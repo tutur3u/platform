@@ -1,5 +1,10 @@
-import { describe, expect, test } from 'vitest';
-import { encodingBudget, watchSenderBandwidth } from './bandwidth';
+import { describe, expect, it, test } from 'vitest';
+import {
+  encodingBudget,
+  initialSendEncodings,
+  planSenderEncodings,
+  watchSenderBandwidth,
+} from './bandwidth';
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -124,4 +129,57 @@ describe('media bandwidth budgets', () => {
       watcher.dispose();
     }
   });
+});
+
+it('scales grid camera budgets down at each room tier while preserving spotlight and screen detail', () => {
+  const camera = (participants: number, spotlight = false) =>
+    encodingBudget('video', 'auto', null, null, { participants, spotlight });
+  const bitrate = (participants: number) => camera(participants).maxBitrate!;
+  expect(bitrate(15)).toBeLessThan(bitrate(4));
+  expect(bitrate(35)).toBeLessThan(bitrate(15));
+  expect(bitrate(50)).toBeLessThan(bitrate(35));
+  expect(camera(50).scaleResolutionDownBy).toBe(2);
+  expect(camera(50, true).scaleResolutionDownBy).toBe(1);
+  expect(
+    encodingBudget('screen', 'auto', null, null, { participants: 50 })
+  ).toMatchObject({ scaleResolutionDownBy: 1 });
+});
+
+it('advertises three RIDs and adapts an unsupported browser with a single encoding', () => {
+  expect(initialSendEncodings('video', 50).map((layer) => layer.rid)).toEqual([
+    'h',
+    'm',
+    'l',
+  ]);
+  expect(initialSendEncodings('video', 50, false)).toEqual([
+    expect.objectContaining({ scaleResolutionDownBy: 2 }),
+  ]);
+  expect(initialSendEncodings('audio', 50)).toEqual([{ maxBitrate: 48000 }]);
+});
+
+it.each([
+  { available: 180000, rtt: 250, loss: 0 },
+  { available: 1000000, rtt: 1200, loss: 0 },
+  { available: 1000000, rtt: 250, loss: 0.18 },
+])('suspends video under congestion without suspending audio', (network) => {
+  const room = { participants: 50, visibleTiles: 9 };
+  const camera = initialSendEncodings('video', 50);
+  expect(
+    planSenderEncodings('video', 'auto', network, room, true, camera).every(
+      (layer) => !layer.active
+    )
+  ).toBe(true);
+  expect(
+    planSenderEncodings('audio', 'auto', network, room, true, [{}])
+  ).toMatchObject([{ active: true, maxBitrate: 48000 }]);
+  expect(
+    planSenderEncodings(
+      'video',
+      'auto',
+      { available: 1000000, rtt: 100, loss: 0 },
+      room,
+      true,
+      camera
+    ).some((layer) => layer.active)
+  ).toBe(true);
 });

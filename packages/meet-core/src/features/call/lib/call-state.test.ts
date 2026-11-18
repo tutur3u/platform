@@ -546,3 +546,36 @@ describe('call lifecycle', () => {
     expect(state.ended).toBe(true);
   });
 });
+
+it('holds a gapped sequence until a full snapshot and ignores a foreign room delta', () => {
+  const initial = {
+    ...INITIAL_CALL_STATE,
+    admission: 'admitted' as const,
+    roomId: 'room',
+  };
+  const frame = (seq: number, roomId = 'room') => ({
+    type: 'presence.delta' as const,
+    seq,
+    roomId,
+    upserted: [],
+    removed: [],
+  });
+  let state = reduceCallState(initial, {
+    type: 'presence',
+    roomId: 'room',
+    seq: 10,
+    presence: [],
+  });
+  expect(reduceCallState(state, frame(11, 'other'))).toBe(state);
+  state = reduceCallState(state, frame(12));
+  expect(state.presenceNeedsResync).toBe(true);
+  expect(reduceCallState(state, frame(11))).toBe(state);
+  state = reduceCallState(state, {
+    type: 'presence',
+    roomId: 'room',
+    seq: 12,
+    presence: [],
+  });
+  expect(state.presenceNeedsResync).toBe(false);
+  expect(reduceCallState(state, frame(13)).presenceSeq).toBe(13);
+});

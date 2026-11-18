@@ -8,6 +8,9 @@ import type {
 } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import { useSyncExternalStore } from 'react';
+import type { MeetRoomController } from '../lib/room-controller';
+import { readRoomControls, subscribeRoomControls } from '../lib/room-actions';
 import type { CallChatMessage } from '../lib/call-state';
 import type { CallPanel } from './control-bar';
 import { ConversationPanel } from './conversation-panel';
@@ -26,6 +29,9 @@ export function SidePanel({
   canManage,
   chat,
   onClose,
+  room,
+  onAdmitAll,
+  onCamerasLockedChange,
   onDecideAdmission,
   onMute,
   onRemove,
@@ -49,6 +55,9 @@ export function SidePanel({
   canManage: boolean;
   chat: CallChatMessage[];
   onClose: () => void;
+  room?: MeetRoomController;
+  onAdmitAll?: () => void;
+  onCamerasLockedChange?: (locked: boolean) => void;
   onDecideAdmission: (userId: string, admit: boolean) => void;
   onMute: (userId: string) => void;
   onRemove: (userId: string) => void;
@@ -62,6 +71,13 @@ export function SidePanel({
   waiting: MeetRealtimeWaitingParticipant[];
 }) {
   const t = useTranslations('meet.call');
+  const controls = useSyncExternalStore(
+    subscribeRoomControls,
+    () => readRoomControls(onDecideAdmission),
+    () => undefined
+  );
+  const actions = room ?? controls?.actions;
+  const settings = room?.state.settings ?? controls?.settings;
 
   return (
     <ResizableCallPanel
@@ -108,7 +124,23 @@ export function SidePanel({
           onForget={onForget}
           shareNotes={shareNotes}
           onShareNotes={onShareNotes}
-          canManage={canManage}
+          canManage={
+            room?.state.canManageParticipants ??
+            controls?.canManage ??
+            canManage
+          }
+          isHost={
+            room ? room.state.role === 'host' : (controls?.isHost ?? canManage)
+          }
+          settings={settings}
+          onAdmitAll={onAdmitAll ?? actions?.admitAllWaiting}
+          onDenyAll={actions?.denyAllWaiting}
+          onCamerasLockedChange={onCamerasLockedChange}
+          onSettingsChange={actions?.updateSettings}
+          onMediaOverride={actions?.setMediaOverride}
+          bulkRemaining={
+            (room?.state.bulkAdmission ?? controls?.bulkAdmission)?.remaining
+          }
           onDecideAdmission={onDecideAdmission}
           onMute={onMute}
           onRemove={onRemove}

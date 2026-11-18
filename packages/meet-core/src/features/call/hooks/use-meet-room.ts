@@ -1,15 +1,20 @@
 'use client';
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
-import type {
-  CloudflareSfuTrack,
-  MeetMediaState,
+import {
+  type CloudflareSfuTrack,
+  type MeetMediaState,
 } from '@tuturuuu/realtime/meet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { encodingBudget } from '../lib/bandwidth';
+import {
+  addLocalTransceiver,
+  useAdaptiveSenderBandwidth,
+} from '../lib/bandwidth';
 import {
   type CallState,
+  clampLocalMedia,
   INITIAL_CALL_STATE,
+  localMediaLocks,
   reduceCallState,
   remoteTrackKey,
 } from '../lib/call-state';
@@ -18,18 +23,17 @@ import { createLocalMediaControls } from '../lib/local-media-controls';
 import { createMediaDiagnosticsReader } from '../lib/media-diagnostics';
 import { openPeerSession } from '../lib/open-peer-session';
 import { recoverMediaState } from '../lib/recover-media-state';
-import { createRoomActions } from '../lib/room-actions';
+import {
+  createRoomActions,
+  type StageVideoWindow,
+  useRoomControlBridge,
+} from '../lib/room-actions';
 import type {
   MeetRoomController,
   UseMeetRoomOptions,
 } from '../lib/room-controller';
-import {
-  applySubscribeResponse,
-  pruneObsoleteReceivers,
-} from '../lib/subscribe-response';
 import { useCameraControls } from './use-camera-controls';
 import { usePublishSession } from './use-publish-session';
-import { useSenderBandwidth } from './use-sender-bandwidth';
 import { useSoloTransport } from './use-solo-transport';
 
 export type {
@@ -43,7 +47,8 @@ import {
   type LocalTrackPlan,
   localTrackSource,
   planLocalTracks,
-  planRemoteSubscriptions,
+  useRecentSpeakers,
+  useWindowedSubscriber,
 } from '../lib/negotiation';
 import {
   PEER_CONFIG,
@@ -60,7 +65,6 @@ import { watchReceiverHealth } from '../lib/receiver-health';
 import {
   listenRemotePlayback,
   type RemoteTrackOwner,
-  reconcileRemotePlayback,
   releaseClosedSubscriptions,
 } from '../lib/remote-playback';
 import {
@@ -96,7 +100,11 @@ export function useMeetRoom({
     videoEnabled: false,
   });
   const signalingRef = useRef<MeetSignaling | null>(null);
-  const actions = useMemo(() => createRoomActions(signalingRef), []);
+  const stageWindow = useRef<StageVideoWindow | null>(null);
+  const actions = useMemo(
+    () => createRoomActions(signalingRef, stageWindow),
+    []
+  );
   const publishPcRef = useRef<RTCPeerConnection | null>(null);
   const subscribePcRef = useRef<RTCPeerConnection | null>(null);
   const publishSessionRef = useRef<string | null>(null);
@@ -138,7 +146,7 @@ export function useMeetRoom({
     const resolveUrl = async (signal?: AbortSignal) => {
       if (!usedInitialToken) {
         usedInitialToken = true;
-        return `${realtimeUrl}?token=${encodeURIComponent(token)}`;
+        return `${realtimeUrl}?presenceDelta=1&token=${encodeURIComponent(token)}`;
       }
       const refreshed = await createMeetCallRealtimeToken(
         meetingId,
@@ -148,19 +156,17 @@ export function useMeetRoom({
       );
       if (refreshed.requiresDeviceChoice)
         throw new Error('Device confirmation required');
-      return `${refreshed.realtimeUrl}?token=${encodeURIComponent(refreshed.token)}`;
+      return `${refreshed.realtimeUrl}?presenceDelta=1&token=${encodeURIComponent(refreshed.token)}`;
     };
     const signaling = new MeetSignaling({
       onMessage: (message) => {
         deliverRoomAssistantAudio(meetingId, message);
-        if (
-          message.type === 'ready' &&
-          message.admission === 'admitted' &&
-          !message.resumed
-        ) {
+        if (message.type === 'ready' && message.admission === 'admitted') {
           resetSubscriber();
-          resetPublisher();
-          setConnectionGeneration((value) => value + 1);
+          if (!message.resumed) {
+            resetPublisher();
+            setConnectionGeneration((value) => value + 1);
+          }
         }
         if (
           message.type === 'track.closed' &&
@@ -304,7 +310,7 @@ export function useMeetRoom({
       if (!selfUserId) return;
       const desired = planLocalTracks(
         selfUserId,
-        next,
+        clampLocalMedia(stateRef.current, next),
         screenStreamRef.current
           ?.getAudioTracks()
           .some((track) => track.readyState === 'live')
@@ -322,7 +328,12 @@ export function useMeetRoom({
         isCurrent: () => publishPcRef.current === previousPc,
         reset: () => resetPublisher(true),
         closeTrack: (sessionId, track) =>
-          closePublishedTrack(signalingRef.current, sessionId, track),
+          track.kind &&
+          localMediaLocks(stateRef.current)[
+            track.kind === 'screen_audio' ? 'screen' : track.kind
+          ]
+            ? Promise.resolve()
+            : closePublishedTrack(signalingRef.current, sessionId, track),
       });
       if (publishPcRef.current !== previousPc || publishEpoch.current !== epoch)
         return;
@@ -354,10 +365,12 @@ export function useMeetRoom({
               : plan.kind === 'screen'
                 ? 'detail'
                 : 'motion';
-          const transceiver = pc.addTransceiver(source, {
-            direction: 'sendonly',
-            sendEncodings: [encodingBudget(plan.kind, 'auto', null, null)],
-          });
+          const transceiver = addLocalTransceiver(
+            pc,
+            source,
+            plan.kind,
+            Object.keys(stateRef.current.participants).length
+          );
           sendersRef.current.set(plan.trackName, transceiver.sender);
           added.push({ plan, transceiver });
         }
@@ -372,6 +385,7 @@ export function useMeetRoom({
           const tracks: CloudflareSfuTrack[] = added.map(
             ({ plan: added_plan, transceiver }) => ({
               location: 'local',
+              kind: added_plan.kind,
               mid: transceiver.mid ?? undefined,
               trackName: added_plan.trackName,
             })
@@ -451,136 +465,61 @@ export function useMeetRoom({
     ).catch(() => undefined);
   }, [connectionGeneration, queueLocalTracks, state.admission]);
 
-  useEffect(() => {
-    if (state.admission !== 'admitted') return;
-    const pull = async () => {
-      if (
-        !activeRef.current ||
-        Object.keys(stateRef.current.participants).length < 2
-      )
-        return;
-      pruneObsoleteReceivers(
-        stateRef.current.remoteTracks,
-        trackOwnersRef.current,
-        subscribedRef.current,
-        setRemoteMedia
-      );
-      const pending = planRemoteSubscriptions(
-        stateRef.current.remoteTracks,
-        subscribedRef.current,
-        stateRef.current.selfUserId
-      );
-      if (!pending.length) return;
-      pendingSubscriptionsRef.current = new Set(
-        pending.map(
-          (track) =>
-            `${encodeURIComponent(track.sessionId ?? '')}:${encodeURIComponent(track.trackName ?? '')}`
-        )
-      );
-      let requestedPeer: RTCPeerConnection | null = null;
-      try {
-        const { pc, sessionId } = await ensureSubscribeSession();
-        requestedPeer = pc;
-        await preparePeerSession(
-          pc,
-          () => subscribePcRef.current === pc,
-          resetSubscriber
-        );
-        if (subscribePcRef.current !== pc) return;
-        const answer = await signalingRef.current?.request<SfuTracksResponse>({
-          sessionId,
-          tracks: pending,
-          type: 'sfu.tracks.subscribe',
-        });
-        if (subscribePcRef.current !== pc) return;
-        applySubscribeResponse(
-          answer,
-          pending,
-          stateRef.current.remoteTracks,
-          trackOwnersRef.current,
-          subscribedRef.current,
-          setRemoteMedia
-        );
-        if (answer?.sessionDescription) {
-          await pc.setRemoteDescription(answer.sessionDescription);
-          if (subscribePcRef.current !== pc) return;
-          const localAnswer = await pc.createAnswer();
-          if (subscribePcRef.current !== pc) return;
-          await pc.setLocalDescription(localAnswer);
-          if (subscribePcRef.current !== pc) return;
-          await signalingRef.current?.request({
-            sessionDescription: { sdp: localAnswer.sdp ?? '', type: 'answer' },
-            sessionId,
-            type: 'sfu.renegotiate',
-          });
-        }
-        if (subscribePcRef.current !== pc) return;
-        reconcileRemotePlayback(
-          pc,
-          trackOwnersRef.current,
-          subscribedRef.current,
-          () => subscribePcRef.current === pc,
-          setRemoteMedia
-        );
-      } catch (error) {
-        if (requestedPeer && subscribePcRef.current === requestedPeer)
-          resetSubscriber();
-        throw error;
-      } finally {
-        pendingSubscriptionsRef.current.clear();
-      }
-    };
-    let active = true;
-    let scheduled = false,
-      failures = 0,
-      retryAfter = 0;
-    const schedule = () => {
-      if (scheduled || Date.now() < retryAfter) return;
-      scheduled = true;
-      subscribeQueue.current = subscribeQueue.current
-        .then(async () => {
-          if (active) await pull();
-          failures = 0;
-        })
-        .catch((error) => {
-          retryAfter =
-            Date.now() + Math.min(15000, 1500 * 2 ** Math.min(failures++, 4));
-          console.warn('Meet track subscription failed', error);
-        })
-        .finally(() => {
-          scheduled = false;
-        });
-    };
-    schedule();
-    const retry = setInterval(schedule, 1500);
-    return () => {
-      active = false;
-      clearInterval(retry);
-      if (stateRef.current.admission !== 'admitted') {
-        subscribePcRef.current?.close();
-        subscribePcRef.current = null;
-        subscribeSessionRef.current = null;
-        subscribedRef.current.clear();
-      }
-    };
-  }, [ensureSubscribeSession, resetSubscriber, state.admission]);
+  useWindowedSubscriber({
+    activeRef,
+    stateRef,
+    admission: state.admission,
+    stageWindow,
+    subscribeSessionRef,
+    subscribePcRef,
+    subscribedRef,
+    trackOwnersRef,
+    pendingSubscriptionsRef,
+    subscribeQueue,
+    ensureSubscribeSession,
+    resetSubscriber,
+    signalingRef,
+    setRemoteMedia,
+  });
+  useRecentSpeakers(
+    state.admission === 'admitted',
+    subscribePcRef,
+    trackOwnersRef,
+    setState
+  );
 
   const applyMedia = useCallback(
     async (next: MeetMediaState, stream: MediaStream | null) => {
       const previous = mediaRef.current;
+      const allowed = clampLocalMedia(stateRef.current, next);
+      if (next.videoEnabled && !allowed.videoEnabled)
+        for (const track of stream?.getVideoTracks() ?? []) track.stop();
+      if (next.audioEnabled && !allowed.audioEnabled)
+        for (const track of stream?.getAudioTracks() ?? [])
+          track.enabled = false;
+      if (next.screenEnabled && !allowed.screenEnabled) {
+        for (const track of screenStreamRef.current?.getTracks() ?? [])
+          track.stop();
+        screenStreamRef.current = null;
+        setScreenStream(null);
+      }
+      next = allowed;
       mediaRef.current = next;
       setMedia(next);
       if (activeRef.current) publishPresence(next);
       try {
         await queueLocalTracks(stream ?? new MediaStream(), next);
       } catch (error) {
-        const restored = recoverMediaState(
-          previous,
-          next,
-          mediaRef.current,
-          !!localStreamRef.current
-            ?.getAudioTracks()
-            .some((track) => track.enabled)
+        const restored = clampLocalMedia(
+          stateRef.current,
+          recoverMediaState(
+            previous,
+            next,
+            mediaRef.current,
+            !!localStreamRef.current
+              ?.getAudioTracks()
+              .some((track) => track.enabled)
+          )
         );
         restored.screenEnabled &&=
           activeRef.current &&
@@ -624,11 +563,40 @@ export function useMeetRoom({
     [applyMedia, effects]
   );
 
-  const { setBandwidthMode, getBandwidthMode } = useSenderBandwidth(
-    publishPcRef,
-    sendersRef,
-    Object.keys(state.participants).length
-  );
+  const { setBandwidthMode, getBandwidthMode } = useAdaptiveSenderBandwidth({
+    peer: publishPcRef,
+    senders: sendersRef,
+    state: stateRef,
+    stage: stageWindow,
+  });
+  const locks = useRoomControlBridge(actions, state);
+  useEffect(() => {
+    if (state.presenceNeedsResync && connectionStatus === 'open')
+      signalingRef.current?.send({ type: 'presence.resync' });
+  }, [connectionStatus, state.presenceNeedsResync]);
+  useEffect(() => {
+    if (locks.audio) {
+      localControls.cancelPendingMicrophone();
+      for (const track of localStreamRef.current?.getAudioTracks() ?? [])
+        track.stop();
+    }
+    if (locks.video) {
+      for (const track of localStreamRef.current?.getVideoTracks() ?? [])
+        track.stop();
+      effects.dispose();
+    }
+    if (locks.audio || locks.video || locks.screen)
+      void applyMedia({ ...mediaRef.current }, localStreamRef.current).catch(
+        () => undefined
+      );
+  }, [
+    applyMedia,
+    effects,
+    localControls,
+    locks.audio,
+    locks.video,
+    locks.screen,
+  ]);
   const sharingUsers = Object.values(state.participants)
     .filter((entry) => entry.media.screenEnabled)
     .map((entry) => entry.userId)
@@ -667,7 +635,14 @@ export function useMeetRoom({
     ...actions,
     setBandwidthMode,
     getBandwidthMode,
-    adoptPreview,
+    adoptPreview: async (stream) => {
+      const { audio, video } = localMediaLocks(stateRef.current);
+      if (audio)
+        for (const track of stream?.getAudioTracks() ?? []) track.stop();
+      if (video)
+        for (const track of stream?.getVideoTracks() ?? []) track.stop();
+      await adoptPreview(stream);
+    },
     leave,
     cameraLook,
     setCameraLook,
@@ -692,5 +667,25 @@ export function useMeetRoom({
     remoteStreams,
     state,
     ...localControls,
+    selectDevice: async (kind, id) => {
+      if (!localMediaLocks(stateRef.current)[kind])
+        await localControls.selectDevice(kind, id);
+    },
+    toggleCamera: async () => {
+      if (!localMediaLocks(stateRef.current).video)
+        await localControls.toggleCamera();
+    },
+    toggleMicrophone: async () => {
+      if (!localMediaLocks(stateRef.current).audio)
+        await localControls.toggleMicrophone();
+    },
+    unmuteMicrophone: async () => {
+      if (!localMediaLocks(stateRef.current).audio)
+        await localControls.unmuteMicrophone();
+    },
+    toggleScreenShare: async () => {
+      if (!localMediaLocks(stateRef.current).screen)
+        await localControls.toggleScreenShare();
+    },
   };
 }

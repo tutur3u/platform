@@ -8,6 +8,7 @@ vi.mock('@tuturuuu/meet-core/runtime', () => ({
 }));
 vi.mock('@tuturuuu/utils/meet-classroom-policy', () => ({
   getClassroomParticipantCap: policy.read,
+  getMeetRoomCapacityLimits: policy.read,
   MeetClassroomPolicyError: class extends Error {
     constructor(
       public status: number,

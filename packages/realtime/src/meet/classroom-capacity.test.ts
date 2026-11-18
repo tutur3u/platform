@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   admitOrHold,
   applyMeetRoomCommand,
+  canCloseMeetSubscriptions,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
   meetRealtimeTokenPayloadSchema,
@@ -185,4 +186,248 @@ it('a second concurrent-order lobby decision observes the first filled slot', ()
     type: 'error',
     error: 'participant_limit_reached',
   });
+});
+
+it.each([50, 100])('lets signed flag-off tiers admit %i publishers', (cap) => {
+  const withTier = (n: number) => {
+    const signed = token(n);
+    return {
+      ...signed,
+      limits: { ...signed.limits, maxPublishers: cap, maxViewers: cap },
+    };
+  };
+  let state = createMeetRoomSnapshot();
+  for (let n = 1; n <= cap; n++)
+    state = admitOrHold(state, withTier(n), now).state;
+  expect(Object.keys(state.presence)).toHaveLength(cap);
+  expect(state.budget?.maxParticipants).toBeUndefined();
+  expect(admitOrHold(state, withTier(cap + 1), now).reply).toContainEqual({
+    type: 'error',
+    error: 'publisher_limit_reached',
+  });
+});
+
+it('holds the default lobby and admits automatically only while admission is open and capacity remains', () => {
+  const host = token(1, 2);
+  const guest = { ...token(2, 2), admission: 'lobby' as const };
+  const initial = admitOrHold(createMeetRoomSnapshot(), host, now).state;
+  expect(initial.settings?.skipLobby ?? false).toBe(false);
+  expect(
+    admitOrHold(initial, guest, now).state.waiting[guest.userId]
+  ).toBeDefined();
+  const open = { ...initial, settings: { shareNotes: false, skipLobby: true } };
+  const admitted = admitOrHold(open, guest, now);
+  expect(admitted.state.presence[guest.userId]).toBeDefined();
+  expect(
+    admitOrHold(admitted.state, { ...guest, userId: token(3, 2).userId }, now)
+      .reply
+  ).toContainEqual({ type: 'error', error: 'participant_limit_reached' });
+  expect(
+    admitOrHold(
+      { ...open, settings: { ...open.settings, admissionClosed: true } },
+      guest,
+      now
+    ).reply
+  ).toContainEqual({ type: 'error', error: 'admission_closed' });
+});
+
+it('bulk admit fills the room, reports overflow, and keeps overflow waiting for an explicit decision', () => {
+  const host = token(1, 3);
+  const cohost = {
+    ...token(2, 3),
+    scopes: [...token(2, 3).scopes, 'participants:manage'],
+  };
+  const first = { ...token(3, 3), admission: 'lobby' as const };
+  const second = { ...token(4, 3), admission: 'lobby' as const };
+  let state = createMeetRoomSnapshot();
+  for (const actor of [host, cohost, first, second])
+    state = admitOrHold(state, actor, now).state;
+  const decide = (actor: typeof host, admit: boolean) =>
+    applyMeetRoomCommand(state, {
+      token: actor,
+      now,
+      message: { type: 'admission.decideAll', admit, requestId: 'bulk' },
+    });
+  expect(decide(first, true).reply[0]).toMatchObject({ type: 'error' });
+  const admitted = decide(cohost, true);
+  expect(admitted.reply[0]).toEqual({
+    type: 'admission.bulkResult',
+    admitted: 1,
+    denied: 0,
+    remaining: 1,
+    requestId: 'bulk',
+  });
+  expect(admitted.state.waiting[second.userId]).toBeDefined();
+  expect(admitted.toManagers.map((message) => message.type)).toEqual([
+    'admission.pending',
+    'admission.approved',
+  ]);
+  state = admitted.state;
+  const denied = decide(host, false);
+  expect(denied.disconnect).toEqual([second.userId]);
+  const reopened = {
+    ...denied.state,
+    settings: { shareNotes: false, skipLobby: true },
+  };
+  expect(
+    admitOrHold(reopened, second, now).state.waiting[second.userId]
+  ).toBeDefined();
+});
+
+it.each([
+  ['audio', 'micsLocked', 'mic', 'audioEnabled'],
+  ['video', 'camerasLocked', 'camera', 'videoEnabled'],
+  ['screen', 'screensLocked', 'screen', 'screenEnabled'],
+  ['screen_audio', 'screensLocked', 'screen', 'screenEnabled'],
+] as const)(
+  'enforces the %s lock in presence, SFU publication and override revocation',
+  (kind, lock, override, field) => {
+    const host = token(1, 5);
+    const guest = token(2, 5);
+    const cohost = {
+      ...token(3, 5),
+      scopes: [...token(3, 5).scopes, 'participants:manage'],
+    };
+    let state = createMeetRoomSnapshot();
+    for (const actor of [host, guest, cohost])
+      state = admitOrHold(state, actor, now).state;
+    const run = (
+      actor: typeof host,
+      message: Parameters<typeof applyMeetRoomCommand>[1]['message']
+    ) => applyMeetRoomCommand(state, { token: actor, now, message });
+    const publish = (actor: typeof host, mid = '0') =>
+      run(actor, {
+        type: 'sfu.tracks.publish',
+        sessionId: actor.userId,
+        requestId: 'pub',
+        sessionDescription: { type: 'offer', sdp: 'fixture' },
+        tracks: [
+          { mid, trackName: `${actor.userId}-${kind}`, location: 'local' },
+        ],
+      });
+    expect(
+      run(guest, { type: 'room.settings.update', settings: { [lock]: true } })
+        .reply[0]
+    ).toMatchObject({ error: 'permission_denied' });
+    state = publish(guest).state;
+    const locked = run(cohost, {
+      type: 'room.settings.update',
+      settings: { [lock]: true },
+    });
+    state = locked.state;
+    expect(locked.broadcast).toContainEqual(
+      expect.objectContaining({
+        type: 'participant.muted',
+        userId: guest.userId,
+        kinds: expect.arrayContaining([kind]),
+      })
+    );
+    expect(locked.broadcast).toContainEqual(
+      expect.objectContaining({ type: 'track.closed', userId: guest.userId })
+    );
+    expect(state.budget?.pendingPublications).toHaveLength(1);
+    expect(publish(guest).reply[0]).toMatchObject({
+      error: 'publish_not_allowed',
+    });
+    expect(publish(host).sfu).not.toBeNull();
+    expect(publish(cohost).sfu).not.toBeNull();
+    const media = {
+      audioEnabled: true,
+      screenEnabled: true,
+      videoEnabled: true,
+    };
+    for (const type of ['presence.join', 'presence.update'] as const)
+      expect(
+        run(guest, { type, media }).state.presence[guest.userId]?.media[field]
+      ).toBe(false);
+    state = run(host, {
+      type: 'room.mediaOverride',
+      userId: guest.userId,
+      override: { [override]: true },
+    }).state;
+    expect(
+      run(guest, { type: 'presence.update', media }).state.presence[
+        guest.userId
+      ]?.media[field]
+    ).toBe(true);
+    state = publish(guest, '1').state;
+    expect(Object.keys(state.tracks)).toHaveLength(1);
+    state = run(host, {
+      type: 'room.mediaOverride',
+      userId: guest.userId,
+      override: null,
+    }).state;
+    expect(Object.keys(state.tracks)).toHaveLength(0);
+    expect(publish(guest).reply[0]).toMatchObject({
+      error: 'publish_not_allowed',
+    });
+  }
+);
+
+it('rejects a camera SDP section declared as audio while cameras are locked', () => {
+  const host = token(1, 5);
+  const guest = token(2, 5);
+  let state = admitOrHold(createMeetRoomSnapshot(), host, now).state;
+  state = admitOrHold(state, guest, now).state;
+  state = applyMeetRoomCommand(state, {
+    token: host,
+    now,
+    message: {
+      type: 'room.settings.update',
+      settings: { camerasLocked: true },
+    },
+  }).state;
+  const result = applyMeetRoomCommand(state, {
+    token: guest,
+    now,
+    message: {
+      type: 'sfu.tracks.publish',
+      sessionId: 'session',
+      requestId: 'publish',
+      sessionDescription: {
+        type: 'offer',
+        sdp: 'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\na=mid:0\r\n',
+      },
+      tracks: [{ mid: '0', kind: 'audio', trackName: `${guest.userId}-audio` }],
+    },
+  });
+  expect(result.sfu).toBeNull();
+  expect(result.reply).toContainEqual({
+    type: 'error',
+    requestId: 'publish',
+    error: 'publish_not_allowed',
+  });
+});
+
+it('allows closing a confirmed receiver MID without touching publisher state', () => {
+  const viewer = {
+    ...token(2, 5),
+    role: 'viewer' as const,
+    scopes: getMeetRealtimeScopesForRole('viewer'),
+  };
+  const state = admitOrHold(createMeetRoomSnapshot(), viewer, now).state;
+  const message = {
+    type: 'sfu.tracks.close' as const,
+    subscription: true as const,
+    requestId: 'close',
+    sessionId: 'receiver',
+    tracks: [{ mid: '7' }],
+  };
+  const attempt = (mids: string[]) =>
+    applyMeetRoomCommand(state, {
+      token: viewer,
+      now,
+      message,
+      canCloseSubscriptions: () =>
+        canCloseMeetSubscriptions({ receiver: mids }, message),
+    });
+  expect(attempt(['8']).reply).toContainEqual({
+    type: 'error',
+    requestId: 'close',
+    error: 'permission_denied',
+  });
+  const accepted = attempt(['7']);
+  expect(accepted.sfu?.message).toEqual({ ...message, force: true });
+  expect(accepted.broadcast).toEqual([]);
+  expect(accepted.state.tracks).toBe(state.tracks);
 });

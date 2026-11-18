@@ -15,6 +15,7 @@ export {
   hasMeetAssistantMention,
   MEET_ASSISTANT_USER_ID,
 } from './assistant-mentions';
+export * from './room-presence-diff';
 export { retainRoomChat } from './chat-retention';
 export { MeetCommandExecutor } from './command-executor';
 export { MEET_REALTIME_URL, resolveMeetRealtimeUrl } from './endpoint';
@@ -28,6 +29,10 @@ export { meetRealtimeClientMessageSchema } from './messages';
 export type { MeetRealtimeScope } from './permissions';
 export {
   canMeetRealtimeControlRecording,
+  clampMeetMedia,
+  isMeetMediaLocked,
+  MEET_MEDIA_CONTROLS,
+  meetTrackKind,
   canMeetRealtimeManageParticipants,
   canMeetRealtimePublish,
   canMeetRealtimeUpdateStage,
@@ -71,6 +76,7 @@ export type {
   MeetRoomCommand,
   MeetRoomOutcome,
   MeetRoomSnapshot,
+  MeetRoomSocketAttachment,
   MeetSfuIntent,
 } from './room';
 export {
@@ -78,6 +84,7 @@ export {
   applyMeetRoomCommand,
   createMeetPresence,
   createMeetRoomSnapshot,
+  createMeetRoomSocketDelivery,
   getMeetDisplayName,
   MEET_CONNECTED_PRESENCE_TTL_MS,
   MEET_PRESENCE_TTL_MS,
@@ -97,7 +104,11 @@ export {
   MEET_MAX_ROOM_PARTICIPANTS,
 } from './room-budget';
 export { mergePublicationCleanup } from './room-cleanup';
-export { canReadRoomNotes, enablesNoteSharing } from './room-controls';
+export {
+  applyMeetRoomSettings,
+  canReadRoomNotes,
+  enablesNoteSharing,
+} from './room-controls';
 export {
   type DocumentRoomCommand,
   documentRoomCommandSchema,
@@ -158,3 +169,8 @@ export {
   MIRA_PRIVATE_NOTICE_VERSION,
   MIRA_ROOM_DENIED,
 } from './room-mira-private';
+
+export {
+  canCloseMeetSubscriptions,
+  recordMeetSubscriptionOperation,
+} from './room-sfu';

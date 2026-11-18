@@ -1,6 +1,6 @@
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
-  getClassroomParticipantCap,
+  getMeetRoomCapacityLimits,
   MeetClassroomPolicyError,
 } from '@tuturuuu/utils/meet-classroom-policy';
 import type {
@@ -154,16 +154,39 @@ export async function POST(request: Request, { params }: Params) {
     const deviceUserId = body.deviceId
       ? await meetDeviceIdentity(auth.user.id, body.deviceId)
       : auth.user.id;
+    const strictCapacity = process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true';
+    const parley = await isParleySession(meetingId).catch((error) => {
+      if (strictCapacity)
+        throw new MeetClassroomPolicyError(
+          503,
+          'Meeting capacity entitlement unavailable'
+        );
+      console.warn('Meet room capacity classification unavailable');
+      return true;
+    });
+    const capacity = await getMeetRoomCapacityLimits({
+      meetingId,
+      wsId,
+      mode,
+      parley,
+    });
+    const maxRoomDurationSeconds = parley
+      ? 7200
+      : await getHostMeetingDurationSeconds(meeting.creator_id).catch(
+          (error) => {
+            if (strictCapacity)
+              throw new MeetClassroomPolicyError(
+                503,
+                'Meeting capacity entitlement unavailable'
+              );
+            console.warn('Meet room duration entitlement unavailable');
+            return 7200;
+          }
+        );
     const signed = signMeetJoinToken({
       accountId: body.deviceId ? auth.user.id : undefined,
-      maxParticipants:
-        process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true' &&
-        (await isParleySession(meetingId))
-          ? undefined
-          : await getClassroomParticipantCap(meetingId, wsId),
-      maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
-        meeting.creator_id
-      ),
+      ...capacity,
+      maxRoomDurationSeconds,
       displayName: getDisplayName(auth.user),
       meetingId,
       mode,

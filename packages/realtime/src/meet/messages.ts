@@ -24,6 +24,7 @@ import {
   type MeetReaction,
   type MeetRoomSettings,
   meetReactionSchema,
+  meetMediaOverrideSchema,
   meetRoomSettingsPatchSchema,
 } from './room-options';
 import {
@@ -103,6 +104,18 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     type: z.literal('admission.decide'),
     userId: participantId,
   }),
+  z.object({ type: z.literal('presence.resync') }),
+  z.object({
+    type: z.literal('room.mediaOverride'),
+    requestId,
+    userId: participantId,
+    override: meetMediaOverrideSchema.nullable(),
+  }),
+  z.object({
+    type: z.literal('admission.decideAll'),
+    requestId,
+    admit: z.boolean(),
+  }),
   z.object({
     kinds: z.array(meetRealtimeTrackKindSchema).min(1),
     requestId,
@@ -159,6 +172,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     sessionId: z.string().trim().min(1).max(180),
     tracks: z.array(cloudflareSfuTrackSchema).min(1).max(256),
     force: z.boolean().optional(),
+    subscription: z.literal(true).optional(),
     type: z.literal('sfu.tracks.close'),
   }),
   z.object({
@@ -178,6 +192,7 @@ export type MeetRealtimeSfuClientMessage = Extract<
 >;
 
 export type MeetRealtimeRoomTrack = {
+  cameraRids?: Array<'h' | 'm' | 'l'>;
   kind?: string;
   mid?: string;
   sessionId: string;
@@ -218,6 +233,7 @@ export type MeetRealtimeServerMessage =
   | { type: 'admission.approved'; participants: MeetApprovedParticipant[] }
   | {
       admission: 'admitted' | 'waiting';
+      canManageParticipants?: boolean;
       expiresAt: string;
       roomExpiresAt?: string;
       limits: MeetRealtimeTokenPayload['limits'];
@@ -232,8 +248,23 @@ export type MeetRealtimeServerMessage =
     }
   | {
       presence: MeetRealtimePresence[];
+      seq?: number;
       roomId: string;
       type: 'presence';
+    }
+  | {
+      type: 'presence.delta';
+      roomId: string;
+      seq: number;
+      upserted: MeetRealtimePresence[];
+      removed: string[];
+    }
+  | {
+      type: 'admission.bulkResult';
+      admitted: number;
+      denied: number;
+      remaining: number;
+      requestId?: string;
     }
   | {
       accountId?: string;

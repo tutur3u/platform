@@ -31,7 +31,29 @@ export function startRoomBudget(
 ): MeetRoomSnapshot {
   if (!Number.isFinite(now)) return state;
   if (state.budget) {
-    if (token.limits.maxParticipants === undefined) return state;
+    if (token.limits.maxParticipants === undefined) {
+      if (state.budget.maxParticipants !== undefined) return state;
+      const maxPublishers = Math.max(
+        state.budget.maxPublishers,
+        Math.min(MEET_MAX_ROOM_PARTICIPANTS, token.limits.maxPublishers)
+      );
+      const maxViewers = Math.max(
+        state.budget.maxViewers,
+        Math.min(
+          token.mode === 'webinar' ? 250 : MEET_MAX_ROOM_PARTICIPANTS,
+          token.limits.maxViewers
+        )
+      );
+      if (
+        maxPublishers === state.budget.maxPublishers &&
+        maxViewers === state.budget.maxViewers
+      )
+        return state;
+      return {
+        ...state,
+        budget: { ...state.budget, maxPublishers, maxViewers },
+      };
+    }
     return {
       ...state,
       budget: {
@@ -47,7 +69,7 @@ export function startRoomBudget(
                 token.limits.maxPublishers
               ),
               maxViewers: Math.min(
-                token.limits.maxParticipants,
+                token.mode === 'webinar' ? 250 : token.limits.maxParticipants,
                 token.limits.maxViewers
               ),
             }
@@ -68,11 +90,13 @@ export function startRoomBudget(
       largeRoomPresenceMilliseconds: 0,
       maxParticipants: token.limits.maxParticipants,
       maxPublishers: Math.min(
-        token.limits.maxParticipants ?? 32,
+        token.limits.maxParticipants ?? MEET_MAX_ROOM_PARTICIPANTS,
         token.limits.maxPublishers
       ),
       maxViewers: Math.min(
-        token.limits.maxParticipants ?? 96,
+        token.mode === 'webinar'
+          ? 250
+          : (token.limits.maxParticipants ?? MEET_MAX_ROOM_PARTICIPANTS),
         token.limits.maxViewers
       ),
     },
@@ -141,7 +165,7 @@ export function roomCapacityError(
         token.limits.maxParticipants ?? 100,
         state.settings?.maxParticipants ?? 100
       )
-    : MEET_MAX_ROOM_PARTICIPANTS;
+    : (state.settings?.maxParticipants ?? MEET_MAX_ROOM_PARTICIPANTS);
   if (
     role !== 'host' &&
     !state.presence[userId] &&
@@ -153,11 +177,19 @@ export function roomCapacityError(
   if (others.length >= cap) return 'participant_limit_reached';
   if (role === 'viewer')
     return others.filter((person) => person.role === 'viewer').length >=
-      Math.min(limits.maxParticipants ?? 96, limits.maxViewers)
+      Math.min(
+        token.mode === 'webinar'
+          ? 250
+          : (limits.maxParticipants ?? MEET_MAX_ROOM_PARTICIPANTS),
+        limits.maxViewers
+      )
       ? 'participant_limit_reached'
       : null;
   return others.filter((person) => person.role !== 'viewer').length >=
-    Math.min(limits.maxParticipants ?? 32, limits.maxPublishers)
+    Math.min(
+      limits.maxParticipants ?? MEET_MAX_ROOM_PARTICIPANTS,
+      limits.maxPublishers
+    )
     ? 'publisher_limit_reached'
     : null;
 }

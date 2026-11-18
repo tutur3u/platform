@@ -10,8 +10,24 @@ export const meetReactionSchema = z.enum([
   'celebrate',
 ]);
 export type MeetReaction = z.infer<typeof meetReactionSchema>;
+export const meetMediaOverrideSchema = z.object({
+  mic: z.boolean().optional(),
+  camera: z.boolean().optional(),
+  screen: z.boolean().optional(),
+});
+const mediaSettings = {
+  micsLocked: z.boolean().optional(),
+  camerasLocked: z.boolean().optional(),
+  screensLocked: z.boolean().optional(),
+  mediaOverrides: z
+    .record(z.uuid(), meetMediaOverrideSchema)
+    .refine((entries) => Object.keys(entries).length <= 256)
+    .optional(),
+};
 export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
+  ...mediaSettings,
+  skipLobby: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
@@ -23,6 +39,8 @@ export const meetRoomSettingsPatchSchema = z.object({
 export const meetRoomSettingsSchema = z.object({
   programming: meetingProgrammingSchema.nullable().optional(),
   maxParticipants: z.number().int().min(1).max(100).optional(),
+  ...mediaSettings,
+  skipLobby: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),

@@ -39,6 +39,8 @@ export function signMeetJoinToken(input: {
   service?: boolean;
   maxRoomDurationSeconds?: number;
   maxParticipants?: number;
+  maxPublishers?: number;
+  maxViewers?: number;
   displayName?: string;
   meetingId: string;
   mode: MeetRealtimeRoomMode;
@@ -56,9 +58,12 @@ export function signMeetJoinToken(input: {
       maxRoomDurationSeconds: input.maxRoomDurationSeconds,
       maxParticipants: input.maxParticipants,
       maxPublishers:
-        input.maxParticipants ?? (input.mode === 'webinar' ? 12 : 8),
+        input.maxPublishers ??
+        input.maxParticipants ??
+        (input.mode === 'webinar' ? 12 : 8),
       maxViewers:
-        input.maxParticipants ?? (input.mode === 'webinar' ? 250 : 96),
+        input.maxViewers ??
+        (input.mode === 'webinar' ? 250 : (input.maxParticipants ?? 96)),
       video: {
         defaultCameraEnabled: false,
         maxFrameRate: 24,

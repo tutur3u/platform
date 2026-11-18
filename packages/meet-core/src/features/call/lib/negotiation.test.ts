@@ -5,6 +5,7 @@ import {
   localTrackName,
   planLocalTracks,
   planRemoteSubscriptions,
+  planWindowedRemoteSubscriptions,
   staleSubscriptions,
   userIdFromTrackName,
   videoConstraints,
@@ -187,4 +188,51 @@ describe('track ownership', () => {
     expect(userIdFromTrackName('user-bogus')).toBeNull();
     expect(userIdFromTrackName('-audio')).toBeNull();
   });
+});
+
+it('keeps audio and screens across pages while pulling and closing camera tracks by window', () => {
+  const track = (userId: string, kind: string) => ({
+    userId,
+    kind,
+    sessionId: userId,
+    trackName: `${userId}-${kind}`,
+  });
+  const publications = [
+    { ...track('first', 'video'), cameraRids: ['h', 'm', 'l'] as const },
+    track('later', 'video'),
+    track('later', 'audio'),
+    track('later', 'screen_audio'),
+    track('later', 'screen'),
+  ].map((entry) => ({
+    ...entry,
+    ...('cameraRids' in entry && entry.cameraRids
+      ? { cameraRids: [...entry.cameraRids] }
+      : {}),
+  }));
+  const remoteTracks = Object.fromEntries(
+    publications.map((entry) => [
+      `${entry.sessionId}:${entry.trackName}`,
+      entry,
+    ])
+  );
+  const plan = planWindowedRemoteSubscriptions({
+    remoteTracks,
+    subscribedKeys: ['later:later-video'],
+    selfUserId: 'me',
+    videoWindow: {
+      cameraUserIds: ['first'],
+      spotlightUserId: 'first',
+      changedAt: 0,
+    },
+  });
+  expect(plan.close).toEqual(['later:later-video']);
+  expect(plan.pending.map((entry) => entry.trackName).sort()).toEqual([
+    'first-video',
+    'later-audio',
+    'later-screen',
+    'later-screen_audio',
+  ]);
+  expect(
+    plan.pending.find((entry) => entry.trackName === 'first-video')
+  ).toMatchObject({ simulcast: { preferredRid: 'h' } });
 });

@@ -1,6 +1,7 @@
 import type { MeetRealtimeSfuClientMessage } from './messages';
 import {
   canMeetRealtimeManageParticipants,
+  clampMeetMedia,
   canMeetRealtimeUpdateStage,
   hasMeetRealtimeScope,
   MEET_REALTIME_SCOPES,
@@ -13,31 +14,32 @@ import {
   meetAdmissionPendingMessage,
   meetPresenceMessage,
   releaseParticipant,
-  remoteMeetTracks,
 } from './room';
 import {
   accountRoomTime,
   expireRoomBudget,
   roomCapacityError,
-  startRoomBudget,
 } from './room-budget';
 import { applyChatMessage } from './room-chat';
-import {
-  applyRoomControl,
-  approvedParticipantsMessage,
-  roomSettingsMessage,
-} from './room-controls';
+import { applyRoomControl, approvedParticipantsMessage } from './room-controls';
 import { lobbyDisplayName } from './room-display-name';
 import { retireIdlePublication } from './room-idle';
 import { denied, outcome } from './room-outcome';
-import { applyRecording, recordingMessage } from './room-recording';
+import { applyRecording } from './room-recording';
 import { applySfuCommand } from './room-sfu';
 import { applyUsageReport, createRoomUsage } from './room-usage';
-import { transcriptionAnnouncements } from './transcription';
+import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
 
 export function applyMeetRoomCommand(
   state: MeetRoomSnapshot,
-  { message, now, token, notesEligible }: MeetRoomCommand
+  {
+    message,
+    now,
+    token,
+    notesEligible,
+    canCloseSubscriptions,
+    requireAdmission,
+  }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
   state = accountRoomTime(state, Date.parse(now));
@@ -49,6 +51,8 @@ export function applyMeetRoomCommand(
       disconnect: [userId],
     });
 
+  if (requireAdmission && !state.presence[userId] && !state.waiting[userId])
+    return denied(state, 'awaiting_admission');
   // A participant still in the lobby may do nothing but wait.
   if (state.waiting[userId] && message.type !== 'presence.join') {
     return denied(state, 'awaiting_admission');
@@ -103,27 +107,29 @@ export function applyMeetRoomCommand(
         });
       }
 
+      const prior = state.presence[userId];
+      const person = createMeetPresence(
+        {
+          ...token,
+          displayName:
+            token.admission === 'lobby'
+              ? (prior?.displayName ??
+                state.approved?.[token.accountId ?? userId]?.displayName ??
+                token.displayName)
+              : message.displayName || token.displayName,
+        },
+        now,
+        message.media
+      );
       const next = {
         ...state,
         presence: {
           ...state.presence,
           [userId]: {
-            ...createMeetPresence(
-              {
-                ...token,
-                displayName:
-                  token.admission === 'lobby'
-                    ? (state.presence[userId]?.displayName ??
-                      state.approved?.[token.accountId ?? userId]
-                        ?.displayName ??
-                      token.displayName)
-                    : message.displayName || token.displayName,
-              },
-              now,
-              message.media
-            ),
-            joinedAt: state.presence[userId]?.joinedAt ?? now,
-            assistantAudio: state.presence[userId]?.assistantAudio,
+            ...person,
+            media: clampMeetMedia(state.settings, person, person.media),
+            joinedAt: prior?.joinedAt ?? now,
+            assistantAudio: prior?.assistantAudio,
           },
         },
       };
@@ -140,7 +146,11 @@ export function applyMeetRoomCommand(
         ...state,
         presence: {
           ...state.presence,
-          [userId]: { ...existing, lastSeenAt: now, media: message.media },
+          [userId]: {
+            ...existing,
+            lastSeenAt: now,
+            media: clampMeetMedia(state.settings, existing, message.media),
+          },
         },
       };
       return outcome(next, {
@@ -194,130 +204,13 @@ export function applyMeetRoomCommand(
       });
     }
 
-    case 'admission.decide': {
-      if (!canMeetRealtimeManageParticipants(token)) {
-        return denied(state, 'permission_denied', message.requestId);
-      }
-
-      const pending = state.waiting[message.userId];
-      if (!pending) {
-        return denied(state, 'participant_not_waiting', message.requestId);
-      }
-
-      const waiting = { ...state.waiting };
-      delete waiting[message.userId];
-
-      if (!message.admit) {
-        const next = { ...state, waiting };
-        return outcome(next, {
-          direct: [
-            {
-              message: {
-                admitted: false,
-                decidedBy: userId,
-                type: 'admission.result',
-              },
-              userId: message.userId,
-            },
-          ],
-          disconnect: [message.userId],
-          toManagers: [meetAdmissionPendingMessage(next)],
-        });
-      }
-
-      if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
-      const capacityError = roomCapacityError(
-        state,
-        token,
-        message.userId,
-        'speaker'
-      );
-      if (capacityError) return denied(state, capacityError);
-      state = startRoomBudget(state, token, Date.parse(now));
-      const next: MeetRoomSnapshot = {
-        ...state,
-        presence: {
-          ...state.presence,
-          [message.userId]: {
-            accountId: pending.accountId,
-            avatarUrl: pending.avatarUrl,
-            displayName: pending.displayName,
-            joinedAt: now,
-            lastSeenAt: now,
-            media: {
-              audioEnabled: false,
-              screenEnabled: false,
-              videoEnabled: false,
-            },
-            role: 'speaker',
-            userId: message.userId,
-          },
-        },
-        waiting,
-        usage: state.usage
-          ? {
-              ...state.usage,
-              devices:
-                Object.keys(state.usage.devices).length < 4096
-                  ? { ...state.usage.devices, [message.userId]: true }
-                  : state.usage.devices,
-              limitedReports:
-                (state.usage.limitedReports ?? 0) +
-                (Object.keys(state.usage.devices).length >= 4096 &&
-                !state.usage.devices[message.userId]
-                  ? 1
-                  : 0),
-            }
-          : undefined,
-        approved: {
-          ...state.approved,
-          [pending.accountId ?? message.userId]: {
-            userId: pending.accountId ?? message.userId,
-            displayName: pending.displayName,
-            avatarUrl: pending.avatarUrl,
-          },
-        },
-      };
-
-      return outcome(next, {
-        broadcast: [meetPresenceMessage(next, roomId)],
-        direct: [
-          {
-            message: {
-              admitted: true,
-              roomExpiresAt: next.budget
-                ? new Date(next.budget.expiresAt).toISOString()
-                : undefined,
-              decidedBy: userId,
-              type: 'admission.result',
-            },
-            userId: message.userId,
-          },
-          { userId: message.userId, message: roomSettingsMessage(next) },
-          { userId: message.userId, message: recordingMessage(next) },
-          ...transcriptionAnnouncements(next, message.userId).map(
-            (message) => ({ userId: pending.userId, message })
-          ),
-          ...(next.chat ?? []).map((entry) => ({
-            userId: message.userId,
-            message: { ...entry, replayed: true },
-          })),
-          ...remoteMeetTracks(next, message.userId).map((track) => ({
-            userId: message.userId,
-            message: {
-              type: 'track.published' as const,
-              sessionId: track.sessionId,
-              tracks: [track],
-              userId: track.userId,
-            },
-          })),
-        ],
-        toManagers: [
-          meetAdmissionPendingMessage(next),
-          approvedParticipantsMessage(next),
-        ],
-      });
-    }
+    case 'admission.decide':
+    case 'admission.decideAll':
+      return decideRoomAdmission(state, message, token, now);
+    case 'presence.resync':
+      return state.presence[userId]
+        ? outcome(state, { reply: [meetPresenceMessage(state, roomId)] })
+        : denied(state, 'awaiting_admission');
 
     case 'participant.mute': {
       if (!canMeetRealtimeManageParticipants(token)) {
@@ -373,7 +266,7 @@ export function applyMeetRoomCommand(
         state.waiting[message.userId]?.accountId;
       if (accountId) delete approved[accountId];
       const released = releaseParticipant(
-        { ...state, approved },
+        blockAutoAdmission({ ...state, approved }, accountId ?? message.userId),
         message.userId,
         roomId
       );
@@ -420,7 +313,12 @@ export function applyMeetRoomCommand(
 
     default:
       return message.type.startsWith('sfu.')
-        ? applySfuCommand(state, message as MeetRealtimeSfuClientMessage, token)
+        ? applySfuCommand(
+            state,
+            message as MeetRealtimeSfuClientMessage,
+            token,
+            canCloseSubscriptions
+          )
         : outcome(state);
   }
 }

@@ -1,18 +1,21 @@
 import {
   accountRoomTime,
   admitOrHold,
+  applyMeetRoomSettings,
+  MeetPresencePublisher,
+  canCloseMeetSubscriptions,
+  recordMeetSubscriptionOperation,
   CloudflareSfuClient,
-  canMeetRealtimeManageParticipants,
+  createMeetRoomSocketDelivery,
+  type MeetRoomSocketAttachment,
   canReadRoomNotes,
   closeBudgetPublications,
   createMeetRoomSnapshot,
   deferBudgetCleanup,
   expireRoomBudget,
   MeetCommandExecutor,
-  type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
-  meetPresenceMessage,
   meetRealtimeClientMessageSchema,
   mergePublicationCleanup,
   pruneMeetPresence,
@@ -53,15 +56,21 @@ export interface MeetRoomEnv extends TurnEnv {
 }
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
-type SocketAttachment = {
-  token: MeetRealtimeTokenPayload;
-};
 export class MeetRoomDurableObject implements DurableObject {
   private readonly env: MeetRoomEnv;
   private readonly state: DurableObjectState;
   private snapshot: RoomServiceState = createMeetRoomSnapshot();
   private loading: Promise<void> | null = null;
+  private readonly presence = new MeetPresencePublisher();
   private commands = new MeetCommandExecutor();
+  private readonly delivery = createMeetRoomSocketDelivery({
+    sockets: () => this.sockets(),
+    read: () => this.snapshot,
+    fullPresence: (roomId) => this.presence.full(roomId),
+    announcements: () => liveRoomAnnouncements(this.snapshot),
+  });
+  private broadcast = this.delivery.broadcast;
+
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
     this.env = env;
     this.state = state;
@@ -79,6 +88,8 @@ export class MeetRoomDurableObject implements DurableObject {
           ...createMeetRoomSnapshot(),
           ...stored,
         });
+      this.presence.restore(this.snapshot);
+      this.delivery.resyncRestoredSockets();
       const counter = await this.state.storage.get<
         number | { requests: number; writes: number }
       >('usage-http-requests');
@@ -112,19 +123,34 @@ export class MeetRoomDurableObject implements DurableObject {
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     // Output gating keeps acknowledgements behind the durable write.
-    return this.state.storage.put(SNAPSHOT_KEY, {
-      ...this.snapshot,
-      chat: this.snapshot.chat
-        ?.filter((message) => message.retained !== false)
-        .slice(-500),
-    });
+    const snapshot = this.snapshot;
+    return this.presence.persist(
+      snapshot,
+      () =>
+        this.state.storage.put(SNAPSHOT_KEY, {
+          ...snapshot,
+          chat: snapshot.chat
+            ?.filter((message) => message.retained !== false)
+            .slice(-500),
+        }),
+      (create) => {
+        const sockets = this.sockets();
+        const roomId = sockets[0] && this.delivery.tokenOf(sockets[0])?.roomId;
+        if (roomId) this.broadcast([create(roomId)]);
+      },
+      (task) => this.state.waitUntil?.(task)
+    );
   }
 
   async prepareForRestart() {
     await this.load();
     const seenAt = new Date().toISOString();
-    for (const person of Object.values(this.snapshot.presence))
-      person.lastSeenAt = seenAt;
+    this.snapshot.presence = Object.fromEntries(
+      Object.values(this.snapshot.presence).map((person) => [
+        person.userId,
+        { ...person, lastSeenAt: seenAt },
+      ])
+    );
     const choices = this.snapshot.miraPrivate?.choices;
     if (choices)
       for (const [accountId, choice] of Object.entries(choices))
@@ -139,91 +165,21 @@ export class MeetRoomDurableObject implements DurableObject {
     return this.state.getWebSockets();
   }
 
-  private tokenOf(socket: WebSocket): MeetRealtimeTokenPayload | null {
-    const attached = socket.deserializeAttachment() as SocketAttachment | null;
-    return attached?.token ?? null;
-  }
-
   private connectionState(
     excluded?: WebSocket,
     token?: MeetRealtimeTokenPayload
   ) {
-    const connected = new Set(
-      this.sockets()
-        .filter(
-          (socket) =>
-            socket !== excluded && socket.readyState === WebSocket.OPEN
-        )
-        .map((socket) => this.tokenOf(socket)?.userId)
-        .filter((id): id is string => !!id)
+    return observeRoomConnections(
+      this.snapshot,
+      this.delivery.connectedUsers(excluded),
+      Date.now(),
+      token
     );
-    return observeRoomConnections(this.snapshot, connected, Date.now(), token);
   }
 
   private async scheduleEmptyRoom() {
     const deadline = emptyRoomDeadline(this.snapshot);
     if (deadline !== undefined) await this.scheduleSweep(deadline);
-  }
-
-  private sendTo(socket: WebSocket, message: MeetRealtimeServerMessage) {
-    try {
-      socket.send(JSON.stringify(message));
-      if (
-        message.type === 'admission.approved' ||
-        (message.type === 'ready' && message.admission === 'admitted')
-      )
-        for (const active of liveRoomAnnouncements(this.snapshot))
-          socket.send(JSON.stringify(active));
-    } catch {
-      // A closing socket is not an error worth surfacing to the room.
-    }
-  }
-
-  private broadcast(messages: MeetRealtimeServerMessage[]) {
-    if (!messages.length) return;
-    for (const socket of this.sockets()) {
-      const token = this.tokenOf(socket);
-      const admitted = token && this.snapshot.presence[token.userId];
-      for (const message of messages) {
-        if (
-          message.type !== 'room.ended' &&
-          !(
-            message.type === 'participant.removed' &&
-            message.userId === token?.userId
-          ) &&
-          !admitted
-        )
-          continue;
-        this.sendTo(socket, message);
-      }
-    }
-  }
-
-  private sendToUser(userId: string, messages: MeetRealtimeServerMessage[]) {
-    if (!messages.length) return;
-    for (const socket of this.sockets()) {
-      if (this.tokenOf(socket)?.userId !== userId) continue;
-      for (const message of messages) this.sendTo(socket, message);
-    }
-  }
-
-  private sendToManagers(messages: MeetRealtimeServerMessage[]) {
-    if (!messages.length) return;
-    for (const socket of this.sockets()) {
-      const token = this.tokenOf(socket);
-      if (!token || !canMeetRealtimeManageParticipants(token)) continue;
-      for (const message of messages) this.sendTo(socket, message);
-    }
-  }
-
-  private disconnect(userIds: string[]) {
-    if (!userIds.length) return;
-    const targets = new Set(userIds);
-    for (const socket of this.sockets()) {
-      const token = this.tokenOf(socket);
-      if (token && targets.has(token.userId))
-        socket.close(4403, 'removed_from_room');
-    }
   }
 
   private sfuClient() {
@@ -236,6 +192,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
   async fetch(request: Request): Promise<Response> {
     await this.load();
+    const url = new URL(request.url);
     this.snapshot.usage ??= createRoomUsage();
     this.snapshot.usage.httpRequests++;
     this.snapshot.usage.httpCounterWrites =
@@ -257,7 +214,7 @@ export class MeetRoomDurableObject implements DurableObject {
       return new Response('Unauthorized', { status: 401 });
     }
 
-    if (new URL(request.url).pathname === '/room-service') {
+    if (url.pathname === '/room-service') {
       const body = await request.json().catch(() => null);
       const personal = await personalReceiptStorage(
         this.state.storage,
@@ -306,7 +263,7 @@ export class MeetRoomDurableObject implements DurableObject {
         headers: { 'Cache-Control': 'private, no-store' },
       });
     }
-    if (new URL(request.url).pathname === '/room-device') {
+    if (url.pathname === '/room-device') {
       const body = (await request.json().catch(() => null)) as {
         mode?: string;
       } | null;
@@ -331,7 +288,7 @@ export class MeetRoomDurableObject implements DurableObject {
         await this.persist();
         await this.scheduleEmptyRoom();
         for (const { person, result } of released) {
-          this.sendToUser(person.userId, [
+          this.delivery.sendToUser(person.userId, [
             {
               type: 'participant.removed',
               by: token.userId,
@@ -339,8 +296,8 @@ export class MeetRoomDurableObject implements DurableObject {
             },
           ]);
           this.broadcast(result.broadcast);
-          this.sendToManagers(result.toManagers);
-          this.disconnect([person.userId]);
+          this.delivery.sendToManagers(result.toManagers);
+          this.delivery.disconnect([person.userId]);
         }
       }
       return Response.json(
@@ -348,7 +305,7 @@ export class MeetRoomDurableObject implements DurableObject {
         { headers: { 'Cache-Control': 'private, no-store' } }
       );
     }
-    if (new URL(request.url).pathname === '/room-state') {
+    if (url.pathname === '/room-state') {
       if (request.method === 'PATCH') {
         const settings = resolveRoomSettingsPatch(
           await request.json().catch(() => null),
@@ -357,9 +314,17 @@ export class MeetRoomDurableObject implements DurableObject {
           this.env
         );
         if (settings instanceof Response) return settings;
-        this.snapshot = { ...this.snapshot, settings };
+        const updated = applyMeetRoomSettings(
+          this.snapshot,
+          settings,
+          token,
+          new Date().toISOString()
+        );
+        this.snapshot = updated.state;
         await this.persist();
-        this.broadcast([{ type: 'room.settings', settings }]);
+        if (this.snapshot.budget?.pendingPublications?.length)
+          await this.scheduleSweep(Date.now());
+        this.broadcast(updated.broadcast);
       }
       return Response.json(
         {
@@ -380,7 +345,7 @@ export class MeetRoomDurableObject implements DurableObject {
       !this.sockets().some(
         (socket) =>
           socket.readyState === WebSocket.OPEN &&
-          this.tokenOf(socket)?.userId === token.userId
+          this.delivery.tokenOf(socket)?.userId === token.userId
       )
     ) {
       const expired = releaseParticipant(
@@ -391,12 +356,15 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot = expired.state;
       await this.persist();
       this.broadcast(expired.broadcast);
-      this.sendToManagers(expired.toManagers);
+      this.delivery.sendToManagers(expired.toManagers);
     }
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 
-    server.serializeAttachment({ token } satisfies SocketAttachment);
+    server.serializeAttachment({
+      token,
+      supportsPresenceDelta: url.searchParams.get('presenceDelta') === '1',
+    } satisfies MeetRoomSocketAttachment);
     this.state.acceptWebSocket(server);
 
     const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
@@ -414,16 +382,14 @@ export class MeetRoomDurableObject implements DurableObject {
           (this.snapshot.usage.limitedReports ?? 0) + 1;
     await this.persist();
 
-    for (const message of outcome.reply) this.sendTo(server, message);
-    this.broadcast(outcome.broadcast);
-    this.sendToManagers(outcome.toManagers);
+    this.delivery.notifyJoin(server, outcome, this.broadcast);
 
     // A newly admitted participant needs the tracks published before they
     // arrived, otherwise they would only ever see people who join after them.
-    if (!this.snapshot.ended && !this.snapshot.waiting[token.userId]) {
-      this.sendTo(server, meetPresenceMessage(this.snapshot, token.roomId));
+    if (!this.snapshot.ended && this.snapshot.presence[token.userId]) {
+      this.delivery.sendTo(server, this.presence.full(token.roomId));
       for (const track of remoteMeetTracks(this.snapshot, token.userId)) {
-        this.sendTo(server, {
+        this.delivery.sendTo(server, {
           sessionId: track.sessionId,
           tracks: [track],
           type: 'track.published',
@@ -432,7 +398,7 @@ export class MeetRoomDurableObject implements DurableObject {
       }
     }
 
-    this.disconnect(outcome.disconnect);
+    this.delivery.disconnect(outcome.disconnect);
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -440,14 +406,17 @@ export class MeetRoomDurableObject implements DurableObject {
   async webSocketMessage(socket: WebSocket, raw: string | ArrayBuffer) {
     await this.load();
 
-    const token = this.tokenOf(socket);
+    const token = this.delivery.tokenOf(socket);
     if (!token) {
-      this.sendTo(socket, { error: 'unauthenticated', type: 'error' });
+      this.delivery.sendTo(socket, { error: 'unauthenticated', type: 'error' });
       return;
     }
 
     if (!isMeetMessageWithinLimit(raw)) {
-      this.sendTo(socket, { error: 'message_too_large', type: 'error' });
+      this.delivery.sendTo(socket, {
+        error: 'message_too_large',
+        type: 'error',
+      });
       return;
     }
     let json: unknown;
@@ -456,7 +425,7 @@ export class MeetRoomDurableObject implements DurableObject {
         typeof raw === 'string' ? raw : new TextDecoder().decode(raw)
       );
     } catch {
-      this.sendTo(socket, { error: 'malformed_json', type: 'error' });
+      this.delivery.sendTo(socket, { error: 'malformed_json', type: 'error' });
       return;
     }
 
@@ -464,15 +433,46 @@ export class MeetRoomDurableObject implements DurableObject {
     this.snapshot.usage.webSocketMessages++;
     const parsed = meetRealtimeClientMessageSchema.safeParse(json);
     if (!parsed.success) {
-      this.sendTo(socket, { error: 'malformed_event', type: 'error' });
+      this.delivery.sendTo(socket, { error: 'malformed_event', type: 'error' });
       return;
     }
 
-    await this.commands.run(roomCommand(parsed.data, token, this.env), {
-      read: () => this.snapshot,
-      commit: (result) => this.flush(socket, result),
-      runSfu: (intent) => runRoomSfuIntent(this.sfuClient(), this.env, intent),
-    });
+    const admitted = this.snapshot.presence[token.userId];
+    const message = parsed.data;
+    if (
+      message.type === 'presence.resync' &&
+      admitted &&
+      !this.snapshot.ended
+    ) {
+      this.delivery.sendTo(socket, this.presence.full(token.roomId));
+      return;
+    }
+    await this.commands.run(
+      {
+        ...roomCommand(message, token, this.env),
+        requireAdmission: true,
+        canCloseSubscriptions: () =>
+          message.type === 'sfu.tracks.close' &&
+          canCloseMeetSubscriptions(
+            this.delivery.attachmentOf(socket)?.sessions,
+            message
+          ),
+      },
+      {
+        read: () => this.snapshot,
+        commit: (result) => {
+          recordMeetSubscriptionOperation(
+            socket,
+            this.delivery.attachmentOf(socket),
+            message,
+            result.reply
+          );
+          return this.flush(socket, result);
+        },
+        runSfu: (intent) =>
+          runRoomSfuIntent(this.sfuClient(), this.env, intent),
+      }
+    );
   }
 
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
@@ -482,12 +482,12 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.scheduleEmptyRoom();
     if (this.snapshot.budget?.pendingPublications?.length)
       await this.scheduleSweep(Date.now());
-    for (const message of result.reply) this.sendTo(socket, message);
+    this.delivery.sendToSocket(socket, result.reply);
     this.broadcast(result.broadcast);
-    this.sendToManagers(result.toManagers);
+    this.delivery.sendToManagers(result.toManagers);
     for (const entry of result.direct)
-      this.sendToUser(entry.userId, [entry.message]);
-    this.disconnect(result.disconnect);
+      this.delivery.sendToUser(entry.userId, [entry.message]);
+    this.delivery.disconnect(result.disconnect);
   }
 
   async webSocketClose(socket: WebSocket, code: number) {
@@ -500,7 +500,7 @@ export class MeetRoomDurableObject implements DurableObject {
 
   private async releaseSocket(socket: WebSocket, recoverable = false) {
     await this.load();
-    const token = this.tokenOf(socket);
+    const token = this.delivery.tokenOf(socket);
     if (!token) return;
     if (
       !this.snapshot.presence[token.userId] &&
@@ -514,15 +514,18 @@ export class MeetRoomDurableObject implements DurableObject {
       (candidate) =>
         candidate !== socket &&
         candidate.readyState === WebSocket.OPEN &&
-        this.tokenOf(candidate)?.userId === token.userId
+        this.delivery.tokenOf(candidate)?.userId === token.userId
     );
     if (stillConnected) return;
     if (recoverable && this.snapshot.presence[token.userId]) {
       // Keep SFU tracks during the existing 30-second presence grace period.
       // The alarm retires them if the same device does not reconnect.
-      this.snapshot.presence[token.userId] = {
-        ...this.snapshot.presence[token.userId]!,
-        lastSeenAt: new Date().toISOString(),
+      this.snapshot.presence = {
+        ...this.snapshot.presence,
+        [token.userId]: {
+          ...this.snapshot.presence[token.userId]!,
+          lastSeenAt: new Date().toISOString(),
+        },
       };
       this.snapshot = this.connectionState(socket, token);
       await this.persist();
@@ -541,7 +544,7 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.persist();
     await this.scheduleEmptyRoom();
     this.broadcast(outcome.broadcast);
-    this.sendToManagers(outcome.toManagers);
+    this.delivery.sendToManagers(outcome.toManagers);
   }
 
   private async scheduleSweep(deadline = Date.now() + PRESENCE_SWEEP_MS) {
@@ -558,7 +561,7 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot = expiredBudget.state;
       await this.persist();
       this.broadcast(expiredBudget.broadcast);
-      this.disconnect(expiredBudget.disconnect);
+      this.delivery.disconnect(expiredBudget.disconnect);
     }
     if (
       this.snapshot.budget?.pendingPublications?.length &&
@@ -609,12 +612,7 @@ export class MeetRoomDurableObject implements DurableObject {
     }
 
     const sockets = this.sockets();
-    const connectedUserIds = new Set(
-      sockets
-        .filter((socket) => socket.readyState === WebSocket.OPEN)
-        .map((socket) => this.tokenOf(socket)?.userId)
-        .filter((userId): userId is string => Boolean(userId))
-    );
+    const connectedUserIds = this.delivery.connectedUsers();
     const accounted = accountRoomTime(this.snapshot, Date.now());
     if (accounted !== this.snapshot) {
       this.snapshot = accounted;
@@ -633,12 +631,14 @@ export class MeetRoomDurableObject implements DurableObject {
       const releases = [];
       for (const userId of expired) {
         const token = sockets
-          .map((socket) => this.tokenOf(socket))
+          .map((socket) => this.delivery.tokenOf(socket))
           .find((candidate) => candidate?.userId === userId);
         const firstSocket = sockets[0];
         const roomId =
           token?.roomId ??
-          (firstSocket ? this.tokenOf(firstSocket)?.roomId : undefined);
+          (firstSocket
+            ? this.delivery.tokenOf(firstSocket)?.roomId
+            : undefined);
         const outcome = releaseParticipant(this.snapshot, userId, roomId ?? '');
         this.snapshot = outcome.state;
         releases.push(outcome);
@@ -646,12 +646,12 @@ export class MeetRoomDurableObject implements DurableObject {
       await this.persist();
       for (const outcome of releases) {
         this.broadcast(outcome.broadcast);
-        this.sendToManagers(outcome.toManagers);
+        this.delivery.sendToManagers(outcome.toManagers);
       }
       for (const userId of expired)
         for (const socket of sockets)
           if (
-            this.tokenOf(socket)?.userId === userId &&
+            this.delivery.tokenOf(socket)?.userId === userId &&
             socket.readyState === WebSocket.OPEN
           )
             socket.close(4000, 'heartbeat_timeout');
@@ -676,7 +676,7 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot = empty.state;
       await this.persist();
       this.broadcast(empty.broadcast);
-      this.disconnect(empty.disconnect);
+      this.delivery.disconnect(empty.disconnect);
     }
     await this.scheduleEmptyRoom();
     // Disconnected presence keeps a grace alarm; open sockets hibernate.

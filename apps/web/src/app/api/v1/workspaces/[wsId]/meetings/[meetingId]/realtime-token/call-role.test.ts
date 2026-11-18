@@ -8,6 +8,13 @@ const mocks = vi.hoisted(() => ({
   sign: vi.fn(),
   creator: 'host',
 }));
+vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
+  isParleySession: async () => false,
+}));
+vi.mock('@tuturuuu/utils/meet-classroom-policy', () => ({
+  getMeetRoomCapacityLimits: async () => ({}),
+  MeetClassroomPolicyError: class extends Error {},
+}));
 vi.mock('@tuturuuu/utils/meet-duration', () => ({
   getHostMeetingDurationSeconds: async () => 7200,
 }));

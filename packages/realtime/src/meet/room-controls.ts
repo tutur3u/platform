@@ -2,11 +2,25 @@ import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
 } from './messages';
+import {
+  canMeetRealtimeManageParticipants,
+  clampMeetMedia,
+  isMeetMediaLocked,
+  meetTrackKind,
+} from './permissions';
 import type {
   MeetRealtimePresence,
+  MeetRealtimeTrackKind,
   MeetRealtimeTokenPayload,
 } from './primitives';
-import type { MeetRoomSnapshot } from './room';
+import {
+  meetPresenceMessage,
+  meetTrackKey,
+  type MeetRoomSnapshot,
+} from './room';
+import { startRoomBudget } from './room-budget';
+import type { MeetRoomSettings } from './room-options';
+import { publicationCleanupKey } from './room-tracks';
 import { endMeetRoom } from './room-ending';
 import { denied, outcome } from './room-outcome';
 import { applyTranscription } from './transcription';
@@ -95,13 +109,30 @@ export function applyRoomControl(
   if (
     ![
       'room.settings.update',
+      'room.mediaOverride',
       'room.title.update',
       'room.end',
       'admission.forget',
     ].includes(message.type)
   )
     return null;
-  if (token.role !== 'host')
+  const managesMedia =
+    message.type === 'room.mediaOverride' ||
+    (message.type === 'room.settings.update' &&
+      Object.keys(message.settings).every((key) =>
+        [
+          'micsLocked',
+          'camerasLocked',
+          'screensLocked',
+          'mediaOverrides',
+        ].includes(key)
+      ));
+  if (
+    (managesMedia &&
+      (!state.presence[token.userId] ||
+        !canMeetRealtimeManageParticipants(token))) ||
+    (!managesMedia && token.role !== 'host')
+  )
     return denied(
       state,
       'permission_denied',
@@ -118,6 +149,25 @@ export function applyRoomControl(
       ],
       broadcast: [{ type: 'room.title.changed', title: message.title }],
     });
+  if (message.type === 'room.mediaOverride') {
+    if (!state.presence[message.userId])
+      return denied(state, 'participant_not_found', message.requestId);
+    const mediaOverrides = { ...state.settings?.mediaOverrides };
+    if (message.override === null) delete mediaOverrides[message.userId];
+    else
+      mediaOverrides[message.userId] = {
+        ...mediaOverrides[message.userId],
+        ...message.override,
+      };
+    if (Object.keys(mediaOverrides).length > 256)
+      return denied(state, 'media_override_limit_reached', message.requestId);
+    return applyMeetRoomSettings(
+      state,
+      { shareNotes: false, ...state.settings, mediaOverrides },
+      token,
+      now
+    );
+  }
   if (message.type === 'room.settings.update') {
     const maximum = Math.min(
       state.budget?.maxParticipants ?? 100,
@@ -137,11 +187,16 @@ export function applyRoomControl(
         'permission_denied',
         'requestId' in message ? message.requestId : undefined
       );
-    const next = {
-      ...state,
-      settings: { shareNotes: false, ...state.settings, ...message.settings },
-    };
-    return outcome(next, { broadcast: [roomSettingsMessage(next)] });
+    return applyMeetRoomSettings(
+      state,
+      {
+        shareNotes: false,
+        ...state.settings,
+        ...message.settings,
+      },
+      token,
+      now
+    );
   }
   if (message.type === 'admission.forget') {
     const approved = { ...state.approved };
@@ -189,4 +244,75 @@ export function rememberAdmission(
       avatarUrl: person.avatarUrl,
     },
   };
+}
+
+export function applyMeetRoomSettings(
+  state: MeetRoomSnapshot,
+  settings: MeetRoomSettings,
+  token: MeetRealtimeTokenPayload,
+  now: string
+) {
+  const next = { ...state, settings };
+  const messages: MeetRealtimeServerMessage[] = [roomSettingsMessage(next)];
+  const kinds = ['audio', 'video', 'screen', 'screen_audio'] as const;
+  const revoked = new Map<string, Set<MeetRealtimeTrackKind>>();
+  for (const person of Object.values(state.presence)) {
+    const locked = kinds.filter(
+      (kind) =>
+        isMeetMediaLocked(settings, person, kind) &&
+        !isMeetMediaLocked(state.settings, person, kind)
+    );
+    if (!locked.length) continue;
+    revoked.set(person.userId, new Set(locked));
+    const media = clampMeetMedia(settings, person, person.media);
+    if (next.presence === state.presence) next.presence = { ...state.presence };
+    next.presence[person.userId] = { ...person, media };
+    messages.push({
+      type: 'participant.muted',
+      by: token.userId,
+      userId: person.userId,
+      kinds: locked,
+    });
+  }
+
+  const retired = Object.values(state.tracks).filter((track) =>
+    revoked.get(track.userId)?.has(meetTrackKind(track))
+  );
+  if (retired.length) {
+    const groups = new Map<string, typeof retired>();
+    next.tracks = { ...state.tracks };
+    for (const track of retired) {
+      delete next.tracks[meetTrackKey(track)];
+      const key = JSON.stringify([track.userId, track.sessionId]);
+      const group = groups.get(key) ?? [];
+      group.push(track);
+      groups.set(key, group);
+    }
+    for (const tracks of groups.values()) {
+      const first = tracks[0]!;
+      messages.push({
+        type: 'track.closed',
+        userId: first.userId,
+        sessionId: first.sessionId,
+        tracks,
+      });
+    }
+    const budget = startRoomBudget(next, token, Date.parse(now)).budget;
+    if (budget)
+      next.budget = {
+        ...budget,
+        nextCleanupAt: 0,
+        pendingPublications: [
+          ...new Map(
+            [...(budget.pendingPublications ?? []), ...retired].map((track) => [
+              publicationCleanupKey(track),
+              track,
+            ])
+          ).values(),
+        ],
+      };
+  }
+  if (next.presence !== state.presence)
+    messages.push(meetPresenceMessage(next, token.roomId));
+  return outcome(next, { broadcast: messages });
 }

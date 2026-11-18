@@ -1,19 +1,37 @@
 'use client';
-import { Activity, Bell, Mic, Settings2 } from '@tuturuuu/icons';
+import {
+  Activity,
+  Bell,
+  Globe,
+  Lock,
+  MessageSquare,
+  Mic,
+  Settings2,
+  Video,
+} from '@tuturuuu/icons';
 import { MeetMemorySettings } from '@tuturuuu/meet-core/features/live-assistant/memory-settings';
 import type { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
 import { Button } from '@tuturuuu/ui/button';
+import { Dialog, DialogTrigger } from '@tuturuuu/ui/dialog';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@tuturuuu/ui/dialog';
-import { Label } from '@tuturuuu/ui/label';
+  SettingsDialogShell,
+  type SettingsNavGroup,
+} from '@tuturuuu/ui/custom/settings-dialog-shell';
+import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
+import { SettingsField } from '../../../../../ui/src/components/ui/custom/settings-field';
+import { SettingItemTab } from '../../../../../ui/src/components/ui/custom/settings-item-tab';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { useId, useState } from 'react';
+import { useLargeRoomLabels } from '../lib/large-room-labels';
+import { RoomPermissionToggles } from './participants-panel';
 import { useTranslations } from 'next-intl';
 import type { MediaDiagnostics } from '../lib/media-diagnostics';
 import type { MeetRoomController } from '../lib/room-controller';
@@ -49,6 +67,60 @@ export function CallSettings({
   onOutput: (id: string) => void;
 }) {
   const t = useTranslations('meet.call');
+  const labels = useLargeRoomLabels();
+  const [activeTab, setActiveTab] = useState('devices');
+  const [bandwidth, setBandwidth] = useState(room.getBandwidthMode);
+  const bandwidthId = useId();
+  const managesMedia = room.state.canManageParticipants ?? canManage;
+  const navItems: SettingsNavGroup[] = [
+    {
+      label: t('devices'),
+      items: [
+        {
+          name: 'devices',
+          label: t('devices'),
+          icon: Mic,
+          keywords: [t('notification_sounds')],
+        },
+        {
+          name: 'media',
+          label: labels('settings_media'),
+          icon: Video,
+          keywords: [t('bandwidth'), labels('settings_large_room')],
+        },
+        {
+          name: 'connection',
+          label: labels('settings_connection'),
+          icon: Activity,
+          keywords: [t('connection_title')],
+        },
+      ],
+    },
+    {
+      label: t('preferences'),
+      items: [
+        ...(managesMedia
+          ? [
+              {
+                name: 'permissions',
+                label: labels('settings_permissions'),
+                icon: Lock,
+                keywords: [
+                  labels('lock_mics'),
+                  labels('lock_cameras'),
+                  labels('lock_screens'),
+                  labels('skip_lobby'),
+                ],
+              },
+            ]
+          : []),
+        { name: 'chat', label: labels('settings_chat'), icon: MessageSquare },
+        ...(canManage || room.state.selfUserId
+          ? [{ name: 'public', label: labels('settings_public'), icon: Globe }]
+          : []),
+      ],
+    },
+  ];
   const data = ai.data;
   const accountId = room.state.selfUserId
     ? room.state.participants[room.state.selfUserId]?.accountId
@@ -67,79 +139,103 @@ export function CallSettings({
           </Button>
         </DialogTrigger>
       </MeetingActionHint>
-      <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{t('settings_title')}</DialogTitle>
-          <DialogDescription>{t('settings_hint')}</DialogDescription>
-        </DialogHeader>
-        <Tabs defaultValue="devices">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger
-              value="devices"
-              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
+      <SettingsDialogShell
+        activeTab={activeTab}
+        onActiveTabChange={setActiveTab}
+        navItems={navItems}
+        keyboardNavigation
+      >
+        {activeTab === 'devices' && (
+          <SettingsSection>
+            <SettingItemTab title={t('devices')} layout="stacked">
+              <DeviceSettings
+                room={room}
+                outputDeviceId={outputDeviceId}
+                onOutput={onOutput}
+              />
+            </SettingItemTab>
+            <SettingsField
+              label={t('notification_sounds')}
+              icon={<Bell className="size-4" />}
+              layout="compact"
             >
-              <Mic className="hidden size-4 sm:block" />
-              {t('devices')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="connection"
-              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
+              {(field) => (
+                <Switch {...field} checked={sound} onCheckedChange={onSound} />
+              )}
+            </SettingsField>
+          </SettingsSection>
+        )}
+        {activeTab === 'media' && (
+          <SettingsSection title={labels('settings_large_room')}>
+            <SettingItemTab
+              title={<Label htmlFor={bandwidthId}>{t('bandwidth')}</Label>}
+              description={labels('settings_large_room_hint')}
+              controlWidth="sm"
             >
-              <Activity className="hidden size-4 sm:block" />
-              {t('connection_title')}
-            </TabsTrigger>
-            <TabsTrigger
-              value="preferences"
-              className="min-w-0 gap-1.5 px-2 text-xs sm:text-sm"
-            >
-              <Settings2 className="hidden size-4 sm:block" />
-              {t('preferences')}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="devices" className="pt-4">
-            <DeviceSettings
-              room={room}
-              outputDeviceId={outputDeviceId}
-              onOutput={onOutput}
-            />
-          </TabsContent>
-          <TabsContent value="connection" className="space-y-4 pt-4">
+              <Select
+                value={bandwidth}
+                onValueChange={(mode) => {
+                  if (mode !== 'auto' && mode !== 'saver' && mode !== 'quality')
+                    return;
+                  setBandwidth(mode);
+                  room.setBandwidthMode(mode);
+                }}
+              >
+                <SelectTrigger id={bandwidthId}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">{t('bandwidth_auto')}</SelectItem>
+                  <SelectItem value="saver">{t('bandwidth_saver')}</SelectItem>
+                  <SelectItem value="quality">
+                    {t('bandwidth_quality')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </SettingItemTab>
+          </SettingsSection>
+        )}
+        {activeTab === 'permissions' && managesMedia && (
+          <>
+            <SettingsSection>
+              <RoomPermissionToggles
+                settings={room.state.settings}
+                onSettingsChange={room.updateSettings}
+                isHost={room.state.role === 'host'}
+              />
+            </SettingsSection>
+            <ClassroomSettings room={room} />
+          </>
+        )}
+        {activeTab === 'connection' && (
+          <SettingsSection surface="plain" className="space-y-4">
             <ConnectionPanel
               embedded
               telemetry={telemetry}
               read={room.getMediaDiagnostics}
               reconnect={room.reconnectMedia}
             />
-          </TabsContent>
-          <TabsContent value="preferences" className="space-y-5 pt-4">
-            <div className="flex items-center justify-between gap-3 rounded-xl border p-4">
-              <Label
-                htmlFor="meet-notification-sound"
-                className="flex items-center gap-2"
-              >
-                <Bell className="size-4" />
-                {t('notification_sounds')}
-              </Label>
-              <Switch
-                id="meet-notification-sound"
-                checked={sound}
-                onCheckedChange={onSound}
-              />
-            </div>
-            {accountId && <MeetMemorySettings userId={accountId} />}
-            <ClassroomSettings room={room} />
+            {canManage && <CloudflareCosts meetingId={meetingId} />}
+            {canManage && data?.canManage && <AiCosts data={data} />}
+          </SettingsSection>
+        )}
+        {activeTab === 'chat' && (
+          <SettingsSection surface="plain">
             <ChatSettings room={room} canManage={canManage} />
             <RecordingSettings
               room={room}
               meetingId={meetingId}
               canManage={canManage}
             />
+          </SettingsSection>
+        )}
+        {activeTab === 'public' && (
+          <SettingsSection surface="plain">
             {canManage && <MeetingPublicSettings meetingId={meetingId} />}
-            {canManage && <CloudflareCosts meetingId={meetingId} />}
-            {canManage && data?.canManage && <AiCosts data={data} />}
-          </TabsContent>
-        </Tabs>
-      </DialogContent>
+            {accountId && <MeetMemorySettings userId={accountId} />}
+          </SettingsSection>
+        )}
+      </SettingsDialogShell>
     </Dialog>
   );
 }

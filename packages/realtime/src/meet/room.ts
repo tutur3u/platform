@@ -1,3 +1,4 @@
+import { canMeetRealtimeManageParticipants } from './permissions';
 import type { RoomBudget } from './room-budget';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { outcome } from './room-outcome';
@@ -44,6 +45,8 @@ export interface MeetRoomSnapshot extends TranscriptionRoomState {
   retiredTracks?: Record<string, true>;
   retiredSessions?: Record<string, true>;
   presence: Record<string, MeetRealtimePresence>;
+  presenceSeq?: number;
+  deniedAutoAdmission?: string[];
   recordings?: RoomRecording[];
   chat?: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[];
   recording: {
@@ -81,6 +84,8 @@ export interface MeetRoomCommand {
    * runtime). Absent means not eligible, so enabling note sharing is denied.
    */
   notesEligible?: boolean;
+  requireAdmission?: boolean;
+  canCloseSubscriptions?: () => boolean;
 }
 
 export function createMeetRoomSnapshot(): MeetRoomSnapshot {
@@ -107,6 +112,9 @@ export function createMeetPresence(
   media?: Partial<MeetRealtimePresence['media']>
 ): MeetRealtimePresence {
   return {
+    ...(canMeetRealtimeManageParticipants(token) && token.role !== 'host'
+      ? { canManageParticipants: true }
+      : {}),
     accountId: token.accountId,
     avatarUrl: token.avatarUrl,
     displayName: getMeetDisplayName(token),
@@ -148,12 +156,14 @@ export function pruneMeetPresence(
 
 export function meetPresenceMessage(
   state: MeetRoomSnapshot,
-  roomId: string
+  roomId: string,
+  seq?: number
 ): MeetRealtimeServerMessage {
   return {
     presence: Object.values(state.presence),
     roomId,
     type: 'presence',
+    ...(seq === undefined ? {} : { seq }),
   };
 }
 
@@ -237,4 +247,185 @@ export { applyMeetRoomCommand } from './room-commands';
 
 export function remoteMeetTracks(state: MeetRoomSnapshot, userId: string) {
   return Object.values(state.tracks).filter((track) => track.userId !== userId);
+}
+
+export type MeetRoomSocketAttachment = {
+  token: MeetRealtimeTokenPayload;
+  presenceSeq?: number;
+  supportsPresenceDelta?: boolean;
+  sessions?: Record<string, string[]>;
+};
+type MeetRoomSocket = {
+  readyState: number;
+  send: (message: string) => void;
+  close: (code: number, reason: string) => void;
+  deserializeAttachment: () => unknown;
+  serializeAttachment: (value: MeetRoomSocketAttachment) => void;
+};
+
+/** Use one serialized frame for room broadcasts and filter by live admission. */
+export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
+  sockets,
+  read,
+  fullPresence,
+  announcements,
+}: {
+  sockets: () => Socket[];
+  read: () => MeetRoomSnapshot;
+  fullPresence: (roomId: string) => MeetRealtimeServerMessage;
+  announcements: () => MeetRealtimeServerMessage[];
+}) {
+  const attachmentOf = (socket: Socket) =>
+    socket.deserializeAttachment() as MeetRoomSocketAttachment | null;
+  const tokenOf = (socket: Socket) => attachmentOf(socket)?.token ?? null;
+  function sendTo(
+    socket: Socket,
+    message: MeetRealtimeServerMessage,
+    wire?: string
+  ) {
+    try {
+      socket.send(wire ?? JSON.stringify(message));
+      if (
+        (message.type === 'presence' || message.type === 'presence.delta') &&
+        message.seq !== undefined
+      ) {
+        const attachment = attachmentOf(socket);
+        if (attachment && typeof socket.serializeAttachment === 'function')
+          socket.serializeAttachment({
+            ...attachment,
+            presenceSeq: message.seq,
+          });
+      }
+      if (
+        message.type === 'admission.approved' ||
+        (message.type === 'ready' && message.admission === 'admitted')
+      )
+        for (const active of announcements())
+          socket.send(JSON.stringify(active));
+    } catch {
+      // A closing socket is not an error worth surfacing to the room.
+    }
+  }
+
+  function sendToSocket(socket: Socket, replies: MeetRealtimeServerMessage[]) {
+    for (const reply of replies) sendTo(socket, reply);
+  }
+
+  function broadcast(messages: MeetRealtimeServerMessage[]) {
+    messages = messages.filter((message) => message.type !== 'presence');
+    if (!messages.length) return;
+    const frames = messages.map((message) => ({
+      message,
+      wire: JSON.stringify(message),
+    }));
+    let legacyPresence: MeetRealtimeServerMessage | undefined;
+    let legacyWire: string | undefined;
+    for (const socket of sockets()) {
+      const token = tokenOf(socket);
+      const admitted = token && read().presence[token.userId];
+      for (const { message, wire } of frames) {
+        if (
+          message.type !== 'room.ended' &&
+          !(
+            message.type === 'participant.removed' &&
+            message.userId === token?.userId
+          ) &&
+          !admitted
+        )
+          continue;
+        if (message.type === 'presence.delta') {
+          const attachment = attachmentOf(socket);
+          if (
+            !attachment?.supportsPresenceDelta ||
+            attachment.presenceSeq === undefined
+          ) {
+            legacyPresence ??= fullPresence(message.roomId);
+            legacyWire ??= JSON.stringify(legacyPresence);
+            sendTo(socket, legacyPresence, legacyWire);
+            continue;
+          }
+        }
+        sendTo(socket, message, wire);
+      }
+    }
+  }
+
+  function sendToUser(userId: string, messages: MeetRealtimeServerMessage[]) {
+    if (!messages.length) return;
+    for (const socket of sockets()) {
+      if (tokenOf(socket)?.userId !== userId) continue;
+      for (const message of messages) {
+        sendTo(socket, message);
+        const token = tokenOf(socket);
+        if (message.type === 'admission.result' && message.admitted && token)
+          sendTo(socket, fullPresence(token.roomId));
+      }
+    }
+  }
+
+  function sendToManagers(messages: MeetRealtimeServerMessage[]) {
+    if (!messages.length) return;
+    for (const socket of sockets()) {
+      const token = tokenOf(socket);
+      if (!token || !canMeetRealtimeManageParticipants(token)) continue;
+      for (const message of messages) sendTo(socket, message);
+    }
+  }
+
+  function disconnect(userIds: string[]) {
+    if (!userIds.length) return;
+    const targets = new Set(userIds);
+    for (const socket of sockets()) {
+      const token = tokenOf(socket);
+      if (token && targets.has(token.userId))
+        socket.close(4403, 'removed_from_room');
+    }
+  }
+
+  function notifyJoin(
+    socket: Socket,
+    result: MeetRoomOutcome,
+    emit: typeof broadcast
+  ) {
+    sendToSocket(socket, result.reply);
+    emit(result.broadcast);
+    sendToManagers(result.toManagers);
+  }
+
+  function connectedUsers(excluded?: Socket) {
+    const users = new Set<string>();
+    for (const socket of sockets()) {
+      if (socket === excluded || socket.readyState !== WebSocket.OPEN) continue;
+      const token = tokenOf(socket);
+      if (token) users.add(token.userId);
+    }
+    return users;
+  }
+
+  function resyncRestoredSockets() {
+    const state = read();
+    if (state.presenceSeq === undefined) return;
+    for (const socket of sockets()) {
+      const attachment = attachmentOf(socket);
+      if (
+        attachment &&
+        attachment.presenceSeq !== state.presenceSeq &&
+        state.presence[attachment.token.userId]
+      )
+        sendTo(socket, fullPresence(attachment.token.roomId));
+    }
+  }
+  return {
+    notifyJoin,
+    sendToSocket,
+    connectedUsers,
+    resyncRestoredSockets,
+    attachmentOf,
+    tokenOf,
+    sendTo,
+    broadcast,
+    sendToUser,
+    sendToManagers,
+    disconnect,
+  };
 }

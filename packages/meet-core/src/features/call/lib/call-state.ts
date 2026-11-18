@@ -11,7 +11,12 @@ import type {
   MeetRealtimeWaitingParticipant,
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
-import { retainRoomChat } from '@tuturuuu/realtime/meet';
+import {
+  applyPresenceDelta,
+  clampMeetMedia,
+  isMeetMediaLocked,
+  retainRoomChat,
+} from '@tuturuuu/realtime/meet';
 
 export type CallAdmission = 'connecting' | 'waiting' | 'admitted' | 'denied';
 
@@ -48,6 +53,12 @@ export interface CallState {
   roomExpiresAt?: string;
   maxParticipants?: number;
   ended: boolean;
+  canManageParticipants?: boolean;
+  recentSpeakerIds?: string[];
+  presenceSeq?: number | null;
+  presenceNeedsResync?: boolean;
+  roomId?: string;
+  bulkAdmission?: { admitted: number; denied: number; remaining: number };
   settings: MeetRoomSettings;
   approved: MeetApprovedParticipant[];
   reactions: Array<{
@@ -151,16 +162,56 @@ export function reduceCallState(
             ? state.remoteTracks
             : {},
         role: message.role,
+        canManageParticipants:
+          message.canManageParticipants ?? message.role === 'host',
+        roomId: message.roomId,
+        presenceSeq: null,
+        presenceNeedsResync: false,
         selfUserId: message.userId,
         stage: message.stage,
       };
 
     case 'presence':
+      if (state.ended || (state.roomId && state.roomId !== message.roomId))
+        return state;
       return {
         ...state,
+        presenceSeq: message.seq ?? null,
+        presenceNeedsResync: false,
         participants: Object.fromEntries(
           message.presence.map((entry) => [entry.userId, entry])
         ),
+      };
+
+    case 'presence.delta': {
+      if (
+        state.admission !== 'admitted' ||
+        state.ended ||
+        state.roomId !== message.roomId ||
+        state.presenceNeedsResync
+      )
+        return state;
+      const result = applyPresenceDelta(
+        state.participants,
+        state.presenceSeq ?? null,
+        message
+      );
+      return {
+        ...state,
+        participants: result.presence,
+        presenceSeq: result.seq,
+        presenceNeedsResync: result.gap,
+      };
+    }
+
+    case 'admission.bulkResult':
+      return {
+        ...state,
+        bulkAdmission: {
+          admitted: message.admitted,
+          denied: message.denied,
+          remaining: message.remaining,
+        },
       };
 
     case 'stage':
@@ -367,4 +418,24 @@ export function countUnreadChatMessages(
   return chat
     .slice(index < 0 ? 0 : index + 1)
     .filter((entry) => !entry.replayed).length;
+}
+
+function localMediaActor(state: CallState) {
+  return {
+    userId: state.selfUserId ?? '',
+    accountId: state.participants[state.selfUserId ?? '']?.accountId,
+    role: state.role ?? 'viewer',
+    canManageParticipants: state.canManageParticipants,
+  } as const;
+}
+export function localMediaLocks(state: CallState) {
+  const actor = localMediaActor(state);
+  return {
+    audio: isMeetMediaLocked(state.settings, actor, 'audio'),
+    video: isMeetMediaLocked(state.settings, actor, 'video'),
+    screen: isMeetMediaLocked(state.settings, actor, 'screen'),
+  };
+}
+export function clampLocalMedia(state: CallState, media: MeetMediaState) {
+  return clampMeetMedia(state.settings, localMediaActor(state), media);
 }

@@ -15,6 +15,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 import {
   classroomParticipantCap,
   getClassroomParticipantCap,
+  getMeetRoomCapacityLimits,
 } from './meet-classroom-policy';
 const host = '11111111-1111-4111-8111-111111111111';
 function setup(tier = 'FREE', email = 'teacher@tuturuuu.com') {
@@ -138,4 +139,66 @@ it('unconfirmed host identity cannot use Free capacity', async () => {
   await expect(
     getClassroomParticipantCap('meeting', 'workspace')
   ).rejects.toMatchObject({ status: 403 });
+});
+
+const capacityFor = (mode: 'call' | 'webinar', parley = false) =>
+  getMeetRoomCapacityLimits({
+    meetingId: 'meeting',
+    wsId: 'workspace',
+    mode,
+    parley,
+  });
+
+it.each([
+  ['FREE', 10, 8, 96, 12],
+  ['PLUS', 50, 50, 50, 50],
+  ['PRO', 50, 50, 50, 50],
+  ['ENTERPRISE', 100, 100, 100, 100],
+])(
+  'signs strict and flag-off call and webinar limits for %s',
+  async (tier, cap, publishers, viewers, webinarPublishers) => {
+    setup(tier);
+    expect(await capacityFor('call')).toEqual({
+      maxParticipants: cap,
+      maxPublishers: cap,
+      maxViewers: cap,
+    });
+    expect(await capacityFor('webinar')).toEqual({
+      maxParticipants: cap,
+      maxPublishers: cap,
+      maxViewers: 250,
+    });
+    fixtures.identity.mockClear();
+    vi.stubEnv('MEET_CLASSROOM_LIMITS_ENABLED', 'false');
+    expect(await capacityFor('call')).toEqual({
+      maxParticipants: undefined,
+      maxPublishers: publishers,
+      maxViewers: viewers,
+    });
+    expect(await capacityFor('webinar')).toEqual({
+      maxParticipants: undefined,
+      maxPublishers: webinarPublishers,
+      maxViewers: 250,
+    });
+    expect(fixtures.identity).not.toHaveBeenCalled();
+  }
+);
+
+it('skips all reads in Parley and falls back on tier errors with the flag off', async () => {
+  setup('FREE', 'host@example.test');
+  expect(await capacityFor('webinar', true)).toEqual({
+    maxParticipants: undefined,
+    maxPublishers: 12,
+    maxViewers: 250,
+  });
+  expect(fixtures.admin).not.toHaveBeenCalled();
+  await expect(capacityFor('call')).rejects.toMatchObject({ status: 403 });
+  fixtures.tier.mockRejectedValue(new Error('unavailable'));
+  await expect(capacityFor('call')).rejects.toMatchObject({ status: 503 });
+  vi.stubEnv('MEET_CLASSROOM_LIMITS_ENABLED', 'false');
+  expect(await capacityFor('call')).toEqual({
+    maxParticipants: undefined,
+    maxPublishers: 8,
+    maxViewers: 96,
+  });
 });

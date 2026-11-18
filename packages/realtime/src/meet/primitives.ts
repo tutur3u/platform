@@ -130,6 +130,7 @@ export const meetAssistantAudioSchema = z.object({
 });
 
 export const meetRealtimePresenceSchema = z.object({
+  canManageParticipants: z.boolean().optional(),
   miraPrivate: z.boolean().optional(),
   assistantAudio: meetAssistantAudioSchema.optional(),
   accountId: z.uuid().optional(),
@@ -149,6 +150,7 @@ export const meetRealtimePresenceSchema = z.object({
 export type MeetRealtimePresence = z.infer<typeof meetRealtimePresenceSchema>;
 
 export const meetRealtimeWaitingParticipantSchema = z.object({
+  canManageParticipants: z.boolean().optional(),
   accountId: z.uuid().optional(),
   avatarUrl: z
     .url()
@@ -191,6 +193,13 @@ export const cloudflareSfuTrackSchema = z.object({
   location: z.string().optional(),
   mid: z.string().optional(),
   sessionId: z.string().optional(),
+  simulcast: z
+    .object({
+      preferredRid: z.enum(['h', 'm', 'l']),
+      priorityOrdering: z.literal('asciibetical'),
+      ridNotAvailable: z.literal('asciibetical'),
+    })
+    .optional(),
   trackName: z.string().optional(),
 });
 
