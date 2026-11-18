@@ -1,9 +1,21 @@
+create table private.usage_pack_products (
+  id uuid primary key,
+  meter text not null,
+  price_cents integer not null,
+  units bigint not null,
+  check ((meter,price_cents,units) in (
+    ('sandbox_seconds',500,60000),('participant_seconds',500,120000),('stored_bytes',300,26843545600)
+  ))
+);
+alter table private.usage_pack_products enable row level security;
+revoke all on private.usage_pack_products from public,anon,authenticated,service_role;
+
 create table private.usage_pack_orders (
   id uuid primary key,
   ws_id uuid not null references public.workspaces(id),
   meter text not null,
   customer_ref text not null,
-  product_id uuid not null,
+  product_id uuid not null references private.usage_pack_products,
   net_cents integer not null check (net_cents >= 0),
   refunded boolean not null,
   grant_id uuid unique references private.usage_grants,
@@ -30,8 +42,10 @@ begin
     select 1 from public.workspaces w where w.id = p_ws
       and p_customer_ref = case when w.personal then w.creator_id::text else 'workspace_' || w.id::text end
   ) then raise exception 'Order customer mismatch'; end if;
-  units := case p_meter when 'sandbox_seconds' then 60000 when 'participant_seconds' then 120000
-    when 'stored_bytes' then 26843545600::bigint end;
+  select catalog.units into units from private.usage_pack_products catalog
+    where catalog.id = p_product and catalog.meter = p_meter and p_net_cents between 0 and catalog.price_cents
+      and (is_refund or p_net_cents = catalog.price_cents) for share;
+  if not found then raise exception 'Unbound usage product or amount'; end if;
   if units is null or p_net_cents < 0 or p_created > p_observed then raise exception 'Invalid order evidence'; end if;
   expiry := case when p_meter = 'stored_bytes' then p_end else p_created + interval '12 months' end;
   if expiry is null or expiry <= p_created then raise exception 'Invalid pack expiration'; end if;
@@ -45,7 +59,7 @@ begin
     if old.observed_at = p_observed and old.net_cents <> p_net_cents and old.refunded = is_refund then
       raise exception 'Conflicting order revision';
     end if;
-    if is_refund and old.grant_id is not null then
+    if is_refund and not old.refunded and old.grant_id is not null then
       -- Preserve exact held/spent history. Deny future commercial use pending
       -- refund reconciliation, including outstanding leases.
       update private.usage_meter_periods set blocked = true where ws_id = p_ws and meter = p_meter;
