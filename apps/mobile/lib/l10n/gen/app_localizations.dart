@@ -775,6 +775,60 @@ abstract class AppLocalizations {
   /// **'active'**
   String get assistantActiveLabel;
 
+  /// No description provided for @assistantConversationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get assistantConversationsTitle;
+
+  /// No description provided for @assistantConversationsThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get assistantConversationsThisWeek;
+
+  /// No description provided for @assistantConversationsEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get assistantConversationsEarlier;
+
+  /// No description provided for @assistantConversationNoPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'No message preview'**
+  String get assistantConversationNoPreview;
+
+  /// No description provided for @assistantAskMira.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask Mira'**
+  String get assistantAskMira;
+
+  /// No description provided for @assistantArchiveConversationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive conversation?'**
+  String get assistantArchiveConversationTitle;
+
+  /// No description provided for @assistantArchiveConversationFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not archive this conversation.'**
+  String get assistantArchiveConversationFailed;
+
+  /// No description provided for @assistantArchiveConversationDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation will be removed from your active conversations.'**
+  String get assistantArchiveConversationDescription;
+
+  /// No description provided for @assistantArchiveConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get assistantArchiveConversation;
+
   /// No description provided for @assistantAskPlaceholder.
   ///
   /// In en, this message translates to:

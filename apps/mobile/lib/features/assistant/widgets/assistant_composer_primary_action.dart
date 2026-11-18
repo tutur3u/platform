@@ -16,6 +16,7 @@ class AssistantComposerPrimaryAction extends StatelessWidget
     required this.focusNode,
     required this.onToggleNavigation,
     required this.onSend,
+    this.inPage = false,
     this.voiceCapture,
     this.onSendVoice,
     this.hasAttachments = false,
@@ -25,6 +26,7 @@ class AssistantComposerPrimaryAction extends StatelessWidget
     super.key,
   });
 
+  final bool inPage;
   final TextEditingController controller;
   final FocusNode focusNode;
   final VoidCallback onToggleNavigation;
@@ -77,32 +79,42 @@ class AssistantComposerPrimaryAction extends StatelessWidget
               : hasPrompt
               ? l10n.assistantSendAction
               : l10n.assistantExpandNavigation;
+          final enabled = localGenerating
+              ? onStopLocal != null
+              : voiceVisible
+              ? !(voice?.busy ?? false) &&
+                    (recording || (paused && onSendVoice != null))
+              : !hasPrompt || !blocked;
+          void invoke() {
+            if (localGenerating) {
+              unawaited(onStopLocal?.call());
+            } else if (recording) {
+              unawaited(voiceCapture?.pause());
+            } else if (paused) {
+              unawaited(onSendVoice?.call());
+            } else if (hasPrompt) {
+              unawaited(onSend());
+            } else {
+              focusNode.unfocus();
+              onToggleNavigation();
+            }
+          }
+
+          if (inPage) {
+            return AppIconButton(
+              tooltip: label,
+              onPressed: enabled ? invoke : null,
+              icon: Icon(icon),
+            );
+          }
           return ShellDockActionButton(
             key: const ValueKey('assistant-navigation-toggle'),
             action: ShellActionSpec(
               id: 'assistant-composer-primary',
               icon: icon,
               tooltip: label,
-              enabled: localGenerating
-                  ? onStopLocal != null
-                  : voiceVisible
-                  ? !(voice?.busy ?? false) &&
-                        (recording || (paused && onSendVoice != null))
-                  : !hasPrompt || !blocked,
-              onPressed: () {
-                if (localGenerating) {
-                  unawaited(onStopLocal?.call());
-                } else if (recording) {
-                  unawaited(voiceCapture?.pause());
-                } else if (paused) {
-                  unawaited(onSendVoice?.call());
-                } else if (hasPrompt) {
-                  unawaited(onSend());
-                } else {
-                  focusNode.unfocus();
-                  onToggleNavigation();
-                }
-              },
+              enabled: enabled,
+              onPressed: invoke,
             ),
           );
         },

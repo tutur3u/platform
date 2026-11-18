@@ -7,10 +7,12 @@ class AssistantThemeScope extends StatefulWidget {
   const AssistantThemeScope({
     required this.value,
     required this.child,
+    this.applyColors = true,
     super.key,
   });
 
   final AssistantThemePreferences value;
+  final bool applyColors;
   final Widget child;
 
   static AssistantThemePreferences valueOf(BuildContext context) =>
@@ -53,8 +55,11 @@ class _AssistantThemeScopeState extends State<AssistantThemeScope> {
     }
     return _AssistantThemeData(
       value: widget.value,
-      colors: _colors,
-      child: Theme(data: _colors.pageTheme(theme), child: widget.child),
+      colors: widget.applyColors ? _colors : null,
+      child: Theme(
+        data: widget.applyColors ? _colors.pageTheme(theme) : theme,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -67,7 +72,7 @@ class _AssistantThemeData extends InheritedWidget {
   });
 
   final AssistantThemePreferences value;
-  final AssistantThemeColors colors;
+  final AssistantThemeColors? colors;
 
   @override
   bool updateShouldNotify(_AssistantThemeData oldWidget) =>
@@ -75,13 +80,20 @@ class _AssistantThemeData extends InheritedWidget {
 }
 
 class AssistantThemeBackdrop extends StatelessWidget {
-  const AssistantThemeBackdrop({required this.child, super.key});
+  const AssistantThemeBackdrop({
+    required this.child,
+    this.pageColor,
+    super.key,
+  });
 
   final Widget child;
+  final Color? pageColor;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: AssistantThemeScope.of(context).backgroundDecoration,
+    decoration: pageColor == null
+        ? AssistantThemeScope.of(context).backgroundDecoration
+        : BoxDecoration(color: pageColor),
     child: child,
   );
 }

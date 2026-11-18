@@ -34,7 +34,10 @@ extension _ShellPageRouteHistory on _ShellPageState {
           reclaimNavigationClearanceWhenHidden:
               widget.matchedLocation == Routes.profileRoot ||
               widget.matchedLocation == Routes.home ||
-              widget.matchedLocation == Routes.calendar,
+              widget.matchedLocation == Routes.calendar ||
+              (widget.assistantConversationsEnabled &&
+                  widget.matchedLocation == Routes.assistant) ||
+              widget.matchedLocation == Routes.assistantConversations,
           keepNavigationVisible: composerVisible,
           composerVisible: composerVisible,
           navigation: navigationBar,
@@ -117,7 +120,8 @@ extension _ShellPageRouteHistory on _ShellPageState {
   bool _routeInterceptsBack() {
     if (!mounted) return true;
     final location = _normalizeRouteLocation(widget.matchedLocation);
-    return _hasOpenModal() ||
+    return location == Routes.assistantConversations ||
+        _hasOpenModal() ||
         context.read<ShellChromeActionsCubit?>()?.state.backForLocation(
               location,
             ) !=

@@ -50,6 +50,8 @@ class AssistantComposerDock extends StatelessWidget {
     this.onSendVoice,
     this.onHeightChanged,
     this.embedded = false,
+    this.inPage = false,
+    this.pagePrimaryAction,
     this.localOnly = false,
     this.localBlocked = false,
     this.localGenerating = false,
@@ -70,6 +72,8 @@ class AssistantComposerDock extends StatelessWidget {
   final AssistantShellState shellState;
   final AssistantRepository? repository;
   final bool embedded;
+  final bool inPage;
+  final Widget? pagePrimaryAction;
   final ValueChanged<double>? onHeightChanged;
   final bool localOnly;
   final bool localBlocked;
@@ -96,12 +100,24 @@ class AssistantComposerDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const promptStyle = TextStyle(fontSize: 16, height: 1.25);
+    final promptStyle = inPage
+        ? AppTokens.of(context).typography.body
+        : const TextStyle(fontSize: 16, height: 1.25);
     final rowHeight = assistantComposerHeight(context);
     final content = AppComposerRow(
       minHeight: rowHeight,
       leading: [
+        if (inPage && !localOnly)
+          AppIconButton(
+            tooltip: context.l10n.assistantAttachFilesAction,
+            onPressed: () {
+              focusNode.unfocus();
+              unawaited(onOpenAttachments());
+            },
+            icon: const Icon(LucideIcons.paperclip),
+          ),
         AssistantComposerOptions(
+          hasDirectAttachment: inPage,
           localOnly: localOnly,
           localModelLabel: localModelLabel,
           onOpenLocalModels: onOpenLocalModels,
@@ -134,7 +150,9 @@ class AssistantComposerDock extends StatelessWidget {
           keyboardType: TextInputType.multiline,
           textInputAction: TextInputAction.newline,
           onTapOutside: (_) => focusNode.unfocus(),
-          placeholder: context.l10n.assistantAskPlaceholder,
+          placeholder: inPage
+              ? context.l10n.assistantAskMira
+              : context.l10n.assistantAskPlaceholder,
           hintMaxLines: 1,
           borderless: true,
         ),
@@ -146,6 +164,10 @@ class AssistantComposerDock extends StatelessWidget {
             final hasPrompt =
                 value.text.trim().isNotEmpty ||
                 chatState.composerAttachments.isNotEmpty;
+            if (inPage && (hasPrompt || localGenerating)) {
+              return pagePrimaryAction ?? const SizedBox.shrink();
+            }
+            if (inPage && localOnly) return const SizedBox.shrink();
             return Visibility(
               key: const ValueKey('assistant-composer-microphone-slot'),
               visible: !hasPrompt && !localGenerating,
@@ -195,6 +217,7 @@ class AssistantComposerDock extends StatelessWidget {
                       capture: capture,
                       state: state,
                       onAttach: onAttachVoice ?? () async {},
+                      trailing: inPage ? pagePrimaryAction : null,
                     )
                   : KeyedSubtree(
                       key: const ValueKey('text-composer'),
@@ -230,6 +253,7 @@ class AssistantComposerDock extends StatelessWidget {
         ],
       ),
     );
+    if (inPage) return sizedComposer;
     if (embedded) {
       return AssistantComposerSizeReporter(
         // Include the border and side controls in occupied clearance.

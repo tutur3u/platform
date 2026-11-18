@@ -11,9 +11,11 @@ class AssistantInlineVoiceControls extends StatelessWidget {
     required this.capture,
     required this.state,
     required this.onAttach,
+    this.trailing,
     super.key,
   });
 
+  final Widget? trailing;
   final AssistantVoiceCaptureCubit capture;
   final AssistantVoiceCaptureState state;
   final Future<void> Function() onAttach;
@@ -95,6 +97,7 @@ class AssistantInlineVoiceControls extends StatelessWidget {
                     ),
               icon: Icon(state.paused ? LucideIcons.mic : LucideIcons.pause),
             ),
+          if (trailing != null) trailing!,
         ],
       ),
     );

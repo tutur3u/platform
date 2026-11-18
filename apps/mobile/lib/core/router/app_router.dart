@@ -373,6 +373,7 @@ GoRouter createAppRouter(
           child: ShellPage(
             matchedLocation: state.uri.path,
             routePattern: state.fullPath,
+            assistantConversationsEnabled: true,
             child: child,
           ),
         ),
@@ -388,6 +389,10 @@ GoRouter createAppRouter(
           GoRoute(
             path: Routes.assistant,
             builder: (context, state) => const AssistantPage(),
+          ),
+          GoRoute(
+            path: Routes.assistantConversations,
+            builder: (_, _) => const SizedBox.shrink(),
           ),
           GoRoute(
             path: Routes.notifications,

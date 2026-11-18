@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
@@ -203,6 +204,20 @@ class _FloatingShellDockState extends State<FloatingShellDock> {
     BuildContext? scrollContext,
   ) {
     if (depth != 0 || metrics.axis != Axis.vertical) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      // A viewport resize can start a ballistic scroll during layout.
+      // Measure the settled viewport after that frame.
+      final location = widget.location;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted &&
+            widget.location == location &&
+            (scrollContext?.mounted ?? true)) {
+          _trackScrolledUnder(metrics, depth, scrollContext);
+        }
+      });
+      return;
+    }
     double? edge;
     if (scrollContext != null) {
       // Offstage root tabs and covered routes keep reporting layout changes.

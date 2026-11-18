@@ -361,6 +361,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantActiveLabel => 'active';
 
   @override
+  String get assistantConversationsTitle => 'Conversations';
+
+  @override
+  String get assistantConversationsThisWeek => 'This week';
+
+  @override
+  String get assistantConversationsEarlier => 'Earlier';
+
+  @override
+  String get assistantConversationNoPreview => 'No message preview';
+
+  @override
+  String get assistantAskMira => 'Ask Mira';
+
+  @override
+  String get assistantArchiveConversationTitle => 'Archive conversation?';
+
+  @override
+  String get assistantArchiveConversationFailed => 'Could not archive this conversation.';
+
+  @override
+  String get assistantArchiveConversationDescription => 'This conversation will be removed from your active conversations.';
+
+  @override
+  String get assistantArchiveConversation => 'Archive';
+
+  @override
   String get assistantAskPlaceholder => 'Ask anything...';
 
   @override

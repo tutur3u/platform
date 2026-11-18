@@ -30,6 +30,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       wsId,
       isLiveMode,
       _isComposerVisible,
+      widget.shellLocation,
       l10n,
       material,
       liveUi,
@@ -54,7 +55,7 @@ extension _AssistantPageChrome on _AssistantPageState {
       action();
     };
     return _chromeActions = <ShellActionSpec>[
-      if (!_isComposerVisible && !isLiveMode)
+      if (!_usesPageComposer && !_isComposerVisible && !isLiveMode)
         ShellActionSpec(
           id: 'assistant-compose',
           inDock: true,
@@ -80,6 +81,22 @@ extension _AssistantPageChrome on _AssistantPageState {
             ),
           ),
         ),
+      if (_usesPageComposer && !isLiveMode) ...[
+        ShellActionSpec(
+          id: 'assistant-conversations',
+          icon: LucideIcons.history,
+          tooltip: l10n.assistantConversationsTitle,
+          onPressed: guarded(() => unawaited(_showHistorySheet(context, wsId))),
+        ),
+        ShellActionSpec(
+          id: 'assistant-new-conversation',
+          icon: LucideIcons.messageSquarePlus,
+          tooltip: l10n.assistantNewConversation,
+          onPressed: guarded(
+            () => unawaited(_startNewConversation(wsId, chatState, liveState)),
+          ),
+        ),
+      ],
       ShellActionSpec(
         id: 'assistant-more',
         icon: LucideIcons.ellipsis,
@@ -87,26 +104,28 @@ extension _AssistantPageChrome on _AssistantPageState {
         callbackToken: (_localScope(), isLiveMode),
         onPressed: guarded(() => unawaited(_showAssistantMore(isLiveMode))),
       ),
-      ShellActionSpec(
-        id: 'assistant-mode-chat',
-        segmentGroup: 'assistant-modes',
-        icon: LucideIcons.messageCircle,
-        tooltip: context.l10n.chatTitle,
-        highlighted: !isLiveMode,
-        onPressed: isLiveMode
-            ? guarded(() => unawaited(_exitLiveMode()))
-            : null,
-      ),
-      ShellActionSpec(
-        id: 'assistant-mode-live',
-        segmentGroup: 'assistant-modes',
-        icon: LucideIcons.audioLines,
-        tooltip: context.l10n.commonLive,
-        highlighted: isLiveMode,
-        onPressed: isLiveMode
-            ? null
-            : guarded(() => unawaited(_handleMicrophoneTap(wsId))),
-      ),
+      if (!_usesPageComposer || isLiveMode)
+        ShellActionSpec(
+          id: 'assistant-mode-chat',
+          segmentGroup: 'assistant-modes',
+          icon: LucideIcons.messageCircle,
+          tooltip: context.l10n.chatTitle,
+          highlighted: !isLiveMode,
+          onPressed: isLiveMode
+              ? guarded(() => unawaited(_exitLiveMode()))
+              : null,
+        ),
+      if (!_usesPageComposer || isLiveMode)
+        ShellActionSpec(
+          id: 'assistant-mode-live',
+          segmentGroup: 'assistant-modes',
+          icon: LucideIcons.audioLines,
+          tooltip: context.l10n.commonLive,
+          highlighted: isLiveMode,
+          onPressed: isLiveMode
+              ? null
+              : guarded(() => unawaited(_handleMicrophoneTap(wsId))),
+        ),
     ];
   }
 
@@ -118,12 +137,18 @@ extension _AssistantPageChrome on _AssistantPageState {
       context: context,
       title: l10n.commonMoreOptions,
       actions: [
-        if (!isLiveMode)
+        if (!isLiveMode && !_usesPageComposer)
           AppSheetAction(
             key: const ValueKey('assistant-more-history'),
             icon: LucideIcons.history,
             label: l10n.assistantHistoryTitle,
             value: 'history',
+          ),
+        if (_usesPageComposer && !isLiveMode)
+          AppSheetAction(
+            icon: LucideIcons.audioLines,
+            label: l10n.commonLive,
+            value: 'live',
           ),
         AppSheetAction(
           key: const ValueKey('assistant-more-settings'),
@@ -144,6 +169,7 @@ extension _AssistantPageChrome on _AssistantPageState {
     if (choice == 'history') {
       await _showHistorySheet(context, _loadedWorkspaceId!);
     }
+    if (choice == 'live') await _handleMicrophoneTap(_loadedWorkspaceId!);
     if (choice == 'settings') await _showLiveSettings();
     if (choice == 'appearance') await _showChatTheme();
   }

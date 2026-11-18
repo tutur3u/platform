@@ -361,6 +361,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantActiveLabel => 'đang hoạt động';
 
   @override
+  String get assistantConversationsTitle => 'Cuộc trò chuyện';
+
+  @override
+  String get assistantConversationsThisWeek => 'Tuần này';
+
+  @override
+  String get assistantConversationsEarlier => 'Trước đó';
+
+  @override
+  String get assistantConversationNoPreview => 'Không có nội dung xem trước';
+
+  @override
+  String get assistantAskMira => 'Hỏi Mira';
+
+  @override
+  String get assistantArchiveConversationTitle => 'Lưu trữ cuộc trò chuyện?';
+
+  @override
+  String get assistantArchiveConversationFailed => 'Không thể lưu trữ cuộc trò chuyện này.';
+
+  @override
+  String get assistantArchiveConversationDescription => 'Cuộc trò chuyện này sẽ được chuyển khỏi danh sách đang hoạt động.';
+
+  @override
+  String get assistantArchiveConversation => 'Lưu trữ';
+
+  @override
   String get assistantAskPlaceholder => 'Hỏi Mira bất cứ điều gì...';
 
   @override

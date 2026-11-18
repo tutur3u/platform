@@ -6,6 +6,7 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
+import 'package:mobile/features/assistant/widgets/assistant_action_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_attachment_preview.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_message_actions.dart';
@@ -30,6 +31,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
     this.toolParts = const [],
     this.orderedParts = const [],
     this.isDraft = false,
+    this.documentLayout = false,
     this.activityActive = false,
     this.receipt,
     this.reactions = const [],
@@ -53,6 +55,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
   final List<AssistantMessagePart> toolParts;
   final List<AssistantMessagePart> orderedParts;
   final bool isDraft;
+  final bool documentLayout;
   final bool activityActive;
   final AssistantMessageReceiptStatus? receipt;
   final List<ChatReactionSummary> reactions;
@@ -137,6 +140,22 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
     final duration = reduceMotion
         ? Duration.zero
         : const Duration(milliseconds: 140);
+    if (widget.documentLayout && !alignEnd) {
+      return DecoratedBox(
+        key: const ValueKey('assistant-message-content'),
+        decoration: BoxDecoration(
+          border: _selected
+              ? Border(
+                  bottom: BorderSide(
+                    color: AppTokens.of(context).colorScheme.ring,
+                  ),
+                )
+              : null,
+        ),
+        child: child,
+      );
+    }
+    final tokens = AppTokens.of(context);
     return AnimatedScale(
       scale: _selected && !reduceMotion ? 1.015 : 1,
       duration: duration,
@@ -152,7 +171,9 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
               (alignEnd
                   ? theme.colorScheme.primaryContainer
                   : Colors.transparent),
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(
+            widget.documentLayout ? tokens.shapes.card : 22,
+          ),
           border: Border.all(
             color: _selected ? theme.colorScheme.primary : Colors.transparent,
           ),
@@ -178,7 +199,9 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         widget.onRefreshReactions != null;
 
     return Align(
-      alignment: alignEnd ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: alignEnd
+          ? AlignmentDirectional.centerEnd
+          : AlignmentDirectional.centerStart,
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth:
@@ -188,6 +211,8 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         ),
         child: Semantics(
           label: label,
+          liveRegion:
+              widget.documentLayout && !alignEnd && (isDraft || activityActive),
           selected: _selected,
           onLongPress: !canOpenActions ? null : () => _openActions(copyPayload),
           child: GestureDetector(
@@ -203,6 +228,16 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                   ? CrossAxisAlignment.end
                   : CrossAxisAlignment.start,
               children: [
+                if (widget.documentLayout && !alignEnd)
+                  ExcludeSemantics(
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        label,
+                        style: AppTokens.of(context).typography.ui,
+                      ),
+                    ),
+                  ),
                 if (widget.replyPreview != null) widget.replyPreview!,
                 if (!alignEnd && orderedParts.isNotEmpty)
                   ..._orderedAssistantChildren(context)
@@ -256,7 +291,19 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                 if (orderedParts.isEmpty || alignEnd) ...[
                   if (toolParts.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    AssistantToolResultsSection(parts: toolParts),
+                    if (widget.documentLayout && !alignEnd) ...[
+                      for (final part in assistantCompletedActionParts(
+                        toolParts,
+                      ))
+                        AssistantCompletedActionCard(part: part),
+                      AssistantToolResultsSection(
+                        parts: [
+                          for (final part in toolParts)
+                            if (part.state != 'output-available') part,
+                        ],
+                      ),
+                    ] else
+                      AssistantToolResultsSection(parts: toolParts),
                   ],
                   if (toolNames.isNotEmpty && toolParts.isEmpty) ...[
                     const SizedBox(height: 8),
@@ -286,6 +333,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
     for (final child in assistantOrderedPartWidgets(
       orderedParts,
       active: activityActive,
+      documentLayout: widget.documentLayout,
     ))
       if (child is Padding && child.child is AssistantMarkdownBody)
         Padding(

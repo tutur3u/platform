@@ -124,7 +124,12 @@ MobileDeepLink? _resolveRootHostLink(
     return _link(Routes.apps, openExternally: openExternally);
   }
   if (segments.first == 'assistant') {
-    return _link(Routes.assistant, openExternally: openExternally);
+    return _link(
+      segments.length > 1 && segments[1] == 'conversations'
+          ? Routes.assistantConversations
+          : Routes.assistant,
+      openExternally: openExternally,
+    );
   }
   if (segments.first == 'notifications') {
     return _link(

@@ -12,13 +12,40 @@ extension _AssistantPageTheme on _AssistantPageState {
 
   Widget _themedPage(BuildContext context) => ListenableBuilder(
     listenable: _chatTheme,
-    builder: (context, _) => AssistantThemeScope(
-      value: _chatTheme.value,
-      child: Builder(
-        builder: (context) =>
-            AssistantThemeBackdrop(child: _buildPage(context)),
-      ),
-    ),
+    builder: (context, _) {
+      final customAppearance =
+          !_usesPageComposer ||
+          _chatTheme.value != const AssistantThemePreferences();
+      final chat = Builder(builder: _buildPage);
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          NotificationListener<Notification>(
+            onNotification: (notification) =>
+                _showsConversations &&
+                (notification is ScrollNotification ||
+                    notification is ScrollMetricsNotification),
+            child: Offstage(
+              offstage: _showsConversations,
+              child: ExcludeFocus(
+                excluding: _showsConversations,
+                child: AssistantThemeScope(
+                  value: _chatTheme.value,
+                  applyColors: customAppearance,
+                  child: AssistantThemeBackdrop(
+                    pageColor: customAppearance
+                        ? null
+                        : AppTokens.of(context).colorScheme.background,
+                    child: chat,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_showsConversations) _buildConversationsPage(),
+        ],
+      );
+    },
   );
 
   Future<void> _showChatTheme() => showAppSheet<void>(

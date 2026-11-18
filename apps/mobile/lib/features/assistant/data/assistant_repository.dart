@@ -235,8 +235,18 @@ class AssistantRepository
       title: conversation.title,
       model: modelId ?? conversation.metadata['modelId']?.toString(),
       createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+      preview: conversation.latestMessage?.content,
     );
   }
+
+  /// The compatible AI history aliases are archived for their owning user.
+  /// Native workspace rows require workspace management permissions.
+  bool canArchiveHistoryChat(AssistantChatRecord chat) =>
+      chat.id.startsWith('ai-chat-') || chat.id.startsWith('legacy-ai-');
+
+  Future<void> archiveHistoryChat(String wsId, AssistantChatRecord chat) =>
+      _chatRepository.deleteConversation(wsId, chat.id);
 
   static final Random _random = Random.secure();
 

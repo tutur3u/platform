@@ -86,7 +86,7 @@ extension _ShellPageLayout on _ShellPageState {
   }
 
   Widget _buildGlobalBody() {
-    final rootVisible = _isRootTabLocation(widget.matchedLocation);
+    final rootVisible = _isRootTabLocation(_bodyLocation);
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -107,7 +107,10 @@ extension _ShellPageLayout on _ShellPageState {
                             .removePadding(removeTop: true)
                             .copyWith(viewPadding: media.viewPadding),
                         child: _trackPageScrolling(
-                          _lastRootLocation,
+                          widget.matchedLocation ==
+                                  Routes.assistantConversations
+                              ? Routes.assistantConversations
+                              : _lastRootLocation,
                           LazyIndexedStack(
                             // Body transitions are separate from the persistent
                             // dock; outgoing bodies own no dock.
@@ -129,6 +132,10 @@ extension _ShellPageLayout on _ShellPageState {
                                     _rootTabReplayTokens[Routes.assistant] ?? 0,
                                   ) ??
                                   AssistantPage(
+                                    shellLocation:
+                                        widget.assistantConversationsEnabled
+                                        ? widget.matchedLocation
+                                        : null,
                                     replayToken:
                                         _rootTabReplayTokens[Routes
                                             .assistant] ??
@@ -297,11 +304,14 @@ extension _ShellPageLayout on _ShellPageState {
     final workspace = context.watch<WorkspaceCubit>().state;
     final assistantDock =
         widget.matchedLocation == Routes.assistant &&
+        (!widget.assistantConversationsEnabled || assistantChrome.isLiveMode) &&
         (workspace.currentWorkspace ?? workspace.personalWorkspaceOrCurrent) !=
             null;
     final composerVisible =
         widget.matchedLocation == Routes.assistant &&
-        (assistantChrome.isComposing || assistantChrome.isLiveMode);
+        ((!widget.assistantConversationsEnabled &&
+                assistantChrome.isComposing) ||
+            assistantChrome.isLiveMode);
     // Chat input and Live call controls share the only dock/exit surface,
     // including immersive mode. Other pages retain their existing policy.
     final showBottomNav =
@@ -604,6 +614,7 @@ extension _ShellPageLayout on _ShellPageState {
             child: ShellTopBarTitle(
               key: ValueKey(widget.matchedLocation),
               matchedLocation: widget.matchedLocation,
+              documentAssistant: widget.assistantConversationsEnabled,
               fallbackTitle: selectedTitle,
             ),
           ),

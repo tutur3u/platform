@@ -187,11 +187,15 @@ Widget routedSorbetTestApp({
   required Locale locale,
   AppearanceSettings appearance = const AppearanceSettings(),
   SorbetTheme? sorbet,
+  Brightness brightness = Brightness.light,
+  Key? boundaryKey,
 }) => shad.ShadcnApp.router(
   debugShowCheckedModeBanner: false,
   theme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.light),
   darkTheme: AppearanceTheme.shadThemeFor(appearance, sorbet, Brightness.dark),
-  themeMode: shad.ThemeMode.light,
+  themeMode: brightness == Brightness.dark
+      ? shad.ThemeMode.dark
+      : shad.ThemeMode.light,
   locale: locale,
   localizationsDelegates: const [
     ...AppLocalizations.localizationsDelegates,
@@ -199,11 +203,21 @@ Widget routedSorbetTestApp({
   ],
   supportedLocales: AppLocalizations.supportedLocales,
   routerConfig: router,
-  builder: (context, child) => SorbetAppearanceHost(
-    appearance: appearance,
-    sorbet: sorbet,
-    child: ShadcnMaterialBridge(child: child ?? const SizedBox.shrink()),
-  ),
+  builder: (context, child) {
+    final hosted = SorbetAppearanceHost(
+      appearance: appearance,
+      sorbet: sorbet,
+      child: ShadcnMaterialBridge(child: child ?? const SizedBox.shrink()),
+    );
+    if (boundaryKey == null) return hosted;
+    return RepaintBoundary(
+      key: boundaryKey,
+      child: MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: hosted,
+      ),
+    );
+  },
 );
 
 /// Hosts the drawers and sheets a routed [page] opens.

@@ -14,7 +14,9 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// The mode name stays stable while the shared shell switches views.
 class AssistantModeTitle extends StatelessWidget {
-  const AssistantModeTitle({super.key});
+  const AssistantModeTitle({this.showAssistantLabel = false, super.key});
+
+  final bool showAssistantLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -46,22 +48,30 @@ class AssistantModeTitle extends StatelessWidget {
     final title = registration?.title.trim().isNotEmpty == true
         ? registration!.title
         : 'Mira';
+    final document = showAssistantLabel && !isLiveMode;
+    final label = document ? context.l10n.navAssistant : title;
     final status = !isLiveMode ? registration?.subtitle : null;
+    Widget titleText({bool folded = false}) => ReadableShellTitle(
+      label,
+      style:
+          (document
+                  ? AppTokens.of(context).typography.title
+                  : theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ))
+              ?.copyWith(
+                color: folded
+                    ? theme.colorScheme.onPrimaryContainer
+                    : theme.colorScheme.onSurface,
+              ),
+    );
     Widget titleRow({bool folded = false}) => Row(
       children: [
-        Image.asset('assets/logos/transparent.png', width: 28, height: 28),
-        const SizedBox(width: 10),
-        Flexible(
-          child: ReadableShellTitle(
-            title,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: folded
-                  ? theme.colorScheme.onPrimaryContainer
-                  : theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
+        if (!document) ...[
+          Image.asset('assets/logos/transparent.png', width: 28, height: 28),
+          const SizedBox(width: 10),
+        ],
+        Flexible(child: titleText(folded: folded)),
         if (status != null && !folded) ...[
           const SizedBox(width: 8),
           AssistantHeaderStatusChip(
@@ -94,6 +104,7 @@ class AssistantModeTitle extends StatelessWidget {
                 message: context.l10n.assistantRenameTitle,
                 child: AppButton.ghost(
                   key: const ValueKey('assistant-name-title'),
+                  alignment: document ? AlignmentDirectional.centerStart : null,
                   onPressed: () {
                     if (!current()) return;
                     final latest = overrides.state.registrationForLocation(
@@ -113,21 +124,15 @@ class AssistantModeTitle extends StatelessWidget {
                   },
                   child: Row(
                     children: [
-                      Image.asset(
-                        'assets/logos/transparent.png',
-                        width: 28,
-                        height: 28,
-                      ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: ReadableShellTitle(
-                          title,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: theme.colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          ),
+                      if (!document) ...[
+                        Image.asset(
+                          'assets/logos/transparent.png',
+                          width: 28,
+                          height: 28,
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                      ],
+                      Flexible(child: titleText()),
                     ],
                   ),
                 ),

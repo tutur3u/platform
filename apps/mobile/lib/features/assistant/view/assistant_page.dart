@@ -45,6 +45,7 @@ import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/models/assistant_mobile_screen_context.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_controller.dart';
+import 'package:mobile/features/assistant/theme/assistant_theme_preferences.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_scope.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_session_source.dart';
 import 'package:mobile/features/assistant/theme/assistant_theme_sheet.dart';
@@ -55,7 +56,9 @@ import 'package:mobile/features/assistant/widgets/assistant_capture_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_dock.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_launcher.dart';
+import 'package:mobile/features/assistant/widgets/assistant_composer_panel.dart';
 import 'package:mobile/features/assistant/widgets/assistant_composer_primary_action.dart';
+import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
@@ -93,6 +96,7 @@ part 'assistant_page_message_actions.dart';
 part 'assistant_page_live_actions.dart';
 part 'assistant_page_live_call.dart';
 part 'assistant_page_layout.dart';
+part 'assistant_page_composer.dart';
 part 'assistant_page_workspace.dart';
 part 'assistant_page_attachments.dart';
 part 'assistant_page_chrome.dart';
@@ -103,6 +107,8 @@ part 'assistant_page_submission.dart';
 class AssistantPage extends StatefulWidget {
   const AssistantPage({
     this.replayToken = 0,
+    this.shellLocation,
+    this.conversationsClock,
     super.key,
     this.repository,
     this.preferences,
@@ -112,6 +118,10 @@ class AssistantPage extends StatefulWidget {
   });
 
   final int replayToken;
+
+  /// Current location of the shell that retains this tab across its routes.
+  final String? shellLocation;
+  final DateTime Function()? conversationsClock;
   final AssistantRepository? repository;
   final AssistantPreferences? preferences;
   final String? Function()? currentActor;
@@ -146,6 +156,9 @@ class _AssistantPageState extends State<AssistantPage>
   );
   late final _chatTheme = AssistantThemeController(actor: _chatThemeActor);
   double? _composerHeight;
+  bool get _usesPageComposer => widget.shellLocation != null;
+  bool get _showsConversations =>
+      widget.shellLocation == Routes.assistantConversations;
   bool _settingsWritePending = false;
   bool _newConversationPending = false;
   void _dismissCreationBanner(String wsId) => setState(
@@ -388,7 +401,10 @@ class _AssistantPageState extends State<AssistantPage>
   @override
   Widget build(BuildContext context) => BackButtonListener(
     onBackButtonPressed: () async {
-      if (!TickerMode.valuesOf(context).enabled || !_isComposerVisible) {
+      if ((_usesPageComposer &&
+              !context.read<AssistantChromeCubit>().state.isLiveMode) ||
+          !TickerMode.valuesOf(context).enabled ||
+          !_isComposerVisible) {
         return false;
       }
       final chrome = context.read<AssistantChromeCubit>();
@@ -495,6 +511,7 @@ class _AssistantPageState extends State<AssistantPage>
   void _handleScroll() {
     _transcriptFollower.observeScroll();
     if (!mounted ||
+        _usesPageComposer ||
         _ignoreScrollVisibilityUpdates ||
         !_scrollController.hasClients) {
       return;
@@ -552,7 +569,9 @@ class _AssistantPageState extends State<AssistantPage>
     }
 
     if (!value) _dismissKeyboard();
-    context.read<AssistantChromeCubit>().setComposerVisible(visible: value);
+    if (!_usesPageComposer) {
+      context.read<AssistantChromeCubit>().setComposerVisible(visible: value);
+    }
     setState(() => _isComposerVisible = value);
   }
 
@@ -599,6 +618,11 @@ class _AssistantPageState extends State<AssistantPage>
     BuildContext context, {
     required bool isComposerVisible,
   }) {
+    if (_usesPageComposer) {
+      return assistantPageComposerClearance(context) +
+          (_composerHeight ?? assistantComposerHeight(context)) +
+          12;
+    }
     return assistantTranscriptBottomClearance(
       context,
       composerVisible: isComposerVisible,

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/notifications/widgets/notifications_action_button.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
@@ -479,6 +480,25 @@ class _ShellActionButton extends StatelessWidget {
       ),
     );
 
+    if (action.filled) {
+      final label = action.tooltip ?? action.id;
+      return Padding(
+        padding: const EdgeInsetsDirectional.only(start: 4),
+        child: AppButton.primary(
+          key: ValueKey('shell-action-button-${action.id}'),
+          semanticLabel: label,
+          onPressed: action.enabled && !action.isLoading
+              ? () => _invokeShellAction(action)
+              : null,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.38,
+            ),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+          ),
+        ),
+      );
+    }
     return KeyedSubtree(
       key: ValueKey<String>('shell-action-button-${action.id}'),
       child: AnimatedOpacity(

@@ -189,10 +189,12 @@ extension _AssistantPageLayout on _AssistantPageState {
                             hasTranscript ||
                             chatState.isBusy ||
                             chatState.status == AssistantChatStatus.error;
-                        final starterPrompts = AssistantStarterPrompts(
-                          onPromptSelected: _applyStarterPrompt,
-                          replayToken: widget.replayToken,
-                        );
+                        final starterPrompts = _usesPageComposer
+                            ? const SizedBox.shrink()
+                            : AssistantStarterPrompts(
+                                onPromptSelected: _applyStarterPrompt,
+                                replayToken: widget.replayToken,
+                              );
                         bool onTranscriptNotification(
                           Notification notification,
                         ) {
@@ -394,6 +396,12 @@ extension _AssistantPageLayout on _AssistantPageState {
                                     ),
                                     if (hasTranscript)
                                       AssistantScrollToBottomOverlay(
+                                        bottomClearance: _usesPageComposer
+                                            ? _composerReservedSpace(
+                                                context,
+                                                isComposerVisible: true,
+                                              )
+                                            : null,
                                         composerVisible: _isComposerVisible,
                                         composerHeight: _composerHeight,
                                         isFullscreen: isFullscreen,
@@ -403,147 +411,33 @@ extension _AssistantPageLayout on _AssistantPageState {
                                         onPressed: _handleScrollToBottomPressed,
                                       ),
                                   ],
-                                  ShellDockPublisher(
-                                    slot: ShellDockSlot(
-                                      location: Routes.assistant,
-                                      workspaceId: currentWorkspace.id,
-                                      composing: isLiveMode
-                                          ? !chrome.navigationExpanded
-                                          : _isComposerVisible,
-                                      content: isLiveMode
-                                          ? _liveCallDock(
-                                              currentWorkspace.id,
-                                              chatState,
-                                              liveState,
-                                            )
-                                          : AssistantComposerDock(
-                                              embedded: true,
-                                              onCancelReply: () {
-                                                if (messageActionsCurrent()) {
-                                                  _chatCubit.clearReplyTarget();
-                                                }
-                                              },
-                                              onHeightChanged:
-                                                  _setComposerHeight,
-                                              localOnly: localLane,
-                                              localBlocked:
-                                                  localLane &&
-                                                  (!local.ready ||
-                                                      local.phase !=
-                                                          LocalChatPhase.idle),
-                                              localGenerating:
-                                                  local.phase ==
-                                                  LocalChatPhase.generating,
-                                              localModelLabel: _localModelLabel(
-                                                local.selectedModelId,
-                                              ),
-                                              onOpenLocalModels:
-                                                  _showLiveSettings,
-                                              onStopLocal: _localCubit.stop,
-                                              voiceCapture: localLane
-                                                  ? null
-                                                  : _voiceCapture,
-                                              onAttachVoice: () =>
-                                                  _finishVoiceRecording(
-                                                    sendNow: false,
-                                                  ),
-                                              onSendVoice: () =>
-                                                  _finishVoiceRecording(
-                                                    sendNow: true,
-                                                  ),
-                                              repository: _repository,
-                                              chatState: chatState,
-                                              chatCubit: _chatCubit,
-                                              liveState: liveState,
-                                              liveUiState: liveUiState,
-                                              shellState: shellState,
-                                              navigationExpanded:
-                                                  chrome.navigationExpanded,
-                                              bottomInset: 0,
-                                              isPersonalWorkspace:
-                                                  isPersonalWorkspace,
-                                              onModelSelected:
-                                                  _selectRemoteModel,
-                                              onOpenCreditSourceSheet: () =>
-                                                  _showCreditSourceSheet(
-                                                    context,
-                                                    shellState: shellState,
-                                                    isPersonalWorkspace:
-                                                        isPersonalWorkspace,
-                                                  ),
-                                              onThinkingModeChanged:
-                                                  _shellCubit.setThinkingMode,
-                                              controller: _inputController,
-                                              focusNode: _inputFocusNode,
-                                              onOpenAttachments: () =>
-                                                  _showAttachmentSheet(
-                                                    context,
-                                                    currentWorkspace.id,
-                                                  ),
-                                              onCloseComposer:
-                                                  _collapseComposerToFab,
-                                              onToggleNavigation:
-                                                  _toggleComposerNavigation,
-                                              onMicrophoneTap: () =>
-                                                  _recordVoiceMessage(
-                                                    currentWorkspace.id,
-                                                  ),
-                                              onSend: () => _handleSend(
-                                                currentWorkspace.id,
-                                              ),
-                                              onRemoveAttachment:
-                                                  removeComposerAttachment,
-                                              onRetryAttachment:
-                                                  retryComposerAttachment,
-                                            ),
-                                      primary: isLiveMode
-                                          ? _livePrimaryAction()
-                                          : _isComposerVisible
-                                          ? AssistantComposerPrimaryAction(
-                                              key: const ValueKey(
-                                                'assistant-dock-primary',
-                                              ),
-                                              controller: _inputController,
-                                              focusNode: _inputFocusNode,
-                                              onToggleNavigation:
-                                                  _toggleComposerNavigation,
-                                              onSend: () => _handleSend(
-                                                currentWorkspace.id,
-                                              ),
-                                              voiceCapture: localLane
-                                                  ? null
-                                                  : _voiceCapture,
-                                              onSendVoice: () =>
-                                                  _finishVoiceRecording(
-                                                    sendNow: true,
-                                                  ),
-                                              hasAttachments: chatState
-                                                  .composerAttachments
-                                                  .isNotEmpty,
-                                              blocked:
-                                                  (localLane &&
-                                                      (!local.ready ||
-                                                          local.phase !=
-                                                              LocalChatPhase
-                                                                  .idle)) ||
-                                                  chatState.status ==
-                                                      AssistantChatStatus
-                                                          .restoring,
-                                              localGenerating:
-                                                  localLane &&
-                                                  local.phase ==
-                                                      LocalChatPhase.generating,
-                                              onStopLocal: _localCubit.stop,
-                                            )
-                                          : AssistantComposerFab(
-                                              label: context
-                                                  .l10n
-                                                  .assistantAskPlaceholder,
-                                              onPressed:
-                                                  _restoreComposerAndFocus,
-                                            ),
+                                  if (isLiveMode)
+                                    _buildLiveDock(
+                                      wsId: currentWorkspace.id,
+                                      chatState: chatState,
+                                      liveState: liveState,
+                                      chrome: chrome,
+                                    )
+                                  else
+                                    _buildComposer(
+                                      context: context,
+                                      wsId: currentWorkspace.id,
+                                      chatState: chatState,
+                                      liveState: liveState,
+                                      liveUiState: liveUiState,
+                                      shellState: shellState,
+                                      local: local,
+                                      isPersonalWorkspace: isPersonalWorkspace,
+                                      localLane: localLane,
+                                      chrome: chrome,
+                                      messageActionsCurrent:
+                                          messageActionsCurrent,
+                                      removeComposerAttachment:
+                                          removeComposerAttachment,
+                                      retryComposerAttachment:
+                                          retryComposerAttachment,
+                                      showSuggestions: !keyboardVisible,
                                     ),
-                                  ),
                                   _localHeader(shellState, local),
                                   ShellChromeActions(
                                     ownerId: 'assistant-root',
@@ -614,6 +508,7 @@ extension _AssistantPageLayout on _AssistantPageState {
       chatState: chatState,
       liveState: liveState,
       assistantName: shellState.soul.name,
+      documentLayout: _usesPageComposer,
       actorId: _currentActor(),
       canPersistMessage: remote ? _chatCubit.canPersistMessage : null,
       needsReactionRefresh: remote ? _chatCubit.needsReactionRefresh : null,

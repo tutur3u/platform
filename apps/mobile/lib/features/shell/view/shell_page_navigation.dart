@@ -43,7 +43,8 @@ extension _ShellPageNavigation on _ShellPageState {
   }
 
   bool _showsGlobalBack(String location) =>
-      location == Routes.notificationsArchive;
+      location == Routes.notificationsArchive ||
+      location == Routes.assistantConversations;
 
   Widget _buildCompactNavIcon({
     required IconData icon,

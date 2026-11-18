@@ -28,12 +28,14 @@ class AssistantComposerOptions extends StatelessWidget {
     this.repository,
     this.chatCubit,
     this.onDismissKeyboard,
+    this.hasDirectAttachment = false,
     this.localOnly = false,
     this.localModelLabel,
     this.onOpenLocalModels,
     super.key,
   });
   final bool localOnly;
+  final bool hasDirectAttachment;
   final String? localModelLabel;
   final Future<void> Function()? onOpenLocalModels;
   final VoidCallback onCloseComposer;
@@ -88,8 +90,9 @@ class AssistantComposerOptions extends StatelessWidget {
     return AppIconButton(
       key: const ValueKey('assistant-composer-options'),
       tooltip: context.l10n.assistantSettingsTitle,
-      // Attachments already show above the prompt; the control stays Plus.
-      icon: const Icon(LucideIcons.plus),
+      icon: Icon(
+        hasDirectAttachment ? LucideIcons.slidersHorizontal : LucideIcons.plus,
+      ),
       onPressed: () {
         final owningChat = chatCubit ?? context.read<AssistantChatCubit?>();
         onDismissKeyboard?.call();
@@ -126,11 +129,12 @@ class AssistantComposerOptions extends StatelessWidget {
                             unawaited(onRemoveAttachment(attachment.id));
                           },
                         ),
-                      option(
-                        _ComposerOption.attach,
-                        LucideIcons.paperclip,
-                        sheetContext.l10n.assistantAttachFilesAction,
-                      ),
+                      if (!hasDirectAttachment)
+                        option(
+                          _ComposerOption.attach,
+                          LucideIcons.paperclip,
+                          sheetContext.l10n.assistantAttachFilesAction,
+                        ),
                     ],
                     option(
                       _ComposerOption.model,

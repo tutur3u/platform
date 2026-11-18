@@ -16,6 +16,7 @@ abstract final class Routes {
   static const home = '/';
   static const apps = '/apps';
   static const assistant = '/assistant';
+  static const assistantConversations = '/assistant/conversations';
   static const chat = '/chat';
   static const mail = '/mail';
   static const notifications = '/notifications';

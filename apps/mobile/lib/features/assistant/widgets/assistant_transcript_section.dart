@@ -15,6 +15,7 @@ class AssistantTranscriptSection extends StatefulWidget {
     required this.liveState,
     required this.assistantName,
     this.onRetry,
+    this.documentLayout = false,
     this.actorId,
     this.canPersistMessage,
     this.needsReactionRefresh,
@@ -27,6 +28,7 @@ class AssistantTranscriptSection extends StatefulWidget {
   });
 
   final AssistantChatState chatState;
+  final bool documentLayout;
   final AssistantLiveState liveState;
   final String assistantName;
   final VoidCallback? onRetry;
@@ -123,6 +125,7 @@ class _AssistantTranscriptSectionState
               )),
               padding: const EdgeInsets.only(bottom: 14),
               child: AssistantTranscriptBubble(
+                documentLayout: widget.documentLayout,
                 reactions: message.reactions,
                 actorId: widget.actorId,
                 isActionCurrent: widget.isActionCurrent,
@@ -192,6 +195,7 @@ class _AssistantTranscriptSectionState
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
+              documentLayout: widget.documentLayout,
               label: context.l10n.assistantLiveDraftUser,
               alignEnd: true,
               text: widget.liveState.userDraft,
@@ -208,6 +212,7 @@ class _AssistantTranscriptSectionState
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: AssistantTranscriptBubble(
+              documentLayout: widget.documentLayout,
               orderedParts: widget.liveState.assistantParts,
               label: context.l10n.assistantLiveDraftAssistant,
               alignEnd: false,

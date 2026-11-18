@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/widgets/assistant_action_card.dart';
 import 'package:mobile/features/assistant/widgets/assistant_markdown_body.dart';
 import 'package:mobile/features/assistant/widgets/assistant_source_link.dart';
 import 'package:mobile/features/assistant/widgets/assistant_thinking_accordion.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/features/assistant/widgets/assistant_tool_steps.dart';
 List<Widget> assistantOrderedPartWidgets(
   List<AssistantMessagePart> parts, {
   required bool active,
+  bool documentLayout = false,
 }) {
   final children = <Widget>[];
   final reasoning = <AssistantMessagePart>[];
@@ -22,7 +24,8 @@ List<Widget> assistantOrderedPartWidgets(
     if (part.type == 'reasoning' && (part.text?.trim().isNotEmpty ?? false)) {
       reasoning.add(part);
     } else if (part.type == 'dynamic-tool' &&
-        !isAssistantInlineImageToolPart(part)) {
+        !isAssistantInlineImageToolPart(part) &&
+        (!documentLayout || part.state != 'output-available')) {
       if (firstTool < 0) firstTool = index;
       tools.add(part);
     } else if (part.type == 'text' && (part.text?.trim().isNotEmpty ?? false)) {
@@ -78,6 +81,16 @@ List<Widget> assistantOrderedPartWidgets(
         ),
       );
     }
+  }
+  if (documentLayout) {
+    children.addAll(
+      assistantCompletedActionParts(parts).map(
+        (part) => AssistantCompletedActionCard(
+          key: part.toolCallId == null ? null : ValueKey(part.toolCallId),
+          part: part,
+        ),
+      ),
+    );
   }
   return children;
 }

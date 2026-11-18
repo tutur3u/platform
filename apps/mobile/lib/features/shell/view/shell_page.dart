@@ -70,6 +70,7 @@ class ShellPage extends StatefulWidget {
     required this.matchedLocation,
     this.enableDebugLogs = kDebugMode,
     this.assistantPageBuilder,
+    this.assistantConversationsEnabled = false,
     this.homePageBuilder,
     this.notificationsPageBuilder,
     this.profilePageBuilder,
@@ -85,6 +86,9 @@ class ShellPage extends StatefulWidget {
   /// change within one pattern updates its page in place.
   final String? routePattern;
   final bool enableDebugLogs;
+
+  /// Hosts both Assistant destinations in one retained root tab.
+  final bool assistantConversationsEnabled;
   @visibleForTesting
   final Widget Function(int replayToken)? assistantPageBuilder;
   @visibleForTesting
@@ -139,6 +143,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
   bool _showMiniNav = true;
   String? _lastLayeredLocation;
   final List<String> _routeHistory = [];
+  String get _bodyLocation =>
+      widget.matchedLocation == Routes.assistantConversations
+      ? Routes.assistant
+      : widget.matchedLocation;
+
   String _lastRootLocation = Routes.home;
   bool _hasVisitedRoot = false;
   DateTime? _lastExitAttemptAt;
@@ -207,8 +216,8 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       (_) => _setShellState(() {}),
     );
     unawaited(_rootTabs.load());
-    _hasVisitedRoot = _isRootTabLocation(widget.matchedLocation);
-    if (_hasVisitedRoot) _lastRootLocation = widget.matchedLocation;
+    _hasVisitedRoot = _isRootTabLocation(_bodyLocation);
+    if (_hasVisitedRoot) _lastRootLocation = _bodyLocation;
     _pageKey = _currentPageKey();
   }
 
@@ -247,9 +256,9 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
       _lastScrolledDockRoute = null;
       _resetReusedPageScroll(oldWidget.matchedLocation);
     }
-    final isRoot = _isRootTabLocation(widget.matchedLocation);
+    final isRoot = _isRootTabLocation(_bodyLocation);
     if (isRoot) {
-      _lastRootLocation = widget.matchedLocation;
+      _lastRootLocation = _bodyLocation;
       _hasVisitedRoot = true;
     } else if (_isRootTabLocation(oldWidget.matchedLocation)) {
       unawaited(
@@ -398,6 +407,11 @@ class _ShellPageState extends State<ShellPage> with WidgetsBindingObserver {
 
   Future<void> _handleBackNavigation(BuildContext context) async {
     final currentLocation = _normalizeRouteLocation(widget.matchedLocation);
+    if (currentLocation == Routes.assistantConversations) {
+      _isHandlingBackNavigation = true;
+      context.go(Routes.assistant);
+      return;
+    }
     final assistantChrome = context.read<AssistantChromeCubit>();
     if (currentLocation == Routes.assistant &&
         assistantChrome.state.composerVisible) {
