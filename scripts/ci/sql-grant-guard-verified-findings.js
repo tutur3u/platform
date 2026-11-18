@@ -476,4 +476,44 @@ module.exports = [
     reason:
       'SECURITY INVOKER internal helper private.require_citation_library_access(uuid,uuid) with search_path pg_catalog, pg_temp, called only from the reviewed service_role-only definer RPCs in the same file; the multi-signature REVOKE ALL at :249-253 removes PUBLIC, anon, authenticated and service_role from it and no later statement grants it, so it ends with no client or service grant; only the no-grant marker is missing; preserve staging-applied 20261118191500 bytes',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261119003000_reconcile_mail_notification_reads.sql',
+    line: 5,
+    rule: 'function-acl',
+    fileDigest:
+      'e27409538d3f8e53a93e597164bbd9fc2ad42d9f3dfeb13a6aa3bb2147d5fab4',
+    digest: '5759fc65f6e9b4d0fe6cfaf80319e7093e72fec799ac4b1499884bece21addcb',
+    reason:
+      'SECURITY DEFINER trigger function private.stamp_mail_notification_consumption() with search_path pg_catalog, pg_temp, attached only by the BEFORE INSERT OR UPDATE stamp_mail_notification_consumption trigger on private.mail_message_user_state; the REVOKE ALL at :16 removes PUBLIC, anon and authenticated and no later statement grants it, so a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261119003000 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261119003000_reconcile_mail_notification_reads.sql',
+    line: 22,
+    rule: 'function-acl',
+    fileDigest:
+      'e27409538d3f8e53a93e597164bbd9fc2ad42d9f3dfeb13a6aa3bb2147d5fab4',
+    digest: '204b348f9e4bd5a358c1dd2b35cf7ccd68f2c086214b09477e85bc4279860040',
+    reason:
+      'SECURITY DEFINER trigger function private.reconcile_mail_read_notifications() with search_path pg_catalog, pg_temp, attached only by the AFTER INSERT OR UPDATE reconcile_mail_read_notifications trigger on private.mail_message_user_state; the REVOKE ALL at :38 removes PUBLIC, anon and authenticated and no later statement grants it, so a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261119003000 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261119003000_reconcile_mail_notification_reads.sql',
+    line: 47,
+    rule: 'function-acl',
+    fileDigest:
+      'e27409538d3f8e53a93e597164bbd9fc2ad42d9f3dfeb13a6aa3bb2147d5fab4',
+    digest: 'd495e8b995e5dcae0c93ea3a387a5d55a74b45528c831e9b8ac3228c6f8b24ac',
+    reason:
+      'SECURITY DEFINER trigger function private.apply_mail_read_state_to_notification() with search_path pg_catalog, pg_temp, attached only by the BEFORE INSERT apply_mail_read_state_to_notification trigger on public.notifications; the REVOKE ALL at :65 removes PUBLIC, anon and authenticated and no later statement grants it, so a direct call fails because trigger functions run only as triggers; only the no-grant marker is missing; preserve staging-applied 20261119003000 bytes',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261119003000_reconcile_mail_notification_reads.sql',
+    line: 75,
+    rule: 'dynamic-sql-review',
+    fileDigest:
+      'e27409538d3f8e53a93e597164bbd9fc2ad42d9f3dfeb13a6aa3bb2147d5fab4',
+    digest: '721d5f2542f04b3d72ab6b3a225b4bdc85ed26416983fdef777537b34f2d7a6c',
+    reason:
+      'Reviewed static bounded DO block: one capped repair of notifications already consumed in Mail state, with a 50000-row guard; no EXECUTE, routine creation, grants or caller-controlled SQL; preserve staging-applied 20261119003000 bytes',
+  },
 ];
