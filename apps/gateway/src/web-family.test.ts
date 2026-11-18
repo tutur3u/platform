@@ -39,7 +39,10 @@ function setup(options: {
     ...(options.mode ? { GATEWAY_MODE: options.mode } : {}),
     ...(options.bound === false
       ? {}
-      : { WEB_FAMILY_API_IDENTITY: { fetch: family } }),
+      : {
+          WEB_FAMILY_API_IDENTITY: { fetch: family },
+          WEB_FAMILY_PUBLIC_DOCS: { fetch: family },
+        }),
   } as unknown as Env;
   const handle = createHandler({
     cache: () => cache,
@@ -347,6 +350,20 @@ describe('web family matching', () => {
     await t.call('/api/v1/auth/accounts/switch');
     expect(t.family).not.toHaveBeenCalled();
     expect(await (await t.call('/api/v1/auth/otp')).text()).toBe('family');
+  });
+
+  it('keeps denied public-docs asset paths on WEB_ORIGIN after prefix stripping', async () => {
+    const t = setup({ flags: 'public-docs' });
+    expect(await (await t.call('/_f/public-docs/_next/image')).text()).toBe(
+      'web'
+    );
+    expect(t.family).not.toHaveBeenCalled();
+
+    const asset = await t.call('/_f/public-docs/_next/static/fixture.js');
+    expect(await asset.text()).toBe('family');
+    expect(t.family.mock.calls[0]?.[0].url).toBe(
+      'https://tuturuuu.com/_next/static/fixture.js'
+    );
   });
 
   it('matches subtrees on segment boundaries', () => {

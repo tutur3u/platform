@@ -90,13 +90,16 @@ export function webFamilyTarget(
   if (!env.PUBLIC_HOST || url.host !== env.PUBLIC_HOST) return null;
   const { pathname } = url;
   if (!isCanonicalPath(pathname)) return null;
-  if (config.deny.some((entry) => inSubtree(pathname, entry))) return null;
+  const isDenied = (path: string) =>
+    config.deny.some((entry) => inSubtree(path, entry));
+  if (isDenied(pathname)) return null;
   const flagged = flaggedFamilies(env);
   if (flagged.size === 0) return null;
   for (const family of config.families) {
     if (!flagged.has(family.id)) continue;
     const path = matchFamily(pathname, family, manifest.locales);
     if (path === null) continue;
+    if (path !== pathname && isDenied(path)) return null;
     if (!BINDING_PATTERN.test(family.binding)) return null;
     const binding = (env as unknown as Record<string, unknown>)[family.binding];
     if (
