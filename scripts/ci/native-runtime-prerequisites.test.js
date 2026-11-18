@@ -95,7 +95,16 @@ test('setup preserves Ubuntu signing and suites, bounds apt transport and runs t
   );
   assert.equal(
     fs.readFileSync(fixture.config, 'utf8'),
-    'Acquire::Retries "3";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\nAPT::Update::Error-Mode "any";\n'
+    [
+      'Acquire::Retries "3";',
+      'Acquire::http::Timeout "20";',
+      'Acquire::https::Timeout "20";',
+      'APT::Update::Error-Mode "any";',
+      // Vendor feeds (packages.microsoft.com) must not gate browser deps.
+      'Dir::Etc::sourcelist "/etc/apt/sources.list.d/ubuntu.sources";',
+      'Dir::Etc::sourceparts "-";',
+      '',
+    ].join('\n')
   );
 });
 

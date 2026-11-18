@@ -19,11 +19,15 @@ runs:
         set -euo pipefail
         # Playwright invokes sudo without preserving APT_CONFIG. Configure the
         # disposable runner so its elevated apt process receives these settings.
+        # Browser OS packages come from Ubuntu only: runner vendor feeds such as
+        # packages.microsoft.com would otherwise fail the strict update.
         sudo tee /etc/apt/apt.conf.d/99-native-runtime >/dev/null <<'EOF'
         Acquire::Retries "3";
         Acquire::http::Timeout "20";
         Acquire::https::Timeout "20";
         APT::Update::Error-Mode "any";
+        Dir::Etc::sourcelist "/etc/apt/sources.list.d/ubuntu.sources";
+        Dir::Etc::sourceparts "-";
         EOF
         # Keep suites, components and Signed-By; bypass the slow Azure mirror.
         sudo sed -i 's|^URIs:.*|URIs: https://archive.ubuntu.com/ubuntu|' /etc/apt/sources.list.d/ubuntu.sources

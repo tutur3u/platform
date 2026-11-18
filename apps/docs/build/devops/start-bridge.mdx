@@ -448,7 +448,10 @@ Runtime setup uses `.github/actions/install-native-runtime-prerequisites` in
 both validation and restore acceptance. On the disposable Ubuntu runner it
 keeps Ubuntu's suites, components and signing key, selects the official HTTPS
 archive instead of the Azure mirror, and sets three apt acquisition retries
-with 20-second HTTP/HTTPS inactivity timeouts. Index download failures are
+with 20-second HTTP/HTTPS inactivity timeouts. Apt reads only that Ubuntu
+source list: runner vendor feeds such as `packages.microsoft.com` are ignored,
+because none of them supply browser dependencies and a vendor-feed outage
+would otherwise fail the strict index update. Index download failures are
 fatal. The existing ten-minute setup and four-minute runtime limits remain.
 Playwright still owns the complete Chromium/font dependency list and already
 uses `--no-install-recommends`; do not trim fonts to hide download failures.
