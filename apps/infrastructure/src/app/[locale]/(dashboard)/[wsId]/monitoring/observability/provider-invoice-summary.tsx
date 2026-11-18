@@ -1,6 +1,12 @@
+import type { Database } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+
+type InvoiceSummaryRow = Pick<
+  Database['private']['Tables']['external_provider_invoices']['Row'],
+  'app_id' | 'provider' | 'account_id' | 'reference' | 'issued_on' | 'amount_usd'
+>;
 
 export async function ProviderInvoiceSummary() {
   const access = await authorizeInfrastructureAdminRequest('view_finance_stats');
@@ -41,7 +47,7 @@ export async function ProviderInvoiceSummary() {
             </tr>
           </thead>
           <tbody>
-            {data.map((row) => (
+            {data.map((row: InvoiceSummaryRow) => (
               <tr key={JSON.stringify([row.app_id, row.provider, row.account_id, row.reference])}>
                 <td>{row.issued_on}</td>
                 <td>{row.provider}</td>
