@@ -86,9 +86,13 @@ test('superseded PR runs cancel, production release evidence does not', () => {
   for (const name of ['i18n-check.yaml', 'e2e-tests.yaml']) {
     const concurrency = readWorkflow(name).concurrency;
     const policy = concurrency['cancel-in-progress'];
+    const mainExemption =
+      name === 'i18n-check.yaml' ? "github.ref != 'refs/heads/main' && " : '';
     assert.equal(
       policy,
-      "${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}"
+      "${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && " +
+        mainExemption +
+        "github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}"
     );
     assert.equal(
       concurrency.group,
