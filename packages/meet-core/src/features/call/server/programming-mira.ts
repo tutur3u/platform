@@ -59,6 +59,35 @@ const actionSchema = z
     ])
   );
 
+async function programmingMiraProvider(access: Access) {
+  const cloudflare = await getCloudflareContext({ async: true }).catch(
+    () => null
+  );
+  const env = cloudflare?.env as
+    | {
+        MEET_AI_DISABLED?: string;
+        GOOGLE_GENERATIVE_AI_API_KEY?: string;
+      }
+    | undefined;
+  const requireAuthority = async () => {
+    const authority = await readMiraDemoAuthority({
+      accountId: access.user.id,
+      workspaceId: access.meeting.ws_id,
+      meetingId: access.meeting.id,
+      workspaceMember: access.canReadWorkspace,
+      admitted: true,
+      disabledBinding: env?.MEET_AI_DISABLED,
+    });
+    if (!authority.allowed)
+      throw new MeetCallAccessError(
+        403,
+        'Private Mira is unavailable',
+        'MIRA_ACCOUNT_UNAVAILABLE'
+      );
+  };
+  return { apiKey: env?.GOOGLE_GENERATIVE_AI_API_KEY, requireAuthority };
+}
+
 export async function readMeetingProgrammingMira(access: Access) {
   const read = await selectedProgrammingMira(access);
   if (!read.selection)
@@ -132,6 +161,11 @@ export async function changeMeetingProgrammingMira(
     return { ok: true };
   }
   if (data.action !== 'analyze') {
+    if (data.action === 'publish') {
+      const { requireAuthority } = await programmingMiraProvider(access);
+      await requirePrivateMiraChoice(access);
+      await requireAuthority();
+    }
     await callRoomService(access, {
       action: 'programming.miraPresence',
       phase: data.action,
@@ -141,30 +175,8 @@ export async function changeMeetingProgrammingMira(
   }
 
   const consent = await requirePrivateMiraChoice(access);
-  const cloudflare = await getCloudflareContext({ async: true }).catch(
-    () => null
-  );
-  const env = cloudflare?.env as
-    | {
-        MEET_AI_DISABLED?: string;
-        GOOGLE_GENERATIVE_AI_API_KEY?: string;
-      }
-    | undefined;
-  const authority = await readMiraDemoAuthority({
-    accountId: access.user.id,
-    workspaceId: access.meeting.ws_id,
-    meetingId: access.meeting.id,
-    workspaceMember: access.canReadWorkspace,
-    admitted: true,
-    disabledBinding: env?.MEET_AI_DISABLED,
-  });
-  if (!authority.allowed)
-    throw new MeetCallAccessError(
-      403,
-      'Private Mira is unavailable',
-      'MIRA_ACCOUNT_UNAVAILABLE'
-    );
-  const apiKey = env?.GOOGLE_GENERATIVE_AI_API_KEY;
+  const { apiKey, requireAuthority } = await programmingMiraProvider(access);
+  await requireAuthority();
   if (data.source === 'chat' && !apiKey)
     throw new MeetCallAccessError(
       503,
@@ -225,6 +237,7 @@ export async function changeMeetingProgrammingMira(
           'Private Mira choice changed',
           'MIRA_CONSENT_REQUIRED'
         );
+      await requireAuthority();
     };
     const { requestPersonalMeetChat } = await import('./personal-chat-request');
     const result = await requestPersonalMeetChat(
@@ -255,7 +268,6 @@ export async function changeMeetingProgrammingMira(
     const answer = programmingMiraAnswerSchema.parse(
       JSON.parse(result.text.trim().replace(/^```(?:json)?\s*|\s*```$/gi, ''))
     );
-    await checkConsent();
     await callRoomService(access, {
       action: 'programming.miraPresence',
       phase: 'draft',
@@ -265,6 +277,7 @@ export async function changeMeetingProgrammingMira(
         replacement: data.intent === 'explain' ? null : answer.replacement,
       },
     });
+    await checkConsent();
     await callRoomService(access, {
       action: 'programming.miraPresence',
       phase: 'publish',

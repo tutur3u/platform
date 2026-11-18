@@ -195,6 +195,11 @@ export async function joinMeetingProgramming(
   access: Access,
   checkpoint = false
 ) {
+  if (checkpoint && !access.isHost)
+    throw new MeetCallAccessError(
+      403,
+      'Only the host can checkpoint programming'
+    );
   const selection = await selected(access);
   if (!selection) return { selection: null };
   const scope = await meetingProgrammingScope(access, selection);

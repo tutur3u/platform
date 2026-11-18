@@ -147,7 +147,7 @@ export function ProgrammingWorkbench({
   const save = useMutation({ mutationFn: checkpointRoom });
   const run = useMutation({
     mutationFn: async (operation: 'run' | 'stop') => {
-      if (operation === 'run' && canExecute) await checkpointRoom();
+      if (operation === 'run' && owner) await checkpointRoom();
       const payload = { operation, requestId: crypto.randomUUID(), stdin };
       const queued = execution
         ? await execution.run(payload)
@@ -206,7 +206,7 @@ export function ProgrammingWorkbench({
             linked.linkedFailure === `${tests.submissionId}:${item.index}`
         )
       : undefined;
-  const canCheckpoint = editable && (problem ? !!meeting && owner : canExecute);
+  const canCheckpoint = owner && editable && (!problem || !!meeting);
   const selectedSave = save.isError
     ? 'failed'
     : saveState(room.saveError, room.savedRevision);
@@ -310,7 +310,7 @@ export function ProgrammingWorkbench({
                   pending: run.isPending || save.isPending,
                   onRun: () => run.mutate('run'),
                   onStop: () => run.mutate('stop'),
-                  onSave: () => save.mutate(),
+                  onSave: canCheckpoint ? () => save.mutate() : undefined,
                 }
               : { kind: 'none' }
         }

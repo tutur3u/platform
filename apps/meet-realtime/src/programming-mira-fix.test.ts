@@ -1,11 +1,16 @@
 import {
+  type CollaborationTicket,
   createProgrammingDocument,
   programmingDocumentSnapshot,
   Y,
 } from '@tuturuuu/realtime/collaboration/server';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildMiraFixUpdate, miraCodeExcerpt } from './programming-mira-fix';
+import {
+  buildMiraFixUpdate,
+  handleProgrammingMiraFix,
+  miraCodeExcerpt,
+} from './programming-mira-fix';
 
 const range = { filePath: 'solution.py', startLine: 2, endLine: 2 };
 test('patches the exact Yjs range and preserves the other lines', () => {
@@ -52,4 +57,85 @@ test('rejects stale fixes after a concurrent source edit', () => {
     null
   );
   doc.destroy();
+});
+
+function readFixture(body: ReadableStream<Uint8Array>, exp: number) {
+  const doc = createProgrammingDocument(
+    [{ path: range.filePath, content: 'a\nb' }],
+    ''
+  );
+  const init: RequestInit & { duplex: 'half' } = {
+    body,
+    method: 'POST',
+    duplex: 'half',
+  };
+  const request = new Request(
+    'https://example.invalid/collaboration/mira-code',
+    init
+  );
+  const ticket = { role: 'owner', exp } as CollaborationTicket;
+  return {
+    doc,
+    response: handleProgrammingMiraFix({
+      request,
+      ticket,
+      doc,
+      state: {} as DurableObjectState,
+      documentKey: 'fixture',
+      publish: async () => assert.fail('Read must not publish'),
+    }),
+  };
+}
+
+test('cancels an oversized stream according to transmitted UTF-8 bytes', async () => {
+  let chunks = 0;
+  let cancelled = false;
+  const bytes = new TextEncoder().encode('é'.repeat(28_000));
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        chunks++;
+        controller.enqueue(bytes);
+      },
+      cancel() {
+        cancelled = true;
+      },
+    },
+    { highWaterMark: 0 }
+  );
+  const { doc, response } = readFixture(
+    body,
+    Math.floor(Date.now() / 1000) + 60
+  );
+  try {
+    assert.equal((await response).status, 413);
+    assert.equal(chunks, 2);
+    assert.ok(cancelled);
+  } finally {
+    doc.destroy();
+  }
+});
+
+test('withholds code when the ticket expires while the command body is read', async (t) => {
+  const exp = 2_000_000_000;
+  let now = (exp - 1) * 1000;
+  t.mock.method(Date, 'now', () => now);
+  const body = new ReadableStream<Uint8Array>(
+    {
+      pull(controller) {
+        now = exp * 1000;
+        controller.enqueue(
+          new TextEncoder().encode(JSON.stringify({ action: 'read', range }))
+        );
+        controller.close();
+      },
+    },
+    { highWaterMark: 0 }
+  );
+  const { doc, response } = readFixture(body, exp);
+  try {
+    assert.equal((await response).status, 403);
+  } finally {
+    doc.destroy();
+  }
 });

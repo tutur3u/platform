@@ -1,7 +1,10 @@
 import type { Session } from '@google/genai/web';
 import { applyLiveCheckpoint } from '../../features/live-assistant/context';
 import type { LiveAssistantEvent } from '../../features/live-assistant/contracts';
-import { requireCurrentPrivateGrant } from './private-grant';
+import {
+  requireCurrentLiveDemoAuthority,
+  requireCurrentPrivateGrant,
+} from './private-grant';
 import {
   LIVE_QUIZ_ARENA_TOOLS,
   type LiveQuizArenaTool,
@@ -125,28 +128,30 @@ export async function executeLiveTool(
       return;
     }
     try {
+      const read = name === 'read_selected_code';
       await requireCurrentPrivateGrant(env, saved);
-      respond(
-        await liveRoomCommand<Record<string, unknown>>(
-          env,
-          saved.claims,
-          saved.identity,
-          {
-            action: 'programming.voiceContext',
-            sessionId: saved.claims.sessionId,
-            ...(name === 'read_selected_code'
-              ? {}
-              : {
-                  id: args.id,
-                  answer: {
-                    explanation: args.explanation,
-                    replacement:
-                      name === 'propose_code_fix' ? args.replacement : null,
-                  },
-                }),
-          }
-        )
+      await requireCurrentLiveDemoAuthority(env, saved);
+      const result = await liveRoomCommand<Record<string, unknown>>(
+        env,
+        saved.claims,
+        saved.identity,
+        {
+          action: 'programming.voiceContext',
+          sessionId: saved.claims.sessionId,
+          ...(read
+            ? {}
+            : {
+                id: args.id,
+                answer: {
+                  explanation: args.explanation,
+                  replacement:
+                    name === 'propose_code_fix' ? args.replacement : null,
+                },
+              }),
+        }
       );
+      if (read) await requireCurrentLiveDemoAuthority(env, saved);
+      respond(result);
     } catch {
       respond({
         error: 'Ask the host to share a code selection for this session',

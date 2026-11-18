@@ -1,15 +1,9 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { miraDemoAdmission } from '../demo-admission';
-import type { MiraWorkspaceAttestation } from '../participant-consent';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { miraDemoAdmission, readMiraAdultAttestation } from '../demo-admission';
 
-export async function readMiraAdultAttestation(
-  _workspaceId: string
-): Promise<MiraWorkspaceAttestation | null> {
-  // No authoritative attestation store is configured. Client and environment
-  // values cannot substitute for a persisted administrator decision.
-  return null;
-}
+export { readMiraAdultAttestation } from '../demo-admission';
 
 export async function readMiraDemoAuthority(input: {
   accountId: string;
@@ -21,7 +15,7 @@ export async function readMiraDemoAuthority(input: {
 }) {
   try {
     const db = await createAdminClient({ noCookie: true });
-    const [identity, workspace, attestation] = await Promise.all([
+    const [identity, workspace, attestation, membership] = await Promise.all([
       db.auth.admin.getUserById(input.accountId),
       db
         .from('workspaces')
@@ -29,6 +23,13 @@ export async function readMiraDemoAuthority(input: {
         .eq('id', input.workspaceId)
         .maybeSingle(),
       readMiraAdultAttestation(input.workspaceId),
+      input.workspaceMember
+        ? verifyWorkspaceMembershipType({
+            supabase: db,
+            userId: input.accountId,
+            wsId: input.workspaceId,
+          })
+        : null,
     ]);
     if (
       identity.error ||
@@ -44,7 +45,7 @@ export async function readMiraDemoAuthority(input: {
       actor: identity.data.user!,
       workspaceId: input.workspaceId,
       meetingId: input.meetingId,
-      workspaceMember: input.workspaceMember,
+      workspaceMember: membership?.ok === true,
       admitted: input.admitted,
       explicitEnable: enabled,
       disabled: !enabled,

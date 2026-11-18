@@ -30,18 +30,35 @@ export class LiveDatabaseError extends Error {
   }
 }
 
-/** All calls are server-only. Never include response bodies in runtime logs. */
-export async function liveDatabase<T>(
+type DatabaseRequest = {
+  method?: string;
+  body?: unknown;
+  schema?: 'public' | 'private';
+  prefer?: string;
+};
+
+export function liveDatabase<T>(
   env: LiveEnvironment,
   path: string,
-  init?: {
-    method?: string;
-    body?: unknown;
-    schema?: 'public' | 'private';
-    prefer?: string;
-  }
+  init?: DatabaseRequest
+) {
+  return liveSupabase<T>(env, `/rest/v1/${path}`, init);
+}
+
+export function liveAuthUser(env: LiveEnvironment, userId: string) {
+  return liveSupabase<unknown>(
+    env,
+    `/auth/v1/admin/users/${encodeURIComponent(userId)}`
+  );
+}
+
+/** All calls are server-only. Never include response bodies in runtime logs. */
+async function liveSupabase<T>(
+  env: LiveEnvironment,
+  path: string,
+  init?: DatabaseRequest
 ): Promise<T> {
-  const url = new URL(`/rest/v1/${path}`, env.NEXT_PUBLIC_SUPABASE_URL);
+  const url = new URL(path, env.NEXT_PUBLIC_SUPABASE_URL);
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   if (url.protocol !== 'https:' && !(local && url.protocol === 'http:'))
     throw new Error('live_database_tls_required');
@@ -49,6 +66,7 @@ export async function liveDatabase<T>(
     // Reject redirects through the status check without forwarding credentials.
     // workerd supports manual/follow, but throws for redirect: 'error'.
     redirect: 'manual',
+    cache: 'no-store',
     method: init?.method ?? 'GET',
     headers: {
       apikey: env.SUPABASE_SECRET_KEY,

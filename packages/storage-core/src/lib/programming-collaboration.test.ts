@@ -1,13 +1,21 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { saveProgrammingRoomCheckpoint } from './programming-collaboration';
+import {
+  programmingRoomTicket,
+  saveProgrammingRoomCheckpoint,
+} from './programming-collaboration';
 
-const mocks = vi.hoisted(() => ({ run: vi.fn(), save: vi.fn(), rpc: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  run: vi.fn(),
+  save: vi.fn(),
+  rpc: vi.fn(),
+  sign: vi.fn(),
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/realtime/collaboration', () => ({
   collaborationTicketSchema: {},
 }));
 vi.mock('@tuturuuu/realtime/core/token', () => ({
-  signRealtimePayload: vi.fn(),
+  signRealtimePayload: mocks.sign,
 }));
 vi.mock('@tuturuuu/utils/account-benefits-server', () => ({
   accountPrivateRpc: mocks.rpc,
@@ -147,3 +155,27 @@ it('rejects runner export without signed run identity', async () => {
   ).rejects.toMatchObject({ status: 403 });
   expect(mocks.save).not.toHaveBeenCalled();
 });
+
+it.each(['editor', 'viewer'] as const)(
+  'denies an interactive checkpoint before signing for %s',
+  async (role) => {
+    const seed = vi.fn();
+    await expect(
+      programmingRoomTicket(
+        {
+          actorId: 'actor',
+          ownerId: 'owner',
+          resourceId: 'project',
+          resource: 'playground',
+          roomId: 'room',
+          displayName: 'Participant',
+          role,
+        },
+        seed,
+        true
+      )
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.sign).not.toHaveBeenCalled();
+    expect(seed).not.toHaveBeenCalled();
+  }
+);

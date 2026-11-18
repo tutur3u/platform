@@ -1,7 +1,14 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const f = vi.hoisted(() => ({ identity: vi.fn(), workspace: vi.fn() }));
+const f = vi.hoisted(() => ({
+  identity: vi.fn(),
+  workspace: vi.fn(),
+  membership: vi.fn(),
+}));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  verifyWorkspaceMembershipType: f.membership,
+}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     auth: { admin: { getUserById: f.identity } },
@@ -40,6 +47,7 @@ const request = {
 beforeEach(() => {
   vi.resetAllMocks();
   f.identity.mockResolvedValue({ data: { user: actor }, error: null });
+  f.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
   f.workspace.mockResolvedValue({ data: workspace, error: null });
 });
 
@@ -92,4 +100,12 @@ it('never creates an attestation and keeps an absent enable binding off', async 
     (await readMiraDemoAuthority({ ...request, disabledBinding: 'true' }))
       .allowed
   ).toBe(false);
+});
+
+it('rejects a stale membership assertion after the member is removed', async () => {
+  f.membership.mockResolvedValue({ ok: false, error: 'membership_missing' });
+  expect(await readMiraDemoAuthority(request)).toEqual({
+    allowed: false,
+    reason: 'membership',
+  });
 });

@@ -52,7 +52,7 @@ export function WorkbenchToolbar({
         busy: boolean;
         onRun: () => void;
         onStop: () => void;
-        onSave: () => void;
+        onSave?: () => void;
         pending: boolean;
       }
     | {
@@ -175,21 +175,23 @@ export function WorkbenchToolbar({
           >
             <Square className="size-3.5" />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            className="size-8"
-            aria-label={t(meeting ? 'checkpoint' : 'save')}
-            title={t(meeting ? 'checkpoint' : 'save')}
-            disabled={controls.pending || !controls.editable || controls.busy}
-            onClick={controls.onSave}
-          >
-            {meeting ? (
-              <Bookmark className="size-3.5" />
-            ) : (
-              <Save className="size-3.5" />
-            )}
-          </Button>
+          {controls.onSave && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="size-8"
+              aria-label={t(meeting ? 'checkpoint' : 'save')}
+              title={t(meeting ? 'checkpoint' : 'save')}
+              disabled={controls.pending || !controls.editable || controls.busy}
+              onClick={controls.onSave}
+            >
+              {meeting ? (
+                <Bookmark className="size-3.5" />
+              ) : (
+                <Save className="size-3.5" />
+              )}
+            </Button>
+          )}
         </>
       )}
       {actions.length > 0 && (

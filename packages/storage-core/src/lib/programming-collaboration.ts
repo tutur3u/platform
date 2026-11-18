@@ -97,6 +97,7 @@ export async function programmingRoomTicket(
       >),
   checkpoint = false
 ) {
+  if (checkpoint && scope.role !== 'owner') throw new AccountServiceError(403);
   const url = endpoint();
   const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
   if (!secret) throw new AccountServiceError(503);
@@ -131,7 +132,7 @@ export async function programmingRoomTicket(
   const response = await fetch(http, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${signRealtimePayload({ ...payload, kind: checkpoint ? 'checkpoint' : 'seed', role: checkpoint ? 'owner' : payload.role }, secret)}`,
+      Authorization: `Bearer ${signRealtimePayload({ ...payload, kind: checkpoint ? 'checkpoint' : 'seed' }, secret)}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(initial),

@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   miraCode: vi.fn(),
   miraChoice: vi.fn(),
   miraChat: vi.fn(),
+  authority: vi.fn(),
+  cloudflare: vi.fn(),
+  ticket: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/education-core/education/programming-access', () => ({
@@ -33,7 +36,7 @@ vi.mock('@tuturuuu/storage-core/playground-service', () => ({
   getPlaygroundRun: vi.fn(),
 }));
 vi.mock('@tuturuuu/storage-core/programming-collaboration', () => ({
-  programmingRoomTicket: vi.fn(),
+  programmingRoomTicket: mocks.ticket,
   requestProgrammingMiraCode: mocks.miraCode,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -54,9 +57,11 @@ vi.mock('../lib/call-access', () => ({
   },
 }));
 
-vi.mock('@opennextjs/cloudflare', () => ({ getCloudflareContext: vi.fn() }));
+vi.mock('@opennextjs/cloudflare', () => ({
+  getCloudflareContext: mocks.cloudflare,
+}));
 vi.mock('../../live-assistant/server/demo-authority', () => ({
-  readMiraDemoAuthority: vi.fn(),
+  readMiraDemoAuthority: mocks.authority,
 }));
 vi.mock('../../live-assistant/server/private-consent', () => ({
   readPrivateMiraChoice: vi.fn(),
@@ -68,7 +73,7 @@ vi.mock('./personal-chat-request', () => ({
 }));
 
 import { changeMeetingProgrammingMira } from './programming-mira';
-import { createMeetingPlayground } from './programming';
+import { createMeetingPlayground, joinMeetingProgramming } from './programming';
 
 const access = {
   isHost: true,
@@ -131,6 +136,19 @@ describe('meeting blank-project admission', () => {
   });
 });
 
+it.each(['playground', 'problem'])(
+  'denies editor-initiated interactive checkpoints for %s rooms',
+  async (kind) => {
+    mocks.room.mockResolvedValue({
+      selection: { kind, id: 'project', language: 'python' },
+    });
+    await expect(
+      joinMeetingProgramming({ ...access, isHost: false }, true)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.ticket).not.toHaveBeenCalled();
+  }
+);
+
 describe('Mira coding routes', () => {
   const selection = {
     kind: 'playground',
@@ -177,6 +195,97 @@ describe('Mira coding routes', () => {
     expect(mocks.miraCode).not.toHaveBeenCalled();
     expect(mocks.miraChat).not.toHaveBeenCalled();
   });
+  function setupReview() {
+    dispatch.mockClear();
+    mocks.elevated.mockResolvedValue(true);
+    mocks.metadata.mockResolvedValue({ language: 'python' });
+    mocks.room.mockResolvedValue({ selection, generation: null });
+    mocks.miraChoice.mockResolvedValue({ revision: 1 });
+    mocks.cloudflare.mockResolvedValue({
+      env: {
+        MEET_AI_DISABLED: 'false',
+        GOOGLE_GENERATIVE_AI_API_KEY: 'fixture',
+      },
+    });
+    mocks.miraCode.mockResolvedValue(
+      Response.json({
+        filePath: 'solution.py',
+        startLine: 2,
+        endLine: 2,
+        original: 'print(1)',
+        digest: 'a'.repeat(64),
+      })
+    );
+    return {
+      selection,
+      action: 'analyze',
+      source: 'chat',
+      intent: 'fix',
+      range: { filePath: 'solution.py', startLine: 2, endLine: 2 },
+    };
+  }
+  const grant = { allowed: true, authority: 'verified-personal' };
+  const revoked = { allowed: false, reason: 'workspace' };
+  const publish = expect.objectContaining({ phase: 'publish' });
+  const dispatch = vi.fn(() => ({
+    text: '{"explanation":"Review","replacement":"print(2)"}',
+  }));
+
+  it('blocks Chat provider dispatch when demo authority is revoked after code selection', async () => {
+    const review = setupReview();
+    mocks.authority.mockResolvedValueOnce(grant).mockResolvedValueOnce(revoked);
+    mocks.miraChat.mockImplementation(async (_access, _input, provider) => {
+      await provider.checkConsent();
+      return dispatch();
+    });
+    await expect(
+      changeMeetingProgrammingMira(access, review)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.miraCode).toHaveBeenCalledOnce();
+    expect(mocks.authority).toHaveBeenCalledTimes(2);
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(mocks.room).not.toHaveBeenCalledWith(access, publish);
+    expect(mocks.room).toHaveBeenLastCalledWith(
+      access,
+      expect.objectContaining({ phase: 'cancel' })
+    );
+  });
+
+  it('blocks shared Chat publication when authority is revoked during generation', async () => {
+    const review = setupReview();
+    mocks.authority
+      .mockResolvedValueOnce(grant)
+      .mockResolvedValueOnce(grant)
+      .mockResolvedValueOnce(revoked);
+    mocks.miraChat.mockImplementation(async (_access, _input, provider) => {
+      await provider.checkConsent();
+      return dispatch();
+    });
+    await expect(
+      changeMeetingProgrammingMira(access, review)
+    ).rejects.toMatchObject({ status: 403 });
+    expect(dispatch).toHaveBeenCalledOnce();
+    expect(mocks.authority).toHaveBeenCalledTimes(3);
+    expect(mocks.room).not.toHaveBeenCalledWith(access, publish);
+    expect(mocks.room).toHaveBeenLastCalledWith(
+      access,
+      expect.objectContaining({ phase: 'cancel' })
+    );
+  });
+
+  it('blocks sharing a Voice Live draft after demo eligibility is revoked', async () => {
+    setupReview();
+    mocks.authority.mockResolvedValue(revoked);
+    await expect(
+      changeMeetingProgrammingMira(access, {
+        selection,
+        action: 'publish',
+        id: action.id,
+      })
+    ).rejects.toMatchObject({ status: 403 });
+    expect(mocks.room).not.toHaveBeenCalledWith(access, publish);
+  });
+
   it('uses the persisted proposal fields and resolves only after the document write', async () => {
     const fix = {
       id: action.id,

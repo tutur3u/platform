@@ -35,6 +35,13 @@ export type MiraAdmission =
         | 'workspace';
     };
 
+export async function readMiraAdultAttestation(
+  _workspaceId: string
+): Promise<MiraWorkspaceAttestation | null> {
+  // No authoritative attestation store is configured.
+  return null;
+}
+
 export function miraDemoAdmission(input: MiraAdmissionInput): MiraAdmission {
   if (input.explicitEnable !== true || input.disabled !== false)
     return { allowed: false, reason: 'disabled' };

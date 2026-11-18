@@ -12,14 +12,38 @@ import {
 } from '@tuturuuu/realtime/meet';
 import { PlaygroundFiles } from '../../../packages/utils/src/playground-schema';
 
-async function readMiraFixCommand(request: Request) {
-  if (request.method !== 'POST') return null;
-  const raw = await request.text();
-  if (raw.length > 110_000) return null;
+const MAX_MIRA_COMMAND_BYTES = 110_000;
+
+async function readMiraFixCommand(
+  request: Request
+): Promise<ProgrammingCodeCommand | Response> {
+  if (request.method !== 'POST' || !request.body)
+    return new Response(null, { status: 400 });
+  if (Number(request.headers.get('content-length')) > MAX_MIRA_COMMAND_BYTES)
+    return new Response(null, { status: 413 });
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  let total = 0;
+  let raw = '';
   try {
-    return programmingCodeCommandSchema.parse(JSON.parse(raw));
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_MIRA_COMMAND_BYTES) {
+        void reader.cancel().catch(() => undefined);
+        return new Response(null, { status: 413 });
+      }
+      raw += decoder.decode(value, { stream: true });
+    }
+    return programmingCodeCommandSchema.parse(
+      JSON.parse(raw + decoder.decode())
+    );
   } catch {
-    return null;
+    void reader.cancel().catch(() => undefined);
+    return new Response(null, { status: 400 });
+  } finally {
+    reader.releaseLock();
   }
 }
 
@@ -98,8 +122,10 @@ export async function handleProgrammingMiraFix({
 }) {
   if (ticket.role !== 'owner') return new Response(null, { status: 403 });
   const command = await readMiraFixCommand(request);
-  if (!command) return new Response(null, { status: 400 });
+  if (command instanceof Response) return command;
   if (command.action === 'read') {
+    if (ticket.exp * 1000 <= Date.now())
+      return new Response(null, { status: 403 });
     const excerpt = miraCodeExcerpt(doc, command.range);
     return excerpt
       ? Response.json(excerpt)
