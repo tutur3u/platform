@@ -15,6 +15,7 @@ alter table private.cross_app_tokens
     )
   );
 
+-- tuturuuu: no-grant (internal)
 create or replace function private.redeem_cross_app_token(
   p_token text,
   p_target_app text,
@@ -135,5 +136,8 @@ begin
   return query select v_record.user_id, v_record.session_data;
 end;
 $$;
+
+revoke all on function private.redeem_cross_app_token(text, text, text)
+  from public, anon, authenticated, service_role;
 
 COMMIT;

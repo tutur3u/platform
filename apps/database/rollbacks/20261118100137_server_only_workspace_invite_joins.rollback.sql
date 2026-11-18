@@ -25,6 +25,7 @@ WITH CHECK (
   )
 );
 
+-- tuturuuu: reviewed(function-grant): public.current_user_workspace_invite_type(uuid) review=N140-INVITE-PKCE
 GRANT EXECUTE ON FUNCTION public.current_user_workspace_invite_type(uuid)
   TO authenticated, service_role;
 

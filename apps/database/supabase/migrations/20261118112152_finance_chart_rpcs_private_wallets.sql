@@ -171,18 +171,27 @@ $$;
 -- chart RPCs had before this migration so it is explicit in this file.
 revoke all on function public.get_daily_income_expense_range(
   uuid, timestamp with time zone, timestamp with time zone, boolean
-) from public, anon;
+) from public, anon, authenticated;
 grant execute on function public.get_daily_income_expense_range(
   uuid, timestamp with time zone, timestamp with time zone, boolean
-) to authenticated, service_role;
+) to service_role;
+-- tuturuuu: reviewed(function-grant): public.get_daily_income_expense_range(uuid,timestamp with time zone,timestamp with time zone,boolean) review=FIN-WALLET-RPC-01
+grant execute on function public.get_daily_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) to authenticated;
 
 revoke all on function public.get_monthly_income_expense_range(
   uuid, timestamp with time zone, timestamp with time zone, boolean
-) from public, anon;
+) from public, anon, authenticated;
 grant execute on function public.get_monthly_income_expense_range(
   uuid, timestamp with time zone, timestamp with time zone, boolean
-) to authenticated, service_role;
+) to service_role;
+-- tuturuuu: reviewed(function-grant): public.get_monthly_income_expense_range(uuid,timestamp with time zone,timestamp with time zone,boolean) review=FIN-WALLET-RPC-01
+grant execute on function public.get_monthly_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) to authenticated;
 
+-- tuturuuu: reviewed(alter-routine-review): FIN-WALLET-RPC-01 F5 pins search_path; body already fully qualified
 alter function public.get_transaction_categories_with_amount_by_workspace(uuid)
   set search_path = pg_catalog, pg_temp;
 

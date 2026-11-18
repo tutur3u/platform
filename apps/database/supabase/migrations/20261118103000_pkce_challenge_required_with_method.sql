@@ -9,6 +9,7 @@ set local lock_timeout = '5s';
 
 -- Revoked rows also drop the stray method so the stricter CHECK validates;
 -- revocation already prevents redemption.
+-- tuturuuu: reviewed(dynamic-sql-review): N140-INVITE-PKCE static revoke of method-without-challenge tokens, no dynamic EXECUTE
 do $migration$
 declare
   v_revoked bigint;
@@ -161,3 +162,6 @@ begin
   return query select v_record.user_id, v_record.session_data;
 end;
 $$;
+
+revoke all on function private.redeem_cross_app_token(text, text, text)
+  from public, anon, authenticated, service_role;
