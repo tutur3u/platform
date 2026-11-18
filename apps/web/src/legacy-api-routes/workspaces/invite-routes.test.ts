@@ -23,6 +23,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   verifyAppSessionRequest: () => ({
     claims: {
       email: 'app-session@example.com',
+      scopes: ['internal-app:session'],
       sub: 'app-session-user',
       target_app: 'calendar',
     },

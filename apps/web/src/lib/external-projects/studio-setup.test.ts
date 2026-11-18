@@ -39,6 +39,9 @@ vi.mock('@tuturuuu/auth/app-session', () => appSessionMocks);
 vi.mock('@tuturuuu/supabase/next/server', () => supabaseMocks);
 vi.mock('@tuturuuu/utils/workspace-helper', () => workspaceMocks);
 vi.mock('./store', () => storeMocks);
+vi.mock('@/lib/app-coordination/external-app-bearer', () => ({
+  rejectStaleExternalAppBearer: vi.fn(async () => null),
+}));
 vi.mock('./app-credentials', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./app-credentials')>()),
   authorizeExternalAppRequest: appCredentialMocks.authorizeExternalAppRequest,
@@ -121,7 +124,11 @@ describe('external project setup access', () => {
       'ttr_app_token'
     );
     appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
-      claims: { scopes: ['external-projects:manage'], sub: userId },
+      claims: {
+        scopes: ['external-projects:manage'],
+        sub: userId,
+        target_app: 'fysh',
+      },
       ok: true,
     });
 

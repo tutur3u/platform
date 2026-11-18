@@ -29,13 +29,15 @@ const REVIEWED_CONSUMERS: Record<string, { calls: number; gates: string[] }> = {
     calls: 1,
     gates: ['APP_SESSION_SCOPE', 'APP_SESSION_REFRESH_SCOPE'],
   },
-  'apps/web/src/app/api/v1/auth/app-token/exchange/route.ts': {
-    calls: 1,
-    gates: ['APP_TOKEN_REFRESH_SCOPE'],
-  },
   'apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts': {
     calls: 1,
     gates: ['INVITATION_ACTION_SCOPE'],
+  },
+  // External-app refresh for the exchange route: target app and refresh scope,
+  // then the single-use and family fences.
+  'apps/web/src/lib/auth/external-app-refresh.ts': {
+    calls: 1,
+    gates: ['claims.target_app !== targetApp', 'APP_TOKEN_REFRESH_SCOPE'],
   },
   'apps/web/src/lib/external-apps/workspace-cron.ts': {
     calls: 1,
