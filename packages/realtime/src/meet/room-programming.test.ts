@@ -1,5 +1,8 @@
 import { expect, it } from 'vitest';
-import type { MeetRealtimeTokenPayload } from './primitives';
+import {
+  type MeetRealtimeTokenPayload,
+  meetRoomLimitsSchema,
+} from './primitives';
 import { createMeetPresence, createMeetRoomSnapshot } from './room';
 import { type RoomServiceState, roomService } from './room-service';
 
@@ -9,6 +12,7 @@ const token = {
   userId: 'guest',
   role: 'speaker',
   scopes: ['meet:server'],
+  limits: meetRoomLimitsSchema.parse({}),
 } as MeetRealtimeTokenPayload;
 it('requires admission even for a signed server caller', () =>
   expect(
