@@ -517,7 +517,18 @@
     "./routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts": "./src/routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
     "./routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route": "./src/routes/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
     "./routes/api/meet-call/[meetingId]/document/route.ts": "./src/routes/api/meet-call/[meetingId]/document/route.ts",
-    "./routes/api/meet-call/[meetingId]/document/route": "./src/routes/api/meet-call/[meetingId]/document/route.ts"
+    "./routes/api/meet-call/[meetingId]/document/route": "./src/routes/api/meet-call/[meetingId]/document/route.ts",
+    "./features/call/components/meet-phone.css": "./src/features/call/components/meet-phone.css",
+    "./features/call/components/meet-phone-lobby-preview": "./src/features/call/components/meet-phone-lobby-preview.tsx",
+    "./features/call/components/meet-phone-lobby-preview.tsx": "./src/features/call/components/meet-phone-lobby-preview.tsx",
+    "./features/call/components/meet-phone-call-layout": "./src/features/call/components/meet-phone-call-layout.tsx",
+    "./features/call/components/meet-phone-call-layout.tsx": "./src/features/call/components/meet-phone-call-layout.tsx",
+    "./features/call/components/meet-phone-bottom-sheet": "./src/features/call/components/meet-phone-bottom-sheet.tsx",
+    "./features/call/components/meet-phone-bottom-sheet.tsx": "./src/features/call/components/meet-phone-bottom-sheet.tsx",
+    "./features/call/components/meet-phone-study-sheet": "./src/features/call/components/meet-phone-study-sheet.tsx",
+    "./features/call/components/meet-phone-study-sheet.tsx": "./src/features/call/components/meet-phone-study-sheet.tsx",
+    "./features/call/hooks/use-phone-call-ui": "./src/features/call/hooks/use-phone-call-ui.ts",
+    "./features/call/hooks/use-phone-call-ui.ts": "./src/features/call/hooks/use-phone-call-ui.ts"
   },
   "scripts": {
     "type-check": "tsc --noEmit && tsc --noEmit -p tsconfig.cloudflare.json",

@@ -1,0 +1,57 @@
+:root {
+  --bg-purple: var(--calendar-bg-purple, #ece1ff);
+  --mira-bg: color-mix(in oklab, var(--purple) 10%, var(--card, #ffffff));
+}
+
+.dark {
+  --bg-purple: var(--calendar-bg-purple, #2f2347);
+  --mira-bg: color-mix(in oklab, var(--purple) 18%, var(--card, #211d26));
+}
+
+@keyframes mira-speaking-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--purple),
+      0 0 0 5px color-mix(in oklab, var(--purple) 28%, transparent);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 2px var(--purple),
+      0 0 0 8px color-mix(in oklab, var(--purple) 14%, transparent);
+  }
+}
+
+.mira-speaking {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px var(--purple);
+  animation: mira-speaking-ring 1.6s ease-in-out infinite;
+}
+
+@keyframes phone-sheet-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.phone-sheet-panel {
+  animation: phone-sheet-slide-up 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mira-speaking {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--purple);
+  }
+
+  .phone-sheet-panel {
+    animation: none;
+  }
+}
