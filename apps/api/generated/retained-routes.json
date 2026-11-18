@@ -634,7 +634,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/admin/external-apps/route.ts",
-    "sourceSha256": "cf985a0d2f44d4dc6730cf03404aae68758959ae06dad5cb0453bff88baa4203",
+    "sourceSha256": "4a166b6cb12a4536dad7117105a5f6f7c523b4167ff87057877062a69f740196",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -724,7 +724,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
-    "sourceSha256": "c18f8ab27357c3c50340627dfbc0f75b42dfa5ac698e817e8a05ecd687acd56c",
+    "sourceSha256": "e21c32a72c435b0e03b671f16ef086d9986e06b6b40c0e369ac3456b0c410a8f",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -794,7 +794,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/accounts/[accountId]/route.ts",
-    "sourceSha256": "d9298440f2bdbed3ef1cff3570764d68bbf7037a9ac77f0d292d2c1b76944a3b",
+    "sourceSha256": "8925a562fb1a19ff20580be354e41206ceca555b9113b64f809dfc8029dab6e5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -824,7 +824,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/accounts/logout/route.ts",
-    "sourceSha256": "24920f3068c77cef7f261ddd2795d36c36d443f2fcf2acbfc8e00119b11bc6f6",
+    "sourceSha256": "efa0b7376d8b7e52942dc6beef993e426b4f0ada6742fb6dc835627cd462977d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -844,7 +844,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/accounts/switch/route.ts",
-    "sourceSha256": "0fa4355d81b3e01e68d7f769f8f9abed55c2f532bc687a43cb1e2b0e19c53ce9",
+    "sourceSha256": "94d97422ce873a8148d912df5daed61c2b598ba97e62f2bf525a26b0fa52ed44",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -854,7 +854,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
-    "sourceSha256": "8043f695f50cdce17853f94775262c3205b472663e4402caf2369bddfffd0751",
+    "sourceSha256": "028becba59bc53b3e412fafdc29cc8add4ec55ad8514c82ba38bbc1b3deee33a",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -864,7 +864,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts",
-    "sourceSha256": "672b77a82aae22859efb38d2c4800cd04de54f3a29283ce0c8208a30602e7f33",
+    "sourceSha256": "0185977c9e96f8622077bd0eb8e3e2a8acb603af834e0480ee5b1cd3ddbd160b",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -894,7 +894,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts",
-    "sourceSha256": "b59e253dc29d542f01b695e9017ab6a86e11f78b95083f79c53831bba5e5ca91",
+    "sourceSha256": "208a5eebcb954468cc5a2e330b5081d306d231706dc90f4634ea7e5e680e94b5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1075,6 +1075,56 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
     "sourceSha256": "79aa38922a43567b224175addbcb6c81610d9e984edc49dee9b5eb2e58501638",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cite/ai/fix-ref",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cite/ai/fix-ref/route.ts",
+    "sourceSha256": "2a4429e7bc1721dcb3fe136cfd403e3c72e38e6d16ee78182bf053b1a3ab9f8f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cite/capture",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cite/capture/route.ts",
+    "sourceSha256": "cec331d7c4b7944fddd4f6613d169ece19dd6709948ca5e009595219220da548",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cite/format",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cite/format/route.ts",
+    "sourceSha256": "8ef233f8ac6992dd1bbee796a37b8ef9e2d1363aac3f75a099137b2d2ff83c63",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cite/lookup",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cite/lookup/route.ts",
+    "sourceSha256": "2e62d4378ae8044ff0b771095e8344443f1a508aac9ea268e1a27d98f542ea4f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/cite/validate",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/cite/validate/route.ts",
+    "sourceSha256": "7bcc5f5441b093ca2d0f8f35db38efd2843635509d7bb21b5d76ff4edec8f8a5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1574,7 +1624,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/live/token/route.ts",
-    "sourceSha256": "c5ca2cdddf4de31fe9b8a8777dcd3debd8f3bac3f645108f244c590cf9c38ae8",
+    "sourceSha256": "50dafe99a34bbfcde822e34b6239df0067b73358d2807c022708b8bc184decc3",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2254,7 +2304,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/user/onboarding-progress/route.ts",
-    "sourceSha256": "5fdd8b28d2e30321c9ccf3ed1346d28d4a71e32179cca073344fb9c08f3a7467",
+    "sourceSha256": "345cd0001954dd3405e2758ed6652912808529b24bac3b5e03bb50b102ff50a6",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2360,6 +2410,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/users/me/bootstrap",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/users/me/bootstrap/route.ts",
+    "sourceSha256": "0126974deee472145dfab228e719a21a08179ccf27c2447c6518c9a6b36965b9",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/users/me/configs/{configId}",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -2414,7 +2474,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/users/me/hidden-workspaces/route.ts",
-    "sourceSha256": "72f74ee359f0f3bca86aa2fbf6fe66502a95be6539c7f665bfa74201689a6a97",
+    "sourceSha256": "4e9840b74a4aaf17f98572a7f9817d2bf2a3a68a70ecf0796f699520cf808f29",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2544,7 +2604,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/users/me/profile/route.ts",
-    "sourceSha256": "8ac6c1dc7e985b02fcaf6b451fbcb513123931c770c03d7544deb9369cf605c6",
+    "sourceSha256": "5c7f84d5eff0eba765787e13df1c0bf18ce7b46500d84c121d77d91740a5e523",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3030,6 +3090,36 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/cite/library/{itemId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/[itemId]/route.ts",
+    "sourceSha256": "01b948caa78bcf33c4be6da180d90487c0a78c728d8ff0baf3a1946755d8d629",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/cite/library/batch",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/batch/route.ts",
+    "sourceSha256": "8061915ae12969bdbab9cfdf40831cd6b7bc86a7a70ab9b72035fb15df5721af",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/cite/library",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/route.ts",
+    "sourceSha256": "92455c4d4e55ca90b080a7c44865c4ce8a8c49721fbb85344daa52f69d54b412",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/consolidate-users",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -3484,7 +3574,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
-    "sourceSha256": "d92e41b89378238ea28bc6fa5dcda70b339d616063bbaf1dcdd103ce29ad1ceb",
+    "sourceSha256": "9b3e019e2f5e7c526c483fdb474a0bf0a39fd9993dc42505fe027913386332a6",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4510,6 +4600,36 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/people/contacts",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/contacts/route.ts",
+    "sourceSha256": "fa39fedc05f3093b8b3fbc6af4934454df820cf465e1cb33e31f49088b6b12a9",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people/resolve",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/resolve/route.ts",
+    "sourceSha256": "3319378f94f8d33075cecc8b2c03a921e78b88f5912b48c5605ddb467916fd0f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/route.ts",
+    "sourceSha256": "dd1549cf8dbacc26a6e368c2c2743c21b816952ba57b88d6966ce0dfe37b3013",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/personal-journal/{entryId}",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -4764,7 +4884,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/route.ts",
-    "sourceSha256": "4f78b32efb86930bfa5b4afbec1f56832a33ffc4b3d507f8ada44b9fef70b7e2",
+    "sourceSha256": "022b2da5bc99cbd47080106c42ad1f6f66566e12da75858e371f98423b371818",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5554,7 +5674,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/route.ts",
-    "sourceSha256": "c9ba552d45426fef2571107071ef7b233d3825a9128d4f4576bcec96c9e53d39",
+    "sourceSha256": "12fa18133f2b1753633a82cbfa5e23c16af71f5bcbc7449d0d17c5382daa03b5",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5574,7 +5694,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
-    "sourceSha256": "243578767692e2bf1ebd9042d0c59c0cdd3ce82fcb57967aa8872ff3646b8540",
+    "sourceSha256": "8d4221ff8d2f1aa773f2f8eb25203c57384e7df96ca171aada64d3e189a1a1a2",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
