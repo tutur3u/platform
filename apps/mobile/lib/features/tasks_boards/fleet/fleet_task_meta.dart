@@ -200,13 +200,13 @@ String? _firstText(Iterable<String?> candidates) {
 /// first-class source that has it, then from the temporary `fleet:v1`
 /// description header:
 ///
-/// - status: `state:` label, the status of the task's list ([listStatus]),
+/// - status: native fleet status, `state:` label, the status of the task's
+///   list ([listStatus]), header;
+/// - owner: `owner:` label, first virtual (agent) assignee, first assignee,
 ///   header;
-/// - owner: `owner:` label, first assignee, header;
 /// - product: first project, `product:` label, header;
 /// - priority and ETA: the native priority and end date, header;
-/// - last update: header only, because the task API does not send
-///   `updated_at`;
+/// - last update: `updated_at`, `legacy_last_update`, header;
 /// - needs you and its reason: native fields, `needs-user` label, header;
 /// - blocked: a blocked-by relationship, `blocked_reason`, header;
 /// - links: native external links, header.
@@ -247,6 +247,7 @@ FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task, {String? listStatus}) {
       FleetStatus.tryParse(fields['status']) ??
       FleetStatus.tryParse(fields['state']);
   final status =
+      FleetStatus.tryParse(task.fleetStatus) ??
       FleetStatus.tryParse(labelValue('state:')) ??
       fleetStatusForListStatus(listStatus) ??
       headerStatus;
@@ -267,11 +268,17 @@ FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task, {String? listStatus}) {
         hasBlock ||
         hasFleetLabel ||
         task.needsUser != null ||
-        nativeLinks.isNotEmpty,
+        nativeLinks.isNotEmpty ||
+        task.externalKey != null ||
+        task.virtualAssignees.isNotEmpty,
     hasBlock: hasBlock,
     status: status,
     owner: _firstText([
       labelValue('owner:'),
+      for (final agent in task.virtualAssignees.take(1)) ...[
+        agent.displayName,
+        agent.key,
+      ],
       for (final assignee in task.assignees.take(1)) ...[
         assignee.displayName,
         assignee.email,
@@ -285,8 +292,10 @@ FleetTaskMeta parseFleetTaskMeta(TaskBoardTask task, {String? listStatus}) {
     ]),
     priority: priority,
     eta: task.endDate ?? _parseDate(fields['eta']),
-    // TODO(tasks): Prefer updated_at when the task API exposes it.
-    lastUpdate: _parseDate(fields['last_update']),
+    lastUpdate:
+        task.updatedAt ??
+        task.legacyLastUpdate ??
+        _parseDate(fields['last_update']),
     needsUser: needsUser,
     needsUserReason: _firstText([
       task.needsUserReason,

@@ -136,6 +136,11 @@ class TaskBoardTask extends Equatable {
     this.needsUserReason,
     this.blockedReason,
     this.externalLinks = const [],
+    this.fleetStatus,
+    this.externalKey,
+    this.updatedAt,
+    this.legacyLastUpdate,
+    this.virtualAssignees = const [],
   });
 
   factory TaskBoardTask.fromJson(Map<String, dynamic> json) {
@@ -213,7 +218,16 @@ class TaskBoardTask extends Equatable {
       },
       needsUserReason: _parseText(json['needs_user_reason']),
       blockedReason: _parseText(json['blocked_reason']),
-      externalLinks: _parseExternalLinks(json['external_links']),
+      externalLinks: _parseExternalLinks(
+        json['task_resources'] ?? json['external_links'],
+      ),
+      fleetStatus: _parseText(json['fleet_status']),
+      externalKey: _parseText(json['external_key']),
+      updatedAt: parseDateTime(json['updated_at']),
+      legacyLastUpdate: parseDateTime(json['legacy_last_update']),
+      virtualAssignees: TaskVirtualAssignee.listFromJson(
+        json['virtual_assignees'] ?? json['agent_assignees'],
+      ),
     );
   }
 
@@ -269,6 +283,11 @@ class TaskBoardTask extends Equatable {
       needsUserReason: needsUserReason,
       blockedReason: blockedReason,
       externalLinks: externalLinks,
+      fleetStatus: fleetStatus,
+      externalKey: externalKey,
+      updatedAt: updatedAt,
+      legacyLastUpdate: legacyLastUpdate,
+      virtualAssignees: virtualAssignees,
     );
   }
 
@@ -361,6 +380,15 @@ class TaskBoardTask extends Equatable {
   final String? needsUserReason;
   final String? blockedReason;
   final List<TaskExternalLink> externalLinks;
+  final String? fleetStatus;
+  final String? externalKey;
+  final DateTime? updatedAt;
+
+  /// Read-only provenance of a legacy header's last update.
+  final DateTime? legacyLastUpdate;
+
+  /// Agent and contact assignees, primary first.
+  final List<TaskVirtualAssignee> virtualAssignees;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -394,6 +422,21 @@ class TaskBoardTask extends Equatable {
       'external_links': externalLinks
           .map((link) => link.toJson())
           .toList(growable: false),
+    if (fleetStatus != null) 'fleet_status': fleetStatus,
+    if (externalKey != null) 'external_key': externalKey,
+    if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
+    if (legacyLastUpdate != null)
+      'legacy_last_update': legacyLastUpdate!.toIso8601String(),
+    if (virtualAssignees.isNotEmpty)
+      'virtual_assignees': [
+        for (final assignee in virtualAssignees)
+          {
+            if (assignee.key != null) 'key': assignee.key,
+            if (assignee.displayName != null)
+              'display_name': assignee.displayName,
+            'position': assignee.position,
+          },
+      ],
   };
 
   @override
@@ -424,6 +467,11 @@ class TaskBoardTask extends Equatable {
     needsUserReason,
     blockedReason,
     externalLinks,
+    fleetStatus,
+    externalKey,
+    updatedAt,
+    legacyLastUpdate,
+    virtualAssignees,
   ];
 }
 

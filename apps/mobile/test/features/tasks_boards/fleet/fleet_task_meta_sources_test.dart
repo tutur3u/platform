@@ -301,4 +301,54 @@ void main() {
       expect(task.toJson().containsKey('external_links'), isFalse);
     });
   });
+
+  group('task fields (N-176 names)', () {
+    test('fleet status, virtual assignees, resources and updated_at win', () {
+      final task = TaskBoardTask.fromJson(const {
+        'id': 'task-2',
+        'list_id': 'list-1',
+        'name': 'Fleet card',
+        'description': _header,
+        'fleet_status': 'waiting_ci',
+        'external_key': 'N-163',
+        'updated_at': '2026-11-18T12:00:00Z',
+        'virtual_assignees': [
+          {'key': 'iris', 'display_name': 'Iris', 'position': 1},
+          {'key': 'claude', 'display_name': 'Claude', 'position': 0},
+        ],
+        'task_resources': [
+          {
+            'kind': 'pr',
+            'url': 'https://github.com/tutur3u/platform/pull/7288',
+            'title': '#7288',
+          },
+          {'kind': 't3_thread', 'url': 't3-thread://v2/x', 'title': 'Atlas'},
+        ],
+      });
+      final meta = parseFleetTaskMeta(task, listStatus: 'active');
+
+      expect(meta.status, FleetStatus.waitingCi);
+      expect(meta.owner, 'Claude');
+      expect(meta.lastUpdate?.toUtc(), DateTime.parse('2026-11-18T12:00:00Z'));
+      expect(meta.links.map((l) => l.label).toList(), ['#7288', 'Atlas']);
+      expect(meta.links.first.uri, isNotNull);
+      expect(meta.links.last.uri, isNull);
+      expect(task.externalKey, 'N-163');
+      expect(TaskBoardTask.fromJson(task.toJson()), task);
+    });
+
+    test('legacy_last_update fills in when updated_at is missing', () {
+      final task = TaskBoardTask.fromJson(const {
+        'id': 'task-3',
+        'list_id': 'list-1',
+        'name': 'Fleet card',
+        'external_key': 'N-1',
+        'legacy_last_update': '2026-11-17T08:00:00Z',
+      });
+      final meta = parseFleetTaskMeta(task);
+
+      expect(meta.isFleetTask, isTrue);
+      expect(meta.lastUpdate?.toUtc(), DateTime.parse('2026-11-17T08:00:00Z'));
+    });
+  });
 }
