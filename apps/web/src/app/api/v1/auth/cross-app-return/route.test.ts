@@ -1,3 +1,4 @@
+import { PRODUCTION_INTERNAL_APP_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
@@ -46,6 +47,7 @@ function createRequest(
 
 describe('cross-app return route', () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
 
@@ -77,21 +79,71 @@ describe('cross-app return route', () => {
     });
   });
 
-  it.each([['nova', 'https://nova.ai.vn']])(
-    'verifies the canonical %s origin before sign-in',
-    async (app, origin) => {
+  it.each(PRODUCTION_INTERNAL_APP_DOMAINS)(
+    'verifies the registered $name return URL from $url before sign-in',
+    async ({ name, url }) => {
       const response = await POST(
-        createRequest(`${origin}/verify-token?nextUrl=%2F`, {
+        createRequest(`${url}/verify-token?nextUrl=%2F`, {
           generateToken: false,
+          origin: 'https://tuturuuu.com',
         })
       );
 
       expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({ appName: app, targetApp: app });
+      expect(await response.json()).toEqual({
+        appName: name,
+        targetApp: name,
+      });
       expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
+      expect(mocks.createClient).not.toHaveBeenCalled();
       expect(mocks.rpc).not.toHaveBeenCalled();
     }
   );
+
+  it('mints a signed-in handoff for a Mail inbox return URL from login', async () => {
+    const loginUrl = new URL(
+      'https://tuturuuu.com/login?returnUrl=https%3A%2F%2Fmail.tuturuuu.com%2Fverify-token%3FnextUrl%3D%252Fpersonal%252Finbox'
+    );
+    const response = await POST(
+      createRequest(loginUrl.searchParams.get('returnUrl') ?? '', {
+        origin: loginUrl.origin,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    const verifier = new URL(body.returnUrl);
+    expect(body.targetApp).toBe('mail');
+    expect(verifier.origin).toBe('https://mail.tuturuuu.com');
+    expect(verifier.pathname).toBe('/verify-token');
+    expect(verifier.searchParams.get('nextUrl')).toBe('/personal/inbox');
+    expect(verifier.searchParams.get('token')).toBe('cross-app-token');
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'generate_cross_app_token',
+      expect.objectContaining({ p_target_app: 'mail', p_user_id: 'user-1' })
+    );
+  });
+
+  it('logs a fixed code when minting fails without including provider errors', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.rpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'private fixture' },
+    });
+
+    const response = await POST(
+      createRequest('https://mail.tuturuuu.com/verify-token')
+    );
+
+    expect(response.status).toBe(500);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(JSON.parse(warn.mock.calls[0]?.[0])).toEqual({
+      code: 'TOKEN_MINT_FAILED',
+      path: '/api/v1/auth/cross-app-return',
+      requestId: expect.any(String),
+      status: 500,
+    });
+  });
 
   it.each([['nova', 'https://nova.ai.vn']])(
     'returns a %s token to its canonical verifier',

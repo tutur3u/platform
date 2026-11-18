@@ -1,6 +1,6 @@
 import { verifyAppSessionToken } from '@tuturuuu/auth/app-session';
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
@@ -38,6 +38,8 @@ vi.mock('@/lib/app-coordination/session-policy', () => ({
 }));
 
 describe('central cross-app token verification route', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
@@ -66,6 +68,31 @@ describe('central cross-app token verification route', () => {
         ],
         error: null,
       }),
+    });
+  });
+
+  it('logs only safe metadata when verifying a Mail handoff fails', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mocks.createClient.mockResolvedValueOnce({
+      rpc: vi.fn().mockResolvedValue({ data: null }),
+    });
+    const response = await POST(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/auth/cross-app-token/verify?unused=private-fixture',
+        {
+          body: JSON.stringify({ targetApp: 'mail', token: 'private-fixture' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(401);
+    expect(warn).toHaveBeenCalledOnce();
+    expect(JSON.parse(warn.mock.calls[0]?.[0])).toEqual({
+      code: 'TOKEN_VERIFICATION_FAILED',
+      path: '/api/v1/auth/cross-app-token/verify',
+      requestId: expect.any(String),
+      status: 401,
     });
   });
 

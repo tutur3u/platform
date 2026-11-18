@@ -21,6 +21,7 @@ describe('LoginForm returnUrl navigation', () => {
   afterEach(() => {
     for (const queryClient of queryClients) queryClient.clear();
     queryClients.clear();
+    mocks.createCrossAppReturnUrlWithInternalApi.mockReset();
     vi.useRealTimers();
     vi.unstubAllEnvs();
   });
@@ -542,32 +543,71 @@ describe('LoginForm returnUrl navigation', () => {
     );
   });
 
-  it('creates a tokenized Chat verifier return URL for authenticated Chat returns', async () => {
-    const chatReturnUrl =
-      'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal';
-    const tokenizedChatReturnUrl =
-      'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal&token=cross-app-token&originApp=web&targetApp=chat';
-    mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
-      returnUrl: tokenizedChatReturnUrl,
-      targetApp: 'chat',
-    });
+  it.each([
+    ['chat', 'https://chat.tuturuuu.com/verify-token?nextUrl=%2Fpersonal'],
+    [
+      'mail',
+      'https://mail.tuturuuu.com/verify-token?nextUrl=%2Fpersonal%2Finbox',
+    ],
+  ])(
+    'opens the %s verifier with a handoff token for a signed-in user',
+    async (targetApp, returnUrl) => {
+      const tokenizedUrl = `${returnUrl}&token=cross-app-token&originApp=web&targetApp=${targetApp}`;
+      mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+        returnUrl: tokenizedUrl,
+        targetApp,
+      });
 
-    renderLoginForm(chatReturnUrl);
+      renderLoginForm(returnUrl);
 
-    await waitFor(() => {
+      await waitFor(() => {
+        expect(mocks.assign).toHaveBeenCalledWith(tokenizedUrl);
+      });
       expect(mocks.createCrossAppReturnUrlWithInternalApi).toHaveBeenCalledWith(
-        {
-          returnUrl: chatReturnUrl,
-        }
+        { returnUrl }
       );
-    });
+      expect(
+        mocks.resolveCrossAppReturnUrlWithInternalApi
+      ).not.toHaveBeenCalled();
+      expect(mocks.refreshSession).toHaveBeenCalled();
+      expect(
+        screen.queryByText('login.invalid_return_url_title')
+      ).not.toBeInTheDocument();
+    }
+  );
 
-    expect(
-      mocks.resolveCrossAppReturnUrlWithInternalApi
-    ).not.toHaveBeenCalled();
-    expect(mocks.refreshSession).toHaveBeenCalled();
-    expect(mocks.assign).toHaveBeenCalledWith(tokenizedChatReturnUrl);
-  });
+  it.each(['session', 'refresh'] as const)(
+    'shows a retry when the signed-in Mail %s fails',
+    async (step) => {
+      const returnUrl =
+        'https://mail.tuturuuu.com/verify-token?nextUrl=%2Fpersonal%2Finbox';
+      if (step === 'session') {
+        mocks.createCrossAppReturnUrlWithInternalApi.mockRejectedValue(
+          new Error('Fixture transport failure')
+        );
+      } else {
+        mocks.createCrossAppReturnUrlWithInternalApi.mockResolvedValue({
+          returnUrl: `${returnUrl}&token=cross-app-token`,
+          targetApp: 'mail',
+        });
+        mocks.refreshSession.mockRejectedValue(
+          new Error('Fixture refresh failure')
+        );
+      }
+
+      renderLoginForm(returnUrl);
+
+      await screen.findByText(`login.cross_app_handoff_${step}_failed`);
+      expect(
+        screen.queryByText('login.invalid_return_url_title')
+      ).not.toBeInTheDocument();
+      expect(mocks.assign).not.toHaveBeenCalled();
+      fireEvent.click(
+        screen.getByRole('button', { name: 'login.cross_app_handoff_retry' })
+      );
+      expect(mocks.reload).toHaveBeenCalledOnce();
+    }
+  );
 
   it('redirects authenticated managed wildcard returns without account confirmation', async () => {
     const managedReturnUrl =

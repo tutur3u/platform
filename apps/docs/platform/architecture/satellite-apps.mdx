@@ -561,6 +561,19 @@ Both contacts incidents above were diagnosed straight from those logs — the
 `workspaceId: 'v1'` in a `WorkspaceHelper` error is what exposed the catch-all
 shadowing the API proxy.
 
+### Sign-in handoff diagnostics
+
+The central Web routes for cross-app return, token verification, and session
+refresh emit one structured failure event with a fixed error code, route path,
+HTTP status, and a server-generated request ID. Match those fields against the
+reported UTC window. The event excludes credentials and request details such as
+query strings and cookies.
+
+On the central login page, a failed session handoff or interrupted browser
+session refresh offers a retry that keeps the app link. An unverified link offers
+to clear it. The login form and cross-app return route tests cover both the
+failure states and a signed-in Mail inbox handoff.
+
 ### Lettin deployment verification diagnostics
 
 The Lettin deployment verifier retains its strict health, expected-version, D1,

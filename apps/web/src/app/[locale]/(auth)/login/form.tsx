@@ -75,7 +75,10 @@ import {
 import { appendDiagnosticReference } from './auth-diagnostic-copy';
 import { resolveAuthRedirectOrigin } from './auth-redirect-origin';
 import { ProfileLoadingState } from './internal-app-account-confirmation-parts';
-import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
+import {
+  InvalidReturnUrlWarning,
+  type ReturnUrlFailureKind,
+} from './invalid-return-url-warning';
 import {
   LoginEmailModePreference,
   processEmailInput,
@@ -257,7 +260,7 @@ interface MobileMfaApprovalChallenge {
 }
 
 interface ReturnUrlValidationFailure {
-  reason?: string;
+  kind: ReturnUrlFailureKind;
   returnUrl: string;
 }
 
@@ -358,7 +361,6 @@ export default function LoginForm({
   );
   const {
     data: resolvedReturnApp,
-    error: resolvedReturnAppError,
     isError: didFailToResolveReturnApp,
     isLoading: isResolvingConfiguredReturnApp,
     refetch: refetchResolvedReturnApp,
@@ -545,13 +547,7 @@ export default function LoginForm({
       !captchaToken);
   const resolvedReturnUrlFailure =
     shouldResolveReturnApp && didFailToResolveReturnApp && returnUrl
-      ? {
-          reason:
-            resolvedReturnAppError instanceof Error
-              ? resolvedReturnAppError.message
-              : undefined,
-          returnUrl,
-        }
+      ? { kind: 'invalid' as const, returnUrl }
       : null;
   const activeReturnUrlFailure =
     returnUrlValidationFailure?.returnUrl === returnUrl
@@ -666,12 +662,9 @@ export default function LoginForm({
   );
 
   const markReturnUrlValidationFailure = useCallback(
-    (failedReturnUrl: string, error?: unknown) => {
+    (failedReturnUrl: string, kind: ReturnUrlFailureKind = 'invalid') => {
       setRedirectingAfterAuthState(false);
-      setReturnUrlValidationFailure({
-        reason: error instanceof Error ? error.message : undefined,
-        returnUrl: failedReturnUrl,
-      });
+      setReturnUrlValidationFailure({ kind, returnUrl: failedReturnUrl });
       setConfirmingReturn(false);
       setLoading(false);
       setReadyForAuth(true);
@@ -748,7 +741,7 @@ export default function LoginForm({
       const refetchResult = await refetchResolvedReturnApp();
 
       if (refetchResult.error) {
-        markReturnUrlValidationFailure(returnUrl, refetchResult.error);
+        markReturnUrlValidationFailure(returnUrl);
         return true;
       }
 
@@ -850,25 +843,26 @@ export default function LoginForm({
         return;
       }
 
-      const crossAppReturn = await createCrossAppReturnUrlWithInternalApi({
+      const handoff = await createCrossAppReturnUrlWithInternalApi({
         ...getCrossAppPkceParams(searchParams),
         returnUrl,
-      });
-
-      if (!crossAppReturn.returnUrl || !crossAppReturn.targetApp) {
-        throw new Error(crossAppReturn.error ?? 'Invalid returnUrl');
+      }).catch(() => null);
+      if (!handoff?.returnUrl || !handoff.targetApp) {
+        markReturnUrlValidationFailure(
+          returnUrl,
+          handoff?.error === 'Invalid returnUrl' ? 'invalid' : 'handoff'
+        );
+        return;
       }
-
-      await supabase.auth.refreshSession();
-
-      const nextUrl = new URL(crossAppReturn.returnUrl);
-
-      if (multiAccount === 'true') {
-        nextUrl.searchParams.set('multiAccount', 'true');
+      const refreshCompleted = await supabase.auth.refreshSession().then(
+        () => true,
+        () => false
+      );
+      if (!refreshCompleted) {
+        markReturnUrlValidationFailure(returnUrl, 'refresh');
+        return;
       }
-
-      // Another app serves its verifier, even on this origin (an apex mount).
-      window.location.assign(nextUrl.toString());
+      window.location.assign(new URL(handoff.returnUrl).toString());
       return;
     }
 
@@ -881,7 +875,7 @@ export default function LoginForm({
     }
 
     router.refresh();
-  }, [router, searchParams, supabase]);
+  }, [markReturnUrlValidationFailure, router, searchParams, supabase]);
 
   const completeMfaSignIn = useCallback(async () => {
     showRedirectingAfterAuth();
@@ -955,7 +949,7 @@ export default function LoginForm({
           );
 
           if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
-            markReturnUrlValidationFailure(returnUrl, navError);
+            markReturnUrlValidationFailure(returnUrl);
             return;
           }
 
@@ -1003,7 +997,7 @@ export default function LoginForm({
       const returnUrl = searchParams.get('returnUrl');
 
       if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
-        markReturnUrlValidationFailure(returnUrl, error);
+        markReturnUrlValidationFailure(returnUrl);
       }
 
       toast.error(t('login.internal_app_continue_failed'));
@@ -1583,7 +1577,7 @@ export default function LoginForm({
           const returnUrl = searchParams.get('returnUrl');
 
           if (returnUrl && !getSafeLocalReturnPath(returnUrl)) {
-            markReturnUrlValidationFailure(returnUrl, error);
+            markReturnUrlValidationFailure(returnUrl);
             return;
           }
 
@@ -1688,6 +1682,7 @@ export default function LoginForm({
   if (activeReturnUrlFailure) {
     return (
       <InvalidReturnUrlWarning
+        failure={activeReturnUrlFailure.kind}
         onClear={clearInvalidReturnUrl}
         returnUrl={activeReturnUrlFailure.returnUrl}
       />

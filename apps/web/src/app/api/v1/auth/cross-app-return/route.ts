@@ -22,6 +22,10 @@ import {
   matchesRegisteredCallbackPath,
   parseCrossAppPkceChallenge,
 } from '@/lib/auth/cross-app-pkce';
+import {
+  type ReportHandoffFailure,
+  withAuthHandoffDiagnostics,
+} from '@/lib/auth/handoff-diagnostics';
 import { normalizeManagedTuturuuuReturnUrl } from '@/lib/auth/managed-tuturuuu-return-url';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -31,6 +35,8 @@ const returnUrlSchema = z.object({
   generateToken: z.boolean().optional().default(true),
   returnUrl: z.string().min(1).max(MAX_URL_LENGTH),
 });
+
+const ROUTE = '/api/v1/auth/cross-app-return';
 
 function decodeReturnUrl(returnUrl: string) {
   try {
@@ -176,27 +182,39 @@ function buildTokenReturnUrl(target: ResolvedCrossAppTarget) {
   return nextUrl;
 }
 
-async function createCrossAppReturn(request: NextRequest) {
+async function createCrossAppReturn(
+  request: NextRequest,
+  fail: ReportHandoffFailure
+) {
   const body = await request.json().catch(() => null);
   const parsed = returnUrlSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 });
+    return fail(
+      'INVALID_RETURN_URL',
+      NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 })
+    );
   }
 
   const decodedReturnUrl = decodeReturnUrl(parsed.data.returnUrl);
   const target = await resolveTargetApp(decodedReturnUrl, request);
 
   if (!target) {
-    return NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 });
+    return fail(
+      'INVALID_RETURN_URL',
+      NextResponse.json({ error: 'Invalid returnUrl' }, { status: 400 })
+    );
   }
 
   const pkceChallenge = parseCrossAppPkceChallenge(parsed.data);
 
   if (pkceChallenge === false) {
-    return NextResponse.json(
-      { code: 'INVALID_CODE_CHALLENGE', error: 'Invalid code challenge' },
-      { status: 400 }
+    return fail(
+      'INVALID_CODE_CHALLENGE',
+      NextResponse.json(
+        { code: 'INVALID_CODE_CHALLENGE', error: 'Invalid code challenge' },
+        { status: 400 }
+      )
     );
   }
 
@@ -214,7 +232,10 @@ async function createCrossAppReturn(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return fail(
+      'UNAUTHORIZED',
+      NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    );
   }
 
   if (!target.requiresToken) {
@@ -230,9 +251,12 @@ async function createCrossAppReturn(request: NextRequest) {
   const boundChallenge = target.kind === 'external' ? pkceChallenge : null;
 
   if (target.requirePkce && !boundChallenge) {
-    return NextResponse.json(
-      { code: 'PKCE_REQUIRED', error: 'An S256 code challenge is required' },
-      { status: 400 }
+    return fail(
+      'PKCE_REQUIRED',
+      NextResponse.json(
+        { code: 'PKCE_REQUIRED', error: 'An S256 code challenge is required' },
+        { status: 400 }
+      )
     );
   }
 
@@ -246,14 +270,17 @@ async function createCrossAppReturn(request: NextRequest) {
     },
     { userId: user.id }
   );
-  if (assurance.status !== 'allowed')
-    return NextResponse.json(
-      {
-        code:
-          assurance.status === 'required' ? 'MFA_REQUIRED' : 'AUTH_UNAVAILABLE',
-      },
-      { status: assurance.status === 'required' ? 403 : 503 }
+  if (assurance.status !== 'allowed') {
+    const code =
+      assurance.status === 'required' ? 'MFA_REQUIRED' : 'AUTH_UNAVAILABLE';
+    return fail(
+      code,
+      NextResponse.json(
+        { code },
+        { status: assurance.status === 'required' ? 403 : 503 }
+      )
     );
+  }
   const verifiedClaims = await supabase.auth.getClaims();
   const sessionClaims =
     verifiedClaims.data?.claims?.sub === user.id && !verifiedClaims.error
@@ -289,14 +316,9 @@ async function createCrossAppReturn(request: NextRequest) {
     : await supabase.rpc('generate_cross_app_token', mintArgs);
 
   if (error || !data) {
-    console.warn('Failed to generate cross-app return token', {
-      error: error?.message,
-      targetApp: target.targetApp,
-    });
-
-    return NextResponse.json(
-      { error: 'Failed to generate token' },
-      { status: 500 }
+    return fail(
+      'TOKEN_MINT_FAILED',
+      NextResponse.json({ error: 'Failed to generate token' }, { status: 500 })
     );
   }
 
@@ -313,11 +335,9 @@ async function createCrossAppReturn(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withRequestLogDrain(
-    {
-      request,
-      route: '/api/v1/auth/cross-app-return',
-    },
-    () => createCrossAppReturn(request)
+  return withRequestLogDrain({ request, route: ROUTE }, () =>
+    withAuthHandoffDiagnostics(ROUTE, (fail) =>
+      createCrossAppReturn(request, fail)
+    )
   );
 }

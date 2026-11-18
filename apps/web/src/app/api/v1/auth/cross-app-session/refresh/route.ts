@@ -19,9 +19,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import {
+  type ReportHandoffFailure,
+  withAuthHandoffDiagnostics,
+} from '@/lib/auth/handoff-diagnostics';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const REFRESH_REPLAY_KEY_PREFIX = 'app-session:refresh:used';
+const ROUTE = '/api/v1/auth/cross-app-session/refresh';
 
 const refreshSchema = z.object({
   refreshToken: z.string().trim().min(1).optional(),
@@ -101,23 +106,32 @@ async function verifyRefreshToken({
   }
 }
 
-async function refreshCrossAppSession(request: NextRequest) {
+async function refreshCrossAppSession(
+  request: NextRequest,
+  fail: ReportHandoffFailure
+) {
   const body = await request.json().catch(() => null);
   const parsed = refreshSchema.safeParse(body);
 
   if (!parsed.success || !isRegisteredAppName(parsed.data.targetApp)) {
-    return jsonNoStore(
-      { error: 'Invalid app-session refresh payload' },
-      { status: 400 }
+    return fail(
+      'INVALID_REFRESH_PAYLOAD',
+      jsonNoStore(
+        { error: 'Invalid app-session refresh payload' },
+        { status: 400 }
+      )
     );
   }
 
   const { refreshToken, targetApp } = parsed.data;
 
   if (!refreshToken) {
-    return jsonNoStore(
-      { error: 'Missing app session refresh credentials' },
-      { status: 401 }
+    return fail(
+      'MISSING_REFRESH_CREDENTIALS',
+      jsonNoStore(
+        { error: 'Missing app session refresh credentials' },
+        { status: 401 }
+      )
     );
   }
 
@@ -131,22 +145,31 @@ async function refreshCrossAppSession(request: NextRequest) {
 
   switch (verification.kind) {
     case 'invalid':
-      return jsonNoStore(
-        { error: 'Invalid or expired app session refresh credentials' },
-        { status: 401 }
+      return fail(
+        'INVALID_REFRESH_CREDENTIALS',
+        jsonNoStore(
+          { error: 'Invalid or expired app session refresh credentials' },
+          { status: 401 }
+        )
       );
     case 'limited':
-      return jsonNoStore(
-        { error: 'Too many refresh attempts' },
-        { status: 429, headers: { 'Retry-After': '60' } }
+      return fail(
+        'REFRESH_RATE_LIMITED',
+        jsonNoStore(
+          { error: 'Too many refresh attempts' },
+          { status: 429, headers: { 'Retry-After': '60' } }
+        )
       );
     case 'unavailable':
-      return jsonNoStore(
-        {
-          code: 'APP_SESSION_REFRESH_UNAVAILABLE',
-          error: 'App session refresh temporarily unavailable',
-        },
-        { status: 503 }
+      return fail(
+        'APP_SESSION_REFRESH_UNAVAILABLE',
+        jsonNoStore(
+          {
+            code: 'APP_SESSION_REFRESH_UNAVAILABLE',
+            error: 'App session refresh temporarily unavailable',
+          },
+          { status: 503 }
+        )
       );
     case 'verified':
       break;
@@ -164,9 +187,12 @@ async function refreshCrossAppSession(request: NextRequest) {
   );
 
   if (error || !data.user || data.user.id !== verification.claims.sub) {
-    return jsonNoStore(
-      { error: 'Invalid or expired app session refresh credentials' },
-      { status: 401 }
+    return fail(
+      'REFRESH_SUBJECT_UNAVAILABLE',
+      jsonNoStore(
+        { error: 'Invalid or expired app session refresh credentials' },
+        { status: 401 }
+      )
     );
   }
 
@@ -176,9 +202,12 @@ async function refreshCrossAppSession(request: NextRequest) {
       verification.claims.mfa ?? null
     )
   ) {
-    return jsonNoStore(
-      { code: 'MFA_REQUIRED', error: 'MFA verification required' },
-      { status: 403 }
+    return fail(
+      'MFA_REQUIRED',
+      jsonNoStore(
+        { code: 'MFA_REQUIRED', error: 'MFA verification required' },
+        { status: 403 }
+      )
     );
   }
   const internalAppSessionPolicy = resolveInternalAppSessionPolicy(
@@ -215,11 +244,9 @@ async function refreshCrossAppSession(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withRequestLogDrain(
-    {
-      request,
-      route: '/api/v1/auth/cross-app-session/refresh',
-    },
-    () => refreshCrossAppSession(request)
+  return withRequestLogDrain({ request, route: ROUTE }, () =>
+    withAuthHandoffDiagnostics(ROUTE, (fail) =>
+      refreshCrossAppSession(request, fail)
+    )
   );
 }

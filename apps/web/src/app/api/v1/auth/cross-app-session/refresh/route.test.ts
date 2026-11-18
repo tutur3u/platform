@@ -93,6 +93,23 @@ describe('cross-app app-session refresh route', () => {
     });
   });
 
+  it('logs only safe metadata when a Mail refresh credential is rejected', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const response = await POST(
+      request({ refreshToken: 'private-fixture', targetApp: 'mail' })
+    );
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(warn).toHaveBeenCalledOnce();
+    expect(JSON.parse(warn.mock.calls[0]?.[0])).toEqual({
+      code: 'INVALID_REFRESH_CREDENTIALS',
+      path: '/api/v1/auth/cross-app-session/refresh',
+      requestId: expect.any(String),
+      status: 401,
+    });
+  });
+
   it('rotates a valid refresh token into a new Web-issued pair', async () => {
     const oldSession = createAppSessionTokenPair({
       targetApp: 'learn',

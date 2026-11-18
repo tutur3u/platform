@@ -10,7 +10,13 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
+import {
+  type ReportHandoffFailure,
+  withAuthHandoffDiagnostics,
+} from '@/lib/auth/handoff-diagnostics';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
+
+const ROUTE = '/api/v1/auth/cross-app-token/verify';
 
 const verifyCrossAppTokenSchema = z.object({
   targetApp: z.string().min(1).max(64),
@@ -31,14 +37,20 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   });
 }
 
-async function verifyCrossAppToken(request: NextRequest) {
+async function verifyCrossAppToken(
+  request: NextRequest,
+  fail: ReportHandoffFailure
+) {
   const body = await request.json().catch(() => null);
   const parsed = verifyCrossAppTokenSchema.safeParse(body);
 
   if (!parsed.success || !isRegisteredAppName(parsed.data.targetApp)) {
-    return jsonNoStore(
-      { error: 'Invalid cross-app token verification payload' },
-      { status: 400 }
+    return fail(
+      'INVALID_VERIFICATION_PAYLOAD',
+      jsonNoStore(
+        { error: 'Invalid cross-app token verification payload' },
+        { status: 400 }
+      )
     );
   }
 
@@ -50,7 +62,10 @@ async function verifyCrossAppToken(request: NextRequest) {
   });
 
   if (!validation) {
-    return jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 });
+    return fail(
+      'TOKEN_VERIFICATION_FAILED',
+      jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 })
+    );
   }
 
   const { policy } = await getAppCoordinationSessionPolicy();
@@ -85,11 +100,9 @@ async function verifyCrossAppToken(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withRequestLogDrain(
-    {
-      request,
-      route: '/api/v1/auth/cross-app-token/verify',
-    },
-    () => verifyCrossAppToken(request)
+  return withRequestLogDrain({ request, route: ROUTE }, () =>
+    withAuthHandoffDiagnostics(ROUTE, (fail) =>
+      verifyCrossAppToken(request, fail)
+    )
   );
 }
