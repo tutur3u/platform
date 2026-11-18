@@ -20,6 +20,7 @@ import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
+import { sidebarEvidencePath } from './sidebar-evidence-path.mjs';
 
 const require = createRequire(import.meta.url);
 const here = import.meta.dirname;
@@ -27,9 +28,6 @@ const repo = path.resolve(here, '../..');
 const harness = path.join(repo, 'packages/ui/tests/sidebar-layout-shift');
 const port = Number(process.env.SIDEBAR_SHIFT_PORT ?? 4191);
 const tolerance = Number(process.env.SIDEBAR_SHIFT_TOLERANCE ?? 0.001);
-const outPath =
-  process.env.SIDEBAR_SHIFT_OUT ??
-  path.join(os.tmpdir(), `sidebar-layout-shift-${process.pid}.json`);
 const noAssert = process.env.SIDEBAR_SHIFT_NO_ASSERT === '1';
 
 // Tooling lives in app workspaces rather than the repo root, so resolve each
@@ -256,6 +254,7 @@ try {
       .slice(0, 6),
     pageErrors,
   };
+  const outPath = sidebarEvidencePath(process.env.SIDEBAR_SHIFT_OUT);
   fs.writeFileSync(
     outPath,
     `${JSON.stringify({ result, shifts, cycles }, null, 2)}\n`
