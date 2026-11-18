@@ -82,16 +82,8 @@ void registerHiddenRecoveryChecks() {
           hidden: any(named: 'hidden'),
         ),
       );
-      // Without the shell chrome registry the sheet shows its inline field,
-      // which scrolls with the body when large text leaves little room.
-      await tester.scrollUntilVisible(
-        find.byType(EditableText),
-        -120,
-        scrollable: _workspacePickerScroll(),
-      );
-      await tester.enterText(find.byType(EditableText), 'Guest');
-      await _settle(tester);
-      expect(find.text('Team'), findsNothing);
+      // A short list shows no filter field.
+      expect(find.byType(EditableText), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.binding.handlePopRoute();
       await _settle(tester);

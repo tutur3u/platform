@@ -277,18 +277,18 @@ Hidden preference service as web. Hidden workspaces can always be restored from
 this sheet or Settings > Hidden workspaces; hiding never revokes membership.
 The sheet inherits shell chrome, dock Back and safe-area padding.
 
-Home chips, the More list and pin eligibility use only active,
-non-hidden workspaces. The workspace summary carries the existing soft-delete
+The Home chip and the workspace picker use only active, non-hidden
+workspaces. The workspace summary carries the existing soft-delete
 flag (deleted); these archived entries are excluded from presentation while
 canonical membership remains available to authorization and background services.
-A hidden current workspace is not reintroduced by its pin or current selection.
+A hidden current workspace is not reintroduced by its recent use.
 Preference failures retain the existing warning, rollback and Retry behavior.
 
 Regression coverage: workspace_visibility_sheet_test.dart,
-home_workspace_chips_test.dart, workspace_visibility_test.dart, and
+workspace_picker_sheet_test.dart, workspace_visibility_test.dart, and
 workspace-actions.test.ts.
 
-Home workspace chips remain because each switches workspace. Passive picker and
+The Home workspace chip remains because it opens the switcher. Passive picker and
 section counts are omitted; Manage workspaces is the actionable visibility entry.
 
 Mobile account shortcuts and the selection page omit passive workspace counts.

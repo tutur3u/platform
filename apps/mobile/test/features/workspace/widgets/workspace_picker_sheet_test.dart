@@ -1,574 +1,433 @@
-import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/theme/appearance/brand_accents.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/models/workspace_limits.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_body.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
-import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
+import 'package:mobile/features/workspace/widgets/workspace_visibility_sheet.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
 
-class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
-    implements WorkspaceCubit {}
+class _Workspaces extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
-/// A phone tall enough to show every row of the short fixtures at once.
-void _useTallPhone(WidgetTester tester) {
+const _personal = Workspace(
+  id: 'personal_ws',
+  name: 'Alex Nguyen',
+  personal: true,
+);
+const _product = Workspace(id: 'ws_1', name: 'Product', tier: workspaceTierPro);
+const _design = Workspace(id: 'ws_2', name: 'Design');
+const _ops = Workspace(id: 'ws_3', name: 'Ops');
+
+const _loaded = WorkspaceState(
+  status: WorkspaceStatus.loaded,
+  workspaces: [_ops, _personal, _product, _design],
+  currentWorkspace: _product,
+  defaultWorkspace: _personal,
+);
+
+List<Workspace> _teams(int count) => [
+  for (var i = 0; i < count; i++)
+    Workspace(id: 'team-$i', name: 'Team ${i.toString().padLeft(2, '0')}'),
+];
+
+Finder _row(String id) => find.byKey(workspacePickerRowKey(id));
+
+const ValueKey<String> _create = ValueKey('workspace-picker-create');
+const ValueKey<String> _manage = ValueKey('workspace-picker-manage');
+
+/// Opens the picker from a page on a nested navigator, as in the shell.
+Future<_Workspaces> _open(
+  WidgetTester tester,
+  WorkspaceState state, {
+  Brightness brightness = Brightness.light,
+  ShellChromeActionsCubit? chrome,
+  WorkspacePickerMode mode = WorkspacePickerMode.current,
+  bool authenticated = false,
+  Size size = const Size(390, 844),
+  bool settle = true,
+}) async {
   tester.view
-    ..physicalSize = const Size(390, 1400)
+    ..physicalSize = size
     ..devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  final cubit = _Workspaces();
+  when(() => cubit.hasAuthenticatedActor).thenReturn(authenticated);
+  when(cubit.refreshHiddenWorkspaces).thenAnswer((_) async {});
+  when(() => cubit.selectWorkspace(any())).thenAnswer((_) async {});
+  when(() => cubit.setDefaultWorkspace(any())).thenAnswer((_) async {});
+  when(() => cubit.state).thenReturn(state);
+  whenListen(cubit, const Stream<WorkspaceState>.empty(), initialState: state);
+  await tester.pumpThemedHome(
+    Navigator(
+      onGenerateRoute: (_) => MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          body: Center(
+            child: TextButton(
+              onPressed: () => showWorkspacePickerSheet(context, mode: mode),
+              child: const Text('Open picker'),
+            ),
+          ),
+        ),
+      ),
+    ),
+    brightness: brightness,
+    wrap: (app) => MultiBlocProvider(
+      providers: [
+        BlocProvider<WorkspaceCubit>.value(value: cubit),
+        if (chrome != null)
+          BlocProvider<ShellChromeActionsCubit>.value(value: chrome),
+      ],
+      child: app,
+    ),
+  );
+  await tester.tap(find.text('Open picker'));
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump(const Duration(milliseconds: 400));
+  }
+  return cubit;
+}
+
+List<double> _tops(WidgetTester tester, List<String> ids) => [
+  for (final id in ids) tester.getTopLeft(_row(id)).dy,
+];
+
+void _expectAscending(List<double> values) {
+  for (var i = 1; i < values.length; i++) {
+    expect(values[i], greaterThan(values[i - 1]), reason: 'row $i');
+  }
+}
+
+/// Asserts [row] is a selected choice in a radio group that a screen reader
+/// can activate, announced as [label].
+void _expectSelectedChoice(WidgetTester tester, Finder row, String label) {
+  final node = tester.getSemantics(row);
+  final data = node.getSemanticsData();
+  expect(data.label, label);
+  expect(data.hasAction(ui.SemanticsAction.tap), isTrue);
+  expect(node.flagsCollection.isButton, isTrue);
+  expect(node.flagsCollection.isInMutuallyExclusiveGroup, isTrue);
+  expect(node.flagsCollection.isSelected, ui.Tristate.isTrue);
 }
 
 void main() {
-  group('WorkspacePickerSheet', () {
-    late WorkspaceCubit workspaceCubit;
+  setUpAll(() => registerFallbackValue(_product));
 
-    const personalWorkspace = Workspace(
-      id: 'personal_ws',
-      name: 'Alex Nguyen',
-      personal: true,
-      tier: workspaceTierPlus,
-      avatarUrl: 'https://example.com/alex.png',
-    );
-    const proWorkspace = Workspace(
-      id: 'ws_1',
-      name: 'Product',
-      tier: workspaceTierPro,
-    );
-    const enterpriseWorkspace = Workspace(
-      id: 'ws_3',
-      name: 'Ops',
-      tier: workspaceTierEnterprise,
-    );
-    const freeWorkspace = Workspace(id: 'ws_2', name: 'Design');
+  testWidgets('the current workspace is the checked first row', (tester) async {
+    await _open(tester, _loaded);
+    _expectSelectedChoice(tester, _row('ws_1'), 'Product, Pro');
+    expect(find.byIcon(AppIcons.check), findsOneWidget);
+    // Without recent use, the rest keep their listed order.
+    _expectAscending(_tops(tester, ['ws_1', 'ws_3', 'personal_ws', 'ws_2']));
+  });
 
-    setUp(() {
-      workspaceCubit = _MockWorkspaceCubit();
-      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(false);
-      when(
-        () => workspaceCubit.refreshHiddenWorkspaces(),
-      ).thenAnswer((_) async {});
-    });
-
-    testWidgets('shows tier badges for each workspace', (tester) async {
-      _useTallPhone(tester);
-      const state = WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [
-          personalWorkspace,
-          proWorkspace,
-          enterpriseWorkspace,
-          freeWorkspace,
-        ],
-        currentWorkspace: proWorkspace,
-        defaultWorkspace: freeWorkspace,
-      );
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
-
-      await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: TextButton(
-                  onPressed: () => showWorkspacePickerSheet(context),
-                  child: const Text('Open picker'),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Open picker'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 250));
-
-      expect(find.text('Alex Nguyen'), findsOneWidget);
-      expect(find.text('Product'), findsOneWidget);
-      expect(find.text('Ops'), findsOneWidget);
-      expect(find.text('Design'), findsOneWidget);
-      expect(find.text('Plus'), findsOneWidget);
-      expect(find.text('Pro'), findsOneWidget);
-      expect(find.text('Enterprise'), findsOneWidget);
-      expect(find.text('Free'), findsOneWidget);
-    });
-
-    testWidgets('keeps filtered results stable when search loses focus', (
+  testWidgets('the rest follow by recent use', (tester) async {
+    await _open(
       tester,
-    ) async {
-      _useTallPhone(tester);
-      const state = WorkspaceState(
-        status: WorkspaceStatus.loaded,
-        workspaces: [personalWorkspace, proWorkspace, freeWorkspace],
-        currentWorkspace: proWorkspace,
-        defaultWorkspace: freeWorkspace,
-      );
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
+      _loaded.copyWith(recentWorkspaceIds: ['ws_2', 'ws_1', 'personal_ws']),
+    );
+    _expectAscending(_tops(tester, ['ws_1', 'ws_2', 'personal_ws', 'ws_3']));
+  });
 
-      await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: TextButton(
-                  onPressed: () => showWorkspacePickerSheet(context),
-                  child: const Text('Open picker'),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Open picker'));
-      await tester.pumpAndSettle();
-
-      // Outside the shell the sheet falls back to an inline search field.
-      expect(find.byType(AppSearchField), findsOneWidget);
-      expect(find.text('Search workspaces'), findsOneWidget);
-      expect(find.text('Design'), findsOneWidget);
-
-      await tester.enterText(find.byType(EditableText), 'Product');
-      await tester.pumpAndSettle();
-      // The query and the single matching row; Design is filtered out.
-      expect(find.text('Product'), findsNWidgets(2));
-      expect(find.text('Design'), findsNothing);
-
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-      expect(find.text('Design'), findsNothing);
-      expect(find.text('Product'), findsNWidgets(2));
-
-      await tester.enterText(find.byType(EditableText), '   ');
-      await tester.pumpAndSettle();
-      expect(find.text('Design'), findsOneWidget);
-    });
-
-    testWidgets('selects the workspace represented by a filtered result', (
+  testWidgets('Pro has an outlined marker and Free has none', (tester) async {
+    await _open(
       tester,
-    ) async {
-      const exocorpseWorkspace = Workspace(
-        id: 'ws_exocorpse',
-        name: 'Exocorpse',
-      );
-      const state = WorkspaceState(
+      const WorkspaceState(
         status: WorkspaceStatus.loaded,
-        workspaces: [freeWorkspace, exocorpseWorkspace, proWorkspace],
-        currentWorkspace: freeWorkspace,
-      );
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
-      when(
-        () => workspaceCubit.selectWorkspace(exocorpseWorkspace),
-      ).thenAnswer((_) async {});
+        workspaces: [_product, _design],
+        currentWorkspace: _design,
+      ),
+    );
+    expect(
+      find.descendant(of: _row('ws_1'), matching: find.text('Pro')),
+      findsOneWidget,
+    );
+    expect(find.text('Free'), findsNothing);
+    _expectSelectedChoice(tester, _row('ws_2'), 'Design');
+  });
 
-      await tester.pumpApp(
-        BlocProvider<WorkspaceCubit>.value(
-          value: workspaceCubit,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: TextButton(
-                onPressed: () => showWorkspacePickerSheet(context),
-                child: const Text('Open picker'),
-              ),
-            ),
-          ),
-        ),
-      );
-
-      await tester.tap(find.text('Open picker'));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(EditableText), 'Exocorpse');
-      await tester.pumpAndSettle();
-      final exocorpseResult = find.ancestor(
-        of: find.text('Exocorpse').last,
-        matching: find.byType(InkWell),
-      );
-      await tester.tap(exocorpseResult.first);
-      await tester.pumpAndSettle();
-
-      verify(
-        () => workspaceCubit.selectWorkspace(exocorpseWorkspace),
-      ).called(1);
-      verifyNever(() => workspaceCubit.selectWorkspace(freeWorkspace));
-    });
-
-    for (final mode in WorkspacePickerMode.values) {
-      testWidgets('selects stable ID after sorting and refresh in $mode', (
-        tester,
-      ) async {
-        const original = Workspace(id: 'first', name: 'Zulu');
-        const duplicateA = Workspace(id: 'duplicate_a', name: 'Alpha');
-        const duplicateB = Workspace(id: 'duplicate_b', name: 'Alpha');
-        const updatedB = Workspace(
-          id: 'duplicate_b',
-          name: 'Alpha',
-          tier: workspaceTierPro,
-        );
-        const initial = WorkspaceState(
-          status: WorkspaceStatus.loaded,
-          workspaces: [original, duplicateB, duplicateA],
-          currentWorkspace: original,
-        );
-        final updates = StreamController<WorkspaceState>();
-        addTearDown(updates.close);
-        whenListen(workspaceCubit, updates.stream, initialState: initial);
-        when(
-          () => workspaceCubit.selectWorkspace(updatedB),
-        ).thenAnswer((_) async {});
-        when(
-          () => workspaceCubit.setDefaultWorkspace(updatedB),
-        ).thenAnswer((_) async {});
-        await tester.pumpApp(
-          BlocProvider<WorkspaceCubit>.value(
-            value: workspaceCubit,
-            child: Builder(
-              builder: (context) => Scaffold(
-                body: TextButton(
-                  onPressed: () =>
-                      showWorkspacePickerSheet(context, mode: mode),
-                  child: const Text('Open picker'),
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.tap(find.text('Open picker'));
-        await tester.pumpAndSettle();
-        await tester.enterText(find.byType(EditableText), 'Alpha');
-        await tester.pumpAndSettle();
-        updates.add(
-          initial.copyWith(workspaces: [duplicateA, original, updatedB]),
-        );
-        await tester.pumpAndSettle();
-        FocusManager.instance.primaryFocus?.unfocus();
-        await tester.pumpAndSettle();
-        expect(find.text('Zulu'), findsNothing);
-        final result = find.byKey(
-          const ValueKey('workspace-result-duplicate_b'),
-        );
-        await tester.ensureVisible(result);
-        await tester.tap(result);
-        await tester.pumpAndSettle();
-        if (mode == WorkspacePickerMode.current) {
-          verify(() => workspaceCubit.selectWorkspace(updatedB)).called(1);
-          verifyNever(() => workspaceCubit.setDefaultWorkspace(updatedB));
-        } else {
-          verify(() => workspaceCubit.setDefaultWorkspace(updatedB)).called(1);
-          verifyNever(() => workspaceCubit.selectWorkspace(updatedB));
-        }
-        verifyNever(() => workspaceCubit.selectWorkspace(original));
-        verifyNever(() => workspaceCubit.selectWorkspace(duplicateA));
-      });
-    }
-    testWidgets('narrow picker sheet supports large text, keyboard and close', (
+  testWidgets('the filter appears only above eight workspaces', (tester) async {
+    final eight = _teams(8);
+    await _open(
       tester,
-    ) async {
-      tester.view.physicalSize = const Size(320, 568);
-      tester.view.devicePixelRatio = 1;
-      tester.platformDispatcher.textScaleFactorTestValue = 2;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-      const state = WorkspaceState(
+      WorkspaceState(
         status: WorkspaceStatus.loaded,
-        workspaces: [proWorkspace, enterpriseWorkspace, freeWorkspace],
-        visibilityResolved: true,
-        visibilityStatus: WorkspaceStatus.loaded,
+        workspaces: eight,
+        currentWorkspace: eight.first,
+      ),
+    );
+    expect(find.byKey(workspacePickerFilterKey), findsNothing);
+    expect(find.byType(EditableText), findsNothing);
+  });
+
+  testWidgets('above eight, the filter narrows rows and can be cleared', (
+    tester,
+  ) async {
+    final nine = _teams(9);
+    final cubit = await _open(
+      tester,
+      WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: nine,
+        currentWorkspace: nine.first,
+      ),
+    );
+    expect(find.byKey(workspacePickerFilterKey), findsOneWidget);
+    await tester.enterText(find.byType(EditableText), 'team 07');
+    await tester.pumpAndSettle();
+    expect(_row('team-7'), findsOneWidget);
+    expect(_row('team-0'), findsNothing);
+
+    await tester.enterText(find.byType(EditableText), 'nothing like this');
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('workspace-picker-no-results')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Clear search'));
+    await tester.pumpAndSettle();
+    expect(_row('team-0'), findsOneWidget);
+
+    await tester.enterText(find.byType(EditableText), 'team 05');
+    await tester.pumpAndSettle();
+    await tester.tap(_row('team-5'));
+    await tester.pumpAndSettle();
+    verify(() => cubit.selectWorkspace(nine[5])).called(1);
+  });
+
+  testWidgets('selecting a row switches workspace and closes', (tester) async {
+    final cubit = await _open(tester, _loaded);
+    await tester.tap(_row('ws_3'));
+    await tester.pumpAndSettle();
+    verify(() => cubit.selectWorkspace(_ops)).called(1);
+    verifyNever(() => cubit.setDefaultWorkspace(any()));
+    expect(find.byType(AppSheetScaffold), findsNothing);
+  });
+
+  testWidgets('default mode checks the default and saves it on tap', (
+    tester,
+  ) async {
+    final cubit = await _open(
+      tester,
+      _loaded,
+      mode: WorkspacePickerMode.defaultWorkspace,
+    );
+    expect(find.byKey(_manage), findsNothing);
+    expect(find.text('Default workspace'), findsWidgets);
+    _expectSelectedChoice(tester, _row('personal_ws'), 'Alex Nguyen');
+    _expectAscending(_tops(tester, ['personal_ws', 'ws_3', 'ws_1', 'ws_2']));
+    await tester.tap(_row('ws_2'));
+    await tester.pumpAndSettle();
+    verify(() => cubit.setDefaultWorkspace(_design)).called(1);
+    verifyNever(() => cubit.selectWorkspace(any()));
+  });
+
+  testWidgets('Create and Manage are plain rows after the workspaces', (
+    tester,
+  ) async {
+    final chrome = ShellChromeActionsCubit();
+    addTearDown(chrome.close);
+    await _open(tester, _loaded, chrome: chrome);
+    final last = tester.getRect(_row('ws_2')).bottom;
+    expect(tester.getRect(find.byKey(_create)).top, greaterThan(last));
+    expect(
+      tester.getRect(find.byKey(_manage)).top,
+      greaterThan(tester.getRect(find.byKey(_create)).top),
+    );
+    expect(find.byType(AppButton), findsNothing);
+
+    await tester.tap(find.byKey(_manage));
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspacePickerSheet), findsNothing);
+    expect(find.byType(WorkspaceVisibilitySheet), findsOneWidget);
+    final back = chrome.state.backForLocation('/test');
+    expect(back, isNotNull);
+    await back!();
+    await tester.pumpAndSettle();
+    expect(find.byType(WorkspaceVisibilitySheet), findsNothing);
+  });
+
+  testWidgets('Create is disabled at the workspace limit', (tester) async {
+    await _open(
+      tester,
+      _loaded.copyWith(
+        limits: const WorkspaceLimits(
+          canCreate: false,
+          currentCount: 4,
+          limit: 4,
+        ),
+      ),
+    );
+    expect(find.text('You have reached the workspace limit'), findsOneWidget);
+    expect(tester.widget<AppOptionTile>(find.byKey(_create)).onTap, isNull);
+  });
+
+  for (final brightness in Brightness.values) {
+    testWidgets('identity tiles use the stable brand colour per id in '
+        '${brightness.name}', (tester) async {
+      await _open(tester, _loaded, brightness: brightness);
+      for (final id in ['ws_2', 'ws_3', 'personal_ws']) {
+        final fills = tester
+            .widgetList<ColoredBox>(
+              find.descendant(of: _row(id), matching: find.byType(ColoredBox)),
+            )
+            .map((box) => box.color);
+        expect(
+          fills,
+          contains(BrandAccents.forKey(id).fill(brightness)),
+          reason: id,
+        );
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('first visibility load shows skeleton rows', (tester) async {
+    await _open(
+      tester,
+      _loaded.copyWith(visibilityStatus: WorkspaceStatus.loading),
+      authenticated: true,
+      settle: false,
+    );
+    expect(find.byType(AppSkeletonRows), findsOneWidget);
+    expect(_row('ws_3'), findsNothing);
+  });
+
+  testWidgets('a preference failure warns and keeps switching available', (
+    tester,
+  ) async {
+    final cubit = await _open(
+      tester,
+      const WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: [_product, _design],
+        visibilityStatus: WorkspaceStatus.error,
         visibilityError: 'offline',
-      );
-      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
-      await tester.pumpApp(
-        BlocProvider.value(
-          value: workspaceCubit,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: TextButton(
-                onPressed: () => showWorkspacePickerSheet(context),
-                child: const Text('Open picker'),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.tap(find.text('Open picker'));
-      await tester.pumpAndSettle();
-      expect(find.byType(AppSheetScaffold), findsOneWidget);
-      expect(find.byType(FloatingActionButton), findsNothing);
-      expect(tester.takeException(), isNull);
-      await tester.tap(find.byType(EditableText));
-      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
-      addTearDown(tester.view.resetViewInsets);
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      tester.view.resetViewInsets();
-      FocusManager.instance.primaryFocus?.unfocus();
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('app-sheet-close')));
-      await tester.pumpAndSettle();
-      expect(find.byType(AppSheetScaffold), findsNothing);
-      expect(find.text('Open picker'), findsOneWidget);
-    });
-    testWidgets(
-      'Settings row opens private restore without selecting a scope',
-      (tester) async {
-        const state = WorkspaceState(
-          status: WorkspaceStatus.loaded,
-          workspaces: [proWorkspace, freeWorkspace],
-          hiddenWorkspaceIds: ['ws_1'],
-          visibilityResolved: true,
-          visibilityStatus: WorkspaceStatus.loaded,
-        );
-        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-        when(() => workspaceCubit.state).thenReturn(state);
-        when(
-          () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
-        ).thenAnswer((_) async {});
-        whenListen(
-          workspaceCubit,
-          const Stream<WorkspaceState>.empty(),
-          initialState: state,
-        );
-        await tester.pumpApp(
-          BlocProvider.value(
-            value: workspaceCubit,
-            child: const HiddenWorkspacesSettingsRow(),
-          ),
-        );
-        await tester.tap(find.text('Hidden workspaces'));
-        await tester.pumpAndSettle();
-        expect(find.text('Product'), findsOneWidget);
-        expect(find.text('Design'), findsNothing);
-        await tester.tap(find.byTooltip('Restore: Product'));
-        await tester.pumpAndSettle();
-        verify(
-          () => workspaceCubit.setWorkspaceHidden('ws_1', hidden: false),
-        ).called(1);
-        verifyNever(() => workspaceCubit.selectWorkspace(proWorkspace));
-        verifyNever(() => workspaceCubit.setDefaultWorkspace(proWorkspace));
-        await tester.binding.handlePopRoute();
-        await tester.pumpAndSettle();
-        expect(find.byType(AppSheetScaffold), findsNothing);
-      },
+      ),
+      authenticated: true,
     );
+    expect(
+      find.text(
+        'Workspace visibility preferences are unavailable. '
+        'Saved hidden choices are kept.',
+      ),
+      findsOneWidget,
+    );
+    clearInteractions(cubit);
+    await tester.tap(find.text('Retry'));
+    verify(cubit.refreshHiddenWorkspaces).called(1);
+    await tester.tap(_row('ws_2'));
+    await tester.pumpAndSettle();
+    verify(() => cubit.selectWorkspace(_design)).called(1);
+  });
 
-    Future<void> openPicker(
-      WidgetTester tester,
-      WorkspaceState state, {
-      Stream<WorkspaceState>? stream,
-    }) async {
-      when(() => workspaceCubit.state).thenReturn(state);
-      whenListen(
-        workspaceCubit,
-        stream ?? const Stream<WorkspaceState>.empty(),
-        initialState: state,
-      );
-      await tester.pumpApp(
-        BlocProvider.value(
-          value: workspaceCubit,
-          child: Builder(
-            builder: (context) => Scaffold(
-              body: TextButton(
-                onPressed: () => showWorkspacePickerSheet(context),
-                child: const Text('Open picker'),
-              ),
-            ),
-          ),
-        ),
-      );
-      await tester.tap(find.text('Open picker'));
-      await tester.pumpAndSettle();
-    }
-
-    testWidgets(
-      'explains the disabled creation action at the workspace limit',
-      (tester) async {
-        await openPicker(
-          tester,
-          const WorkspaceState(
-            status: WorkspaceStatus.loaded,
-            workspaces: [proWorkspace, freeWorkspace],
-            limits: WorkspaceLimits(
-              canCreate: false,
-              currentCount: 2,
-              limit: 2,
-            ),
-          ),
-        );
-        expect(find.text('2 of 2 workspaces used'), findsOneWidget);
-        expect(
-          find.text('You have reached the workspace limit'),
-          findsOneWidget,
-        );
-        final add = tester.widget<AppButton>(
-          find.byKey(const ValueKey('workspace-picker-create')),
-        );
-        expect(add.onPressed, isNull);
-      },
-    );
-    testWidgets(
-      'preference failure warns without blocking membership or retry',
-      (tester) async {
-        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-        await openPicker(
-          tester,
-          const WorkspaceState(
-            status: WorkspaceStatus.loaded,
-            workspaces: [proWorkspace],
-            visibilityStatus: WorkspaceStatus.error,
-            visibilityError: 'offline',
-          ),
-        );
-        expect(
-          find.text(
-            'Workspace visibility preferences are unavailable. '
-            'Saved hidden choices are kept.',
-          ),
-          findsOneWidget,
-        );
-        clearInteractions(workspaceCubit);
-        await tester.tap(find.text('Retry'));
-        verify(() => workspaceCubit.refreshHiddenWorkspaces()).called(1);
-        expect(find.text('Product'), findsOneWidget);
-        expect(
-          tester
-              .widget<WorkspaceResultTile>(
-                find.byKey(const ValueKey('workspace-result-ws_1')),
-              )
-              .onVisibility,
-          isNull,
-        );
-        when(
-          () => workspaceCubit.selectWorkspace(proWorkspace),
-        ).thenAnswer((_) async {});
-        await tester.ensureVisible(
-          find.byKey(const ValueKey('workspace-result-ws_1')),
-        );
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Product'));
-        await tester.pumpAndSettle();
-        verify(() => workspaceCubit.selectWorkspace(proWorkspace)).called(1);
-        verifyNever(
-          () => workspaceCubit.setWorkspaceHidden(
-            any(),
-            hidden: any(named: 'hidden'),
-          ),
-        );
-      },
-    );
-    testWidgets('normal picker keeps hidden entries behind management', (
+  testWidgets('the normal picker keeps hidden workspaces out', (tester) async {
+    await _open(
       tester,
-    ) async {
-      const state = WorkspaceState(
+      const WorkspaceState(
         status: WorkspaceStatus.loaded,
-        workspaces: [proWorkspace],
+        workspaces: [_product, _design],
         hiddenWorkspaceIds: ['ws_1'],
         visibilityResolved: true,
         visibilityStatus: WorkspaceStatus.loaded,
-      );
-      when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-      await openPicker(tester, state);
-      expect(find.text('Hidden workspaces'), findsNothing);
-      expect(find.byTooltip('Restore: Product'), findsNothing);
-      expect(find.byTooltip('Hide: Product'), findsNothing);
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(find.byType(AppSheetScaffold), findsNothing);
-    });
-    testWidgets(
-      'save error keeps the whole viewport scrollable to the last row',
-      (tester) async {
-        tester.view.physicalSize = const Size(320, 640);
-        tester.view.padding = const FakeViewPadding(top: 44, bottom: 34);
-        tester.view.viewPadding = const FakeViewPadding(top: 44, bottom: 34);
-        addTearDown(tester.view.resetPadding);
-        addTearDown(tester.view.resetViewPadding);
-        tester.view.devicePixelRatio = 1;
-        tester.platformDispatcher.textScaleFactorTestValue = 1.5;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-        when(() => workspaceCubit.hasAuthenticatedActor).thenReturn(true);
-        final workspaces = List.generate(
-          20,
-          (index) => Workspace(
-            id: 'synthetic-$index',
-            name:
-                'Synthetic team ${index.toString().padLeft(2, '0')} '
-                'with a long workspace label',
-          ),
-        );
-        await openPicker(
-          tester,
-          WorkspaceState(
-            status: WorkspaceStatus.loaded,
-            workspaces: workspaces,
-            visibilityStatus: WorkspaceStatus.loaded,
-            visibilityResolved: true,
-            visibilityError: 'synthetic offline failure',
-          ),
-        );
-        expect(
-          find.text('Unable to save this change. Try again when connected.'),
-          findsOneWidget,
-        );
-        expect(find.text('Retry'), findsOneWidget);
-        final scroll = find
-            .descendant(
-              of: find.byType(CustomScrollView),
-              matching: find.byType(Scrollable),
-            )
-            .first;
-        await tester.scrollUntilVisible(
-          find.byKey(const ValueKey('workspace-result-synthetic-19')),
-          250,
-          scrollable: scroll,
-        );
-        await tester.pumpAndSettle();
-        expect(tester.takeException(), isNull);
-        final last = tester.getRect(
-          find.byKey(const ValueKey('workspace-result-synthetic-19')),
-        );
-        expect(
-          last.bottom,
-          lessThan(
-            tester
-                .getRect(find.byKey(const ValueKey('workspace-picker-create')))
-                .top,
-          ),
-        );
-      },
+      ),
+      authenticated: true,
     );
+    expect(_row('ws_1'), findsNothing);
+    expect(_row('ws_2'), findsOneWidget);
+    expect(find.byTooltip('Restore: Product'), findsNothing);
+  });
+
+  testWidgets('the hidden list restores without selecting', (tester) async {
+    tester.view
+      ..physicalSize = const Size(390, 844)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    const state = WorkspaceState(
+      status: WorkspaceStatus.loaded,
+      workspaces: [_product, _design],
+      hiddenWorkspaceIds: ['ws_1'],
+      visibilityResolved: true,
+      visibilityStatus: WorkspaceStatus.loaded,
+    );
+    final cubit = _Workspaces();
+    when(() => cubit.hasAuthenticatedActor).thenReturn(true);
+    when(cubit.refreshHiddenWorkspaces).thenAnswer((_) async {});
+    when(() => cubit.state).thenReturn(state);
+    when(
+      () => cubit.setWorkspaceHidden('ws_1', hidden: false),
+    ).thenAnswer((_) async {});
+    whenListen(
+      cubit,
+      const Stream<WorkspaceState>.empty(),
+      initialState: state,
+    );
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: cubit,
+        child: const HiddenWorkspacesSettingsRow(),
+      ),
+    );
+    await tester.tap(find.text('Hidden workspaces'));
+    await tester.pumpAndSettle();
+    expect(find.text('Product'), findsOneWidget);
+    expect(find.text('Design'), findsNothing);
+    await tester.tap(find.byTooltip('Restore: Product'));
+    await tester.pumpAndSettle();
+    verify(() => cubit.setWorkspaceHidden('ws_1', hidden: false)).called(1);
+    verifyNever(() => cubit.selectWorkspace(any()));
+    expect(find.byKey(_create), findsNothing);
+  });
+
+  testWidgets('a long list builds lazily and scrolls to the end rows', (
+    tester,
+  ) async {
+    final teams = _teams(40);
+    await _open(
+      tester,
+      WorkspaceState(
+        status: WorkspaceStatus.loaded,
+        workspaces: teams,
+        currentWorkspace: teams.first,
+      ),
+    );
+    expect(_row('team-39'), findsNothing);
+    final scroll = find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first;
+    await tester.scrollUntilVisible(
+      find.byKey(_manage),
+      300,
+      scrollable: scroll,
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a narrow sheet supports large text and closes', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    await _open(tester, _loaded, size: const Size(320, 568));
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.byKey(const ValueKey('app-sheet-close')));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppSheetScaffold), findsNothing);
   });
 }

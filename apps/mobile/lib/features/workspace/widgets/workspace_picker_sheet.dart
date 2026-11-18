@@ -7,8 +7,9 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_slivers.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_body.dart';
 import 'package:mobile/features/workspace/widgets/workspace_visibility_sheet.dart';
+import 'package:mobile/features/workspace/workspace_picker_order.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -18,8 +19,8 @@ enum WorkspacePickerMode { current, defaultWorkspace }
 ///
 /// [mode] picks what a selection changes: the current workspace (switch) or
 /// the default one opened at launch. [hiddenOnly] lists hidden workspaces
-/// with restore actions instead. Inside the shell the sheet sits under the
-/// shell chrome, so the dock's search action and Back drive it.
+/// with restore actions instead. The sheet fits its rows and opens tall only
+/// when the filter field shows.
 Future<void> showWorkspacePicker(
   BuildContext context, {
   WorkspacePickerMode mode = WorkspacePickerMode.current,
@@ -27,9 +28,12 @@ Future<void> showWorkspacePicker(
 }) {
   final cubit = context.read<WorkspaceCubit>();
   unawaited(cubit.refreshHiddenWorkspaces());
+  final count = cubit.state.visibleWorkspaces.length;
   return showAppSheet<void>(
     context: context,
-    size: AppSheetSize.large,
+    size: count > workspacePickerFilterThreshold
+        ? AppSheetSize.large
+        : AppSheetSize.fit,
     builder: (_) => BlocProvider.value(
       value: cubit,
       child: WorkspacePickerSheet(
@@ -51,6 +55,10 @@ void showWorkspacePickerSheet(
 );
 
 /// Body of the workspace picker sheet; open it with [showWorkspacePicker].
+///
+/// The selected workspace is the checked first row; the rest follow by
+/// recent use. Create and Manage are plain rows at the end, and a filter
+/// field appears only above [workspacePickerFilterThreshold] workspaces.
 class WorkspacePickerSheet extends StatefulWidget {
   const WorkspacePickerSheet({
     required this.parentContext,
@@ -69,13 +77,11 @@ class WorkspacePickerSheet extends StatefulWidget {
 }
 
 class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
-  final _search = TextEditingController();
+  final _filter = TextEditingController();
 
   @override
   void dispose() {
-    // The shell search field may still hold the controller this frame.
-    final search = _search;
-    WidgetsBinding.instance.addPostFrameCallback((_) => search.dispose());
+    _filter.dispose();
     super.dispose();
   }
 
@@ -88,8 +94,8 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
     }
   }
 
-  void _clearSearch() {
-    _search.clear();
+  void _clearFilter() {
+    _filter.clear();
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() {});
   }
@@ -124,11 +130,11 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
     await showCreateWorkspaceDialog(widget.parentContext);
   }
 
-  Future<void> _setHidden(Workspace workspace, {required bool hidden}) async {
+  Future<void> _restore(Workspace workspace) async {
     try {
       await context.read<WorkspaceCubit>().setWorkspaceHidden(
         workspace.id,
-        hidden: hidden,
+        hidden: false,
       );
     } on Object {
       // The cubit rolls back and exposes a localized retry state.
@@ -140,8 +146,6 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
       [
         displayWorkspacePickerName(context, workspace),
         workspace.name,
-        workspace.id,
-        workspace.tier,
       ].whereType<String>().any((value) => value.toLowerCase().contains(query));
 
   @override
@@ -150,82 +154,64 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
         builder: (context, state) {
           final l10n = context.l10n;
           final cubit = context.read<WorkspaceCubit>();
-          final query = _search.text.trim().toLowerCase();
           final hiddenOnly = widget.hiddenOnly;
+          final defaultMode =
+              widget.mode == WorkspacePickerMode.defaultWorkspace;
           final choices = hiddenOnly
               ? state.hiddenWorkspaces
               : state.visibleWorkspaces;
-          final results = choices.where((w) => _matches(w, query)).toList();
-          final selected = widget.mode == WorkspacePickerMode.defaultWorkspace
-              ? state.defaultWorkspace
-              : state.currentWorkspace;
-          final needsVisibility = cubit.hasAuthenticatedActor;
-          final canCreate = state.limits?.canCreate ?? true;
-          final data = WorkspacePickerData(
-            state: state,
-            mode: widget.mode,
-            hiddenOnly: hiddenOnly,
-            query: query,
-            results: results,
-            // Pin the selection above the results until the user searches.
-            pinned: !hiddenOnly && query.isEmpty
-                ? choices.where((w) => w.id == selected?.id).firstOrNull
-                : null,
-            selectedId: selected?.id,
-            loading:
-                needsVisibility &&
-                !state.visibilityResolved &&
-                state.visibilityStatus == WorkspaceStatus.loading,
-            canManageVisibility:
-                hiddenOnly && needsVisibility && state.visibilityResolved,
+          final showFilter = choices.length > workspacePickerFilterThreshold;
+          final query = showFilter ? _filter.text.trim().toLowerCase() : '';
+          final selectedId = defaultMode
+              ? state.defaultWorkspace?.id
+              : state.currentWorkspace?.id;
+          final rows = orderPickerWorkspaces(
+            choices.where((w) => _matches(w, query)).toList(),
+            selectedId: hiddenOnly ? null : selectedId,
+            recentIds: hiddenOnly ? const [] : state.recentWorkspaceIds,
           );
+          final needsVisibility = cubit.hasAuthenticatedActor;
           return AppSheetScaffold(
             title: hiddenOnly
                 ? l10n.workspaceHiddenTitle
-                : widget.mode == WorkspacePickerMode.defaultWorkspace
+                : defaultMode
                 ? l10n.workspaceDefaultPickerTitle
                 : l10n.workspacePickerTitle,
             description: hiddenOnly
                 ? l10n.workspaceHiddenDescription
-                : widget.mode == WorkspacePickerMode.defaultWorkspace
+                : defaultMode
                 ? l10n.workspacePickerDefaultDescription
                 : null,
-            search: AppSheetSearch(
-              controller: _search,
-              hint: l10n.workspacePickerSearchHint,
-              onChanged: (_) => setState(() {}),
-            ),
-            actions: [
-              if (!hiddenOnly)
-                AppButton.outline(
-                  key: const ValueKey('workspace-picker-create'),
-                  leading: const Icon(LucideIcons.plus, size: 16),
-                  onPressed: canCreate ? _create : null,
-                  child: Text(l10n.workspaceCreateSubmit),
-                ),
-            ],
-            slivers: [
-              if (!hiddenOnly && widget.mode == WorkspacePickerMode.current)
-                SliverToBoxAdapter(
-                  child: AppButton.outline(
-                    key: const ValueKey('workspace-picker-manage'),
-                    leading: const Icon(LucideIcons.eye, size: 16),
-                    onPressed: _manage,
-                    child: Text(l10n.workspaceManageTitle),
-                  ),
-                ),
-              ...buildWorkspacePickerSlivers(
-                context,
-                data,
-                WorkspacePickerCallbacks(
-                  onSelect: _select,
-                  onSetHidden: _setHidden,
-                  onRetryVisibility: cubit.refreshHiddenWorkspaces,
-                  onClearSearch: _clearSearch,
-                  onCreate: canCreate && !hiddenOnly ? _create : null,
-                ),
+            slivers: buildWorkspacePickerBody(
+              context,
+              WorkspacePickerBodyData(
+                state: state,
+                rows: rows,
+                selectedId: selectedId,
+                hiddenOnly: hiddenOnly,
+                filter: showFilter ? _filter : null,
+                query: query,
+                loading:
+                    needsVisibility &&
+                    !state.visibilityResolved &&
+                    state.visibilityStatus == WorkspaceStatus.loading,
+                canRestore: needsVisibility && state.visibilityResolved,
               ),
-            ],
+              WorkspacePickerBodyActions(
+                onSelect: _select,
+                onRestore: _restore,
+                onRetryVisibility: cubit.refreshHiddenWorkspaces,
+                onFilterChanged: () => setState(() {}),
+                onClearFilter: _clearFilter,
+                onCreate: hiddenOnly
+                    ? null
+                    : (state.limits?.canCreate ?? true)
+                    ? _create
+                    : null,
+                showCreate: !hiddenOnly,
+                onManage: hiddenOnly || defaultMode ? null : _manage,
+              ),
+            ),
           );
         },
       );

@@ -5,7 +5,7 @@ import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/notifications/widgets/notification_row.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
-import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
+import 'package:mobile/features/workspace/widgets/workspace_picker_row.dart';
 
 import 'shell_chrome_scenes.dart';
 
@@ -99,7 +99,8 @@ class ShellSceneNotificationsBody extends StatelessWidget {
   }
 }
 
-/// The workspace switcher's rows on the shared sheet surface over the scrim.
+/// The workspace picker's rows on the shared sheet surface over the scrim:
+/// the checked current workspace first, then the rest by recent use.
 class ShellSceneSwitcherSheet extends StatelessWidget {
   const ShellSceneSwitcherSheet({super.key});
 
@@ -107,16 +108,8 @@ class ShellSceneSwitcherSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final style = ShellChromeStyle.of(context);
     final media = MediaQuery.of(context);
-    Widget row(Workspace w, {bool selected = false}) => WorkspaceResultTile(
-      workspace: w,
-      selected: selected,
-      current: selected,
-      isDefault: false,
-      pending: false,
-      onSelect: () {},
-      onVisibility: null,
-      actionLabel: '',
-    );
+    Widget row(Workspace w, {bool selected = false}) =>
+        WorkspacePickerRow(workspace: w, selected: selected, onTap: () {});
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -138,7 +131,13 @@ class ShellSceneSwitcherSheet extends StatelessWidget {
                   caption: 'Workspaces',
                   children: [
                     row(sceneWorkspace, selected: true),
-                    row(const Workspace(id: 'ws-2', name: 'Personal')),
+                    row(
+                      const Workspace(
+                        id: 'ws-2',
+                        name: 'Personal',
+                        tier: workspaceTierPro,
+                      ),
+                    ),
                     row(const Workspace(id: 'ws-3', name: 'Design team')),
                   ],
                 ),

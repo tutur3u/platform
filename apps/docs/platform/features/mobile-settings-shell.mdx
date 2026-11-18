@@ -215,37 +215,77 @@ Coverage: `shell_dock_action_group_test.dart`.
 ### Phone root tabs
 
 On phones the dock's root destinations are four tabs and More, which fills the
-pill's five slots. The default tabs are Home, Tasks, Calendar and Mail. Mail is
-experimental; when the account cannot open it, the first available of Mira,
-Apps, Notifications and You takes its slot, so the dock never offers a tab the
-user cannot open. Tasks, Calendar and Mail open their module, whose own
-destinations and Back then fill the dock as when the module opens from Apps.
-Dock Back and system Back from that module return to the root destination
-that opened it, usually Home.
+pill's five slots. The default tabs are Home, Apps, Mira and Alerts
+(Notifications; "Thông báo" in Vietnamese). These four never depend on an
+experiment, so the default dock is always complete. A saved choice that names
+an unavailable tab is refilled from the defaults, then Tasks, Calendar, Mail
+and You. Tasks, Calendar and Mail open their module, whose own destinations
+and Back then fill the dock as when the module opens from Apps. Dock Back and
+system Back from that module return to the root destination that opened it,
+usually Home.
 
-More opens the shared sheet listing every root destination that is not a tab
-(Mira, Apps, Notifications, You and any removed default), followed by Edit
-tabs. More is the active slot while one of those destinations is open.
-Edit tabs picks up to four tabs from the openable destinations, in the order
-they were picked; the last tab cannot be removed and Reset to default returns
-to the defaults. The choice is stored on the device as tab ids; unknown or
-unavailable ids are ignored when read, and a choice left with no openable tab
-uses the defaults. The tablet rail keeps its fixed Home, Apps, Mira,
-Notifications and You destinations.
+More opens a sheet in this order: the current workspace (it opens the
+workspace picker), the root destinations that are not tabs (Tasks, Calendar,
+Mail and You when unpinned), Finance, Drive and Timer when visible, Settings,
+then Edit tabs and Reset tabs. More is the active slot while an unpinned root
+destination is open. Edit tabs picks up to four tabs from the openable
+destinations, in the order they were picked; the last tab cannot be removed.
+Reset tabs (in More and in the editor) clears the saved choice and returns to
+the defaults; it is disabled while no choice is saved.
 
-Coverage: `shell_root_tabs_test.dart` (defaults, Mail fallback, More list and
-selection, editing, persistence and Reset, Back from a module tab, unchanged
-rail), `shell_viewport_checks.dart` (44px named slots at every phone size) and
+The choice is stored on the device under `shell-dock-root-tabs-v1` as tab ids,
+and only an explicit choice is stored. A device without a saved value follows
+the current defaults, so changing the defaults moves untouched docks while a
+user's own set is kept as saved. Unknown or unavailable ids are ignored when
+read, and a choice left with no openable tab uses the defaults. The tablet rail
+keeps its fixed Home, Apps, Mira, Notifications and You destinations.
+
+Coverage: `shell_root_tabs_test.dart` (defaults for fresh preferences, a kept
+custom set, More order and destinations, the workspace row opening the picker,
+editing, persistence, Reset from More and the editor, Back from a module tab,
+no header workspace switcher, unchanged rail), `shell_viewport_checks.dart`
+(44px named slots at every phone size) and
 `shell_profile_navigation_checks.dart`.
 
+### Workspace picker
+
+The shell top bar carries no workspace switcher. The workspace opens from the
+Home chip under the greeting or the first row of the dock's More sheet, and
+both open the same compact picker sheet:
+
+- The selected workspace (the current one, or the default in the default
+  workspace picker) is the checked first row. The rest follow in one list by
+  recent use, then in the listed order.
+- Recent use is kept per account and per device under
+  `workspace-recent-ids-v1:<account id>`: up to 12 workspace ids, updated on
+  every switch. Nothing else is stored, and another account never sees it.
+  Signing an account out or removing it from the device deletes its list,
+  and signing out of every account deletes all of them. Switching accounts
+  keeps each list.
+- Paid tiers carry a small outlined marker (Pro, Plus, Enterprise); Free has
+  none.
+- Create workspace and Manage workspaces are plain rows after the list. Create
+  is disabled with the limit message when the workspace limit is reached;
+  Manage opens the visibility sheet and is not shown in the default workspace
+  picker.
+- A filter field appears only above 8 workspaces, and then the sheet opens
+  tall; otherwise it fits its rows. Tapping a row switches and closes the
+  sheet.
+- The hidden-workspaces list (Settings > Hidden workspaces) uses the same sheet
+  with restore actions and no Create or Manage rows. The normal picker never
+  exposes hide buttons.
+
+Coverage: `workspace_picker_sheet_test.dart` (checked first row, recent-use
+order, tier marker, filter threshold, switching, default mode, Create and
+Manage rows, limit, loading and preference failure, hidden restore, long
+lists, large text) and `workspace_recents_test.dart` (ordering, the per-account
+store and recording on switch).
+
 Leaving Apps or launching a module clears Apps search so returning starts in
-navigation mode. Workspace picker search replaces the shell title, and its
-visible footer actions are centered. Hiding and restoring workspace shortcuts
-belongs to Settings; the normal picker never exposes hide buttons. Coverage:
-`workspace_picker_sheet_test.dart`. Native dark launch backgrounds match the
-actual app theme, checked by `native_splash_theme_test.dart`; the locked screen
-shows only the lock status and unlock action. Device visual, transition, and
-keyboard checks on the exact CI-built artifact remain required.
+navigation mode. Native dark launch backgrounds match the actual app theme,
+checked by `native_splash_theme_test.dart`; the locked screen shows only the
+lock status and unlock action. Device visual, transition, and keyboard checks
+on the exact CI-built artifact remain required.
 
 ## Notification navigation and refresh
 

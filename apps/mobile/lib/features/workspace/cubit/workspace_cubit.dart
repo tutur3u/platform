@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mobile/features/workspace/data/workspace_recents_store.dart';
 import 'package:mobile/features/workspace/data/workspace_visibility_repository.dart';
 
 /// Manages workspace selection, listing, and creation.
@@ -13,12 +14,19 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   WorkspaceCubit({
     required WorkspaceRepository workspaceRepository,
     WorkspaceVisibilityRepository? visibilityRepository,
+    WorkspaceRecentsStore recentsStore = const WorkspaceRecentsStore(),
   }) : _repo = workspaceRepository,
        _visibility = visibilityRepository ?? WorkspaceVisibilityRepository(),
+       _recents = recentsStore,
        super(const WorkspaceState());
 
   final WorkspaceRepository _repo;
   final WorkspaceVisibilityRepository _visibility;
+  final WorkspaceRecentsStore _recents;
+
+  /// Completes once the current account's stored recents are merged, so a
+  /// switch never overwrites them with a shorter list.
+  Future<void> _recentsLoaded = Future<void>.value();
   String? _actor;
   String? _explicitSelectionId;
   Set<String> _confirmedHiddenIds = {};
@@ -49,6 +57,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
       _visibilityRevision++;
       _visibilityRequest++;
       emit(const WorkspaceState());
+      if (actor != null) _recentsLoaded = _loadRecents(actor, _actorEpoch);
     }
     if (actor != null) unawaited(refreshHiddenWorkspaces());
     final requestToken = ++_loadRequestToken;
@@ -105,9 +114,15 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   Future<void> selectWorkspace(Workspace workspace) async {
     _selectionRevision += 1;
     _explicitSelectionId = workspace.id;
+    final recents = pushWorkspaceRecent(state.recentWorkspaceIds, workspace.id);
     emit(
-      state.copyWith(currentWorkspace: workspace, hiddenModuleIds: const []),
+      state.copyWith(
+        currentWorkspace: workspace,
+        hiddenModuleIds: const [],
+        recentWorkspaceIds: recents,
+      ),
     );
+    if (_actor case final actor?) unawaited(_saveRecents(actor, _actorEpoch));
     await _repo.saveSelectedWorkspace(workspace);
     unawaited(_loadMobileModuleFlags(workspace.id));
   }
@@ -165,6 +180,24 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     } on Exception catch (_) {
       // Non-critical — UI shows create button without limit info
     }
+  }
+
+  /// Reads [actor]'s recent workspaces unless the account changed meanwhile.
+  /// Switches made before the read finishes stay first.
+  Future<void> _loadRecents(String actor, int epoch) async {
+    final stored = await _recents.read(actor);
+    if (isClosed || epoch != _actorEpoch || stored.isEmpty) return;
+    var merged = stored;
+    for (final id in state.recentWorkspaceIds.reversed) {
+      merged = pushWorkspaceRecent(merged, id);
+    }
+    emit(state.copyWith(recentWorkspaceIds: merged));
+  }
+
+  Future<void> _saveRecents(String actor, int epoch) async {
+    await _recentsLoaded;
+    if (isClosed || epoch != _actorEpoch) return;
+    await _recents.write(actor, state.recentWorkspaceIds);
   }
 
   /// Clears workspace selection (on logout).

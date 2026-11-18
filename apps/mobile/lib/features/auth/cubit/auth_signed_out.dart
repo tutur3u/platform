@@ -4,6 +4,8 @@ extension _AuthSignedOut on AuthCubit {
   void _publishSignedOutState(void Function(AuthState) publish) {
     unawaited(clearAuthFeatureCaches(userId: state.user?.id));
     final inAddFlow = state.isAddAccountFlow || _isInAddAccountFlow;
+    // An account added alongside stays stored, so it keeps its device data.
+    if (!inAddFlow) unawaited(clearAccountDeviceData(userId: state.user?.id));
     if (inAddFlow) {
       publish(
         const AuthState.unauthenticated().copyWith(

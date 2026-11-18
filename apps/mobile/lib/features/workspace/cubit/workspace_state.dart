@@ -22,7 +22,12 @@ class WorkspaceState extends Equatable {
     this.visibilityStatus = WorkspaceStatus.initial,
     this.visibilityError,
     this.visibilityResolved = false,
+    this.recentWorkspaceIds = const [],
   });
+
+  /// Workspace ids this account switched to on this device, most recent
+  /// first. The picker orders workspaces by it.
+  final List<String> recentWorkspaceIds;
 
   final List<String> hiddenWorkspaceIds;
   final List<String> pendingVisibilityIds;
@@ -79,7 +84,9 @@ class WorkspaceState extends Equatable {
     WorkspaceStatus? visibilityStatus,
     Object? visibilityError = _sentinel,
     bool? visibilityResolved,
+    List<String>? recentWorkspaceIds,
   }) => WorkspaceState(
+    recentWorkspaceIds: recentWorkspaceIds ?? this.recentWorkspaceIds,
     visibilityResolved: visibilityResolved ?? this.visibilityResolved,
     hiddenWorkspaceIds: hiddenWorkspaceIds ?? this.hiddenWorkspaceIds,
     pendingVisibilityIds: pendingVisibilityIds ?? this.pendingVisibilityIds,
@@ -119,5 +126,6 @@ class WorkspaceState extends Equatable {
     error,
     isCreating,
     emptyMembershipConfirmed,
+    recentWorkspaceIds,
   ];
 }
