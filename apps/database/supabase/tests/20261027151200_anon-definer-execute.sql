@@ -598,7 +598,12 @@ INSERT INTO definer_added_later VALUES
   -- apps/database/supabase/migrations/20261105082000_board_sprint_horizon.sql
   ('public.add_board_sprint(uuid,uuid,uuid)'),
   ('public.remove_board_sprint(uuid,uuid,uuid,uuid)'),
-  ('public.list_board_unplanned_task_ids(uuid,uuid)');
+  ('public.list_board_unplanned_task_ids(uuid,uuid)'),
+  ('public.reserve_workspace_usage(uuid,text,uuid,bigint,timestamptz)'),
+  ('public.settle_workspace_usage(uuid,uuid,bigint)'),
+  ('public.release_expired_workspace_usage(uuid,uuid,text)'),
+  ('public.workspace_usage_summary(uuid)'),
+  ('public.apply_usage_pack_order(uuid,uuid,uuid,text,text,text,integer,timestamptz,timestamptz,timestamptz)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
