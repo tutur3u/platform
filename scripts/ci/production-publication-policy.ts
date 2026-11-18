@@ -21,6 +21,7 @@ const protectedSurfaces = {
   mail: ['frontend'],
   apps: ['frontend'],
   workspace: ['frontend'],
+  git: ['frontend'],
   // Wave 2: held until a reviewed Start + Void cutover admits it.
   shortener: ['frontend'],
 } as const;

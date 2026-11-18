@@ -39,6 +39,11 @@ workerd: the canonical host answers the public root (a redirect to `/tutur3u/pla
 `200`), an unknown host answers `404`, and closed public ingress such as
 `/api/storage/probe` answers `403`.
 
+`productionPublicationPolicy` in `tuturuuu.ci.ts` admits `git` for the `frontend` surface: a manual
+route-free upload of the sealed artifact, a private smoke and a one-step route rollback. No workflow
+publishes it, and `vercel-production-git.yaml` keeps deploying the Next app until a release owner
+attaches the host.
+
 ## Worker caches
 
 The Worker keeps two Cache API layers (per colo, no extra charge); Vercel/Node uses neither.

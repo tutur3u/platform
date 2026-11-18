@@ -236,5 +236,13 @@ export const productionPublicationPolicy = {
       'Workspace native Start route-free upload with smoke and no gateway routes; host attach only after smoke',
     surfaces: ['frontend'],
   },
+  // Admission opens the manual route-free upload of the sealed artifact; a
+  // release owner attaches the host after private smoke.
+  git: {
+    state: 'admitted',
+    reason:
+      'git native root cutover: manual route-free deploy of the sealed artifact, private smoke, one-step route rollback',
+    surfaces: ['frontend'],
+  },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

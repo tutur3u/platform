@@ -26,6 +26,7 @@ const apps = [
   'mail',
   'apps',
   'workspace',
+  'git',
   'shortener',
   'mastermind',
 ];
@@ -390,10 +391,31 @@ test('Workspace admission opens only its route-free seal workflow and adds no pu
     );
 });
 
+test('Git admission opens its route-free upload and adds no Cloudflare publisher', (t) => {
+  const root = fixture(t);
+  for (const workflow of [
+    'git-cloudflare.yaml',
+    'vercel-production-git.yaml',
+  ])
+    assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
+  // The sealed artifact job never writes to a provider.
+  const { jobs } = readWorkflow('git-cloudflare.yaml');
+  assert.deepEqual(
+    publicationWrites(jobs).map(([name]) => name),
+    []
+  );
+  for (const app of ['shortener', 'mastermind'])
+    assert.equal(
+      runPolicy(root, `${app}-cloudflare.yaml`).output,
+      'allowed=false\n'
+    );
+});
+
 const publishers = [
   ...apps
     // Workspace has no Vercel publisher; its only workflow is the dispatch-only seal.
-    .filter((app) => app !== 'mastermind' && app !== 'workspace')
+    // Git's Vercel publisher predates the policy gate and stays outside it.
+    .filter((app) => !['mastermind', 'workspace', 'git'].includes(app))
     .map((app) => ({
       workflow: `vercel-production-${app}.yaml`,
       job: 'Deploy-Production',
