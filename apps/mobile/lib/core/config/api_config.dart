@@ -203,24 +203,19 @@ abstract final class FinanceEndpoints {
 
   static String categories(String wsId) =>
       '/api/workspaces/$wsId/transactions/categories';
-
   static String category(String wsId, String categoryId) =>
       '/api/workspaces/$wsId/transactions/categories/$categoryId';
 
   static String tags(String wsId) => '/api/workspaces/$wsId/tags';
-
   static String tag(String wsId, String tagId) =>
       '/api/workspaces/$wsId/tags/$tagId';
 
   static String transaction(String wsId, String transactionId) =>
       '/api/workspaces/$wsId/transactions/$transactionId';
-
   static String transfers(String wsId) => '/api/workspaces/$wsId/transfers';
 
-  /// Cursor-based infinite-scroll endpoint (mirrors web's transactions/infinite).
   static String infiniteTransactions(String wsId) =>
       '/api/workspaces/$wsId/transactions/infinite';
-
   static String transactionStats(String wsId) =>
       '/api/workspaces/$wsId/transactions/stats';
 
@@ -228,6 +223,11 @@ abstract final class FinanceEndpoints {
       '/api/v1/workspaces/$wsId/settings/$configId';
 
   static const exchangeRates = '/api/v1/exchange-rates';
+
+  static String budgets(String wsId) =>
+      '/api/v1/workspaces/$wsId/finance/budgets';
+  static String budget(String wsId, String budgetId) =>
+      '/api/v1/workspaces/$wsId/finance/budgets/$budgetId';
 }
 
 /// Inventory endpoint paths.

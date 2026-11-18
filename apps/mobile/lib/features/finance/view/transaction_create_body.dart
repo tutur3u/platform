@@ -1,7 +1,7 @@
 part of 'transaction_detail_sheet.dart';
 
 extension on _TransactionFormDialogState {
-  Widget _buildCreateBody(BuildContext context) {
+  Widget _buildCreateBody(BuildContext context, {required bool showAmounts}) {
     final l10n = context.l10n;
     final colors = context.tokens.colorScheme;
     final selectedTags = _displaySelectedTags.map((tag) => tag.name).join(', ');
@@ -35,7 +35,10 @@ extension on _TransactionFormDialogState {
             focusNode: _sourceAmountFocusNode,
             child: _CreateAmount(
               label: l10n.financeAmount,
-              amount: _createAmountLabel(_MoneyFieldTarget.source),
+              amount: _createAmountLabel(
+                _MoneyFieldTarget.source,
+                showAmounts: showAmounts,
+              ),
               currency: _selectedCurrency,
               focused: _sourceAmountFocusNode.hasFocus,
               onAmount: _isSaving
@@ -66,7 +69,7 @@ extension on _TransactionFormDialogState {
           ),
           const SizedBox(height: 16),
         ],
-        _buildCreateDetails(context),
+        _buildCreateDetails(context, showAmounts: showAmounts),
         const SizedBox(height: 16),
         if (_tags.isNotEmpty) ...[
           AppCard(

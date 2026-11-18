@@ -296,11 +296,26 @@ String _financeLocation(List<String> segments) {
     return Routes.walletDetailPath(segments[2]);
   }
   if (segments.length > 1 && segments[1] == 'wallets') return Routes.wallets;
+  if (segments.length > 2 && segments[1] == 'transactions') {
+    return Routes.transactionDetailsLocation(segments[2]);
+  }
   if (segments.length > 1 && segments[1] == 'transactions') {
     return Routes.transactions;
   }
   if (segments.length > 1 && segments[1] == 'categories') {
     return Routes.categories;
+  }
+  if (segments.length > 1 && segments[1] == 'reports') {
+    return Routes.financeReports;
+  }
+  if (segments.length > 1 && segments[1] == 'manage') {
+    return Routes.financeManage;
+  }
+  if (segments.length > 1 && segments[1] == 'budgets') {
+    return Routes.financeBudgets;
+  }
+  if (segments.length > 1 && segments[1] == 'checkpoints') {
+    return Routes.financeCheckpoints;
   }
   return Routes.finance;
 }

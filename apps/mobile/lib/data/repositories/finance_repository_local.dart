@@ -129,6 +129,7 @@ extension _FinanceLocalReads on FinanceRepository {
     String cursor,
     String? search,
     String? walletId,
+    FinanceTransactionQuery query,
   ) => CacheKey(
     namespace: 'finance.cursorAnchors',
     userId: userId,
@@ -137,6 +138,7 @@ extension _FinanceLocalReads on FinanceRepository {
       'cursor': cursor,
       'search': search ?? '',
       'walletId': walletId ?? '',
+      if (!query.isEmpty) 'filters': query.cacheKey,
     },
   );
 
@@ -146,6 +148,7 @@ extension _FinanceLocalReads on FinanceRepository {
     InfiniteTransactionResponse page,
     String? search,
     String? walletId,
+    FinanceTransactionQuery query,
   ) async {
     if (userId == null ||
         _cacheUserId() != userId ||
@@ -154,7 +157,14 @@ extension _FinanceLocalReads on FinanceRepository {
       return;
     }
     await _cacheStore.write(
-      key: _cursorAnchorKey(wsId, userId, page.nextCursor!, search, walletId),
+      key: _cursorAnchorKey(
+        wsId,
+        userId,
+        page.nextCursor!,
+        search,
+        walletId,
+        query,
+      ),
       policy: CachePolicies.moduleData,
       payload: {'anchorId': page.data.last.id},
       tags: ['module:finance', 'workspace:$wsId'],
@@ -167,6 +177,7 @@ extension _FinanceLocalReads on FinanceRepository {
     String? cursor,
     String? search,
     String? walletId,
+    FinanceTransactionQuery query = const FinanceTransactionQuery(),
   }) async {
     final rows = await _localTransactions(
       wsId,
@@ -176,7 +187,14 @@ extension _FinanceLocalReads on FinanceRepository {
     String? anchor;
     if (cursor != null && !cursor.startsWith('local:')) {
       final cached = await _cacheStore.read<String>(
-        key: _cursorAnchorKey(wsId, _cacheUserId(), cursor, search, walletId),
+        key: _cursorAnchorKey(
+          wsId,
+          _cacheUserId(),
+          cursor,
+          search,
+          walletId,
+          query,
+        ),
         decode: (value) => (value! as Map)['anchorId'] as String,
       );
       anchor = cached.data;
@@ -188,10 +206,13 @@ extension _FinanceLocalReads on FinanceRepository {
                 ? 'local:${row.id}' == cursor
                 : row.id == anchor,
           );
-    final page = cursor != null && after < 0
-        ? <Transaction>[]
-        : rows.skip(after + 1).take(limit).toList(growable: false);
-    final hasMore = page.isNotEmpty && after + 1 + page.length < rows.length;
+    final remaining = cursor != null && after < 0
+        ? const <Transaction>[]
+        : rows.skip(after + 1);
+    final matching = query.isEmpty ? remaining : remaining.where(query.matches);
+    final window = matching.take(limit + 1).toList(growable: false);
+    final hasMore = window.length > limit;
+    final page = hasMore ? window.take(limit).toList(growable: false) : window;
     return InfiniteTransactionResponse(
       data: page,
       hasMore: hasMore,

@@ -58,7 +58,8 @@ extension on _TransactionFormDialogState {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_moneySuggestions.isNotEmpty)
+              if (financeAmountsVisible(context) &&
+                  _moneySuggestions.isNotEmpty)
                 _MoneyMultiplierRow(
                   suggestions: _moneySuggestions,
                   onSelected: _applyMoneyMultiplier,

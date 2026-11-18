@@ -1,121 +1,70 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
-import 'package:mobile/core/ui/components/app_card.dart';
-import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/finance/utils/finance_flow.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_tone.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../helpers/pump_app.dart';
 
 void main() {
-  testWidgets(
-    'activity tiles count recent report entries without money totals',
-    (tester) async {
-      final state = FinanceState(
-        workspaceCurrency: 'USD',
-        recentTransactions: [
-          Transaction(id: 'income', amount: 1000, takenAt: DateTime(2026)),
-          Transaction(id: 'expense', amount: -75, takenAt: DateTime(2026, 2)),
-          const Transaction(
-            id: 'other-expense',
-            amount: -55,
-            walletCurrency: 'VND',
-          ),
-          const Transaction(id: 'excluded', amount: 800, reportOptIn: false),
-          const Transaction(id: 'redacted'),
-        ],
-      );
-
-      Widget overview({required bool showAmounts}) => FinanceOverviewContent(
-        state: state,
-        showAmounts: showAmounts,
-        onTransactionTap: (_) {},
-        onCreate: () {},
-      );
-
-      Finder tile(String label) => find.byWidget(
-        tester
-            .element(find.text(label))
-            .findAncestorWidgetOfExactType<DecoratedBox>()!,
-      );
-
-      const income = 'Recent income entries';
-      const expense = 'Recent expense entries';
-      await tester.pumpThemedHome(overview(showAmounts: true));
-      expect(
-        find.descendant(of: tile(income), matching: find.text('1')),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(of: tile(expense), matching: find.text('2')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('Recent in ·'), findsNothing);
-      expect(
-        find.descendant(of: tile(income), matching: find.textContaining(r'$')),
-        findsNothing,
-      );
-
-      await tester.pumpThemedHome(overview(showAmounts: false));
-      expect(
-        find.descendant(
-          of: tile(income),
-          matching: find.text(financeMaskedAmountPlaceholder),
-        ),
-        findsOneWidget,
-      );
-    },
-  );
-
-  testWidgets('wallet cards distinguish a conversion, type and zero balance', (
+  testWidgets('overview redacts every amount and remembers the eye toggle', (
     tester,
   ) async {
+    SharedPreferences.setMockInitialValues({});
+    final settings = SettingsRepository();
+    final preferences = FinancePreferencesCubit(settingsRepository: settings);
+    addTearDown(preferences.close);
     const state = FinanceState(
-      workspaceCurrency: 'VND',
-      exchangeRates: [
-        ExchangeRate(
-          baseCurrency: 'USD',
-          targetCurrency: 'VND',
-          rate: 25000,
-          date: '2026-11-18',
-        ),
+      workspaceCurrency: 'USD',
+      wallets: [Wallet(id: 'wallet', name: 'Everyday', balance: 50)],
+      recentTransactions: [
+        Transaction(id: 'income', description: 'Payroll', amount: 1000),
       ],
-      wallets: [
-        Wallet(
-          id: 'foreign',
-          name: 'Foreign wallet',
-          currency: 'USD',
-          balance: 1,
-        ),
-        Wallet(id: 'zero', name: 'Empty wallet', balance: 0),
-        Wallet(id: 'credit', name: 'Credit line', balance: 20, type: 'CREDIT'),
-      ],
+      monthFlow: FinanceFlow(currency: 'USD', income: 1000, expense: -75),
     );
+
     await tester.pumpThemedHome(
-      FinanceOverviewContent(
-        state: state,
-        showAmounts: true,
-        onTransactionTap: (_) {},
-        onCreate: () {},
+      BlocProvider.value(
+        value: preferences,
+        child: FinanceOverviewContent(
+          state: state,
+          onTransactionTap: (_) {},
+          onCreate: () {},
+          now: DateTime(2026, 11, 18),
+        ),
       ),
     );
-    expect(find.text('≈ ₫25,000'), findsOneWidget);
-    expect(find.text('Standard'), findsNWidgets(2));
-    expect(find.text('Credit'), findsOneWidget);
-    AppCard wallet(String name) => tester
-        .element(find.text(name))
-        .findAncestorWidgetOfExactType<AppCard>()!;
+    expect(preferences.state.showAmounts, isFalse);
+    expect(find.text(financeMaskedAmountPlaceholder), findsWidgets);
+    expect(find.textContaining(r'$'), findsNothing);
+    expect(find.text('Payroll'), findsOneWidget);
 
-    expect(
-      wallet('Empty wallet').fillColor,
-      isNot(wallet('Foreign wallet').fillColor),
-    );
+    await preferences.toggleShowAmounts();
+    await tester.pump();
+    expect(find.text(r'$50.00'), findsWidgets);
+    expect(find.text(r'+$1,000.00'), findsWidgets);
+    expect(find.text(r'−$75.00'), findsOneWidget);
+    expect(find.text(financeMaskedAmountPlaceholder), findsNothing);
+
+    final reloaded = FinancePreferencesCubit(settingsRepository: settings);
+    addTearDown(reloaded.close);
+    await reloaded.load();
+    expect(reloaded.state.showAmounts, isTrue);
+    await preferences.toggleShowAmounts();
+    await tester.pump();
+    expect(find.textContaining(r'$'), findsNothing);
+    await reloaded.load();
+    expect(reloaded.state.showAmounts, isFalse);
   });
 
   for (final sorbet in [null, const SorbetTheme()]) {

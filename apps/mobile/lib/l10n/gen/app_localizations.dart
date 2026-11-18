@@ -7399,6 +7399,12 @@ abstract class AppLocalizations {
   /// **'Pick image'**
   String get financeWalletPickImage;
 
+  /// No description provided for @financeWalletSearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching wallets'**
+  String get financeWalletSearchEmpty;
+
   /// No description provided for @financeWalletSearchCurrency.
   ///
   /// In en, this message translates to:
@@ -7440,6 +7446,288 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Standard'**
   String get financeWalletTypeStandard;
+
+  /// No description provided for @financeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get financeAll;
+
+  /// No description provided for @financeAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get financeAllCategories;
+
+  /// No description provided for @financeAllTime.
+  ///
+  /// In en, this message translates to:
+  /// **'All time'**
+  String get financeAllTime;
+
+  /// No description provided for @financeAllWallets.
+  ///
+  /// In en, this message translates to:
+  /// **'All wallets'**
+  String get financeAllWallets;
+
+  /// No description provided for @financeBudgetAlertAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert at {percent}%'**
+  String financeBudgetAlertAt(int percent);
+
+  /// No description provided for @financeBudgetAlertHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the spending threshold for alerts.'**
+  String get financeBudgetAlertHint;
+
+  /// No description provided for @financeBudgetAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a limit greater than zero'**
+  String get financeBudgetAmountRequired;
+
+  /// No description provided for @financeBudgetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get financeBudgetCustom;
+
+  /// No description provided for @financeBudgetDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, one{1 day left} other{{days} days left}}'**
+  String financeBudgetDaysLeft(int days);
+
+  /// No description provided for @financeBudgetDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget deleted'**
+  String get financeBudgetDeleted;
+
+  /// No description provided for @financeBudgetEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get financeBudgetEnd;
+
+  /// No description provided for @financeBudgetEndAfterStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an end date on or after the start date'**
+  String get financeBudgetEndAfterStart;
+
+  /// No description provided for @financeBudgetLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} left'**
+  String financeBudgetLeft(String amount);
+
+  /// No description provided for @financeBudgetLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Limit ({currency})'**
+  String financeBudgetLimit(String currency);
+
+  /// No description provided for @financeBudgetMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get financeBudgetMonthly;
+
+  /// No description provided for @financeBudgetNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Groceries'**
+  String get financeBudgetNamePlaceholder;
+
+  /// No description provided for @financeBudgetDescriptionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'What this budget covers'**
+  String get financeBudgetDescriptionPlaceholder;
+
+  /// No description provided for @financeBudgetName.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget name'**
+  String get financeBudgetName;
+
+  /// No description provided for @financeBudgetNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a budget name'**
+  String get financeBudgetNameRequired;
+
+  /// No description provided for @financeBudgetOfLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'of {amount}'**
+  String financeBudgetOfLimit(String amount);
+
+  /// No description provided for @financeBudgetOver.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} over budget'**
+  String financeBudgetOver(String amount);
+
+  /// No description provided for @financeBudgetSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update the budget'**
+  String get financeBudgetSaveFailed;
+
+  /// No description provided for @financeBudgetSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget saved'**
+  String get financeBudgetSaved;
+
+  /// No description provided for @financeBudgetStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get financeBudgetStart;
+
+  /// No description provided for @financeBudgetYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get financeBudgetYearly;
+
+  /// No description provided for @financeBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'Budgets'**
+  String get financeBudgets;
+
+  /// No description provided for @financeDeleteBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete budget'**
+  String get financeDeleteBudget;
+
+  /// No description provided for @financeDeleteBudgetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this budget? Its transactions will be kept.'**
+  String get financeDeleteBudgetBody;
+
+  /// No description provided for @financeEditBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit budget'**
+  String get financeEditBudget;
+
+  /// No description provided for @financeHiddenAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden amount'**
+  String get financeHiddenAmount;
+
+  /// No description provided for @financeIn.
+  ///
+  /// In en, this message translates to:
+  /// **'In'**
+  String get financeIn;
+
+  /// No description provided for @financeMonthUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly totals are unavailable'**
+  String get financeMonthUnavailable;
+
+  /// No description provided for @financeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get financeMonth;
+
+  /// No description provided for @financeNewBudget.
+  ///
+  /// In en, this message translates to:
+  /// **'New budget'**
+  String get financeNewBudget;
+
+  /// No description provided for @financeNoAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You don’t have access to this finance information.'**
+  String get financeNoAccessBody;
+
+  /// No description provided for @financeNoAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Finance access required'**
+  String get financeNoAccessTitle;
+
+  /// No description provided for @financeNoBudgets.
+  ///
+  /// In en, this message translates to:
+  /// **'No budgets'**
+  String get financeNoBudgets;
+
+  /// No description provided for @financeNoBudgetsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Set a spending limit to track your progress.'**
+  String get financeNoBudgetsBody;
+
+  /// No description provided for @financeOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to load finance data.'**
+  String get financeOfflineBody;
+
+  /// No description provided for @financeOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline'**
+  String get financeOfflineTitle;
+
+  /// No description provided for @financeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Out'**
+  String get financeOut;
+
+  /// No description provided for @financeRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent activity'**
+  String get financeRecent;
+
+  /// No description provided for @financeReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get financeReports;
+
+  /// No description provided for @financeThisMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get financeThisMonth;
+
+  /// No description provided for @financeTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get financeTotal;
+
+  /// No description provided for @financeTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfers'**
+  String get financeTransfers;
+
+  /// No description provided for @financeWalletCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 wallet} other{{count} wallets}}'**
+  String financeWalletCount(int count);
 
   /// No description provided for @financeWallets.
   ///

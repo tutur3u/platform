@@ -12,6 +12,8 @@ class FinanceState extends Equatable {
     this.recentTransactions = const [],
     this.workspaceCurrency = '',
     this.exchangeRates = const [],
+    this.monthFlow,
+    this.isLoadingMonthFlow = false,
     this.error,
   });
 
@@ -23,6 +25,11 @@ class FinanceState extends Equatable {
   final List<Transaction> recentTransactions;
   final String workspaceCurrency;
   final List<ExchangeRate> exchangeRates;
+
+  /// Income and expense of the current month in the workspace currency;
+  /// null until it loads.
+  final FinanceFlow? monthFlow;
+  final bool isLoadingMonthFlow;
   final String? error;
 
   bool get hasWorkspaceCurrency => workspaceCurrency.trim().isNotEmpty;
@@ -74,6 +81,8 @@ class FinanceState extends Equatable {
     List<Transaction>? recentTransactions,
     String? workspaceCurrency,
     List<ExchangeRate>? exchangeRates,
+    FinanceFlow? monthFlow,
+    bool? isLoadingMonthFlow,
     String? error,
     bool clearError = false,
   }) => FinanceState(
@@ -87,6 +96,8 @@ class FinanceState extends Equatable {
     recentTransactions: recentTransactions ?? this.recentTransactions,
     workspaceCurrency: workspaceCurrency ?? this.workspaceCurrency,
     exchangeRates: exchangeRates ?? this.exchangeRates,
+    monthFlow: monthFlow ?? this.monthFlow,
+    isLoadingMonthFlow: isLoadingMonthFlow ?? this.isLoadingMonthFlow,
     error: clearError ? null : (error ?? this.error),
   );
 
@@ -100,6 +111,8 @@ class FinanceState extends Equatable {
     recentTransactions,
     workspaceCurrency,
     exchangeRates,
+    monthFlow,
+    isLoadingMonthFlow,
     error,
   ];
 }

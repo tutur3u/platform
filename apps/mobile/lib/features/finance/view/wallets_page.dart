@@ -11,6 +11,8 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_icon_button.dart';
+import 'package:mobile/core/ui/kit/app_rich_row.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -19,21 +21,29 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart' as money;
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
+part 'wallets_card.dart';
+
 class WalletsPage extends StatelessWidget {
-  const WalletsPage({super.key});
+  const WalletsPage({this.repository, super.key});
+
+  final FinanceRepository? repository;
 
   static void clearCache() {
     _WalletsViewState.clearMemoryCache();
@@ -42,7 +52,7 @@ class WalletsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: const _WalletsView(),
     );
   }
@@ -64,6 +74,8 @@ class _WalletsViewState extends State<_WalletsView> {
     _cache.clear();
   }
 
+  final _searchController = TextEditingController();
+  bool _isSearchVisible = false;
   List<Wallet> _wallets = const [];
   String? _workspaceCurrency;
   bool _isLoading = false;
@@ -82,6 +94,17 @@ class _WalletsViewState extends State<_WalletsView> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _seedWalletsFromCacheIfNeeded();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _closeSearch() {
+    _searchController.clear();
+    setState(() => _isSearchVisible = false);
   }
 
   CacheKey _cacheKey(String wsId) {
@@ -166,6 +189,12 @@ class _WalletsViewState extends State<_WalletsView> {
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
         listener: (context, state) {
+          setState(() {
+            _wallets = const [];
+            _workspaceCurrency = null;
+            _error = null;
+            _isLoading = state.currentWorkspace != null;
+          });
           _seedWalletsFromCacheIfNeeded(wsId: state.currentWorkspace?.id);
           unawaited(_loadWallets());
         },
@@ -197,11 +226,43 @@ class _WalletsViewState extends State<_WalletsView> {
                 ),
               ),
             ),
-            ExtendedFab(
-              icon: Icons.add,
-              label: l10n.financeCreateWallet,
-              includeBottomSafeArea: false,
-              onPressed: _onCreate,
+            ShellTitleOverride(
+              ownerId: 'finance-wallets',
+              locations: const {Routes.wallets},
+              title: l10n.financeWallets,
+              showLeadingBrand: false,
+              showAvatar: false,
+            ),
+            ShellChromeActions(
+              ownerId: 'finance-wallets',
+              locations: const {Routes.wallets},
+              actions: [
+                ShellActionSpec.search(
+                  id: 'finance-wallet-search',
+                  active: _isSearchVisible,
+                  tooltip: _isSearchVisible
+                      ? l10n.financeActivityClearSearch
+                      : l10n.financeSearchWallets,
+                  controller: _searchController,
+                  searchHint: l10n.financeSearchWallets,
+                  onSearchChanged: (_) => setState(() {}),
+                  onCloseSearch: _closeSearch,
+                  onPressed: () {
+                    if (_isSearchVisible) {
+                      _closeSearch();
+                    } else {
+                      setState(() => _isSearchVisible = true);
+                    }
+                  },
+                ),
+                ShellActionSpec(
+                  id: 'finance-create-wallet',
+                  icon: Icons.add,
+                  tooltip: l10n.financeCreateWallet,
+                  filled: true,
+                  onPressed: _onCreate,
+                ),
+              ],
             ),
           ],
         ),
@@ -217,7 +278,7 @@ class _WalletsViewState extends State<_WalletsView> {
     final l10n = context.l10n;
 
     if (_isLoading && wallets.isEmpty) {
-      return const AppPageBody(child: AppLoadingIndicator.page());
+      return const FinanceListSkeleton();
     }
 
     if (wallets.isNotEmpty &&
@@ -267,13 +328,40 @@ class _WalletsViewState extends State<_WalletsView> {
       );
     }
 
+    final search = _searchController.text.trim().toLowerCase();
+    final visibleWallets = search.isEmpty
+        ? wallets
+        : wallets
+              .where((wallet) {
+                return [
+                  wallet.name,
+                  wallet.description,
+                  wallet.currency,
+                ].nonNulls.any((value) => value.toLowerCase().contains(search));
+              })
+              .toList(growable: false);
+    if (visibleWallets.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: pagePadding,
+        children: [
+          AppStateMessage(
+            icon: Icons.search_off_outlined,
+            title: l10n.financeWalletSearchEmpty,
+            actionLabel: l10n.financeActivityClearSearch,
+            onAction: _closeSearch,
+          ),
+        ],
+      );
+    }
+
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: pagePadding,
-      itemCount: wallets.length,
+      itemCount: visibleWallets.length,
       separatorBuilder: (context, index) => const shad.Gap(AppLayout.itemGap),
       itemBuilder: (context, index) {
-        final wallet = wallets[index];
+        final wallet = visibleWallets[index];
         return PendingSyncFrame(
           workspaceId:
               context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '',
@@ -281,6 +369,7 @@ class _WalletsViewState extends State<_WalletsView> {
           feature: 'finance',
           child: _WalletCard(
             wallet: wallet,
+            currency: wallet.currency ?? _workspaceCurrency!,
             showAmounts: showAmounts,
             onTap: () => _openWallet(wallet),
             onEdit: () => _onEdit(wallet),
@@ -539,149 +628,6 @@ class _WalletCardSkeleton extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _WalletCard extends StatelessWidget {
-  const _WalletCard({
-    required this.wallet,
-    required this.showAmounts,
-    required this.onTap,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final Wallet wallet;
-  final bool showAmounts;
-  final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = FinancePalette.of(context);
-    final theme = shad.Theme.of(context);
-    final isCredit = wallet.type == 'CREDIT';
-    final accent = isCredit ? palette.negative : palette.accent;
-    final balance = wallet.balance ?? 0;
-    final currency = wallet.currency ?? 'USD';
-    final isZeroBalance = balance.abs() < 0.000001;
-    final icon = resolvePlatformIcon(
-      wallet.icon,
-      fallback: isCredit ? Icons.credit_card_outlined : Icons.wallet_outlined,
-    );
-
-    return Opacity(
-      opacity: isZeroBalance ? 0.58 : 1,
-      child: FinancePanel(
-        onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                WalletVisualAvatar(
-                  icon: wallet.icon,
-                  imageSrc: wallet.imageSrc,
-                  fallbackIcon: icon,
-                  backgroundColor: accent.withValues(alpha: 0.14),
-                ),
-                const shad.Gap(12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        wallet.name ?? '-',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.typography.large.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (wallet.description?.trim().isNotEmpty ?? false) ...[
-                        const shad.Gap(4),
-                        Text(
-                          wallet.description!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.typography.textSmall.copyWith(
-                            color: theme.colorScheme.mutedForeground,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const shad.Gap(8),
-                shad.GhostButton(
-                  density: shad.ButtonDensity.icon,
-                  onPressed: onEdit,
-                  child: const Icon(Icons.edit_outlined, size: 18),
-                ),
-                shad.GhostButton(
-                  density: shad.ButtonDensity.icon,
-                  onPressed: onDelete,
-                  child: const Icon(Icons.delete_outline, size: 18),
-                ),
-              ],
-            ),
-            const shad.Gap(18),
-            FinanceAmountText(
-              amount: balance,
-              currency: currency,
-              isVisible: showAmounts,
-              showPlus: false,
-              alignment: CrossAxisAlignment.start,
-              forceColor: theme.colorScheme.foreground,
-              style: theme.typography.h3,
-              fitToWidth: true,
-            ),
-            const shad.Gap(12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                _WalletMetaPill(
-                  label: isCredit
-                      ? context.l10n.financeWalletTypeCredit
-                      : context.l10n.financeWalletTypeStandard,
-                  color: accent,
-                ),
-                _WalletMetaPill(
-                  label: currency.toUpperCase(),
-                  color: theme.colorScheme.mutedForeground,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _WalletMetaPill extends StatelessWidget {
-  const _WalletMetaPill({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: shad.Theme.of(
-          context,
-        ).typography.xSmall.copyWith(color: color, fontWeight: FontWeight.w700),
       ),
     );
   }

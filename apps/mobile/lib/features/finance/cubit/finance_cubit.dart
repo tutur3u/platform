@@ -10,9 +10,11 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
+import 'package:mobile/features/finance/utils/finance_flow.dart';
 import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 
 part 'finance_state.dart';
@@ -24,7 +26,9 @@ class FinanceCubit extends Cubit<FinanceState> {
     required FinanceRepository financeRepository,
     CacheStore? cacheStore,
     String? Function()? currentUserId,
+    DateTime Function()? now,
   }) : _repo = financeRepository,
+       _now = now ?? DateTime.now,
        _store = cacheStore ?? CacheStore.instance,
        _mutationQueue = financeRepository.mutationQueue,
        _currentUserId = currentUserId ?? currentCacheUserId,
@@ -51,6 +55,7 @@ class FinanceCubit extends Cubit<FinanceState> {
   final OfflineMutationQueue _mutationQueue;
   final CacheStore _store;
   final String? Function() _currentUserId;
+  final DateTime Function() _now;
   int _generation = 0;
   String? _requestedWorkspaceId;
   String? _loadedUserId;
@@ -272,6 +277,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         status: FinanceStatus.loaded,
         isFromCache: false,
         isRefreshing: false,
+        isLoadingMonthFlow: true,
         lastUpdatedAt: null,
         wallets: sortedWallets,
         recentTransactions: recentTransactionsPage.data,
@@ -287,6 +293,7 @@ class FinanceCubit extends Cubit<FinanceState> {
       _loadedWorkspaceId = wsId;
       _loadedUserId = userId;
       emit(nextState);
+      unawaited(_loadMonthFlow(generation, userId, wsId, nextState));
       await _store.write(
         key: cacheKey,
         policy: _cachePolicy,
@@ -308,6 +315,37 @@ class FinanceCubit extends Cubit<FinanceState> {
         return;
       }
       emit(state.copyWith(status: FinanceStatus.error, error: e.toString()));
+    }
+  }
+
+  Future<void> _loadMonthFlow(
+    int generation,
+    String? userId,
+    String wsId,
+    FinanceState loaded,
+  ) async {
+    try {
+      final flow = await loadFinanceFlow(
+        repository: _repo,
+        wsId: wsId,
+        currency: loaded.workspaceCurrency,
+        rates: loaded.exchangeRates,
+        query: FinanceTransactionQuery.month(_now()),
+      );
+      if (!_isCurrent(generation, userId, wsId)) return;
+      final memoryCacheKey = '${userId ?? 'anonymous'}::$wsId';
+      final next = state.copyWith(monthFlow: flow, isLoadingMonthFlow: false);
+      final cached = _cache[memoryCacheKey];
+      if (cached != null) {
+        _cache[memoryCacheKey] = _FinanceCacheEntry(
+          state: next,
+          fetchedAt: cached.fetchedAt,
+        );
+      }
+      emit(next);
+    } on Object {
+      if (!_isCurrent(generation, userId, wsId)) return;
+      emit(state.copyWith(isLoadingMonthFlow: false));
     }
   }
 

@@ -5,7 +5,10 @@ import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
+import 'package:mobile/features/finance/widgets/finance_form_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart'
+    show financeAmountsVisible;
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -90,59 +93,49 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
     final isEdit = widget.checkpoint != null;
     final l10n = context.l10n;
 
-    return FinanceModalScaffold(
+    return FinanceFormScaffold(
       title: isEdit
           ? l10n.financeCheckpointsEdit
           : l10n.financeCheckpointsRecord,
-      subtitle: l10n.financeCheckpointsRecordDescription(
-        widget.wallet.name ?? l10n.financeWallets,
-      ),
-      actions: [
-        shad.SecondaryButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
+      onSave: _submit,
+      children: [
+        _FieldLabel(
+          label: l10n.financeCheckpointsActualBalanceWithCurrency(
+            (widget.wallet.currency ?? 'USD').toUpperCase(),
+          ),
         ),
-        shad.PrimaryButton(onPressed: _submit, child: Text(l10n.commonSave)),
+        const shad.Gap(6),
+        _SheetTextField(
+          controller: _amountController,
+          obscureText: !financeAmountsVisible(context),
+          placeholder: '0',
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+          errorText: _amountError,
+          onChanged: (_) => setState(() => _amountError = null),
+        ),
+        const shad.Gap(14),
+        _FieldLabel(label: l10n.financeCheckpointsCheckedAt),
+        const shad.Gap(6),
+        _SheetTextField(
+          controller: _checkedAtController,
+          placeholder: '2026-06-16 23:09',
+          errorText: _checkedAtError,
+          onChanged: (_) => setState(() => _checkedAtError = null),
+        ),
+        const shad.Gap(14),
+        _FieldLabel(label: l10n.financeCheckpointsNote),
+        const shad.Gap(6),
+        shad.TextArea(
+          selectionControls: platformTextSelectionControls(),
+          contextMenuBuilder: platformTextContextMenuBuilder(),
+          controller: _noteController,
+          placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
+          maxLength: 500,
+        ),
       ],
-      child: ListView(
-        children: [
-          _FieldLabel(
-            label: l10n.financeCheckpointsActualBalanceWithCurrency(
-              (widget.wallet.currency ?? 'USD').toUpperCase(),
-            ),
-          ),
-          const shad.Gap(6),
-          _SheetTextField(
-            controller: _amountController,
-            placeholder: '0',
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-              signed: true,
-            ),
-            errorText: _amountError,
-            onChanged: (_) => setState(() => _amountError = null),
-          ),
-          const shad.Gap(14),
-          _FieldLabel(label: l10n.financeCheckpointsCheckedAt),
-          const shad.Gap(6),
-          _SheetTextField(
-            controller: _checkedAtController,
-            placeholder: '2026-06-16 23:09',
-            errorText: _checkedAtError,
-            onChanged: (_) => setState(() => _checkedAtError = null),
-          ),
-          const shad.Gap(14),
-          _FieldLabel(label: l10n.financeCheckpointsNote),
-          const shad.Gap(6),
-          shad.TextArea(
-            selectionControls: platformTextSelectionControls(),
-            contextMenuBuilder: platformTextContextMenuBuilder(),
-            controller: _noteController,
-            placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
-            maxLength: 500,
-          ),
-        ],
-      ),
     );
   }
 
@@ -150,7 +143,7 @@ class _WalletCheckpointFormSheetState extends State<WalletCheckpointFormSheet> {
     final amount = double.tryParse(_amountController.text.trim());
     final checkedAt = _parseDateTimeInput(_checkedAtController.text.trim());
     setState(() {
-      _amountError = amount == null
+      _amountError = amount == null || !amount.isFinite
           ? context.l10n.financeCheckpointsAmountRequired
           : null;
       _checkedAtError = checkedAt == null
@@ -387,67 +380,58 @@ class _WalletCheckpointBatchSheetState
     final l10n = context.l10n;
     final totals = _enteredTotals();
 
-    return FinanceModalScaffold(
+    return FinanceFormScaffold(
       title: l10n.financeCheckpointsBatchRecord,
-      subtitle: l10n.financeCheckpointsBatchDescription,
-      actions: [
-        shad.SecondaryButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.commonCancel),
+      onSave: _submit,
+      children: [
+        _FieldLabel(label: l10n.financeCheckpointsCheckedAt),
+        const shad.Gap(6),
+        _SheetTextField(
+          controller: _checkedAtController,
+          placeholder: '2026-06-16 23:09',
+          errorText: _checkedAtError,
+          onChanged: (_) => setState(() => _checkedAtError = null),
         ),
-        shad.PrimaryButton(onPressed: _submit, child: Text(l10n.commonSave)),
-      ],
-      child: ListView(
-        children: [
-          _FieldLabel(label: l10n.financeCheckpointsCheckedAt),
-          const shad.Gap(6),
-          _SheetTextField(
-            controller: _checkedAtController,
-            placeholder: '2026-06-16 23:09',
-            errorText: _checkedAtError,
-            onChanged: (_) => setState(() => _checkedAtError = null),
-          ),
-          const shad.Gap(14),
-          _FieldLabel(label: l10n.financeCheckpointsSharedNote),
-          const shad.Gap(6),
-          shad.TextArea(
-            selectionControls: platformTextSelectionControls(),
-            contextMenuBuilder: platformTextContextMenuBuilder(),
-            controller: _noteController,
-            placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
-            maxLength: 500,
+        const shad.Gap(14),
+        _FieldLabel(label: l10n.financeCheckpointsSharedNote),
+        const shad.Gap(6),
+        shad.TextArea(
+          selectionControls: platformTextSelectionControls(),
+          contextMenuBuilder: platformTextContextMenuBuilder(),
+          controller: _noteController,
+          placeholder: Text(l10n.financeCheckpointsNotePlaceholder),
+          maxLength: 500,
+        ),
+        const shad.Gap(18),
+        if (totals.isNotEmpty) ...[
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final entry in totals.entries)
+                FinanceStatChip(
+                  label: entry.key,
+                  value: maskFinanceValue(
+                    formatCurrency(entry.value, entry.key),
+                    showAmounts: financeAmountsVisible(context),
+                  ),
+                  tint: FinancePalette.of(context).accent,
+                ),
+            ],
           ),
           const shad.Gap(18),
-          if (totals.isNotEmpty) ...[
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final entry in totals.entries)
-                  FinanceStatChip(
-                    label: entry.key,
-                    value: maskFinanceValue(
-                      formatCurrency(entry.value, entry.key),
-                      showAmounts: widget.showAmounts,
-                    ),
-                    tint: FinancePalette.of(context).accent,
-                  ),
-              ],
-            ),
-            const shad.Gap(18),
-          ],
-          for (final wallet in widget.wallets) ...[
-            _BatchWalletRow(
-              wallet: wallet,
-              controller: _amountControllers[wallet.id]!,
-              showAmounts: widget.showAmounts,
-              onChanged: (_) => setState(() => _entriesError = null),
-            ),
-            const shad.Gap(10),
-          ],
-          if (_entriesError != null) _FieldError(message: _entriesError!),
         ],
-      ),
+        for (final wallet in widget.wallets) ...[
+          _BatchWalletRow(
+            wallet: wallet,
+            controller: _amountControllers[wallet.id]!,
+            showAmounts: financeAmountsVisible(context),
+            onChanged: (_) => setState(() => _entriesError = null),
+          ),
+          const shad.Gap(10),
+        ],
+        if (_entriesError != null) _FieldError(message: _entriesError!),
+      ],
     );
   }
 
@@ -557,6 +541,7 @@ class _BatchWalletRow extends StatelessWidget {
               selectionControls: platformTextSelectionControls(),
               contextMenuBuilder: platformTextContextMenuBuilder(),
               controller: controller,
+              obscureText: !showAmounts,
               placeholder: Text(currency),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -640,12 +625,14 @@ class _SheetTextField extends StatelessWidget {
     required this.onChanged,
     this.keyboardType,
     this.errorText,
+    this.obscureText = false,
   });
   final TextEditingController controller;
   final String placeholder;
   final ValueChanged<String> onChanged;
   final TextInputType? keyboardType;
   final String? errorText;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -659,6 +646,7 @@ class _SheetTextField extends StatelessWidget {
           placeholder: Text(placeholder),
           keyboardType: keyboardType,
           onChanged: onChanged,
+          obscureText: obscureText,
         ),
         if (errorText != null) ...[
           const shad.Gap(4),

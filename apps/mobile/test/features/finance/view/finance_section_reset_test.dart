@@ -1,7 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
+import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -45,32 +47,45 @@ void main() {
           BlocProvider.value(value: miniNav),
           BlocProvider.value(value: preferences),
         ],
-        child: const TransactionCategoriesPage(),
+        child: const FinanceDockRegistration(
+          location: Routes.categories,
+          child: TransactionCategoriesPage(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
-    miniNav.state
-        .resolveForLocation(Routes.categories)!
-        .items
-        .firstWhere((item) => item.id == 'tags')
-        .onPressed!();
+    final dock = miniNav.state.resolveForLocation(Routes.categories)!;
+    expect(dock.items.map((item) => item.id), [
+      'back',
+      'finance_home',
+      'finance_history',
+      'finance_budgets',
+      'finance_wallets',
+      'finance_more',
+    ]);
+    expect(dock.items.last.selected, isTrue);
+    dock.items.last.onReselect!();
+    await tester.pumpAndSettle();
+    expect(find.text('Reports'), findsOneWidget);
+    expect(find.text('Checkpoints'), findsOneWidget);
+    expect(find.text('Manage'), findsOneWidget);
+    Navigator.of(tester.element(find.text('Reports'))).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tags').first);
     await tester.pumpAndSettle();
     expect(
-      miniNav.state
-          .resolveForLocation(Routes.categories)!
-          .items
-          .firstWhere((item) => item.id == 'tags')
-          .selected,
+      chrome.state
+          .resolveForLocation(Routes.categories)
+          .any((action) => action.tooltip == 'Create tag'),
       isTrue,
     );
     chrome.state.resetSectionForLocation(Routes.categories)!();
     await tester.pumpAndSettle();
     expect(
-      miniNav.state
-          .resolveForLocation(Routes.categories)!
-          .items
-          .firstWhere((item) => item.id == 'categories')
-          .selected,
+      chrome.state
+          .resolveForLocation(Routes.categories)
+          .any((action) => action.tooltip == 'Create category'),
       isTrue,
     );
     expect(tester.takeException(), isNull);

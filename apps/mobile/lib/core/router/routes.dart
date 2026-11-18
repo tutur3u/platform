@@ -171,6 +171,9 @@ abstract final class Routes {
   static const transactionDetail = '/finance/transactions/:transactionId';
   static const financeCheckpoints = '/finance/checkpoints';
   static const categories = '/finance/categories';
+  static const financeBudgets = '/finance/budgets';
+  static const financeManage = '/finance/manage';
+  static const financeReports = '/finance/reports';
   static const inventoryProducts = '/inventory/products';
   static const inventoryProductCreate = '/inventory/products/create';
   static const inventoryProductDetail = '/inventory/products/:productId';
@@ -189,6 +192,11 @@ abstract final class Routes {
   static const timerStats = '/timer/stats';
   static const timerRequests = '/timer/requests';
   static const timerManagement = '/timer/management';
+
+  static String transactionDetailsLocation(String transactionId) => Uri(
+    path: transactions,
+    queryParameters: {'transactionId': transactionId},
+  ).toString();
 
   static String walletDetailPath(String walletId) =>
       '/finance/wallets/$walletId';

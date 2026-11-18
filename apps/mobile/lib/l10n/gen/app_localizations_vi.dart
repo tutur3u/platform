@@ -3847,6 +3847,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeWalletPickImage => 'Chọn hình ảnh';
 
   @override
+  String get financeWalletSearchEmpty => 'Không tìm thấy ví phù hợp';
+
+  @override
   String get financeWalletSearchCurrency => 'Tìm tiền tệ';
 
   @override
@@ -3875,6 +3878,161 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeWalletTypeStandard => 'Thường';
+
+  @override
+  String get financeAll => 'Tất cả';
+
+  @override
+  String get financeAllCategories => 'Tất cả danh mục';
+
+  @override
+  String get financeAllTime => 'Mọi thời điểm';
+
+  @override
+  String get financeAllWallets => 'Tất cả ví';
+
+  @override
+  String financeBudgetAlertAt(int percent) {
+    return 'Cảnh báo ở mức $percent%';
+  }
+
+  @override
+  String get financeBudgetAlertHint => 'Đặt ngưỡng chi tiêu để nhận cảnh báo.';
+
+  @override
+  String get financeBudgetAmountRequired => 'Nhập hạn mức lớn hơn không';
+
+  @override
+  String get financeBudgetCustom => 'Tùy chỉnh';
+
+  @override
+  String financeBudgetDaysLeft(int days) {
+    return 'Còn $days ngày';
+  }
+
+  @override
+  String get financeBudgetDeleted => 'Đã xóa ngân sách';
+
+  @override
+  String get financeBudgetEnd => 'Ngày kết thúc';
+
+  @override
+  String get financeBudgetEndAfterStart => 'Chọn ngày kết thúc từ ngày bắt đầu trở đi';
+
+  @override
+  String financeBudgetLeft(String amount) {
+    return 'Còn $amount';
+  }
+
+  @override
+  String financeBudgetLimit(String currency) {
+    return 'Hạn mức ($currency)';
+  }
+
+  @override
+  String get financeBudgetMonthly => 'Hằng tháng';
+
+  @override
+  String get financeBudgetNamePlaceholder => 'Ví dụ: Thực phẩm';
+
+  @override
+  String get financeBudgetDescriptionPlaceholder => 'Các khoản chi trong ngân sách này';
+
+  @override
+  String get financeBudgetName => 'Tên ngân sách';
+
+  @override
+  String get financeBudgetNameRequired => 'Nhập tên ngân sách';
+
+  @override
+  String financeBudgetOfLimit(String amount) {
+    return 'trên $amount';
+  }
+
+  @override
+  String financeBudgetOver(String amount) {
+    return 'Vượt ngân sách $amount';
+  }
+
+  @override
+  String get financeBudgetSaveFailed => 'Không thể cập nhật ngân sách';
+
+  @override
+  String get financeBudgetSaved => 'Đã lưu ngân sách';
+
+  @override
+  String get financeBudgetStart => 'Ngày bắt đầu';
+
+  @override
+  String get financeBudgetYearly => 'Hằng năm';
+
+  @override
+  String get financeBudgets => 'Ngân sách';
+
+  @override
+  String get financeDeleteBudget => 'Xóa ngân sách';
+
+  @override
+  String get financeDeleteBudgetBody => 'Xóa ngân sách này? Các giao dịch vẫn được giữ lại.';
+
+  @override
+  String get financeEditBudget => 'Chỉnh sửa ngân sách';
+
+  @override
+  String get financeHiddenAmount => 'Số tiền đã ẩn';
+
+  @override
+  String get financeIn => 'Thu';
+
+  @override
+  String get financeMonthUnavailable => 'Chưa có tổng thu chi trong tháng';
+
+  @override
+  String get financeMonth => 'Tháng';
+
+  @override
+  String get financeNewBudget => 'Ngân sách mới';
+
+  @override
+  String get financeNoAccessBody => 'Bạn không có quyền truy cập thông tin tài chính này.';
+
+  @override
+  String get financeNoAccessTitle => 'Cần quyền truy cập tài chính';
+
+  @override
+  String get financeNoBudgets => 'Chưa có ngân sách';
+
+  @override
+  String get financeNoBudgetsBody => 'Đặt hạn mức chi tiêu để theo dõi tiến độ.';
+
+  @override
+  String get financeOfflineBody => 'Kết nối Internet để tải dữ liệu tài chính.';
+
+  @override
+  String get financeOfflineTitle => 'Bạn đang ngoại tuyến';
+
+  @override
+  String get financeOut => 'Chi';
+
+  @override
+  String get financeRecent => 'Hoạt động gần đây';
+
+  @override
+  String get financeReports => 'Báo cáo';
+
+  @override
+  String get financeThisMonth => 'Tháng này';
+
+  @override
+  String get financeTotal => 'Tổng';
+
+  @override
+  String get financeTransfers => 'Chuyển tiền';
+
+  @override
+  String financeWalletCount(int count) {
+    return '$count ví';
+  }
 
   @override
   String get financeWallets => 'Ví';

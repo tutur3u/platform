@@ -16,26 +16,31 @@ import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletDetailPage extends StatelessWidget {
-  const WalletDetailPage({required this.walletId, super.key});
+  const WalletDetailPage({required this.walletId, this.repository, super.key});
+
+  final FinanceRepository? repository;
 
   final String walletId;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: _WalletDetailView(walletId: walletId),
     );
   }
@@ -88,17 +93,37 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       (cubit) => cubit.state.showAmounts,
     );
     final wallet = _wallet;
+    final location = Routes.walletDetailPath(widget.walletId);
 
     return shad.Scaffold(
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => unawaited(_loadInitial()),
+        listener: (context, _) {
+          ++_requestToken;
+          setState(() {
+            _wallet = null;
+            _transactions = const [];
+            _stats = null;
+            _exchangeRates = const [];
+            _workspaceCurrency = '';
+            _nextCursor = null;
+            _hasMore = false;
+          });
+          unawaited(_loadInitial());
+        },
         child: Stack(
           children: [
             FinanceAmountVisibilityShellAction(
               ownerId: 'finance-wallet-detail-amount-visibility',
-              locations: {Routes.walletDetailPath(widget.walletId)},
+              locations: {location},
+            ),
+            ShellTitleOverride(
+              ownerId: 'finance-wallet-detail',
+              locations: {location},
+              title: wallet?.name ?? l10n.financeWallet,
+              showLeadingBrand: false,
+              showAvatar: false,
             ),
             Column(
               children: [
@@ -106,7 +131,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                   child: NovaRefreshIndicator(
                     onRefresh: _onRefresh,
                     child: _isLoadingInitial && wallet == null
-                        ? const AppPageBody(child: AppLoadingIndicator.page())
+                        ? const FinanceListSkeleton()
                         : _error != null
                         ? AppPageListView(
                             physics: const AlwaysScrollableScrollPhysics(),
@@ -189,11 +214,18 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
               ],
             ),
             if (wallet != null && !_isLoadingInitial)
-              ExtendedFab(
-                icon: Icons.add,
-                label: context.l10n.financeCreateTransaction,
-                includeBottomSafeArea: false,
-                onPressed: _onCreateTransaction,
+              ShellChromeActions(
+                ownerId: 'finance-wallet-detail',
+                locations: {location},
+                actions: [
+                  ShellActionSpec(
+                    id: 'finance-wallet-create-transaction',
+                    icon: Icons.add,
+                    tooltip: l10n.financeCreateTransaction,
+                    filled: true,
+                    onPressed: _onCreateTransaction,
+                  ),
+                ],
               ),
           ],
         ),

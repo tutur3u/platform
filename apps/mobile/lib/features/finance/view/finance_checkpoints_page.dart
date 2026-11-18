@@ -15,10 +15,12 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_checkpoint_sheets.dart';
 import 'package:mobile/features/finance/widgets/wallet_checkpoint_ui.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -26,14 +28,20 @@ import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class FinanceCheckpointsPage extends StatelessWidget {
-  const FinanceCheckpointsPage({this.initialWalletId, super.key});
+  const FinanceCheckpointsPage({
+    this.initialWalletId,
+    this.repository,
+    super.key,
+  });
+
+  final FinanceRepository? repository;
 
   final String? initialWalletId;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: _FinanceCheckpointsView(initialWalletId: initialWalletId),
     );
   }
@@ -103,15 +111,34 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
       child: BlocListener<WorkspaceCubit, WorkspaceState>(
         listenWhen: (prev, curr) =>
             prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => unawaited(_load()),
+        listener: (context, state) {
+          ++_requestToken;
+          setState(() {
+            _summary = null;
+            _selectedWalletCheckpoints = null;
+            _selectedWalletId = null;
+            _categories = const [];
+            _error = null;
+            _isLoadingSummary = state.currentWorkspace != null;
+            _isLoadingWallet = false;
+          });
+          unawaited(_load());
+        },
         child: Stack(
           children: [
             const FinanceAmountVisibilityShellAction(
               ownerId: 'finance-checkpoints-amount-visibility',
               locations: {Routes.financeCheckpoints},
             ),
+            ShellTitleOverride(
+              ownerId: 'finance-checkpoints',
+              locations: const {Routes.financeCheckpoints},
+              title: context.l10n.financeCheckpointsShortLabel,
+              showLeadingBrand: false,
+              showAvatar: false,
+            ),
             if (_isLoadingSummary && summary == null)
-              const AppPageBody(child: AppLoadingIndicator.page())
+              const FinanceListSkeleton()
             else if (_error != null && summary == null)
               NovaRefreshIndicator.state(
                 onRefresh: () => _load(showLoader: false, forceRefresh: true),
@@ -352,15 +379,18 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     Wallet wallet, {
     WalletCheckpoint? checkpoint,
   }) async {
-    final result = await showFinanceModal<WalletCheckpointFormResult>(
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final result = await showFinanceFullscreenModal<WalletCheckpointFormResult>(
       context: context,
       builder: (_) =>
           WalletCheckpointFormSheet(wallet: wallet, checkpoint: checkpoint),
     );
     if (!mounted || result == null) return;
 
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final savedMessage = context.l10n.financeCheckpointsSaved;
     final fallbackError = context.l10n.commonSomethingWentWrong;
@@ -408,6 +438,8 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
   }
 
   Future<void> _openDeleteSheet(WalletCheckpoint checkpoint) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
     final showAmounts = context
         .read<FinancePreferencesCubit>()
         .state
@@ -421,8 +453,9 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     );
     if (!mounted || confirmed != true) return;
 
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final deletedMessage = context.l10n.financeCheckpointsDeleted;
     final fallbackError = context.l10n.commonSomethingWentWrong;
@@ -460,6 +493,8 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     Wallet wallet,
     WalletCheckpointInterval interval,
   ) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
     final showAmounts = context
         .read<FinancePreferencesCubit>()
         .state
@@ -476,8 +511,9 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
         );
     if (!mounted || result == null) return;
 
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final createdMessage = context.l10n.financeCheckpointsReconciliationCreated;
     final cleanMessage = context.l10n.financeCheckpointsReconciliationClean;
@@ -522,22 +558,25 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
   Future<void> _openBatchSheet() async {
     final summary = _summary;
     if (summary == null || summary.wallets.isEmpty || _isMutating) return;
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
     final showAmounts = context
         .read<FinancePreferencesCubit>()
         .state
         .showAmounts;
-    final result = await showFinanceModal<WalletCheckpointBatchFormResult>(
-      context: context,
-      maxDialogWidth: 760,
-      builder: (_) => WalletCheckpointBatchSheet(
-        wallets: summary.wallets,
-        showAmounts: showAmounts,
-      ),
-    );
+    final result =
+        await showFinanceFullscreenModal<WalletCheckpointBatchFormResult>(
+          context: context,
+          builder: (_) => WalletCheckpointBatchSheet(
+            wallets: summary.wallets,
+            showAmounts: showAmounts,
+          ),
+        );
     if (!mounted || result == null) return;
 
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
+    if (context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
     final toastContext = Navigator.of(context, rootNavigator: true).context;
     final savedMessage = context.l10n.financeCheckpointsBatchSaved;
     final fallbackError = context.l10n.commonSomethingWentWrong;

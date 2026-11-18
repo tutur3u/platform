@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/number_symbols.dart';
@@ -32,10 +31,12 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart'
+    show financeAmountsVisible, formatFinanceAmount;
+import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_tone.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
-import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
@@ -555,9 +556,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final isSyntheticTransfer = _transaction.transfer?.isSynthetic ?? false;
-    final showAmounts = context.select<FinancePreferencesCubit?, bool>(
-      (cubit) => cubit?.state.showAmounts ?? false,
-    );
+    final showAmounts = financeAmountsVisible(context);
     final date = _transaction.takenAt ?? _transaction.createdAt;
     final dateText = date != null
         ? DateFormat.yMMMd().add_jm().format(date.toLocal())
@@ -628,9 +627,11 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                     ),
                   ),
                 ),
-                shad.GhostButton(
+                const FinanceAmountVisibilityButton(),
+                AppIconButton(
                   onPressed: isSyntheticTransfer ? null : _showEditDialog,
-                  child: const Icon(Icons.edit_outlined, size: 18),
+                  tooltip: l10n.financeEditTransaction,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
                 ),
               ],
             ),
@@ -760,30 +761,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     );
   }
 
-  Future<void> _showEditDialog() async {
-    final rootNav = Navigator.of(context, rootNavigator: true);
-    final toastContext = rootNav.context;
-    final updated = await _showTransactionComposerRoute<Transaction>(
-      context,
-      child: _TransactionFormDialog(
-        wsId: widget.wsId,
-        transaction: _transaction,
-        repository: widget.repository,
-        onSave: widget.onSave,
-        exchangeRates: widget.exchangeRates,
-      ),
-    );
-
-    if (updated == null || !mounted) return;
-
+  void _applyEditedTransaction(Transaction updated) {
     setState(() => _transaction = updated);
-    if (toastContext.mounted) {
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, overlay) =>
-            shad.Alert(content: Text(ctx.l10n.financeTransactionUpdated)),
-      );
-    }
-    _closeSheet(true);
   }
 }

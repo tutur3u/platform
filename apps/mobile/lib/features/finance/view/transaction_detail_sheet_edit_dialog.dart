@@ -159,6 +159,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
             style: theme.typography.large.copyWith(fontWeight: FontWeight.w600),
           ),
           trailing: [
+            const FinanceAmountVisibilityButton(),
             shad.GhostButton(
               onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
               child: const Icon(Icons.close_rounded, size: 18),
@@ -224,7 +225,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
                                 ),
                               );
                             },
-                            child: _moneySuggestions.isNotEmpty
+                            child:
+                                financeAmountsVisible(context) &&
+                                    _moneySuggestions.isNotEmpty
                                 ? Padding(
                                     key: const ValueKey('money-suggestions'),
                                     padding: const EdgeInsets.only(bottom: 10),

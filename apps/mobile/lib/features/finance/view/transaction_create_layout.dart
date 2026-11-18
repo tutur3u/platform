@@ -10,7 +10,11 @@ extension on _TransactionFormDialogState {
         child: Column(
           children: [
             _buildCreateHeader(context),
-            Expanded(child: _buildCreateScrollView()),
+            Expanded(
+              child: _buildCreateScrollView(
+                showAmounts: financeAmountsVisible(context),
+              ),
+            ),
             _buildCreateFooter(context),
           ],
         ),
@@ -41,13 +45,14 @@ extension on _TransactionFormDialogState {
                 ),
               ),
             ),
+            const FinanceAmountVisibilityButton(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCreateScrollView() => LayoutBuilder(
+  Widget _buildCreateScrollView({required bool showAmounts}) => LayoutBuilder(
     builder: (context, constraints) {
       final gutter = AppPageInsets.gutterOf(
         context,
@@ -63,7 +68,7 @@ extension on _TransactionFormDialogState {
             },
             child: SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(gutter, 12, gutter, 20),
-              child: _buildCreateBody(context),
+              child: _buildCreateBody(context, showAmounts: showAmounts),
             ),
           ),
         ),

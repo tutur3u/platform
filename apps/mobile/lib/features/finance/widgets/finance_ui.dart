@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+export 'package:mobile/features/finance/widgets/finance_money.dart'
+    show financeMaskedAmountPlaceholder, maskFinanceValue;
 export 'package:mobile/features/finance/widgets/finance_segmented_row.dart';
-
-const financeMaskedAmountPlaceholder = '••••••';
-
-String maskFinanceValue(
-  String value, {
-  required bool showAmounts,
-  String placeholder = financeMaskedAmountPlaceholder,
-}) {
-  return showAmounts ? value : placeholder;
-}
 
 class FinancePalette {
   factory FinancePalette.of(BuildContext context) {

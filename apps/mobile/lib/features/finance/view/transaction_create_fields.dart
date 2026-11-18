@@ -1,7 +1,10 @@
 part of 'transaction_detail_sheet.dart';
 
 extension on _TransactionFormDialogState {
-  String _createAmountLabel(_MoneyFieldTarget target) {
+  String _createAmountLabel(
+    _MoneyFieldTarget target, {
+    required bool showAmounts,
+  }) {
     final (controller, currency) = switch (target) {
       _MoneyFieldTarget.source => (_amountController, _selectedCurrency),
       _MoneyFieldTarget.destination => (
@@ -9,6 +12,7 @@ extension on _TransactionFormDialogState {
         _selectedDestinationCurrency,
       ),
     };
+    if (!showAmounts) return financeMaskedAmountPlaceholder;
     if (controller.text.trim().isEmpty) return '0';
     final preview = formatAmountExpressionPreview(
       controller.text,
@@ -23,10 +27,17 @@ extension on _TransactionFormDialogState {
         : preview;
   }
 
-  Widget _buildCreateDetails(BuildContext context) {
+  Widget _buildCreateDetails(
+    BuildContext context, {
+    required bool showAmounts,
+  }) {
     final l10n = context.l10n;
     final colors = context.tokens.colorScheme;
     final divider = Divider(height: 1, thickness: 1, color: colors.border);
+    final destinationAmount = _createAmountLabel(
+      _MoneyFieldTarget.destination,
+      showAmounts: showAmounts,
+    );
     return AppCard(
       padding: EdgeInsets.zero,
       child: Column(
@@ -61,8 +72,7 @@ extension on _TransactionFormDialogState {
                   child: AppGroupedRow(
                     title: Text(l10n.financeDestinationAmountOptional),
                     trailing: _CreateDetailValue(
-                      '${_createAmountLabel(_MoneyFieldTarget.destination)} '
-                      '$_selectedDestinationCurrency',
+                      '$destinationAmount $_selectedDestinationCurrency',
                     ),
                     onTap: _isSaving || !_canEditDestinationAmount
                         ? null

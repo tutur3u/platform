@@ -1,24 +1,24 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold, TextField;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/view/transaction_list_body.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
-import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/fab/extended_fab.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 Future<void> _loadFromWorkspace(
   BuildContext context,
@@ -32,10 +32,15 @@ Future<void> _loadFromWorkspace(
   await cubit.load(ws.id, forceRefresh: forceRefresh);
 }
 
+/// Transactions: kind, month, wallet and category filters, their In/Out
+/// totals, and every matching transaction grouped by day. It opens on the
+/// current month.
 class TransactionListPage extends StatelessWidget {
   const TransactionListPage({
     this.initialTransactionId,
     this.startInSearch = false,
+    this.repository,
+    this.now,
     super.key,
   });
 
@@ -43,10 +48,14 @@ class TransactionListPage extends StatelessWidget {
 
   final String? initialTransactionId;
 
+  /// Injected in tests; the page builds its own otherwise.
+  final FinanceRepository? repository;
+  final DateTime? now;
+
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: BlocProvider(
         create: (context) {
           final wsId = context
@@ -54,50 +63,34 @@ class TransactionListPage extends StatelessWidget {
               .state
               .currentWorkspace
               ?.id;
+          final month = FinanceTransactionQuery.month(now ?? DateTime.now());
           final cubit = TransactionListCubit(
             financeRepository: context.read<FinanceRepository>(),
-            initialState: wsId == null
-                ? null
-                : TransactionListCubit.seedStateForWorkspace(wsId),
+            initialState: TransactionListState(query: month),
           );
-          unawaited(_loadFromWorkspace(context, cubit));
+          if (wsId != null) unawaited(_loadFromWorkspace(context, cubit));
           return cubit;
         },
         child: _TransactionListView(
           initialTransactionId: initialTransactionId,
           startInSearch: startInSearch,
+          now: now,
         ),
       ),
     );
   }
 }
 
-class _TransactionListSkeleton extends StatelessWidget {
-  const _TransactionListSkeleton();
-
-  @override
-  Widget build(BuildContext context) => const AppPageListView(
-    children: [
-      FinanceSkeletonBlock(height: 108, radius: 22),
-      SizedBox(height: AppSpacing.lg),
-      FinanceSkeletonBlock(height: 68, radius: 18),
-      SizedBox(height: AppSpacing.sm),
-      FinanceSkeletonBlock(height: 68, radius: 18),
-      SizedBox(height: AppSpacing.sm),
-      FinanceSkeletonBlock(height: 68, radius: 18),
-    ],
-  );
-}
-
 class _TransactionListView extends StatefulWidget {
   const _TransactionListView({
     required this.startInSearch,
     this.initialTransactionId,
+    this.now,
   });
 
   final bool startInSearch;
-
   final String? initialTransactionId;
+  final DateTime? now;
 
   @override
   State<_TransactionListView> createState() => _TransactionListViewState();
@@ -136,16 +129,12 @@ class _TransactionListViewState extends State<_TransactionListView> {
           wsId: wsId,
           transactionId: transactionId,
         );
-    if (!mounted || transaction == null) return;
-    await openTransactionDetailSheet(
-      context,
-      wsId: wsId,
-      transaction: transaction,
-      repository: repository,
-      workspaceCurrency: state.workspaceCurrency,
-      exchangeRates: state.exchangeRates,
-    );
-    if (mounted) await _onRefresh();
+    if (!mounted ||
+        transaction == null ||
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
+    await _openTransaction(transaction);
   }
 
   @override
@@ -158,21 +147,16 @@ class _TransactionListViewState extends State<_TransactionListView> {
     super.dispose();
   }
 
-  Future<void> _onRefresh() async {
-    await _loadFromWorkspace(
-      context,
-      context.read<TransactionListCubit>(),
-      forceRefresh: true,
-    );
-  }
+  Future<void> _onRefresh() => _loadFromWorkspace(
+    context,
+    context.read<TransactionListCubit>(),
+    forceRefresh: true,
+  );
 
   void _onScroll() {
-    if (!_scrollController.hasClients) {
-      return;
-    }
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    if (currentScroll >= maxScroll - 200) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
       unawaited(context.read<TransactionListCubit>().loadMore());
     }
   }
@@ -191,215 +175,129 @@ class _TransactionListViewState extends State<_TransactionListView> {
     setState(() => _isSearchVisible = false);
   }
 
+  Future<void> _openTransaction(Transaction transaction) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    final state = context.read<TransactionListCubit>().state;
+    await openTransactionDetailSheet(
+      context,
+      wsId: wsId,
+      transaction: transaction,
+      repository: context.read<FinanceRepository>(),
+      workspaceCurrency: state.workspaceCurrency,
+      exchangeRates: state.exchangeRates,
+    );
+    if (mounted) await _onRefresh();
+  }
+
   Future<void> _onCreateTransaction() async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) {
-      return;
-    }
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
+    if (wsId == null) return;
     final state = context.read<TransactionListCubit>().state;
     final created = await openCreateTransactionSheet(
       context,
       wsId: wsId,
       repository: context.read<FinanceRepository>(),
       exchangeRates: state.exchangeRates,
+      initialWalletId: state.walletId,
     );
-
-    if (!mounted || !created) {
-      return;
-    }
-
+    if (!mounted || !created) return;
+    showAppToast(context, message: context.l10n.financeTransactionSaved);
     await _onRefresh();
-    if (toastContext.mounted) {
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, _) =>
-            shad.Alert(content: Text(ctx.l10n.financeTransactionCreated)),
-      );
-    }
+  }
+
+  void _clearFilters() {
+    _debounce?.cancel();
+    _searchController.clear();
+    unawaited(
+      context.read<TransactionListCubit>().setFilters(
+        query: const FinanceTransactionQuery(),
+        walletId: null,
+        clearSearch: true,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final showAmounts = context.select<FinancePreferencesCubit, bool>(
-      (cubit) => cubit.state.showAmounts,
-    );
-
-    return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) => unawaited(_onRefresh()),
-        child: Stack(
-          children: [
-            ShellChromeActions(
-              ownerId: 'finance-transactions',
-              locations: const {Routes.transactions},
-              actions: [
-                ShellActionSpec.search(
-                  id: 'finance-transactions-search',
-                  active: _isSearchVisible,
-                  tooltip: _isSearchVisible
-                      ? l10n.financeActivityClearSearch
-                      : l10n.financeSearchTransactions,
-                  controller: _searchController,
-                  searchHint: l10n.financeSearchTransactions,
-                  onSearchChanged: _onSearchChanged,
-                  onCloseSearch: _closeSearch,
-                  onPressed: () {
-                    if (_isSearchVisible) {
-                      _closeSearch();
-                    } else {
-                      setState(() => _isSearchVisible = true);
-                    }
-                  },
+    final showAmounts = financeAmountsVisible(context);
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (prev, curr) =>
+          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+      listener: (context, _) => unawaited(_onRefresh()),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ShellTitleOverride(
+            ownerId: 'finance-transactions',
+            locations: const {Routes.transactions},
+            title: l10n.financeTransactions,
+            showLeadingBrand: false,
+            showAvatar: false,
+          ),
+          ShellChromeActions(
+            ownerId: 'finance-transactions',
+            locations: const {Routes.transactions},
+            actions: [
+              ShellActionSpec.search(
+                id: 'finance-transactions-search',
+                active: _isSearchVisible,
+                tooltip: _isSearchVisible
+                    ? l10n.financeActivityClearSearch
+                    : l10n.financeSearchTransactions,
+                controller: _searchController,
+                searchHint: l10n.financeSearchTransactions,
+                onSearchChanged: _onSearchChanged,
+                onCloseSearch: _closeSearch,
+                onPressed: () {
+                  if (_isSearchVisible) {
+                    _closeSearch();
+                  } else {
+                    setState(() => _isSearchVisible = true);
+                  }
+                },
+              ),
+              financeAmountVisibilityAction(
+                context,
+                showAmounts: showAmounts,
+                id: 'finance-transactions-amount-visibility',
+              ),
+              ShellActionSpec(
+                id: 'finance-transactions-create',
+                icon: AppIcons.add,
+                tooltip: l10n.financeNewTransaction,
+                filled: true,
+                onPressed: () => unawaited(_onCreateTransaction()),
+              ),
+            ],
+          ),
+          BlocBuilder<TransactionListCubit, TransactionListState>(
+            builder: (context, state) => TransactionListBody(
+              state: state,
+              controller: _scrollController,
+              workspaceId: context
+                  .read<WorkspaceCubit>()
+                  .state
+                  .currentWorkspace
+                  ?.id,
+              now: widget.now,
+              onRefresh: _onRefresh,
+              onTransactionTap: (transaction) =>
+                  unawaited(_openTransaction(transaction)),
+              onFiltersChanged: (query, walletId) => unawaited(
+                context.read<TransactionListCubit>().setFilters(
+                  query: query,
+                  walletId: walletId,
                 ),
-                financeAmountVisibilityAction(
-                  context,
-                  showAmounts: showAmounts,
-                  id: 'finance-transactions-amount-visibility',
-                ),
-              ],
+              ),
+              onClearFilters: _clearFilters,
+              onLoadMore: () =>
+                  unawaited(context.read<TransactionListCubit>().loadMore()),
+              onCreate: () => unawaited(_onCreateTransaction()),
             ),
-            BlocBuilder<TransactionListCubit, TransactionListState>(
-              builder: (context, state) {
-                if (_searchController.text != state.search &&
-                    _searchController.text.isEmpty &&
-                    state.search.isNotEmpty) {
-                  _searchController.text = state.search;
-                }
-
-                if (state.status == TransactionListStatus.loading &&
-                    state.transactions.isEmpty) {
-                  return const _TransactionListSkeleton();
-                }
-
-                if (state.status == TransactionListStatus.error &&
-                    state.transactions.isEmpty) {
-                  return NovaRefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: AppPageListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        FinanceEmptyState(
-                          icon: Icons.error_outline,
-                          title: l10n.commonSomethingWentWrong,
-                          body: state.error ?? l10n.financeTransactions,
-                          action: shad.SecondaryButton(
-                            onPressed: _onRefresh,
-                            child: Text(l10n.commonRetry),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (!state.hasWorkspaceCurrency) {
-                  return const _TransactionListSkeleton();
-                }
-
-                if (state.transactions.isEmpty) {
-                  return NovaRefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: AppPageListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        const shad.Gap(14),
-                        FinanceEmptyState(
-                          icon: state.search.isNotEmpty
-                              ? Icons.search_off_rounded
-                              : Icons.receipt_long_outlined,
-                          title: state.search.isNotEmpty
-                              ? l10n.financeNoSearchResults
-                              : l10n.financeNoTransactions,
-                          body: state.search.isNotEmpty
-                              ? l10n.financeActivitySearchEmptyBody
-                              : l10n.financeOverviewNoTransactionsBody,
-                          action: state.search.isNotEmpty
-                              ? shad.SecondaryButton(
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _onSearchChanged('');
-                                  },
-                                  child: Text(l10n.financeActivityClearSearch),
-                                )
-                              : shad.SecondaryButton(
-                                  onPressed: _onCreateTransaction,
-                                  child: Text(l10n.financeAddFirstTransaction),
-                                ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final repository = context.read<FinanceRepository>();
-                return NovaRefreshIndicator(
-                  onRefresh: _onRefresh,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) =>
-                        GroupedTransactionAccordion(
-                          workspaceId: context
-                              .read<WorkspaceCubit>()
-                              .state
-                              .currentWorkspace
-                              ?.id,
-                          lazy: true,
-                          scrollController: _scrollController,
-                          listPadding: AppPageInsets.of(
-                            context,
-                            width: constraints.maxWidth,
-                          ),
-                          compactHorizontalPadding: 0,
-                          transactions: state.transactions,
-                          workspaceCurrency: state.workspaceCurrency,
-                          exchangeRates: state.exchangeRates,
-                          showLoadingMore: state.isLoadingMore,
-                          usePanelChrome: false,
-                          emphasizeTransactionRows: true,
-                          collapseBreakdownByDefault: true,
-                          showAmounts: showAmounts,
-                          onTransactionTap: (transaction) async {
-                            final wsId = context
-                                .read<WorkspaceCubit>()
-                                .state
-                                .currentWorkspace
-                                ?.id;
-                            if (wsId == null) {
-                              return;
-                            }
-
-                            await openTransactionDetailSheet(
-                              context,
-                              wsId: wsId,
-                              transaction: transaction,
-                              repository: repository,
-                              workspaceCurrency: state.workspaceCurrency,
-                              exchangeRates: state.exchangeRates,
-                            );
-
-                            if (!context.mounted) {
-                              return;
-                            }
-
-                            await _onRefresh();
-                          },
-                        ),
-                  ),
-                );
-              },
-            ),
-            ExtendedFab(
-              icon: Icons.add,
-              label: l10n.financeCreateTransaction,
-              includeBottomSafeArea: false,
-              onPressed: _onCreateTransaction,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

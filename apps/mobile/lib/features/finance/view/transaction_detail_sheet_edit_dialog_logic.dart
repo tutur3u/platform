@@ -784,6 +784,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   );
 
   String _formattedMoneyFieldLabel(_MoneyFieldTarget target) {
+    if (!financeAmountsVisible(context)) return financeMaskedAmountPlaceholder;
     final currency = switch (target) {
       _MoneyFieldTarget.source => _selectedCurrency,
       _MoneyFieldTarget.destination => _selectedDestinationCurrency,
@@ -792,9 +793,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       _MoneyFieldTarget.source => _amountController.text.trim(),
       _MoneyFieldTarget.destination => _destinationAmountController.text.trim(),
     };
-    if (rawText.isEmpty) {
-      return '';
-    }
+    if (rawText.isEmpty) return '';
     if (containsAmountOperator(
       rawText,
       decimalSeparator: _localeDecimalSeparator,

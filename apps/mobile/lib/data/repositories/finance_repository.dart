@@ -20,10 +20,12 @@ import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
@@ -31,20 +33,23 @@ import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 
-part 'finance_repository_local.dart';
-part 'finance_repository_offline_preparation.dart';
-part 'finance_repository_checkpoints.dart';
 part 'finance_repository_attachments.dart';
-part 'finance_repository_transaction_lookup.dart';
+part 'finance_repository_budgets.dart';
+part 'finance_repository_checkpoints.dart';
+part 'finance_repository_local.dart';
 part 'finance_repository_mutations.dart';
+part 'finance_repository_offline_preparation.dart';
 part 'finance_repository_taxonomy.dart';
+part 'finance_repository_transaction_lookup.dart';
 
 /// Repository for finance operations (wallets, transactions, categories).
 class FinanceRepository
     with
         FinanceRepositoryAttachments,
         FinanceRepositoryMutations,
-        FinanceRepositoryTaxonomy {
+        FinanceRepositoryTaxonomy,
+        FinanceRepositoryBudgets,
+        FinanceRepositoryCheckpoints {
   FinanceRepository({
     ApiClient? apiClient,
     CacheStore? cacheStore,
@@ -512,6 +517,7 @@ class FinanceRepository
     String? cursor,
     String? search,
     String? walletId,
+    FinanceTransactionQuery query = const FinanceTransactionQuery(),
   }) async {
     final userId = _cacheUserId();
     if (cursor?.startsWith('local:') == true || !await _networkAvailable()) {
@@ -521,6 +527,7 @@ class FinanceRepository
         cursor: cursor,
         search: search,
         walletId: walletId,
+        query: query,
       );
     }
     try {
@@ -530,34 +537,46 @@ class FinanceRepository
       if (walletId != null && walletId.isNotEmpty) {
         params['walletId'] = walletId;
       }
+      params.addAll(query.toParams());
 
-      final query = Uri(queryParameters: params).query;
+      final encoded = Uri(queryParameters: params).query;
       final response = await readThroughJson(
         api: _api,
         namespace: 'finance.infiniteTransactions',
         workspaceId: wsId,
-        path: '${FinanceEndpoints.infiniteTransactions(wsId)}?$query',
+        path: '${FinanceEndpoints.infiniteTransactions(wsId)}?$encoded',
         cacheStore: _cacheStore,
         cacheUserId: _cacheUserId,
       );
 
       final page = InfiniteTransactionResponse.fromJson(response);
-      await _rememberTransactionCursor(wsId, userId, page, search, walletId);
+      await _rememberTransactionCursor(
+        wsId,
+        userId,
+        page,
+        search,
+        walletId,
+        query,
+      );
       if (cursor == null &&
           (search == null || search.isEmpty) &&
-          walletId == null) {
+          walletId == null &&
+          query.isEmpty) {
         _startHistoryBackfill(wsId);
       }
+      final rows = cursor == null
+          ? overlayPendingTransactions(
+              wsId,
+              page.data,
+              _mutationQueue.pending.value,
+              walletId: walletId,
+              search: search,
+            )
+          : page.data;
       return InfiniteTransactionResponse(
-        data: cursor == null
-            ? overlayPendingTransactions(
-                wsId,
-                page.data,
-                _mutationQueue.pending.value,
-                walletId: walletId,
-                search: search,
-              )
-            : page.data,
+        data: query.isEmpty
+            ? rows
+            : rows.where(query.matches).toList(growable: false),
         hasMore: page.hasMore,
         nextCursor: page.nextCursor,
       );
@@ -569,6 +588,7 @@ class FinanceRepository
         cursor: cursor,
         search: search,
         walletId: walletId,
+        query: query,
       );
     }
   }

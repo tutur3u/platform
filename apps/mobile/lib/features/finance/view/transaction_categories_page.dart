@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -12,6 +11,7 @@ import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/app_segmented_control.dart';
 import 'package:mobile/core/utils/color_hex.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -21,11 +21,12 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
-import 'package:mobile/features/shell/view/shell_mini_nav.dart';
+import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -36,9 +37,13 @@ import 'package:mobile/widgets/platform_icon_picker.dart';
 
 part 'transaction_categories_cards.dart';
 part 'transaction_categories_fields.dart';
+part 'transaction_categories_forms.dart';
+part 'transaction_categories_preview.dart';
 
 class TransactionCategoriesPage extends StatelessWidget {
-  const TransactionCategoriesPage({super.key});
+  const TransactionCategoriesPage({this.repository, super.key});
+
+  final FinanceRepository? repository;
 
   static void clearCaches() {
     _TransactionCategoriesViewState.clearMemoryCaches();
@@ -47,7 +52,7 @@ class TransactionCategoriesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: const _TransactionCategoriesView(),
     );
   }
@@ -213,49 +218,46 @@ class _TransactionCategoriesViewState
               ownerId: 'finance-manage-amount-visibility',
               locations: {Routes.categories},
             ),
-            ShellMiniNav(
-              ownerId: 'finance-manage-mini-nav',
+            ShellTitleOverride(
+              ownerId: 'finance-categories',
               locations: const {Routes.categories},
-              deepLinkBackRoute: Routes.finance,
-              items: [
-                ShellMiniNavItemSpec(
-                  id: 'back',
-                  icon: Icons.chevron_left,
-                  label: l10n.navBack,
-                  callbackToken: 'back',
-                  onPressed: () => context.go(Routes.finance),
+              title: l10n.financeCategories,
+              showLeadingBrand: false,
+              showAvatar: false,
+            ),
+            Column(
+              children: [
+                AppPageBody(
+                  consumeBottomClearance: false,
+                  child: AppSegmentedControl<int>(
+                    selected: _activeTab,
+                    onChanged: _switchTab,
+                    segments: [
+                      AppSegment(
+                        value: _tabCategories,
+                        label: l10n.financeCategories,
+                      ),
+                      AppSegment(value: _tabTags, label: l10n.financeTags),
+                    ],
+                  ),
                 ),
-                ShellMiniNavItemSpec(
-                  id: 'categories',
-                  icon: Icons.category_outlined,
-                  label: l10n.financeCategories,
-                  selected: _activeTab == _tabCategories,
-                  callbackToken: 'categories-$_activeTab',
-                  onPressed: () => _switchTab(_tabCategories),
-                ),
-                ShellMiniNavItemSpec(
-                  id: 'tags',
-                  icon: Icons.label_outline,
-                  label: l10n.financeTags,
-                  selected: _activeTab == _tabTags,
-                  callbackToken: 'tags-$_activeTab',
-                  onPressed: () => _switchTab(_tabTags),
+                Expanded(
+                  child: NovaRefreshIndicator(
+                    onRefresh: () => _loadCurrentTab(forceRefresh: true),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final insets = AppPageInsets.of(
+                          context,
+                          width: constraints.maxWidth,
+                        );
+                        return _activeTab == _tabCategories
+                            ? _buildCategoriesContent(l10n, insets, showAmounts)
+                            : _buildTagsContent(l10n, insets, showAmounts);
+                      },
+                    ),
+                  ),
                 ),
               ],
-            ),
-            NovaRefreshIndicator(
-              onRefresh: () => _loadCurrentTab(forceRefresh: true),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final insets = AppPageInsets.of(
-                    context,
-                    width: constraints.maxWidth,
-                  );
-                  return _activeTab == _tabCategories
-                      ? _buildCategoriesContent(l10n, insets, showAmounts)
-                      : _buildTagsContent(l10n, insets, showAmounts);
-                },
-              ),
             ),
             ShellChromeActions(
               ownerId: 'finance-manage-create',
@@ -267,7 +269,7 @@ class _TransactionCategoriesViewState
                 ShellActionSpec(
                   id: 'finance-manage-create',
                   icon: Icons.add,
-                  inDock: true,
+                  filled: true,
                   tooltip: _activeTab == _tabCategories
                       ? l10n.financeCreateCategory
                       : l10n.financeCreateTag,
@@ -290,7 +292,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_categoriesLoading) {
-      return const AppPageBody(child: AppLoadingIndicator.page());
+      return const FinanceListSkeleton(summaryHeight: 48);
     }
     if (_categoriesError != null) {
       return ListView(
@@ -364,7 +366,7 @@ class _TransactionCategoriesViewState
     bool showAmounts,
   ) {
     if (_tagsLoading) {
-      return const AppPageBody(child: AppLoadingIndicator.page());
+      return const FinanceListSkeleton(summaryHeight: 48);
     }
     if (_tagsError != null) {
       return ListView(
@@ -813,671 +815,4 @@ Map<String, dynamic> _tagToJson(FinanceTag tag) {
     'amount': tag.amount,
     'transaction_count': tag.transactionCount,
   };
-}
-
-class _CategoryDialog extends StatefulWidget {
-  const _CategoryDialog({
-    required this.wsId,
-    required this.repository,
-    this.category,
-  });
-
-  final String wsId;
-  final FinanceRepository repository;
-  final TransactionCategory? category;
-
-  @override
-  State<_CategoryDialog> createState() => _CategoryDialogState();
-}
-
-class _CategoryDialogState extends State<_CategoryDialog> {
-  late final TextEditingController _nameController;
-  late bool _isExpense;
-  String? _icon;
-  String? _colorHex;
-  String? _nameError;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.category?.name ?? '');
-    _isExpense = widget.category?.isExpense ?? true;
-    _icon = widget.category?.icon;
-    _colorHex = normalizeHex(widget.category?.color ?? '');
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final previewColor =
-        parseHex(_colorHex) ??
-        (_isExpense
-            ? shad.Theme.of(context).colorScheme.destructive
-            : shad.Theme.of(context).colorScheme.primary);
-    final previewIcon = resolvePlatformIcon(
-      _icon,
-      fallback: _isExpense ? Icons.arrow_downward : Icons.arrow_upward,
-    );
-
-    return FinanceFullscreenFormScaffold(
-      title: widget.category == null
-          ? context.l10n.financeCreateCategory
-          : context.l10n.financeEditCategory,
-      subtitle: context.l10n.financeCategoryDialogSubtitle,
-      primaryActionLabel: widget.category == null
-          ? context.l10n.financeCreateCategory
-          : context.l10n.timerSave,
-      onPrimaryPressed: _isSaving ? null : _saveCategory,
-      onClose: _isSaving ? null : () => Navigator.of(context).pop(false),
-      isSaving: _isSaving,
-      child: ListView(
-        children: [
-          _TaxonomyPreviewCard(
-            name: _nameController.text.trim().isEmpty
-                ? context.l10n.financeCreateCategory
-                : _nameController.text.trim(),
-            subtitle: _isExpense
-                ? context.l10n.financeExpense
-                : context.l10n.financeIncome,
-            previewColor: previewColor,
-            icon: previewIcon,
-          ),
-          const shad.Gap(12),
-          FinanceFormSection(
-            title: context.l10n.timerCategoryName,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _TaxonomyTextField(
-                  controller: _nameController,
-                  placeholder: context.l10n.timerCategoryName,
-                  autofocus: true,
-                  errorText: _nameError,
-                  onChanged: _onNameChanged,
-                ),
-                const shad.Gap(10),
-                _TaxonomyFieldLabel(label: context.l10n.financeType),
-                const shad.Gap(4),
-                FinanceSegmentedRow(
-                  leftLabel: context.l10n.financeExpense,
-                  rightLabel: context.l10n.financeIncome,
-                  leftSelected: _isExpense,
-                  onLeftPressed: () => setState(() => _isExpense = true),
-                  onRightPressed: () => setState(() => _isExpense = false),
-                ),
-              ],
-            ),
-          ),
-          const shad.Gap(12),
-          FinanceFormSection(
-            title: context.l10n.financeIcon,
-            child: PlatformIconPickerField(
-              value: _icon,
-              title: context.l10n.financeSelectIcon,
-              searchPlaceholder: context.l10n.financeSearchIcons,
-              emptyText: context.l10n.financeNoIconsFound,
-              showLabel: false,
-              onChanged: (value) => setState(() => _icon = value),
-            ),
-          ),
-          const shad.Gap(12),
-          FinanceFormSection(
-            title: context.l10n.calendarEventColor,
-            child: _TaxonomyColorSection(
-              colorHex: _colorHex ?? context.l10n.financeNoColor,
-              previewColor: previewColor,
-              onPickColor: _openColorPicker,
-              onRandomize: () => setState(() => _colorHex = randomHexColor()),
-              onClear: _colorHex == null
-                  ? null
-                  : () => setState(() => _colorHex = null),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _saveCategory() async {
-    final nameError = _validateName(_nameController.text);
-    setState(() => _nameError = nameError);
-    if (nameError != null) {
-      return;
-    }
-
-    final rootNav = Navigator.of(context, rootNavigator: true);
-    final toastContext = rootNav.context;
-
-    setState(() => _isSaving = true);
-    try {
-      final repository = widget.repository;
-      final color = _colorHex;
-      if (widget.category == null) {
-        await repository.createCategory(
-          wsId: widget.wsId,
-          name: _nameController.text.trim(),
-          isExpense: _isExpense,
-          icon: _icon,
-          color: color,
-        );
-      } else {
-        await repository.updateCategory(
-          wsId: widget.wsId,
-          categoryId: widget.category!.id,
-          name: _nameController.text.trim(),
-          isExpense: _isExpense,
-          icon: _icon,
-          color: color,
-        );
-      }
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } on ApiException catch (e) {
-      final message = e.message.trim();
-      final details = message.isEmpty || message == 'Request failed'
-          ? context.l10n.commonSomethingWentWrong
-          : message;
-
-      if (toastContext.mounted) {
-        shad.showToast(
-          context: toastContext,
-          builder: (ctx, _) => shad.Alert.destructive(
-            title: Text(ctx.l10n.commonSomethingWentWrong),
-            content: Text(details),
-          ),
-        );
-      }
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    } on Exception {
-      if (toastContext.mounted) {
-        shad.showToast(
-          context: toastContext,
-          builder: (ctx, _) => shad.Alert.destructive(
-            content: Text(ctx.l10n.commonSomethingWentWrong),
-          ),
-        );
-      }
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  void _onNameChanged(String value) {
-    setState(() => _nameError = _validateName(value));
-  }
-
-  String? _validateName(String value) {
-    if (value.trim().isEmpty) {
-      return context.l10n.financeCategoryNameRequired;
-    }
-    return null;
-  }
-
-  Future<void> _openColorPicker() async {
-    var selected =
-        parseHex(_colorHex) ??
-        (_isExpense
-            ? shad.Theme.of(context).colorScheme.destructive
-            : shad.Theme.of(context).colorScheme.primary);
-
-    final result = await showFinanceModal<Color>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return FinanceModalScaffold(
-              title: context.l10n.financePickColor,
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(context.l10n.commonCancel),
-                ),
-                shad.PrimaryButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(selected),
-                  child: Text(context.l10n.timerSave),
-                ),
-              ],
-              child: ColorPicker(
-                pickerColor: selected,
-                onColorChanged: (color) =>
-                    setDialogState(() => selected = color),
-                enableAlpha: false,
-                portraitOnly: true,
-                labelTypes: const [ColorLabelType.hex],
-                pickerAreaHeightPercent: 0.72,
-                displayThumbColor: true,
-                hexInputBar: true,
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null && mounted) {
-      setState(() => _colorHex = colorToHexString(result));
-    }
-  }
-}
-
-class _TagDialog extends StatefulWidget {
-  const _TagDialog({required this.wsId, required this.repository, this.tag});
-
-  final String wsId;
-  final FinanceRepository repository;
-  final FinanceTag? tag;
-
-  @override
-  State<_TagDialog> createState() => _TagDialogState();
-}
-
-class _TagDialogState extends State<_TagDialog> {
-  late final TextEditingController _nameController;
-  late final TextEditingController _descriptionController;
-  String? _colorHex;
-  String? _nameError;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.tag?.name ?? '');
-    _descriptionController = TextEditingController(
-      text: widget.tag?.description ?? '',
-    );
-    _colorHex = normalizeHex(widget.tag?.color ?? '') ?? '#3B82F6';
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final previewColor = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
-
-    return FinanceFullscreenFormScaffold(
-      title: widget.tag == null
-          ? context.l10n.financeCreateTag
-          : context.l10n.financeEditTag,
-      subtitle: context.l10n.financeTagDialogSubtitle,
-      primaryActionLabel: widget.tag == null
-          ? context.l10n.financeCreateTag
-          : context.l10n.timerSave,
-      onPrimaryPressed: _isSaving ? null : _saveTag,
-      onClose: _isSaving ? null : () => Navigator.of(context).pop(false),
-      isSaving: _isSaving,
-      child: ListView(
-        children: [
-          _TaxonomyPreviewCard(
-            name: _nameController.text.trim().isEmpty
-                ? context.l10n.financeCreateTag
-                : _nameController.text.trim(),
-            subtitle: _descriptionController.text.trim().isEmpty
-                ? context.l10n.financeTagDialogSubtitle
-                : _descriptionController.text.trim(),
-            previewColor: previewColor,
-            icon: Icons.sell_outlined,
-          ),
-          const shad.Gap(12),
-          FinanceFormSection(
-            title: context.l10n.financeTagName,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _TaxonomyTextField(
-                  controller: _nameController,
-                  placeholder: context.l10n.financeTagName,
-                  autofocus: true,
-                  errorText: _nameError,
-                  onChanged: _onNameChanged,
-                ),
-                const shad.Gap(10),
-                _TaxonomyFieldLabel(label: context.l10n.financeDescription),
-                const shad.Gap(4),
-                _TaxonomyTextArea(
-                  controller: _descriptionController,
-                  placeholder: context.l10n.financeDescription,
-                  onChanged: (_) => setState(() {}),
-                ),
-              ],
-            ),
-          ),
-          const shad.Gap(12),
-          FinanceFormSection(
-            title: context.l10n.calendarEventColor,
-            child: _TaxonomyColorSection(
-              colorHex: _colorHex ?? '#3B82F6',
-              previewColor: previewColor,
-              onPickColor: _openColorPicker,
-              onRandomize: () => setState(() => _colorHex = randomHexColor()),
-              onClear: _colorHex == null
-                  ? null
-                  : () => setState(() => _colorHex = '#3B82F6'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _saveTag() async {
-    final nameError = _validateName(_nameController.text);
-    setState(() => _nameError = nameError);
-    if (nameError != null) return;
-
-    final rootNav = Navigator.of(context, rootNavigator: true);
-    final toastContext = rootNav.context;
-
-    setState(() => _isSaving = true);
-    try {
-      final repository = widget.repository;
-      final description = _descriptionController.text.trim();
-      if (widget.tag == null) {
-        await repository.createTag(
-          wsId: widget.wsId,
-          name: _nameController.text.trim(),
-          color: _colorHex ?? '#3B82F6',
-          description: description.isEmpty ? null : description,
-        );
-      } else {
-        await repository.updateTag(
-          wsId: widget.wsId,
-          tagId: widget.tag!.id,
-          name: _nameController.text.trim(),
-          color: _colorHex ?? '#3B82F6',
-          description: description.isEmpty ? null : description,
-        );
-      }
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } on ApiException catch (e) {
-      final message = e.message.trim();
-      final details = message.isEmpty || message == 'Request failed'
-          ? context.l10n.commonSomethingWentWrong
-          : message;
-
-      if (toastContext.mounted) {
-        shad.showToast(
-          context: toastContext,
-          builder: (ctx, _) => shad.Alert.destructive(
-            title: Text(ctx.l10n.commonSomethingWentWrong),
-            content: Text(details),
-          ),
-        );
-      }
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    } on Exception {
-      if (toastContext.mounted) {
-        shad.showToast(
-          context: toastContext,
-          builder: (ctx, _) => shad.Alert.destructive(
-            content: Text(ctx.l10n.commonSomethingWentWrong),
-          ),
-        );
-      }
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
-  }
-
-  void _onNameChanged(String value) {
-    setState(() => _nameError = _validateName(value));
-  }
-
-  String? _validateName(String value) {
-    if (value.trim().isEmpty) {
-      return context.l10n.financeTagNameRequired;
-    }
-    return null;
-  }
-
-  Future<void> _openColorPicker() async {
-    var selected = parseHex(_colorHex) ?? const Color(0xFF3B82F6);
-
-    final result = await showFinanceModal<Color>(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return FinanceModalScaffold(
-              title: context.l10n.financePickColor,
-              actions: [
-                shad.OutlineButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(context.l10n.commonCancel),
-                ),
-                shad.PrimaryButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(selected),
-                  child: Text(context.l10n.timerSave),
-                ),
-              ],
-              child: ColorPicker(
-                pickerColor: selected,
-                onColorChanged: (color) =>
-                    setDialogState(() => selected = color),
-                enableAlpha: false,
-                portraitOnly: true,
-                labelTypes: const [ColorLabelType.hex],
-                pickerAreaHeightPercent: 0.72,
-                displayThumbColor: true,
-                hexInputBar: true,
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    if (result != null && mounted) {
-      setState(() => _colorHex = colorToHexString(result));
-    }
-  }
-}
-
-class _ManageFinanceCardSkeleton extends StatelessWidget {
-  const _ManageFinanceCardSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return const FinancePanel(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              FinanceSkeletonBlock(width: 52, height: 52, radius: 18),
-              shad.Gap(14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    FinanceSkeletonBlock(width: 140, height: 18),
-                    shad.Gap(10),
-                    FinanceSkeletonBlock(width: 112, height: 28, radius: 999),
-                  ],
-                ),
-              ),
-              FinanceSkeletonBlock(width: 88, height: 22),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TaxonomyPreviewCard extends StatelessWidget {
-  const _TaxonomyPreviewCard({
-    required this.name,
-    required this.subtitle,
-    required this.previewColor,
-    required this.icon,
-  });
-
-  final String name;
-  final String subtitle;
-  final Color previewColor;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return FinancePanel(
-      padding: const EdgeInsets.all(14),
-      radius: 22,
-      backgroundColor: FinancePalette.of(context).elevatedPanel,
-      borderColor: previewColor.withValues(alpha: 0.18),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: previewColor.withValues(alpha: 0.16),
-            ),
-            child: Icon(icon, size: 18, color: previewColor),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const shad.Gap(4),
-                Text(
-                  subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TaxonomyColorSection extends StatelessWidget {
-  const _TaxonomyColorSection({
-    required this.colorHex,
-    required this.previewColor,
-    required this.onPickColor,
-    required this.onRandomize,
-    this.onClear,
-  });
-
-  final String colorHex;
-  final Color previewColor;
-  final VoidCallback onPickColor;
-  final VoidCallback onRandomize;
-  final VoidCallback? onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.colorScheme.border.withValues(alpha: 0.72),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: previewColor,
-                ),
-              ),
-              const shad.Gap(10),
-              Expanded(
-                child: Text(
-                  colorHex,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const shad.Gap(10),
-        Row(
-          children: [
-            Expanded(
-              child: shad.OutlineButton(
-                onPressed: onPickColor,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(context.l10n.financePickColor),
-                  ),
-                ),
-              ),
-            ),
-            const shad.Gap(8),
-            Expanded(
-              child: shad.OutlineButton(
-                onPressed: onRandomize,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(context.l10n.financeRandomizeColor),
-                  ),
-                ),
-              ),
-            ),
-            if (onClear != null) ...[
-              const shad.Gap(8),
-              shad.GhostButton(
-                onPressed: onClear,
-                child: const Icon(Icons.close_rounded, size: 18),
-              ),
-            ],
-          ],
-        ),
-      ],
-    );
-  }
 }

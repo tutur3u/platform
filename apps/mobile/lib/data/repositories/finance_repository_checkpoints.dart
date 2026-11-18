@@ -1,7 +1,10 @@
 part of 'finance_repository.dart';
 
-extension FinanceRepositoryCheckpoints on FinanceRepository {
-  // ── Wallet checkpoints ─────────────────────────
+mixin FinanceRepositoryCheckpoints {
+  ApiClient get _api;
+  CacheStore get _cacheStore;
+  String? Function() get _cacheUserId;
+  OfflineMutationQueue get _mutationQueue;
 
   static const _checkpointPolicy = CachePolicy(
     staleAfter: Duration(minutes: 2),

@@ -58,3 +58,32 @@ Future<T?> _showTransactionComposerRoute<T>(
     MaterialPageRoute<T>(fullscreenDialog: true, builder: (_) => child),
   );
 }
+
+extension on _TransactionDetailSheetState {
+  Future<void> _showEditDialog() async {
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    final toastContext = rootNav.context;
+    final updated = await _showTransactionComposerRoute<Transaction>(
+      context,
+      child: _TransactionFormDialog(
+        wsId: widget.wsId,
+        transaction: _transaction,
+        repository: widget.repository,
+        onSave: widget.onSave,
+        exchangeRates: widget.exchangeRates,
+      ),
+    );
+
+    if (updated == null || !mounted) return;
+
+    _applyEditedTransaction(updated);
+    if (toastContext.mounted) {
+      shad.showToast(
+        context: toastContext,
+        builder: (ctx, overlay) =>
+            shad.Alert(content: Text(ctx.l10n.financeTransactionUpdated)),
+      );
+    }
+    _closeSheet(true);
+  }
+}

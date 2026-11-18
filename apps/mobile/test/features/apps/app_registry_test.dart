@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 import '../../helpers/helpers.dart';
@@ -51,7 +52,7 @@ void main() {
   });
 
   group('mini app navigation config', () {
-    test('finance module exposes contextual nav items', () {
+    test('finance module has four destinations and the More item', () {
       final finance = AppRegistry.moduleById('finance');
 
       expect(finance, isNotNull);
@@ -59,10 +60,20 @@ void main() {
           .map((item) => item.route)
           .toList();
 
-      expect(routes, contains(Routes.finance));
-      expect(routes, contains(Routes.transactions));
-      expect(routes, contains(Routes.categories));
-      expect(routes.length, greaterThanOrEqualTo(3));
+      expect(routes, [
+        Routes.finance,
+        Routes.transactions,
+        Routes.financeBudgets,
+        Routes.wallets,
+        Routes.financeManage,
+      ]);
+      expect(finance.miniAppNavItems.last.id, 'finance_more');
+      expect(financeExtraNavItems.map((item) => item.route), [
+        Routes.categories,
+        Routes.financeReports,
+        Routes.financeCheckpoints,
+        Routes.financeManage,
+      ]);
     });
 
     test('tasks module dock ends with Task settings', () {
@@ -110,8 +121,9 @@ void main() {
       }
     });
 
-    testWidgets('finance nav uses overview, activity, wallets, '
-        'checkpoints, manage labels', (tester) async {
+    testWidgets('finance dock destinations retain accessible names', (
+      tester,
+    ) async {
       late List<String> labels;
 
       await tester.pumpApp(
@@ -128,10 +140,10 @@ void main() {
 
       expect(labels, [
         'Overview',
-        'Activity',
+        'Transactions',
+        'Budgets',
         'Wallets',
-        'Checkpoints',
-        'Manage',
+        'More',
       ]);
     });
 

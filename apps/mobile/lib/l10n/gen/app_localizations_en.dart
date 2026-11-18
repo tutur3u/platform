@@ -3873,6 +3873,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeWalletPickImage => 'Pick image';
 
   @override
+  String get financeWalletSearchEmpty => 'No matching wallets';
+
+  @override
   String get financeWalletSearchCurrency => 'Search currencies';
 
   @override
@@ -3901,6 +3904,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeWalletTypeStandard => 'Standard';
+
+  @override
+  String get financeAll => 'All';
+
+  @override
+  String get financeAllCategories => 'All categories';
+
+  @override
+  String get financeAllTime => 'All time';
+
+  @override
+  String get financeAllWallets => 'All wallets';
+
+  @override
+  String financeBudgetAlertAt(int percent) {
+    return 'Alert at $percent%';
+  }
+
+  @override
+  String get financeBudgetAlertHint => 'Set the spending threshold for alerts.';
+
+  @override
+  String get financeBudgetAmountRequired => 'Enter a limit greater than zero';
+
+  @override
+  String get financeBudgetCustom => 'Custom';
+
+  @override
+  String financeBudgetDaysLeft(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days left',
+      one: '1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeBudgetDeleted => 'Budget deleted';
+
+  @override
+  String get financeBudgetEnd => 'End date';
+
+  @override
+  String get financeBudgetEndAfterStart => 'Choose an end date on or after the start date';
+
+  @override
+  String financeBudgetLeft(String amount) {
+    return '$amount left';
+  }
+
+  @override
+  String financeBudgetLimit(String currency) {
+    return 'Limit ($currency)';
+  }
+
+  @override
+  String get financeBudgetMonthly => 'Monthly';
+
+  @override
+  String get financeBudgetNamePlaceholder => 'e.g. Groceries';
+
+  @override
+  String get financeBudgetDescriptionPlaceholder => 'What this budget covers';
+
+  @override
+  String get financeBudgetName => 'Budget name';
+
+  @override
+  String get financeBudgetNameRequired => 'Enter a budget name';
+
+  @override
+  String financeBudgetOfLimit(String amount) {
+    return 'of $amount';
+  }
+
+  @override
+  String financeBudgetOver(String amount) {
+    return '$amount over budget';
+  }
+
+  @override
+  String get financeBudgetSaveFailed => 'Could not update the budget';
+
+  @override
+  String get financeBudgetSaved => 'Budget saved';
+
+  @override
+  String get financeBudgetStart => 'Start date';
+
+  @override
+  String get financeBudgetYearly => 'Yearly';
+
+  @override
+  String get financeBudgets => 'Budgets';
+
+  @override
+  String get financeDeleteBudget => 'Delete budget';
+
+  @override
+  String get financeDeleteBudgetBody => 'Delete this budget? Its transactions will be kept.';
+
+  @override
+  String get financeEditBudget => 'Edit budget';
+
+  @override
+  String get financeHiddenAmount => 'Hidden amount';
+
+  @override
+  String get financeIn => 'In';
+
+  @override
+  String get financeMonthUnavailable => 'Monthly totals are unavailable';
+
+  @override
+  String get financeMonth => 'Month';
+
+  @override
+  String get financeNewBudget => 'New budget';
+
+  @override
+  String get financeNoAccessBody => 'You don’t have access to this finance information.';
+
+  @override
+  String get financeNoAccessTitle => 'Finance access required';
+
+  @override
+  String get financeNoBudgets => 'No budgets';
+
+  @override
+  String get financeNoBudgetsBody => 'Set a spending limit to track your progress.';
+
+  @override
+  String get financeOfflineBody => 'Connect to the internet to load finance data.';
+
+  @override
+  String get financeOfflineTitle => 'You’re offline';
+
+  @override
+  String get financeOut => 'Out';
+
+  @override
+  String get financeRecent => 'Recent activity';
+
+  @override
+  String get financeReports => 'Reports';
+
+  @override
+  String get financeThisMonth => 'This month';
+
+  @override
+  String get financeTotal => 'Total';
+
+  @override
+  String get financeTransfers => 'Transfers';
+
+  @override
+  String financeWalletCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wallets',
+      one: '1 wallet',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get financeWallets => 'Wallets';

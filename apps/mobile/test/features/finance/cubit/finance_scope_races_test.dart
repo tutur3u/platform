@@ -88,6 +88,7 @@ void main() {
       () => repo.getWorkspaceDefaultCurrency(any()),
     ).thenAnswer((_) async => 'USD');
     when(() => repo.getWallets(any())).thenAnswer((_) async => const []);
+    when(() => repo.getCategories(any())).thenAnswer((_) async => const []);
     when(
       () => repo.getTransactionsInfinite(
         wsId: any(named: 'wsId'),

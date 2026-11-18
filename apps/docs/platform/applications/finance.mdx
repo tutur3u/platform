@@ -46,6 +46,21 @@ fallback. Root hosting has no mount prefix. A `/finance` mount stays inside
 propagation remains unchanged. Regression coverage lives in
 `apps/finance/src/proxy-base-path.test.ts`.
 
+## Finance on mobile
+
+The Finance dock places Back on the left. Overview, Transactions, Budgets,
+Wallets, and More are icon-only destinations with accessible names. More opens
+Categories, Reports, Checkpoints, and Manage. Categories and Tags share a
+two-tab view. Create and edit forms open above the dock.
+
+Amounts start hidden on each installation, including recent activity, wallet
+balances, budget progress, transaction amounts, and checkpoint totals. The
+eye control updates all Finance screens and remembers the choice on the device.
+Workspace permissions and transaction confidentiality still govern which
+amounts the app receives. The mobile regression coverage is in
+`apps/mobile/test/features/finance/view/finance_overview_test.dart` and
+`apps/mobile/test/features/finance/view/finance_section_reset_test.dart`.
+
 ## Invoice creator names
 
 Invoice creator options in standalone Finance and Web's shared Finance surface

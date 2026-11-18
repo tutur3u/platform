@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -24,7 +25,7 @@ void main() {
     });
 
     blocTest<FinanceCubit, FinanceState>(
-      'loads recent transactions through the API-backed infinite endpoint',
+      'uses the recent endpoint and loads the current month separately',
       build: () {
         when(() => repository.getWallets('ws_1')).thenAnswer(
           (_) async => const [
@@ -60,34 +61,37 @@ void main() {
           ],
         );
 
-        return FinanceCubit(financeRepository: repository);
+        final now = DateTime(2026, 11, 18);
+        when(
+          () => repository.getTransactionsInfinite(
+            wsId: 'ws_1',
+            limit: 100,
+            query: FinanceTransactionQuery.month(now),
+          ),
+        ).thenAnswer(
+          (_) async =>
+              const InfiniteTransactionResponse(data: [], hasMore: false),
+        );
+        return FinanceCubit(financeRepository: repository, now: () => now);
       },
       act: (cubit) => cubit.loadFinanceData('ws_1'),
       expect: () => [
         const FinanceState(status: FinanceStatus.loading),
-        const FinanceState(
-          status: FinanceStatus.loaded,
-          wallets: [
-            Wallet(id: 'wallet_1', name: 'Main wallet', currency: 'USD'),
-          ],
-          recentTransactions: [
-            Transaction(
-              id: 'tx_1',
-              amount: 42,
-              description: 'Lunch',
-              walletId: 'wallet_1',
+        isA<FinanceState>()
+            .having((state) => state.status, 'status', FinanceStatus.loaded)
+            .having((state) => state.isLoadingMonthFlow, 'loading month', true)
+            .having(
+              (state) => state.recentTransactions.single.id,
+              'recent transaction',
+              'tx_1',
             ),
-          ],
-          exchangeRates: [
-            ExchangeRate(
-              baseCurrency: 'USD',
-              targetCurrency: 'EUR',
-              rate: 0.92,
-              date: '2026-03-25',
+        isA<FinanceState>()
+            .having((state) => state.isLoadingMonthFlow, 'loading month', false)
+            .having(
+              (state) => state.monthFlow?.currency,
+              'flow currency',
+              'USD',
             ),
-          ],
-          workspaceCurrency: 'USD',
-        ),
       ],
       verify: (_) {
         verify(() => repository.getWallets('ws_1')).called(1);

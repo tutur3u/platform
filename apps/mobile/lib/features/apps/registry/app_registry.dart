@@ -12,7 +12,7 @@ import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/education/view/education_page.dart';
-import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -106,14 +106,7 @@ class AppRegistry {
       pageBuilder: _pageCalendar,
       miniAppNavItems: _calendarMiniNav,
     ),
-    AppModule(
-      id: 'finance',
-      route: Routes.finance,
-      icon: Icons.account_balance_wallet_outlined,
-      labelBuilder: _labelFinance,
-      pageBuilder: _pageFinance,
-      miniAppNavItems: _financeMiniNav,
-    ),
+    financeModule,
     AppModule(
       id: 'drive',
       route: Routes.drive,
@@ -274,39 +267,6 @@ class AppRegistry {
       route: Routes.calendar,
       icon: Icons.view_agenda_outlined,
       labelBuilder: _labelCalendarAgenda,
-    ),
-  ];
-
-  static const List<MiniAppNavItem> _financeMiniNav = [
-    MiniAppNavItem(
-      id: 'finance_home',
-      route: Routes.finance,
-      icon: Icons.home_outlined,
-      labelBuilder: _labelFinanceOverview,
-    ),
-    MiniAppNavItem(
-      id: 'finance_history',
-      route: Routes.transactions,
-      icon: Icons.receipt_long_outlined,
-      labelBuilder: _labelFinanceActivity,
-    ),
-    MiniAppNavItem(
-      id: 'finance_wallets',
-      route: Routes.wallets,
-      icon: Icons.account_balance_wallet_outlined,
-      labelBuilder: _labelWallets,
-    ),
-    MiniAppNavItem(
-      id: 'finance_checkpoints',
-      route: Routes.financeCheckpoints,
-      icon: Icons.fact_check_outlined,
-      labelBuilder: _labelFinanceCheckpoints,
-    ),
-    MiniAppNavItem(
-      id: 'finance_more',
-      route: Routes.categories,
-      icon: Icons.tune_rounded,
-      labelBuilder: _labelFinanceManage,
     ),
   ];
 
@@ -597,7 +557,6 @@ class AppRegistry {
   static String _labelCalendar(AppLocalizations l10n) => l10n.navCalendar;
   static String _labelCalendarAgenda(AppLocalizations l10n) =>
       l10n.calendarAgendaView;
-  static String _labelFinance(AppLocalizations l10n) => l10n.navFinance;
   static String _labelDrive(AppLocalizations l10n) => l10n.driveTitle;
   static String _labelDocuments(AppLocalizations l10n) => l10n.documentsTitle;
   static String _labelNotes(AppLocalizations l10n) => l10n.notesTitle;
@@ -617,15 +576,6 @@ class AppRegistry {
   static String _labelInventoryManage(AppLocalizations l10n) =>
       l10n.inventoryManageLabel;
   static String _labelStorefront(AppLocalizations l10n) => l10n.storefrontTitle;
-  static String _labelFinanceOverview(AppLocalizations l10n) =>
-      l10n.financeOverviewLabel;
-  static String _labelFinanceActivity(AppLocalizations l10n) =>
-      l10n.financeActivityLabel;
-  static String _labelFinanceCheckpoints(AppLocalizations l10n) =>
-      l10n.financeCheckpointsShortLabel;
-  static String _labelFinanceManage(AppLocalizations l10n) =>
-      l10n.financeManageLabel;
-  static String _labelWallets(AppLocalizations l10n) => l10n.financeWallets;
   static String _labelTimer(AppLocalizations l10n) => l10n.navTimer;
   static String _labelTimerHistory(AppLocalizations l10n) => l10n.timerHistory;
   static String _labelTimerStats(AppLocalizations l10n) => l10n.timerStatsTitle;
@@ -644,7 +594,6 @@ class AppRegistry {
   static Widget _pageEducation(BuildContext context) => const EducationPage();
   static Widget _pageCrm(BuildContext context) => const CrmPage();
   static Widget _pageMeet(BuildContext context) => const MeetPortalPage();
-  static Widget _pageFinance(BuildContext context) => const FinancePage();
   static Widget _pageInventory(BuildContext context) => const InventoryPage();
   static Widget _pageTimer(BuildContext context) => const TimeTrackerPage();
   static Widget _pageSettings(BuildContext context) => const SettingsPage();

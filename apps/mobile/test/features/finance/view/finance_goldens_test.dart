@@ -9,18 +9,35 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_preferences.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../helpers/golden_tolerance.dart';
 import '../../../helpers/pump_app.dart';
 import 'finance_scenes.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final original = goldenFileComparator;
   setUpAll(() async {
     goldenFileComparator = GoldenTolerance(
       File('test/features/finance/view/finance_goldens_test.dart').absolute.uri,
     );
     if (!Platform.isLinux) return;
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+      ..setMockMethodCallHandler(
+        const MethodChannel('mobile/shell_back'),
+        (_) async => null,
+      )
+      ..setMockMethodCallHandler(
+        const MethodChannel('com.llfbandit.app_links/events'),
+        (_) async => null,
+      );
+    await Supabase.initialize(
+      url: 'https://example.supabase.co',
+      publishableKey: 'test-anon-key',
+    );
     for (final font in const {
       'Roboto': 'assets/fonts/NotoSans.ttf',
       'NotoSans': 'assets/fonts/NotoSans.ttf',
@@ -35,7 +52,13 @@ void main() {
   });
   tearDownAll(() => goldenFileComparator = original);
 
-  for (final form in [false, true]) {
+  for (final (scene, showAmounts) in [
+    (FinanceScene.overview, false),
+    (FinanceScene.overview, true),
+    for (final scene in FinanceScene.values.skip(1)) (scene, false),
+    (null, false),
+  ]) {
+    final form = scene == null;
     for (final (design, sorbet) in [
       ('classic', null),
       ('sorbet', const SorbetTheme()),
@@ -45,8 +68,10 @@ void main() {
           ('phone', const Size(390, 844), 48.0, 34.0),
           ('tablet', const Size(834, 1194), 24.0, 20.0),
         ]) {
-          final scene = form ? 'transaction_create' : 'finance_overview';
-          final name = '${scene}_${design}_${brightness.name}_$device';
+          final nameBase = scene == null
+              ? 'transaction_create'
+              : 'finance_${scene.name}${showAmounts ? '_shown' : ''}';
+          final name = '${nameBase}_${design}_${brightness.name}_$device';
           testWidgets(name, skip: !Platform.isLinux, (tester) async {
             tester.view
               ..physicalSize = size
@@ -59,7 +84,7 @@ void main() {
                 sorbet: sorbet,
                 brightness: brightness,
                 boundaryKey: const ValueKey('golden'),
-                home: form
+                home: scene == null
                     ? Builder(
                         builder: (context) => Center(
                           child: TextButton(
@@ -89,9 +114,15 @@ void main() {
                           ),
                         ),
                       )
-                    : const FinanceOverviewScene(),
+                    : FinanceScreenScene(
+                        scene: scene,
+                        showAmounts: showAmounts,
+                      ),
               ),
             );
+            if (scene == FinanceScene.transactionDetail) {
+              await tester.tap(find.text('Open transaction details'));
+            }
             if (form) {
               await tester.tap(find.text('Open form'));
               await tester.pumpAndSettle();
