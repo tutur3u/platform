@@ -30,6 +30,14 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      // The recovery and proxy suites exercise the server environment reader.
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
       {
         find: '@tuturuuu/supabase/next/auth-browser',
         replacement: resolve(
