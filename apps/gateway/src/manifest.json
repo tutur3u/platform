@@ -48,6 +48,14 @@
       "prefix": []
     },
     {
+      "id": "web-meet-product",
+      "origin": "web",
+      "cache": "page",
+      "localized": true,
+      "exact": ["/products/meet"],
+      "prefix": ["/products/meet/"]
+    },
+    {
       "id": "marketing-products",
       "group": "products",
       "flagOrigin": "marketing",

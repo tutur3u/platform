@@ -115,12 +115,12 @@ The gateway can serve a page group from the `apps/marketing` Worker instead of t
 | --- | --- |
 | `legal` | `/privacy`, `/terms`, `/acceptable-use`, `/community-guidelines`, `/security`, `/legal/*`, `/security/*` |
 | `company` | `/about`, `/branding`, `/careers`, `/contact`, `/contributors`, `/partners`, `/women-in-tech` |
-| `products` | `/products`, `/products/*` |
+| `products` | `/products`, `/products/*` except `/products/meet` and `/products/meet/*` |
 | `solutions` | `/solutions/*` |
 | `blog` | `/blog`, `/blog/*` |
 | `home` | `/`, `/pricing` |
 
-`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator` and `/visualizations/*` always stay on the web origin.
+`/changelog`, `/download`, `/models`, `/meet`, `/meet-together`, `/portfolio`, `/qr-generator`, `/visualizations/*` and the Meet product page (`/products/meet`, `/products/meet/*`, which `/meet` redirects anonymous visitors to) always stay on the web origin.
 
 Two Worker variables control the flip:
 

@@ -39,6 +39,24 @@ describe('matchRoute', () => {
     expect(matchRoute('/favicon.ico').cache).toBe('static');
   });
 
+  it('keeps the Meet product page and its plans on web outside every group', () => {
+    for (const path of [
+      '/products/meet',
+      '/vi/products/meet',
+      '/products/meet/plans/abc123',
+    ]) {
+      expect(matchRoute(path), path).toMatchObject({
+        routeId: 'web-meet-product',
+        origin: 'web',
+        cache: 'page',
+      });
+      expect(matchRoute(path).group, path).toBeUndefined();
+    }
+    expect(matchRoute('/products/meet-together').routeId).toBe(
+      'marketing-products'
+    );
+  });
+
   it('sends everything else to the default pass-through route', () => {
     for (const path of [
       '/login',
