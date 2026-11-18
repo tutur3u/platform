@@ -4,6 +4,7 @@ import {
   Download,
   FileText,
   Loader2,
+  LockKeyhole,
   Paperclip,
   RefreshCw,
   Send,
@@ -109,6 +110,7 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
 export function ChatPanel({
   mentionRequest = 0,
   onMentionHandled,
+  onOpenPrivateMira,
   chat,
   onSendChat,
   selfUserId,
@@ -117,6 +119,7 @@ export function ChatPanel({
 }: {
   mentionRequest?: number;
   onMentionHandled?: () => void;
+  onOpenPrivateMira?: () => void;
   chat: CallChatMessage[];
   onSendChat: (body: string, attachments?: string[]) => Promise<{ id: string }>;
   selfUserId: string | null;
@@ -372,6 +375,17 @@ export function ChatPanel({
                   : 'assistant_failed'
               )}
             </p>
+            {assistantNotice === 'room_unavailable' && onOpenPrivateMira && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={onOpenPrivateMira}
+              >
+                <LockKeyhole className="size-4" />
+                {t('personal_chat')}
+              </Button>
+            )}
           </div>
         )}
         <div ref={bottom} />

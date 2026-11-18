@@ -3,7 +3,7 @@ import { LockKeyhole, Users } from '@tuturuuu/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatPanel } from './chat-panel';
 import { PersonalChat } from './personal-chat';
 
@@ -15,6 +15,7 @@ export function ConversationPanel({
   const t = useTranslations('meet.call');
   // A room gaining participants never switches or publishes a private draft.
   const [mode, setMode] = useState('room');
+  const privateTab = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (props.mentionRequest) setMode('room');
   }, [props.mentionRequest]);
@@ -29,7 +30,7 @@ export function ConversationPanel({
           <Users className="size-3.5" />
           {t('room_chat')}
         </TabsTrigger>
-        <TabsTrigger value="personal">
+        <TabsTrigger ref={privateTab} value="personal">
           <LockKeyhole className="size-3.5" />
           {t('personal_chat')}
         </TabsTrigger>
@@ -44,6 +45,10 @@ export function ConversationPanel({
         </p>
         <ChatPanel
           {...props}
+          onOpenPrivateMira={() => {
+            setMode('personal');
+            privateTab.current?.focus();
+          }}
           mentionRequest={mode === 'room' ? props.mentionRequest : 0}
         />
       </TabsContent>

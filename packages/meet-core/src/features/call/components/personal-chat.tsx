@@ -1,6 +1,6 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
-import { LockKeyhole, Send, Share2 } from '@tuturuuu/icons';
+import { LockKeyhole, RefreshCw, Send, Share2 } from '@tuturuuu/icons';
 import {
   askPersonalMeetAssistant,
   readPrivateMiraPolicy,
@@ -128,6 +128,7 @@ export function PersonalChat({
         ask.mutate(draft.trim());
     },
   });
+  const retryingDraft = ask.isError && ask.variables === draft.trim();
   const publish = useMutation({
     mutationFn: async (text: string) => {
       await onShare(text);
@@ -215,8 +216,16 @@ export function PersonalChat({
           disabled={!draft.trim() || ask.isPending}
           className="w-full"
         >
-          <Send className="size-4" />
-          {t(ask.isPending ? 'mira_thinking' : 'send')}
+          {retryingDraft ? (
+            <RefreshCw className="size-4" />
+          ) : (
+            <Send className="size-4" />
+          )}
+          {ask.isPending
+            ? t('mira_thinking')
+            : retryingDraft
+              ? liveT('retry')
+              : t('send')}
         </Button>
       </form>
       <Dialog

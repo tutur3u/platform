@@ -44,7 +44,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-function ask(body: string) {
+function ask(body: string, onOpenPrivateMira?: () => void) {
   const onSendChat = vi.fn(async () => ({ id: 'synthetic-message' }));
   render(
     <QueryClientProvider
@@ -55,6 +55,7 @@ function ask(body: string) {
       <NextIntlClientProvider locale="en" messages={messages}>
         <ChatPanel
           chat={[]}
+          onOpenPrivateMira={onOpenPrivateMira}
           onSendChat={onSendChat}
           selfUserId="self"
           accountId="synthetic-account"
@@ -87,6 +88,20 @@ for (const mention of ['@mira', '@ttr', '@tuturuuu'])
       undefined
     );
   });
+
+it('lets the user open Private Mira from the room denial without resending the message', async () => {
+  f.ask.mockRejectedValue(
+    Object.assign(new Error('Room unavailable'), { status: 403 })
+  );
+  const openPrivate = vi.fn();
+  const send = ask('@mira summarize', openPrivate);
+  fireEvent.click(
+    await screen.findByRole('button', { name: call.personal_chat })
+  );
+  expect(openPrivate).toHaveBeenCalledOnce();
+  expect(send).toHaveBeenCalledOnce();
+  expect(f.ask).toHaveBeenCalledOnce();
+});
 
 it('keeps other assistant failures distinct from the room denial', async () => {
   f.ask.mockRejectedValue(

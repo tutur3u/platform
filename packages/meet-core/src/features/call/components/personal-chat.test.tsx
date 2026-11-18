@@ -65,7 +65,7 @@ it.each([422, 409, 503])(
     });
     fireEvent.click(screen.getByRole('button', { name: 'send' }));
     await screen.findByRole('alert');
-    fireEvent.click(screen.getByRole('button', { name: 'send' }));
+    fireEvent.click(screen.getByRole('button', { name: 'retry' }));
     await waitFor(() => expect(ask).toHaveBeenCalledTimes(2));
     const first = ask.mock.calls[0]![1].requestId;
     const second = ask.mock.calls[1]![1].requestId;
