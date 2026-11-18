@@ -55,3 +55,20 @@ it('keeps HEAD answering from the GET handler without a body', async () => {
   expect(response?.status).toBe(200);
   expect(await response?.text()).toBe('');
 });
+
+it('handles OPTIONS and 405 for /api/meet-call/[meetingId]/polls lazily', async () => {
+  const id = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  const options = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${id}/polls`, {
+      method: 'OPTIONS',
+    })
+  );
+  expect(options?.status).toBe(204);
+  expect(options?.headers.get('Allow')).toBe('GET, POST, HEAD, OPTIONS');
+  const notAllowed = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${id}/polls`, {
+      method: 'DELETE',
+    })
+  );
+  expect(notAllowed?.status).toBe(405);
+});
