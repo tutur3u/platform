@@ -301,14 +301,16 @@ localization changes.
   root-navigator context only for legacy `shad.showToast` callers.
 - Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
   on failure before the server refresh; do not rely on the refresh alone.
-- The board timeline is an agenda (`utils/task_board_timeline_agenda.dart`):
-  a pure model plus `TaskTimelineAgendaCache`. `filteredTasksByListId`
-  regroups into new collections on every build while reusing task objects, so
-  memoize on element identity, not map identity. The view is one
-  `CustomScrollView` with `center:` on today's sliver; slivers before the
-  centre grow upward, so their items are stored bottom-up. Keep rows lazy
-  (`SliverList.builder` with per-row card segments) rather than building a
-  day's card as one widget. Date-placed views must load every page of the
+- The board timeline (`widgets/timeline/`) is a pure projection
+  (`utils/task_timeline_projection.dart`, `utils/task_timeline_window.dart`)
+  plus `TaskTimelineProjectionCache`. `filteredTasksByListId` regroups into
+  new collections on every build while reusing task objects, so memoize on
+  element identity, not map identity. The day strip and body share
+  `TaskTimelineMetrics`; the grid is one `CustomPaint` behind a single
+  `ListView.builder` of caption and bar rows. The timeline header draws no
+  edge: its scroll notifications reach the shell, which draws the one
+  hairline at the body viewport's top once scrolled and keeps the dock
+  auto-hide. Date-placed views must load every page of the
   lists they summarize (`task_board_detail_page_timeline_loading.dart`,
   policy in `utils/task_board_timeline_paging.dart`: 100 per page, two lists
   at a time, a 2,000-task board budget) and must not state that a day is
