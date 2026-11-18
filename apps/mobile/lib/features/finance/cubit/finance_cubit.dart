@@ -330,6 +330,7 @@ class FinanceCubit extends Cubit<FinanceState> {
         wsId: wsId,
         currency: loaded.workspaceCurrency,
         rates: loaded.exchangeRates,
+        wallets: loaded.wallets,
         query: FinanceTransactionQuery.month(_now()),
       );
       if (!_isCurrent(generation, userId, wsId)) return;

@@ -65,12 +65,11 @@ void main() {
         Routes.transactions,
         Routes.financeBudgets,
         Routes.wallets,
-        Routes.financeManage,
+        Routes.financeMore,
       ]);
       expect(finance.miniAppNavItems.last.id, 'finance_more');
       expect(financeExtraNavItems.map((item) => item.route), [
         Routes.categories,
-        Routes.financeReports,
         Routes.financeCheckpoints,
         Routes.financeManage,
       ]);

@@ -6,6 +6,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -54,12 +55,6 @@ const financeExtraNavItems = <MiniAppNavItem>[
     labelBuilder: _categories,
   ),
   MiniAppNavItem(
-    id: 'finance_reports',
-    route: Routes.financeReports,
-    icon: LucideIcons.chartPie,
-    labelBuilder: _reports,
-  ),
-  MiniAppNavItem(
     id: 'finance_checkpoints',
     route: Routes.financeCheckpoints,
     icon: LucideIcons.listChecks,
@@ -68,6 +63,7 @@ const financeExtraNavItems = <MiniAppNavItem>[
   MiniAppNavItem(
     id: 'finance_manage',
     route: Routes.financeManage,
+    aliasRoutes: [Routes.financeMore],
     icon: Icons.tune_rounded,
     labelBuilder: _manage,
   ),
@@ -77,10 +73,10 @@ const _fallbackNavItems = <MiniAppNavItem>[
   ...financePrimaryNavItems,
   MiniAppNavItem(
     id: 'finance_more',
-    route: Routes.financeManage,
+    route: Routes.financeMore,
     aliasRoutes: [
+      Routes.financeManage,
       Routes.categories,
-      Routes.financeReports,
       Routes.financeCheckpoints,
     ],
     icon: Icons.more_horiz,
@@ -93,17 +89,35 @@ const financeMiniAppNavItems = <MiniAppNavItem>[
   ...financeExtraNavItems,
 ];
 
-class FinanceDockRegistration extends StatelessWidget {
+class FinanceDockRegistration extends StatefulWidget {
   const FinanceDockRegistration({
     required this.location,
     required this.child,
+    this.openMoreOnEntry = false,
     super.key,
   });
 
   final String location;
   final Widget child;
+  final bool openMoreOnEntry;
 
-  Future<void> _openMore(BuildContext context, String? selected) async {
+  @override
+  State<FinanceDockRegistration> createState() =>
+      _FinanceDockRegistrationState();
+}
+
+class _FinanceDockRegistrationState extends State<FinanceDockRegistration> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.openMoreOnEntry) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_openMore(fallback: true));
+      });
+    }
+  }
+
+  Future<void> _openMore({String? selected, bool fallback = false}) async {
     final l10n = context.l10n;
     final route = await showAppChoiceSheet<String>(
       context: context,
@@ -118,14 +132,16 @@ class FinanceDockRegistration extends StatelessWidget {
           ),
       ],
     );
-    if (context.mounted && route != null && route != selected) {
-      context.go(route);
+    if (!mounted) return;
+    if (fallback || (route != null && route != selected)) {
+      context.go(route ?? Routes.finance);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final location = widget.location;
     final index = miniNavSelectedIndex(location, financeMiniAppNavItems);
     final active = financeMiniAppNavItems[index];
     final moreSelected = index >= financePrimaryNavItems.length;
@@ -160,17 +176,24 @@ class FinanceDockRegistration extends StatelessWidget {
               icon: Icons.more_horiz,
               selected: moreSelected,
               onPressed: () => unawaited(
-                _openMore(context, moreSelected ? active.route : null),
+                _openMore(selected: moreSelected ? active.route : null),
               ),
-              onReselect: () => unawaited(_openMore(context, active.route)),
+              onReselect: () => unawaited(_openMore(selected: active.route)),
             ),
           ],
         ),
-        child,
+        FinancePermissionScope(child: widget.child),
       ],
     );
   }
 }
+
+Widget financeMoreFallback(BuildContext context, GoRouterState state) =>
+    const FinanceDockRegistration(
+      location: Routes.financeMore,
+      openMoreOnEntry: true,
+      child: SizedBox.shrink(),
+    );
 
 String _more(AppLocalizations l10n) => l10n.navMore;
 String _label(AppLocalizations l10n) => l10n.navFinance;
@@ -179,7 +202,6 @@ String _transactions(AppLocalizations l10n) => l10n.financeTransactions;
 String _wallets(AppLocalizations l10n) => l10n.financeWallets;
 String _budgets(AppLocalizations l10n) => l10n.financeBudgets;
 String _categories(AppLocalizations l10n) => l10n.financeCategories;
-String _reports(AppLocalizations l10n) => l10n.financeReports;
 String _checkpoints(AppLocalizations l10n) => l10n.financeCheckpointsShortLabel;
 String _manage(AppLocalizations l10n) => l10n.financeManageLabel;
 Widget _page(BuildContext context) => const FinanceDockRegistration(

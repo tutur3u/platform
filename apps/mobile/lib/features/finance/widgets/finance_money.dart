@@ -18,6 +18,27 @@ String maskFinanceValue(
   return showAmounts ? value : placeholder;
 }
 
+String? financeAmountSemantics(BuildContext context, String text) =>
+    text.contains(financeMaskedAmountPlaceholder)
+    ? text.replaceAll(
+        financeMaskedAmountPlaceholder,
+        context.l10n.financeHiddenAmount,
+      )
+    : null;
+
+class FinanceMaskedText extends Text {
+  FinanceMaskedText(
+    BuildContext context,
+    super.data, {
+    super.style,
+    super.maxLines,
+    super.overflow,
+    super.softWrap,
+    super.textAlign,
+    super.key,
+  }) : super(semanticsLabel: financeAmountSemantics(context, data));
+}
+
 /// Whether finance amounts are shown on this device. Amounts stay hidden
 /// until the person turns them on with the eye toggle in the finance top bar,
 /// and when no preference store is in scope.

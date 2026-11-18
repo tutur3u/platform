@@ -31,8 +31,29 @@ class BudgetsState extends Equatable {
   final String workspaceCurrency;
   final String? error;
 
-  double get totalLimit => budgets.fold(0, (sum, b) => sum + b.amount);
-  double get totalSpent => budgets.fold(0, (sum, b) => sum + b.spent);
+  Iterable<FinanceBudget> activeMonthlyBudgets(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    final currency = workspaceCurrency.toUpperCase();
+    if (currency.isEmpty) return const [];
+    final sameCurrencyWallets = {
+      for (final wallet in wallets)
+        if (wallet.currency?.toUpperCase() == currency) wallet.id,
+    };
+    // Workspace-wide budget spend sums wallet amounts on the server.
+    final workspaceSpendMatchesCurrency =
+        wallets.isNotEmpty && sameCurrencyWallets.length == wallets.length;
+    return budgets.where((budget) {
+      final walletId = budget.walletId;
+      final matchesCurrency = walletId == null
+          ? workspaceSpendMatchesCurrency
+          : sameCurrencyWallets.contains(walletId);
+      return matchesCurrency &&
+          budget.period == FinanceBudgetPeriod.monthly &&
+          !budget.startDate.isAfter(today) &&
+          !(budget.endDate?.isBefore(today) ?? false);
+    });
+  }
+
   int countFor(FinanceBudgetHealth health) =>
       budgets.where((budget) => budget.health == health).length;
 
@@ -151,24 +172,27 @@ class BudgetsCubit extends Cubit<BudgetsState> {
     }
   }
 
-  Future<void> save(
+  Future<FinanceBudgetWrite> save(
     FinanceBudget budget, {
     required bool isNew,
     required String wsId,
   }) async {
     _checkScope(wsId);
-    if (isNew) {
-      await _repo.createBudget(wsId: wsId, budget: budget);
-    } else {
-      await _repo.updateBudget(wsId: wsId, budget: budget);
-    }
+    final result = await (isNew
+        ? _repo.createBudget(wsId: wsId, budget: budget)
+        : _repo.updateBudget(wsId: wsId, budget: budget));
     if (_ownsScope(wsId)) await load(wsId, forceRefresh: true);
+    return result;
   }
 
-  Future<void> delete(String budgetId, {required String wsId}) async {
+  Future<FinanceBudgetWrite> delete(
+    String budgetId, {
+    required String wsId,
+  }) async {
     _checkScope(wsId);
-    await _repo.deleteBudget(wsId: wsId, budgetId: budgetId);
+    final result = await _repo.deleteBudget(wsId: wsId, budgetId: budgetId);
     if (_ownsScope(wsId)) await load(wsId, forceRefresh: true);
+    return result;
   }
 
   bool _ownsScope(String wsId) =>

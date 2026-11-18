@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/finance/budget.dart';
+import 'package:mobile/data/models/finance/wallet.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/budgets_cubit.dart';
 import 'package:mobile/features/finance/view/budget_form_page.dart';
 
@@ -12,12 +14,13 @@ class _BudgetRepository extends FinanceSceneRepository {
   String? workspace;
 
   @override
-  Future<void> createBudget({
+  Future<FinanceBudgetWrite> createBudget({
     required String wsId,
     required FinanceBudget budget,
   }) async {
     workspace = wsId;
     created = budget;
+    return FinanceBudgetWrite.synced;
   }
 }
 
@@ -26,6 +29,51 @@ void main() {
     expect(parseBudgetAmount('1,234.50'), 1234.5);
     expect(parseBudgetAmount('1.234,50', decimalSeparator: ','), 1234.5);
     expect(parseBudgetAmount(''), isNull);
+  });
+
+  test('summary takes only active monthly budgets in workspace currency', () {
+    final now = DateTime(2026, 11, 18);
+    FinanceBudget budget(
+      String id, {
+      String? walletId,
+      FinanceBudgetPeriod period = FinanceBudgetPeriod.monthly,
+      DateTime? start,
+      DateTime? end,
+    }) => FinanceBudget(
+      id: id,
+      name: id,
+      amount: 10,
+      startDate: start ?? DateTime(2026, 11),
+      endDate: end,
+      period: period,
+      walletId: walletId,
+    );
+    final state = BudgetsState(
+      workspaceCurrency: 'VND',
+      wallets: const [
+        Wallet(id: 'vnd', name: 'Local', currency: 'VND'),
+        Wallet(id: 'usd', name: 'Foreign', currency: 'USD'),
+      ],
+      budgets: [
+        budget('workspace'),
+        budget('local', walletId: 'vnd'),
+        budget('foreign', walletId: 'usd'),
+        budget('unknown', walletId: 'missing'),
+        budget('yearly', walletId: 'vnd', period: FinanceBudgetPeriod.yearly),
+        budget('ended', walletId: 'vnd', end: DateTime(2026, 11, 10)),
+        budget('future', walletId: 'vnd', start: DateTime(2026, 11, 25)),
+      ],
+    );
+    expect(state.activeMonthlyBudgets(now).map((budget) => budget.id), [
+      'local',
+    ]);
+    expect(
+      state
+          .copyWith(wallets: [state.wallets.first])
+          .activeMonthlyBudgets(now)
+          .map((budget) => budget.id),
+      ['workspace', 'local'],
+    );
   });
 
   testWidgets('validates the limit and saves to the form workspace', (
@@ -59,7 +107,12 @@ void main() {
       of: find.byKey(amount),
       matching: find.byType(TextField),
     );
+    expect(tester.widget<TextField>(limit).obscureText, isTrue);
     await tester.enterText(limit, '1,250.50');
+    await tester.pump();
+    expect(tester.widget<TextField>(limit).obscureText, isFalse);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
     expect(tester.widget<TextField>(limit).obscureText, isTrue);
     await tester.tap(find.byKey(save));
     await tester.pumpAndSettle();

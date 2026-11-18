@@ -173,8 +173,11 @@ void main() {
       tester.widget<InkWell>(equalInkWellFinder).onTap?.call();
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('money-key-Done')), findsOneWidget);
+      expect(find.textContaining('42.5'), findsWidgets);
       tester.widget<InkWell>(doneInkWellFinder).onTap?.call();
       await tester.pumpAndSettle();
+      expect(find.textContaining('42.5'), findsNothing);
+      expect(find.text('••••••'), findsWidgets);
 
       await tester.ensureVisible(find.text('Settings').last);
       await tester.pumpAndSettle();

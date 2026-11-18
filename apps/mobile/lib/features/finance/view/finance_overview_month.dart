@@ -33,10 +33,7 @@ class FinanceMonthSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AppSectionHeader(
-          title: DateFormat.MMMM(locale).format(month),
-          subtitle: l10n.financeThisMonth,
-        ),
+        AppSectionHeader(title: DateFormat.MMMM(locale).format(month)),
         if (flow == null)
           if (loading)
             const FinanceSkeleton(height: 92)

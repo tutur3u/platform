@@ -6,10 +6,16 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 
 /// Compact label/value pair inside an [AppSummaryHero].
 class AppHeroFact extends StatelessWidget {
-  const AppHeroFact({required this.label, required this.value, super.key});
+  const AppHeroFact({
+    required this.label,
+    required this.value,
+    this.valueSemanticsLabel,
+    super.key,
+  });
 
   final String label;
   final String value;
+  final String? valueSemanticsLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +29,7 @@ class AppHeroFact extends StatelessWidget {
         children: [
           Text(
             value,
+            semanticsLabel: valueSemanticsLabel,
             style: tokens.typography.large.copyWith(
               color: c.foreground,
               fontWeight: FontWeight.w700,
@@ -50,6 +57,7 @@ class AppSummaryHero extends StatelessWidget {
   const AppSummaryHero({
     required this.eyebrow,
     required this.headline,
+    this.headlineSemanticsLabel,
     this.icon,
     this.tone = AppTone.primary,
     this.supporting,
@@ -60,6 +68,7 @@ class AppSummaryHero extends StatelessWidget {
 
   final String eyebrow;
   final String headline;
+  final String? headlineSemanticsLabel;
   final IconData? icon;
   final AppTone tone;
   final String? supporting;
@@ -105,6 +114,7 @@ class AppSummaryHero extends StatelessWidget {
           header: true,
           child: Text(
             headline,
+            semanticsLabel: headlineSemanticsLabel,
             style: type.x3Large.copyWith(
               color: c.foreground,
               fontWeight: FontWeight.w700,

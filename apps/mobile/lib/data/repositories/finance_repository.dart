@@ -597,8 +597,9 @@ class FinanceRepository
     required String wsId,
     String? walletId,
     String? search,
+    FinanceTransactionQuery filters = const FinanceTransactionQuery(),
   }) async {
-    final params = <String, String>{};
+    final params = filters.toParams();
     if (walletId != null && walletId.isNotEmpty) params['walletId'] = walletId;
     if (search != null && search.isNotEmpty) params['q'] = search;
 

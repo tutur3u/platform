@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/number_symbols.dart';
@@ -32,11 +33,12 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart'
-    show financeAmountsVisible, formatFinanceAmount;
+    show financeAmountSemantics, financeAmountsVisible, formatFinanceAmount;
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_tone.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
+import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
@@ -102,6 +104,8 @@ class _TransactionDetailSheet extends StatefulWidget {
     required this.repository,
     required this.onSave,
     required this.onDelete,
+    required this.canEdit,
+    required this.canDelete,
     this.workspaceCurrency,
     this.exchangeRates,
   });
@@ -111,6 +115,8 @@ class _TransactionDetailSheet extends StatefulWidget {
   final FinanceRepository repository;
   final TransactionSaveHandler onSave;
   final Future<void> Function(String transactionId) onDelete;
+  final bool canEdit;
+  final bool canDelete;
   final String? workspaceCurrency;
   final List<ExchangeRate>? exchangeRates;
 
@@ -564,42 +570,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
     final tagText = _transaction.tags.isEmpty
         ? l10n.financeNoTag
         : _transaction.tags.map((tag) => tag.name).join(', ');
-    final excludedReportColor = theme.colorScheme.mutedForeground.withValues(
-      alpha: 0.72,
-    );
     final categoryIcon = resolveTransactionCategoryIcon(_transaction);
-    final privacyChips = <Widget>[
-      if (_transaction.reportOptIn == true)
-        _DetailChip(
-          icon: Icons.insights_outlined,
-          label: l10n.financeReportOptIn,
-          color: theme.colorScheme.primary,
-        )
-      else
-        _DetailChip(
-          icon: Icons.insights_outlined,
-          label: l10n.financeExcludedFromReports,
-          color: excludedReportColor,
-        ),
-      if (_transaction.isAmountConfidential == true)
-        _DetailChip(
-          icon: Icons.visibility_off_outlined,
-          label: l10n.financeConfidentialAmount,
-          color: theme.colorScheme.destructive,
-        ),
-      if (_transaction.isDescriptionConfidential == true)
-        _DetailChip(
-          icon: Icons.notes_outlined,
-          label: l10n.financeConfidentialDescription,
-          color: theme.colorScheme.destructive,
-        ),
-      if (_transaction.isCategoryConfidential == true)
-        _DetailChip(
-          icon: Icons.category_outlined,
-          label: l10n.financeConfidentialCategory,
-          color: theme.colorScheme.destructive,
-        ),
-    ];
+    final privacyChips = _transactionPrivacyChips(context, _transaction);
 
     return PopScope<bool>(
       canPop: false,
@@ -628,11 +600,12 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                   ),
                 ),
                 const FinanceAmountVisibilityButton(),
-                AppIconButton(
-                  onPressed: isSyntheticTransfer ? null : _showEditDialog,
-                  tooltip: l10n.financeEditTransaction,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                ),
+                if (widget.canEdit && !isSyntheticTransfer)
+                  AppIconButton(
+                    onPressed: _showEditDialog,
+                    tooltip: l10n.financeEditTransaction,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                  ),
               ],
             ),
             const shad.Gap(16),
@@ -657,7 +630,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                     value: _transaction.isTransfer
                         ? _transferRouteLabel(_transaction)
                         : (_transaction.walletName ?? '-'),
-                    onTap: _isQuickSaving || isSyntheticTransfer
+                    onTap:
+                        _isQuickSaving || isSyntheticTransfer || !widget.canEdit
                         ? null
                         : _showWalletQuickAction,
                   ),
@@ -667,7 +641,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                       icon: categoryIcon,
                       label: l10n.financeCategory,
                       value: _transaction.categoryName ?? '-',
-                      onTap: _isQuickSaving || isSyntheticTransfer
+                      onTap:
+                          _isQuickSaving ||
+                              isSyntheticTransfer ||
+                              !widget.canEdit
                           ? null
                           : _showCategoryQuickAction,
                     ),
@@ -677,7 +654,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                     icon: Icons.sell_outlined,
                     label: l10n.financeTags,
                     value: tagText,
-                    onTap: _isQuickSaving || isSyntheticTransfer
+                    onTap:
+                        _isQuickSaving || isSyntheticTransfer || !widget.canEdit
                         ? null
                         : _showTagQuickAction,
                   ),
@@ -686,7 +664,8 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                     icon: Icons.schedule_rounded,
                     label: l10n.financeTakenAt,
                     value: dateText,
-                    onTap: _isQuickSaving || isSyntheticTransfer
+                    onTap:
+                        _isQuickSaving || isSyntheticTransfer || !widget.canEdit
                         ? null
                         : _showTakenAtQuickAction,
                   ),
@@ -695,7 +674,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                     icon: Icons.insights_outlined,
                     label: l10n.financeReportOptIn,
                     value: _transaction.reportOptIn == true,
-                    enabled: !_isQuickSaving && !isSyntheticTransfer,
+                    enabled:
+                        !_isQuickSaving &&
+                        !isSyntheticTransfer &&
+                        widget.canEdit,
                     activeLabel: l10n.financeReportOptIn,
                     inactiveLabel: l10n.financeExcludedFromReports,
                     onChanged: _toggleReportOptIn,
@@ -710,18 +692,10 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                 child: Wrap(spacing: 8, runSpacing: 8, children: privacyChips),
               ),
             ],
-            const shad.Gap(18),
-            shad.DestructiveButton(
-              onPressed: _showDeleteConfirmation,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.delete_outline, size: 16),
-                  const shad.Gap(8),
-                  Text(l10n.financeDeleteTransaction),
-                ],
-              ),
-            ),
+            if (widget.canDelete) ...[
+              const shad.Gap(18),
+              _deleteButton(context),
+            ],
           ],
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
+import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -63,14 +64,18 @@ void main() {
 
         final now = DateTime(2026, 11, 18);
         when(
-          () => repository.getTransactionsInfinite(
+          () => repository.getTransactionStats(
             wsId: 'ws_1',
-            limit: 100,
-            query: FinanceTransactionQuery.month(now),
+            walletId: 'wallet_1',
+            filters: FinanceTransactionQuery.month(now),
           ),
         ).thenAnswer(
-          (_) async =>
-              const InfiniteTransactionResponse(data: [], hasMore: false),
+          (_) async => const TransactionStats(
+            totalTransactions: 2,
+            totalIncome: 240,
+            totalExpense: -60,
+            netTotal: 180,
+          ),
         );
         return FinanceCubit(financeRepository: repository, now: () => now);
       },
@@ -91,7 +96,9 @@ void main() {
               (state) => state.monthFlow?.currency,
               'flow currency',
               'USD',
-            ),
+            )
+            .having((state) => state.monthFlow?.income, 'income', 240)
+            .having((state) => state.monthFlow?.expense, 'expense', -60),
       ],
       verify: (_) {
         verify(() => repository.getWallets('ws_1')).called(1);

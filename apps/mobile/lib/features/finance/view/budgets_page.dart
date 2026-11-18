@@ -9,6 +9,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/budgets_cubit.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/budget_form_page.dart';
 import 'package:mobile/features/finance/view/budget_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -81,6 +82,7 @@ class BudgetsView extends StatelessWidget {
       context,
       message: switch (result) {
         BudgetFormResult.saved => context.l10n.financeBudgetSaved,
+        BudgetFormResult.pending => context.l10n.offlineEditQueued,
         BudgetFormResult.deleted => context.l10n.financeBudgetDeleted,
       },
     );
@@ -118,7 +120,8 @@ class BudgetsView extends StatelessWidget {
                   showAmounts: showAmounts,
                   id: 'finance-budgets-amount-visibility',
                 ),
-                if (state.status != BudgetsStatus.forbidden)
+                if (state.status == BudgetsStatus.loaded &&
+                    canManageFinance(context, 'manage_finance'))
                   ShellActionSpec(
                     id: 'finance-budget-create',
                     icon: AppIcons.add,
@@ -150,8 +153,12 @@ class BudgetsView extends StatelessWidget {
                 child: _BudgetsList(
                   state: state,
                   now: now ?? DateTime.now(),
-                  onOpen: (budget) => unawaited(_openForm(context, budget)),
-                  onCreate: () => unawaited(_openForm(context)),
+                  onOpen: canManageFinance(context, 'manage_finance')
+                      ? (budget) => unawaited(_openForm(context, budget))
+                      : null,
+                  onCreate: canManageFinance(context, 'manage_finance')
+                      ? () => unawaited(_openForm(context))
+                      : null,
                 ),
               ),
             },
@@ -172,8 +179,8 @@ class _BudgetsList extends StatelessWidget {
 
   final BudgetsState state;
   final DateTime now;
-  final ValueChanged<FinanceBudget> onOpen;
-  final VoidCallback onCreate;
+  final ValueChanged<FinanceBudget>? onOpen;
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -194,15 +201,20 @@ class _BudgetsList extends StatelessWidget {
       );
     }
     final currency = state.workspaceCurrency;
+    final monthly = state.activeMonthlyBudgets(now);
     return AppPageListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        BudgetSummaryCard(
-          spent: state.totalSpent,
-          limit: state.totalLimit,
-          currency: currency,
-          month: now,
-        ),
+        if (monthly.isNotEmpty)
+          BudgetSummaryCard(
+            spent: monthly.fold<double>(0, (sum, budget) => sum + budget.spent),
+            limit: monthly.fold<double>(
+              0,
+              (sum, budget) => sum + budget.amount,
+            ),
+            currency: currency,
+            month: now,
+          ),
         for (final budget in state.budgets) ...[
           const SizedBox(height: AppLayout.itemGap),
           BudgetCard(
@@ -210,9 +222,9 @@ class _BudgetsList extends StatelessWidget {
             category: state.categoryFor(budget.categoryId),
             currency: currency,
             pending: state.pendingIds.contains(budget.id),
-            onTap: state.pendingIds.contains(budget.id)
+            onTap: state.pendingIds.contains(budget.id) || onOpen == null
                 ? null
-                : () => onOpen(budget),
+                : () => onOpen!(budget),
           ),
         ],
       ],

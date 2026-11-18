@@ -561,4 +561,4 @@ class _DayGroup extends StatelessWidget {
   }
 }
 
-String _maskedAmountText() => '••••••';
+String _maskedAmountText() => financeMaskedAmountPlaceholder;

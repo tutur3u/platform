@@ -13,6 +13,7 @@ import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
@@ -104,6 +105,7 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
     final showAmounts = context.select<FinancePreferencesCubit, bool>(
       (cubit) => cubit.state.showAmounts,
     );
+    final canChange = canManageFinance(context, 'update_wallets');
     final summary = _summary;
     final selectedWallet = _selectedWallet;
 
@@ -147,7 +149,9 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
             else if (summary == null || summary.wallets.isEmpty)
               NovaRefreshIndicator.state(
                 onRefresh: () => _load(showLoader: false, forceRefresh: true),
-                child: _CheckpointEmpty(onBatchCheck: _openBatchSheet),
+                child: _CheckpointEmpty(
+                  onBatchCheck: canChange ? _openBatchSheet : null,
+                ),
               )
             else
               NovaRefreshIndicator(
@@ -158,7 +162,9 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
                     FinanceCheckpointTotalsPanel(
                       totals: summary.totalsByCurrency,
                       showAmounts: showAmounts,
-                      onBatchCheck: _isMutating ? () {} : _openBatchSheet,
+                      onBatchCheck: !_isMutating && canChange
+                          ? _openBatchSheet
+                          : null,
                     ),
                     const shad.Gap(AppLayout.sectionGap),
                     WalletCheckpointSelector(
@@ -186,15 +192,21 @@ class _FinanceCheckpointsViewState extends State<_FinanceCheckpointsView> {
                         wallet: selectedWallet,
                         response: _selectedWalletCheckpoints!,
                         showAmounts: showAmounts,
-                        canMutate: !_isMutating,
+                        canMutate: !_isMutating && canChange,
                         onCreate: () => _openCheckpointSheet(selectedWallet),
                         onEdit: (checkpoint) => _openCheckpointSheet(
                           selectedWallet,
                           checkpoint: checkpoint,
                         ),
                         onDelete: _openDeleteSheet,
-                        onReconcile: (interval) =>
-                            _openReconciliationSheet(selectedWallet, interval),
+                        onReconcile:
+                            !_isMutating &&
+                                canManageFinance(context, 'create_transactions')
+                            ? (interval) => _openReconciliationSheet(
+                                selectedWallet,
+                                interval,
+                              )
+                            : null,
                       )
                     else
                       FinanceEmptyState(
@@ -662,7 +674,7 @@ class _CheckpointError extends StatelessWidget {
 class _CheckpointEmpty extends StatelessWidget {
   const _CheckpointEmpty({required this.onBatchCheck});
 
-  final VoidCallback onBatchCheck;
+  final VoidCallback? onBatchCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -672,10 +684,12 @@ class _CheckpointEmpty extends StatelessWidget {
           icon: Icons.fact_check_outlined,
           title: context.l10n.financeCheckpointsNoWallets,
           body: context.l10n.financeCheckpointsNoWalletsDetail,
-          action: shad.SecondaryButton(
-            onPressed: onBatchCheck,
-            child: Text(context.l10n.financeCheckpointsBatchRecord),
-          ),
+          action: onBatchCheck == null
+              ? null
+              : shad.SecondaryButton(
+                  onPressed: onBatchCheck,
+                  child: Text(context.l10n.financeCheckpointsBatchRecord),
+                ),
         ),
       ),
     );

@@ -89,7 +89,6 @@ class _WalletDialogState extends State<WalletDialog> {
     );
 
     return FinanceFullscreenFormScaffold(
-      showAmountVisibility: _type == 'CREDIT',
       title: widget.wallet == null
           ? l10n.financeCreateWallet
           : l10n.financeEditWallet,
@@ -212,7 +211,7 @@ class _WalletDialogState extends State<WalletDialog> {
                   const shad.Gap(4),
                   _WalletTextField(
                     controller: _limitController,
-                    obscureText: !financeAmountsVisible(context),
+                    privateAmount: true,
                     placeholder: '0.00',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,

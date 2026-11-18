@@ -1,5 +1,7 @@
 part of 'finance_repository.dart';
 
+enum FinanceBudgetWrite { synced, pending }
+
 /// Budgets read through the offline cache, with queued edits overlaid.
 typedef FinanceBudgetList = ({
   List<FinanceBudget> budgets,
@@ -18,15 +20,6 @@ mixin FinanceRepositoryBudgets {
   }) async {
     final userId = _cacheUserId();
     final path = FinanceEndpoints.budgets(wsId);
-    final response = await readThroughJsonList(
-      api: _api,
-      namespace: 'finance.budgets',
-      workspaceId: wsId,
-      path: path,
-      forceRefresh: forceRefresh,
-      cacheStore: _cacheStore,
-      cacheUserId: _cacheUserId,
-    );
     final pending = (await _mutationQueue.listPending())
         .where(
           (record) =>
@@ -35,6 +28,24 @@ mixin FinanceRepositoryBudgets {
               record.path.contains(path),
         )
         .toList(growable: false);
+    List<dynamic> response;
+    try {
+      response = await readThroughJsonList(
+        api: _api,
+        namespace: 'finance.budgets',
+        workspaceId: wsId,
+        path: path,
+        forceRefresh: forceRefresh,
+        cacheStore: _cacheStore,
+        cacheUserId: _cacheUserId,
+      );
+    } on Object catch (error) {
+      if (!isOfflineTransportFailure(error) ||
+          !pending.any((record) => record.method == 'POST')) {
+        rethrow;
+      }
+      response = const [];
+    }
     if (userId != _cacheUserId()) {
       throw const ApiException(
         message: 'Account changed during budget read',
@@ -59,16 +70,17 @@ mixin FinanceRepositoryBudgets {
     );
   }
 
-  Future<void> createBudget({
+  Future<FinanceBudgetWrite> createBudget({
     required String wsId,
     required FinanceBudget budget,
-  }) async {
+  }) {
     final path = FinanceEndpoints.budgets(wsId);
     final payload = budget.toPayload();
-    await queueOrSendVoid(
+    return queueOrSendValue(
       queue: _mutationQueue,
       apiClient: _api,
       feature: 'finance',
+      pendingValue: (_) => FinanceBudgetWrite.pending,
       method: 'POST',
       path: path,
       workspaceId: wsId,
@@ -77,20 +89,22 @@ mixin FinanceRepositoryBudgets {
       send: () async {
         await _api.postJson(path, payload);
         await _invalidateBudgets(wsId);
+        return FinanceBudgetWrite.synced;
       },
     );
   }
 
-  Future<void> updateBudget({
+  Future<FinanceBudgetWrite> updateBudget({
     required String wsId,
     required FinanceBudget budget,
-  }) async {
+  }) {
     final path = FinanceEndpoints.budget(wsId, budget.id);
     final payload = budget.toPayload();
-    await queueOrSendVoid(
+    return queueOrSendValue(
       queue: _mutationQueue,
       apiClient: _api,
       feature: 'finance',
+      pendingValue: (_) => FinanceBudgetWrite.pending,
       method: 'PATCH',
       path: path,
       workspaceId: wsId,
@@ -100,19 +114,21 @@ mixin FinanceRepositoryBudgets {
       send: () async {
         await _api.patchJson(path, payload);
         await _invalidateBudgets(wsId);
+        return FinanceBudgetWrite.synced;
       },
     );
   }
 
-  Future<void> deleteBudget({
+  Future<FinanceBudgetWrite> deleteBudget({
     required String wsId,
     required String budgetId,
-  }) async {
+  }) {
     final path = FinanceEndpoints.budget(wsId, budgetId);
-    await queueOrSendVoid(
+    return queueOrSendValue(
       queue: _mutationQueue,
       apiClient: _api,
       feature: 'finance',
+      pendingValue: (_) => FinanceBudgetWrite.pending,
       method: 'DELETE',
       path: path,
       workspaceId: wsId,
@@ -121,6 +137,7 @@ mixin FinanceRepositoryBudgets {
       send: () async {
         await _api.deleteJson(path);
         await _invalidateBudgets(wsId);
+        return FinanceBudgetWrite.synced;
       },
     );
   }

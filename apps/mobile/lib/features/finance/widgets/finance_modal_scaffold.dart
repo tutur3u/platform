@@ -3,7 +3,6 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
     show AppSheetHandle;
-import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -161,7 +160,6 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
     this.onClose,
     this.isSaving = false,
     this.closeResult,
-    this.showAmountVisibility = false,
     this.padding = const EdgeInsets.fromLTRB(16, 8, 16, 24),
     super.key,
   });
@@ -174,7 +172,6 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
   final VoidCallback? onClose;
   final bool isSaving;
   final Object? closeResult;
-  final bool showAmountVisibility;
   final EdgeInsetsGeometry padding;
   final Widget child;
 
@@ -188,7 +185,6 @@ class FinanceFullscreenFormScaffold extends StatelessWidget {
         shad.AppBar(
           title: Text(title),
           trailing: [
-            if (showAmountVisibility) const FinanceAmountVisibilityButton(),
             shad.GhostButton(
               onPressed: isSaving
                   ? null

@@ -19,7 +19,13 @@ class FinanceBalanceStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 136,
+      height:
+          136 +
+          (MediaQuery.textScalerOf(context).scale(32) - 32).clamp(
+                0.0,
+                double.infinity,
+              ) *
+              3,
       child: ListView(
         scrollDirection: Axis.horizontal,
         clipBehavior: Clip.none,
@@ -67,6 +73,8 @@ class _TotalCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   l10n.financeTotal,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: tokens.typography.ui.copyWith(color: ink),
                 ),
               ),

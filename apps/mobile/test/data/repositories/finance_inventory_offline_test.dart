@@ -10,6 +10,7 @@ import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -18,42 +19,11 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import 'finance_permission_restoration_cases.dart';
 
+part 'finance_inventory_offline_cases.dart';
+
 class _SecureStorage extends Mock implements FlutterSecureStorage {}
 
 class _Api extends Mock implements ApiClient {}
-
-Map<String, dynamic> _product(
-  String id,
-  String name,
-  int day, {
-  String? description,
-  bool archived = false,
-}) => {
-  'id': id,
-  'name': name,
-  'description': description,
-  'ws_id': 'ws',
-  'category_id': 'category',
-  'owner_id': 'owner',
-  'archived': archived,
-  'created_at': '2026-10-${day.toString().padLeft(2, '0')}T00:00:00Z',
-  'inventory': <Map<String, dynamic>>[],
-};
-Map<String, dynamic> _transaction(String id, String description, int day) => {
-  'id': id,
-  'description': description,
-  'wallet_id': 'wallet',
-  'amount': -10,
-  'taken_at': '2026-10-${day.toString().padLeft(2, '0')}T00:00:00Z',
-};
-Map<String, dynamic> _sale(String id, int day) => {
-  'id': id,
-  'notice': 'Sale $id',
-  'paid_amount': 100,
-  'created_at': '2026-10-${day.toString().padLeft(2, '0')}T00:00:00Z',
-  'owners': <String>[],
-  'lines': <Map<String, dynamic>>[],
-};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -142,6 +112,8 @@ void main() {
     policy: CachePolicies.offlineCatalog,
     payload: payload,
   );
+  _registerOfflineBudgetTest(repository: () => finance, apiClient: () => api);
+
   test(
     'offline product queries preserve whole query, accents and wildcards',
     () async {

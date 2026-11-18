@@ -26,7 +26,7 @@ class FinanceCheckpointTotalsPanel extends StatelessWidget {
 
   final List<WalletCheckpointCurrencyTotal> totals;
   final bool showAmounts;
-  final VoidCallback onBatchCheck;
+  final VoidCallback? onBatchCheck;
 
   @override
   Widget build(BuildContext context) {
@@ -94,18 +94,20 @@ class FinanceCheckpointTotalsPanel extends StatelessWidget {
                   _CheckpointTotalChip(total: total, showAmounts: showAmounts),
               ],
             ),
-          const shad.Gap(18),
-          shad.PrimaryButton(
-            onPressed: onBatchCheck,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.add_task_outlined, size: 16),
-                const shad.Gap(8),
-                Text(context.l10n.financeCheckpointsBatchRecord),
-              ],
+          if (onBatchCheck != null) ...[
+            const shad.Gap(18),
+            shad.PrimaryButton(
+              onPressed: onBatchCheck,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.add_task_outlined, size: 16),
+                  const shad.Gap(8),
+                  Text(context.l10n.financeCheckpointsBatchRecord),
+                ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -244,7 +246,7 @@ class WalletCheckpointDetailSections extends StatelessWidget {
   final VoidCallback onCreate;
   final ValueChanged<WalletCheckpoint> onEdit;
   final ValueChanged<WalletCheckpoint> onDelete;
-  final ValueChanged<WalletCheckpointInterval> onReconcile;
+  final ValueChanged<WalletCheckpointInterval>? onReconcile;
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +264,7 @@ class WalletCheckpointDetailSections extends StatelessWidget {
           intervals: response.intervals,
           currency: wallet.currency ?? response.latest?.currency ?? 'USD',
           showAmounts: showAmounts,
-          onReconcile: canMutate ? onReconcile : null,
+          onReconcile: onReconcile,
         ),
         const shad.Gap(16),
         _TimelineList(
@@ -312,7 +314,8 @@ class _CheckpointTotalChip extends StatelessWidget {
             ),
           ),
           const shad.Gap(8),
-          Text(
+          FinanceMaskedText(
+            context,
             maskFinanceValue(
               formatCurrency(total.actualTotal, total.currency),
               showAmounts: showAmounts,
@@ -320,7 +323,8 @@ class _CheckpointTotalChip extends StatelessWidget {
             style: theme.typography.large.copyWith(fontWeight: FontWeight.w900),
           ),
           const shad.Gap(4),
-          Text(
+          FinanceMaskedText(
+            context,
             context.l10n.financeCheckpointsVarianceValue(
               maskFinanceValue(
                 formatCurrency(total.varianceTotal, total.currency),

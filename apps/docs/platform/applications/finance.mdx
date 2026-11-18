@@ -50,16 +50,25 @@ propagation remains unchanged. Regression coverage lives in
 
 The Finance dock places Back on the left. Overview, Transactions, Budgets,
 Wallets, and More are icon-only destinations with accessible names. More opens
-Categories, Reports, Checkpoints, and Manage. Categories and Tags share a
+Categories, Checkpoints, and Manage. Categories and Tags share a
 two-tab view. Create and edit forms open above the dock.
 
 Amounts start hidden on each installation, including recent activity, wallet
 balances, budget progress, transaction amounts, and checkpoint totals. The
 eye control updates all Finance screens and remembers the choice on the device.
+Read-only amounts, previews, and suggestions follow this setting. An amount field
+shows its value while it has editing focus, and masks it again when focus leaves.
+The budget summary covers active monthly budgets in the workspace currency.
+It omits workspace-wide budgets when their spending can combine different
+wallet currencies.
+Offline budget edits stay pending until the server confirms them.
+Transaction totals use the server ledger figures, which follow the server's
+transaction visibility and filter rules.
 Workspace permissions and transaction confidentiality still govern which
 amounts the app receives. The mobile regression coverage is in
-`apps/mobile/test/features/finance/view/finance_overview_test.dart` and
-`apps/mobile/test/features/finance/view/finance_section_reset_test.dart`.
+`apps/mobile/test/features/finance/view/finance_accessibility_test.dart`,
+`apps/mobile/test/features/finance/view/finance_workspace_test.dart`, and
+`apps/mobile/test/features/finance/view/budget_form_test.dart`.
 
 ## Invoice creator names
 

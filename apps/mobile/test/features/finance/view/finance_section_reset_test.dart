@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/finance/finance_module.dart';
@@ -25,6 +26,49 @@ void main() {
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
+  });
+
+  testWidgets('fallback More opens its sheet and routes without pushing', (
+    tester,
+  ) async {
+    final miniNav = ShellMiniNavCubit();
+    addTearDown(miniNav.close);
+    final router = GoRouter(
+      initialLocation: financeModule.miniAppNavItems.last.route,
+      routes: [
+        GoRoute(path: Routes.financeMore, builder: financeMoreFallback),
+        for (final item in financeExtraNavItems)
+          GoRoute(
+            path: item.route,
+            builder: (context, state) => FinanceDockRegistration(
+              location: item.route,
+              child: Text(item.id),
+            ),
+          ),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpAppRouter(
+      router,
+      wrap: (app) => BlocProvider.value(value: miniNav, child: app),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Reports'), findsNothing);
+    await tester.tap(find.text('Checkpoints'));
+    await tester.pumpAndSettle();
+    expect(router.canPop(), isFalse);
+    expect(find.text('finance_checkpoints'), findsOneWidget);
+
+    miniNav.state
+        .resolveForLocation(Routes.financeCheckpoints)!
+        .items
+        .last
+        .onReselect!();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Categories'));
+    await tester.pumpAndSettle();
+    expect(router.canPop(), isFalse);
+    expect(find.text('finance_categories'), findsOneWidget);
   });
 
   testWidgets('finance reselection resets Tags to Categories', (tester) async {
@@ -66,10 +110,10 @@ void main() {
     expect(dock.items.last.selected, isTrue);
     dock.items.last.onReselect!();
     await tester.pumpAndSettle();
-    expect(find.text('Reports'), findsOneWidget);
     expect(find.text('Checkpoints'), findsOneWidget);
     expect(find.text('Manage'), findsOneWidget);
-    Navigator.of(tester.element(find.text('Reports'))).pop();
+    expect(find.text('Reports'), findsNothing);
+    Navigator.of(tester.element(find.text('Manage'))).pop();
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Tags').first);

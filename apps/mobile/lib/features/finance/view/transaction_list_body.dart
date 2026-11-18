@@ -30,7 +30,7 @@ class TransactionListBody extends StatelessWidget {
   final ValueChanged<Transaction> onTransactionTap;
   final TransactionFiltersChanged onFiltersChanged;
   final VoidCallback onClearFilters;
-  final VoidCallback onCreate;
+  final VoidCallback? onCreate;
   final VoidCallback? onLoadMore;
   final String? workspaceId;
   final DateTime? now;

@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -63,10 +64,12 @@ class TransactionListPage extends StatelessWidget {
               .state
               .currentWorkspace
               ?.id;
-          final month = FinanceTransactionQuery.month(now ?? DateTime.now());
+          final initialQuery = startInSearch
+              ? const FinanceTransactionQuery()
+              : FinanceTransactionQuery.month(now ?? DateTime.now());
           final cubit = TransactionListCubit(
             financeRepository: context.read<FinanceRepository>(),
-            initialState: TransactionListState(query: month),
+            initialState: TransactionListState(query: initialQuery),
           );
           if (wsId != null) unawaited(_loadFromWorkspace(context, cubit));
           return cubit;
@@ -179,7 +182,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     final state = context.read<TransactionListCubit>().state;
-    await openTransactionDetailSheet(
+    final changed = await openTransactionDetailSheet(
       context,
       wsId: wsId,
       transaction: transaction,
@@ -187,7 +190,11 @@ class _TransactionListViewState extends State<_TransactionListView> {
       workspaceCurrency: state.workspaceCurrency,
       exchangeRates: state.exchangeRates,
     );
-    if (mounted) await _onRefresh();
+    if (mounted &&
+        changed &&
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId) {
+      await _onRefresh();
+    }
   }
 
   Future<void> _onCreateTransaction() async {
@@ -225,7 +232,12 @@ class _TransactionListViewState extends State<_TransactionListView> {
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-      listener: (context, _) => unawaited(_onRefresh()),
+      listener: (context, _) {
+        _debounce?.cancel();
+        _searchController.clear();
+        setState(() => _isSearchVisible = false);
+        unawaited(_onRefresh());
+      },
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -263,13 +275,14 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 showAmounts: showAmounts,
                 id: 'finance-transactions-amount-visibility',
               ),
-              ShellActionSpec(
-                id: 'finance-transactions-create',
-                icon: AppIcons.add,
-                tooltip: l10n.financeNewTransaction,
-                filled: true,
-                onPressed: () => unawaited(_onCreateTransaction()),
-              ),
+              if (canManageFinance(context, 'create_transactions'))
+                ShellActionSpec(
+                  id: 'finance-transactions-create',
+                  icon: AppIcons.add,
+                  tooltip: l10n.financeNewTransaction,
+                  filled: true,
+                  onPressed: () => unawaited(_onCreateTransaction()),
+                ),
             ],
           ),
           BlocBuilder<TransactionListCubit, TransactionListState>(
@@ -294,7 +307,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
               onClearFilters: _clearFilters,
               onLoadMore: () =>
                   unawaited(context.read<TransactionListCubit>().loadMore()),
-              onCreate: () => unawaited(_onCreateTransaction()),
+              onCreate: canManageFinance(context, 'create_transactions')
+                  ? () => unawaited(_onCreateTransaction())
+                  : null,
             ),
           ),
         ],

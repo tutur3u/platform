@@ -199,7 +199,8 @@ class WalletCheckpointDeleteSheet extends StatelessWidget {
           children: [
             Text(_formatDateTimeInput(checkpoint.checkedAt)),
             const shad.Gap(8),
-            Text(
+            FinanceMaskedText(
+              context,
               maskFinanceValue(
                 formatCurrency(checkpoint.actualBalance, checkpoint.currency),
                 showAmounts: showAmounts,
@@ -279,7 +280,8 @@ class _WalletCheckpointReconciliationSheetState
               children: [
                 _FieldLabel(label: l10n.financeCheckpointsVariance),
                 const shad.Gap(6),
-                Text(
+                FinanceMaskedText(
+                  context,
                   maskFinanceValue(
                     formatCurrency(widget.interval.intervalVariance, currency),
                     showAmounts: widget.showAmounts,
@@ -522,7 +524,8 @@ class _BatchWalletRow extends StatelessWidget {
                   ),
                 ),
                 const shad.Gap(4),
-                Text(
+                FinanceMaskedText(
+                  context,
                   maskFinanceValue(
                     formatCurrency(wallet.balance ?? 0, currency),
                     showAmounts: showAmounts,

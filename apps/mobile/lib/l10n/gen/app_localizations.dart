@@ -7477,12 +7477,6 @@ abstract class AppLocalizations {
   /// **'Alert at {percent}%'**
   String financeBudgetAlertAt(int percent);
 
-  /// No description provided for @financeBudgetAlertHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Set the spending threshold for alerts.'**
-  String get financeBudgetAlertHint;
-
   /// No description provided for @financeBudgetAmountRequired.
   ///
   /// In en, this message translates to:
@@ -7548,6 +7542,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'What this budget covers'**
   String get financeBudgetDescriptionPlaceholder;
+
+  /// No description provided for @financeBudgetDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete the budget'**
+  String get financeBudgetDeleteFailed;
+
+  /// No description provided for @financeMonthlyBudgetScope.
+  ///
+  /// In en, this message translates to:
+  /// **'Active monthly budgets in {currency}'**
+  String financeMonthlyBudgetScope(String currency);
 
   /// No description provided for @financeBudgetName.
   ///
@@ -7698,18 +7704,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recent activity'**
   String get financeRecent;
-
-  /// No description provided for @financeReports.
-  ///
-  /// In en, this message translates to:
-  /// **'Reports'**
-  String get financeReports;
-
-  /// No description provided for @financeThisMonth.
-  ///
-  /// In en, this message translates to:
-  /// **'This month'**
-  String get financeThisMonth;
 
   /// No description provided for @financeTotal.
   ///

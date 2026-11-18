@@ -8,6 +8,7 @@ import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
 import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
+import 'package:mobile/core/router/finance_routes.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
@@ -30,14 +31,6 @@ import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
-import 'package:mobile/features/finance/finance_module.dart';
-import 'package:mobile/features/finance/view/budgets_page.dart';
-import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
-import 'package:mobile/features/finance/view/finance_secondary_pages.dart';
-import 'package:mobile/features/finance/view/transaction_categories_page.dart';
-import 'package:mobile/features/finance/view/transaction_list_page.dart';
-import 'package:mobile/features/finance/view/wallet_detail_page.dart';
-import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -523,82 +516,7 @@ GoRouter createAppRouter(
               return DocumentDetailPage(documentId: documentId);
             },
           ),
-          GoRoute(
-            path: Routes.transactions,
-            builder: (context, state) => FinanceDockRegistration(
-              location: state.uri.path,
-              child: TransactionListPage(
-                initialTransactionId:
-                    state.uri.queryParameters['transactionId'],
-                startInSearch: state.uri.queryParameters['search'] == '1',
-              ),
-            ),
-          ),
-          GoRoute(
-            path: Routes.transactionDetail,
-            redirect: (context, state) {
-              final id = state.pathParameters['transactionId'];
-              return id == null
-                  ? Routes.transactions
-                  : Routes.transactionDetailsLocation(id);
-            },
-          ),
-          GoRoute(
-            path: Routes.categories,
-            builder: (context, state) => const FinanceDockRegistration(
-              location: Routes.categories,
-              child: TransactionCategoriesPage(),
-            ),
-          ),
-          GoRoute(
-            path: Routes.financeBudgets,
-            builder: (context, state) => const FinanceDockRegistration(
-              location: Routes.financeBudgets,
-              child: BudgetsPage(),
-            ),
-          ),
-          GoRoute(
-            path: Routes.financeManage,
-            builder: (context, state) => const FinanceDockRegistration(
-              location: Routes.financeManage,
-              child: FinanceManagePage(),
-            ),
-          ),
-          GoRoute(
-            path: Routes.financeReports,
-            builder: (context, state) => const FinanceDockRegistration(
-              location: Routes.financeReports,
-              child: FinanceReportsPage(),
-            ),
-          ),
-          GoRoute(
-            path: Routes.wallets,
-            builder: (context, state) => const FinanceDockRegistration(
-              location: Routes.wallets,
-              child: WalletsPage(),
-            ),
-          ),
-          GoRoute(
-            path: Routes.financeCheckpoints,
-            builder: (context, state) => FinanceDockRegistration(
-              location: state.uri.path,
-              child: FinanceCheckpointsPage(
-                initialWalletId: state.uri.queryParameters['walletId'],
-              ),
-            ),
-          ),
-          GoRoute(
-            path: Routes.walletDetail,
-            builder: (context, state) {
-              final walletId = state.pathParameters['walletId'];
-              return FinanceDockRegistration(
-                location: state.uri.path,
-                child: walletId == null || walletId.isEmpty
-                    ? const WalletsPage()
-                    : WalletDetailPage(walletId: walletId),
-              );
-            },
-          ),
+          ...financeRoutes(),
           ...settingsRoutes(),
           GoRoute(
             path: Routes.timerRequests,

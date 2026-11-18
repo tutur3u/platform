@@ -14,8 +14,8 @@ class _WalletCard extends StatelessWidget {
   final String currency;
   final bool showAmounts;
   final VoidCallback onTap;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,8 @@ class _WalletCard extends StatelessWidget {
           ),
           title: wallet.name ?? l10n.financeWallet,
           subtitle: subtitle,
-          trailing: Text(
+          trailing: money.FinanceMaskedText(
+            context,
             money.maskFinanceValue(
               money.formatFinanceAmount(wallet.balance ?? 0, currency),
               showAmounts: showAmounts,
@@ -55,16 +56,18 @@ class _WalletCard extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            AppIconButton(
-              icon: const Icon(Icons.edit_outlined),
-              tooltip: l10n.financeEditWallet,
-              onPressed: onEdit,
-            ),
-            AppIconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: l10n.financeDeleteWallet,
-              onPressed: onDelete,
-            ),
+            if (onEdit != null)
+              AppIconButton(
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: l10n.financeEditWallet,
+                onPressed: onEdit,
+              ),
+            if (onDelete != null)
+              AppIconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: l10n.financeDeleteWallet,
+                onPressed: onDelete,
+              ),
             const SizedBox(width: AppSpacing.sm),
           ],
         ),

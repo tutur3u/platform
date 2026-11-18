@@ -16,12 +16,14 @@ import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/finance/budget.dart';
+import 'package:mobile/data/repositories/finance_repository.dart';
+
 import 'package:mobile/features/finance/cubit/budgets_cubit.dart';
 import 'package:mobile/features/finance/widgets/finance_form_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-enum BudgetFormResult { saved, deleted }
+enum BudgetFormResult { saved, deleted, pending }
 
 /// Opens the budget form above the shell; resolves with what happened, or
 /// null when it was closed without changes.
@@ -84,6 +86,7 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
   late String? _categoryId = widget.budget?.categoryId;
   late String? _walletId = widget.budget?.walletId;
   bool _saving = false;
+  bool _editingAmount = false;
   bool _submitted = false;
 
   bool get _isNew => widget.budget == null;
@@ -157,8 +160,18 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     );
     setState(() => _saving = true);
     try {
-      await widget.cubit.save(budget, isNew: _isNew, wsId: widget.wsId);
-      if (mounted) Navigator.of(context).pop(BudgetFormResult.saved);
+      final result = await widget.cubit.save(
+        budget,
+        isNew: _isNew,
+        wsId: widget.wsId,
+      );
+      if (mounted) {
+        Navigator.of(context).pop(
+          result == FinanceBudgetWrite.pending
+              ? BudgetFormResult.pending
+              : BudgetFormResult.saved,
+        );
+      }
     } on Object {
       if (!mounted) return;
       setState(() => _saving = false);
@@ -179,12 +192,21 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     if (!confirmed || !mounted) return;
     setState(() => _saving = true);
     try {
-      await widget.cubit.delete(widget.budget!.id, wsId: widget.wsId);
-      if (mounted) Navigator.of(context).pop(BudgetFormResult.deleted);
+      final result = await widget.cubit.delete(
+        widget.budget!.id,
+        wsId: widget.wsId,
+      );
+      if (mounted) {
+        Navigator.of(context).pop(
+          result == FinanceBudgetWrite.pending
+              ? BudgetFormResult.pending
+              : BudgetFormResult.deleted,
+        );
+      }
     } on Object {
       if (!mounted) return;
       setState(() => _saving = false);
-      showAppToast(context, message: context.l10n.financeBudgetSaveFailed);
+      showAppToast(context, message: context.l10n.financeBudgetDeleteFailed);
     }
   }
 
@@ -251,7 +273,6 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     final state = widget.cubit.state;
     final locale = Localizations.localeOf(context).toString();
     final date = DateFormat.yMMMd(locale);
-    final muted = context.tokens.colorScheme.mutedForeground;
     return FinanceFormScaffold(
       title: _isNew ? l10n.financeNewBudget : l10n.financeEditBudget,
       saving: _saving,
@@ -277,18 +298,21 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
           onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: AppSpacing.lg),
-        AppTextField(
-          key: const ValueKey('finance-budget-amount'),
-          controller: _amount,
-          obscureText: !financeAmountsVisible(context),
-          label: l10n.financeBudgetLimit(state.workspaceCurrency),
-          placeholder: '0',
-          errorText: _amountError(context),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\s]')),
-          ],
-          onChanged: (_) => setState(() {}),
+        Focus(
+          onFocusChange: (value) => setState(() => _editingAmount = value),
+          child: AppTextField(
+            key: const ValueKey('finance-budget-amount'),
+            controller: _amount,
+            obscureText: !_editingAmount && !financeAmountsVisible(context),
+            label: l10n.financeBudgetLimit(state.workspaceCurrency),
+            placeholder: '0',
+            errorText: _amountError(context),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,\s]')),
+            ],
+            onChanged: (_) => setState(() {}),
+          ),
         ),
         const SizedBox(height: AppSpacing.lg),
         AppSegmentedControl<FinanceBudgetPeriod>(
@@ -368,10 +392,6 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
           max: 100,
           divisions: 20,
           onChanged: (value) => setState(() => _threshold = value),
-        ),
-        Text(
-          l10n.financeBudgetAlertHint,
-          style: context.tokens.typography.bodySm.copyWith(color: muted),
         ),
         const SizedBox(height: AppSpacing.lg),
         AppTextField(

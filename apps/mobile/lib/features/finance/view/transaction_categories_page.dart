@@ -19,6 +19,7 @@ import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
@@ -214,10 +215,6 @@ class _TransactionCategoriesViewState
             unawaited(_handleWorkspaceChanged(state.currentWorkspace?.id)),
         child: Stack(
           children: [
-            const FinanceAmountVisibilityShellAction(
-              ownerId: 'finance-manage-amount-visibility',
-              locations: {Routes.categories},
-            ),
             ShellTitleOverride(
               ownerId: 'finance-categories',
               locations: const {Routes.categories},
@@ -266,171 +263,33 @@ class _TransactionCategoriesViewState
                 if (_activeTab != _tabCategories) _switchTab(_tabCategories);
               },
               actions: [
-                ShellActionSpec(
-                  id: 'finance-manage-create',
-                  icon: Icons.add,
-                  filled: true,
-                  tooltip: _activeTab == _tabCategories
-                      ? l10n.financeCreateCategory
-                      : l10n.financeCreateTag,
-                  callbackToken: _activeTab,
-                  onPressed: _activeTab == _tabCategories
-                      ? _onCreateCategory
-                      : _onCreateTag,
+                financeAmountVisibilityAction(
+                  context,
+                  showAmounts: showAmounts,
                 ),
+                if (canManageFinance(
+                  context,
+                  _activeTab == _tabCategories
+                      ? 'create_transactions'
+                      : 'manage_finance',
+                ))
+                  ShellActionSpec(
+                    id: 'finance-manage-create',
+                    icon: Icons.add,
+                    filled: true,
+                    tooltip: _activeTab == _tabCategories
+                        ? l10n.financeCreateCategory
+                        : l10n.financeCreateTag,
+                    callbackToken: _activeTab,
+                    onPressed: _activeTab == _tabCategories
+                        ? _onCreateCategory
+                        : _onCreateTag,
+                  ),
               ],
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCategoriesContent(
-    AppLocalizations l10n,
-    EdgeInsets pagePadding,
-    bool showAmounts,
-  ) {
-    if (_categoriesLoading) {
-      return const FinanceListSkeleton(summaryHeight: 48);
-    }
-    if (_categoriesError != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        children: [
-          FinanceEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.commonSomethingWentWrong,
-            body: _categoriesError!,
-            action: shad.SecondaryButton(
-              onPressed: _loadCategories,
-              child: Text(l10n.commonRetry),
-            ),
-          ),
-        ],
-      );
-    }
-    if (_categories.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        children: [
-          FinanceEmptyState(
-            icon: Icons.category_outlined,
-            title: l10n.financeNoCategories,
-            body: l10n.financeManageCategoriesEmptyBody,
-            action: shad.SecondaryButton(
-              onPressed: _onCreateCategory,
-              child: Text(l10n.financeCreateCategory),
-            ),
-          ),
-        ],
-      );
-    }
-    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
-      return ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        itemCount: _categories.length.clamp(1, 6),
-        separatorBuilder: (context, index) => const shad.Gap(8),
-        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
-      );
-    }
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: pagePadding,
-      itemCount: _categories.length,
-      separatorBuilder: (context, index) => const shad.Gap(8),
-      itemBuilder: (context, index) {
-        final category = _categories[index];
-        return PendingSyncFrame(
-          workspaceId: _categoriesWorkspaceId ?? '',
-          entityId: category.id,
-          feature: 'finance',
-          child: _CategoryCard(
-            category: category,
-            currencyCode: _workspaceCurrency!,
-            showAmounts: showAmounts,
-            onEdit: () => _onEdit(category),
-            onDelete: () => _onDelete(category),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTagsContent(
-    AppLocalizations l10n,
-    EdgeInsets pagePadding,
-    bool showAmounts,
-  ) {
-    if (_tagsLoading) {
-      return const FinanceListSkeleton(summaryHeight: 48);
-    }
-    if (_tagsError != null) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        children: [
-          FinanceEmptyState(
-            icon: Icons.error_outline,
-            title: l10n.commonSomethingWentWrong,
-            body: _tagsError!,
-            action: shad.SecondaryButton(
-              onPressed: _loadTags,
-              child: Text(l10n.commonRetry),
-            ),
-          ),
-        ],
-      );
-    }
-    if (_tags.isEmpty) {
-      return ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        children: [
-          FinanceEmptyState(
-            icon: Icons.sell_outlined,
-            title: l10n.financeNoTags,
-            body: l10n.financeManageTagsEmptyBody,
-            action: shad.SecondaryButton(
-              onPressed: _onCreateTag,
-              child: Text(l10n.financeCreateTag),
-            ),
-          ),
-        ],
-      );
-    }
-    if (_workspaceCurrency == null || _workspaceCurrency!.trim().isEmpty) {
-      return ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: pagePadding,
-        itemCount: _tags.length.clamp(1, 6),
-        separatorBuilder: (context, index) => const shad.Gap(8),
-        itemBuilder: (context, index) => const _ManageFinanceCardSkeleton(),
-      );
-    }
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: pagePadding,
-      itemCount: _tags.length,
-      separatorBuilder: (context, index) => const shad.Gap(8),
-      itemBuilder: (context, index) {
-        final tag = _tags[index];
-        return PendingSyncFrame(
-          workspaceId: _tagsWorkspaceId ?? '',
-          entityId: tag.id,
-          feature: 'finance',
-          child: _TagCard(
-            tag: tag,
-            currencyCode: _workspaceCurrency!,
-            showAmounts: showAmounts,
-            onEdit: () => _onEditTag(tag),
-            onDelete: () => _onDeleteTag(tag),
-          ),
-        );
-      },
     );
   }
 

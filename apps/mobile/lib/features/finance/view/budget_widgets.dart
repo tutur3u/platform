@@ -47,8 +47,7 @@ class FinanceMeter extends StatelessWidget {
   }
 }
 
-/// Spent against the combined limit of every budget, with the days left
-/// in [month].
+/// Spent against the combined limit of eligible monthly budgets.
 class BudgetSummaryCard extends StatelessWidget {
   const BudgetSummaryCard({
     required this.spent,
@@ -89,6 +88,7 @@ class BudgetSummaryCard extends StatelessWidget {
               color: colors.mutedForeground,
             ),
           ),
+          Text(l10n.financeMonthlyBudgetScope(currency), style: muted),
           const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -106,7 +106,8 @@ class BudgetSummaryCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Text(
+              FinanceMaskedText(
+                context,
                 l10n.financeBudgetOfLimit(
                   financeMoney(context, limit, currency),
                 ),
@@ -123,7 +124,8 @@ class BudgetSummaryCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: FinanceMaskedText(
+                  context,
                   maskFinanceValue(
                     budgetPercent(progress),
                     showAmounts: financeAmountsVisible(context),
@@ -200,7 +202,8 @@ class BudgetCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: tokens.typography.ui,
                     ),
-                    Text(
+                    FinanceMaskedText(
+                      context,
                       pending
                           ? l10n.offlineEditQueued
                           : l10n.financeBudgetOfLimit(
@@ -233,7 +236,8 @@ class BudgetCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
+                child: FinanceMaskedText(
+                  context,
                   maskFinanceValue(
                     budgetPercent(budget.progress),
                     showAmounts: financeAmountsVisible(context),
@@ -241,7 +245,8 @@ class BudgetCard extends StatelessWidget {
                   style: muted,
                 ),
               ),
-              Text(
+              FinanceMaskedText(
+                context,
                 over
                     ? l10n.financeBudgetOver(
                         financeMoney(context, remaining, currency),

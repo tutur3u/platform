@@ -19,6 +19,7 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/utils/wallet_ordering.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart' as money;
@@ -200,10 +201,6 @@ class _WalletsViewState extends State<_WalletsView> {
         },
         child: Stack(
           children: [
-            const FinanceAmountVisibilityShellAction(
-              ownerId: 'finance-wallets-amount-visibility',
-              locations: {Routes.wallets},
-            ),
             NovaRefreshIndicator(
               onRefresh: () => _loadWallets(forceRefresh: true),
               child: LayoutBuilder(
@@ -255,13 +252,18 @@ class _WalletsViewState extends State<_WalletsView> {
                     }
                   },
                 ),
-                ShellActionSpec(
-                  id: 'finance-create-wallet',
-                  icon: Icons.add,
-                  tooltip: l10n.financeCreateWallet,
-                  filled: true,
-                  onPressed: _onCreate,
+                financeAmountVisibilityAction(
+                  context,
+                  showAmounts: showAmounts,
                 ),
+                if (canManageFinance(context, 'create_wallets'))
+                  ShellActionSpec(
+                    id: 'finance-create-wallet',
+                    icon: Icons.add,
+                    tooltip: l10n.financeCreateWallet,
+                    filled: true,
+                    onPressed: _onCreate,
+                  ),
               ],
             ),
           ],
@@ -319,10 +321,12 @@ class _WalletsViewState extends State<_WalletsView> {
             icon: Icons.account_balance_wallet_outlined,
             title: l10n.financeNoWallets,
             body: l10n.financeOverviewNoWalletsBody,
-            action: shad.SecondaryButton(
-              onPressed: _onCreate,
-              child: Text(l10n.financeCreateFirstWallet),
-            ),
+            action: canManageFinance(context, 'create_wallets')
+                ? shad.SecondaryButton(
+                    onPressed: _onCreate,
+                    child: Text(l10n.financeCreateFirstWallet),
+                  )
+                : null,
           ),
         ],
       );
@@ -372,8 +376,12 @@ class _WalletsViewState extends State<_WalletsView> {
             currency: wallet.currency ?? _workspaceCurrency!,
             showAmounts: showAmounts,
             onTap: () => _openWallet(wallet),
-            onEdit: () => _onEdit(wallet),
-            onDelete: () => _onDelete(wallet),
+            onEdit: canManageFinance(context, 'update_wallets')
+                ? () => _onEdit(wallet)
+                : null,
+            onDelete: canManageFinance(context, 'delete_wallets')
+                ? () => _onDelete(wallet)
+                : null,
           ),
         );
       },
@@ -534,6 +542,7 @@ class _WalletsViewState extends State<_WalletsView> {
             .toList(growable: false),
         tags: [_cacheTag, 'workspace:$wsId', 'module:finance'],
       );
+      if (!mounted || requestToken != _currentWalletsRequestToken) return;
       setState(() {
         _wallets = sortedWallets;
         _workspaceCurrency = workspaceCurrency;

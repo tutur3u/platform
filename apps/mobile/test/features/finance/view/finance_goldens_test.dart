@@ -38,6 +38,7 @@ void main() {
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
     );
+    await seedFinanceSceneCache();
     for (final font in const {
       'Roboto': 'assets/fonts/NotoSans.ttf',
       'NotoSans': 'assets/fonts/NotoSans.ttf',
@@ -132,6 +133,16 @@ void main() {
               await tester.tap(find.text('Groceries'));
             }
             await tester.pumpAndSettle();
+            if (scene == FinanceScene.wallets ||
+                scene == FinanceScene.categories) {
+              await pumpFinanceUntilVisible(
+                tester,
+                find.text(
+                  scene == FinanceScene.wallets ? 'Everyday' : 'Groceries',
+                ),
+              );
+              await tester.pumpAndSettle();
+            }
             expect(tester.takeException(), isNull);
             await expectLater(
               find.byKey(const ValueKey('golden')),

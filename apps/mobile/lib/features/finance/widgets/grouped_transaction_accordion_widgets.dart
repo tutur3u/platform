@@ -193,7 +193,8 @@ class _TransactionTile extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
+                          FinanceMaskedText(
+                            context,
                             amountText,
                             maxLines: 1,
                             style: theme.typography.large.copyWith(
@@ -207,7 +208,8 @@ class _TransactionTile extends StatelessWidget {
                           ),
                           if (transferLinkedAmountText != null) ...[
                             const SizedBox(height: 2),
-                            Text(
+                            FinanceMaskedText(
+                              context,
                               transferLinkedAmountText,
                               style: theme.typography.xSmall.copyWith(
                                 color: colorScheme.mutedForeground,
@@ -215,7 +217,8 @@ class _TransactionTile extends StatelessWidget {
                             ),
                           ] else if (convertedAmountText != null) ...[
                             const SizedBox(height: 2),
-                            Text(
+                            FinanceMaskedText(
+                              context,
                               convertedAmountText,
                               style: theme.typography.xSmall.copyWith(
                                 color: colorScheme.mutedForeground,
@@ -341,7 +344,8 @@ class _TransactionTile extends StatelessWidget {
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerRight,
-                      child: Text(
+                      child: FinanceMaskedText(
+                        context,
                         amountText,
                         maxLines: 1,
                         style: theme.typography.small.copyWith(
@@ -357,7 +361,8 @@ class _TransactionTile extends StatelessWidget {
                     if (transferLinkedAmountText != null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text(
+                        child: FinanceMaskedText(
+                          context,
                           transferLinkedAmountText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -370,7 +375,8 @@ class _TransactionTile extends StatelessWidget {
                         transferLinkedAmountText == null)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text(
+                        child: FinanceMaskedText(
+                          context,
                           convertedAmountText,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -441,7 +447,8 @@ class _SummaryPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(
+          FinanceMaskedText(
+            context,
             label,
             style: shad.Theme.of(context).typography.xSmall.copyWith(
               color: color,

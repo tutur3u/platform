@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:mobile/core/utils/currency_formatter.dart';
-import 'package:mobile/features/finance/widgets/finance_money.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart'
+    hide FinanceAmountText;
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 export 'package:mobile/features/finance/widgets/finance_money.dart'
-    show financeMaskedAmountPlaceholder, maskFinanceValue;
+    show FinanceMaskedText, financeMaskedAmountPlaceholder, maskFinanceValue;
 export 'package:mobile/features/finance/widgets/finance_segmented_row.dart';
 
 class FinancePalette {
@@ -190,7 +191,8 @@ class FinanceStatChip extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              FinanceMaskedText(
+                context,
                 value,
                 style: theme.typography.small.copyWith(
                   fontWeight: FontWeight.w700,
@@ -296,7 +298,8 @@ class FinanceAmountText extends StatelessWidget {
               alignment: alignment == CrossAxisAlignment.end
                   ? Alignment.centerRight
                   : Alignment.centerLeft,
-              child: Text(
+              child: FinanceMaskedText(
+                context,
                 amountText,
                 maxLines: 1,
                 softWrap: false,
@@ -308,7 +311,8 @@ class FinanceAmountText extends StatelessWidget {
             ),
           )
         else
-          Text(
+          FinanceMaskedText(
+            context,
             amountText,
             maxLines: 1,
             softWrap: false,
@@ -419,7 +423,8 @@ class FinanceKeyValueRow extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: Text(
+                child: FinanceMaskedText(
+                  context,
                   value,
                   textAlign: TextAlign.right,
                   style: theme.typography.small.copyWith(

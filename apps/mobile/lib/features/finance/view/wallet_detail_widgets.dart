@@ -39,6 +39,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final hiddenAmount = showAmounts ? null : l10n.financeHiddenAmount;
     final isCredit = wallet.type == 'CREDIT';
     final currency = (wallet.currency ?? workspaceCurrency).toUpperCase();
     final balance = wallet.balance ?? 0;
@@ -53,6 +54,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
         AppSummaryHero(
           eyebrow: l10n.financeWalletBalance,
           headline: _money(balance, currency),
+          headlineSemanticsLabel: hiddenAmount,
           icon: isCredit ? LucideIcons.creditCard : LucideIcons.wallet,
           tone: isCredit ? AppTone.warning : AppTone.primary,
           supporting: wallet.description,
@@ -67,6 +69,7 @@ class WalletDetailSummaryCard extends StatelessWidget {
               AppHeroFact(
                 label: workspaceCurrency,
                 value: _money(converted, workspaceCurrency, approximate: true),
+                valueSemanticsLabel: hiddenAmount,
               ),
             if (totals != null)
               AppHeroFact(
@@ -97,18 +100,21 @@ class WalletDetailSummaryCard extends StatelessWidget {
               AppStatTile(
                 label: l10n.financeIncome,
                 value: _money(totals.totalIncome, currency),
+                valueSemanticsLabel: hiddenAmount,
                 icon: LucideIcons.arrowDownLeft,
                 tone: AppTone.success,
               ),
               AppStatTile(
                 label: l10n.financeExpense,
                 value: _money(totals.totalExpense, currency),
+                valueSemanticsLabel: hiddenAmount,
                 icon: LucideIcons.arrowUpRight,
                 tone: AppTone.destructive,
               ),
               AppStatTile(
                 label: l10n.financeNet,
                 value: _money(totals.netTotal, currency),
+                valueSemanticsLabel: hiddenAmount,
                 icon: LucideIcons.chartPie,
               ),
             ],

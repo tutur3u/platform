@@ -131,6 +131,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     if (isClosed) {
       return;
     }
+    _emptyFilteredPages = 0;
     final generation = ++_generation;
     final userId = _currentUserId();
     final hasVisibleData =
@@ -249,7 +250,14 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     if (isClosed || query == state.search) {
       return;
     }
-    await _reloadScope(state.copyWith(search: query));
+    await _reloadScope(
+      state.copyWith(
+        search: query,
+        query: query.isEmpty
+            ? state.query
+            : state.query.copyWith(start: null, end: null),
+      ),
+    );
   }
 
   /// Apply kind, category, date and wallet filters and reload from scratch.
@@ -318,7 +326,6 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     await _fetch(replaceExisting: true, generation: generation);
   }
 
-  /// Totals cover a dated range only; all-time totals would read every page.
   Future<void> _loadFlow(int generation, String? userId) async {
     final wsId = _wsId;
     final scoped = state;
@@ -335,6 +342,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
         wsId: wsId,
         currency: scoped.flowCurrency,
         rates: scoped.exchangeRates,
+        wallets: scoped.wallets,
         query: scoped.query,
         walletId: scoped.walletId,
         search: scoped.search.isEmpty ? null : scoped.search,
@@ -425,7 +433,11 @@ class TransactionListCubit extends Cubit<TransactionListState> {
       if (replaceExisting) {
         unawaited(_loadFlow(requestGeneration, userId));
       }
-      if (requestState.hasFilters && result.data.isEmpty && result.hasMore) {
+      if ((requestState.hasFilters || search.isNotEmpty) &&
+          result.data.isEmpty &&
+          result.hasMore &&
+          result.nextCursor != null &&
+          result.nextCursor != requestState.cursor) {
         if (++_emptyFilteredPages <= _maxEmptyFilteredPages) {
           unawaited(loadMore());
         }

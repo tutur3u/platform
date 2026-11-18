@@ -72,7 +72,8 @@ class FinanceTransactionRow extends StatelessWidget {
       title: financeTransactionTitle(transaction),
       subtitle: subtitle.isEmpty ? null : subtitle,
       trailing: amount == null
-          ? Text(
+          ? FinanceMaskedText(
+              context,
               financeMaskedAmountPlaceholder,
               style: context.tokens.typography.numeric,
             )

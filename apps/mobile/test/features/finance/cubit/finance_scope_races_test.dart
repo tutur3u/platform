@@ -8,6 +8,8 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cached_resource_record.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
+import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -109,6 +111,147 @@ void main() {
     cacheStore: store,
     currentUserId: () => user,
   );
+
+  test(
+    'filters namespace the list and stats, and reset on workspace change',
+    () async {
+      const wallet = Wallet(
+        id: 'scoped-wallet',
+        name: 'Scoped',
+        currency: 'USD',
+      );
+      final filters = FinanceTransactionQuery.month(
+        DateTime(2026, 11),
+        kind: FinanceTransactionKind.expense,
+        categoryId: 'food',
+      );
+      when(
+        () => repo.getWallets('filters-home'),
+      ).thenAnswer((_) async => const [wallet]);
+      when(
+        () => repo.getTransactionsInfinite(
+          wsId: 'filters-home',
+          walletId: wallet.id,
+          query: filters,
+        ),
+      ).thenAnswer((_) async => _page('filtered'));
+      when(
+        () => repo.getTransactionStats(
+          wsId: 'filters-home',
+          walletId: wallet.id,
+          filters: filters,
+        ),
+      ).thenAnswer(
+        (_) async => const TransactionStats(
+          totalTransactions: 8,
+          totalIncome: 0,
+          totalExpense: -150,
+          netTotal: -150,
+        ),
+      );
+
+      final cubit = transactions();
+      addTearDown(cubit.close);
+      await cubit.load('filters-home');
+      final defaultKey = cubit.state.scopeKey;
+      await cubit.setFilters(query: filters, walletId: wallet.id);
+      await _settle();
+      expect(cubit.state.query, filters);
+      expect(cubit.state.walletId, wallet.id);
+      expect(cubit.state.scopeKey, isNot(defaultKey));
+      expect(store.writes.map((key) => key.value).toSet(), hasLength(2));
+      expect(cubit.state.transactions.single.id, 'filtered');
+      expect(cubit.state.flow?.expense, -150);
+      verify(
+        () => repo.getTransactionStats(
+          wsId: 'filters-home',
+          walletId: wallet.id,
+          filters: filters,
+        ),
+      ).called(1);
+
+      await cubit.load('filters-other');
+      expect(cubit.state.scopeKey, defaultKey);
+      expect(cubit.state.walletId, isNull);
+      expect(cubit.state.query, const FinanceTransactionQuery());
+      expect(cubit.state.transactions.single.id, 'default');
+    },
+  );
+
+  test('load restarts the capped scan through empty filtered pages', () async {
+    const ws = 'empty-filter-pages';
+    const query = FinanceTransactionQuery(
+      kind: FinanceTransactionKind.transfer,
+    );
+    var requests = 0;
+    var found = false;
+    for (var page = 0; page <= 5; page++) {
+      when(
+        () => repo.getTransactionsInfinite(
+          wsId: ws,
+          query: query,
+          cursor: page == 0 ? null : 'page-$page',
+        ),
+      ).thenAnswer((_) async {
+        requests++;
+        if (found && page == 1) return _page('visible');
+        return InfiniteTransactionResponse(
+          data: const [],
+          hasMore: true,
+          nextCursor: 'page-${page + 1}',
+        );
+      });
+    }
+    final cubit = transactions();
+    addTearDown(cubit.close);
+    await cubit.load(ws);
+    final scanned = cubit.stream.firstWhere(
+      (state) => state.cursor == 'page-6',
+    );
+    await cubit.setFilters(query: query, walletId: null);
+    await scanned;
+    await _settle();
+    expect(requests, 6);
+    expect(cubit.state.transactions, isEmpty);
+
+    found = true;
+    final match = cubit.stream.firstWhere(
+      (state) => state.transactions.isNotEmpty,
+    );
+    await cubit.load(ws, forceRefresh: true);
+    expect((await match).transactions.single.id, 'visible');
+    expect(requests, 8);
+  });
+
+  test('typing a search clears only the month from the request', () async {
+    const ws = 'search-dates';
+    const query = FinanceTransactionQuery(categoryId: 'food');
+    when(
+      () => repo.getTransactionsInfinite(
+        wsId: ws,
+        query: FinanceTransactionQuery.month(
+          DateTime(2026, 11),
+          categoryId: 'food',
+        ),
+      ),
+    ).thenAnswer((_) async => _page('current'));
+    when(
+      () => repo.getTransactionsInfinite(wsId: ws, query: query, search: 'tea'),
+    ).thenAnswer((_) async => _page('older'));
+    final cubit = transactions();
+    addTearDown(cubit.close);
+    await cubit.load(ws);
+    await cubit.setFilters(
+      query: FinanceTransactionQuery.month(
+        DateTime(2026, 11),
+        categoryId: 'food',
+      ),
+      walletId: null,
+    );
+    await cubit.setSearch('tea');
+    expect(cubit.state.query, query);
+    expect(cubit.state.transactions.single.id, 'older');
+  });
 
   test('finance discards an old workspace success and cache write', () async {
     final delayed = Completer<List<Wallet>>();

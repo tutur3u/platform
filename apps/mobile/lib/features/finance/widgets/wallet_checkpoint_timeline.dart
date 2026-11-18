@@ -63,7 +63,8 @@ class _TimelineList extends StatelessWidget {
                           ),
                         ),
                         const shad.Gap(4),
-                        Text(
+                        FinanceMaskedText(
+                          context,
                           maskFinanceValue(
                             formatCurrency(checkpoint.actualBalance, currency),
                             showAmounts: showAmounts,

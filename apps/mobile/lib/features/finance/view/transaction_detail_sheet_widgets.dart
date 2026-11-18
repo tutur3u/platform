@@ -30,6 +30,7 @@ class _TransactionSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final amount = transaction.amount;
+    final hiddenAmount = showAmounts ? null : l10n.financeHiddenAmount;
     final transfer = transaction.transfer;
     final currency = transaction.walletCurrency ?? workspaceCurrency;
     final walletName = transaction.walletName ?? '—';
@@ -47,6 +48,9 @@ class _TransactionSummaryCard extends StatelessWidget {
     return AppSummaryHero(
       eyebrow: title,
       headline: _money(amount, currency),
+      headlineSemanticsLabel: amount == null
+          ? l10n.financeHiddenAmount
+          : hiddenAmount,
       icon: resolveTransactionCategoryIcon(transaction),
       tone: transaction.isTransfer
           ? AppTone.primary
@@ -61,11 +65,13 @@ class _TransactionSummaryCard extends StatelessWidget {
           AppHeroFact(
             label: transfer!.linkedWalletName,
             value: _money(transfer.linkedAmount, linkedCurrency),
+            valueSemanticsLabel: hiddenAmount,
           )
         else if (converted != null)
           AppHeroFact(
             label: workspaceCurrency,
             value: _money(converted, workspaceCurrency, approximate: true),
+            valueSemanticsLabel: hiddenAmount,
           ),
         if (!transaction.isTransfer && transaction.walletName != null)
           AppHeroFact(label: l10n.financeWallet, value: walletName),
@@ -294,4 +300,89 @@ class _DetailChip extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PreviewChip extends StatelessWidget {
+  const _PreviewChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const shad.Gap(4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 148),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: shad.Theme.of(context).typography.xSmall.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+List<Widget> _transactionPrivacyChips(
+  BuildContext context,
+  Transaction transaction,
+) {
+  final l10n = context.l10n;
+  final theme = shad.Theme.of(context);
+  final excludedReportColor = theme.colorScheme.mutedForeground.withValues(
+    alpha: 0.72,
+  );
+  return [
+    if (transaction.reportOptIn == true)
+      _DetailChip(
+        icon: Icons.insights_outlined,
+        label: l10n.financeReportOptIn,
+        color: theme.colorScheme.primary,
+      )
+    else
+      _DetailChip(
+        icon: Icons.insights_outlined,
+        label: l10n.financeExcludedFromReports,
+        color: excludedReportColor,
+      ),
+    if (transaction.isAmountConfidential == true)
+      _DetailChip(
+        icon: Icons.visibility_off_outlined,
+        label: l10n.financeConfidentialAmount,
+        color: theme.colorScheme.destructive,
+      ),
+    if (transaction.isDescriptionConfidential == true)
+      _DetailChip(
+        icon: Icons.notes_outlined,
+        label: l10n.financeConfidentialDescription,
+        color: theme.colorScheme.destructive,
+      ),
+    if (transaction.isCategoryConfidential == true)
+      _DetailChip(
+        icon: Icons.category_outlined,
+        label: l10n.financeConfidentialCategory,
+        color: theme.colorScheme.destructive,
+      ),
+  ];
 }

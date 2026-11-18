@@ -13,6 +13,7 @@ import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/finance_overview_balances.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
@@ -58,14 +59,14 @@ Future<void> _reload(BuildContext context, {bool retainError = false}) async {
 }
 
 class FinancePage extends StatelessWidget {
-  const FinancePage({this.reports = false, super.key});
+  const FinancePage({this.repository, super.key});
 
-  final bool reports;
+  final FinanceRepository? repository;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => FinanceRepository(),
+      create: (_) => repository ?? FinanceRepository(),
       child: BlocProvider(
         create: (context) {
           final cubit = FinanceCubit(
@@ -82,24 +83,20 @@ class FinancePage extends StatelessWidget {
           unawaited(CacheWarmupCoordinator.instance.prewarmModule('finance'));
           return cubit;
         },
-        child: _FinanceView(reports: reports),
+        child: const _FinanceView(),
       ),
     );
   }
 }
 
 class _FinanceView extends StatelessWidget {
-  const _FinanceView({required this.reports});
-
-  final bool reports;
+  const _FinanceView();
 
   @override
   Widget build(BuildContext context) {
     final showAmounts = financeAmountsVisible(context);
-    final location = reports ? Routes.financeReports : Routes.finance;
-    final title = reports
-        ? context.l10n.financeReports
-        : context.l10n.navFinance;
+    const location = Routes.finance;
+    final title = context.l10n.navFinance;
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (prev, curr) =>
           prev.currentWorkspace?.id != curr.currentWorkspace?.id,
@@ -115,28 +112,27 @@ class _FinanceView extends StatelessWidget {
           children: [
             ShellTitleOverride(
               ownerId: location,
-              locations: {location},
+              locations: const {location},
               title: title,
               showLeadingBrand: false,
               showAvatar: false,
             ),
             ShellChromeActions(
               ownerId: location,
-              locations: {location},
+              locations: const {location},
               actions: [
+                ShellActionSpec(
+                  id: 'finance-search',
+                  icon: LucideIcons.search,
+                  tooltip: context.l10n.commonSearch,
+                  onPressed: () =>
+                      context.push('${Routes.transactions}?search=1'),
+                ),
                 financeAmountVisibilityAction(
                   context,
                   showAmounts: showAmounts,
                 ),
-                if (!reports)
-                  ShellActionSpec(
-                    id: 'finance-search',
-                    icon: LucideIcons.search,
-                    tooltip: context.l10n.commonSearch,
-                    onPressed: () =>
-                        context.push('${Routes.transactions}?search=1'),
-                  ),
-                if (!reports)
+                if (canManageFinance(context, 'create_transactions'))
                   ShellActionSpec(
                     id: 'finance-create',
                     icon: AppIcons.add,
@@ -169,34 +165,14 @@ class _FinanceView extends StatelessWidget {
     }
     return NovaRefreshIndicator(
       onRefresh: () => _reload(context, retainError: true),
-      child: reports
-          ? _reportsBody(context, state)
-          : FinanceOverviewContent(
-              state: state,
-              onTransactionTap: (transaction) =>
-                  _openTransaction(context, state, transaction),
-              onCreate: () => _create(context, state),
-            ),
-    );
-  }
-
-  Widget _reportsBody(BuildContext context, FinanceState state) {
-    final flow = state.monthFlow;
-    if (flow == null && !state.isLoadingMonthFlow && !state.isRefreshing) {
-      return FinanceProblemView(
-        problem: FinanceProblem.error,
-        onRetry: () => unawaited(_reload(context)),
-      );
-    }
-    return AppPageListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        FinanceMonthSummary(
-          flow: flow,
-          month: DateTime.now(),
-          loading: state.isLoadingMonthFlow,
-        ),
-      ],
+      child: FinanceOverviewContent(
+        state: state,
+        onTransactionTap: (transaction) =>
+            _openTransaction(context, state, transaction),
+        onCreate: canManageFinance(context, 'create_transactions')
+            ? () => _create(context, state)
+            : null,
+      ),
     );
   }
 }
@@ -214,7 +190,7 @@ class FinanceOverviewContent extends StatelessWidget {
 
   final FinanceState state;
   final ValueChanged<Transaction> onTransactionTap;
-  final VoidCallback onCreate;
+  final VoidCallback? onCreate;
 
   /// Reference time for the month heading and day labels; defaults to now.
   final DateTime? now;
@@ -285,7 +261,7 @@ class _Recent extends StatelessWidget {
   final FinanceState state;
   final DateTime now;
   final ValueChanged<Transaction> onTransactionTap;
-  final VoidCallback onCreate;
+  final VoidCallback? onCreate;
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +321,7 @@ Future<void> _openTransaction(
 ) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId == null) return;
-  await openTransactionDetailSheet(
+  final changed = await openTransactionDetailSheet(
     context,
     wsId: wsId,
     transaction: transaction,
@@ -353,5 +329,9 @@ Future<void> _openTransaction(
     workspaceCurrency: state.workspaceCurrency,
     exchangeRates: state.exchangeRates,
   );
-  if (context.mounted) await _reload(context);
+  if (context.mounted &&
+      changed &&
+      context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId) {
+    await _reload(context);
+  }
 }

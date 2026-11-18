@@ -3923,9 +3923,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get financeBudgetAlertHint => 'Set the spending threshold for alerts.';
-
-  @override
   String get financeBudgetAmountRequired => 'Enter a limit greater than zero';
 
   @override
@@ -3969,6 +3966,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeBudgetDescriptionPlaceholder => 'What this budget covers';
+
+  @override
+  String get financeBudgetDeleteFailed => 'Could not delete the budget';
+
+  @override
+  String financeMonthlyBudgetScope(String currency) {
+    return 'Active monthly budgets in $currency';
+  }
 
   @override
   String get financeBudgetName => 'Budget name';
@@ -4048,12 +4053,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeRecent => 'Recent activity';
-
-  @override
-  String get financeReports => 'Reports';
-
-  @override
-  String get financeThisMonth => 'This month';
 
   @override
   String get financeTotal => 'Total';

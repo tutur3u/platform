@@ -34,6 +34,7 @@ class AppStatTile extends StatelessWidget {
   const AppStatTile({
     required this.label,
     required this.value,
+    this.valueSemanticsLabel,
     this.icon,
     this.tone = AppTone.neutral,
     this.caption,
@@ -46,6 +47,7 @@ class AppStatTile extends StatelessWidget {
 
   final String label;
   final String value;
+  final String? valueSemanticsLabel;
   final IconData? icon;
 
   /// Tints the icon tile and the progress meter. The value stays in the
@@ -97,6 +99,7 @@ class AppStatTile extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               value,
+              semanticsLabel: valueSemanticsLabel,
               maxLines: 1,
               style: type.x2Large.copyWith(
                 color: c.foreground,

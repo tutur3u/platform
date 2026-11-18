@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -24,7 +29,6 @@ import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/utils/finance_flow.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
-import 'package:mobile/features/finance/view/finance_overview_month.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/finance/view/finance_secondary_pages.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
@@ -41,6 +45,43 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
+
+/// Waits for views that finish publishing their cache on real disk I/O.
+Future<void> pumpFinanceUntilVisible(WidgetTester tester, Finder target) async {
+  final deadline = DateTime.now().add(const Duration(seconds: 5));
+  while (target.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump(const Duration(milliseconds: 16));
+  }
+  expect(target, findsWidgets);
+}
+
+const _sceneWorkspaceId = 'fixture-finance';
+
+Future<void> seedFinanceSceneCache() async {
+  final repository = FinanceSceneRepository();
+  final categories = await repository.getCategories(_sceneWorkspaceId);
+  final snapshots = {
+    'finance.wallets': _wallets.map((wallet) => wallet.toJson()).toList(),
+    'finance.categories': categories
+        .map((category) => category.toJson())
+        .toList(),
+  };
+  for (final MapEntry(key: namespace, value: payload) in snapshots.entries) {
+    await CacheStore.instance.write(
+      key: CacheKey(
+        namespace: namespace,
+        userId: currentCacheUserId(),
+        workspaceId: _sceneWorkspaceId,
+        locale: currentCacheLocaleTag(),
+      ),
+      policy: CachePolicies.moduleData,
+      payload: payload,
+    );
+  }
+}
 
 final financeSceneDate = DateTime(2026, 11, 18, 9, 30);
 
@@ -71,7 +112,12 @@ class FinanceSceneRepository extends FinanceRepository {
 
   @override
   Future<List<TransactionCategory>> getCategories(String wsId) async => const [
-    TransactionCategory(id: 'food', name: 'Groceries', icon: 'ShoppingCart'),
+    TransactionCategory(
+      id: 'food',
+      name: 'Groceries',
+      icon: 'ShoppingCart',
+      amount: 420000,
+    ),
     TransactionCategory(id: 'home', name: 'Home', icon: 'House'),
     TransactionCategory(id: 'transport', name: 'Transport', icon: 'Car'),
     TransactionCategory(id: 'coffee', name: 'Coffee', icon: 'Coffee'),
@@ -117,6 +163,7 @@ class FinanceSceneRepository extends FinanceRepository {
     required String wsId,
     String? walletId,
     String? search,
+    FinanceTransactionQuery filters = const FinanceTransactionQuery(),
   }) async => const TransactionStats(
     totalTransactions: 3,
     totalIncome: 32000000,
@@ -137,6 +184,7 @@ class FinanceSceneRepository extends FinanceRepository {
         amount: 5000000,
         spent: 3250000,
         startDate: DateTime(2026, 11),
+        walletId: 'wallet-vnd',
         categoryId: 'food',
       ),
       FinanceBudget(
@@ -145,6 +193,7 @@ class FinanceSceneRepository extends FinanceRepository {
         amount: 2500000,
         spent: 800000,
         startDate: DateTime(2026, 11),
+        walletId: 'wallet-vnd',
         categoryId: 'transport',
       ),
     ],
@@ -269,7 +318,6 @@ enum FinanceScene {
   walletDetail('Everyday', Routes.walletDetail),
   checkpoints('Checkpoints', Routes.financeCheckpoints),
   categories('Categories', Routes.categories),
-  reports('Reports', Routes.financeReports),
   manage('Manage', Routes.financeManage);
 
   const FinanceScene(this.title, this.route);
@@ -282,11 +330,13 @@ class FinanceScreenScene extends StatefulWidget {
   const FinanceScreenScene({
     required this.scene,
     this.showAmounts = false,
+    this.page,
     super.key,
   });
 
   final FinanceScene scene;
   final bool showAmounts;
+  final Widget? page;
 
   @override
   State<FinanceScreenScene> createState() => _FinanceScreenSceneState();
@@ -304,7 +354,7 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
   void initState() {
     super.initState();
     when(() => _workspace.state).thenReturn(
-      const WorkspaceState(currentWorkspace: Workspace(id: 'fixture-finance')),
+      const WorkspaceState(currentWorkspace: Workspace(id: _sceneWorkspaceId)),
     );
     when(() => _workspace.stream).thenAnswer((_) => const Stream.empty());
     unawaited(_preferences.load());
@@ -387,14 +437,6 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
     FinanceScene.categories => TransactionCategoriesPage(
       repository: _repository,
     ),
-    FinanceScene.reports => AppPageListView(
-      children: [
-        FinanceMonthSummary(
-          flow: financeSceneState.monthFlow,
-          month: financeSceneDate,
-        ),
-      ],
-    ),
     FinanceScene.manage => const FinanceManagePage(),
   };
 
@@ -432,7 +474,7 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
                     ),
                   ),
                 ),
-                child: _content(),
+                child: widget.page ?? _content(),
               ),
             ),
             Positioned(
@@ -448,21 +490,23 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
+                  if ({
+                    FinanceScene.overview,
+                    FinanceScene.transactions,
+                    FinanceScene.wallets,
+                  }.contains(scene))
+                    ShellTopBarButton(
+                      icon: const Icon(LucideIcons.search),
+                      onPressed: () {},
+                    ),
                   ShellTopBarButton(
+                    key: const ValueKey('finance-scene-eye'),
                     icon: Icon(
                       widget.showAmounts ? LucideIcons.eye : LucideIcons.eyeOff,
                     ),
                     highlighted: !widget.showAmounts,
                     onPressed: _preferences.toggleShowAmounts,
                   ),
-                  if ({
-                    FinanceScene.overview,
-                    FinanceScene.transactions,
-                  }.contains(scene))
-                    ShellTopBarButton(
-                      icon: const Icon(LucideIcons.search),
-                      onPressed: () {},
-                    ),
                   if ({
                     FinanceScene.overview,
                     FinanceScene.transactions,

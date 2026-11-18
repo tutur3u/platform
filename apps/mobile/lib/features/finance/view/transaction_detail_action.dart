@@ -8,6 +8,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_cache.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 
 Future<void> invalidateFinanceMutationCaches(String wsId) async {
@@ -27,10 +28,24 @@ Future<bool> openTransactionDetailSheet(
   String? workspaceCurrency,
   List<ExchangeRate>? exchangeRates,
 }) {
+  final confidential =
+      transaction.isAmountConfidential == true ||
+      transaction.isDescriptionConfidential == true ||
+      transaction.isCategoryConfidential == true;
+  bool canChange(String verb) =>
+      canManageFinance(context, '${verb}_transactions', listen: false) &&
+      (!confidential ||
+          canManageFinance(
+            context,
+            '${verb}_confidential_transactions',
+            listen: false,
+          ));
   return showTransactionDetailSheet(
     context,
     wsId: wsId,
     transaction: transaction,
+    canEdit: canChange('update'),
+    canDelete: canChange('delete'),
     repository: repository,
     workspaceCurrency: workspaceCurrency,
     exchangeRates: exchangeRates,

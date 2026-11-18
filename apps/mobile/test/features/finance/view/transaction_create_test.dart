@@ -108,9 +108,10 @@ Future<void> _enterAmount(WidgetTester tester) async {
   await _tap(tester, find.byKey(const ValueKey('money-source-surface')));
   await _tap(tester, _key('2'));
   await _tap(tester, _key('000'));
+  expect(find.text('2,000'), findsOneWidget);
+  await _tap(tester, _key('Done'));
   expect(find.text('2,000'), findsNothing);
   expect(find.text('••••••'), findsWidgets);
-  await _tap(tester, _key('Done'));
 }
 
 void main() {

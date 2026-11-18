@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -404,10 +405,23 @@ void main() {
   test(
     'transaction page and stats preserve encoded filters and server envelopes',
     () async {
+      final filters = FinanceTransactionQuery.month(
+        DateTime(2026, 9),
+        kind: FinanceTransactionKind.expense,
+        categoryId: _category,
+      );
       respond = (request) async {
         expect(request.url.queryParameters['q'], 'rent & food');
         expect(request.url.queryParameters['walletId'], _wallet);
         if (request.url.path.endsWith('/stats')) {
+          for (final key in [
+            'start',
+            'end',
+            'transactionType',
+            'categoryIds',
+          ]) {
+            expect(request.url.queryParameters[key], filters.toParams()[key]);
+          }
           return json({
             'totalTransactions': 1,
             'totalIncome': 0,
@@ -438,6 +452,7 @@ void main() {
         wsId: _ws,
         search: 'rent & food',
         walletId: _wallet,
+        filters: filters,
       );
       expect(stats.totalExpense, 12);
       expect(stats.totalTransactions, 1);

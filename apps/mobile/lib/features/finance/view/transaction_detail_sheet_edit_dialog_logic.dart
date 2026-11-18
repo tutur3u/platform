@@ -60,11 +60,7 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       _sourceAmountFocusNode.hasFocus || _destinationAmountFocusNode.hasFocus;
 
   bool _isMoneyFieldActive(_MoneyFieldTarget target) =>
-      _activeMoneyField == target &&
-      switch (target) {
-        _MoneyFieldTarget.source => true,
-        _MoneyFieldTarget.destination => _canEditDestinationAmount,
-      };
+      _activeMoneyField == target && _activeMoneyFocusNode.hasFocus;
 
   void _setActiveMoneyField(_MoneyFieldTarget target) {
     final nextTarget =
@@ -784,7 +780,9 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
   );
 
   String _formattedMoneyFieldLabel(_MoneyFieldTarget target) {
-    if (!financeAmountsVisible(context)) return financeMaskedAmountPlaceholder;
+    if (!financeAmountsVisible(context) && !_isMoneyFieldActive(target)) {
+      return financeMaskedAmountPlaceholder;
+    }
     final currency = switch (target) {
       _MoneyFieldTarget.source => _selectedCurrency,
       _MoneyFieldTarget.destination => _selectedDestinationCurrency,
@@ -794,20 +792,14 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
       _MoneyFieldTarget.destination => _destinationAmountController.text.trim(),
     };
     if (rawText.isEmpty) return '';
-    if (containsAmountOperator(
+    final hasExpression = containsAmountOperator(
       rawText,
       decimalSeparator: _localeDecimalSeparator,
       groupingSeparator: _localeGroupingSeparator,
-    )) {
-      return formatAmountExpressionPreview(
-        rawText,
-        currencyCode: currency,
-        decimalSeparator: _localeDecimalSeparator,
-        groupingSeparator: _localeGroupingSeparator,
-        locale: Localizations.localeOf(context).toString(),
-      );
-    }
-    final parsed = _parseAmount(rawText, currencyCode: currency);
+    );
+    final parsed = hasExpression
+        ? null
+        : _parseAmount(rawText, currencyCode: currency);
     if (parsed == null) {
       return formatAmountExpressionPreview(
         rawText,

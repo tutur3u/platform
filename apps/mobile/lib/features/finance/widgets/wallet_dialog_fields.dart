@@ -243,7 +243,7 @@ class _WalletFieldLabel extends StatelessWidget {
   }
 }
 
-class _WalletTextField extends StatelessWidget {
+class _WalletTextField extends StatefulWidget {
   const _WalletTextField({
     required this.controller,
     required this.placeholder,
@@ -251,7 +251,7 @@ class _WalletTextField extends StatelessWidget {
     this.keyboardType,
     this.autofocus = false,
     this.errorText,
-    this.obscureText = false,
+    this.privateAmount = false,
   });
   final TextEditingController controller;
   final String placeholder;
@@ -259,26 +259,39 @@ class _WalletTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final bool autofocus;
   final String? errorText;
-  final bool obscureText;
+  final bool privateAmount;
+
+  @override
+  State<_WalletTextField> createState() => _WalletTextFieldState();
+}
+
+class _WalletTextFieldState extends State<_WalletTextField> {
+  bool _editing = false;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        shad.TextField(
-          selectionControls: platformTextSelectionControls(),
-          contextMenuBuilder: platformTextContextMenuBuilder(),
-          controller: controller,
-          placeholder: Text(placeholder),
-          keyboardType: keyboardType,
-          autofocus: autofocus,
-          onChanged: onChanged,
-          obscureText: obscureText,
+        Focus(
+          onFocusChange: (value) => setState(() => _editing = value),
+          child: shad.TextField(
+            selectionControls: platformTextSelectionControls(),
+            contextMenuBuilder: platformTextContextMenuBuilder(),
+            controller: widget.controller,
+            placeholder: Text(widget.placeholder),
+            keyboardType: widget.keyboardType,
+            autofocus: widget.autofocus,
+            onChanged: widget.onChanged,
+            obscureText:
+                widget.privateAmount &&
+                !_editing &&
+                !financeAmountsVisible(context),
+          ),
         ),
-        if (errorText != null) ...[
+        if (widget.errorText != null) ...[
           const shad.Gap(4),
-          _WalletFieldErrorText(message: errorText!),
+          _WalletFieldErrorText(message: widget.errorText!),
         ],
       ],
     );

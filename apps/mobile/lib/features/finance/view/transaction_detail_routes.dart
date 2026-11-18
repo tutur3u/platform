@@ -7,20 +7,28 @@ Future<bool> showTransactionDetailSheet(
   required FinanceRepository repository,
   required TransactionSaveHandler onSave,
   required Future<void> Function(String transactionId) onDelete,
+  bool canEdit = true,
+  bool canDelete = true,
   String? workspaceCurrency,
   List<ExchangeRate>? exchangeRates,
 }) async {
+  final preferences = context.read<FinancePreferencesCubit?>();
+  final sheet = _TransactionDetailSheet(
+    wsId: wsId,
+    transaction: transaction,
+    repository: repository,
+    onSave: onSave,
+    onDelete: onDelete,
+    canEdit: canEdit,
+    canDelete: canDelete,
+    workspaceCurrency: workspaceCurrency,
+    exchangeRates: exchangeRates,
+  );
   final result = await showAdaptiveSheet<bool>(
     context: context,
-    builder: (_) => _TransactionDetailSheet(
-      wsId: wsId,
-      transaction: transaction,
-      repository: repository,
-      onSave: onSave,
-      onDelete: onDelete,
-      workspaceCurrency: workspaceCurrency,
-      exchangeRates: exchangeRates,
-    ),
+    builder: (_) => preferences == null
+        ? sheet
+        : BlocProvider.value(value: preferences, child: sheet),
   );
 
   return result == true;
@@ -60,6 +68,21 @@ Future<T?> _showTransactionComposerRoute<T>(
 }
 
 extension on _TransactionDetailSheetState {
+  Widget _deleteButton(BuildContext context) {
+    final l10n = context.l10n;
+    return shad.DestructiveButton(
+      onPressed: _showDeleteConfirmation,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.delete_outline, size: 16),
+          const shad.Gap(8),
+          Text(l10n.financeDeleteTransaction),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showEditDialog() async {
     final rootNav = Navigator.of(context, rootNavigator: true);
     final toastContext = rootNav.context;

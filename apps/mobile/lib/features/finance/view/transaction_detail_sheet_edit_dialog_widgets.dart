@@ -71,7 +71,7 @@ class _PrimaryAmountComposer extends StatelessWidget {
     return Semantics(
       button: true,
       focused: isFocused,
-      label: '$currencyCode $amountLabel',
+      label: currencyCode,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
@@ -135,7 +135,8 @@ class _PrimaryAmountComposer extends StatelessWidget {
                 ],
               ),
               const shad.Gap(14),
-              Text(
+              FinanceMaskedText(
+                context,
                 hasAmount ? amountLabel : placeholderLabel,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -393,48 +394,6 @@ class _MoneyKeypadButton extends StatelessWidget {
                   ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _PreviewChip extends StatelessWidget {
-  const _PreviewChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const shad.Gap(4),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 148),
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: shad.Theme.of(context).typography.xSmall.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -36,6 +36,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Payment date'), findsOneWidget);
+    final limit = find.byWidgetPredicate(
+      (widget) =>
+          widget is EditableText &&
+          widget.keyboardType ==
+              const TextInputType.numberWithOptions(decimal: true),
+    );
+    await tester.ensureVisible(limit);
+    expect(tester.widget<EditableText>(limit).obscureText, isTrue);
+    await tester.enterText(limit, '250');
+    await tester.pump();
+    expect(tester.widget<EditableText>(limit).obscureText, isFalse);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    expect(tester.widget<EditableText>(limit).obscureText, isTrue);
     expect(tester.takeException(), isNull);
   });
 }

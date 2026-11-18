@@ -12,7 +12,9 @@ extension on _TransactionFormDialogState {
         _selectedDestinationCurrency,
       ),
     };
-    if (!showAmounts) return financeMaskedAmountPlaceholder;
+    if (!showAmounts && !_isMoneyFieldActive(target)) {
+      return financeMaskedAmountPlaceholder;
+    }
     if (controller.text.trim().isEmpty) return '0';
     final preview = formatAmountExpressionPreview(
       controller.text,
@@ -180,7 +182,8 @@ class _CreateAmount extends StatelessWidget {
               constraints: const BoxConstraints(minHeight: 48, minWidth: 80),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text(
+                child: FinanceMaskedText(
+                  context,
                   amount,
                   style: tokens.typography.numeric.copyWith(
                     color: focused ? colors.ring : colors.foreground,
@@ -216,6 +219,7 @@ class _CreateDetailValue extends StatelessWidget {
     ),
     child: Text(
       value,
+      semanticsLabel: financeAmountSemantics(context, value),
       textAlign: TextAlign.end,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,

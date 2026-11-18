@@ -12,6 +12,7 @@ import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
@@ -114,10 +115,6 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         },
         child: Stack(
           children: [
-            FinanceAmountVisibilityShellAction(
-              ownerId: 'finance-wallet-detail-amount-visibility',
-              locations: {location},
-            ),
             ShellTitleOverride(
               ownerId: 'finance-wallet-detail',
               locations: {location},
@@ -183,7 +180,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                       workspaceCurrency: _workspaceCurrency,
                                       exchangeRates: _exchangeRates,
                                       showAmounts: showAmounts,
-                                      onEdit: _isLoadingInitial
+                                      onEdit:
+                                          _isLoadingInitial ||
+                                              !canManageFinance(
+                                                context,
+                                                'update_wallets',
+                                              )
                                           ? null
                                           : _onEditWallet,
                                       onOpenCheckpoints: () => context.push(
@@ -199,12 +201,18 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                                     title: l10n.financeNoTransactions,
                                     body:
                                         l10n.financeOverviewNoTransactionsBody,
-                                    action: shad.SecondaryButton(
-                                      onPressed: _onCreateTransaction,
-                                      child: Text(
-                                        l10n.financeAddFirstTransaction,
-                                      ),
-                                    ),
+                                    action:
+                                        canManageFinance(
+                                          context,
+                                          'create_transactions',
+                                        )
+                                        ? shad.SecondaryButton(
+                                            onPressed: _onCreateTransaction,
+                                            child: Text(
+                                              l10n.financeAddFirstTransaction,
+                                            ),
+                                          )
+                                        : null,
                                   ),
                                   onTransactionTap: _openTransaction,
                                 ),
@@ -213,11 +221,17 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                 ),
               ],
             ),
-            if (wallet != null && !_isLoadingInitial)
-              ShellChromeActions(
-                ownerId: 'finance-wallet-detail',
-                locations: {location},
-                actions: [
+            ShellChromeActions(
+              ownerId: 'finance-wallet-detail',
+              locations: {location},
+              actions: [
+                financeAmountVisibilityAction(
+                  context,
+                  showAmounts: showAmounts,
+                ),
+                if (wallet != null &&
+                    !_isLoadingInitial &&
+                    canManageFinance(context, 'create_transactions'))
                   ShellActionSpec(
                     id: 'finance-wallet-create-transaction',
                     icon: Icons.add,
@@ -225,8 +239,8 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                     filled: true,
                     onPressed: _onCreateTransaction,
                   ),
-                ],
-              ),
+              ],
+            ),
           ],
         ),
       ),
@@ -477,7 +491,7 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
 
-    await openTransactionDetailSheet(
+    final changed = await openTransactionDetailSheet(
       context,
       wsId: wsId,
       transaction: transaction,
@@ -486,7 +500,11 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       exchangeRates: _exchangeRates,
     );
 
-    if (!mounted) return;
+    if (!mounted ||
+        !changed ||
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
+      return;
+    }
     await _loadInitial(showLoader: false);
   }
 

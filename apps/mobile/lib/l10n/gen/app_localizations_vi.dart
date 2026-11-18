@@ -3897,9 +3897,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get financeBudgetAlertHint => 'Đặt ngưỡng chi tiêu để nhận cảnh báo.';
-
-  @override
   String get financeBudgetAmountRequired => 'Nhập hạn mức lớn hơn không';
 
   @override
@@ -3937,6 +3934,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeBudgetDescriptionPlaceholder => 'Các khoản chi trong ngân sách này';
+
+  @override
+  String get financeBudgetDeleteFailed => 'Không thể xóa ngân sách';
+
+  @override
+  String financeMonthlyBudgetScope(String currency) {
+    return 'Ngân sách hằng tháng đang hoạt động bằng $currency';
+  }
 
   @override
   String get financeBudgetName => 'Tên ngân sách';
@@ -4016,12 +4021,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeRecent => 'Hoạt động gần đây';
-
-  @override
-  String get financeReports => 'Báo cáo';
-
-  @override
-  String get financeThisMonth => 'Tháng này';
 
   @override
   String get financeTotal => 'Tổng';
