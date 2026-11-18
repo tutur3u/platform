@@ -120,7 +120,7 @@ extension _MailReaderBody on _MailReaderState {
       message['recipients'],
     ).where((row) => row['kind'] == 'to').firstOrNull;
     final address = first?['address'] as String?;
-    return MailRecipientSummary(
+    return MailReaderRecipientLine(
       address: address,
       name: first?['displayName'] as String?,
       profile: _person(address),
@@ -151,10 +151,11 @@ extension _MailReaderBody on _MailReaderState {
                   _expandedMessages[message['id'] as String] = expanded,
               tilePadding: EdgeInsets.zero,
               dense: true,
-              title: MailReaderIdentity(
+              title: MailReaderSenderRow(
                 address: message['fromAddress'] as String? ?? '',
                 name: message['fromName'] as String?,
                 profile: _person(message['fromAddress'] as String?),
+                date: mailMessageDate(message),
               ),
               subtitle: _recipientSummary(message),
               children: [

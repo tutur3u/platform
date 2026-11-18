@@ -4,10 +4,12 @@ import 'package:mobile/features/mail/view/mail_message_date.dart';
 import 'package:mobile/features/mail/view/mail_reader_identity.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Compact "To" recipient and localized date shown under a message sender.
+/// Compact "To" recipient under a message sender, followed by the localized
+/// date when the sender row has no room for it.
 ///
-/// Each line keeps its own vertical clearance so the sender above and the
-/// message details panel below never touch the recipient or the date.
+/// The date sits on the To line when both fit, and wraps below it with
+/// [lineGap] of clearance otherwise. The sender above and the message
+/// details panel below never touch the recipient or the date.
 class MailRecipientSummary extends StatelessWidget {
   const MailRecipientSummary({
     required this.address,
@@ -25,10 +27,13 @@ class MailRecipientSummary extends StatelessWidget {
   /// Clearance between the sender row and the recipient row.
   static const double topGap = AppSpacing.sm;
 
-  /// Clearance between the recipient row and the date.
+  /// Clearance between the recipient row and a date wrapped below it.
   static const double lineGap = AppSpacing.sm;
 
-  /// Clearance between the date and the following details panel.
+  /// Gap between the recipient and a date on the same line.
+  static const double dateGap = AppSpacing.md;
+
+  /// Clearance between the summary and the following details panel.
   static const double bottomGap = AppSpacing.md;
 
   @override
@@ -38,13 +43,16 @@ class MailRecipientSummary extends StatelessWidget {
     final to = address;
     return Padding(
       padding: const EdgeInsets.only(top: topGap, bottom: bottomGap),
-      child: Column(
+      child: Wrap(
         key: const ValueKey('mail-recipient-summary'),
-        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: dateGap,
+        runSpacing: lineGap,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           if (to != null && to.isNotEmpty)
             Row(
               key: const ValueKey('mail-recipient-row'),
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   context.l10n.mailTo,
@@ -61,14 +69,12 @@ class MailRecipientSummary extends StatelessWidget {
                 ),
               ],
             ),
-          if (date case final value?) ...[
-            if (to != null && to.isNotEmpty) const SizedBox(height: lineGap),
+          if (date case final value?)
             Text(
               formatMailMessageDate(context, value),
               key: const ValueKey('mail-recipient-date'),
               style: theme.textTheme.bodyMedium?.copyWith(color: muted),
             ),
-          ],
         ],
       ),
     );

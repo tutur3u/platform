@@ -83,6 +83,13 @@ wide layouts, the first Back (dock, rail or system) and Escape close the pane;
 the next Back leaves Mail. The pane header carries the subject and message
 actions; the shell navbar and dock keep the inbox title, filters and actions.
 
+Each message header shows the sender on the left and its date right-aligned
+on the same row, with the To recipient directly below. The sender name
+truncates before the date. When the row cannot keep 120dp for the sender
+(narrow widths or large text), the date follows the To recipient instead, on
+its line when it fits and wrapped below it otherwise. Coverage:
+`mail_reader_header_test.dart` and `mail_recipient_summary_test.dart`.
+
 Opening never waits for the network. The reader renders the inbox row's
 subject, participants and snippet in the opening frame, then hydrates from the
 in-memory preview store, the encrypted Mail cache, or one detail request (one

@@ -12,27 +12,50 @@ void main() {
     WidgetTester tester, {
     String? address = 'reader@example.test',
     DateTime? date,
+    double width = 800,
   }) => tester.pumpApp(
     Material(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(key: senderKey, height: 40),
-          MailRecipientSummary(
-            address: address,
-            name: 'Reader Name',
-            date: date ?? DateTime(2026, 11, 18, 5, 40),
+      child: Align(
+        alignment: Alignment.topLeft,
+        child: SizedBox(
+          width: width,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(key: senderKey, height: 40),
+              MailRecipientSummary(
+                address: address,
+                name: 'Reader Name',
+                date: date ?? DateTime(2026, 11, 18, 5, 40),
+              ),
+              const SizedBox(key: detailsKey, height: 48),
+            ],
           ),
-          const SizedBox(key: detailsKey, height: 48),
-        ],
+        ),
       ),
     ),
   );
 
-  testWidgets('To row and date keep vertical clearance on every side', (
+  testWidgets('date follows the recipient on the To line when it fits', (
     tester,
   ) async {
     await pump(tester);
+    await tester.pump();
+
+    final recipient = tester.getRect(
+      find.byKey(const ValueKey('mail-recipient-row')),
+    );
+    final date = tester.getRect(
+      find.byKey(const ValueKey('mail-recipient-date')),
+    );
+    expect(date.left - recipient.right, MailRecipientSummary.dateGap);
+    expect(date.center.dy, closeTo(recipient.center.dy, 0.5));
+  });
+
+  testWidgets('To row and a wrapped date keep vertical clearance', (
+    tester,
+  ) async {
+    await pump(tester, width: 220);
     await tester.pump();
 
     final sender = tester.getRect(find.byKey(senderKey));
