@@ -167,6 +167,22 @@ begin
 end;
 $$;
 
+-- CREATE OR REPLACE keeps existing grants; restate the execute boundary the
+-- chart RPCs had before this migration so it is explicit in this file.
+revoke all on function public.get_daily_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) from public, anon;
+grant execute on function public.get_daily_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) to authenticated, service_role;
+
+revoke all on function public.get_monthly_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) from public, anon;
+grant execute on function public.get_monthly_income_expense_range(
+  uuid, timestamp with time zone, timestamp with time zone, boolean
+) to authenticated, service_role;
+
 alter function public.get_transaction_categories_with_amount_by_workspace(uuid)
   set search_path = pg_catalog, pg_temp;
 
