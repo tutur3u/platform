@@ -22,7 +22,10 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
 import { z } from 'zod';
-import { getExternalAppById } from '@/lib/app-coordination/external-apps';
+import {
+  externalAppBearerRejectionResponse,
+  verifyExternalAppBearerIssuer,
+} from '@/lib/app-coordination/external-app-bearer';
 
 const DRIVE_READ_SCOPE = 'workspace:drive:read';
 const DRIVE_WRITE_SCOPE = 'workspace:drive:write';
@@ -146,8 +149,17 @@ export async function requireExternalAppWorkspaceDriveAccess({
   }
 
   const admin = (await createAdminClient()) as AdminDb;
-  const app = await getExternalAppById(verification.claims.target_app, admin);
-  if (!app?.enabled) return accessError('Forbidden', 403);
+  const issuer = await verifyExternalAppBearerIssuer({
+    admin,
+    claims: verification.claims,
+  });
+  if (!issuer.ok) {
+    return {
+      ok: false as const,
+      response: externalAppBearerRejectionResponse(issuer.reason),
+    };
+  }
+  const { app } = issuer;
 
   let normalizedWorkspaceId: string;
   try {

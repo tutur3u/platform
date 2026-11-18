@@ -111,6 +111,43 @@ describe('external app workspace Drive', () => {
     if (!missingScope.ok) expect(missingScope.response.status).toBe(403);
   });
 
+  it('denies bearers from a disabled app or minted before a secret rotation', async () => {
+    const request = new Request('https://tuturuuu.com', {
+      headers: { Authorization: 'Bearer app-token' },
+    });
+    const access = () =>
+      requireExternalAppWorkspaceDriveAccess({
+        request,
+        requiredScopes: ['workspace:drive:read'],
+        wsId: workspaceId,
+      });
+
+    mocks.getExternalAppById.mockResolvedValueOnce({ enabled: false });
+    const disabled = await access();
+    expect(disabled.ok).toBe(false);
+    if (!disabled.ok) expect(disabled.response.status).toBe(403);
+
+    mocks.getExternalAppById.mockResolvedValueOnce({
+      allowedWorkspaceIds: [workspaceId],
+      enabled: true,
+      id: 'cybershield35',
+      secretIssuedAt: '2026-11-01T00:00:00.000Z',
+    });
+    mocks.verifyToken.mockReturnValueOnce({
+      claims: {
+        iat: Date.parse('2026-10-31T23:59:00.000Z') / 1000,
+        scopes: ['workspace:drive:read'],
+        sub: '11111111-1111-4111-8111-111111111111',
+        target_app: 'cybershield35',
+      },
+      ok: true,
+    });
+    const rotated = await access();
+    expect(rotated.ok).toBe(false);
+    if (!rotated.ok) expect(rotated.response.status).toBe(401);
+    expect(mocks.verifyMembership).not.toHaveBeenCalled();
+  });
+
   it('isolates objects to the authenticated app chat namespace', () => {
     expect(isExternalAppChatDrivePath('cybershield35', path)).toBe(true);
     expect(isExternalAppChatDrivePath('another-app', path)).toBe(false);

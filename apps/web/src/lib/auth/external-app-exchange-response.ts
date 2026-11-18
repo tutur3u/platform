@@ -16,6 +16,35 @@ export type ExchangeUserProfile = {
   name: string | null;
 };
 
+/**
+ * Ceiling for an external-app bearer's lifetime, whatever the session policy
+ * says. Bearers cannot be revoked individually, so this bounds how long one
+ * outlives a logout, a removed membership or a leaked copy; the registry and
+ * membership are re-checked whenever the app refreshes.
+ */
+export const EXTERNAL_APP_BEARER_MAX_TTL_SECONDS = 900;
+
+export function getExternalAppBearerLifetime(
+  policy: Pick<
+    AppCoordinationSessionPolicy,
+    'externalAppBearerTtlSeconds' | 'internalAppRefreshEarlySeconds'
+  >
+) {
+  const ttlSeconds = Math.min(
+    policy.externalAppBearerTtlSeconds,
+    EXTERNAL_APP_BEARER_MAX_TTL_SECONDS
+  );
+
+  return {
+    // Leave most of the lifetime usable instead of refreshing on every call.
+    refreshEarlySeconds: Math.min(
+      policy.internalAppRefreshEarlySeconds,
+      Math.floor(ttlSeconds / 3)
+    ),
+    ttlSeconds,
+  };
+}
+
 export function createExchangeTokenBody({
   assurance,
   email,
@@ -41,11 +70,12 @@ export function createExchangeTokenBody({
   const assuranceClaims = assurance
     ? { aal: assurance.aal, amr: assurance.amr }
     : {};
+  const bearerLifetime = getExternalAppBearerLifetime(policy);
   const accessToken = createAppCoordinationToken({
     ...assuranceClaims,
     email,
     mfa: mfa ?? undefined,
-    expiresInSeconds: policy.externalAppBearerTtlSeconds,
+    expiresInSeconds: bearerLifetime.ttlSeconds,
     originApp: 'web',
     scopes,
     targetApp,
@@ -75,7 +105,7 @@ export function createExchangeTokenBody({
     },
     expiresAt: accessToken.expiresAt,
     expiresIn: accessToken.claims.exp - accessToken.claims.iat,
-    refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
+    refreshEarlySeconds: bearerLifetime.refreshEarlySeconds,
     refreshExpiresAt: refreshToken.expiresAt,
     refreshExpiresIn: refreshToken.claims.exp - refreshToken.claims.iat,
     refreshToken: refreshToken.token,

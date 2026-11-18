@@ -25,6 +25,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate as validateUUID } from 'uuid';
+import { rejectStaleExternalAppBearer } from '@/lib/app-coordination/external-app-bearer';
 import {
   getWorkspaceInviteStatus,
   type WorkspaceInvitationRecord,
@@ -64,6 +65,13 @@ export {
 } from './studio-setup';
 
 type AdminDb = TypedSupabaseClient;
+
+function deny(error: string, status: 401 | 403) {
+  return {
+    ok: false as const,
+    response: NextResponse.json({ error }, { status }),
+  };
+}
 
 type ExternalProjectAppTokenExchangeAuthorization =
   | {
@@ -397,20 +405,19 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
   }
 
   if (!verification.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   if (!appTokenHasRequiredScope(verification.claims, 'manage')) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
+  const appRejection = await rejectStaleExternalAppBearer(
+    admin,
+    verification.claims
+  );
+  if (appRejection) return { ok: false as const, response: appRejection };
   const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
     admin,
     userId: verification.claims.sub,
@@ -439,10 +446,7 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
   });
 
   if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   return {
@@ -481,10 +485,7 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
   }
 
   if (!verification.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
@@ -516,10 +517,7 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
   });
 
   if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   return {
@@ -560,20 +558,19 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
   }
 
   if (!verification.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   if (!appTokenHasRequiredScope(verification.claims, mode)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
+  const appRejection = await rejectStaleExternalAppBearer(
+    admin,
+    verification.claims
+  );
+  if (appRejection) return { ok: false as const, response: appRejection };
   const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
     admin,
     userId: verification.claims.sub,
@@ -609,10 +606,7 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
     hasRootExternalProjectsAdminPermission(rootPermissions);
 
   if (!allowed) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   const binding = await resolveWorkspaceExternalProjectBinding(
@@ -684,10 +678,7 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
   }
 
   if (!verification.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
@@ -726,10 +717,7 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
     hasRootExternalProjectsAdminPermission(rootPermissions);
 
   if (!allowed) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   const binding = await resolveWorkspaceExternalProjectBinding(
@@ -843,10 +831,7 @@ export async function requireWorkspaceExternalProjectSetupAccess({
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   const rootPermissions = await getPermissions({
@@ -855,10 +840,7 @@ export async function requireWorkspaceExternalProjectSetupAccess({
   });
 
   if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   return {
@@ -973,10 +955,7 @@ export async function requireWorkspaceExternalProjectAccess({
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
@@ -990,10 +969,7 @@ export async function requireWorkspaceExternalProjectAccess({
     hasRootExternalProjectsAdminPermission(rootPermissions);
 
   if (!allowed) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   const binding = await resolveWorkspaceExternalProjectBinding(
@@ -1030,10 +1006,7 @@ export async function requireWorkspaceExternalProjectMemberBootstrapAccess({
   wsId: string;
 }) {
   if (!getAppSessionTokenFromRequest(request)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   let verification: ReturnType<typeof verifyAppSessionRequest>;
@@ -1051,10 +1024,7 @@ export async function requireWorkspaceExternalProjectMemberBootstrapAccess({
   }
 
   if (!verification.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+    return deny('Unauthorized', 401);
   }
 
   const admin = (await createAdminClient()) as TypedSupabaseClient;
@@ -1088,10 +1058,7 @@ export async function requireWorkspaceExternalProjectMemberBootstrapAccess({
   }
 
   if (!hasRootExternalProjectsAdminPermission(rootPermissions)) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
-    };
+    return deny('Forbidden', 403);
   }
 
   return {

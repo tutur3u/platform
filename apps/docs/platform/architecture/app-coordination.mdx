@@ -209,7 +209,20 @@ CLI-only APIs.
 8. Tuturuuu validates the app secret and cross-app token, then returns a
    short-lived bearer token for Tuturuuu APIs plus the normalized authorized
    `workspaceId` and, when known, the session's `aal` and `amr` (see
-   [Session assurance](#session-assurance)).
+   [Session assurance](#session-assurance)). Bearers live at most 900 seconds;
+   refresh before `expiresIn - refreshEarlySeconds` by calling the same route
+   with `refreshToken` and the app secret. Each refresh re-checks the app
+   registration and, for external-project scopes, the workspace membership and
+   EPM permission.
+
+Every external-project and external-app Drive call made with the bearer
+re-checks the app registry on top of its membership checks. Disabling the
+app answers its bearers with `403` immediately. Rotating the app secret answers
+bearers issued before the rotation with `401`; refresh tokens keep working
+because refresh requires the current secret. Coverage:
+`apps/web/src/lib/app-coordination/external-app-bearer.test.ts`,
+`apps/web/src/lib/external-projects/access-app-status.test.ts` and
+`apps/web/src/lib/auth/external-app-exchange-response.test.ts`.
 
 External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
@@ -380,6 +393,8 @@ on auth paths. Defaults and caps are:
 - Internal app refresh-early window: 900 seconds default, min 60, max 7,200.
 - Browser refresh replay grace: 30 seconds default, min 0, max 300.
 - External app bearer TTL: 28,800 seconds default, min 300, max 86,400.
+  Issued bearers are capped at 900 seconds whatever this value says, and the
+  returned `refreshEarlySeconds` is at most a third of the bearer lifetime.
 - CLI access TTL: 28,800 seconds default, min 300, max 86,400.
 - CLI refresh TTL: 7,776,000 seconds default, min 86,400, max 7,776,000.
 
@@ -401,9 +416,11 @@ deployments, the runtime also accepts the server-side Supabase secret as a
 fallback verifier so satellites without the explicit coordination secret do not
 fail immediately after cross-app token validation.
 
-When rotating an app secret, deploy the new external app environment first, then
-rotate from Infrastructure. Existing short-lived bearer tokens keep working
-until they expire, but future exchanges require the new app secret.
+Rotating an app secret from Infrastructure revokes every bearer issued before
+the rotation, and future exchanges and refreshes require the new secret. Update
+the external app's environment as soon as the new secret is issued; its next
+call gets `401`, and refreshing with the new secret restores access without a
+new login. Disabling an app revokes all of its bearers until it is re-enabled.
 
 Cross-app login tokens are user-bound handoff tokens. The database RPC only
 mints a token for the authenticated caller's own `auth.uid()`; do not use it as a
