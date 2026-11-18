@@ -18,6 +18,17 @@ Status: **Enforced** means the rule is live in code with the listed regression
 coverage. **Planned** means it is approved and scheduled in the shared-session
 plan, with its owner PR not yet merged.
 
+## Legacy saved accounts
+
+Web and Workspace silently discard the retired browser multi-session store when
+the account provider starts, including on signed-out login. The old storage
+entry alone cannot identify an account that can still be switched. A user can
+sign in normally and explicitly add accounts to the current server-side vault.
+Account-switch failures still use the feedback on the account menu. The Web
+account-switcher provider test covers silent cleanup on signed-out login, and
+the satellite account-switcher messages test covers menu and toast copy in
+English and Vietnamese.
+
 ## Who can read the session
 
 | Rule | Default | Status |

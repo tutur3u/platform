@@ -2010,6 +2010,17 @@
     "trigger_label": "Open version details",
     "version": "Version"
   },
+  "workspace-invitation": {
+    "accept": "Accept invitation",
+    "accept-error": "Failed to accept invitation",
+    "accept-success": "Workspace invitation accepted",
+    "decline-error": "Failed to reject invitation",
+    "decline-success": "Workspace invitation rejected",
+    "direct-invite": "Direct invitation",
+    "email-invite": "Email invitation",
+    "list-eyebrow": "Pending invitations",
+    "reject": "Reject"
+  },
   "ws-members": {
     "assign_invitation_role": "Assign role",
     "clear_all_roles": "Clear all",

@@ -1110,6 +1110,9 @@
     "read_only_description": "Bạn có thể xem các cài đặt này, nhưng cần quản lý không gian làm việc để thay đổi.",
     "title": "Không gian làm việc"
   },
+  "search": {
+    "search": "Tìm kiếm"
+  },
   "settings": {
     "back_to_app": "Quay lại ứng dụng",
     "keyboard_shortcuts": {

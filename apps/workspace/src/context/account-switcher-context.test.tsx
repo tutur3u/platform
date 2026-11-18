@@ -92,6 +92,21 @@ describe('AccountSwitcherProvider', () => {
     removeItem.mockRestore();
   });
 
+  it('saves a new account with the requested return route', async () => {
+    mocks.save.mockResolvedValue({ success: true });
+    const { result } = renderHook(() => useAccountSwitcher(), { wrapper });
+    await waitFor(() => expect(result.current.isInitialized).toBe(true));
+
+    await act(async () => {
+      await result.current.addAccount({ returnUrl: '/en/personal/tasks' });
+    });
+
+    expect(mocks.save).toHaveBeenCalledWith({
+      returnUrl: '/en/personal/tasks',
+      route: '/en/personal/tasks',
+    });
+  });
+
   it('surfaces account_limit from a save so callers can show the limit', async () => {
     mocks.save.mockResolvedValue({
       error: 'limit',

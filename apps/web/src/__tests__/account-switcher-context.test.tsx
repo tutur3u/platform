@@ -114,7 +114,12 @@ describe('AccountSwitcherProvider', () => {
     expect(mocks.updateCurrentWebAccountWithInternalApi).not.toHaveBeenCalled();
   });
 
-  it('clears legacy localStorage sessions and asks users to re-authenticate', async () => {
+  it('clears legacy storage silently on signed-out login', async () => {
+    mocks.pathname = '/login';
+    mocks.listWebAccountsWithInternalApi.mockResolvedValue({
+      accounts: [],
+      activeAccountId: null,
+    });
     window.localStorage.setItem('tuturuuu_multi_session_store', 'old-session');
 
     renderHook(() => useAccountSwitcher(), {
@@ -127,12 +132,7 @@ describe('AccountSwitcherProvider', () => {
       )
     );
 
-    expect(mocks.toastInfo).toHaveBeenCalledWith(
-      'legacy_reauth_required',
-      expect.objectContaining({
-        description: 'legacy_reauth_required_description',
-      })
-    );
+    expect(mocks.toastInfo).not.toHaveBeenCalled();
   });
 
   it('switches accounts through the internal API helper', async () => {

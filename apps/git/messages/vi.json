@@ -2010,6 +2010,17 @@
     "trigger_label": "Mở thông tin phiên bản",
     "version": "Phiên bản"
   },
+  "workspace-invitation": {
+    "accept": "Chấp nhận lời mời",
+    "accept-error": "Không thể chấp nhận lời mời",
+    "accept-success": "Đã chấp nhận lời mời vào không gian làm việc",
+    "decline-error": "Không thể từ chối lời mời",
+    "decline-success": "Đã từ chối lời mời vào không gian làm việc",
+    "direct-invite": "Lời mời trực tiếp",
+    "email-invite": "Lời mời qua email",
+    "list-eyebrow": "Lời mời đang chờ",
+    "reject": "Từ chối"
+  },
   "ws-members": {
     "assign_invitation_role": "Gán vai trò",
     "clear_all_roles": "Xóa tất cả",

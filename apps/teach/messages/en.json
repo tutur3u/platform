@@ -397,6 +397,9 @@
     "whats_the_title": "What's the title?",
     "write_something": "Write something"
   },
+  "course-data-table": {
+    "modules": "Modules"
+  },
   "course-details-tabs": {
     "extra_reading": "Extra Reading",
     "module_content": "Module Content",
@@ -770,6 +773,13 @@
   },
   "sidebar_tabs": {
     "education": "Education"
+  },
+  "storage-object-data-table": {
+    "clear_files": "Clear files",
+    "files": "Files",
+    "folder": {
+      "name": "Folder name"
+    }
   },
   "teach": {
     "byline": "by Tuturuuu",

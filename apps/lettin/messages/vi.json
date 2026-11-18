@@ -1,4 +1,14 @@
 {
+  "account_switcher": {
+    "accounts": "Tài khoản",
+    "current_account": "Tài khoản hiện tại",
+    "manage_accounts": "Quản lý tài khoản",
+    "please_wait": "Vui lòng đợi...",
+    "remove_account": "Xóa tài khoản",
+    "switch_account": "Chuyển tài khoản",
+    "switch_account_error": "Không thể chuyển tài khoản. Vui lòng thử lại.",
+    "unknown_user": "Người dùng không xác định"
+  },
   "calendar": {
     "creation_recovery_notice": "Lần tạo trước chưa được xác nhận. Hãy thử lại yêu cầu ban đầu; các chỉnh sửa vẫn được giữ để lưu sau khi xác nhận.",
     "creation_recovery_retry": "Thử lại lần tạo ban đầu",

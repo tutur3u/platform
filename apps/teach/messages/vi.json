@@ -397,6 +397,9 @@
     "whats_the_title": "Tiêu đề là gì?",
     "write_something": "Hãy viết gì đó..."
   },
+  "course-data-table": {
+    "modules": "Mô-đun"
+  },
   "course-details-tabs": {
     "extra_reading": "Đọc thêm",
     "module_content": "Nội dung mô-đun",
@@ -770,6 +773,13 @@
   },
   "sidebar_tabs": {
     "education": "Giáo dục"
+  },
+  "storage-object-data-table": {
+    "clear_files": "Huỷ tất cả",
+    "files": "Tệp tin",
+    "folder": {
+      "name": "Tên thư mục"
+    }
   },
   "teach": {
     "byline": "bởi Tuturuuu",

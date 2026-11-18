@@ -1,4 +1,14 @@
 {
+  "account_switcher": {
+    "accounts": "Accounts",
+    "current_account": "Current Account",
+    "manage_accounts": "Manage Accounts",
+    "please_wait": "Please wait...",
+    "remove_account": "Remove account",
+    "switch_account": "Switch Account",
+    "switch_account_error": "Failed to switch account. Please try again.",
+    "unknown_user": "Unknown User"
+  },
   "calendar": {
     "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
     "creation_recovery_retry": "Retry original creation",

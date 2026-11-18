@@ -15,9 +15,7 @@ import {
   switchWebAccountWithInternalApi,
   updateCurrentWebAccountWithInternalApi,
 } from '@tuturuuu/internal-api/auth';
-import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   createContext,
   type JSX,
@@ -43,7 +41,9 @@ export interface AccountOperationResult {
   success: boolean;
 }
 
-export interface AddAccountOptions extends SaveCurrentWebAccountPayload {
+export interface AddAccountOptions {
+  route?: string | null;
+  returnUrl?: string | null;
   switchImmediately?: boolean;
 }
 
@@ -107,7 +107,6 @@ export function AccountSwitcherProvider({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const t = useTranslations('account_switcher');
   const lastSyncedRouteRef = useRef<string | null>(null);
 
   const currentRoute = useMemo(() => {
@@ -183,19 +182,12 @@ export function AccountSwitcherProvider({
   });
 
   useEffect(() => {
-    const legacyValue = window.localStorage.getItem(
-      LEGACY_MULTI_SESSION_STORAGE_KEY
-    );
-
-    if (!legacyValue) {
-      return;
+    try {
+      window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
+    } catch {
+      // The server-side account vault works without access to browser storage.
     }
-
-    window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
-    toast.info(t('legacy_reauth_required'), {
-      description: t('legacy_reauth_required_description'),
-    });
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     const activeAccountId = accountsQuery.data?.activeAccountId;

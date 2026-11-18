@@ -31,6 +31,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/supabase/next/auth-browser',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/auth-browser.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/user',
         replacement: resolve(
           __dirname,

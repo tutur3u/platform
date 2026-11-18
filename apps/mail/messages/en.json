@@ -1110,6 +1110,9 @@
     "read_only_description": "You can review these settings, but a workspace manager is required to change them.",
     "title": "Workspace"
   },
+  "search": {
+    "search": "Search"
+  },
   "settings": {
     "back_to_app": "Back to app",
     "keyboard_shortcuts": {
