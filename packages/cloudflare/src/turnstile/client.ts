@@ -36,3 +36,5 @@ export function resolveTurnstileClientState(
     canRenderWidget: isRequired && Boolean(siteKey),
   };
 }
+
+export * from './safari';

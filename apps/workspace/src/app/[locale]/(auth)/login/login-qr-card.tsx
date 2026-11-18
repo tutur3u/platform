@@ -11,14 +11,11 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTranslations } from 'next-intl';
+import { SAFARI_SAFE_TURNSTILE_OPTIONS } from '@tuturuuu/cloudflare/turnstile/client';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  getTurnstileClientErrorMessageKey,
-  shouldRetryTurnstileClientError,
-} from './turnstile-state';
-
-const CAPTCHA_ERROR_RETRY_DELAY = 3000;
+import { getTurnstileClientErrorMessageKey } from './turnstile-state';
+import { useTurnstileRetry } from './use-turnstile-retry';
 
 interface LoginQrCardProps {
   canRenderTurnstile?: boolean;
@@ -63,32 +60,37 @@ export function LoginQrCard({
     turnstileRef.current?.reset();
   }, []);
 
-  const handleCaptchaSuccess = useCallback((token: string) => {
-    setCaptchaToken(token);
-    setCaptchaTokenVersion((value) => value + 1);
+  const resetAfterError = useCallback(() => {
+    resetTurnstile();
     setCaptchaError(undefined);
-  }, []);
+  }, [resetTurnstile]);
+  const captchaRetry = useTurnstileRetry(resetAfterError, resetTurnstile);
+
+  const handleCaptchaSuccess = useCallback(
+    (token: string) => {
+      captchaRetry.onSuccess();
+      setCaptchaToken(token);
+      setCaptchaTokenVersion((value) => value + 1);
+      setCaptchaError(undefined);
+    },
+    [captchaRetry]
+  );
 
   const handleCaptchaError = useCallback(
     (errorCode?: string) => {
-      resetTurnstile();
+      setCaptchaToken(undefined);
       setCaptchaError(
         t(`login.${getTurnstileClientErrorMessageKey(errorCode)}`)
       );
-
-      if (shouldRetryTurnstileClientError(errorCode)) {
-        window.setTimeout(() => {
-          resetTurnstile();
-          setCaptchaError(undefined);
-        }, CAPTCHA_ERROR_RETRY_DELAY);
-      }
+      return captchaRetry.onError(errorCode);
     },
-    [resetTurnstile, t]
+    [captchaRetry, t]
   );
 
   const handleCaptchaTimeout = useCallback(() => {
-    resetTurnstile();
-  }, [resetTurnstile]);
+    setCaptchaToken(undefined);
+    captchaRetry.onTimeout();
+  }, [captchaRetry]);
 
   const challengeQuery = useQuery({
     enabled: canCreateChallenge && !disabled,
@@ -195,6 +197,7 @@ export function LoginQrCard({
               <Turnstile
                 ref={turnstileRef}
                 siteKey={turnstileSiteKey}
+                options={SAFARI_SAFE_TURNSTILE_OPTIONS}
                 onSuccess={handleCaptchaSuccess}
                 onExpire={() => setCaptchaToken(undefined)}
                 onError={handleCaptchaError}

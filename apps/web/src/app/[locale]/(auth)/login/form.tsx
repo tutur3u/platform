@@ -3,6 +3,7 @@
 import { requiresAccountConfirmationForReturnApp } from './return-app-confirmation';
 
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
+import { SAFARI_SAFE_TURNSTILE_OPTIONS } from '@tuturuuu/cloudflare/turnstile/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
 import {
@@ -87,12 +88,11 @@ import {
   getTurnstileClientErrorMessageKey,
   resolveLoginTurnstileClientState,
   shouldHonorLocalE2EAuthBypassForLogin,
-  shouldRetryTurnstileClientError,
 } from './turnstile-state';
+import { useTurnstileRetry } from './use-turnstile-retry';
 import { useAutoOAuthLogin } from './use-auto-oauth-login';
 import { useDeferredAuthSurfaceRecovery } from './use-deferred-auth-surface-recovery';
 
-const CAPTCHA_ERROR_RETRY_DELAY = 3000;
 const INVALID_LOCAL_RETURN_URL = '__invalid_local_return_url__';
 const MANAGED_TUTURUUU_RETURN_APP = 'managed-tuturuuu';
 const VERIFY_TOKEN_FALLBACK_PATH = '/onboarding';
@@ -685,50 +685,47 @@ export default function LoginForm({
     setRedirectingAfterAuthState(true);
   }, [setRedirectingAfterAuthState]);
 
+  const resetCaptchaAfterError = useCallback(() => {
+    captchaRefPassword.current?.reset();
+    setCaptchaError(undefined);
+  }, []);
+  const captchaRetry = useTurnstileRetry(resetCaptchaAfterError, resetCaptcha);
+
   const handleCaptchaSuccess = useCallback(
     (token: string) => {
+      captchaRetry.onSuccess();
       setCaptchaToken(token);
       setCaptchaError(undefined);
       setPasswordRateLimitedEmail(null);
       passwordForm.clearErrors('password');
     },
-    [passwordForm]
+    [captchaRetry, passwordForm]
   );
 
   const handleCaptchaError = useCallback(
     (errorCode?: string) => {
       console.warn('[Turnstile] Error:', errorCode);
-      resetCaptcha();
+      setCaptchaToken(undefined);
       setPasswordRateLimitedEmail(null);
       passwordForm.clearErrors('password');
       setCaptchaError(
         t(`login.${getTurnstileClientErrorMessageKey(errorCode)}`)
       );
-
-      if (shouldRetryTurnstileClientError(errorCode)) {
-        window.setTimeout(() => {
-          resetCaptcha();
-          setCaptchaError(undefined);
-        }, CAPTCHA_ERROR_RETRY_DELAY);
-      }
+      return captchaRetry.onError(errorCode);
     },
-    [passwordForm, resetCaptcha, t]
+    [captchaRetry, passwordForm, t]
   );
-
-  const handleCaptchaTimeout = useCallback(() => {
-    console.warn('[Turnstile] Timeout - resetting widget');
-    resetCaptcha();
-  }, [resetCaptcha]);
 
   const renderTurnstile = (siteKey: string) => (
     <Suspense fallback={<TurnstileLoadingFallback />}>
       <Turnstile
         ref={captchaRefPassword}
         siteKey={siteKey}
+        options={SAFARI_SAFE_TURNSTILE_OPTIONS}
         onSuccess={handleCaptchaSuccess}
         onExpire={() => setCaptchaToken(undefined)}
         onError={handleCaptchaError}
-        onTimeout={handleCaptchaTimeout}
+        onTimeout={captchaRetry.onTimeout}
       />
     </Suspense>
   );

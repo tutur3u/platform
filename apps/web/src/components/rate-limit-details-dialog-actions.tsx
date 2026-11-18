@@ -1,7 +1,10 @@
 'use client';
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
-import type { resolveTurnstileClientState } from '@tuturuuu/cloudflare/turnstile/client';
+import {
+  type resolveTurnstileClientState,
+  SAFARI_SAFE_TURNSTILE_OPTIONS,
+} from '@tuturuuu/cloudflare/turnstile/client';
 import { Copy, Loader2, Shield } from '@tuturuuu/icons/lucide-static';
 import { Button } from '@tuturuuu/ui/button';
 import { DialogFooter } from '@tuturuuu/ui/dialog';
@@ -63,6 +66,7 @@ export function RateLimitAppealRequestSection({
         <div className="space-y-2">
           {turnstileState.canRenderWidget && turnstileState.siteKey ? (
             <Turnstile
+              options={SAFARI_SAFE_TURNSTILE_OPTIONS}
               onError={onCaptchaError}
               onExpire={onCaptchaExpire}
               onSuccess={onCaptchaSuccess}

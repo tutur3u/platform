@@ -1,3 +1,4 @@
+import { withTurnstileCsp } from '@tuturuuu/cloudflare/turnstile/client';
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
@@ -13,7 +14,9 @@ export default defineBridgeAppConfig<FormsEnvironment>({
     mountHosts: [],
     unknownHost: 'reject',
   },
-  csp: defaultContentSecurityPolicy,
+  // Shared forms render Cloudflare Turnstile, so its origin is allowed in
+  // every directive the policy restricts.
+  csp: (nonce) => withTurnstileCsp(defaultContentSecurityPolicy(nonce)),
   wrapResponse(response, { request, env }) {
     const headers = new Headers(response.headers);
     const path = new URL(request.url).pathname;

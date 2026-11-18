@@ -227,6 +227,26 @@ origins; without it the `/api/auth/dev-session` rate-limit reset returns 403
 and most auth specs fail in `beforeEach`. `--install` installs the
 Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
 
+### Turnstile in WebKit
+
+`apps/web/playwright.turnstile-webkit.config.ts` runs the shared Turnstile
+lifecycle in Desktop Safari and iOS WebKit against Cloudflare's public test
+site keys. It needs no app server: the harness page is served by route
+interception and only the challenge loads from Cloudflare.
+
+```bash
+cd apps/web
+bunx playwright install webkit
+bunx playwright test -c playwright.turnstile-webkit.config.ts
+```
+
+It checks token delivery under the forms nonce policy, a fresh token after a
+back/forward cache restore, and bounded resets for a blocked challenge.
+Surfaces must not call `reset()` from Turnstile's error callback: Safari's
+transient `600010` failures then restart the challenge in a loop. Use
+`createTurnstileRetryScheduler`, `SAFARI_SAFE_TURNSTILE_OPTIONS` and
+`withTurnstileCsp` from `@tuturuuu/cloudflare/turnstile/client`.
+
 ## Gotchas
 
 - Browsers must open web at `http://localhost:7803`, not `127.0.0.1`: Next dev

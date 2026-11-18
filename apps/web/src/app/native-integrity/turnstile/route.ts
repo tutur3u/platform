@@ -37,7 +37,7 @@ setTimeout(()=>deliver({error:'unavailable'}),18000);
         'Cache-Control': 'private, no-store',
         'Referrer-Policy': 'no-referrer',
         'X-Content-Type-Options': 'nosniff',
-        'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src https://challenges.cloudflare.com; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors ${parents.join(' ')}`,
+        'Content-Security-Policy': `default-src 'none'; script-src 'nonce-${nonce}' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; child-src https://challenges.cloudflare.com; connect-src https://challenges.cloudflare.com; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors ${parents.join(' ')}`,
         'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
       },
     }

@@ -86,10 +86,12 @@
     iframe.style.background = 'transparent';
     iframe.setAttribute('allowtransparency', 'true');
     // The embedded form posts only a height, a public share code and a
-    // submitted flag, and needs no access to the host page.
+    // submitted flag, and needs no access to the host page. Turnstile opens
+    // its privacy and help links in unsandboxed popups, and Safari only lets
+    // the embedded challenge use its own storage after a user gesture.
     iframe.setAttribute(
       'sandbox',
-      'allow-scripts allow-forms allow-same-origin allow-popups'
+      'allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-storage-access-by-user-activation'
     );
     return iframe;
   }

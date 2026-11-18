@@ -2,6 +2,10 @@
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import {
+  readTurnstileScriptNonce,
+  SAFARI_SAFE_TURNSTILE_OPTIONS,
+} from '@tuturuuu/cloudflare/turnstile/client';
+import {
   ArrowLeft,
   ArrowRight,
   Check,
@@ -395,6 +399,8 @@ export function renderFormSectionCard({
               <Turnstile
                 ref={captchaRef}
                 siteKey={turnstileSiteKey}
+                options={SAFARI_SAFE_TURNSTILE_OPTIONS}
+                scriptOptions={{ nonce: readTurnstileScriptNonce() }}
                 onSuccess={(token) => {
                   setCaptchaToken(token);
                   setCaptchaError(undefined);

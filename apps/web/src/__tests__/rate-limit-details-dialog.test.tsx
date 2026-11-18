@@ -60,7 +60,10 @@ vi.mock('@tuturuuu/internal-api/infrastructure', () => ({
   unblockBlockedIp: mocks.unblockBlockedIp,
 }));
 
-vi.mock('@tuturuuu/cloudflare/turnstile/client', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/client', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@tuturuuu/cloudflare/turnstile/client')
+  >()),
   resolveTurnstileClientState: () => ({
     canRenderWidget: true,
     isRequired: true,
