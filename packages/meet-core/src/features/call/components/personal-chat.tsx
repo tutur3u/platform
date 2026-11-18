@@ -1,6 +1,12 @@
 'use client';
 import { useMutation } from '@tanstack/react-query';
-import { BookOpen, LockKeyhole, RefreshCw, Send, Share2 } from '@tuturuuu/icons';
+import {
+  BookOpen,
+  LockKeyhole,
+  RefreshCw,
+  Send,
+  Share2,
+} from '@tuturuuu/icons';
 import {
   askPersonalMeetAssistant,
   readPrivateMiraPolicy,
