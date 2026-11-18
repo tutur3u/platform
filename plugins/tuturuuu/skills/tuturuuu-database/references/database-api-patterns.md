@@ -14,6 +14,10 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- Production migrations are auto-approved under the standing fleet decision:
+  ship them after an exact-SQL security review, green CI, a successful staging
+  migration and the gated `supabase-production.yaml` run, without a per-migration
+  USER approval request.
 - New application relations go in `private`. The shrink-only allowlist
   `apps/database/public-schema-allowlist.json` lists what may remain in
   `public`; `bun db:public-guard` checks it statically and

@@ -230,8 +230,7 @@ for roles, independent review, publication, receipts and retirement.
     a fix cannot ship quickly or an active exploit/secret leak is involved, per
     the runbook.
     DNS, zone, canonical-route and staging provider changes need
-    release-authority approval; database migrations need explicit user
-    approval.
+    release-authority approval. Production database migrations are auto-approved by the fleet under the USER's standing decision; they still require an exact-SQL security review, green CI and staging, and the gated supabase-production workflow. Do not ask the USER per migration.
   - Live API/page behavior belongs to `apps/web` (Next.js) and the owning
     satellite, whether Next.js or native Start. Keep shared data access in
     `packages/internal-api`, keep domain libraries framework-independent, and

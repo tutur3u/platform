@@ -236,6 +236,11 @@ with all Calendar clients closed; a READY deployment alone is insufficient.
 
 ### Production Database
 
+Production migrations are auto-approved by the fleet under a standing decision.
+Each one still needs an exact-SQL security review, green CI, a successful
+staging migration and this gated workflow; no per-migration approval request
+goes to the USER.
+
 `supabase-production.yaml` is stricter than staging:
 
 1. It re-evaluates automatically after either `Vercel Production Deployment

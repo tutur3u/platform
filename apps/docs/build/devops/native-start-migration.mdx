@@ -178,7 +178,9 @@ Approvals:
 
 - DNS, zone, canonical-route and staging-provider changes need release-authority
   approval.
-- Database migrations need explicit user approval. The bridge itself needs none.
+- Production database migrations are auto-approved by the fleet; they still need
+  an exact-SQL security review, green CI and staging, and the gated
+  `supabase-production.yaml` workflow. The bridge itself needs none.
 
 ## Direct cutover
 

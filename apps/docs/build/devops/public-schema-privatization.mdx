@@ -402,11 +402,11 @@ Tables: `workspaces`, `workspace_members`, `workspace_members_and_invites`,
 - **Security review (Selene)** for: the guard spec and Wave 0 migration; each
   wave's Phase B and C migrations, rollback migration and helper-schema
   changes; any allowlist addition. Review uses the exact migration SHA.
-- **User approval (D138)** for every production database change. Batch to
-  limit dialogs: Wave 0 default privileges (only if needed); then one dialog per batch of
-  "Phase C of wave N + Phase B of wave N+1". Each dialog states the tables,
-  the exact SHA, the staging marker, the rollback migration and the evidence
-  (pgTAP, HTTP denial, exact-commit CI).
+- **Fleet auto-approval** for production database changes under the standing
+  decision: no per-change USER dialog. Each batch ("Phase C of wave N + Phase B
+  of wave N+1") records the tables, the exact SHA, the staging marker, the
+  rollback migration and the evidence (pgTAP, HTTP denial, exact-commit CI)
+  before the gated `supabase-production.yaml` run.
 - Batch migration merges per wave: one combined disposable rehearsal,
   back-to-back merges, one staging marker, one production sync.
 - Production evidence: the `supabase-production.yaml` exact-SHA result, a
