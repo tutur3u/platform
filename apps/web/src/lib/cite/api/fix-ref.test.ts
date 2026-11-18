@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CitationAiError } from '@/lib/cite/ai/contracts';
-import { POST } from './route';
+import { POST } from './fix-ref';
 
 const mocks = vi.hoisted(() => ({
   wrapped: [] as { handler: unknown; options: unknown }[],

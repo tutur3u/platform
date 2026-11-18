@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CitationLookupError } from '@/lib/cite/metadata-network';
-import { POST } from './route';
+import { POST } from './lookup';
 
 const lookup = vi.hoisted(() => vi.fn());
 const budget = vi.hoisted(() => vi.fn());

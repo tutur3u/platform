@@ -27,7 +27,7 @@ vi.mock('@/lib/cite/library/authorization', () => ({
     getMany: mocks.getMany,
   }),
 }));
-const { POST } = await import('./route');
+const { POST } = await import('./batch');
 
 const context = { params: { wsId: 'ws-1' } };
 const post = (body: string, type = 'application/json') =>

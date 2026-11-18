@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST } from './route';
+import { POST } from './capture';
 
 const capture = vi.hoisted(() => vi.fn());
 const budget = vi.hoisted(() => vi.fn());

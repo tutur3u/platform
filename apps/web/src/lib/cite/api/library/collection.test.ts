@@ -33,7 +33,7 @@ vi.mock('@/lib/cite/library/authorization', () => ({
     create: mocks.create,
   }),
 }));
-const { GET, POST } = await import('./route');
+const { GET, POST } = await import('./collection');
 
 const context = { params: { wsId: 'ws-1' } };
 const get = () =>

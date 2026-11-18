@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST as capture } from '../capture/route';
+import { POST as capture } from './capture';
 import { resetInstanceLookupBudget } from '@/lib/cite/lookup-budget-fallback';
-import { POST as lookup } from './route';
+import { POST as lookup } from './lookup';
 
 const spies = vi.hoisted(() => ({
   store: vi.fn(),

@@ -14,12 +14,6 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/duplicate/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/publish` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/%5BversionId%5D/publish/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/%5BversionId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/page-versions/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/publish` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/publish/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/%5BentryId%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/entries/batch` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/batch/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/entries/bulk` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/bulk/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/entries/bundle` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/bundle/route.ts) |
@@ -194,5 +188,11 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/topic-announcements/announcements/[announcementId]/schedule` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/announcements/%5BannouncementId%5D/schedule/route.ts) |
 | `/api/v1/workspaces/[wsId]/topic-announcements/announcements/[announcementId]/send` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/announcements/%5BannouncementId%5D/send/route.ts) |
 | `/api/v1/workspaces/[wsId]/topic-announcements/attachments/upload` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/attachments/upload/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/campus-options` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/campus-options/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/contacts/[contactId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/contacts/%5BcontactId%5D/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/contacts/[contactId]/verify` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/contacts/%5BcontactId%5D/verify/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/contacts` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/contacts/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/import` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/import/route.ts) |
+| `/api/v1/workspaces/[wsId]/topic-announcements/notify-teachers` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/topic-announcements/notify-teachers/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

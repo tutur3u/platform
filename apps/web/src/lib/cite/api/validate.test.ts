@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { CiteWorkSchema, validateCitation } from '@tuturuuu/cite';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { POST } from './route';
+import { POST } from './validate';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),

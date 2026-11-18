@@ -111,11 +111,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/auth/qr-login/challenges` | OPTIONS, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/auth/qr-login/challenges/route.ts) |
 | `/api/v1/auth/recovery/consume` | OPTIONS, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/auth/recovery/consume/route.ts) |
 | `/api/v1/calendar/auth/accounts` | DELETE, GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/calendar/auth/accounts/route.ts) |
-| `/api/v1/cite/ai/fix-ref` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/ai/fix-ref/route.ts) |
-| `/api/v1/cite/capture` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/capture/route.ts) |
-| `/api/v1/cite/format` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/format/route.ts) |
-| `/api/v1/cite/lookup` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/lookup/route.ts) |
-| `/api/v1/cite/validate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/validate/route.ts) |
+| `/api/v1/cite/[...path]` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cite/%5B...path%5D/route.ts) |
 | `/api/v1/cms/workspaces` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/cms/workspaces/route.ts) |
 | `/api/v1/devboxes/agents/events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/events/route.ts) |
 | `/api/v1/devboxes/agents/heartbeat` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/devboxes/agents/heartbeat/route.ts) |
@@ -194,5 +190,9 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/mobile/version-check` | GET, HEAD, OPTIONS | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mobile/version-check/route.ts) |
 | `/api/v1/native-integrity/challenge` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/native-integrity/challenge/route.ts) |
 | `/api/v1/native-integrity/enroll` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/native-integrity/enroll/route.ts) |
+| `/api/v1/newsletter/unsubscribe` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts) |
+| `/api/v1/notifications/[id]/metadata` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/%5Bid%5D/metadata/route.ts) |
+| `/api/v1/notifications/[id]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/%5Bid%5D/route.ts) |
+| `/api/v1/notifications/account-preferences` | GET, HEAD, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/notifications/account-preferences/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

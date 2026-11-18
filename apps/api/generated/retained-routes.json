@@ -1080,51 +1080,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/cite/ai/fix-ref",
+    "path": "/api/v1/cite/{...path}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/cite/ai/fix-ref/route.ts",
-    "sourceSha256": "2a4429e7bc1721dcb3fe136cfd403e3c72e38e6d16ee78182bf053b1a3ab9f8f",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/cite/capture",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/cite/capture/route.ts",
-    "sourceSha256": "2c6a29ef7f34a0b92619c942b275ac0b2bca85a2f5624c2e68c127b69c5cbdcb",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/cite/format",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/cite/format/route.ts",
-    "sourceSha256": "8ef233f8ac6992dd1bbee796a37b8ef9e2d1363aac3f75a099137b2d2ff83c63",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/cite/lookup",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/cite/lookup/route.ts",
-    "sourceSha256": "2e62d4378ae8044ff0b771095e8344443f1a508aac9ea268e1a27d98f542ea4f",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/cite/validate",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/cite/validate/route.ts",
-    "sourceSha256": "7bcc5f5441b093ca2d0f8f35db38efd2843635509d7bb21b5d76ff4edec8f8a5",
+    "source": "apps/web/src/app/api/v1/cite/[...path]/route.ts",
+    "sourceSha256": "4dc7e1268e2b0c5170115f34e17590ebeb4b577ce803b1b1ec01de13dce6ce1e",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3090,31 +3050,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/cite/library/{itemId}",
+    "path": "/api/v1/workspaces/{wsId}/cite/library/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/[itemId]/route.ts",
-    "sourceSha256": "01b948caa78bcf33c4be6da180d90487c0a78c728d8ff0baf3a1946755d8d629",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/cite/library/batch",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/batch/route.ts",
-    "sourceSha256": "8061915ae12969bdbab9cfdf40831cd6b7bc86a7a70ab9b72035fb15df5721af",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/cite/library",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/route.ts",
-    "sourceSha256": "92455c4d4e55ca90b080a7c44865c4ce8a8c49721fbb85344daa52f69d54b412",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/[[...segments]]/route.ts",
+    "sourceSha256": "1477f1bf9ea1870ff60fac7b5bdc071e83fe9b2c885c0b5a359e61c8a0bbd6af",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

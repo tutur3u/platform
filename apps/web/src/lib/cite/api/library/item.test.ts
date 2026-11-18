@@ -36,7 +36,7 @@ vi.mock('@/lib/cite/library/authorization', () => ({
     remove: mocks.remove,
   }),
 }));
-const { GET, PATCH, DELETE } = await import('./route');
+const { GET, PATCH, DELETE } = await import('./item');
 
 const itemId = '33333333-3333-4333-8333-333333333333';
 const scope = { wsId: 'verified-ws', actorId: 'user-1' };
