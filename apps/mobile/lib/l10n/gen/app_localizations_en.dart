@@ -9115,6 +9115,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailFilterProjects => 'Projects';
 
   @override
+  String get taskBoardDetailFilterUndated => 'Without dates';
+
+  @override
   String get taskBoardDetailFilterStatuses => 'Statuses';
 
   @override
@@ -9611,15 +9614,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskBoardDetailThisWeek => 'This week';
-
-  @override
-  String get taskBoardDetailTimelineEmptyDescription => 'Add start and end dates to tasks to place them on the timeline.';
-
-  @override
-  String get taskBoardDetailTimelineEmptyTitle => 'No scheduled tasks yet';
-
-  @override
-  String get taskBoardDetailTimelineUnscheduledTitle => 'Unscheduled tasks';
 
   @override
   String get taskBoardDetailTimelineView => 'Timeline';
@@ -10353,37 +10347,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskSettingsTitle => 'Task settings';
 
   @override
-  String get taskTimelineLoadingTasks => 'Loading tasks…';
-
-  @override
-  String get taskTimelineNotAllLoaded => 'Some tasks aren\'t loaded yet';
-
-  @override
-  String get taskTimelineNothingToday => 'Nothing scheduled today';
-
-  @override
-  String taskTimelineOngoing(int day, int total, String date) {
-    return 'Day $day of $total, ends $date';
-  }
-
-  @override
-  String get taskTimelineRangeAll => 'All';
-
-  @override
   String get taskTimelineRangeMonth => 'Month';
+
+  @override
+  String get taskTimelineRangeTitle => 'Range';
+
+  @override
+  String get taskTimelineRangeTwoWeeks => '2 weeks';
 
   @override
   String get taskTimelineRangeWeek => 'Week';
 
   @override
-  String get taskTimelineShowLater => 'Show later tasks';
+  String taskTimelineDaysLate(int days) {
+    return '${days}d';
+  }
 
   @override
-  String get taskTimelineShowOverdue => 'Show overdue';
+  String taskTimelineDaysLateLong(int days) {
+    return '${days}d late';
+  }
 
   @override
-  String taskTimelineStarted(String date) {
-    return 'Started $date';
+  String get taskTimelineEmptyMonth => 'Nothing scheduled this month';
+
+  @override
+  String get taskTimelineEmptyTwoWeeks => 'Nothing scheduled these two weeks';
+
+  @override
+  String get taskTimelineEmptyWeek => 'Nothing scheduled this week';
+
+  @override
+  String taskTimelineOverdueCount(int count) {
+    return 'Overdue $count';
+  }
+
+  @override
+  String get taskTimelineTodayButton => 'Today';
+
+  @override
+  String taskTimelineUndatedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tasks without dates',
+      one: '1 task without dates',
+    );
+    return '$_temp0';
   }
 
   @override

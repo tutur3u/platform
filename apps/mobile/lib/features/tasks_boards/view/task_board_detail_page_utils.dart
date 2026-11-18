@@ -281,22 +281,8 @@ IconData _taskBoardListStatusIcon(String? status) {
   };
 }
 
-Color _taskBoardListColor(BuildContext context, String? color) {
-  final palette = context.dynamicColors;
-  return switch (TaskBoardList.normalizeSupportedColor(color) ?? 'GRAY') {
-    'GRAY' => palette.gray,
-    'RED' => palette.red,
-    'BLUE' => palette.blue,
-    'GREEN' => palette.green,
-    'YELLOW' => palette.yellow,
-    'ORANGE' => palette.orange,
-    'PURPLE' => palette.purple,
-    'PINK' => palette.pink,
-    'INDIGO' => palette.indigo,
-    'CYAN' => palette.cyan,
-    _ => palette.gray,
-  };
-}
+Color _taskBoardListColor(BuildContext context, String? color) =>
+    taskBoardListColor(context, color);
 
 Color _taskBoardListSurfaceColor(BuildContext context, String? color) {
   final palette = context.dynamicColors;

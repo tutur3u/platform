@@ -401,10 +401,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     }
                   } else if (state.currentView ==
                       TaskBoardDetailView.timeline) {
-                    _scheduleTimelinePages(
-                      context,
-                      _timelineOpenLists(sortedLists),
-                    );
+                    _scheduleTimelinePages(context, sortedLists);
                   }
 
                   return NovaRefreshIndicator(
@@ -506,7 +503,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                             _openEditListDialog(context, list),
                         onFocusedListChanged: _handleKanbanPageChanged,
                       ),
-                      TaskBoardDetailView.timeline => _TaskBoardTimelineView(
+                      TaskBoardDetailView.timeline => TaskTimelineView(
                         lists: sortedLists,
                         tasksByList: filteredByList,
                         hasLoadError: _timelineHasLoadError(sortedLists, state),
@@ -523,6 +520,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         },
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
+                        onShowUndated: () => _showUndated(isPersonalBoard),
                       ),
                     },
                   );
@@ -691,16 +689,12 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   }
 
   void _goIfMounted(BuildContext context, String location) {
-    if (!mounted || !context.mounted) {
-      return;
-    }
+    if (!mounted || !context.mounted) return;
     context.go(location);
   }
 
   void _openBoardViewRoute(BuildContext context, TaskBoardDetailView view) {
-    if (!mounted || !context.mounted) {
-      return;
-    }
+    if (!mounted || !context.mounted) return;
     final viewName = switch (view) {
       TaskBoardDetailView.list => taskBoardDetailViewList,
       TaskBoardDetailView.kanban => taskBoardDetailViewKanban,
@@ -917,9 +911,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   }
 
   void _setBoardView(BuildContext context, TaskBoardDetailView view) {
-    if (!mounted || !context.mounted) {
-      return;
-    }
+    if (!mounted || !context.mounted) return;
     final cubit = context.read<TaskBoardDetailCubit>();
     if (cubit.state.currentView == view) {
       _restoreScrollOffsetsForCurrentBoard();

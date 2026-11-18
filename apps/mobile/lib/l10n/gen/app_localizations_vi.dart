@@ -9015,6 +9015,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailFilterProjects => 'Dự án';
 
   @override
+  String get taskBoardDetailFilterUndated => 'Chưa có ngày';
+
+  @override
   String get taskBoardDetailFilterStatuses => 'Trạng thái';
 
   @override
@@ -9499,15 +9502,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskBoardDetailThisWeek => 'tuần này';
-
-  @override
-  String get taskBoardDetailTimelineEmptyDescription => 'Thêm ngày bắt đầu và ngày kết thúc cho công việc để hiển thị trên dòng thời gian.';
-
-  @override
-  String get taskBoardDetailTimelineEmptyTitle => 'Chưa có công việc nào được lên lịch';
-
-  @override
-  String get taskBoardDetailTimelineUnscheduledTitle => 'Công việc chưa lên lịch';
 
   @override
   String get taskBoardDetailTimelineView => 'Dòng thời gian';
@@ -10241,37 +10235,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskSettingsTitle => 'Cài đặt công việc';
 
   @override
-  String get taskTimelineLoadingTasks => 'Đang tải công việc…';
-
-  @override
-  String get taskTimelineNotAllLoaded => 'Một số việc chưa được tải';
-
-  @override
-  String get taskTimelineNothingToday => 'Hôm nay chưa có việc nào';
-
-  @override
-  String taskTimelineOngoing(int day, int total, String date) {
-    return 'Ngày $day/$total, kết thúc $date';
-  }
-
-  @override
-  String get taskTimelineRangeAll => 'Tất cả';
-
-  @override
   String get taskTimelineRangeMonth => 'Tháng';
+
+  @override
+  String get taskTimelineRangeTitle => 'Khoảng thời gian';
+
+  @override
+  String get taskTimelineRangeTwoWeeks => '2 tuần';
 
   @override
   String get taskTimelineRangeWeek => 'Tuần';
 
   @override
-  String get taskTimelineShowLater => 'Hiện các việc về sau';
+  String taskTimelineDaysLate(int days) {
+    return '$days ngày';
+  }
 
   @override
-  String get taskTimelineShowOverdue => 'Xem việc quá hạn';
+  String taskTimelineDaysLateLong(int days) {
+    return 'Trễ $days ngày';
+  }
 
   @override
-  String taskTimelineStarted(String date) {
-    return 'Bắt đầu $date';
+  String get taskTimelineEmptyMonth => 'Tháng này chưa có lịch';
+
+  @override
+  String get taskTimelineEmptyTwoWeeks => 'Hai tuần này chưa có lịch';
+
+  @override
+  String get taskTimelineEmptyWeek => 'Tuần này chưa có lịch';
+
+  @override
+  String taskTimelineOverdueCount(int count) {
+    return 'Quá hạn $count';
+  }
+
+  @override
+  String get taskTimelineTodayButton => 'Hôm nay';
+
+  @override
+  String taskTimelineUndatedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count công việc chưa có ngày',
+    );
+    return '$_temp0';
   }
 
   @override

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/timezone_location.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_task.dart';
@@ -17,6 +17,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
+import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_rows.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -121,8 +122,6 @@ final List<TaskBoardTask> _standardTasks = [
   _task('task-1', 'Alpha task', end: 0),
   _task('task-overdue', 'Overdue task', end: -3),
   _task('task-ongoing', 'Ongoing task', start: -2, end: 3),
-  _task('task-soon', 'Soon task', start: 2),
-  _task('task-later', 'Later task', start: 12),
   _task('task-undated', 'Undated task'),
 ];
 
@@ -159,28 +158,25 @@ Future<_TimelineRepository> _pumpTimeline(
   return repository;
 }
 
+String _dayKey(DateTime day) =>
+    'task-timeline-day-${DateFormat('yyyy-MM-dd').format(day)}';
+
 void main() {
-  group('board timeline agenda', () {
+  group('board timeline page', () {
     usePhoneSurface();
 
-    testWidgets('opens on today with overdue work above it', (tester) async {
+    testWidgets('opens on this week with overdue work first', (tester) async {
       await _pumpTimeline(tester, _standardTasks);
 
-      final todayHeader = find.textContaining('Today ·');
-      expect(todayHeader, findsOneWidget);
-      final scrollTop = tester.getTopLeft(find.byType(CustomScrollView)).dy;
-      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(120));
-      expect(_key('task-timeline-row-task-1'), findsOneWidget);
-      expect(find.textContaining('Day 3 of 6'), findsOneWidget);
-
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, 400));
-      await tester.pumpAndSettle();
-      expect(find.text('Overdue task'), findsOneWidget);
-      expect(find.text('Overdue'), findsOneWidget);
-
-      await tester.tap(_key('task-timeline-today-button'));
-      await tester.pumpAndSettle();
-      expect(tester.getTopLeft(todayHeader).dy - scrollTop, lessThan(120));
+      final today = taskDay(DateTime.now(), null);
+      expect(_key(_dayKey(today)), findsOneWidget);
+      expect(find.text('Overdue 1'), findsOneWidget);
+      expect(find.text('3d'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Overdue task')).dy,
+        lessThan(tester.getTopLeft(find.text('Alpha task')).dy),
+      );
+      expect(_key('task-timeline-today-button'), findsNothing);
     });
 
     testWidgets('loads every page without scrolling and places page five', (
@@ -188,13 +184,12 @@ void main() {
     ) async {
       final repository = await _pumpTimeline(tester, [
         for (var i = 0; i < 449; i++)
-          _task('bulk-$i', 'Bulk task $i', start: 5, end: 6),
+          _task('bulk-$i', 'Bulk task $i', start: 40, end: 41),
         _task('task-today', 'Due today task', end: 0),
       ]);
 
       // No drag or fling happened: the Timeline paged on its own. The
-      // today task is task 450, on page five at 100 per page; first-page
-      // loading would leave Today empty.
+      // today task is task 450, on page five at 100 per page.
       final timelinePages = repository.pages.skip(
         repository.pagesBeforeTimeline,
       );
@@ -202,22 +197,20 @@ void main() {
       expect(timelinePages.every((page) => page.limit == 100), isTrue);
       expect(repository.pages.last.offset, greaterThanOrEqualTo(400));
       expect(_key('task-timeline-row-task-today'), findsOneWidget);
-      expect(_key('task-timeline-nothing-today'), findsNothing);
-      expect(_key('task-timeline-today-loading'), findsNothing);
+      expect(_key('task-timeline-empty'), findsNothing);
     });
 
-    testWidgets('never claims nothing today while pages remain', (
+    testWidgets('never claims an empty week while pages remain', (
       tester,
     ) async {
       await _pumpTimeline(tester, [
         for (var i = 0; i < 150; i++)
-          _task('bulk-$i', 'Bulk task $i', start: 3),
+          _task('bulk-$i', 'Bulk task $i', start: 40),
         _task('task-today', 'Due today task', end: 0),
       ], holdAfterFirstPage: true);
 
-      expect(_key('task-timeline-nothing-today'), findsNothing);
-      expect(_key('task-timeline-today-loading'), findsOneWidget);
-      expect(find.text('Loading tasks…'), findsOneWidget);
+      expect(_key('task-timeline-empty'), findsNothing);
+      expect(find.byType(AppLoadingIndicator), findsWidgets);
     });
 
     for (final offset in [0, 50]) {
@@ -226,10 +219,9 @@ void main() {
       ) async {
         final repository = await _pumpTimeline(tester, [
           for (var i = 0; i < 150; i++)
-            _task('bulk-$i', 'Bulk task $i', start: 3),
+            _task('bulk-$i', 'Bulk task $i', start: 40),
           _task('task-today', 'Due today task', end: 0),
         ], failAtOffset: offset);
-        expect(_key('task-timeline-nothing-today'), findsNothing);
         expect(find.text('Something went wrong'), findsWidgets);
         expect(_key('task-timeline-retry'), findsOneWidget);
         final attempts = repository.pages.length;
@@ -240,46 +232,10 @@ void main() {
         await tester.pumpAndSettle();
         expect(_key('task-timeline-row-task-today'), findsOneWidget);
         expect(_key('task-timeline-retry'), findsNothing);
-        expect(_key('task-timeline-nothing-today'), findsNothing);
       });
     }
 
-    testWidgets('a start-only task is ongoing, never overdue', (tester) async {
-      await _pumpTimeline(tester, [
-        _task('task-1', 'Alpha task', end: 0),
-        _task('task-started', 'Started task', start: -5),
-      ]);
-
-      expect(find.textContaining('Started'), findsWidgets);
-      expect(_key('task-timeline-row-task-started'), findsOneWidget);
-      expect(_key('task-timeline-show-overdue'), findsNothing);
-      expect(find.text('Overdue'), findsNothing);
-    });
-
-    testWidgets('Show overdue jumps to the overdue days', (tester) async {
-      await _pumpTimeline(tester, _standardTasks);
-
-      expect(find.text('Overdue task'), findsNothing);
-      await tester.tap(_key('task-timeline-show-overdue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Overdue task'), findsOneWidget);
-    });
-
-    testWidgets('the range hides later work until Show later', (tester) async {
-      await _pumpTimeline(tester, _standardTasks);
-
-      await tester.tap(find.text('Week'));
-      await tester.pumpAndSettle();
-      expect(find.text('Later task'), findsNothing);
-      await tester.scrollUntilVisible(_key('task-timeline-show-later'), 200);
-      await tester.tap(_key('task-timeline-show-later'));
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(find.text('Later task'), 200);
-      expect(find.text('Later task'), findsOneWidget);
-      await tester.scrollUntilVisible(find.text('Undated task'), 200);
-    });
-
-    testWidgets('tapping a row opens the task quick actions', (tester) async {
+    testWidgets('tapping a task opens its details', (tester) async {
       await _pumpTimeline(tester, _standardTasks);
 
       await tester.tap(_key('task-timeline-row-task-1'));
@@ -289,42 +245,86 @@ void main() {
     });
 
     testWidgets('builds only the rows near the viewport', (tester) async {
-      final tasks = [
-        for (var i = 0; i < 1500; i++)
-          _task('bulk-$i', 'Bulk task $i', start: i % 60, end: i % 60 + 1),
-      ];
       await _pumpTimeline(tester, [
-        ...tasks,
-        _task('task-1', 'Alpha task', end: 0),
+        for (var i = 0; i < 1500; i++)
+          _task('bulk-$i', 'Bulk task $i', start: 0, end: i % 3),
       ]);
 
-      final built = find.byType(AppGroupedRow, skipOffstage: false);
+      final built = find.byType(TaskTimelineBarRow, skipOffstage: false);
+      expect(built, findsWidgets);
       expect(built.evaluate().length, lessThan(40));
-      // Counts are gone: no "N tasks" chips or per-list totals.
-      expect(find.textContaining(RegExp(r'\d+ tasks')), findsNothing);
     });
 
-    testWidgets('a board with no dated or undated work shows one message', (
+    testWidgets('the undated shortcut opens the list filtered to them', (
       tester,
     ) async {
       await _pumpTimeline(tester, [
-        TaskBoardTask(
-          id: 'task-1',
-          listId: 'list-2',
-          name: 'Alpha task',
-          endDate: _day(1),
-        ),
+        _task('task-1', 'Alpha task'),
+        _task('task-2', 'Beta task'),
       ]);
 
-      expect(find.byType(CustomScrollView), findsNothing);
-      expect(find.byType(AppStateMessage), findsOneWidget);
+      expect(find.text('Nothing scheduled this week'), findsOneWidget);
+      await tester.tap(find.text('2 tasks without dates'));
+      await tester.pumpAndSettle();
+
+      final cubit = readRowActionsCubit(tester);
+      expect(cubit.state.currentView, TaskBoardDetailView.list);
+      expect(cubit.state.filters.undatedOnly, isTrue);
+      expect(find.text('Alpha task'), findsOneWidget);
+    });
+
+    testWidgets('body scrolling reaches the shell for its hairline and dock', (
+      tester,
+    ) async {
+      final escaped = <ScrollNotification>[];
+      final repository = _TimelineRepository([
+        for (var i = 0; i < 40; i++) _task('bulk-$i', 'Bulk task $i', end: 0),
+      ]);
+      await tester.pumpApp(
+        NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            escaped.add(notification);
+            return false;
+          },
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<WorkspaceCubit>.value(
+                value: rowActionsWorkspaceCubit(),
+              ),
+              BlocProvider(create: (_) => ShellChromeActionsCubit()),
+            ],
+            child: TaskBoardDetailPage(
+              boardId: 'board-1',
+              taskRepository: repository,
+            ),
+          ),
+        ),
+      );
+      for (var i = 0; i < 3; i++) {
+        await tester.pump(const Duration(milliseconds: 350));
+      }
+      await tester.pumpAndSettle();
+      BlocProvider.of<TaskBoardDetailCubit>(
+        tester.element(find.byType(Scrollable).first),
+      ).setView(TaskBoardDetailView.timeline);
+      await tester.pumpAndSettle();
+      escaped.clear();
+
+      await tester.drag(_key('task-timeline-body'), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(
+        escaped.where(
+          (n) => n is ScrollUpdateNotification && n.dragDetails != null,
+        ),
+        isNotEmpty,
+      );
     });
   });
 
   group('board timeline in the timezone setting', () {
     usePhoneSurface();
 
-    testWidgets('labels today and the span day in the setting zone', (
+    testWidgets('marks today and places bars in the setting zone', (
       tester,
     ) async {
       final zone = _zoneOnAnotherDay();
@@ -338,63 +338,28 @@ void main() {
           resolved: true,
         ),
       );
-      TaskBoardTask task(String id, String name, {int? start, int? end}) =>
+      await pumpRowActionsBoard(
+        tester,
+        workspaceCubit: rowActionsWorkspaceCubit(),
+        repository: _TimelineRepository([
           TaskBoardTask(
-            id: id,
+            id: 'task-1',
             listId: 'list-1',
-            name: name,
-            priority: 'high',
-            startDate: start == null ? null : _zoneDayAt(zone, start),
-            endDate: end == null ? null : _zoneDayAt(zone, end),
-          );
-      await tester.pumpApp(
-        MultiBlocProvider(
-          providers: [
-            BlocProvider<WorkspaceCubit>.value(
-              value: rowActionsWorkspaceCubit(),
-            ),
-            BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
-            BlocProvider(create: (_) => ShellChromeActionsCubit()),
-          ],
-          child: TaskBoardDetailPage(
-            boardId: 'board-1',
-            taskRepository: _TimelineRepository([
-              task('task-1', 'Alpha task', end: 0),
-              task('task-ongoing', 'Ongoing task', start: -2, end: 3),
-              task('task-soon', 'Soon task', start: 1),
-            ]),
+            name: 'Alpha task',
+            endDate: _zoneDayAt(zone, 0),
           ),
-        ),
+        ]),
+        timezone: timezone,
       );
-      for (var i = 0; i < 3; i++) {
-        await tester.pump(const Duration(milliseconds: 350));
-      }
-      await tester.pumpAndSettle();
-      BlocProvider.of<TaskBoardDetailCubit>(
-        tester.element(find.byType(Scrollable).first),
-      ).setView(TaskBoardDetailView.timeline);
+      readRowActionsCubit(tester).setView(TaskBoardDetailView.timeline);
       await tester.pumpAndSettle();
 
       final zoneToday = taskDay(DateTime.now(), zone);
-      final date = DateFormat.MMMEd('en');
-      final todayHeader = find.text('Today · ${date.format(zoneToday)}');
-      expect(todayHeader, findsOneWidget);
-      expect(find.textContaining('Today ·'), findsOneWidget);
-      final zoneTomorrow = DateTime(
-        zoneToday.year,
-        zoneToday.month,
-        zoneToday.day + 1,
-      );
-      expect(
-        find.text('Tomorrow · ${date.format(zoneTomorrow)}'),
-        findsOneWidget,
-      );
-      // Today's group holds the task due today, below its header.
-      expect(
-        tester.getTopLeft(_key('task-timeline-row-task-1')).dy,
-        greaterThan(tester.getTopLeft(todayHeader).dy),
-      );
-      expect(find.textContaining('Day 3 of 6'), findsOneWidget);
+      final cell = tester.getRect(_key(_dayKey(zoneToday)));
+      final bar = tester.getRect(_key('task-timeline-bar-task-1'));
+      expect(bar.left, moreOrLessEquals(cell.left + 1, epsilon: 0.5));
+      expect(bar.right, moreOrLessEquals(cell.right - 1, epsilon: 0.5));
+      expect(find.textContaining(RegExp(r'^\dd$')), findsNothing);
     });
   });
 
@@ -407,7 +372,7 @@ void main() {
       await _pumpTimeline(tester, _standardTasks);
 
       expect(tester.takeException(), isNull);
-      await tester.drag(find.byType(CustomScrollView), const Offset(0, -600));
+      await tester.drag(_key('task-timeline-body'), const Offset(0, -600));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
     });
@@ -418,40 +383,45 @@ void main() {
 
     for (final MapEntry(key: name, value: (settings, brightness))
         in DesignRender.themes.entries) {
-      testWidgets('phone $name', (tester) async {
-        DesignRender.setSize(tester, DesignRender.sizes['phone']!);
-        final workspaceCubit = rowActionsWorkspaceCubit();
-        await tester.pumpWidget(
-          RepaintBoundary(
-            key: DesignRenderApp.boundaryKey,
-            child: appearanceTestApp(
-              appearance: settings,
-              brightness: brightness,
-              home: MultiBlocProvider(
-                providers: [
-                  BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
-                  BlocProvider(create: (_) => ShellChromeActionsCubit()),
-                ],
-                child: TaskBoardDetailPage(
-                  boardId: 'board-1',
-                  taskRepository: _TimelineRepository(_standardTasks),
+      for (final MapEntry(key: device, value: size) in {
+        'phone': DesignRender.sizes['phone']!,
+        'tablet': const Size(834, 1194),
+      }.entries) {
+        testWidgets('$device $name', (tester) async {
+          DesignRender.setSize(tester, size);
+          final workspaceCubit = rowActionsWorkspaceCubit();
+          await tester.pumpWidget(
+            RepaintBoundary(
+              key: DesignRenderApp.boundaryKey,
+              child: appearanceTestApp(
+                appearance: settings,
+                brightness: brightness,
+                home: MultiBlocProvider(
+                  providers: [
+                    BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+                    BlocProvider(create: (_) => ShellChromeActionsCubit()),
+                  ],
+                  child: TaskBoardDetailPage(
+                    boardId: 'board-1',
+                    taskRepository: _TimelineRepository(_standardTasks),
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-        for (var i = 0; i < 3; i++) {
-          await tester.pump(const Duration(milliseconds: 350));
-        }
-        await tester.pumpAndSettle();
-        BlocProvider.of<TaskBoardDetailCubit>(
-          tester.element(find.byType(Scrollable).first),
-        ).setView(TaskBoardDetailView.timeline);
-        await tester.pumpAndSettle();
+          );
+          for (var i = 0; i < 3; i++) {
+            await tester.pump(const Duration(milliseconds: 350));
+          }
+          await tester.pumpAndSettle();
+          BlocProvider.of<TaskBoardDetailCubit>(
+            tester.element(find.byType(Scrollable).first),
+          ).setView(TaskBoardDetailView.timeline);
+          await tester.pumpAndSettle();
 
-        expect(find.textContaining('Today ·'), findsOneWidget);
-        await DesignRender.capture(tester, 'task-timeline-phone-$name');
-      });
+          expect(_key('task-timeline-header'), findsOneWidget);
+          await DesignRender.capture(tester, 'task-timeline-$device-$name');
+        });
+      }
     }
   });
 }

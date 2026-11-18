@@ -3,6 +3,8 @@ part of 'task_board_detail_page.dart';
 /// The Timeline places tasks by date, so it needs every task of every open
 /// list, not the first page the other views start from. The paging policy
 /// (page size, board budget, concurrency) is [taskTimelineListsToLoad].
+/// Done and Closed lists contribute only their first page, which is enough
+/// to show recently finished work faded on the bars.
 extension _TimelineLoading on _TaskBoardDetailPageViewState {
   /// Lists the Timeline shows: Done and Closed lists are left out.
   List<TaskBoardList> _timelineOpenLists(List<TaskBoardList> lists) => [
@@ -28,10 +30,8 @@ extension _TimelineLoading on _TaskBoardDetailPageViewState {
   /// After this frame, requests the next pages the policy allows. Each page
   /// changes the state, which rebuilds the page and schedules the next ones,
   /// until every open list is loaded or the board budget is reached.
-  void _scheduleTimelinePages(
-    BuildContext context,
-    List<TaskBoardList> openLists,
-  ) {
+  void _scheduleTimelinePages(BuildContext context, List<TaskBoardList> lists) {
+    final openLists = _timelineOpenLists(lists);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !context.mounted) return;
       final cubit = context.read<TaskBoardDetailCubit>();
@@ -55,6 +55,31 @@ extension _TimelineLoading on _TaskBoardDetailPageViewState {
           ),
         );
       }
+      for (final list in lists) {
+        if (!_taskListDone(list) ||
+            state.listTasksByListId.containsKey(list.id) ||
+            state.loadingListIds.contains(list.id) ||
+            state.listLoadErrorById.containsKey(list.id)) {
+          continue;
+        }
+        unawaited(
+          cubit.loadListTasks(
+            listId: list.id,
+            pageSizeHint: taskTimelinePageSize,
+          ),
+        );
+      }
     });
+  }
+
+  /// Opens the list view filtered to tasks without dates.
+  void _showUndated(bool personal) {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    cubit.setFilters(cubit.state.filters.copyWith(undatedOnly: true));
+    if (personal) {
+      _openBoardViewRoute(context, TaskBoardDetailView.list);
+    } else {
+      _setBoardView(context, TaskBoardDetailView.list);
+    }
   }
 }

@@ -14,6 +14,7 @@ class TaskBoardDetailFilters extends Equatable {
     this.assigneeIds = const <String>{},
     this.labelIds = const <String>{},
     this.projectIds = const <String>{},
+    this.undatedOnly = false,
   });
 
   final Set<String> listIds;
@@ -23,13 +24,17 @@ class TaskBoardDetailFilters extends Equatable {
   final Set<String> labelIds;
   final Set<String> projectIds;
 
+  /// Only tasks with neither a start nor a due date.
+  final bool undatedOnly;
+
   bool get hasAdvancedFilters =>
       listIds.isNotEmpty ||
       statuses.isNotEmpty ||
       priorities.isNotEmpty ||
       assigneeIds.isNotEmpty ||
       labelIds.isNotEmpty ||
-      projectIds.isNotEmpty;
+      projectIds.isNotEmpty ||
+      undatedOnly;
 
   TaskBoardDetailFilters copyWith({
     Set<String>? listIds,
@@ -38,6 +43,7 @@ class TaskBoardDetailFilters extends Equatable {
     Set<String>? assigneeIds,
     Set<String>? labelIds,
     Set<String>? projectIds,
+    bool? undatedOnly,
   }) {
     return TaskBoardDetailFilters(
       listIds: listIds ?? this.listIds,
@@ -46,6 +52,7 @@ class TaskBoardDetailFilters extends Equatable {
       assigneeIds: assigneeIds ?? this.assigneeIds,
       labelIds: labelIds ?? this.labelIds,
       projectIds: projectIds ?? this.projectIds,
+      undatedOnly: undatedOnly ?? this.undatedOnly,
     );
   }
 
@@ -57,6 +64,7 @@ class TaskBoardDetailFilters extends Equatable {
     assigneeIds,
     labelIds,
     projectIds,
+    undatedOnly,
   ];
 }
 
@@ -131,6 +139,7 @@ class TaskBoardDetailState extends Equatable {
     final hasPriorityFilter = filters.priorities.isNotEmpty;
     final hasListFilter = filters.listIds.isNotEmpty;
     final hasStatusFilter = filters.statuses.isNotEmpty;
+    final undatedOnly = filters.undatedOnly;
     final normalizedPriorities = hasPriorityFilter
         ? filters.priorities
               .map((priority) => priority.trim().toLowerCase())
@@ -146,7 +155,8 @@ class TaskBoardDetailState extends Equatable {
         !hasProjectFilter &&
         !hasPriorityFilter &&
         !hasListFilter &&
-        !hasStatusFilter) {
+        !hasStatusFilter &&
+        !undatedOnly) {
       return source;
     }
 
@@ -158,6 +168,10 @@ class TaskBoardDetailState extends Equatable {
             final matchesSearch =
                 name.contains(query) || description.contains(query);
             if (!matchesSearch) return false;
+          }
+
+          if (undatedOnly && (task.startDate != null || task.endDate != null)) {
+            return false;
           }
 
           if (hasListFilter && !filters.listIds.contains(task.listId)) {

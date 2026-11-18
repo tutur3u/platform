@@ -37,6 +37,7 @@ class _TaskBoardAdvancedFilterSheetState
   late Set<String> _assigneeIds;
   late Set<String> _labelIds;
   late Set<String> _projectIds;
+  late bool _undatedOnly;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _TaskBoardAdvancedFilterSheetState
     _assigneeIds = Set<String>.from(widget.initialFilters.assigneeIds);
     _labelIds = Set<String>.from(widget.initialFilters.labelIds);
     _projectIds = Set<String>.from(widget.initialFilters.projectIds);
+    _undatedOnly = widget.initialFilters.undatedOnly;
   }
 
   @override
@@ -208,6 +210,13 @@ class _TaskBoardAdvancedFilterSheetState
                   _projectIds = nextSelectedIds;
                 }),
               ),
+              const shad.Gap(10),
+              AppToggleRow(
+                key: const ValueKey('task-board-filter-undated'),
+                title: Text(context.l10n.taskBoardDetailFilterUndated),
+                value: _undatedOnly,
+                onChanged: (value) => setState(() => _undatedOnly = value),
+              ),
               const shad.Gap(16),
               Row(
                 children: [
@@ -241,6 +250,7 @@ class _TaskBoardAdvancedFilterSheetState
       _assigneeIds.clear();
       _labelIds.clear();
       _projectIds.clear();
+      _undatedOnly = false;
     });
   }
 
@@ -253,6 +263,7 @@ class _TaskBoardAdvancedFilterSheetState
         assigneeIds: Set<String>.from(_assigneeIds),
         labelIds: Set<String>.from(_labelIds),
         projectIds: Set<String>.from(_projectIds),
+        undatedOnly: _undatedOnly,
       ),
     );
 

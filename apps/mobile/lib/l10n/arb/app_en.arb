@@ -4237,6 +4237,7 @@
   "taskBoardDetailFilterLabels": "Labels",
   "taskBoardDetailFilterLists": "Lists",
   "taskBoardDetailFilterProjects": "Projects",
+  "taskBoardDetailFilterUndated": "Without dates",
   "taskBoardDetailFilterStatuses": "Statuses",
   "taskBoardDetailFilters": "Filters",
   "taskBoardDetailFiltersActive": "Filters active",
@@ -4389,9 +4390,6 @@
   "taskBoardDetailTaskTitleLabel": "Title",
   "taskBoardDetailTaskTitleRequired": "Task title is required",
   "taskBoardDetailThisWeek": "This week",
-  "taskBoardDetailTimelineEmptyDescription": "Add start and end dates to tasks to place them on the timeline.",
-  "taskBoardDetailTimelineEmptyTitle": "No scheduled tasks yet",
-  "taskBoardDetailTimelineUnscheduledTitle": "Unscheduled tasks",
   "taskBoardDetailTimelineView": "Timeline",
   "taskBoardDetailToday": "Today",
   "taskBoardDetailTomorrow": "Tomorrow",
@@ -4627,33 +4625,43 @@
   "taskSettingsEstimateNotSet": "Not set",
   "taskSettingsOrganiseSection": "Organise",
   "taskSettingsTitle": "Task settings",
-  "taskTimelineLoadingTasks": "Loading tasks…",
-  "taskTimelineNotAllLoaded": "Some tasks aren't loaded yet",
-  "taskTimelineNothingToday": "Nothing scheduled today",
-  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
-  "@taskTimelineOngoing": {
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeTitle": "Range",
+  "taskTimelineRangeTwoWeeks": "2 weeks",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineDaysLate": "{days}d",
+  "@taskTimelineDaysLate": {
     "placeholders": {
-      "day": {
+      "days": {
         "type": "int"
-      },
-      "total": {
-        "type": "int"
-      },
-      "date": {
-        "type": "String"
       }
     }
   },
-  "taskTimelineRangeAll": "All",
-  "taskTimelineRangeMonth": "Month",
-  "taskTimelineRangeWeek": "Week",
-  "taskTimelineShowLater": "Show later tasks",
-  "taskTimelineShowOverdue": "Show overdue",
-  "taskTimelineStarted": "Started {date}",
-  "@taskTimelineStarted": {
+  "taskTimelineDaysLateLong": "{days}d late",
+  "@taskTimelineDaysLateLong": {
     "placeholders": {
-      "date": {
-        "type": "String"
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTimelineEmptyMonth": "Nothing scheduled this month",
+  "taskTimelineEmptyTwoWeeks": "Nothing scheduled these two weeks",
+  "taskTimelineEmptyWeek": "Nothing scheduled this week",
+  "taskTimelineOverdueCount": "Overdue {count}",
+  "@taskTimelineOverdueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "taskTimelineTodayButton": "Today",
+  "taskTimelineUndatedCount": "{count, plural, =1{1 task without dates} other{{count} tasks without dates}}",
+  "@taskTimelineUndatedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },

@@ -17329,6 +17329,12 @@ abstract class AppLocalizations {
   /// **'Projects'**
   String get taskBoardDetailFilterProjects;
 
+  /// No description provided for @taskBoardDetailFilterUndated.
+  ///
+  /// In en, this message translates to:
+  /// **'Without dates'**
+  String get taskBoardDetailFilterUndated;
+
   /// No description provided for @taskBoardDetailFilterStatuses.
   ///
   /// In en, this message translates to:
@@ -18240,24 +18246,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This week'**
   String get taskBoardDetailThisWeek;
-
-  /// No description provided for @taskBoardDetailTimelineEmptyDescription.
-  ///
-  /// In en, this message translates to:
-  /// **'Add start and end dates to tasks to place them on the timeline.'**
-  String get taskBoardDetailTimelineEmptyDescription;
-
-  /// No description provided for @taskBoardDetailTimelineEmptyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'No scheduled tasks yet'**
-  String get taskBoardDetailTimelineEmptyTitle;
-
-  /// No description provided for @taskBoardDetailTimelineUnscheduledTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Unscheduled tasks'**
-  String get taskBoardDetailTimelineUnscheduledTitle;
 
   /// No description provided for @taskBoardDetailTimelineView.
   ///
@@ -19669,41 +19657,23 @@ abstract class AppLocalizations {
   /// **'Task settings'**
   String get taskSettingsTitle;
 
-  /// No description provided for @taskTimelineLoadingTasks.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading tasks…'**
-  String get taskTimelineLoadingTasks;
-
-  /// No description provided for @taskTimelineNotAllLoaded.
-  ///
-  /// In en, this message translates to:
-  /// **'Some tasks aren\'t loaded yet'**
-  String get taskTimelineNotAllLoaded;
-
-  /// No description provided for @taskTimelineNothingToday.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing scheduled today'**
-  String get taskTimelineNothingToday;
-
-  /// No description provided for @taskTimelineOngoing.
-  ///
-  /// In en, this message translates to:
-  /// **'Day {day} of {total}, ends {date}'**
-  String taskTimelineOngoing(int day, int total, String date);
-
-  /// No description provided for @taskTimelineRangeAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get taskTimelineRangeAll;
-
   /// No description provided for @taskTimelineRangeMonth.
   ///
   /// In en, this message translates to:
   /// **'Month'**
   String get taskTimelineRangeMonth;
+
+  /// No description provided for @taskTimelineRangeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Range'**
+  String get taskTimelineRangeTitle;
+
+  /// No description provided for @taskTimelineRangeTwoWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'2 weeks'**
+  String get taskTimelineRangeTwoWeeks;
 
   /// No description provided for @taskTimelineRangeWeek.
   ///
@@ -19711,23 +19681,53 @@ abstract class AppLocalizations {
   /// **'Week'**
   String get taskTimelineRangeWeek;
 
-  /// No description provided for @taskTimelineShowLater.
+  /// No description provided for @taskTimelineDaysLate.
   ///
   /// In en, this message translates to:
-  /// **'Show later tasks'**
-  String get taskTimelineShowLater;
+  /// **'{days}d'**
+  String taskTimelineDaysLate(int days);
 
-  /// No description provided for @taskTimelineShowOverdue.
+  /// No description provided for @taskTimelineDaysLateLong.
   ///
   /// In en, this message translates to:
-  /// **'Show overdue'**
-  String get taskTimelineShowOverdue;
+  /// **'{days}d late'**
+  String taskTimelineDaysLateLong(int days);
 
-  /// No description provided for @taskTimelineStarted.
+  /// No description provided for @taskTimelineEmptyMonth.
   ///
   /// In en, this message translates to:
-  /// **'Started {date}'**
-  String taskTimelineStarted(String date);
+  /// **'Nothing scheduled this month'**
+  String get taskTimelineEmptyMonth;
+
+  /// No description provided for @taskTimelineEmptyTwoWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled these two weeks'**
+  String get taskTimelineEmptyTwoWeeks;
+
+  /// No description provided for @taskTimelineEmptyWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled this week'**
+  String get taskTimelineEmptyWeek;
+
+  /// No description provided for @taskTimelineOverdueCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue {count}'**
+  String taskTimelineOverdueCount(int count);
+
+  /// No description provided for @taskTimelineTodayButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get taskTimelineTodayButton;
+
+  /// No description provided for @taskTimelineUndatedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 task without dates} other{{count} tasks without dates}}'**
+  String taskTimelineUndatedCount(int count);
 
   /// No description provided for @tasksAllCaughtUp.
   ///
