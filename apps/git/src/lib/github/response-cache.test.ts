@@ -281,7 +281,9 @@ describe('cachedGitHubFetch', () => {
       headers: { Authorization: 'Bearer secret-token' },
       url: repoUrl('/'),
     });
-    const [[key, stored]] = [...entries.entries()];
+    const entry = [...entries.entries()][0];
+    if (!entry) throw new Error('expected one stored response');
+    const [key, stored] = entry;
     expect(key).not.toContain('secret-token');
     expect(stored.headers.get('set-cookie')).toBeNull();
     expect(stored.headers.get('x-ratelimit-remaining')).toBeNull();

@@ -238,11 +238,12 @@ describe('serveWithEdgePageCache', () => {
     expect(entries.size).toBe(1);
 
     const render = vi.fn(async () => html('<main>private</main>'));
-    for (const headers of [
+    const credentialHeaders: Record<string, string>[] = [
       { cookie: 'sb-access-token=secret' },
       { cookie: 'NEXT_LOCALE=en' },
       { authorization: 'Bearer token' },
-    ]) {
+    ];
+    for (const headers of credentialHeaders) {
       const response = await serveWithEdgePageCache({
         options: options(store),
         render,
