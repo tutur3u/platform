@@ -16,6 +16,7 @@ class ShellActionSpec extends Equatable {
     this.enabled = true,
     this.isLoading = false,
     this.highlighted = false,
+    this.filled = false,
     this.inDock = false,
     this.keepVisibleWithKeyboard = false,
     this.segmentGroup,
@@ -47,6 +48,7 @@ class ShellActionSpec extends Equatable {
   }) : icon = active ? AppIcons.close : AppIcons.search,
        callbackToken = (active, hasQuery, callbackToken),
        isLoading = false,
+       filled = false,
        highlighted = active || hasQuery,
        inDock = true,
        keepVisibleWithKeyboard = active && keepVisibleWithKeyboard,
@@ -61,6 +63,7 @@ class ShellActionSpec extends Equatable {
   final bool enabled;
   final bool isLoading;
   final bool highlighted;
+  final bool filled;
   final bool inDock;
   final bool keepVisibleWithKeyboard;
   final String? segmentGroup;
@@ -83,6 +86,7 @@ class ShellActionSpec extends Equatable {
     enabled,
     isLoading,
     highlighted,
+    filled,
     inDock,
     keepVisibleWithKeyboard,
     segmentGroup,

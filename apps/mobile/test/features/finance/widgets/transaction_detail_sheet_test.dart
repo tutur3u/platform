@@ -373,7 +373,7 @@ void main() {
         expect(switches, hasLength(1));
         expect(switches.first.value, isFalse);
 
-        await tapMode('Basic');
+        await tapMode('Expense');
         switches = tester
             .widgetList<shad.Switch>(find.byType(shad.Switch))
             .toList(growable: false);
@@ -394,7 +394,7 @@ void main() {
             .toList(growable: false);
         expect(switches.first.value, isTrue);
 
-        await tapMode('Basic');
+        await tapMode('Expense');
         switches = tester
             .widgetList<shad.Switch>(find.byType(shad.Switch))
             .toList(growable: false);

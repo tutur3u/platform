@@ -1,5 +1,7 @@
 part of 'transaction_detail_sheet.dart';
 
+enum _CreateTransactionMode { expense, income, transfer }
+
 enum _MoneyFieldTarget { source, destination }
 
 class _TransactionFormDialog extends StatefulWidget {
@@ -11,6 +13,7 @@ class _TransactionFormDialog extends StatefulWidget {
     this.onCreate,
     this.exchangeRates,
     this.initialWalletId,
+    this.initialTakenAt,
   }) : assert(
          transaction == null ? onCreate != null : onSave != null,
          'Create mode requires onCreate; edit mode requires onSave.',
@@ -23,6 +26,7 @@ class _TransactionFormDialog extends StatefulWidget {
   final TransactionCreateHandler? onCreate;
   final List<ExchangeRate>? exchangeRates;
   final String? initialWalletId;
+  final DateTime? initialTakenAt;
 
   @override
   State<_TransactionFormDialog> createState() => _TransactionFormDialogState();
@@ -36,29 +40,107 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     setState(() {});
   }
 
-  void _onModeChanged(bool isTransfer) {
+  _CreateTransactionMode _createMode = _CreateTransactionMode.expense;
+
+  void _setCreateMode(_CreateTransactionMode mode) {
+    if (_isSaving || mode == _createMode) return;
+    _dismissMoneyInput();
     setState(() {
-      _isTransfer = isTransfer;
-      if (_isTransfer) {
-        _categoryId = null;
-        _activeMoneyField = _MoneyFieldTarget.source;
-        if (_isCreate && !_hasEditedSettings) {
-          _reportOptIn = false;
-        }
-      } else {
-        _destinationWalletId = null;
-        _destinationAmountController.clear();
-        _isDestinationOverridden = false;
-        _activeMoneyField = _MoneyFieldTarget.source;
-        if (_isCreate && !_hasEditedSettings) {
-          _reportOptIn = true;
-        }
-      }
+      _createMode = mode;
+      _isTransfer = mode == _CreateTransactionMode.transfer;
+      _categoryId = null;
+      _destinationWalletId = null;
+      _destinationAmountController.clear();
+      _isDestinationOverridden = false;
+      _activeMoneyField = _MoneyFieldTarget.source;
+      if (!_hasEditedSettings) _reportOptIn = !_isTransfer;
     });
+  }
+
+  void _selectCreateCategory(String id) => setState(() => _categoryId = id);
+
+  void _expandSettings() => setState(() => _showSettings = true);
+
+  String _currencyForWallet(Wallet wallet) {
+    final code = wallet.currency?.trim().toUpperCase();
+    return code == null || code.isEmpty ? _workspaceCurrency : code;
+  }
+
+  Future<void> _pickWallet({String? currency}) async {
+    final selectedWalletId = await showFinanceModal<String?>(
+      context: context,
+      builder: (_) => _WalletPickerDialog(
+        wallets: currency == null
+            ? _wallets
+            : _wallets
+                  .where((wallet) => _currencyForWallet(wallet) == currency)
+                  .toList(),
+        title: context.l10n.financeWallet,
+        selectedWalletId: _walletId,
+      ),
+    );
+
+    if (selectedWalletId == null || !mounted) return;
+    setState(() {
+      _walletId = selectedWalletId;
+      if (_destinationWalletId == selectedWalletId) {
+        _destinationWalletId = null;
+      }
+      if (_isCreate) _isDestinationOverridden = false;
+    });
+    _tryAutoFillDestinationAmount();
+  }
+
+  Future<void> _pickCreateCurrency() async {
+    final currencies = _wallets
+        .map(_currencyForWallet)
+        .where((code) => code.isNotEmpty)
+        .toSet();
+    final currency = await showAppSheet<String>(
+      context: context,
+      builder: (context) => AppSheetScaffold(
+        title: context.l10n.financeWalletSelectCurrency,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final code in currencies)
+              AppGroupedRow(
+                title: Text(code),
+                trailing: code == _selectedCurrency
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.of(context).pop(code),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted || currency == null) return;
+    if (_selectedWallet != null && _selectedCurrency == currency) return;
+    await _pickWallet(currency: currency);
+  }
+
+  Future<void> _pickReceipt() async {
+    final l10n = context.l10n;
+    try {
+      final source = await showImageSourcePickerDialog(
+        context: context,
+        title: l10n.financeAttachReceipt,
+        cameraLabel: l10n.camera,
+        galleryLabel: l10n.gallery,
+      );
+      if (source == null || !mounted) return;
+      final photo = await ImagePicker().pickImage(source: source);
+      if (photo == null || !mounted) return;
+      await _pickAttachments(files: [GalleryPlatformFile(photo)]);
+    } on Exception {
+      if (mounted) _showAttachmentToast(l10n.commonSomethingWentWrong);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isCreate) return _buildCreate(context);
     final l10n = context.l10n;
     final theme = shad.Theme.of(context);
     final palette = FinancePalette.of(context);
@@ -67,17 +149,13 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     final selectedCategory = _displaySelectedCategory;
     final selectedTags = _displaySelectedTags;
     final selectedTagLabel = selectedTags.map((tag) => tag.name).join(', ');
-    final actionLabel = _isCreate
-        ? (_isTransfer ? l10n.financeTransfer : l10n.financeCreateTransaction)
-        : l10n.timerSave;
+    final actionLabel = l10n.timerSave;
 
     return shad.Scaffold(
       headers: [
         shad.AppBar(
           title: Text(
-            _isCreate
-                ? l10n.financeCreateTransaction
-                : l10n.financeEditTransaction,
+            l10n.financeEditTransaction,
             style: theme.typography.large.copyWith(fontWeight: FontWeight.w600),
           ),
           trailing: [
@@ -229,13 +307,6 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_isCreate) ...[
-                  _ModeSelectorCard(
-                    isTransfer: _isTransfer,
-                    onChanged: _onModeChanged,
-                  ),
-                  const shad.Gap(12),
-                ],
                 TapRegion(
                   groupId: _moneyTapRegionGroup,
                   onTapOutside: (_) => _dismissMoneyInput(),
@@ -435,6 +506,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _takenAt =
         widget.transaction?.takenAt ??
         widget.transaction?.createdAt ??
+        widget.initialTakenAt ??
         DateTime.now();
     _walletId = widget.transaction?.walletId ?? widget.initialWalletId;
     _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
@@ -461,7 +533,7 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _destinationAmountFocusNode.addListener(_handleMoneyFocusChanged);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!mounted || _isCreate) return;
       _setActiveMoneyField(_MoneyFieldTarget.source);
     });
     unawaited(_loadOptions());

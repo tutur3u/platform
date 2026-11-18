@@ -265,18 +265,26 @@ extension _ShellPageLayout on _ShellPageState {
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
     final l10n = context.l10n;
+    final isFinanceOverview = widget.matchedLocation == Routes.finance;
     final isMiniAppRoute =
-        activeModule != null || injectedMiniNavRegistration != null;
+        (activeModule != null && !isFinanceOverview) ||
+        injectedMiniNavRegistration != null;
     final activeMiniNavItems = isMiniAppRoute
         ? activeModule?.miniAppNavItemsFor(context) ?? const <MiniAppNavItem>[]
         : const <MiniAppNavItem>[];
     final useInjectedMiniNav = injectedMiniNavRegistration != null;
     final isCompact = _usesCompactNavigation(context);
     _syncRootTabs(context);
+    final financeOverviewKey =
+        _usesRail || _phoneRootTabs.contains(ShellRootTab.apps)
+        ? ShellRootTab.apps.key
+        : shellRootMoreKey;
     final selectedKey = useInjectedMiniNav
         ? _injectedMiniSelectedKey(injectedMiniNavRegistration)
         : isMiniAppRoute
         ? _miniSelectedKey(context, activeMiniNavItems)
+        : isFinanceOverview
+        ? financeOverviewKey
         : _selectedKeyForLocation(widget.matchedLocation);
     final globalItems = _buildNavItems(context, state, l10n);
     final miniItems = useInjectedMiniNav
@@ -285,7 +293,7 @@ extension _ShellPageLayout on _ShellPageState {
             injectedMiniNavRegistration,
             isCompact,
           )
-        : activeModule != null
+        : isMiniAppRoute && activeModule != null
         ? _buildMiniAppNavItems(context, activeModule, activeMiniNavItems)
         : const <shad.NavigationItem>[];
     final assistantChrome = context.watch<AssistantChromeCubit>().state;

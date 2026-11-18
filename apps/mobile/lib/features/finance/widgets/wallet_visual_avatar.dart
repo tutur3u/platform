@@ -11,6 +11,7 @@ class WalletVisualAvatar extends StatelessWidget {
     this.imageSrc,
     this.size = 36,
     this.backgroundColor,
+    this.foregroundColor,
     super.key,
   });
 
@@ -19,11 +20,13 @@ class WalletVisualAvatar extends StatelessWidget {
   final IconData fallbackIcon;
   final double size;
   final Color? backgroundColor;
+  final Color? foregroundColor;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = shad.Theme.of(context).colorScheme;
     final bg = backgroundColor ?? colorScheme.primary.withValues(alpha: 0.14);
+    final ink = foregroundColor ?? colorScheme.primary;
     final resolvedIcon = resolvePlatformIcon(icon, fallback: fallbackIcon);
 
     return Container(
@@ -31,23 +34,17 @@ class WalletVisualAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: bg),
       child: imageSrc == null
-          ? Icon(resolvedIcon, size: size * 0.46, color: colorScheme.primary)
+          ? Icon(resolvedIcon, size: size * 0.46, color: ink)
           : Padding(
               padding: EdgeInsets.all(size * 0.18),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: SvgPicture.network(
                   walletImageUrl(imageSrc!),
-                  placeholderBuilder: (_) => Icon(
-                    resolvedIcon,
-                    size: size * 0.46,
-                    color: colorScheme.primary,
-                  ),
-                  errorBuilder: (context, error, stackTrace) => Icon(
-                    resolvedIcon,
-                    size: size * 0.46,
-                    color: colorScheme.primary,
-                  ),
+                  placeholderBuilder: (_) =>
+                      Icon(resolvedIcon, size: size * 0.46, color: ink),
+                  errorBuilder: (context, error, stackTrace) =>
+                      Icon(resolvedIcon, size: size * 0.46, color: ink),
                 ),
               ),
             ),

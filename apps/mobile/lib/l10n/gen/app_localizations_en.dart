@@ -3129,6 +3129,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeAddTransaction => 'Add';
 
   @override
+  String get financeAttachReceipt => 'Attach receipt';
+
+  @override
+  String get financeCloseTransactionForm => 'Close new transaction';
+
+  @override
+  String get financeNewTransaction => 'New transaction';
+
+  @override
+  String financeRecentIn(String month) {
+    return 'Recent in · $month';
+  }
+
+  @override
+  String financeRecentOut(String month) {
+    return 'Recent out · $month';
+  }
+
+  @override
+  String financeTotalInCurrency(String currency) {
+    return 'Total in $currency';
+  }
+
+  @override
+  String get financeTransactionDate => 'Date';
+
+  @override
+  String get financeTransactionNote => 'Note';
+
+  @override
+  String get financeTransactionSaved => 'Transaction saved';
+
+  @override
   String get financeAmount => 'Amount';
 
   @override

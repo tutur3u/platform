@@ -1,18 +1,27 @@
 import 'dart:async';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart' hide AlertDialog, TextField;
+import 'package:flutter/material.dart' hide AlertDialog;
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/number_symbols.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
+import 'package:mobile/core/ui/components/app_card.dart';
+import 'package:mobile/core/ui/components/app_icon_button.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
-    show AppSheetHandle;
+    show AppSheetHandle, showAppSheet;
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
+import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
@@ -23,19 +32,26 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_tone.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
+import 'package:mobile/widgets/image_source_picker_dialog.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 
-part 'transaction_detail_sheet_widgets.dart';
+part 'transaction_create_category.dart';
+part 'transaction_create_fields.dart';
+part 'transaction_create_footer.dart';
+part 'transaction_create_layout.dart';
+part 'transaction_detail_routes.dart';
 part 'transaction_detail_sheet_amount_parsing.dart';
+part 'transaction_detail_sheet_attachment_widgets.dart';
 part 'transaction_detail_sheet_edit_dialog.dart';
 part 'transaction_detail_sheet_edit_dialog_logic.dart';
 part 'transaction_detail_sheet_edit_dialog_widgets.dart';
-part 'transaction_detail_sheet_attachment_widgets.dart';
+part 'transaction_detail_sheet_widgets.dart';
 
 typedef TransactionSaveHandler =
     Future<Transaction> Function({
@@ -75,63 +91,6 @@ Color? _parseHexColor(String? hex) {
     radix: 16,
   );
   return value != null ? Color(value) : null;
-}
-
-Future<bool> showTransactionDetailSheet(
-  BuildContext context, {
-  required String wsId,
-  required Transaction transaction,
-  required FinanceRepository repository,
-  required TransactionSaveHandler onSave,
-  required Future<void> Function(String transactionId) onDelete,
-  String? workspaceCurrency,
-  List<ExchangeRate>? exchangeRates,
-}) async {
-  final result = await showAdaptiveSheet<bool>(
-    context: context,
-    builder: (_) => _TransactionDetailSheet(
-      wsId: wsId,
-      transaction: transaction,
-      repository: repository,
-      onSave: onSave,
-      onDelete: onDelete,
-      workspaceCurrency: workspaceCurrency,
-      exchangeRates: exchangeRates,
-    ),
-  );
-
-  return result == true;
-}
-
-Future<bool> showCreateTransactionSheet(
-  BuildContext context, {
-  required String wsId,
-  required FinanceRepository repository,
-  required TransactionCreateHandler onCreate,
-  List<ExchangeRate>? exchangeRates,
-  String? initialWalletId,
-}) async {
-  final result = await _showTransactionComposerRoute<bool>(
-    context,
-    child: _TransactionFormDialog(
-      wsId: wsId,
-      repository: repository,
-      onCreate: onCreate,
-      exchangeRates: exchangeRates,
-      initialWalletId: initialWalletId,
-    ),
-  );
-
-  return result == true;
-}
-
-Future<T?> _showTransactionComposerRoute<T>(
-  BuildContext context, {
-  required Widget child,
-}) {
-  return Navigator.of(context, rootNavigator: true).push<T>(
-    MaterialPageRoute<T>(fullscreenDialog: true, builder: (_) => child),
-  );
 }
 
 class _TransactionDetailSheet extends StatefulWidget {

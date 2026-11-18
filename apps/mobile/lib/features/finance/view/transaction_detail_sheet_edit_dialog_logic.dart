@@ -377,8 +377,8 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
     }
   }
 
-  Future<void> _pickAttachments() async {
-    final result = await FilePicker.pickFiles();
+  Future<void> _pickAttachments({List<PlatformFile>? files}) async {
+    final result = files ?? await FilePicker.pickFiles();
     if (result.isEmpty || !mounted) return;
     final availableSlots = _maxTransactionAttachmentCount - _attachments.length;
     if (availableSlots <= 0) {
@@ -526,27 +526,6 @@ mixin _TransactionFormDialogStateHelpers on State<_TransactionFormDialog> {
           ? shad.Alert.destructive(content: Text(message))
           : shad.Alert(content: Text(message)),
     );
-  }
-
-  Future<void> _pickWallet() async {
-    final selectedWalletId = await showFinanceModal<String?>(
-      context: context,
-      builder: (_) => _WalletPickerDialog(
-        wallets: _wallets,
-        title: context.l10n.financeWallet,
-        selectedWalletId: _walletId,
-      ),
-    );
-
-    if (selectedWalletId == null || !mounted) return;
-    setState(() {
-      _walletId = selectedWalletId;
-      if (_destinationWalletId == selectedWalletId) {
-        _destinationWalletId = null;
-      }
-      if (_isCreate) _isDestinationOverridden = false;
-    });
-    _tryAutoFillDestinationAmount();
   }
 
   Future<void> _pickDestinationWallet() async {

@@ -6067,6 +6067,60 @@ abstract class AppLocalizations {
   /// **'Add'**
   String get financeAddTransaction;
 
+  /// No description provided for @financeAttachReceipt.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach receipt'**
+  String get financeAttachReceipt;
+
+  /// No description provided for @financeCloseTransactionForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close new transaction'**
+  String get financeCloseTransactionForm;
+
+  /// No description provided for @financeNewTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'New transaction'**
+  String get financeNewTransaction;
+
+  /// No description provided for @financeRecentIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent in · {month}'**
+  String financeRecentIn(String month);
+
+  /// No description provided for @financeRecentOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent out · {month}'**
+  String financeRecentOut(String month);
+
+  /// No description provided for @financeTotalInCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Total in {currency}'**
+  String financeTotalInCurrency(String currency);
+
+  /// No description provided for @financeTransactionDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get financeTransactionDate;
+
+  /// No description provided for @financeTransactionNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get financeTransactionNote;
+
+  /// No description provided for @financeTransactionSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction saved'**
+  String get financeTransactionSaved;
+
   /// No description provided for @financeAmount.
   ///
   /// In en, this message translates to:

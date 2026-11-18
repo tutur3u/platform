@@ -33,7 +33,13 @@ Future<void> _loadFromWorkspace(
 }
 
 class TransactionListPage extends StatelessWidget {
-  const TransactionListPage({this.initialTransactionId, super.key});
+  const TransactionListPage({
+    this.initialTransactionId,
+    this.startInSearch = false,
+    super.key,
+  });
+
+  final bool startInSearch;
 
   final String? initialTransactionId;
 
@@ -57,7 +63,10 @@ class TransactionListPage extends StatelessWidget {
           unawaited(_loadFromWorkspace(context, cubit));
           return cubit;
         },
-        child: _TransactionListView(initialTransactionId: initialTransactionId),
+        child: _TransactionListView(
+          initialTransactionId: initialTransactionId,
+          startInSearch: startInSearch,
+        ),
       ),
     );
   }
@@ -81,7 +90,12 @@ class _TransactionListSkeleton extends StatelessWidget {
 }
 
 class _TransactionListView extends StatefulWidget {
-  const _TransactionListView({this.initialTransactionId});
+  const _TransactionListView({
+    required this.startInSearch,
+    this.initialTransactionId,
+  });
+
+  final bool startInSearch;
 
   final String? initialTransactionId;
 
@@ -98,6 +112,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
   @override
   void initState() {
     super.initState();
+    _isSearchVisible = widget.startInSearch;
     _scrollController.addListener(_onScroll);
     if (widget.initialTransactionId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

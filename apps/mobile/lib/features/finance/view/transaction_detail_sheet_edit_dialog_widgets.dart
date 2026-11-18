@@ -1,24 +1,5 @@
 part of 'transaction_detail_sheet.dart';
 
-class _ModeSelectorCard extends StatelessWidget {
-  const _ModeSelectorCard({required this.isTransfer, required this.onChanged});
-
-  final bool isTransfer;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return FinanceSegmentedRow(
-      leftLabel: l10n.financeBasic,
-      rightLabel: l10n.financeTransfer,
-      leftSelected: !isTransfer,
-      onLeftPressed: () => onChanged(false),
-      onRightPressed: () => onChanged(true),
-    );
-  }
-}
-
 class _PrimaryAmountComposer extends StatelessWidget {
   const _PrimaryAmountComposer({
     required this.amountLabel,

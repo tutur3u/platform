@@ -7,25 +7,34 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/sorbet/sorbet_scales.dart';
+import 'package:mobile/core/ui/components/app_card.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
-import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
-import 'package:mobile/features/finance/utils/wallet_ordering.dart';
+import 'package:mobile/features/finance/utils/transaction_icon.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/finance/widgets/finance_tone.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+part 'finance_overview_rows.dart';
+part 'finance_overview_sections.dart';
 part 'finance_page_hero.dart';
 
 class FinanceOverviewSkeleton extends StatelessWidget {
@@ -123,23 +132,38 @@ class _FinanceView extends StatelessWidget {
 
             return Stack(
               children: [
-                const FinanceAmountVisibilityShellAction(
-                  ownerId: 'finance-overview-amount-visibility',
-                  locations: {Routes.finance},
+                ShellChromeActions(
+                  ownerId: 'finance-overview',
+                  locations: const {Routes.finance},
+                  actions: [
+                    financeAmountVisibilityAction(
+                      context,
+                      showAmounts: showAmounts,
+                    ),
+                    ShellActionSpec(
+                      id: 'finance-search',
+                      icon: Icons.search,
+                      tooltip: context.l10n.commonSearch,
+                      onPressed: () =>
+                          context.push('${Routes.transactions}?search=1'),
+                    ),
+                    ShellActionSpec(
+                      id: 'finance-create',
+                      icon: Icons.add,
+                      tooltip: context.l10n.financeNewTransaction,
+                      filled: true,
+                      onPressed: () => unawaited(_create(context, state)),
+                    ),
+                  ],
                 ),
                 NovaRefreshIndicator(
                   onRefresh: () => _reload(context, retainError: true),
-                  child: AppPageListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      _OverviewHero(state: state, showAmounts: showAmounts),
-                      const shad.Gap(AppLayout.sectionGap),
-                      const _CheckpointAuditShortcut(),
-                      const shad.Gap(AppLayout.sectionGap),
-                      _WalletHighlights(state: state, showAmounts: showAmounts),
-                      const shad.Gap(AppLayout.sectionGap),
-                      _ActivityPreview(state: state, showAmounts: showAmounts),
-                    ],
+                  child: FinanceOverviewContent(
+                    state: state,
+                    showAmounts: showAmounts,
+                    onTransactionTap: (transaction) =>
+                        _openTransaction(context, state, transaction),
+                    onCreate: () => _create(context, state),
                   ),
                 ),
               ],
@@ -149,6 +173,38 @@ class _FinanceView extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _create(BuildContext context, FinanceState state) async {
+  final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  if (wsId == null) return;
+  final created = await openCreateTransactionSheet(
+    context,
+    wsId: wsId,
+    repository: context.read<FinanceRepository>(),
+    exchangeRates: state.exchangeRates,
+  );
+  if (!created || !context.mounted) return;
+  showAppToast(context, message: context.l10n.financeTransactionSaved);
+  await _reload(context, retainError: true);
+}
+
+Future<void> _openTransaction(
+  BuildContext context,
+  FinanceState state,
+  Transaction transaction,
+) async {
+  final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  if (wsId == null) return;
+  await openTransactionDetailSheet(
+    context,
+    wsId: wsId,
+    transaction: transaction,
+    repository: context.read<FinanceRepository>(),
+    workspaceCurrency: state.workspaceCurrency,
+    exchangeRates: state.exchangeRates,
+  );
+  if (context.mounted) await _reload(context);
 }
 
 class _FinanceError extends StatelessWidget {
@@ -171,450 +227,6 @@ class _FinanceError extends StatelessWidget {
             child: Text(l10n.commonRetry),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CheckpointAuditShortcut extends StatelessWidget {
-  const _CheckpointAuditShortcut();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final palette = FinancePalette.of(context);
-
-    return FinancePanel(
-      onTap: () => context.push(Routes.financeCheckpoints),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: palette.accent.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(
-              Icons.fact_check_outlined,
-              color: palette.accent,
-              size: 22,
-            ),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.financeCheckpointsTitle,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const shad.Gap(4),
-                Text(
-                  context.l10n.financeCheckpointsOverviewHint,
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const shad.Gap(10),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: theme.colorScheme.mutedForeground,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WalletHighlights extends StatelessWidget {
-  const _WalletHighlights({required this.state, required this.showAmounts});
-
-  final FinanceState state;
-  final bool showAmounts;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FinanceSectionHeader(
-          title: l10n.financeOverviewWalletSectionTitle,
-          action: shad.GhostButton(
-            onPressed: () => context.push(Routes.wallets),
-            child: Text(l10n.financeViewAll),
-          ),
-        ),
-        const shad.Gap(14),
-        if (state.wallets.isEmpty)
-          FinanceEmptyState(
-            icon: Icons.account_balance_wallet_outlined,
-            title: l10n.financeNoWallets,
-            body: l10n.financeOverviewNoWalletsBody,
-            action: shad.SecondaryButton(
-              onPressed: () => context.push(Routes.wallets),
-              child: Text(l10n.financeCreateFirstWallet),
-            ),
-          )
-        else
-          // The row takes the height of its tallest card, so long names,
-          // descriptions, converted totals and larger text sizes grow the
-          // cards instead of overflowing them. Cards never drop below the
-          // 236 baseline, which keeps short wallets aligned.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (index, wallet) in state.wallets.indexed) ...[
-                    if (index > 0) const shad.Gap(12),
-                    _WalletHighlightCard(
-                      wallet: wallet,
-                      workspaceCurrency: state.workspaceCurrency,
-                      exchangeRates: state.exchangeRates,
-                      showAmounts: showAmounts,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _WalletHighlightCard extends StatelessWidget {
-  const _WalletHighlightCard({
-    required this.wallet,
-    required this.workspaceCurrency,
-    required this.exchangeRates,
-    required this.showAmounts,
-  });
-
-  final Wallet wallet;
-  final String workspaceCurrency;
-  final List<ExchangeRate> exchangeRates;
-  final bool showAmounts;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = FinancePalette.of(context);
-    final theme = shad.Theme.of(context);
-    final isCredit = wallet.type == 'CREDIT';
-    final accent = isCredit ? palette.negative : palette.accent;
-    final balance = wallet.balance ?? 0;
-    final currency = wallet.currency ?? workspaceCurrency;
-    final converted = convertCurrency(
-      balance,
-      currency,
-      workspaceCurrency,
-      exchangeRates,
-    );
-    final showConverted =
-        currency.toUpperCase() != workspaceCurrency.toUpperCase() &&
-        converted != null;
-    final isZeroNet = isWalletDisplayNetZero(
-      wallet: wallet,
-      workspaceCurrency: workspaceCurrency,
-      exchangeRates: exchangeRates,
-    );
-
-    return ConstrainedBox(
-      constraints: const BoxConstraints.tightFor(
-        width: 224,
-      ).copyWith(minHeight: 236),
-      child: Opacity(
-        opacity: isZeroNet ? 0.58 : 1,
-        child: FinancePanel(
-          onTap: () => context.push(Routes.walletDetailPath(wallet.id)),
-          backgroundColor: palette.panel,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  WalletVisualAvatar(
-                    icon: wallet.icon,
-                    imageSrc: wallet.imageSrc,
-                    fallbackIcon: isCredit
-                        ? Icons.credit_card_outlined
-                        : Icons.account_balance_wallet_outlined,
-                    backgroundColor: accent.withValues(alpha: 0.12),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      isCredit
-                          ? context.l10n.financeWalletTypeCredit
-                          : context.l10n.financeWalletTypeStandard,
-                      style: theme.typography.xSmall.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Text(
-                wallet.name ?? '-',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.large.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              if (wallet.description?.trim().isNotEmpty ?? false) ...[
-                const shad.Gap(6),
-                Text(
-                  wallet.description!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ] else
-                const shad.Gap(16),
-              const shad.Gap(16),
-              FinanceAmountText(
-                amount: balance,
-                currency: currency,
-                isVisible: showAmounts,
-                showPlus: false,
-                alignment: CrossAxisAlignment.start,
-                forceColor: theme.colorScheme.foreground,
-                style: theme.typography.h4,
-                fitToWidth: true,
-              ),
-              if (showConverted) ...[
-                const shad.Gap(8),
-                Text(
-                  maskFinanceValue(
-                    '≈ ${formatCurrency(converted, workspaceCurrency)}',
-                    showAmounts: showAmounts,
-                  ),
-                  style: theme.typography.textSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ActivityPreview extends StatelessWidget {
-  const _ActivityPreview({required this.state, required this.showAmounts});
-
-  final FinanceState state;
-  final bool showAmounts;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        FinanceSectionHeader(
-          title: l10n.financeOverviewActivityTitle,
-          action: shad.GhostButton(
-            onPressed: () => context.push(Routes.transactions),
-            child: Text(l10n.financeViewAll),
-          ),
-        ),
-        const shad.Gap(14),
-        if (state.recentTransactions.isEmpty)
-          FinanceEmptyState(
-            icon: Icons.receipt_long_outlined,
-            title: l10n.financeNoTransactions,
-            body: l10n.financeOverviewNoTransactionsBody,
-            action: shad.SecondaryButton(
-              onPressed: () => context.push(Routes.transactions),
-              child: Text(l10n.financeAddFirstTransaction),
-            ),
-          )
-        else
-          Column(
-            children: [
-              for (final transaction in state.recentTransactions.take(5)) ...[
-                _ActivityTile(
-                  transaction: transaction,
-                  workspaceCurrency: state.workspaceCurrency,
-                  exchangeRates: state.exchangeRates,
-                  showAmounts: showAmounts,
-                ),
-                if (transaction != state.recentTransactions.take(5).last)
-                  const shad.Gap(10),
-              ],
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _ActivityTile extends StatelessWidget {
-  const _ActivityTile({
-    required this.transaction,
-    required this.workspaceCurrency,
-    required this.exchangeRates,
-    required this.showAmounts,
-  });
-
-  final Transaction transaction;
-  final String workspaceCurrency;
-  final List<ExchangeRate> exchangeRates;
-  final bool showAmounts;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final palette = FinancePalette.of(context);
-    final amount = transaction.amount ?? 0;
-    final isExpense = amount < 0;
-    final accent = isExpense ? palette.negative : palette.positive;
-    final title = (transaction.description?.trim().isNotEmpty ?? false)
-        ? transaction.description!.trim()
-        : (transaction.categoryName ?? transaction.walletName ?? '—');
-    final currency = transaction.walletCurrency ?? workspaceCurrency;
-    final converted = convertCurrency(
-      amount,
-      currency,
-      workspaceCurrency,
-      exchangeRates,
-    );
-    final showConverted =
-        converted != null &&
-        currency.toUpperCase() != workspaceCurrency.toUpperCase();
-    final subtitle = [
-      if (transaction.categoryName?.trim().isNotEmpty ?? false)
-        transaction.categoryName!.trim(),
-      if (transaction.walletName?.trim().isNotEmpty ?? false)
-        transaction.walletName!.trim(),
-    ].join(' · ');
-    final date = transaction.takenAt ?? transaction.createdAt;
-
-    return FinancePanel(
-      radius: 20,
-      onTap: () async {
-        final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-        if (wsId == null) {
-          return;
-        }
-
-        await openTransactionDetailSheet(
-          context,
-          wsId: wsId,
-          transaction: transaction,
-          repository: context.read<FinanceRepository>(),
-          workspaceCurrency: workspaceCurrency,
-          exchangeRates: exchangeRates,
-        );
-
-        if (!context.mounted) {
-          return;
-        }
-
-        await _reload(context);
-      },
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              isExpense ? Icons.south_west_rounded : Icons.north_east_rounded,
-              color: accent,
-            ),
-          ),
-          const shad.Gap(14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (subtitle.isNotEmpty) ...[
-                  const shad.Gap(4),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.typography.textSmall.copyWith(
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ),
-                ],
-                if (date != null) ...[
-                  const shad.Gap(4),
-                  Text(
-                    DateFormat.yMMMd().format(date),
-                    style: theme.typography.xSmall.copyWith(
-                      color: theme.colorScheme.mutedForeground,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const shad.Gap(12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              FinanceAmountText(
-                amount: amount,
-                currency: currency,
-                isVisible: showAmounts,
-                style: theme.typography.small,
-              ),
-              if (showConverted) ...[
-                const shad.Gap(4),
-                Text(
-                  maskFinanceValue(
-                    '≈ ${formatCurrency(converted, workspaceCurrency)}',
-                    showAmounts: showAmounts,
-                  ),
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
       ),
     );
   }

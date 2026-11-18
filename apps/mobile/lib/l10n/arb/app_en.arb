@@ -2340,6 +2340,36 @@
   "financeAddAttachments": "Add attachments",
   "financeAddFirstTransaction": "Add first transaction",
   "financeAddTransaction": "Add",
+  "financeAttachReceipt": "Attach receipt",
+  "financeCloseTransactionForm": "Close new transaction",
+  "financeNewTransaction": "New transaction",
+  "financeRecentIn": "Recent in · {month}",
+  "@financeRecentIn": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "financeRecentOut": "Recent out · {month}",
+  "@financeRecentOut": {
+    "placeholders": {
+      "month": {
+        "type": "String"
+      }
+    }
+  },
+  "financeTotalInCurrency": "Total in {currency}",
+  "@financeTotalInCurrency": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "financeTransactionDate": "Date",
+  "financeTransactionNote": "Note",
+  "financeTransactionSaved": "Transaction saved",
   "financeAmount": "Amount",
   "financeAttachmentCount": "{count, plural, =0{No files selected} one{1 file selected} other{{count} files selected}}",
   "financeAttachmentEmpty": "No attachments selected",

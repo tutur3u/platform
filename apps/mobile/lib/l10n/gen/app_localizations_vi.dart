@@ -3115,6 +3115,39 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeAddTransaction => 'Thêm';
 
   @override
+  String get financeAttachReceipt => 'Đính kèm hóa đơn';
+
+  @override
+  String get financeCloseTransactionForm => 'Đóng giao dịch mới';
+
+  @override
+  String get financeNewTransaction => 'Giao dịch mới';
+
+  @override
+  String financeRecentIn(String month) {
+    return 'Thu gần đây · $month';
+  }
+
+  @override
+  String financeRecentOut(String month) {
+    return 'Chi gần đây · $month';
+  }
+
+  @override
+  String financeTotalInCurrency(String currency) {
+    return 'Tổng theo $currency';
+  }
+
+  @override
+  String get financeTransactionDate => 'Ngày';
+
+  @override
+  String get financeTransactionNote => 'Ghi chú';
+
+  @override
+  String get financeTransactionSaved => 'Đã lưu giao dịch';
+
+  @override
   String get financeAmount => 'Số tiền';
 
   @override

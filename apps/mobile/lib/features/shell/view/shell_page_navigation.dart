@@ -1,8 +1,8 @@
 part of 'shell_page.dart';
 
 extension _ShellPageNavigation on _ShellPageState {
-  /// Root destinations (see [_ShellPageRootTabs]). The archive below
-  /// Notifications leads with Back.
+  /// Root destinations (see [_ShellPageRootTabs]) and Back on pages that keep
+  /// the global tabs visible.
   List<shad.NavigationItem> _buildNavItems(
     BuildContext context,
     AppTabState state,
@@ -43,7 +43,7 @@ extension _ShellPageNavigation on _ShellPageState {
   }
 
   bool _showsGlobalBack(String location) =>
-      location == Routes.notificationsArchive;
+      location == Routes.notificationsArchive || location == Routes.finance;
 
   Widget _buildCompactNavIcon({
     required IconData icon,

@@ -515,6 +515,7 @@ GoRouter createAppRouter(
             path: Routes.transactions,
             builder: (context, state) => TransactionListPage(
               initialTransactionId: state.uri.queryParameters['transactionId'],
+              startInSearch: state.uri.queryParameters['search'] == '1',
             ),
           ),
           GoRoute(
