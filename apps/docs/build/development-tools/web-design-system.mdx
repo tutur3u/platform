@@ -125,6 +125,23 @@ Regression coverage: `packages/ui/src/components/ui/floating-bar.test.tsx`
 padding, control heights and divider spacing in light, dark and Sorbet against
 `packages/ui/fixtures/floating-bar`.
 
+## Split buttons and filter tracks
+
+A split button is two `Button`s that read as one control: outer corners use the
+same radius as the sibling buttons, the seam corners are square, a 1px divider
+separates the halves, and both halves have the neighbouring controls' height.
+Sorbet's pill rule (`[data-slot="button"]`) sets all four corners and defeats
+side utilities such as `rounded-r-none`, so the halves carry
+`data-sorbet-shape="keep"`. A filter is the shared `ToggleGroup` with
+`variant="default"` (a segmented track with inner padding and gap), kept 8px or
+more from an adjacent search box and at its height. Meet's Meetings page
+applies both.
+
+Regression coverage: `apps/web/e2e/meetings-page-geometry.fixture.ts` measures
+the split-button radii, seam, heights, divider and gaps, the filter track and
+the past-list icon actions at 390px and 1100px in light and dark Sorbet against
+`packages/ui/fixtures/meetings-page`.
+
 ## Hover-expand sidebar
 
 The shared `Structure` in hover mode (`overlayOnExpand`) is a pure overlay. The
