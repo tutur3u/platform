@@ -116,6 +116,16 @@ const queuedMainBaselines = new Set([
   'turbo-unit-tests.yaml',
   'type-check.yaml',
 ]);
+const boundedMainProducers = new Set([
+  'codex-plugin.yaml',
+  'i18n-check.yaml',
+  'required-account-mfa-contract.yaml',
+  'security-checks.yaml',
+]);
+
+function mainRunCancels(file) {
+  return !queuedMainBaselines.has(file) && !boundedMainProducers.has(file);
+}
 const workflows = Object.fromEntries(
   fs
     .readdirSync(workflowRoot)
@@ -250,6 +260,8 @@ module.exports = {
   prExceptions,
   mainExceptions,
   queuedMainBaselines,
+  boundedMainProducers,
+  mainRunCancels,
   workflows,
   events,
   context,

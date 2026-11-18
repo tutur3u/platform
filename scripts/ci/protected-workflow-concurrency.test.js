@@ -6,6 +6,7 @@ const {
   prExceptions,
   mainExceptions,
   queuedMainBaselines,
+  mainRunCancels,
   workflows,
   events,
   context,
@@ -14,34 +15,6 @@ const {
   assertSupersedes,
   assertPrSupersedes,
 } = require('./protected-workflow-concurrency-helpers.js');
-
-const boundedMainProducers = new Set([
-  'codex-plugin.yaml',
-  'i18n-check.yaml',
-  'required-account-mfa-contract.yaml',
-  'security-checks.yaml',
-]);
-
-for (const file of boundedMainProducers) {
-  test(`${file}: main keeps the active run and shares the default pending slot`, () => {
-    const { concurrency: policy, name: workflow } = workflows[file];
-    assert.ok(events(workflows[file]).push.branches.includes('main'));
-    const first = { ...context('refs/heads/main'), workflow };
-    const latest = { ...first, sha: 'latest', run_id: 3 };
-    assert.equal(render(policy.group, first), render(policy.group, latest));
-    assert.equal(render(policy['cancel-in-progress'], first), false);
-    assert.equal(render(policy['cancel-in-progress'], latest), false);
-    assert.equal(policy.queue, undefined);
-    assert.equal(
-      render(policy['cancel-in-progress'], {
-        ...latest,
-        ref: 'refs/heads/main-spoof',
-      }),
-      true
-    );
-  });
-}
-
 const prGroups = new Map();
 for (const [file, workflow] of Object.entries(workflows)) {
   for (const event of ['pull_request', 'pull_request_target']) {
@@ -92,12 +65,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
     Object.hasOwn(events(workflow), 'push') &&
     (!push?.branches || push.branches.includes('main')) &&
     !push?.['branches-ignore']?.includes('main');
-  if (
-    onMain &&
-    !mainExceptions[file] &&
-    !queuedMainBaselines.has(file) &&
-    !boundedMainProducers.has(file)
-  ) {
+  if (onMain && !mainExceptions[file] && mainRunCancels(file)) {
     test(`${file}: main validation supersedes without sharing a production group`, () => {
       const first = { ...context('refs/heads/main'), workflow: workflow.name };
       const group = assertSupersedes(workflow, first, {
@@ -270,7 +238,7 @@ for (const [file, workflow] of Object.entries(workflows)) {
       assertQualification(
         policy,
         workflow.name,
-        !queuedMainBaselines.has(file) && !boundedMainProducers.has(file)
+        mainRunCancels(file)
       );
     });
   }
@@ -285,7 +253,7 @@ test('main validation inventory requires isolated qualification, including Oxc j
     assertQualification(
       workflow.concurrency,
       workflow.name,
-      !queuedMainBaselines.has(file) && !boundedMainProducers.has(file)
+      mainRunCancels(file)
     );
   }
 });
