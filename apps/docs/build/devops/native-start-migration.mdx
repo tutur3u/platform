@@ -175,10 +175,10 @@ emitted outside the Start manifest. Vite keeps stylesheet dependencies relative
 to their CSS and resolves client asset URLs from the browser's app base. The
 emitted-worker asset check parses the rendered HTML and requests every
 same-origin resource on both production host variants, including Open Graph
-and Twitter images. The shared apex metadata catalog in
+and Twitter images. The shared apex asset catalog in
 `packages/utils/src/common/apex-metadata-assets.ts` records the root icons,
-Web manifest and default social image with their media types. An emitted
-catalog URL must return HTTP 200 with its recorded media type. Other
+Web manifest, default social image and shared UI logo with their media types.
+An emitted catalog URL must return HTTP 200 with its recorded media type. Other
 same-origin resources on the apex must stay inside the app mount.
 Redirects are checked separately, and an asset probe must reach an HTML page
 that emits resources.

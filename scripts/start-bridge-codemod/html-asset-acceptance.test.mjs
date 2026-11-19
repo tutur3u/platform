@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import test from 'node:test';
+import { TUTURUUU_LOGO_URL } from '../../packages/ui/src/components/ui/custom/tuturuuu-logo-urls.ts';
 import { assertRenderedAssets } from './html-asset-acceptance.mjs';
 
 const require = createRequire(
@@ -32,6 +33,7 @@ test('checks shared apex metadata resources and mounted CSS', async (t) => {
     <link rel="manifest" href="/manifest.webmanifest">
     <meta property="og:image" content="https://tuturuuu.com/media/logos/og-image.jpg">
     <meta name="twitter:image" content="/media/logos/og-image.jpg">
+    <img src="${TUTURUUU_LOGO_URL}">
     <link rel="stylesheet" href="/tools/assets/main.css">
   `);
   const contentTypes = {
@@ -41,6 +43,7 @@ test('checks shared apex metadata resources and mounted CSS', async (t) => {
     '/apple-touch-icon.png': 'image/png',
     '/manifest.webmanifest': 'application/manifest+json',
     '/media/logos/og-image.jpg': 'image/jpeg',
+    '/media/logos/transparent.png': 'image/png',
   };
   const sharedRequests = [];
   await assertRenderedAssets(t, require, call, pages, async (url) => {
@@ -58,6 +61,7 @@ test('checks shared apex metadata resources and mounted CSS', async (t) => {
     'https://tuturuuu.com/apple-touch-icon.png',
     'https://tuturuuu.com/manifest.webmanifest',
     'https://tuturuuu.com/media/logos/og-image.jpg',
+    TUTURUUU_LOGO_URL,
   ]);
 });
 

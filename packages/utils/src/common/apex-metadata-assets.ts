@@ -14,4 +14,5 @@ export const apexMetadataAssetTypes: ReadonlyMap<string, readonly string[]> =
       ['application/manifest+json'],
     ],
     ['https://tuturuuu.com/media/logos/og-image.jpg', ['image/jpeg']],
+    ['https://tuturuuu.com/media/logos/transparent.png', ['image/png']],
   ]);

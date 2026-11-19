@@ -72,7 +72,7 @@ export async function assertRenderedAssets(
       'workerd could not parse the HTML fixture'
     );
     const resources = new Set();
-    const escaped = [];
+    const escaped = new Set();
     for (const reference of await parsed.json()) {
       if (reference.startsWith('#')) continue;
       const url = URL.parse(reference, document);
@@ -100,15 +100,15 @@ export async function assertRenderedAssets(
       }
       if (url.origin !== document.origin) continue;
       if (base && !url.pathname.startsWith(`${base}/`)) {
-        escaped.push(reference);
+        escaped.add(reference);
         continue;
       }
       resources.add(`${url.pathname}${url.search}`);
     }
     assert.equal(
-      escaped.length,
+      escaped.size,
       0,
-      `${document.href} emitted ${escaped.join(', ')} outside ${base}`
+      `${document.href} emitted ${[...escaped].join(', ')} outside ${base}`
     );
     assert.ok(
       resources.size > 0,
