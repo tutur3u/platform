@@ -33,8 +33,11 @@ const WORKFLOWS = {
   },
   'supabase-family-key.yaml': {
     job: 'create',
-    environment: 'supabase-production-migrations',
-    secrets: ['COLAB_CLOUDFLARE_API_TOKEN', 'SUPABASE_ACCESS_TOKEN'],
+    environment: 'supabase-family-key',
+    secrets: [
+      'SUPABASE_FAMILY_KEY_CLOUDFLARE_API_TOKEN',
+      'SUPABASE_ACCESS_TOKEN',
+    ],
     consumers: ['node scripts/ci/supabase-family-key.mjs put'],
     inputs: { action: ['create'] },
   },
@@ -175,4 +178,22 @@ test('supabase-family-key: refuses a second key before creating one', () => {
     'utf8'
   );
   assert.ok(text.includes('SUPABASE_PROJECT_REF: nzamlzqfdwaaxdefwraj'));
+});
+
+test('supabase-family-key: masks both tokens before invoking scripts', () => {
+  const { env, run } = readWorkflow('supabase-family-key.yaml', {
+    raw: true,
+  }).jobs.create.steps.at(-1);
+  assert.equal(
+    env.CLOUDFLARE_API_TOKEN,
+    '$' + '{{ secrets.SUPABASE_FAMILY_KEY_CLOUDFLARE_API_TOKEN }}'
+  );
+  assert.equal(
+    env.SUPABASE_ACCESS_TOKEN,
+    '$' + '{{ secrets.SUPABASE_ACCESS_TOKEN }}'
+  );
+  assert.match(
+    run,
+    /printf '::add-mask::%s\\n' "\$CLOUDFLARE_API_TOKEN" "\$SUPABASE_ACCESS_TOKEN"\nnode /
+  );
 });

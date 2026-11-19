@@ -7,10 +7,9 @@ name: Supabase Family Key
 # file, artifact, log line or command argument. A second run refuses to create
 # a second key.
 #
-# Credentials, by name: SUPABASE_ACCESS_TOKEN from the
-# supabase-production-migrations environment, and COLAB_CLOUDFLARE_API_TOKEN
-# (Cloudflare token that edits the Workers). Readback prints key name, id and
-# type, and each Worker secret name and type; it fails closed on a mismatch.
+# Use the repository Supabase token and the dedicated environment's
+# account-scoped Workers Scripts:Edit token. Readback prints names, IDs and
+# types only, and fails closed on a mismatch.
 on:
   workflow_dispatch:
     inputs:
@@ -33,7 +32,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: supabase-production-migrations
+    environment: supabase-family-key
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,12 +49,15 @@ jobs:
       - name: Create the key, write it to the family Workers and read it back
         env:
           CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.SUPABASE_FAMILY_KEY_CLOUDFLARE_API_TOKEN }}
           SUPABASE_PROJECT_REF: nzamlzqfdwaaxdefwraj
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           set -euo pipefail
           set +x
+          : "${CLOUDFLARE_API_TOKEN:?Missing Cloudflare family key token}"
+          : "${SUPABASE_ACCESS_TOKEN:?Missing Supabase access token}"
+          printf '::add-mask::%s\n' "$CLOUDFLARE_API_TOKEN" "$SUPABASE_ACCESS_TOKEN"
           node scripts/ci/supabase-family-key.mjs preflight
           value="$(node scripts/ci/supabase-family-key.mjs create)"
           printf '::add-mask::%s\n' "$value"
