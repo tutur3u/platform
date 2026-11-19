@@ -208,6 +208,19 @@ Image provenance: [official Redis image](https://hub.docker.com/_/redis) and
 The helper pins the SHA-256 verified from the registry manifest index for
 `7.4-alpine`; review and reverify the digest before updating it.
 
+## Web Vercel route budget
+
+The Web preview workflow counts routing rules in
+`.vercel/output/config.json` after the Vercel build. The maximum is 1,948,
+leaving 100 rules below Vercel’s deployment limit. The count appears in the
+**Check Web route budget** step. Treat the **Route (app)** listing as a source
+inventory because one Next.js endpoint can produce several routing rules.
+
+Keep the URL and method contracts when consolidating workspace APIs. Selected
+legacy resource groups share generated catch-all wrappers. Update the underlying
+handlers and regenerate wrappers with
+`node scripts/generate-web-api-route-wrappers.js --write`.
+
 ## Offline Vercel Release Recipe
 
 The Calendar stage publisher reads a committed record from

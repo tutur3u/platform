@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { listFilesRecursive } = require('./tanstack-file-utils.js');
+const { groupWorkspaceWrappers } = require('./web-api-wrapper-groups.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DEFAULT_LEGACY_API_DIR = path.join(
@@ -137,7 +138,7 @@ function expectedWrappers({
   const sourceDir = legacyApiDir ?? legacyV1Dir ?? DEFAULT_LEGACY_API_DIR;
   const targetDir = appApiDir ?? appV1Dir ?? DEFAULT_APP_API_DIR;
 
-  return routeFiles(sourceDir, fsImpl).flatMap((legacyRoutePath) => {
+  const wrappers = routeFiles(sourceDir, fsImpl).flatMap((legacyRoutePath) => {
     const relativeRouteFile = toPosix(
       path.relative(sourceDir, legacyRoutePath)
     );
@@ -153,6 +154,12 @@ function expectedWrappers({
       targetPath: path.join(targetDir, relativeRouteFile),
     };
   });
+  return groupWorkspaceWrappers(
+    wrappers,
+    targetDir,
+    GENERATED_MARKER,
+    legacyImportPath
+  );
 }
 
 function collectGeneratedWrappers(

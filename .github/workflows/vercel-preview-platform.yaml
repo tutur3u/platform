@@ -130,6 +130,10 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
+      - name: Check Web route budget
+        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        run: node scripts/ci/check-web-vercel-route-budget.js
+
       - name: Record successful Vercel build marker
         if: steps.check_commits.outputs.skip_build != 'true'
         continue-on-error: true
