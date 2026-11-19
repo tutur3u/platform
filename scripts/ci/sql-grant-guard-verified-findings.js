@@ -609,4 +609,43 @@ module.exports = [
     reason:
       'The published DO block schedules a fixed job with constant command text. The forward migration removes the job, and the schedule ownership guard requires the exact retirement migration bytes.',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261120060435_education_learner_attempt_submit.sql',
+    line: 24,
+    rule: 'function-acl',
+    fileDigest:
+      'a0a122567bb21f1234c684e96fcd549a6d8d00443e8f863f90b1941535145344',
+    digest: 'cf29a2d268120bf4798f6ced00f1bfa352593ef5680f5acd74373ad811208e2c',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261120064112_restate_education_learner_attempt_acl.sql',
+    reason:
+      'fixed forward by 20261120064112_restate_education_learner_attempt_acl.sql; private.education_learner_course_quiz_links is an internal helper called only from submit_education_learner_attempt. The applied file already revokes PUBLIC, anon, authenticated and service_role. The forward migration restates that revoke and does not grant the helper.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120060435_education_learner_attempt_submit.sql',
+    line: 58,
+    rule: 'function-acl',
+    fileDigest:
+      'a0a122567bb21f1234c684e96fcd549a6d8d00443e8f863f90b1941535145344',
+    digest: 'f1fb060410104cc0dc27750ecdcc6e94489aa512be7bfdd83a4ccd029b8351f6',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261120064112_restate_education_learner_attempt_acl.sql',
+    reason:
+      'fixed forward by 20261120064112_restate_education_learner_attempt_acl.sql; private.education_learner_completed_modules is an internal helper called only from submit_education_learner_attempt. The applied file already revokes PUBLIC, anon, authenticated and service_role. The forward migration restates that revoke and does not grant the helper.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120060435_education_learner_attempt_submit.sql',
+    line: 86,
+    rule: 'function-acl',
+    fileDigest:
+      'a0a122567bb21f1234c684e96fcd549a6d8d00443e8f863f90b1941535145344',
+    digest: '3c788f5e23a5c5ab390e39b21c75eae618e308a7754e87a6c65302144549be55',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261120064112_restate_education_learner_attempt_acl.sql',
+    reason:
+      'fixed forward by 20261120064112_restate_education_learner_attempt_acl.sql; private.education_learner_attempt_payload is an internal helper called only from submit_education_learner_attempt. The applied file already revokes PUBLIC, anon, authenticated and service_role. The forward migration restates that revoke and does not grant the helper. service_role keeps EXECUTE only on submit_education_learner_attempt.',
+  },
 ];

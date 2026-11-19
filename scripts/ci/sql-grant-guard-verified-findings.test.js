@@ -197,3 +197,78 @@ test('committed O5 records require the reviewed final hardening supplier', () =>
   );
   assert.equal(missing.verified.length, verifiedFindings.length - bound.length);
 });
+
+test('learner attempt helpers stay closed unless the ACL restatement is present', () => {
+  const fs = require('node:fs');
+  const verifiedFindings = require('./sql-grant-guard-verified-findings');
+  const historical =
+    'apps/database/supabase/migrations/20261120060435_education_learner_attempt_submit.sql';
+  const hardening =
+    'apps/database/supabase/migrations/20261120064112_restate_education_learner_attempt_acl.sql';
+  const bound = verifiedFindings.filter((e) => e.path === historical);
+  assert.deepEqual(
+    bound.map((e) => e.line).sort((a, b) => a - b),
+    [24, 58, 86]
+  );
+  const sql = fs.readFileSync(hardening, 'utf8').toLowerCase();
+  assert.match(
+    sql,
+    /revoke all on function private\.education_learner_course_quiz_links\(uuid, uuid\) from public, anon, authenticated, service_role;/
+  );
+  assert.match(
+    sql,
+    /revoke all on function private\.education_learner_completed_modules\(uuid, uuid, uuid\) from public, anon, authenticated, service_role;/
+  );
+  assert.match(
+    sql,
+    /revoke all on function private\.education_learner_attempt_payload\(uuid, boolean\) from public, anon, authenticated, service_role;/
+  );
+  assert.match(
+    sql,
+    /revoke all on function private\.submit_education_learner_attempt\(uuid, uuid, uuid, text, integer, jsonb\) from public, anon, authenticated;/
+  );
+  assert.match(
+    sql,
+    /grant execute on function private\.submit_education_learner_attempt\(uuid, uuid, uuid, text, integer, jsonb\) to service_role;/
+  );
+  assert.doesNotMatch(
+    sql,
+    /grant execute on function private\.education_learner_/
+  );
+  for (const e of bound) {
+    assert.equal(e.rule, 'function-acl');
+    assert.equal(e.class, 'fixed-forward');
+    assert.equal(e.requiredMigration, hardening);
+    assert.ok(
+      e.reason.includes(
+        '20261120064112_restate_education_learner_attempt_acl.sql'
+      )
+    );
+  }
+  const files = [
+    ...new Set(
+      verifiedFindings.flatMap((e) =>
+        [e.path, e.requiredMigration].filter(Boolean)
+      )
+    ),
+  ];
+  const run = (list) =>
+    evaluateSqlFiles({
+      files: list,
+      readFile: (f) => fs.readFileSync(f, 'utf8'),
+      verifiedFindings,
+    });
+  const present = run(files);
+  assert.deepEqual(
+    present.violations.filter((f) => f.file === historical),
+    []
+  );
+  const missing = run(files.filter((f) => f !== hardening));
+  assert.deepEqual(
+    missing.violations
+      .filter((f) => f.file === historical)
+      .map((f) => f.line)
+      .sort((a, b) => a - b),
+    [24, 58, 86]
+  );
+});
