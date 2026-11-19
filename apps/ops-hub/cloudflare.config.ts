@@ -12,6 +12,7 @@ export default defineConfig({
       OPS_HUB_GATEWAY_SECRET: bindings.secret(),
       OPS_HUB_PUBLISHER_PUBLIC_KEY: bindings.secret(),
       OPS_HUB_ALLOWED_USER_IDS: bindings.secret(),
+      BOARD_ASSERTION_AUDIENCE: bindings.secret(),
       BOARD_PUBLIC_KEY_A: bindings.secret(),
       BOARD_PUBLIC_KEY_B: bindings.secret(),
       BOARD_STATE_SECRET: bindings.secret(),

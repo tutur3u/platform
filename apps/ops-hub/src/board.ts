@@ -1,5 +1,6 @@
+import { removeDelegation } from './board/revocation';
 import { DurableObject } from 'cloudflare:workers';
-import { authorize } from './board/assertion';
+import { authorize, boardPath } from './board/assertion';
 import { job } from './board/contracts';
 import { Followups } from './board/followups';
 import { Leases } from './board/leases';
@@ -50,8 +51,8 @@ export class FleetBoard extends DurableObject<Env> {
         ) {
           reject(404, 'not_found');
         }
-        await this.#followups.consume(envelope);
-        await schedule(this.#store);
+        if (await this.#followups.consume(envelope))
+          await schedule(this.#store);
         return new Response(null, { status: 204 });
       }
       const input = await authorize(request, this.env);
@@ -62,29 +63,19 @@ export class FleetBoard extends DurableObject<Env> {
       )
         reject(404, 'not_found');
       if (input.actor.actor.startsWith('agent:') && !input.actor.agentActive) {
-        this.#store.tx(() => {
-          const agentKey = input.actor.actor.slice(6);
-          const row = this.#store.one(
-            'DELETE FROM delegations WHERE agent_key=? AND user_id=? RETURNING expires_at',
-            agentKey,
-            input.actor.userId
-          );
-          if (row)
-            this.#store.audit(
-              input.actor,
-              'delegation.deactivated',
-              agentKey + ':' + input.actor.userId,
-              null,
-              { expiresAt: row.expires_at },
-              null
-            );
-        });
+        this.#store.tx(() =>
+          removeDelegation(
+            this.#store,
+            input.actor,
+            input.actor.actor.slice(6),
+            input.actor.userId,
+            Date.now(),
+            'delegation.deactivated'
+          )
+        );
         reject(403, 'forbidden');
       }
-      const path = input.url.pathname
-        .split('/')
-        .slice(2)
-        .map((part) => decodeURIComponent(part));
+      const path = boardPath(input.url.pathname);
       const result =
         request.method === 'GET'
           ? {

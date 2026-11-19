@@ -1,3 +1,4 @@
+import { removeDelegation } from './revocation';
 import { BoardError, type Store, system } from './store';
 import type { Tasks } from './tasks';
 
@@ -20,7 +21,8 @@ interface Watch extends Record<string, SqlStorageValue> {
 export class WatcherEvents {
   constructor(
     readonly store: Store,
-    readonly tasks: Tasks
+    readonly tasks: Tasks,
+    readonly available: (kind: string) => boolean = () => false
   ) {}
 
   async drain() {
@@ -30,8 +32,9 @@ export class WatcherEvents {
       generation
     );
     const pending = this.store.rows<Event>(
-      'SELECT * FROM watcher_events WHERE generation=? ORDER BY audit_seq LIMIT 5',
-      generation
+      'SELECT * FROM watcher_events WHERE generation=? AND retry_at<=? ORDER BY audit_seq LIMIT 5',
+      generation,
+      Date.now()
     );
     for (const event of pending) {
       if (this.store.count('followups') >= 5000) {
@@ -62,18 +65,39 @@ export class WatcherEvents {
         const owner = {
           actor: watch.owner_key,
           userId: watch.owner_user_id,
-          manager: false,
-          agentActive: true,
         };
-        if (watch.target_kind === 't3_thread') continue;
+        if (!this.available(watch.target_kind)) continue;
         try {
-          this.store.tx(() =>
-            this.store.require(event.channel_id, owner, 'operator', Date.now())
-          );
+          const delegated = this.store.tx(() => {
+            if (!this.store.delegated(owner, Date.now())) return false;
+            this.store.requireRole(
+              event.channel_id,
+              owner.actor,
+              'operator',
+              Date.now()
+            );
+            return true;
+          });
+          if (!delegated) continue;
+          const actor = await this.tasks.dispatchActor(owner, generation);
+          if (owner.actor.startsWith('agent:') && !actor.agentActive) {
+            this.store.tx(() => {
+              this.store.enabled(generation);
+              removeDelegation(
+                this.store,
+                system,
+                owner.actor.slice(6),
+                owner.userId,
+                Date.now(),
+                'delegation.deactivated'
+              );
+            });
+            continue;
+          }
           if (watch.label_id) {
             if (!event.task_id) continue;
             const state = await this.tasks.access(
-              owner,
+              actor,
               generation,
               event.channel_id,
               event.task_id
@@ -83,7 +107,7 @@ export class WatcherEvents {
           const created = this.store.tx(() => {
             const now = Date.now();
             this.store.enabled(event.generation);
-            this.store.require(event.channel_id, owner, 'operator', now);
+            this.store.require(event.channel_id, actor, 'operator', now);
             if (
               !this.store.one(
                 'SELECT 1 FROM watchers WHERE id=? AND disabled_at IS NULL',
@@ -138,6 +162,14 @@ export class WatcherEvents {
           if (!(error instanceof BoardError)) throw error;
           if (error.status === 429 && error.code === 'budget_exhausted') return;
           if (error.code === 'board_stopped') return;
+          if (error.status === 503) {
+            this.store.run(
+              'UPDATE watcher_events SET retry_at=? WHERE audit_seq=?',
+              Date.now() + 60_000,
+              event.audit_seq
+            );
+            return;
+          }
         }
       }
       this.store.run(

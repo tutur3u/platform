@@ -1,3 +1,4 @@
+import { cancelOwnerWork, removeDelegation } from './revocation';
 import { z } from 'zod';
 import {
   key,
@@ -150,6 +151,7 @@ export function changeGrant(
         null,
         requestId
       );
+      cancelOwnerWork(store, actor, subject, now, { channelId: channel });
     }
     return { revoked: !!before };
   }
@@ -199,31 +201,23 @@ export function changeDelegation(
   store.manager(actor, actor.issuedAt);
   const agentKey = parse(key, agent);
   const userId = parse(uuid, user);
-  const subject = `${agentKey}:${userId}`;
+  if (remove)
+    return {
+      revoked: removeDelegation(
+        store,
+        actor,
+        agentKey,
+        userId,
+        now,
+        'delegation.revoked',
+        requestId
+      ),
+    };
   const before = store.one(
     `SELECT ${delegationProjection} FROM delegations WHERE agent_key=? AND user_id=?`,
     agentKey,
     userId
   );
-  if (remove) {
-    if (before) {
-      store.run(
-        'DELETE FROM delegations WHERE agent_key=? AND user_id=?',
-        agentKey,
-        userId
-      );
-      store.audit(
-        actor,
-        'delegation.revoked',
-        subject,
-        null,
-        before,
-        null,
-        requestId
-      );
-    }
-    return { revoked: !!before };
-  }
   store.enabled();
   const { expiresAt } = parse(delegationInput, body);
   if (expiresAt <= now || expiresAt > now + 30 * 86_400_000)
@@ -247,7 +241,7 @@ export function changeDelegation(
   store.audit(
     actor,
     'delegation.changed',
-    subject,
+    `${agentKey}:${userId}`,
     null,
     before,
     row,

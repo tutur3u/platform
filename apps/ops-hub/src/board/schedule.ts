@@ -20,11 +20,19 @@ export async function schedule(store: Store) {
     now,
     control.generation
   )?.due;
-  const watcherDue = store.one('SELECT 1 FROM watcher_events LIMIT 1')
-    ? control.window_start === window && control.tasks_reads >= 120
-      ? window + 3_600_000
-      : now
-    : null;
+  const nextWatcher = store.one<{ due: number | null }>(
+    'SELECT MIN(CASE WHEN generation=? THEN retry_at ELSE 0 END) AS due FROM watcher_events',
+    control.generation
+  )?.due;
+  const watcherDue =
+    nextWatcher == null
+      ? null
+      : Math.max(
+          nextWatcher,
+          control.window_start === window && control.tasks_reads >= 120
+            ? window + 3_600_000
+            : now
+        );
   if (due == null && watcherDue == null) return;
   const lastSlot = control.window_start === window && control.alarm_sets >= 119;
   const at = Math.max(

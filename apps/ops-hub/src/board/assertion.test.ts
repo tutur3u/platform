@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { base64 } from '../protocol';
 import { authorize, encode, hash } from './assertion';
 import type { Identity } from './contracts';
@@ -18,6 +18,7 @@ describe('Fleet Board assertions', () => {
     if (!('publicKey' in a) || !('publicKey' in b))
       throw new Error('Expected an Ed25519 key pair');
     const env = {
+      BOARD_ASSERTION_AUDIENCE: 'test:https://board.invalid',
       BOARD_PUBLIC_KEY_A: base64(
         await crypto.subtle.exportKey('raw', a.publicKey)
       ),
@@ -34,6 +35,7 @@ describe('Fleet Board assertions', () => {
       const now = Date.now();
       const identity: Identity = {
         kid,
+        aud: env.BOARD_ASSERTION_AUDIENCE,
         workspaceId: id,
         boardId: id,
         userId: id,
@@ -77,6 +79,24 @@ describe('Fleet Board assertions', () => {
       await expect(authorize(request(), env)).resolves.toMatchObject({
         actor: identity,
       });
+      await expect(
+        authorize(request(), {
+          ...env,
+          BOARD_ASSERTION_AUDIENCE: 'other:https://board.invalid',
+        })
+      ).rejects.toThrow('unauthenticated');
+      const clock = vi.spyOn(Date, 'now').mockReturnValue(now - 5_000);
+      try {
+        await expect(authorize(request(), env)).resolves.toMatchObject({
+          actor: identity,
+        });
+        clock.mockReturnValue(now - 5_001);
+        await expect(authorize(request(), env)).rejects.toThrow(
+          'unauthenticated'
+        );
+      } finally {
+        clock.mockRestore();
+      }
       await expect(authorize(request(url, 'POST'), env)).rejects.toThrow(
         'unauthenticated'
       );

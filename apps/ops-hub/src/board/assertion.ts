@@ -41,7 +41,9 @@ export async function authorize(
   }
   const now = Date.now();
   if (
-    actor.issuedAt > now ||
+    !env.BOARD_ASSERTION_AUDIENCE ||
+    actor.aud !== env.BOARD_ASSERTION_AUDIENCE ||
+    actor.issuedAt > now + 5_000 ||
     actor.expiresAt <= now ||
     actor.expiresAt > actor.issuedAt + 60_000
   )
@@ -113,4 +115,15 @@ export async function authorize(
     ),
     url,
   };
+}
+
+export function boardPath(pathname: string) {
+  try {
+    return pathname
+      .split('/')
+      .slice(2)
+      .map((part) => decodeURIComponent(part));
+  } catch {
+    reject(400, 'invalid_request');
+  }
 }

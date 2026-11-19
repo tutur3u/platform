@@ -113,7 +113,13 @@ export function watch(store: Store, input: Input, now: number) {
   const { actor, json, idempotency } = input;
   const watch = parse(watcher, json);
   if (watch.target.kind === 't3_thread') reject(503, 'adapter_unavailable');
-  store.capacity('watchers', 256);
+  store.charge(actor, 'watcher', now);
+  const total = store.one<{ total: number; owned: number | null }>(
+    'SELECT COUNT(*) AS total, SUM(owner_key=?) AS owned FROM watchers WHERE disabled_at IS NULL',
+    actor.actor
+  );
+  if ((total?.total ?? 0) >= 256 || (total?.owned ?? 0) >= 16)
+    reject(429, 'budget_exhausted');
   const row = {
     ...watch,
     id: crypto.randomUUID(),

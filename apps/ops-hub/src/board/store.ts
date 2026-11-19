@@ -64,6 +64,15 @@ export const system: Actor = {
 export class Store {
   constructor(readonly storage: DurableObjectStorage) {
     storage.sql.exec(schema);
+    if (
+      !this.rows<{ name: string }>('PRAGMA table_info(watcher_events)').some(
+        (column) => column.name === 'retry_at'
+      )
+    ) {
+      this.run(
+        'ALTER TABLE watcher_events ADD COLUMN retry_at INTEGER NOT NULL DEFAULT 0'
+      );
+    }
   }
 
   rows<T extends Record<string, SqlStorageValue>>(
@@ -95,15 +104,19 @@ export class Store {
   }
 
   active(actor: Actor, now: number) {
-    if (!actor.actor.startsWith('agent:')) return true;
     return (
-      actor.agentActive &&
-      !!this.one(
-        'SELECT 1 FROM delegations WHERE agent_key=? AND user_id=? AND expires_at>?',
-        actor.actor.slice(6),
-        actor.userId,
-        now
-      )
+      (!actor.actor.startsWith('agent:') || actor.agentActive) &&
+      this.delegated(actor, now)
+    );
+  }
+
+  delegated(actor: Pick<Actor, 'actor' | 'userId'>, now: number) {
+    if (!actor.actor.startsWith('agent:')) return true;
+    return !!this.one(
+      'SELECT 1 FROM delegations WHERE agent_key=? AND user_id=? AND expires_at>?',
+      actor.actor.slice(6),
+      actor.userId,
+      now
     );
   }
 
@@ -142,8 +155,12 @@ export class Store {
 
   require(channelId: string, actor: Actor, required: Role, now: number) {
     this.admit(actor, now);
+    return this.requireRole(channelId, actor.actor, required, now);
+  }
+
+  requireRole(channelId: string, actor: string, required: Role, now: number) {
     const channel = this.channel(channelId);
-    const { role } = this.explain(channel, actor.actor, now);
+    const { role } = this.explain(channel, actor, now);
     if (!role) reject(404, 'not_found');
     if (ranks[role] < ranks[required]) reject(403, 'forbidden');
     return channel;
@@ -156,7 +173,8 @@ export class Store {
     channel: string | null,
     before: unknown,
     after: unknown,
-    request: string | null = null
+    request: string | null = null,
+    eventGeneration?: number
   ) {
     if (
       (this.one<{ seq: number }>('SELECT MAX(seq) AS seq FROM audit')?.seq ??
@@ -187,7 +205,13 @@ export class Store {
     };
     const control = this.control();
     const bit = bits[action];
-    if (row && channel && bit && !control.stopped) {
+    if (
+      row &&
+      channel &&
+      bit &&
+      !control.stopped &&
+      (eventGeneration === undefined || eventGeneration === control.generation)
+    ) {
       const followup =
         bit === 16
           ? this.one<{ task_id: string }>(
@@ -210,7 +234,7 @@ export class Store {
               : target;
       if (bit !== 16 || followup) {
         this.run(
-          'INSERT INTO watcher_events VALUES(?,?,?,?,?)',
+          'INSERT INTO watcher_events(audit_seq,channel_id,task_id,event_bit,generation) VALUES(?,?,?,?,?)',
           row.seq,
           channel,
           typeof task === 'string' ? task : null,
@@ -251,6 +275,17 @@ export class Store {
     if (this.count(table) >= max) reject(429, 'budget_exhausted');
   }
 
+  replayCapacity(actor: Actor, cleanup: boolean, now: number) {
+    this.capacity('idempotency', cleanup ? 5000 : 4750);
+    const row = this.one<{ count: number }>(
+      'SELECT COUNT(*) AS count FROM idempotency WHERE actor=? AND expires_at>?',
+      actor.actor,
+      now
+    );
+    if ((row?.count ?? 0) >= (cleanup ? 250 : 200))
+      reject(429, 'budget_exhausted');
+  }
+
   enabled(generation?: number) {
     const control = this.control();
     if (
@@ -286,11 +321,18 @@ export class Store {
 
   charge(
     actor: Actor,
-    operation: 'message' | 'claim' | 'followup',
+    operation:
+      | 'message'
+      | 'claim'
+      | 'followup'
+      | 'renew'
+      | 'watcher'
+      | 'cancel',
     now: number
   ) {
     const window = now - (now % 3_600_000);
-    const cap = operation === 'message' ? 60 : 30;
+    const cap =
+      operation === 'message' ? 60 : operation === 'watcher' ? 15 : 30;
     const result = this.one<{ used: number }>(
       `
       INSERT INTO actor_budget VALUES(?,?,?,1)

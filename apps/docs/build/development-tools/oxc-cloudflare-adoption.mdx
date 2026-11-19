@@ -487,3 +487,15 @@ unavailable until the recipient audience can be verified. SQLite tests cover
 stopped dispatch, stale generations and lease expiry. Hosted Queue and alarm
 behavior, account-level ingress budgets and the operator stop rehearsal remain
 activation evidence.
+
+Dispatch checks the agent's live delegation and Tasks eligibility before
+verification. Message reads cache positive task access per user and task for
+at most 60 seconds and recheck the channel grant after the Tasks response.
+Stale completions may record the outcome of work already started. They do
+not create watcher work. Set `BOARD_ASSERTION_AUDIENCE` to the same
+environment and Worker origin identifier used by the gateway signer.
+
+The board admits up to 200 live replay rows per actor for ordinary writes
+and up to 250 for cleanup. Each actor may renew leases or cancel follow-ups
+30 times per hour and create 15 watchers per hour. The board allows 256
+enabled watchers, up to 16 per actor.

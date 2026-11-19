@@ -198,7 +198,7 @@ export class Writes {
       );
       const cleanup =
         method === 'DELETE' || leaf === 'release' || resource === 'control';
-      this.store.capacity('idempotency', cleanup ? 5000 : 4750);
+      this.store.replayCapacity(actor, cleanup, now);
       if (!cleanup) this.store.enabled(generation);
       let response: unknown;
       let status = 200;

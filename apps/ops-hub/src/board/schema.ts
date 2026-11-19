@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS idempotency (
  response_json TEXT NOT NULL CHECK(json_valid(response_json)), created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL,
  PRIMARY KEY(authenticated_user_id,actor,request_key)
 );
+CREATE INDEX IF NOT EXISTS idempotency_actor_expiry ON idempotency(actor,expires_at);
 CREATE INDEX IF NOT EXISTS idempotency_expiry ON idempotency(expires_at,actor,request_key);
 CREATE TABLE IF NOT EXISTS actor_budget (
  actor TEXT NOT NULL, operation TEXT NOT NULL, window_start INTEGER NOT NULL, used INTEGER NOT NULL,
@@ -87,7 +88,7 @@ CREATE TABLE IF NOT EXISTS actor_budget (
 );
 CREATE TABLE IF NOT EXISTS watcher_events (
  audit_seq INTEGER PRIMARY KEY REFERENCES audit(seq), channel_id TEXT NOT NULL REFERENCES channels(id),
- task_id TEXT, event_bit INTEGER NOT NULL, generation INTEGER NOT NULL
+ task_id TEXT, event_bit INTEGER NOT NULL, generation INTEGER NOT NULL, retry_at INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS deliveries (
  id TEXT PRIMARY KEY NOT NULL, audit_seq INTEGER NOT NULL REFERENCES audit(seq),

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { readBounded } from '../protocol';
 import { ms, uuid, type Identity } from './contracts';
-import { type Actor, reject, type Store } from './store';
+import { type Actor, BoardError, reject, type Store } from './store';
 
 export const boardName = (workspaceId: string, boardId: string) =>
   `board:${workspaceId}:${boardId}`;
@@ -45,11 +45,12 @@ export class Tasks {
     readonly name: string
   ) {}
 
-  async read<T>(
+  private async read<T>(
     actor: Actor,
     generation: number,
     path: string,
-    shape: z.ZodType<T>
+    shape: z.ZodType<T>,
+    checkEligibility = false
   ) {
     const [, workspace, board] = this.name.split(':');
     if (
@@ -70,7 +71,12 @@ export class Tasks {
     } catch {
       reject(503, 'tasks_unavailable');
     }
-    this.store.tx(() => this.store.admit(actor, Date.now()));
+    this.store.tx(() => {
+      const now = Date.now();
+      if (checkEligibility) {
+        if (!this.store.delegated(actor, now)) reject(403, 'forbidden');
+      } else this.store.admit(actor, now);
+    });
     this.store.reserve('tasks_reads', generation);
     try {
       const response = await fetch(url, {
@@ -82,13 +88,15 @@ export class Tasks {
           'X-Board-Actor': actor.actor,
         },
       });
+      if (response.status === 429) reject(429, 'budget_exhausted');
       if (!response.ok) throw new Error();
       return shape.parse(
         JSON.parse(
           new TextDecoder().decode(await readBounded(response.body, 256 * 1024))
         )
       );
-    } catch {
+    } catch (error) {
+      if (error instanceof BoardError) throw error;
       reject(503, 'tasks_unavailable');
     }
   }
@@ -145,6 +153,26 @@ export class Tasks {
       project
     );
     if (!result.allowed) reject(422, 'invalid_reference');
+  }
+
+  async dispatchActor(
+    owner: Pick<Actor, 'actor' | 'userId'>,
+    generation: number
+  ): Promise<Actor> {
+    const actor = { ...owner, manager: false, agentActive: false };
+    if (!owner.actor.startsWith('agent:')) return actor;
+    const query = new URLSearchParams({
+      principal: owner.actor,
+      executor: owner.userId,
+    });
+    const state = await this.read(
+      actor,
+      generation,
+      `principals/eligibility?${query}`,
+      project,
+      true
+    );
+    return { ...actor, agentActive: state.allowed };
   }
 
   threads(

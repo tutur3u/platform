@@ -23,6 +23,8 @@ const seqSchema = z
   .transform(Number);
 
 export class Reads {
+  private readonly taskAccess = new Map<string, number>();
+
   constructor(
     readonly store: Store,
     readonly tasks: Tasks,
@@ -109,8 +111,8 @@ export class Reads {
           url.searchParams.get('principal') ?? actor.actor
         );
         const item = this.store.channel(parse(uuid, channel));
-        if (target !== actor.actor || actor.manager) this.store.manager(actor);
-        else this.store.require(item.id, actor, 'reader', now);
+        this.store.require(item.id, actor, 'reader', now);
+        if (target !== actor.actor) this.store.manager(actor);
         return { principal: target, ...this.store.explain(item, target, now) };
       });
     }
@@ -136,6 +138,17 @@ export class Reads {
       });
       return { items: result.items, nextCursor: await seal(result.nextCursor) };
     }
+    const messageGeneration =
+      resource === 'channels' &&
+      subject === 'threads' &&
+      leaf === 'messages' &&
+      path.length === 5
+        ? await this.authorizeMessages(
+            actor,
+            parse(uuid, channel),
+            parse(uuid, task)
+          )
+        : undefined;
     if (typeof position !== 'number') reject(400, 'invalid_request');
     const result = this.store.tx(() => {
       this.store.admit(actor, Date.now());
@@ -191,6 +204,7 @@ export class Reads {
         );
       }
       if (subject === 'threads' && leaf === 'messages' && path.length === 5) {
+        this.store.enabled(messageGeneration);
         this.store.require(id, actor, 'reader', Date.now());
         return this.store
           .rows<{ body_json: string }>(
@@ -229,6 +243,33 @@ export class Reads {
       items: result.slice(0, limit),
       nextCursor: await seal(result.length > limit ? position + limit : null),
     };
+  }
+
+  private async authorizeMessages(
+    actor: Identity,
+    channel: string,
+    task: string
+  ) {
+    const generation = this.store.tx(() => {
+      this.store.require(channel, actor, 'reader', Date.now());
+      return this.store.enabled().generation;
+    });
+    const key = JSON.stringify([actor.userId, task, channel, generation]);
+    const startedAt = Date.now();
+    if ((this.taskAccess.get(key) ?? 0) <= startedAt) {
+      await this.tasks.access(
+        { ...actor, actor: `user:${actor.userId}`, agentActive: false },
+        generation,
+        channel,
+        task
+      );
+      if (this.taskAccess.size >= 512) {
+        const oldest = this.taskAccess.keys().next().value;
+        if (oldest !== undefined) this.taskAccess.delete(oldest);
+      }
+      this.taskAccess.set(key, startedAt + 60_000);
+    }
+    return generation;
   }
 
   audit(actor: Identity, url: URL, now: number) {

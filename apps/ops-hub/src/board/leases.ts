@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { base64 } from '../protocol';
 import { encode, hash } from './assertion';
 import { type Identity, ttl } from './contracts';
-import { reject, type Store, system } from './store';
+import { BoardError, reject, type Store, system } from './store';
 import type { Tasks } from './tasks';
 
 export const claimInput = z.strictObject({ ttlMs: ttl });
@@ -128,7 +128,12 @@ export class Leases {
         const now = Date.now();
         const current = this.get(item.taskId);
         if (current && current.expires_at > now) continue;
-        await this.tasks.access(actor, generation, channel, item.taskId);
+        try {
+          await this.tasks.access(actor, generation, channel, item.taskId);
+        } catch (error) {
+          if (error instanceof BoardError && error.status === 404) continue;
+          throw error;
+        }
         const fence = this.store.enabled(generation).next_fence + 1;
         const token = await this.token(actor, item.taskId, requestKey, fence);
         return {
@@ -238,6 +243,7 @@ export class Leases {
     }
     this.store.enabled();
     this.store.require(channel, actor, 'operator', now);
+    this.store.charge(actor, 'renew', now);
     const expiresAt = Math.min(now + ttlMs, lease.claimed_at + 1_800_000);
     if (expiresAt <= lease.expires_at || lease.renewals >= 5)
       reject(409, 'lease_limit');

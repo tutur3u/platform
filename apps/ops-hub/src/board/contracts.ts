@@ -43,6 +43,7 @@ export const ttl = z.int().min(30_000).max(600_000).default(300_000);
 export const identity = z
   .strictObject({
     kid: z.enum(['a', 'b']),
+    aud: z.string().min(1).max(256),
     workspaceId: uuid,
     boardId: uuid,
     userId: uuid,

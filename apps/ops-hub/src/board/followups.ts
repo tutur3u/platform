@@ -1,3 +1,5 @@
+import { consume } from './dispatch';
+import { removeDelegation } from './revocation';
 import { followup, type Job, type Identity } from './contracts';
 import { BoardError, reject, type Store, system } from './store';
 import type { Tasks } from './tasks';
@@ -5,7 +7,7 @@ import type { Leases } from './leases';
 import { schedule } from './schedule';
 import { WatcherEvents } from './watcher-events';
 
-interface Followup extends Record<string, SqlStorageValue> {
+export interface Followup extends Record<string, SqlStorageValue> {
   id: string;
   task_id: string;
   channel_id: string;
@@ -41,6 +43,7 @@ export function followupView(row: Followup, generation: number) {
 }
 
 export class Followups {
+  private readonly consuming = new Set<string>();
   constructor(
     readonly store: Store,
     readonly tasks: Tasks,
@@ -60,8 +63,7 @@ export class Followups {
     if (input.dueAt < now || input.dueAt > now + 30 * 86_400_000)
       reject(422, 'invalid_reference');
     // The wake bridge must expose owner registration and audience authorization before admission.
-    if (input.kind === 'notify' && input.payload.target.kind === 't3_thread')
-      reject(503, 'adapter_unavailable');
+    if (input.kind === 'notify') reject(503, 'adapter_unavailable');
     this.store.capacity('followups', 5000);
     this.store.charge(actor, 'followup', now);
     const id = crypto.randomUUID();
@@ -110,6 +112,7 @@ export class Followups {
       reject(404, 'not_found');
     if (!['pending', 'queued'].includes(row.state))
       reject(409, 'state_conflict');
+    this.store.charge(actor, 'cancel', Date.now());
     this.finish(row, 'cancelled', 'cancelled', actor, requestId);
     return { state: 'cancelled' };
   }
@@ -135,7 +138,8 @@ export class Followups {
       row.channel_id,
       { state: row.state, attempts: row.attempts },
       { state, code, attempts: row.attempts },
-      requestId
+      requestId,
+      row.generation
     );
   }
 
@@ -193,103 +197,22 @@ export class Followups {
     } catch {
       this.store.tx(() => {
         const current = this.get(row.id);
-        if (current?.state === 'queued' && current.attempts === attempt)
-          this.retry(current, 'queue_unavailable');
+        if (current?.state !== 'queued' || current.attempts !== attempt) return;
+        if (this.store.control().generation !== current.generation)
+          this.finish(current, 'cancelled', 'stopped');
+        else this.retry(current, 'queue_unavailable');
       });
     }
   }
 
   async consume(envelope: Job) {
-    const row = this.store.tx(() => {
-      const current = this.get(envelope.id);
-      const control = this.store.control();
-      if (
-        !current ||
-        control.stopped ||
-        current.generation !== control.generation ||
-        current.generation !== envelope.generation ||
-        current.state !== 'queued' ||
-        current.attempts !== envelope.attempt
-      )
-        return;
-      const owner = {
-        actor: current.owner_key,
-        userId: current.owner_user_id,
-        manager: false,
-        agentActive: true,
-      };
-      try {
-        this.store.require(current.channel_id, owner, 'operator', Date.now());
-      } catch (error) {
-        if (!(error instanceof BoardError)) throw error;
-        this.finish(current, 'cancelled', 'authorization_lost');
-        return;
-      }
-      if (
-        this.store.one(
-          `SELECT 1 FROM deliveries d JOIN watchers w ON w.id=d.watcher_id
-        WHERE d.followup_id=? AND w.disabled_at IS NOT NULL`,
-          current.id
-        )
-      ) {
-        this.finish(current, 'cancelled', 'watcher_disabled');
-        return;
-      }
-      if (current.kind !== 'verify_task') {
-        this.finish(current, 'failed', 'adapter_unavailable');
-        return;
-      }
-      this.store.run(
-        "UPDATE followups SET state='delivering',updated_at=? WHERE id=?",
-        Date.now(),
-        current.id
-      );
-      this.store.audit(
-        system,
-        'followup.delivering',
-        current.id,
-        current.channel_id,
-        { state: 'queued' },
-        { state: 'delivering' }
-      );
-      return current;
-    });
-    if (!row) return;
-    let done = false;
-    let code = 'not_done';
+    if (this.consuming.has(envelope.id)) return false;
+    this.consuming.add(envelope.id);
     try {
-      const result = await this.tasks.access(
-        {
-          actor: row.owner_key,
-          userId: row.owner_user_id,
-          manager: false,
-          agentActive: true,
-        },
-        row.generation,
-        row.channel_id,
-        row.task_id
-      );
-      done = result.done;
-    } catch (error) {
-      code = error instanceof BoardError ? error.code : 'tasks_unavailable';
+      return await consume(this, envelope);
+    } finally {
+      this.consuming.delete(envelope.id);
     }
-    this.store.tx(() => {
-      const current = this.get(row.id);
-      if (
-        current?.state !== 'delivering' ||
-        current.attempts !== envelope.attempt
-      )
-        return;
-      const control = this.store.control();
-      if (done) this.finish(current, 'succeeded', 'verified');
-      else if (
-        control.stopped ||
-        control.generation !== current.generation ||
-        ['forbidden', 'not_found'].includes(code)
-      ) {
-        this.finish(current, 'cancelled', code);
-      } else this.retry(current, code);
-    });
   }
 
   async alarm(name: string) {
@@ -319,18 +242,13 @@ export class Followups {
         'SELECT * FROM delegations WHERE expires_at<=? LIMIT 25',
         now
       )) {
-        this.store.run(
-          'DELETE FROM delegations WHERE agent_key=? AND user_id=?',
-          row.agent_key,
-          row.user_id
-        );
-        this.store.audit(
+        removeDelegation(
+          this.store,
           system,
-          'delegation.expired',
-          `${row.agent_key}:${row.user_id}`,
-          null,
-          { expiresAt: row.expires_at },
-          null
+          String(row.agent_key),
+          String(row.user_id),
+          now,
+          'delegation.expired'
         );
       }
       this.store.run(
@@ -360,6 +278,12 @@ export class Followups {
       this.store.control().generation
     )) {
       try {
+        if (row.kind !== 'verify_task') {
+          this.store.tx(() =>
+            this.finish(row, 'failed', 'adapter_unavailable')
+          );
+          continue;
+        }
         await this.enqueue(row, name);
       } catch (error) {
         if (
