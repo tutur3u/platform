@@ -482,6 +482,21 @@ content. Those remain unverified until normal read-only QA in the reviewer
 session on the relevant production mobile build; record the tested build and
 outcomes without credentials. It does not guarantee Apple approval.
 
+### Android build verification
+
+Android builds use the checked-in Gradle wrapper and the Flutter SDK version
+pinned in the workflow. Verify the wrapper, Android Gradle Plugin, and Kotlin
+together after an upgrade. From `apps/mobile`, run
+`flutter build appbundle --debug --flavor development --target lib/main_development.dart`
+to verify the bundle build with debug signing.
+
+### iOS build runner
+
+The iOS simulator build and TestFlight upload jobs use GitHub's hosted
+`xcode-27` image. Both jobs select an installed Xcode and check the actual
+`iphoneos` SDK version before setting up Flutter. Check the job's runner image
+and the selector's Xcode and SDK output when diagnosing an SDK mismatch.
+
 ### Per-build What to Test
 
 What to Test is `betaBuildLocalizations.whatsNew`, separate from app-level

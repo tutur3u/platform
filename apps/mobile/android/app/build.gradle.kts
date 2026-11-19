@@ -1,8 +1,10 @@
 import java.util.Properties
 import java.io.FileInputStream
 import java.security.MessageDigest
+import com.android.build.api.dsl.LibraryExtension
 import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("com.android.application")
@@ -24,8 +26,8 @@ val productionReleaseRequested = gradle.startParameter.taskNames.any {
 
 android {
     namespace = "com.tuturuuu.app.mobile"
-    // flutter_pcm_sound pulls AndroidX artifacts that require compileSdk 34+.
-    compileSdk = maxOf(flutter.compileSdkVersion, 34)
+    // permission_handler_android publishes an API 37 compile SDK requirement.
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -101,7 +103,7 @@ android {
             }
             isMinifyEnabled = true
             proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
+                getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
@@ -133,7 +135,7 @@ dependencies {
     // Used natively by TelemetryCollectionLockProvider; the plugin's copy is not on this classpath.
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-messaging")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     testImplementation("junit:junit:4.13.2")
 }
@@ -142,9 +144,9 @@ dependencies {
 // exactly one pinned source in generated build storage, never mutate pub-cache.
 val webRtcProject = project(":flutter_webrtc")
 webRtcProject.plugins.withId("com.android.library") {
-    webRtcProject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+    webRtcProject.extensions.configure<LibraryExtension> {
         val mainJava = sourceSets.getByName("main").java
-        val originalRoots = mainJava.srcDirs.toList()
+        val originalRoots = mainJava.directories.map { webRtcProject.file(it) }
         val relativeCapturer = "com/cloudwebrtc/webrtc/OrientationAwareScreenCapturer.java"
         val relativeBridge = "com/cloudwebrtc/webrtc/MeetScreenCaptureBridge.java"
         val upstreamCapturer = webRtcProject.file("src/main/java/$relativeCapturer")
@@ -208,8 +210,13 @@ analyticsProject.plugins.withId("org.jetbrains.kotlin.android") {
                 }
             }
             kotlinSources.setSrcDirs(listOf(output))
-            analyticsProject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+            analyticsProject.extensions.configure<LibraryExtension> {
                 sourceSets.getByName("main").java.setSrcDirs(listOf(output))
+            }
+            analyticsProject.tasks.withType<KotlinCompile>().configureEach {
+                exclude { element ->
+                    originalRoots.any { root -> element.file.toPath().startsWith(root.toPath()) }
+                }
             }
             analyticsProject.tasks.configureEach {
                 if (name.startsWith("compile") || name.startsWith("lint")) dependsOn(prepare)

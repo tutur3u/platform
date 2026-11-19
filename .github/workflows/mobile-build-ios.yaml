@@ -37,7 +37,7 @@ jobs:
     name: Build iOS (Development, simulator)
     needs: [check-ci]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    runs-on: macos-latest
+    runs-on: xcode-27
     defaults:
       run:
         working-directory: apps/mobile
