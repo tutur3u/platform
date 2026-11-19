@@ -1,5 +1,6 @@
 import { withTurnstileCsp } from '@tuturuuu/cloudflare/turnstile/client';
 import { defaultContentSecurityPolicy } from '@tuturuuu/start-bridge/csp';
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { FormsEnvironment } from './cloudflare/worker';
@@ -7,19 +8,24 @@ import type { FormsEnvironment } from './cloudflare/worker';
 const PUBLIC_FILES = new Set(['/embed.js', '/robots.txt', '/sitemap.xml']);
 const upstreamFramablePaths = framablePathRegexes();
 const EMBED_PAGE = /^\/embed\/[^/]+(?:\/|$)/u;
+const profile =
+  import.meta.env?.VITE_FORMS_NATIVE_PROFILE ??
+  process.env.VITE_FORMS_NATIVE_PROFILE;
 
 export default defineBridgeAppConfig<FormsEnvironment>({
   mounts: {
     rootHosts: ['forms.tuturuuu.com', 'forms.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
     unknownHost: 'reject',
   },
   // Shared forms render Cloudflare Turnstile, so its origin is allowed in
   // every directive the policy restricts.
   csp: (nonce) => withTurnstileCsp(defaultContentSecurityPolicy(nonce)),
-  wrapResponse(response, { request, env }) {
+  wrapResponse(response, { request, env, mounts }) {
     const headers = new Headers(response.headers);
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const mount = mounts && resolveAppBase(url, { ...mounts, app: 'forms' });
+    const path = url.pathname.slice(mount?.basePath.length ?? 0);
     const isEmbed = EMBED_PAGE.test(path);
     const upstreamFramable = upstreamFramablePaths.some((pattern) =>
       pattern.test(path)

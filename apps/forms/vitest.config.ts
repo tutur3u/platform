@@ -29,6 +29,13 @@ export default defineConfig({
           '../../packages/supabase/src/next/server.ts'
         ),
       },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
     ],
   },
 });

@@ -18,7 +18,7 @@ rollback target through cutover.
 | --- | --- |
 | Production Worker | `tuturuuu-forms` (`VITE_FORMS_NATIVE_PROFILE=production`) |
 | Staging Worker | the staging Worker name |
-| Host | `forms.tuturuuu.com` (operator-attached; no source route) |
+| Hosts | `forms.tuturuuu.com` and, for the production candidate, `tuturuuu.com/forms`. The release operator attaches routes. |
 | Bindings and vars | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX` (`0` production, `1` staging) |
 | Secret names | `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
 | Build | `VITE_FORMS_NATIVE_PROFILE=production bun run --cwd apps/forms build:cloudflare` |
@@ -26,6 +26,11 @@ rollback target through cutover.
 | Data | No database writes or migrations are part of this cutover. |
 
 ## Acceptance and smoke
+
+The app's `mounts.mountHosts` admits `tuturuuu.com` only for the production
+build profile. The Worker resolves the mount before classifying asset and
+embed responses. The production artifact job restores its sealed archive and
+repeats workerd acceptance before upload.
 
 Run the production build and emitted suite from the repository root:
 

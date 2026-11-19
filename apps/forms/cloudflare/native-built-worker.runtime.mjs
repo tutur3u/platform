@@ -216,6 +216,7 @@ test(
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
+                headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
               });
             });
@@ -289,6 +290,19 @@ test(
             });
             assert.equal(failure, null, failure ?? '');
           }
+        }
+      );
+      await t.test(
+        'the apex preserves the bare path and asset policy',
+        async () => {
+          assert.equal((await call(`${BASE}?source=smoke`, APEX)).status, 200);
+          const asset = await call(`${BASE}/embed.js`, APEX);
+          assert.equal(asset.status, 200);
+          assert.notEqual(asset.headers['cache-control'], 'private, no-store');
+          const info = await call(`${BASE}/api/build-info`, APEX);
+          assert.equal(info.status, 200);
+          assert.equal(JSON.parse(info.body).commitHash, source);
+          assert.equal((await call('/api/build-info', APEX)).status, 404);
         }
       );
     } else {
