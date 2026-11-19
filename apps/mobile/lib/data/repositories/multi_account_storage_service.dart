@@ -516,7 +516,7 @@ class MultiAccountStorageService {
   Future<StoredAccountRemovalResult> signOutCurrentAccount() async {
     final activeId =
         _client.auth.currentUser?.id ?? await getActiveStoredAccountId();
-    if (activeId != null) return removeStoredAccount(activeId);
+    if (activeId != null) return await removeStoredAccount(activeId);
 
     final signOutError = await _signOutSupabase(
       logMessage: 'Supabase sign-out failed during current account sign-out',

@@ -462,7 +462,7 @@ void main() {
         if (request.url.path.endsWith('/logout')) {
           throw http.ClientException('Synthetic network error');
         }
-        return acceptRevocation(request);
+        return await acceptRevocation(request);
       };
 
       final result = await service.removeStoredAccount('target');
