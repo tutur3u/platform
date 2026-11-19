@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/features/tasks_boards/utils/task_due_dates.dart';
+import 'package:mobile/features/tasks_boards/utils/task_timeline_lane_packing.dart';
 import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
 
 /// One row of the board timeline body.
@@ -20,6 +21,13 @@ class TaskTimelineCaption extends TaskTimelineRow {
   final int? overdueCount;
 
   bool get isOverdue => listId == null;
+}
+
+/// Non-overlapping bars packed into one horizontal lane.
+class TaskTimelineLane extends TaskTimelineRow {
+  const TaskTimelineLane(this.bars);
+
+  final List<TaskTimelineBar> bars;
 }
 
 /// A task's bar across the window's day columns.
@@ -154,16 +162,18 @@ TaskTimelineProjection buildTaskTimelineProjection({
   final rows = <TaskTimelineRow>[
     if (overdue.isNotEmpty) ...[
       TaskTimelineCaption.overdue(overdue.length),
-      ...overdue,
+      for (final lane in packTaskTimelineBarsIntoLanes(overdue))
+        TaskTimelineLane(lane),
     ],
   ];
   for (final list in lists) {
     final bars = groups[list.id];
     if (bars == null) continue;
     bars.sort(_compareBars);
-    rows
-      ..add(TaskTimelineCaption.list(list.id))
-      ..addAll(bars);
+    rows.add(TaskTimelineCaption.list(list.id));
+    for (final lane in packTaskTimelineBarsIntoLanes(bars)) {
+      rows.add(TaskTimelineLane(lane));
+    }
   }
   return TaskTimelineProjection(
     window: window,

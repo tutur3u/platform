@@ -4395,6 +4395,10 @@
   "taskBoardDetailCompleteTask": "Complete",
   "taskBoardDetailCreateList": "Create list",
   "taskBoardDetailCreateTask": "Create task",
+  "taskBoardListEmptyTitle": "Nothing here yet",
+  "taskBoardListGroupNoDate": "No date",
+  "taskBoardListGroupOverdue": "Overdue",
+  "taskBoardListGroupUpcoming": "Upcoming",
   "taskBoardDetailDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
   "taskBoardDetailDefaultHiddenListsDescription": "List mode hides Documents lists until you choose a list or status filter.",
   "taskBoardDetailDefaultHiddenListsOverrideDescription": "Your list or status filter is overriding the default Documents exclusion.",
@@ -4845,6 +4849,7 @@
   "taskTimelineEmptyMonth": "Nothing scheduled this month",
   "taskTimelineEmptyTwoWeeks": "Nothing scheduled these two weeks",
   "taskTimelineEmptyWeek": "Nothing scheduled this week",
+  "taskTimelineScheduleTask": "Schedule a task",
   "taskTimelineOverdueCount": "Overdue {count}",
   "@taskTimelineOverdueCount": {
     "placeholders": {

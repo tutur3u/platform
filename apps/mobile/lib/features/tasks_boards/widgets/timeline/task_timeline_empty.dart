@@ -13,6 +13,7 @@ class TaskTimelineEmpty extends StatelessWidget {
     required this.undatedCount,
     this.loading = false,
     this.onShowUndated,
+    this.onScheduleTask,
     this.onLoadMore,
     super.key,
   });
@@ -23,6 +24,7 @@ class TaskTimelineEmpty extends StatelessWidget {
   /// Pages are still loading, so the range is not known to be empty.
   final bool loading;
   final VoidCallback? onShowUndated;
+  final VoidCallback? onScheduleTask;
   final VoidCallback? onLoadMore;
 
   @override
@@ -30,6 +32,7 @@ class TaskTimelineEmpty extends StatelessWidget {
     if (loading) return const AppLoadingIndicator.page();
     final l10n = context.l10n;
     final showUndated = undatedCount > 0 && onShowUndated != null;
+    final schedule = onScheduleTask != null;
     return AppStateMessage(
       key: const ValueKey('task-timeline-empty'),
       icon: LucideIcons.calendarDays,
@@ -39,12 +42,21 @@ class TaskTimelineEmpty extends StatelessWidget {
         TaskTimelineSpan.twoWeeks => l10n.taskTimelineEmptyTwoWeeks,
         TaskTimelineSpan.month => l10n.taskTimelineEmptyMonth,
       },
-      actionLabel: showUndated
+      actionLabel: schedule
+          ? l10n.taskTimelineScheduleTask
+          : showUndated
           ? l10n.taskTimelineUndatedCount(undatedCount)
           : onLoadMore != null
           ? l10n.timerHistoryLoadMore
           : null,
-      onAction: showUndated ? onShowUndated : onLoadMore,
+      onAction: schedule
+          ? onScheduleTask
+          : showUndated
+          ? onShowUndated
+          : onLoadMore,
+      secondaryActionLabel:
+          schedule && showUndated ? l10n.taskTimelineUndatedCount(undatedCount) : null,
+      onSecondaryAction: schedule && showUndated ? onShowUndated : null,
     );
   }
 }

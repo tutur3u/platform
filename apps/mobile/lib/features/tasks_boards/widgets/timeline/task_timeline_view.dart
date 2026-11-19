@@ -37,6 +37,8 @@ class TaskTimelineView extends StatefulWidget {
     required this.onLoadMore,
     required this.onTaskTap,
     this.onShowUndated,
+    this.onScheduleTask,
+    this.onBarShift,
     this.clock = DateTime.now,
     super.key,
   });
@@ -57,6 +59,12 @@ class TaskTimelineView extends StatefulWidget {
   /// Opens the board's tasks that have no dates.
   final VoidCallback? onShowUndated;
 
+  /// Opens the create-task sheet when the range is empty.
+  final VoidCallback? onScheduleTask;
+
+  /// Shifts a task's dates by whole columns after a horizontal drag.
+  final Future<void> Function(TaskBoardTask task, int deltaDays)? onBarShift;
+
   /// The current instant; tests pin it.
   final DateTime Function() clock;
 
@@ -69,6 +77,7 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
   TaskTimelineSpan? _chosenSpan;
   TaskTimelineWindow? _window;
   Timer? _midnight;
+  double _pinchScale = 1;
 
   @override
   void dispose() {
@@ -151,29 +160,46 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
                 ),
               ),
             Expanded(
-              child: projection.isEmpty
-                  ? TaskTimelineEmpty(
-                      span: span,
-                      undatedCount: projection.undatedCount,
-                      loading: widget.hasMoreTasks && widget.isLoadingMoreTasks,
-                      onShowUndated: widget.onShowUndated,
-                      onLoadMore: widget.hasMoreTasks && !widget.hasLoadError
-                          ? widget.onLoadMore
-                          : null,
-                    )
-                  : TaskTimelineBody(
-                      projection: projection,
-                      metrics: metrics,
-                      tall: tablet,
-                      listNames: _listNames(context),
-                      listColors: {
-                        for (final list in widget.lists)
-                          list.id: taskBoardListColor(context, list.color),
-                      },
-                      scrollController: widget.scrollController,
-                      onTaskTap: (task) => unawaited(widget.onTaskTap(task)),
-                      footer: _footer(context),
-                    ),
+              child: GestureDetector(
+                behavior: HitTestBehavior.deferToChild,
+                onScaleStart: (_) => _pinchScale = 1,
+                onScaleUpdate: (details) {
+                  final delta = details.scale - _pinchScale;
+                  _pinchScale = details.scale;
+                  if (delta.abs() < 0.02) return;
+                  if (details.scale < 0.92) {
+                    _zoomSpan(-1, window, today);
+                  } else if (details.scale > 1.08) {
+                    _zoomSpan(1, window, today);
+                  }
+                },
+                child: projection.isEmpty
+                    ? TaskTimelineEmpty(
+                        span: span,
+                        undatedCount: projection.undatedCount,
+                        loading:
+                            widget.hasMoreTasks && widget.isLoadingMoreTasks,
+                        onShowUndated: widget.onShowUndated,
+                        onScheduleTask: widget.onScheduleTask,
+                        onLoadMore: widget.hasMoreTasks && !widget.hasLoadError
+                            ? widget.onLoadMore
+                            : null,
+                      )
+                    : TaskTimelineBody(
+                        projection: projection,
+                        metrics: metrics,
+                        tall: tablet,
+                        listNames: _listNames(context),
+                        listColors: {
+                          for (final list in widget.lists)
+                            list.id: taskBoardListColor(context, list.color),
+                        },
+                        scrollController: widget.scrollController,
+                        onTaskTap: (task) => unawaited(widget.onTaskTap(task)),
+                        onBarShift: widget.onBarShift,
+                        footer: _footer(context),
+                      ),
+              ),
             ),
           ],
         );
@@ -216,6 +242,19 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
 
   /// Keeps today in view when the range holds it, otherwise the middle of
   /// the current range.
+  void _zoomSpan(
+    int direction,
+    TaskTimelineWindow window,
+    DateTime today,
+  ) {
+    const order = TaskTimelineSpan.values;
+    final current = _chosenSpan ?? window.span;
+    final index = order.indexOf(current);
+    final next = (index + direction).clamp(0, order.length - 1);
+    if (next == index) return;
+    _showSpan(order[next], window, today);
+  }
+
   void _showSpan(
     TaskTimelineSpan picked,
     TaskTimelineWindow window,

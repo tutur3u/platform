@@ -9,6 +9,7 @@ import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_caption_row.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_grid_painter.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_rows.dart';
+import 'package:mobile/features/tasks_boards/utils/task_timeline_projection.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_view.dart';
 
 import '../../../../helpers/helpers.dart';
@@ -91,22 +92,43 @@ class _Harness {
   }
 }
 
+bool _insideTimelineLane(Element element) {
+  var inside = false;
+  element.visitAncestorElements((ancestor) {
+    if (ancestor.widget is TaskTimelineLaneRow) {
+      inside = true;
+      return false;
+    }
+    return true;
+  });
+  return inside;
+}
+
 /// Rows built for task captions and bars, in order.
-List<String> _rowOrder(WidgetTester tester) => [
+List<String> _rowOrder(WidgetTester tester) {
+  final ordered = <String>[];
   for (final element
       in find
           .byWidgetPredicate(
             (widget) =>
                 widget is TaskTimelineCaptionRow ||
+                widget is TaskTimelineLaneRow ||
                 widget is TaskTimelineBarRow,
           )
-          .evaluate())
+          .evaluate()) {
     switch (element.widget) {
-      final TaskTimelineCaptionRow row => '[${row.label}]',
-      final TaskTimelineBarRow row => row.bar.task.id,
-      _ => '',
-    },
-];
+      case TaskTimelineCaptionRow(label: final label):
+        ordered.add('[$label]');
+      case TaskTimelineLaneRow(:final bars):
+        ordered.add(bars.map((bar) => bar.task.id).join(','));
+      case TaskTimelineBarRow(:final bar):
+        if (!_insideTimelineLane(element)) ordered.add(bar.task.id);
+      default:
+        break;
+    }
+  }
+  return ordered;
+}
 
 void main() {
   group('task timeline on a phone', () {

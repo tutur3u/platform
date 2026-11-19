@@ -9319,6 +9319,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailCreateTask => 'Create task';
 
   @override
+  String get taskBoardListEmptyTitle => 'Nothing here yet';
+
+  @override
+  String get taskBoardListGroupNoDate => 'No date';
+
+  @override
+  String get taskBoardListGroupOverdue => 'Overdue';
+
+  @override
+  String get taskBoardListGroupUpcoming => 'Upcoming';
+
+  @override
   String taskBoardDetailDaysAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -10719,6 +10731,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get taskTimelineEmptyWeek => 'Nothing scheduled this week';
+
+  @override
+  String get taskTimelineScheduleTask => 'Schedule a task';
 
   @override
   String taskTimelineOverdueCount(int count) {

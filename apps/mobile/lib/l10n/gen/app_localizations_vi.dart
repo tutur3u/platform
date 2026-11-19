@@ -9207,6 +9207,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailCreateTask => 'Tạo công việc';
 
   @override
+  String get taskBoardListEmptyTitle => 'Chưa có gì ở đây';
+
+  @override
+  String get taskBoardListGroupNoDate => 'Không có ngày';
+
+  @override
+  String get taskBoardListGroupOverdue => 'Quá hạn';
+
+  @override
+  String get taskBoardListGroupUpcoming => 'Sắp tới';
+
+  @override
   String taskBoardDetailDaysAgo(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -10589,6 +10601,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get taskTimelineEmptyWeek => 'Tuần này chưa có lịch';
+
+  @override
+  String get taskTimelineScheduleTask => 'Lên lịch công việc';
 
   @override
   String taskTimelineOverdueCount(int count) {

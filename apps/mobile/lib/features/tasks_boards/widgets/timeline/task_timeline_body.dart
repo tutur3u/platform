@@ -19,6 +19,7 @@ class TaskTimelineBody extends StatelessWidget {
     required this.listColors,
     required this.scrollController,
     required this.onTaskTap,
+    this.onBarShift,
     this.tall = false,
     this.footer,
     super.key,
@@ -30,6 +31,7 @@ class TaskTimelineBody extends StatelessWidget {
   final Map<String, Color> listColors;
   final ScrollController scrollController;
   final ValueChanged<TaskBoardTask> onTaskTap;
+  final Future<void> Function(TaskBoardTask task, int columnDelta)? onBarShift;
 
   /// Tablet rows: full-height bars with titles inside.
   final bool tall;
@@ -82,12 +84,23 @@ class TaskTimelineBody extends StatelessWidget {
                     ? l10n.taskTimelineOverdueCount(caption.overdueCount!)
                     : listNames[caption.listId] ?? '',
               ),
+              final TaskTimelineLane lane => TaskTimelineLaneRow(
+                bars: lane.bars,
+                metrics: metrics,
+                tall: tall,
+                listColors: listColors,
+                onTaskTap: onTaskTap,
+                onBarShift: onBarShift,
+              ),
               final TaskTimelineBar bar => TaskTimelineBarRow(
                 bar: bar,
                 metrics: metrics,
                 tall: tall,
                 color: listColors[bar.task.listId] ?? c.mutedForeground,
                 onTap: () => onTaskTap(bar.task),
+                onBarShift: onBarShift == null
+                    ? null
+                    : (delta) => onBarShift!(bar.task, delta),
               ),
             };
           },

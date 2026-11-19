@@ -562,6 +562,9 @@ class _MultiDayAllDayRowState extends State<_MultiDayAllDayRow> {
               height: rowHeight,
               child: _MultiDayAllDayChip(
                 event: span.event,
+                continuesBeforeViewport: span.continuesBeforeViewport,
+                continuesAfterViewport: span.continuesAfterViewport,
+                singleVisibleDay: span.singleVisibleDay,
                 labelLeft: math.max(
                   0,
                   widget.viewportStart -
@@ -591,23 +594,38 @@ class _MultiDayAllDayChip extends StatelessWidget {
     required this.onTap,
     required this.labelLeft,
     required this.labelRight,
+    required this.continuesBeforeViewport,
+    required this.continuesAfterViewport,
+    required this.singleVisibleDay,
   });
 
   final CalendarEvent event;
   final VoidCallback onTap;
   final double labelLeft;
   final double labelRight;
+  final bool continuesBeforeViewport;
+  final bool continuesAfterViewport;
+  final bool singleVisibleDay;
 
   @override
   Widget build(BuildContext context) {
     final accentColor = EventColors.inContext(event, context).accent;
     final foregroundColor = EventColors.inContext(event, context).foreground;
+    final ends = allDayPillRoundedEnds(
+      continuesBeforeViewport: continuesBeforeViewport,
+      continuesAfterViewport: continuesAfterViewport,
+      singleVisibleDay: singleVisibleDay,
+    );
+    final radius = allDayPillBorderRadius(
+      roundStart: ends.roundStart,
+      roundEnd: ends.roundEnd,
+    );
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: radius,
         child: Container(
           padding: EdgeInsets.only(
             left: labelLeft + 10,
@@ -615,7 +633,7 @@ class _MultiDayAllDayChip extends StatelessWidget {
           ),
           decoration: BoxDecoration(
             color: EventColors.inContext(event, context).background,
-            borderRadius: BorderRadius.circular(999),
+            borderRadius: radius,
             border: Border.all(color: accentColor),
           ),
           alignment: Alignment.centerLeft,

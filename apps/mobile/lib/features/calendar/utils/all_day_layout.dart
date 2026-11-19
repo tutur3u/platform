@@ -10,6 +10,8 @@ class AllDaySpan {
     required this.row,
     this.isMerged = false,
     this.mergedEventIds = const [],
+    this.continuesBeforeViewport = false,
+    this.continuesAfterViewport = false,
   });
 
   final CalendarEvent event;
@@ -29,8 +31,16 @@ class AllDaySpan {
   /// IDs of events that were merged into this span.
   final List<String> mergedEventIds;
 
+  /// The event continues before the first visible column.
+  final bool continuesBeforeViewport;
+
+  /// The event continues after the last visible column.
+  final bool continuesAfterViewport;
+
   /// Number of columns this span covers.
   int get span => endIndex - startIndex + 1;
+
+  bool get singleVisibleDay => startIndex == endIndex;
 }
 
 /// Result of computing all-day layout.
@@ -179,6 +189,17 @@ AllDayLayoutResult calculateAllDayLayout({
     }
 
     if (row > maxRow) maxRow = row;
+    var continuesBefore = false;
+    var continuesAfter = false;
+    final bounds = calendarAllDayBounds(span.event);
+    if (bounds != null) {
+      final visibleStart = dates.first;
+      final visibleEnd = dates.last;
+      continuesBefore = bounds.start.isBefore(visibleStart);
+      continuesAfter = bounds.end.isAfter(
+        visibleEnd.add(const Duration(days: 1)),
+      );
+    }
     result.add(
       AllDaySpan(
         event: span.event,
@@ -187,6 +208,8 @@ AllDayLayoutResult calculateAllDayLayout({
         row: row,
         isMerged: span.isMerged,
         mergedEventIds: span.mergedEventIds,
+        continuesBeforeViewport: continuesBefore,
+        continuesAfterViewport: continuesAfter,
       ),
     );
   }

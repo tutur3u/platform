@@ -17689,6 +17689,30 @@ abstract class AppLocalizations {
   /// **'Create task'**
   String get taskBoardDetailCreateTask;
 
+  /// No description provided for @taskBoardListEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get taskBoardListEmptyTitle;
+
+  /// No description provided for @taskBoardListGroupNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get taskBoardListGroupNoDate;
+
+  /// No description provided for @taskBoardListGroupOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get taskBoardListGroupOverdue;
+
+  /// No description provided for @taskBoardListGroupUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get taskBoardListGroupUpcoming;
+
   /// No description provided for @taskBoardDetailDaysAgo.
   ///
   /// In en, this message translates to:
@@ -20304,6 +20328,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing scheduled this week'**
   String get taskTimelineEmptyWeek;
+
+  /// No description provided for @taskTimelineScheduleTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a task'**
+  String get taskTimelineScheduleTask;
 
   /// No description provided for @taskTimelineOverdueCount.
   ///

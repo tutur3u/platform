@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/features/tasks_boards/utils/task_timeline_projection.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_metrics.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -15,6 +17,7 @@ class TaskTimelineBarRow extends StatelessWidget {
     required this.metrics,
     required this.onTap,
     this.tall = false,
+    this.onBarShift,
     super.key,
   });
 
@@ -31,6 +34,7 @@ class TaskTimelineBarRow extends StatelessWidget {
   final TaskTimelineMetrics metrics;
   final VoidCallback onTap;
   final bool tall;
+  final Future<void> Function(int columnDelta)? onBarShift;
 
   @override
   Widget build(BuildContext context) {
@@ -70,10 +74,13 @@ class TaskTimelineBarRow extends StatelessWidget {
     return Semantics(
       button: true,
       label: title,
-      child: GestureDetector(
-        key: ValueKey('task-timeline-row-${bar.task.id}'),
-        behavior: HitTestBehavior.opaque,
+      child: _TimelineBarInteractions(
+        taskId: bar.task.id,
+        metrics: metrics,
+        columnSpan: bar.columnSpan,
+        enabled: onBarShift != null && !bar.done,
         onTap: onTap,
+        onBarShift: onBarShift,
         child: Opacity(opacity: bar.done ? 0.5 : 1, child: row),
       ),
     );
@@ -197,6 +204,116 @@ class TaskTimelineBarRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TimelineBarInteractions extends StatefulWidget {
+  const _TimelineBarInteractions({
+    required this.taskId,
+    required this.metrics,
+    required this.columnSpan,
+    required this.enabled,
+    required this.onTap,
+    required this.onBarShift,
+    required this.child,
+  });
+
+  final String taskId;
+  final TaskTimelineMetrics metrics;
+  final int columnSpan;
+  final bool enabled;
+  final VoidCallback onTap;
+  final Future<void> Function(int columnDelta)? onBarShift;
+  final Widget child;
+
+  @override
+  State<_TimelineBarInteractions> createState() =>
+      _TimelineBarInteractionsState();
+}
+
+class _TimelineBarInteractionsState extends State<_TimelineBarInteractions> {
+  double _dragDx = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      key: ValueKey('task-timeline-row-${widget.taskId}'),
+      behavior: HitTestBehavior.opaque,
+      onTap: widget.onTap,
+      onHorizontalDragStart: widget.enabled ? (_) => _dragDx = 0 : null,
+      onHorizontalDragUpdate: widget.enabled
+          ? (details) => _dragDx += details.delta.dx
+          : null,
+      onHorizontalDragEnd: widget.enabled
+          ? (_) {
+              final columnWidth = widget.metrics.columnWidth;
+              if (columnWidth <= 0 || widget.onBarShift == null) return;
+              final delta = (_dragDx / columnWidth).round();
+              _dragDx = 0;
+              if (delta != 0) {
+                unawaited(widget.onBarShift!(delta));
+              }
+            }
+          : null,
+      child: widget.child,
+    );
+  }
+}
+
+/// Several non-overlapping bars on one horizontal lane.
+class TaskTimelineLaneRow extends StatelessWidget {
+  const TaskTimelineLaneRow({
+    required this.bars,
+    required this.metrics,
+    required this.listColors,
+    required this.onTaskTap,
+    this.tall = false,
+    this.onBarShift,
+    super.key,
+  });
+
+  final List<TaskTimelineBar> bars;
+  final TaskTimelineMetrics metrics;
+  final Map<String, Color> listColors;
+  final ValueChanged<TaskBoardTask> onTaskTap;
+  final bool tall;
+  final Future<void> Function(TaskBoardTask task, int columnDelta)? onBarShift;
+
+  @override
+  Widget build(BuildContext context) {
+    if (bars.length == 1) {
+      final bar = bars.single;
+      final c = AppTokens.of(context).colorScheme;
+      return TaskTimelineBarRow(
+        bar: bar,
+        metrics: metrics,
+        tall: tall,
+        color: listColors[bar.task.listId] ?? c.mutedForeground,
+        onTap: () => onTaskTap(bar.task),
+        onBarShift: onBarShift == null
+            ? null
+            : (delta) => onBarShift!(bar.task, delta),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final bar in bars)
+          TaskTimelineBarRow(
+            bar: bar,
+            metrics: metrics,
+            tall: tall,
+            color:
+                listColors[bar.task.listId] ??
+                AppTokens.of(context).colorScheme.mutedForeground,
+            onTap: () => onTaskTap(bar.task),
+            onBarShift: onBarShift == null
+                ? null
+                : (delta) => onBarShift!(bar.task, delta),
+          ),
+      ],
     );
   }
 }

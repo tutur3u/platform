@@ -361,6 +361,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         board: detail,
                         sort: _listSort,
                         scrollController: _listScrollController,
+                        clock: widget.clock,
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
                         onTaskToggleDone: (task, targetStatus) =>
@@ -379,12 +380,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onToggleTaskSelection: (task) => context
                             .read<TaskBoardDetailCubit>()
                             .toggleBulkTaskSelection(task.id),
-                        collapsedListIds: _collapsedListIds,
-                        onToggleListCollapsed: (list) => _toggleListCollapsed(
+                        onQuickAdd: () => _openTaskCreateSheet(
                           context,
-                          list: list,
-                          state: state,
-                          pageSizeHint: pageSizeHint,
+                          lists: sortedLists,
                         ),
                         onLoadMore: () {
                           _loadMoreVisibleLists(
@@ -455,6 +453,15 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
                         onShowUndated: () => _showUndated(isPersonalBoard),
+                        onScheduleTask: () => _openTaskCreateSheet(
+                          context,
+                          lists: sortedLists,
+                        ),
+                        onBarShift: (task, deltaDays) => _shiftTaskTimeline(
+                          context,
+                          task: task,
+                          deltaDays: deltaDays,
+                        ),
                       ),
                     },
                   );
@@ -805,35 +812,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         !state.loadedListIds.contains(list.id) &&
         !state.loadingListIds.contains(list.id) &&
         !state.listLoadErrorById.containsKey(list.id);
-  }
-
-  void _toggleListCollapsed(
-    BuildContext context, {
-    required TaskBoardList list,
-    required TaskBoardDetailState state,
-    required int pageSizeHint,
-  }) {
-    final wasCollapsed = _collapsedListIds.contains(list.id);
-    setState(() {
-      _listCollapsePreferenceTouchedIds.add(list.id);
-      if (!_collapsedListIds.add(list.id)) {
-        _collapsedListIds.remove(list.id);
-      }
-    });
-
-    final shouldLoadOnExpand =
-        wasCollapsed &&
-        !state.listTasksByListId.containsKey(list.id) &&
-        !state.loadedListIds.contains(list.id) &&
-        !state.loadingListIds.contains(list.id);
-    if (shouldLoadOnExpand) {
-      unawaited(
-        context.read<TaskBoardDetailCubit>().loadListTasks(
-          listId: list.id,
-          pageSizeHint: pageSizeHint,
-        ),
-      );
-    }
   }
 
   void _setListSort(TaskBoardListViewSortField sort) {
@@ -1216,6 +1194,41 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         context: toastContext,
         builder: (context, overlay) =>
             shad.Alert.destructive(content: Text(fallbackErrorMessage)),
+      );
+    }
+  }
+
+  Future<void> _shiftTaskTimeline(
+    BuildContext context, {
+    required TaskBoardTask task,
+    required int deltaDays,
+  }) async {
+    if (deltaDays == 0) return;
+
+    DateTime? shift(DateTime? date) {
+      if (date == null) return null;
+      final wall = taskInZone(date, taskTimezone(context));
+      return wall.add(Duration(days: deltaDays));
+    }
+
+    final name = task.name?.trim().isNotEmpty == true
+        ? task.name!.trim()
+        : context.l10n.taskBoardDetailUntitledTask;
+    final cubit = context.read<TaskBoardDetailCubit>();
+    try {
+      await cubit.updateTask(
+        taskId: task.id,
+        name: name,
+        startDate: shift(task.startDate),
+        endDate: shift(task.endDate),
+      );
+    } on Exception {
+      if (!context.mounted) return;
+      shad.showToast(
+        context: Navigator.of(context, rootNavigator: true).context,
+        builder: (context, overlay) => shad.Alert.destructive(
+          content: Text(context.l10n.commonSomethingWentWrong),
+        ),
       );
     }
   }

@@ -35,7 +35,8 @@ class _DayStripState extends State<TaskTimelineDayStrip> {
   @override
   Widget build(BuildContext context) {
     final metrics = widget.metrics;
-    final roomy = metrics.columnWidth >= 28;
+    final narrow = metrics.columnWidth < 22;
+    final compact = metrics.columnWidth < 28;
     return GestureDetector(
       key: const ValueKey('task-timeline-day-strip'),
       behavior: HitTestBehavior.opaque,
@@ -58,12 +59,8 @@ class _DayStripState extends State<TaskTimelineDayStrip> {
                 child: _DayCell(
                   day: widget.window.dayAt(column),
                   isToday: widget.window.dayAt(column) == widget.today,
-                  roomy: roomy,
-                  showNumber:
-                      roomy ||
-                      column == 0 ||
-                      widget.window.dayAt(column).weekday == DateTime.monday ||
-                      widget.window.dayAt(column) == widget.today,
+                  narrow: narrow,
+                  compact: compact,
                   onTap: () => widget.onCentre(widget.window.dayAt(column)),
                 ),
               ),
@@ -78,17 +75,16 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.isToday,
-    required this.roomy,
-    required this.showNumber,
+    required this.narrow,
+    required this.compact,
     required this.onTap,
   });
 
   final DateTime day;
   final bool isToday;
 
-  /// Wide columns show the weekday initial and a full-size number.
-  final bool roomy;
-  final bool showNumber;
+  final bool narrow;
+  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -98,12 +94,13 @@ class _DayCell extends StatelessWidget {
     final locale = context.l10n.localeName;
     final weekday = DateFormat.EEEEE(locale).format(day);
     final numberStyle =
-        (roomy ? tokens.typography.small : tokens.typography.xSmall).copyWith(
+        (compact ? tokens.typography.xSmall : tokens.typography.small).copyWith(
+          fontSize: narrow ? 10 : null,
           fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
           color: isToday ? c.background : c.foreground,
           fontFeatures: const [FontFeature.tabularFigures()],
         );
-    final diameter = roomy ? 30.0 : 22.0;
+    final diameter = compact ? (narrow ? 20.0 : 22.0) : 30.0;
     return Semantics(
       button: true,
       selected: isToday,
@@ -120,16 +117,19 @@ class _DayCell extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (roomy)
-                Text(
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
                   weekday,
                   maxLines: 1,
                   overflow: TextOverflow.clip,
                   style: tokens.typography.xSmall.copyWith(
+                    fontSize: narrow ? 9 : null,
                     color: isToday ? c.foreground : c.mutedForeground,
                     fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
+              ),
               const SizedBox(height: AppSpacing.xxs),
               Container(
                 width: diameter,
@@ -138,15 +138,16 @@ class _DayCell extends StatelessWidget {
                 decoration: isToday
                     ? BoxDecoration(color: c.foreground, shape: BoxShape.circle)
                     : null,
-                child: showNumber
-                    ? Text(
-                        '${day.day}',
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.visible,
-                        style: numberStyle,
-                      )
-                    : null,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    '${day.day}',
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.visible,
+                    style: numberStyle,
+                  ),
+                ),
               ),
             ],
           ),
