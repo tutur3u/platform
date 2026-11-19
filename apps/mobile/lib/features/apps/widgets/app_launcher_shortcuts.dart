@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
@@ -17,8 +18,8 @@ class AppLauncherRecents extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return AppHorizontalScrollView(
+      pageKind: AppPageKind.root,
       child: Row(
         spacing: AppSpacing.sm,
         children: [
@@ -28,7 +29,12 @@ class AppLauncherRecents extends StatelessWidget {
               radius: AppRadius.pill,
               onPressed: () => onSelected(app),
               child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(8, 8, 16, 8),
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.sm,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   spacing: AppSpacing.sm,

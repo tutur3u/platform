@@ -34,7 +34,7 @@ void main() {
       ('drive_file', 'Drive'),
       ('education_course', 'Education'),
       ('cms_content', 'CMS'),
-      ('crm_contact', 'CRM'),
+      ('crm_contact', 'Contacts'),
       ('habit_reminder', 'Habits'),
       ('habits', 'Habits'),
       ('timer_finished', 'Timer'),

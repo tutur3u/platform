@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/components/app_control_target.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -46,8 +47,7 @@ class AppFilterBar<T> extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
+        child: AppHorizontalScrollView(
           child: Row(
             children: [
               for (final (index, option) in options.indexed) ...[

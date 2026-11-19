@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/features/notes/note_mention_embed_builder.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_description_table_embed_builder.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -78,8 +79,7 @@ class NoteEditor extends StatelessWidget {
     child: Column(
       children: [
         if (editing)
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          AppHorizontalScrollView(
             child: Row(
               children: [
                 for (final action in <(Attribute<dynamic>, IconData)>[

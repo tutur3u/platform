@@ -45,9 +45,8 @@ class AssistantComposerPanel extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (showSuggestions) ...[
-                  SingleChildScrollView(
+                  AppHorizontalScrollView(
                     key: const ValueKey('assistant-starter-prompts'),
-                    scrollDirection: Axis.horizontal,
                     padding: insets,
                     child: Row(
                       spacing: AppSpacing.sm,

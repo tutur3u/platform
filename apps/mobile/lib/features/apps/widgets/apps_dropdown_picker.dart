@@ -33,7 +33,7 @@ class AppsDropdownPicker extends StatelessWidget {
       message: context.l10n.navApps,
       excludeFromSemantics: true,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppTokens.of(context).shapes.field),
         onTap: () => unawaited(showAppsPicker(context)),
         child: ExcludeSemantics(
           child: ShellBrandTitle(title: title ?? context.l10n.navApps),
@@ -228,39 +228,19 @@ class _AppsScreenState extends State<AppsScreen>
               opacity: _opacity,
               child: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _search,
-                builder: (context, value, _) {
-                  final tokens = AppTokens.of(context);
-                  return AppsHubPage(
-                    query: value.text,
-                    onSelected: _open,
-                    onManage: _manage,
-                    search: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: tokens.colorScheme.card,
-                        borderRadius: BorderRadius.circular(
-                          tokens.shapes.field,
-                        ),
-                      ),
-                      child: AppTextField(
-                        key: const ValueKey('apps-search-field'),
-                        controller: _search,
-                        focusNode: _searchFocus,
-                        placeholder: context.l10n.appsHubSearchHint,
-                        leading: const Icon(LucideIcons.search, size: 20),
-                        trailing: value.text.isEmpty
-                            ? null
-                            : AppIconButton(
-                                icon: const Icon(LucideIcons.x),
-                                tooltip: context.l10n.commonClearSearch,
-                                onPressed: _search.clear,
-                              ),
-                        onSubmitted: _submitSearch,
-                        onTapOutside: (_) => _searchFocus.unfocus(),
-                        textInputAction: TextInputAction.search,
-                      ),
-                    ),
-                  );
-                },
+                builder: (context, value, _) => AppsHubPage(
+                  query: value.text,
+                  onSelected: _open,
+                  onManage: _manage,
+                  search: AppSearchField(
+                    key: const ValueKey('apps-search-field'),
+                    controller: _search,
+                    focusNode: _searchFocus,
+                    placeholder: context.l10n.appsHubSearchHint,
+                    clearTooltip: context.l10n.commonClearSearch,
+                    onSubmitted: _submitSearch,
+                  ),
+                ),
               ),
             ),
           ),

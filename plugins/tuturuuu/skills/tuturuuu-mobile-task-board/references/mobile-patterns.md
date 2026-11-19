@@ -105,6 +105,14 @@ localization changes.
   CMS (`features/cms`) is the reference migration; retire `finance_ui.dart`
   widgets per app using the mapping table there.
 
+- Use `AppHorizontalScrollView` for strips of chips and cards. Put the page
+  gutters inside the scroll view and mount the strip at its owning viewport
+  width. See [horizontal strips](../../../../../apps/docs/build/development-tools/mobile-design-system.mdx#page-primitives)
+  for the lazy-list variant and clipping behavior.
+- Keep the Apps launcher search field visible above its list when the viewport
+  has enough room. Small keyboard-constrained viewports scroll the field with
+  the results. Other route search continues to use shell search.
+
 ## Design System And shadcn Removal
 
 - Import `package:mobile/core/ui/ui.dart`, not `package:shadcn_flutter` or its

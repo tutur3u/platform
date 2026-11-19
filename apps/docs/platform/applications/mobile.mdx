@@ -115,6 +115,19 @@ Every screen uses the same page gutters, section spacing, and wide-screen max
 widths. Only calendar, board, conversation, call, and media/map canvases run
 full-bleed. See the [mobile design system](/build/development-tools/mobile-design-system).
 
+Apps keeps Search above the launcher list when there is room, including while
+the list scrolls. Pinned apps stay out of Recents. Contacts keeps the `crm` launcher ID and
+accepts `/crm` as a route alias so pinned apps and deep links continue to open.
+The Apps regression tests cover filtering, recents, and dock clearance.
+
+Inbox retries queued read changes on open, on resume, and after a transient
+network or server failure. A single-item read change stops automatic replay
+after four ordinary retryable failures and offers tap-to-retry. A server
+response that the notification no longer exists clears its queued read change.
+The inbox reloads from the current account and workspace after queue replay.
+The offline mutation admission tests cover replay, deleted notifications, and
+manual recovery.
+
 Offline availability is product-specific. Cached data is not proof that an
 edit reached the server. Review queued/sync states and recover through the
 owning product's documented flow. Optional products should not warm private

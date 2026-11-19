@@ -59,7 +59,9 @@ class AppsHubPage extends StatelessWidget {
         .map((id) => visible[id])
         .nonNulls
         .toList();
+    final pinnedIds = state.pinnedAppIds.toSet();
     final recent = state.recentAppIds
+        .where((id) => !pinnedIds.contains(id))
         .map((id) => visible[id])
         .nonNulls
         .take(4)
@@ -94,64 +96,118 @@ class AppsHubPage extends StatelessWidget {
       }
     }
 
-    return NovaRefreshIndicator(
+    final headerInset = floatingShellHeaderInset(context);
+    const kind = AppPageKind.root;
+    Widget buildScroll({Widget? leading}) => NovaRefreshIndicator(
       onRefresh: () => _refresh(context),
-      child: AppPageScrollView(
-        kind: AppPageKind.root,
-        topInset: floatingShellHeaderInset(context),
+      child: CustomScrollView(
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          if (search case final field?)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-                child: field,
-              ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: search == null || leading != null
+                  ? headerInset + AppLayout.pageTop
+                  : AppSpacing.sm,
             ),
+          ),
+          if (leading != null) ...[
+            SliverAppPage(
+              kind: kind,
+              includeTop: false,
+              includeBottom: false,
+              sliver: SliverToBoxAdapter(child: leading),
+            ),
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
+          ],
           if (!searching && (pinned.isNotEmpty || onManage != null))
-            SliverToBoxAdapter(
-              key: const ValueKey('apps-section-pinned'),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-                child: AppLauncherPins(
-                  title: l10n.appsPinnedSection,
-                  apps: pinned,
-                  onSelected: open,
-                  onManage: onManage,
+            SliverAppPage(
+              kind: kind,
+              includeTop: false,
+              includeBottom: false,
+              sliver: SliverToBoxAdapter(
+                key: const ValueKey('apps-section-pinned'),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                  child: AppLauncherPins(
+                    title: l10n.appsPinnedSection,
+                    apps: pinned,
+                    onSelected: open,
+                    onManage: onManage,
+                  ),
                 ),
               ),
             ),
-          if (!searching && recent.isNotEmpty)
+          if (!searching && recent.isNotEmpty) ...[
+            SliverAppPage(
+              kind: kind,
+              includeTop: false,
+              includeBottom: false,
+              sliver: SliverToBoxAdapter(
+                child: AppSectionHeader(title: l10n.appsRecentSection),
+              ),
+            ),
             SliverToBoxAdapter(
               key: const ValueKey('apps-section-recent'),
-              child: _AppsSection(
-                title: l10n.appsRecentSection,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
                 child: AppLauncherRecents(apps: recent, onSelected: open),
               ),
             ),
-          if (sections.isEmpty)
-            SliverToBoxAdapter(
-              child: AppStateMessage(
-                icon: searching ? Icons.search : Icons.apps,
-                title: searching ? l10n.appsNoMatches : l10n.appsHubEmpty,
-              ),
+          ],
+          SliverAppPage(
+            kind: kind,
+            includeTop: false,
+            sliver: SliverMainAxisGroup(
+              slivers: [
+                if (sections.isEmpty)
+                  SliverToBoxAdapter(
+                    child: AppStateMessage(
+                      icon: searching ? Icons.search : Icons.apps,
+                      title: searching ? l10n.appsNoMatches : l10n.appsHubEmpty,
+                    ),
+                  ),
+                for (final (id, title, apps) in sections)
+                  SliverToBoxAdapter(
+                    key: ValueKey('apps-section-$id'),
+                    child: _AppsSection(
+                      title: title,
+                      child: _AppsGrid(
+                        keyPrefix: searching ? id : 'app',
+                        apps: apps,
+                        onSelected: open,
+                      ),
+                    ),
+                  ),
+              ],
             ),
-          for (final (id, title, apps) in sections)
-            SliverToBoxAdapter(
-              key: ValueKey('apps-section-$id'),
-              child: _AppsSection(
-                title: title,
-                child: _AppsGrid(
-                  keyPrefix: searching ? id : 'app',
-                  apps: apps,
-                  onSelected: open,
-                ),
-              ),
-            ),
+          ),
         ],
       ),
+    );
+    final field = search;
+    if (field == null) return buildScroll();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final insets = AppPageInsets.of(
+          context,
+          width: constraints.maxWidth,
+          kind: kind,
+          topInset: headerInset,
+          consumeBottomClearance: false,
+        );
+        if (constraints.maxHeight < insets.top + AppLayout.rowMinHeight * 2) {
+          return buildScroll(leading: field);
+        }
+        return Column(
+          children: [
+            Padding(padding: insets, child: field),
+            Expanded(child: buildScroll()),
+          ],
+        );
+      },
     );
   }
 }

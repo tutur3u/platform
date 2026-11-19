@@ -264,7 +264,10 @@ void main() {
     await _pump(tester);
     final scrollable = find.descendant(
       of: find.byKey(const ValueKey('apps-screen')),
-      matching: find.byType(Scrollable),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Scrollable && widget.axisDirection == AxisDirection.down,
+      ),
     );
     final position = tester.state<ScrollableState>(scrollable.first).position;
     expect(position.maxScrollExtent, greaterThan(position.minScrollExtent));

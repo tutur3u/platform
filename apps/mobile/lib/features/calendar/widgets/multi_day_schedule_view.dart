@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/ui/kit/app_event_block.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
@@ -333,9 +334,8 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                 ),
                 child: Stack(
                   children: [
-                    SingleChildScrollView(
+                    AppHorizontalScrollView(
                       controller: _headerController,
-                      scrollDirection: Axis.horizontal,
                       physics: DateSnapScrollPhysics(dayWidth: dayColumnWidth),
                       child: SizedBox(
                         width: gutterWidth + dayAreaWidth,
@@ -432,50 +432,55 @@ class _MultiDayScheduleViewState extends State<MultiDayScheduleView> {
                       // recentres, because its key maps back to its index.
                       SizedBox(
                         height: 24 * hourHeight,
-                        child: ListView.custom(
-                          controller: _gridController,
-                          scrollDirection: Axis.horizontal,
-                          physics: DateSnapScrollPhysics(
-                            dayWidth: dayColumnWidth,
-                          ),
-                          padding: EdgeInsets.only(left: gutterWidth),
-                          itemExtent: dayColumnWidth,
-                          scrollCacheExtent: ScrollCacheExtent.pixels(
-                            dayColumnWidth * widget.visibleDayCount,
-                          ),
-                          childrenDelegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final date = visibleDates[index];
-                              return KeyedSubtree(
-                                key: ValueKey((widget.zoomScope, date)),
-                                child: _MultiDayTimelineColumn(
-                                  date: date,
-                                  selectedDate: widget.selectedDate,
-                                  redesigned: widget.visibleDayCount == 1,
-                                  hourHeight: hourHeight,
-                                  events: _timedEventsForDay(date),
-                                  isToday: _isToday(date),
-                                  onEventTap: (event) {
-                                    if (!_zoomBlocked()) {
-                                      widget.onEventTap(event);
-                                    }
-                                  },
-                                  onCreateAtTime: (time) {
-                                    if (!_zoomBlocked()) {
-                                      widget.onCreateAtTime(time);
-                                    }
-                                  },
-                                ),
-                              );
-                            },
-                            childCount: visibleDates.length,
-                            findChildIndexCallback: (key) {
-                              if (key is! ValueKey<(Object?, DateTime)>) {
-                                return null;
-                              }
-                              final index = visibleDates.indexOf(key.value.$2);
-                              return index < 0 ? null : index;
-                            },
+                        child: AppHorizontalViewport(
+                          child: ListView.custom(
+                            controller: _gridController,
+                            scrollDirection: Axis.horizontal,
+                            clipBehavior: Clip.none,
+                            physics: DateSnapScrollPhysics(
+                              dayWidth: dayColumnWidth,
+                            ),
+                            padding: EdgeInsets.only(left: gutterWidth),
+                            itemExtent: dayColumnWidth,
+                            scrollCacheExtent: ScrollCacheExtent.pixels(
+                              dayColumnWidth * widget.visibleDayCount,
+                            ),
+                            childrenDelegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final date = visibleDates[index];
+                                return KeyedSubtree(
+                                  key: ValueKey((widget.zoomScope, date)),
+                                  child: _MultiDayTimelineColumn(
+                                    date: date,
+                                    selectedDate: widget.selectedDate,
+                                    redesigned: widget.visibleDayCount == 1,
+                                    hourHeight: hourHeight,
+                                    events: _timedEventsForDay(date),
+                                    isToday: _isToday(date),
+                                    onEventTap: (event) {
+                                      if (!_zoomBlocked()) {
+                                        widget.onEventTap(event);
+                                      }
+                                    },
+                                    onCreateAtTime: (time) {
+                                      if (!_zoomBlocked()) {
+                                        widget.onCreateAtTime(time);
+                                      }
+                                    },
+                                  ),
+                                );
+                              },
+                              childCount: visibleDates.length,
+                              findChildIndexCallback: (key) {
+                                if (key is! ValueKey<(Object?, DateTime)>) {
+                                  return null;
+                                }
+                                final index = visibleDates.indexOf(
+                                  key.value.$2,
+                                );
+                                return index < 0 ? null : index;
+                              },
+                            ),
                           ),
                         ),
                       ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_filter_bar.dart';
@@ -61,9 +62,7 @@ class TransactionListFilters extends StatelessWidget {
               onChanged(query.copyWith(kind: kind), state.walletId),
         ),
         const SizedBox(height: AppSpacing.sm),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
+        AppHorizontalScrollView(
           child: Row(
             spacing: AppSpacing.sm,
             children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -34,8 +35,7 @@ class NotificationsFilterBar extends StatelessWidget {
             : l10n.notificationsFilterUnread,
       NotificationsTab.archive => l10n.notificationsFilterRead,
     };
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return AppHorizontalScrollView(
       child: Row(
         children: [
           for (final tab in order) ...[

@@ -34,6 +34,34 @@ void main() {
     },
   );
 
+  testWidgets(
+    'pinned apps are excluded from Recents and Search stays visible',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({
+        'apps-pinned': ['calendar'],
+        'apps-recent': ['calendar', 'tasks'],
+      });
+      final tabs = AppTabCubit(settingsRepository: SettingsRepository());
+      addTearDown(tabs.close);
+      await tabs.loadLastApp();
+      await tester.pumpApp(
+        BlocProvider.value(
+          value: tabs,
+          child: const Scaffold(body: AppsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('recent-calendar')), findsNothing);
+      expect(find.byKey(const ValueKey('recent-tasks')), findsOneWidget);
+
+      final search = find.byKey(const ValueKey('apps-search-field'));
+      final originalPosition = tester.getTopLeft(search);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -400));
+      await tester.pumpAndSettle();
+      expect(tester.getTopLeft(search), originalPosition);
+    },
+  );
+
   for (final size in [
     const Size(390, 844),
     const Size(1024, 768),

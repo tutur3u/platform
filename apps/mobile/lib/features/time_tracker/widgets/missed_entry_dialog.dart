@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
@@ -285,49 +286,54 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 if (_images.isNotEmpty)
                   SizedBox(
                     height: 76,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        final image = _images[index];
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(image.path),
-                                width: 76,
-                                height: 76,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                            Positioned(
-                              top: 2,
-                              right: 2,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _images.removeAt(index);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.close,
-                                    color: Colors.white,
-                                    size: 14,
+                    child: AppHorizontalViewport(
+                      child: AppHorizontalViewport(
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          itemBuilder: (context, index) {
+                            final image = _images[index];
+                            return Stack(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(image.path),
+                                    width: 76,
+                                    height: 76,
+                                    fit: BoxFit.cover,
                                   ),
                                 ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                      separatorBuilder: (_, _) => const shad.Gap(8),
-                      itemCount: _images.length,
+                                Positioned(
+                                  top: 2,
+                                  right: 2,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _images.removeAt(index);
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          separatorBuilder: (_, _) => const shad.Gap(8),
+                          itemCount: _images.length,
+                        ),
+                      ),
                     ),
                   ),
                 if (requiresProof && _images.isEmpty) ...[

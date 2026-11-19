@@ -111,8 +111,7 @@ class _TaskMetadataRow extends StatelessWidget {
 
     metadataWidgets.addAll(chips);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return AppHorizontalScrollView(
       physics: const BouncingScrollPhysics(),
       child: Row(children: metadataWidgets),
     );

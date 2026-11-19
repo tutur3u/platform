@@ -146,10 +146,8 @@ void main() {
     expect(tile('pinned', 'tasks'), findsNothing);
     expect(tile('work', 'tasks'), findsNothing);
     expect(tile('recent', 'tasks'), findsNothing);
-    expect(
-      tester.getTopLeft(tile('recent', 'calendar')).dx,
-      lessThan(tester.getTopLeft(tile('recent', 'finance')).dx),
-    );
+    expect(tile('recent', 'calendar'), findsNothing);
+    expect(tile('recent', 'finance'), findsOneWidget);
   });
 
   testWidgets('disabled and access-denied shortcuts stay out of results', (

@@ -1,4 +1,5 @@
 import 'package:mobile/core/cache/offline_resource_reference.dart';
+import 'package:mobile/core/config/api_config.dart';
 
 class PendingMutationRecord {
   const PendingMutationRecord({
@@ -86,6 +87,19 @@ class PendingMutationRecord {
         segments[6].isNotEmpty &&
         segments[7] == 'settings';
   }
+
+  bool get isSingleNotificationRead =>
+      feature == 'notifications' &&
+      method == 'PATCH' &&
+      entityId != null &&
+      path == NotificationEndpoints.notification(entityId!) &&
+      payload?['read'] is bool;
+
+  bool get isBulkNotificationRead =>
+      feature == 'notifications' &&
+      method == 'PATCH' &&
+      path == NotificationEndpoints.base &&
+      payload?['action'] == 'mark_all_read';
 
   final String method;
   final String path;

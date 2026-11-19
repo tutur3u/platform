@@ -1,6 +1,7 @@
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
+import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -41,16 +42,17 @@ class NotificationsRepository {
     final rows = {for (final row in source) row['id'] as String: row};
     var hasPendingReadChange = false;
     for (final item in await OfflineMutationQueue.instance.listPending()) {
-      if (item.feature != 'notifications') continue;
-      if (item.path == NotificationEndpoints.base &&
-          item.payload?['action'] == 'mark_all_read' &&
-          (item.payload?['wsId'] == null || item.payload?['wsId'] == wsId)) {
+      if (item.status != PendingMutationStatus.queued) continue;
+      if (item.isBulkNotificationRead) {
         hasPendingReadChange = true;
         for (final row in rows.values) {
+          final targetWorkspace = item.payload?['wsId'];
+          if (targetWorkspace != null && targetWorkspace != row['ws_id']) {
+            continue;
+          }
           row['read_at'] = DateTime.now().toUtc().toIso8601String();
         }
-      } else if (item.path ==
-              NotificationEndpoints.notification(item.entityId ?? '') &&
+      } else if (item.isSingleNotificationRead &&
           rows.containsKey(item.entityId)) {
         hasPendingReadChange = true;
         rows[item.entityId]!['read_at'] = item.payload?['read'] == true
@@ -90,9 +92,8 @@ class NotificationsRepository {
     final pending = await OfflineMutationQueue.instance.listPending();
     if (pending.any(
       (item) =>
-          item.feature == 'notifications' &&
-          item.path == NotificationEndpoints.base &&
-          item.payload?['action'] == 'mark_all_read' &&
+          item.status == PendingMutationStatus.queued &&
+          item.isBulkNotificationRead &&
           (item.payload?['wsId'] == null || item.payload?['wsId'] == wsId),
     )) {
       return 0;
@@ -109,6 +110,7 @@ class NotificationsRepository {
       path: path,
       workspaceId: 'personal',
       entityId: id,
+      replaySafe: true,
       payload: payload,
       send: () async {
         await _apiClient.patchJson(path, payload);

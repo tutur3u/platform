@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
 import 'shell_rail_harness.dart';
@@ -128,6 +129,44 @@ void main() {
     expect(shell.path, Routes.home);
     expect(railItem(l10n.navHome), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('prefixed mini-app Back appears only in the dock Back zone', (
+    tester,
+  ) async {
+    useShellWindow(tester, const Size(390, 844));
+    final shell = await pumpRailShell(
+      tester,
+      Routes.inventorySales,
+      page: (location) => ShellMiniNav(
+        ownerId: 'fixture',
+        locations: {location},
+        deepLinkBackRoute: Routes.apps,
+        items: [
+          const ShellMiniNavItemSpec(
+            id: 'fixture-back',
+            icon: Icons.chevron_left,
+            label: 'Back',
+          ),
+          const ShellMiniNavItemSpec(
+            id: 'fixture-sales',
+            icon: Icons.receipt_long,
+            label: 'Sales',
+            selected: true,
+          ),
+          const ShellMiniNavItemSpec(
+            id: 'fixture-products',
+            icon: Icons.list,
+            label: 'Products',
+          ),
+        ],
+      ),
+    );
+    final back = find.bySemanticsLabel(shellL10n(tester).navBack);
+    expect(back, findsOneWidget);
+    await tester.tap(back);
+    await settleShell(tester);
+    expect(shell.path, Routes.home);
   });
 
   testWidgets('phones in landscape keep the floating dock', (tester) async {

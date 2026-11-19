@@ -175,8 +175,7 @@ class _MoneyMultiplierRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = shad.Theme.of(context);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    return AppHorizontalScrollView(
       child: Row(
         children: suggestions
             .map(

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -62,7 +64,8 @@ class NotificationsView extends StatefulWidget {
   State<NotificationsView> createState() => _NotificationsViewState();
 }
 
-class _NotificationsViewState extends State<NotificationsView> {
+class _NotificationsViewState extends State<NotificationsView>
+    with OfflineSyncRefresh<NotificationsView> {
   late NotificationsTab _selectedTab = widget.initialTab;
   StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
@@ -86,6 +89,7 @@ class _NotificationsViewState extends State<NotificationsView> {
       final notificationsCubit = context.read<NotificationsCubit>();
       unawaited(notificationsCubit.refreshUnreadCount());
       unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
+      unawaited(OfflineMutationQueue.instance.syncOnViewOpen('notifications'));
     });
   }
 
@@ -104,6 +108,11 @@ class _NotificationsViewState extends State<NotificationsView> {
   void dispose() {
     unawaited(_pushEventsSubscription?.cancel());
     super.dispose();
+  }
+
+  @override
+  Future<void> refreshAfterOfflineSync() async {
+    await context.read<NotificationsCubit>().reconcileAfterSync(_selectedTab);
   }
 
   @override

@@ -5350,7 +5350,7 @@ abstract class AppLocalizations {
   /// No description provided for @crmPermissionDenied.
   ///
   /// In en, this message translates to:
-  /// **'You do not have permission to access this CRM view.'**
+  /// **'You do not have permission to access this Contacts view.'**
   String get crmPermissionDenied;
 
   /// No description provided for @crmPhone.
@@ -5386,7 +5386,7 @@ abstract class AppLocalizations {
   /// No description provided for @crmTitle.
   ///
   /// In en, this message translates to:
-  /// **'CRM'**
+  /// **'Contacts'**
   String get crmTitle;
 
   /// No description provided for @crmUploadAvatar.
@@ -13998,6 +13998,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re all caught up'**
   String get notificationsAllCaughtUp;
+
+  /// No description provided for @notificationsRetryFailedSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed. Tap to retry'**
+  String get notificationsRetryFailedSync;
+
+  /// No description provided for @notificationsRetryPendingSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to sync. Tap to retry'**
+  String get notificationsRetryPendingSync;
 
   /// No description provided for @notificationsReadEmptyTitle.
   ///

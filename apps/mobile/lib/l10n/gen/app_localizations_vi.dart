@@ -2738,7 +2738,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmNote => 'Ghi chú';
 
   @override
-  String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện CRM này.';
+  String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện Danh bạ này.';
 
   @override
   String get crmPhone => 'Số điện thoại';
@@ -2756,7 +2756,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmStatus => 'Trạng thái';
 
   @override
-  String get crmTitle => 'CRM';
+  String get crmTitle => 'Danh bạ';
 
   @override
   String get crmUploadAvatar => 'Tải ảnh đại diện';
@@ -7275,6 +7275,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsAllCaughtUp => 'Bạn đã xem hết thông báo';
+
+  @override
+  String get notificationsRetryFailedSync => 'Đồng bộ thất bại. Chạm để thử lại';
+
+  @override
+  String get notificationsRetryPendingSync => 'Đang chờ đồng bộ. Chạm để thử lại';
 
   @override
   String get notificationsReadEmptyTitle => 'Chưa có thông báo đã đọc';

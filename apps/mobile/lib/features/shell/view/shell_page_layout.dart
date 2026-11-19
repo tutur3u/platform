@@ -146,7 +146,11 @@ extension _ShellPageLayout on _ShellPageState {
                                   widget.notificationsPageBuilder?.call(
                                     context,
                                   ) ??
-                                  const NotificationsPage(),
+                                  NotificationsPage(
+                                    isActive:
+                                        widget.matchedLocation ==
+                                        Routes.notifications,
+                                  ),
                               (_) {
                                 final token =
                                     _rootTabReplayTokens[Routes.profileRoot] ??
@@ -312,17 +316,17 @@ extension _ShellPageLayout on _ShellPageState {
         ((!widget.matchedLocation.startsWith(Routes.assistant) ||
                 !assistantChrome.isFullscreen) &&
             !immersive);
-    final injectedBack = useInjectedMiniNav
-        ? _injectedMiniNavKey(injectedMiniNavRegistration.ownerId, 'back')
-        : null;
-    final hasInjectedBack =
-        injectedBack != null &&
-        miniItems.any((item) => item.key == injectedBack);
-    final backKey = hasInjectedBack
-        ? injectedBack
-        : _ShellPageState._backToRootKey;
+    final injectedBack = injectedMiniNavRegistration?.items
+        .where((item) => item.isBack)
+        .firstOrNull;
+    final backKey = injectedBack == null
+        ? _ShellPageState._backToRootKey
+        : _injectedMiniNavKey(
+            injectedMiniNavRegistration!.ownerId,
+            injectedBack.id,
+          );
     final navChildren = [
-      if (useInjectedMiniNav && !hasInjectedBack) _defaultBackItem(l10n),
+      if (useInjectedMiniNav && injectedBack == null) _defaultBackItem(l10n),
       ...(isMiniAppRoute ? miniItems : globalItems),
     ];
     final back = navChildren.where((item) => item.key == backKey).firstOrNull;

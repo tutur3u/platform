@@ -87,6 +87,73 @@ void main() {
     directory.deleteSync(recursive: true);
   });
 
+  PendingMutationRecord notificationRead(
+    String id, {
+    PendingMutationStatus status = PendingMutationStatus.queued,
+    int order = 0,
+  }) => PendingMutationRecord(
+    id: 'mutation-$id',
+    feature: 'notifications',
+    method: 'PATCH',
+    path: '/api/v1/notifications/$id',
+    payload: const {'read': true},
+    optimisticPatch: {'entityId': id},
+    userId: actor,
+    workspaceId: 'personal',
+    createdAt: DateTime.utc(2026, 1, 1, 0, order),
+    status: status,
+  );
+
+  test(
+    'opening notifications retires a removed row and unblocks the next read',
+    () async {
+      queue.registerDispatcher('notifications', (record) async {
+        sent.add(record);
+        if (record.entityId == 'gone') {
+          throw const ApiException(
+            statusCode: 404,
+            message: 'Notification not found',
+          );
+        }
+      });
+      await queue.enqueue(
+        notificationRead('gone', status: PendingMutationStatus.conflict),
+      );
+      await queue.enqueue(notificationRead('next', order: 1));
+      await queue.synchronize();
+      online = true;
+      await queue.syncOnViewOpen('notifications');
+      expect(sent.map((record) => record.entityId), ['gone', 'next']);
+      expect(await queue.listPending(), isEmpty);
+    },
+  );
+
+  test(
+    'repeated server failures stop replay and allow a manual retry',
+    () async {
+      var available = false;
+      queue.registerDispatcher('notifications', (record) async {
+        sent.add(record);
+        if (!available) {
+          throw const ApiException(statusCode: 503, message: 'Unavailable');
+        }
+      });
+      await queue.enqueue(notificationRead('retry'));
+      await queue.synchronize();
+      online = true;
+      for (var attempt = 0; attempt < 5; attempt++) {
+        await queue.drain();
+      }
+      expect(sent, hasLength(4));
+      final failed = (await queue.listPending()).single;
+      expect(failed.status, PendingMutationStatus.failed);
+      available = true;
+      await queue.retry(failed.id);
+      expect(sent, hasLength(5));
+      expect(await queue.listPending(), isEmpty);
+    },
+  );
+
   test(
     'model write cannot enqueue for a departed actor while offline',
     () async {

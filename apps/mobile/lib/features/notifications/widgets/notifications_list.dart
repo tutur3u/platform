@@ -210,6 +210,7 @@ class _NotificationsListState extends State<_NotificationsList> {
       child: PendingSyncFrame(
         workspaceId: 'personal',
         feature: 'notifications',
+        notificationWorkspaceId: notification.wsId,
         entityId: notification.id,
         relatedEntityIds: [
           if (notification.entityId != null) notification.entityId!,

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -166,37 +167,40 @@ class _AssistantModelPickerSheetState extends State<AssistantModelPickerSheet> {
             children: [
               SizedBox(
                 height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _filterChip(
-                      context.l10n.assistantModelAll,
-                      !_favoritesOnly && _provider == null,
-                      () => setState(() {
-                        _favoritesOnly = false;
-                        _provider = null;
-                      }),
-                    ),
-                    if (_canSyncFavorites)
+                child: AppHorizontalViewport(
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    children: [
                       _filterChip(
-                        context.l10n.assistantModelFavorites,
-                        _favoritesOnly,
-                        () => setState(() {
-                          _favoritesOnly = true;
-                          _provider = null;
-                        }),
-                        enabled: !_favoritesLoading,
-                      ),
-                    for (final provider in providers)
-                      _filterChip(
-                        provider,
-                        !_favoritesOnly && _provider == provider,
+                        context.l10n.assistantModelAll,
+                        !_favoritesOnly && _provider == null,
                         () => setState(() {
                           _favoritesOnly = false;
-                          _provider = provider;
+                          _provider = null;
                         }),
                       ),
-                  ],
+                      if (_canSyncFavorites)
+                        _filterChip(
+                          context.l10n.assistantModelFavorites,
+                          _favoritesOnly,
+                          () => setState(() {
+                            _favoritesOnly = true;
+                            _provider = null;
+                          }),
+                          enabled: !_favoritesLoading,
+                        ),
+                      for (final provider in providers)
+                        _filterChip(
+                          provider,
+                          !_favoritesOnly && _provider == provider,
+                          () => setState(() {
+                            _favoritesOnly = false;
+                            _provider = provider;
+                          }),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               AppToggleRow(

@@ -30,6 +30,7 @@ import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 part 'offline_mutation_dispatch.dart';
+part 'offline_mutation_failure.dart';
 part 'offline_mutation_dependencies.dart';
 part 'offline_inventory_replay.dart';
 
@@ -176,6 +177,23 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         },
       ),
     );
+  }
+
+  Future<void> syncOnViewOpen(String feature) => _syncFromView(() async {
+    if (_initialized &&
+        pending.value.any((record) => record.feature == feature)) {
+      await synchronize();
+    }
+  });
+
+  Future<void> retryFromView(String id) => _syncFromView(() => retry(id));
+
+  Future<void> _syncFromView(Future<void> Function() run) async {
+    try {
+      await run();
+    } on Object {
+      debugPrint('Offline sync unavailable; edits remain stored.');
+    }
   }
 
   /// Replay edits before revalidating visited resources.
@@ -448,7 +466,10 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         return record;
       }
       admitted = true;
-      return record.copyWith(status: PendingMutationStatus.queued);
+      return record.copyWith(
+        status: PendingMutationStatus.queued,
+        attemptCount: 0,
+      );
     });
     if (!admitted) return;
     await refresh();
@@ -504,7 +525,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
         if (id != null) unresolvedEarlier.add((record.workspaceId, id));
       }
 
-      for (final record in records) {
+      for (var record in records) {
         if (_disposed) return;
         if (OfflineInventoryMutation.fromRecord(record) != null) continue;
         if (_cancelingIds.contains(record.id) ||
@@ -513,8 +534,17 @@ class OfflineMutationQueue with WidgetsBindingObserver {
           continue;
         }
         final scope = (record.orderingFeature, record.workspaceId);
+        if (record.isSingleNotificationRead &&
+            record.status == PendingMutationStatus.conflict &&
+            record.attemptCount == 0 &&
+            !record.replaySafe) {
+          record = record.copyWith(status: PendingMutationStatus.queued);
+        }
         if (record.status != PendingMutationStatus.queued) {
-          blockedScopes.add(scope);
+          if (record.feature != 'notifications' ||
+              record.isBulkNotificationRead) {
+            blockedScopes.add(scope);
+          }
           remember(record);
           continue;
         }
@@ -547,7 +577,15 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             remember(record);
             continue;
           }
-          await dispatcher(record);
+          try {
+            await dispatcher(record);
+          } on ApiException catch (error) {
+            if (!record.isSingleNotificationRead ||
+                error.statusCode != 404 ||
+                error.message != 'Notification not found') {
+              rethrow;
+            }
+          }
           // An already dispatched ACK must be reconciled even after disposal.
           await _store.deletePendingMutation(record.id);
           if (_disposed) return;
@@ -558,27 +596,18 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             await _store.invalidateTags(
               {'module:$module'},
               userId: record.userId,
-              workspaceId: record.workspaceId,
+              workspaceId: record.feature == 'notifications'
+                  ? null
+                  : record.workspaceId,
             );
           } on Object {
             // A cache failure after acknowledgment must never resend a write.
           }
         } on Exception catch (error) {
-          final status = switch (error) {
-            ApiException(statusCode: 409 || 412) =>
-              PendingMutationStatus.conflict,
-            ApiException(statusCode: 401 || 429) =>
-              PendingMutationStatus.queued,
-            ApiException(isVerificationRequired: true) =>
-              PendingMutationStatus.queued,
-            ApiException(statusCode: 403) => PendingMutationStatus.failed,
-            _ when _isRetryable(error) && !record.replaySafe =>
-              PendingMutationStatus.conflict,
-            _ when _isRetryable(error) => PendingMutationStatus.queued,
-            _ => PendingMutationStatus.failed,
-          };
+          final attemptCount = record.attemptCount + 1;
+          final status = _replayFailureStatus(record, error, attemptCount);
           final nextRecord = record.copyWith(
-            attemptCount: record.attemptCount + 1,
+            attemptCount: attemptCount,
             lastError: error.toString(),
             status: status,
           );
@@ -599,7 +628,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
           }
           // Edits inside a module/workspace can depend on a preceding create.
           // Other modules can keep syncing after a non-retryable conflict.
-          blockedScopes.add(scope);
+          if (record.feature != 'notifications' ||
+              record.isBulkNotificationRead ||
+              status == PendingMutationStatus.queued) {
+            blockedScopes.add(scope);
+          }
           remember(record);
           if (status == PendingMutationStatus.queued ||
               error is ApiException &&

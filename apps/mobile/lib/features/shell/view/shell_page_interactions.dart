@@ -24,7 +24,7 @@ extension _ShellPageInteractions on _ShellPageState {
       return;
     }
 
-    if (selected.id == 'back' && registration.deepLinkBackRoute != null) {
+    if (selected.isBack && registration.deepLinkBackRoute != null) {
       unawaited(_runBackNavigation(context));
       return;
     }

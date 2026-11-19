@@ -262,6 +262,7 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
         workspaceId: 'personal',
         borderRadius: notificationCardRadius(context),
         feature: 'notifications',
+        notificationWorkspaceId: notification.wsId,
         entityId: notification.id,
         relatedEntityIds: [
           if (notification.entityId != null) notification.entityId!,

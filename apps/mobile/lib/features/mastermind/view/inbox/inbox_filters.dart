@@ -40,8 +40,7 @@ class InboxFilters extends StatelessWidget {
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: AppHorizontalScrollView(
         child: Row(
           spacing: AppSpacing.sm,
           children: [

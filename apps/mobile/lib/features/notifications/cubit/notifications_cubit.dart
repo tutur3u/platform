@@ -181,6 +181,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
+  Future<void> reconcileAfterSync(NotificationsTab tab) async {
+    await _refreshLoadedTabs(preferredTab: tab);
+  }
+
   Future<void> loadTab(NotificationsTab tab, {bool refresh = false}) async {
     await _loadTabResult(tab, refresh: refresh);
   }

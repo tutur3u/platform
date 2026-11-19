@@ -24,13 +24,15 @@ class NotificationsPage extends StatefulWidget {
     this.initialTab = NotificationsTab.inbox,
     this.repository,
     this.now,
+    this.isActive = true,
     super.key,
   });
 
   const NotificationsPage.archive({super.key})
     : initialTab = NotificationsTab.archive,
       repository = null,
-      now = null;
+      now = null,
+      isActive = true;
 
   /// Filter shown on open. Unread by default, so new activity leads and
   /// everything else stays one tap away under All.
@@ -44,6 +46,7 @@ class NotificationsPage extends StatefulWidget {
   /// Fixed clock for day grouping in render tests.
   @visibleForTesting
   final DateTime? now;
+  final bool isActive;
 
   @override
   State<NotificationsPage> createState() => _NotificationsPageState();
@@ -114,6 +117,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 actions: _actions,
                 tab: _tab,
                 now: widget.now,
+                isActive: widget.isActive,
                 onTabChanged: (tab) => setState(() => _tab = tab),
               ),
               BlocBuilder<NotificationsCubit, NotificationsState>(

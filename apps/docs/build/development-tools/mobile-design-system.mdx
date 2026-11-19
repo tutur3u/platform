@@ -121,6 +121,15 @@ page therefore adds nothing instead of counting the dock clearance twice.
 `SliverAppPage(includeBottom: false)` leaves the bottom clearance for the
 sliver that consumes it.
 
+Place a horizontal strip at the width of its owning page or panel. Use
+`AppHorizontalScrollView` with `pageKind` to put page gutters inside the
+scrollable content. For a lazy strip, put its padded `ListView` inside
+`AppHorizontalViewport` and set the list's clip behavior to `Clip.none`.
+The viewport clips at the horizontal edges and leaves space for vertical
+paint overflow. Give a full-width strip its own sliver when the surrounding
+sections use page gutters. Modal strips and embedded controls use their
+own panel bounds.
+
 ## Grouped sections
 
 `AppGroupedSection(caption:, footer:, children:)` renders a muted caption, a

@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/features/time_tracker/widgets/request_image_gallery.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/image_source_picker_dialog.dart';
@@ -116,8 +117,7 @@ class _RequestImageEditorState extends State<RequestImageEditor> {
           ],
         ),
         const shad.Gap(8),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
+        AppHorizontalScrollView(
           child: Row(
             children: [
               if (_existingImages.isNotEmpty)

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -156,24 +157,30 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
                 else
                   SizedBox(
                     height: 52,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _boards.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final board = _boards[index];
-                        return ChoiceChip(
-                          label: Text(board.$2),
-                          selected: _boardId == board.$1,
-                          selectedColor: scheme.onSurface,
-                          labelStyle: TextStyle(
-                            color: _boardId == board.$1
-                                ? scheme.surface
-                                : scheme.onSurface,
-                          ),
-                          onSelected: (_) => unawaited(_selectBoard(board.$1)),
-                        );
-                      },
+                    child: AppHorizontalViewport(
+                      child: AppHorizontalViewport(
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          itemCount: _boards.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final board = _boards[index];
+                            return ChoiceChip(
+                              label: Text(board.$2),
+                              selected: _boardId == board.$1,
+                              selectedColor: scheme.onSurface,
+                              labelStyle: TextStyle(
+                                color: _boardId == board.$1
+                                    ? scheme.surface
+                                    : scheme.onSurface,
+                              ),
+                              onSelected: (_) =>
+                                  unawaited(_selectBoard(board.$1)),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 16),
@@ -186,24 +193,30 @@ class _NoteTaskConversionSheetState extends State<NoteTaskConversionSheet> {
                 else
                   SizedBox(
                     height: 52,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _lists.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final list = _lists[index];
-                        return ChoiceChip(
-                          label: Text(list.$2),
-                          selected: _listId == list.$1,
-                          selectedColor: scheme.onSurface,
-                          labelStyle: TextStyle(
-                            color: _listId == list.$1
-                                ? scheme.surface
-                                : scheme.onSurface,
-                          ),
-                          onSelected: (_) => setState(() => _listId = list.$1),
-                        );
-                      },
+                    child: AppHorizontalViewport(
+                      child: AppHorizontalViewport(
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.none,
+                          itemCount: _lists.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
+                          itemBuilder: (context, index) {
+                            final list = _lists[index];
+                            return ChoiceChip(
+                              label: Text(list.$2),
+                              selected: _listId == list.$1,
+                              selectedColor: scheme.onSurface,
+                              labelStyle: TextStyle(
+                                color: _listId == list.$1
+                                    ? scheme.surface
+                                    : scheme.onSurface,
+                              ),
+                              onSelected: (_) =>
+                                  setState(() => _listId = list.$1),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 const Spacer(),

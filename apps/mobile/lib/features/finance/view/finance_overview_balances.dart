@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
@@ -26,19 +27,21 @@ class FinanceBalanceStrip extends StatelessWidget {
                 double.infinity,
               ) *
               3,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        children: [
-          _TotalCard(state: state),
-          for (final wallet in state.wallets) ...[
-            const SizedBox(width: 10),
-            FinanceWalletCard(
-              wallet: wallet,
-              fallbackCurrency: state.workspaceCurrency,
-            ),
+      child: AppHorizontalViewport(
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.none,
+          children: [
+            _TotalCard(state: state),
+            for (final wallet in state.wallets) ...[
+              const SizedBox(width: 10),
+              FinanceWalletCard(
+                wallet: wallet,
+                fallbackCurrency: state.workspaceCurrency,
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

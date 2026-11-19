@@ -82,8 +82,7 @@ class _OriginalHeatmapView extends StatelessWidget {
 
     return SizedBox(
       height: heatmapHeight,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: AppHorizontalScrollView(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

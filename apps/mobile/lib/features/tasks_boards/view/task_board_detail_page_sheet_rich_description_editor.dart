@@ -474,8 +474,7 @@ class _TaskDescriptionToolbar extends StatelessWidget {
 
     return ColoredBox(
       color: theme.colorScheme.secondary.withValues(alpha: 0.25),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      child: AppHorizontalScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
         child: Row(
           children: [

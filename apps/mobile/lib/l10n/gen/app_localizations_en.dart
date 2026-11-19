@@ -2752,7 +2752,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmNote => 'Note';
 
   @override
-  String get crmPermissionDenied => 'You do not have permission to access this CRM view.';
+  String get crmPermissionDenied => 'You do not have permission to access this Contacts view.';
 
   @override
   String get crmPhone => 'Phone';
@@ -2770,7 +2770,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmStatus => 'Status';
 
   @override
-  String get crmTitle => 'CRM';
+  String get crmTitle => 'Contacts';
 
   @override
   String get crmUploadAvatar => 'Upload avatar';
@@ -7350,6 +7350,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsAllCaughtUp => 'You\'re all caught up';
+
+  @override
+  String get notificationsRetryFailedSync => 'Sync failed. Tap to retry';
+
+  @override
+  String get notificationsRetryPendingSync => 'Waiting to sync. Tap to retry';
 
   @override
   String get notificationsReadEmptyTitle => 'No read notifications';

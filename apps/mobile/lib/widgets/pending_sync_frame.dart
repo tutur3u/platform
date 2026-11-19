@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
-import 'package:mobile/core/ui/tokens/app_tokens.dart';
+import 'package:mobile/core/ui/ui.dart'
+    show AppButton, AppButtonSize, AppTokens;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_outline_painter.dart';
 
@@ -14,6 +17,7 @@ class PendingSyncFrame extends StatelessWidget {
     required this.entityId,
     required this.child,
     this.feature,
+    this.notificationWorkspaceId,
     this.relatedEntityIds = const [],
     this.borderRadius,
     super.key,
@@ -22,6 +26,7 @@ class PendingSyncFrame extends StatelessWidget {
   final String workspaceId;
   final String entityId;
   final String? feature;
+  final String? notificationWorkspaceId;
   final List<String> relatedEntityIds;
   final Widget child;
 
@@ -46,9 +51,9 @@ class PendingSyncFrame extends StatelessWidget {
         }
         if (record.entityId == entityId ||
             relatedEntityIds.contains(record.entityId) ||
-            (record.feature == 'notifications' &&
-                record.path == '/api/v1/notifications' &&
-                record.payload?['action'] == 'mark_all_read') ||
+            (record.isBulkNotificationRead &&
+                (record.payload?['wsId'] == null ||
+                    record.payload?['wsId'] == notificationWorkspaceId)) ||
             (record.feature == 'tasks' &&
                 record.path.endsWith('/tasks/bulk') &&
                 (record.payload?['taskIds'] as List?)?.contains(entityId) ==
@@ -67,6 +72,14 @@ class PendingSyncFrame extends StatelessWidget {
       }
       if (mutation == null) return child;
       final status = mutation.status;
+      final retryId =
+          feature == 'notifications' &&
+              mutation.canRetry &&
+              !OfflineMutationQueue.instance.syncingIds.value.contains(
+                mutation.id,
+              )
+          ? mutation.id
+          : null;
       final colors = AppTokens.of(context).colorScheme;
       final label = switch (status) {
         PendingMutationStatus.queued =>
@@ -77,7 +90,7 @@ class PendingSyncFrame extends StatelessWidget {
         PendingMutationStatus.failed => context.l10n.offlineEditFailed,
       };
       return Semantics(
-        label: label,
+        label: retryId == null ? label : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -91,24 +104,40 @@ class PendingSyncFrame extends StatelessWidget {
               ),
               child: Opacity(opacity: 0.64, child: child),
             ),
-            ExcludeSemantics(
-              child: Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                  AppSpacing.md,
-                  AppSpacing.xs,
+            if (retryId != null)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: AppButton.ghost(
+                  size: AppButtonSize.small,
+                  onPressed: () => unawaited(
+                    OfflineMutationQueue.instance.retryFromView(retryId),
+                  ),
+                  child: Text(
+                    status == PendingMutationStatus.queued
+                        ? context.l10n.notificationsRetryPendingSync
+                        : context.l10n.notificationsRetryFailedSync,
+                  ),
                 ),
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: status == PendingMutationStatus.queued
-                        ? colors.mutedForeground
-                        : colors.destructive,
+              )
+            else
+              ExcludeSemantics(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                  ),
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: status == PendingMutationStatus.queued
+                          ? colors.mutedForeground
+                          : colors.destructive,
+                    ),
                   ),
                 ),
               ),
-            ),
           ],
         ),
       );

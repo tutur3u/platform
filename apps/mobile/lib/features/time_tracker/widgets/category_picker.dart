@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
@@ -26,62 +27,67 @@ class CategoryPicker extends StatelessWidget {
 
     return SizedBox(
       height: 40,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          shad.Toggle(
-            value: selectedCategoryId == null,
-            onChanged: (v) => onSelected(null),
-            child: Text(l10n.timerNoCategory),
-          ),
-          const shad.Gap(8),
-          ...categories.map(
-            (category) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: shad.Toggle(
-                value: category.id == selectedCategoryId,
-                onChanged: (v) => onSelected(category.id),
+      child: AppHorizontalViewport(
+        child: AppHorizontalViewport(
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              shad.Toggle(
+                value: selectedCategoryId == null,
+                onChanged: (v) => onSelected(null),
+                child: Text(l10n.timerNoCategory),
+              ),
+              const shad.Gap(8),
+              ...categories.map(
+                (category) => Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: shad.Toggle(
+                    value: category.id == selectedCategoryId,
+                    onChanged: (v) => onSelected(category.id),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (category.color != null) ...[
+                          Container(
+                            width: 12,
+                            height: 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: resolveTimeTrackingCategoryColor(
+                                context,
+                                category.color,
+                                fallback: Colors.grey,
+                              ),
+                            ),
+                          ),
+                          const shad.Gap(8),
+                        ],
+                        Text(category.name ?? ''),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              shad.OutlineButton(
+                onPressed: onAddCategory,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (category.color != null) ...[
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: resolveTimeTrackingCategoryColor(
-                            context,
-                            category.color,
-                            fallback: Colors.grey,
-                          ),
-                        ),
-                      ),
-                      const shad.Gap(8),
-                    ],
-                    Text(category.name ?? ''),
+                    Icon(
+                      LucideIcons.plus,
+                      size: 16,
+                      color: theme.colorScheme.primary,
+                    ),
+                    const shad.Gap(4),
+                    Text(l10n.timerAddCategory),
                   ],
                 ),
               ),
-            ),
+            ],
           ),
-          shad.OutlineButton(
-            onPressed: onAddCategory,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  LucideIcons.plus,
-                  size: 16,
-                  color: theme.colorScheme.primary,
-                ),
-                const shad.Gap(4),
-                Text(l10n.timerAddCategory),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

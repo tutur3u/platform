@@ -2,6 +2,7 @@
 /// sections. See `apps/docs/build/development-tools/mobile-design-system.mdx`.
 library;
 
+export 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 export 'package:mobile/core/layout/app_page.dart';
 export 'package:mobile/core/layout/grouped_rows.dart';
 export 'package:mobile/core/layout/grouped_section.dart';

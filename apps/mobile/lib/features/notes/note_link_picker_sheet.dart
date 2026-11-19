@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -383,8 +384,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 12),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
+              AppHorizontalScrollView(
                 child: Row(
                   children: [
                     for (final kind in NoteLinkKind.values)

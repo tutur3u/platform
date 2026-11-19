@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/notifications/widgets/notification_inbox_actions.dart';
@@ -20,6 +21,7 @@ class NotificationsInbox extends StatefulWidget {
     required this.tab,
     required this.onTabChanged,
     this.now,
+    this.isActive = true,
     super.key,
   });
 
@@ -29,12 +31,14 @@ class NotificationsInbox extends StatefulWidget {
 
   /// Clock used for day grouping; the device clock when null.
   final DateTime? now;
+  final bool isActive;
 
   @override
   State<NotificationsInbox> createState() => _NotificationsInboxState();
 }
 
-class _NotificationsInboxState extends State<NotificationsInbox> {
+class _NotificationsInboxState extends State<NotificationsInbox>
+    with OfflineSyncRefresh<NotificationsInbox> {
   StreamSubscription<PushNotificationEvent>? _pushEvents;
 
   NotificationsCubit get _cubit => widget.actions.cubit;
@@ -45,12 +49,15 @@ class _NotificationsInboxState extends State<NotificationsInbox> {
     _pushEvents = PushNotificationService.instance.events.listen(
       (_) => _refresh(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.isActive) _open();
+    });
   }
 
   @override
   void didUpdateWidget(covariant NotificationsInbox oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive) _open();
     if (oldWidget.tab != widget.tab) unawaited(_cubit.loadTab(widget.tab));
   }
 
@@ -60,10 +67,21 @@ class _NotificationsInboxState extends State<NotificationsInbox> {
     super.dispose();
   }
 
+  void _open() {
+    _refresh();
+    unawaited(OfflineMutationQueue.instance.syncOnViewOpen('notifications'));
+  }
+
   void _refresh() {
     if (!mounted) return;
     unawaited(_cubit.refreshUnreadCount());
     unawaited(_cubit.loadTab(widget.tab, refresh: true));
+  }
+
+  @override
+  Future<void> refreshAfterOfflineSync() async {
+    if (!widget.isActive) return;
+    await _cubit.reconcileAfterSync(widget.tab);
   }
 
   @override
@@ -84,71 +102,53 @@ class _NotificationsInboxState extends State<NotificationsInbox> {
           ) ||
           !identical(previous.pendingIds, current.pendingIds),
       builder: (context, state) {
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final insets = AppPageInsets.of(
-              context,
-              width: constraints.maxWidth,
-            );
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: floatingShellHeaderInset(context)),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    insets.left,
-                    AppSpacing.sm,
-                    insets.right,
-                    AppSpacing.xs,
-                  ),
-                  child: NotificationsFilterBar(
-                    selected: widget.tab,
-                    unreadCount: state.unreadCount,
-                    onSelected: widget.onTabChanged,
-                  ),
-                ),
-                Expanded(
-                  child: ClipRect(
-                    child: NotificationsFeedList(
-                      key: PageStorageKey((widget.tab, state.scopeWorkspaceId)),
-                      tab: widget.tab,
-                      feed: state.feedFor(widget.tab),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: floatingShellHeaderInset(context)),
+            NotificationsFilterBar(
+              selected: widget.tab,
+              unreadCount: state.unreadCount,
+              onSelected: widget.onTabChanged,
+            ),
+            Expanded(
+              child: ClipRect(
+                child: NotificationsFeedList(
+                  key: PageStorageKey((widget.tab, state.scopeWorkspaceId)),
+                  tab: widget.tab,
+                  feed: state.feedFor(widget.tab),
+                  now: widget.now,
+                  onRefresh: () => _cubit.loadTab(widget.tab, refresh: true),
+                  onLoadMore: () => _cubit.loadMore(widget.tab),
+                  itemBuilder: (notification) {
+                    final openInvite =
+                        notification.type == 'workspace_invite' &&
+                        notification.actionTaken == null;
+                    return NotificationInboxRow(
+                      key: ValueKey('notification-${notification.id}'),
+                      notification: notification,
                       now: widget.now,
-                      onRefresh: () =>
-                          _cubit.loadTab(widget.tab, refresh: true),
-                      onLoadMore: () => _cubit.loadMore(widget.tab),
-                      itemBuilder: (notification) {
-                        final openInvite =
-                            notification.type == 'workspace_invite' &&
-                            notification.actionTaken == null;
-                        return NotificationInboxRow(
-                          key: ValueKey('notification-${notification.id}'),
-                          notification: notification,
-                          now: widget.now,
-                          isPending: state.isPending(notification.id),
-                          onOpen: () =>
-                              unawaited(actions.open(context, notification)),
-                          onToggleRead: () => unawaited(
-                            actions.toggleRead(context, notification),
-                          ),
-                          onAcceptInvite: openInvite
-                              ? () => unawaited(
-                                  actions.acceptInvite(context, notification),
-                                )
-                              : null,
-                          onDeclineInvite: openInvite
-                              ? () => unawaited(
-                                  actions.declineInvite(context, notification),
-                                )
-                              : null,
-                        );
-                      },
-                    ),
-                  ),
+                      isPending: state.isPending(notification.id),
+                      onOpen: () =>
+                          unawaited(actions.open(context, notification)),
+                      onToggleRead: () =>
+                          unawaited(actions.toggleRead(context, notification)),
+                      onAcceptInvite: openInvite
+                          ? () => unawaited(
+                              actions.acceptInvite(context, notification),
+                            )
+                          : null,
+                      onDeclineInvite: openInvite
+                          ? () => unawaited(
+                              actions.declineInvite(context, notification),
+                            )
+                          : null,
+                    );
+                  },
                 ),
-              ],
-            );
-          },
+              ),
+            ),
+          ],
         );
       },
     );

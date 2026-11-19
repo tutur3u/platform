@@ -16,6 +16,8 @@ class ShellMiniNavItemSpec extends Equatable {
   });
 
   final String id;
+  bool get isBack => id == 'back' || id.endsWith('-back');
+
   final IconData icon;
   final String label;
   final VoidCallback? onPressed;

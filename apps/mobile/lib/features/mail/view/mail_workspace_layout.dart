@@ -177,8 +177,7 @@ extension _MailWorkspaceLayout on _MailWorkspaceState {
                               ),
                             ),
                             if (_selected.isNotEmpty)
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
+                              AppHorizontalScrollView(
                                 child: Row(
                                   children: [
                                     Padding(

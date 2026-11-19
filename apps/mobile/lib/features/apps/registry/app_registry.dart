@@ -567,7 +567,7 @@ class AppRegistry {
   static String _labelNotes(AppLocalizations l10n) => l10n.notesTitle;
   static String _labelCms(AppLocalizations l10n) => l10n.cmsTitleApp;
   static String _labelEducation(AppLocalizations l10n) => l10n.educationTitle;
-  static String _labelCrm(AppLocalizations l10n) => l10n.crmTitle;
+  static String _labelCrm(AppLocalizations l10n) => l10n.contactsTitle;
   static String _labelMeet(AppLocalizations l10n) => l10n.meetTitle;
   static String _labelInventory(AppLocalizations l10n) => l10n.inventoryTitle;
   static String _labelInventoryOverview(AppLocalizations l10n) =>

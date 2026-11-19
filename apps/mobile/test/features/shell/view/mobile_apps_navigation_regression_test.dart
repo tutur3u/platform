@@ -303,7 +303,7 @@ void main() {
     await apps.select(AppRegistry.moduleById('tasks')!);
     await mount(tester);
     expect(find.byKey(const ValueKey('pinned-tasks')), findsOneWidget);
-    expect(find.byKey(const ValueKey('recent-tasks')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recent-tasks')), findsNothing);
     final left = tester.getRect(find.byKey(const ValueKey('app-tasks')));
     final right = tester.getRect(find.byKey(const ValueKey('app-calendar')));
     await tester.tapAt(Offset((left.right + right.left) / 2, left.center.dy));
