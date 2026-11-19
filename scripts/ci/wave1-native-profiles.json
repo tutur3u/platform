@@ -431,6 +431,86 @@
           "stagingPublicationVars": {}
         }
       }
+    },
+    "forms": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-forms",
+      "canonicalHost": "forms.tuturuuu.com",
+      "secrets": [
+        "TURNSTILE_SECRET_KEY",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "SUPABASE_SECRET_KEY",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "forms",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://forms.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "TURNSTILE_SECRET_KEY",
+          "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET",
+          "SUPABASE_SECRET_KEY",
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/forms/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/embed.js",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": false
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-forms",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-forms",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": false
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "0"
+          },
+          "stagingPublicationVars": {}
+        }
+      }
     }
   },
   "stagingAdmission": {
