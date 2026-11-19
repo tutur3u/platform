@@ -80,30 +80,38 @@
     },
     "native-workers-gateway": {
       "title": "Simple native Workers and gateway",
-      "status": "qualified",
+      "status": "switched",
       "owner": "cf/Void Wrangler-exit lane",
-      "implementation": "scripts/ci/fixtures/cf-worker-parity/api.json",
-      "wranglerPrior": "wrangler.jsonc identity baselines without cloudflare.config.ts",
-      "toolchain": "cron-control template; cf-worker-parity baselines for api and gateway",
+      "implementation": ".github/workflows/{api,status-api,gateway}-cloudflare.yaml",
+      "wranglerPrior": "wrangler.jsonc plus Vite plugin configPath for api; gateway operator merge still reads wrangler.jsonc",
+      "toolchain": "cloudflare.config.ts, vp build, cf-worker-parity.mjs, cf deploy --prebuilt --dry-run",
       "parityEvidence": [
         "scripts/ci/native-simple-workers-template.test.mjs",
+        "scripts/ci/api-cloudflare-workflow.test.js",
+        "scripts/ci/status-api-cloudflare-workflow.test.js",
+        "scripts/ci/gateway-cloudflare-workflow.test.js",
         "scripts/ci/fixtures/cf-worker-parity/api.json",
+        "scripts/ci/fixtures/cf-worker-parity/status-api.json",
         "scripts/ci/fixtures/cf-worker-parity/gateway.json"
       ],
       "rehearsal": {
-        "kind": "identity-baseline",
-        "notes": "Parity JSON pins deployment identity; Vite+ emit and cf deploy follow apps/cron-control when app owners migrate."
+        "kind": "build-output-qualification",
+        "notes": "Each workflow builds once, asserts cf-worker-parity, and runs cf deploy --dry-run without credentials."
       },
       "productionTemplate": {
-        "workflow": "pending per app",
+        "workflow": ".github/workflows/cron-control-cloudflare.yaml",
         "publisher": "cf deploy --prebuilt",
-        "profiles": ["apps/api", "apps/gateway"]
+        "profiles": ["apps/api", "apps/status-api", "apps/gateway"]
       },
       "decision": null,
-      "allowlistDelta": null,
+      "allowlistDelta": {
+        "files": -1,
+        "uses": -4,
+        "note": "apps/api/wrangler.jsonc removed; api package.json drops direct wrangler devDependency."
+      },
       "wranglerGapsRetained": ["pending-migration"],
       "removalConditions": [
-        "cloudflare.config.ts, vp build, cf-worker-parity.mjs CI and production workflow per app"
+        "gateway-deploy-config.mjs reads cloudflare.config.ts instead of wrangler.jsonc"
       ]
     },
     "email-storage-do-void-publisher": {

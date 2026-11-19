@@ -1,5 +1,5 @@
 {
-  "source": "apps/gateway/wrangler.jsonc",
+  "source": "apps/gateway/cloudflare.config.ts",
   "identity": {
     "name": "tuturuuu-gateway",
     "accountId": "e8912e2867beecc673d171907bf09649",

@@ -10,10 +10,10 @@ export default defineConfig({
   },
   plugins: [
     cloudflare({
-      configPath: './wrangler.jsonc',
       viteEnvironment: { name: 'worker' },
       remoteBindings: false,
       inspectorPort: false,
+      experimental: { newConfig: { cfBuildOutput: true } },
     }),
   ],
   environments: { worker: { build: { outDir: 'dist/worker' } } },

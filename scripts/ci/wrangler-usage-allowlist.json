@@ -544,16 +544,6 @@
         "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       }
     },
-    "apps/api/package.json": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6821",
-        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
-      },
-      "digest": "5885748fa252384100a1ee1796dc8608a4844ea82e9dced2b6ed892add90a490"
-    },
     "apps/api/scripts/worker-runtime.test.mjs": {
       "lines": 2,
       "uses": 2,
@@ -563,26 +553,6 @@
         "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
       },
       "digest": "5c39eca31e598f25c287dedb8ed8bd3e68230927bf28a5a6f9e6a3b7f6a88635"
-    },
-    "apps/api/vite.config.ts": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6821",
-        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
-      },
-      "digest": "9e15c227f35f6c2d0ad3c5586ae959517cd2d997e3959303be8cce73f001bcf8"
-    },
-    "apps/api/wrangler.jsonc": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7785",
-        "reason": "Atomic Oxfmt formatting and replacement of trailing formatter commands. Wrangler targets, flags, bindings and invocation counts are preserved."
-      },
-      "digest": "18a58b4e27e730a68df945dcc8bfcdf7caf858b5d6d912f423a2be14d424ba37"
     },
     "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
       "lines": 3,
@@ -2783,24 +2753,14 @@
       "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
     },
     "scripts/ci/fixtures/cf-toolchain-receipts.json": {
-      "lines": 23,
-      "uses": 29,
+      "lines": 25,
+      "uses": 33,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/ab5a1a37206e068cbc67fb521c2eeab625e4bbe8",
-        "reason": "Records email-storage-do cf publisher qualification and calendar emit-only bundle parity; allowlist deltas reference net Wrangler retirements."
+        "decision": "https://github.com/tutur3u/platform/commit/4122fb86eb1a341571439d050b2604d4c1eb3fed",
+        "reason": "Native worker gateway switched to cf Build Output workflows; receipts record per-item allowlist deltas."
       },
-      "digest": "5e891da6196ad4dc378b9e087d28f16c6a6726ac8931483611b0b5ec23afd84a"
-    },
-    "scripts/ci/fixtures/cf-worker-parity/api.json": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Pending-migration parity baseline naming wrangler.jsonc source; no CLI invocation."
-      },
-      "digest": "2b492c342711d27e2a6d3af1bc9dbccf16383d6efb53e0316c8b864a087866a0"
+      "digest": "c1dbc54f321e22d53b54e50e378b1e139f676128bf22067394f1775dbdbc4f01"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
@@ -2821,16 +2781,6 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
-    },
-    "scripts/ci/fixtures/cf-worker-parity/gateway.json": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Pending-migration parity baseline naming wrangler.jsonc source; no CLI invocation."
-      },
-      "digest": "5e2fd80955b3f1867b00401def0b4295a90c047b7c7a7bcf561cd4cb4cc50a82"
     },
     "scripts/ci/fixtures/native-abuse-guard.mjs": {
       "kind": "script",
@@ -3163,16 +3113,6 @@
         "reason": "Shared signed-in native root-browser gate (#6818) loads the app's Wrangler SDK to start its built Worker; every Start + Void app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "23238e55e45b6b35303bdc58ddbf3e07d58fd8aeda1dd60b3dbea2e5e7e1a9fd"
-    },
-    "scripts/ci/native-simple-workers-template.test.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Template test references wrangler.jsonc baselines for api and gateway; no CLI invocation."
-      },
-      "digest": "f55e9f280f6180195f92aca855f81b13ac63cf94d61bf73b3ee3e1afed89f6ad"
     },
     "scripts/ci/native-wrangler-evidence.mjs": {
       "lines": 17,

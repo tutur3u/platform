@@ -1,0 +1,83 @@
+name: Gateway Cloudflare
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - 'apps/gateway/**'
+      - '.github/workflows/gateway-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/gateway-cloudflare-workflow.test.js'
+      - 'scripts/ci/fixtures/cf-worker-parity/gateway.json'
+      - 'bun.lock'
+      - 'package.json'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/gateway/**'
+      - '.github/workflows/gateway-cloudflare.yaml'
+      - 'scripts/ci/cf-worker-parity.mjs'
+      - 'scripts/ci/gateway-cloudflare-workflow.test.js'
+      - 'scripts/ci/fixtures/cf-worker-parity/gateway.json'
+      - 'bun.lock'
+      - 'package.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  deployments: read
+concurrency:
+  group: gateway-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: gateway-cloudflare.yaml
+  build-acceptance:
+    name: Build and accept Gateway Worker
+    needs: check-ci
+    if: ${{ needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CF_SEND_TELEMETRY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: node --test scripts/ci/gateway-cloudflare-workflow.test.js
+      - run: bun run type-check
+        working-directory: apps/gateway
+      - run: bun run lint
+        working-directory: apps/gateway
+      - run: bun run test
+        working-directory: apps/gateway
+      - run: bun run build
+        working-directory: apps/gateway
+      - name: Compare emitted Build Output with the recorded deployment identity
+        run: node scripts/ci/cf-worker-parity.mjs apps/gateway scripts/ci/fixtures/cf-worker-parity/gateway.json
+      - name: Check the prebuilt artifact without credentials
+        run: bun x --no-install cf deploy --prebuilt --mode production --dry-run --no-provision
+        working-directory: apps/gateway
+      - name: Stage the cf Build Output artifact
+        run: cp -R apps/gateway/.cloudflare/output "$RUNNER_TEMP/gateway-build-output"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: gateway-worker-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/gateway-build-output
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true

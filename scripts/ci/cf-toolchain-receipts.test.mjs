@@ -45,7 +45,7 @@ test('calendar publisher and native worker templates are recorded as switched or
     receipts['calendar-build-output'].implementation,
     /calendar-cf-publisher/
   );
-  assert.equal(receipts['native-workers-gateway'].status, 'qualified');
+  assert.equal(receipts['native-workers-gateway'].status, 'switched');
   assert.ok(
     receipts['native-workers-gateway'].parityEvidence.includes(
       'scripts/ci/fixtures/cf-worker-parity/gateway.json'
