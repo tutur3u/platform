@@ -287,6 +287,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   .currentWorkspace
                   ?.id,
               now: widget.now,
+              showTagFilter: canManageFinance(context, 'manage_finance'),
               onRefresh: _onRefresh,
               onTransactionTap: (transaction) =>
                   unawaited(_openTransaction(transaction)),

@@ -8,6 +8,7 @@ import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
+import 'package:mobile/features/finance/view/transaction_tag_picker.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -20,11 +21,13 @@ class TransactionListFilters extends StatelessWidget {
   const TransactionListFilters({
     required this.state,
     required this.onChanged,
+    this.showTagFilter = false,
     super.key,
   });
 
   final TransactionListState state;
   final TransactionFiltersChanged onChanged;
+  final bool showTagFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +86,14 @@ class TransactionListFilters extends StatelessWidget {
                 active: query.categoryId != null,
                 onPressed: () => unawaited(_pickCategory(context)),
               ),
+              if (showTagFilter)
+                AppFilterButton(
+                  key: const ValueKey('finance-filter-tag'),
+                  icon: LucideIcons.tags,
+                  label: l10n.financeTags,
+                  active: query.tagId != null,
+                  onPressed: () => unawaited(_pickTag(context)),
+                ),
             ],
           ),
         ),
@@ -108,6 +119,15 @@ class TransactionListFilters extends StatelessWidget {
     );
     if (!context.mounted || picked == null) return;
     onChanged(state.query, picked.isEmpty ? null : picked);
+  }
+
+  Future<void> _pickTag(BuildContext context) async {
+    final picked = await showTransactionTagPicker(context, state.query.tagId);
+    if (!context.mounted || picked == null) return;
+    onChanged(
+      state.query.copyWith(tagId: picked.isEmpty ? null : picked),
+      state.walletId,
+    );
   }
 
   Future<void> _pickCategory(BuildContext context) async {

@@ -12,7 +12,7 @@ enum TransactionEmptyKind {
   /// Nothing recorded in the selected period (or at all).
   none,
 
-  /// Kind, category or wallet filters hide every row of the period.
+  /// Kind, category, tag or wallet filters hide every row of the period.
   filtered,
 
   /// A search query matches nothing.
@@ -25,6 +25,7 @@ TransactionEmptyKind transactionEmptyKindOf(TransactionListState state) {
   final query = state.query;
   if (query.kind != FinanceTransactionKind.all ||
       query.categoryId != null ||
+      query.tagId != null ||
       state.walletId != null) {
     return TransactionEmptyKind.filtered;
   }

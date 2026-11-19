@@ -34,7 +34,8 @@ Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
 ## Periods
 
 Transactions and a wallet page pin a period bar: previous, the period, next
-(never past today) and a Week / Month / Year chooser. Both open on the current
+(never past today) and a Week / Month / Year chooser. Finance managers can also filter Transactions by
+tag. Both open on the current
 month; Transactions also offers All time, which search uses. Weeks start on
 Monday.
 
@@ -45,7 +46,7 @@ as a filter:
 
 - Nothing in the period: "No transactions in {period}" with Add first
   transaction.
-- Kind, category or wallet filters hide every row: "No matching
+- Kind, category, tag or wallet filters hide every row: "No matching
   transactions" with Clear filters, which keeps the period.
 - A search query matches nothing: "No results for {query}" with Clear search.
 
@@ -128,7 +129,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Monthly overview and wallet-period cash flow. Dedicated reports are open |
 | Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
-| Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, type and period. Advanced filters are open |
+| Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, type and period. Creator and arbitrary date ranges are open |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Open |
 | Debts, promotions and inventory reconciliation | Dedicated web workflows | Open |
 

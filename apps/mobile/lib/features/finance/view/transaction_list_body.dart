@@ -23,6 +23,7 @@ class TransactionListBody extends StatelessWidget {
     this.onClearSearch,
     this.onLoadMore,
     this.workspaceId,
+    this.showTagFilter = false,
     this.now,
     super.key,
   });
@@ -39,6 +40,7 @@ class TransactionListBody extends StatelessWidget {
   final VoidCallback? onCreate;
   final VoidCallback? onLoadMore;
   final String? workspaceId;
+  final bool showTagFilter;
   final DateTime? now;
 
   @override
@@ -76,6 +78,7 @@ class TransactionListBody extends StatelessWidget {
             child: TransactionListFilters(
               state: state,
               onChanged: onFiltersChanged,
+              showTagFilter: showTagFilter,
             ),
           ),
           SliverList.builder(
