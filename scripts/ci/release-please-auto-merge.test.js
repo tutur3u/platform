@@ -253,8 +253,8 @@ test('release merge pins the same Flutter version as the mobile workflow', () =>
   assert.ok(mobileVersion, 'mobile.yaml must pin a Flutter version');
   assert.equal(
     mobileVersion,
-    '3.47.x',
-    'Flutter 3.44.9 rewrites the Dart 3.13-resolved mobile lockfile before release merging'
+    '3.50.0',
+    'The release merge resolves the mobile lockfile with the same Flutter as mobile.yaml'
   );
   assert.ok(flutterWorkflows.length > 0, 'expected Flutter workflows');
 

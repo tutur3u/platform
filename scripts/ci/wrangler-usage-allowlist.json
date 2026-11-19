@@ -489,10 +489,10 @@
       "uses": 14,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/1d68096a7cdb96b553ecb3272d238c963806941d",
-        "reason": "The web route family workflow builds each family with OpenNext, measures it with wrangler deploy --dry-run, deploys it with wrangler deploy and uploads/deploys the gateway version with wrangler versions upload/deploy, because cf has no OpenNext adapter or versions command parity yet."
+        "decision": "https://github.com/tutur3u/platform/commit/f4ab3caf7bc6f11fb66c5daf24b1b64edd2d69b3",
+        "reason": "The web route family workflow builds each family with OpenNext, measures it with wrangler deploy --dry-run, deploys it with wrangler deploy and uploads/deploys the gateway version with wrangler versions upload/deploy, retrying the deploy until the uploaded version is visible, because cf has no OpenNext adapter or versions command parity yet."
       },
-      "digest": "b647f2d23ffd98a41d6ed6a6bcc7d8fa5c3cbca20f4997231e0d4dfa41082e33"
+      "digest": "7246f82df3cf716f0687b50fc1236d5269cccc8cc65f8c543b15c691efa279b9"
     },
     ".github/workflows/web-start-candidate.yaml": {
       "lines": 1,

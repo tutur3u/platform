@@ -107,6 +107,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/state/route.ts',
   // Host-only public projection policy is persisted in the Meet room Durable Object.
   'apps/meet/src/app/api/meet-call/[meetingId]/public-info/route.ts',
+  // Account-free guest join: host opt-in, plan check and per-room rate limit in
+  // meet-core guest-access, admitted through the room lobby.
+  'apps/meet/src/app/api/meet-call/[meetingId]/guest/route.ts',
   // Meet room services use app-session auth plus the signed Durable Object admission/admin policy.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/route.ts',
   // Requester-only AI: no room history or room publication.

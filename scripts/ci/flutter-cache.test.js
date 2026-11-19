@@ -127,7 +127,7 @@ test('all caching mobile jobs use the wrapper, retain version pins and trigger o
           usesWrapper = true;
           adopted++;
           assert.deepEqual(step.with, {
-            'flutter-version': '3.47.x',
+            'flutter-version': '3.50.0',
             channel: 'stable',
           });
         }
