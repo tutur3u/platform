@@ -165,6 +165,7 @@ Future<void> pumpRowActionsBoard(
   required RowActionsRepository repository,
   ITimeTrackerRepository? timeTrackerRepository,
   TimezoneSettingsCubit? timezone,
+  String boardId = 'board-1',
 }) async {
   await tester.pumpApp(
     MultiBlocProvider(
@@ -175,7 +176,7 @@ Future<void> pumpRowActionsBoard(
           BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
       ],
       child: TaskBoardDetailPage(
-        boardId: 'board-1',
+        boardId: boardId,
         taskRepository: repository,
         timeTrackerRepository: timeTrackerRepository,
       ),

@@ -310,6 +310,15 @@ localization changes.
 - Pass the page context, not the root navigator's context, to
   `showAppToast`; the root navigator's element sits above its overlay. Keep the
   root-navigator context only for legacy `shad.showToast` callers.
+- Board detail requires only the board metadata and lists
+  (`task_repository_board_detail.dart`): each read has a bounded timeout and
+  one retry after a timeout, transport or 5xx failure. Labels, members,
+  projects and estimation degrade to empty (or the values already shown) and
+  are listed in `TaskBoardDetail.unavailableParts`; the cubit re-reads them
+  on a bounded backoff, merges and re-hydrates loaded tasks, then caches.
+  Share guests get 403 from the membership-only part routes, so a part
+  failure must never reach the full-page error. Hydration keeps a task's own
+  relations when a lookup list is empty.
 - Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
   on failure before the server refresh; do not rely on the refresh alone.
 - The board timeline (`widgets/timeline/`) is a pure projection

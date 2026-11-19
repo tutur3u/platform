@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:http/http.dart' as http;
@@ -37,6 +38,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+part 'task_repository_board_detail.dart';
 part 'task_repository_helpers.dart';
 part 'task_repository_local.dart';
 part 'task_repository_mine.dart';
@@ -49,12 +51,18 @@ part 'task_repository_writes.dart';
 
 /// Repository for task operations.
 class TaskRepository {
-  TaskRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _apiClient = apiClient ?? ApiClient(),
-      _httpClient = httpClient ?? http.Client();
+  TaskRepository({
+    ApiClient? apiClient,
+    http.Client? httpClient,
+    TaskBoardDetailLoadPolicy boardDetailLoadPolicy =
+        const TaskBoardDetailLoadPolicy(),
+  }) : _apiClient = apiClient ?? ApiClient(),
+       _httpClient = httpClient ?? http.Client(),
+       _boardDetailLoadPolicy = boardDetailLoadPolicy;
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
+  final TaskBoardDetailLoadPolicy _boardDetailLoadPolicy;
   final Map<String, DateTime> _historyWarmups = {};
 
   Future<Map<String, dynamic>> _read(
@@ -331,44 +339,12 @@ class TaskRepository {
     );
   }
 
-  Future<TaskBoardDetail> getTaskBoardDetail(
-    String wsId,
-    String boardId,
-  ) async {
-    final results = await Future.wait<dynamic>([
-      _getTaskBoardMetadata(this, wsId, boardId),
-      getBoardLists(wsId, boardId),
-      getTaskLabels(wsId),
-      getWorkspaceUsers(wsId),
-      getTaskProjects(wsId),
-      getTaskEstimateBoards(wsId),
-    ]);
+  Future<TaskBoardDetail> getTaskBoardDetail(String wsId, String boardId) =>
+      _loadTaskBoardDetail(this, wsId, boardId);
 
-    final estimateBoards = results[5] as List<TaskEstimateBoard>;
-    TaskEstimateBoard? boardEstimation;
-    for (final estimateBoard in estimateBoards) {
-      if (estimateBoard.id == boardId) {
-        boardEstimation = estimateBoard;
-        break;
-      }
-    }
-
-    final labels = results[2] as List<TaskLabel>;
-    final members = results[3] as List<WorkspaceUserOption>;
-    final projects = results[4] as List<TaskProjectSummary>;
-
-    return (results[0] as TaskBoardDetail).copyWith(
-      lists: results[1] as List<TaskBoardList>,
-      tasks: const <TaskBoardTask>[],
-      labels: labels,
-      members: members,
-      projects: projects,
-      estimationType: boardEstimation?.estimationType,
-      extendedEstimation: boardEstimation?.extendedEstimation ?? false,
-      allowZeroEstimates: boardEstimation?.allowZeroEstimates ?? true,
-      countUnestimatedIssues: boardEstimation?.countUnestimatedIssues ?? false,
-    );
-  }
+  /// Reads the [TaskBoardDetail.unavailableParts] of [detail] again.
+  Future<TaskBoardDetail> reloadTaskBoardDetailParts(TaskBoardDetail detail) =>
+      _reloadTaskBoardDetailParts(this, detail);
 
   Future<List<TaskBoardTask>> getBoardTasksForList(
     String wsId, {

@@ -24,18 +24,24 @@ part 'task_board_detail_cache_merge.dart';
 part 'task_board_detail_list_reads.dart';
 part 'task_board_detail_mutation_guard.dart';
 part 'task_board_detail_page_merge.dart';
+part 'task_board_detail_part_recovery.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     with
         _TaskBoardMutationRunner,
         _TaskBoardListReadGuard,
-        _TaskBoardTaskPlacement {
+        _TaskBoardTaskPlacement,
+        _TaskBoardPartRecovery {
   TaskBoardDetailCubit({
     required TaskRepository taskRepository,
     TaskBroadcastClient? taskBroadcastClient,
+    this.partRetryDelays = _TaskBoardPartRecovery.defaultPartRetryDelays,
   }) : _taskRepository = taskRepository,
        _taskBroadcastClient = TaskBroadcastOwner(taskBroadcastClient),
        super(const TaskBoardDetailState());
+
+  @override
+  final List<Duration> partRetryDelays;
 
   static const int _listTaskPageSize = 50;
   static const int _initialPrefetchListCount = 3;
@@ -61,28 +67,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
   bool _pendingRealtimeBoardReload = false;
   final Set<String> _pendingRealtimeListIds = <String>{};
   final Set<String> _seenRealtimeEventIds = <String>{};
-
-  static CacheKey _listTasksCacheKey({
-    required String wsId,
-    required String boardId,
-    required String listId,
-    required int limit,
-    required int offset,
-  }) {
-    return CacheKey(
-      namespace: 'tasks.board_list_tasks',
-      userId: currentCacheUserId(),
-      workspaceId: wsId,
-      locale: currentCacheLocaleTag(),
-      schemaVersion: 2,
-      params: {
-        'boardId': boardId,
-        'listId': listId,
-        'limit': limit.toString(),
-        'offset': offset.toString(),
-      },
-    );
-  }
 
   void _ensureBoardRealtimeSubscription(String boardId) {
     if (_subscribedRealtimeBoardId == boardId) {
@@ -373,7 +357,9 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     }
 
     try {
-      final detail = await _taskRepository.getTaskBoardDetail(wsId, boardId);
+      final detail = _withShownParts(
+        await _taskRepository.getTaskBoardDetail(wsId, boardId),
+      );
       if (requestToken != _loadRequestToken) return;
 
       final retainedTasksByList = _mergeTaskListSnapshots(
@@ -432,9 +418,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
             )
             .catchError((_) {}),
       );
+      _scheduleBoardPartRetry(requestToken);
 
       await _prefetchInitialLists(requestToken: requestToken, detail: detail);
-    } on Exception catch (error) {
+    } on Object catch (error) {
       if (requestToken != _loadRequestToken) return;
       if (hasCachedDetail) {
         emit(state.copyWith(error: error.toString()));

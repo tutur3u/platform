@@ -8,6 +8,11 @@ import 'package:mobile/data/utils/date_utils.dart';
 
 const _taskBoardDetailSentinel = Object();
 
+/// Workspace data a board shows next to its lists. A part that fails to load
+/// leaves the board usable with an empty value, and is listed in
+/// [TaskBoardDetail.unavailableParts] so it can be read again later.
+enum TaskBoardDetailPart { labels, members, projects, estimation }
+
 class TaskBoardDetail extends Equatable {
   const TaskBoardDetail({
     required this.id,
@@ -27,6 +32,7 @@ class TaskBoardDetail extends Equatable {
     this.labels = const [],
     this.members = const [],
     this.projects = const [],
+    this.unavailableParts = const {},
   });
 
   factory TaskBoardDetail.fromJson(Map<String, dynamic> json) {
@@ -100,6 +106,9 @@ class TaskBoardDetail extends Equatable {
   final List<WorkspaceUserOption> members;
   final List<TaskProjectSummary> projects;
 
+  /// Parts that failed to load and hold empty or earlier values. Not cached.
+  final Set<TaskBoardDetailPart> unavailableParts;
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'ws_id': wsId,
@@ -138,6 +147,7 @@ class TaskBoardDetail extends Equatable {
     List<TaskLabel>? labels,
     List<WorkspaceUserOption>? members,
     List<TaskProjectSummary>? projects,
+    Set<TaskBoardDetailPart>? unavailableParts,
   }) {
     return TaskBoardDetail(
       id: id,
@@ -168,6 +178,7 @@ class TaskBoardDetail extends Equatable {
       labels: labels ?? this.labels,
       members: members ?? this.members,
       projects: projects ?? this.projects,
+      unavailableParts: unavailableParts ?? this.unavailableParts,
     );
   }
 
@@ -190,5 +201,6 @@ class TaskBoardDetail extends Equatable {
     labels,
     members,
     projects,
+    unavailableParts,
   ];
 }

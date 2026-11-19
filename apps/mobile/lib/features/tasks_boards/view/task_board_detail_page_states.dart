@@ -12,20 +12,11 @@ class _TaskBoardDetailErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppPageBody(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 30),
-            const shad.Gap(10),
-            Text(message, textAlign: TextAlign.center),
-            const shad.Gap(12),
-            shad.OutlineButton(
-              onPressed: () => unawaited(onRetry()),
-              child: Text(context.l10n.commonRetry),
-            ),
-          ],
-        ),
+      child: AppStateMessage(
+        icon: LucideIcons.circleAlert,
+        title: message,
+        actionLabel: context.l10n.commonRetry,
+        onAction: onRetry,
       ),
     );
   }

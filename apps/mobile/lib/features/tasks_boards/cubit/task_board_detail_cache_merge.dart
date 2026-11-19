@@ -51,3 +51,25 @@ CacheKey _detailCacheKey({required String wsId, required String boardId}) {
     params: {'boardId': boardId},
   );
 }
+
+CacheKey _listTasksCacheKey({
+  required String wsId,
+  required String boardId,
+  required String listId,
+  required int limit,
+  required int offset,
+}) {
+  return CacheKey(
+    namespace: 'tasks.board_list_tasks',
+    userId: currentCacheUserId(),
+    workspaceId: wsId,
+    locale: currentCacheLocaleTag(),
+    schemaVersion: 2,
+    params: {
+      'boardId': boardId,
+      'listId': listId,
+      'limit': limit.toString(),
+      'offset': offset.toString(),
+    },
+  );
+}

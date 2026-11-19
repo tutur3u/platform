@@ -179,6 +179,19 @@ Map<String, dynamic> _normalizeTaskPayload(Map<String, dynamic> data) {
   };
 }
 
+/// Resolves task assignees, labels and projects from the board's lookups.
+List<TaskBoardTask> hydrateBoardTaskRelations({
+  required List<TaskBoardTask> tasks,
+  required List<WorkspaceUserOption> members,
+  required List<TaskLabel> labels,
+  required List<TaskProjectSummary> projects,
+}) => _hydrateTaskRelations(
+  tasks: tasks,
+  members: members,
+  labels: labels,
+  projects: projects,
+);
+
 List<TaskBoardTask> _hydrateTaskRelations({
   required List<TaskBoardTask> tasks,
   required List<WorkspaceUserOption> members,
@@ -225,10 +238,11 @@ List<TaskBoardTask> _hydrateTaskRelations({
             )
             .toList(growable: false);
 
+        // An empty lookup is a part that did not load; keep the task's own.
         return task.copyWith(
-          assignees: hydratedAssignees,
-          labels: hydratedLabels,
-          projects: hydratedProjects,
+          assignees: members.isEmpty ? null : hydratedAssignees,
+          labels: labels.isEmpty ? null : hydratedLabels,
+          projects: projects.isEmpty ? null : hydratedProjects,
         );
       })
       .toList(growable: false);
