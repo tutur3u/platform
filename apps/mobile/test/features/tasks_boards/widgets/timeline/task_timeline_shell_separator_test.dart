@@ -32,18 +32,31 @@ bool _shellHeaderShadow(WidgetTester tester) {
 }
 
 /// Edges or shadows the timeline header draws itself.
-Finder _timelineHeaderEdges() => find.descendant(
-  of: find.byKey(_timelineHeader),
-  matching: find.byWidgetPredicate((widget) {
-    if (widget is Divider) return true;
-    if (widget is DecoratedBox && widget.decoration is BoxDecoration) {
-      final decoration = widget.decoration as BoxDecoration;
-      return decoration.border != null ||
-          (decoration.boxShadow?.isNotEmpty ?? false);
-    }
-    return false;
-  }),
-);
+/// Edges the header draws, not counting the span control's own surface.
+Iterable<Element> _timelineHeaderEdges() {
+  final control = find
+      .descendant(
+        of: find.byKey(const ValueKey('task-timeline-span-control')),
+        matching: find.byType(DecoratedBox),
+      )
+      .evaluate()
+      .toSet();
+  return find
+      .descendant(
+        of: find.byKey(_timelineHeader),
+        matching: find.byWidgetPredicate((widget) {
+          if (widget is Divider) return true;
+          if (widget is DecoratedBox && widget.decoration is BoxDecoration) {
+            final decoration = widget.decoration as BoxDecoration;
+            return decoration.border != null ||
+                (decoration.boxShadow?.isNotEmpty ?? false);
+          }
+          return false;
+        }),
+      )
+      .evaluate()
+      .where((element) => !control.contains(element));
+}
 
 double _dockOpacity(WidgetTester tester) => tester
     .widget<AnimatedOpacity>(
@@ -120,7 +133,7 @@ void main() {
       expect(find.byKey(_composite), findsNothing);
       expect(_shellHeaderHairline(tester), isFalse);
       expect(_shellHeaderShadow(tester), isFalse);
-      expect(_timelineHeaderEdges(), findsNothing);
+      expect(_timelineHeaderEdges(), isEmpty);
       expect(_dockOpacity(tester), 1);
 
       await tester.drag(
@@ -136,7 +149,7 @@ void main() {
       );
       expect(_shellHeaderHairline(tester), isFalse);
       expect(_shellHeaderShadow(tester), isFalse);
-      expect(_timelineHeaderEdges(), findsNothing);
+      expect(_timelineHeaderEdges(), isEmpty);
       // The body's scroll still reaches the shell: the dock hides.
       expect(visibility, contains(false));
       expect(_dockOpacity(tester), 0);

@@ -122,7 +122,7 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
               window: window,
               today: today,
               metrics: metrics,
-              onRangePressed: () => unawaited(_pickSpan(span, window, today)),
+              onSpanChanged: (picked) => _showSpan(picked, window, today),
               onShift: (steps) => _show(window.shift(steps)),
               onCentre: (day) => _show(TaskTimelineWindow.centredOn(span, day)),
               onToday: window.contains(today)
@@ -214,13 +214,13 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
     if (controller.hasClients) controller.jumpTo(0);
   }
 
-  Future<void> _pickSpan(
-    TaskTimelineSpan current,
+  /// Keeps today in view when the range holds it, otherwise the middle of
+  /// the current range.
+  void _showSpan(
+    TaskTimelineSpan picked,
     TaskTimelineWindow window,
     DateTime today,
-  ) async {
-    final picked = await showTaskTimelineSpanSheet(context, current);
-    if (picked == null || !mounted) return;
+  ) {
     final anchor = window.contains(today)
         ? today
         : window.dayAt(window.days ~/ 2);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
@@ -59,7 +60,12 @@ class _Harness {
   final List<TaskBoardTask> tapped = [];
   int undatedOpened = 0;
 
-  Future<void> pump(WidgetTester tester, List<TaskBoardTask> tasks) async {
+  Future<void> pump(
+    WidgetTester tester,
+    List<TaskBoardTask> tasks, {
+    ThemeMode? themeMode,
+    bool settle = true,
+  }) async {
     final byList = <String, List<TaskBoardTask>>{};
     for (final task in tasks) {
       byList.putIfAbsent(task.listId, () => []).add(task);
@@ -79,8 +85,9 @@ class _Harness {
         onShowUndated: () => undatedOpened += 1,
         clock: () => _now,
       ),
+      themeMode: themeMode,
     );
-    await tester.pumpAndSettle();
+    if (settle) await tester.pumpAndSettle();
   }
 }
 
@@ -113,7 +120,15 @@ void main() {
       ]);
 
       // The shell draws the single hairline below the strip once the body
-      // scrolls (task_timeline_shell_separator_test.dart).
+      // scrolls (task_timeline_shell_separator_test.dart). The span control's
+      // own surface is not a header edge.
+      final control = find
+          .descendant(
+            of: _key('task-timeline-span-control'),
+            matching: find.byType(DecoratedBox),
+          )
+          .evaluate()
+          .toSet();
       final edges = find.descendant(
         of: _key('task-timeline-header'),
         matching: find.byWidgetPredicate(
@@ -129,7 +144,10 @@ void main() {
                           false))),
         ),
       );
-      expect(edges, findsNothing);
+      expect(
+        edges.evaluate().where((element) => !control.contains(element)),
+        isEmpty,
+      );
       expect(find.text('Today'), findsNothing);
     });
 
@@ -283,7 +301,7 @@ void main() {
       expect(harness.undatedOpened, 1);
     });
 
-    testWidgets('the range button switches week, 2 weeks and month', (
+    testWidgets('the span control switches week, 2 weeks and month', (
       tester,
     ) async {
       await _Harness().pump(tester, const []);
@@ -294,18 +312,42 @@ void main() {
               'task-timeline-day-2',
             ),
       );
+      AppSegmentedControl<TaskTimelineSpan> control() =>
+          tester.widget<AppSegmentedControl<TaskTimelineSpan>>(
+            _key('task-timeline-span-control'),
+          );
+      String range() =>
+          tester.widget<Text>(_key('task-timeline-range-label')).data!;
+
+      expect(control().selected, TaskTimelineSpan.week);
+      expect(range(), 'Nov 16 – 22');
       expect(cells(), findsNWidgets(7));
+      expect(
+        tester.getSize(find.text('Week')).height,
+        lessThan(tester.getSize(_key('task-timeline-span-control')).height),
+      );
+      expect(
+        tester.getSize(_key('task-timeline-span-control')).height,
+        greaterThanOrEqualTo(44),
+      );
 
       Future<void> pick(String label) async {
-        await tester.tap(_key('task-timeline-range-button'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(label).last);
+        await tester.tap(
+          find.descendant(
+            of: _key('task-timeline-span-control'),
+            matching: find.text(label),
+          ),
+        );
         await tester.pumpAndSettle();
       }
 
       await pick('2 weeks');
+      expect(control().selected, TaskTimelineSpan.twoWeeks);
+      expect(range(), 'Nov 16 – 29');
       expect(cells(), findsNWidgets(14));
       await pick('Month');
+      expect(control().selected, TaskTimelineSpan.month);
+      expect(range(), 'Nov 1 – 30');
       expect(
         cells(),
         findsNWidgets(
@@ -314,7 +356,57 @@ void main() {
       );
       expect(find.text('Nothing scheduled this month'), findsOneWidget);
       await pick('Week');
+      expect(control().selected, TaskTimelineSpan.week);
       expect(cells(), findsNWidgets(7));
+    });
+
+    testWidgets('the span control follows the theme in light and dark', (
+      tester,
+    ) async {
+      final tracks = <Color?>[];
+      for (final mode in [ThemeMode.light, ThemeMode.dark]) {
+        await _Harness().pump(tester, const [], themeMode: mode);
+        final control = _key('task-timeline-span-control');
+        final colors = AppTokens.of(tester.element(control)).colorScheme;
+        final track = tester.widget<DecoratedBox>(
+          find
+              .descendant(of: control, matching: find.byType(DecoratedBox))
+              .first,
+        );
+        final color = (track.decoration as BoxDecoration).color;
+        expect(color, colors.muted.withValues(alpha: 0.8), reason: '$mode');
+        expect(
+          tester.widget<Text>(_key('task-timeline-range-label')).style?.color,
+          colors.foreground,
+          reason: '$mode',
+        );
+        tracks.add(color);
+      }
+      expect(tracks.first, isNot(tracks.last));
+    });
+
+    testWidgets('the empty range illustration animates, and holds a still '
+        'pose under reduced motion', (tester) async {
+      for (final reduceMotion in [false, true]) {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            FakeAccessibilityFeatures(disableAnimations: reduceMotion);
+        await _Harness().pump(tester, const [], settle: false);
+        await tester.pump(AppIllustration.period ~/ 4);
+
+        final illustration = tester.widget<AppIllustration>(
+          find.byType(AppIllustration),
+        );
+        expect(illustration.kind, AppIllustrationKind.calendarFree);
+        expect(illustration.cycles, greaterThan(0));
+        expect(find.text('Nothing scheduled this week'), findsOneWidget);
+        expect(
+          tester.binding.hasScheduledFrame,
+          !reduceMotion,
+          reason: reduceMotion ? 'reduced motion' : 'default motion',
+        );
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+      tester.platformDispatcher.clearAccessibilityFeaturesTestValue();
     });
 
     testWidgets('tapping a task opens it', (tester) async {

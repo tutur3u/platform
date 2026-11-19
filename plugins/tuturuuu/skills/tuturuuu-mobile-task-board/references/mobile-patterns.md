@@ -327,8 +327,11 @@ localization changes.
   new collections on every build while reusing task objects, so memoize on
   element identity, not map identity. The day strip and body share
   `TaskTimelineMetrics`; the grid is one `CustomPaint` behind a single
-  `ListView.builder` of caption and bar rows. The timeline header draws no
-  edge: its scroll notifications reach the shell, which draws the one
+  `ListView.builder` of caption and bar rows. The span is a kit
+  `AppSegmentedControl` (Week, 2 weeks, Month) above the range label and
+  Today button; the control's own surface is not a header edge, and its
+  empty-range `AppIllustration` animates unless motion is reduced. The
+  timeline header draws no edge: its scroll notifications reach the shell, which draws the one
   hairline at the body viewport's top once scrolled and keeps the dock
   auto-hide. Date-placed views must load every page of the
   lists they summarize (`task_board_detail_page_timeline_loading.dart`,

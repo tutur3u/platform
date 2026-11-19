@@ -48,33 +48,3 @@ class TaskTimelineEmpty extends StatelessWidget {
     );
   }
 }
-
-/// Picks Week, 2 weeks or Month; null when dismissed.
-Future<TaskTimelineSpan?> showTaskTimelineSpanSheet(
-  BuildContext context,
-  TaskTimelineSpan current,
-) {
-  final l10n = context.l10n;
-  return showAppChoiceSheet<TaskTimelineSpan>(
-    context: context,
-    title: l10n.taskTimelineRangeTitle,
-    selected: current,
-    choices: [
-      AppSheetChoice(
-        key: const ValueKey('task-timeline-span-week'),
-        value: TaskTimelineSpan.week,
-        label: l10n.taskTimelineRangeWeek,
-      ),
-      AppSheetChoice(
-        key: const ValueKey('task-timeline-span-two-weeks'),
-        value: TaskTimelineSpan.twoWeeks,
-        label: l10n.taskTimelineRangeTwoWeeks,
-      ),
-      AppSheetChoice(
-        key: const ValueKey('task-timeline-span-month'),
-        value: TaskTimelineSpan.month,
-        label: l10n.taskTimelineRangeMonth,
-      ),
-    ],
-  );
-}
