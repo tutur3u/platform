@@ -31,21 +31,6 @@ const PRIORITY_OPTIONS: ReadonlyArray<{
   { value: 'low', tone: 'text-dynamic-blue' },
 ];
 
-/** Literal message keys, so every app's typed messages accept them. */
-/** Literal message keys, so every app's typed messages accept them. */
-export function priorityLabelKey(priority: string) {
-  switch (priority) {
-    case 'critical':
-      return 'tasks.priority_critical' as const;
-    case 'high':
-      return 'tasks.priority_high' as const;
-    case 'low':
-      return 'tasks.priority_low' as const;
-    default:
-      return 'tasks.priority_normal' as const;
-  }
-}
-
 export function getPriorityOptions(
   getLabel: (priority: TaskPriority) => string
 ): QuickCreateOption[] {

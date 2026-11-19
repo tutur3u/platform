@@ -2,25 +2,30 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api';
-import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { getUserConfig } from '@tuturuuu/internal-api/users';
+import { useUserConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
   dispatchTaskOpenResult,
   REQUEST_OPEN_TASK_EVENT,
   type RequestOpenTaskPayload,
 } from '@tuturuuu/ui/lib/task-open-events';
-import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { getTasksAppUrl } from '@tuturuuu/ui/lib/tasks-app-url';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import {
   useOptionalWorkspacePresenceContext,
   WorkspacePresenceProvider,
 } from '../providers/workspace-presence-provider';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
+import {
+  readTaskOpenMode,
+  TASK_OPEN_MODE_CONFIG_ID,
+} from './task-dialog-presentation';
 import { TaskEditDialog } from './task-edit-dialog';
-import { buildWorkspaceTaskUrl } from './task-url';
+import type { TaskDialogCurrentUser } from './task-edit-dialog/user-display';
+import { buildStandaloneTaskUrl, buildWorkspaceTaskUrl } from './task-url';
 import { useTaskDialogPresentationPreferences } from './use-task-dialog-presentation-preferences';
 
 /**
@@ -39,7 +44,15 @@ export function TaskDialogManager({
   wsId: string;
 }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const locale = useLocale();
+  const standaloneTaskId =
+    searchParams.get('taskView') === 'page' ? searchParams.get('task') : null;
   const t = useTranslations('common');
+  const { data: savedOpenMode } = useUserConfig(TASK_OPEN_MODE_CONFIG_ID);
+  const openMode = standaloneTaskId
+    ? 'page'
+    : (readTaskOpenMode(savedOpenMode) ?? 'sidebar');
   const {
     state,
     isPersonalWorkspace,
@@ -56,13 +69,81 @@ export function TaskDialogManager({
   const originalPathnameRef = useRef<string | null>(null);
   const hasChangedUrlRef = useRef(false);
   const handledCanonicalTaskQueryRef = useRef<string | null>(null);
+  const pageNavigationRef = useRef<string | null>(null);
+  const previousStandaloneTaskIdRef = useRef(standaloneTaskId);
+  const fullPage = openMode === 'page' && state.mode === 'edit';
+
+  useEffect(() => {
+    const leftStandalonePage =
+      previousStandaloneTaskIdRef.current && !standaloneTaskId;
+    previousStandaloneTaskIdRef.current = standaloneTaskId;
+    if (leftStandalonePage && fullPage && state.isOpen) {
+      triggerClose();
+      return;
+    }
+    if (!state.isOpen) {
+      pageNavigationRef.current = null;
+      return;
+    }
+    const taskId = state.task?.id;
+    if (
+      !fullPage ||
+      !taskId ||
+      !state.boardId ||
+      state.isHydratingTask ||
+      state.taskLoadError ||
+      standaloneTaskId === taskId ||
+      pageNavigationRef.current === taskId
+    )
+      return;
+
+    const page = buildStandaloneTaskUrl({
+      locale,
+      taskId,
+      workspaceId: state.taskWsId ?? wsId,
+      isPersonalWorkspace: state.taskWorkspacePersonal ?? isPersonalWorkspace,
+    });
+    const isOpeningDeepLink = searchParams.get('task') === taskId;
+    const target = routePrefix ? getTasksAppUrl(page) : page;
+    if (standaloneTaskId || isOpeningDeepLink) {
+      router.replace(target);
+    } else {
+      pageNavigationRef.current = taskId;
+      router.push(target);
+    }
+  }, [
+    fullPage,
+    isPersonalWorkspace,
+    locale,
+    routePrefix,
+    router,
+    searchParams,
+    standaloneTaskId,
+    state.boardId,
+    state.isHydratingTask,
+    state.isOpen,
+    state.task?.id,
+    state.taskLoadError,
+    state.taskWorkspacePersonal,
+    state.taskWsId,
+    triggerClose,
+    wsId,
+  ]);
 
   // Handle URL manipulation when fakeTaskUrl is enabled.
   // Uses window.history.pushState (not router.push) to update the URL bar
   // without triggering Next.js navigation, which would load the task detail page
   // behind the dialog and cause a jarring double-dialog flash.
   useEffect(() => {
-    if (state.isOpen && state.fakeTaskUrl && state.task?.id && state.boardId) {
+    if (
+      state.isOpen &&
+      state.fakeTaskUrl &&
+      !fullPage &&
+      state.task?.id &&
+      state.boardId &&
+      !state.isHydratingTask &&
+      !state.taskLoadError
+    ) {
       const currentPath = `${window.location.pathname}${window.location.search}`;
       if (!originalPathnameRef.current) {
         originalPathnameRef.current = currentPath;
@@ -79,6 +160,7 @@ export function TaskDialogManager({
       });
 
       if (currentPath !== taskUrl) {
+        handledCanonicalTaskQueryRef.current = state.task.id;
         window.history.pushState(
           {
             __fakeTaskUrl: true,
@@ -100,6 +182,9 @@ export function TaskDialogManager({
       hasChangedUrlRef.current = false;
     }
   }, [
+    fullPage,
+    state.isHydratingTask,
+    state.taskLoadError,
     state.isOpen,
     state.fakeTaskUrl,
     state.task?.id,
@@ -113,7 +198,7 @@ export function TaskDialogManager({
 
   // Handle browser back button when a fake task URL is active
   useEffect(() => {
-    if (!state.isOpen || !state.fakeTaskUrl) return;
+    if (!state.isOpen) return;
 
     const handlePopState = () => {
       if (hasChangedUrlRef.current) {
@@ -128,46 +213,36 @@ export function TaskDialogManager({
     return () => window.removeEventListener('popstate', handlePopState);
   }, [state.isOpen, state.fakeTaskUrl, triggerClose]);
 
-  // Fetch current user immediately on mount (persists across dialog open/close)
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    display_name?: string | null;
-    full_name?: string | null;
-    email?: string | null;
-    avatar_url?: string | null;
-  } | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const profile = await getCurrentUserProfile().catch(() => null);
-
-      if (profile?.id) {
-        setCurrentUser({
-          id: profile.id,
-          display_name: profile.display_name,
-          full_name: profile.full_name,
-          email: profile.email,
-          avatar_url: profile.avatar_url,
-        });
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  // Read draft mode preference from user config (same query key as useUserBooleanConfig)
-  const { data: draftModeRaw } = useQuery({
-    queryKey: ['user-config', 'TASK_DRAFT_MODE_ENABLED'],
-    queryFn: async () =>
-      (await getUserConfig('TASK_DRAFT_MODE_ENABLED')).value ?? 'false',
+  const { data: currentUser } = useQuery<TaskDialogCurrentUser>({
+    queryKey: ['task-dialog-current-user'],
+    queryFn: () => getCurrentUserProfile(),
     staleTime: 5 * 60 * 1000,
   });
+  const { data: draftModeRaw } = useUserConfig('TASK_DRAFT_MODE_ENABLED');
   const draftModeEnabled = draftModeRaw === 'true';
 
   const presentationPreferences = useTaskDialogPresentationPreferences();
 
   const handleClose = () => {
     triggerClose();
+    if (!standaloneTaskId) return;
+    if (pageNavigationRef.current) {
+      router.back();
+      return;
+    }
+
+    const boardUrl = state.boardId
+      ? buildWorkspaceTaskUrl({
+          boardId: state.boardId,
+          currentPathname: window.location.pathname,
+          taskId: standaloneTaskId,
+          workspaceId: state.taskWsId ?? wsId,
+          isPersonalWorkspace:
+            state.taskWorkspacePersonal ?? isPersonalWorkspace,
+          routePrefix,
+        }).replace(/\?task=.*$/u, '')
+      : `/${locale}/${encodeURIComponent(wsId)}`;
+    router.replace(boardUrl);
   };
 
   // Navigate to a task by opening it in the dialog
@@ -194,31 +269,6 @@ export function TaskDialogManager({
         }
       }
 
-      const currentTaskWsId = state.taskWsId ?? wsId;
-
-      try {
-        const { task } = await getWorkspaceTask(currentTaskWsId, taskId, {
-          fetch: (input, init) =>
-            fetch(new URL(String(input), window.location.origin).toString(), {
-              ...init,
-              cache: 'no-store',
-            }),
-        });
-
-        if (task.board_id && task.board_id === state.boardId) {
-          openTask(task as Task, task.board_id, state.availableLists, false, {
-            taskWsId: currentTaskWsId,
-            taskWorkspacePersonal: state.taskWorkspacePersonal,
-            taskWorkspaceTier: state.taskWorkspaceTier,
-            canUseBoardAssignees: state.canUseBoardAssignees,
-            assigneeMemberSource: state.assigneeMemberSource,
-          });
-          return;
-        }
-      } catch {
-        // Fall back to the generic current-user task lookup below.
-      }
-
       await openTaskById(taskId);
     },
     [
@@ -233,7 +283,6 @@ export function TaskDialogManager({
       state.taskWorkspacePersonal,
       state.taskWorkspaceTier,
       state.taskWsId,
-      wsId,
     ]
   );
 
@@ -315,6 +364,8 @@ export function TaskDialogManager({
     }
 
     handledCanonicalTaskQueryRef.current = canonicalTaskId;
+    if (state.isOpen && state.task?.id === canonicalTaskId) return;
+
     void (async () => {
       const opened = await openCanonicalTask(canonicalTaskId);
 
@@ -325,7 +376,7 @@ export function TaskDialogManager({
         });
       }
     })();
-  }, [openCanonicalTask, searchParams, t]);
+  }, [openCanonicalTask, searchParams, state.isOpen, state.task?.id, t]);
 
   useEffect(() => {
     const legacyTaskId = searchParams.get('openTaskId');
@@ -579,7 +630,8 @@ export function TaskDialogManager({
       parentTaskId={state.parentTaskId}
       parentTaskName={state.parentTaskName}
       pendingRelationship={state.pendingRelationship}
-      currentUser={currentUser || undefined}
+      currentUser={currentUser?.id ? currentUser : undefined}
+      openMode={openMode}
       draftModeEnabled={draftModeEnabled}
       presentationPreferences={presentationPreferences}
       draftId={state.draftId}

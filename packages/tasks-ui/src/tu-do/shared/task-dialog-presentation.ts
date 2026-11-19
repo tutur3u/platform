@@ -9,7 +9,13 @@ export const TASK_DOCUMENT_CREATE_PRESENTATION_CONFIG_ID =
 export const TASK_DOCUMENT_EDIT_PRESENTATION_CONFIG_ID =
   'TASK_DOCUMENT_EDIT_PRESENTATION';
 
-/** `panel` is the board's right side panel; it is not a saved preference. */
+export const TASK_OPEN_MODE_CONFIG_ID = 'TASK_OPEN_MODE';
+export const TASK_OPEN_MODES = ['sidebar', 'dialog', 'page'] as const;
+export type TaskOpenMode = (typeof TASK_OPEN_MODES)[number];
+
+export function readTaskOpenMode(value: unknown): TaskOpenMode | undefined {
+  return TASK_OPEN_MODES.find((mode) => mode === value);
+}
 export type TaskDialogPresentation =
   | 'compact'
   | 'focused'
@@ -93,6 +99,7 @@ export function resolveTaskDialogOpeningPresentation({
   draftId,
   mode = 'edit',
   panelSurface = false,
+  openMode,
   selectedListStatus,
 }: {
   preferences: TaskDialogPresentationPreferences;
@@ -100,14 +107,18 @@ export function resolveTaskDialogOpeningPresentation({
   mode?: TaskDialogMode;
   /** True while a board asks for task edits in its side panel. */
   panelSurface?: boolean;
+  openMode?: TaskOpenMode;
   selectedListStatus?: string | null;
 }): TaskDialogPresentation {
   if (draftId) return 'fullscreen';
   const isDocument = selectedListStatus === 'documents';
-  // Documents keep their own preference; tasks open beside the board.
-  if (panelSurface && mode === 'edit' && !isDocument) return 'panel';
   if (mode === 'create') {
     return isDocument ? preferences.documentCreate : preferences.taskCreate;
   }
-  return isDocument ? preferences.documentEdit : preferences.taskEdit;
+  if (openMode === 'page') return 'fullscreen';
+  if (openMode === 'sidebar' || (!openMode && panelSurface && !isDocument)) {
+    return 'panel';
+  }
+  const dialog = isDocument ? preferences.documentEdit : preferences.taskEdit;
+  return openMode === 'dialog' && dialog === 'fullscreen' ? 'focused' : dialog;
 }

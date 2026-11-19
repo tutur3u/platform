@@ -87,3 +87,21 @@ export function buildWorkspaceTaskUrl({
 
   return `${origin}${relativeUrl}`;
 }
+
+export function buildStandaloneTaskUrl({
+  locale,
+  taskId,
+  workspaceId,
+  isPersonalWorkspace,
+}: Pick<
+  BuildWorkspaceTaskUrlOptions,
+  'taskId' | 'workspaceId' | 'isPersonalWorkspace'
+> & {
+  locale: string;
+}) {
+  const workspaceSlug = toWorkspaceSlug(workspaceId, {
+    personal: isPersonalWorkspace,
+  });
+  const query = new URLSearchParams({ task: taskId, taskView: 'page' });
+  return `/${locale}/${workspaceSlug}/tasks/${encodeURIComponent(taskId)}?${query}`;
+}

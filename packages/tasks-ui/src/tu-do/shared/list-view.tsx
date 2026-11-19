@@ -70,12 +70,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
 import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from '../boards/boardId/task-card/task-card-checkbox-style';
-import {
-  getTaskCardHydratingOpenOptions,
-  isExternalTaskSnapshot,
-} from '../boards/boardId/task-card/task-card-open-options';
+import { getTaskCardHydratingOpenOptions } from '../boards/boardId/task-card/task-card-open-options';
 import { useTaskDialog } from '../hooks/useTaskDialog';
+import { taskDetailQuery } from '../providers/task-detail-query';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
+import { priorityLabelKey } from '../utils/taskPriorityUtils';
 import { useBoardBroadcast } from './board-broadcast-context';
 import type { ListViewSortField, ListViewSortOrder } from './list-view-sorting';
 import {
@@ -294,7 +293,7 @@ function ReadOnlyListView({
                     <TableCell className="px-2 py-2">
                       {task.priority && (
                         <Badge variant="secondary" className="font-normal">
-                          {t(`tasks.priority_${task.priority}`)}
+                          {t(priorityLabelKey(task.priority))}
                         </Badge>
                       )}
                     </TableCell>
@@ -366,7 +365,7 @@ function InteractiveListView({
   const [openTaskMenu, setOpenTaskMenu] = useState<TaskMenuState | null>(null);
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
-  const { openTask, openTaskById } = useTaskDialog();
+  const { openTaskById } = useTaskDialog();
   const showAssignees = canUseBoardAssignees ?? !isPersonalWorkspace;
   const effectiveAssigneeMemberSource =
     assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
@@ -513,30 +512,27 @@ function InteractiveListView({
   }
 
   function openTaskFromRow(task: Task) {
-    if (isExternalTaskSnapshot(task)) {
-      void openTaskById(
-        task.id,
-        getTaskCardHydratingOpenOptions({
-          task,
-          boardId,
-          availableLists: lists,
-          effectiveWorkspaceId: workspaceId,
-          isPersonalWorkspace,
-          canUseBoardAssignees: task.source_workspace_id ? true : showAssignees,
-          assigneeMemberSource: task.source_workspace_id
-            ? 'board'
-            : effectiveAssigneeMemberSource,
-        })
-      );
-      return;
-    }
+    void openTaskById(
+      task.id,
+      getTaskCardHydratingOpenOptions({
+        task,
+        boardId,
+        availableLists: lists,
+        effectiveWorkspaceId: workspaceId,
+        isPersonalWorkspace,
+        canUseBoardAssignees:
+          Boolean(task.source_workspace_id) || showAssignees,
+        assigneeMemberSource: task.source_workspace_id
+          ? 'board'
+          : effectiveAssigneeMemberSource,
+      })
+    );
+  }
 
-    openTask(task, boardId, lists, false, {
-      taskWsId: workspaceId,
-      taskWorkspacePersonal: isPersonalWorkspace,
-      canUseBoardAssignees: showAssignees,
-      assigneeMemberSource: effectiveAssigneeMemberSource,
-    });
+  function prefetchRowTask(task: Task) {
+    void queryClient.prefetchQuery(
+      taskDetailQuery(task.id, task.source_workspace_id ?? workspaceId)
+    );
   }
 
   function formatDate(date: string) {
@@ -762,6 +758,8 @@ function InteractiveListView({
                         taskIsPastDue &&
                           'border-l-2 border-l-dynamic-red/70 bg-dynamic-red/5'
                       )}
+                      onPointerEnter={() => prefetchRowTask(task)}
+                      onFocus={() => prefetchRowTask(task)}
                       onClick={(e) => {
                         if (
                           (e.target as HTMLElement).closest(
@@ -998,7 +996,7 @@ function InteractiveListView({
                               setOpenTaskMenu(open ? { taskId: task.id } : null)
                             }
                             contextMenuPoint={
-                              openTaskMenu?.taskId === task.id
+                              openTaskMenu && openTaskMenu.taskId === task.id
                                 ? openTaskMenu.point
                                 : null
                             }

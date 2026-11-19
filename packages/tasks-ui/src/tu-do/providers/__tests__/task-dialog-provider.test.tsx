@@ -1,7 +1,8 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { TaskFilters } from '../../boards/boardId/task-filter';
 import {
@@ -55,9 +56,14 @@ const mockList: TaskList = {
 };
 
 // Wrapper component
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <TaskDialogProvider>{children}</TaskDialogProvider>
-);
+function wrapper({ children }: { children: ReactNode }) {
+  const [queryClient] = useState(() => new QueryClient());
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TaskDialogProvider>{children}</TaskDialogProvider>
+    </QueryClientProvider>
+  );
+}
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -183,17 +189,9 @@ describe('TaskDialogProvider', () => {
       await openPromise;
     });
 
-    expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
-      mockTask.id,
-      {
-        taskWsId: 'workspace-1',
-        taskWorkspacePersonal: undefined,
-        taskWorkspaceTier: undefined,
-      },
-      expect.objectContaining({
-        fetch: expect.any(Function),
-      })
-    );
+    expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(mockTask.id, {
+      taskWsId: 'workspace-1',
+    });
     expect(result.current.state).toMatchObject({
       isOpen: true,
       isHydratingTask: false,

@@ -14,6 +14,7 @@ import dayjs from 'dayjs';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { priorityLabelKey } from '../../../../utils/taskPriorityUtils';
 import {
   buildEstimationIndices,
   type EstimationType,
@@ -27,7 +28,6 @@ import { QuickCreateListChip } from './quick-create-list-chip';
 import { QuickCreateOptionPicker } from './quick-create-option-picker';
 import {
   getPriorityOptions,
-  priorityLabelKey,
   type QuickCreateAssignee,
   type QuickCreateProject,
 } from './quick-create-property-options';

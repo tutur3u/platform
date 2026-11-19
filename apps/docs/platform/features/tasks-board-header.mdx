@@ -125,3 +125,22 @@ addresses. The assignee picker and mention suggestions use the task home
 workspace; task cards and history retain authorized task identities. History actor names
 come from public profiles; private email fallbacks from history storage are
 not returned.
+
+## Opening tasks
+
+In **Settings → Tasks**, **Open tasks in** sets how existing tasks open across
+the authenticated Tasks and Web interfaces. Right sidebar is the default and
+leaves the board usable. Dialog opens a centered editor. Full page opens the
+task on its own shareable page in Tasks.
+Creation, private drafts, and public share pages keep their dedicated flows.
+
+Cards and list rows begin loading details on pointer hover or keyboard focus.
+Opening the task uses the card or row as an immediate shell while details load.
+Repeated opens reuse recent data, and edits invalidate that task's cached
+details. The rich text editor loads after the shell and the activity section
+loads when selected.
+
+Presentation selection is covered by
+`packages/tasks-ui/src/tu-do/shared/task-dialog-presentation.test.ts`.
+Prefetch reuse and edit invalidation are covered by
+`packages/tasks-ui/src/tu-do/providers/__tests__/task-detail-prefetch.test.tsx`.

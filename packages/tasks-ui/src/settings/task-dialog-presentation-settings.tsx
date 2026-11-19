@@ -15,11 +15,14 @@ import {
 import { useTranslations } from 'next-intl';
 import {
   normalizeTaskDialogPresentation,
+  readTaskOpenMode,
   TASK_DIALOG_CREATE_PRESENTATION_CONFIG_ID,
   TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
   TASK_DIALOG_EDIT_PRESENTATION_CONFIG_ID,
   TASK_DOCUMENT_CREATE_PRESENTATION_CONFIG_ID,
   TASK_DOCUMENT_EDIT_PRESENTATION_CONFIG_ID,
+  TASK_OPEN_MODE_CONFIG_ID,
+  TASK_OPEN_MODES,
   type TaskDialogPresentation,
 } from '../tu-do/shared/task-dialog-presentation';
 
@@ -85,6 +88,37 @@ function PresentationSelect({
   );
 }
 
+function OpenTasksInSetting() {
+  const t = useTranslations('settings.tasks');
+  const { data, isLoading } = useUserConfig(TASK_OPEN_MODE_CONFIG_ID, '');
+  const update = useUpdateUserConfig();
+
+  return (
+    <SettingItemTab title={t('open_tasks_in')} controlWidth="xs">
+      <Select
+        value={readTaskOpenMode(data) ?? 'sidebar'}
+        onValueChange={(value) => {
+          const mode = readTaskOpenMode(value);
+          if (mode)
+            update.mutate({ configId: TASK_OPEN_MODE_CONFIG_ID, value: mode });
+        }}
+        disabled={isLoading || update.isPending}
+      >
+        <SelectTrigger aria-label={t('open_tasks_in')} className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TASK_OPEN_MODES.map((mode) => (
+            <SelectItem key={mode} value={mode}>
+              {t(`open_tasks_in_${mode}`)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </SettingItemTab>
+  );
+}
+
 export function TaskDialogPresentationSettings() {
   const { data: legacyTaskEditPresentation } = useUserConfig(
     TASK_DIALOG_DEFAULT_PRESENTATION_CONFIG_ID,
@@ -93,6 +127,7 @@ export function TaskDialogPresentationSettings() {
 
   return (
     <>
+      <OpenTasksInSetting />
       {PREFERENCES.map(([configId, label, fallback]) => (
         <PresentationSelect
           configId={configId}

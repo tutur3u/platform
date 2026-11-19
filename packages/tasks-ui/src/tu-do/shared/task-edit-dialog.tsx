@@ -55,6 +55,7 @@ import {
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   type TaskDialogPresentation,
   type TaskDialogPresentationPreferences,
+  type TaskOpenMode,
 } from './task-dialog-presentation';
 import { CompactTaskDialogPanel } from './task-edit-dialog/components/compact-task-create-popover';
 import { CompactTaskDescriptionPreview } from './task-edit-dialog/components/compact-task-description-preview';
@@ -64,11 +65,14 @@ import {
   SmartTaskSuggestionsButton,
   SmartTaskSuggestionsPanel,
 } from './task-edit-dialog/components/smart-task-suggestions-panel';
-import { TaskDescriptionEditor } from './task-edit-dialog/components/task-description-editor';
 import {
   TaskDialogHeader,
   useTaskDialogHeaderInfo,
 } from './task-edit-dialog/components/task-dialog-header';
+import {
+  TaskActivitySection,
+  TaskDescriptionEditor,
+} from './task-edit-dialog/components/task-dialog-lazy-sections';
 import { TaskDialogLoadingShell } from './task-edit-dialog/components/task-dialog-loading-shell';
 import { TaskNameInput } from './task-edit-dialog/components/task-name-input';
 import { TaskSprintRow } from './task-edit-dialog/components/task-sprint-row';
@@ -111,7 +115,6 @@ import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relation
 import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
 import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
 import { PersonalOverridesSection } from './task-edit-dialog/personal-overrides-section';
-import { TaskActivitySection } from './task-edit-dialog/task-activity-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
 import { TaskDescriptionRestoreBanner } from './task-edit-dialog/task-description-restore-banner';
 import { TaskDescriptionVersionRestoreDialog } from './task-edit-dialog/task-description-version-restore-dialog';
@@ -185,15 +188,12 @@ export interface TaskEditDialogProps {
   visibleBoardId?: string;
   visibleTaskSnapshot?: Partial<Task>;
   isOpen: boolean;
-  /** Present when opened via /shared/task/[shareCode] */
   shareCode?: string;
-  /** Permission returned from shared-task API */
   sharedPermission?: 'view' | 'edit';
   availableLists?: TaskList[];
   filters?: TaskFilters;
   mode?: 'edit' | 'create';
   collaborationMode?: boolean;
-  /** Whether realtime features (Yjs sync, presence avatars) are enabled - true for all tiers */
   realtimeEnabled?: boolean;
   isHydratingTask?: boolean;
   taskLoadError?: boolean;
@@ -205,13 +205,10 @@ export interface TaskEditDialogProps {
   parentTaskName?: string;
   pendingRelationship?: PendingRelationship;
   currentUser?: TaskDialogCurrentUser;
-  /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
   sharedContext?: SharedTaskContext;
-  /** Whether draft mode is enabled from user settings */
   draftModeEnabled?: boolean;
-  /** Preferred opening presentation by task/document and create/edit flow. */
   presentationPreferences?: TaskDialogPresentationPreferences;
-  /** When editing an existing draft, this is the draft ID */
+  openMode?: TaskOpenMode;
   draftId?: string;
   onClose: () => void;
   onUpdate: () => void;
@@ -251,6 +248,7 @@ export function TaskEditDialog({
   currentUser: propsCurrentUser,
   sharedContext,
   draftModeEnabled = false,
+  openMode,
   presentationPreferences = {
     taskCreate: 'compact',
     taskEdit: 'focused',
@@ -753,21 +751,17 @@ export function TaskEditDialog({
     (list) => list.id === formState.selectedListId
   );
   const panelSurface = useIsTaskPanelSurfaceActive();
-  const openingPresentation = useMemo(
-    () =>
-      resolveTaskDialogOpeningPresentation({
-        preferences: presentationPreferences,
-        draftId,
-        mode,
-        panelSurface,
-        selectedListStatus: currentList?.status,
-      }),
-    [currentList?.status, draftId, mode, panelSurface, presentationPreferences]
-  );
+  const openingPresentation = resolveTaskDialogOpeningPresentation({
+    preferences: presentationPreferences,
+    draftId,
+    mode,
+    openMode,
+    panelSurface,
+    selectedListStatus: currentList?.status,
+  });
 
   useTaskDocumentTitle(isOpen && !isCreateMode ? (task ?? null) : null);
 
-  // Labels state
   const [availableLabels, setAvailableLabels] = useState<WorkspaceTaskLabel[]>(
     []
   );
@@ -787,10 +781,8 @@ export function TaskEditDialog({
     }
   }, [workspaceLabels]);
 
-  // Projects state
   const [newProjectName, setNewProjectName] = useState('');
 
-  // Editor state
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(true);
   const [descriptionStorageLength, setDescriptionStorageLength] = useState(() =>
     getTaskDescriptionStorageLength(formState.description)

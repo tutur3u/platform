@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getWorkspaceTask } from '@tuturuuu/internal-api/tasks';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 import { TaskBoardLoadingState } from './task-board-loading-state';
@@ -21,15 +21,20 @@ export function TaskLegacyRouteRecovery({
 }: TaskLegacyRouteRecoveryProps) {
   const router = useRouter();
   const t = useTranslations('common');
+  const searchParams = useSearchParams();
+  const standalone =
+    searchParams.get('taskView') === 'page' &&
+    searchParams.get('task') === taskId;
   const { data, error } = useQuery({
     queryKey: ['legacy-task-route', workspaceId, taskId],
     queryFn: () => getWorkspaceTask(workspaceId, taskId),
+    enabled: !standalone,
     retry: false,
     staleTime: 30000,
   });
 
   useEffect(() => {
-    if (!data?.task?.board_id) {
+    if (standalone || !data?.task?.board_id) {
       return;
     }
 
@@ -45,9 +50,16 @@ export function TaskLegacyRouteRecovery({
     if (window.location.pathname + window.location.search !== canonicalUrl) {
       router.replace(canonicalUrl);
     }
-  }, [data?.task.board_id, routePrefix, router, taskId, workspaceId]);
+  }, [
+    data?.task.board_id,
+    routePrefix,
+    router,
+    standalone,
+    taskId,
+    workspaceId,
+  ]);
 
-  if (error) {
+  if (!standalone && error) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center p-6">
         <div className="max-w-md text-center">

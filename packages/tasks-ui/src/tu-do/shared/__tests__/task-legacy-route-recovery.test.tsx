@@ -9,6 +9,7 @@ const mockReplace = vi.fn();
 const mockGetWorkspaceTask = vi.fn();
 
 vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
   useRouter: () => ({
     replace: mockReplace,
   }),
@@ -63,6 +64,25 @@ describe('TaskLegacyRouteRecovery', () => {
         '/personal/tasks/boards/board-1?task=task-1'
       );
     });
+  });
+
+  it('leaves standalone task links on their page for the shared editor', () => {
+    window.history.pushState(
+      {},
+      '',
+      '/personal/tasks/task-1?task=task-1&taskView=page'
+    );
+    renderWithQueryClient(
+      <TaskLegacyRouteRecovery
+        routePrefix=""
+        taskId="task-1"
+        workspaceId="personal"
+      />
+    );
+
+    expect(screen.getByTestId('task-board-loading-state')).toBeInTheDocument();
+    expect(mockGetWorkspaceTask).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('uses the board skeleton while resolving the canonical task route', () => {

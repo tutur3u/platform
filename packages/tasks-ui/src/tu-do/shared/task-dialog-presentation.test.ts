@@ -160,6 +160,31 @@ describe('resolveTaskDialogOpeningPresentation', () => {
     ).toBe('fullscreen');
   });
 
+  it.each([
+    ['sidebar', 'panel'],
+    ['dialog', 'focused'],
+    ['page', 'fullscreen'],
+  ] as const)(
+    'opens existing board tasks in the saved %s mode',
+    (openMode, expected) => {
+      expect(
+        resolveTaskDialogOpeningPresentation({
+          preferences,
+          panelSurface: true,
+          openMode,
+        })
+      ).toBe(expected);
+      expect(
+        resolveTaskDialogOpeningPresentation({
+          preferences,
+          panelSurface: true,
+          mode: 'create',
+          openMode,
+        })
+      ).toBe('compact');
+    }
+  );
+
   it('keeps drafts fullscreen', () => {
     expect(
       resolveTaskDialogOpeningPresentation({

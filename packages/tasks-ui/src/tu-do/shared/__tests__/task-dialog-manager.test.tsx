@@ -38,10 +38,11 @@ vi.mock('@tuturuuu/ui/hooks/use-workspace-presence', () => ({
   },
 }));
 
+const mockReplace = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
-    replace: vi.fn(),
+    replace: mockReplace,
     refresh: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
@@ -53,6 +54,7 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string) => key,
 }));
 
@@ -522,27 +524,28 @@ describe('TaskDialogManager', () => {
     });
   });
 
-  it('auto-opens the canonical task deep link from the current workspace', async () => {
+  it('takes a canonical task deep link to the standalone page when preferred', async () => {
     mockSearchParams.set('task', 'task-2');
+    mockGetUserConfig.mockResolvedValue({ value: 'page' });
+    mockGetTaskDialogHydration.mockResolvedValue({
+      task: { ...mockTask, id: 'task-2', board_id: 'board-1' },
+      taskWsId: 'workspace-1',
+      availableLists: [mockList],
+    });
 
     const { getByTestId } = render(
       <Wrapper>
-        <TaskDialogManager wsId="workspace-1" />
+        <TaskDialogManager wsId="workspace-1" routePrefix="" />
       </Wrapper>
     );
 
     await waitFor(() => {
-      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
-        'task-2',
-        expect.any(Object),
-        expect.any(Object)
-      );
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith('task-2', {});
     });
 
     await waitFor(() => {
-      expect(getByTestId('task-edit-dialog')).toHaveAttribute(
-        'data-open',
-        'true'
+      expect(mockReplace).toHaveBeenCalledWith(
+        '/en/workspace-1/tasks/task-2?task=task-2&taskView=page'
       );
       expect(getByTestId('task-name')).toHaveTextContent('Test Task');
     });
@@ -681,11 +684,7 @@ describe('TaskDialogManager', () => {
       expect(
         document.querySelector('[data-testid="task-name"]')
       ).toHaveTextContent('Test Task');
-      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
-        'task-42',
-        expect.not.objectContaining({ taskWsId: expect.anything() }),
-        expect.any(Object)
-      );
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith('task-42', {});
     });
   });
 
@@ -872,11 +871,7 @@ describe('TaskDialogManager', () => {
     );
 
     await waitFor(() => {
-      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith(
-        'task-42',
-        expect.any(Object),
-        expect.any(Object)
-      );
+      expect(mockGetTaskDialogHydration).toHaveBeenCalledWith('task-42', {});
     });
   });
 

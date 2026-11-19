@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildWorkspaceTaskUrl } from './task-url';
+import { buildStandaloneTaskUrl, buildWorkspaceTaskUrl } from './task-url';
 
 describe('buildWorkspaceTaskUrl', () => {
   const task = {
@@ -45,4 +45,15 @@ describe('buildWorkspaceTaskUrl', () => {
     expect(performance.now() - startedAt).toBeLessThan(500);
     expect(url).toContain(`/workspace-1/x${'/'.repeat(100_000)}y/boards/`);
   });
+});
+
+it('builds locale-aware full page links using the resolved task workspace', () => {
+  expect(
+    buildStandaloneTaskUrl({
+      locale: 'vi',
+      workspaceId: 'workspace-1',
+      isPersonalWorkspace: true,
+      taskId: 'task-1',
+    })
+  ).toBe('/vi/personal/tasks/task-1?task=task-1&taskView=page');
 });

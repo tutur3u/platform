@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -39,7 +40,9 @@ const mockList: TaskList = {
 
 // Wrapper component for hooks that need context
 const wrapper = ({ children }: { children: ReactNode }) => (
-  <TaskDialogProvider>{children}</TaskDialogProvider>
+  <QueryClientProvider client={new QueryClient()}>
+    <TaskDialogProvider>{children}</TaskDialogProvider>
+  </QueryClientProvider>
 );
 
 describe('useTaskDialog', () => {

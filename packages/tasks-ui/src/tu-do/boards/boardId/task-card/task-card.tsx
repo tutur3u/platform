@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { taskDetailQuery } from '../../../providers/task-detail-query';
 import {
   AlertCircle,
   Archive,
@@ -390,7 +391,7 @@ function TaskCardInner({
   const { state: dialogState, actions: dialogActions } = useTaskDialogState();
   const { createSubtask } = useTaskDialogContext();
 
-  const { openTask, openTaskById } = useTaskDialog();
+  const { openTaskById } = useTaskDialog();
 
   const workspaceContextWsId = workspaceId ?? wsId;
   const { data: boardConfig } = useBoardConfig(boardId, workspaceContextWsId);
@@ -1150,7 +1151,7 @@ function TaskCardInner({
   // Removed explicit drag handle – entire card is now draggable for better UX.
   // Keep attributes/listeners to spread onto root interactive area.
 
-  const openExternalTask = useCallback(() => {
+  const openCardTask = useCallback(() => {
     void openTaskById(
       task.id,
       getTaskCardHydratingOpenOptions({
@@ -1178,6 +1179,19 @@ function TaskCardInner({
     openTaskById,
   ]);
 
+  const prefetchCardTask = () => {
+    if (
+      isOverlay ||
+      isDragging ||
+      isMultiSelectMode ||
+      cardVisibilityState.pending
+    )
+      return;
+    void queryClient.prefetchQuery(
+      taskDetailQuery(task.id, task.source_workspace_id ?? effectiveWorkspaceId)
+    );
+  };
+
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
       // Check if only Shift is held (without CMD/Ctrl) for multiselect
@@ -1197,36 +1211,17 @@ function TaskCardInner({
         !dialogState.newLabelDialogOpen &&
         !dialogState.newProjectDialogOpen
       ) {
-        // Only open edit dialog if not in multi-select mode, not dragging, and no other dialogs are open
-        if (isPersonalExternalTask) {
-          openExternalTask();
-          return;
-        }
-
-        openTask(task, boardId, availableLists, false, {
-          taskWsId: effectiveWorkspaceId,
-          taskWorkspacePersonal: isPersonalWorkspace,
-          canUseBoardAssignees: shouldUseBoardAssignees,
-          assigneeMemberSource: effectiveAssigneeMemberSource,
-        });
+        openCardTask();
       }
     },
     [
       task,
-      boardId,
-      effectiveWorkspaceId,
-      effectiveAssigneeMemberSource,
-      isPersonalWorkspace,
-      shouldUseBoardAssignees,
-      isPersonalExternalTask,
       isMultiSelectMode,
-      availableLists,
       isDragging,
       menuOpen,
       dialogState,
       onSelect,
-      openTask,
-      openExternalTask,
+      openCardTask,
     ]
   );
 
@@ -1855,6 +1850,8 @@ function TaskCardInner({
       ref={setCardRefs}
       style={style}
       onClick={handleCardClick}
+      onPointerEnter={prefetchCardTask}
+      onFocus={prefetchCardTask}
       onContextMenu={(e) => {
         // If only Shift is held (without CMD/Ctrl), handle as selection
         if (e.shiftKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
