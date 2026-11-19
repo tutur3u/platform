@@ -1,19 +1,25 @@
 // App-owned start-bridge Worker options for ai: the codemod created this
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+
+const profile =
+  import.meta.env?.VITE_AI_NATIVE_PROFILE ?? process.env.VITE_AI_NATIVE_PROFILE;
 
 export default defineBridgeAppConfig({
   worker: { compatibilityFlags: ['enable_request_signal'] },
   mounts: {
     rootHosts: ['ai.tuturuuu.com', 'ai.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
     unknownHost: 'reject',
   },
-  wrapResponse(response, { request }) {
+  wrapResponse(response, { request, mounts }) {
     const result = new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    const path = new URL(request.url).pathname;
+    const url = new URL(request.url);
+    const mount = mounts && resolveAppBase(url, { ...mounts, app: 'ai' });
+    const path = url.pathname.slice(mount?.basePath.length ?? 0);
     const sandboxedWebgl =
       /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u.test(
         path

@@ -252,6 +252,10 @@ jobs:
       - name: Check emitted anonymous redirect and required-secret startup refusal
         timeout-minutes: 4
         run: node scripts/ci/ai-cutover-smoke.mjs
+      - name: Validate and seal the emitted Worker
+        run: |
+          python3 scripts/ci/ai-native-artifact.py config apps/ai
+          python3 scripts/ci/ai-native-artifact.py seal apps/ai --receipt "$RUNNER_TEMP/receipt.json"
       - name: Exercise emitted runtime with fixture bindings
         working-directory: apps/ai
         timeout-minutes: 4
@@ -261,9 +265,18 @@ jobs:
         run: bun run test:runtime
       - name: Package deployable output and emitted Wrangler config
         run: |
-          python3 scripts/ci/ai-native-artifact.py config apps/ai
-          python3 scripts/ci/ai-native-artifact.py seal apps/ai --receipt "$RUNNER_TEMP/receipt.json"
           python3 scripts/ci/ai-native-artifact.py pack apps/ai --receipt "$RUNNER_TEMP/receipt.json" --archive "$RUNNER_TEMP/ai-native.tar.gz"
+      - name: Restore and qualify the sealed archive
+        env:
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/ai-restore" "$SOURCE_SHA"
+          cd "$RUNNER_TEMP/ai-restore"
+          bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+          python3 scripts/ci/ai-native-artifact.py restore apps/ai --archive "$RUNNER_TEMP/ai-native.tar.gz" --receipt "$RUNNER_TEMP/ai-restored-artifact.json"
+          node scripts/ci/ai-cutover-smoke.mjs
+          CI=true bun run --cwd apps/ai test:runtime
+          python3 scripts/ci/ai-native-artifact.py verify apps/ai --receipt "$RUNNER_TEMP/ai-restored-artifact.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ai-cutover-${{ matrix.profile }}-${{ env.SOURCE_SHA }}

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { startFixtureWorker } from './runtime-fixture.mjs';
 
+const production = process.env.VITE_AI_NATIVE_PROFILE === 'production';
+
 test(
   'emitted ai Worker applies security and personalized cache policy',
   {
@@ -29,9 +31,14 @@ test(
         );
       },
     });
-    for (const host of ['ai.tuturuuu.com', 'ai.tutur3u.com']) {
+    const targets = [
+      ['ai.tuturuuu.com', ''],
+      ['ai.tutur3u.com', ''],
+    ];
+    if (production) targets.push(['tuturuuu.com', '/ai']);
+    for (const [host, base] of targets) {
       for (const path of ['/api/build-info', '/api/private', '/vi']) {
-        const response = await worker.request(path, { host });
+        const response = await worker.request(`${base}${path}`, { host });
         if (path === '/api/build-info') assert.equal(response.status, 200);
         assert.equal(
           response.headers['content-security-policy'],
@@ -63,20 +70,33 @@ test(
     const sandbox = "sandbox allow-scripts; default-src 'none'";
     const webgl =
       '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl/game.js';
-    const sandboxed = await worker.request(webgl);
-    assert.equal(sandboxed.status, 200);
-    assert.equal(sandboxed.headers['content-security-policy'], sandbox);
-    assert.equal(sandboxed.headers['x-frame-options'], undefined);
+    for (const [host, base] of targets) {
+      const sandboxed = await worker.request(`${base}${webgl}`, { host });
+      assert.equal(sandboxed.status, 200);
+      assert.equal(sandboxed.headers['content-security-policy'], sandbox);
+      assert.equal(sandboxed.headers['x-frame-options'], undefined);
+      const neighbouring = await worker.request(
+        `${base}${webgl.replace('/webgl/', '/webgl-other/')}`,
+        { host }
+      );
+      assert.equal(neighbouring.status, 200);
+      assert.equal(
+        neighbouring.headers['content-security-policy'],
+        `${sandbox}; frame-ancestors 'none'`
+      );
+      assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
+    }
     assert.ok(upstream.includes(`https://central.invalid${webgl}`));
-    const neighbouring = await worker.request(
-      webgl.replace('/webgl/', '/webgl-other/')
-    );
-    assert.equal(neighbouring.status, 200);
-    assert.equal(
-      neighbouring.headers['content-security-policy'],
-      `${sandbox}; frame-ancestors 'none'`
-    );
-    assert.equal(neighbouring.headers['x-frame-options'], 'DENY');
+    const mountedRobots = await worker.request('/ai/robots.txt', {
+      host: 'tuturuuu.com',
+    });
+    assert.equal(mountedRobots.status, production ? 200 : 404);
+    if (production) {
+      assert.notEqual(
+        mountedRobots.headers['cache-control'],
+        'private, no-store'
+      );
+    }
     for (const path of ['/assets/client.js', '/robots.txt']) {
       for (const method of ['POST', 'PUT']) {
         const response = await worker.request(path, { method });

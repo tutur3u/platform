@@ -17,7 +17,7 @@ The existing Vercel deployment remains the rollback target until cutover.
 | --- | --- |
 | Production Worker | `tuturuuu-ai` (`VITE_AI_NATIVE_PROFILE=production`) |
 | Staging Worker | the staging Worker name |
-| Host | `ai.tuturuuu.com` (operator-attached; no source route) |
+| Hosts | `ai.tuturuuu.com` and, for the production candidate, `tuturuuu.com/ai`. The release operator attaches routes. |
 | Bindings | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX=1` in the source config; production artifact policy must be checked in its emitted config |
 | Secret names | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`; provider credentials are optional: `GOOGLE_GENERATIVE_AI_API_KEY` or `GOOGLE_API_KEY`, `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN` |
 | Build | `VITE_AI_NATIVE_PROFILE=production bun run --cwd apps/ai build:cloudflare` |
@@ -29,10 +29,16 @@ build logs only the selected provider category, never credential values.
 
 ## Acceptance and smoke
 
+The `ai-cloudflare.yaml` cutover jobs run the emitted Worker checks before
+upload and repeat them from a fresh restore. The production fixture checks
+mounted asset caching and preserves the upstream WebGL sandbox while denying
+framing on adjacent paths.
+
 Run the production build and emitted suite from the repository root:
 
 ```bash
-VITE_AI_NATIVE_PROFILE=production bun run --cwd apps/ai build:cloudflare
+export VITE_AI_NATIVE_PROFILE=production
+bun run --cwd apps/ai build:cloudflare
 CI=true CI_SOURCE_SHA="$(git rev-parse HEAD)" bun run --cwd apps/ai test:runtime
 ```
 
