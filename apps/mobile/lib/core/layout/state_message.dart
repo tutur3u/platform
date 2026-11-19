@@ -9,8 +9,10 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 /// Empty, error and unavailable states with one shared look.
 ///
 /// The default constructor centres an icon tile, a title, a message and an
-/// optional action for a whole page or pane. [AppStateMessage.inline] lays the
-/// same content out as a row inside a grouped card.
+/// optional action for a whole page or pane; an [illustration], such as an
+/// `AppIllustration`, takes the icon tile's place there.
+/// [AppStateMessage.inline] lays the same content out as a row inside a
+/// grouped card and always shows the icon tile.
 class AppStateMessage extends StatelessWidget {
   const AppStateMessage({
     required this.icon,
@@ -21,6 +23,7 @@ class AppStateMessage extends StatelessWidget {
     this.onAction,
     this.secondaryActionLabel,
     this.onSecondaryAction,
+    this.illustration,
     super.key,
   }) : inline = false;
 
@@ -34,7 +37,8 @@ class AppStateMessage extends StatelessWidget {
     this.secondaryActionLabel,
     this.onSecondaryAction,
     super.key,
-  }) : inline = true;
+  }) : inline = true,
+       illustration = null;
 
   final IconData icon;
   final String title;
@@ -46,6 +50,9 @@ class AppStateMessage extends StatelessWidget {
   /// A quieter second choice shown under the main action.
   final String? secondaryActionLabel;
   final FutureOr<void> Function()? onSecondaryAction;
+
+  /// Artwork shown above the title in place of the icon tile.
+  final Widget? illustration;
   final bool inline;
 
   @override
@@ -129,7 +136,7 @@ class AppStateMessage extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                AppIconTile(icon: icon, tone: tone, size: 56),
+                illustration ?? AppIconTile(icon: icon, tone: tone, size: 56),
                 const SizedBox(height: AppSpacing.lg),
                 titleText,
                 if (messageText != null) ...[

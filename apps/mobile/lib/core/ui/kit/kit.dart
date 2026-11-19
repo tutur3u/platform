@@ -1,5 +1,6 @@
 /// Shared composition kit for redesigned mini apps: section headers, summary
-/// heroes, stat tiles, panels, filter bars, rich rows and adaptive grids.
+/// heroes, stat tiles, panels, filter bars, rich rows, adaptive grids and
+/// empty-state illustrations.
 ///
 /// Rows, icon tiles, tones and empty/error states come from
 /// `package:mobile/core/layout/layout.dart` (`AppGroupedRow`, `AppIconTile`,
@@ -20,3 +21,4 @@ export 'package:mobile/core/ui/kit/app_section_header.dart';
 export 'package:mobile/core/ui/kit/app_segmented_control.dart';
 export 'package:mobile/core/ui/kit/app_stat_tile.dart';
 export 'package:mobile/core/ui/kit/app_summary_hero.dart';
+export 'package:mobile/core/ui/kit/illustration/app_illustration.dart';
