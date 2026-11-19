@@ -47,6 +47,23 @@ export function WorkspaceDeletionSettings({
   return <DangerZone key={workspace.id} workspace={workspace} />;
 }
 
+function getDeletionStatusMessageKey(status: unknown) {
+  switch (status) {
+    case 'ready':
+      return null;
+    case 'name_required':
+      return 'delete_workspace_name_required';
+    case 'checking':
+      return 'delete_checking_status';
+    case 'subscription_active':
+      return 'delete_subscription_active';
+    case 'protected':
+      return 'delete_workspace_protected';
+    default:
+      return 'delete_status_failed';
+  }
+}
+
 function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
   const t = useTranslations('ws-settings');
   const tCommon = useTranslations('common');
@@ -70,7 +87,10 @@ function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
       router.refresh();
     },
     onError: (error) => {
-      const code = error instanceof InternalApiError ? error.code : undefined;
+      const code =
+        error instanceof InternalApiError && 'code' in error
+          ? error.code
+          : undefined;
       if (code === 'subscription_active' || code === 'forbidden') {
         void eligibility.refetch();
       }
@@ -91,18 +111,8 @@ function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
       ? 'failed'
       : (eligibility.data?.status ?? 'checking');
   const ready = status === 'ready' && !deletion.isSuccess;
-  const blockedMessage =
-    status === 'ready'
-      ? null
-      : t(
-          {
-            name_required: 'delete_workspace_name_required',
-            failed: 'delete_status_failed',
-            checking: 'delete_checking_status',
-            subscription_active: 'delete_subscription_active',
-            protected: 'delete_workspace_protected',
-          }[status]
-        );
+  const messageKey = getDeletionStatusMessageKey(status);
+  const blockedMessage = messageKey ? t(messageKey) : null;
   const canSubmit =
     ready &&
     !deletion.isPending &&

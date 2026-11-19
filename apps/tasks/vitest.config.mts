@@ -7,6 +7,17 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/types/supabase',
+        replacement: resolve(__dirname, '../../packages/types/src/supabase.ts'),
+      },
+      {
         find: /^@tuturuuu\/internal-api\/(.+)$/,
         replacement: resolve(
           __dirname,

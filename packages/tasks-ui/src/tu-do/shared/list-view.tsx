@@ -77,7 +77,7 @@ import {
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { taskDetailQuery } from '../providers/task-detail-query';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
-import { priorityLabelKey } from '../utils/taskPriorityUtils';
+import { priorityLabelKey } from '../utils/task-priority-label-key';
 import { useBoardBroadcast } from './board-broadcast-context';
 import type { ListViewSortField, ListViewSortOrder } from './list-view-sorting';
 import {

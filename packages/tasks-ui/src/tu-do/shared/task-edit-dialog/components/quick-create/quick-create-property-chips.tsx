@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { priorityLabelKey } from '../../../../utils/taskPriorityUtils';
+import { priorityLabelKey } from '../../../../utils/task-priority-label-key';
 import {
   buildEstimationIndices,
   type EstimationType,

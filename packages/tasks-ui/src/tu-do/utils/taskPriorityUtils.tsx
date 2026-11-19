@@ -5,19 +5,6 @@ import { cn } from '@tuturuuu/utils/format';
 import React from 'react';
 import { PRIORITY_BADGE_COLORS, PRIORITY_LABELS } from './taskConstants';
 
-export function priorityLabelKey(priority: string) {
-  switch (priority) {
-    case 'critical':
-      return 'tasks.priority_critical' as const;
-    case 'high':
-      return 'tasks.priority_high' as const;
-    case 'low':
-      return 'tasks.priority_low' as const;
-    default:
-      return 'tasks.priority_normal' as const;
-  }
-}
-
 export const PRIORITY_ICONS: Record<
   NonNullable<Task['priority']>,
   React.ReactElement
