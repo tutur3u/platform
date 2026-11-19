@@ -144,13 +144,23 @@ function renderEntry({ date, window, runs, jobs, sampled, note }) {
   return `\n${lines.join('\n')}\n`;
 }
 
-function gh(path) {
-  return JSON.parse(
-    execFileSync('gh', ['api', '--paginate', '--slurp', path], {
-      encoding: 'utf8',
-      maxBuffer: 256 * 1024 * 1024,
-    })
-  );
+// Read-only API calls retry a bounded number of times: one transient 5xx or
+// rate-limit reply must not drop the whole day's entry.
+function gh(path, attempts = 3) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return JSON.parse(
+        execFileSync('gh', ['api', '--paginate', '--slurp', path], {
+          encoding: 'utf8',
+          maxBuffer: 256 * 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
+      );
+    } catch (error) {
+      if (attempt >= attempts) throw error;
+      execFileSync('sleep', [String(attempt * 5)]);
+    }
+  }
 }
 
 function parseArgs(argv) {
