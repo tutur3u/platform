@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { resolve } = require('node:path');
 const test = require('node:test');
 const {
   LEGACY_OWNERS,
@@ -114,6 +116,38 @@ const allowedEntry = (id, target = TARGETS.cronTrigger) => ({
 
 test('the repository adds no schedule or background owner outside Cloudflare', () => {
   assert.deepEqual(checkRepository().violations, []);
+});
+
+test('attendance retirement removes the owner and admits only the exact historical pair', () => {
+  const source = `${MIGRATIONS}/20261120015000_meet_attendance_workspace_retention.sql`;
+  const repair = `${MIGRATIONS}/20261120055902_retire_meet_attendance_pg_cron.sql`;
+  const read = (file) =>
+    readFileSync(resolve(__dirname, '../..', file), 'utf8');
+  const history = { [source]: read(source), [repair]: read(repair) };
+  const run = (sql) =>
+    evaluateOwnership({
+      ...fixture(sql),
+      allowlist: [],
+      migrationCutoff: MIGRATION_CUTOFF,
+    });
+
+  assert.deepEqual(run(history), { owners: [], violations: [] });
+  const missing = run({ [source]: history[source] });
+  assert.match(missing.owners[0].id, /^pg-cron:meet-attendance-retention:/);
+  assert.equal(missing.violations.length, 2);
+  for (const file of [source, repair]) {
+    assert.match(
+      run({ ...history, [file]: `${history[file]}-- different bytes\n` })
+        .violations[0],
+      /calls cron.schedule/
+    );
+  }
+  const recreated = run({
+    ...history,
+    [`${MIGRATIONS}/20261120055903_recreate.sql`]: history[source],
+  });
+  assert.match(recreated.owners[0].id, /^pg-cron:meet-attendance-retention:/);
+  assert.equal(recreated.violations.length, 2);
 });
 
 test('same-request stream persistence has one exact-path registration', () => {

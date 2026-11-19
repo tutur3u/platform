@@ -5,6 +5,7 @@
 // Policy: docs-internal/build/devops/cloudflare-backend-ownership.mdx
 
 const { execFileSync } = require('node:child_process');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -12,6 +13,33 @@ const {
   LEGACY_OWNERS,
   TARGETS,
 } = require('./cloudflare-backend-ownership-allowlist');
+
+// This published migration introduced a schedule that its forward repair removes.
+const ATTENDANCE_RETIREMENT = {
+  job: 'meet-attendance-retention',
+  source:
+    'apps/database/supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql',
+  sourceDigest:
+    'c27fd01b36e0aa95bcb6fd2e178a22c53b57c23a04b691af7124945107b4352d',
+  repair:
+    'apps/database/supabase/migrations/20261120055902_retire_meet_attendance_pg_cron.sql',
+  repairDigest:
+    '61062289153a1a5bd058cbcff4132fcd84ea892d595018f77ed7bed3f4d7c69e',
+};
+
+function matchesRetiredAttendanceSchedule(schedule, files, readFile) {
+  const { job, source, sourceDigest, repair, repairDigest } =
+    ATTENDANCE_RETIREMENT;
+  if (
+    schedule.name !== job ||
+    schedule.file !== source ||
+    !files.includes(repair)
+  )
+    return false;
+  const digest = (file) =>
+    createHash('sha256').update(readFile(file)).digest('hex');
+  return digest(source) === sourceDigest && digest(repair) === repairDigest;
+}
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 // Request continuations finish the same response; they do not own scheduled work.
@@ -364,6 +392,7 @@ function evaluateOwnership({
   // cannot schedule anything else, even under an allowlisted name.
   for (const schedule of pgCronSchedules) {
     if (migrationCutoff && schedule.version <= migrationCutoff) continue;
+    if (matchesRetiredAttendanceSchedule(schedule, files, readFile)) continue;
     const retained = allowlist.some(
       (owner) =>
         owner.id.startsWith(`pg-cron:${schedule.name}:`) &&

@@ -129,7 +129,10 @@ the move are collected under the new workspace.
 Intervals live in the private `meet_attendance_sessions` table. The retention
 clock is `joined_at`. Rows expire 90 days after that timestamp, the same
 ceiling as raw interaction events. `private.purge_expired_meet_attendance`
-deletes expired rows, and a daily job runs it when pg_cron is installed.
+deletes expired rows. The forward migration retires the daily Postgres job.
+**Release gate:** Keep attendance disabled in production until the Meet
+redesign ships and verifies a Cloudflare scheduled job that enforces the
+90-day retention limit.
 Opening the panel also deletes expired rows for that meeting and workspace and
 pages the rest in stable `joined_at`, `source_key` order past the 1,000-row
 API limit. Equivalent timestamps, including `Z` and `+00:00`, count as

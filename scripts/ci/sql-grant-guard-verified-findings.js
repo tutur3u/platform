@@ -596,4 +596,17 @@ module.exports = [
     reason:
       'SECURITY INVOKER trigger private.workspace_documents_assign_owner() assigns owner attribution and rejects owner changes during document writes. The same-file REVOKE ALL at line 41 removes PUBLIC, anon and authenticated; the function requires trigger context and has no later grant. The trigger-only annotation is missing.',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql',
+    line: 58,
+    rule: 'dynamic-sql-review',
+    fileDigest:
+      'c27fd01b36e0aa95bcb6fd2e178a22c53b57c23a04b691af7124945107b4352d',
+    digest: 'dd7be776c53bf721008d6692b77060992f7a399787d799366d6368c1157a5f03',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261120055902_retire_meet_attendance_pg_cron.sql',
+    reason:
+      'The published DO block schedules a fixed job with constant command text. The forward migration removes the job, and the schedule ownership guard requires the exact retirement migration bytes.',
+  },
 ];

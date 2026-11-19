@@ -1,0 +1,1 @@
+-- Intentionally empty. Rolling back must not recreate the retired schedule.
