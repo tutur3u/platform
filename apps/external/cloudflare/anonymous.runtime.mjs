@@ -6,9 +6,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
+import { deploymentProfile } from './deployment-profile.ts';
 
-const app = 'external';
-const gated = false;
+const profile = deploymentProfile(process.env.VITE_EXTERNAL_NATIVE_PROFILE);
 const require = createRequire(import.meta.url);
 test(
   'anonymous root and closed public ingress on the emitted Worker',
@@ -16,9 +17,10 @@ test(
   async (t) => {
     assert.equal(process.env.CI, 'true', 'Run in owning CI after build');
     const { configPath, config } = readNativeRuntimeConfig(resolve('.'));
+    assert.equal(config.name, profile.name);
     assert.equal(config.workers_dev, false);
     assert.equal(config.preview_urls, false);
-    const scratch = await mkdtemp(join(tmpdir(), `${app}-anonymous-`));
+    const scratch = await mkdtemp(join(tmpdir(), 'external-anonymous-'));
     t.after(() => rm(scratch, { recursive: true, force: true }));
     const envFile = join(scratch, 'empty.env');
     await writeFile(envFile, '', { mode: 0o600 });
@@ -78,11 +80,13 @@ test(
             headers: { host },
           },
           (response) => {
-            response.resume();
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
             response.on('end', () =>
               resolveResponse({
                 status: response.statusCode,
-                location: response.headers.location,
+                headers: response.headers,
+                body: Buffer.concat(chunks).toString('utf8'),
               })
             );
           }
@@ -90,18 +94,49 @@ test(
           .on('error', reject)
           .end();
       });
-    const canonical = `${app}.tuturuuu.com`;
-    const response = await get(canonical);
-    if (gated) {
-      assert.ok([301, 302, 303, 307, 308].includes(response.status));
-      const target = new URL(response.location, `https://${canonical}`);
-      assert.equal(target.host, canonical);
-      assert.equal(target.pathname, '/login');
-    } else {
-      assert.equal(response.status, 200);
-    }
+    const canonical = 'external.tuturuuu.com';
+    const apex = 'tuturuuu.com';
     assert.equal((await get('unknown.invalid')).status, 404);
-    if (app === 'external')
-      assert.equal((await get(canonical, '/api/storage/probe')).status, 403);
+    assert.equal((await get(apex, '/externality')).status, 404);
+
+    const variants = [{ host: canonical, prefix: '' }];
+    if (profile.mountHosts.includes(apex)) {
+      variants.push({ host: apex, prefix: '/external' });
+      assert.equal((await get(apex, '/api/build-info')).status, 404);
+    } else {
+      assert.equal((await get(apex, '/external?source=smoke')).status, 404);
+    }
+
+    for (const { host, prefix } of variants) {
+      const page = await get(host, `${prefix || '/'}?source=smoke`);
+      assert.equal(page.status, 200, host);
+      assert.match(page.headers['content-type'] ?? '', /text\/html/u);
+      assert.match(page.headers['cache-control'] ?? '', /\bno-store\b/u);
+      assert.equal((await get(host, `${prefix}/robots.txt`)).status, 200);
+      assert.equal(
+        (await get(host, `${prefix}/api/storage/probe`)).status,
+        403
+      );
+
+      const identity = await get(host, `${prefix}/api/build-info`);
+      assert.equal(identity.status, 200, host);
+      const build = JSON.parse(identity.body);
+      assert.equal(build.appName, 'external', host);
+      assert.match(process.env.CI_SOURCE_SHA ?? '', /^[a-f0-9]{40}$/u);
+      assert.equal(build.commitHash, process.env.CI_SOURCE_SHA, host);
+    }
+
+    await t.test('every rendered resource loads from its page origin', (t) =>
+      assertRenderedAssets(
+        t,
+        require,
+        (path, host) => get(host, path),
+        variants.map(({ host, prefix }) => ({
+          host,
+          path: prefix || '/',
+          base: prefix,
+        }))
+      )
+    );
   }
 );

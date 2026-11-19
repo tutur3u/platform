@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
-    paths: ['apps/external/**', 'packages/**', 'bun.lock', '.github/workflows/external-cloudflare.yaml']
+    paths: ['apps/external/**', 'packages/**', 'bun.lock', 'scripts/ci/external-native-artifact.py', 'scripts/ci/apps-native-artifact.py', '.github/workflows/external-cloudflare.yaml', '.github/workflows/native-start-app.yaml']
 permissions:
   contents: read
 concurrency:
@@ -47,55 +47,29 @@ jobs:
   build:
     needs: affected-gate
     if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.PRODUCTION_SUPABASE_URL || vars.PRODUCTION_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_APP_URL: https://external.tuturuuu.com
-      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
-      CI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-      - name: Build workspace dependencies
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: bun turbo:local run build --filter="@tuturuuu/external^..." --concurrency=2
-          token: ''
-          team: ''
-      - name: Build Start Worker
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: cd apps/external && bun run build:cloudflare
-          token: ''
-          team: ''
-      - name: Check bridge routes and native types
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          command: cd apps/external && bun run routes:check && bun run type-check:cloudflare
-          token: ''
-          team: ''
-      - name: Record emitted config receipt
-        run: node scripts/ci/native-emitted-config-receipt.mjs apps/external "$CI_SOURCE_SHA" "$RUNNER_TEMP/external-config-receipt.json"
-      - name: Anonymous root and closed ingress smoke
-        working-directory: apps/external
-        run: node --test cloudflare/anonymous.runtime.mjs
-      - name: Package deployable Worker and assets
-        run: |
-          mkdir -p "$RUNNER_TEMP/cutover"
-          tar -czf "$RUNNER_TEMP/cutover/external-worker.tgz" -C apps/external dist
-          cp "$RUNNER_TEMP/external-config-receipt.json" "$RUNNER_TEMP/cutover/"
-          echo "$CI_SOURCE_SHA" > "$RUNNER_TEMP/cutover/SOURCE_SHA"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: external-cutover-${{ github.event.pull_request.head.sha || github.sha }}
-          path: ${{ runner.temp }}/cutover/
-          retention-days: 7
-          if-no-files-found: error
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: ${{ fromJSON(github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && '["staging","production"]' || '["staging"]') }}
+    uses: ./.github/workflows/native-start-app.yaml
+    with:
+      app: external
+      package: '@tuturuuu/external'
+      artifact-script: scripts/ci/external-native-artifact.py
+      env-interface: ExternalGeneratedEnv
+      worker-environment-type: ExternalEnvironment
+      profile-env: VITE_EXTERNAL_NATIVE_PROFILE=${{ matrix.profile }}
+      artifact-suffix: ${{ matrix.profile }}
+      build-environment: ${{ matrix.profile == 'production' && 'production' || 'preview' }}
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ matrix.profile == 'production' && vars.PRODUCTION_SUPABASE_URL || matrix.profile == 'staging' && (vars.STAGING_SUPABASE_URL || 'https://external-ci.supabase.invalid') || '' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ matrix.profile == 'production' && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || matrix.profile == 'staging' && (vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_external_ci_placeholder') || '' }}
+        NEXT_PUBLIC_APP_URL=https://external.tuturuuu.com
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+      unit-command: |
+        if [ "$VITE_EXTERNAL_NATIVE_PROFILE" = production ]; then
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" && test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" || exit 1
+        fi
+        bun x --no-install vitest run src/proxy.test.ts && bun run type-check:cloudflare
+      format-paths: >-
+        apps/external/cloudflare apps/external/start-bridge.config.ts apps/external/vite.config.mts apps/external/vitest.config.ts apps/external/void.config.ts

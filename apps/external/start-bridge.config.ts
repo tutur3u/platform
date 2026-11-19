@@ -6,11 +6,17 @@ import {
   createRootResponsePolicy,
 } from '@tuturuuu/start-bridge/response-policy';
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
+import { deploymentProfile } from './cloudflare/deployment-profile';
+
+const profile = deploymentProfile(
+  import.meta.env?.VITE_EXTERNAL_NATIVE_PROFILE ??
+    process.env.VITE_EXTERNAL_NATIVE_PROFILE
+);
 
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['external.tuturuuu.com'],
-    mountHosts: [],
+    mountHosts: profile.mountHosts,
     unknownHost: 'reject',
   },
   worker: { workersDev: false },
