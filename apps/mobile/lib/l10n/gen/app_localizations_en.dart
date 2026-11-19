@@ -2459,6 +2459,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get counterAppBarTitle => 'Counter';
 
   @override
+  String get contactsAbsent => 'Absent';
+
+  @override
+  String get contactsAttendance => 'Attendance';
+
+  @override
+  String get contactsAttendanceClear => 'Not marked';
+
+  @override
+  String get contactsAttendanceSaved => 'Attendance saved.';
+
+  @override
   String get contactsColorEnergy => 'Energy';
 
   @override
@@ -2498,6 +2510,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsEmptyGroups => 'No groups yet';
 
   @override
+  String get contactsEmptySchedule => 'No sessions in the next two weeks';
+
+  @override
   String get contactsEmptySearch => 'No contacts match this search';
 
   @override
@@ -2525,16 +2540,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsHeroQuestion => 'Who needs attention?';
 
   @override
+  String get contactsLate => 'Late';
+
+  @override
   String get contactsLinkedAccounts => 'Linked accounts';
 
   @override
   String get contactsPeople => 'People';
 
   @override
+  String get contactsPresent => 'Present';
+
+  @override
   String get contactsPermissionDenied => 'You do not have permission to view contacts.';
 
   @override
   String get contactsSaved => 'Saved.';
+
+  @override
+  String get contactsSchedule => 'Schedule';
 
   @override
   String get contactsSearchHint => 'Search contacts by name, email, or phone';

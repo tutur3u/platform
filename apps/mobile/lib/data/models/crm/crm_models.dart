@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+part 'crm_directory_models.dart';
+
 String? crmAsString(Object? value) {
   if (value is String) {
     final trimmed = value.trim();
@@ -224,88 +226,6 @@ class CrmUsersResult extends Equatable {
 
   @override
   List<Object?> get props => [users, count, permissions];
-}
-
-class CrmGroup extends Equatable {
-  const CrmGroup({
-    required this.id,
-    required this.name,
-    this.notes,
-    this.startingDate,
-    this.endingDate,
-    this.isGuest = false,
-    this.archived = false,
-  });
-
-  factory CrmGroup.fromJson(Map<String, dynamic> json) {
-    return CrmGroup(
-      id: crmAsString(json['id']) ?? '',
-      name: crmAsString(json['name']) ?? 'Unnamed group',
-      notes: crmAsString(json['notes']),
-      startingDate: crmAsString(json['starting_date']),
-      endingDate: crmAsString(json['ending_date']),
-      isGuest: crmAsBool(json['is_guest']),
-      archived: crmAsBool(json['archived']),
-    );
-  }
-
-  final String id;
-  final String name;
-  final String? notes;
-  final String? startingDate;
-  final String? endingDate;
-  final bool isGuest;
-  final bool archived;
-
-  @override
-  List<Object?> get props => [
-    id,
-    name,
-    notes,
-    startingDate,
-    endingDate,
-    isGuest,
-    archived,
-  ];
-}
-
-class CrmGroupTag extends Equatable {
-  const CrmGroupTag({
-    required this.id,
-    required this.name,
-    this.color,
-    this.groupIds = const <String>[],
-  });
-
-  factory CrmGroupTag.fromJson(Map<String, dynamic> json) {
-    final raw = json['group_ids'];
-    final ids = <String>[];
-    if (raw is List) {
-      for (final item in raw) {
-        if (item is Map) {
-          final id = crmAsString(item['group_id'] ?? item['id']);
-          if (id != null) ids.add(id);
-        } else {
-          final id = crmAsString(item);
-          if (id != null) ids.add(id);
-        }
-      }
-    }
-    return CrmGroupTag(
-      id: crmAsString(json['id']) ?? '',
-      name: crmAsString(json['name']) ?? '',
-      color: crmAsString(json['color']),
-      groupIds: ids,
-    );
-  }
-
-  final String id;
-  final String name;
-  final String? color;
-  final List<String> groupIds;
-
-  @override
-  List<Object?> get props => [id, name, color, groupIds];
 }
 
 class CrmFeedbackActor extends Equatable {

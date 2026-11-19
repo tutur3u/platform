@@ -589,6 +589,39 @@ abstract final class CrmEndpoints {
   static String userGroup(String wsId, String groupId) =>
       '${userGroupCollection(wsId)}/${Uri.encodeComponent(groupId)}';
 
+  static String userGroupSessions(
+    String wsId, {
+    String? from,
+    String? to,
+    String? groupId,
+  }) {
+    final params = <String, String>{
+      if (from != null && from.isNotEmpty) 'from': from,
+      if (to != null && to.isNotEmpty) 'to': to,
+      if (groupId != null && groupId.isNotEmpty) 'groupId': groupId,
+    };
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '${userGroupCollection(wsId)}/sessions$suffix';
+  }
+
+  static String userGroupMembers(String wsId, String groupId) =>
+      '${userGroup(wsId, groupId)}/members?offset=0&limit=100';
+
+  static String userGroupAttendance(
+    String wsId,
+    String groupId, {
+    required String date,
+    String? sessionId,
+  }) {
+    final params = <String, String>{
+      'date': date,
+      if (sessionId != null && sessionId.isNotEmpty) 'sessionId': sessionId,
+    };
+    return '${userGroup(wsId, groupId)}/attendance?${Uri(queryParameters: params).query}';
+  }
+
   static String groupTags(String wsId, {int? page, int? pageSize}) {
     final params = <String, String>{};
     if (page != null) {

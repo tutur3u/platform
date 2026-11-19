@@ -310,6 +310,55 @@ extension _CrmPageActions on _CrmPageState {
     }
   }
 
+  Future<void> _showAttendance(CrmSession session) async {
+    final wsId = _wsId;
+    final date = contactSessionDate(session);
+    if (wsId == null || date == null) return;
+    try {
+      final members = await _repository.getGroupMembers(wsId, session.groupId);
+      final marks = await _repository.getAttendance(
+        wsId,
+        session.groupId,
+        date: date,
+        sessionId: session.id,
+      );
+      if (!mounted) return;
+      final saved = await _showOwnedSheet<bool>(
+        context: context,
+        builder: (context) => ContactAttendanceSheet(
+          title: session.label,
+          members: members,
+          canEdit: _canCheckAttendance,
+          initialStatus: {
+            for (final mark in marks)
+              if (mark.sessionId == null || mark.sessionId == session.id)
+                mark.userId: mark.status,
+          },
+          onSave: (statusByUser) {
+            final payload = [
+              for (final entry in statusByUser.entries)
+                if (entry.value != 'NONE')
+                  {
+                    'date': date,
+                    'status': entry.value,
+                    'user_id': entry.key,
+                    'session_id': session.id,
+                  },
+            ];
+            if (payload.isEmpty) return Future<void>.value();
+            return _repository.saveAttendance(wsId, session.groupId, payload);
+          },
+        ),
+      );
+      if (saved == true && mounted) {
+        _toast(context.l10n.contactsAttendanceSaved);
+      }
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _toast(error.message, destructive: true);
+    }
+  }
+
   Future<void> _showGroupEditor({CrmGroup? group}) async {
     final saved = await _showOwnedSheet<bool>(
       context: context,

@@ -2445,6 +2445,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get counterAppBarTitle => 'Bộ đếm';
 
   @override
+  String get contactsAbsent => 'Vắng';
+
+  @override
+  String get contactsAttendance => 'Điểm danh';
+
+  @override
+  String get contactsAttendanceClear => 'Chưa điểm danh';
+
+  @override
+  String get contactsAttendanceSaved => 'Đã lưu điểm danh.';
+
+  @override
   String get contactsColorEnergy => 'Năng lượng';
 
   @override
@@ -2484,6 +2496,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsEmptyGroups => 'Chưa có nhóm';
 
   @override
+  String get contactsEmptySchedule => 'Không có buổi học trong hai tuần tới';
+
+  @override
   String get contactsEmptySearch => 'Không có liên hệ khớp với tìm kiếm';
 
   @override
@@ -2511,16 +2526,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsHeroQuestion => 'Ai cần được chú ý?';
 
   @override
+  String get contactsLate => 'Muộn';
+
+  @override
   String get contactsLinkedAccounts => 'Tài khoản đã liên kết';
 
   @override
   String get contactsPeople => 'Mọi người';
 
   @override
+  String get contactsPresent => 'Có mặt';
+
+  @override
   String get contactsPermissionDenied => 'Bạn không có quyền xem danh bạ này.';
 
   @override
   String get contactsSaved => 'Đã lưu.';
+
+  @override
+  String get contactsSchedule => 'Lịch';
 
   @override
   String get contactsSearchHint => 'Tìm liên hệ theo tên, email hoặc số điện thoại';

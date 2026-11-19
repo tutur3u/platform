@@ -2,7 +2,7 @@ part of 'crm_page.dart';
 
 enum _CrmTab { users, audit }
 
-enum _ContactDirectory { people, groups, tags }
+enum _ContactDirectory { people, groups, tags, schedule }
 
 String _crmStatusLabel(BuildContext context, String value) {
   switch (value) {

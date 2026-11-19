@@ -22,9 +22,11 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/crm/utils/contact_identity.dart';
+import 'package:mobile/features/crm/utils/contact_schedule.dart';
 import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
+import 'package:mobile/features/crm/view/contact_attendance_sheet.dart';
 import 'package:mobile/features/crm/view/contact_group_editor.dart';
 import 'package:mobile/features/crm/view/contact_list_row.dart';
 import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
@@ -102,6 +104,9 @@ class _CrmPageState extends State<CrmWorkspace> {
   List<CrmGroupTag> _tags = const <CrmGroupTag>[];
   List<CrmAuditEvent> _auditEvents = const <CrmAuditEvent>[];
   List<CrmGroup> _groups = const <CrmGroup>[];
+  List<CrmSession> _sessions = const <CrmSession>[];
+  bool _sessionsLoading = false;
+  String? _sessionsError;
   bool _isLoading = true;
   bool _isLoadingMore = false;
   String? _error;
@@ -154,6 +159,8 @@ class _CrmPageState extends State<CrmWorkspace> {
       _workspacePermissions.containsPermission('update_user_groups');
   bool get _canDeleteGroups =>
       _workspacePermissions.containsPermission('delete_user_groups');
+  bool get _canCheckAttendance =>
+      _workspacePermissions.containsPermission('check_user_attendance');
   bool get _canManageFeedbacks =>
       _workspacePermissions.containsPermission('update_user_groups_scores');
 

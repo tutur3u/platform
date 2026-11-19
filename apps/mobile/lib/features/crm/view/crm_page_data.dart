@@ -176,6 +176,37 @@ extension _CrmPageData on _CrmPageState {
     }
   }
 
+  Future<void> _loadSessions() async {
+    final wsId = _wsId;
+    if (wsId == null || !_canViewFeedbacks) return;
+    _updateState(() {
+      _sessionsLoading = true;
+      _sessionsError = null;
+    });
+    final start = DateTime.now();
+    final from = DateTime(start.year, start.month, start.day).toUtc();
+    final to = from.add(const Duration(days: 14));
+    try {
+      final sessions = await _repository.getSessions(
+        wsId,
+        from: from.toIso8601String(),
+        to: to.toIso8601String(),
+      );
+      if (!mounted) return;
+      _updateState(() => _sessions = sessions);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _updateState(() => _sessionsError = error.message);
+    } on Object {
+      if (!mounted) return;
+      _updateState(
+        () => _sessionsError = context.l10n.commonSomethingWentWrong,
+      );
+    } finally {
+      if (mounted) _updateState(() => _sessionsLoading = false);
+    }
+  }
+
   Future<void> _loadMore() async {
     final wsId = _wsId;
     if (wsId == null || _isLoading || _isLoadingMore) return;

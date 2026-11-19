@@ -4777,6 +4777,30 @@ abstract class AppLocalizations {
   /// **'Counter'**
   String get counterAppBarTitle;
 
+  /// No description provided for @contactsAbsent.
+  ///
+  /// In en, this message translates to:
+  /// **'Absent'**
+  String get contactsAbsent;
+
+  /// No description provided for @contactsAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get contactsAttendance;
+
+  /// No description provided for @contactsAttendanceClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Not marked'**
+  String get contactsAttendanceClear;
+
+  /// No description provided for @contactsAttendanceSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance saved.'**
+  String get contactsAttendanceSaved;
+
   /// No description provided for @contactsColorEnergy.
   ///
   /// In en, this message translates to:
@@ -4855,6 +4879,12 @@ abstract class AppLocalizations {
   /// **'No groups yet'**
   String get contactsEmptyGroups;
 
+  /// No description provided for @contactsEmptySchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions in the next two weeks'**
+  String get contactsEmptySchedule;
+
   /// No description provided for @contactsEmptySearch.
   ///
   /// In en, this message translates to:
@@ -4909,6 +4939,12 @@ abstract class AppLocalizations {
   /// **'Who needs attention?'**
   String get contactsHeroQuestion;
 
+  /// No description provided for @contactsLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Late'**
+  String get contactsLate;
+
   /// No description provided for @contactsLinkedAccounts.
   ///
   /// In en, this message translates to:
@@ -4921,6 +4957,12 @@ abstract class AppLocalizations {
   /// **'People'**
   String get contactsPeople;
 
+  /// No description provided for @contactsPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Present'**
+  String get contactsPresent;
+
   /// No description provided for @contactsPermissionDenied.
   ///
   /// In en, this message translates to:
@@ -4932,6 +4974,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved.'**
   String get contactsSaved;
+
+  /// No description provided for @contactsSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get contactsSchedule;
 
   /// No description provided for @contactsSearchHint.
   ///

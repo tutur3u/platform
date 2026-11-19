@@ -159,7 +159,9 @@ extension _CrmPageLayout on _CrmPageState {
             )
           else
             NovaRefreshIndicator(
-              onRefresh: () => _loadInitial(force: true),
+              onRefresh: () => _directory == _ContactDirectory.schedule
+                  ? _loadSessions()
+                  : _loadInitial(force: true),
               child: _directoryList(
                 context,
                 allowed: allowed,
@@ -177,7 +179,11 @@ extension _CrmPageLayout on _CrmPageState {
     required bool usersTab,
   }) {
     final l10n = context.l10n;
-    if (_isLoading && _directoryCount == 0) {
+    final scheduleCold =
+        _directory == _ContactDirectory.schedule &&
+        _sessionsLoading &&
+        _sessions.isEmpty;
+    if (scheduleCold || (_isLoading && _directoryCount == 0 && !scheduleCold)) {
       return AppPageListView(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
@@ -205,6 +211,7 @@ extension _CrmPageLayout on _CrmPageState {
       _ContactDirectory.people => _users.length,
       _ContactDirectory.groups => _visibleGroups.length,
       _ContactDirectory.tags => _visibleTags.length,
+      _ContactDirectory.schedule => _sessions.length,
     };
   }
 
@@ -257,7 +264,12 @@ extension _CrmPageLayout on _CrmPageState {
           padding: const EdgeInsets.only(bottom: AppSpacing.lg),
           child: AppSegmentedControl<_ContactDirectory>(
             selected: _directory,
-            onChanged: (value) => _updateState(() => _directory = value),
+            onChanged: (value) {
+              _updateState(() => _directory = value);
+              if (value == _ContactDirectory.schedule) {
+                unawaited(_loadSessions());
+              }
+            },
             segments: [
               AppSegment(
                 value: _ContactDirectory.people,
@@ -273,6 +285,11 @@ extension _CrmPageLayout on _CrmPageState {
                 value: _ContactDirectory.tags,
                 label: l10n.contactsTags,
                 icon: LucideIcons.tags,
+              ),
+              AppSegment(
+                value: _ContactDirectory.schedule,
+                label: l10n.contactsSchedule,
+                icon: LucideIcons.calendar,
               ),
             ],
           ),
@@ -302,7 +319,23 @@ extension _CrmPageLayout on _CrmPageState {
       );
       return slots;
     }
-    if (_directoryCount == 0 && !_isLoading) {
+    if (_directory == _ContactDirectory.schedule &&
+        _sessionsError != null &&
+        _sessions.isEmpty &&
+        !_sessionsLoading) {
+      slots.add(
+        AppStateMessage(
+          icon: LucideIcons.circleAlert,
+          tone: AppTone.destructive,
+          title: l10n.commonSomethingWentWrong,
+          message: _sessionsError,
+          actionLabel: l10n.commonRetry,
+          onAction: _loadSessions,
+        ),
+      );
+      return slots;
+    }
+    if (_directoryCount == 0 && !_isLoading && !_sessionsLoading) {
       final searching = _searchController.text.trim().isNotEmpty;
       final createLabel = _emptyCreateLabel(l10n, usersTab);
       slots.add(
@@ -383,7 +416,7 @@ extension _CrmPageLayout on _CrmPageState {
           );
         }),
       );
-    } else if (usersTab) {
+    } else if (usersTab && _directory == _ContactDirectory.tags) {
       slots.addAll(
         _namedSlices(_visibleTags.length, (index) {
           final tag = _visibleTags[index];
@@ -403,6 +436,40 @@ extension _CrmPageLayout on _CrmPageState {
           );
         }),
       );
+    } else if (usersTab && _directory == _ContactDirectory.schedule) {
+      final days = contactScheduleDays(_sessions);
+      final localizations = MaterialLocalizations.of(context);
+      for (final day in days) {
+        slots
+          ..add(
+            AppSectionHeader(title: localizations.formatMediumDate(day.day)),
+          )
+          ..addAll(
+            _namedSlices(day.sessions.length, (index) {
+              final session = day.sessions[index];
+              final start = DateTime.tryParse(session.startsAt)?.toLocal();
+              final end = DateTime.tryParse(session.endsAt)?.toLocal();
+              final when = start == null
+                  ? session.startsAt
+                  : localizations.formatTimeOfDay(
+                      TimeOfDay.fromDateTime(start),
+                    );
+              final until = end == null
+                  ? ''
+                  : localizations.formatTimeOfDay(TimeOfDay.fromDateTime(end));
+              return AppRichRow(
+                title: session.label,
+                subtitle: session.groupName,
+                trailingCaption: until.isEmpty ? when : '$when–$until',
+                leading: const AppIconTile(
+                  icon: LucideIcons.calendar,
+                  tone: AppTone.info,
+                ),
+                onTap: () => _showAttendance(session),
+              );
+            }),
+          );
+      }
     } else {
       slots.addAll(
         _namedSlices(_auditEvents.length, (index) {
@@ -445,6 +512,7 @@ extension _CrmPageLayout on _CrmPageState {
       _ContactDirectory.people => l10n.contactsTitle,
       _ContactDirectory.groups => l10n.contactsGroups,
       _ContactDirectory.tags => l10n.contactsTags,
+      _ContactDirectory.schedule => l10n.contactsSchedule,
     };
   }
 
@@ -454,6 +522,7 @@ extension _CrmPageLayout on _CrmPageState {
       _ContactDirectory.people => l10n.contactsEmpty,
       _ContactDirectory.groups => l10n.contactsEmptyGroups,
       _ContactDirectory.tags => l10n.contactsEmptyTags,
+      _ContactDirectory.schedule => l10n.contactsEmptySchedule,
     };
   }
 
@@ -462,7 +531,7 @@ extension _CrmPageLayout on _CrmPageState {
     return switch (_directory) {
       _ContactDirectory.groups => l10n.contactsCreateGroup,
       _ContactDirectory.tags => l10n.contactsCreateTag,
-      _ContactDirectory.people => null,
+      _ContactDirectory.people || _ContactDirectory.schedule => null,
     };
   }
 
@@ -471,7 +540,7 @@ extension _CrmPageLayout on _CrmPageState {
     return switch (_directory) {
       _ContactDirectory.groups => _showGroupEditor,
       _ContactDirectory.tags => _showTagEditor,
-      _ContactDirectory.people => null,
+      _ContactDirectory.people || _ContactDirectory.schedule => null,
     };
   }
 

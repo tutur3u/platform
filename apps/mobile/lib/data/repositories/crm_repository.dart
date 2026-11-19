@@ -229,6 +229,84 @@ class CrmRepository {
     );
   }
 
+  Future<List<CrmSession>> getSessions(
+    String wsId, {
+    required String from,
+    required String to,
+    String? groupId,
+  }) async {
+    final response = await _read(
+      wsId,
+      'sessions',
+      CrmEndpoints.userGroupSessions(
+        wsId,
+        from: from,
+        to: to,
+        groupId: groupId,
+      ),
+    );
+    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(CrmSession.fromJson)
+        .where((session) => session.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<List<CrmGroupMember>> getGroupMembers(
+    String wsId,
+    String groupId,
+  ) async {
+    final rows = await _api.getJsonList(
+      CrmEndpoints.userGroupMembers(wsId, groupId),
+    );
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(CrmGroupMember.fromJson)
+        .where((member) => member.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<List<CrmAttendanceMark>> getAttendance(
+    String wsId,
+    String groupId, {
+    required String date,
+    String? sessionId,
+  }) async {
+    final rows = await _api.getJsonList(
+      CrmEndpoints.userGroupAttendance(
+        wsId,
+        groupId,
+        date: date,
+        sessionId: sessionId,
+      ),
+    );
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(CrmAttendanceMark.fromJson)
+        .where((mark) => mark.userId.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  Future<void> saveAttendance(
+    String wsId,
+    String groupId,
+    List<Map<String, dynamic>> marks,
+  ) async {
+    await _api.postJson(
+      CrmEndpoints.userGroupAttendance(
+        wsId,
+        groupId,
+        date: marks.first['date'] as String,
+      ),
+      marks,
+    );
+    await CacheStore.instance.invalidateTags(
+      {'module:crm'},
+      workspaceId: wsId,
+      userId: expectedUserId,
+    );
+  }
+
   Future<void> deleteGroup(String wsId, String groupId) {
     return _write(
       wsId,
