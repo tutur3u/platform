@@ -7,6 +7,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@tuturuuu/supabase/next': new URL(
+        '../supabase/src/next',
+        import.meta.url
+      ).pathname,
       'next-intl/config': new URL(
         './src/intl/fixtures/request-config.ts',
         import.meta.url

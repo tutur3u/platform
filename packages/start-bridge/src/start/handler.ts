@@ -30,6 +30,7 @@ import {
 } from '../next/proxy-bridge';
 import type { BridgeRequestContext } from '../server/request-context';
 import { admitMountedMutation, type BridgeCsrfOptions } from './csrf-admission';
+import { prefixHtmlAssets } from './html-assets';
 import {
   isMountedLogoutPath,
   refuseCrossOriginMountedLogout,
@@ -284,7 +285,10 @@ export function createBridgeHandler<
         // the browser-visible URL (router basepath), not a middleware rewrite.
         if (options.serverFnBase && inBase(pathname, options.serverFnBase))
           return options.start.fetch(base.stripRequest(forwarded) ?? forwarded);
-        return options.start.fetch(new Request(request.url, forwarded));
+        const page = await options.start.fetch(
+          new Request(request.url, forwarded)
+        );
+        return prefixHtmlAssets(page, url, base.basePath, publicAssets);
       };
       response = await dispatchThroughProxy({
         request,

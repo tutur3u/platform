@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 
 const app = 'git';
 const production = process.env.VITE_GIT_NATIVE_PROFILE === 'production';
@@ -85,6 +86,7 @@ test(
               resolveResponse({
                 status: response.statusCode,
                 location: response.headers.location,
+                headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
               })
             );
@@ -109,6 +111,21 @@ test(
     assert.equal((await get('unknown.invalid')).status, 404);
 
     const apex = 'tuturuuu.com';
+    const assetProbe = '/tutur3u/platform';
+    await t.test('every rendered resource loads from its page origin', (t) =>
+      assertRenderedAssets(t, require, (path, host) => get(host, path), [
+        { host: canonical, path: assetProbe },
+        ...(production
+          ? [
+              {
+                host: apex,
+                path: `/git${assetProbe}`,
+                base: '/git',
+              },
+            ]
+          : []),
+      ])
+    );
     if (!production) {
       assert.equal((await get(apex, '/git')).status, 404);
       return;

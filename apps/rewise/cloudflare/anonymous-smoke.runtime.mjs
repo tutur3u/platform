@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertServerArtifact } from './server-artifact-scan.mjs';
 import { assertCentralLoginRedirect } from './central-login-redirect.mjs';
+import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -122,12 +123,14 @@ async function startWorker(t, secrets) {
           headers: { ...headers, host },
         },
         (response) => {
-          response.resume();
+          const chunks = [];
+          response.on('data', (chunk) => chunks.push(chunk));
           response.on('end', () =>
             resolve({
               status: response.statusCode ?? 0,
               location: response.headers.location ?? '',
               headers: response.headers,
+              body: Buffer.concat(chunks).toString('utf8'),
             })
           );
         }
@@ -155,6 +158,22 @@ test(
   },
   async (t) => {
     const call = await startWorker(t, SYNTHETIC_SECRETS);
+    const assetProbe = '/__native-asset-probe.svg';
+    await t.test('every rendered resource loads from its page origin', (t) =>
+      assertRenderedAssets(t, require, call, [
+        { host: ROOT_HOST, path: assetProbe, status: 404 },
+        ...(production
+          ? [
+              {
+                host: APEX_HOST,
+                path: `/rewise${assetProbe}`,
+                base: '/rewise',
+                status: 404,
+              },
+            ]
+          : []),
+      ])
+    );
     for (const [path, returnUrl] of Object.entries(EXPECTED)) {
       const response = await call(path);
       assertCentralLoginRedirect(response, returnUrl);

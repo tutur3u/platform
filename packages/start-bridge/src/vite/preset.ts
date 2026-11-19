@@ -212,15 +212,14 @@ export interface StartBridgePreset {
   /** Shared `define` (both environments). */
   define: Record<string, string>;
   /**
-   * Vite `experimental`: JS-referenced asset URLs read the runtime app base
-   * (request context on the server, the document head script in the browser);
-   * CSS-referenced URLs stay relative to their stylesheet. One artifact then
-   * serves both the subdomain root and the apex mount.
+   * Vite `experimental`: client asset URLs read the document's runtime app
+   * base. CSS dependencies resolve relative to the stylesheet. The Worker
+   * scopes SSR markup per request, so cached SSR manifests keep their paths.
    */
   experimental: {
     renderBuiltUrl: (
       filename: string,
-      context: { hostType: 'js' | 'css' | 'html' }
+      context: { hostType: 'js' | 'css' | 'html'; ssr?: boolean }
     ) => { runtime: string } | { relative: true } | undefined;
   };
   /** Client `define`: `process.env` limited to `NEXT_PUBLIC_*` + NODE_ENV. */
@@ -257,9 +256,9 @@ export function startBridgePreset(
     base: basePath.assetBase,
     alias: startBridgeAliases(options),
     experimental: {
-      renderBuiltUrl: (filename, { hostType }) => {
+      renderBuiltUrl: (filename, { hostType, ssr }) => {
         if (hostType === 'css') return { relative: true };
-        if (hostType !== 'js') return undefined;
+        if (hostType !== 'js' || ssr) return undefined;
         const global = 'globalThis.__tuturuuuAppBase';
         return {
           runtime: `((typeof ${global}==='function'?${global}():${global})??${JSON.stringify(basePath.basePath)})+${JSON.stringify(`/${filename}`)}`,

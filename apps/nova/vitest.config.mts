@@ -18,6 +18,13 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
         find: /^@tuturuuu\/internal-api\/(.*)$/,
         replacement: resolve(
           __dirname,
@@ -27,6 +34,13 @@ export default defineConfig({
       {
         find: /^@tuturuuu\/supabase\/(.*)$/,
         replacement: resolve(__dirname, '../../packages/supabase/src/$1.ts'),
+      },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
       },
     ],
   },

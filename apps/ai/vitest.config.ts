@@ -7,6 +7,18 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@tuturuuu/internal-api': path.resolve(
+        __dirname,
+        '../../packages/internal-api/src'
+      ),
+      '@tuturuuu/supabase/next': path.resolve(
+        __dirname,
+        '../../packages/supabase/src/next'
+      ),
+      '#secret-env': path.resolve(
+        __dirname,
+        '../../packages/supabase/src/next/secret-env.ts'
+      ),
     },
   },
   test: {

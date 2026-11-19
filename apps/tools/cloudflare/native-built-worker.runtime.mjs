@@ -18,6 +18,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 import {
   FIXTURE,
   mountedPath,
@@ -230,6 +231,19 @@ test(
       });
     const ROOT_HOST = MOUNTS.rootHosts[0];
     const get = (path) => call(path, ROOT_HOST);
+
+    await t.test('every rendered resource loads from its page origin', (t) =>
+      assertRenderedAssets(t, require, call, [
+        { host: ROOT_HOST, path: '/' },
+        { host: ROOT_HOST, path: '/qr?format=svg' },
+        ...(MOUNTED
+          ? [
+              { host: APEX, path: BASE, base: BASE },
+              { host: APEX, path: `${BASE}/qr?format=svg`, base: BASE },
+            ]
+          : []),
+      ])
+    );
 
     await t.test('build identity is the exact compiled source', async () => {
       // A public deploy-verification endpoint, read anonymously as production

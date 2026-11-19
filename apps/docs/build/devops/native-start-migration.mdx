@@ -169,6 +169,14 @@ they only redirect.
 
 ## Gates before cutover
 
+The mounted Worker scopes local asset attributes while streaming its Start HTML.
+That includes React's RSC stylesheet and module preload hints, which can be
+emitted outside the Start manifest. Vite keeps stylesheet dependencies relative
+to their CSS and resolves client asset URLs from the browser's app base. The
+emitted-worker asset check parses the rendered HTML and requests every
+same-origin resource on both production host variants. Redirects are checked
+separately, and an asset probe must reach an HTML page that emits resources.
+
 The generated binding-type harness extends the owning app's base tsconfig and
 checks its full source graph with `noEmit` and `allowImportingTsExtensions`.
 The latter admits explicit `.ts` imports in Worker configuration without emitting

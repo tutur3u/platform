@@ -115,6 +115,9 @@ describe('Vite preset', () => {
       relative: true,
     });
     expect(render('index.html', { hostType: 'html' })).toBeUndefined();
+    expect(
+      render('assets/layout.css', { hostType: 'js', ssr: true })
+    ).toBeUndefined();
     const runtime = render('assets/a.png', { hostType: 'js' });
     const evaluate = (base: unknown) => {
       (globalThis as Record<string, unknown>).__tuturuuuAppBase = base;
