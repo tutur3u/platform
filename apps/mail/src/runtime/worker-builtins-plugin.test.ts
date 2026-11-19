@@ -80,8 +80,11 @@ describe('Mail CommonJS builtin imports in Worker builds', () => {
     expect(config.indexOf('mailWorkerBuiltins(),')).toBeLessThan(
       config.indexOf('voidPlugin(),')
     );
+    // The deployment profile may only be baked in through `define`; no plugin
+    // or alias choice may branch on it.
+    expect(config).not.toMatch(/process\.env\.PROFILE/u);
     expect(config).not.toMatch(
-      /process\.env\.(?:PROFILE|MAIL_DEPLOYMENT_PROFILE)/u
+      /process\.env\.MAIL_DEPLOYMENT_PROFILE\s*(?:===|!==|\?)/u
     );
   });
 });

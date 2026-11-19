@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mailAppPath } from './mail-mount';
 import { applyMailResponsePolicy } from './response-policy';
 
@@ -49,4 +49,24 @@ describe('Mail host and app mount boundaries', () => {
       );
     }
   );
+});
+
+describe('Mail staging mount', () => {
+  afterEach(() => vi.unstubAllEnvs());
+  it.each([
+    ['https://mail.tutur3u.com/vi/personal/inbox', '/vi/personal/inbox'],
+    [
+      'https://mail.tutur3u.com/api/v1/mail/connected/callback',
+      '/api/v1/mail/connected/callback',
+    ],
+    ['https://mail.tuturuuu.com/vi/personal/inbox', null],
+    ['https://tuturuuu.com/mail/vi/personal/inbox', null],
+    ['https://web.tutur3u.com/mail/vi/personal/inbox', null],
+    ['https://mail-preview.example.test/vi/personal/inbox', null],
+  ])('resolves only the staging host path for %s', async (url, expected) => {
+    vi.resetModules();
+    vi.stubEnv('MAIL_DEPLOYMENT_PROFILE', 'staging');
+    const { mailAppPath: stagingPath } = await import('./mail-mount');
+    expect(stagingPath(new Request(url))).toBe(expected);
+  });
 });

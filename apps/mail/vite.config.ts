@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
 import { mailActionPorts } from './src/runtime/action-port-plugin';
+import { resolveMailDeploymentProfile } from './src/runtime/deployment-profile';
 import { MAIL_FUNCTION_BASE } from './src/runtime/mail-api-policy';
 import { mailWorkerBuiltins } from './src/runtime/worker-builtins-plugin';
 
@@ -25,6 +26,13 @@ const bridge = startBridgePreset({
     '@opennextjs/cloudflare',
   ],
 });
+
+// No default: build, dev and preview all fail unless the profile is explicit.
+// Only the dev server accepts `development`; builds need production/staging.
+const deploymentProfile = (command: 'build' | 'serve') =>
+  JSON.stringify(
+    resolveMailDeploymentProfile(process.env.MAIL_DEPLOYMENT_PROFILE, command)
+  );
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
@@ -105,6 +113,7 @@ export default defineConfig(({ command }) => ({
   },
   define: {
     ...bridge.define,
+    'process.env.MAIL_DEPLOYMENT_PROFILE': deploymentProfile(command),
     'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
       process.env.NEXT_PUBLIC_SUPABASE_URL
     ),
@@ -125,6 +134,7 @@ export default defineConfig(({ command }) => ({
     client: {
       define: {
         ...bridge.clientDefine(command),
+        'process.env.MAIL_DEPLOYMENT_PROFILE': deploymentProfile(command),
       },
     },
   },

@@ -1,6 +1,7 @@
 import { forwardToCentralApi } from '@tuturuuu/start-bridge/api-forward';
 import { retarget } from '@tuturuuu/start-bridge/base-path';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { matchRoute } from '@tuturuuu/start-bridge/route-match';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
@@ -21,6 +22,7 @@ import {
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
 import { endpoints } from './api-registry.bridge.gen';
+import { isMailStagingArtifact } from './deployment-profile';
 import { MAIL_FUNCTION_BASE } from './mail-api-policy';
 import { registerMailServerApiPaths } from './mail-api-server';
 import { mailAppPath, mailMounts } from './mail-mount';
@@ -31,6 +33,7 @@ import { proxyMatches } from './proxy-bridge';
 import { publicAssets } from './public-assets';
 import { applyMailResponsePolicy } from './response-policy';
 import { applyMailDocumentHeaders } from './security-profile';
+import { denyWithoutStagingAccess, fetchOwner } from './staging-access';
 import type { MailExecutionContext, MailRuntimeEnv } from './worker-contract';
 
 registerMailServerApiPaths();
@@ -56,6 +59,17 @@ const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
         'x-forwarded-host': url.host,
         'x-forwarded-proto': url.protocol.slice(0, -1),
       },
+      // Staging only: owner calls drop client Access credentials and carry the
+      // Mail service token to the issuer origin. Production forwards as-is.
+      ...(isMailStagingArtifact()
+        ? {
+            fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
+              fetchOwner(
+                new Request(input, init),
+                (bridgeRequest().cloudflare?.env ?? {}) as MailRuntimeEnv
+              ),
+          }
+        : {}),
     });
   },
   matches: proxyMatches,
@@ -76,6 +90,8 @@ export async function handleMailRequest(
     );
   const path = mailAppPath(incoming);
   if (path === null) return finish(new Response('Not Found', { status: 404 }));
+  const denied = await denyWithoutStagingAccess(incoming, env);
+  if (denied) return denied;
   if (
     resolveAppBase(new URL(incoming.url), mailMounts)?.mode === 'mounted' &&
     [

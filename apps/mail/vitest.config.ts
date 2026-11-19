@@ -55,6 +55,9 @@ export default defineConfig({
   test: {
     server: { deps: { inline: ['next-intl'] } },
     environment: 'node',
+    // Pinned explicitly: source has no fallback, and the profile tests
+    // re-import modules under each profile plus the unset/unknown cases.
+    env: { MAIL_DEPLOYMENT_PROFILE: 'production' },
     exclude: ['**/node_modules/**', '**/dist/**'],
     globals: true,
     include: ['src/**/*.test.ts'],
