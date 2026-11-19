@@ -101,6 +101,11 @@ test(
       assert.equal(`${target.pathname}${target.search}`, path);
     };
     assertRedirect(await get(canonical), canonical, '/tutur3u/platform');
+    assertRedirect(
+      await get(canonical, '/vi/tutur3u/platform?source=smoke'),
+      canonical,
+      '/tutur3u/platform?source=smoke'
+    );
     assert.equal((await get('unknown.invalid')).status, 404);
 
     const apex = 'tuturuuu.com';
@@ -118,6 +123,11 @@ test(
       await get(apex, '/git/vi/tutur3u/platform?source=smoke'),
       apex,
       '/git/tutur3u/platform?source=smoke'
+    );
+    assertRedirect(
+      await get(apex, '/git/vi?source=smoke'),
+      apex,
+      '/git?source=smoke'
     );
     assert.equal((await get(apex, '/api/build-info')).status, 404);
     const source = process.env.CI_SOURCE_SHA;
