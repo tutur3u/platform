@@ -24,10 +24,7 @@ import { PlaygroundCreate } from '@tuturuuu/utils/playground-schema';
 import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
-import {
-  callRoomService,
-  type SignedInMeetCallAccess,
-} from './room-service';
+import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
 async function elevated(access: Access) {

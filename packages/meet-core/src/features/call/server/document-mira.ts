@@ -11,10 +11,7 @@ import {
 } from '@tuturuuu/realtime/documents';
 import type { MiraDocumentSource } from '@tuturuuu/realtime/meet';
 import { channelEndpoint, meetingDocumentChannel } from './documents';
-import {
-  callRoomService,
-  type SignedInMeetCallAccess,
-} from './room-service';
+import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
 const MIRA_PUBLISHER_ID = '00000000-0000-4000-8000-000000000001';

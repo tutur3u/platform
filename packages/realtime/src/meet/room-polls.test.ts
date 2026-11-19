@@ -181,7 +181,11 @@ describe('anonymous guest poll voting', () => {
         displayName: 'Guest',
         joinedAt: '2026-11-19T00:00:00.000Z',
         lastSeenAt: '2026-11-19T00:00:00.000Z',
-        media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+        media: {
+          audioEnabled: false,
+          videoEnabled: false,
+          screenEnabled: false,
+        },
         role: 'speaker' as const,
       },
     },

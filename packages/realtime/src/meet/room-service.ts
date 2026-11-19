@@ -158,9 +158,10 @@ export function roomService(
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
   const removal = guestRemovalStatus.safeParse(input);
   if (removal.success) {
-    const guestId = removal.data.guestId ?? (token.accountId ?? token.userId);
+    const guestId = removal.data.guestId ?? token.accountId ?? token.userId;
     const accountId = token.accountId ?? token.userId;
-    if (guestId !== accountId && token.role !== 'host') return fail('Forbidden');
+    if (guestId !== accountId && token.role !== 'host')
+      return fail('Forbidden');
     return {
       state: snapshot,
       body: isGuestRemovalBlocked(snapshot, guestId, Date.now()),

@@ -20,10 +20,7 @@ import {
   readMeetingProgrammingTest,
   selectedProgrammingMira,
 } from './programming';
-import {
-  callRoomService,
-  type SignedInMeetCallAccess,
-} from './room-service';
+import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
 const excerptSchema = programmingRangeSchema.and(

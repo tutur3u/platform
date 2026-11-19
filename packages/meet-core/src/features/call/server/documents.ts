@@ -13,10 +13,7 @@ import {
 import { accountPrivateRpc } from '@tuturuuu/utils/account-benefits-server';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
-import {
-  callRoomService,
-  type SignedInMeetCallAccess,
-} from './room-service';
+import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
 type Access = SignedInMeetCallAccess;
 export type MeetingDocuments = ReturnType<typeof readRoomDocuments>;

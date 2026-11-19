@@ -54,7 +54,9 @@ for (const { app, runtimeEnv } of WORKERS) {
       (step) => step.run === `${parityRun} "$CLOUDFLARE_ACCOUNT_ID"`
     );
     const publishing = deployment.filter((step) =>
-      step.run?.includes('cf deploy --prebuilt --mode production --no-provision')
+      step.run?.includes(
+        'cf deploy --prebuilt --mode production --no-provision'
+      )
     );
     assert.equal(publishing.length, 1, 'publish exactly once');
     const publishIndex = deployment.indexOf(publishing[0]);

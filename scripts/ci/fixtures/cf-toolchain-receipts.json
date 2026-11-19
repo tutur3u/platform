@@ -144,10 +144,7 @@
         "uses": -28,
         "note": "coordination and devbox-control workflows drop wrangler deploy qualification and production publication steps."
       },
-      "wranglerGapsRetained": [
-        "void-wave1-publication",
-        "pending-migration"
-      ],
+      "wranglerGapsRetained": ["void-wave1-publication", "pending-migration"],
       "removalConditions": [
         "Disposable DO migration/data rehearsal receipt before production publisher switch",
         "Void prebuilt deploy path proves byte identity"
