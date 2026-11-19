@@ -37,7 +37,7 @@ export function createWorkspaceRouteHandlers(routes: readonly Route[]) {
           Number(right[index]?.startsWith('['));
         if (priority) return priority;
       }
-      return 0;
+      return left.length - right.length;
     })
     .map(([pattern, source]) => {
       const handlers = { ...source };
