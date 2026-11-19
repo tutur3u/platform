@@ -52,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { useTableRowVirtualizer } from '@tuturuuu/ui/hooks/use-table-row-virtualizer';
 import {
   Tooltip,
   TooltipContent,
@@ -371,8 +372,7 @@ function InteractiveListView({
     assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
 
   // Infinite scroll
-  const [displayCount, setDisplayCount] = useState(50);
-  const LOAD_MORE_COUNT = 50;
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
   // Column visibility
   const [columnVisibility] = useState<ColumnVisibility>({
@@ -441,7 +441,7 @@ function InteractiveListView({
 
     previousWorkspaceIdRef.current = workspaceId;
     previousBoardIdRef.current = boardId;
-    setDisplayCount(50);
+    scrollContainerRef.current?.scrollTo?.({ top: 0 });
     clearSelection();
     if (previousBoardId) {
       void queryClient.cancelQueries({ queryKey: ['tasks', previousBoardId] });
@@ -459,12 +459,11 @@ function InteractiveListView({
     sortOrder,
   });
 
-  // Display tasks with incremental rendering
-  const displayedTasks = useMemo(() => {
-    return sortedTasks.slice(0, displayCount);
-  }, [sortedTasks, displayCount]);
-
-  const hasMore = displayCount < sortedTasks.length;
+  // Only rows near the viewport render; spacer rows keep the scroll height.
+  const rowWindow = useTableRowVirtualizer({
+    count: sortedTasks.length,
+    scrollRef: scrollContainerRef,
+  });
   const listsById = useMemo(
     () => new Map(lists.map((list) => [list.id, list])),
     [lists]
@@ -497,7 +496,7 @@ function InteractiveListView({
 
   function handleSelectAll(checked: boolean) {
     if (checked) {
-      setSelectedTasks(new Set(displayedTasks.map((task) => task.id)));
+      setSelectedTasks(new Set(sortedTasks.map((task) => task.id)));
     } else {
       setSelectedTasks(new Set());
     }
@@ -539,28 +538,6 @@ function InteractiveListView({
       assigneeMemberSource: effectiveAssigneeMemberSource,
     });
   }
-
-  // Infinite scroll handler
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLDivElement;
-      if (!target) return;
-
-      const { scrollTop, scrollHeight, clientHeight } = target;
-      const scrollPercentage = (scrollTop + clientHeight) / scrollHeight;
-
-      // Load more when user scrolls to 80%
-      if (scrollPercentage > 0.8 && hasMore) {
-        setDisplayCount((prev) => prev + LOAD_MORE_COUNT);
-      }
-    };
-
-    const scrollContainer = document.querySelector('[data-scroll-container]');
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll);
-      return () => scrollContainer.removeEventListener('scroll', handleScroll);
-    }
-  }, [hasMore]);
 
   function formatDate(date: string) {
     const dateObj = new Date(date);
@@ -629,7 +606,11 @@ function InteractiveListView({
           </div>
         </div>
       ) : (
-        <div className="relative flex-1 overflow-auto" data-scroll-container>
+        <div
+          className="relative flex-1 overflow-auto"
+          data-scroll-container
+          ref={scrollContainerRef}
+        >
           <TooltipProvider>
             <Table>
               <TableHeader className="sticky top-0 z-10 border-b">
@@ -639,8 +620,8 @@ function InteractiveListView({
                       <TooltipTrigger asChild>
                         <Checkbox
                           checked={
-                            selectedTasks.size === displayedTasks.length &&
-                            displayedTasks.length > 0
+                            selectedTasks.size === sortedTasks.length &&
+                            sortedTasks.length > 0
                           }
                           onCheckedChange={(checked) =>
                             handleSelectAll(!!checked)
@@ -738,7 +719,14 @@ function InteractiveListView({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayedTasks.map((task) => {
+                {rowWindow.paddingTop > 0 && (
+                  <tr aria-hidden style={{ height: rowWindow.paddingTop }}>
+                    <td colSpan={99} />
+                  </tr>
+                )}
+                {rowWindow.indexes.map((rowIndex) => {
+                  const task = sortedTasks[rowIndex];
+                  if (!task) return null;
                   const taskList = getTaskList(task);
                   const taskDueDateVisible = shouldShowTaskDueDate({
                     completedAt: task.completed_at,
@@ -763,6 +751,8 @@ function InteractiveListView({
                   return (
                     <TableRow
                       key={task.id}
+                      data-index={rowIndex}
+                      ref={rowWindow.measureRow}
                       className={cn(
                         'group h-11 cursor-pointer border-b transition-all duration-200',
                         'hover:bg-muted/50 hover:shadow-sm',
@@ -1031,21 +1021,14 @@ function InteractiveListView({
                     </TableRow>
                   );
                 })}
+                {rowWindow.paddingBottom > 0 && (
+                  <tr aria-hidden style={{ height: rowWindow.paddingBottom }}>
+                    <td colSpan={99} />
+                  </tr>
+                )}
               </TableBody>
             </Table>
           </TooltipProvider>
-
-          {/* Infinite scroll loading indicator */}
-          {hasMore && (
-            <div className="flex items-center justify-center border-t bg-linear-to-b from-background to-muted/20 py-4">
-              <div className="flex items-center gap-2.5 rounded-lg border bg-background px-4 py-2 shadow-sm">
-                <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="font-medium text-muted-foreground text-xs">
-                  {tc('loading_more_tasks')}
-                </span>
-              </div>
-            </div>
-          )}
         </div>
       )}
 

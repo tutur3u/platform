@@ -213,7 +213,7 @@ describe('ListView task context menu', () => {
     expect(openTaskMock).not.toHaveBeenCalled();
   });
 
-  it('preserves the expanded render window when task data updates in place', () => {
+  it('windows long lists and keeps the window when task data updates in place', () => {
     const manyTasks = Array.from({ length: 60 }, (_, index) => ({
       ...tasks[0]!,
       display_number: index + 1,
@@ -221,16 +221,12 @@ describe('ListView task context menu', () => {
       name: `Task ${index + 1}`,
     }));
     const { queryClient, rerender } = renderListView(manyTasks);
-    const scrollContainer = document.querySelector('[data-scroll-container]');
 
-    expect(scrollContainer).not.toBeNull();
-    Object.defineProperties(scrollContainer, {
-      clientHeight: { configurable: true, value: 20 },
-      scrollHeight: { configurable: true, value: 100 },
-      scrollTop: { configurable: true, value: 81 },
-    });
-    fireEvent.scroll(scrollContainer!);
-    expect(screen.getByText('Task 60')).toBeInTheDocument();
+    expect(screen.getByText('Task 1')).toBeInTheDocument();
+    expect(screen.queryByText('Task 60')).toBeNull();
+    const renderedRows = document.querySelectorAll('tr[data-index]').length;
+    expect(renderedRows).toBeGreaterThan(0);
+    expect(renderedRows).toBeLessThan(60);
 
     const updatedTasks = manyTasks.map((task) => ({
       ...task,
@@ -248,6 +244,9 @@ describe('ListView task context menu', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByText('Task 60')).toBeInTheDocument();
+    expect(screen.getByText('Task 1')).toBeInTheDocument();
+    expect(document.querySelectorAll('tr[data-index]').length).toBe(
+      renderedRows
+    );
   });
 });
