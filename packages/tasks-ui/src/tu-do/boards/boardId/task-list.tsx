@@ -7,7 +7,13 @@ import { MoveRight } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useTranslations } from 'next-intl';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { MeasuredTaskCard } from './task';
 import type { TaskCardAssigneeMemberSource } from './task-card/task-card';
@@ -308,10 +314,40 @@ function VirtualizedTaskListInner({
     prefixHeightsRef.current = prefix;
   }, [avgHeight]);
 
+  const sortableTaskIds = useMemo(() => tasks.map((t) => t.id), [tasks]);
+
+  // A running sum keeps the average O(1) per measurement, and the prefix
+  // table rebuilds once per frame however many cards measure in it.
+  const sizeSumRef = useRef(0);
+  const rebuildFrameRef = useRef<number | null>(null);
+  const scheduleRebuild = useCallback(() => {
+    if (rebuildFrameRef.current !== null) return;
+    rebuildFrameRef.current = requestAnimationFrame(() => {
+      rebuildFrameRef.current = null;
+      const count = Object.keys(sizesRef.current).length;
+      if (count > 0) {
+        const next = Math.round(sizeSumRef.current / count);
+        setAvgHeight((current) =>
+          Math.abs(current - next) >= 2 ? next : current
+        );
+      }
+      rebuildPrefixHeights();
+    });
+  }, [rebuildPrefixHeights]);
+  useEffect(
+    () => () => {
+      if (rebuildFrameRef.current !== null) {
+        cancelAnimationFrame(rebuildFrameRef.current);
+      }
+    },
+    []
+  );
+
   const updateSize = useCallback(
     (id: string, height: number) => {
       const prev = sizesRef.current[id];
       if (prev === height) return;
+      sizeSumRef.current += height - (prev ?? 0);
       sizesRef.current[id] = height;
 
       // Also update external taskHeightsRef if provided
@@ -319,14 +355,9 @@ function VirtualizedTaskListInner({
         externalTaskHeightsRef.current.set(id, height);
       }
 
-      const values = Object.values(sizesRef.current);
-      if (values.length > 0) {
-        const sum = values.reduce((a, b) => a + b, 0);
-        setAvgHeight(Math.round(sum / values.length));
-      }
-      rebuildPrefixHeights();
+      scheduleRebuild();
     },
-    [rebuildPrefixHeights, externalTaskHeightsRef]
+    [scheduleRebuild, externalTaskHeightsRef]
   );
 
   // Initialize idsRef when task list changes
@@ -424,7 +455,7 @@ function VirtualizedTaskListInner({
         </div>
       ) : shouldVirtualize ? (
         <SortableContext
-          items={tasks.map((t) => t.id)}
+          items={sortableTaskIds}
           strategy={verticalListSortingStrategy}
         >
           <div style={{ height: totalHeight, position: 'relative' }}>
@@ -466,7 +497,7 @@ function VirtualizedTaskListInner({
         </SortableContext>
       ) : (
         <SortableContext
-          items={tasks.map((t) => t.id)}
+          items={sortableTaskIds}
           strategy={verticalListSortingStrategy}
         >
           <TaskListContent
