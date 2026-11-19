@@ -465,14 +465,14 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 12,
-      "uses": 14,
+      "lines": 13,
+      "uses": 15,
+      "digest": "010069c682daa7284540b738215c242510fcc77667accd5376458aeee4f79e6e",
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/f4ab3caf7bc6f11fb66c5daf24b1b64edd2d69b3",
-        "reason": "The web route family workflow builds each family with OpenNext, measures it with wrangler deploy --dry-run, deploys it with wrangler deploy and uploads/deploys the gateway version with wrangler versions upload/deploy, retrying the deploy until the uploaded version is visible, because cf has no OpenNext adapter or versions command parity yet."
-      },
-      "digest": "7246f82df3cf716f0687b50fc1236d5269cccc8cc65f8c543b15c691efa279b9"
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The added step label documents that the opt-in cf rehearsal leaves the current OpenNext publisher in charge. It adds no legacy CLI invocation."
+      }
     },
     ".github/workflows/web-start-candidate.yaml": {
       "lines": 1,
@@ -1407,22 +1407,22 @@
     "apps/meet-realtime/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
+      "digest": "d32107cb8e613fb6dc67572abfd000cbe999de60320f6bdf3848ca2eb02eb18c",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
-        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
-      },
-      "digest": "951616c963ece614faca181183e0af053a9b8e7de2ef6ddad66662ff20657943"
+        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
+        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+      }
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
+      "digest": "2b50011746cc7f4f665fe4e8886983dc5fcfc1ba4f25fa5ce49e429738f4b7bc",
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
-        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
-      },
-      "digest": "5684c24cd2a13fe36ab102e9692818ee5fd26dc60a5213dd48df18a05c2d5900"
+        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
+        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+      }
     },
     "apps/meet/.gitignore": {
       "lines": 1,
@@ -1457,12 +1457,12 @@
     "apps/meet/wrangler.legacy.jsonc": {
       "lines": 2,
       "uses": 2,
+      "digest": "5723ede9b6a7252b8815d737686f9d12fccdb84c133730c7f4df4281ee54733f",
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
-        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
-      },
-      "digest": "2816f469474953f2daa4b8c711947ba843910132b5d998a9049b3f409769a1ec"
+        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
+        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+      }
     },
     "apps/mind/.gitignore": {
       "lines": 1,
@@ -1619,12 +1619,12 @@
     "apps/parley/wrangler.jsonc": {
       "lines": 2,
       "uses": 2,
+      "digest": "4b9f9f9008e612c75b120cb1cdeb04303f18a5938940405a8363797a3b8785e6",
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
-        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
-      },
-      "digest": "7d1c89e4bd73b31e03b181cc95bd5a96350d358e07972bdbb3a3f438d40352f1"
+        "decision": "https://github.com/tutur3u/platform/commit/03c2c12af601f2bd50ae21f83b2f8ba6209b6e9f",
+        "reason": "The committed class timer flag changes from false to true. The existing tool, target and number of occurrences are unchanged."
+      }
     },
     "apps/pay/.gitignore": {
       "lines": 1,
@@ -2242,6 +2242,16 @@
       },
       "digest": "d12248f30b5486419590f1859a232a3300ccb098f78eb6b1648c6b038c8476d1"
     },
+    "packages/start-bridge/src/start/html-assets.test.ts": {
+      "lines": 2,
+      "uses": 3,
+      "digest": "3f91764d0598bd7f2d01a50abb21b8cf7c36a28548ab7df477f2e50b9a1ca5e5",
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/ca85cdec500984028a8685941e1b3995181625a4",
+        "reason": "The asset test resolves Miniflare via the installed legacy supplier to run the sealed config in local Workerd. It invokes no CLI or provider operation."
+      }
+    },
     "packages/start-bridge/src/vite/rsc.test.ts": {
       "lines": 1,
       "uses": 1,
@@ -2582,6 +2592,26 @@
       "uses": 2,
       "digest": "266117b4de2288a62660949298586be14768bbdd9d9a4fac3df4c0c03922e16a"
     },
+    "scripts/ci/cf-build-output-publisher.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "c48f7573ceee9e81fa59c85ba25a0109f0b0d7b4a73cfc56fe7e0fa4b9b47c3d",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+      }
+    },
+    "scripts/ci/cf-build-output-publisher.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "88293e1cd3a923dacf2e42fcd1187115b5dd13c75c234c4e11345e6490b76b2b",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+      }
+    },
     "scripts/ci/cf-cron-control-order.test.mjs": {
       "gap": "cf-config-internals",
       "admitted": {
@@ -2623,14 +2653,14 @@
       "digest": "2f27ae7a2350483a1d7661aa41fe487ef52d6722838609d575f4350d13785d61"
     },
     "scripts/ci/cf-worker-parity.test.mjs": {
-      "lines": 26,
-      "uses": 31,
+      "lines": 25,
+      "uses": 30,
+      "digest": "44347c5fdc36366c73779802993d20b4c5525aebd7f4009a8edd2f4f7cafe168",
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487: retained v1 Wrangler production publication and isolated runtime persistence."
-      },
-      "digest": "4c48fc2eb94578c3de929af8f4e4213a09c666c971d5c83cc63d63395bdfc2bb"
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The exact existing gateway config and deploy-config filename are retained as inputs to cf merge and parity checks while OpenNext remains the live publisher."
+      }
     },
     "scripts/ci/cf-worker-publication.test.js": {
       "gap": "parity-tooling",
@@ -2773,7 +2803,6 @@
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
     },
     "scripts/ci/fixtures/native-abuse-guard.mjs": {
-      "kind": "script",
       "lines": 1,
       "uses": 1,
       "digest": "4f791977cb084883cb3386f1961b5abfd3c5bcaa6f21008b0e52247be3cf2d26",
@@ -2781,6 +2810,26 @@
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/8228",
         "reason": "Proposal for synthetic local qualification only; Security acceptance pending. Disposable abuse-guard config and local SDK denial/cleanup controls; no provider access."
+      }
+    },
+    "scripts/ci/gateway-cf-publication.mjs": {
+      "lines": 6,
+      "uses": 6,
+      "digest": "9d78fca8cc8ff150aaab8db0e70083d50376e3bb08b24d771486e3fc5fc9f75b",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The exact existing gateway config and deploy-config filename are retained as inputs to cf merge and parity checks while OpenNext remains the live publisher."
+      }
+    },
+    "scripts/ci/gateway-cf-publication.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "1ff9b19af583f83e54835a3575f9f2758baefc1a4fc0b046de223b6c746b4a1e",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The exact existing gateway config and deploy-config filename are retained as inputs to cf merge and parity checks while OpenNext remains the live publisher."
       }
     },
     "scripts/ci/gateway-deploy-config.mjs": {
@@ -3044,7 +3093,6 @@
       "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
     },
     "scripts/ci/native-abuse-guard.runtime.mjs": {
-      "kind": "script",
       "lines": 4,
       "uses": 4,
       "digest": "2a4ff2672f33bcc9db01a1a41d82df83b619812216f7bc6ebfa095d0d475e2f9",
@@ -3234,6 +3282,16 @@
       },
       "digest": "32a78472daacd0a61c79d840aa61f6c6d0fb6315dc002606b05e7c17753e2acd"
     },
+    "scripts/ci/pr-label-gate.test.js": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "d9c0ac01fd15d33a52031eb85ced5517382addfb4216c047153181de54667c51",
+      "gap": "security-path-classification",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The comment names the historical trigger filter removed in the protected workflow test. It invokes no CLI."
+      }
+    },
     "scripts/ci/pre-seal-doctor.mjs": {
       "lines": 5,
       "uses": 5,
@@ -3345,7 +3403,6 @@
       "digest": "99d635ce313af1ff602ce34891806c8cf6893d6ed07702d1d19d68dbb4ea1ddc"
     },
     "scripts/ci/shared-secret-scripts.test.mjs": {
-      "kind": "script",
       "lines": 1,
       "uses": 1,
       "gap": "opennext-web-families",
@@ -3356,7 +3413,6 @@
       "digest": "7f99d25f88b58dd1219e7d29c9f033d03d2b2231f06f29ba32d07570229c34d1"
     },
     "scripts/ci/shared-secret-targets.mjs": {
-      "kind": "script",
       "lines": 1,
       "uses": 1,
       "gap": "opennext-web-families",
@@ -3426,6 +3482,16 @@
       },
       "digest": "c867d467771e3cf280a1a0d98056ce09965cdabd0abd1c5a210a0b01ea39393c"
     },
+    "scripts/ci/wave1-cf-output.test.mjs": {
+      "lines": 5,
+      "uses": 5,
+      "digest": "4529ef9ee2df3c26ca2a714c2082685e2c56b5573dd6a7a76cdef5a0b365d71e",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+      }
+    },
     "scripts/ci/wave1-native-artifact.mjs": {
       "lines": 4,
       "uses": 4,
@@ -3435,6 +3501,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "21483c0dcd7291dffcd7a7277ef38f24f7b492b9ac4aba4375ae365be36dde03"
+    },
+    "scripts/ci/wave1-native-calendar-profile.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "669900d65c963608b1f615df9006f66e969b5c0bc8f8b935e6a2337dc1537afb",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+      }
     },
     "scripts/ci/wave1-native-finance-profile.test.mjs": {
       "lines": 1,
@@ -3447,13 +3523,13 @@
       "digest": "a51f22c1c38b2cb295ffc065b1e7eb451f62d9d0565d11b39d422e5903ab829d"
     },
     "scripts/ci/wave1-native-production-test-helper.mjs": {
-      "gap": "void-wave1-publication",
       "lines": 1,
       "uses": 1,
-      "digest": "6daeb014ea10d181a459dfbd5d6d81198d90a5669b0b7648fdd212c87d9f97ed",
+      "digest": "3b784b469c0f6f77e6e3d86801c7ac34c0bb49f8ffd96746a1c08411d3ec773b",
+      "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6963",
-        "reason": "CI repair after the reviewed diagnostic extraction: lower retained CLI counts and admit only the relocated fixture output-file contract; no new invocation."
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
       }
     },
     "scripts/ci/wave1-native-production.test.mjs": {
@@ -3515,6 +3591,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "5ce11fab75df1f5880c6fc88e29b795d31719025350fb56f46e023691532732f"
+    },
+    "scripts/ci/wave1-native-upload-error.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "digest": "825147dd6407aaf9234fc4eb710e181a8ffe0630879714d3f59553308c44140a",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
+        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+      }
     },
     "scripts/ci/wave1-web-seal.mjs": {
       "lines": 2,
@@ -3597,7 +3683,6 @@
       "digest": "d74417773f1b71014c5cebea5eedad445d536e323dd2c16b92d46de3e21627b4"
     },
     "scripts/public-schema-guard/callers.js": {
-      "kind": "script",
       "lines": 1,
       "uses": 1,
       "digest": "5dbac457454fda41e20d3ce0dbb2d0229bb9b67fd5ec222f1f955d3b02b033e9",
@@ -3646,6 +3731,16 @@
         "reason": "start-bridge codemod pins the Wrangler devDependency for generated apps; each generated app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "003e42560c1dfe190858c746acda20f00175843f3be72b2a0f27e7b88ff36454"
+    },
+    "scripts/start-bridge-codemod/html-asset-acceptance.mjs": {
+      "lines": 2,
+      "uses": 3,
+      "digest": "3f91764d0598bd7f2d01a50abb21b8cf7c36a28548ab7df477f2e50b9a1ca5e5",
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/629c5f5e572ad5e93164f3bc9531a74c0d18e149",
+        "reason": "The asset acceptance helper resolves the existing Miniflare supplier and runs sealed bytes locally to check asset responses."
+      }
     },
     "scripts/start-bridge-codemod/plan.test.mjs": {
       "lines": 3,
