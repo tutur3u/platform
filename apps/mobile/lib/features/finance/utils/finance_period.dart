@@ -82,6 +82,18 @@ class FinancePeriod extends Equatable {
   List<Object?> get props => [kind, start];
 }
 
+/// The calendar period [query] covers exactly, or null for all time or a
+/// range that is no single week, month or year.
+FinancePeriod? financePeriodOf(FinanceTransactionQuery query) {
+  final start = query.start;
+  if (start == null) return null;
+  for (final kind in FinancePeriodKind.values) {
+    final period = FinancePeriod.containing(kind, start);
+    if (period.start == start && period.end == query.end) return period;
+  }
+  return null;
+}
+
 /// Money in and out per bucket of [period], from non-transfer rows.
 ({List<double> income, List<double> expense}) financePeriodBuckets(
   FinancePeriod period,

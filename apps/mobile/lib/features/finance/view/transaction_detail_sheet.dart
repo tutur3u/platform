@@ -636,7 +636,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                         : _showWalletQuickAction,
                   ),
                   if (!_transaction.isTransfer) ...[
-                    const shad.Gap(10),
+                    const _QuickActionDivider(),
                     _QuickActionTile(
                       icon: categoryIcon,
                       label: l10n.financeCategory,
@@ -649,7 +649,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                           : _showCategoryQuickAction,
                     ),
                   ],
-                  const shad.Gap(10),
+                  const _QuickActionDivider(),
                   _QuickActionTile(
                     icon: Icons.sell_outlined,
                     label: l10n.financeTags,
@@ -659,7 +659,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                         ? null
                         : _showTagQuickAction,
                   ),
-                  const shad.Gap(10),
+                  const _QuickActionDivider(),
                   _QuickActionTile(
                     icon: Icons.schedule_rounded,
                     label: l10n.financeTakenAt,
@@ -669,7 +669,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
                         ? null
                         : _showTakenAtQuickAction,
                   ),
-                  const shad.Gap(10),
+                  const _QuickActionDivider(),
                   _QuickActionToggleTile(
                     icon: Icons.insights_outlined,
                     label: l10n.financeReportOptIn,
@@ -689,7 +689,7 @@ class _TransactionDetailSheetState extends State<_TransactionDetailSheet> {
               const shad.Gap(14),
               _DetailSectionCard(
                 title: l10n.settingsTitle,
-                child: Wrap(spacing: 8, runSpacing: 8, children: privacyChips),
+                child: _DetailChips(chips: privacyChips),
               ),
             ],
             if (widget.canDelete) ...[

@@ -80,6 +80,7 @@ class _TransactionSummaryCard extends StatelessWidget {
   }
 }
 
+/// A titled group: an overline above one card that holds its rows.
 class _DetailSectionCard extends StatelessWidget {
   const _DetailSectionCard({required this.title, required this.child});
 
@@ -88,25 +89,74 @@ class _DetailSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinancePanel(
-      backgroundColor: FinancePalette.of(context).elevatedPanel,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: shad.Theme.of(
-              context,
-            ).typography.small.copyWith(fontWeight: FontWeight.w800),
+    final tokens = context.tokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 8),
+          child: Semantics(
+            header: true,
+            child: Text(
+              title,
+              style: tokens.typography.caption.copyWith(
+                color: tokens.colorScheme.mutedForeground,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
-          const shad.Gap(14),
-          child,
-        ],
-      ),
+        ),
+        AppCard(padding: const EdgeInsets.symmetric(vertical: 4), child: child),
+      ],
     );
   }
 }
 
+/// Privacy chips inside a section card.
+class _DetailChips extends StatelessWidget {
+  const _DetailChips({required this.chips});
+
+  final List<Widget> chips;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    child: Wrap(spacing: 8, runSpacing: 8, children: chips),
+  );
+}
+
+/// Hairline between quick-action rows, inset past their icons.
+class _QuickActionDivider extends StatelessWidget {
+  const _QuickActionDivider();
+
+  @override
+  Widget build(BuildContext context) => Divider(
+    height: 1,
+    thickness: 1,
+    indent: 58,
+    color: context.tokens.colorScheme.border.withValues(alpha: 0.6),
+  );
+}
+
+class _QuickActionIcon extends StatelessWidget {
+  const _QuickActionIcon({required this.icon, required this.color});
+
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 32,
+    height: 32,
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: context.tokens.borderRadiusMd,
+    ),
+    child: Icon(icon, size: 16, color: color),
+  );
+}
+
+/// One editable property: icon, label over its value, and a chevron.
 class _QuickActionTile extends StatelessWidget {
   const _QuickActionTile({
     required this.icon,
@@ -122,64 +172,47 @@ class _QuickActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: theme.colorScheme.border.withValues(alpha: 0.72),
-            ),
-          ),
+    final tokens = context.tokens;
+    final colors = tokens.colorScheme;
+    return InkWell(
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 56),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
+            spacing: 12,
             children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, size: 16, color: theme.colorScheme.primary),
-              ),
-              const shad.Gap(12),
+              _QuickActionIcon(icon: icon, color: colors.primary),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: theme.typography.xSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.35,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tokens.typography.caption.copyWith(
+                        color: colors.mutedForeground,
                       ),
                     ),
-                    const shad.Gap(4),
                     Text(
                       value,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.typography.small.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: tokens.typography.uiSm.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
-              const shad.Gap(10),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: theme.colorScheme.mutedForeground,
-              ),
+              if (onTap != null)
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: colors.mutedForeground,
+                ),
             ],
           ),
         ),
@@ -209,57 +242,45 @@ class _QuickActionToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final accent = value
-        ? theme.colorScheme.primary
-        : theme.colorScheme.mutedForeground;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.card,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: accent.withValues(alpha: value ? 0.36 : 0.18),
+    final tokens = context.tokens;
+    final colors = tokens.colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 56),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          spacing: 12,
+          children: [
+            _QuickActionIcon(
+              icon: icon,
+              color: value ? colors.primary : colors.mutedForeground,
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.caption.copyWith(
+                      color: colors.mutedForeground,
+                    ),
+                  ),
+                  Text(
+                    value ? activeLabel : inactiveLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: tokens.typography.uiSm.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            shad.Switch(value: value, onChanged: enabled ? onChanged : null),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 16, color: accent),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.35,
-                  ),
-                ),
-                const shad.Gap(4),
-                Text(
-                  value ? activeLabel : inactiveLabel,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const shad.Gap(12),
-          shad.Switch(value: value, onChanged: enabled ? onChanged : null),
-        ],
       ),
     );
   }

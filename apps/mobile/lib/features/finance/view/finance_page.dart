@@ -291,6 +291,7 @@ class _Recent extends StatelessWidget {
                 .toList(growable: false),
             fallbackCurrency: state.workspaceCurrency,
             onTap: onTransactionTap,
+            showNet: true,
             now: now,
           ),
       ],

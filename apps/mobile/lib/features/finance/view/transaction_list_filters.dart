@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_filter_bar.dart';
@@ -12,31 +11,25 @@ import 'package:mobile/features/finance/view/finance_overview_month.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Months the month picker offers, newest first.
-const transactionMonthChoices = 12;
-
 typedef TransactionFiltersChanged =
     void Function(FinanceTransactionQuery query, String? walletId);
 
-/// Kind pills, month, wallet and category pickers, and the In/Out totals of
-/// whatever the filters select.
+/// Kind pills, wallet and category chips, and the In/Out totals of whatever
+/// the filters select. The period has its own pinned bar.
 class TransactionListFilters extends StatelessWidget {
   const TransactionListFilters({
     required this.state,
     required this.onChanged,
-    this.now,
     super.key,
   });
 
   final TransactionListState state;
   final TransactionFiltersChanged onChanged;
-  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final query = state.query;
-    final locale = Localizations.localeOf(context).toString();
     final start = query.start;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,15 +65,6 @@ class TransactionListFilters extends StatelessWidget {
             spacing: AppSpacing.sm,
             children: [
               AppFilterButton(
-                key: const ValueKey('finance-filter-month'),
-                icon: LucideIcons.calendar,
-                label: start == null
-                    ? l10n.financeAllTime
-                    : DateFormat.yMMM(locale).format(start),
-                active: start != null,
-                onPressed: () => unawaited(_pickMonth(context)),
-              ),
-              AppFilterButton(
                 key: const ValueKey('finance-filter-wallet'),
                 icon: LucideIcons.wallet,
                 label: state.selectedWallet?.name ?? l10n.financeAllWallets,
@@ -107,42 +91,6 @@ class TransactionListFilters extends StatelessWidget {
           _FlowRow(state: state),
         ],
       ],
-    );
-  }
-
-  Future<void> _pickMonth(BuildContext context) async {
-    final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
-    final today = now ?? DateTime.now();
-    final months = [
-      for (var i = 0; i < transactionMonthChoices; i++)
-        DateTime(today.year, today.month - i),
-    ];
-    final current = state.query.start;
-    final picked = await showAppChoiceSheet<String>(
-      context: context,
-      title: l10n.financeMonth,
-      selected: current == null ? '' : current.toIso8601String(),
-      choices: [
-        for (final month in months)
-          AppSheetChoice(
-            value: month.toIso8601String(),
-            label: DateFormat.yMMMM(locale).format(month),
-          ),
-        AppSheetChoice(value: '', label: l10n.financeAllTime),
-      ],
-    );
-    if (!context.mounted || picked == null) return;
-    final month = picked.isEmpty ? null : DateTime.parse(picked);
-    onChanged(
-      month == null
-          ? state.query.copyWith(start: null, end: null)
-          : FinanceTransactionQuery.month(
-              month,
-              kind: state.query.kind,
-              categoryId: state.query.categoryId,
-            ),
-      state.walletId,
     );
   }
 

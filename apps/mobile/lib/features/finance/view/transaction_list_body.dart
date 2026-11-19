@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
+import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/view/transaction_list_empty.dart';
 import 'package:mobile/features/finance/view/transaction_list_filters.dart';
+import 'package:mobile/features/finance/widgets/finance_period_bar.dart';
 import 'package:mobile/features/finance/widgets/finance_transaction_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -41,82 +43,110 @@ class TransactionListBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final groups = groupTransactionsByDay(state.transactions);
+    final today = now ?? DateTime.now();
+    final query = state.query;
     return NovaRefreshIndicator(
       onRefresh: onRefresh,
-      child: AppPageListView.builder(
+      child: AppPageScrollView(
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        itemCount: groups.length + 2,
-        itemBuilder: (context, index) {
-          if (index == 0) {
-            return TransactionListFilters(
+        slivers: [
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: FinancePinnedHeaderDelegate(
+              extent: financePeriodBarExtent(context),
+              child: FinancePeriodBar(
+                key: const ValueKey('finance-transactions-period'),
+                period: financePeriodOf(query),
+                now: today,
+                onChanged: (period) => onFiltersChanged(
+                  query.copyWith(start: period.start, end: period.end),
+                  state.walletId,
+                ),
+                onAllTime: () => onFiltersChanged(
+                  query.copyWith(start: null, end: null),
+                  state.walletId,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: TransactionListFilters(
               state: state,
-              now: now,
               onChanged: onFiltersChanged,
-            );
-          }
-          if (index == groups.length + 1) {
-            if (state.status == TransactionListStatus.loading ||
-                state.status == TransactionListStatus.initial) {
-              return const Padding(
-                padding: EdgeInsets.only(top: AppSpacing.lg),
-                child: AppSkeletonRows(count: 3),
-              );
-            }
-            if (state.status == TransactionListStatus.error) {
-              return Padding(
-                padding: const EdgeInsets.only(top: AppSpacing.lg),
-                child: AppStateMessage(
-                  icon: Icons.error_outline,
-                  title: l10n.commonSomethingWentWrong,
-                  message: state.error,
-                  actionLabel: l10n.commonRetry,
-                  onAction: onRefresh,
-                ),
-              );
-            }
-            if (state.hasMore && onLoadMore != null) {
-              return Center(
-                child: TextButton(
-                  onPressed: onLoadMore,
-                  child: Text(l10n.commonLoadMore),
-                ),
-              );
-            }
-            return groups.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.lg),
-                    child: TransactionListEmptyState(
-                      state: state,
-                      onCreate: onCreate,
-                      onClearFilters: onClearFilters,
-                      onClearSearch: onClearSearch ?? onClearFilters,
-                    ),
-                  )
-                : const SizedBox.shrink();
-          }
-          final group = groups[index - 1];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              FinanceDayHeader(
-                group: group,
-                fallbackCurrency: state.workspaceCurrency,
-                now: now,
-              ),
-              AppGroupedCard(
-                children: [
-                  for (final transaction in group.transactions)
-                    _row(transaction),
-                ],
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+          SliverList.builder(
+            itemCount: groups.length + 1,
+            itemBuilder: (context, index) => index == groups.length
+                ? _footer(context, groups.isEmpty)
+                : _group(groups[index]),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _footer(BuildContext context, bool empty) {
+    final l10n = context.l10n;
+    if (state.status == TransactionListStatus.loading ||
+        state.status == TransactionListStatus.initial) {
+      return const Padding(
+        padding: EdgeInsets.only(top: AppSpacing.lg),
+        child: AppSkeletonRows(count: 3),
+      );
+    }
+    if (state.status == TransactionListStatus.error) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.lg),
+        child: AppStateMessage(
+          icon: Icons.error_outline,
+          title: l10n.commonSomethingWentWrong,
+          message: state.error,
+          actionLabel: l10n.commonRetry,
+          onAction: onRefresh,
+        ),
+      );
+    }
+    if (state.hasMore && onLoadMore != null) {
+      return Center(
+        child: TextButton(
+          onPressed: onLoadMore,
+          child: Text(l10n.commonLoadMore),
+        ),
+      );
+    }
+    return empty
+        ? Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.lg),
+            child: TransactionListEmptyState(
+              state: state,
+              onCreate: onCreate,
+              onClearFilters: onClearFilters,
+              onClearSearch: onClearSearch ?? onClearFilters,
+            ),
+          )
+        : const SizedBox.shrink();
+  }
+
+  Widget _group(FinanceDayGroup group) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FinanceDayHeader(
+          group: group,
+          fallbackCurrency: state.workspaceCurrency,
+          now: now,
+        ),
+        AppGroupedCard(
+          dividerInset: 64,
+          children: [
+            for (final transaction in group.transactions) _row(transaction),
+          ],
+        ),
+      ],
     );
   }
 

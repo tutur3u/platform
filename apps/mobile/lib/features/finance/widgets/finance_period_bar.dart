@@ -16,19 +16,22 @@ double financePeriodBarExtent(BuildContext context) =>
     math.max(52, MediaQuery.textScalerOf(context).scale(22) + 30);
 
 /// Period stepper: previous, the period label, next (disabled past
-/// [now]) and a compact Week / Month / Year chooser. Drawn as a floating
-/// pill so it can stay pinned above scrolling content.
+/// [now]) and a compact Week / Month / Year chooser, which also offers All
+/// time when [onAllTime] is set. A null [period] is all time. Drawn as a
+/// floating pill so it can stay pinned above scrolling content.
 class FinancePeriodBar extends StatelessWidget {
   const FinancePeriodBar({
     required this.period,
     required this.onChanged,
     required this.now,
+    this.onAllTime,
     super.key,
   });
 
-  final FinancePeriod period;
+  final FinancePeriod? period;
   final ValueChanged<FinancePeriod> onChanged;
   final DateTime now;
+  final VoidCallback? onAllTime;
 
   String _kindLabel(BuildContext context, FinancePeriodKind kind) =>
       switch (kind) {
@@ -38,18 +41,27 @@ class FinancePeriodBar extends StatelessWidget {
       };
 
   Future<void> _pickKind(BuildContext context) async {
-    final kind = await showAppChoiceSheet<FinancePeriodKind>(
+    const allTime = 'all';
+    final period = this.period;
+    final picked = await showAppChoiceSheet<String>(
       context: context,
       title: context.l10n.financeBudgetPeriod,
-      selected: period.kind,
+      selected: period?.kind.name ?? allTime,
       choices: [
         for (final kind in FinancePeriodKind.values)
-          AppSheetChoice(value: kind, label: _kindLabel(context, kind)),
+          AppSheetChoice(value: kind.name, label: _kindLabel(context, kind)),
+        if (onAllTime != null)
+          AppSheetChoice(value: allTime, label: context.l10n.financeAllTime),
       ],
     );
-    if (kind == null || kind == period.kind) return;
+    if (picked == null || picked == (period?.kind.name ?? allTime)) return;
+    if (picked == allTime) {
+      onAllTime?.call();
+      return;
+    }
+    final kind = FinancePeriodKind.values.byName(picked);
     // A new length keeps the period that contains the current start.
-    final anchor = period.contains(now) ? now : period.start;
+    final anchor = period == null || period.contains(now) ? now : period.start;
     onChanged(FinancePeriod.containing(kind, anchor));
   }
 
@@ -59,8 +71,8 @@ class FinancePeriodBar extends StatelessWidget {
     final colors = tokens.colorScheme;
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
-    final next = period.shift(1);
-    final canGoNext = !next.start.isAfter(now);
+    final period = this.period;
+    final next = period?.shift(1);
     return Container(
       key: const ValueKey('finance-period-bar'),
       height: financePeriodBarExtent(context) - AppSpacing.sm,
@@ -76,11 +88,13 @@ class FinancePeriodBar extends StatelessWidget {
           AppIconButton(
             icon: const Icon(LucideIcons.chevronLeft),
             tooltip: l10n.financePreviousPeriod,
-            onPressed: () => onChanged(period.shift(-1)),
+            onPressed: period == null
+                ? null
+                : () => onChanged(period.shift(-1)),
           ),
           Expanded(
             child: Text(
-              period.label(locale),
+              period?.label(locale) ?? l10n.financeAllTime,
               key: const ValueKey('finance-period-label'),
               textAlign: TextAlign.center,
               maxLines: 1,
@@ -94,13 +108,17 @@ class FinancePeriodBar extends StatelessWidget {
           AppIconButton(
             icon: const Icon(LucideIcons.chevronRight),
             tooltip: l10n.financeNextPeriod,
-            onPressed: canGoNext ? () => onChanged(next) : null,
+            onPressed: next != null && !next.start.isAfter(now)
+                ? () => onChanged(next)
+                : null,
           ),
           Flexible(
             child: AppFilterButton(
               key: const ValueKey('finance-period-kind'),
               icon: LucideIcons.calendarRange,
-              label: _kindLabel(context, period.kind),
+              label: period == null
+                  ? l10n.financeBudgetPeriod
+                  : _kindLabel(context, period.kind),
               onPressed: () => unawaited(_pickKind(context)),
             ),
           ),

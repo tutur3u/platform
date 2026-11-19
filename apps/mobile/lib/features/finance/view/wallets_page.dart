@@ -11,8 +11,10 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_icon_button.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_rich_row.dart';
+import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
@@ -348,32 +350,36 @@ class _WalletsViewState extends State<_WalletsView> {
       );
     }
 
-    return ListView.separated(
+    final wsId =
+        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+    return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: pagePadding,
-      itemCount: visibleWallets.length,
-      separatorBuilder: (context, index) => const shad.Gap(AppLayout.itemGap),
-      itemBuilder: (context, index) {
-        final wallet = visibleWallets[index];
-        return PendingSyncFrame(
-          workspaceId:
-              context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '',
-          entityId: wallet.id,
-          feature: 'finance',
-          child: _WalletCard(
-            wallet: wallet,
-            currency: wallet.currency ?? _workspaceCurrency!,
-            showAmounts: showAmounts,
-            onTap: () => _openWallet(wallet),
-            onEdit: canManageFinance(context, 'update_wallets')
-                ? () => _onEdit(wallet)
-                : null,
-            onDelete: canManageFinance(context, 'delete_wallets')
-                ? () => _onDelete(wallet)
-                : null,
-          ),
-        );
-      },
+      children: [
+        AppGroupedCard(
+          dividerInset: 64,
+          children: [
+            for (final wallet in visibleWallets)
+              PendingSyncFrame(
+                workspaceId: wsId,
+                entityId: wallet.id,
+                feature: 'finance',
+                child: _WalletRow(
+                  wallet: wallet,
+                  currency: wallet.currency ?? _workspaceCurrency!,
+                  showAmounts: showAmounts,
+                  onTap: () => _openWallet(wallet),
+                  onEdit: canManageFinance(context, 'update_wallets')
+                      ? () => _onEdit(wallet)
+                      : null,
+                  onDelete: canManageFinance(context, 'delete_wallets')
+                      ? () => _onDelete(wallet)
+                      : null,
+                ),
+              ),
+          ],
+        ),
+      ],
     );
   }
 
