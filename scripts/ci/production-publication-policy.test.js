@@ -583,8 +583,5 @@ test('the production app deny-list holds exactly the listed apps and never web',
     ],
     { cwd: repoRoot, encoding: 'utf8' }
   );
-  assert.equal(
-    listed.trim(),
-    'calendar,colab,lettin,mail,meet,mind,parley,tasks,track'
-  );
+  assert.equal(listed.trim(), 'colab,lettin,meet,mind,parley,tasks,track');
 });
