@@ -6,6 +6,7 @@
   // WEB_OPENNEXT_FAMILY=api-identity in a pruned, disposable CI checkout.
   "$schema": "../../../../node_modules/wrangler/config-schema.json",
   "name": "tuturuuu-web-api-identity",
+  "account_id": "e8912e2867beecc673d171907bf09649",
   "main": "../../.open-next/worker.js",
   "compatibility_date": "2026-10-12",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],

@@ -4,6 +4,7 @@
   // with the live Worker's variables and service bindings. See
   // apps/docs/build/devops/gateway-worker.mdx.
   "name": "tuturuuu-gateway",
+  "account_id": "e8912e2867beecc673d171907bf09649",
   "main": "src/worker.ts",
   "compatibility_date": "2026-09-28",
   "workers_dev": false,
