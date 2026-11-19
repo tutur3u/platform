@@ -557,6 +557,21 @@ abstract final class CrmEndpoints {
 
   static String users(String wsId) => '/api/v1/workspaces/$wsId/users';
 
+  static String reports(String wsId) =>
+      '/api/v1/workspaces/$wsId/users/reports?page=1&pageSize=30';
+
+  static String approvals(String wsId, {required String kind}) =>
+      '/api/v1/workspaces/$wsId/users/approvals?kind=$kind&status=pending&page=1&limit=30';
+
+  static String topicAnnouncements(String wsId) =>
+      '/api/v1/workspaces/$wsId/topic-announcements?page=1&pageSize=30';
+
+  static String groupIndicators(String wsId, String groupId) =>
+      '${userGroup(wsId, groupId)}/indicators';
+
+  static String guestUsers(String wsId) =>
+      '/api/v1/workspaces/$wsId/users/database?page=1&pageSize=50&status=active';
+
   static String user(String wsId, String userId) =>
       '/api/v1/workspaces/$wsId/users/$userId';
 

@@ -2448,6 +2448,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsAbsent => 'Vắng';
 
   @override
+  String get contactsAnnouncements => 'Thông báo';
+
+  @override
+  String get contactsApprovals => 'Phê duyệt';
+
+  @override
   String get contactsAttendance => 'Điểm danh';
 
   @override
@@ -2526,6 +2532,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsGroups => 'Nhóm';
 
   @override
+  String get contactsGuestLeads => 'Khách tiềm năng';
+
+  @override
   String get contactsHeroQuestion => 'Ai cần được chú ý?';
 
   @override
@@ -2533,6 +2542,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get contactsLinkedAccounts => 'Tài khoản đã liên kết';
+
+  @override
+  String get contactsMetrics => 'Chỉ số';
 
   @override
   String get contactsPeople => 'Mọi người';
@@ -2544,16 +2556,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsPermissionDenied => 'Bạn không có quyền xem danh bạ này.';
 
   @override
+  String get contactsReports => 'Báo cáo';
+
+  @override
   String get contactsSaved => 'Đã lưu.';
 
   @override
   String get contactsSchedule => 'Lịch';
 
   @override
+  String get contactsSections => 'Mục';
+
+  @override
   String get contactsSearchHint => 'Tìm liên hệ theo tên, email hoặc số điện thoại';
 
   @override
   String get contactsStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get contactsStructure => 'Cơ cấu';
 
   @override
   String get contactsTagColor => 'Màu';
@@ -2569,6 +2590,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get contactsTitle => 'Danh bạ';
+
+  @override
+  String get contactsTutoring => 'Phụ đạo';
+
+  @override
+  String get contactsWorkforce => 'Nhân sự';
+
+  @override
+  String get contactsWorkspaceAttendance => 'Điểm danh';
 
   @override
   String get crmAddFeedback => 'Thêm phản hồi';

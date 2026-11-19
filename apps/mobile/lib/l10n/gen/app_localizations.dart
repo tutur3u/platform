@@ -4783,6 +4783,18 @@ abstract class AppLocalizations {
   /// **'Absent'**
   String get contactsAbsent;
 
+  /// No description provided for @contactsAnnouncements.
+  ///
+  /// In en, this message translates to:
+  /// **'Announcements'**
+  String get contactsAnnouncements;
+
+  /// No description provided for @contactsApprovals.
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get contactsApprovals;
+
   /// No description provided for @contactsAttendance.
   ///
   /// In en, this message translates to:
@@ -4939,6 +4951,12 @@ abstract class AppLocalizations {
   /// **'Groups'**
   String get contactsGroups;
 
+  /// No description provided for @contactsGuestLeads.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest leads'**
+  String get contactsGuestLeads;
+
   /// No description provided for @contactsHeroQuestion.
   ///
   /// In en, this message translates to:
@@ -4956,6 +4974,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Linked accounts'**
   String get contactsLinkedAccounts;
+
+  /// No description provided for @contactsMetrics.
+  ///
+  /// In en, this message translates to:
+  /// **'Metrics'**
+  String get contactsMetrics;
 
   /// No description provided for @contactsPeople.
   ///
@@ -4975,6 +4999,12 @@ abstract class AppLocalizations {
   /// **'You do not have permission to view contacts.'**
   String get contactsPermissionDenied;
 
+  /// No description provided for @contactsReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get contactsReports;
+
   /// No description provided for @contactsSaved.
   ///
   /// In en, this message translates to:
@@ -4987,6 +5017,12 @@ abstract class AppLocalizations {
   /// **'Schedule'**
   String get contactsSchedule;
 
+  /// No description provided for @contactsSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Sections'**
+  String get contactsSections;
+
   /// No description provided for @contactsSearchHint.
   ///
   /// In en, this message translates to:
@@ -4998,6 +5034,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start date'**
   String get contactsStartDate;
+
+  /// No description provided for @contactsStructure.
+  ///
+  /// In en, this message translates to:
+  /// **'Structure'**
+  String get contactsStructure;
 
   /// No description provided for @contactsTagColor.
   ///
@@ -5028,6 +5070,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contacts'**
   String get contactsTitle;
+
+  /// No description provided for @contactsTutoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Tutoring'**
+  String get contactsTutoring;
+
+  /// No description provided for @contactsWorkforce.
+  ///
+  /// In en, this message translates to:
+  /// **'Workforce'**
+  String get contactsWorkforce;
+
+  /// No description provided for @contactsWorkspaceAttendance.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get contactsWorkspaceAttendance;
 
   /// No description provided for @crmAddFeedback.
   ///

@@ -117,6 +117,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -800));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Customer'));
       await tester.pumpAndSettle();
       expect(

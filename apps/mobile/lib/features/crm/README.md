@@ -30,6 +30,13 @@ mobile directory against that surface.
 | Notes | Feedback on a person and group | Feedback sheet, gated by group permissions |
 | Permissions | Public info, private info, group view, audit management, create/update/delete | Same permission keys. Missing private permission removes private fields from the row and the detail |
 | Overview | Users dashboard | Compact stat row: people, groups, tags, and how many loaded people need attention. It is not the web archived and report counters |
+| Reports, approvals, announcements | Full queues | Sections list: report title and stage, pending approvals, announcement title |
+| Workspace attendance | Group day grid | Pick a group and mark today, without a session |
+| Guest leads | Threshold RPC | Guest people on the loaded database page |
+| Tutoring | Tutoring workspace | Upcoming group sessions |
+| Metrics | Per-group indicators | Pick a group, then its indicators |
+| Structure | Org chart | Group names |
+| Workforce | Contracts | Loaded people. Contract fields are not on the contacts API |
 | Attendance, reports, approvals, guest leads, tutoring, metrics, structure, topic announcements, workforce | Contacts navigation | Not in this module |
 
 Roles stay on the workspace permission set (`view_users_public_info`,

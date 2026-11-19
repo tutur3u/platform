@@ -2462,6 +2462,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsAbsent => 'Absent';
 
   @override
+  String get contactsAnnouncements => 'Announcements';
+
+  @override
+  String get contactsApprovals => 'Approvals';
+
+  @override
   String get contactsAttendance => 'Attendance';
 
   @override
@@ -2540,6 +2546,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsGroups => 'Groups';
 
   @override
+  String get contactsGuestLeads => 'Guest leads';
+
+  @override
   String get contactsHeroQuestion => 'Who needs attention?';
 
   @override
@@ -2547,6 +2556,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactsLinkedAccounts => 'Linked accounts';
+
+  @override
+  String get contactsMetrics => 'Metrics';
 
   @override
   String get contactsPeople => 'People';
@@ -2558,16 +2570,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsPermissionDenied => 'You do not have permission to view contacts.';
 
   @override
+  String get contactsReports => 'Reports';
+
+  @override
   String get contactsSaved => 'Saved.';
 
   @override
   String get contactsSchedule => 'Schedule';
 
   @override
+  String get contactsSections => 'Sections';
+
+  @override
   String get contactsSearchHint => 'Search contacts by name, email, or phone';
 
   @override
   String get contactsStartDate => 'Start date';
+
+  @override
+  String get contactsStructure => 'Structure';
 
   @override
   String get contactsTagColor => 'Color';
@@ -2583,6 +2604,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get contactsTitle => 'Contacts';
+
+  @override
+  String get contactsTutoring => 'Tutoring';
+
+  @override
+  String get contactsWorkforce => 'Workforce';
+
+  @override
+  String get contactsWorkspaceAttendance => 'Attendance';
 
   @override
   String get crmAddFeedback => 'Add feedback';

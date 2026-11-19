@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
 class CrmRepository {
@@ -231,6 +232,54 @@ class CrmRepository {
       payload: payload,
       entityId: groupId,
     );
+  }
+
+  Future<List<ContactSectionRecord>> loadReports(String wsId) async {
+    return contactReportRecords(await _api.getJson(CrmEndpoints.reports(wsId)));
+  }
+
+  Future<List<ContactSectionRecord>> loadApprovals(String wsId) async {
+    final records = <ContactSectionRecord>[];
+    for (final kind in const ['reports', 'posts']) {
+      try {
+        records.addAll(
+          contactApprovalRecords(
+            await _api.getJson(CrmEndpoints.approvals(wsId, kind: kind)),
+          ),
+        );
+      } on ApiException catch (error) {
+        if (error.statusCode != 403) rethrow;
+      }
+    }
+    return records;
+  }
+
+  Future<List<ContactSectionRecord>> loadAnnouncements(String wsId) async {
+    return contactAnnouncementRecords(
+      await _api.getJson(CrmEndpoints.topicAnnouncements(wsId)),
+    );
+  }
+
+  Future<List<ContactSectionRecord>> loadMetrics(
+    String wsId,
+    String groupId,
+  ) async {
+    return contactMetricRecords(
+      await _api.getJson(CrmEndpoints.groupIndicators(wsId, groupId)),
+    );
+  }
+
+  Future<List<ContactSectionRecord>> loadGuestLeads(String wsId) async {
+    final json = await _api.getJson(CrmEndpoints.guestUsers(wsId));
+    final rows = json['data'];
+    if (rows is! List) return const [];
+    final guests = rows.whereType<Map<dynamic, dynamic>>().where((row) {
+      final guest = row['is_guest'];
+      return guest == true || guest == 'true';
+    });
+    return contactGuestLeadRecords({
+      'data': [for (final row in guests) Map<String, dynamic>.from(row)],
+    });
   }
 
   Future<List<CrmSession>> getSessions(

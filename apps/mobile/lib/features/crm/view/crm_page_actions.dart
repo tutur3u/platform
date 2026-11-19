@@ -294,6 +294,11 @@ extension _CrmPageActions on _CrmPageState {
               value: 'duplicates',
               icon: LucideIcons.gitMerge,
             ),
+          AppSheetAction(
+            label: l10n.contactsSections,
+            value: 'sections',
+            icon: LucideIcons.layoutGrid,
+          ),
         ],
       ),
     );
@@ -307,7 +312,43 @@ extension _CrmPageActions on _CrmPageState {
         await _exportUsers();
       case 'duplicates':
         await _showDuplicateSheet();
+      case 'sections':
+        await _showSectionsSheet();
     }
+  }
+
+  Future<void> _showSectionsSheet() async {
+    final l10n = context.l10n;
+    final section = await _showOwnedSheet<_ContactSection>(
+      context: context,
+      builder: (context) => AppActionSheet<_ContactSection>(
+        title: l10n.contactsSections,
+        actions: [
+          for (final item in _ContactSection.values)
+            AppSheetAction(
+              label: _sectionTitleFor(l10n, item),
+              value: item,
+              icon: LucideIcons.contact,
+            ),
+        ],
+      ),
+    );
+    if (!mounted || section == null) return;
+    await _openSection(section);
+  }
+
+  String _sectionTitleFor(AppLocalizations l10n, _ContactSection section) {
+    return switch (section) {
+      _ContactSection.reports => l10n.contactsReports,
+      _ContactSection.attendance => l10n.contactsWorkspaceAttendance,
+      _ContactSection.approvals => l10n.contactsApprovals,
+      _ContactSection.guestLeads => l10n.contactsGuestLeads,
+      _ContactSection.tutoring => l10n.contactsTutoring,
+      _ContactSection.metrics => l10n.contactsMetrics,
+      _ContactSection.structure => l10n.contactsStructure,
+      _ContactSection.announcements => l10n.contactsAnnouncements,
+      _ContactSection.workforce => l10n.contactsWorkforce,
+    };
   }
 
   Future<void> _showAttendance(CrmSession session) async {

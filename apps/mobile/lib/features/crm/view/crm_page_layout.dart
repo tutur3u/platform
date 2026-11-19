@@ -15,7 +15,9 @@ extension _CrmPageLayout on _CrmPageState {
           ShellTitleOverride(
             ownerId: 'contacts-title',
             locations: Routes.contactLocations,
-            title: selected == null
+            title: _section != null
+                ? _sectionTitle(l10n)
+                : selected == null
                 ? l10n.contactsTitle
                 : (contactNamedTitle(
                         displayName: selected.displayName,
@@ -151,7 +153,15 @@ extension _CrmPageLayout on _CrmPageState {
                 ),
             ],
           ),
-          if (selected != null)
+          if (_section != null)
+            ContactSectionList(
+              records: _sectionRecords,
+              loading: _sectionLoading,
+              error: _sectionError,
+              onRefresh: _reloadSection,
+              onOpen: _openSectionRecord,
+            )
+          else if (selected != null)
             _CrmUserDetail(
               user: selected,
               privateInfo: _userPermissions?.hasPrivateInfo ?? false,

@@ -23,6 +23,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/crm/utils/contact_identity.dart';
 import 'package:mobile/features/crm/utils/contact_schedule.dart';
+import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
@@ -30,6 +31,7 @@ import 'package:mobile/features/crm/view/contact_attendance_sheet.dart';
 import 'package:mobile/features/crm/view/contact_group_editor.dart';
 import 'package:mobile/features/crm/view/contact_list_row.dart';
 import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
+import 'package:mobile/features/crm/view/contact_section_list.dart';
 import 'package:mobile/features/crm/view/contact_tag_editor.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -49,6 +51,7 @@ part 'crm_page_actions.dart';
 part 'crm_page_data.dart';
 part 'crm_page_helpers.dart';
 part 'crm_page_layout.dart';
+part 'crm_sections.dart';
 part 'crm_user_detail.dart';
 part 'crm_user_form.dart';
 part 'crm_view_components.dart';
@@ -105,6 +108,11 @@ class _CrmPageState extends State<CrmWorkspace> {
   List<CrmAuditEvent> _auditEvents = const <CrmAuditEvent>[];
   List<CrmGroup> _groups = const <CrmGroup>[];
   List<CrmSession> _sessions = const <CrmSession>[];
+  _ContactSection? _section;
+  String? _sectionDrill;
+  List<ContactSectionRecord> _sectionRecords = const [];
+  bool _sectionLoading = false;
+  String? _sectionError;
   bool _sessionsLoading = false;
   String? _sessionsError;
   bool _isLoading = true;
@@ -218,7 +226,16 @@ class _CrmPageState extends State<CrmWorkspace> {
   }
 
   Future<void> _back() async {
-    if (_selectedUser != null) {
+    if (_sectionDrill != null) {
+      _updateState(() => _sectionDrill = null);
+      await _reloadSection();
+    } else if (_section != null) {
+      _updateState(() {
+        _section = null;
+        _sectionRecords = const [];
+        _sectionError = null;
+      });
+    } else if (_selectedUser != null) {
       _updateState(() => _selectedUser = null);
     } else if (_searching) {
       _resetSearch();
