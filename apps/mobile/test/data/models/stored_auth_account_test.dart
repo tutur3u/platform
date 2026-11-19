@@ -29,6 +29,8 @@ void main() {
 
     expect(debugString, isNot(contains('refresh-token-secret')));
     expect(debugString, isNot(contains('access-token-secret')));
+    expect(debugString, isNot(contains('user@example.com')));
+    expect(debugString, isNot(contains('User One')));
     expect(debugString, contains('refreshToken: [redacted]'));
     expect(debugString, contains('sessionJson: [redacted]'));
   });

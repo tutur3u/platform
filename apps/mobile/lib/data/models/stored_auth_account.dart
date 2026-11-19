@@ -103,9 +103,6 @@ class StoredAuthAccount extends Equatable {
         'lastActiveAt: $lastActiveAt, '
         'addedAt: $addedAt, '
         'sessionJson: $redactedSessionJson, '
-        'email: $email, '
-        'displayName: $displayName, '
-        'avatarUrl: $avatarUrl, '
         'lastWorkspaceId: $lastWorkspaceId, '
         'refreshToken: $_redactedSecret'
         ')';

@@ -1,7 +1,12 @@
 import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:mobile/core/constants/storage_keys.dart';
+import 'package:mobile/data/models/multi_account_store.dart';
+import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/repositories/multi_account_storage_service.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
@@ -48,6 +53,25 @@ Map<String, dynamic> _storedAccount({
   };
 }
 
+Map<String, dynamic> _sessionJson(
+  String id, {
+  bool expired = false,
+  String refreshToken = 'synthetic-refresh',
+}) {
+  String encode(Object value) =>
+      base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
+  final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  final exp = expired ? now - 120 : now + 3600;
+  final header = encode({'alg': 'HS256', 'typ': 'JWT'});
+  final payload = encode({'sub': id, 'iat': now - 360, 'exp': exp});
+  return {
+    'access_token': '$header.$payload.signature',
+    'refresh_token': refreshToken,
+    'token_type': 'bearer',
+    'user': _user(id).toJson(),
+  };
+}
+
 void main() {
   late SupabaseClient supabaseClient;
   late GoTrueClient goTrueClient;
@@ -57,6 +81,8 @@ void main() {
   late GoogleIdentityClient googleIdentityClient;
   late MultiAccountStorageService service;
   late Map<String, String> secureStorageValues;
+  late Future<http.Response> Function(http.Request) refreshResponse;
+  late List<http.Request> refreshRequests;
 
   setUp(() {
     supabaseClient = _MockSupabaseClient();
@@ -66,6 +92,12 @@ void main() {
     apiClient = _MockApiClient();
     googleIdentityClient = _MockGoogleIdentityClient();
     secureStorageValues = <String, String>{};
+    refreshRequests = [];
+    refreshResponse = (_) async => http.Response('{}', 500);
+    when(
+      () => supabaseClient.rest,
+    ).thenReturn(PostgrestClient('https://fictional.supabase.test/rest/v1'));
+    when(() => goTrueClient.headers).thenReturn({'apikey': 'synthetic-key'});
 
     when(() => supabaseClient.auth).thenReturn(goTrueClient);
     when(() => goTrueClient.currentSession).thenReturn(session);
@@ -109,8 +141,177 @@ void main() {
       secureStorage: secureStorage,
       apiClient: apiClient,
       googleIdentityClient: googleIdentityClient,
+      refreshHttpClient: MockClient((request) {
+        refreshRequests.add(request);
+        return refreshResponse(request);
+      }),
     );
   });
+
+  void seedSwitch({bool expired = false, String sessionOwner = 'target'}) {
+    final current = Session.fromJson(_sessionJson('current-user'))!;
+    when(() => goTrueClient.currentSession).thenReturn(current);
+    secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
+      'version': 1,
+      'activeAccountId': 'current-user',
+      'accounts': [
+        _storedAccount(id: 'current-user', lastActiveAt: 100),
+        {
+          ..._storedAccount(
+            id: 'target',
+            lastActiveAt: 90,
+            refreshToken: 'synthetic-refresh',
+          ),
+          'sessionJson': jsonEncode(
+            _sessionJson(sessionOwner, expired: expired),
+          ),
+          'lastWorkspaceId': 'target-workspace',
+        },
+      ],
+    });
+    when(() => goTrueClient.recoverSession(any())).thenAnswer((
+      invocation,
+    ) async {
+      final json = invocation.positionalArguments.single as String;
+      final restored = Session.fromJson(
+        jsonDecode(json) as Map<String, dynamic>,
+      )!;
+      when(() => goTrueClient.currentSession).thenReturn(restored);
+      when(() => goTrueClient.currentUser).thenReturn(restored.user);
+      return AuthResponse(session: restored);
+    });
+  }
+
+  MultiAccountStore readStore() => MultiAccountStore.fromJson(
+    jsonDecode(secureStorageValues[StorageKeys.multiAccountStore]!)
+        as Map<String, dynamic>,
+  );
+
+  test('restores a valid saved session without a network request', () async {
+    seedSwitch();
+    final events = <String>[];
+    final result = await service.switchToStoredAccount(
+      'target',
+      beforeActivate: () async {
+        expect(goTrueClient.currentUser!.id, 'current-user');
+        events.add('cleaned');
+      },
+    );
+
+    expect(result, StoredAccountSwitchResult.switched);
+    expect(events, ['cleaned']);
+    expect(refreshRequests, isEmpty);
+    verifyNever(() => apiClient.getJson(any()));
+    expect(goTrueClient.currentUser!.id, 'target');
+    expect(readStore().activeAccountId, 'target');
+    expect(readStore().accounts.first.lastWorkspaceId, 'target-workspace');
+  });
+
+  test(
+    'isolates a rejected refresh from the currently signed-in user',
+    () async {
+      seedSwitch(expired: true);
+      refreshResponse = (_) async =>
+          http.Response('{"error_code":"refresh_token_not_found"}', 400);
+
+      final result = await service.switchToStoredAccount(
+        'target',
+        beforeActivate: () async => fail('Activation must be skipped'),
+      );
+
+      expect(result, StoredAccountSwitchResult.signInRequired);
+      expect(goTrueClient.currentUser!.id, 'current-user');
+      expect(readStore().activeAccountId, 'current-user');
+      verifyNever(() => goTrueClient.recoverSession(any()));
+      verifyNever(() => goTrueClient.setSession(any()));
+      expect(
+        refreshRequests.single.url.toString(),
+        'https://fictional.supabase.test/auth/v1/token?grant_type=refresh_token',
+      );
+    },
+  );
+
+  test('keeps the current account after a transient refresh failure', () async {
+    seedSwitch(expired: true);
+    final result = await service.switchToStoredAccount('target');
+
+    expect(result, StoredAccountSwitchResult.failed);
+    expect(goTrueClient.currentUser!.id, 'current-user');
+    expect(readStore().activeAccountId, 'current-user');
+    verifyNever(() => goTrueClient.recoverSession(any()));
+  });
+
+  test(
+    'validates the account before activating a saved or refreshed session',
+    () async {
+      seedSwitch(sessionOwner: 'different-user');
+      expect(
+        await service.switchToStoredAccount('target'),
+        StoredAccountSwitchResult.failed,
+      );
+      expect(refreshRequests, isEmpty);
+      seedSwitch(expired: true);
+      refreshResponse = (_) async =>
+          http.Response(jsonEncode(_sessionJson('different-user')), 200);
+      expect(
+        await service.switchToStoredAccount('target'),
+        StoredAccountSwitchResult.failed,
+      );
+      expect(goTrueClient.currentUser!.id, 'current-user');
+      verifyNever(() => goTrueClient.recoverSession(any()));
+    },
+  );
+
+  test(
+    'saves refreshed credentials and preserves each account workspace',
+    () async {
+      seedSwitch(expired: true);
+      await service.updateActiveAccountWorkspaceContext('current-workspace');
+      refreshResponse = (_) async => http.Response(
+        jsonEncode(_sessionJson('target', refreshToken: 'synthetic-rotated')),
+        200,
+      );
+
+      expect(
+        await service.switchToStoredAccount('target'),
+        StoredAccountSwitchResult.switched,
+      );
+      expect(readStore().accounts.first.refreshToken, 'synthetic-rotated');
+      expect(readStore().accounts.first.lastWorkspaceId, 'target-workspace');
+      expect(readStore().accounts.last.lastWorkspaceId, 'current-workspace');
+
+      await service.updateActiveAccountWorkspaceContext('target-new-workspace');
+      expect(
+        readStore().accounts.first.lastWorkspaceId,
+        'target-new-workspace',
+      );
+      expect(readStore().accounts.last.lastWorkspaceId, 'current-workspace');
+    },
+  );
+
+  test(
+    'a failed cleanup retains the rotated token without activating it',
+    () async {
+      seedSwitch(expired: true);
+      refreshResponse = (_) async => http.Response(
+        jsonEncode(_sessionJson('target', refreshToken: 'synthetic-rotated')),
+        200,
+      );
+      final result = await service.switchToStoredAccount(
+        'target',
+        beforeActivate: () async => throw StateError('Cleanup failed'),
+      );
+
+      expect(result, StoredAccountSwitchResult.failed);
+      expect(readStore().activeAccountId, 'current-user');
+      expect(
+        readStore().accounts.singleWhere((a) => a.id == 'target').refreshToken,
+        'synthetic-rotated',
+      );
+      expect(goTrueClient.currentUser!.id, 'current-user');
+      verifyNever(() => goTrueClient.recoverSession(any()));
+    },
+  );
 
   test(
     'saves the refreshed token after profile lookup, not the old snapshot',
@@ -180,6 +381,19 @@ void main() {
     expect(hasActiveAccount, isTrue);
   });
 
+  test('removing a saved account preserves the active session', () async {
+    seedSwitch(expired: true);
+
+    final result = await service.removeStoredAccount('target');
+
+    expect(result.success, isTrue);
+    expect(readStore().accounts.single.id, 'current-user');
+    expect(readStore().activeAccountId, 'current-user');
+    expect(goTrueClient.currentUser!.id, 'current-user');
+    expect(refreshRequests, isEmpty);
+    verifyNever(() => goTrueClient.signOut());
+  });
+
   test(
     'removeStoredAccount signs out Google when removing final account',
     () async {
@@ -191,6 +405,7 @@ void main() {
         ],
       });
 
+      when(() => goTrueClient.currentUser).thenReturn(_user('only-user'));
       when(() => googleIdentityClient.signOut()).thenThrow(Exception('ignore'));
 
       final result = await service.removeStoredAccount('only-user');
@@ -216,6 +431,7 @@ void main() {
           _storedAccount(id: 'only-user', lastActiveAt: 100, refreshToken: ''),
         ],
       });
+      when(() => goTrueClient.currentUser).thenReturn(_user('only-user'));
       when(
         () => goTrueClient.signOut(),
       ).thenThrow(const AuthException('sign-out failed'));

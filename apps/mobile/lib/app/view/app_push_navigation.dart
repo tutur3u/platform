@@ -1,11 +1,53 @@
 part of 'app.dart';
 
 extension _AppPushNavigation on _AppState {
-  Future<void> _loadWorkspacesWithReminders() async {
-    await _workspaceCubit.loadWorkspaces();
-    if (!mounted) return;
-    _syncOfflinePreparationScope();
+  Future<void> _stopAccountServices() async {
+    // Stop private delivery and collection using the departing credentials.
+    await PushNotificationService.instance.disableTelemetry();
+    await ReminderService.instance.stopSession();
+    await PushNotificationService.instance.stopSession();
+  }
+
+  Future<void> _restoreCurrentAccountServices() async {
     final userId = _authCubit.state.user?.id;
+    if (!mounted ||
+        userId == null ||
+        _authCubit.state.status != AuthStatus.authenticated) {
+      return;
+    }
+    unawaited(_startPushSession(userId));
+    await ReminderService.instance.startWorkspaceSession(
+      userId,
+      _workspaceCubit.state,
+    );
+  }
+
+  bool _recordAccountWorkspace(WorkspaceState state) {
+    final userId = _authCubit.state.user?.id;
+    final workspaceId = state.currentWorkspace?.id;
+    if (userId == null ||
+        workspaceId == null ||
+        !_workspaceCubit.hasAuthenticatedActor ||
+        workspaceId != _workspaceCubit.state.currentWorkspace?.id) {
+      return false;
+    }
+    unawaited(ReminderService.instance.startWorkspaceSession(userId, state));
+    unawaited(_authCubit.updateActiveAccountWorkspaceContext(workspaceId));
+    return true;
+  }
+
+  Future<void> _loadWorkspacesWithReminders() async {
+    final auth = _authCubit.state;
+    final userId = auth.user?.id;
+    final preferredWorkspace = auth.accounts
+        .where((account) => account.id == userId)
+        .firstOrNull
+        ?.lastWorkspaceId;
+    await _workspaceCubit.loadWorkspaces(
+      preferredWorkspaceId: preferredWorkspace,
+    );
+    if (!mounted || userId != _authCubit.state.user?.id) return;
+    _syncOfflinePreparationScope();
     if (userId != null) {
       await ReminderService.instance.startWorkspaceSession(
         userId,

@@ -29,6 +29,9 @@ class AuthState extends Equatable {
     this.accounts = const <StoredAuthAccount>[],
     this.activeAccountId,
     this.isAddAccountFlow = false,
+    this.switchingAccountId,
+    this.expiredAccountIds = const {},
+    this.addAccountEmail,
   });
 
   const AuthState.unknown() : this._();
@@ -50,6 +53,12 @@ class AuthState extends Equatable {
   final List<StoredAuthAccount> accounts;
   final String? activeAccountId;
   final bool isAddAccountFlow;
+  final String? switchingAccountId;
+  final Set<String> expiredAccountIds;
+  final String? addAccountEmail;
+
+  @override
+  bool get stringify => false;
 
   AuthState copyWith({
     AuthStatus? status,
@@ -60,6 +69,9 @@ class AuthState extends Equatable {
     List<StoredAuthAccount>? accounts,
     Object? activeAccountId = _sentinel,
     bool? isAddAccountFlow,
+    Object? switchingAccountId = _sentinel,
+    Set<String>? expiredAccountIds,
+    Object? addAccountEmail = _sentinel,
   }) => AuthState._(
     status: status ?? this.status,
     user: user ?? this.user,
@@ -73,6 +85,13 @@ class AuthState extends Equatable {
         ? this.activeAccountId
         : activeAccountId as String?,
     isAddAccountFlow: isAddAccountFlow ?? this.isAddAccountFlow,
+    switchingAccountId: switchingAccountId == _sentinel
+        ? this.switchingAccountId
+        : switchingAccountId as String?,
+    expiredAccountIds: expiredAccountIds ?? this.expiredAccountIds,
+    addAccountEmail: addAccountEmail == _sentinel
+        ? this.addAccountEmail
+        : addAccountEmail as String?,
   );
 
   @override
@@ -82,6 +101,7 @@ class AuthState extends Equatable {
     user?.email,
     user?.emailConfirmedAt,
     user?.appMetadata,
+    user?.userMetadata,
     user?.factors,
     error,
     errorCode,
@@ -89,5 +109,8 @@ class AuthState extends Equatable {
     accounts,
     activeAccountId,
     isAddAccountFlow,
+    switchingAccountId,
+    expiredAccountIds,
+    addAccountEmail,
   ];
 }

@@ -7,8 +7,10 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/constants/storage_keys.dart';
 import 'package:mobile/data/models/multi_account_store.dart';
+import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/data/repositories/stored_session_restore.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -19,20 +21,30 @@ class MultiAccountStorageService {
     required FlutterSecureStorage secureStorage,
     required ApiClient apiClient,
     required GoogleIdentityClient googleIdentityClient,
+    http.Client? refreshHttpClient,
   }) : _client = supabaseClient,
        _secureStorage = secureStorage,
        _apiClient = apiClient,
-       _googleIdentityClient = googleIdentityClient;
+       _googleIdentityClient = googleIdentityClient,
+       _refreshHttpClient = refreshHttpClient;
 
   final SupabaseClient _client;
   final FlutterSecureStorage _secureStorage;
   final ApiClient _apiClient;
   final GoogleIdentityClient _googleIdentityClient;
+  final http.Client? _refreshHttpClient;
 
   static const int _multiAccountStoreVersion = 1;
   static const int _maxStoredAccounts = 5;
   Future<void>? _syncInFlight;
   bool _syncRequested = false;
+  Future<void> _storeWrites = Future<void>.value();
+
+  Future<T> _editStore<T>(Future<T> Function() edit) {
+    final result = _storeWrites.then((_) => edit());
+    _storeWrites = result.then<void>((_) {}, onError: (Object _) {});
+    return result;
+  }
 
   Future<MultiAccountStore> _loadMultiAccountStore() async {
     try {
@@ -61,37 +73,19 @@ class MultiAccountStorageService {
     );
   }
 
-  Future<void> clearMultiAccountStore() async {
-    await _secureStorage.delete(key: StorageKeys.multiAccountStore);
-  }
+  Future<void> clearMultiAccountStore() => _editStore(
+    () => _secureStorage.delete(key: StorageKeys.multiAccountStore),
+  );
 
-  String? _readDisplayName(User user) {
-    final metadata = user.userMetadata;
-    final displayName = metadata?['display_name'] as String?;
-    if (displayName != null && displayName.trim().isNotEmpty) {
-      return displayName.trim();
-    }
-    final fullName = metadata?['full_name'] as String?;
-    if (fullName != null && fullName.trim().isNotEmpty) {
-      return fullName.trim();
-    }
-    return null;
-  }
+  String? _readDisplayName(User user) =>
+      _nonEmptyTrimmed(user.userMetadata?['display_name']) ??
+      _nonEmptyTrimmed(user.userMetadata?['full_name']);
 
-  String? _readAvatarUrl(User user) {
-    final avatarUrl = user.userMetadata?['avatar_url'] as String?;
-    if (avatarUrl == null || avatarUrl.trim().isEmpty) {
-      return null;
-    }
-    return avatarUrl.trim();
-  }
+  String? _readAvatarUrl(User user) =>
+      _nonEmptyTrimmed(user.userMetadata?['avatar_url']);
 
-  String? _nonEmptyTrimmed(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return null;
-    }
-    return value.trim();
-  }
+  String? _nonEmptyTrimmed(Object? value) =>
+      value is String && value.trim().isNotEmpty ? value.trim() : null;
 
   String? _primaryLabelFromProfile(UserProfile? profile) {
     if (profile == null) {
@@ -108,10 +102,14 @@ class MultiAccountStorageService {
     return null;
   }
 
-  Future<UserProfile?> _fetchCurrentUserProfile() async {
+  Future<UserProfile?> _fetchCurrentUserProfile(String userId) async {
     try {
-      final json = await _apiClient.getJson(ProfileEndpoints.profile);
-      return UserProfile.fromJson(json);
+      final json = await ApiClient.runForUser(
+        userId,
+        () => _apiClient.getJson(ProfileEndpoints.profile),
+      );
+      final profile = UserProfile.fromJson(json);
+      return profile.id == userId ? profile : null;
     } on Object {
       return null;
     }
@@ -191,12 +189,24 @@ class MultiAccountStorageService {
   }) async {
     final initialUserId = _client.auth.currentUser?.id;
     if (initialUserId == null) return;
-    final apiProfile = await _fetchCurrentUserProfile();
+    final apiProfile = await _fetchCurrentUserProfile(initialUserId);
+    await _persistCurrentSession(
+      initialUserId,
+      switchImmediately: switchImmediately,
+      apiProfile: apiProfile,
+    );
+  }
+
+  Future<bool> _persistCurrentSession(
+    String expectedUserId, {
+    bool switchImmediately = true,
+    UserProfile? apiProfile,
+  }) => _editStore(() async {
     final store = await _loadMultiAccountStore();
     final session = _client.auth.currentSession;
     final user = _client.auth.currentUser;
-    if (session == null || user == null || user.id != initialUserId) {
-      return;
+    if (session == null || user == null || user.id != expectedUserId) {
+      return false;
     }
 
     final sessionJson = jsonEncode(session.toJson());
@@ -243,134 +253,149 @@ class MultiAccountStorageService {
     await _saveMultiAccountStore(
       store.copyWith(accounts: trimmed, activeAccountId: nextActiveId),
     );
-  }
+    return true;
+  });
 
   Future<({bool success, String? error})> completeAddAccountFlow() async {
     try {
-      final initialUserId = _client.auth.currentUser?.id;
-      final apiProfile = await _fetchCurrentUserProfile();
-      final store = await _loadMultiAccountStore();
-      final session = _client.auth.currentSession;
-      final user = _client.auth.currentUser;
-      if (session == null || user == null || user.id != initialUserId) {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null || !await _persistCurrentSession(userId)) {
         return (success: false, error: 'No active session found');
       }
-
-      final sessionJson = jsonEncode(session.toJson());
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final existingIndex = store.accounts.indexWhere((a) => a.id == user.id);
-
-      final List<StoredAuthAccount> updated;
-      if (existingIndex >= 0) {
-        final existing = store.accounts[existingIndex];
-        updated = [...store.accounts]
-          ..[existingIndex] = _accountFromCurrentSession(
-            user: user,
-            session: session,
-            sessionJson: sessionJson,
-            addedAt: existing.addedAt,
-            lastActiveAt: now,
-            lastWorkspaceId: existing.lastWorkspaceId,
-            fallbackDisplayName: existing.displayName,
-            fallbackAvatarUrl: existing.avatarUrl,
-            apiProfile: apiProfile,
-          );
-      } else {
-        updated = [
-          ...store.accounts,
-          _accountFromCurrentSession(
-            user: user,
-            session: session,
-            sessionJson: sessionJson,
-            apiProfile: apiProfile,
-          ),
-        ];
-      }
-
-      final trimmed = _sortAccountsByRecent(
-        updated,
-      ).take(_maxStoredAccounts).toList();
-
-      await _saveMultiAccountStore(
-        store.copyWith(accounts: trimmed, activeAccountId: user.id),
-      );
-
       return (success: true, error: null);
-    } on AuthException catch (e) {
-      return (success: false, error: e.message);
-    } on Object catch (e) {
-      return (success: false, error: e.toString());
+    } on Object {
+      return (success: false, error: 'Failed to save account');
     }
   }
 
-  Future<({bool success, String? error})> switchToStoredAccount(
-    String accountId,
-  ) async {
+  Future<StoredAccountSwitchResult> switchToStoredAccount(
+    String accountId, {
+    Future<void> Function()? beforeActivate,
+  }) async {
+    final origin = _client.auth.currentUser?.id;
     final store = await _loadMultiAccountStore();
     final target = store.accounts.where((a) => a.id == accountId).firstOrNull;
-    if (target == null) {
-      return (success: false, error: 'Account not found');
-    }
+    if (target == null) return StoredAccountSwitchResult.failed;
 
     try {
-      final authResponse = target.sessionJson != null
-          ? await _client.auth.recoverSession(target.sessionJson!)
-          : await _client.auth.setSession(target.refreshToken);
-      final restoredSession = authResponse.session;
-      final restoredUser = authResponse.user;
-      if (restoredSession == null || restoredUser == null) {
-        return (success: false, error: 'Failed to restore session');
+      final saved = readStoredSession(target);
+      final reuseSaved =
+          saved != null &&
+          !saved.isExpired &&
+          saved.refreshToken?.isNotEmpty == true;
+      final candidate = reuseSaved
+          ? saved
+          : await refreshStoredSession(
+              authUrl: Uri.parse(_client.rest.url).resolve('../auth/v1'),
+              apiKey: _client.auth.headers['apikey']!,
+              refreshToken: target.refreshToken,
+              httpClient: _refreshHttpClient,
+            );
+      if (candidate == null) return StoredAccountSwitchResult.signInRequired;
+      if (candidate.user.id != accountId ||
+          _client.auth.currentUser?.id != origin) {
+        return StoredAccountSwitchResult.failed;
       }
-      if (restoredUser.id != accountId) {
-        return (
-          success: false,
-          error: 'Session restore returned a different account',
-        );
-      }
-
-      final now = DateTime.now().millisecondsSinceEpoch;
-      final apiProfile = await _fetchCurrentUserProfile();
-      final latestStore = await _loadMultiAccountStore();
-      final session = _client.auth.currentSession;
-      final user = _client.auth.currentUser;
-      if (session == null || user?.id != accountId) {
-        return (
-          success: false,
-          error: 'Account changed during session restore',
-        );
-      }
-      final restoredSessionJson = jsonEncode(session.toJson());
-      final updatedAccounts = latestStore.accounts.map((account) {
-        if (account.id != accountId) {
-          return account;
-        }
-        return _accountFromCurrentSession(
-          user: user!,
-          session: session,
-          sessionJson: restoredSessionJson,
-          addedAt: account.addedAt,
-          lastActiveAt: now,
-          lastWorkspaceId: account.lastWorkspaceId,
-          fallbackDisplayName: account.displayName,
-          fallbackAvatarUrl: account.avatarUrl,
-          apiProfile: apiProfile,
-        );
-      }).toList();
-
-      await _saveMultiAccountStore(
-        latestStore.copyWith(
-          accounts: _sortAccountsByRecent(updatedAccounts),
-          activeAccountId: accountId,
-        ),
-      );
-
-      return (success: true, error: null);
-    } on AuthException catch (e) {
-      return (success: false, error: e.message);
-    } on Object catch (e) {
-      return (success: false, error: e.toString());
+      // Preserve rotated credentials even when cleanup or activation fails.
+      final prepared = reuseSaved
+          ? target
+          : await _rememberRefresh(target, candidate);
+      if (prepared == null) return StoredAccountSwitchResult.failed;
+      await beforeActivate?.call();
+      return await _activateStoredSession(prepared, candidate, origin);
+    } on Object {
+      return StoredAccountSwitchResult.failed;
     }
   }
+
+  Future<StoredAuthAccount?> _rememberRefresh(
+    StoredAuthAccount target,
+    Session candidate,
+  ) => _editStore(() async {
+    final store = await _loadMultiAccountStore();
+    final latest = store.accounts.where((a) => a.id == target.id).firstOrNull;
+    if (latest == null || latest.refreshToken != target.refreshToken) {
+      return null;
+    }
+    final updated = _updatedSession(latest, candidate);
+    await _saveMultiAccountStore(
+      store.copyWith(
+        accounts: [
+          for (final account in store.accounts)
+            if (account.id == target.id) updated else account,
+        ],
+      ),
+    );
+    return updated;
+  });
+
+  Future<StoredAccountSwitchResult> _activateStoredSession(
+    StoredAuthAccount target,
+    Session candidate,
+    String? origin,
+  ) => _editStore(() async {
+    final store = await _loadMultiAccountStore();
+    final latest = store.accounts.where((a) => a.id == target.id).firstOrNull;
+    final current = _client.auth.currentSession;
+    if (latest == null ||
+        latest.refreshToken != target.refreshToken ||
+        current?.user.id != origin ||
+        candidate.isExpired) {
+      return StoredAccountSwitchResult.failed;
+    }
+    final updated = [
+      for (final account in store.accounts)
+        if (account.id == target.id)
+          _updatedSession(account, candidate, active: true)
+        else if (current != null && account.id == current.user.id)
+          _updatedSession(account, current)
+        else
+          account,
+      if (current != null &&
+          current.refreshToken?.isNotEmpty == true &&
+          !store.accounts.any((account) => account.id == current.user.id))
+        _accountFromCurrentSession(
+          user: current.user,
+          session: current,
+          sessionJson: jsonEncode(current.toJson()),
+          lastActiveAt: DateTime.now().millisecondsSinceEpoch - 1,
+        ),
+    ];
+    final sessionJson = jsonEncode(candidate.toJson());
+    final saved = store.copyWith(
+      accounts: _sortAccountsByRecent(
+        updated,
+      ).take(_maxStoredAccounts).toList(),
+    );
+    // Secure storage must contain any rotated credentials before SDK adoption.
+    await _saveMultiAccountStore(saved.copyWith(activeAccountId: target.id));
+    try {
+      if (!identical(_client.auth.currentSession, current) ||
+          _client.auth.currentUser?.id != origin ||
+          candidate.isExpired) {
+        return StoredAccountSwitchResult.failed;
+      }
+      await _client.auth.recoverSession(sessionJson);
+      return _client.auth.currentUser?.id == target.id
+          ? StoredAccountSwitchResult.switched
+          : StoredAccountSwitchResult.failed;
+    } finally {
+      if (_client.auth.currentUser?.id != target.id) {
+        await _saveMultiAccountStore(saved);
+      }
+    }
+  });
+
+  StoredAuthAccount _updatedSession(
+    StoredAuthAccount account,
+    Session session, {
+    bool active = false,
+  }) => account.copyWith(
+    refreshToken: session.refreshToken,
+    email: session.user.email ?? account.email,
+    sessionJson: jsonEncode(session.toJson()),
+    lastActiveAt: active ? DateTime.now().millisecondsSinceEpoch : null,
+  );
 
   Future<({bool success, bool switched, String? error})> removeStoredAccount(
     String accountId,
@@ -379,7 +404,7 @@ class MultiAccountStorageService {
     final accountExists = store.accounts.any(
       (account) => account.id == accountId,
     );
-    if (!accountExists) {
+    if (!accountExists && _client.auth.currentUser?.id != accountId) {
       return (success: false, switched: false, error: 'Account not found');
     }
 
@@ -387,18 +412,15 @@ class MultiAccountStorageService {
         .where((account) => account.id != accountId)
         .toList();
 
-    final wasActive = store.activeAccountId == accountId;
+    final wasActive =
+        (_client.auth.currentUser?.id ?? store.activeAccountId) == accountId;
     if (!wasActive) {
-      final nextActiveId = remaining.any((a) => a.id == store.activeAccountId)
-          ? store.activeAccountId
-          : remaining.firstOrNull?.id;
-      await _saveMultiAccountStore(
-        store.copyWith(
-          accounts: _sortAccountsByRecent(remaining),
-          activeAccountId: nextActiveId,
-        ),
+      final removed = await _removeInactiveAccount(accountId);
+      return (
+        success: removed,
+        switched: false,
+        error: removed ? null : 'Account changed during removal',
       );
-      return (success: true, switched: false, error: null);
     }
 
     if (remaining.isEmpty) {
@@ -434,43 +456,49 @@ class MultiAccountStorageService {
       );
     }
 
-    final switchedStore = await _loadMultiAccountStore();
-    final normalizedRemaining = switchedStore.accounts
-        .where((account) => account.id != accountId)
-        .toList();
-    await _saveMultiAccountStore(
-      switchedStore.copyWith(
-        accounts: _sortAccountsByRecent(normalizedRemaining),
-        activeAccountId: switchedStore.activeAccountId,
-      ),
+    final removed = await _removeInactiveAccount(accountId);
+    return (
+      success: removed,
+      switched: true,
+      error: removed ? null : 'Account changed during removal',
     );
-    return (success: true, switched: true, error: null);
   }
 
-  Future<void> updateActiveAccountWorkspaceContext(String workspaceId) async {
+  Future<bool> _removeInactiveAccount(String accountId) => _editStore(() async {
     final store = await _loadMultiAccountStore();
-    final activeId = store.activeAccountId;
-    if (activeId == null) {
-      return;
-    }
-
-    final updatedAccounts = store.accounts.map((account) {
-      if (account.id != activeId) {
-        return account;
-      }
-      return account.copyWith(
-        lastWorkspaceId: workspaceId,
-        lastActiveAt: DateTime.now().millisecondsSinceEpoch,
-      );
-    }).toList();
-
+    if (_client.auth.currentUser?.id == accountId) return false;
+    final remaining = store.accounts.where((a) => a.id != accountId).toList();
+    final activeId = _client.auth.currentUser?.id ?? store.activeAccountId;
     await _saveMultiAccountStore(
-      store.copyWith(accounts: _sortAccountsByRecent(updatedAccounts)),
+      store.copyWith(
+        accounts: remaining,
+        activeAccountId: remaining.any((a) => a.id == activeId)
+            ? activeId
+            : remaining.firstOrNull?.id,
+      ),
     );
+    return true;
+  });
+
+  Future<void> updateActiveAccountWorkspaceContext(String workspaceId) {
+    final actor = _client.auth.currentUser?.id;
+    return _editStore(() async {
+      final store = await _loadMultiAccountStore();
+      if (actor == null || actor != _client.auth.currentUser?.id) return;
+      final updated = [
+        for (final account in store.accounts)
+          if (account.id == actor)
+            account.copyWith(lastWorkspaceId: workspaceId)
+          else
+            account,
+      ];
+      await _saveMultiAccountStore(store.copyWith(accounts: updated));
+    });
   }
 
   Future<({bool switched, String? error})> signOutCurrentAccount() async {
-    final activeId = await getActiveStoredAccountId();
+    final activeId =
+        _client.auth.currentUser?.id ?? await getActiveStoredAccountId();
     if (activeId == null) {
       final signOutError = await _signOutSupabase(
         logMessage: 'Supabase sign-out failed during current account sign-out',

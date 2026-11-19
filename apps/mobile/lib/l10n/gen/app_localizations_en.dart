@@ -1618,6 +1618,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authSavedAccountsTitle => 'Saved accounts';
 
   @override
+  String get authSignInAgain => 'Sign in again';
+
+  @override
   String get authSwitchAccount => 'Switch account';
 
   @override

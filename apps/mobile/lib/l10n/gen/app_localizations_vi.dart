@@ -1611,6 +1611,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authSavedAccountsTitle => 'Tài khoản đã lưu';
 
   @override
+  String get authSignInAgain => 'Đăng nhập lại';
+
+  @override
   String get authSwitchAccount => 'Chuyển tài khoản';
 
   @override

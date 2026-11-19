@@ -8,14 +8,13 @@ import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_link_row.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
 import 'package:mobile/features/settings/view/settings_delete_account_row.dart';
-import 'package:mobile/features/settings/view/settings_profile_parts.dart';
+import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Opens account switching from the signed-in account's profile.
@@ -28,73 +27,34 @@ class ProfileAccountSwitchRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final (actorId, email, name, imageUrl) = context
-        .select<AuthCubit, (String?, String?, String?, String?)>((cubit) {
-          final user = cubit.state.user;
-          final saved = cubit.state.accounts
-              .where((account) => account.id == user?.id)
-              .firstOrNull;
-          final metadata = user?.userMetadata;
-          return (
-            user?.id,
-            user?.email ?? saved?.email,
-            saved?.displayName ??
-                _metadataString(metadata?['display_name']) ??
-                _metadataString(metadata?['full_name']),
-            saved?.avatarUrl ?? _metadataString(metadata?['avatar_url']),
-          );
-        });
-    final currentProfile = actorId != null && profile?.id == actorId
-        ? profile
-        : null;
-    final currentEmail = currentProfile?.email ?? email;
-    final currentName =
-        [
-              currentProfile?.displayName,
-              currentProfile?.fullName,
-              name,
-              currentEmail,
-            ]
-            .whereType<String>()
-            .map((value) => value.trim())
-            .firstWhere(
-              (value) => value.isNotEmpty,
-              orElse: () => l10n.profileTitle,
-            );
-    final image = currentProfile == null ? imageUrl : avatarUrl ?? imageUrl;
-    const size = ProfileLinkRow.tileSize;
-    final fallback = SettingsProfileAvatar(
-      url: null,
-      name: currentName,
-      size: size,
+    final active = context.select<AuthCubit, AccountIdentity?>(
+      (cubit) => activeAccountIdentity(
+        cubit.state,
+        profile: profile,
+        avatarUrl: avatarUrl,
+      ),
     );
-    return ProfileLinkRow(
-      key: const ValueKey('profile-switch-account'),
-      title: l10n.authSwitchAccount,
-      subtitle: currentEmail ?? (actorId == null ? null : currentName),
-      icon: LucideIcons.users,
-      tone: AppTone.primary,
-      leading: actorId == null
-          ? null
-          : image == null
-          ? fallback
-          : ClipOval(
-              child: Image(
-                image: profileMediaImage(image, actorId),
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => fallback,
-              ),
-            ),
-      showChevron: false,
-      trailing: const Icon(LucideIcons.chevronsUpDown),
-      onTap: () => unawaited(showProfileAccountSwitcher(context)),
+    return Semantics(
+      label: l10n.authSwitchAccount,
+      child: ProfileLinkRow(
+        key: const ValueKey('profile-switch-account'),
+        title: active?.name ?? l10n.authSwitchAccount,
+        subtitle: active?.email,
+        icon: LucideIcons.users,
+        tone: AppTone.primary,
+        leading: active == null
+            ? null
+            : AccountAvatar(identity: active, size: ProfileLinkRow.tileSize),
+        onTap: () => unawaited(
+          showProfileAccountSwitcher(
+            context,
+            profile: profile,
+            avatarUrl: avatarUrl,
+          ),
+        ),
+      ),
     );
   }
-
-  static String? _metadataString(Object? value) =>
-      value is String && value.trim().isNotEmpty ? value.trim() : null;
 }
 
 /// Shortcuts to the settings people reach for from their profile.

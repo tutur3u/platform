@@ -77,8 +77,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Previous identity'), findsOneWidget);
-      expect(find.byType(Image), findsOneWidget);
+      expect(find.text('Previous identity'), findsNWidgets(2));
+      expect(find.byType(Image), findsNWidgets(2));
       accounts.add(_signedIn('next'));
       await tester.pump();
       await tester.pump();
@@ -95,7 +95,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Current identity'), findsOneWidget);
+      expect(find.text('Current identity'), findsNWidgets(2));
       profiles.add(
         const ShellProfileState(
           userId: 'next',

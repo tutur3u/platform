@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/app/view/auth_session_boundary.dart';
 
 void main() {
@@ -40,8 +41,45 @@ void main() {
         ),
       );
 
+      expect(find.text('init:1'), findsNothing);
+      await tester.pump();
       expect(find.text('init:2'), findsOneWidget);
     });
+
+    testWidgets(
+      'discards route state held by GoRouter across account changes',
+      (tester) async {
+        final router = GoRouter(
+          routes: [
+            ShellRoute(
+              builder: (_, _, child) => child,
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (_, _) => const _TestStatefulChild(),
+                ),
+              ],
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+        Widget app(String actor) => MaterialApp.router(
+          routerConfig: router,
+          builder: (_, child) =>
+              AuthSessionBoundary(identity: actor, child: child!),
+        );
+
+        await tester.pumpWidget(app('synthetic-user-a'));
+        await tester.pumpAndSettle();
+        expect(find.text('init:1'), findsOneWidget);
+
+        await tester.pumpWidget(app('synthetic-user-b'));
+        await tester.pumpAndSettle();
+        expect(find.text('init:1'), findsNothing);
+        expect(find.text('init:2'), findsOneWidget);
+        expect(router.routeInformationProvider.value.uri.path, '/');
+      },
+    );
   });
 }
 

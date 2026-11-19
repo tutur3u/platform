@@ -10,6 +10,7 @@ import 'package:mobile/core/platform/device_platform.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
+import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/multi_account_storage_service.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -112,11 +113,13 @@ class AuthRepository {
     return await _multiAccountStorageService.completeAddAccountFlow();
   }
 
-  Future<({bool success, String? error})> switchToStoredAccount(
-    String accountId,
-  ) async {
-    return await _multiAccountStorageService.switchToStoredAccount(accountId);
-  }
+  Future<StoredAccountSwitchResult> switchToStoredAccount(
+    String accountId, {
+    Future<void> Function()? beforeActivate,
+  }) => _multiAccountStorageService.switchToStoredAccount(
+    accountId,
+    beforeActivate: beforeActivate,
+  );
 
   Future<({bool success, bool switched, String? error})> removeStoredAccount(
     String accountId,

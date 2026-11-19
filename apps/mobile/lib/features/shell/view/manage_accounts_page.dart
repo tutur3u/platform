@@ -148,7 +148,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
         builder: (context, state) {
           final accounts = sortStoredAccountsByRecent(state.accounts);
           final activeAccount = accounts
-              .where((account) => account.id == state.activeAccountId)
+              .where((account) => account.id == state.user?.id)
               .firstOrNull;
           final savedAccounts = activeAccount == null
               ? accounts
@@ -297,7 +297,7 @@ class _ManageAccountCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AccountAvatar(account: account, size: 46),
+              AccountAvatar(identity: savedAccountIdentity(account), size: 46),
               const shad.Gap(14),
               Expanded(
                 child: Column(

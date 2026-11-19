@@ -80,9 +80,9 @@ void main() {
     'switch row follows the signed-in identity when stored active ID is stale',
     (tester) async {
       await pump(tester, const ProfileAccountSwitchRow());
-      expect(find.text('Switch account'), findsOneWidget);
+      expect(find.text('Alex Doe'), findsOneWidget);
       expect(find.text('alex@example.test'), findsOneWidget);
-      expect(find.text('A'), findsOneWidget);
+      expect(find.text('AD'), findsOneWidget);
       expect(find.text('recent@example.test'), findsNothing);
       expect(find.text('older@example.test'), findsNothing);
     },

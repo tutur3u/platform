@@ -75,7 +75,7 @@ and a Cover banner row that adds, changes or removes the banner), Account (Manag
 accounts at `/settings/accounts`, Sessions and devices) and Account status, as
 captioned grouped cards with the shell title "Edit profile". Its identity card is
 borderless with a circular avatar, matching the Settings profile row, and an unknown
-join date is omitted. Manage accounts appears only here; the root has neither a
+join date is omitted. The Settings root has neither a
 You row nor a Manage accounts row, and its group caption is General. Legacy
 `/profile/edit` and `/profile/accounts` links redirect to those destinations.
 `/profile` retains the Overview/Timeline activity surface. Its edit entry is a
@@ -139,6 +139,27 @@ text, system/dock back without a top Back button, and unknown module links;
 `shell_assistant_composer_test.dart` verifies one dock, draft/focus and Live
 transitions, and `shell_profile_races_test.dart` covers delayed account/cache
 completion. These widget checks do not establish installed-device or production evidence.
+
+### Switch accounts from Profile
+
+Tap the row with your avatar, name and email to open **Switch account**. The
+signed-in account appears first with a check. Other saved accounts appear in
+recent order. The sheet shows the saved list immediately and refreshes in the
+background. Use **Add account** to sign in with another account, or **Manage
+accounts** to remove accounts from the device.
+
+A switch shows progress beside the chosen account. A valid saved session opens
+without a profile request. An expired session is refreshed when possible. If the
+session requires new credentials, the row shows **Sign in again** and opens
+sign-in with that account's email filled in when available. An unsuccessful
+refresh keeps the current account open. Each account returns to its last
+workspace when that workspace is still accessible and visible.
+
+These defaults apply to Classic and Sorbet in both mobile languages.
+`profile_overview_shell_test.dart` exercises the first frame and sheet actions.
+`auth_account_switch_test.dart` verifies outgoing cache isolation, and
+`multi_account_storage_service_test.dart` covers saved sessions and workspace
+ownership.
 
 ### Floating dock layout
 

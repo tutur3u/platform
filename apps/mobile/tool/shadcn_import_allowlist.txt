@@ -112,8 +112,6 @@ lib/features/settings/view/settings_workspace_page.dart
 lib/features/settings/view/settings_workspace_roles_page.dart
 lib/features/settings/view/settings_workspace_secrets_page.dart
 lib/features/settings/view/workspace_properties_dialog.dart
-lib/features/shell/view/account_presentation.dart
-lib/features/shell/view/account_switcher_sheet.dart
 lib/features/shell/view/custom_navigation_bar.dart
 lib/features/shell/view/manage_accounts_page.dart
 lib/features/shell/view/mobile_section_app_bar.dart

@@ -75,18 +75,17 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.addAccountMode) {
+      final email = context.read<AuthCubit>().state.addAccountEmail;
+      if (email != null) _emailController.text = email;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      if (widget.addAccountMode) {
+      if (mounted && widget.addAccountMode) {
         context.read<AuthCubit>().setAddAccountFlow(enabled: true);
       }
     });
     _otpAvailabilityGraceTimer = Timer(_otpAvailabilityGracePeriod, () {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() => _otpAvailabilityGraceExpired = true);
     });
   }

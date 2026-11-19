@@ -223,12 +223,8 @@ class _AppState extends State<App> {
     scheduleOptionalStartup(_startPushAfterFirstFrame);
     _authCubit = AuthCubit(
       authRepository: _authRepo,
-      onBeforeSignOut: () async {
-        // Sign-out and account switch revoke collection before auth changes.
-        await PushNotificationService.instance.disableTelemetry();
-        await ReminderService.instance.stopSession();
-        await PushNotificationService.instance.stopSession();
-      },
+      onBeforeSignOut: _stopAccountServices,
+      onAbortedSwitch: _restoreCurrentAccountServices,
     );
     _appVersionCubit = AppVersionCubit(
       versionCheckRepository: _versionCheckRepository,
@@ -612,23 +608,7 @@ class _AppState extends State<App> {
                     state.currentWorkspace?.id,
                   ),
                 );
-                if (state.currentWorkspace == null) {
-                  return;
-                }
-                final userId = context.read<AuthCubit>().state.user?.id;
-                if (userId != null) {
-                  unawaited(
-                    ReminderService.instance.startWorkspaceSession(
-                      userId,
-                      state,
-                    ),
-                  );
-                }
-                unawaited(
-                  context.read<AuthCubit>().updateActiveAccountWorkspaceContext(
-                    state.currentWorkspace!.id,
-                  ),
-                );
+                if (!_recordAccountWorkspace(state)) return;
                 unawaited(CacheWarmupCoordinator.instance.prewarmBoot());
                 unawaited(_openPendingDeepLinkIfReady());
               },

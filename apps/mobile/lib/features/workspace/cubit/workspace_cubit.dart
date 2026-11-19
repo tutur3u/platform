@@ -29,6 +29,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   Future<void> _recentsLoaded = Future<void>.value();
   String? _actor;
   String? _explicitSelectionId;
+  String? _preferredWorkspaceId;
   Set<String> _confirmedHiddenIds = {};
   bool get hasAuthenticatedActor =>
       _actor != null && _repo.authenticatedUserId == _actor;
@@ -47,13 +48,20 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
   /// 2. Local default workspace cache (offline fallback)
   /// 3. Encrypted replica selection (migrated from SharedPreferences)
   /// 4. Auto-select if only one workspace exists
-  Future<void> loadWorkspaces({bool forceRefresh = false}) async {
+  ///
+  /// A kept account preference takes precedence over defaults when its
+  /// selected-workspace replica is absent and the workspace is visible.
+  Future<void> loadWorkspaces({
+    bool forceRefresh = false,
+    String? preferredWorkspaceId,
+  }) async {
     final actor = _repo.authenticatedUserId;
     if (_actor != actor) {
       _actor = actor;
       _actorEpoch++;
       _confirmedHiddenIds = {};
       _explicitSelectionId = null;
+      _preferredWorkspaceId = preferredWorkspaceId;
       _visibilityRevision++;
       _visibilityRequest++;
       emit(const WorkspaceState());
@@ -210,6 +218,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     _actorEpoch++;
     _confirmedHiddenIds = {};
     _explicitSelectionId = null;
+    _preferredWorkspaceId = null;
     emit(const WorkspaceState());
     await _repo.clearSelectedWorkspace();
   }
@@ -245,6 +254,9 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         .firstOrNull;
     current ??= visible
         .where((workspace) => workspace.id == saved?.id)
+        .firstOrNull;
+    current ??= visible
+        .where((workspace) => workspace.id == _preferredWorkspaceId)
         .firstOrNull;
     current ??= visible
         .where((workspace) => workspace.id == defaultWorkspace?.id)
@@ -370,6 +382,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         state.status == WorkspaceStatus.loaded &&
         !state.visibilityResolved) {
       current =
+          visible.where((w) => w.id == _preferredWorkspaceId).firstOrNull ??
           visible
               .where((w) => w.id == state.defaultWorkspace?.id)
               .firstOrNull ??
@@ -380,6 +393,7 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
         ids.contains(current.id) &&
         current.id != _explicitSelectionId) {
       current =
+          visible.where((w) => w.id == _preferredWorkspaceId).firstOrNull ??
           visible
               .where((w) => w.id == state.defaultWorkspace?.id)
               .firstOrNull ??

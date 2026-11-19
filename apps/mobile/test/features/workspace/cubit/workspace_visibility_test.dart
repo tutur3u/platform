@@ -58,6 +58,38 @@ void main() {
     await Future<void>.delayed(Duration.zero);
   }
 
+  test('restores the account workspace after visibility settles', () async {
+    final visibilityReady = Completer<List<String>>();
+    when(
+      () => visibility.refresh('A'),
+    ).thenAnswer((_) => visibilityReady.future);
+    when(() => repo.loadSelectedWorkspace()).thenAnswer((_) async => null);
+    await cubit.loadWorkspaces(
+      forceRefresh: true,
+      preferredWorkspaceId: team.id,
+    );
+    expect(cubit.state.currentWorkspace, isNull);
+    visibilityReady.complete([]);
+    await Future<void>.delayed(Duration.zero);
+    expect(cubit.state.currentWorkspace, team);
+  });
+
+  test(
+    'skips the saved preference when it is hidden for the new actor',
+    () async {
+      when(() => repo.loadSelectedWorkspace()).thenAnswer((_) async => null);
+      await load();
+      actor = 'B';
+      when(() => visibility.refresh('B')).thenAnswer((_) async => [team.id]);
+      await cubit.loadWorkspaces(
+        forceRefresh: true,
+        preferredWorkspaceId: team.id,
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(cubit.state.currentWorkspace, personal);
+    },
+  );
+
   test('startup skips an archived saved and default workspace', () async {
     const archived = Workspace(id: 'archived', personal: true, deleted: true);
     when(() => repo.getWorkspaces()).thenAnswer((_) async => [archived, team]);

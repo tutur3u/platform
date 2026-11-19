@@ -31,14 +31,9 @@ Future<void> clearSignedOutAccountCaches(
   await clearAccountDeviceData(userId: userId, allAccounts: allAccounts);
 }
 
-/// Clears the data this device keeps for [accountId] once it is removed:
-/// its cache scope when it was the active account, and its per-account data
-/// either way.
-Future<void> clearRemovedAccountData(
-  String accountId, {
-  required bool active,
-}) async {
-  if (active) await CacheStore.instance.clearScope(userId: accountId);
+/// Removes the account's encrypted cache scope and device-local recents.
+Future<void> clearRemovedAccountData(String accountId) async {
+  await CacheStore.instance.clearScope(userId: accountId);
   await clearAccountDeviceData(userId: accountId);
 }
 

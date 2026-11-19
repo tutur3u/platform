@@ -3175,6 +3175,12 @@ abstract class AppLocalizations {
   /// **'Saved accounts'**
   String get authSavedAccountsTitle;
 
+  /// No description provided for @authSignInAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again'**
+  String get authSignInAgain;
+
   /// No description provided for @authSwitchAccount.
   ///
   /// In en, this message translates to:

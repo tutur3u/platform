@@ -1789,6 +1789,7 @@
   "authSavedAccountBadge": "Đã lưu trên thiết bị",
   "authSavedAccountsDescription": "Quản lý các tài khoản được lưu trên thiết bị này mà không đổi tài khoản hiện tại.",
   "authSavedAccountsTitle": "Tài khoản đã lưu",
+  "authSignInAgain": "Đăng nhập lại",
   "authSwitchAccount": "Chuyển tài khoản",
   "authSwitchAccountDescription": "Chọn một tài khoản đã lưu để tiếp tục.",
   "authSwitchAccountFailed": "Không thể chuyển tài khoản.",

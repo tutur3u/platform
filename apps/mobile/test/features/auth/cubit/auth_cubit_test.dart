@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/auth_action_result.dart';
 import 'package:mobile/data/models/auth_session.dart';
+import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -338,7 +339,10 @@ void main() {
       ).thenAnswer((_) async {});
       when(
         () => authRepository.switchToStoredAccount(any()),
-      ).thenAnswer((_) async => (success: false, error: null));
+      ).thenAnswer((_) async => StoredAccountSwitchResult.failed);
+      when(
+        authRepository.completeAddAccountFlow,
+      ).thenAnswer((_) async => (success: true, error: null));
     });
 
     test('beginAddAccountFlow keeps the current session active', () async {

@@ -16,7 +16,7 @@ supa.User _user(String id) => supa.User.fromJson({
 })!;
 
 void main() {
-  test('redacts stored account secrets from Bloc change logs', () {
+  test('omits credentials and account emails from Bloc change logs', () {
     final previousStringify = EquatableConfig.stringify;
     EquatableConfig.stringify = true;
     addTearDown(() => EquatableConfig.stringify = previousStringify);
@@ -46,9 +46,10 @@ void main() {
       currentState: AuthState.authenticated(
         _user('user-1'),
       ).copyWith(accounts: const <StoredAuthAccount>[account]),
-      nextState: AuthState.authenticated(
-        _user('user-1'),
-      ).copyWith(accounts: <StoredAuthAccount>[rotated]),
+      nextState: AuthState.authenticated(_user('user-1')).copyWith(
+        accounts: <StoredAuthAccount>[rotated],
+        addAccountEmail: 'reauth@example.test',
+      ),
     );
 
     final logLine = change.toString();
@@ -57,6 +58,8 @@ void main() {
     expect(logLine, isNot(contains('access-token-secret')));
     expect(logLine, isNot(contains('rotated-refresh-token-secret')));
     expect(logLine, isNot(contains('rotated-access-token')));
-    expect(logLine, contains('[redacted]'));
+    expect(logLine, isNot(contains('user-1@example.com')));
+    expect(logLine, isNot(contains('reauth@example.test')));
+    expect(logLine, contains('AuthState'));
   });
 }

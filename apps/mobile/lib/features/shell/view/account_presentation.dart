@@ -1,148 +1,138 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/core/widgets/profile_media_image.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
+import 'package:mobile/data/models/user_profile.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/shell/avatar_url_identity.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+
+typedef AccountIdentity = ({
+  String id,
+  String name,
+  String? email,
+  String? url,
+});
 
 List<StoredAuthAccount> sortStoredAccountsByRecent(
   Iterable<StoredAuthAccount> accounts,
-) {
-  return [...accounts]
-    ..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
+) => [...accounts]..sort((a, b) => b.lastActiveAt.compareTo(a.lastActiveAt));
+
+String? _nonEmpty(Object? value) =>
+    value is String && value.trim().isNotEmpty ? value.trim() : null;
+
+String accountPrimaryLabel(StoredAuthAccount account) =>
+    savedAccountIdentity(account).name;
+
+String? accountSecondaryLabel(StoredAuthAccount account) =>
+    savedAccountIdentity(account).email;
+
+AccountIdentity savedAccountIdentity(StoredAuthAccount account) => _identity(
+  account.id,
+  account.displayName,
+  account.email,
+  account.avatarUrl,
+);
+
+AccountIdentity? activeAccountIdentity(
+  AuthState state, {
+  UserProfile? profile,
+  String? avatarUrl,
+}) {
+  final user = state.user;
+  if (user == null) return null;
+  final saved = state.accounts
+      .where((entry) => entry.id == user.id)
+      .firstOrNull;
+  final sameProfile = profile?.id == user.id ? profile : null;
+  return _identity(
+    user.id,
+    _nonEmpty(sameProfile?.displayName) ??
+        _nonEmpty(sameProfile?.fullName) ??
+        _nonEmpty(user.userMetadata?['display_name']) ??
+        _nonEmpty(user.userMetadata?['full_name']) ??
+        saved?.displayName,
+    _nonEmpty(sameProfile?.email) ?? _nonEmpty(user.email) ?? saved?.email,
+    sameProfile == null
+        ? _nonEmpty(user.userMetadata?['avatar_url']) ?? saved?.avatarUrl
+        : avatarUrl ?? sameProfile.avatarUrl,
+  );
 }
 
-String accountPrimaryLabel(StoredAuthAccount account) {
-  final name = account.displayName?.trim();
-  if (name != null && name.isNotEmpty) {
-    return name;
-  }
-  final email = account.email?.trim();
-  if (email != null && email.isNotEmpty) {
-    return email;
-  }
-  return account.id;
+AccountIdentity _identity(String id, String? name, String? email, String? url) {
+  final label = _nonEmpty(name) ?? _nonEmpty(email) ?? id;
+  final address = _nonEmpty(email);
+  return (
+    id: id,
+    name: label,
+    email: label == address ? null : address,
+    url: url,
+  );
 }
 
-String? accountSecondaryLabel(StoredAuthAccount account) {
-  final primary = accountPrimaryLabel(account);
-  final email = account.email?.trim();
-  if (email == null || email.isEmpty || email == primary) {
-    return null;
-  }
-  return email;
-}
-
-String accountInitials(StoredAuthAccount account) {
-  final source = account.displayName?.trim().isNotEmpty == true
-      ? account.displayName!.trim()
-      : (account.email?.trim().isNotEmpty == true
-            ? account.email!.trim()
-            : account.id);
-  return _initialsFromDisplayString(source);
-}
-
-String _initialsFromDisplayString(String value) {
-  final trimmed = value.trim();
-  if (trimmed.isEmpty) {
-    return 'U';
-  }
-  final parts = trimmed.split(RegExp(r'\s+'));
-  if (parts.length == 1) {
-    return parts.first.characters.first.toUpperCase();
-  }
+String _initials(String name) {
+  final parts = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty);
+  if (parts.isEmpty) return '?';
   final first = parts.first.characters.first.toUpperCase();
-  final last = parts.last.characters.first.toUpperCase();
-  return '$first$last';
+  if (parts.length == 1) return first;
+  return '$first${parts.last.characters.first.toUpperCase()}';
 }
 
 class AccountAvatar extends StatelessWidget {
   const AccountAvatar({
-    required this.account,
+    required this.identity,
     this.isSelected = false,
     this.size = 42,
     super.key,
   });
 
-  final StoredAuthAccount account;
+  final AccountIdentity identity;
   final bool isSelected;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final url = normalizeAvatarUrl(account.avatarUrl);
-    final initials = accountInitials(account);
-
+    final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
+    final url = normalizeAvatarUrl(identity.url);
+    final uri = url == null ? null : Uri.tryParse(url);
+    final fallback = Center(
+      child: Text(
+        _initials(identity.name),
+        maxLines: 1,
+        style: tokens.typography.small.copyWith(
+          color: isSelected ? c.primary : c.foreground,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(size * 0.32),
-        border: Border.all(
-          color: isSelected
-              ? theme.colorScheme.primary.withValues(alpha: 0.48)
-              : theme.colorScheme.border.withValues(alpha: 0.45),
-          width: isSelected ? 2 : 1,
-        ),
-        color: colorScheme.surfaceContainerHighest,
+        color: isSelected ? c.primary.withValues(alpha: 0.12) : c.muted,
+        shape: BoxShape.circle,
       ),
       clipBehavior: Clip.antiAlias,
-      child: url != null
+      child:
+          url != null &&
+              uri?.hasAuthority == true &&
+              uri!.userInfo.isEmpty &&
+              const {'https', 'http'}.contains(uri.scheme)
           ? Image(
-              image: CachedNetworkImageProvider(
-                url,
-                cacheKey: avatarIdentityKeyForUrl(url) ?? url,
+              key: ValueKey(identity.id),
+              image: ResizeImage(
+                profileMediaImage(url, identity.id),
+                width: (size * MediaQuery.devicePixelRatioOf(context)).ceil(),
               ),
               fit: BoxFit.cover,
-              gaplessPlayback: true,
-              errorBuilder: (context, error, stackTrace) =>
-                  const _AccountAvatarPlaceholder(),
+              frameBuilder: (context, child, frame, sync) =>
+                  sync || frame != null ? child : fallback,
+              errorBuilder: (_, _, _) => fallback,
             )
-          : _AccountAvatarInitials(initials: initials),
-    );
-  }
-}
-
-class _AccountAvatarPlaceholder extends StatelessWidget {
-  const _AccountAvatarPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Icon(
-          Icons.person_outline_rounded,
-          size: 20,
-          color: colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
-}
-
-class _AccountAvatarInitials extends StatelessWidget {
-  const _AccountAvatarInitials({required this.initials});
-
-  final String initials;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    return ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: Text(
-          initials,
-          style: theme.typography.small.copyWith(
-            fontWeight: FontWeight.w700,
-            color: colorScheme.onSurface,
-          ),
-        ),
-      ),
+          : fallback,
     );
   }
 }

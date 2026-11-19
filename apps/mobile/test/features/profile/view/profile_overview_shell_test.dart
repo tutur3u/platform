@@ -122,6 +122,7 @@ void main() {
     );
     await experiments.load();
     auth = _Auth();
+    when(() => auth.isClosed).thenReturn(false);
     workspaces = _Workspaces();
     when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
     profile = _Profile();
@@ -144,6 +145,7 @@ void main() {
             lastActiveAt: 2,
             addedAt: 2,
             displayName: 'Account B',
+            email: 'demo-b@example.test',
           ),
         ],
       ),
@@ -163,9 +165,16 @@ void main() {
     );
     when(() => auth.syncCurrentSessionToStore()).thenAnswer((_) async {});
     when(() => auth.switchAccount('b')).thenAnswer((_) async => true);
+    when(
+      () => auth.beginAddAccountFlow(email: any(named: 'email')),
+    ).thenAnswer((_) async => true);
     router = GoRouter(
       initialLocation: Routes.profileRoot,
       routes: [
+        GoRoute(
+          path: Routes.addAccount,
+          builder: (_, _) => const Text('Synthetic sign-in destination'),
+        ),
         ShellRoute(
           builder: (context, state, child) => ShellPage(
             matchedLocation: state.uri.path,
@@ -186,6 +195,10 @@ void main() {
             GoRoute(
               path: Routes.settings,
               builder: (_, _) => const Text('Preferences page'),
+            ),
+            GoRoute(
+              path: Routes.settingsAccounts,
+              builder: (_, _) => const Text('Synthetic account management'),
             ),
           ],
         ),
@@ -344,17 +357,109 @@ void main() {
   testWidgets('actual Profile account action selects stored account', (
     tester,
   ) async {
+    final refresh = Completer<void>();
+    when(
+      () => auth.syncCurrentSessionToStore(),
+    ).thenAnswer((_) => refresh.future);
     await mount(tester);
     expect(find.text('Account B'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
+    await tester.pump();
+    expect(find.text('Account B'), findsOneWidget);
+    expect(refresh.isCompleted, isFalse);
     await _pump(tester);
-    await tester.tap(find.text('Account B').last);
+    await tester.tap(find.text('Account B'));
+    refresh.complete();
     await _pump(tester);
     verify(() => auth.syncCurrentSessionToStore()).called(1);
     verify(() => auth.switchAccount('b')).called(1);
     expect(tester.takeException(), isNull);
     await tester.pump(const Duration(seconds: 7));
   });
+  testWidgets('switching reports progress on the selected row and retries', (
+    tester,
+  ) async {
+    final updates = StreamController<AuthState>.broadcast(sync: true);
+    addTearDown(updates.close);
+    final initial = auth.state;
+    whenListen(auth, updates.stream, initialState: initial);
+    final switchRequest = Completer<bool>();
+    when(() => auth.switchAccount('b')).thenAnswer((_) {
+      updates.add(initial.copyWith(switchingAccountId: 'b'));
+      return switchRequest.future;
+    });
+
+    await mount(tester);
+    await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
+    await _pump(tester);
+    final row = find.byKey(const ValueKey('switch-account-b'));
+    await tester.tap(row);
+    await tester.pump();
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.byKey(const ValueKey('account-switch-progress')),
+      ),
+      findsOneWidget,
+    );
+    await tester.tap(row, warnIfMissed: false);
+    verify(() => auth.switchAccount('b')).called(1);
+    updates.add(initial);
+    switchRequest.complete(false);
+    await tester.pump();
+    expect(find.text("Couldn't switch account."), findsOneWidget);
+
+    when(() => auth.switchAccount('b')).thenAnswer((_) async => true);
+    await tester.tap(row);
+    await _pump(tester);
+    expect(row, findsNothing);
+  });
+
+  testWidgets('expired account opens sign-in with that account as a hint', (
+    tester,
+  ) async {
+    when(
+      () => auth.state,
+    ).thenReturn(auth.state.copyWith(expiredAccountIds: {'b'}));
+    await mount(tester);
+    await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
+    await _pump(tester);
+    await tester.tap(find.text('Sign in again'));
+    await _pump(tester);
+    expect(find.text('Synthetic sign-in destination'), findsOneWidget);
+    verify(
+      () => auth.beginAddAccountFlow(email: 'demo-b@example.test'),
+    ).called(1);
+    verifyNever(() => auth.switchAccount('b'));
+    expect(router.routeInformationProvider.value.uri.query, isEmpty);
+  });
+
+  testWidgets('Manage accounts opens the account management destination', (
+    tester,
+  ) async {
+    await mount(tester);
+    await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
+    await _pump(tester);
+    await tester.tap(find.text('Manage accounts'));
+    await _pump(tester);
+    expect(find.text('Synthetic account management'), findsOneWidget);
+  });
+
+  testWidgets('Add account opens sign-in without an account hint', (
+    tester,
+  ) async {
+    await mount(tester);
+    await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
+    await _pump(tester);
+    await tester.tap(find.text('Add account'));
+    await _pump(tester);
+    expect(find.text('Synthetic sign-in destination'), findsOneWidget);
+    final hint = verify(
+      () => auth.beginAddAccountFlow(email: captureAny(named: 'email')),
+    ).captured.single;
+    expect(hint, isNull);
+  });
+
   for (final size in [const Size(320, 700), const Size(1032, 1376)]) {
     testWidgets('Profile fits $size at double text', (tester) async {
       await mount(tester, size: size);

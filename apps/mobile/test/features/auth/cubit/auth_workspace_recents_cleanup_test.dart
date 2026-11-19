@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mobile/data/models/stored_account_switch_result.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -76,8 +77,18 @@ void main() {
       () => repo.removeStoredAccount(any()),
     ).thenAnswer((_) async => (success: true, switched: false, error: null));
     when(
-      () => repo.switchToStoredAccount(any()),
-    ).thenAnswer((_) async => (success: true, error: null));
+      () => repo.switchToStoredAccount(
+        any(),
+        beforeActivate: any(named: 'beforeActivate'),
+      ),
+    ).thenAnswer((invocation) async {
+      final prepare =
+          invocation.namedArguments[#beforeActivate]
+              as Future<void> Function()?;
+      await prepare?.call();
+      when(repo.getCurrentUserSync).thenReturn(_user(_other));
+      return StoredAccountSwitchResult.switched;
+    });
   });
 
   tearDown(() async {

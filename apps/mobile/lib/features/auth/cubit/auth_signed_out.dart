@@ -12,6 +12,7 @@ extension _AuthSignedOut on AuthCubit {
           accounts: state.accounts,
           activeAccountId: state.activeAccountId,
           isAddAccountFlow: true,
+          addAccountEmail: state.addAccountEmail,
         ),
       );
       unawaited(_reloadStoredAccounts());

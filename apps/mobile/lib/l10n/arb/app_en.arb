@@ -1850,6 +1850,7 @@
   "authSavedAccountBadge": "Saved on device",
   "authSavedAccountsDescription": "Manage accounts stored on this device without changing the current one.",
   "authSavedAccountsTitle": "Saved accounts",
+  "authSignInAgain": "Sign in again",
   "authSwitchAccount": "Switch account",
   "authSwitchAccountDescription": "Choose a saved account to continue.",
   "authSwitchAccountFailed": "Couldn't switch account.",
