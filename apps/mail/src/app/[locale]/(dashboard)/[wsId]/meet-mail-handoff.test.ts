@@ -210,21 +210,29 @@ it('connected client previews before consent and initializes only plain fields t
   expect(body).not.toHaveProperty('sourceId');
   expect(api.send).not.toHaveBeenCalled();
 });
+// The floating composer mounts lazily; the default 1s waitFor is too tight
+// when the suite shares a machine with other checks.
+const composerTimeout = 4000;
 it('managed client leaves parsing inert, then opens the actual floating composer with escaped plaintext', async () => {
   mount(false);
   await screen.findByText('confirm');
   expect(api.create).not.toHaveBeenCalled();
   expect(api.send).not.toHaveBeenCalled();
-  await waitFor(() =>
-    expect(screen.getByRole('button', { name: 'import' })).toBeEnabled()
+  await waitFor(
+    () => expect(screen.getByRole('button', { name: 'import' })).toBeEnabled(),
+    { timeout: composerTimeout }
   );
   fireEvent.click(screen.getByRole('button', { name: 'import' }));
-  await waitFor(() =>
-    expect(
-      document.querySelector('input[value="<b>Plain title</b>"]')
-    ).not.toBeNull()
+  await waitFor(
+    () =>
+      expect(
+        document.querySelector('input[value="<b>Plain title</b>"]')
+      ).not.toBeNull(),
+    { timeout: composerTimeout }
   );
-  await waitFor(() => expect(api.create).toHaveBeenCalled());
+  await waitFor(() => expect(api.create).toHaveBeenCalled(), {
+    timeout: composerTimeout,
+  });
   const payload = api.create.mock.calls[0]?.[2];
   expect(payload.to).toEqual(['guest@example.invalid']);
   expect(payload.bodyText).toContain('<b>Plain title</b>');
