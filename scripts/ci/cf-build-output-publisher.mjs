@@ -38,6 +38,23 @@ export function cfBundleModuleNames(buildRoot) {
   return modules.sort();
 }
 
+export function cfBuildOutputMainModule(buildRoot) {
+  const workerConfigPath = join(
+    buildRoot,
+    BUILD_OUTPUT_PREFIX,
+    'workers/default/worker.config.json'
+  );
+  const worker = JSON.parse(readFileSync(workerConfigPath, 'utf8'));
+  assert.equal(worker.manifest?.type, 'complete', 'complete manifest required');
+  return worker.manifest.mainModule;
+}
+
+/** Module paths staged for upload excluding the Worker entry module. */
+export function cfBundleSecondaryModuleNames(buildRoot) {
+  const mainModule = cfBuildOutputMainModule(buildRoot);
+  return cfBundleModuleNames(buildRoot).filter((name) => name !== mainModule);
+}
+
 export function assertUploadNameParity(receipt, secondaryModuleNames) {
   const expected = receipt.secondaryModuleNames ?? [];
   assert.deepEqual(

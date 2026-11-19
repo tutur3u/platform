@@ -7,7 +7,7 @@ import {
   BUILD_OUTPUT_PREFIX,
   assertMeasuredLimits,
   assertUploadNameParity,
-  cfBundleModuleNames,
+  cfBundleSecondaryModuleNames,
   measureBuildOutputUpload,
   parseCfVersionId,
   runCfPrebuilt,
@@ -48,7 +48,7 @@ export async function rehearseCalendarPublication({
     sourceSha,
     destination: buildRoot,
   });
-  assertUploadNameParity(receipt, cfBundleModuleNames(buildRoot));
+  assertUploadNameParity(receipt, cfBundleSecondaryModuleNames(buildRoot));
   assertControlFileParity(receipt);
   stageBuildOutput(appRoot, buildRoot);
   const publicationConfig = JSON.parse(readFileSync(config, 'utf8'));

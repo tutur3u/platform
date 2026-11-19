@@ -10,7 +10,7 @@ import { join, resolve } from 'node:path';
 import {
   assertMeasuredLimits,
   assertUploadNameParity,
-  cfBundleModuleNames,
+  cfBundleSecondaryModuleNames,
   measureBuildOutputUpload,
   parseCfVersionId,
   runCfPrebuilt,
@@ -84,7 +84,7 @@ export async function rehearseWave1Publication({
     sha,
     destination: buildRoot,
   });
-  assertUploadNameParity(receipt, cfBundleModuleNames(buildRoot));
+  assertUploadNameParity(receipt, cfBundleSecondaryModuleNames(buildRoot));
   stageBuildOutput(appRoot, buildRoot);
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   try {
