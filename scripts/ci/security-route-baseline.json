@@ -4432,6 +4432,11 @@
     "digest": "0dc17e9105b321ca5e1bcd7e90bd17a26f2bc58a4d1bf5fe50ccfe7b634cfc73"
   },
   {
+    "file": "apps/web/src/app/api/v1/auth/fleet-smoke/route.ts",
+    "digest": "122544248a9f15a40d969b2adf359ff24f633f0bae01f7e97f12a7f7ff3e7e4d",
+    "review": "Iris independent Security review of 7e38656757, PASS-WITH-FIXES, 2026-11-20. Inline bearer check uses constant-time digest comparison and fails closed for missing or invalid credentials, origin, or expiry."
+  },
+  {
     "file": "apps/web/src/app/api/v1/auth/mfa/devices/route.ts",
     "digest": "5c87b25c7965ceb2fd78b7d7abec0caa42e56ced6ac9b75c62f141102df90e2a"
   },

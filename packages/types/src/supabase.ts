@@ -6237,6 +6237,34 @@ export type Database = {
           },
         ];
       };
+      fleet_smoke_operations: {
+        Row: {
+          activated_at: string | null;
+          id: string;
+          reserved_at: string;
+          retired_at: string | null;
+          state: string;
+          workspace_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          activated_at?: string | null;
+          id: string;
+          reserved_at?: string;
+          retired_at?: string | null;
+          state: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          activated_at?: string | null;
+          id?: string;
+          reserved_at?: string;
+          retired_at?: string | null;
+          state?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [];
+      };
       form_logic_rules: {
         Row: {
           action_type: string;
@@ -23896,6 +23924,10 @@ export type Database = {
           p_worker_id: string;
         };
         Returns: boolean;
+      };
+      fleet_smoke_transition: {
+        Args: { p_action: string; p_factor?: string; p_id: string };
+        Returns: Json;
       };
       form_id_from_question: {
         Args: { p_question_id: string };
