@@ -240,6 +240,25 @@ rollback cannot discard another gateway change. If a rollout is reverted,
 hold future gateway deploys until the mount configuration reflects that
 decision.
 
+### Hosted rollback status on 2026-11-20
+
+Cloudflare showed gateway version `220f3461-0a83-42b1-ab79-ce45bd126e41`
+at 100% traffic and offered rollback to the prior Ready version below.
+Use the version serving immediately before the change when rehearsing or rolling
+back a later mount.
+
+```bash
+wrangler rollback 74cd2de2-0603-4b3e-b294-e21dd29a4c4e --name tuturuuu-gateway \
+  --message "Restore gateway routing"
+```
+
+The isolated rehearsal Worker has a `workers.dev` endpoint. Its bootstrap
+template still answers requests. The gateway bundle was prepared
+on the Studio, and the dashboard editor readback still showed the template
+after the upload attempt. The hosted rehearsal remains open until two versions
+of the gateway source serve distinct staging responses and one rollback restores
+the first version and its response.
+
 ## Web route families
 
 Route families of `apps/web` built as their own Worker (see
