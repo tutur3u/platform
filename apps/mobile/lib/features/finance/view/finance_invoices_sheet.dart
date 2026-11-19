@@ -10,6 +10,7 @@ import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/finance_invoice_editor.dart';
+import 'package:mobile/features/finance/view/finance_invoice_export_sheet.dart';
 import 'package:mobile/features/finance/view/finance_invoice_report_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -71,6 +72,17 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
         false;
   }
 
+  Future<void> _export(BuildContext context, String query) =>
+      widget.session.open<void>(
+        context,
+        (_) => FinanceInvoiceExportSheet(
+          repository: widget.repository,
+          session: widget.session,
+          pending: _subscriptions,
+          query: query,
+        ),
+      );
+
   Widget? _money(FinanceInvoice invoice) {
     final total = invoice.total;
     final wallet = widget.wallets
@@ -115,6 +127,7 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
       return FinanceDirectorySheet<FinancePendingInvoice>(
         title: l10n.financeInvoices,
         empty: l10n.financeInvoiceNoPending,
+        onExport: session.allows('export_finance_data') ? _export : null,
         sections: sections,
         fetch: (query, page) =>
             widget.repository.getPendingInvoices(ws, query: query, page: page),
@@ -141,6 +154,7 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
     return FinanceDirectorySheet<FinanceInvoice>(
       title: l10n.financeInvoices,
       empty: l10n.financeInvoiceEmpty,
+      onExport: session.allows('export_finance_data') ? _export : null,
       sections: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.sm,

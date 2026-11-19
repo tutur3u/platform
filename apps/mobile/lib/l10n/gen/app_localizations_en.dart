@@ -16633,4 +16633,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeReportConverted => 'Estimated using the latest exchange rates.';
+
+  @override
+  String get financeExportInvoices => 'Export invoices';
+
+  @override
+  String get financeInvoiceShareFile => 'Share file';
+
+  @override
+  String get financeInvoiceExportFormat => 'File format';
+
+  @override
+  String get financeInvoiceExportError => 'Could not export all invoices. Narrow the search and try again.';
 }

@@ -30804,6 +30804,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimated using the latest exchange rates.'**
   String get financeReportConverted;
+
+  /// No description provided for @financeExportInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Export invoices'**
+  String get financeExportInvoices;
+
+  /// No description provided for @financeInvoiceShareFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Share file'**
+  String get financeInvoiceShareFile;
+
+  /// No description provided for @financeInvoiceExportFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'File format'**
+  String get financeInvoiceExportFormat;
+
+  /// No description provided for @financeInvoiceExportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export all invoices. Narrow the search and try again.'**
+  String get financeInvoiceExportError;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

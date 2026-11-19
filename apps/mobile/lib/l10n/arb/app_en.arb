@@ -7908,5 +7908,9 @@
   "financeInvoiceByWallet": "By wallet",
   "financeInvoiceByCreator": "By creator",
   "financeReportRatesMissing": "Exchange rates are unavailable for this report.",
-  "financeReportConverted": "Estimated using the latest exchange rates."
+  "financeReportConverted": "Estimated using the latest exchange rates.",
+  "financeExportInvoices": "Export invoices",
+  "financeInvoiceShareFile": "Share file",
+  "financeInvoiceExportFormat": "File format",
+  "financeInvoiceExportError": "Could not export all invoices. Narrow the search and try again."
 }

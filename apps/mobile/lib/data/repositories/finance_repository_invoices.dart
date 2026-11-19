@@ -32,11 +32,12 @@ mixin FinanceRepositoryInvoices {
     int page,
     T Function(Map<String, dynamic>) decode, {
     bool pending = false,
+    int pageSize = 25,
   }) async {
     final params = Uri(
       queryParameters: {
         'page': '$page',
-        'pageSize': '25',
+        'pageSize': '$pageSize',
         if (query.isNotEmpty) 'q': query,
         if (pending) 'groupByUser': 'false',
       },
@@ -50,6 +51,115 @@ mixin FinanceRepositoryInvoices {
       items: rows.map(decode).toList(growable: false),
       count: response['count'] as int,
     );
+  }
+
+  Future<List<List<Object?>>?> getInvoiceExportRows({
+    required String workspace,
+    required String query,
+    required bool pending,
+    required bool Function() active,
+  }) {
+    if (pending) {
+      return _collectInvoiceExport(
+        workspace: workspace,
+        query: query,
+        pending: true,
+        active: active,
+        parse: FinancePendingInvoice.fromJson,
+        headers: const [
+          'customer_id',
+          'customer_name',
+          'group_ids',
+          'months_due',
+          'amount_due',
+        ],
+        key: (row) => jsonEncode([row.customerId, row.groups]),
+        values: (row) => [
+          row.customerId,
+          row.customer,
+          row.groups.join(', '),
+          row.months.join(', '),
+          row.total,
+        ],
+      );
+    }
+    return _collectInvoiceExport(
+      workspace: workspace,
+      query: query,
+      pending: false,
+      active: active,
+      parse: FinanceInvoice.fromJson,
+      headers: const [
+        'invoice_id',
+        'customer',
+        'creator',
+        'wallet_id',
+        'wallet',
+        'amount',
+        'created_at',
+        'completed_at',
+        'subscription_months',
+        'notice',
+        'note',
+      ],
+      key: (row) => row.id,
+      values: (row) => [
+        row.id,
+        row.customer,
+        row.creator,
+        row.walletId,
+        row.wallet,
+        row.total,
+        row.createdAt?.toIso8601String(),
+        row.completedAt?.toIso8601String(),
+        row.coverage,
+        row.notice,
+        row.note,
+      ],
+    );
+  }
+
+  Future<List<List<Object?>>?> _collectInvoiceExport<T>({
+    required String workspace,
+    required String query,
+    required bool pending,
+    required bool Function() active,
+    required T Function(Map<String, dynamic>) parse,
+    required List<String> headers,
+    required String Function(T) key,
+    required List<Object?> Function(T) values,
+  }) async {
+    const pageSize = 100;
+    const rowLimit = 5000;
+    final user = _cacheUserId();
+    final keys = <String>{};
+    final result = <List<Object?>>[headers];
+    int? expected;
+    for (var page = 1; expected == null || keys.length < expected; page++) {
+      if (!active() || _cacheUserId() != user) return null;
+      final current = await _invoicePage(
+        workspace,
+        query,
+        page,
+        parse,
+        pending: pending,
+        pageSize: pageSize,
+      );
+      if (!active() || _cacheUserId() != user) return null;
+      expected ??= current.count;
+      if (expected > rowLimit ||
+          current.count != expected ||
+          current.items.length != (expected - keys.length).clamp(0, pageSize)) {
+        throw const FormatException('Cannot export a complete invoice report.');
+      }
+      for (final row in current.items) {
+        if (!keys.add(key(row))) {
+          throw const FormatException('Invoice export changed while paging.');
+        }
+        result.add(values(row));
+      }
+    }
+    return result;
   }
 
   Future<String> createInvoice({

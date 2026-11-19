@@ -16426,4 +16426,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeReportConverted => 'Ước tính theo tỷ giá mới nhất.';
+
+  @override
+  String get financeExportInvoices => 'Xuất hóa đơn';
+
+  @override
+  String get financeInvoiceShareFile => 'Chia sẻ tệp';
+
+  @override
+  String get financeInvoiceExportFormat => 'Định dạng tệp';
+
+  @override
+  String get financeInvoiceExportError => 'Không thể xuất tất cả hóa đơn. Thu hẹp tìm kiếm rồi thử lại.';
 }

@@ -15,6 +15,7 @@ class FinanceDirectorySheet<T> extends StatefulWidget {
     this.create,
     this.createLabel,
     this.sections,
+    this.onExport,
     super.key,
   });
 
@@ -30,6 +31,7 @@ class FinanceDirectorySheet<T> extends StatefulWidget {
   final Future<bool> Function(BuildContext context)? create;
   final String? createLabel;
   final Widget? sections;
+  final Future<void> Function(BuildContext, String)? onExport;
 
   @override
   State<FinanceDirectorySheet<T>> createState() =>
@@ -109,6 +111,12 @@ class _FinanceDirectorySheetState<T> extends State<FinanceDirectorySheet<T>> {
       ),
       onRefresh: () => _load(reset: true),
       actions: [
+        if (widget.onExport case final export?)
+          AppButton.secondary(
+            leading: const Icon(LucideIcons.download),
+            onPressed: () => export(context, _search.text.trim()),
+            child: Text(l10n.financeExportInvoices),
+          ),
         if (create != null)
           AppButton.primary(
             leading: const Icon(LucideIcons.plus),

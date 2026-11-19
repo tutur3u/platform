@@ -7203,5 +7203,9 @@
   "financeInvoiceByWallet": "Theo ví",
   "financeInvoiceByCreator": "Theo người tạo",
   "financeReportRatesMissing": "Chưa có tỷ giá cho báo cáo này.",
-  "financeReportConverted": "Ước tính theo tỷ giá mới nhất."
+  "financeReportConverted": "Ước tính theo tỷ giá mới nhất.",
+  "financeExportInvoices": "Xuất hóa đơn",
+  "financeInvoiceShareFile": "Chia sẻ tệp",
+  "financeInvoiceExportFormat": "Định dạng tệp",
+  "financeInvoiceExportError": "Không thể xuất tất cả hóa đơn. Thu hẹp tìm kiếm rồi thử lại."
 }
