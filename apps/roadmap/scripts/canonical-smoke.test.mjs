@@ -211,18 +211,26 @@ function deferredZone(historyIn) {
   };
 }
 
-test('D79: the smoke finds the history asset in the entry the page names, with hydration deferred', async () => {
-  const passing = await canonicalSmoke({
-    origin: ORIGIN,
-    fetchImpl: deferredZone('/index-'),
-  });
-  assert.deepEqual(passing.failures, []);
-  assert.ok(passing.checked.includes(`200 history ${HISTORY}`));
-  // Broken variant (#8190 at 7d39dbbd): the URL only in a route chunk the
-  // page names through an inert hint, which the smoke never fetches.
+test('the smoke finds the history asset in the entry or a deferred route chunk', async () => {
+  for (const chunk of ['/roadmap-Abcd1234', '/index-']) {
+    const result = await canonicalSmoke({
+      origin: ORIGIN,
+      fetchImpl: deferredZone(chunk),
+    });
+    assert.deepEqual(result.failures, [], chunk);
+    assert.ok(result.checked.includes(`200 history ${HISTORY}`));
+    assert.ok(
+      result.checked.includes(
+        `200 modulepreload ${ORIGIN}/roadmap/assets/roadmap-Abcd1234.js`
+      )
+    );
+  }
+});
+
+test('a history alternate link alone does not prove a script loads history', async () => {
   const broken = await canonicalSmoke({
     origin: ORIGIN,
-    fetchImpl: deferredZone('/roadmap-Abcd1234'),
+    fetchImpl: deferredZone('/absent-'),
   });
   assert.ok(
     broken.failures.includes(

@@ -3,8 +3,8 @@ import historyUrl from '../generated/history.json?url';
 /**
  * The hashed full-history JSON. The timeline fetches it lazily; the roadmap
  * head also links it as the page's machine-readable alternate (no fetch).
- * Because the head imports it, the URL lives in the entry chunk, where the
- * canonical smoke (which scans the page's scripts) finds and checks it.
+ * The canonical smoke reads both the entry and deferred route chunks to find
+ * the URL, since the bundler can move it into a shared chunk.
  */
 export { historyUrl };
 

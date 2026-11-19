@@ -18,6 +18,7 @@
  * Usage: node apps/roadmap/scripts/canonical-smoke.mjs [origin] [history-path]
  */
 import { smokeAssets } from '../../../scripts/ci/asset-smoke.mjs';
+import { DEFERRED_PRELOAD_REL } from '@tuturuuu/roadmap-core/defer-hydration.ts';
 
 /** Every public page and language. Kept in step with the pre-seal doctor. */
 export const CANONICAL_PAGES = [
@@ -35,18 +36,22 @@ function attribute(attrs, name) {
   return match ? (match[1] ?? match[2] ?? match[3] ?? '') : null;
 }
 
-/** Resource hints a browser acts on by itself, with their rel and `as`. */
+/** Resource hints the browser loads directly or the hydration boot script activates. */
 export function resourceHints(html) {
   const hints = [];
   for (const match of String(html).matchAll(/<link\b([^>]*)>/gi)) {
     const rels = (attribute(match[1], 'rel') ?? '').toLowerCase().split(/\s+/);
-    const rel = ['preload', 'modulepreload', 'prefetch', 'prerender'].find(
-      (name) => rels.includes(name)
-    );
+    const rel = [
+      'preload',
+      'modulepreload',
+      'prefetch',
+      'prerender',
+      DEFERRED_PRELOAD_REL,
+    ].find((name) => rels.includes(name));
     const href = attribute(match[1], 'href');
     if (rel && href)
       hints.push({
-        rel,
+        rel: rel === DEFERRED_PRELOAD_REL ? 'modulepreload' : rel,
         href,
         as: (attribute(match[1], 'as') ?? '').toLowerCase(),
       });
@@ -170,9 +175,14 @@ export async function canonicalSmoke({
   failures.push(...assets.failures);
   for (const asset of assets.assets ?? [])
     checked.push(`${asset.status} ${asset.url}`);
-  const scripts = (assets.assets ?? [])
-    .filter((asset) => asset.kind === 'js' && asset.ok)
-    .map((asset) => asset.url);
+  const scripts = new Set(
+    (assets.assets ?? [])
+      .filter((asset) => asset.kind === 'js' && asset.ok)
+      .map((asset) => asset.url)
+  );
+  for (const hint of hints.values()) {
+    if (hint.rel === 'modulepreload') scripts.add(hint.target);
+  }
   const histories = historyPath
     ? [historyPath]
     : await discoverHistory(scripts, fetchImpl);
