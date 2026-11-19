@@ -1,0 +1,44 @@
+---
+updatedAt: "2026-11-19"
+title: 'Mobile notifications'
+description: 'How the mobile Inbox tab lists, filters, opens and marks notifications.'
+audience: users
+---
+
+The Inbox root tab lists notifications for the current workspace (personal
+scope when the personal workspace is active).
+
+- **Filters**: All (default), Unread (with the unread count) and Read chips
+  above the feed. Each filter is its own server-paged feed; the
+  `/notifications/archive` deep link opens Read.
+- **Feed**: rows group under sticky Today, Yesterday and Earlier headers by
+  the device's local calendar day. A row shows the source tile, title, a
+  one-line body, relative time and an unread dot. Cached rows render first,
+  then refresh on open, on push events and on pull to refresh; the next page
+  loads near the end of the list.
+- **Open**: a tap marks the notification read at once and opens its target:
+  task (board with the task), calendar event, chat conversation, finance
+  transaction, time-tracking request or mail thread, switching workspace
+  first when needed. Notifications without an openable screen, or whose
+  workspace the user no longer belongs to, open a details sheet; the sheet
+  notes when the linked item is no longer available.
+- **Read state**: swiping a row toward the end edge toggles read or unread
+  and shows an Undo toast. **Mark all as read** sits in the top bar with a
+  notification settings action that opens Reminders. Notifications cannot be
+  deleted or archived separately from read state; the API has no such action.
+- **Invites**: open workspace invites show Accept and Decline in the row.
+- **States**: skeleton rows on first load; "You're all caught up" (All),
+  "No unread notifications" (Unread) or "No read notifications" (Read) when
+  empty; an offline or error message with Retry when nothing is cached; an
+  inline banner with Retry over cached rows when a refresh fails.
+- **Badges**: every notifications cubit publishes its unread count to
+  `NotificationsUnreadCount`, and in-app reads emit an archive-changed push
+  event so the top-bar bell refreshes.
+
+Regression coverage: `notifications_inbox_test.dart` (filters, open, missing
+target, swipe and Undo, states), `notification_open_plan_test.dart` (target
+routing and fallbacks), `notification_day_groups_test.dart` (midnight and
+time-zone grouping), `notifications_inbox_read_test.dart` (optimistic read,
+mark all read, badge count, offline) and `notifications_inbox_goldens_test.dart`.
+
+Server access rules are in [Notification access](/platform/features/notification-access).
