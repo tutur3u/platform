@@ -719,7 +719,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `cancel-in-progress: false` and `queue: max` so active and pending runs survive
   newer pushes. PR validation groups use workflow, event and PR number, with
   `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
-  and ref. Production, generated Release Please refs and manual qualification
+  and ref without cancelling the active run: `cancel-in-progress` exempts
+  `refs/heads/main`, so a newer push replaces only the pending run and long
+  workflows still finish under frequent pushes. Only report-only smoke and
+  preview workflows supersede active main runs. Production, generated Release Please refs and manual qualification
   retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never

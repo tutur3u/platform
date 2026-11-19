@@ -116,12 +116,15 @@ const queuedMainBaselines = new Set([
   'turbo-unit-tests.yaml',
   'type-check.yaml',
 ]);
-const boundedMainProducers = new Set([
-  'codex-plugin.yaml',
-  'i18n-check.yaml',
-  'required-account-mfa-contract.yaml',
-  'security-checks.yaml',
-]);
+// Every other main-push validation workflow keeps its active main run and
+// shares one pending slot: a newer push replaces only the queued run, so long
+// workflows still finish under frequent pushes instead of cancelling forever.
+const boundedMainProducers = new Set();
+// Main pushes may still supersede these: their newest run is the only signal.
+const mainSupersedeAllowed = {
+  'e2e-smoke-report-only.yaml': 'Report-only smoke; the newest main run wins',
+  'vercel-preview-platform.yaml': 'Previews follow the newest ref',
+};
 
 function mainRunCancels(file) {
   return !queuedMainBaselines.has(file) && !boundedMainProducers.has(file);
@@ -135,6 +138,23 @@ const workflows = Object.fromEntries(
 for (const [file, workflow] of Object.entries(workflows)) {
   if (String(workflow.name || '').endsWith(' Cloudflare Source'))
     queuedMainBaselines.add(file);
+}
+function pushesMain(workflow) {
+  if (!Object.hasOwn(events(workflow), 'push')) return false;
+  const push = events(workflow).push;
+  return (
+    (!push?.branches || push.branches.includes('main')) &&
+    !push?.['branches-ignore']?.includes('main')
+  );
+}
+for (const [file, workflow] of Object.entries(workflows)) {
+  if (
+    pushesMain(workflow) &&
+    !mainExceptions[file] &&
+    !mainSupersedeAllowed[file] &&
+    !queuedMainBaselines.has(file)
+  )
+    boundedMainProducers.add(file);
 }
 function events(workflow) {
   const on = workflow.on;
@@ -261,6 +281,7 @@ module.exports = {
   mainExceptions,
   queuedMainBaselines,
   boundedMainProducers,
+  pushesMain,
   mainRunCancels,
   workflows,
   events,

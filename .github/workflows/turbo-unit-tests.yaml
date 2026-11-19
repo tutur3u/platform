@@ -107,7 +107,7 @@ jobs:
           const { spawnSync } = require('node:child_process');
           const files = discoverScriptTests();
           console.log(`Discovered ${files.length} script test files.`);
-          const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', '--test-concurrency=2', '--test-reporter=tap', ...files], { stdio: 'inherit' });
+          const result = spawnSync(process.execPath, ['--experimental-strip-types', '--test', '--test-concurrency=4', '--test-reporter=tap', ...files], { stdio: 'inherit' });
           if (result.error) throw result.error;
           process.exitCode = result.status ?? 1;
           NODE

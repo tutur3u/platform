@@ -86,8 +86,8 @@ test('superseded PR runs cancel, production release evidence does not', () => {
   for (const name of ['i18n-check.yaml', 'e2e-tests.yaml']) {
     const concurrency = readWorkflow(name).concurrency;
     const policy = concurrency['cancel-in-progress'];
-    const mainExemption =
-      name === 'i18n-check.yaml' ? "github.ref != 'refs/heads/main' && " : '';
+    // Main keeps its active run; only the pending slot is replaced.
+    const mainExemption = "github.ref != 'refs/heads/main' && ";
     assert.equal(
       policy,
       "${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && " +
