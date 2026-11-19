@@ -267,6 +267,13 @@ rollback cannot discard another gateway change. If a rollout is reverted,
 hold future gateway deploys until the mount configuration reflects that
 decision.
 
+After each switch, confirm the expected build identity twice in succession
+from both watch locations before fetching any assets referenced by the live
+HTML. Allow a bounded readiness interval for documented preimage responses
+while the deployment reaches the edge. Roll back on an unexpected response
+or if that interval expires. Start the post-deploy watch after both the app
+and gateway have converged.
+
 ### Hosted rollback status on 2026-11-20
 
 Cloudflare showed gateway version `220f3461-0a83-42b1-ab79-ce45bd126e41`

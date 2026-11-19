@@ -126,7 +126,7 @@ def display_url(url):
 def check_url(url, pins, pinned_origins, *, document=False):
     row = {"url": display_url(url), "passed": False}
     try:
-        headers = {"Cache-Control": "no-cache"}
+        headers = {"Cache-Control": "no-cache", "User-Agent": "Tuturuuu-Gateway-Smoke/1.0"}
         if origin(url) in pinned_origins:
             headers[VERSION_OVERRIDES] = pins
         request = Request(url, headers=headers, method="GET")
