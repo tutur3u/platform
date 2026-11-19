@@ -133,6 +133,8 @@ void main() {
         '/api/v1/calendar/connections?wsId=ws': ApiOrigin.calendar,
         '/api/v1/workspaces/ws/courses': ApiOrigin.teach,
         '/api/v1/workspaces/ws/education/attempts': ApiOrigin.teach,
+        '/api/v1/workspaces/ws/education/learner-progress': ApiOrigin.platform,
+        '/api/v1/workspaces/ws/education/quiz-attempts': ApiOrigin.platform,
         '/api/v1/workspaces/ws/time-tracking/sessions': ApiOrigin.platform,
         '/api/v1/infrastructure/mobile-versions': ApiOrigin.infrastructure,
         '/api/v1/workspaces/ws/mail/bootstrap': ApiOrigin.mail,

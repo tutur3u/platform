@@ -156,6 +156,14 @@ class ApiOrigins {
     }
     if (_matchesWorkspaceV1(
       path,
+      r'education/(?:learner-progress|quiz-attempts)(?:/|$)',
+    )) {
+      // Practice progress is served by the web app. Teach still owns the
+      // older set-scoped attempts list.
+      return ApiOrigin.platform;
+    }
+    if (_matchesWorkspaceV1(
+      path,
       r'(?:education|courses|quizzes|quiz-sets|flashcards)(?:/|$)',
     )) {
       return ApiOrigin.teach;

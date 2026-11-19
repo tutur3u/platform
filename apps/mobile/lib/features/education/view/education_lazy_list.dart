@@ -20,24 +20,28 @@ extension _EducationLazyList on _EducationPageState {
         ? _buildOverview(context)
         : <Widget>[
             if (_tab == _EducationTab.library)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final section in _EducationLibraryTab.values)
-                    _EducationLibraryToggle(
-                      label: switch (section) {
-                        _EducationLibraryTab.quizzes =>
-                          l10n.educationLibraryQuizzesLabel,
-                        _EducationLibraryTab.quizSets =>
-                          l10n.educationLibraryQuizSetsLabel,
-                        _EducationLibraryTab.flashcards =>
-                          l10n.educationLibraryFlashcardsLabel,
-                      },
-                      selected: _libraryTab == section,
-                      onTap: () => _selectLibraryTab(section),
-                    ),
-                ],
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final section in _EducationLibraryTab.values)
+                      AppChip(
+                        label: Text(switch (section) {
+                          _EducationLibraryTab.quizzes =>
+                            l10n.educationLibraryQuizzesLabel,
+                          _EducationLibraryTab.quizSets =>
+                            l10n.educationLibraryQuizSetsLabel,
+                          _EducationLibraryTab.flashcards =>
+                            l10n.educationLibraryFlashcardsLabel,
+                        }),
+                        selected: _libraryTab == section,
+                        inMutuallyExclusiveGroup: true,
+                        onSelected: (_) => _selectLibraryTab(section),
+                      ),
+                  ],
+                ),
               ),
           ];
     final rows = _tab == _EducationTab.overview ? 0 : _visibleCount;
@@ -56,55 +60,40 @@ extension _EducationLazyList on _EducationPageState {
             return Semantics(
               label: l10n.commonLoading,
               liveRegion: true,
-              child: Column(
-                children: List.generate(
-                  3,
-                  (_) => Container(
-                    height: 78,
-                    margin: const EdgeInsets.only(bottom: 10),
-                    decoration: BoxDecoration(
-                      color: shad.Theme.of(context).colorScheme.muted,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-              ),
+              child: const AppSkeletonRows(count: 3),
             );
           }
           if (_error != null) {
-            return Center(
-              child: TextButton.icon(
-                onPressed: _isLoading
-                    ? null
-                    : () => _reloadCurrentTab(force: true),
-                icon: const Icon(Icons.refresh_rounded),
-                label: Text(l10n.commonRetry),
-              ),
+            return AppStateMessage(
+              icon: AppIcons.error,
+              title: l10n.commonSomethingWentWrong,
+              tone: AppTone.destructive,
+              actionLabel: l10n.commonRetry,
+              onAction: _isLoading
+                  ? null
+                  : () => _reloadCurrentTab(force: true),
             );
           }
           if (_isLoading || _isLoadingMore) {
             return const AppLoadingIndicator.page();
           }
           if (rows == 0 && _tab != _EducationTab.overview) {
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: Text(switch (_tab) {
-                  _EducationTab.courses => l10n.educationEmptyCourses,
-                  _EducationTab.attempts => l10n.educationEmptyAttempts,
-                  _ => switch (_libraryTab) {
-                    _EducationLibraryTab.quizzes => l10n.educationEmptyQuizzes,
-                    _EducationLibraryTab.quizSets =>
-                      l10n.educationEmptyQuizSets,
-                    _EducationLibraryTab.flashcards =>
-                      l10n.educationEmptyFlashcards,
-                  },
-                }),
-              ),
+            return AppStateMessage(
+              icon: LucideIcons.graduationCap,
+              title: switch (_tab) {
+                _EducationTab.courses => l10n.educationEmptyCourses,
+                _EducationTab.attempts => l10n.educationEmptyAttempts,
+                _ => switch (_libraryTab) {
+                  _EducationLibraryTab.quizzes => l10n.educationEmptyQuizzes,
+                  _EducationLibraryTab.quizSets => l10n.educationEmptyQuizSets,
+                  _EducationLibraryTab.flashcards =>
+                    l10n.educationEmptyFlashcards,
+                },
+              },
             );
           }
           if (_shouldShowLoadMore) {
-            return TextButton(
+            return AppButton.ghost(
               onPressed: _loadMore,
               child: Text(l10n.commonLoadMore),
             );

@@ -53,6 +53,33 @@ List<T> _mergeEducation<T>(List<T> old, List<T> next, String Function(T) id) =>
       for (final row in next) id(row): row,
     }.values.toList(growable: false);
 
+bool _mergesLearnerAttempts(String status, String? setId) =>
+    (status == 'all' || status == 'completed') &&
+    (setId == null || setId.isEmpty);
+
+int _attemptStamp(EducationAttemptSummary attempt) =>
+    DateTime.tryParse(
+      attempt.submittedAt ?? attempt.completedAt ?? '',
+    )?.millisecondsSinceEpoch ??
+    0;
+
+List<EducationAttemptSummary> _combineAttempts(
+  List<EducationAttemptSummary> learner,
+  List<EducationAttemptSummary> teach, {
+  int? take,
+}) {
+  final byId = <String, EducationAttemptSummary>{
+    for (final attempt in learner) attempt.id: attempt,
+    for (final attempt in teach) attempt.id: attempt,
+  };
+  final merged = byId.values.toList()
+    ..sort((a, b) => _attemptStamp(b).compareTo(_attemptStamp(a)));
+  if (take == null || merged.length <= take) {
+    return merged;
+  }
+  return merged.take(take).toList(growable: false);
+}
+
 extension _EducationFailures on _EducationPageState {
   void _handleLoadFailure(Object error) {
     final denied = _educationAccessDenied(error);
@@ -78,6 +105,7 @@ extension _EducationFailures on _EducationPageState {
         _attemptsCount = 0;
         _attemptSummaryCount = 0;
         _attemptSets = const [];
+        _clearLearnerProgress();
       }
     });
   }

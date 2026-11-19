@@ -13,7 +13,7 @@ extension _EducationPageLayout on _EducationPageState {
     final l10n = context.l10n;
     final hasWorkspace = _wsId.isNotEmpty;
 
-    return shad.Scaffold(
+    return AppScaffold(
       child: Stack(
         children: [
           ShellMiniNav(
@@ -152,12 +152,21 @@ extension _EducationPageLayout on _EducationPageState {
     unawaited(
       showAppSheet<void>(
         context: context,
-        builder: (_) => EducationCourseDetail(course: course),
+        builder: (sheetContext) => EducationCourseDetail(
+          course: course,
+          onPractice: () {
+            Navigator.of(sheetContext).pop();
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              _openQuizPractice(courseId: course.id);
+            });
+          },
+        ),
       ),
     );
   }
 
-  void _openQuizPractice() {
+  void _openQuizPractice({String? courseId}) {
     unawaited(
       showAppSheet<void>(
         context: context,
@@ -167,6 +176,17 @@ extension _EducationPageLayout on _EducationPageState {
             if (_quizPreview.isNotEmpty) return _quizPreview;
             final page = await _repository.getQuizzes(_wsId);
             return page.items;
+          },
+          submitAttempt: (answers, durationSeconds) =>
+              _repository.submitQuizAttempt(
+                _wsId,
+                courseId: courseId,
+                durationSeconds: durationSeconds,
+                answers: answers,
+              ),
+          onSubmitted: () {
+            if (!mounted) return;
+            unawaited(_loadOverview());
           },
         ),
       ),

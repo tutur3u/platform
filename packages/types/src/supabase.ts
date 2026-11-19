@@ -4815,6 +4815,171 @@ export type Database = {
         };
         Relationships: [];
       };
+      education_learner_module_progress: {
+        Row: {
+          completed_at: string;
+          course_id: string;
+          id: string;
+          module_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string;
+          course_id: string;
+          id?: string;
+          module_id: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string;
+          course_id?: string;
+          id?: string;
+          module_id?: string;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'education_learner_module_progress_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_module_progress_module_id_fkey';
+            columns: ['module_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_course_modules';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_module_progress_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_module_progress_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      education_learner_quiz_attempt_answers: {
+        Row: {
+          attempt_id: string;
+          created_at: string;
+          id: string;
+          is_correct: boolean;
+          quiz_id: string;
+          score_awarded: number;
+          selected_option_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempt_id: string;
+          created_at?: string;
+          id?: string;
+          is_correct: boolean;
+          quiz_id: string;
+          score_awarded?: number;
+          selected_option_id?: string | null;
+        };
+        Update: {
+          attempt_id?: string;
+          created_at?: string;
+          id?: string;
+          is_correct?: boolean;
+          quiz_id?: string;
+          score_awarded?: number;
+          selected_option_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'education_learner_quiz_attempt_answers_attempt_id_fkey';
+            columns: ['attempt_id'];
+            isOneToOne: false;
+            referencedRelation: 'education_learner_quiz_attempts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_quiz_attempt_answers_quiz_id_fkey';
+            columns: ['quiz_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_quizzes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      education_learner_quiz_attempts: {
+        Row: {
+          attempt_number: number;
+          correct_count: number;
+          course_id: string | null;
+          duration_seconds: number | null;
+          id: string;
+          question_count: number;
+          submitted_at: string;
+          total_score: number;
+          user_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempt_number: number;
+          correct_count: number;
+          course_id?: string | null;
+          duration_seconds?: number | null;
+          id?: string;
+          question_count: number;
+          submitted_at?: string;
+          total_score: number;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          attempt_number?: number;
+          correct_count?: number;
+          course_id?: string | null;
+          duration_seconds?: number | null;
+          id?: string;
+          question_count?: number;
+          submitted_at?: string;
+          total_score?: number;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'education_learner_quiz_attempts_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_quiz_attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'education_learner_quiz_attempts_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       email_bounce_complaints: {
         Row: {
           bounce_subtype: string | null;

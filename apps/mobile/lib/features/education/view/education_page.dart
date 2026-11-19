@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -14,15 +14,13 @@ import 'package:mobile/features/education/view/education_course_detail.dart';
 import 'package:mobile/features/education/view/education_flashcard_study.dart';
 import 'package:mobile/features/education/view/education_home.dart';
 import 'package:mobile/features/education/view/education_quiz_practice.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'education_cards.dart';
 part 'education_attempt_reader.dart';
@@ -124,6 +122,14 @@ class _EducationPageState extends State<EducationWorkspace> {
       const <EducationAttemptFilterSet>[];
   String _attemptStatus = 'all';
   String? _attemptSetId;
+  Map<String, double>? _courseCompletion;
+  List<EducationAttemptSummary> _learnerAttempts =
+      const <EducationAttemptSummary>[];
+  int _learnerAttemptCount = 0;
+  List<EducationAttemptSummary> _teachAttemptPreview =
+      const <EducationAttemptSummary>[];
+  int _teachAttemptCount = 0;
+  int _learnerListExtra = 0;
 
   String get _wsId => widget.workspaceId;
 
@@ -152,6 +158,80 @@ class _EducationPageState extends State<EducationWorkspace> {
 
   void _updateState(VoidCallback update) {
     if (mounted) setState(update);
+  }
+
+  bool get _includeLearnerAttempts =>
+      _courseCompletion != null &&
+      _mergesLearnerAttempts(_attemptStatus, _attemptSetId);
+
+  Future<EducationLearnerProgress?> _readLearnerProgress() async {
+    try {
+      return await _repository.getLearnerProgress(_wsId);
+    } on Object catch (error) {
+      if (error is ApiException && error.statusCode == 401) rethrow;
+      return null;
+    }
+  }
+
+  void _rememberProgress(EducationLearnerProgress progress) {
+    _courseCompletion = {
+      for (final course in progress.courses)
+        course.courseId: course.completionRatio,
+    };
+    _learnerAttempts = progress.attempts;
+    _learnerAttemptCount = progress.attemptCount;
+  }
+
+  EducationCourse _withCompletion(EducationCourse course) {
+    final ratio = _courseCompletion?[course.id];
+    if (ratio == null || course.completionRatio == ratio) return course;
+    return course.copyWith(completionRatio: ratio);
+  }
+
+  void _paintCourses() {
+    _courses = [for (final course in _courses) _withCompletion(course)];
+    _coursePreview = [
+      for (final course in _coursePreview) _withCompletion(course),
+    ];
+  }
+
+  void _publishAttemptPreview() {
+    final learner = _includeLearnerAttempts
+        ? _learnerAttempts
+        : const <EducationAttemptSummary>[];
+    _attemptPreview = _combineAttempts(learner, _teachAttemptPreview, take: 3);
+    _attemptSummaryCount =
+        _teachAttemptCount +
+        (_includeLearnerAttempts ? _learnerAttemptCount : 0);
+  }
+
+  Future<void> _loadLearnerProgress(int token) async {
+    if (_wsId.isEmpty) return;
+    try {
+      final progress = await _repository.getLearnerProgress(_wsId);
+      if (!mounted || token != _requestToken) return;
+      _updateState(() {
+        _rememberProgress(progress);
+        _paintCourses();
+        _publishAttemptPreview();
+      });
+    } on Object catch (error) {
+      if (!mounted || token != _requestToken) return;
+      if (error is ApiException && error.statusCode == 401) {
+        _requestToken++;
+        _handleLoadFailure(error);
+        _updateState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _clearLearnerProgress() {
+    _courseCompletion = null;
+    _learnerAttempts = const [];
+    _learnerAttemptCount = 0;
+    _teachAttemptPreview = const [];
+    _teachAttemptCount = 0;
+    _learnerListExtra = 0;
   }
 
   @override

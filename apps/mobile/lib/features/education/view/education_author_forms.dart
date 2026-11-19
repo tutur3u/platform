@@ -66,70 +66,42 @@ class _CourseSheetState extends State<_CourseSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      title: widget.title,
+      actions: [
+        AppButton.ghost(
+          onPressed: _submitting
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: Text(l10n.commonCancel),
+        ),
+        AppButton.primary(
+          onPressed: _submitting ? null : _submit,
+          loading: _submitting,
+          child: Text(l10n.commonSave),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.title,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 16),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _error!,
-                style: TextStyle(
-                  color: shad.Theme.of(context).colorScheme.destructive,
-                ),
-              ),
-            ),
-          TextField(
+          if (_error != null) ...[
+            AppAlert.destructive(content: Text(_error!)),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          AppTextField(
             controller: _nameController,
-            decoration: InputDecoration(
-              hintText: context.l10n.inputPlaceholderCourseName,
-              labelText: context.l10n.educationCourseNameLabel,
-            ),
+            label: l10n.educationCourseNameLabel,
+            placeholder: l10n.inputPlaceholderCourseName,
+            textInputAction: TextInputAction.next,
           ),
-          const SizedBox(height: 12),
-          TextField(
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
             controller: _descriptionController,
+            label: l10n.educationCourseDescriptionLabel,
+            placeholder: l10n.inputPlaceholderCourseDescription,
             minLines: 3,
             maxLines: 5,
-            decoration: InputDecoration(
-              hintText: context.l10n.inputPlaceholderCourseDescription,
-              labelText: context.l10n.educationCourseDescriptionLabel,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: _submitting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  child: Text(context.l10n.commonCancel),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: Text(context.l10n.commonSave),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -209,77 +181,49 @@ class _SimpleEducationSheetState extends State<_SimpleEducationSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
+    final l10n = context.l10n;
+    final paired = widget.secondaryLabel != null;
+    return AppSheetScaffold(
+      title: widget.title,
+      actions: [
+        AppButton.ghost(
+          onPressed: _submitting
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: Text(l10n.commonCancel),
+        ),
+        AppButton.primary(
+          onPressed: _submitting ? null : _submit,
+          loading: _submitting,
+          child: Text(l10n.commonSave),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.title,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 16),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _error!,
-                style: TextStyle(
-                  color: shad.Theme.of(context).colorScheme.destructive,
-                ),
-              ),
-            ),
-          TextField(
+          if (_error != null) ...[
+            AppAlert.destructive(content: Text(_error!)),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          AppTextField(
             controller: _primaryController,
-            minLines: widget.secondaryLabel == null ? 1 : 2,
-            maxLines: widget.secondaryLabel == null ? 1 : 4,
-            decoration: InputDecoration(
-              hintText: widget.secondaryLabel == null
-                  ? context.l10n.inputPlaceholderQuizSetName
-                  : context.l10n.inputPlaceholderFlashcardFront,
-              labelText: widget.fieldLabel,
-            ),
+            label: widget.fieldLabel,
+            placeholder: paired
+                ? l10n.inputPlaceholderFlashcardFront
+                : l10n.inputPlaceholderQuizSetName,
+            minLines: paired ? 2 : 1,
+            maxLines: paired ? 4 : 1,
           ),
-          if (widget.secondaryLabel != null) ...[
-            const SizedBox(height: 12),
-            TextField(
+          if (paired) ...[
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
               controller: _secondaryController,
+              label: widget.secondaryLabel,
+              placeholder: l10n.inputPlaceholderFlashcardBack,
               minLines: 2,
               maxLines: 4,
-              decoration: InputDecoration(
-                hintText: context.l10n.inputPlaceholderFlashcardBack,
-                labelText: widget.secondaryLabel,
-              ),
             ),
           ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: _submitting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  child: Text(context.l10n.commonCancel),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: Text(context.l10n.commonSave),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

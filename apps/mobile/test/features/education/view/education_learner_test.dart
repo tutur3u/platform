@@ -1,10 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/kit/app_meter.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/features/education/view/education_flashcard_study.dart';
 import 'package:mobile/features/education/view/education_home.dart';
 import 'package:mobile/features/education/view/education_quiz_practice.dart';
 
 import '../../../helpers/helpers.dart';
+
+void _noop() {}
+
+void _noopCourse(EducationCourse _) {}
+
+void _noopAttempt(EducationAttemptSummary _) {}
 
 void main() {
   testWidgets('home shows a course once with module facts', (tester) async {
@@ -34,6 +41,39 @@ void main() {
     expect(find.text('Algebra'), findsOneWidget);
     expect(find.text('4 modules'), findsOneWidget);
     expect(find.text('Education'), findsNothing);
+    expect(find.textContaining('% complete'), findsNothing);
+  });
+
+  testWidgets('home shows a real completion meter', (tester) async {
+    await tester.pumpApp(
+      const EducationHome(
+        workspaceId: 'ws',
+        courses: [
+          EducationCourse(
+            id: 'course',
+            name: 'Algebra',
+            modulesCount: 4,
+            completionRatio: 0.5,
+          ),
+        ],
+        courseCount: 1,
+        quizCount: 0,
+        quizSetCount: 0,
+        flashcardCount: 0,
+        attemptCount: 0,
+        attempts: [],
+        onOpenCourse: _noopCourse,
+        onOpenQuizzes: _noop,
+        onOpenQuizSets: _noop,
+        onOpenFlashcards: _noop,
+        onOpenAttempt: _noopAttempt,
+        onSeeCourses: _noop,
+        onSeeAttempts: _noop,
+      ),
+    );
+
+    expect(find.text('50% complete'), findsOneWidget);
+    expect(find.byType(AppMeter), findsOneWidget);
   });
 
   testWidgets('quiz practice hides the answer until it is checked', (
@@ -63,6 +103,49 @@ void main() {
     await tester.pump();
     expect(find.text('Correct'), findsOneWidget);
     expect(find.text('Not quite'), findsOneWidget);
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('0 of 1'), findsOneWidget);
+    expect(find.text('This score stays on this device.'), findsOneWidget);
+  });
+
+  testWidgets('quiz practice shows the server score after submit', (
+    tester,
+  ) async {
+    await tester.pumpApp(
+      EducationQuizPractice(
+        loadQuizzes: () async => const [
+          EducationQuiz(
+            id: 'quiz',
+            question: 'Two plus two?',
+            options: [
+              EducationQuizOption(id: 'a', value: 'Four', isCorrect: true),
+              EducationQuizOption(id: 'b', value: 'Five', isCorrect: false),
+            ],
+          ),
+        ],
+        submitAttempt: (answers, _) async {
+          expect(answers.single.optionId, 'b');
+          return const EducationQuizSubmission(
+            id: 'attempt',
+            correctCount: 0,
+            questionCount: 1,
+            totalScore: 0,
+            completedModuleIds: [],
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Five'));
+    await tester.pump();
+    await tester.tap(find.text('Check'));
+    await tester.pump();
+    await tester.tap(find.text('Next'));
+    await tester.pumpAndSettle();
+    expect(find.text('0 of 1'), findsOneWidget);
+    expect(find.text('Saved to your attempts.'), findsOneWidget);
+    expect(find.text('This score stays on this device.'), findsNothing);
   });
 
   testWidgets('flashcard study reveals the back on demand', (tester) async {

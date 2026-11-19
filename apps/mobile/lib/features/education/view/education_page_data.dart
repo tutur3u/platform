@@ -24,10 +24,18 @@ extension _EducationPageData on _EducationPageState {
         page: nextPage,
       );
       if (!mounted || requestToken != _requestToken) return;
+      if (!append) {
+        final progress = await _readLearnerProgress();
+        if (!mounted || requestToken != _requestToken) return;
+        if (progress != null) _rememberProgress(progress);
+      }
       _updateState(() {
-        _courses = append
-            ? _mergeEducation(_courses, result.items, (row) => row.id)
-            : result.items;
+        _courses =
+            (append
+                    ? _mergeEducation(_courses, result.items, (row) => row.id)
+                    : result.items)
+                .map(_withCompletion)
+                .toList(growable: false);
         _coursesPage = nextPage;
         _coursesCount = append && result.items.isEmpty
             ? _courses.length
@@ -161,16 +169,34 @@ extension _EducationPageData on _EducationPageState {
         setId: _attemptSetId,
       );
       if (!mounted || requestToken != _requestToken) return;
+      if (!append && _mergesLearnerAttempts(_attemptStatus, _attemptSetId)) {
+        final progress = await _readLearnerProgress();
+        if (!mounted || requestToken != _requestToken) return;
+        if (progress != null) _rememberProgress(progress);
+      }
       _updateState(() {
-        _attempts = append
+        final include =
+            !append &&
+            _includeLearnerAttempts &&
+            _mergesLearnerAttempts(_attemptStatus, _attemptSetId);
+        final merged = include
+            ? _combineAttempts(_learnerAttempts, result.attempts)
+            : append
             ? _mergeEducation(_attempts, result.attempts, (row) => row.id)
             : result.attempts;
+        if (!append) {
+          final extra = merged.length - result.attempts.length;
+          _learnerListExtra = extra < 0 ? 0 : extra;
+        }
+        _attempts = merged;
         _attemptsPage = nextPage;
         _attemptsCount = append && result.attempts.isEmpty
             ? _attempts.length
-            : result.count;
-        _attemptSummaryCount = result.count;
+            : result.count + _learnerListExtra;
+        _attemptSummaryCount =
+            result.count + (_includeLearnerAttempts ? _learnerAttemptCount : 0);
         _attemptSets = result.sets;
+        _paintCourses();
       });
     } on Object catch (error) {
       if (!mounted || requestToken != _requestToken) return;

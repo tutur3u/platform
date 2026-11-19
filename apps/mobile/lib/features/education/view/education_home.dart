@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/data/models/education/education_models.dart';
+import 'package:mobile/features/education/view/education_course_detail.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
@@ -170,20 +171,26 @@ class _CourseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppRichRow(
-      title: course.name,
-      subtitle: course.description,
-      leading: const AppIconTile(
-        icon: LucideIcons.graduationCap,
-        tone: AppTone.primary,
-      ),
-      meta: [
-        AppMetaItem(
-          icon: LucideIcons.layers,
-          label: context.l10n.educationCourseModules(course.modulesCount),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppRichRow(
+          title: course.name,
+          subtitle: course.description,
+          leading: const AppIconTile(
+            icon: LucideIcons.graduationCap,
+            tone: AppTone.primary,
+          ),
+          meta: [
+            AppMetaItem(
+              icon: LucideIcons.layers,
+              label: context.l10n.educationCourseModules(course.modulesCount),
+            ),
+          ],
+          onTap: () => onTap(course),
         ),
+        EducationCourseMeter(ratio: course.completionRatio),
       ],
-      onTap: () => onTap(course),
     );
   }
 }

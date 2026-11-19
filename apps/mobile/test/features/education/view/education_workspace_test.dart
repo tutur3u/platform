@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -95,6 +96,14 @@ class Repository extends Mock implements EducationRepository {
               sets: [],
             ),
           ));
+
+  @override
+  Future<EducationLearnerProgress> getLearnerProgress(String wsId) async =>
+      const EducationLearnerProgress(
+        courses: [],
+        attemptCount: 0,
+        attempts: [],
+      );
 }
 
 void main() {
@@ -273,12 +282,12 @@ void main() {
         .onPressed!();
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'New course');
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(AppButton, 'Save'));
     await tester.pumpAndSettle();
     expect(find.text('Course permission rejected'), findsOneWidget);
     expect(tester.takeException(), isNull);
     repository.saveCourse = () async {};
-    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.tap(find.widgetWithText(AppButton, 'Save'));
     await tester.pumpAndSettle();
     expect(find.text('Course permission rejected'), findsNothing);
   });

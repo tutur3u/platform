@@ -93,131 +93,124 @@ class _QuizSheetState extends State<_QuizSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      title: widget.title,
+      actions: [
+        AppButton.ghost(
+          onPressed: _submitting
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: Text(l10n.commonCancel),
+        ),
+        AppButton.primary(
+          onPressed: _submitting ? null : _submit,
+          loading: _submitting,
+          child: Text(l10n.commonSave),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.title,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 16),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                _error!,
-                style: TextStyle(
-                  color: shad.Theme.of(context).colorScheme.destructive,
-                ),
-              ),
-            ),
-          TextField(
+          if (_error != null) ...[
+            AppAlert.destructive(content: Text(_error!)),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          AppTextField(
             controller: _questionController,
+            label: l10n.educationQuizQuestionLabel,
+            placeholder: l10n.inputPlaceholderQuizQuestion,
             minLines: 2,
             maxLines: 4,
-            decoration: InputDecoration(
-              hintText: context.l10n.inputPlaceholderQuizQuestion,
-              labelText: context.l10n.educationQuizQuestionLabel,
-            ),
           ),
-          const SizedBox(height: 12),
-          ...List.generate(_options.length, (index) {
-            final option = _options[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: FinancePanel(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            context.l10n.educationQuizOptionLabel(index + 1),
-                            style: shad.Theme.of(context).typography.small
-                                .copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                        Switch(
-                          value: option.isCorrect,
-                          onChanged: (value) {
-                            setState(() => option.isCorrect = value);
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: option.controller,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.inputPlaceholderQuizOption,
-                        labelText: context.l10n.educationQuizOptionValueLabel,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: option.explanationController,
-                      decoration: InputDecoration(
-                        hintText: context.l10n.inputPlaceholderQuizExplanation,
-                        labelText:
-                            context.l10n.educationQuizOptionExplanationLabel,
-                      ),
-                    ),
-                    if (_options.length > 2)
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _options.removeAt(index).dispose();
-                            });
-                          },
-                          child: Text(context.l10n.commonDelete),
-                        ),
-                      ),
-                  ],
-                ),
+          const SizedBox(height: AppSpacing.md),
+          for (var index = 0; index < _options.length; index++)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
+              child: _QuizOptionEditor(
+                index: index,
+                option: _options[index],
+                canRemove: _options.length > 2,
+                onCorrectChanged: (value) {
+                  setState(() => _options[index].isCorrect = value);
+                },
+                onRemove: () {
+                  setState(() => _options.removeAt(index).dispose());
+                },
               ),
-            );
-          }),
-          TextButton.icon(
+            ),
+          AppButton.ghost(
+            leading: const Icon(LucideIcons.plus),
             onPressed: () {
               setState(() => _options.add(_QuizOptionDraft.empty()));
             },
-            icon: const Icon(Icons.add_rounded),
-            label: Text(context.l10n.educationAddOption),
+            child: Text(l10n.educationAddOption),
           ),
-          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuizOptionEditor extends StatelessWidget {
+  const _QuizOptionEditor({
+    required this.index,
+    required this.option,
+    required this.canRemove,
+    required this.onCorrectChanged,
+    required this.onRemove,
+  });
+
+  final int index;
+  final _QuizOptionDraft option;
+  final bool canRemove;
+  final ValueChanged<bool> onCorrectChanged;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Row(
             children: [
               Expanded(
-                child: TextButton(
-                  onPressed: _submitting
-                      ? null
-                      : () => Navigator.of(context).pop(false),
-                  child: Text(context.l10n.commonCancel),
+                child: Text(
+                  l10n.educationQuizOptionLabel(index + 1),
+                  style: AppTokens.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: Text(context.l10n.commonSave),
-                ),
+              AppSwitch(
+                value: option.isCorrect,
+                semanticLabel: l10n.educationQuizCorrect,
+                onChanged: onCorrectChanged,
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: option.controller,
+            label: l10n.educationQuizOptionValueLabel,
+            placeholder: l10n.inputPlaceholderQuizOption,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppTextField(
+            controller: option.explanationController,
+            label: l10n.educationQuizOptionExplanationLabel,
+            placeholder: l10n.inputPlaceholderQuizExplanation,
+          ),
+          if (canRemove)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: AppButton.ghost(
+                onPressed: onRemove,
+                child: Text(l10n.commonDelete),
+              ),
+            ),
         ],
       ),
     );

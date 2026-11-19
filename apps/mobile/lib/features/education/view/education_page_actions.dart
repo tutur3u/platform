@@ -159,15 +159,15 @@ extension _EducationPageActions on _EducationPageState {
   }) async {
     final confirmed = await _showOwnedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(context.l10n.commonDelete),
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
         content: Text(title),
         actions: [
-          TextButton(
+          AppButton.ghost(
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          FilledButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
@@ -206,13 +206,11 @@ extension _EducationPageActions on _EducationPageState {
 
     await _showOwnedSheet<void>(
       context: context,
-      builder: (context) => FractionallySizedBox(
-        heightFactor: 0.86,
-        child: _EducationAttemptReader(
-          repository: _repository,
-          workspaceId: wsId,
-          attemptId: attempt.id,
-        ),
+      size: AppSheetSize.large,
+      builder: (context) => _EducationAttemptReader(
+        repository: _repository,
+        workspaceId: wsId,
+        attemptId: attempt.id,
       ),
     );
   }

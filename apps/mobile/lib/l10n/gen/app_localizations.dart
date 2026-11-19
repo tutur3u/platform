@@ -6025,6 +6025,12 @@ abstract class AppLocalizations {
   /// **'New document'**
   String get documentsNewDocument;
 
+  /// No description provided for @documentsOwnerUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get documentsOwnerUnknown;
+
   /// No description provided for @documentsOwnerWorkspace.
   ///
   /// In en, this message translates to:
@@ -6678,6 +6684,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This score stays on this device.'**
   String get educationQuizLocalNote;
+
+  /// No description provided for @educationQuizSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved to your attempts.'**
+  String get educationQuizSaved;
+
+  /// No description provided for @educationCourseCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% complete'**
+  String educationCourseCompletion(int percent);
 
   /// No description provided for @educationQuizQuestionLabel.
   ///

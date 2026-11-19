@@ -2395,6 +2395,7 @@
   "documentsLinkPlaceholder": "https://",
   "documentsLinkTitle": "Link",
   "documentsNewDocument": "New document",
+  "documentsOwnerUnknown": "Unknown",
   "documentsOwnerWorkspace": "Workspace",
   "documentsOwnerYou": "You",
   "documentsPublic": "Public document",
@@ -2504,6 +2505,15 @@
   "educationQuizCorrect": "Correct",
   "educationQuizIncorrect": "Not quite",
   "educationQuizLocalNote": "This score stays on this device.",
+  "educationQuizSaved": "Saved to your attempts.",
+  "educationCourseCompletion": "{percent}% complete",
+  "@educationCourseCompletion": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "educationQuizQuestionLabel": "Question",
   "educationQuizScore": "{correct} of {total}",
   "educationQuizSetNameLabel": "Quiz set name",

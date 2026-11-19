@@ -93,9 +93,10 @@ extension _EducationOverviewData on _EducationPageState {
           setId: _attemptSetId,
         ),
         (value) {
-          _attemptPreview = value.attempts;
-          _attemptSummaryCount = value.count;
+          _teachAttemptPreview = value.attempts;
+          _teachAttemptCount = value.count;
           _attemptSets = value.sets;
+          _publishAttemptPreview();
         },
         () {
           _attemptPreview = const [];
@@ -103,8 +104,10 @@ extension _EducationOverviewData on _EducationPageState {
           _attemptsCount = 0;
           _attemptSummaryCount = 0;
           _attemptSets = const [];
+          _clearLearnerProgress();
         },
       ),
+      _loadLearnerProgress(token),
     ]);
     if (mounted && token == _requestToken) {
       _updateState(() {

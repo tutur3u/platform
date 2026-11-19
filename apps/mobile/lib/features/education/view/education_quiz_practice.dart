@@ -6,29 +6,51 @@ import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Local quiz practice. Correctness stays hidden until the learner answers,
-/// and the score is not submitted because the API has no attempt-submit route.
+typedef EducationQuizSubmit =
+    Future<EducationQuizSubmission> Function(
+      List<EducationQuizAnswer> answers,
+      int durationSeconds,
+    );
+
+/// Practice that hides correctness until Check. The finished score comes from
+/// [submitAttempt] when the page provides one. A null callback keeps the
+/// on-device note for callers that cannot reach the server.
 class EducationQuizPractice extends StatefulWidget {
-  const EducationQuizPractice({required this.loadQuizzes, super.key});
+  const EducationQuizPractice({
+    required this.loadQuizzes,
+    this.submitAttempt,
+    this.onSubmitted,
+    super.key,
+  });
 
   final Future<List<EducationQuiz>> Function() loadQuizzes;
+  final EducationQuizSubmit? submitAttempt;
+  final VoidCallback? onSubmitted;
 
   @override
   State<EducationQuizPractice> createState() => _EducationQuizPracticeState();
 }
 
 class _EducationQuizPracticeState extends State<EducationQuizPractice> {
+  final Stopwatch _elapsed = Stopwatch();
+  final List<EducationQuizAnswer> _answers = [];
   List<EducationQuiz>? _quizzes;
   Object? _error;
   var _index = 0;
   var _correct = 0;
+  var _scoreCorrect = 0;
+  var _scoreTotal = 0;
   String? _selectedId;
   var _checked = false;
   var _finished = false;
+  var _saved = false;
+  var _submitting = false;
+  var _submitFailed = false;
 
   @override
   void initState() {
     super.initState();
+    _elapsed.start();
     unawaited(_load());
   }
 
@@ -53,6 +75,7 @@ class _EducationQuizPracticeState extends State<EducationQuizPractice> {
     setState(() {
       _checked = true;
       if (correct) _correct += 1;
+      _answers.add(EducationQuizAnswer(quizId: quiz.id, optionId: selected));
     });
   }
 
@@ -60,7 +83,7 @@ class _EducationQuizPracticeState extends State<EducationQuizPractice> {
     final quizzes = _quizzes;
     if (quizzes == null) return;
     if (_index + 1 >= quizzes.length) {
-      setState(() => _finished = true);
+      unawaited(_finish());
       return;
     }
     setState(() {
@@ -68,6 +91,45 @@ class _EducationQuizPracticeState extends State<EducationQuizPractice> {
       _selectedId = null;
       _checked = false;
     });
+  }
+
+  Future<void> _finish() async {
+    final quizzes = _quizzes;
+    final submit = widget.submitAttempt;
+    if (quizzes == null) return;
+    if (submit == null) {
+      setState(() {
+        _finished = true;
+        _saved = false;
+        _scoreCorrect = _correct;
+        _scoreTotal = quizzes.length;
+        _submitFailed = false;
+      });
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _submitFailed = false;
+    });
+    try {
+      final elapsed = _elapsed.elapsed.inSeconds;
+      final result = await submit(_answers, elapsed > 86400 ? 86400 : elapsed);
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _finished = true;
+        _saved = true;
+        _scoreCorrect = result.correctCount;
+        _scoreTotal = result.questionCount;
+      });
+      widget.onSubmitted?.call();
+    } on Object {
+      if (!mounted) return;
+      setState(() {
+        _submitting = false;
+        _submitFailed = true;
+      });
+    }
   }
 
   @override
@@ -92,11 +154,23 @@ class _EducationQuizPracticeState extends State<EducationQuizPractice> {
               title: l10n.educationLibraryQuizzesLabel,
               message: l10n.educationEmptyQuizzes,
             )
+          : _submitting
+          ? const AppLoadingIndicator.page()
+          : _submitFailed
+          ? AppStateMessage(
+              icon: AppIcons.error,
+              tone: AppTone.destructive,
+              title: l10n.commonSomethingWentWrong,
+              actionLabel: l10n.commonRetry,
+              onAction: () => unawaited(_finish()),
+            )
           : _finished
           ? AppStateMessage(
               icon: AppIcons.success,
-              title: l10n.educationQuizScore(_correct, quizzes.length),
-              message: l10n.educationQuizLocalNote,
+              title: l10n.educationQuizScore(_scoreCorrect, _scoreTotal),
+              message: _saved
+                  ? l10n.educationQuizSaved
+                  : l10n.educationQuizLocalNote,
             )
           : _Question(
               quiz: quizzes[_index],

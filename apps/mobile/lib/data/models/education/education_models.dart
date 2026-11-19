@@ -37,9 +37,11 @@ class EducationCourse extends Equatable {
     this.certTemplate,
     this.createdAt,
     this.modulesCount = 0,
+    this.completionRatio,
   });
 
   factory EducationCourse.fromJson(Map<String, dynamic> json) {
+    final ratio = json['completion_ratio'];
     return EducationCourse(
       id: educationAsString(json['id']) ?? '',
       name: educationAsString(json['name']) ?? '',
@@ -47,6 +49,7 @@ class EducationCourse extends Equatable {
       certTemplate: educationAsString(json['cert_template']),
       createdAt: educationAsString(json['created_at']),
       modulesCount: educationAsInt(json['modules_count']),
+      completionRatio: ratio == null ? null : educationAsDouble(ratio),
     );
   }
 
@@ -57,6 +60,21 @@ class EducationCourse extends Equatable {
   final String? createdAt;
   final int modulesCount;
 
+  /// Null when learner progress was not loaded. Zero is a real empty meter.
+  final double? completionRatio;
+
+  EducationCourse copyWith({double? completionRatio}) {
+    return EducationCourse(
+      id: id,
+      name: name,
+      description: description,
+      certTemplate: certTemplate,
+      createdAt: createdAt,
+      modulesCount: modulesCount,
+      completionRatio: completionRatio ?? this.completionRatio,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,
@@ -65,6 +83,121 @@ class EducationCourse extends Equatable {
     certTemplate,
     createdAt,
     modulesCount,
+    completionRatio,
+  ];
+}
+
+class EducationCourseProgress extends Equatable {
+  const EducationCourseProgress({
+    required this.courseId,
+    required this.completedModules,
+    required this.totalModules,
+    required this.completionRatio,
+  });
+
+  factory EducationCourseProgress.fromJson(Map<String, dynamic> json) {
+    final ratio = json['completion_ratio'];
+    return EducationCourseProgress(
+      courseId: educationAsString(json['course_id']) ?? '',
+      completedModules: educationAsInt(json['completed_modules']),
+      totalModules: educationAsInt(json['total_modules']),
+      completionRatio: ratio == null ? 0 : educationAsDouble(ratio),
+    );
+  }
+
+  final String courseId;
+  final int completedModules;
+  final int totalModules;
+  final double completionRatio;
+
+  @override
+  List<Object?> get props => [
+    courseId,
+    completedModules,
+    totalModules,
+    completionRatio,
+  ];
+}
+
+class EducationLearnerProgress extends Equatable {
+  const EducationLearnerProgress({
+    required this.courses,
+    required this.attemptCount,
+    required this.attempts,
+  });
+
+  factory EducationLearnerProgress.fromJson(Map<String, dynamic> json) {
+    return EducationLearnerProgress(
+      courses: (json['courses'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(EducationCourseProgress.fromJson)
+          .toList(growable: false),
+      attemptCount: educationAsInt(json['attempt_count']),
+      attempts: (json['attempts'] as List<dynamic>? ?? const <dynamic>[])
+          .whereType<Map<String, dynamic>>()
+          .map(EducationAttemptSummary.fromJson)
+          .toList(growable: false),
+    );
+  }
+
+  final List<EducationCourseProgress> courses;
+  final int attemptCount;
+  final List<EducationAttemptSummary> attempts;
+
+  @override
+  List<Object?> get props => [courses, attemptCount, attempts];
+}
+
+class EducationQuizAnswer extends Equatable {
+  const EducationQuizAnswer({required this.quizId, required this.optionId});
+
+  final String quizId;
+  final String optionId;
+
+  @override
+  List<Object?> get props => [quizId, optionId];
+}
+
+class EducationQuizSubmission extends Equatable {
+  const EducationQuizSubmission({
+    required this.id,
+    required this.correctCount,
+    required this.questionCount,
+    required this.totalScore,
+    required this.completedModuleIds,
+  });
+
+  factory EducationQuizSubmission.fromJson(Map<String, dynamic> json) {
+    final attempt = json['attempt'];
+    final row = attempt is Map<String, dynamic> ? attempt : json;
+    final modules = json['completed_module_ids'];
+    return EducationQuizSubmission(
+      id: educationAsString(row['id']) ?? '',
+      correctCount: educationAsInt(row['correct_count']),
+      questionCount: educationAsInt(row['question_count']),
+      totalScore: educationAsDouble(row['total_score']),
+      completedModuleIds: modules is List
+          ? modules
+                .map(educationAsString)
+                .whereType<String>()
+                .toList(growable: false)
+          : const <String>[],
+    );
+  }
+
+  final String id;
+  final int correctCount;
+  final int questionCount;
+  final double totalScore;
+  final List<String> completedModuleIds;
+
+  @override
+  List<Object?> get props => [
+    id,
+    correctCount,
+    questionCount,
+    totalScore,
+    completedModuleIds,
   ];
 }
 

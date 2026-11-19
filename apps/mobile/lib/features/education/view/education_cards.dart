@@ -1,5 +1,50 @@
 part of 'education_page.dart';
 
+class _EducationMenu extends StatelessWidget {
+  const _EducationMenu({this.onEdit, this.onDelete});
+
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppIconButton(
+      tooltip: l10n.commonMoreOptions,
+      icon: const Icon(LucideIcons.ellipsis),
+      onPressed: () {
+        unawaited(
+          showAppActionSheet<void>(
+            context: context,
+            title: l10n.commonMoreOptions,
+            actions: [
+              if (onEdit != null)
+                AppSheetAction(
+                  label: l10n.commonEdit,
+                  icon: LucideIcons.pencil,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onEdit!();
+                  },
+                ),
+              if (onDelete != null)
+                AppSheetAction(
+                  label: l10n.commonDelete,
+                  icon: LucideIcons.trash2,
+                  destructive: true,
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDelete!();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _CourseCard extends StatelessWidget {
   const _CourseCard({
     required this.course,
@@ -15,85 +60,27 @@ class _CourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final certificate = course.certTemplate;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        onTap: onTap,
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: shad.Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.school_outlined,
-                color: shad.Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    course.name,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  if (course.description?.isNotEmpty ?? false) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      course.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: shad.Theme.of(context).typography.textSmall
-                          .copyWith(
-                            color: shad.Theme.of(
-                              context,
-                            ).colorScheme.mutedForeground,
-                          ),
-                    ),
-                  ],
-                  if (course.certTemplate?.isNotEmpty ?? false) ...[
-                    const SizedBox(height: 10),
-                    _EducationBadge(
-                      icon: Icons.verified_outlined,
-                      label: course.certTemplate!,
-                      tint: shad.Theme.of(context).colorScheme.primary,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (onEdit != null || onDelete != null)
-              PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'edit') onEdit?.call();
-                  if (value == 'delete') onDelete?.call();
-                },
-                itemBuilder: (context) => [
-                  if (onEdit != null)
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                  if (onDelete != null)
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                ],
-              ),
-          ],
-        ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppGroupedSection(
+        children: [
+          AppRichRow(
+            title: course.name,
+            subtitle: course.description,
+            leading: const AppIconTile(icon: LucideIcons.graduationCap),
+            meta: [
+              if (certificate != null && certificate.isNotEmpty)
+                AppMetaItem(icon: LucideIcons.badgeCheck, label: certificate),
+            ],
+            trailing: onEdit == null && onDelete == null
+                ? null
+                : _EducationMenu(onEdit: onEdit, onDelete: onDelete),
+            onTap: onTap,
+          ),
+          if (course.completionRatio != null)
+            EducationCourseMeter(ratio: course.completionRatio),
+        ],
       ),
     );
   }
@@ -109,57 +96,15 @@ class _QuizSetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: shad.Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.layers_outlined,
-                color: shad.Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    quizSet.name,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') onEdit?.call();
-                if (value == 'delete') onDelete?.call();
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  value: 'edit',
-                  child: Text(context.l10n.commonEdit),
-                ),
-                PopupMenuItem(
-                  value: 'delete',
-                  child: Text(context.l10n.commonDelete),
-                ),
-              ],
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppGroupedSection(
+        children: [
+          AppRichRow(
+            title: quizSet.name,
+            leading: const AppIconTile(icon: LucideIcons.layers),
+            trailing: _EducationMenu(onEdit: onEdit, onDelete: onDelete),
+          ),
+        ],
       ),
     );
   }
@@ -174,10 +119,10 @@ class _QuizCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppPanel(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -187,46 +132,34 @@ class _QuizCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     quiz.question,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
+                    style: tokens.typography.large.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                  ],
-                ),
+                _EducationMenu(onEdit: onEdit, onDelete: onDelete),
               ],
             ),
-            const SizedBox(height: 10),
-            ...quiz.options
-                .take(4)
-                .map(
-                  (option) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _EducationBadge(
-                      icon: option.isCorrect
-                          ? Icons.check_circle_outline_rounded
-                          : Icons.radio_button_unchecked_rounded,
-                      label: option.value,
-                      tint: option.isCorrect
-                          ? shad.Theme.of(context).colorScheme.primary
-                          : shad.Theme.of(context).colorScheme.primary,
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final option in quiz.options.take(4))
+                  AppBadge(
+                    variant: option.isCorrect
+                        ? AppBadgeVariant.primary
+                        : AppBadgeVariant.outline,
+                    leading: Icon(
+                      option.isCorrect
+                          ? LucideIcons.circleCheck
+                          : LucideIcons.circle,
+                      size: 14,
                     ),
+                    child: Text(option.value),
                   ),
-                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -244,49 +177,16 @@ class _FlashcardCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: FinancePanel(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    flashcard.front,
-                    style: shad.Theme.of(
-                      context,
-                    ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit?.call();
-                    if (value == 'delete') onDelete?.call();
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'edit',
-                      child: Text(context.l10n.commonEdit),
-                    ),
-                    PopupMenuItem(
-                      value: 'delete',
-                      child: Text(context.l10n.commonDelete),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              flashcard.back,
-              style: shad.Theme.of(context).typography.textSmall.copyWith(
-                color: shad.Theme.of(context).colorScheme.mutedForeground,
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppGroupedSection(
+        children: [
+          AppRichRow(
+            title: flashcard.front,
+            subtitle: flashcard.back,
+            leading: const AppIconTile(icon: LucideIcons.layers),
+            trailing: _EducationMenu(onEdit: onEdit, onDelete: onDelete),
+          ),
+        ],
       ),
     );
   }

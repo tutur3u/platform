@@ -16,7 +16,6 @@ class _EducationAttemptReader extends StatefulWidget {
 
 class _EducationAttemptReaderState extends State<_EducationAttemptReader> {
   EducationAttemptDetail? _detail;
-  bool _loading = true;
   bool _failed = false;
   int _generation = 0;
   @override
@@ -27,10 +26,7 @@ class _EducationAttemptReaderState extends State<_EducationAttemptReader> {
 
   Future<void> _load({bool force = false}) async {
     final generation = ++_generation;
-    setState(() {
-      _loading = true;
-      _failed = false;
-    });
+    setState(() => _failed = false);
     Future<EducationAttemptDetail> read() => widget.repository.getAttemptDetail(
       widget.workspaceId,
       widget.attemptId,
@@ -56,32 +52,30 @@ class _EducationAttemptReaderState extends State<_EducationAttemptReader> {
           _detail = null;
         }
       });
-    } finally {
-      if (mounted && generation == _generation) {
-        setState(() => _loading = false);
-      }
     }
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      if (_loading)
-        Semantics(
-          liveRegion: true,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Text(context.l10n.commonLoading),
-          ),
-        ),
-      if (_failed)
-        TextButton.icon(
-          onPressed: () => _load(force: true),
-          icon: const Icon(Icons.refresh_rounded),
-          label: Text(context.l10n.commonRetry),
-        ),
-      if (_detail != null)
-        Expanded(child: _AttemptDetailSheet(detail: _detail!)),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final detail = _detail;
+    final title =
+        detail?.learner?.fullName ??
+        detail?.learner?.email ??
+        l10n.educationAttemptsLabel;
+    return AppSheetScaffold(
+      title: title,
+      child: _failed
+          ? AppStateMessage(
+              icon: AppIcons.error,
+              title: l10n.commonSomethingWentWrong,
+              tone: AppTone.destructive,
+              actionLabel: l10n.commonRetry,
+              onAction: () => _load(force: true),
+            )
+          : detail == null
+          ? const AppLoadingIndicator.page()
+          : _AttemptDetailBody(detail: detail),
+    );
+  }
 }

@@ -3085,6 +3085,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsNewDocument => 'Tài liệu mới';
 
   @override
+  String get documentsOwnerUnknown => 'Không rõ';
+
+  @override
   String get documentsOwnerWorkspace => 'Không gian làm việc';
 
   @override
@@ -3427,6 +3430,14 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get educationQuizLocalNote => 'Điểm này chỉ lưu trên máy này.';
+
+  @override
+  String get educationQuizSaved => 'Đã lưu vào các lần làm.';
+
+  @override
+  String educationCourseCompletion(int percent) {
+    return 'Hoàn thành $percent%';
+  }
 
   @override
   String get educationQuizQuestionLabel => 'Câu hỏi';

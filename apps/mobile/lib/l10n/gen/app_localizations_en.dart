@@ -3099,6 +3099,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsNewDocument => 'New document';
 
   @override
+  String get documentsOwnerUnknown => 'Unknown';
+
+  @override
   String get documentsOwnerWorkspace => 'Workspace';
 
   @override
@@ -3442,6 +3445,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get educationQuizLocalNote => 'This score stays on this device.';
+
+  @override
+  String get educationQuizSaved => 'Saved to your attempts.';
+
+  @override
+  String educationCourseCompletion(int percent) {
+    return '$percent% complete';
+  }
 
   @override
   String get educationQuizQuestionLabel => 'Question';

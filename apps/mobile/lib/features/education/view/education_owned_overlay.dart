@@ -4,8 +4,10 @@ extension _EducationOwnedSheets on _EducationPageState {
   Future<T?> _showOwnedSheet<T>({
     required BuildContext context,
     required WidgetBuilder builder,
+    AppSheetSize size = AppSheetSize.fit,
   }) => showAppSheet<T>(
     context: context,
+    size: size,
     builder: (context) =>
         _EducationOwnedOverlay(alive: _alive, child: builder(context)),
   );

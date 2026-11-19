@@ -16,95 +16,65 @@ class _AttemptsFilterSheet extends StatefulWidget {
 }
 
 class _AttemptsFilterSheetState extends State<_AttemptsFilterSheet> {
+  static const _allSets = '';
+
   late String _status;
-  String? _setId;
+  late String _setId;
 
   @override
   void initState() {
     super.initState();
     _status = widget.selectedStatus;
-    _setId = widget.selectedSetId;
+    _setId = widget.selectedSetId ?? _allSets;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      title: l10n.commonFilters,
+      actions: [
+        AppButton.ghost(
+          onPressed: () =>
+              Navigator.of(context).pop({'status': 'all', 'setId': null}),
+          child: Text(l10n.educationClearFilters),
+        ),
+        AppButton.primary(
+          onPressed: () => Navigator.of(
+            context,
+          ).pop({'status': _status, 'setId': _setId.isEmpty ? null : _setId}),
+          child: Text(l10n.commonApply),
+        ),
+      ],
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            context.l10n.commonFilters,
-            style: shad.Theme.of(
-              context,
-            ).typography.large.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            initialValue: _status,
-            decoration: InputDecoration(
-              labelText: context.l10n.educationAttemptStatusLabel,
-            ),
-            items: [
-              DropdownMenuItem(
-                value: 'all',
-                child: Text(context.l10n.commonAll),
-              ),
-              DropdownMenuItem(
+          AppSelect<String>(
+            title: l10n.educationAttemptStatusLabel,
+            value: _status,
+            options: [
+              AppSelectOption(value: 'all', label: l10n.commonAll),
+              AppSelectOption(
                 value: 'completed',
-                child: Text(context.l10n.educationAttemptStatusCompleted),
+                label: l10n.educationAttemptStatusCompleted,
               ),
-              DropdownMenuItem(
+              AppSelectOption(
                 value: 'incomplete',
-                child: Text(context.l10n.educationAttemptStatusIncomplete),
+                label: l10n.educationAttemptStatusIncomplete,
               ),
             ],
-            onChanged: (value) => setState(() => _status = value ?? 'all'),
+            onChanged: (value) => setState(() => _status = value),
           ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String?>(
-            initialValue: _setId,
-            decoration: InputDecoration(
-              labelText: context.l10n.educationAttemptQuizSetLabel,
-            ),
-            items: [
-              DropdownMenuItem(child: Text(context.l10n.commonAll)),
-              ...widget.sets.map(
-                (set) => DropdownMenuItem<String?>(
-                  value: set.id,
-                  child: Text(set.name),
-                ),
-              ),
+          const SizedBox(height: AppSpacing.md),
+          AppSelect<String>(
+            title: l10n.educationAttemptQuizSetLabel,
+            value: _setId,
+            options: [
+              AppSelectOption(value: _allSets, label: l10n.commonAll),
+              for (final set in widget.sets)
+                AppSelectOption(value: set.id, label: set.name),
             ],
             onChanged: (value) => setState(() => _setId = value),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pop({'status': 'all', 'setId': null}),
-                  child: Text(context.l10n.educationClearFilters),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).pop({'status': _status, 'setId': _setId}),
-                  child: Text(context.l10n.commonApply),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -112,90 +82,76 @@ class _AttemptsFilterSheetState extends State<_AttemptsFilterSheet> {
   }
 }
 
-class _AttemptDetailSheet extends StatelessWidget {
-  const _AttemptDetailSheet({required this.detail});
+class _AttemptDetailBody extends StatelessWidget {
+  const _AttemptDetailBody({required this.detail});
 
   final EducationAttemptDetail detail;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          Text(
-            detail.learner?.fullName ??
-                detail.learner?.email ??
-                detail.attempt.id,
-            style: shad.Theme.of(
-              context,
-            ).typography.h3.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _EducationBadge(
-                icon: Icons.score_outlined,
-                label: detail.attempt.totalScore.toStringAsFixed(1),
-                tint: shad.Theme.of(context).colorScheme.primary,
-              ),
-              _EducationBadge(
-                icon: Icons.timer_outlined,
-                label: _formatDuration(detail.attempt.durationSeconds),
-                tint: shad.Theme.of(context).colorScheme.primary,
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ...detail.answers.map(
-            (answer) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: FinancePanel(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final tokens = AppTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: [
+            AppBadge(
+              leading: const Icon(LucideIcons.star, size: 14),
+              child: Text(detail.attempt.totalScore.toStringAsFixed(1)),
+            ),
+            AppBadge.outline(
+              leading: const Icon(LucideIcons.timer, size: 14),
+              child: Text(_formatDuration(detail.attempt.durationSeconds)),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        for (final answer in detail.answers) ...[
+          AppPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  answer.question ?? answer.quizId,
+                  style: tokens.typography.large.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (answer.selectedOptionValue != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    answer.selectedOptionValue!,
+                    style: tokens.typography.textSmall,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
                   children: [
-                    Text(
-                      answer.question ?? answer.quizId,
-                      style: shad.Theme.of(
-                        context,
-                      ).typography.large.copyWith(fontWeight: FontWeight.w800),
-                    ),
-                    const SizedBox(height: 8),
-                    if (answer.selectedOptionValue != null)
-                      Text(
-                        answer.selectedOptionValue!,
-                        style: shad.Theme.of(context).typography.textSmall,
+                    for (final option in answer.options)
+                      AppBadge(
+                        variant: option.id == answer.selectedOptionId
+                            ? AppBadgeVariant.primary
+                            : AppBadgeVariant.outline,
+                        leading: Icon(
+                          option.isCorrect
+                              ? LucideIcons.circleCheck
+                              : LucideIcons.circle,
+                          size: 14,
+                        ),
+                        child: Text(option.value),
                       ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: answer.options
-                          .map(
-                            (option) => _EducationBadge(
-                              icon: option.isCorrect
-                                  ? Icons.check_circle_outline_rounded
-                                  : Icons.radio_button_unchecked_rounded,
-                              label: option.value,
-                              tint: option.id == answer.selectedOptionId
-                                  ? shad.Theme.of(context).colorScheme.primary
-                                  : option.isCorrect
-                                  ? shad.Theme.of(context).colorScheme.primary
-                                  : shad.Theme.of(context).colorScheme.primary,
-                            ),
-                          )
-                          .toList(growable: false),
-                    ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
+          const SizedBox(height: AppSpacing.md),
         ],
-      ),
+      ],
     );
   }
 }

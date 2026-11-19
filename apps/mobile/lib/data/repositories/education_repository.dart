@@ -469,6 +469,53 @@ class EducationRepository {
     return EducationAttemptDetail.fromJson(response);
   }
 
+  Future<EducationLearnerProgress> getLearnerProgress(String wsId) async {
+    final actor = _actor;
+    final response = await _read(
+      wsId,
+      'learner-progress',
+      '/api/v1/workspaces/$wsId/education/learner-progress',
+      actor,
+    );
+    return EducationLearnerProgress.fromJson(response);
+  }
+
+  /// Posts the attempt directly. A queued write cannot be shown as a server
+  /// score, so this does not use the offline mutation queue.
+  Future<EducationQuizSubmission> submitQuizAttempt(
+    String wsId, {
+    required List<EducationQuizAnswer> answers,
+    String? courseId,
+    int? durationSeconds,
+  }) async {
+    final actor = _actor;
+    _checkActor(actor);
+    if (actor == null) {
+      throw const ApiException(
+        message: 'Authentication required',
+        statusCode: 401,
+      );
+    }
+    final response = await _api.postJson(
+      '/api/v1/workspaces/$wsId/education/quiz-attempts',
+      {
+        if (courseId != null && courseId.isNotEmpty) 'course_id': courseId,
+        if (durationSeconds != null) 'duration_seconds': durationSeconds,
+        'answers': [
+          for (final answer in answers)
+            {'quiz_id': answer.quizId, 'selected_option_id': answer.optionId},
+        ],
+      },
+    );
+    _checkActor(actor);
+    await _store.invalidateTags(
+      {'module:education'},
+      workspaceId: wsId,
+      userId: actor,
+    );
+    return EducationQuizSubmission.fromJson(response);
+  }
+
   void dispose() {
     _api.dispose();
   }
