@@ -7931,5 +7931,36 @@
   "financeCreditPaymentDue": "Next payment due",
   "financeCreditCharge": "Record purchase",
   "financeCreditPayment": "Record card payment",
-  "financeCreditRefund": "Record refund"
+  "financeCreditRefund": "Record refund",
+  "financeInvoiceManualSubscription": "New subscription",
+  "financeInvoiceNoEligibleGroups": "No eligible groups for this month",
+  "financeInvoiceMoveWallet": "Change invoice wallet",
+  "@financeInvoiceMoveCurrency": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "financeInvoiceMoveCurrency": "The invoice amount will keep its numeric value and use {currency}.",
+  "financeInvoiceHistory": "Invoice history",
+  "financeInvoiceNoHistory": "No invoice history",
+  "financeInvoiceRestore": "Restore invoice",
+  "financeInvoiceRestoreHelp": "Restore the invoice and its linked records from the recovery snapshot.",
+  "financeInvoiceRestoreError": "Could not restore the invoice. Check the latest history.",
+  "financeInvoiceDeletedOnly": "Deleted",
+  "financeInvoiceCreatedEvent": "Created",
+  "financeInvoiceUpdatedEvent": "Updated",
+  "financeInvoiceRestoredEvent": "Restored",
+  "financeFeeLocks": "Fee locks",
+  "financeFeeLocksEmpty": "No tuition records for this month",
+  "financeFeeLockDraft": "Draft",
+  "financeFeeLockLocked": "Locked",
+  "financeFeeLockNone": "No draft",
+  "financeFeeLockConfirm": "Lock fees",
+  "financeFeeLockConfirmHelp": "Save an immutable snapshot of the current draft.",
+  "financeFeeLockChanged": "Refresh the fee lock before trying again.",
+  "financeFeeLockReason": "Reason",
+  "financeFeeLockSessions": "Billable sessions",
+  "financeFeeLockNoLines": "No configured tuition lines for this student"
 }

@@ -9,9 +9,12 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/features/finance/view/finance_fee_locks_sheet.dart';
 import 'package:mobile/features/finance/view/finance_invoice_editor.dart';
 import 'package:mobile/features/finance/view/finance_invoice_export_sheet.dart';
+import 'package:mobile/features/finance/view/finance_invoice_history_sheet.dart';
 import 'package:mobile/features/finance/view/finance_invoice_report_sheet.dart';
+import 'package:mobile/features/finance/view/finance_invoice_subscription_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
@@ -53,10 +56,12 @@ class _FinanceInvoicesSheet extends StatefulWidget {
 
 class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
   bool _subscriptions = false;
+  int _listRevision = 0;
 
   Future<bool> _create(
     BuildContext context, [
     FinancePendingInvoice? pending,
+    bool manualSubscription = false,
   ]) async {
     if (!widget.session.active || !context.mounted) return false;
     return await widget.session.open<bool>(
@@ -67,9 +72,36 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
             wallets: widget.wallets,
             currency: widget.currency,
             pending: pending,
+            manualSubscription: manualSubscription,
           ),
         ) ??
         false;
+  }
+
+  Future<bool> _manualSubscription(BuildContext context) async {
+    final session = widget.session;
+    final customer = await selectFinanceInvoiceCustomer(context, session);
+    if (!context.mounted ||
+        customer == null ||
+        !session.allows('create_invoices')) {
+      return false;
+    }
+    final terms = await session.open<FinancePendingInvoice>(
+      context,
+      (_) => FinanceInvoiceSubscriptionSheet(
+        customer: customer,
+        load: () => widget.repository.getSubscriptionGroups(
+          session.workspaceId,
+          customer.id,
+        ),
+      ),
+    );
+    if (!context.mounted ||
+        terms == null ||
+        !session.allows('create_invoices')) {
+      return false;
+    }
+    return await _create(context, terms, true);
   }
 
   Future<void> _export(BuildContext context, String query) =>
@@ -104,6 +136,7 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
         session: widget.session,
         repository: widget.repository,
         invoice: invoice,
+        wallets: widget.wallets,
         amount: _money(invoice),
       ),
     );
@@ -127,6 +160,8 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
       return FinanceDirectorySheet<FinancePendingInvoice>(
         title: l10n.financeInvoices,
         empty: l10n.financeInvoiceNoPending,
+        create: session.allows('create_invoices') ? _manualSubscription : null,
+        createLabel: l10n.financeInvoiceManualSubscription,
         onExport: session.allows('export_finance_data') ? _export : null,
         sections: sections,
         fetch: (query, page) =>
@@ -152,6 +187,7 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
       );
     }
     return FinanceDirectorySheet<FinanceInvoice>(
+      key: ValueKey(_listRevision),
       title: l10n.financeInvoices,
       empty: l10n.financeInvoiceEmpty,
       onExport: session.allows('export_finance_data') ? _export : null,
@@ -160,17 +196,47 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
         spacing: AppSpacing.sm,
         children: [
           sections,
-          AppButton.secondary(
-            leading: const Icon(LucideIcons.chartNoAxesColumn),
-            onPressed: () => session.open<void>(
-              context,
-              (_) => FinanceInvoiceReportSheet(
-                session: session,
-                repository: widget.repository,
-                wallets: widget.wallets,
+          AppGroupedCard(
+            children: [
+              AppRichRow(
+                title: l10n.financeInvoiceReports,
+                leading: const AppIconTile(icon: LucideIcons.chartNoAxesColumn),
+                onTap: () => session.open<void>(
+                  context,
+                  (_) => FinanceInvoiceReportSheet(
+                    session: session,
+                    repository: widget.repository,
+                    wallets: widget.wallets,
+                  ),
+                ),
               ),
-            ),
-            child: Text(l10n.financeInvoiceReports),
+              if (session.allows('manage_workspace_audit_logs'))
+                AppRichRow(
+                  title: l10n.financeInvoiceHistory,
+                  leading: const AppIconTile(icon: LucideIcons.history),
+                  onTap: () => session.open<void>(
+                    context,
+                    (_) => FinanceInvoiceHistorySheet(
+                      session: session,
+                      repository: widget.repository,
+                      onRestore: () {
+                        if (mounted) setState(() => _listRevision++);
+                      },
+                    ),
+                  ),
+                ),
+              AppRichRow(
+                title: l10n.financeFeeLocks,
+                leading: const AppIconTile(icon: LucideIcons.lockKeyhole),
+                onTap: () => session.open<void>(
+                  context,
+                  (_) => FinanceFeeLocksSheet(
+                    session: session,
+                    repository: widget.repository,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -203,12 +269,14 @@ class _FinanceInvoiceDetails extends StatefulWidget {
     required this.session,
     required this.repository,
     required this.invoice,
+    required this.wallets,
     required this.amount,
   });
 
   final FinanceSheetSession session;
   final FinanceRepository repository;
   final FinanceInvoice invoice;
+  final List<Wallet> wallets;
   final Widget? amount;
 
   @override
@@ -245,6 +313,62 @@ class _FinanceInvoiceDetailsState extends State<_FinanceInvoiceDetails> {
         });
       }
     }
+  }
+
+  Future<void> _moveWallet() async {
+    final invoice = widget.invoice;
+    final session = widget.session;
+    final candidates = widget.wallets.where(
+      (wallet) => wallet.id != invoice.walletId && wallet.currency != null,
+    );
+    final l10n = context.l10n;
+    final wallet = await session.open<Wallet>(
+      context,
+      (_) => AppChoiceSheet(
+        title: l10n.financeInvoiceMoveWallet,
+        selected: null,
+        choices: [
+          for (final wallet in candidates)
+            AppSheetChoice(
+              value: wallet,
+              label: wallet.name ?? wallet.id,
+              subtitle: wallet.currency,
+            ),
+        ],
+      ),
+    );
+    if (wallet == null ||
+        !mounted ||
+        !session.allows('update_invoices') ||
+        !session.allows('change_finance_wallets')) {
+      return;
+    }
+    final currency = widget.wallets
+        .where((wallet) => wallet.id == invoice.walletId)
+        .firstOrNull
+        ?.currency;
+    if (currency != wallet.currency) {
+      final confirmed = await showAppConfirmDialog(
+        context: context,
+        title: l10n.financeInvoiceMoveWallet,
+        message: l10n.financeInvoiceMoveCurrency(wallet.currency!),
+        confirmLabel: l10n.financeInvoiceMoveWallet,
+        cancelLabel: l10n.commonCancel,
+      );
+      if (!mounted ||
+          !confirmed ||
+          !session.allows('update_invoices') ||
+          !session.allows('change_finance_wallets')) {
+        return;
+      }
+    }
+    await _write(
+      () => widget.repository.moveInvoiceWallet(
+        workspace: session.workspaceId,
+        id: invoice.id,
+        walletId: wallet.id,
+      ),
+    );
   }
 
   Future<void> _delete() async {
@@ -315,6 +439,17 @@ class _FinanceInvoiceDetailsState extends State<_FinanceInvoiceDetails> {
             leading: const AppIconTile(icon: LucideIcons.receipt),
             trailing: widget.amount,
           ),
+          if (canEdit &&
+              widget.session.allows('change_finance_wallets') &&
+              widget.wallets.any(
+                (wallet) =>
+                    wallet.id != invoice.walletId && wallet.currency != null,
+              ))
+            AppRichRow(
+              title: l10n.financeInvoiceMoveWallet,
+              leading: const AppIconTile(icon: LucideIcons.wallet),
+              onTap: _busy ? null : _moveWallet,
+            ),
           if (invoice.coverage case final coverage? when coverage.isNotEmpty)
             AppRichRow(title: l10n.financeInvoiceCoverage, subtitle: coverage),
           if (invoice.creator case final creator?)

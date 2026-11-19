@@ -30900,6 +30900,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Record refund'**
   String get financeCreditRefund;
+
+  /// No description provided for @financeInvoiceManualSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'New subscription'**
+  String get financeInvoiceManualSubscription;
+
+  /// No description provided for @financeInvoiceNoEligibleGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No eligible groups for this month'**
+  String get financeInvoiceNoEligibleGroups;
+
+  /// No description provided for @financeInvoiceMoveWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Change invoice wallet'**
+  String get financeInvoiceMoveWallet;
+
+  /// No description provided for @financeInvoiceMoveCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'The invoice amount will keep its numeric value and use {currency}.'**
+  String financeInvoiceMoveCurrency(String currency);
+
+  /// No description provided for @financeInvoiceHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice history'**
+  String get financeInvoiceHistory;
+
+  /// No description provided for @financeInvoiceNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoice history'**
+  String get financeInvoiceNoHistory;
+
+  /// No description provided for @financeInvoiceRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore invoice'**
+  String get financeInvoiceRestore;
+
+  /// No description provided for @financeInvoiceRestoreHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore the invoice and its linked records from the recovery snapshot.'**
+  String get financeInvoiceRestoreHelp;
+
+  /// No description provided for @financeInvoiceRestoreError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not restore the invoice. Check the latest history.'**
+  String get financeInvoiceRestoreError;
+
+  /// No description provided for @financeInvoiceDeletedOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get financeInvoiceDeletedOnly;
+
+  /// No description provided for @financeInvoiceCreatedEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get financeInvoiceCreatedEvent;
+
+  /// No description provided for @financeInvoiceUpdatedEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get financeInvoiceUpdatedEvent;
+
+  /// No description provided for @financeInvoiceRestoredEvent.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored'**
+  String get financeInvoiceRestoredEvent;
+
+  /// No description provided for @financeFeeLocks.
+  ///
+  /// In en, this message translates to:
+  /// **'Fee locks'**
+  String get financeFeeLocks;
+
+  /// No description provided for @financeFeeLocksEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No tuition records for this month'**
+  String get financeFeeLocksEmpty;
+
+  /// No description provided for @financeFeeLockDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get financeFeeLockDraft;
+
+  /// No description provided for @financeFeeLockLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get financeFeeLockLocked;
+
+  /// No description provided for @financeFeeLockNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No draft'**
+  String get financeFeeLockNone;
+
+  /// No description provided for @financeFeeLockConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Lock fees'**
+  String get financeFeeLockConfirm;
+
+  /// No description provided for @financeFeeLockConfirmHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Save an immutable snapshot of the current draft.'**
+  String get financeFeeLockConfirmHelp;
+
+  /// No description provided for @financeFeeLockChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh the fee lock before trying again.'**
+  String get financeFeeLockChanged;
+
+  /// No description provided for @financeFeeLockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get financeFeeLockReason;
+
+  /// No description provided for @financeFeeLockSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Billable sessions'**
+  String get financeFeeLockSessions;
+
+  /// No description provided for @financeFeeLockNoLines.
+  ///
+  /// In en, this message translates to:
+  /// **'No configured tuition lines for this student'**
+  String get financeFeeLockNoLines;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

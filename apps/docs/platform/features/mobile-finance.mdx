@@ -149,6 +149,19 @@ The creator filter matches both workspace and platform creator records. A
 custom date range includes the selected end date in the device's local time.
 Search and CSV export use the selected creator and custom date range.
 
+## Invoice workflows
+
+Start a subscription for a customer and eligible groups on the Subscriptions
+tab, then select the wallet and add invoice lines. Invoice editors with wallet
+reassignment permission can change the linked wallet. A currency change
+requires confirmation because the invoice retains its numeric amount.
+
+Invoice history requires workspace audit permission. Recovery uses the stored
+snapshot and requires the same create and delete permissions on web and mobile.
+Fee locks support drafting from configured tuition lines, editing quantities,
+locking a version, and reopening with a reason. The web app includes bulk
+operations, notice templates, and custom fee lines.
+
 ## Import and export
 
 Finance managers can import Money Lover files from Transactions. Choose the
@@ -196,7 +209,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Budgets | Create, edit, delete and track category budgets | Create, edit, delete, detail, status and daily spending pace |
 | Transfers | Linked wallet entries with source and destination amounts | Create and edit transfers, including cross-currency amounts. Linked entries collapse in activity |
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
-| Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, and collect outstanding subscriptions. Fee locks, manual subscription setup, wallet reassignment, and recovery remain open |
+| Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, collect and set up subscriptions, change wallets, restore eligible deleted invoices, and manage fee lock drafts and revisions |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet and cross-wallet cash flow, cumulative movement, category totals, and invoice totals by wallet and creator |
 | Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. Review status is shared with web |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |

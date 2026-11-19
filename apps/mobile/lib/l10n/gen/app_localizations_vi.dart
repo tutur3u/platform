@@ -16476,4 +16476,78 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeCreditRefund => 'Ghi nhận hoàn tiền';
+
+  @override
+  String get financeInvoiceManualSubscription => 'Đăng ký mới';
+
+  @override
+  String get financeInvoiceNoEligibleGroups => 'Không có nhóm đủ điều kiện trong tháng này';
+
+  @override
+  String get financeInvoiceMoveWallet => 'Đổi ví hóa đơn';
+
+  @override
+  String financeInvoiceMoveCurrency(String currency) {
+    return 'Số tiền trên hóa đơn giữ nguyên giá trị số và dùng $currency.';
+  }
+
+  @override
+  String get financeInvoiceHistory => 'Lịch sử hóa đơn';
+
+  @override
+  String get financeInvoiceNoHistory => 'Chưa có lịch sử hóa đơn';
+
+  @override
+  String get financeInvoiceRestore => 'Khôi phục hóa đơn';
+
+  @override
+  String get financeInvoiceRestoreHelp => 'Khôi phục hóa đơn và các bản ghi liên kết từ bản lưu khôi phục.';
+
+  @override
+  String get financeInvoiceRestoreError => 'Không thể khôi phục hóa đơn. Hãy xem lịch sử mới nhất.';
+
+  @override
+  String get financeInvoiceDeletedOnly => 'Đã xóa';
+
+  @override
+  String get financeInvoiceCreatedEvent => 'Đã tạo';
+
+  @override
+  String get financeInvoiceUpdatedEvent => 'Đã cập nhật';
+
+  @override
+  String get financeInvoiceRestoredEvent => 'Đã khôi phục';
+
+  @override
+  String get financeFeeLocks => 'Chốt học phí';
+
+  @override
+  String get financeFeeLocksEmpty => 'Không có bản ghi học phí trong tháng này';
+
+  @override
+  String get financeFeeLockDraft => 'Bản nháp';
+
+  @override
+  String get financeFeeLockLocked => 'Đã chốt';
+
+  @override
+  String get financeFeeLockNone => 'Chưa có bản nháp';
+
+  @override
+  String get financeFeeLockConfirm => 'Chốt học phí';
+
+  @override
+  String get financeFeeLockConfirmHelp => 'Lưu bản chụp bất biến của bản nháp hiện tại.';
+
+  @override
+  String get financeFeeLockChanged => 'Làm mới bản chốt học phí trước khi thử lại.';
+
+  @override
+  String get financeFeeLockReason => 'Lý do';
+
+  @override
+  String get financeFeeLockSessions => 'Số buổi tính phí';
+
+  @override
+  String get financeFeeLockNoLines => 'Chưa có dòng học phí được cấu hình cho học viên này';
 }

@@ -8,10 +8,10 @@ import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
-import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/finance/view/finance_invoice_subscription_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
@@ -24,6 +24,7 @@ class FinanceInvoiceEditor extends StatefulWidget {
     required this.wallets,
     required this.currency,
     this.pending,
+    this.manualSubscription = false,
     super.key,
   });
 
@@ -32,6 +33,7 @@ class FinanceInvoiceEditor extends StatefulWidget {
   final List<Wallet> wallets;
   final String currency;
   final FinancePendingInvoice? pending;
+  final bool manualSubscription;
 
   @override
   State<FinanceInvoiceEditor> createState() => _FinanceInvoiceEditorState();
@@ -61,21 +63,9 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
   }
 
   Future<void> _selectCustomer() async {
-    final crm = CrmRepository();
-    final customer = await widget.session.open<CrmUser>(
+    final customer = await selectFinanceInvoiceCustomer(
       context,
-      (context) => FinanceDirectorySheet<CrmUser>(
-        title: context.l10n.financeInvoiceCustomer,
-        empty: context.l10n.financeInvoiceNoCustomers,
-        fetch: (query, page) async {
-          final result = await crm.getUsers(_wsId, query: query, page: page);
-          return (items: result.users, count: result.count);
-        },
-        row: (context, person, _) => AppOptionTile(
-          title: person.label,
-          onTap: () => Navigator.of(context).pop(person),
-        ),
-      ),
+      widget.session,
     );
     if (mounted && customer != null) setState(() => _customer = customer);
   }
@@ -205,6 +195,8 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
     return AppSheetScaffold(
       title: pending == null
           ? l10n.financeInvoiceNew
+          : widget.manualSubscription
+          ? l10n.financeInvoiceManualSubscription
           : l10n.financeInvoiceSubscriptionNew,
       actions: [
         AppButton.primary(

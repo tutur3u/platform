@@ -130,3 +130,128 @@ typedef FinanceSubscriptionTerms = ({
   String month,
   int months,
 });
+
+typedef FinanceSubscriptionGroup = ({
+  String id,
+  String name,
+  DateTime? start,
+  DateTime? end,
+});
+
+class FinanceInvoiceEvent {
+  FinanceInvoiceEvent.fromJson(Map<String, dynamic> json)
+    : id = json['id'] as String,
+      invoiceId = json['invoice_id'] as String,
+      action = json['operation'] as String,
+      actor = json['actor_name'] as String?,
+      customer = json['customer_name'] as String?,
+      currency = json['currency'] as String?,
+      amount = _amount(json['amount']),
+      at = DateTime.tryParse(json['occurred_at'] as String? ?? ''),
+      canRestore = json['can_restore'] == true;
+
+  final String id;
+  final String invoiceId;
+  final String action;
+  final String? actor;
+  final String? customer;
+  final String? currency;
+  final double? amount;
+  final DateTime? at;
+  final bool canRestore;
+}
+
+class FinanceFeeLockRow {
+  FinanceFeeLockRow.fromJson(Map<String, dynamic> json, this.currency)
+    : studentId = json['student_id'] as String,
+      student = json['student_name'] as String,
+      lockId = (json['lock'] as Map<String, dynamic>?)?['id'] as String?,
+      status = (json['lock'] as Map<String, dynamic>?)?['status'] as String?,
+      amount = _amount(json['baseline_total']) ?? 0,
+      baseline = [
+        for (final row
+            in (json['classes'] as List<dynamic>).cast<Map<String, dynamic>>())
+          if ((_amount(row['baseline_quantity']) ?? 0) > 0 &&
+              row['product_id'] != null &&
+              row['unit_id'] != null &&
+              row['warehouse_id'] != null)
+            FinanceFeeLine.baseline(row),
+      ];
+
+  final String studentId;
+  final String student;
+  final String? lockId;
+  final String? status;
+  final String currency;
+  final double amount;
+  final List<FinanceFeeLine> baseline;
+}
+
+typedef FinanceFeeLockDetail = ({
+  String? status,
+  int? version,
+  String currency,
+  String note,
+  List<FinanceFeeLine> lines,
+});
+
+class FinanceFeeLine {
+  FinanceFeeLine.baseline(Map<String, dynamic> row)
+    : this.fromJson({
+        ...row,
+        'kind': 'tuition',
+        'label': row['group_name'],
+        'quantity': row['baseline_quantity'],
+        'line_amount': row['baseline_amount'],
+      });
+
+  FinanceFeeLine.fromJson(Map<String, dynamic> row)
+    : _data = row,
+      kind = row['kind'] as String,
+      label = row['label'] as String,
+      quantity = _amount(row['quantity'])!,
+      amount = _amount(row['line_amount'])!;
+
+  final Map<String, dynamic> _data;
+  final String kind;
+  final String label;
+  final double quantity;
+  final double amount;
+
+  Map<String, dynamic> toDraft({
+    required double quantity,
+    required String editedReason,
+  }) {
+    final groupId = _data['group_id'] as String?;
+    if (kind == 'tuition') {
+      return {
+        'kind': kind,
+        'group_id': groupId,
+        'quantity': quantity,
+        if (_data['adjustment_amount'] case final num adjustment)
+          'adjustment_amount': adjustment,
+        if (quantity != this.quantity)
+          'reason': editedReason
+        else if (_data['reason'] case final String reason)
+          'reason': reason,
+      };
+    }
+
+    return {
+      'kind': kind,
+      if (groupId != null) 'group_id': groupId,
+      'quantity': quantity,
+      if (_data['product_id'] case final String product) ...{
+        'source': 'catalog',
+        'product_id': product,
+        'unit_id': _data['unit_id'],
+        'warehouse_id': _data['warehouse_id'],
+      } else ...{
+        'source': 'free_text',
+        'label': label,
+        'unit_label': _data['unit_label'],
+        'unit_price': _amount(_data['unit_price']),
+      },
+    };
+  }
+}

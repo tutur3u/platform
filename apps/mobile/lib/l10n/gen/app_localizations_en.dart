@@ -16683,4 +16683,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeCreditRefund => 'Record refund';
+
+  @override
+  String get financeInvoiceManualSubscription => 'New subscription';
+
+  @override
+  String get financeInvoiceNoEligibleGroups => 'No eligible groups for this month';
+
+  @override
+  String get financeInvoiceMoveWallet => 'Change invoice wallet';
+
+  @override
+  String financeInvoiceMoveCurrency(String currency) {
+    return 'The invoice amount will keep its numeric value and use $currency.';
+  }
+
+  @override
+  String get financeInvoiceHistory => 'Invoice history';
+
+  @override
+  String get financeInvoiceNoHistory => 'No invoice history';
+
+  @override
+  String get financeInvoiceRestore => 'Restore invoice';
+
+  @override
+  String get financeInvoiceRestoreHelp => 'Restore the invoice and its linked records from the recovery snapshot.';
+
+  @override
+  String get financeInvoiceRestoreError => 'Could not restore the invoice. Check the latest history.';
+
+  @override
+  String get financeInvoiceDeletedOnly => 'Deleted';
+
+  @override
+  String get financeInvoiceCreatedEvent => 'Created';
+
+  @override
+  String get financeInvoiceUpdatedEvent => 'Updated';
+
+  @override
+  String get financeInvoiceRestoredEvent => 'Restored';
+
+  @override
+  String get financeFeeLocks => 'Fee locks';
+
+  @override
+  String get financeFeeLocksEmpty => 'No tuition records for this month';
+
+  @override
+  String get financeFeeLockDraft => 'Draft';
+
+  @override
+  String get financeFeeLockLocked => 'Locked';
+
+  @override
+  String get financeFeeLockNone => 'No draft';
+
+  @override
+  String get financeFeeLockConfirm => 'Lock fees';
+
+  @override
+  String get financeFeeLockConfirmHelp => 'Save an immutable snapshot of the current draft.';
+
+  @override
+  String get financeFeeLockChanged => 'Refresh the fee lock before trying again.';
+
+  @override
+  String get financeFeeLockReason => 'Reason';
+
+  @override
+  String get financeFeeLockSessions => 'Billable sessions';
+
+  @override
+  String get financeFeeLockNoLines => 'No configured tuition lines for this student';
 }

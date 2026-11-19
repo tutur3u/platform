@@ -44,6 +44,7 @@ void main() {
                     context,
                     wallets: const [
                       Wallet(id: 'primary', name: 'Cash', currency: 'VND'),
+                      Wallet(id: 'backup', name: 'Savings', currency: 'VND'),
                     ],
                     currency: 'VND',
                   ),
@@ -70,6 +71,22 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
     expect(repository.saved, ('invoice-1', 'Receipt provided'));
+    await tester.tap(find.text('Quinn'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Change invoice wallet'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Savings'));
+    await tester.pumpAndSettle();
+    expect(repository.moved, ('invoice-1', 'backup'));
+    await tester.tap(find.text('Invoice history'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Archived customer'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Restore invoice').last);
+    await tester.pumpAndSettle();
+    expect(repository.restored, 'archived-invoice');
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Subscriptions'));
     await tester.pumpAndSettle();
     expect(find.text('Morgan'), findsOneWidget);
@@ -82,6 +99,42 @@ void main() {
 
 class _InvoiceRepository extends FinanceSceneRepository {
   (String, String?)? saved;
+  (String, String)? moved;
+  String? restored;
+
+  @override
+  Future<void> moveInvoiceWallet({
+    required String workspace,
+    required String id,
+    required String walletId,
+  }) async {
+    moved = (id, walletId);
+  }
+
+  @override
+  Future<FinancePageResult<FinanceInvoiceEvent>> getInvoiceHistory(
+    String workspace, {
+    required String query,
+    required int page,
+    required bool deleted,
+  }) async => (
+    items: [
+      if (restored == null)
+        FinanceInvoiceEvent.fromJson({
+          'id': 'archived-event',
+          'invoice_id': 'archived-invoice',
+          'operation': 'DELETE',
+          'customer_name': 'Archived customer',
+          'can_restore': true,
+        }),
+    ],
+    count: restored == null ? 1 : 0,
+  );
+
+  @override
+  Future<void> restoreInvoice(String workspace, String id) async {
+    restored = id;
+  }
 
   @override
   Future<FinanceInvoiceReport> getInvoiceReport(
