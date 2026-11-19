@@ -10,6 +10,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_category.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/view/apps_hub_results.dart';
+import 'package:mobile/features/apps/widgets/app_launcher_pins.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_shortcuts.dart';
 import 'package:mobile/features/apps/widgets/app_launcher_tile.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
@@ -112,9 +113,10 @@ class AppsHubPage extends StatelessWidget {
           if (!searching && (pinned.isNotEmpty || onManage != null))
             SliverToBoxAdapter(
               key: const ValueKey('apps-section-pinned'),
-              child: _AppsSection(
-                title: l10n.appsPinnedSection,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
                 child: AppLauncherPins(
+                  title: l10n.appsPinnedSection,
                   apps: pinned,
                   onSelected: open,
                   onManage: onManage,

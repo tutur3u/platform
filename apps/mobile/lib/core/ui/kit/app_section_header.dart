@@ -15,7 +15,9 @@ class AppSectionHeader extends StatelessWidget {
     this.count,
     this.icon,
     this.actionLabel,
+    this.actionIcon,
     this.onAction,
+    this.actionKey,
     this.padding = const EdgeInsets.only(bottom: AppSpacing.md),
     super.key,
   });
@@ -28,7 +30,11 @@ class AppSectionHeader extends StatelessWidget {
   final int? count;
   final IconData? icon;
   final String? actionLabel;
+
+  /// Leading icon of the trailing action button.
+  final IconData? actionIcon;
   final VoidCallback? onAction;
+  final Key? actionKey;
   final EdgeInsetsGeometry padding;
 
   @override
@@ -96,7 +102,9 @@ class AppSectionHeader extends StatelessWidget {
           if (actionLabel != null && onAction != null) ...[
             const SizedBox(width: AppSpacing.sm),
             AppButton.ghost(
+              key: actionKey,
               size: AppButtonSize.small,
+              leading: actionIcon == null ? null : Icon(actionIcon),
               onPressed: onAction,
               child: Text(actionLabel!),
             ),
