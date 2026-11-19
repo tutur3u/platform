@@ -9,6 +9,7 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_interest.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/finance_reports_sheet.dart';
+import 'package:mobile/features/finance/view/wallet_credit_sheet.dart';
 import 'package:mobile/features/finance/view/wallet_interest_sheet.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -30,6 +31,7 @@ void main() {
   for (final brightness in Brightness.values) {
     testWidgets('wallet tools render in ${brightness.name}', (tester) async {
       final repository = _WalletToolsRepository();
+      WalletCreditAction? creditAction;
       DesignRender.setSize(tester, DesignRender.sizes['phone']!);
       await tester.pumpWidget(
         DesignRenderApp(
@@ -69,6 +71,16 @@ void main() {
                       ),
                       child: const Text('Open reports'),
                     ),
+                    TextButton(
+                      onPressed: () async {
+                        creditAction = await showWalletCredit(
+                          context,
+                          walletId: 'wallet-vnd',
+                          currency: 'VND',
+                        );
+                      },
+                      child: const Text('Open credit'),
+                    ),
                   ],
                 ),
               ),
@@ -90,11 +102,37 @@ void main() {
       expect(find.text('Rent'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await DesignRender.capture(tester, 'wallet-report-${brightness.name}');
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Open credit'));
+      await tester.pumpAndSettle();
+      expect(find.text('Next payment due'), findsOneWidget);
+      await DesignRender.capture(tester, 'credit-summary-${brightness.name}');
+      final payment = find.text('Record card payment');
+      await tester.ensureVisible(payment);
+      await tester.tap(payment);
+      await tester.pumpAndSettle();
+      expect(creditAction, WalletCreditAction.payment);
     });
   }
 }
 
 class _WalletToolsRepository extends FinanceSceneRepository {
+  @override
+  Future<WalletCreditSummary> getWalletCreditSummary(
+    String workspace,
+    String wallet,
+  ) async => (
+    limit: 10000000.0,
+    available: 7000000.0,
+    outstanding: 3000000.0,
+    utilization: 30.0,
+    statementBalance: 2200000.0,
+    activity: 800000.0,
+    statement: DateTime(2026, 12, 5),
+    payment: DateTime(2026, 12, 25),
+  );
+
   @override
   Future<WalletInterest> getWalletInterest(
     String workspace,

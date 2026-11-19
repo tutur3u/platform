@@ -13,6 +13,8 @@ class _TransactionFormDialog extends StatefulWidget {
     this.onCreate,
     this.exchangeRates,
     this.initialWalletId,
+    this.initialDestinationWalletId,
+    this.initialIncome = false,
     this.initialTakenAt,
     this.initialTransfer = false,
   }) : assert(
@@ -27,6 +29,8 @@ class _TransactionFormDialog extends StatefulWidget {
   final TransactionCreateHandler? onCreate;
   final List<ExchangeRate>? exchangeRates;
   final String? initialWalletId;
+  final String? initialDestinationWalletId;
+  final bool initialIncome;
   final DateTime? initialTakenAt;
 
   /// Opens a new entry in transfer mode.
@@ -46,6 +50,8 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
 
   late _CreateTransactionMode _createMode = widget.initialTransfer
       ? _CreateTransactionMode.transfer
+      : widget.initialIncome
+      ? _CreateTransactionMode.income
       : _CreateTransactionMode.expense;
 
   void _setCreateMode(_CreateTransactionMode mode) {
@@ -518,7 +524,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
         widget.initialTakenAt ??
         DateTime.now();
     _walletId = widget.transaction?.walletId ?? widget.initialWalletId;
-    _destinationWalletId = widget.transaction?.transfer?.linkedWalletId;
+    _destinationWalletId =
+        widget.transaction?.transfer?.linkedWalletId ??
+        widget.initialDestinationWalletId;
     _categoryId = widget.transaction?.categoryId;
     _tagIds =
         widget.transaction?.tags.map((tag) => tag.id).toList(growable: false) ??

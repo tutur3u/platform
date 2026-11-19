@@ -16438,4 +16438,42 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeInvoiceExportError => 'Không thể xuất tất cả hóa đơn. Thu hẹp tìm kiếm rồi thử lại.';
+
+  @override
+  String get financeCreditSummary => 'Tóm tắt tín dụng';
+
+  @override
+  String get financeCreditLimit => 'Hạn mức tín dụng';
+
+  @override
+  String get financeCreditAvailable => 'Hạn mức khả dụng';
+
+  @override
+  String get financeCreditOutstanding => 'Tổng dư nợ';
+
+  @override
+  String get financeCreditStatementBalance => 'Dư nợ sao kê';
+
+  @override
+  String get financeCreditCurrentActivity => 'Giao dịch kỳ hiện tại';
+
+  @override
+  String financeCreditUtilization(int percent) {
+    return 'Đã dùng $percent% hạn mức';
+  }
+
+  @override
+  String get financeCreditNextStatement => 'Kỳ sao kê tiếp theo';
+
+  @override
+  String get financeCreditPaymentDue => 'Hạn thanh toán tiếp theo';
+
+  @override
+  String get financeCreditCharge => 'Ghi nhận giao dịch mua';
+
+  @override
+  String get financeCreditPayment => 'Ghi nhận thanh toán thẻ';
+
+  @override
+  String get financeCreditRefund => 'Ghi nhận hoàn tiền';
 }

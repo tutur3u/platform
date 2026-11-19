@@ -41,6 +41,8 @@ Future<bool> showCreateTransactionSheet(
   required TransactionCreateHandler onCreate,
   List<ExchangeRate>? exchangeRates,
   String? initialWalletId,
+  String? initialDestinationWalletId,
+  bool initialIncome = false,
   DateTime? initialTakenAt,
   bool initialTransfer = false,
 }) async {
@@ -52,6 +54,8 @@ Future<bool> showCreateTransactionSheet(
       onCreate: onCreate,
       exchangeRates: exchangeRates,
       initialWalletId: initialWalletId,
+      initialDestinationWalletId: initialDestinationWalletId,
+      initialIncome: initialIncome,
       initialTakenAt: initialTakenAt,
       initialTransfer: initialTransfer,
     ),

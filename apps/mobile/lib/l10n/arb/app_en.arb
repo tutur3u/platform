@@ -7912,5 +7912,24 @@
   "financeExportInvoices": "Export invoices",
   "financeInvoiceShareFile": "Share file",
   "financeInvoiceExportFormat": "File format",
-  "financeInvoiceExportError": "Could not export all invoices. Narrow the search and try again."
+  "financeInvoiceExportError": "Could not export all invoices. Narrow the search and try again.",
+  "financeCreditSummary": "Credit summary",
+  "financeCreditLimit": "Credit limit",
+  "financeCreditAvailable": "Available credit",
+  "financeCreditOutstanding": "Total outstanding",
+  "financeCreditStatementBalance": "Statement balance",
+  "financeCreditCurrentActivity": "Current cycle activity",
+  "@financeCreditUtilization": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "financeCreditUtilization": "{percent}% of limit used",
+  "financeCreditNextStatement": "Next statement",
+  "financeCreditPaymentDue": "Next payment due",
+  "financeCreditCharge": "Record purchase",
+  "financeCreditPayment": "Record card payment",
+  "financeCreditRefund": "Record refund"
 }

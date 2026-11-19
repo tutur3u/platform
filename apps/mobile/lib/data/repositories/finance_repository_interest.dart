@@ -1,8 +1,41 @@
 part of 'finance_repository.dart';
 
+typedef WalletCreditSummary = ({
+  double limit,
+  double available,
+  double outstanding,
+  double utilization,
+  double statementBalance,
+  double activity,
+  DateTime statement,
+  DateTime payment,
+});
+
 mixin FinanceRepositoryInterest {
   ApiClient get _api;
   String? Function() get _cacheUserId;
+
+  Future<WalletCreditSummary> getWalletCreditSummary(
+    String workspace,
+    String wallet,
+  ) async {
+    final path = FinanceEndpoints.wallet(
+      Uri.encodeComponent(workspace),
+      Uri.encodeComponent(wallet),
+    );
+    final summary = await _readWalletFinance('$path/credit-summary');
+    double amount(String key) => (summary[key] as num).toDouble();
+    return (
+      limit: amount('limit'),
+      available: amount('availableCredit'),
+      outstanding: amount('totalOutstanding'),
+      utilization: amount('utilization'),
+      statementBalance: amount('statementBalance'),
+      activity: amount('currentActivity'),
+      statement: DateTime.parse(summary['nextStatementDate'] as String),
+      payment: DateTime.parse(summary['nextPaymentDate'] as String),
+    );
+  }
 
   String _interestPath(String workspace, String wallet) =>
       '${FinanceEndpoints.wallet(Uri.encodeComponent(workspace), Uri.encodeComponent(wallet))}/interest';
@@ -13,7 +46,7 @@ mixin FinanceRepositoryInterest {
       'ENABLE_EXPERIMENTAL_FINANCE',
     );
     try {
-      final response = await _readInterest(path);
+      final response = await _readWalletFinance(path);
       return response['value'] == 'true' || response['value'] == true;
     } on ApiException catch (error) {
       if (error.statusCode == 404 || error.statusCode == 403) return false;
@@ -25,7 +58,7 @@ mixin FinanceRepositoryInterest {
     String workspace,
     String wallet,
   ) async => WalletInterest.fromJson(
-    await _readInterest(_interestPath(workspace, wallet)),
+    await _readWalletFinance(_interestPath(workspace, wallet)),
   );
 
   Future<num> getWalletHistoricalInterest(
@@ -35,13 +68,13 @@ mixin FinanceRepositoryInterest {
     required String to,
   }) async {
     final query = Uri(queryParameters: {'from': from, 'to': to}).query;
-    final response = await _readInterest(
+    final response = await _readWalletFinance(
       '${_interestPath(workspace, wallet)}/calculate?$query',
     );
     return response['totalInterest'] as num;
   }
 
-  Future<Map<String, dynamic>> _readInterest(String path) {
+  Future<Map<String, dynamic>> _readWalletFinance(String path) {
     final user = _cacheUserId();
     Future<Map<String, dynamic>> request() => _api.getJson(path);
     return user == null ? request() : ApiClient.runForUser(user, request);

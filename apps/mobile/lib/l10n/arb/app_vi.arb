@@ -7207,5 +7207,17 @@
   "financeExportInvoices": "Xuất hóa đơn",
   "financeInvoiceShareFile": "Chia sẻ tệp",
   "financeInvoiceExportFormat": "Định dạng tệp",
-  "financeInvoiceExportError": "Không thể xuất tất cả hóa đơn. Thu hẹp tìm kiếm rồi thử lại."
+  "financeInvoiceExportError": "Không thể xuất tất cả hóa đơn. Thu hẹp tìm kiếm rồi thử lại.",
+  "financeCreditSummary": "Tóm tắt tín dụng",
+  "financeCreditLimit": "Hạn mức tín dụng",
+  "financeCreditAvailable": "Hạn mức khả dụng",
+  "financeCreditOutstanding": "Tổng dư nợ",
+  "financeCreditStatementBalance": "Dư nợ sao kê",
+  "financeCreditCurrentActivity": "Giao dịch kỳ hiện tại",
+  "financeCreditUtilization": "Đã dùng {percent}% hạn mức",
+  "financeCreditNextStatement": "Kỳ sao kê tiếp theo",
+  "financeCreditPaymentDue": "Hạn thanh toán tiếp theo",
+  "financeCreditCharge": "Ghi nhận giao dịch mua",
+  "financeCreditPayment": "Ghi nhận thanh toán thẻ",
+  "financeCreditRefund": "Ghi nhận hoàn tiền"
 }

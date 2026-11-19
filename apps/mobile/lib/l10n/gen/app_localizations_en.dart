@@ -16645,4 +16645,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeInvoiceExportError => 'Could not export all invoices. Narrow the search and try again.';
+
+  @override
+  String get financeCreditSummary => 'Credit summary';
+
+  @override
+  String get financeCreditLimit => 'Credit limit';
+
+  @override
+  String get financeCreditAvailable => 'Available credit';
+
+  @override
+  String get financeCreditOutstanding => 'Total outstanding';
+
+  @override
+  String get financeCreditStatementBalance => 'Statement balance';
+
+  @override
+  String get financeCreditCurrentActivity => 'Current cycle activity';
+
+  @override
+  String financeCreditUtilization(int percent) {
+    return '$percent% of limit used';
+  }
+
+  @override
+  String get financeCreditNextStatement => 'Next statement';
+
+  @override
+  String get financeCreditPaymentDue => 'Next payment due';
+
+  @override
+  String get financeCreditCharge => 'Record purchase';
+
+  @override
+  String get financeCreditPayment => 'Record card payment';
+
+  @override
+  String get financeCreditRefund => 'Record refund';
 }

@@ -15,6 +15,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/view/wallet_credit_sheet.dart';
 import 'package:mobile/features/finance/view/wallet_detail_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/view/wallet_interest_sheet.dart';
@@ -251,7 +252,31 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     unawaited(_load());
   }
 
-  Future<void> _create({bool transfer = false}) async {
+  Future<void> _openCredit(Wallet wallet) async {
+    final workspace = _wsId;
+    final action = await showWalletCredit(
+      context,
+      walletId: wallet.id,
+      currency: (wallet.currency ?? _workspaceCurrency).toUpperCase(),
+    );
+    if (!mounted ||
+        workspace != _wsId ||
+        _wallet?.id != wallet.id ||
+        action == null ||
+        !canManageFinance(context, 'create_transactions', listen: false)) {
+      return;
+    }
+    await _create(
+      payment: action == WalletCreditAction.payment,
+      income: action == WalletCreditAction.refund,
+    );
+  }
+
+  Future<void> _create({
+    bool transfer = false,
+    bool payment = false,
+    bool income = false,
+  }) async {
     final wsId = _wsId;
     final wallet = _wallet;
     if (wsId == null || wallet == null) return;
@@ -260,8 +285,10 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       wsId: wsId,
       repository: context.read<FinanceRepository>(),
       exchangeRates: _exchangeRates,
-      initialWalletId: wallet.id,
-      initialTransfer: transfer,
+      initialWalletId: payment ? null : wallet.id,
+      initialDestinationWalletId: payment ? wallet.id : null,
+      initialTransfer: transfer || payment,
+      initialIncome: income,
     );
     if (!mounted || !created) return;
     showAppToast(context, message: context.l10n.financeTransactionSaved);
@@ -327,6 +354,16 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                 context,
                 showAmounts: financeAmountsVisible(context),
               ),
+              if (wallet != null &&
+                  wallet.type == 'CREDIT' &&
+                  _workspaceCurrency.isNotEmpty &&
+                  canManageFinance(context, 'view_transactions'))
+                ShellActionSpec(
+                  id: 'finance-wallet-credit',
+                  icon: LucideIcons.creditCard,
+                  tooltip: l10n.financeCreditSummary,
+                  onPressed: () => unawaited(_openCredit(wallet)),
+                ),
               if (wallet != null &&
                   _workspaceCurrency.isNotEmpty &&
                   canManageFinance(context, 'view_transactions'))

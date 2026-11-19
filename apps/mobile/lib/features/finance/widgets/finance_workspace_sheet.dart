@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -64,9 +66,13 @@ class FinanceSheetSession extends ChangeNotifier {
   );
 
   Future<void> run(WidgetBuilder builder) async {
+    await runForResult<void>(builder);
+  }
+
+  Future<T?> runForResult<T>(WidgetBuilder builder) async {
     if (!active) {
       dispose();
-      return;
+      return null;
     }
     void changed() {
       if (_ended || active) return;
@@ -77,11 +83,12 @@ class FinanceSheetSession extends ChangeNotifier {
     final workspaceChanges = _workspace.stream.listen((_) => changed());
     final actorChanges = _actor?.stream.listen((_) => changed());
     try {
-      await open<void>(_context, builder);
+      final result = await open<T>(_context, builder);
+      return active ? result : null;
     } finally {
       _ended = true;
-      await workspaceChanges.cancel();
-      await actorChanges?.cancel();
+      unawaited(workspaceChanges.cancel());
+      unawaited(actorChanges?.cancel());
       // The route may retain its exit animation after the result resolves.
       WidgetsBinding.instance.addPostFrameCallback((_) => dispose());
     }

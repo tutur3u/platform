@@ -30828,6 +30828,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not export all invoices. Narrow the search and try again.'**
   String get financeInvoiceExportError;
+
+  /// No description provided for @financeCreditSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit summary'**
+  String get financeCreditSummary;
+
+  /// No description provided for @financeCreditLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit limit'**
+  String get financeCreditLimit;
+
+  /// No description provided for @financeCreditAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available credit'**
+  String get financeCreditAvailable;
+
+  /// No description provided for @financeCreditOutstanding.
+  ///
+  /// In en, this message translates to:
+  /// **'Total outstanding'**
+  String get financeCreditOutstanding;
+
+  /// No description provided for @financeCreditStatementBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Statement balance'**
+  String get financeCreditStatementBalance;
+
+  /// No description provided for @financeCreditCurrentActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Current cycle activity'**
+  String get financeCreditCurrentActivity;
+
+  /// No description provided for @financeCreditUtilization.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of limit used'**
+  String financeCreditUtilization(int percent);
+
+  /// No description provided for @financeCreditNextStatement.
+  ///
+  /// In en, this message translates to:
+  /// **'Next statement'**
+  String get financeCreditNextStatement;
+
+  /// No description provided for @financeCreditPaymentDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Next payment due'**
+  String get financeCreditPaymentDue;
+
+  /// No description provided for @financeCreditCharge.
+  ///
+  /// In en, this message translates to:
+  /// **'Record purchase'**
+  String get financeCreditCharge;
+
+  /// No description provided for @financeCreditPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Record card payment'**
+  String get financeCreditPayment;
+
+  /// No description provided for @financeCreditRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Record refund'**
+  String get financeCreditRefund;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
