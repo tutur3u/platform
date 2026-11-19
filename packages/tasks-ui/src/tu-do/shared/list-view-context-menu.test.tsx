@@ -8,11 +8,16 @@ import { ListView } from './list-view';
 
 const openTaskMock = vi.hoisted(() => vi.fn());
 const openTaskByIdMock = vi.hoisted(() => vi.fn());
+const bulkDeleteTasksMock = vi.hoisted(() => vi.fn());
 
 vi.mock('next-intl', () => ({
   useLocale: () => 'en',
-  useTranslations: () => (key: string) =>
-    key === 'select_all_tasks' ? 'Select all tasks' : key,
+  useTranslations: () => (key: string, values?: { count?: number }) =>
+    key === 'select_all_tasks'
+      ? 'Select all tasks'
+      : values?.count !== undefined
+        ? `${key}:${values.count}`
+        : key,
 }));
 
 vi.mock('next-themes', () => ({
@@ -36,7 +41,7 @@ vi.mock('./board-broadcast-context', () => ({
 
 vi.mock('../boards/boardId/kanban/bulk/bulk-operations', () => ({
   useBulkOperations: () => ({
-    bulkDeleteTasks: vi.fn(),
+    bulkDeleteTasks: bulkDeleteTasksMock,
     bulkUpdateDueDate: vi.fn(),
     bulkUpdatePriority: vi.fn(),
   }),
@@ -248,5 +253,27 @@ describe('ListView task context menu', () => {
     expect(document.querySelectorAll('tr[data-index]').length).toBe(
       renderedRows
     );
+  });
+
+  it('confirms a bulk delete beyond the rendered rows with the exact count', () => {
+    bulkDeleteTasksMock.mockClear();
+    const manyTasks = Array.from({ length: 60 }, (_, index) => ({
+      ...tasks[0]!,
+      display_number: index + 1,
+      id: `task-${index + 1}`,
+      name: `Task ${index + 1}`,
+    }));
+    renderListView(manyTasks);
+    expect(document.querySelectorAll('tr[data-index]').length).toBeLessThan(60);
+
+    fireEvent.click(screen.getByLabelText('Select all tasks'));
+    const trigger = screen.getByRole('button', { name: /bulk_actions/ });
+    fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByText('delete'));
+
+    expect(
+      screen.getByText('delete_selected_tasks_confirmation:60')
+    ).toBeInTheDocument();
+    expect(bulkDeleteTasksMock).not.toHaveBeenCalled();
   });
 });
