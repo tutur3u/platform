@@ -13,7 +13,11 @@ import { createRequire, findPackageJSON } from 'node:module';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readRegularFileSync } from '../safe-fs.js';
-import { BUILD_OUTPUT_PREFIX } from './cf-build-output-publisher.mjs';
+import {
+  BUILD_OUTPUT_PREFIX,
+  buildOutputObservability,
+  discoverCfBuildOutputEsmModules,
+} from './cf-build-output-publisher.mjs';
 import { verify } from './wave1-native-artifact.mjs';
 
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -70,45 +74,6 @@ async function suppliers() {
   return { api, versions };
 }
 
-function moduleGlobs(config) {
-  return (config.rules?.flatMap((rule) => rule.globs) ?? ['**/*.{js,mjs}']).map(
-    (glob) => glob.replaceAll('\\', '/')
-  );
-}
-
-function matchesModule(name, globs) {
-  return globs.some((glob) => {
-    const pattern = glob
-      .replaceAll('**/', '')
-      .replaceAll('**', '')
-      .replaceAll('*', '.*');
-    return new RegExp(`^${pattern}$`).test(name) || /\.m?js$/u.test(name);
-  });
-}
-
-function discoverModules(bundleRoot, config, mainModule) {
-  const globs = moduleGlobs(config);
-  const modules = {};
-  function visit(directory) {
-    for (const name of readdirSync(directory)) {
-      const path = join(directory, name);
-      const stat = lstatSync(path);
-      assert.ok(!stat.isSymbolicLink());
-      if (stat.isDirectory()) visit(path);
-      else if (name.endsWith('.map')) continue;
-      else if (!matchesModule(name, globs)) continue;
-      const rel = posix(relative(bundleRoot, path));
-      modules[rel] = { type: 'esm' };
-    }
-  }
-  visit(bundleRoot);
-  assert.ok(
-    Object.hasOwn(modules, mainModule),
-    'main module missing from bundle'
-  );
-  return modules;
-}
-
 function publicationEnvBindings(config) {
   const env = {};
   const binding = config.assets?.binding ?? 'ASSETS';
@@ -129,7 +94,11 @@ function buildInput(appRoot, app, environment, sha) {
   const mainPath = resolve(configDir, mainRel);
   const bundleRoot = dirname(mainPath);
   const mainModule = posix(relative(bundleRoot, mainPath));
-  const modules = discoverModules(bundleRoot, config, mainModule);
+  const modules = discoverCfBuildOutputEsmModules(
+    bundleRoot,
+    config,
+    mainModule
+  );
   const assetsDir = resolve(configDir, config.assets.directory);
   const assetFiles = inventory(assetsDir);
   const rootConfig = { buildContext: { mode: 'production', isPreview: false } };
@@ -142,7 +111,7 @@ function buildInput(appRoot, app, environment, sha) {
       runWorkerFirst: config.assets.run_worker_first ?? true,
       notFoundHandling: config.assets.not_found_handling ?? 'none',
     },
-    observability: config.observability,
+    observability: buildOutputObservability(config.observability),
     env: publicationEnvBindings(config),
     manifest: { type: 'complete', mainModule, modules },
   };

@@ -1,0 +1,120 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import {
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { createRequire } from 'node:module';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { emitWave1Output } from './wave1-cf-output.mjs';
+import { prepare } from './wave1-native-artifact.mjs';
+import { rehearseWave1Publication } from './wave1-cf-publisher.mjs';
+
+const require = createRequire(import.meta.url);
+const { fixture } = require('./wave1-native-test-fixture.cjs');
+const sha = 'd'.repeat(40);
+const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
+const requireCalendar = createRequire(
+  join(repoRoot, 'apps/calendar/package.json')
+);
+const cfCli = join(requireCalendar.resolve('cf/package.json'), '../bin/cf');
+
+function execCfFromRepo(command, args, options) {
+  if (command === 'bun' && args[0] === 'x' && args[2] === 'cf') {
+    return execFileSync(cfCli, args.slice(3), options);
+  }
+  return execFileSync(command, args, options);
+}
+
+test('multi-chunk Wave-1 emit passes cf Build Output inspection', async (t) => {
+  const appRoot = fixture(t, 'mail');
+  mkdirSync(join(appRoot, 'dist/server/chunks'), { recursive: true });
+  writeFileSync(
+    join(appRoot, 'dist/server/chunks', 'mail-shared.js'),
+    'export const mailShared = true;\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/wrangler.json'),
+    JSON.stringify({
+      ...JSON.parse(
+        readFileSync(join(appRoot, 'dist/server/wrangler.json'), 'utf8')
+      ),
+      rules: [{ type: 'ESModule', globs: ['**/*'] }],
+    })
+  );
+  prepare(appRoot, 'mail', 'staging', 'cf-emit-fixture', sha);
+  const parent = realpathSync(
+    mkdtempSync(join(tmpdir(), 'wave1-cf-output-staging-'))
+  );
+  const destination = join(parent, 'build-output');
+  t.after(() => rmSync(parent, { recursive: true, force: true }));
+  await emitWave1Output({
+    appRoot,
+    app: 'mail',
+    environment: 'staging',
+    sha,
+    destination,
+  });
+  const worker = JSON.parse(
+    readFileSync(
+      join(
+        destination,
+        '.cloudflare/output/v0/workers/default/worker.config.json'
+      ),
+      'utf8'
+    )
+  );
+  assert.equal(worker.observability?.headSamplingRate, 0.05);
+  assert.equal(worker.observability?.head_sampling_rate, undefined);
+  for (const name of Object.keys(worker.manifest.modules)) {
+    assert.ok(
+      /\.(?:m?js)$/u.test(name),
+      `module name must reference a script file: ${name}`
+    );
+  }
+  assert.deepEqual(Object.keys(worker.manifest.modules).sort(), [
+    'chunks/mail-shared.js',
+    'index.js',
+  ]);
+});
+
+test('multi-chunk sealed output passes cf deploy prebuilt dry-run', async (t) => {
+  const appRoot = fixture(t, 'mail');
+  mkdirSync(join(appRoot, 'dist/server/chunks'), { recursive: true });
+  writeFileSync(
+    join(appRoot, 'dist/server/chunks', 'mail-shared.js'),
+    'export const mailShared = true;\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/wrangler.json'),
+    JSON.stringify({
+      ...JSON.parse(
+        readFileSync(join(appRoot, 'dist/server/wrangler.json'), 'utf8')
+      ),
+      rules: [{ type: 'ESModule', globs: ['**/*'] }],
+    })
+  );
+  prepare(appRoot, 'mail', 'staging', 'cf-dry-run-fixture', sha);
+  const env = {
+    ...process.env,
+    RUNNER_TEMP: mkdtempSync(join(tmpdir(), 'wave1-cf-runner-')),
+  };
+  t.after(() => rmSync(env.RUNNER_TEMP, { recursive: true, force: true }));
+  await rehearseWave1Publication({
+    appRoot,
+    app: 'mail',
+    environment: 'staging',
+    sha,
+    configPath: join(appRoot, 'dist/wave1/wrangler.json'),
+    env,
+    exec: execCfFromRepo,
+  });
+});

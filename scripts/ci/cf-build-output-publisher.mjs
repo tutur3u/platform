@@ -17,6 +17,75 @@ import {
 export const BUILD_OUTPUT_PREFIX = '.cloudflare/output/v0/';
 export const VERSION_ID = /^[0-9a-f-]{36}$/i;
 
+const posixPath = (value) => value.split('\\').join('/');
+
+function moduleGlobs(config) {
+  return (config.rules?.flatMap((rule) => rule.globs) ?? ['**/*.{js,mjs}']).map(
+    (glob) => glob.replaceAll('\\', '/')
+  );
+}
+
+function matchesModuleBasename(name, globs) {
+  return globs.some((glob) => {
+    const pattern = glob
+      .replaceAll('**/', '')
+      .replaceAll('**', '')
+      .replaceAll('*', '.*');
+    return new RegExp(`^${pattern}$`).test(name) || /\.m?js$/u.test(name);
+  });
+}
+
+/** Maps Wrangler observability fields to cf Build Output worker schema casing. */
+export function buildOutputObservability(observability) {
+  if (observability === undefined) return undefined;
+  const output = { ...observability };
+  if (Object.hasOwn(observability, 'head_sampling_rate')) {
+    output.headSamplingRate = observability.head_sampling_rate;
+    delete output.head_sampling_rate;
+  }
+  if (observability.logs && typeof observability.logs === 'object') {
+    const logs = { ...observability.logs };
+    if (Object.hasOwn(observability.logs, 'head_sampling_rate')) {
+      logs.headSamplingRate = observability.logs.head_sampling_rate;
+      delete logs.head_sampling_rate;
+    }
+    output.logs = logs;
+  }
+  return output;
+}
+
+export function discoverCfBuildOutputEsmModules(
+  bundleRoot,
+  config,
+  mainModule
+) {
+  const globs = moduleGlobs(config);
+  const modules = {};
+  function visit(directory) {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      const stat = lstatSync(path);
+      assert.ok(!stat.isSymbolicLink(), 'bundle symlink forbidden');
+      if (stat.isDirectory()) {
+        visit(path);
+        continue;
+      }
+      assert.ok(stat.isFile(), 'bundle module path must be a regular file');
+      if (name.endsWith('.map')) continue;
+      const rel = posixPath(relative(bundleRoot, path));
+      if (!/\.(?:m?js)$/u.test(rel)) continue;
+      if (!matchesModuleBasename(name, globs)) continue;
+      modules[rel] = { type: 'esm' };
+    }
+  }
+  visit(bundleRoot);
+  assert.ok(
+    Object.hasOwn(modules, mainModule),
+    'main module missing from bundle'
+  );
+  return modules;
+}
+
 export function cfBundleModuleNames(buildRoot) {
   const bundleRoot = join(
     buildRoot,

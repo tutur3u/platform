@@ -74,9 +74,10 @@ export async function rehearseWave1Publication({
       publicationQualified: true,
     };
   }
-  const buildRoot = realpathSync(
+  const scratch = realpathSync(
     mkdtempSync(resolve(env.RUNNER_TEMP, `wave1-cf-publish-${app}-`))
   );
+  const buildRoot = join(scratch, 'prebuilt');
   const receipt = await emitWave1Output({
     appRoot,
     app,
