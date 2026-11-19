@@ -206,4 +206,24 @@ describe('Teach proxy local auth API guard', () => {
       targetApp: 'teach',
     });
   });
+
+  it.each([
+    ['https://teach.tuturuuu.com', ''],
+    ['https://tuturuuu.com', '/teach'],
+  ])('preserves the deep link through login on %s', async (origin, base) => {
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'No session',
+      ok: false,
+    });
+
+    const destination = '/dashboard?x=1&x=2&q=a%2Fb';
+    const response = await proxy(
+      new NextRequest(`${origin}${base}${destination}`, {
+        nextConfig: { basePath: base },
+      })
+    );
+    expect(response.headers.get('location')).toBe(
+      `${origin}${base}/login?next=${encodeURIComponent(destination)}`
+    );
+  });
 });

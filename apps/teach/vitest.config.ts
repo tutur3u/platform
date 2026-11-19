@@ -22,10 +22,28 @@ export default defineConfig({
           '../../packages/internal-api/src/workspace-config-ids.ts'
         ),
       },
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../../packages/internal-api/src'),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/supabase/next',
         replacement: resolve(__dirname, '../../packages/supabase/src/next'),
+      },
+      {
+        find: '@tuturuuu/supabase/request/server',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/request/server.ts'
+        ),
+      },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
       },
     ],
   },

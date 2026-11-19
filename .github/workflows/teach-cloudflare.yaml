@@ -178,7 +178,7 @@ jobs:
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
-        apps/teach/src/start-bridge apps/teach/src/routes apps/teach/src/router.tsx apps/teach/src/start.ts apps/teach/cloudflare apps/teach/vite.config.mts apps/teach/void.config.ts apps/teach/tsconfig.json apps/teach/package.json apps/teach/start-bridge.routes.json
+        apps/teach/src/start-bridge apps/teach/src/routes apps/teach/src/router.tsx apps/teach/src/start.ts apps/teach/cloudflare apps/teach/vite.config.mts apps/teach/void.config.ts apps/teach/tsconfig.json apps/teach/package.json apps/teach/start-bridge.routes.json apps/teach/src/proxy.ts apps/teach/src/proxy.test.ts apps/teach/vitest.config.ts
   teach-cutover-artifact:
     needs: [check-ci, affected-gate]
     if: ${{ (needs.affected-gate.outputs.run == 'true' && needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
@@ -252,14 +252,26 @@ jobs:
           test "$(node -p "require('./apps/teach/dist/server/wrangler.json').preview_urls")" = false
           test -f apps/teach/dist/server/index.mjs
           test -d apps/teach/dist/client
-      - name: Validate, seal and pack the final production output
+      - name: Qualify the production Worker and seal the archive
         env:
           TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/teach-native-artifact.py --profile production config apps/teach
           python3 scripts/ci/teach-native-artifact.py --profile production seal apps/teach --receipt "$RUNNER_TEMP/teach-production-artifact.json"
+          node --test apps/teach/cloudflare/cutover.runtime.mjs
+          python3 scripts/ci/teach-native-artifact.py --profile production verify apps/teach --receipt "$RUNNER_TEMP/teach-production-artifact.json"
           python3 scripts/ci/teach-native-artifact.py --profile production pack apps/teach --receipt "$RUNNER_TEMP/teach-production-artifact.json" --archive "$RUNNER_TEMP/teach-production-artifact.tar.gz"
+      - name: Restore and qualify the sealed production archive
+        env:
+          TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/teach-restore" "$SOURCE_SHA"
+          cd "$RUNNER_TEMP/teach-restore"
+          bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+          python3 scripts/ci/teach-native-artifact.py --profile production restore apps/teach --archive "$RUNNER_TEMP/teach-production-artifact.tar.gz" --receipt "$RUNNER_TEMP/teach-restored.json"
+          node --test apps/teach/cloudflare/cutover.runtime.mjs
+          python3 scripts/ci/teach-native-artifact.py --profile production verify apps/teach --receipt "$RUNNER_TEMP/teach-restored.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: teach-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}

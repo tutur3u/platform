@@ -1,7 +1,7 @@
 ---
 title: "Teach on Start + Void"
-description: "Native Teach Worker, qualification commands, cutover packet and Vercel rollback."
-updatedAt: "2026-11-09"
+description: "Native Teach Worker, qualification for both production URLs, cutover and rollback."
+updatedAt: "2026-11-20"
 audience: developers
 ---
 
@@ -22,19 +22,18 @@ production publication stays held in `tuturuuu.ci.ts` until a cutover PR.
 | Vars (names) | `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`), `TUTURUUU_NOINDEX` (staging only) |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Optional integrations keep the names in `apps/teach/env.example` |
 | Build | `bun turbo:local run build --filter=@tuturuuu/teach^...`, then `bun run --cwd apps/teach build:cloudflare`. Output: `dist/server/wrangler.json`, `dist/client` |
-| Routing | Attach only `teach.tuturuuu.com/*`. Do not attach `tuturuuu.com/*` |
-| Prior Vercel deployment | Not recorded in the repository. The release owner captures the production deployment id and DNS record before the flip |
+| Routing | Keep canonical routing separate. On the apex gateway, bind `MOUNT_TEACH` to `tuturuuu-teach` for `/teach` and `/teach/*` |
+| Preimage | Capture the immutable serving deployment, DNS records and canonical route, plus the serving gateway version, routes and bindings |
 
-Unlike Track and Tasks, `start-bridge.config.ts` does not set
-`unknownHost: 'reject'`, so the Worker is not restricted to its two declared hosts.
-The cutover artifact keeps `workers_dev` off and declares no routes; attach only the Teach route during the production cutover.
+The production Worker admits `teach.tuturuuu.com` and the exact `/teach` mount
+and its descendants on `tuturuuu.com`. The noindex staging profile also supports
+preview hosts. The production archive is route-free with public previews off.
 
 ## Rollback
 
-Remove only the `teach.tuturuuu.com/*` Worker route, or restore the captured DNS
-record, so the hostname returns to the captured immutable Vercel deployment. Do not
-rebuild and do not promote the Vercel project. The Worker holds no state; Teach
-data stays in Supabase and Storage, which the rollback does not touch.
+Restore the captured gateway version in one operation and verify Web again
+handles the apex paths. If a separate subdomain release regresses, restore its
+captured route and serving deployment. Teach data remains in Supabase and Storage.
 
 ## Smoke
 
@@ -42,19 +41,27 @@ data stays in Supabase and Storage, which the rollback does not touch.
 node scripts/native-cutover/smoke.mjs --origin https://teach.tuturuuu.com --app teach --expect native
 curl -sI https://teach.tuturuuu.com/api/build-info            # 200, no-store
 curl -s -o /dev/null -w '%{http_code}\n' https://teach.tuturuuu.com/          # 200, landing page renders
-curl -s -o /dev/null -w '%{http_code}\n' https://teach.tuturuuu.com/login     # 200, login page renders
-curl -sI https://teach.tuturuuu.com/en/dashboard              # redirects when signed out, never 5xx
+curl -sI 'https://teach.tuturuuu.com/en/dashboard?x=1&x=2'    # localized redirect preserves query
+curl -sI 'https://tuturuuu.com/teach?x=1&x=2'                 # mounted landing page
+curl -sI https://tuturuuu.com/teach/api/build-info             # same build as the subdomain
 ```
 
-Every response carries the Teach SEO robots header and the private cache policy.
-The rollback smoke is the same command with `--expect legacy`.
+Run these against a version-pinned, zero-traffic upload before routing. With an
+approved test identity on both variants, verify the existing root session, a
+localized timetable, lesson and attendance reads, disposable teaching changes
+and file uploads with cleanup, and the Web API fallback. After activation, watch
+errors, auth, assets and localization for 30–60 minutes and roll back immediately
+on regression.
 
 ## Qualification
 
 `teach-cloudflare.yaml` builds the native output, rejects route-tree drift,
 type-checks (`type-check:cloudflare`), seals the emitted Worker with
 `scripts/ci/teach-native-artifact.py` and runs the emitted-Worker suite in workerd
-(`bun run --cwd apps/teach test:runtime`, 7 tests, egress denied). The 404 probe
+(`bun run --cwd apps/teach test:runtime`, egress denied). The production job runs
+the cutover checks on the emitted Worker and repeats them after restoring the
+sealed archive in a clean checkout. It checks the whole login redirect chain,
+same-origin HTML assets, exact build identity and host admission. The 404 probe
 uses `/login/__native-smoke-missing__` because every non-public path redirects
 signed-out users to login. `/api/build-info` is public to GET and HEAD through
 `proxy.ts`, with ambient cookies and authorization removed, as in Track and Tasks.
