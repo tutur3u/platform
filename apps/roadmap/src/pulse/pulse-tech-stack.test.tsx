@@ -41,6 +41,8 @@ it('renders bilingual stack status, target routes and migration progress', () =>
   expect(en).toContain('cf CLI');
   expect(en).toContain('Outside this migration');
   // Apps outside the migration sit behind the filter, not in the default list.
+  // The shared target stack is stated once, not on every row.
+  expect(en.split('Native Cloudflare Worker · cf CLI').length - 1).toBe(1);
   expect(en).toContain('Migrating');
   expect(en).not.toContain('Mobile app');
   expect(vi).toContain('Đang chuyển đổi');

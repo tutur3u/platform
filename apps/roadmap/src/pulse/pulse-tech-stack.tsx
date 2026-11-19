@@ -8,7 +8,7 @@ import {
   type TechStack,
 } from '@tuturuuu/roadmap-core/tech-stack.ts';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Segmented } from '@tuturuuu/roadmap-core/components/ds/segmented.tsx';
 import { useState } from 'react';
@@ -32,37 +32,22 @@ const ORDER: Record<AppTechStack['status'], number> = {
   outside: 4,
 };
 
-function StackDetails({
-  copy,
-  stack,
-}: {
-  copy: typeof en.techStack;
-  stack: TechStack;
-}) {
-  const framework = copy.stack[stack.framework];
+/** One line: framework, bundler, hosting and deploy CLI. */
+function stackLine(copy: typeof en.techStack, stack: Omit<TechStack, 'url'>) {
   const bundler =
     stack.bundler === 'next'
       ? copy.nextBundler
       : stack.bundler === 'other'
         ? copy.unspecified
         : copy.stack[stack.bundler];
-  const hosting = stack.hosting ? copy.stack[stack.hosting] : copy.unspecified;
-  return (
-    <>
-      <span>
-        {framework} · {bundler}
-      </span>
-      <span>
-        {hosting}
-        {stack.deployCli && ` · ${copy.stack[stack.deployCli]}`}
-      </span>
-      {stack.url && (
-        <span className="wrap-anywhere">
-          {stack.url.replace(/^https:\/\//, '')}
-        </span>
-      )}
-    </>
-  );
+  return [
+    copy.stack[stack.framework],
+    bundler,
+    stack.hosting ? copy.stack[stack.hosting] : copy.unspecified,
+    stack.deployCli ? copy.stack[stack.deployCli] : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 type Show = 'migrating' | 'outside' | 'all';
@@ -115,6 +100,9 @@ export function PulseTechStack({
         <Card>
           <CardContent className="grid gap-3 p-4 sm:p-5">
             <p className="font-medium">{progress}</p>
+            <p className="text-muted-foreground text-sm">
+              {copy.target}: {stackLine(copy, TARGET_TECH_STACK)}
+            </p>
             <Progress
               aria-label={progress}
               aria-valuenow={cutOver}
@@ -141,47 +129,52 @@ export function PulseTechStack({
         />
       )}
       {apps.length > 0 ? (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {sorted.map(({ id, status, current, targetUrl }) => (
-            <li key={id} className="min-w-0">
-              <Card className="h-full">
-                <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
-                  <CardTitle
-                    role="heading"
-                    aria-level={3}
-                    className="truncate text-base"
-                  >
+        <Card>
+          <ul className="divide-y">
+            {sorted.map(({ id, status, current, targetUrl }) => (
+              <li
+                key={id}
+                className="grid gap-x-4 gap-y-1 px-4 py-3 text-sm md:grid-cols-[minmax(0,12rem)_6.5rem_minmax(0,1fr)_minmax(0,1fr)] md:items-start"
+              >
+                <div className="flex min-w-0 items-center justify-between gap-2 md:grid md:justify-start">
+                  <span className="truncate font-medium">
                     {APP_NAMES[id] ?? id}
-                  </CardTitle>
-                  <Badge variant={variant[status]}>{copy.status[status]}</Badge>
-                </CardHeader>
-                <CardContent className="p-4 pt-0 text-sm">
-                  <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-2">
-                    <dt className="text-muted-foreground text-xs">
-                      {copy.current}
-                    </dt>
-                    <dd className="grid">
-                      <StackDetails copy={copy} stack={current} />
-                    </dd>
-                    {targetUrl && (
-                      <>
-                        <dt className="text-muted-foreground text-xs">
-                          {copy.target}
-                        </dt>
-                        <dd className="grid">
-                          <StackDetails
-                            copy={copy}
-                            stack={{ ...TARGET_TECH_STACK, url: targetUrl }}
-                          />
-                        </dd>
-                      </>
-                    )}
-                  </dl>
-                </CardContent>
-              </Card>
-            </li>
-          ))}
-        </ul>
+                  </span>
+                  <Badge variant={variant[status]} className="md:hidden">
+                    {copy.status[status]}
+                  </Badge>
+                  {current.url && (
+                    <span className="wrap-anywhere hidden text-muted-foreground text-xs md:block">
+                      {current.url.replace(/^https:\/\//, '')}
+                    </span>
+                  )}
+                </div>
+                <Badge
+                  variant={variant[status]}
+                  className="hidden self-start md:inline-flex"
+                >
+                  {copy.status[status]}
+                </Badge>
+                <p className="grid gap-0.5 md:gap-0">
+                  <span className="text-muted-foreground text-xs md:sr-only">
+                    {copy.current}
+                  </span>
+                  {stackLine(copy, current)}
+                </p>
+                {targetUrl && (
+                  <p className="grid gap-0.5 md:gap-0">
+                    <span className="text-muted-foreground text-xs md:sr-only">
+                      {copy.target}
+                    </span>
+                    <span className="wrap-anywhere">
+                      {targetUrl.replace(/^https:\/\//, '')}
+                    </span>
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
       ) : (
         <p>{copy.unavailable}</p>
       )}
