@@ -1,7 +1,7 @@
 [
   {
     "file": "apps/ai/src/app/api/auth/logout/route.ts",
-    "digest": "4ca0c057bb6eab35c920d03f1fceeb48529991d511720ec76e1cd31bfc1a1f4b"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/ai/src/app/api/auth/refresh-app-session/route.ts",
@@ -81,7 +81,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/calendar/src/app/api/auth/refresh-app-session/route.ts",
@@ -101,7 +101,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/cron/calendar/smart-schedule/route.ts",
-    "digest": "bbded53c557f87bbbe83cb22cb421f1a699468e242bf48c6a55dd7ff2672ed9c"
+    "digest": "873a73d251d25a6d96e83c58fdc8b835af40eeef209d8c69744e4b885f50dcb5"
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/auth/accounts/route.ts",
@@ -109,7 +109,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/auth/callback/route.ts",
-    "digest": "b1488ad9310ced9ec0d322fef48cefd630354c8a03555baed6b46490d07b207b"
+    "digest": "07bff21cc6f0c63d07c4b4f04d978a0b622d8693fe4e0155dd3306660247217e"
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/auth/fetch/route.ts",
@@ -117,7 +117,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/auth/full-sync/route.ts",
-    "digest": "467b786cc8c5da881b218d5da502ee4c3aa201c025fc7d20355bea1e4d9333b6"
+    "digest": "e8359536defb6593d0c68f0b4776614141bd64fdb04754faa6951ffd2b42d458"
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/auth/import-calendars/route.ts",
@@ -157,7 +157,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/connections/route.ts",
-    "digest": "3c870c44e52351f0a4cd9807a704664fef335b66eb7aa6d78d40db39aa02b446"
+    "digest": "54b3e3dcea1c5542cf09a6e1598e8d8afa15b54ee5b0cff8b98b04e9d5fc5a3f"
   },
   {
     "file": "apps/calendar/src/app/api/v1/calendar/events/generate/route.ts",
@@ -208,6 +208,10 @@
     "digest": "64287c61f5fc2d25b6a04e33cb9bb6c8afdb33ee670516755af3a309d52b40cf"
   },
   {
+    "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/attendees/route.ts",
+    "digest": "c5b923f8376a649b83aa3ecdec4cc152d5ef5d31e337b5f27ef35ce18ae96291"
+  },
+  {
     "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/events/[eventId]/color-operation/route.ts",
     "digest": "a0ffde87fd45aca4efc18c12edf949c5307eb3ff22b5bbd897d4a6de3ea5c9e3"
   },
@@ -230,6 +234,10 @@
   {
     "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/habit-events/route.ts",
     "digest": "895b6a7de4769e3f56c16000858be69294e217ebf71566c94142b2c6ce3c89f6"
+  },
+  {
+    "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/invitation-capabilities/route.ts",
+    "digest": "b5b20632450ae7242c1a8555f0b1a1a4366df64eb57d0154acbbe856e57e91a0"
   },
   {
     "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/schedulable-tasks/route.ts",
@@ -269,11 +277,7 @@
   },
   {
     "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendar/sync/route.ts",
-    "digest": "aa0403010f73e184a1bfc967580207719c16ff8153eb6f377180866cff16223e"
-  },
-  {
-    "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendars/reset/route.ts",
-    "digest": "5784107ab565e1ec985928c8ec2695bcb4381f85d07b0200daabb454f1c4c2d6"
+    "digest": "5911ac54b9c6a155ecd257bbdf131ee1337f9b01918828383f7266e6edb7e1df"
   },
   {
     "file": "apps/calendar/src/app/api/v1/workspaces/[wsId]/calendars/route.ts",
@@ -285,7 +289,7 @@
   },
   {
     "file": "apps/chat/src/app/api/auth/logout/route.ts",
-    "digest": "b5acbff7dcecf668e1fb207066b60f8aad8e1de27bfd8121b38937d6bf787b78"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/chat/src/app/api/auth/refresh-app-session/route.ts",
@@ -301,7 +305,7 @@
   },
   {
     "file": "apps/cms/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/cms/src/app/api/auth/refresh-app-session/route.ts",
@@ -369,7 +373,7 @@
   },
   {
     "file": "apps/contacts/src/app/api/auth/logout/route.ts",
-    "digest": "b71cc4a3210c74c12d413e4f5724ce4d808f07ca5c6fa055d65558d5ce3ba7c6"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/contacts/src/app/api/auth/refresh-app-session/route.ts",
@@ -393,7 +397,7 @@
   },
   {
     "file": "apps/contacts/src/app/api/v1/notifications/route.ts",
-    "digest": "a6a52e10d9fede9daf9fd32c3807a8b82e5c1acb81426a90c42a7d3d6dc3e53f"
+    "digest": "ea320bc2d34b590370ffcbcd2c4621bd7f03a35481cacd9e022fc470dfc2ecb5"
   },
   {
     "file": "apps/contacts/src/app/api/v1/notifications/unread-count/route.ts",
@@ -617,7 +621,7 @@
   },
   {
     "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts",
-    "digest": "1b597bcaf65ba4671aa0ddce7a638402ad4c549f2220add17d450fb91a3a3029"
+    "digest": "84c7b9f74cfedc107fe9981d7afa3f385869120e50a78679cf73fd7007d0487d"
   },
   {
     "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/bulk-import/route.ts",
@@ -688,8 +692,16 @@
     "digest": "97656090b14ef232d88d0610a4a8e98546025f6272039a653c22914f75966382"
   },
   {
+    "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/held/route.ts",
+    "digest": "e86cff0a4c9870f455e4c8f786ca621849e258a516f219e3b2f4de5c3f448483"
+  },
+  {
+    "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/resend/route.ts",
+    "digest": "8a8d28d784bdc7d9263583cafd128b88fe9ad55662ddb2377426a87b336eae17"
+  },
+  {
     "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts",
-    "digest": "84069393376552aea3e336ac1cf485408b1257f54241256d1f1c295e8a806142"
+    "digest": "3022a97bfa1390ee4f350c73447a3f6b744c8f2e741ba487c0c027abe788161b"
   },
   {
     "file": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
@@ -705,7 +717,7 @@
   },
   {
     "file": "apps/drive/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/drive/src/app/api/auth/refresh-app-session/route.ts",
@@ -769,7 +781,7 @@
   },
   {
     "file": "apps/finance/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/finance/src/app/api/auth/refresh-app-session/route.ts",
@@ -797,11 +809,11 @@
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/budgets/[budgetId]/route.ts",
-    "digest": "adfeaf42822866036aa4f8e415b381955c9a4c59f35711c7d049be49eec6b687"
+    "digest": "4686cf2d3bbe361533d485b5fbc2ebf7ed7975c8c27dda1a4a79780982a3cd2e"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/budgets/route.ts",
-    "digest": "c81a6d4db2130bd215adba7ffee9ba126492e8ffc2e73985ae0090e03c9377e8"
+    "digest": "635b82508be08c34cf4642e559cf6379f0e7297640a2c92dc778dabd183f7fbc"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/budgets/status/route.ts",
@@ -820,8 +832,44 @@
     "digest": "14cada03591514662821b1e14ca620ea66bfe6de0090f7a1925a087ea95473e3"
   },
   {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/lock/route.ts",
+    "digest": "e74642d36e33b30a8c887af79a3099963335af6a7db5db4169380672f8fdf4a8"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/reopen/route.ts",
+    "digest": "6f751398a58090c0244b3f944962de6234874c736de2e0470841e0d6379e648d"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/[lockId]/route.ts",
+    "digest": "e28a9d79884c1fec77d6c19c7a732958def4d3283843d2fa83ac15111ffc6de5"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/export/route.ts",
+    "digest": "e845eacf973b0c15bb47ce23f7c5d17fd5ca1d1d334820f79b0288b06dee788f"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/lock-batch/route.ts",
+    "digest": "3c872b32ff810750d052e46521c24ad87af7a243792c9b85922e655bd7da942c"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/route.ts",
+    "digest": "73a8537ad1da7289548108f858ee43bc2a7d22f07871b1fff2ed889ca55aa92d"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/suggestion/route.ts",
+    "digest": "166db633a4ab41b9b3057fc4a159995834e350d88f5ca35ccdf60646a1ef2e59"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/template/preview/route.ts",
+    "digest": "d08dc378ef6bc35f78c6e0770e0eb87a065f633bff3f3138d5f06c463ab93faf"
+  },
+  {
+    "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/fee-locks/template/route.ts",
+    "digest": "494ddb8d13753330eee357a57cc3b0b7d3b0a93ff77906b01272c1c8b21a6124"
+  },
+  {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/filter-users/route.ts",
-    "digest": "210f98b0e26f9aa49b8b3ac0b98a7cfdfe142d4fe6dbee45084c0ff27131e1d7"
+    "digest": "1da031f6a9f3835ce3eef97c1d7c367824777d9d5285e8a485518952ad51c1f2"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/restore/route.ts",
@@ -829,7 +877,7 @@
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/invoices/[invoiceId]/route.ts",
-    "digest": "b47380a604e9004a225509456925c687ce46a57d8bdbd5316dc773d3bb6e2c1e"
+    "digest": "458085db13274d30013eac9b88e180e856f87cb90a701a90fd00346ffffb175e"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/invoices/analytics/route.ts",
@@ -861,15 +909,15 @@
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route.ts",
-    "digest": "51ec4f9e97012ecda2ed130388205cfbbc8d4cd0ae644d733a82df02e23f2830"
+    "digest": "0b7835a18619b5918c827a225f29fd6dbf21827719cee0089240c1b9a7733de6"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/[recurringTransactionId]/route.ts",
-    "digest": "e4094b5e2e5cc414f80a9e931cf95b8e6025bad4736b9fc1b516f5ed5ae4e4e0"
+    "digest": "3c16578497156a9d18c12cbbb22549964b23fb03def8d9f59be3e14feabdf83a"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/route.ts",
-    "digest": "23028975b0c169b7c1999c90c93c1a8e07927e43ec865b6871456f0a5f3c3061"
+    "digest": "441adf4138aab36919d8b70ccb740e7956f49de1260bef4c8f58c168c7e127a1"
   },
   {
     "file": "apps/finance/src/app/api/v1/workspaces/[wsId]/finance/recurring-transactions/upcoming/route.ts",
@@ -1060,12 +1108,16 @@
     "digest": "9032e4fc4a4e30b4e9e89957afd2cb7b2e92a312934faf57f38fdba811d78af7"
   },
   {
+    "file": "apps/finance/src/app/api/workspaces/[wsId]/wallets/migrate/route.ts",
+    "digest": "6a78a0585974731b3315efd5fb6eaa51cd910b7ca22a8924b3f3a646085e9921"
+  },
+  {
     "file": "apps/finance/src/app/api/workspaces/[wsId]/wallets/route.ts",
     "digest": "2c0da0e8a563dd40889ad0167a6fdcd320abb916dc337152a11f221d53154d4f"
   },
   {
     "file": "apps/forms/src/app/api/auth/logout/route.ts",
-    "digest": "bb47111474ca4147ef624037fc4086154937d402715842502cf787f434dabf21"
+    "digest": "44dc2e203aae3e6af2947b91775176ee7f1a756d0e774f2217fa33576a91bfb7"
   },
   {
     "file": "apps/forms/src/app/api/auth/refresh-app-session/route.ts",
@@ -1081,11 +1133,11 @@
   },
   {
     "file": "apps/forms/src/app/api/v1/shared/forms/[shareCode]/response-copy/route.ts",
-    "digest": "f43ea93a0cbb75fb4fecb2a9000d0ab3149b3e52b1f097ef856170aafc2fd495"
+    "digest": "980b779f80bfd19f4a14a8569c90e42e9516303407b84e33143ff46a3e013240"
   },
   {
     "file": "apps/forms/src/app/api/v1/shared/forms/[shareCode]/route.ts",
-    "digest": "b9d34af440cb020df7ddf41ea5b7f6404c3c78e6522cd83ad46cefde42984845"
+    "digest": "80b85c57cf5d3b14c1fb6ac4d517eb65000b1d90e81b60280fa9a97f5cab9896"
   },
   {
     "file": "apps/forms/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
@@ -1125,11 +1177,11 @@
   },
   {
     "file": "apps/forms/src/app/api/v1/workspaces/[wsId]/forms/[formId]/route.ts",
-    "digest": "ea1e94adaf0f061f433ae08a276854efee53322d6068812ac2dde56db0687f4a"
+    "digest": "5fa2e119a1fddb835db42656a259175e5dc6ba05f9bc2ab2ca89becf89141c43"
   },
   {
     "file": "apps/forms/src/app/api/v1/workspaces/[wsId]/forms/[formId]/share-link/route.ts",
-    "digest": "1ebf431f9a96e524ebe2a7538cf5793a764b342975d1b10fc508986b7c9d8cb3"
+    "digest": "d050224bf15bef5dd978bd5e30182a055a674574a3b5accdaa9e3e3e76e6ecd6"
   },
   {
     "file": "apps/forms/src/app/api/v1/workspaces/[wsId]/forms/media/route.ts",
@@ -1145,7 +1197,7 @@
   },
   {
     "file": "apps/git/src/app/api/auth/logout/route.ts",
-    "digest": "8ad51252bc58166c594d6c288d62fe3c163c2e4ad15bd015834d0a8b8f4438df"
+    "digest": "44dc2e203aae3e6af2947b91775176ee7f1a756d0e774f2217fa33576a91bfb7"
   },
   {
     "file": "apps/git/src/app/api/auth/refresh-app-session/route.ts",
@@ -1161,7 +1213,7 @@
   },
   {
     "file": "apps/hive/src/app/api/auth/logout/route.ts",
-    "digest": "160ae8f5e04c9405b3034cf6069e515820909ef31d34cc1972d2e2f7e50d76fe"
+    "digest": "0faae4f68504a4170583baf8a4aff13e657a499319e33ddcb6122114052acd87"
   },
   {
     "file": "apps/hive/src/app/api/auth/refresh-app-session/route.ts",
@@ -1177,7 +1229,7 @@
   },
   {
     "file": "apps/hive/src/app/api/cron/hive/simulate/route.ts",
-    "digest": "d4f93c0a1bf0136ff3e26fa9fa087ace4c7db16b09e9328b72b29341eb8ded95"
+    "digest": "718629a01f852cab6c6e820dfcb6fa2e6befe00e33156e89c613270a363354e5"
   },
   {
     "file": "apps/hive/src/app/api/v1/hive/access-requests/[requestId]/approve/route.ts",
@@ -1325,7 +1377,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/auth/logout/route.ts",
-    "digest": "391849cf6516f08294a2d4cd13534a5ee8434ff8b62cf55de0acc41d0960ce55"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/infrastructure/src/app/api/auth/refresh-app-session/route.ts",
@@ -1337,7 +1389,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/build-info/route.ts",
-    "digest": "886ebf6304350fd2644593f13ba0623b0c17693fc18bdc1478918ef81fc4d205"
+    "digest": "1c47df936ca8e5499fdb4da9753a6a307c055b4fe8e695e234251b864a76d9fd"
   },
   {
     "file": "apps/infrastructure/src/app/api/cron/calendar/[job]/route.ts",
@@ -1345,19 +1397,19 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/cron/infrastructure/docker-recovery-alerts/route.ts",
-    "digest": "59106a11181fe807bf91d8f842111a33f502b574287a5de3932a11e1e09cab7d"
+    "digest": "018c53c60a11c31579461c789d7db44777d0ad3813eb25356119f8e4e4977e35"
   },
   {
     "file": "apps/infrastructure/src/app/api/cron/infrastructure/sample-resources/route.ts",
-    "digest": "e57ea64c52881022f9981eff4190dc4be060220fd16f146ea0afd010bfc74c8d"
+    "digest": "2d1e6ee82059dcb9d877c80547315eb833691077f1b5c7df4b65762fab521fb6"
   },
   {
     "file": "apps/infrastructure/src/app/api/cron/infrastructure/sync-trust-cache/route.ts",
-    "digest": "fd7bfcea62d7af007f658fabce34e684642561ee5cca6c59ba7253c593217f89"
+    "digest": "497a8a00272cfafb252a7d2ebac99aeceec448a163ce3b2d49e4cabf4cf2d443"
   },
   {
     "file": "apps/infrastructure/src/app/api/parley/references/[id]/route.ts",
-    "digest": "a8d1499f886ac4e54922a6f4b955f077f3e8d2381b75873e5d0f7d7b2f9575aa"
+    "digest": "0c6e90e70d4810814f7a6c1d9c094736ea86651b7325467c1f21d91947939724"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/account-benefits/route.ts",
@@ -1365,11 +1417,11 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/allocations/route.ts",
-    "digest": "ad5eb321a4ea296ca1d133921f5dddfa996e8866b3bb7ea7284379d12bacde48"
+    "digest": "b1b990c873e39ffddaa865d3e048e81f35574f276cfd2f71186e3ff26810c828"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/balances/route.ts",
-    "digest": "8686b03b24bd3b5aaf6f9c98d320cb3fd4c51c8e1b5b3ed3d6cd91baf4b37347"
+    "digest": "91ebb886b733f5444b3e69a4221f0f8039a31b76600cf377e5f60e01fed58422"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/entity-detail/route.ts",
@@ -1377,7 +1429,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/features/route.ts",
-    "digest": "19c76a1f105b7a1633f26ec4fee3096ae5df16a2f65bcfd9e18c26c380e4c964"
+    "digest": "f2d914e842615fcbafa861c88105d47e738eb6e7add04c1d7609b99102fcc8f4"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/models/facets/route.ts",
@@ -1385,7 +1437,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/models/route.ts",
-    "digest": "9860f1f05a0f57aa19aeaa631fa46e9f542046f1a92bc3bc641e0af27572da48"
+    "digest": "d4a28cdf6c407b9e58d06737096aa2fe3ddaad56efab868b716abbeda2c6176e"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/overview/route.ts",
@@ -1393,7 +1445,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/sync-models/route.ts",
-    "digest": "a9a192d25ad68d02cf713007f669be366d8a033048bbde6743bde80172e034d6"
+    "digest": "1c72e0ae764efb7d3ff17b983d68ee755426efc39c7101ea740315503ce1df82"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/admin/ai-credits/transactions/route.ts",
@@ -1489,7 +1541,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/stt/modal/route.ts",
-    "digest": "fa0153c4422cbd5c6195e8163c1313d9311a28c9eee2434a545fb0e79f3b8e28"
+    "digest": "dcb856fb7d2e65dfa4b1f53dfcdb738395173ea3c7485b029a487161b36fb86f"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/ai/studio/workspaces/route.ts",
@@ -1533,19 +1585,19 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/bill-coupons/route.ts",
-    "digest": "ae586a9b03b0204f8e7947d40d8928cdf013917d79a7ddb15a711020f942a19a"
+    "digest": "14ee4dec4c6332eefd9bc330e6a278fd2c8e4e6723b0a61b0c47e133f6e1498f"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/bill-packages/route.ts",
-    "digest": "4ab1564611aaa8b6f999ecdb5795fae380e75b433dcebc0ad41020762372ad02"
+    "digest": "b0bd51259e1ebc97f610fe567a3caf2bb85c5fe280837c91d961f6953b7616b7"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/bills/route.ts",
-    "digest": "7cf645ee45cbb3750f76adc144a52f3d6399d66d7808ba320199bc2e301e5443"
+    "digest": "b88859c7e93279b4fbc294b5884b9096efac3064e990224396f9d41667992456"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/blocked-ips/route.ts",
-    "digest": "86c7973f4d4664949c65c276b3f73b06b3dbebdbca9c26c5e7584139386193b9"
+    "digest": "9e4e88be7f3eaca74e9835a0c844d7bb7abb2506a6fe4ba4a0e68ee9370a966f"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/changelog/[id]/publish/route.ts",
@@ -1569,23 +1621,23 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-attendance/route.ts",
-    "digest": "2f05f86ab769df34998b0f59b5a24442be896b092180f56c39a19454038fba8d"
+    "digest": "aee6a194bfd8404da528d44cd302180831c499abcb06b07496fecfa8d143b34f"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-members/route.ts",
-    "digest": "a1d93db8494e72171e18ba397f9b85af695dc0dbe25153526d23f5db031dbe3d"
+    "digest": "4a0d4c00a7da784d3710747fd383f0443ae47758b22cb4bad8005f58dc41603f"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-packages/route.ts",
-    "digest": "19e2f3deef2e35b9e69e9906bb7c0ec99256276856c68834a4a7d50c7342c139"
+    "digest": "aafb092025214aa7a754464aec4a4e38c8a153102a476757fceb9fefeb3f3c66"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/class-scores/route.ts",
-    "digest": "3da67912e7c006c57b2f88c1b0afe3798ef258905d63c24f5b0ffc12a671de6b"
+    "digest": "c34b6455a79823c6d99155ffe04465e45b7b19b673d841dd1ec95ae011fbfedf"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/classes/route.ts",
-    "digest": "e1dbeab55b5e78380e6762a3ef21cea2e96159536d4ce16f09e1673c67f34277"
+    "digest": "6d3de09289856b5c247edf5e53ea64f0b9ec69d435c4fc33cc4e51e0b696fde4"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/coupons/route.ts",
@@ -1601,7 +1653,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts",
-    "digest": "aa0cace635fd42b9abfd1f1394b4a8e7cda0a60965cca74582a9abea07ea102d"
+    "digest": "9936b84cc77c0eac838fac06b014f72c8d3b156938b06d3e3574a17bf3f83b75"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/[runnerId]/drain/route.ts",
@@ -1617,15 +1669,15 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/[entryId]/route.ts",
-    "digest": "27fb6ccb89a79f60ef79d41e061620b8ba66c6216429e410c0724f5a60047c1d"
+    "digest": "fbe6a9aa531e589110301fede1bbaf9a74c16281a775fe6bc28b9bad58dcbfa0"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/route.ts",
-    "digest": "71249e94878af5b8a857464c038ec4b86dfb393c1d8f666617a1aa5bc7eb3372"
+    "digest": "b9c1d9516fabe8a64cd405686c0a95621e3f15356c33f17fc1d3ffddc88664bb"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/entity-creation-limits/route.ts",
-    "digest": "fc232a3dcc46ad956701f90db26f6eca83c572501f8565d74b871d0baa799df7"
+    "digest": "c5d9573ceb174d27f0bb890f8d462f3f75c11b12f4b9ad98d5438b3960ab8132"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/external-apps/[appId]/secrets/route.ts",
@@ -1637,7 +1689,15 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/external-apps/route.ts",
-    "digest": "c3397f0a675492ee256328697a991003d1c174eef3916771e127cb470ec827c5"
+    "digest": "b53d15c1d57414b7be848d0bf28a29e5c710db2359833977892ba2ec3d1ccca3"
+  },
+  {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/feature-flags/audit/route.ts",
+    "digest": "66c799b3b301531d2fdf008f008ad5719edd94d5f39900eebd88e1ae4728aa82"
+  },
+  {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/feature-flags/route.ts",
+    "digest": "5fbf8872a32e0e6664774a803b042883636790cc019a6f18ad7e049193243207"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/github-bot/auto-pickup/route.ts",
@@ -1674,6 +1734,10 @@
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/languages/route.ts",
     "digest": "9c7666dbceced99bbeb367b3689fd63d618d63a52a7adef88f3cc1c4c64b7408"
+  },
+  {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/lessons/route.ts",
+    "digest": "3a0396d086222552a7154329ce2dc14c1608753c96f2f0fc9be33f61173358bc"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/migrate/bill-coupons/route.ts",
@@ -2049,11 +2113,11 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/otp-limits/reset/route.ts",
-    "digest": "0373b5725e1889b5efea632461ea13da56bbc7d36170e1bf9f618df3b2e7bf3a"
+    "digest": "a8d27268b9cd42f66ced7aeee286c74c58b8ae0aee606872f3b525642a59fd90"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/package-stock-changes/route.ts",
-    "digest": "648dd08a58819c5b0308d2781c792ee90e3048d1206f5ee8fba3cb11bf33fbb3"
+    "digest": "e2ab41e4be8aeec59e8ccfe1c96a205bc4926196e0e09ee4088c47d4fc77fcb0"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/packages/route.ts",
@@ -2064,16 +2128,20 @@
     "digest": "c0d201430f560e76aecea3db7aeea6abe2250c66805a12d3ffddcd6526b587e6"
   },
   {
+    "file": "apps/infrastructure/src/app/api/v1/infrastructure/policy-notice/route.ts",
+    "digest": "2bf32f709a59f33dbb181c28be0ffb1edef4640d18a2dd24a686d06d6711ce95"
+  },
+  {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/route.ts",
     "digest": "75d1f74e65fcb0ba28ab18fe8a81075e4b127569c4f6a0a4029a9d6696f68a7a"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/post-email-queue/run-now/route.ts",
-    "digest": "ce1ddfc4b61b358b739f6a640150377df441cf6e6f7934e7a8a63459d6a1884a"
+    "digest": "0ca3b9b6382e92b0be3aea8dadbcc4c6fe10f1f427f6d65b3763f9ededa4a7d8"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/product-categories/route.ts",
-    "digest": "830a3fa27975f4c1848c5ac29894e72a31203d91375c98dd1a898bfd43cce298"
+    "digest": "2b5df146b9300f08b8cd94df4b2ce717157c8c966ce56fee1d78c5b762c416c5"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/product-prices/route.ts",
@@ -2089,15 +2157,15 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/[projectId]/route.ts",
-    "digest": "ca79e9074c32da3bc2ce5880b8158f4c46ca7605d2fff7f5b1e656557ec5d093"
+    "digest": "5eea3aa58d87a18668b677df5b25e95c889b175e766368c3dcef6e6390f0e126"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/[projectId]/sync/route.ts",
-    "digest": "e6c7ffd4ca85cee7129ba7533814ff1fc7b48a25284738d829b01be732bf86db"
+    "digest": "b7fbaeabb4eca54237f8a08eba3d8ca1ac86edd53bb9aebab47174cc832d2493"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/projects/route.ts",
-    "digest": "cae8c7c4f32fe545d6c1cc27df70265b4d80f1d9a9a3dc83f68a1e418ecc175c"
+    "digest": "e62221d4d405364645f48bc07ffe94da5232c5f37f4c71f702b634ff0c5bf2ba"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/push-notifications/test/route.ts",
@@ -2129,7 +2197,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/rate-limits/workspace-secrets/route.ts",
-    "digest": "5443310f56d7534d6a41ef8c09ef7ea8d9c235b3ca5b3094f4a7a51f32329f8d"
+    "digest": "2e4c4998f880727c42928d23d782482ed264861464ebe01fc70de5d9ffc23a20"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/review-accounts/[userId]/route.ts",
@@ -2145,11 +2213,11 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/roles/route.ts",
-    "digest": "de199eece2833eab8c3ec6d76e695ec0736bb9f556bcb1bc728227fe5739d35d"
+    "digest": "26fa4e81f978501c574871064c276e09fccad23b2514fa831f9bfc9a355b1a55"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/score-names/route.ts",
-    "digest": "1a0f7a599d672a18d5eb0b58f578740b6663deb299229efb48635de1c7eb3d99"
+    "digest": "e14dd869c21012c909e3fbebf2b1adeea4bd535b2504cab7a6449de95442a5ef"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/sidebar/route.ts",
@@ -2161,11 +2229,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/student-feedbacks/route.ts",
-    "digest": "9a7d49563dab2b93dae064ec9338eede008da6e874bcf7869d755ecb44e24d91"
-  },
-  {
-    "file": "apps/infrastructure/src/app/api/v1/infrastructure/suspensions/[id]/route.ts",
-    "digest": "0a5a47824df2081a96229bd16934059faf774ed674bff2673da3ef0249fdebb9"
+    "digest": "4866676c80eef4ef136a270b26f62b4c2a6f61a7c04273f346947920747e323a"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/timezones/[timezoneId]/route.ts",
@@ -2177,7 +2241,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/transaction-categories/route.ts",
-    "digest": "3197d1f5eab03ad1354736af6ca953c4df16053f581eacfe13a8fff90e82ae18"
+    "digest": "61af1ae6f7db9c23a21236ea86efb335eaa3dc55d1fefdd134f3eac940a75ef7"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-coupons/route.ts",
@@ -2193,7 +2257,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/user-status-changes/route.ts",
-    "digest": "083b3897faffa48dbf729057d0ad4ba4df46c49d1ee9da45dd424555ac788c90"
+    "digest": "a7f6d29acc0786dfb0010e762561547d500f47ea8d078e093a2db43db2cdb43a"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/users/fields/types/route.ts",
@@ -2201,7 +2265,7 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/users/route.ts",
-    "digest": "3d670a3842f78c019f1cb6c879a259a1a2fa8f3707620dafd123bcf4bd8b70f1"
+    "digest": "009d0b1143792e0deefb00851f7f89d823a0462a011928b0bb602b2203b16a14"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/infrastructure/wallet-transactions/route.ts",
@@ -2264,6 +2328,10 @@
     "digest": "1f7f346d952047386cb1011befd50933dc2a2e01703b717842e7005438c62738"
   },
   {
+    "file": "apps/infrastructure/src/app/api/v1/ops-hub/[...path]/route.ts",
+    "digest": "cdd6fbcac0bfc3be8ff63d8a6ae90ad0a3237705fab851a71df3b634dd0ca005"
+  },
+  {
     "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
     "digest": "ff6c755755a1bf458e878154c4a040ec674698db6939eb1af33d4a9b53626a20"
   },
@@ -2281,31 +2349,31 @@
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/infrastructure/realtime/analytics/summary/route.ts",
-    "digest": "4e9940dcc66501c6602ceb88c895057b8249ccf4f4cd295a3d8681f22bb77f8f"
+    "digest": "20039293294a757d5183d21afd5910c6a0bd3170cca8233063d549d7d4eed172"
   },
   {
     "file": "apps/infrastructure/src/app/api/v1/workspaces/[wsId]/settings/calendar-sync/route.ts",
-    "digest": "1b67989f9810d437947b6606edd0fc9ca812d476e86e1011d096e9aea79ceb54"
+    "digest": "ab07404e1e8d6d6a4174276dd101edf700138c076ead67e586ba68c10b0b7948"
   },
   {
     "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/route.ts",
-    "digest": "3e3fae3fe5ae4b3a1e2e2adf9cfbc5cd0275010ede2f8cffdb52efa8985de34c"
+    "digest": "61b97158d992baf39cfb347f43098e4c4792830e0b8af1cfb2d3f5e1445bc678"
   },
   {
     "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/[secretId]/route.ts",
-    "digest": "3f4a77000765b4fc934300aa8471fa1988901ffbc49ce8763341e3a6b7e8d54d"
+    "digest": "a03b2e962c40b705ae39f3c6d69f24862d992c9cb1b0bfe51373d72a495feeed"
   },
   {
     "file": "apps/infrastructure/src/app/api/workspaces/[wsId]/secrets/route.ts",
-    "digest": "5886ede8c439aa44e9ad3ed154994b3c32528812265b5148cf24284bdf85d913"
+    "digest": "f7d68892b7f3ee63fe4df99b1d6382c68b0b4153e1e68a3e383ba4c9aec0ee48"
   },
   {
     "file": "apps/infrastructure/src/app/api/workspaces/route.ts",
-    "digest": "4a6a4a557f972045565b6c623d93c8593f4f5991ffda9592f35f87e0188492c5"
+    "digest": "ef594c724d2869ca2ea128252044973c7b32c7c28e8625c850065d8abe2c2f05"
   },
   {
     "file": "apps/inventory/src/app/api/auth/logout/route.ts",
-    "digest": "db58ad3de4a148d06eeaa51dd1a6a2f6b2e9efceb13331c6ee05f05feeab2d13"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/inventory/src/app/api/auth/refresh-app-session/route.ts",
@@ -2537,7 +2605,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/product-form-options/route.ts",
-    "digest": "b31d98d672bb60dda9cf335b1c28e88ff9f3d79f67a8ce85d749a9f865c750a2"
+    "digest": "f5f26c63ad155c485c2be04ea2d9f72203001f2a2fb23d52c1c48c299f67da32"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/products/route.ts",
@@ -2557,7 +2625,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/sales-defaults/route.ts",
-    "digest": "24e1a76e4d7e4d1674bf03e29496bfe04914ddaaf2fcb163f786a3b186b7f368"
+    "digest": "b24232004f38d3ef64e2e2056849528758e51efd20b4e1c3a4ad5e4714442aeb"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/[periodId]/prices/route.ts",
@@ -2569,7 +2637,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/sales-periods/route.ts",
-    "digest": "47e85d61594d7029818133f9e1efb08eccfeb1116cbe5d6633dfb084b18368e0"
+    "digest": "3bea5c13ec724d6881060e9eb9e1928ac31a4e9882ab70669fdbe5205055a019"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/inventory/sales/[saleId]/period/route.ts",
@@ -2677,11 +2745,11 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/product-categories/[categoryId]/route.ts",
-    "digest": "13fc0ced80538ab294f22db91a1e1811ea8e079fc5b60a96da2bfdb67edf94ed"
+    "digest": "efc82c565b4e86e277adb5a46acf6b53b540781c5f42347fee3cd68532d885a8"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/product-categories/route.ts",
-    "digest": "5b1a21a44aba83f48b46dc60668e666835bb461a710f2bf42c543da59a54548c"
+    "digest": "ce466ac39fa793ca464bf7495ce8b0d68e3b1d068529c913e300e482672cf16b"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/product-suppliers/[supplierId]/route.ts",
@@ -2713,7 +2781,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route.ts",
-    "digest": "d4c3a22dbe549e965ef5177519ef368471b0f39591fbab88b36dbadd3fb33761"
+    "digest": "62f4512f1db3a28c77158214272e1a65f6c06c717066f5da3a8253f31087fb25"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/products/[productId]/route.ts",
@@ -2741,7 +2809,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/promotions/referral-settings/route.ts",
-    "digest": "7f83cb998f47f9e6e7a0595a01840082c7cdc62ca0e36d9dfce34f297d81799a"
+    "digest": "1045ea9de09794d92d63742189d1572e5f1768fda5a6d4c5d93952d37fd4792b"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/promotions/route.ts",
@@ -2749,11 +2817,11 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/[productId]/route.ts",
-    "digest": "2f2f8bd2aed6a174f8390be43107097f600d842bf7eb5f83fda1c1099d46258a"
+    "digest": "70fe39a6224cb4e4222685e5f9298e545232a96e60b649d7e663543e43c6b267"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/route.ts",
-    "digest": "75f3d657214ddd49e1d9289b69344968a78bbb3907fed3fdbbc08895ae779f9e"
+    "digest": "7dde1599f69b485c233bfe571e134976e848e34a4e1c6a7d9bf2ad7284637b41"
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/user-groups/linked-products/route.ts",
@@ -2761,7 +2829,7 @@
   },
   {
     "file": "apps/inventory/src/app/api/v1/workspaces/[wsId]/users/[userId]/linked-promotions/route.ts",
-    "digest": "74c7bb5c3118ad0c51433196aa8a5e62ee91e6643253bc71b5429d06dbc2755c"
+    "digest": "a386c12fc23e88015f647745bcc4184a952bde9d8ab5db165bf4ac4215a953b3"
   },
   {
     "file": "apps/inventory/src/app/api/workspaces/[wsId]/route.ts",
@@ -2769,7 +2837,7 @@
   },
   {
     "file": "apps/learn/src/app/api/auth/logout/route.ts",
-    "digest": "0b85fe96fe5d4246a76c368e5b1fe123d847be6a773febc61060214ae4863add"
+    "digest": "44dc2e203aae3e6af2947b91775176ee7f1a756d0e774f2217fa33576a91bfb7"
   },
   {
     "file": "apps/learn/src/app/api/auth/refresh-app-session/route.ts",
@@ -2788,64 +2856,16 @@
     "digest": "d517e69900762eb2bc9e2a51217b699bfa3af9fb0833f9f2975b8c00a81aa86c"
   },
   {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/course-modules/[moduleId]/vocabulary/route.ts",
-    "digest": "6adf756c11605f2c19b893a59824464192c224537d8eb4b288e6f2d8385c4ad3"
+    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/parent-invites/accept/route.ts",
+    "digest": "79ca3904b1a9067ceb192bec2da3ebc3aa2145416eb35a7cb912428e10918021"
   },
   {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/assignments/route.ts",
-    "digest": "2606fbd0a2a91e2ff13b42faecc351829ee00e065c2b6902e5b09d90b1293e89"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/modules/[moduleId]/route.ts",
-    "digest": "0a2ba4a705a6b2f726c3c9c1d82c035b13f8cf35a6a53d2864f711314ad14627"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/route.ts",
-    "digest": "59797b0830f3e030258516704c2e77473bf1af02778d2f53f95ae2f4b091a7c2"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/attempt/route.ts",
-    "digest": "87fa3e770130481e9de61429ff4312e35fc2395d4d3e5d337cdaa81feb82f825"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/save-answer/route.ts",
-    "digest": "52d81bcab8d14c1c899dbe3a1ec5de1198b2f0a098ab6d800b2492d45ee10b1e"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/start/route.ts",
-    "digest": "a962c36b72b4d0a3732102aa997fb52b873ee37e61e2f65cfb6397a2d1ca8cd0"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/[courseId]/tests/[testId]/submit/route.ts",
-    "digest": "b1d0dbb4d92cdae98d121110f1214f08d539ac60852ba4f500824c36612b4a19"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/courses/route.ts",
-    "digest": "9af385abcd8149815fdd2bf8ed6e2e770a1202a667a4ca3d4aa8640852bade77"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/home/route.ts",
-    "digest": "9c98606923522ceb9df15f5b8da6651e0db81e5ee81af8fe473b2e88b1ff02e9"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/marks/route.ts",
-    "digest": "5a569133a47768c2836edbb4ca53fd249977bb0a534aa6f7a5bba2ee17ac405a"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/practice/route.ts",
-    "digest": "2c0b11f947e7102d09c38b69a893d0a2c3e33b07cc602c9fb0a034933f065923"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/reports/route.ts",
-    "digest": "e4cbadf7330c5a157c91d059c9ae6344a99f959a5d3a91f0ac51c36331300797"
-  },
-  {
-    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/todo/route.ts",
-    "digest": "ea56f29f85d55e78cb0e8f512a75f82a99d810737c7677c62fcf2eb9d4a5cbac"
+    "file": "apps/learn/src/app/api/v1/workspaces/[wsId]/tulearn/parent-links/[linkId]/accept/route.ts",
+    "digest": "38eaf9155a76a0ceaea39e31a20dc9ff79685c490c2968ed49d892d17c492394"
   },
   {
     "file": "apps/lettin/src/app/api/auth/logout/route.ts",
-    "digest": "afa205c844d8479c871c991a3b0d36716d11f3d4259002376f6a2fe2b5e62c20"
+    "digest": "44dc2e203aae3e6af2947b91775176ee7f1a756d0e774f2217fa33576a91bfb7"
   },
   {
     "file": "apps/lettin/src/app/api/auth/refresh-app-session/route.ts",
@@ -2905,11 +2925,11 @@
   },
   {
     "file": "apps/mail/src/app/api/ai/email-draft/route.ts",
-    "digest": "a48b5ab26b3da57ea1183761846aa2c37b5059d11c1cb17f15a373d770852001"
+    "digest": "f363f2c1f6a7137cd50328845aca4b80c0ecff58a13c578a27762fa577e0801e"
   },
   {
     "file": "apps/mail/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/mail/src/app/api/auth/refresh-app-session/route.ts",
@@ -2958,6 +2978,10 @@
   {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels/route.ts",
     "digest": "7641e37b4e52d8782bee482b29431cbaa832c1425b02854bc2f5b92bddf8600f"
+  },
+  {
+    "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/correspondents/route.ts",
+    "digest": "541acd37ecb5cf85ebc4cf5adb9d55c3ab597142cb2ff0d386416fe122e11ee5"
   },
   {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/drafts/[draftId]/attachments/[attachmentId]/route.ts",
@@ -3024,6 +3048,10 @@
     "digest": "2afa9429a7c1687403d1d0b47af28a1530c18fc101e10b49d205458d16ef6537"
   },
   {
+    "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/source/route.ts",
+    "digest": "bb27ab717fcd2a812a2f6b31a4f24cd6fe72900c442980f0cdfb397a5e4c74b8"
+  },
+  {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/messages/[messageId]/state/route.ts",
     "digest": "f47776d4538be25a30a05fb5a62454d5724c2f7ea039b0edbb796b5b0ae175ec"
   },
@@ -3042,6 +3070,14 @@
   {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/read-all/route.ts",
     "digest": "3cde2e7800628fa463fc68f11396f3f9c4adae1216ee81e09ead51f666f9b06a"
+  },
+  {
+    "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/[blockId]/route.ts",
+    "digest": "ad4e399fe47c533af7bbe69d1e79b420eb177f0d4895ea560371bd42a1cca113"
+  },
+  {
+    "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/sender-blocks/route.ts",
+    "digest": "decf8a4fe7787c3994dc8730bb8a7f571cb2f31672ceb22f8df9c43094b988b7"
   },
   {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/settings/route.ts",
@@ -3065,11 +3101,11 @@
   },
   {
     "file": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/send/route.ts",
-    "digest": "7b8f5c9dfffdb6118d19e34d42ac74a7899208c59ab2ad1074c530880602a6c6"
+    "digest": "abe6e4269b50ab2db361c0ed05ed2db5df50dd55cd0de3498370c59eb20398e1"
   },
   {
     "file": "apps/meet/src/app/api/auth/logout/route.ts",
-    "digest": "7026e2d599abd4f364fb041fe4bfaf791a2a5f34dfd2459bd1f4df295b27334e"
+    "digest": "bee2603260bba3d8eebac8fa541a94031e4dad7f95c5242ae5aa5f622e11b5a8"
   },
   {
     "file": "apps/meet/src/app/api/auth/refresh-app-session/route.ts",
@@ -3113,11 +3149,15 @@
   },
   {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts",
-    "digest": "6900e2edfd794739b48313c1b48193ebb1d9821b9e59161e0de6665da4e2e0cd"
+    "digest": "736bcd530aca3745ab7b942f60f847978af2f82cfc8191ec31f9c4f66680984e"
   },
   {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts",
     "digest": "9b5deee23cbdeee611526fd1f5c0fdbeecb8ceab4be019271c3ff47256a21775"
+  },
+  {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/polls/route.ts",
+    "digest": "e316713c055672f7a3de136165fbecea007830b429c6ee7f49aaae41c34c4e50"
   },
   {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/programming/preview/[port]/[[...path]]/route.ts",
@@ -3130,6 +3170,14 @@
   {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/public-info/route.ts",
     "digest": "1a0d4ff98ed60e5ea4cfae8a366533a79be2a4bf863cd62fe09a29b6d63d066a"
+  },
+  {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/quiz-arena/route.ts",
+    "digest": "1b4dd41a5804036331815cd637d20b695a3a50d3f7f0a2e54d36daf5e3bbec32"
+  },
+  {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/rating/route.ts",
+    "digest": "68f899115f5df68fa9a3a7a120552e4171233f525106c39d29ac05753947e89f"
   },
   {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/recording/route.ts",
@@ -3165,7 +3213,7 @@
   },
   {
     "file": "apps/mind/src/app/api/auth/logout/route.ts",
-    "digest": "6a300da9ed55479d6d6d53f4b0d26ac05b7fe0a701db0dd260d475eda02cc54a"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/mind/src/app/api/auth/refresh-app-session/route.ts",
@@ -3180,36 +3228,12 @@
     "digest": "8d33f10b231a49f97adf5730af75d84a3f5c526e72bfa8a3ebd814c483645645"
   },
   {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/ai/patches/[patchId]/apply/route.ts",
-    "digest": "db86fc5610b6b57d49022afd6a544ec388055065018101b0c8d8e1c4aaf91e12"
-  },
-  {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/graph/route.ts",
-    "digest": "9d5294fa2dce0678b5c5fc7b5c49d6a72c6a6a9a747224f421971768d50a1613"
-  },
-  {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/patches/route.ts",
-    "digest": "39e820fd4433300d84435217e2e7a2ea614258b97be700c7ad15d948e0666f5c"
-  },
-  {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/boards/[boardId]/route.ts",
-    "digest": "cce071698331e58d5265d16393ffa3d55d49754ca1be174ec0990fc4e0363152"
-  },
-  {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/boards/route.ts",
-    "digest": "f84c37dcb295bea616c611918fe41b633804e9f7c1e0ced9028ccfe6f660d3af"
-  },
-  {
-    "file": "apps/mind/src/app/api/v1/workspaces/[wsId]/mind/search/route.ts",
-    "digest": "35aadae823aff4ff5448776d7083c030eb2f5b6a750da7d554fd761262f25c83"
-  },
-  {
     "file": "apps/nova/src/app/api/auth/callback/route.ts",
     "digest": "52b4f0dced47ed3aabf96e825e33a31a635632d807926035369ebc079740d0be"
   },
   {
     "file": "apps/nova/src/app/api/auth/challenges/verify-password/route.ts",
-    "digest": "fdd57c64ebbe619cd10c2c7dfb0f4989c724a416a385137c02ddbecebc1ff7e2"
+    "digest": "f09feb8979f59dc0ffb0203e0ccedc15abc297b4a55db1cd275290d0ab2a4551"
   },
   {
     "file": "apps/nova/src/app/api/auth/email/route.ts",
@@ -3217,7 +3241,7 @@
   },
   {
     "file": "apps/nova/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/nova/src/app/api/auth/refresh-app-session/route.ts",
@@ -3233,15 +3257,15 @@
   },
   {
     "file": "apps/nova/src/app/api/og/[userId]/route.tsx",
-    "digest": "176bf10b73e11789fb44f0a7bb062cff65dec580afaebc29c9657b0f07577c04"
+    "digest": "4d66a3eb544e5de7b0ea814582ea51fc3695ab271718cc68a1a152efbdeb60f0"
   },
   {
     "file": "apps/nova/src/app/api/og/route.tsx",
-    "digest": "1216fb57b4a8fbbe61c8fa49185b6ff9df9e0ccc0b0bf0b658e69e3994124c36"
+    "digest": "5ef732dd8a22f6ce2c952530828c21a877a282faed4d661f1cd7e8614ac1b150"
   },
   {
     "file": "apps/nova/src/app/api/v1/challenges/[challengeId]/managers/route.ts",
-    "digest": "7be62340433c244e61c551123190abae64dc058f7836b734fa3b04603cd92219"
+    "digest": "d96e07c385d2d22bd7d1466d672fdca693defc02e851938d31abce7b5ddca656"
   },
   {
     "file": "apps/nova/src/app/api/v1/challenges/[challengeId]/route.ts",
@@ -3357,7 +3381,7 @@
   },
   {
     "file": "apps/parley/src/app/api/auth/logout/route.ts",
-    "digest": "7026e2d599abd4f364fb041fe4bfaf791a2a5f34dfd2459bd1f4df295b27334e"
+    "digest": "bee2603260bba3d8eebac8fa541a94031e4dad7f95c5242ae5aa5f622e11b5a8"
   },
   {
     "file": "apps/parley/src/app/api/auth/refresh-app-session/route.ts",
@@ -3437,7 +3461,7 @@
   },
   {
     "file": "apps/pay/src/app/api/auth/logout/route.ts",
-    "digest": "ddd6521a142ea7167b3fed3a91b21347c8d5f7ca2895d56a46116f45ebcc97ee"
+    "digest": "44dc2e203aae3e6af2947b91775176ee7f1a756d0e774f2217fa33576a91bfb7"
   },
   {
     "file": "apps/pay/src/app/api/auth/refresh-app-session/route.ts",
@@ -3457,15 +3481,15 @@
   },
   {
     "file": "apps/pay/src/app/api/cron/payment/orders/route.ts",
-    "digest": "6d1351f595e9b1878f13aa5eeaaadd53d493d0283b690a475455a8c4c7556e9f"
+    "digest": "bdedae7e48a6e03f81fd5db2470c3cc2d0bb7cb4a27de653f8a7e40f161d8194"
   },
   {
     "file": "apps/pay/src/app/api/cron/payment/products/route.ts",
-    "digest": "ad193cf90a3986c14a3991a89e8864519b476dbc04829cd7656e9113e9a419d2"
+    "digest": "19a906c4f12a66ae0f5990158358a4a282c7e4aacedc6bb705596bca0d8f67f1"
   },
   {
     "file": "apps/pay/src/app/api/cron/payment/subscriptions/route.ts",
-    "digest": "7935fbaea5ae5deedd47ca6a2f4d8f467efeecc25a7e2d3e4628a1075187a3c4"
+    "digest": "1170024c4395fb94f9bc30512625e67990b0480de3c9261556748ead3f47a159"
   },
   {
     "file": "apps/pay/src/app/api/payment/credit-packs/checkouts/route.ts",
@@ -3481,7 +3505,7 @@
   },
   {
     "file": "apps/pay/src/app/api/payment/migrations/subscriptions/cross-check/phase-2/route.ts",
-    "digest": "bab22ee36f1fecdd843394fea5ae164c17e8f7263d78e1c0a1f5117075d407ac"
+    "digest": "7547c216459bd347eaf62928cdf9efe095aab6d41cf93d53572e1b065c4d8746"
   },
   {
     "file": "apps/pay/src/app/api/payment/migrations/subscriptions/cross-check/phase-3/route.ts",
@@ -3517,7 +3541,7 @@
   },
   {
     "file": "apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/checkouts/route.ts",
-    "digest": "a563f101e8fb15c29b05d17cf8e998a480fe2961ecd7d403223dd6de922bb1b8"
+    "digest": "f21f26611415dbfffebc72cf371707918690d008cc6763a052009a81b3ff58f3"
   },
   {
     "file": "apps/pay/src/app/api/payment/subscriptions/[subscriptionId]/preview/route.ts",
@@ -3525,7 +3549,7 @@
   },
   {
     "file": "apps/pay/src/app/api/payment/webhooks/route.ts",
-    "digest": "e36a4e163ac7051b391069fa2b569fe62f562a4856e628768b7fdcc90c5a77c5"
+    "digest": "a2f19d9b655f0ddb5c6db25234eb5335fc0e6e3a021a6171f032d787907dcf2b"
   },
   {
     "file": "apps/pay/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
@@ -3536,16 +3560,8 @@
     "digest": "c881347513cf6aad201d16724af255e87d4dd9fe643c92cb4eb891fd9e5e8053"
   },
   {
-    "file": "apps/playground/src/app/api/ai/object-generation/route.ts",
-    "digest": "15ac5edac86e878e34f3b868af321db5f797891f5ab67c02768c8523b5559ebc"
-  },
-  {
-    "file": "apps/playground/src/app/api/ai/tool-calling/route.ts",
-    "digest": "73d8a784b16fdc1eeab87a1bfa834741ddeaee48812fd4541219d8a415b41bbd"
-  },
-  {
     "file": "apps/playground/src/app/api/build-info/route.ts",
-    "digest": "4b918d499f126a4421094118159c595c3ddec9d664924ef3b8d6a1651b090b7f"
+    "digest": "dba0ff88ecf553662b8786f4db81935a1269971f6c340c8dde413188a9800594"
   },
   {
     "file": "apps/rewise/src/app/api/ai/chat/google/new/route.ts",
@@ -3569,7 +3585,7 @@
   },
   {
     "file": "apps/rewise/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/rewise/src/app/api/auth/refresh-app-session/route.ts",
@@ -3605,7 +3621,7 @@
   },
   {
     "file": "apps/storefront/src/app/api/auth/logout/route.ts",
-    "digest": "d5dd4c971a41e11fb240911c95fe7e1008349791a69b9efa24e778a21aedbd0f"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/storefront/src/app/api/auth/refresh-app-session/route.ts",
@@ -3621,7 +3637,7 @@
   },
   {
     "file": "apps/tasks/src/app/api/[...path]/route.ts",
-    "digest": "b73f18545f3bbe2ab2d7229e8bf3863535b9a1193873b53001ebfcafedcf783e"
+    "digest": "22eb719949961275b781f940811a7c50d6cc65b43def4b98cb25b9da012e6c4c"
   },
   {
     "file": "apps/tasks/src/app/api/[wsId]/task/[taskId]/edit/route.ts",
@@ -3632,16 +3648,8 @@
     "digest": "76994348ebd06909fb2f59611efbc45e0b126111375ace4ab2c8c7a752503930"
   },
   {
-    "file": "apps/tasks/src/app/api/admin/tasks/embeddings/generate/route.ts",
-    "digest": "ed2e6e40acae3ffc11ac480f1f22584fa71de5c4a28ea61d88f414276725b0d4"
-  },
-  {
-    "file": "apps/tasks/src/app/api/admin/tasks/embeddings/stats/route.ts",
-    "digest": "3466a0c296460d107b9245b5d2c28da0fb45ca6ff8385e9ea03ae1730457aa84"
-  },
-  {
     "file": "apps/tasks/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/tasks/src/app/api/auth/refresh-app-session/route.ts",
@@ -3677,7 +3685,7 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/shared/tasks/[shareCode]/route.ts",
-    "digest": "b10f173247d82d0a4414e59a7b2c8780ce993b4c5434057cc685e26d16e28bb4"
+    "digest": "48ddb829c25600b7a22be5281350b39855948ef5af80ddbf3bda20d3e4f5e69e"
   },
   {
     "file": "apps/tasks/src/app/api/v1/task-board-status-templates/route.ts",
@@ -3688,28 +3696,8 @@
     "digest": "a8a90fd3a9a2475c259ec6619df401945c71e3f957ef81cc780aefdec76173ca"
   },
   {
-    "file": "apps/tasks/src/app/api/v1/users/me/configs/[configId]/route.ts",
-    "digest": "9781368fce5a475bc3ad7e831dca371573d8b4f73efaf690ada5b6e6256b45d2"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/users/me/tasks/[taskId]/overrides/route.ts",
-    "digest": "cf7ceedba5203512f016959760e999f702ba45e0c4cee6d81d3b1f36256a710a"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/users/me/tasks/[taskId]/personal-placement/route.ts",
-    "digest": "2c284f63ff7967c06361093f392d272e66feeeea1f5b13674722b4b7c4a272d4"
-  },
-  {
     "file": "apps/tasks/src/app/api/v1/users/me/tasks/[taskId]/route.ts",
-    "digest": "08ffdc0184c0b55c93ba18d7a58de0d1141cf99f9b4a3278fc68ec7702ca69df"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/users/me/tasks/[taskId]/schedule/route.ts",
-    "digest": "e71877217d003188827942e14c97bb1b61eef733a2a34e164ecf3acf535c049d"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/users/me/workspaces/[wsId]/configs/[configId]/route.ts",
-    "digest": "5c728753f82776e471f3017f6303143cd1d0e93e2cfaddc2f07f998b5383748a"
+    "digest": "b96a05855b80a8cc16317b802effdc45014d0e6a1e20bc901926bbc228195182"
   },
   {
     "file": "apps/tasks/src/app/api/v1/users/task-settings/route.ts",
@@ -3730,34 +3718,6 @@
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
     "digest": "88cf44d0bc74150c742807fd50bec018f4690a03c48ebfda6808f7df4ec6534e"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards-with-lists/route.ts",
-    "digest": "a88b0ef80268603c046d756b32437dbbb4c10d11a7fc820ca1591ac01ec98c0c"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/[boardId]/archive/route.ts",
-    "digest": "215ee744fa41827749b0ef5ba3e16822c1957de093e0fb054e319210e848859c"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/[boardId]/estimation/route.ts",
-    "digest": "f8824c19431ac7a951d3de6cb5cf186c2c20729df9ed2512fabbd88d3d1ca6c5"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/[boardId]/route.ts",
-    "digest": "8b6a0d0f1b83a3778964f3d4f69ac81b20b8ff3565cb860c9095e5a12d060cd6"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/[boardId]/trash/route.ts",
-    "digest": "836b4fcba1e06832ae9d091bb1908aa21d4a9c3e8834326fb7339a3fb5529af3"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/estimation/route.ts",
-    "digest": "5ece15063483ffa09a05f1d8cdf20dbd4f09167605db4d206214ba955e66cc96"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/boards/route.ts",
-    "digest": "52a11f038722b00729aa6f82a971254e19b674a8494d4f69fde49dbf440213a6"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/habit-trackers/[trackerId]/entries/[entryId]/route.ts",
@@ -3808,88 +3768,16 @@
     "digest": "43d9f858886737fb721faae52bcf84f2c1e5be63377441e4b6b8f34d326676f0"
   },
   {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/habits/route.ts",
-    "digest": "177d99a1b76c003ec4d4f735fe39aa7317feb16692d8c880576544dd15d973fc"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/labels/[labelId]/route.ts",
-    "digest": "16c3afd7c3fc0a609e27f268ca91483fdc7e9c1f120839598ceb879ba00997ca"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/labels/route.ts",
-    "digest": "5f1838a40c7dfd1e5274f81c6649dbde80df07a8db70abfd94abf1a199512f64"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/convert-to-project/route.ts",
-    "digest": "1bf77c190b9dd66d2bb6faf56a79b3f2e8d9f833fba5a4126e9d7ec5a2bc44da"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/convert-to-task/route.ts",
-    "digest": "b1d6065e96b93b6ee81179d4624db5cadf881f9b9daeca7b64b1189c0b4bc9ac"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/route.ts",
-    "digest": "9a6b7c0ead838a7f3532d3508282cdb786d89786e43370f5857984ca6b7e595d"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/route.ts",
-    "digest": "34e0d632162fc863f9a251c26f27ae57ee2188556c41c317b8e6b64a8f03824d"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/capacity-rules/[ruleId]/route.ts",
-    "digest": "ee860a68c6e2f260232fa78b55d9e5aec3ce0ed8be3bde7aeae5d57461e4e5b4"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/capacity-rules/route.ts",
-    "digest": "57cd4ef3ebd2d3603e896e677276ee3fcdebaba3eca123bdaf53cda3db07b5a2"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/[listId]/route.ts",
-    "digest": "46b8252efb30160d6ab182334d47e491a3daa9627ebbdb1484871bce7ed7d95e"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/lists/route.ts",
-    "digest": "241b9b9fb0a6f03b97526527406c2e9e84d5f48fd9af65d5ddf23c1f45da9e5f"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/public-link/route.ts",
-    "digest": "616c48f28e03a3e48d0d56279c23b0b6b93bd24d168125c50eec4f831b1358bb"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/route.ts",
-    "digest": "64d314372cde979a1c9107c972971b7e49684393a0adf865e5fb7db087d507cb"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/shares/route.ts",
-    "digest": "fe66cade3bd2189538016f371be9776b8a91cf06f4ce57a74a84c46fffce1c47"
-  },
-  {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/templates/route.ts",
-    "digest": "49eaaa076838467e304cd10d802ed28f92adc291183d686542a1ed474bd3e60b"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/viewable-members/route.ts",
-    "digest": "6fd5aff6afc60b0f2f2e8381c0678b86b89ce894bc673ba34fc1771a40cb5e3f"
+    "digest": "585dca4507df714fa4acc88e0e8631b7b2c6141a23933a9ce1bb09f153eba81b"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/[cycleId]/route.ts",
-    "digest": "39557da2e9cf4bc6dd73a60b7356298869cde6a58086f183f3fffd66ce394cae"
+    "digest": "ff4252214d803329f72081b7bc2d8c9034ec9b98f595146f5c6031d56e8ab986"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/route.ts",
-    "digest": "809b012e1587260ca410d2cbe6061aca4536c7449ab4956229ad8da7f3d582cc"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-drafts/[draftId]/convert/route.ts",
-    "digest": "afe55ef0ca7dd38c62a213d52310611e7e4129094b5fb713031e046cd258fe44"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-drafts/[draftId]/route.ts",
-    "digest": "a6824087a0fc7d6256f0e10ce83f333452ade4c70c1fa849aae21c0df729f7bb"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-drafts/route.ts",
-    "digest": "fa30966fbb7db4ee8f07558a2a09ab3550b2e74daf3498de6d5f63f7e77bb449"
+    "digest": "19bcf730fda8d4a55a4ff51b2cf427a7938d9426d1511f8ec37ec272719e254c"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-initiatives/[initiativeId]/projects/[projectId]/route.ts",
@@ -3902,10 +3790,6 @@
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-initiatives/[initiativeId]/route.ts",
     "digest": "0f1a589f71b623e04a681438c83115290ab23a20f7794189495cb74f9f254a8f"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-initiatives/route.ts",
-    "digest": "b61f3e8798e949408421e5d552725a1010e92b26d5a6b52419e35cf8e5804428"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-plans/[planId]/digest/route.ts",
@@ -4017,35 +3901,11 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/[updateId]/route.ts",
-    "digest": "e1f59bb50f5f8123db5abd06a687ea57bd97a4d2f260746485a0d990e8b6616f"
+    "digest": "a002e8f35968a5de8181b681c817dcc52a25a4cb846e8af36de614766c05e4f7"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/[projectId]/updates/route.ts",
-    "digest": "410d081c81b5b53972843203929fc23ea0a4d5a500efd6cfd5ec786ebae0775b"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-projects/route.ts",
-    "digest": "f24bc919e17e6896326738b84f7f66ce6929c0f6d5a326b73074a7c6767e1657"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-templates/[templateKey]/instantiate/route.ts",
-    "digest": "3050ae484e88e11699b21f9a6da90e8e9fea7c85074198766830de19b4afffe1"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-templates/[templateKey]/route.ts",
-    "digest": "f7710f239bc25711aa6f242a5c386368ff3eec13a3c5b1090959fe745222b2cf"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-templates/from-task/route.ts",
-    "digest": "e9dee21c1ece2015adf5c2a313d8ba5930aa59ce5354b6cd5b5b5b8f5cf5b052"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-templates/route.ts",
-    "digest": "4680b4ad0ca5f2fc77b217e7290c5b4fb4ce0558b7eabcc5bf82dd842dd452ff"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/description/route.ts",
-    "digest": "0ca35dbaf3b180d99b0c4f857bd55ff3e0aa2ef201cfc15e43ef1f43d3dffff9"
+    "digest": "ed02e30ebb25f46cd480f4c7dbdaead30e29765ddaac9dc8009fe34a368f7c47"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/embedding/route.ts",
@@ -4057,11 +3917,7 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/history/route.ts",
-    "digest": "51516b335959ccfc32dc7f4392e61423eddcd66ae379c2b245bb20d329fafb7c"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/labels/route.ts",
-    "digest": "7df81d6fd9c713795069aca67720c1712596ea27f8a77c16837afe9a968e0516"
+    "digest": "c73acdf8f99352a9fd240a53a9a428c3d3a17c94283649b278cdc88fa502c24a"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/mentions/cleanup/route.ts",
@@ -4069,27 +3925,15 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/move/route.ts",
-    "digest": "9a35a1a951bad50555e30a0f0027386a9e05baa37ca085c0e38ff1827c8d72e6"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/relationships/route.ts",
-    "digest": "160a6a76b7dd4a2f99153beb961f60e8c9282e130545310c323c4c5674d60c10"
+    "digest": "3b47d0df15050e76d0462d763aa5f49d3f9fb2cbe82979e43b48332f5d05983f"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/revert/route.ts",
-    "digest": "ef3b985392b5942500bf22bd2417c9dcbfa0dd315d807cba40368660cda4fb46"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/route.ts",
-    "digest": "bd3802cae319726e76295a840ccbdd9f712fc5f653f837735354c50162ca0270"
+    "digest": "24ee8c90a64dc0d9d32e08caf2da0b62152e47fdb3c16189c818b6d36d71f2ec"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/history/route.ts",
     "digest": "e727ace00e23912074a3e66a125a983106e369d5f33d8bbe61810bef6246d325"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/schedule/route.ts",
-    "digest": "10548953a4f5cbef96d06f1df4175940ca4b570f7702a561eba95a085706f4c8"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/share-links/route.ts",
@@ -4101,11 +3945,7 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/[taskId]/snapshot/[historyId]/route.ts",
-    "digest": "9e17f1ecd91a44fe7a0c6c280b7330820c1a420f42edf3575ca4aa46c63055ad"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/bulk/route.ts",
-    "digest": "f4f97d980f959a7f74698ba138e00d705e7af2d732c86e081b89717cd04002df"
+    "digest": "5ee33ef5f4b0ae6a0c812553e8b8be20ffd065d0ce9e779940333ad5ddcd1312"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/embeddings/generate/route.ts",
@@ -4113,71 +3953,23 @@
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/history/route.ts",
-    "digest": "3bbcfc5a2c474add0b1245b15538eb3258bd54b3d7af0755a7c18595fdedd0e4"
+    "digest": "e15b6f814be365a642d8228152c00950cdec64f65c5a9fda21fc85937b0f9dab"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/journal/route.ts",
     "digest": "1483e1985eacd88b4a45a6ebd54bd5dd3ca651e5fae0bac96035caa7493031bb"
   },
   {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/route.ts",
-    "digest": "7f83cdfcdd1013e06e707e46e6f48a78a88081ea5f5ce9599d2e7e53341fdae3"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/schedule-batch/route.ts",
-    "digest": "1afaec343442ad6b608d5a97dbc654064d157ef5092408cd9e27fed2c193be2f"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/search/route.ts",
-    "digest": "27c3899e3f5f2a8104eaa0e3a708c3089a572eca413376dfbd97c066b8620660"
-  },
-  {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
-    "digest": "f722f37e7c0dce72efb9c83085dde9756f8d409e14015d7fb3a6f8ddab1af807"
+    "digest": "8066f28b5b91db756845176ccb3301387ac1c84e52733c8f728db5b2ae6132b1"
   },
   {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/with-relationship/route.ts",
     "digest": "eb62f298ce8eadd3999818d64f12ed5f63b09d675803a6c38a8c15639bdac5a4"
   },
   {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
-    "digest": "f0a77fb36513ddaa9e8e3ec9249824ba891206eaf819a42b0c2f90f9a0f6b199"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/route.ts",
-    "digest": "c7432cc2aced6a4cf8f40b0ea2606f5d45d55f90e3fb26db449055562328b33a"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/shares/route.ts",
-    "digest": "6112573fce8af04a4657f139bf9030d9e7748a7b26a3c9584031423d709634e3"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/background/route.ts",
-    "digest": "8981bf8832c8dd0c22d1334cc0503ad5c8a931d294aa22a2e7dbe53f41c6d66d"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/route.ts",
-    "digest": "2410c5f43319e21defb7245f85aaf71eaa502dd66681d7ea0c581ef0daf2fe79"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/templates/upload-url/route.ts",
-    "digest": "074c2b458071d537033aeea9ab9d53fbd02cb135afc23d38278d2863ac6acee9"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/route.ts",
-    "digest": "40b4148b1626ecaa9aa5e58ed7e7ad0a0d9185df09811fed8ead7e5bd6a13836"
-  },
-  {
-    "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/route.ts",
-    "digest": "cc9f44e839850f73d52d3d7584f7a82283808b599e385d47103eaa587017192f"
-  },
-  {
     "file": "apps/tasks/src/app/api/v1/workspaces/[wsId]/time-tracking/tasks/route.ts",
     "digest": "5b9e4b449300507b79aea9bc8a68ad8b46fd17738330412875c288eba97df7cc"
-  },
-  {
-    "file": "apps/tasks/src/app/api/workspaces/[wsId]/members/route.ts",
-    "digest": "84c5151da15f82ce1ffc3e9ce4b42d49c2cabf93c5c4f953a81b1e97d5abe600"
   },
   {
     "file": "apps/tasks/src/app/api/workspaces/[wsId]/route.ts",
@@ -4186,6 +3978,10 @@
   {
     "file": "apps/teach/src/app/api/ai/objects/flashcards/route.ts",
     "digest": "e74dad35d8003bc58e8994356bf6fbfdc5129fa9bac04d1a9a4e77ef9e12e2de"
+  },
+  {
+    "file": "apps/teach/src/app/api/ai/objects/inline-assistance/route.ts",
+    "digest": "abaf4cb812ae4393ae59b535d3d2841f569a622a1ce1f5e56bdf0a1a760b52f3"
   },
   {
     "file": "apps/teach/src/app/api/ai/objects/quizzes/explanation/route.ts",
@@ -4197,7 +3993,7 @@
   },
   {
     "file": "apps/teach/src/app/api/auth/logout/route.ts",
-    "digest": "69e6d3c94dded5558d29bdc0b0a5fccf48ca6bc83fc14366b02dceecb85ac078"
+    "digest": "a7f0ff3685030026e8228cbb008145e961d509a2d4412749d975e6b3ad1709aa"
   },
   {
     "file": "apps/teach/src/app/api/auth/refresh-app-session/route.ts",
@@ -4212,16 +4008,12 @@
     "digest": "7ef08b2be05598c02f29cc2f43b0ce59d52a89a7fb6edfbe361144b56ca9b6b5"
   },
   {
-    "file": "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/todo/route.ts",
-    "digest": "5f57aa18909cd259de8ce76dccc9793c112e41565f854ddacf08c4198476606f"
-  },
-  {
     "file": "apps/tools/src/app/api/build-info/route.ts",
     "digest": "7d3e5284c6b26827a84da59881517c3f83bc4957790af662a7b2d700def90547"
   },
   {
     "file": "apps/track/src/app/api/auth/logout/route.ts",
-    "digest": "60568690e6c68555fa755b660dc216f5cc9021bcfd4775fcfe9aac0a45f976d0"
+    "digest": "c84460e669749fc2de634d0a0da2ae6c0de3416e0f61d8a1ca97ddd97fab25d0"
   },
   {
     "file": "apps/track/src/app/api/auth/refresh-app-session/route.ts",
@@ -4246,10 +4038,6 @@
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
     "digest": "3691a6100267a3dc88588a2e4d6e34a22ddb4e8444ae694c882c47964f7aa0ad"
-  },
-  {
-    "file": "apps/track/src/app/api/v1/workspaces/[wsId]/settings/route.ts",
-    "digest": "148fa2eaa024550c467f34776d51ba72ded983eeb3c49923558e6d5fa1ac8d29"
   },
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/analytics/route.ts",
@@ -4293,7 +4081,7 @@
   },
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/comments/route.ts",
-    "digest": "233b27a83e0aacd3fb6094813b1109d3f0cc29b9a8ab81384ac33f95f4e1dec9"
+    "digest": "afa9be3285e0448de4fd5946e5b08ce259c9f4771a36d06b75b923da0fd6c4ef"
   },
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/breaks/active/route.ts",
@@ -4302,10 +4090,6 @@
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/move/route.ts",
     "digest": "f8f57300be08b641d59e2e5051d0cac04fcfa26d87887fb32e7ea8283b06ce55"
-  },
-  {
-    "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/stats/summary/route.ts",
-    "digest": "ca9c142416b5efaf2295b365486f75c58ed19c56eb91c383a41edef7e500e4b3"
   },
   {
     "file": "apps/track/src/app/api/v1/workspaces/[wsId]/time-tracking/templates/route.ts",
@@ -4385,7 +4169,7 @@
   },
   {
     "file": "apps/web/src/app/api/auth/callback/route.ts",
-    "digest": "6c9352f432069f224a61dbcb829044ad1b061a3eefd7ee62e146cc05030354b0"
+    "digest": "437355dc25d09d820d9e4802f9b99549df26cd0ea9a95f20ae37adcc82f01514"
   },
   {
     "file": "apps/web/src/app/api/auth/dev-login/route.ts",
@@ -4441,7 +4225,7 @@
   },
   {
     "file": "apps/web/src/app/api/cli/auth/refresh/route.ts",
-    "digest": "065eccab175f925ca91a8ac936644456231296063c394d368c7ffa5e50cb0a47"
+    "digest": "10b5aa4105b09ce8741df74473207e41eca47eb013c5c16797df10ba34d7fd3c"
   },
   {
     "file": "apps/web/src/app/api/cli/auth/start/route.ts",
@@ -4473,7 +4257,7 @@
   },
   {
     "file": "apps/web/src/app/api/cron/process-notification-batches/route.ts",
-    "digest": "2cf0a75b73fbb1f1fa408c5e595b6cfce8c425fab13bff21b0fe0ff2899fc290"
+    "digest": "53e7a02faac22f6dff9a19be13743e866a4d3568e922f23da8e930378cb0f616"
   },
   {
     "file": "apps/web/src/app/api/cron/process-post-email-queue/route.ts",
@@ -4489,7 +4273,7 @@
   },
   {
     "file": "apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts",
-    "digest": "9d7918610efce2ba85ccd1b88d640ea2db0579582ac12c0033d53e52944fd62b"
+    "digest": "8aeaeae48bc7f7712147c5cb8dbc8a74f7c9dbb4ae3ed9bcf78cf30c6560e55c"
   },
   {
     "file": "apps/web/src/app/api/email/unsubscribe/route.ts",
@@ -4509,7 +4293,7 @@
   },
   {
     "file": "apps/web/src/app/api/reports/route.ts",
-    "digest": "4c3167abce3e0815dbaab04fc3273a0ac2421a4c7e24540b08dd3a23ca046779"
+    "digest": "7c1ecbd4a526800d31e3b6e4b41caaf29ed0d0e96bb945b73bde19fcf8c07962"
   },
   {
     "file": "apps/web/src/app/api/reports/upload-url/route.ts",
@@ -4541,7 +4325,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/admin/external-apps/route.ts",
-    "digest": "277d23970fed39ee9bbc1e6d80f7a6e5deb841bff13d9c2d2e1191a92ec633d4"
+    "digest": "4a166b6cb12a4536dad7117105a5f6f7c523b4167ff87057877062a69f740196"
   },
   {
     "file": "apps/web/src/app/api/v1/admin/external-project-audits/route.ts",
@@ -4577,7 +4361,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
-    "digest": "c18f8ab27357c3c50340627dfbc0f75b42dfa5ac698e817e8a05ecd687acd56c"
+    "digest": "e21c32a72c435b0e03b671f16ef086d9986e06b6b40c0e369ac3456b0c410a8f"
   },
   {
     "file": "apps/web/src/app/api/v1/assistant/live/turns/route.ts",
@@ -4601,7 +4385,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/auth/accounts/[accountId]/route.ts",
-    "digest": "d9298440f2bdbed3ef1cff3570764d68bbf7037a9ac77f0d292d2c1b76944a3b"
+    "digest": "8925a562fb1a19ff20580be354e41206ceca555b9113b64f809dfc8029dab6e5"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/accounts/current/route.ts",
@@ -4613,7 +4397,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/auth/accounts/logout/route.ts",
-    "digest": "24920f3068c77cef7f261ddd2795d36c36d443f2fcf2acbfc8e00119b11bc6f6"
+    "digest": "efa0b7376d8b7e52942dc6beef993e426b4f0ada6742fb6dc835627cd462977d"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/accounts/route.ts",
@@ -4621,31 +4405,31 @@
   },
   {
     "file": "apps/web/src/app/api/v1/auth/accounts/switch/route.ts",
-    "digest": "0fa4355d81b3e01e68d7f769f8f9abed55c2f532bc687a43cb1e2b0e19c53ce9"
+    "digest": "94d97422ce873a8148d912df5daed61c2b598ba97e62f2bf525a26b0fa52ed44"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/app-token/exchange/route.ts",
-    "digest": "34f60827e48715d38beb312fba9e046a604da92cef847827eecf21c0d5f0b03f"
+    "digest": "028becba59bc53b3e412fafdc29cc8add4ec55ad8514c82ba38bbc1b3deee33a"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/app-token/invitation-decision/route.ts",
-    "digest": "55c7e6b62c81f71a9d9a144cd28d320455e1619053f0fbd9075a93d084f0f7bc"
+    "digest": "0185977c9e96f8622077bd0eb8e3e2a8acb603af834e0480ee5b1cd3ddbd160b"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/colab/verify/route.ts",
-    "digest": "57b5da30a8140ef1ef3306a06459077f2b3c53b05623e536f4e89eabcf6dcdf3"
+    "digest": "24d48cfb91d6ccf02da27d60d15058b36f13fe2f48887bd89d3b2f83222919a8"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/cross-app-return/route.ts",
-    "digest": "3a0992e2b752ef434514089276bfb657d95d0ae07e433eb3afaeaebd64de2e94"
+    "digest": "d0907f6a3822cc5ebef33538dc9b0f72ee3a7e7fe7f2f9988e3fdd8908fe0356"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/cross-app-session/refresh/route.ts",
-    "digest": "792dea886c7c4b4edcee54c1efbc29a742937da2cf869ce39213a60f3926671c"
+    "digest": "08cced6b5160e05cc5f7d0d40c6d23b4d16a18a774bd041d3f46949ea71067fe"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/cross-app-token/verify/route.ts",
-    "digest": "5d04c3335564b82a387bb32a68b36709212ee0a94061c8882092d457acdf4ae2"
+    "digest": "0dc17e9105b321ca5e1bcd7e90bd17a26f2bc58a4d1bf5fe50ccfe7b634cfc73"
   },
   {
     "file": "apps/web/src/app/api/v1/auth/mfa/devices/route.ts",
@@ -4714,6 +4498,10 @@
   {
     "file": "apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
     "digest": "79aa38922a43567b224175addbcb6c81610d9e984edc49dee9b5eb2e58501638"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/cite/[...path]/route.ts",
+    "digest": "4dc7e1268e2b0c5170115f34e17590ebeb4b577ce803b1b1ec01de13dce6ce1e"
   },
   {
     "file": "apps/web/src/app/api/v1/cms/workspaces/route.ts",
@@ -4852,16 +4640,12 @@
     "digest": "8024227172134a6c589aa713fa15154980ed6f5040f42ab4b555231e273b45f2"
   },
   {
-    "file": "apps/web/src/app/api/v1/inquiries/[id]/media-urls/route.ts",
-    "digest": "fe0c2993f31177510f2dfcca4609849e156e29bd53d835dbde1c4582f74121d7"
-  },
-  {
     "file": "apps/web/src/app/api/v1/inquiries/[id]/route.ts",
-    "digest": "8dd88c9508ed941ae53e7e210a1ac9375869d8f4de603b0917a75ad86e9dc880"
+    "digest": "35ba2ab05224ce6fd21f3981de720d0a9779881e3e1bdb31545045ff150fd714"
   },
   {
     "file": "apps/web/src/app/api/v1/inquiries/route.ts",
-    "digest": "ca0066ded00834604dbccda7aa757b291beaea181501aaed94d746bbecec5ef1"
+    "digest": "58c7fb37a840ee7e1fe42c26b25298fb02fb378ce03d19f97e068be73ec7e0ac"
   },
   {
     "file": "apps/web/src/app/api/v1/integrations/discord/available-members/route.ts",
@@ -4909,7 +4693,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/live/token/route.ts",
-    "digest": "c5ca2cdddf4de31fe9b8a8777dcd3debd8f3bac3f645108f244c590cf9c38ae8"
+    "digest": "50dafe99a34bbfcde822e34b6239df0067b73358d2807c022708b8bc184decc3"
   },
   {
     "file": "apps/web/src/app/api/v1/live/tools/execute/route.ts",
@@ -4920,8 +4704,12 @@
     "digest": "1045092074f0002e4337b9a107713f52ebe57cb49223330fad1e8981ba455b1c"
   },
   {
+    "file": "apps/web/src/app/api/v1/mastermind/push-events/route.ts",
+    "digest": "4a6fbf005088c357f1de7837cbbc417498e9f3ad56e0581d4a4b5aa04edc9636"
+  },
+  {
     "file": "apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.ts",
-    "digest": "2a9056137132ddba05da35770942a83f78f1f774ee239ba2ed9271269a07abde"
+    "digest": "1686dfbcdd34301ff66659cfaef518dbd8d56c04b8f3ee5bea4a8541a0e7d2e9"
   },
   {
     "file": "apps/web/src/app/api/v1/meet/plans/[planId]/finalization/route.ts",
@@ -4933,15 +4721,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/meet/plans/route.ts",
-    "digest": "8ab3ed8f2b5a1af4f32455dac1648b816bb339985ffdab28971a9ba5fdf7dfd3"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/preview/[port]/[[...path]]/route.ts",
-    "digest": "d6f7b571f1f3ac3e93a0d7288d3bc7eecb50335addf6af1567317b61cfabb690"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/meetings/[meetingId]/collaboration/route.ts",
-    "digest": "3e7aeedcb79fba8bb7160965fe140a7cbddb5b26aad0c2c410744366e96c6ee6"
+    "digest": "23011b88cb8a5ae9c9e8402cba4d5d2d6f1b5acfc01bf8cb4771a2914ca56cc7"
   },
   {
     "file": "apps/web/src/app/api/v1/mira/achievements/route.ts",
@@ -4996,8 +4776,16 @@
     "digest": "c452564bb2f17e5a202ca39dbe20e84b3a1ed7db50ed1f8a3d186c6383fecf62"
   },
   {
+    "file": "apps/web/src/app/api/v1/mobile/feature-flags/route.ts",
+    "digest": "9950ed4842215387195d69020b36ab7285e8a25d67c0950d4b9566185a91379c"
+  },
+  {
     "file": "apps/web/src/app/api/v1/mobile/version-check/route.ts",
     "digest": "f4b9571878bd6e39f770d1426fe277df63c4507e6629c99054246256a82d9e87"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/mobile/version/route.ts",
+    "digest": "8db08ebee8c6cbf83401c1c7a9977322d934ba66a7c983c86cecd50ecabe513d"
   },
   {
     "file": "apps/web/src/app/api/v1/native-integrity/challenge/route.ts",
@@ -5006,6 +4794,10 @@
   {
     "file": "apps/web/src/app/api/v1/native-integrity/enroll/route.ts",
     "digest": "6cafc5250f82c6418206f11d86cdd317a335351a4aca82f6ffd57a79d680e8eb"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/newsletter/unsubscribe/route.ts",
+    "digest": "778899ffb885b121750a367fddc1f6137c1ed90e8bc8692e74127327be8a1588"
   },
   {
     "file": "apps/web/src/app/api/v1/notifications/[id]/metadata/route.ts",
@@ -5117,7 +4909,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/storage/download/[...path]/route.ts",
-    "digest": "44f10a40265c81a83f76b0fa02dbdac4caa8ad660f5a6d6b925f86850185be49"
+    "digest": "2a2b6186488a5119761c6d7aed7d4c8015b73e60b3d50ee262250b01ee0338c5"
   },
   {
     "file": "apps/web/src/app/api/v1/storage/folders/route.ts",
@@ -5133,11 +4925,11 @@
   },
   {
     "file": "apps/web/src/app/api/v1/storage/share-batch/route.ts",
-    "digest": "9ebd9c709d0d430e84d854434fd96cb8d3535e6bdf628439cc28c055804e9731"
+    "digest": "a223399fe962b841d9fadf70a07953a9b7f3dd6b43b9db5480d73d46c56caec7"
   },
   {
     "file": "apps/web/src/app/api/v1/storage/share/route.ts",
-    "digest": "043b5a368fe728bf7a4442163f4f3853ddb2f725efae372f59bb3915636086b0"
+    "digest": "4698a38ca0909199cefff7740ab164c4da8e94d6996463f9dea6006c524b9cd8"
   },
   {
     "file": "apps/web/src/app/api/v1/storage/upload-url/route.ts",
@@ -5174,6 +4966,10 @@
   {
     "file": "apps/web/src/app/api/v1/users/me/board-list-overrides/route.ts",
     "digest": "1e0e7b8a478373034571f7b204083d34e44a95a081d49d6211c65ce35fcc0d56"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/users/me/bootstrap/route.ts",
+    "digest": "0126974deee472145dfab228e719a21a08179ccf27c2447c6518c9a6b36965b9"
   },
   {
     "file": "apps/web/src/app/api/v1/users/me/configs/[configId]/route.ts",
@@ -5220,26 +5016,6 @@
     "digest": "5266a9749e72e08b5f62de11eff9a6b0ed65f15318dbc70d149ecca969b5009a"
   },
   {
-    "file": "apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/collaboration/route.ts",
-    "digest": "68a14efc4fec654be0e44988bd89107067a8c24bccefb9c7839f8ad2743aadd2"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/preview/[port]/[[...path]]/route.ts",
-    "digest": "a19f858e64d30b539eb0249fe0342c49942a1d2c0325934a3838b1acfe653270"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/route.ts",
-    "digest": "11ea0115b97090a565bdf7d09e25625d3a76cdcaa0645ec27c113487ea3b9bbe"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/[runId]/route.ts",
-    "digest": "289ee3515d4fdd6e120f751a0125fc982242d892f860075db310966e2ed0f541"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/users/me/playgrounds/[projectId]/runs/route.ts",
-    "digest": "d97c3201f7bd20270e9d0b991fd8e0af8b1c45d4b7c15ef76e04599029dd048e"
-  },
-  {
     "file": "apps/web/src/app/api/v1/users/me/workspaces/[wsId]/configs/[configId]/route.ts",
     "digest": "5bcf136e82e3b89cb4e25dcc8dced481aefb34a01e059cc78cdfeaddaae1d65c"
   },
@@ -5249,15 +5025,27 @@
   },
   {
     "file": "apps/web/src/app/api/v1/users/sessions/route.ts",
-    "digest": "10045c88e6dff43c42b397336d7b4b32b921a4a18ff0f3faf85e1ccee9f9ccd2"
+    "digest": "df1e2b8b47d886abbec9a50445c59d9f035180f5b6b5b7e91d51f456151e52af"
   },
   {
     "file": "apps/web/src/app/api/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts",
     "digest": "e6e595cd78bfb5e235fd11ed05e35f15b19cce32a0988375ffc2f24c8cd4c5b1"
   },
   {
+    "file": "apps/web/src/app/api/v1/webhooks/email/ses/route.ts",
+    "digest": "0c9b2a999ad63bd4e103f4b4b839e0e3f35295c9a571caeabce95e019092ecc4"
+  },
+  {
     "file": "apps/web/src/app/api/v1/webhooks/sepay/[token]/route.ts",
     "digest": "ba210a4804005280c15c1d3bcfacd482ac93d677cce4149ce097e228887a7b77"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspace-domains/resolve/route.ts",
+    "digest": "809621dbd6050ad4e10a04a2b0fe8d78216dbf4633f7ce57f0b24a456e410763"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspace-domains/site/route.ts",
+    "digest": "a080565382d6162aad9bec3e5fd77e5fc35894f036f1a510425a58f125e6a1ad"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/Mention/route.ts",
@@ -5344,28 +5132,8 @@
     "digest": "49f2403523a532709f4884c09a8d6890e129adf1a611b81228180e5db1b85b1b"
   },
   {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts",
-    "digest": "9bba0d5c2ccc2bbc0f47d69d08505f98d3a13ced8d106bf7479471a1d261753f"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/external-context/route.ts",
-    "digest": "190f7bf3ac3622ee0e617495d31a40997c253bee45b0b6996470ee050535543d"
-  },
-  {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/link-previews/route.ts",
     "digest": "73c1ad963684b9cd465403a49d70df2b31ad913b4cc08aa5e2fc3839789a4cfe"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/[messageId]/route.ts",
-    "digest": "6c71d4323684eb211b8f74d9f6e36d82ac3afa71e25e62aad2def719b24fc70f"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/route.ts",
-    "digest": "01d7b7482e834a77479809459fd9d4559613c80918760d3c1c4176aedf4e828b"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/reactions/route.ts",
-    "digest": "47c9cf5ebbc4bfca8c9d490f9a71633d86428cbf2079ceb21c8730bb1d44705e"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/read/route.ts",
@@ -5396,16 +5164,16 @@
     "digest": "eaea873af33edfc177ee931185c9cdb493ea36a806edc43f9e478b65a70fe575"
   },
   {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/reactions/retire/route.ts",
-    "digest": "6affbe4ed3c48811e8bc2417f55ed9e954b0bc7b86fad65b42aa8962d1a1e0a9"
-  },
-  {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/realtime/route.ts",
     "digest": "0efd6d8a245b1f01328a52e360f8b5e5edcd19386da0d410653da4adf62000ee"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/search/route.ts",
     "digest": "192bf2a7623e1f069b0f4988af64786cbdc0b86671d9ad704c09c58a6dd9809c"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/[[...segments]]/route.ts",
+    "digest": "1477f1bf9ea1870ff60fac7b5bdc071e83fe9b2c885c0b5a359e61c8a0bbd6af"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/consolidate-users/route.ts",
@@ -5433,15 +5201,15 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/datasets/[datasetId]/cells/route.ts",
-    "digest": "c4d7ee3f0df217d83005662bcca731c9e2796058297619f13dab5ab828260564"
+    "digest": "4c002d1dce8945cdc9ec86934a10c2021f22366f6eabcc2c39ee2ac1a42502c2"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/[columnId]/route.ts",
-    "digest": "a5b13f6e12e8a7b76a0a5052394b7486e09e209c79ae97b9cfbc9c8ddacf8ab7"
+    "digest": "6d46ebdb881a3035be86a0007f259aa80bd73bb04160ee00fb803e90e78dd0da"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/route.ts",
-    "digest": "b0e4ad0a5847dda92d2c977dba0d4490b6173a4a1e57b2ca6444e16816960a3f"
+    "digest": "9fef771c9776f22520b29bbf339f7edc4bd980664c1e15bab815c97d5dcb3c63"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/sync/route.ts",
@@ -5484,12 +5252,16 @@
     "digest": "d3a75109c374ffa3d9d88617ed559df99a96ceb6e741afa54651c752d5ddda5e"
   },
   {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/[documentId]/route.ts",
-    "digest": "262abb7cc7266b1bb8f4d7fd6f237f5ac5e04186e4cfa27f23aa8a9b55566146"
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/route.ts",
+    "digest": "a113007099cbfbd4c7f32ce2e07286a0531eaee8540c26db08d5bc769867b49f"
   },
   {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
-    "digest": "a352b814127130b4f220f1e050465035505d4e3026354a65ddf7d9fea430c80d"
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/[domainId]/verify/route.ts",
+    "digest": "3076e62c01c4514ace95e1a1109659a3324a6ad7ca6fca8f65df214dd5f77c16"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/route.ts",
+    "digest": "520055b07554bef759427f6c045350e0de00608b266ee2782d8890ba23401a99"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/fix/route.ts",
@@ -5564,20 +5336,8 @@
     "digest": "0744fd49bb2433cc4232c86830bc11c094f04813437d968782f401de54c066f7"
   },
   {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/config/route.ts",
-    "digest": "07aefadbfbf1c108106ebdfd9c413773d25bfb2607bdfe018b432c74bddfaa88"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/credentials/route.ts",
-    "digest": "cd779232b9d3ef7949ecaeca8d2e06d38e288c5604b801ad0377db0e6baf0988"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-chat/sync/route.ts",
-    "digest": "db246dabc182bc5a429fc00c57cf9996caa4c4c3e29f8f6c895eb71440e4d81d"
-  },
-  {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
-    "digest": "ecbc0f642b1a26a7e9525d1d3e65e1afd05e9eb5a489d2b0b599824eb9df8518"
+    "digest": "c2de04d2aa859be25e284a6dac242e78024e6a895842f73fbf018fe5f4f994fe"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route.ts",
@@ -5634,6 +5394,18 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/duplicate/route.ts",
     "digest": "b5a9e0cee1c0dc1ac631af83ecfcb16e4823c8d95e4d956b692077369aa3e573"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/publish/route.ts",
+    "digest": "e83d98e9e02befa0b7d567816d9fc7e3e8203c11dbe8ac4a4f0bbc9c978796ad"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/[versionId]/route.ts",
+    "digest": "98a96ea924b27e0d8e810f90a1806701483e55204ae2f9e3d0792ae7aa3f9b8a"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/page-versions/route.ts",
+    "digest": "af01f7491bc09f556ea8dc73fe839dc31019b4ccd61e6949a6396bbdaabbd67c"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/publish/route.ts",
@@ -5721,7 +5493,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.ts",
-    "digest": "2acd659e108b4632e9e82f2d29e7daf07e216d5cff7ff3c67766eb05b9ecc21f"
+    "digest": "4a483e88e1e426b0644ba2e1386eeda6c314d737428202bee93f65d98e867954"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/storage-analytics/route.ts",
@@ -5737,7 +5509,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/submissions/route.ts",
-    "digest": "01e0f0785726f2020d1cde1bde5b048ebc580a53c86517d1e1fd67faeee83e37"
+    "digest": "77745deb8d8e3786a47f029ee7e2521a8c8809b80ded778741cbe748df9ff9de"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/summary/route.ts",
@@ -5869,15 +5641,15 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts",
-    "digest": "caa795b63ac36a43edc493f7c8fd77d3ff62f9d45cf50a74c4fa3387c7e8760c"
+    "digest": "85fdb8079e3ae26e6fe999aaef645a5fd85a975815b1b7725ff1c9b46a0a4032"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/record/route.ts",
-    "digest": "b752ba89d342ebb5f93f43c7e58a9f8b6da0d5dae9b35ae791253c17df926e49"
+    "digest": "0071c37fc25b98e95523fe20212f41ac400e272f9529c0855be7b0ef415bb6c3"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/chunks/route.ts",
-    "digest": "de06d8b36ef0718277a2da953a21adf2f24c24cc7ffe277fe83562adc099f0cd"
+    "digest": "74ada8b998a2c0584ceb49f9d63461bc1522049b9d66c7e775780cb89103645b"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/play/route.ts",
@@ -5885,23 +5657,23 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/route.ts",
-    "digest": "b02a0d514057cb23ec38226d2137a91a5c9c2a06c3064460e0714c60268e1b3f"
+    "digest": "830da93bb4c3e2993eee3b9abda94eb725cb9760d5fd3d540be743ba7764fbc5"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts",
-    "digest": "7e085344d0a432ff6dd2170ebdff49d737d433aee8b801d63f75b9bb299cf6da"
+    "digest": "c8d5e0df4fc64486f891ca6b9e19025c425dad8014dd7b9dc75925aee52cfef0"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/route.ts",
-    "digest": "66e5b8816b5332e895ec6dee4c1090497bbb603a8d6ea9a32c82b478945aef9a"
+    "digest": "4c75ce13224a6c3b7830e3223aa80ab72d0c67c0bbd25b31aeba2715281dcc0d"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.ts",
-    "digest": "3bc38210a8aece301e5a4bc55009da3ca7efde76dcb148cdcde8510b6b35f3d6"
+    "digest": "4c4d8b782a319416c66451a68af8fe2f7ae4730ded1a765e24020588e3c3f425"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/route.ts",
-    "digest": "b32cccdd946620a14b52dfeacc2a5b9149a8bd03762de95b74902a8590a315be"
+    "digest": "b1847cfa0868bd689674eac76b256b451d9615fd55fb9a76b00d11e9916290da"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/stream/route.ts",
@@ -5913,7 +5685,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/members/batch-invite/route.ts",
-    "digest": "55a98a1bc5ed96094dca8c4b1a7f3d710a94b4bc87fb658f9f245dd5986ba033"
+    "digest": "b6ae0ee29b59acd11eea083aad2d37126e6f7cb86d5b4a17e60b6246ac5aa24a"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/members/route.ts",
@@ -5926,6 +5698,22 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
     "digest": "2c8c9b63df2ffd0a620ff63802c28e5fbfeafea84b49dae548bc4d5b761503d6"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/approval/route.ts",
+    "digest": "90b1f37ca66ec2eef098b765398920f97a702ed42e1e3018573980f2a9dff9b4"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/domain/route.ts",
+    "digest": "498c9c617626397ae6dc77082eebb3c1130216a30ffb9858b9c91a71292ebacb"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/subscribers/route.ts",
+    "digest": "3fa6e9e0414bea3b6fdd971d8f7248a7ecea3f4cee4a819abe528a49bf40a9bc"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/newsletter/test-send/route.ts",
+    "digest": "bdd4c5ce2470bbc676ad64eb1f5ebf974906ba107df87fcc866ad11464d54b2b"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/[noteId]/convert-to-project/route.ts",
@@ -5946,14 +5734,6 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/route.ts",
     "digest": "f4368fc700924b4550ea5d03fe2b86251a5d078eed5853ff7e59e0fbae2ad371"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/[jobId]/route.ts",
-    "digest": "bb57cc2ae4ee3dfb35f76e11b73b4fc0e1b5c024d0c82327657d8ee403f28e0b"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
-    "digest": "34c57d13564c6477202b92bb640c9340e09a6a0580159448e594b1a9b67f9b0a"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/personal-journal/[entryId]/route.ts",
@@ -5990,14 +5770,6 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/profile-activity/route.ts",
     "digest": "bc30ba570f1ef70f8e63baf2df7d4dbc40e355ca16bf27f761cf4a4ff7041ab9"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/[problemId]/route.ts",
-    "digest": "7f9031fa64b1e38b3b241e41d5965f38e8debbac94906e2eac7ecdcd84f654aa"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/programming/problems/route.ts",
-    "digest": "ddb82452d533bb712f0af173ce6d56163110d24267a0d459d2f74bf7507d9934"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/roles/[roleId]/members/[userId]/route.ts",
@@ -6097,11 +5869,11 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/export-links/route.ts",
-    "digest": "a8a5abca61b294e209a14850d2d6c36c74ed5616ed0039ebee521636476060a9"
+    "digest": "1796e457f5e128d15ff97f560fdb1370312d9dde74cc6fde551c868d7e477e29"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/export/[token]/[...assetPath]/route.ts",
-    "digest": "de598782f9d12fd8e2638ecf79e965641b07d32bb5e52722414cf09b2c6dfb47"
+    "digest": "72a220a41acf60c792fa42a7f193863e1134a45f63db9fe6d80060b33cb9517f"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/finalize-upload/route.ts",
@@ -6113,7 +5885,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/list/route.ts",
-    "digest": "1f367b2c46ac38999ee9c4aaa29d16fbe7e00bbfc98b51a43a9100e7fbd950c1"
+    "digest": "d6bfcfb309e98eb18f8c6a1e04200edbceb9a4fd8a3a221fcfbbb9fe63fd474c"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/migrate/route.ts",
@@ -6137,7 +5909,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/share/route.ts",
-    "digest": "c29f5afb132153918ab3c1162048422612b40a9d48426a95d10ce6c24a32b453"
+    "digest": "f816b79547819a1e645d0170ec419caf78f3c87bd2bc3fc65ac5ef7c2b0fb1fc"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/storage/upload-url/route.ts",
@@ -6149,7 +5921,7 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/background-url/route.ts",
-    "digest": "cb03717470c5ac604e36ee17bd06508dd8fd170e735fae1e682a5cc93df6755a"
+    "digest": "793645e47f5ed500e4580f606acd1fb3c4394697b0f944831ad5a807dfa294f0"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/templates/[templateId]/route.ts",
@@ -6304,6 +6076,10 @@
     "digest": "c869360f4f20f2fdb83a44fdf172f393d35366013354fae3b271ed4fdb02b489"
   },
   {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/campus-options/route.ts",
+    "digest": "99469963d7a137deb6b9fdb2128479a39d28ca4a1dc4e7ed0b6b23c7ce9413bb"
+  },
+  {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/topic-announcements/contacts/[contactId]/route.ts",
     "digest": "9bad621f6bf54f0a8dea2544d824153ac53995a10b1df19a55d52f71b876424a"
   },
@@ -6353,7 +6129,11 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/export/route.ts",
-    "digest": "9607cd439ca681d87972cc3ec94521c63a07686fcac00d394e522469a25219c9"
+    "digest": "165fc7e79e8eee2236a9ae62e37bc7efe22c78be70415138904c223d90b8f0e8"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/payroll/route.ts",
+    "digest": "88faad906b3dddc151cf9a9d6fb1f3efebe2524c20552cc59ece4eb1cb936ee6"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/policy/route.ts",
@@ -6361,27 +6141,27 @@
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/queue/route.ts",
-    "digest": "3dd48b38e38ddb688bd54bae9d97272afb12b6fb03c43462232e595d1f9b3d34"
+    "digest": "12fa18133f2b1753633a82cbfa5e23c16af71f5bcbc7449d0d17c5382daa03b5"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/mark/route.ts",
-    "digest": "82254766bb61a149573b78ecfd1ed93a00635e77b79545feb072d4a65a0cc661"
+    "digest": "772db04b43696dc74300bc87f5e599a6a62719ad0518072cd7115a9dc274d297"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/message-preview/route.ts",
-    "digest": "58c7511938cf164429d57bc73f2dd201efd9694b1d7ac1163105219cc668ca35"
+    "digest": "8d4221ff8d2f1aa773f2f8eb25203c57384e7df96ca171aada64d3e189a1a1a2"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route.ts",
-    "digest": "0e5e979036f5b5d171c5b7331becf1e940ebe27fb74036e9fd96bd1ac73554e1"
+    "digest": "77c1df186d1e49ecc6d9bd742c418284f99c1ac576eaf5d177075ae4ad3e348d"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/sessions/route.ts",
-    "digest": "71dbefc379f5ed08d5d52d3792f788b27e1929659033a13d89e633eeb1852aa8"
+    "digest": "1fe4eb6ffd46aa859dc0000c8c00fddc440d4a141c856d0bde214bfc9ba3be9f"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/teachers/route.ts",
-    "digest": "d9b0a430edda09258a2cb7155dc9470d26a3e8a3bc3eafc06f6469b1d2f20268"
+    "digest": "52f81a17fdbc9c0e65bf48142bb544f44718dd9872ac1414b54499ec3cc55fd5"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/weak-support/end/route.ts",
@@ -6462,10 +6242,6 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/route.ts",
     "digest": "5595548222967bfcb18564ebd409c948cc2e2042a5ea3c6a52f44715c7bf0379"
-  },
-  {
-    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/storage/route.ts",
-    "digest": "d536a9aad134efc447a36969b3b0948f8878a09c0d2c09a08d763220322792b3"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/activity-logs/route.ts",
@@ -6708,10 +6484,6 @@
     "digest": "9ad0bc0b943f623a7408c5b717e8a799c87a7d169599d4a48f271523bbace9d8"
   },
   {
-    "file": "apps/web/src/app/api/workspaces/[wsId]/accept-invite/route.ts",
-    "digest": "85e6f84dc6e7b8181c471d568d151e56611c7936dcd8c2f712386876c1bd657d"
-  },
-  {
     "file": "apps/web/src/app/api/workspaces/[wsId]/categories/[categoryId]/route.ts",
     "digest": "e24369b12b4560caf020eb5c87817a7c64f2ca1e6ecf9975c193ba4663b590a8"
   },
@@ -6737,7 +6509,7 @@
   },
   {
     "file": "apps/web/src/app/api/workspaces/[wsId]/members/invite/route.ts",
-    "digest": "cf0bf4313f430774ab286a7983a633f99077abf8791ec877657d90c494ddcb5f"
+    "digest": "441927494a218fc08f93bc0ce9d457fa65f344b32e8a09dfc770c21b11d28112"
   },
   {
     "file": "apps/web/src/app/api/workspaces/[wsId]/members/profile/route.ts",
@@ -6797,7 +6569,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/[wsId]/crawlers/list/route.ts",
-    "digest": "25afaec0e92c2373ca19e2572eb371d8b108d35d3061a39d091c3b64dfdeabe3"
+    "digest": "3aebaadd423992fc3540fe8d046a94f8ec895137b19f48db7f753afcc2232c45"
   },
   {
     "file": "apps/web/src/legacy-api-routes/[wsId]/crawlers/uncrawled/route.ts",
@@ -6837,11 +6609,11 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/ai/meetings/summary/route.ts",
-    "digest": "6481437f0f7f7a7e28e548198c56e87b9c00cbf42fe9ea01ae859e8e24294752"
+    "digest": "e45909c094d55fdc07726c08e8841f2745fc79c6e15321006794d8b9a83b3985"
   },
   {
     "file": "apps/web/src/legacy-api-routes/ai/meetings/transcription/route.ts",
-    "digest": "cd89ed95f52598412413d0c2a29020f9702082b0add53fc79a403458b529f032"
+    "digest": "e45909c094d55fdc07726c08e8841f2745fc79c6e15321006794d8b9a83b3985"
   },
   {
     "file": "apps/web/src/legacy-api-routes/ai/objects/year-plan/route.ts",
@@ -6869,7 +6641,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/me/route.ts",
-    "digest": "0d0c5532aa8575e88bb8921954df57bcedb5b835e8d9570f377a97f487d08ef7"
+    "digest": "f508cd10ca2f531742a0eb3b80ff506819b98021fbb249fb230c9fa43f402e7c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/mfa/totp/assurance-level/route.ts",
@@ -6881,7 +6653,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/mfa/totp/challenge/verify/route.ts",
-    "digest": "a869be49c60f85e18c06796c92b57292b6a975cc71769f4d9c31cf975322bfbe"
+    "digest": "45f4922f0513194b5ae2b0022a6f6062e3e4e7cac425e581f78014a1f1e8530a"
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/mfa/totp/factors/[factorId]/route.ts",
@@ -6889,7 +6661,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/mfa/totp/factors/[factorId]/verify/route.ts",
-    "digest": "46a2154215e23310a2835a5798cf21860c81352608b371cd57c0c9a4ce6f086a"
+    "digest": "cd31fd97e2e6e80a912909fa29f10f57bf6e9fcce462733506129c08de363d90"
   },
   {
     "file": "apps/web/src/legacy-api-routes/auth/mfa/totp/factors/route.ts",
@@ -6917,19 +6689,19 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/cron/finance/exchange-rates/route.ts",
-    "digest": "eb6a0d117f06ec1a439d7c8de0eff34f1f100c7f82fdc8aeb967df8e404aeb20"
+    "digest": "c081b1fc2c444f036abc89e3b4739d2517d8a977173bc0d8a3f7429a73ca24f2"
   },
   {
     "file": "apps/web/src/legacy-api-routes/cron/process-post-email-queue/route.ts",
-    "digest": "b2199ae7c8b06a52d72289073caecbe4a22d393d05e4f450ae6c912dcaa67a36"
+    "digest": "2b1c6ce0c9a71e0c404bd2da116f488d3a768ae440749e51e7b59951938ecf15"
   },
   {
     "file": "apps/web/src/legacy-api-routes/cron/process-report-automation/route.ts",
-    "digest": "5cf0f9b7f6aecf9cf6ee006100b051f81b78046f6c016ccca22b31497a7dbdc9"
+    "digest": "7f5f1410cf8ff2d0462f6584d042da5965db7b2f7ed354d9e23f98e9a67c3296"
   },
   {
     "file": "apps/web/src/legacy-api-routes/cron/process-topic-announcement-queue/route.ts",
-    "digest": "b9357035fbbaef775078e0ecba8276d94a0269c8243e225d274ba37665fded94"
+    "digest": "7a347af9aa28ec91b892097a58391ddafe1d48f66ad59f9588a0cdf87ee94de6"
   },
   {
     "file": "apps/web/src/legacy-api-routes/email/unsubscribe/route.ts",
@@ -6944,10 +6716,6 @@
     "digest": "aea4a83f9b9b1d66f59bd612cffd6407c45f82594f1c97d47bf8f0d8868d4e95"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/reports/route.ts",
-    "digest": "f0da9d31ff36d0bc0261c5f8a5e79c0627d518080bbfa5c39537b2ed334655c7"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/reports/upload-url/route.ts",
     "digest": "7f1a2503de7bbc22dd7e906708478489f338bb5ad400c252bf1d66a36180d10a"
   },
@@ -6960,20 +6728,12 @@
     "digest": "780c612cee66a6c105da043ba24bf3fbc92ff3eb486f3e286abd004b12f5bfb7"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/time-tracking/export/route.ts",
-    "digest": "ef9f481eb16d08fd8544c8057d68c2b82d4129964a18dfa0e82aafbbb681c4a7"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/trpc/[trpc]/route.ts",
     "digest": "9bd58b70a2b425cd1d3bc3c136f8ba0f369049be06fd8c6cc51d2ca7093deb6b"
   },
   {
     "file": "apps/web/src/legacy-api-routes/users/search/route.ts",
     "digest": "e7a65c55c7a3ed657ab759ced2633baa97f6ab46f1b203834498e884b7fa02ad"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/admin/ai/memory/backfill-mira/route.ts",
-    "digest": "84648fa593ed3472bc18dddd3a5940dc513688e53949fdeb659751494f69f79a"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/admin/external-project-audits/route.ts",
@@ -6996,48 +6756,32 @@
     "digest": "afa04feb68c37eeda2b9865f4d93c814330306ae7996ed591c70469ca893b906"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/ai/chats/[chatId]/route.ts",
-    "digest": "fc34e5b17fc1c77336cc5b6f155c3ecb5da829b90db40a3f52454348713573c3"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/aurora/forecast/route.ts",
-    "digest": "acd31406522c859c74e1c41184b306ba5c3b71942d7a98ff23816870f3c5c6cc"
+    "digest": "ea3c37b881bb39cc37ac4579098cfe582148f4c2941fd9c6148e6012f3ac06c9"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/aurora/health/route.ts",
-    "digest": "42508d5d4afa0d78a015153564161a874bb325c5336461d1bc43fa3bd2b6ad76"
+    "digest": "221fc50f4e872180efbfe239d6d8f811115991c9f86cba1f0873e384b3306dcc"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/aurora/ml-metrics/route.ts",
-    "digest": "1ed0392a0a602691c664b27c3a7ee179dd4940593c756115cdf4a6de90eda73b"
+    "digest": "f05648e947f569c2b71782711258ac7f6607c6166863c5392357c018946ec06d"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/aurora/statistical-metrics/route.ts",
-    "digest": "9942be2479365c19af3c06540a5991a13dd1aaccc38a43300fc986abb427e146"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/[accountId]/route.ts",
-    "digest": "a3ae52da825489a2d7c18fe676dabf0d8dca0184410ce6bcb8c8e803747bb6fa"
+    "digest": "7673e0ba4b7a427c3639c6762bd4a3318d1574dfd8fb15f97e59a76be18ccc7c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/current/route.ts",
-    "digest": "d39a42a7e9d040ab5cd4e91d8a950c4254c1ed77a348d0ff5b245681b707451b"
+    "digest": "f1da62d2ebd3f0a2d65418409ff6a1aa5c76c31e60519d35c4fd9acd58e4f0b5"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/logout-all/route.ts",
-    "digest": "4e6caa03e082f98f2ab49e022d22822e93da62e54555cf2e4f84d9e0d0c16e1c"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/logout/route.ts",
-    "digest": "95d335e36925957f6cb4c0dcfb5026dc599ad2dd51c249cc7eaeb647bdbf5be9"
+    "digest": "dad190b1eab64008e9535880607f3db9d34a1c593f58842a92e4ef78a86c7537"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/route.ts",
     "digest": "56ced97b759e96afd1a56bff25976ea8bbe24ef752ffbd22b9e93935c66c1506"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/auth/accounts/switch/route.ts",
-    "digest": "0e477f8cce9e00ed5cf27b6b1d10a3b9d10f0965d683ec2c09b99cbb3998a504"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/auth/mobile/password-login/route.ts",
@@ -7136,20 +6880,16 @@
     "digest": "8d02571843105cff751e74923c5f98949ae3744e8dfb4b539bf312e534e1ad0f"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/inquiries/[id]/media-urls/route.ts",
-    "digest": "b465585209696657c5fb03d27e87ef5be9d371c67aab0bf2eee19f3eeda2649d"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/integrations/discord/available-members/route.ts",
-    "digest": "f54f386f4e3301ceee9c2f88034d25f1549decb3c2e52a0f15deb401994e9f68"
+    "digest": "5a0a753ec64f5f9173b90bcbd74a3040ccee24542984231c24632720cf4e00d6"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/integrations/discord/members/route.ts",
-    "digest": "b52eff227090099f8156749066f9f9e4fd9cd66da00d3555950bdac08ea79ddb"
+    "digest": "c2bca3f6335caa2b4c0fc51c05adc7354fa75444f3ee1cf4c2955b51e2bde289"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/integrations/discord/route.ts",
-    "digest": "595553b44f6a88954181125879a8e2295e08707d316e538b55404d32be9a7556"
+    "digest": "d0591744a9759b4cb088c14976e35c3ccc01c5188c97c781066856a021637cd1"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/link-shortener/[linkId]/analytics/route.ts",
@@ -7157,11 +6897,11 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/link-shortener/[linkId]/password/route.ts",
-    "digest": "01543ac77856d6a7ba69305292363bd3050bfaed486782d6fa17d246a118b28d"
+    "digest": "3e71d752db7c2bfee54fe2fb01e229b273703cef2933eb8ec4d14a9dd996acdb"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/link-shortener/shorten/route.ts",
-    "digest": "b6d17f7176e5692bb0d0e31373728bf2b6da1583b01f20e37cbae3b76051925e"
+    "digest": "4ded96e902e14420f8857d7ac175471d9a0c340575f9ff79f62f8e626303a8a8"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/live/session/route.ts",
@@ -7169,7 +6909,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/live/tools/execute/route.ts",
-    "digest": "e1c974096d7c7dd51d7f579ce1641d9abd6f4393bc23e5e30ca836f812b8594c"
+    "digest": "3396acd3349c363f1cf93afc4b5bd50790473dff2f06c7beeaa802bd56586126"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/mira/achievements/route.ts",
@@ -7217,7 +6957,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
-    "digest": "57ce244d08034b5079ae3b7a21adca2bb7ad48d5eb22d936bbe849dc0586fea0"
+    "digest": "55038995d7e0fcc09f5f564c81b2c1b0d7b3f47045f24f523916ab797c727844"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/mira/xp/route.ts",
@@ -7226,14 +6966,6 @@
   {
     "file": "apps/web/src/legacy-api-routes/v1/mobile/version-check/route.ts",
     "digest": "faec9bb06f77d4ff7de82ee881720dc25cb1bf518481437a2ec0ebbd056dc728"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/notifications/[id]/metadata/route.ts",
-    "digest": "85b6860d0a07d1008b4545936717fdae67c67f750a7cf79360fcb56053533dff"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/notifications/[id]/route.ts",
-    "digest": "51f4f5fea6a24d83b89288c3d25221b03ed48b09680f1e4cc654d5333b8ae046"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/notifications/preferences/route.ts",
@@ -7245,7 +6977,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/proxy/tuturuuu/route.ts",
-    "digest": "52f87b102d245535484e2f22f7ff5a249bdd84a7645a7b5fe791bf6cf78fd3c5"
+    "digest": "9c7952b44033f9eb1da8e748cd52de4eab96f048c43ca1df2c3127cf4494197f"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/public/user-profile-links/[code]/submit/route.ts",
@@ -7253,7 +6985,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/rate-limit-appeals/route.ts",
-    "digest": "e11db91e32de94915c2f6b35287f83d4684092737df49a96d7df6238c7571d9e"
+    "digest": "ff91d852afee043d3554a5281faf06951695ecc3074d5e20680bf13adcd104f2"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/storage/analytics/route.ts",
@@ -7277,27 +7009,15 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/topic-announcement-verifications/[token]/route.ts",
-    "digest": "57fbd2a9b610ab7997f1f09fd85b1f6d2e4938277accca195a18e5b663e375c8"
+    "digest": "f02c59375c9fa4d1256e786ab4b6eb5ad575509d990f84ac3a4c562a4d79530c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/user/profile/route.ts",
     "digest": "b71abe303e1cce7992ccaf717e1c6280637b5e86884e88873b9c3fce3b599628"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/users/me/configs/[configId]/route.ts",
-    "digest": "f2d81bb5279c0af954ca2b11a7947d5a340e6766bf5788f134b4fcc86540e370"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/users/me/identities/[identityId]/route.ts",
-    "digest": "6c70551d7667932ea480a6fb3805cf212644b8c99a4bbe2f451800826ef79d61"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/users/me/identities/link/[provider]/route.ts",
-    "digest": "49d0afa5b76c7bab697b3a6b4572f30bb91bdade91ad250aad959c34581395d0"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/users/me/workspaces/[wsId]/configs/[configId]/route.ts",
-    "digest": "72b6bcaaacc24df4fe50fb954861d9c7ca1733b317571c59da84f20f4eea50ec"
+    "digest": "61921b6418c7c8bff69abc7f8f0eaa773be6cc69d592c1ee0318d7918d336b41"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/webhooks/ai-agents/[adapter]/[channelId]/route.ts",
@@ -7312,108 +7032,12 @@
     "digest": "5190eb3738c84fce9b972d906203e6a48f35199255907bc045472c48e51b8ed7"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/credits/route.ts",
-    "digest": "c29d6226c66692e441d57d210d274ace6ae8ef9e729216ea689965eeee70d74e"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/ai/prompts/[promptId]/route.ts",
     "digest": "c1a58239a63324bb71e76b7f0a2bb3bcdc45af64dc4bed5061452ef0496248d2"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/api-keys/[keyId]/rotate/route.ts",
-    "digest": "38feb621d2230a38068b1bc11ba67332de97a3bdf728be846623ae56a1061f6a"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/api-keys/[keyId]/route.ts",
-    "digest": "f69a0336834b969d4dfc8bbb347819543d5d0c82592edff642f4a028515f99fd"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/api-keys/[keyId]/usage-logs/route.ts",
-    "digest": "b3e2e98599cf713b39a9c6085ef706025570a1dc36759be9cb68431757a3521d"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/api-keys/roles/route.ts",
-    "digest": "bba7ef23fdd23330898fd876326ef4f26215615deb00604c02e0a650202cc3f1"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/api-keys/route.ts",
-    "digest": "b893799801b3dc62f9e4cd0dbdc4814d7cdae77317d9fb21bd1c2edfdc554f8c"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/channels/[channelId]/messages/route.ts",
-    "digest": "bdf3aa415a2fb63f26934bea9364782c803bae5f8eb14b77711a5aebedf6ed4d"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/channels/[channelId]/participants/route.ts",
-    "digest": "1b495b35848a30b623b30050b164768861e349818b13c4769219535418be5cc5"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/channels/[channelId]/typing/route.ts",
-    "digest": "d8c07e460103ab6ffc48a0dce9f4ddbd023828ec5ef36866c117c8d88f4e4545"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/channels/route.ts",
-    "digest": "9f9b6d7036e946d8c627aa7636ada745600a4c30ee1e75208d6bf3ffb36bd11f"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/ai-observability/route.ts",
-    "digest": "751a99836759404c72e8b934c318fee34c718e998a52001e116d86ff3d466370"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/ai-settings/route.ts",
-    "digest": "87279a0a2c207324a7b1182559d22e003885f74d0d6dfe45e9ea39b342060eaa"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/[attachmentId]/route.ts",
-    "digest": "46c9a960e8295095b9c84040cc64079f5771a88d61321df9ae7bfd64a307524f"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/link-previews/route.ts",
-    "digest": "e6fbb59040419766a12fc42085ee30b24f7e447a4076971a63898207bae7f63f"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/read/route.ts",
-    "digest": "3e8e3ab9507e8f2c1c286affdbd00798ee66207f908a53d55930b5cf3db6df57"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/route.ts",
-    "digest": "72de2468f498a6ce91453e4c76031faae76a66e970a9a163599af64a507198b5"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/shared-content/route.ts",
-    "digest": "f2b3e85921edac9fbfb08361e9bc9a2d0a72f2eba4e85d38d233de0fbab57229"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/title/route.ts",
-    "digest": "d76b472fdea1c13e9b178e21ba5b21e5b8796c4f580df1b1abcdac0317a5b386"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/directory/route.ts",
-    "digest": "aa86f850ae569f66492da85e342da839162776cc7ec61194e7e797d9689bb027"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/friend-requests/[requestId]/route.ts",
-    "digest": "893854301f98393929eb1017be39d4b9022d37d6f09c3912485a4051e2cd305f"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/friend-requests/route.ts",
-    "digest": "8bb300bfb754808804499653f5d9f1b2046535e5046285cda602befb2e9b6373"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/realtime/route.ts",
-    "digest": "445a38f721e0b478b5e96d456624a181eb689a30fdea29bf71eb0d901920c3b1"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/search/route.ts",
-    "digest": "f22a1979bf98a9186a6b03629559a2a78e68fb4591422deab6c0d166bb803ab2"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/consolidate-users/route.ts",
     "digest": "4188a048c837368e73177a0cef9eae5502991ef4885e500df0bc95b64766f070"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/crawlers/route.ts",
-    "digest": "80f24149fe030c49e092b47bcb9678d047c7f9a2b4e309b310cd14ce42bbed18"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/crawlers/status/route.ts",
@@ -7441,7 +7065,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/encryption/route.ts",
-    "digest": "574206cd690b850efb578991e9b1cf2ea71987832e924056b9814784299f55f8"
+    "digest": "40a3bad9a4f191c2820d5be11f0dbee3a3070fd0235f8864e31a70d93d4d3c03"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-apps/cron/executions/route.ts",
@@ -7505,7 +7129,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/[assetId]/webgl/[...assetPath]/route.ts",
-    "digest": "1235d01c2baeafddc17c085ec1d7ca65222ff3bdcef798a1e94a315f96296252"
+    "digest": "b36c56382b9b51235b87f1682f08e95457e547c1dfac2e10dd5d9336d9f98f84"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/process/route.ts",
@@ -7513,7 +7137,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/[jobId]/route.ts",
-    "digest": "d212e29e9347af68f4a625f9d05ce27b329ab00d215e6c43a4df9662b0b2075d"
+    "digest": "e7d66de18453eda6fe1e9487f661e28684b8d1beadfb34b6c18e55fb5a6cc85c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/assets/import-jobs/route.ts",
@@ -7633,15 +7257,15 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/route.ts",
-    "digest": "3081297ef4f378d7e8d7f7e236870b866832b14c8c34915a3ced104e731432fe"
+    "digest": "613ae19993b3e03e51595403e3ad9285976c89f1008d6ed2ba119285c43987ed"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/storage/route.ts",
-    "digest": "377cc6f92668b2bb627f14e89a0801e0dd2a271362e37930091f1191527c424a"
+    "digest": "c75f15b097079dca2bec8afe2b2e2ae3182edab328f85917320b2d30327d8121"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/summary/route.ts",
-    "digest": "14f8a46dd0f50e0048d0dd84cd0985ed06e4979ed8cbc53b6a9672412ad0eead"
+    "digest": "c65889fa37ee92349cf7dee2c6ad2f5920485f4e03572dbdaac56acc6c64508a"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/apply/route.ts",
@@ -7649,11 +7273,11 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/diff/route.ts",
-    "digest": "05ba867a2de4f4601fe3f6d9fd6cbdc3be2fdf55fdb3a3c8aa94bc1a2d62c8d9"
+    "digest": "d8db8d4049b2a455a1b660b6bf6b3866c76729828497a9b14951596658aa6f53"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/sync/snapshot/route.ts",
-    "digest": "11ee80fb472a82b0d841766502016fafe9e11739b08904e4a166743bc3641296"
+    "digest": "5d3e59ad3d0c076c28ed524fdd81c0eb06b56d40aebb2b808c5f5e8f37770a43"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route.ts",
@@ -7724,44 +7348,12 @@
     "digest": "e1b98de705919e77b902496008ccbd319b936fb91809be80079462312470cf60"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/record/route.ts",
-    "digest": "89ceef69b0443972998bae40dc6016b3d4c4d404735eb6050d25954e69a0a775"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/chunks/route.ts",
-    "digest": "6ef7e55f5e12b4e8e3aa045ad34d2d82fa1e50d5537e7a3bdb8643a27d197a2d"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/play/route.ts",
-    "digest": "d2fad56acaf0ddba0b060f363c1259db5ef43002e2a7b1c7dd005c9c6979da15"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/route.ts",
-    "digest": "608c2e864285200e049f152e053a5ddbe140a5b4d5dd83ea4e5567c66ad77f87"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts",
-    "digest": "050241fbadcd7531083cc91c0110e1c60db03a079e8287a1ee398adbfafa5c9c"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/route.ts",
-    "digest": "5e83d9e9283bba677d17347fc898f471913445abdceeec175e89f190570377b3"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/route.ts",
-    "digest": "388d216f6e684c3283e40427a02b983d6aa7b133b2fb649468daabf4a7955be4"
+    "digest": "7d4fa206e5d5f1601cf0f969b35988c566cf07f9dfac0efc67399600719a088a"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/stream/route.ts",
     "digest": "4833bf44a07fbaf5ca680cd7226dc688c805bf40d01f791e820fff126bc7b00b"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/members/route.ts",
-    "digest": "7abd2a6b1dbabb7ea32975a92ac8a5a7fb2759e0ec8c6470a462d1f42ebbcf2d"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/mobile/module-flags/route.ts",
-    "digest": "7ab583e8c8c2776a2183cb88eb172e4d4ef7cf361bc3bf9fc3174744c91d2b2e"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/notes/[noteId]/convert-to-project/route.ts",
@@ -7777,19 +7369,19 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/[roleId]/members/route.ts",
-    "digest": "75cdc45826755b4afc4c15da72f7a55602b523dc782df2a1b07dbfe62ba816f0"
+    "digest": "8c4fc4e641a959d870f002c4bb7413ef080956590ffd17c5148b026925540ac1"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/[roleId]/route.ts",
-    "digest": "788696233ffcf46b8eafc407f5de19706f601d4bdfcfc30b8c073d8eae13ebfa"
+    "digest": "421dea1d76890351217f2f361dc74b979c9f43c8687af77004fb24176223b28c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/default/route.ts",
-    "digest": "f26787d958505a4a8fe8ffe169c129df4167305169ce5c3c1a874df7c45f1975"
+    "digest": "91c2b3c30d49c96be605bd38deb0deb60f0056e56f6e48744c4cfbeb547fe101"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/route.ts",
-    "digest": "88467d6c833465cf0d7a22f0cbda9681f6fbd888cebd5fa89ad243ee688047f3"
+    "digest": "08d2b720e51d6908e810f2294972241013045fc6558f39066aeda0804816d1e2"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/route.ts",
@@ -7798,10 +7390,6 @@
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/[configId]/route.ts",
     "digest": "74afcb54164f7209b65b594531cd4de561373612975e7aedf3a5cae4304e95a2"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/settings/route.ts",
-    "digest": "2300d08acb7fb21cac3b8e113c46564620c830c556bf582c3b00bdffada5a9c7"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/slides/[slideId]/route.ts",
@@ -7820,14 +7408,6 @@
     "digest": "4bd965ed361cf5d1f6429fd0562931c80875654b2b524aab5126c69dad154146"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/export-links/route.ts",
-    "digest": "906072d10b2d028eeba8dc028cc151f398fd1b6cbb721bb02a90fcfedacce99f"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/export/[token]/[...assetPath]/route.ts",
-    "digest": "264311301f494b81d637d77818ff9058e74eee21cca91cdf2af9afc7f91fbde6"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/finalize-upload/route.ts",
     "digest": "1a45f44d22aba64bbad8855d297f340f42e531b380f10feca83c8061353a6e4b"
   },
@@ -7841,7 +7421,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/object/route.ts",
-    "digest": "19d01e7a183b908301ff1e319ee79e743be90bf498d4ee60d2bd5d81f728deb4"
+    "digest": "3d6ee02cfef63a5933a45a5159e1f82d2bf2705cf989f3e059f352e300f02a68"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/rename/route.ts",
@@ -7849,7 +7429,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts",
-    "digest": "7cb921415e4f2710734206c576cd179637a59fc31f0bf2482fab2d924108eb7e"
+    "digest": "892e7260a92ba341b5ca5f15faeddd46a9175fe205e67036551af840c7d2aa22"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload/route.ts",
@@ -7857,7 +7437,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/route.ts",
-    "digest": "8533cc88599fc0ca7fb3ee2dcda331370e3e501fac1c58c687220a3e244dd600"
+    "digest": "ca4102f392bf87262fff93b690dba0fd118261a9f1258b3a8c9bfba43178f580"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/[templateId]/shares/route.ts",
@@ -7865,7 +7445,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/templates/route.ts",
-    "digest": "78e4b3ba55c326631945ce73f171f6107b0f8f1628852b707b1d2da29809adb2"
+    "digest": "43322e70d45dbd3e6aae9e755d2337d50a09d744f7531a0916a7de67dfb6f9a2"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracker/stats/route.ts",
@@ -7913,7 +7493,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/requests/[id]/comments/route.ts",
-    "digest": "233b27a83e0aacd3fb6094813b1109d3f0cc29b9a8ab81384ac33f95f4e1dec9"
+    "digest": "afa9be3285e0448de4fd5946e5b08ce259c9f4771a36d06b75b923da0fd6c4ef"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/breaks/active/route.ts",
@@ -7949,11 +7529,11 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/attachments/upload/route.ts",
-    "digest": "9241b308bd62d84fce664519c4f00925586739af7988314947afa605c2ad907f"
+    "digest": "f6ebed0d5182ced967fdb96e85aad4048887cdb840c5e0e65ca6c3b43bf84cf3"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/contacts/[contactId]/route.ts",
-    "digest": "1846bd6b8865921df2ea5c9eb19568354d3c7a53876ad7cc8076f40cc177e41c"
+    "digest": "dd74feaebe3f6575675a87295d11690c7f7dc80bab65e04cee6005a5c16b4142"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/contacts/[contactId]/verify/route.ts",
@@ -7961,7 +7541,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/contacts/route.ts",
-    "digest": "7d048d1d6e96831932263e2e3abe8c886acb6c8b351f310501a963d4cba582c8"
+    "digest": "67759d8ea65c245bc782bb1104b414e88de6113734d7d6dcc7d223ab20fbfc68"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/import/route.ts",
@@ -8069,7 +7649,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/[userId]/user-groups/route.ts",
-    "digest": "c84dcbfa17ba85f7d5ff7a1c9c91fdae94ffd7b4a0a047f54747a7dfe50398d9"
+    "digest": "0a487e97d5f8425f7728357e58a2dc1d35ed4fe5ebd13b2c6e4f8bf6a963d2e3"
   },
   {
     "file": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/users/bulk-import/route.ts",
@@ -8160,20 +7740,12 @@
     "digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/decline-invite/route.ts",
-    "digest": "2e09ae0ee379cf94cc509c6eea5d70b3c70c6a540bb4393c59a12fe9b32c3b5e"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/invite-links/[linkId]/route.ts",
     "digest": "13865c66e6382cf99b936e799d7fcaf9152249a29a8d3f3aab53d9f0f5f95bc5"
   },
   {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/invite-links/route.ts",
     "digest": "8f1a2aff6615340c4490c94d278ab04faa210c495c9939f603af7a1c67811efd"
-  },
-  {
-    "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/invite-status/route.ts",
-    "digest": "f337dd716778f46dd79eea471f755eca815de7ac1ebd3bb899a7383647a0f1a1"
   },
   {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/members/enhanced/route.ts",
@@ -8184,16 +7756,12 @@
     "digest": "3967c80cc09b94e1f672d5a8c1d02f2ce1f0cef9b6e555dceacbf2931bee9fd0"
   },
   {
-    "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/members/route.ts",
-    "digest": "7abd2a6b1dbabb7ea32975a92ac8a5a7fb2759e0ec8c6470a462d1f42ebbcf2d"
-  },
-  {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/[secretId]/route.ts",
-    "digest": "9e4dfe7cc042e24eeded92ba851f3a4bb81d6fef1adeb5b6dcab63665d231d6d"
+    "digest": "ffbfbab1577592a579220db63927a641426835463af811a1c00fc79a843f41da"
   },
   {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/secrets/route.ts",
-    "digest": "236621a1db8a414a36890aa603f889a10b1096bf8c974540c1b1eac55c38429b"
+    "digest": "67c57bfd1a4bd5d40f17e5d47cc1025db8c56fc3bcada16ba590ca2dc45f495c"
   },
   {
     "file": "apps/web/src/legacy-api-routes/workspaces/[wsId]/tags/[tagId]/route.ts",

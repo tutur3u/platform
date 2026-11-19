@@ -56,19 +56,29 @@ function newFindings(entries, baseline) {
 }
 if (require.main === module) {
   try {
-    const root = process.cwd();
-    const baseline = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, 'security-route-baseline.json'),
-        'utf8'
-      )
-    );
-    const findings = newFindings(inventory(root), baseline);
-    if (process.argv[2])
-      fs.writeFileSync(
-        process.argv[2],
-        `${JSON.stringify({ findings }, null, 2)}\n`
+    const [output, ...extra] = process.argv.slice(2);
+    if (
+      extra.length ||
+      (output?.startsWith('--') && output !== '--write-baseline')
+    ) {
+      throw new Error(
+        'Usage: security-route-permissions.js [report-path | --write-baseline]'
       );
+    }
+    const baselinePath = path.join(__dirname, 'security-route-baseline.json');
+    const entries = inventory();
+    if (output === '--write-baseline') {
+      fs.writeFileSync(baselinePath, `${JSON.stringify(entries, null, 2)}\n`);
+      console.log(
+        `Route permission baseline: ${entries.length} entries written.`
+      );
+      return;
+    }
+    const baseline = JSON.parse(fs.readFileSync(baselinePath, 'utf8'));
+    const findings = newFindings(entries, baseline);
+    if (output) {
+      fs.writeFileSync(output, `${JSON.stringify({ findings }, null, 2)}\n`);
+    }
     for (const finding of findings)
       console.error(
         finding.file +
