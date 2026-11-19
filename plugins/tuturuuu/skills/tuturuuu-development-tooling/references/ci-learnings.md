@@ -37,3 +37,30 @@ The CodeQL analysis step took a median of 1,323.5 s across 24 successful jobs. K
 The prior sample's Root median queue and execution were 115 and 306 s. This sample measured 45 and 324 s. The samples overlap and use different recent-run quotas, so a matched-source comparison is still required to attribute any improvement. Six daily probes of one successful hosted unit shard showed three fully warm and three mixed Turbo task totals. Two days had no qualifying sample. Mark cold or warm only with explicit task-cache evidence.
 
 One of 179 failed job attempts recovered, and three attempts had a comparable retry. The recovered attempt failed fetching an npm package during strict Mintlify validation. Matching hosted image versions and exact job logs establish a setup recovery. The sample establishes zero fail-then-pass test assertions and supports no quarantine. Keep the original assertion and attempt identity when investigating a timeout. [Mintlify run](https://github.com/tutur3u/platform/actions/runs/44057985423)
+
+## 2026-11-19 | Daily CI sample
+
+Window 2026-11-18T17:43 to 2026-11-19T17:43 UTC, main branch: 1000 workflow runs (625 success, 136 cancelled, 96 queued, 54 failure, 38 pending, 36 skipped, 15 in_progress). Job timing covers 80 sampled runs; execution uses successful jobs only.
+
+| Slowest workflows (wall) | p50 / p90 (n) |
+| --- | ---: |
+| mobile | 42.7 min / 64.8 min (3) |
+| Teach Cloudflare Source | 42.6 min / 74.9 min (7) |
+| Nova Cloudflare Source | 41.3 min / 75.1 min (8) |
+| Chat Cloudflare Source | 40.0 min / 75.8 min (8) |
+| Forms Cloudflare Source | 38.8 min / 68.7 min (8) |
+| Apps Cloudflare Source | 38.4 min / 61.6 min (9) |
+
+| Slowest jobs (execution) | p50 / p90 (n) | queue p90 |
+| --- | ---: | ---: |
+| mobile / Mobile Tests (1) | 22.4 min / 24.0 min (2) | 2.1 min |
+| mobile / Mobile Tests (0) | 21.7 min / 23.9 min (2) | 2.8 min |
+| CodeQL Manual Fallback / Analyze (javascript-typescript) | 19.0 min / 20.8 min (3) | 64 s |
+| Finance Cloudflare Source / native-production / validate | 4.3 min / 4.3 min (1) | 7.1 min |
+| Public schema guard / contract | 3.3 min / 3.3 min (1) | 7.0 min |
+| Tutoring teacher hours foundation / contract | 3.2 min / 3.2 min (1) | 7.0 min |
+
+Longest queues (p90): Oxc Check / check-ci / Check CI Config 34.3 min; Coordination Cloudflare / check-ci / Check CI Config 31.1 min; Pay Cloudflare Source / check-ci / Check CI Config 28.8 min; Forms Cloudflare Source / check-ci / Check CI Config 26.7 min.
+Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
+
+Baseline before main coalescing (74ca3852f4). Workflow wall time was mostly queue: Cloudflare Source runs took 38-41 min p50 while their jobs executed in 2-7 min, and tiny Check CI Config jobs queued up to 30 min, because 26 workflows gave every main SHA its own group and each push to a shared package queued about five jobs in each of 23 Cloudflare Source workflows. 74ca3852f4 moves Cloudflare Source, docs/SEO, Test and Type Check to one shared main group without cancelling: the active run finishes and only the pending run is replaced. CodeQL (per-tip security baseline) and Oxc (job-level locks) keep per-SHA groups. Rollback condition: a promotion or release gate that needs evidence for an intermediate main SHA. Also fixed: the SDK portable closure test expected 28 sources after task-history joined (7a246d8107), and web Vitest pins apps/web/tsconfig.json (d69934ece9) because Oxc tsconfig discovery walks past tsconfig files that do not include a test and, in a worktree nested in another checkout, reached that checkout's unresolvable package configs. A changed web Vitest config runs the whole web suite in bun check:changed, which needs an owned Redis: wrap it with scripts/fleet-ci/with-redis.sh. Under host load, subprocess and crypto tests with fixed 0.4-7 s budgets time out on fleet Macs (sdk-qualification-phase, qualify-sdk-package, native-integrity-apple, agent-quota positional admission); they passed on hosted runners, so they stay unconfirmed flake candidates.
