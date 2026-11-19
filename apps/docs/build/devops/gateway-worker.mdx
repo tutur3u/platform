@@ -177,21 +177,22 @@ Provider deployment and cache operations belong to the release owner.
 
 ## Apps mounted at tuturuuu.com/&lt;app&gt;
 
-An app moved from `<app>.tuturuuu.com` to `tuturuuu.com/<app>` gets two zone
-routes on its own Worker: `tuturuuu.com/<app>` and `tuturuuu.com/<app>/*`. They
+An app can receive apex traffic through the gateway alone, or it can own zone
+routes directly. A direct mount can use two zone routes on its own Worker: `tuturuuu.com/<app>` and `tuturuuu.com/<app>/*`. They
 are more specific than the gateway's `tuturuuu.com/*`, so those requests never
 reach the gateway. One case slips through: a zone route cannot match the bare
 path once a query string is present, so `tuturuuu.com/<app>?x=1` would fall to
 the gateway and on to Web.
 
-For that case the gateway hands `/<app>` (any query) to the app's Worker
-through a service binding. An app that serves its nested paths through the
-gateway instead of its own `/<app>/*` zone route opts in explicitly:
+The gateway can cover that gap through a service binding or own the complete
+apex mount. Configure the paths the gateway should dispatch:
 
 - Add the exact mount to `GATEWAY_MOUNTED_PATHS` (comma-separated, e.g.
   `/learn,/tasks`). Add `/<app>/*` (e.g. `/learn,/learn/*`) only when the
   gateway should also hand that app its nested paths.
 - Bind the app Worker as `MOUNT_<SEGMENT>` (`MOUNT_LEARN`, `MOUNT_STORE`).
+  The deploy helper merges committed mount paths and services with live
+  configuration. A conflicting live service target fails the deploy.
 
 A service binding is not a same-zone subrequest, so the request reaches the
 Worker, not the Vercel origin. Only requests on `PUBLIC_HOST` mount, and
@@ -206,9 +207,38 @@ lookalikes (`/learning`), other hosts and unlisted or unbound paths keep going
 to `WEB_ORIGIN`. Regression coverage lives in
 `apps/gateway/src/worker-mount.test.ts`.
 
-**Rollback for one app:** remove its two zone routes and its
-`GATEWAY_MOUNTED_PATHS` entries. Its subdomain serves again. Mount dispatch
-precedes `GATEWAY_MODE`, so `passthrough` alone does not roll back a mount.
+### Roadmap query routing
+
+An exact `tuturuuu.com/roadmap` zone route excludes requests such as
+`/roadmap?x=1`. If they reach Web, Web's Roadmap proxy fetches the same apex URL
+again and hits the loop guard. The Roadmap route configuration uses
+`tuturuuu.com/roadmap*` to include those queries. Test the deployed Roadmap
+route and its lookalike pass-through before marking the query fix live. See
+the [Roadmap cutover packet](/build/devops/wave1-cutover-packets#roadmap).
+
+### One-action rollback for a gateway mount
+
+For a new mount, keep the existing apex route and subdomain routing in place.
+Admit both `/<app>` and `/<app>/*` in a single gateway version with its service
+binding. Capture the route inventory and verify that no more-specific zone
+route bypasses the gateway. Capture the active gateway version ID and prove
+that it still serves the current paths before deploying the new version.
+
+If activation changes only the gateway version, one rollback restores the
+previous dispatch and bindings across its existing route:
+
+```bash
+wrangler rollback <prior-gateway-version-id> --name tuturuuu-gateway \
+  --message "Restore gateway routing"
+```
+
+Rehearse this against the staging equivalents and verify the before, active
+and restored request paths. Independent DNS, zone routes and target Worker
+versions need separate changes, so keep them out of this activation. Mount
+dispatch precedes `GATEWAY_MODE`. Pause gateway releases during the watch so a
+rollback cannot discard another gateway change. If a rollout is reverted,
+hold future gateway deploys until the mount configuration reflects that
+decision.
 
 ## Web route families
 

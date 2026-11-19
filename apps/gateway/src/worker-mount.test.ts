@@ -188,6 +188,39 @@ describe('mounted app ingress', () => {
   });
 });
 
+it('switches an entire apex mount through a single gateway version', async () => {
+  const web = vi.fn(async () => new Response('web'));
+  vi.stubGlobal('fetch', web);
+  const mounted = vi.fn(async (request: Request) => new Response(request.url));
+  const { handle } = handler();
+  const active = {
+    ...ENV,
+    GATEWAY_MOUNTED_PATHS: '/tools,/tools/*',
+    MOUNT_TOOLS: { fetch: mounted },
+  } as unknown as Env;
+
+  const paths = ['/tools', '/tools?x=1&x=%20', '/tools/qr-generator?x=1'];
+  for (const path of paths) {
+    const url = `https://tuturuuu.com${path}`;
+    const routed = await handle(new Request(url), active);
+    expect(routed.headers.get('x-gateway-cache')).toBe('MOUNT');
+    expect(await routed.text()).toBe(url);
+
+    const restored = await handle(new Request(url), ENV);
+    expect(await restored.text()).toBe('web');
+  }
+
+  for (const url of [
+    'https://tools.tuturuuu.com/',
+    'https://tuturuuu.com/toolshed',
+    'https://tuturuuu.com/products/tools',
+  ]) {
+    expect(await (await handle(new Request(url), active)).text()).toBe('web');
+  }
+  expect(mounted).toHaveBeenCalledTimes(paths.length);
+  expect(web).toHaveBeenCalledTimes(paths.length + 3);
+});
+
 describe('mount admission', () => {
   function mindEnv(paths: string, extra: Partial<Env> = {}) {
     const fetch = vi.fn(async (request: Request) => new Response(request.url));

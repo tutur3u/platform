@@ -212,6 +212,7 @@ jobs:
           node-version: 24
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/gateway test
+      - run: node --test scripts/ci/gateway-deploy-config.test.mjs
       - name: Capture the live gateway settings
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}

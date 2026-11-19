@@ -5,15 +5,18 @@ import { fileURLToPath } from 'node:url';
 // Deploy config for the tuturuuu.com gateway (apps/gateway) built from the
 // committed wrangler.jsonc and the live Worker settings, so a CI deploy keeps
 // what operators set on the live Worker:
-// - plain-text vars: live values win over committed defaults, except the
-//   family flag this deploy sets. Both origin overrides must match live.
-// - service bindings: live bindings are kept; every flagged web family gets
-//   WEB_FAMILY_<ID> -> tuturuuu-web-<id>;
+// - plain-text vars: live values win over committed defaults, except mount
+//   paths are merged and the family flag is set by the deploy. Both origin
+//   overrides must match live.
+// - service bindings: keep live and committed bindings and add flagged web
+//   families;
 // - secrets: not written here; a version upload inherits them.
 // Any other live binding type stops the deploy instead of being dropped.
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const ORIGIN_NAMES = ['WEB_ORIGIN', 'MARKETING_ORIGIN'];
+const MOUNT_PATHS = 'GATEWAY_MOUNTED_PATHS';
+const MOUNT_PATH_PATTERN = /^\/([a-z][a-z0-9-]*)(?:\/\*)?$/u;
 const FORBIDDEN_NAMES = ['GATEWAY_ACCEPTANCE_HOST', 'VERCEL_PROTECTION_BYPASS'];
 const KEPT_TYPES = new Set(['plain_text', 'secret_text', 'service']);
 
@@ -85,33 +88,67 @@ function checkForbiddenNames(base, liveBindings, env) {
 
 /**
  * @param {object} base committed apps/gateway/wrangler.jsonc
- * @param {Array<{type: string, name: string, text?: string, service?: string}>} liveBindings
+ * @param {Array<{type: string, name: string, text?: string, service?: string, environment?: string, entrypoint?: string}>} liveBindings
  * @param {{families: Array<{id: string, enabled: boolean, worker: string}>}} families
  * @param {Record<string, string | undefined>} env
  */
 export function deployConfig(base, liveBindings, families, env) {
   checkForbiddenNames(base, liveBindings, env);
   const vars = { ...base.vars };
-  const services = new Map();
+  const services = new Map(
+    (base.services ?? []).map((service) => [service.binding, service])
+  );
+  const committedMounts = parseFlagged(base.vars?.[MOUNT_PATHS]);
+  for (const path of committedMounts) {
+    const segment = MOUNT_PATH_PATTERN.exec(path)?.[1];
+    if (!segment || segment === 'api') {
+      throw new Error(`Invalid committed gateway mount path: ${path}`);
+    }
+    const binding = `MOUNT_${segment.toUpperCase().replaceAll('-', '_')}`;
+    if (!services.get(binding)?.service) {
+      throw new Error(`Committed gateway mount ${path} requires ${binding}`);
+    }
+  }
   for (const binding of liveBindings) {
     if (!KEPT_TYPES.has(binding.type)) {
       throw new Error(
         `Live gateway binding ${binding.name} has type ${binding.type}; add it to the deploy config before deploying from CI.`
       );
     }
-    if (binding.type === 'plain_text') vars[binding.name] = binding.text ?? '';
-    if (binding.type === 'service') services.set(binding.name, binding.service);
+    const { name, service, environment, entrypoint } = binding;
+    const committed = services.get(name);
+    if (
+      committed &&
+      (binding.type !== 'service' ||
+        committed.service !== service ||
+        committed.environment !== environment ||
+        committed.entrypoint !== entrypoint)
+    ) {
+      throw new Error(`Committed gateway service ${name} differs from live`);
+    }
+    if (binding.type === 'plain_text') vars[name] = binding.text ?? '';
+    if (binding.type === 'service') {
+      services.set(name, {
+        binding: name,
+        service,
+        ...(environment === undefined ? {} : { environment }),
+        ...(entrypoint === undefined ? {} : { entrypoint }),
+      });
+    }
   }
   const secrets = new Set(
     liveBindings.filter((b) => b.type === 'secret_text').map((b) => b.name)
   );
-  for (const name of [...ORIGIN_NAMES, 'GATEWAY_WEB_FAMILIES']) {
+  for (const name of [...ORIGIN_NAMES, 'GATEWAY_WEB_FAMILIES', MOUNT_PATHS]) {
     if (secrets.has(name)) {
       throw new Error(
         `${name} is a live gateway secret; delete it before deploying it as a variable.`
       );
     }
   }
+  vars[MOUNT_PATHS] = parseFlagged(
+    [...committedMounts, vars[MOUNT_PATHS]].join(',')
+  ).join(',');
   for (const name of ORIGIN_NAMES) {
     const origin = httpsOrigin(name, env[name]);
     const live = liveBindings.filter((binding) => binding.name === name);
@@ -139,16 +176,17 @@ export function deployConfig(base, liveBindings, families, env) {
         'GATEWAY_WEB_FAMILIES contains a family that is not activated'
       );
     }
-    services.set(familyBinding(id), family.worker);
+    const binding = familyBinding(id);
+    services.set(binding, { binding, service: family.worker });
   }
   vars.GATEWAY_WEB_FAMILIES = flagged.join(',');
   const { routes: _routes, ...rest } = base;
   return {
     ...rest,
     vars,
-    services: [...services]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([binding, service]) => ({ binding, service })),
+    services: [...services.values()].sort((a, b) =>
+      a.binding.localeCompare(b.binding)
+    ),
   };
 }
 

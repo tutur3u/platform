@@ -85,6 +85,82 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   ]);
 });
 
+const withTools = {
+  ...base,
+  vars: { ...base.vars, GATEWAY_MOUNTED_PATHS: '/tools,/tools/*' },
+  services: [{ binding: 'MOUNT_TOOLS', service: 'tuturuuu-tools' }],
+};
+
+test('admits committed mount paths and bindings alongside live ones', () => {
+  const config = deployConfig(
+    withTools,
+    [
+      ...liveOrigins,
+      {
+        type: 'plain_text',
+        name: 'GATEWAY_MOUNTED_PATHS',
+        text: '/tools,/learn/*',
+      },
+      { type: 'service', name: 'MOUNT_TOOLS', service: 'tuturuuu-tools' },
+      {
+        type: 'service',
+        name: 'MOUNT_LEARN',
+        service: 'tuturuuu-learn',
+        environment: 'private',
+        entrypoint: 'Mounted',
+      },
+    ],
+    families,
+    { ...env, GATEWAY_WEB_FAMILIES: '' }
+  );
+  assert.equal(config.vars.GATEWAY_MOUNTED_PATHS, '/tools,/tools/*,/learn/*');
+  assert.deepEqual(config.services, [
+    {
+      binding: 'MOUNT_LEARN',
+      service: 'tuturuuu-learn',
+      environment: 'private',
+      entrypoint: 'Mounted',
+    },
+    { binding: 'MOUNT_TOOLS', service: 'tuturuuu-tools' },
+  ]);
+});
+
+test('refuses to change a live service claimed by the committed config', () => {
+  assert.throws(
+    () =>
+      deployConfig(
+        withTools,
+        [
+          ...liveOrigins,
+          { type: 'service', name: 'MOUNT_TOOLS', service: 'other-worker' },
+        ],
+        families,
+        env
+      ),
+    { message: 'Committed gateway service MOUNT_TOOLS differs from live' }
+  );
+});
+
+test('refuses committed mounts without their paired binding or on the API path', () => {
+  assert.throws(
+    () => deployConfig({ ...withTools, services: [] }, live, families, env),
+    { message: 'Committed gateway mount /tools requires MOUNT_TOOLS' }
+  );
+  assert.throws(
+    () =>
+      deployConfig(
+        {
+          ...withTools,
+          vars: { ...base.vars, GATEWAY_MOUNTED_PATHS: '/api/*' },
+        },
+        live,
+        families,
+        env
+      ),
+    { message: 'Invalid committed gateway mount path: /api/*' }
+  );
+});
+
 test('the committed family table activates only public-docs', () => {
   assert.deepEqual(
     families.families
