@@ -7,6 +7,7 @@ import { DEFAULT_RANGE, type Range, RANGES } from '../../insights/series';
 import { timeToLive } from '../../insights/production';
 import { Tooltip } from '../info';
 import { type Lang, type Messages, SectionTitle } from '../shared';
+import { Segmented } from '../ds/segmented';
 import { Breakdown } from './breakdown';
 import { CommitPulse } from './commit-pulse';
 import { Delta } from './delta';
@@ -96,37 +97,29 @@ export function PulseSection({
             <p>{shown === 'commits' ? t.commits.scope : t.pulse.subtitle}</p>
           }
         />
-        {commits ? (
-          <fieldset className="segmented flow-switch">
-            <legend className="sr-only">{t.commits.flow}</legend>
-            {(['commits', 'prs'] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                aria-pressed={shown === option}
-                onClick={() => pickFlow(option)}
-              >
-                {option === 'commits'
-                  ? t.commits.flowCommits
-                  : t.commits.flowPrs}
-              </button>
-            ))}
-          </fieldset>
-        ) : null}
-        <fieldset className="segmented range-switch">
-          <legend className="sr-only">{t.pulse.range}</legend>
-          {RANGES.map((option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={range === option}
-              aria-label={`${fill(t.pulse.rangeOption, { n: option })}: ${fill(t.pulse.rangeName, { n: option })}`}
-              onClick={() => pick(option)}
-            >
-              {fill(t.pulse.rangeOption, { n: option })}
-            </button>
-          ))}
-        </fieldset>
+        <div className="flex flex-wrap gap-2">
+          {commits ? (
+            <Segmented
+              label={t.commits.flow}
+              value={shown}
+              onChange={pickFlow}
+              options={[
+                { value: 'commits', label: t.commits.flowCommits },
+                { value: 'prs', label: t.commits.flowPrs },
+              ]}
+            />
+          ) : null}
+          <Segmented
+            label={t.pulse.range}
+            value={String(range) as `${Range}`}
+            onChange={(next) => pick(Number(next) as Range)}
+            options={RANGES.map((option) => ({
+              value: String(option) as `${Range}`,
+              label: fill(t.pulse.rangeOption, { n: option }),
+              name: `${fill(t.pulse.rangeOption, { n: option })}: ${fill(t.pulse.rangeName, { n: option })}`,
+            }))}
+          />
+        </div>
       </header>
       {shown === 'commits' && commits ? (
         <CommitPulse
@@ -140,32 +133,6 @@ export function PulseSection({
       ) : (
         <div className="pulse-layout">
           <figure className="pulse-card">
-            <figcaption className="pulse-legend">
-              <Tooltip
-                id="tip-pulse-all"
-                tip={t.pulse.allScope}
-                className="key key-all"
-              >
-                <i aria-hidden />
-                <span className="tip-label">{t.pulse.all}</span>
-              </Tooltip>
-              <Tooltip
-                id="tip-pulse-tracked"
-                tip={t.pulse.trackedScope}
-                className="key key-tracked"
-              >
-                <i aria-hidden />
-                <span className="tip-label">{t.pulse.tracked}</span>
-              </Tooltip>
-              <span className="key key-prod">
-                <i aria-hidden />
-                {t.pulse.inProd}
-              </span>
-              <span className="key key-ma">
-                <i aria-hidden />
-                {t.pulse.average}
-              </span>
-            </figcaption>
             <PulseChart points={pulse.points} t={t} lang={lang} today={today} />
             <div className="pulse-notes">
               {pulse.lastDay ? (

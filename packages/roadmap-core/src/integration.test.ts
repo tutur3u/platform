@@ -90,36 +90,39 @@ test('split CSS keeps the UI scan exclusion at the repository components directo
   assert.ok(matches(css));
   assert.ok(!matches(css.replace('../../../packages/ui', '../../packages/ui')));
 });
-test('the four detail tabs retain their sections below either roadmap lead', () => {
+test('the five tabs hold their sections below the header', () => {
   const page = source('./pages/roadmap.tsx');
   /** The source of one panel in the page's `panels` object. */
   const panel = (s: string, tab: string, next: string | null) =>
     s.slice(
-      s.indexOf(`\n    ${tab}: (`),
-      next ? s.indexOf(`\n    ${next}: (`) : s.indexOf('\n  };')
+      s.indexOf(`\n    ${tab}: `),
+      next ? s.indexOf(`\n    ${next}: `) : s.indexOf('\n  };')
     );
   const placed = (s: string) => {
     const at = {
-      overview: panel(s, 'overview', 'progress'),
-      progress: panel(s, 'progress', 'activity'),
-      activity: panel(s, 'activity', 'infrastructure'),
-      infrastructure: panel(s, 'infrastructure', null),
+      overview: panel(s, 'overview', 'tracks'),
+      tracks: panel(s, 'tracks', 'activity'),
+      activity: panel(s, 'activity', 'releases'),
+      releases: panel(s, 'releases', 'stack'),
+      stack: panel(s, 'stack', null),
     };
     return (
-      ['<TrackGlance', '<ComingSoon', '<UpdatesTeaser'].every((c) =>
-        at.overview.includes(c)
+      ['<OverallBar', '<TrackGlance', '<ComingSoon', '<UpdatesTeaser'].every(
+        (c) => at.overview.includes(c)
       ) &&
-      ['<OverallBar', '<TracksSection', '<TimelineSection'].every((c) =>
-        at.progress.includes(c)
+      ['<TracksSection', '<TimelineSection'].every((c) =>
+        at.tracks.includes(c)
       ) &&
       [
         '<ShippedTile',
         '<PulseSection',
+        'activityExtras?.(view)',
         '<ProductionUpdates',
         '<PatchNotes',
       ].every((c) => at.activity.includes(c)) &&
-      ['<HostingSection', '<MigrationSection'].every((c) =>
-        at.infrastructure.includes(c)
+      at.releases.includes('<StoreReleases') &&
+      ['{stackLead}', '<HostingSection', '<MigrationSection'].every((c) =>
+        at.stack.includes(c)
       )
     );
   };
@@ -136,7 +139,7 @@ test('the four detail tabs retain their sections below either roadmap lead', () 
   const kpis = source('./components/insights/kpis.tsx');
   assert.match(
     page,
-    /renderLead\(view\)[\s\S]+<RoadmapTabs[\s\S]+panels=\{panels\}/
+    /renderHeader\(view\)[\s\S]+<RoadmapTabs[\s\S]+panels=\{panels\}/
   );
   assert.match(
     kpis,
@@ -171,9 +174,7 @@ test('the router location alone selects the tab; a click only navigates', () => 
   const tabs = source('./components/tabs.tsx');
   const derived = (s: string) =>
     s.includes('useRouterState({ select: (state) => state.location.hash })') &&
-    s.includes(
-      'const active = upgraded ? tabForFragment(hash, panelOf) : null;'
-    ) &&
+    s.includes('const active = tabForFragment(hash, panelOf);') &&
     !/useState<TabId|setActive|addEventListener\('hashchange'/.test(s);
   assert.ok(derived(tabs));
   // Broken variant: a click that also sets local state can drift from the
@@ -181,15 +182,18 @@ test('the router location alone selects the tab; a click only navigates', () => 
   assert.ok(
     !derived(
       tabs.replace(
-        'const active = upgraded',
-        'const [picked, setActive] = useState<TabId | null>(null);\n  const active = upgraded'
+        'const active = tabForFragment',
+        'const [picked, setActive] = useState<TabId | null>(null);\n  const active = tabForFragment'
       )
     )
   );
-  assert.ok(/event\.preventDefault\(\);\s*select\(tab, false\);/.test(tabs));
+  assert.match(tabs, /void navigate\(\{[^}]*hash: next,[^}]*\}\)/s);
   assert.ok(/hashScrollIntoView: false,/.test(tabs));
-  // Modified clicks (new tab, new window) keep the native link.
-  assert.ok(/event\.metaKey \|\|\s*event\.ctrlKey/.test(tabs));
+  assert.ok(/resetScroll: false,/.test(tabs));
+  // Modified clicks (new tab, new window) keep the native link: HashTabs
+  // intercepts a plain left click only (custom/hash-tabs.test.tsx).
+  const hashTabs = source('../../ui/src/components/ui/custom/hash-tabs.tsx');
+  assert.match(hashTabs, /event\.metaKey \|\|\s*event\.ctrlKey/);
   // A fragment naming a section in a hidden panel scrolls to it once shown.
   assert.ok(
     /document\.getElementById\(id\)\?\.scrollIntoView\(\{ block: 'start' \}\)/.test(
@@ -228,14 +232,14 @@ test('the compact lead labels the rendered source in a fixed slot', () => {
     source('./pages/roadmap.tsx'),
     /shown=\{shownState\('snapshot', data\.source\)\}/
   );
-  const pulse = source('../../../apps/roadmap/src/pulse/pulse-hero.tsx');
+  const pulse = source('../../../apps/roadmap/src/pulse/pulse-summary.tsx');
   assert.match(
     pulse,
     /snapshot\?\.productionSha \? \([\s\S]+?\{copy\.production\}[\s\S]+?\{copy\.productionUnknown\}/
   );
   assert.match(
     pulse,
-    /snapshot && !sampled && <span>\{copy\.snapshot\}<\/span>/
+    /snapshot && !sampled && \(\s*<Badge variant="secondary">\{copy\.snapshot\}<\/Badge>/
   );
   assert.match(pulse, /dateTime=\{snapshot\.generatedAt\}/);
   for (const t of [en, vi])

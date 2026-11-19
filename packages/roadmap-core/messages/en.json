@@ -51,6 +51,28 @@
       "approved": "Approved",
       "live": "Live",
       "rejected": "Rejected"
+    },
+    "nextBody": "Next release: {store}, {date}",
+    "noNext": "No release is scheduled.",
+    "open": "Preview {title}",
+    "devices": {
+      "iphone-6.9": "iPhone",
+      "mac": "Mac",
+      "phone": "Android phone",
+      "desktop": "Windows desktop"
+    },
+    "locales": {
+      "en": "English",
+      "vi": "Vietnamese"
+    },
+    "preview": {
+      "close": "Close preview",
+      "previous": "Previous screenshot",
+      "next": "Next screenshot",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "thumbnails": "All screenshots",
+      "counter": "{n} of {total}"
     }
   },
   "meta": {
@@ -130,7 +152,9 @@
     "unavailable": "Activity is unavailable.",
     "updated": "Updated {age} ago",
     "week": "7 days",
-    "weekly": "Commits on main this week"
+    "weekly": "Commits on main this week",
+    "commitOne": "{count} commit",
+    "commitMany": "{count} commits"
   },
   "commitSummary": {
     "title": "Commits on main",
@@ -143,9 +167,10 @@
   "tabs": {
     "label": "Roadmap sections",
     "overview": "Overview",
-    "progress": "Progress",
+    "tracks": "Tracks",
     "activity": "Activity",
-    "infrastructure": "Infrastructure"
+    "releases": "Releases",
+    "stack": "Tech stack"
   },
   "info": {
     "about": "About {title}",
@@ -344,7 +369,9 @@
     "minutes": "{n} min",
     "hours": "{n} h",
     "days": "{n} d",
-    "otherWork": "Internal, client and unscoped work"
+    "otherWork": "Internal, client and unscoped work",
+    "trackedWaiting": "Tracked, not in production yet",
+    "untracked": "Other merged PRs"
   },
   "commits": {
     "flow": "Count",
@@ -409,5 +436,9 @@
     "updates": "No production updates yet",
     "tracks": "No matching deliverables",
     "period": "Nothing merged"
+  },
+  "summary": {
+    "commitsWeek": "Commits to main this week",
+    "previous": "{count} last week"
   }
 }

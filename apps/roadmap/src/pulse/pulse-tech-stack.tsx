@@ -7,14 +7,28 @@ import {
   TARGET_TECH_STACK,
   type TechStack,
 } from '@tuturuuu/roadmap-core/tech-stack.ts';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Progress } from '@tuturuuu/ui/progress';
 
-const statusClass = {
-  cutOver: 'live',
-  candidate: 'in_progress',
-  held: 'waiting_for_merge',
-  paused: 'planned',
-  outside: 'planned',
-} satisfies Record<AppTechStack['status'], string>;
+const variant = {
+  cutOver: 'success',
+  candidate: 'warning',
+  held: 'secondary',
+  paused: 'outline',
+  outside: 'outline',
+} satisfies Record<
+  AppTechStack['status'],
+  'success' | 'warning' | 'secondary' | 'outline'
+>;
+
+const ORDER: Record<AppTechStack['status'], number> = {
+  cutOver: 0,
+  candidate: 1,
+  held: 2,
+  paused: 3,
+  outside: 4,
+};
 
 function StackDetails({
   copy,
@@ -44,6 +58,11 @@ function StackDetails({
   );
 }
 
+/**
+ * How far the move to TanStack Start on Cloudflare has come: one progress
+ * figure, then every app with its current stack and, where it has one, the
+ * target route.
+ */
 export function PulseTechStack({
   apps,
   lang,
@@ -57,63 +76,82 @@ export function PulseTechStack({
   const progress = copy.progress
     .replace('{done}', String(cutOver))
     .replace('{total}', String(total));
+  const sorted = [...apps].sort(
+    (a, b) =>
+      ORDER[a.status] - ORDER[b.status] ||
+      (APP_NAMES[a.id] ?? a.id).localeCompare(APP_NAMES[b.id] ?? b.id)
+  );
 
   return (
-    <section className="pulse-section" aria-labelledby="pulse-tech-stack-title">
-      <header className="pulse-section-head">
-        <h2 id="pulse-tech-stack-title">{copy.title}</h2>
-        <p>{copy.source}</p>
+    <section
+      className="grid gap-4"
+      aria-labelledby="pulse-tech-stack-title"
+      id="tech-stack"
+    >
+      <header className="grid gap-1.5">
+        <h2
+          id="pulse-tech-stack-title"
+          className="font-semibold text-xl tracking-tight"
+        >
+          {copy.title}
+        </h2>
+        <p className="text-muted-foreground text-sm">{copy.source}</p>
       </header>
       {total > 0 && (
-        <div className="pulse-product" data-product="roadmap">
-          <p>{progress}</p>
-          <div
-            className="pulse-progress"
-            role="progressbar"
-            aria-label={progress}
-            aria-valuenow={cutOver}
-            aria-valuemax={total}
-          >
-            {cutOver > 0 && (
-              <span data-progress="shipped" style={{ flexGrow: cutOver }} />
-            )}
-            {cutOver < total && <span style={{ flexGrow: total - cutOver }} />}
-          </div>
-        </div>
+        <Card>
+          <CardContent className="grid gap-3 p-4 sm:p-5">
+            <p className="font-medium">{progress}</p>
+            <Progress
+              aria-label={progress}
+              aria-valuenow={cutOver}
+              value={cutOver}
+              max={total}
+              className="h-2.5"
+              indicatorStyle={{
+                transform: `translateX(-${100 - (cutOver * 100) / total}%)`,
+              }}
+            />
+          </CardContent>
+        </Card>
       )}
       {apps.length > 0 ? (
-        <details className="pulse-product">
-          <summary>{copy.inventory}</summary>
-          <div className="pulse-products">
-            {apps.map(({ id, status, current, targetUrl }) => (
-              <article className="pulse-product" key={id}>
-                <header>
-                  <h3>{APP_NAMES[id] ?? id}</h3>
-                  <span className={`badge ${statusClass[status]}`}>
-                    {copy.status[status]}
-                  </span>
-                </header>
-                <dl>
-                  <dt className="pulse-quiet">{copy.current}</dt>
-                  <dd>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {sorted.map(({ id, status, current, targetUrl }) => (
+            <li key={id} className="min-w-0">
+              <Card className="h-full">
+                <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-2">
+                  <CardTitle
+                    role="heading"
+                    aria-level={3}
+                    className="truncate text-base"
+                  >
+                    {APP_NAMES[id] ?? id}
+                  </CardTitle>
+                  <Badge variant={variant[status]}>{copy.status[status]}</Badge>
+                </CardHeader>
+                <CardContent className="grid gap-2 p-4 pt-0 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs">
+                      {copy.current}
+                    </p>
                     <StackDetails copy={copy} stack={current} />
-                  </dd>
+                  </div>
                   {targetUrl && (
-                    <>
-                      <dt className="pulse-quiet">{copy.target}</dt>
-                      <dd>
-                        <StackDetails
-                          copy={copy}
-                          stack={{ ...TARGET_TECH_STACK, url: targetUrl }}
-                        />
-                      </dd>
-                    </>
+                    <div>
+                      <p className="text-muted-foreground text-xs">
+                        {copy.target}
+                      </p>
+                      <StackDetails
+                        copy={copy}
+                        stack={{ ...TARGET_TECH_STACK, url: targetUrl }}
+                      />
+                    </div>
                   )}
-                </dl>
-              </article>
-            ))}
-          </div>
-        </details>
+                </CardContent>
+              </Card>
+            </li>
+          ))}
+        </ul>
       ) : (
         <p>{copy.unavailable}</p>
       )}

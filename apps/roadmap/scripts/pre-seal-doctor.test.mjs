@@ -24,7 +24,6 @@ import {
 import { tabFailures, TABS } from './doctor-tabs.mjs';
 import '../../../scripts/ci/asset-smoke.test.mjs';
 import './canonical-smoke.test.mjs';
-import './tabs-selection.test.mjs';
 
 const LOGO = '/roadmap/assets/tuturuuu-logo-Abcd1234.png';
 const STATUSES = [
@@ -49,20 +48,21 @@ const INFO = `<ul class="legend">${STATUSES.map(
  * Progress panel.
  */
 const PANEL_BODY = {
-  overview:
-    '<h2 id="glance-title">Glance</h2><h2 id="latest-updates-title">Latest</h2>',
-  progress: `${INFO}<section class="section" id="tracks"></section><h2 id="timeline-title">Timeline</h2>`,
+  overview: `<h2 id="glance-title">Glance</h2>${INFO}<h2 id="latest-updates-title">Latest</h2>`,
+  tracks:
+    '<section class="section" id="tracks"></section><h2 id="timeline-title">Timeline</h2>',
   activity:
-    '<section class="section" id="pulse"></section><section class="section" id="updates"></section>',
-  infrastructure:
-    '<h2 id="hosting-title">Hosting</h2><h2 id="migration-title">Migration</h2>',
+    '<section class="section" id="pulse"></section><h2 id="pulse-products-title">Products</h2><h2 id="pulse-heat-title">Heat</h2><h2 id="pulse-train-title">Train</h2><section class="section" id="updates"></section>',
+  releases: '<section id="store-releases"></section>',
+  stack:
+    '<section id="tech-stack"></section><h2 id="hosting-title">Hosting</h2><h2 id="migration-title">Migration</h2>',
 };
-const TAB_HTML = `<div class="rm-tabs" id="sections"><nav class="rm-tabbar" aria-label="Roadmap sections"><div class="rm-tablist">${TABS.map(
-  (tab) =>
-    `<a id="tab-${tab}" class="rm-tab" href="#${tab}" data-tab="${tab}"><span>${tab}</span></a>`
-).join('')}</div></nav>${TABS.map(
+const TAB_HTML = `<div dir="ltr" data-slot="tabs" class="flex flex-col gap-2 rm-tabs" id="sections" tabindex="-1"><div role="tablist" aria-label="Roadmap sections" data-slot="tabs-list">${TABS.map(
   (tab, index) =>
-    `<section id="${tab}" class="rm-panel" data-panel="${tab}"${index ? '' : ' data-default=""'} aria-labelledby="tab-${tab}">${PANEL_BODY[tab]}</section>`
+    `<a href="#${tab}" role="tab" aria-selected="${index === 0}" aria-controls="${tab}" data-state="${index ? 'inactive' : 'active'}" id="tab-${tab}" data-slot="tabs-trigger"><span>${tab}</span></a>`
+).join('')}</div>${TABS.map(
+  (tab, index) =>
+    `<div data-state="${index ? 'inactive' : 'active'}" role="tabpanel" aria-labelledby="tab-${tab}" id="${tab}" tabindex="0" data-slot="tabs-content" class="rm-panel" data-panel="${tab}"${index ? '' : ' data-default=""'}>${PANEL_BODY[tab]}</div>`
 ).join('')}</div>`;
 const COMMIT = 'a'.repeat(40);
 
@@ -515,7 +515,7 @@ test('D79: statuses popover, (i) buttons and tooltips keep their server markup',
   );
 });
 
-test('all four tab panels are in the server HTML, with link tabs until hydration', () => {
+test('all five tab panels are in the server HTML, with link tabs until hydration', () => {
   const body = passing().canonical.body;
   assert.deepEqual(tabFailures(body), []);
   const fails = (html, text) => {
@@ -532,26 +532,26 @@ test('all four tab panels are in the server HTML, with link tabs until hydration
   };
   // Broken variants. A panel rendered only when selected (client-only).
   fails(
-    body.replace(/<section id="activity"[^]*?<\/section><\/section>/, ''),
+    body.replace(
+      /<div data-state="inactive" role="tabpanel"[^>]*id="activity"[^]*?<\/section><\/div>/,
+      ''
+    ),
     'panel activity is not in the server HTML'
   );
-  // A hidden or preselected panel in the server HTML.
-  fails(
-    body.replace('<section id="progress"', '<section hidden id="progress"'),
-    'panel progress is hidden or selected'
-  );
-  // Tab roles without the script that gives them keyboard behaviour.
+  // A hidden panel in the server HTML.
   fails(
     body.replace(
-      'class="rm-tab" href="#overview"',
-      'class="rm-tab" role="tab" href="#overview"'
+      'role="tabpanel" aria-labelledby="tab-tracks"',
+      'hidden role="tabpanel" aria-labelledby="tab-tracks"'
     ),
-    'tab overview has tab semantics before hydration'
+    'panel tracks is hidden'
   );
   // A tab that is a button (dead without JS) instead of a fragment link.
+  fails(body.replace('href="#stack"', ''), 'tab stack is not a link to #stack');
+  // A tab that does not control its panel.
   fails(
-    body.replace('href="#infrastructure"', ''),
-    'tab infrastructure is not a link to #infrastructure'
+    body.replace('aria-controls="releases"', 'aria-controls="x"'),
+    'tab releases does not control its panel'
   );
   // A section moved out of its tab (old #pulse links would miss it).
   fails(
@@ -564,14 +564,13 @@ test('all four tab panels are in the server HTML, with link tabs until hydration
     body.replace('data-default=""', ''),
     'panel overview has the wrong default'
   );
+  // The server must not claim a hydrated page.
   fails(
-    body
-      .replace(' data-active', '')
-      .replace(
-        'class="rm-tabs" id="sections"',
-        'class="rm-tabs" id="sections" data-active="overview"'
-      ),
-    'already selects a tab'
+    body.replace(
+      'class="flex flex-col gap-2 rm-tabs" id="sections"',
+      'class="flex flex-col gap-2 rm-tabs" id="sections" data-ready=""'
+    ),
+    'already marked hydrated'
   );
   assert.deepEqual(tabFailures('<main></main>'), [
     'the tabs root (#sections) is missing',

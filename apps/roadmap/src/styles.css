@@ -5,7 +5,6 @@
 @import "@tuturuuu/ui/globals.css";
 @import "@tuturuuu/marketing-shell/fonts.css";
 @import "@tuturuuu/roadmap-core/styles.css";
-@import "./pulse/pulse.css";
 
 /* The shared globals scan every UI component (and streamdown) for classes,
    which made this page ship ~350 KB of utilities it never uses. Scan only
@@ -19,3 +18,22 @@
 @source '../../../packages/ui/src/components/ui/accordion.tsx';
 @source '../../../packages/ui/src/components/ui/button.tsx';
 @source '../../../packages/ui/src/components/ui/custom/theme-toggle.tsx';
+/* The design-system surfaces of the redesigned page: its own components and
+   the shared primitives they compose. */
+@source '../../../packages/roadmap-core/src/components/ds';
+@source '../../../packages/roadmap-core/src/components/store-releases.tsx';
+@source '../../../packages/roadmap-core/src/components/insights/pulse-chart.tsx';
+@source '../../../packages/ui/src/components/ui/tabs.tsx';
+@source '../../../packages/ui/src/components/ui/dialog.tsx';
+@source '../../../packages/ui/src/components/ui/badge.tsx';
+@source '../../../packages/ui/src/components/ui/card.tsx';
+@source '../../../packages/ui/src/components/ui/skeleton.tsx';
+@source '../../../packages/ui/src/components/ui/toggle.tsx';
+@source '../../../packages/ui/src/components/ui/toggle-group.tsx';
+@source '../../../packages/ui/src/components/ui/progress.tsx';
+@source '../../../packages/ui/src/components/ui/chart.tsx';
+@source '../../../packages/ui/src/components/ui/chart-bars.tsx';
+@source '../../../packages/ui/src/components/ui/chart-heatmap.tsx';
+@source '../../../packages/ui/src/components/ui/custom/hash-tabs.tsx';
+@source '../../../packages/ui/src/components/ui/custom/media-preview-dialog.tsx';
+@source '../../../packages/ui/src/components/ui/custom/media-preview-stage.tsx';

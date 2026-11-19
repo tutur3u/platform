@@ -44,16 +44,24 @@ import {
 } from '../components/insights/updates';
 import { NotesEmpty, PatchNotes } from '../components/insights/patch-notes';
 import { shownState } from '../components/live-label';
+import { StoreReleases } from '../components/store-releases';
 import { RoadmapTabs, skipToTabs } from '../components/tabs';
 
 export function RoadmapPage({
   lang,
   observation,
-  renderLead,
+  renderHeader,
+  activityExtras,
+  stackLead,
 }: {
   lang: Lang;
   observation?: { live: LiveData; commits: CommitWindow } | null;
-  renderLead?: (view: RoadmapView) => ReactNode;
+  /** Replaces the default hero above the tabs. */
+  renderHeader?: (view: RoadmapView) => ReactNode;
+  /** Charts shown in the Activity tab between the pulse and the updates. */
+  activityExtras?: (view: RoadmapView) => ReactNode;
+  /** Leads the Tech stack tab, above hosting and the move to tuturuuu.com. */
+  stackLead?: ReactNode;
 }) {
   const navigate = useNavigate();
   const setLang = useCallback(
@@ -78,7 +86,7 @@ export function RoadmapPage({
 
   return (
     <div
-      className={renderLead ? 'roadmap roadmap-pulse' : 'roadmap'}
+      className="roadmap"
       lang={lang}
       data-source-sha={__ROADMAP_BUILD_SHA__}
       data-nav-compact={navCompact ? '' : undefined}
@@ -107,7 +115,9 @@ export function RoadmapPage({
           now={Date.parse(data.generatedAt)}
           commits={scheduled ? observation.commits : undefined}
           onDock={onDock}
-          renderLead={renderLead}
+          renderHeader={renderHeader}
+          activityExtras={activityExtras}
+          stackLead={stackLead}
         />
       </MarketingShell>
     </div>
@@ -129,7 +139,9 @@ const RoadmapMain = memo(function RoadmapMain({
   now,
   commits,
   onDock,
-  renderLead,
+  renderHeader,
+  activityExtras,
+  stackLead,
 }: {
   t: typeof en;
   lang: Lang;
@@ -137,7 +149,9 @@ const RoadmapMain = memo(function RoadmapMain({
   now: number;
   commits?: CommitWindow;
   onDock: (docked: boolean) => void;
-  renderLead?: (view: RoadmapView) => ReactNode;
+  renderHeader?: (view: RoadmapView) => ReactNode;
+  activityExtras?: (view: RoadmapView) => ReactNode;
+  stackLead?: ReactNode;
 }) {
   const view = useMemo(
     () => buildView(data, now, undefined, BUILD_HOSTING),
@@ -154,6 +168,7 @@ const RoadmapMain = memo(function RoadmapMain({
   const panels = {
     overview: (
       <>
+        <OverallBar totals={view.totals} t={t} />
         <TrackGlance t={t} view={view} />
         <ComingSoon t={t} lang={lang} />
         <Suspense>
@@ -161,9 +176,8 @@ const RoadmapMain = memo(function RoadmapMain({
         </Suspense>
       </>
     ),
-    progress: (
+    tracks: (
       <>
-        <OverallBar totals={view.totals} t={t} />
         <TracksSection t={t} lang={lang} view={view} onDock={onDock} />
         <Suspense>
           <TimelineSection
@@ -200,6 +214,7 @@ const RoadmapMain = memo(function RoadmapMain({
             now={now}
           />
         </Suspense>
+        {activityExtras?.(view)}
         <Suspense>
           <div
             className={`catchup${changelog?.releases.length ? '' : ' catchup-single'}`}
@@ -211,23 +226,27 @@ const RoadmapMain = memo(function RoadmapMain({
         </Suspense>
       </>
     ),
-    infrastructure: (
-      <Suspense>
-        <HostingSection
-          t={t}
-          lang={lang}
-          view={view}
-          main={data.main}
-          hosting={BUILD_HOSTING}
-        />
-        <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
-      </Suspense>
+    releases: <StoreReleases lang={lang} t={t.storeReleases} now={now} />,
+    stack: (
+      <>
+        {stackLead}
+        <Suspense>
+          <HostingSection
+            t={t}
+            lang={lang}
+            view={view}
+            main={data.main}
+            hosting={BUILD_HOSTING}
+          />
+          <MigrationSection t={t} lang={lang} hosting={BUILD_HOSTING} />
+        </Suspense>
+      </>
     ),
   };
   return (
     <main className="page rm-page">
-      {renderLead ? (
-        renderLead(view)
+      {renderHeader ? (
+        renderHeader(view)
       ) : (
         <>
           <Hero

@@ -165,41 +165,26 @@ describe('a11y: workshop pages keep the navbar controls', () => {
   });
 });
 
-describe('a11y: roadmap tabs (WAI-ARIA tabs once hydrated)', () => {
-  const tabs = readFileSync(
-    new URL('./components/tabs.tsx', import.meta.url),
-    'utf8'
-  );
+describe('a11y: roadmap tabs (the shared Tabs, WAI-ARIA tabs pattern)', () => {
+  const read = (file: string) =>
+    readFileSync(new URL(file, import.meta.url), 'utf8');
+  const tabs = read('./components/tabs.tsx');
+  const hashTabs = read('../../ui/src/components/ui/custom/hash-tabs.tsx');
+  const uiTabs = read('../../ui/src/components/ui/tabs.tsx');
   const css = readStyles();
-  /** Tab semantics appear only with the script that implements them. */
-  const gated = (source: string) =>
-    [
-      "role={upgraded ? 'tablist' : undefined}",
-      "role={upgraded ? 'tab' : undefined}",
-      'aria-selected={upgraded ? selected : undefined}',
-      'aria-controls={upgraded ? tab : undefined}',
-      'tabIndex={upgraded ? (selected ? 0 : -1) : undefined}',
-      "role={upgraded ? 'tabpanel' : undefined}",
-      'aria-labelledby={`tab-${tab}`}',
-    ].every((needle) => source.includes(needle));
 
-  it('roles, selection, controls and a roving tabindex follow hydration', () => {
-    assert.equal(gated(tabs), true);
-    // Broken variant: tab roles in the server HTML promise arrow keys that
-    // do nothing until the page hydrates.
-    assert.equal(
-      gated(tabs.replace("role={upgraded ? 'tab' : undefined}", 'role="tab"')),
-      false
+  it('is the design system Tabs, so roles, selection and arrow keys come from it', () => {
+    assert.match(tabs, /from '@tuturuuu\/ui\/custom\/hash-tabs'/);
+    assert.match(hashTabs, /from '\.\.\/tabs'/);
+    assert.match(uiTabs, /@radix-ui\/react-tabs/);
+    // Each trigger names its panel and each panel its trigger.
+    assert.match(hashTabs, /aria-controls=\{id\}/);
+    assert.match(hashTabs, /aria-labelledby=\{`tab-\$\{id\}`\}/);
+    // Broken variant: a roadmap-local tab list would bypass the shared one.
+    assert.doesNotMatch(
+      tabs.replace("'@tuturuuu/ui/custom/hash-tabs'", "'./local-tabs'"),
+      /@tuturuuu\/ui\/custom\/hash-tabs/
     );
-  });
-
-  it('arrow keys, Home and End move focus and selection', () => {
-    assert.match(tabs, /const next = tabForKey\(event\.key, active\);/);
-    assert.match(
-      tabs,
-      /querySelector<HTMLElement>\(`#tab-\$\{next\}`\)\?\.focus\(\)/
-    );
-    assert.match(tabs, /event\.key === ' '/);
   });
 
   /** Declarations of the rule whose whole selector is `selector`. */
@@ -209,22 +194,23 @@ describe('a11y: roadmap tabs (WAI-ARIA tabs once hydrated)', () => {
     ].find((match) => (match[1] ?? '').trim() === selector)?.[2] ?? '';
 
   it('tabs are 44px tap targets with a visible focus ring', () => {
-    const tab = rule(css, '.rm-tab');
-    assert.ok(Number(/min-height:\s*(\d+)px/.exec(tab)?.[1]) >= 44, tab);
-    const focus = rule(css, '.rm-tab:focus-visible');
-    assert.ok(focus, 'a focus-visible rule for tabs');
-    assert.doesNotMatch(focus, /outline:\s*(none|0)/);
-    // Broken variant: a 36px tab is below the target size on phones.
-    assert.equal(
-      Number(/min-height:\s*(\d+)px/.exec('min-height: 36px')?.[1]) >= 44,
-      false
-    );
+    assert.match(tabs, /listClassName="h-11"/);
+    // The trigger keeps the shared look and gains a 44px hit area.
+    const hit =
+      /\[data-slot="tabs-trigger"\]::after,[^{]*\{([^}]*)\}/.exec(css)?.[1] ??
+      '';
+    assert.match(hit, /position:\s*absolute/);
+    assert.match(hit, /min\(0px, calc\(50% - 22px\)\)/);
+    assert.match(uiTabs, /focus-visible:ring-4/);
+    assert.doesNotMatch(uiTabs, /outline-none|focus:outline-none/);
+    // Broken variant: a 36px list is below the target size on phones.
+    assert.equal(/h-11/.test(tabs.replace('h-11', 'h-9')), false);
   });
 
-  it('the tab bar scrolls itself on phones, never the page', () => {
-    const list = rule(css, '.rm-tablist');
-    assert.match(list, /overflow-x:\s*auto/);
-    assert.match(list, /min-width:\s*0/);
-    assert.match(rule(css, '.rm-tab'), /white-space:\s*nowrap/);
+  it('the tab list scrolls itself on phones, never the page', () => {
+    assert.match(hashTabs, /w-full justify-start overflow-x-auto/);
+    const list = rule(css, '.rm-tabs > [data-slot="tabs-list"]');
+    assert.match(list, /max-width:\s*100%/);
+    assert.match(uiTabs, /whitespace-nowrap/);
   });
 });

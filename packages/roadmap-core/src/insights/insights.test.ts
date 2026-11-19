@@ -12,7 +12,6 @@ import {
   parseActivity,
   type ActivitySnapshot,
 } from './activity.ts';
-import { axisRank, dayAt, nextIndex, niceMax } from './chart-nav.ts';
 import { allMerged, buildPulse } from './pulse-model.ts';
 import { productionUpdates, timeToLive, waitingAge } from './production.ts';
 import { change, dayKeys, movingAverage, quantile, RANGES } from './series.ts';
@@ -574,68 +573,42 @@ describe('patch notes', async () => {
   });
 });
 
-describe('chart keyboard navigation', () => {
-  it('moves with arrows, Home, End and page keys, clamped', () => {
-    assert.equal(nextIndex('ArrowRight', 3, 14), 4);
-    assert.equal(nextIndex('ArrowLeft', 3, 14), 2);
-    assert.equal(nextIndex('ArrowLeft', 0, 14), 0);
-    assert.equal(nextIndex('ArrowRight', 13, 14), 13);
-    assert.equal(nextIndex('Home', 9, 14), 0);
-    assert.equal(nextIndex('End', 2, 14), 13);
-    assert.equal(nextIndex('PageUp', 10, 14), 13);
-    assert.equal(nextIndex('PageDown', 3, 14), 0);
-    // Broken variant: other keys (Tab) leave the chart to the browser.
-    assert.equal(nextIndex('Tab', 3, 14), null);
-    assert.equal(nextIndex('a', 3, 14), null);
+describe('pulse chart: the shared chart components', () => {
+  const read = (file: string) =>
+    readFileSync(new URL(file, import.meta.url), 'utf8');
+
+  it('draws the pulse with the shared stacked bars, a tooltip and a data table', () => {
+    const chart = read('../components/insights/pulse-chart.tsx');
+    assert.match(chart, /<LazyChartBars/);
+    assert.match(chart, /\bstacked\b/);
+    assert.match(chart, /tooltipFooter=\{/);
+    assert.match(chart, /labelFormatter=\{/);
+    assert.match(chart, /<ChartTable/);
+    // No hand-rolled pointer handling: the shared chart owns hover, focus
+    // and tap.
+    assert.doesNotMatch(chart, /onPointer(Down|Move|Up)=/);
   });
 
-  it('uses a roving tabindex, a polite live region and a data table', () => {
-    const chart = readFileSync(
-      new URL('../components/insights/pulse-chart.tsx', import.meta.url),
-      'utf8'
+  it('keeps the chart library out of the first bundle', () => {
+    const lazy = read('../components/ds/lazy-chart.tsx');
+    assert.match(lazy, /import\('@tuturuuu\/ui\/chart-bars'\)/);
+    assert.match(lazy, /import\('@tuturuuu\/ui\/chart-heatmap'\)/);
+    assert.match(lazy, /new IntersectionObserver/);
+    // A static import of a chart module anywhere else would pull Recharts
+    // into the entry chunk; only type imports are allowed.
+    const staticChart =
+      /^import (?!type)[^;]*from '@tuturuuu\/ui\/chart(-bars|-heatmap)?';/m;
+    for (const file of [
+      '../components/ds/chart-card.tsx',
+      '../components/insights/pulse-chart.tsx',
+      '../../../../apps/roadmap/src/pulse/pulse-products.tsx',
+      '../../../../apps/roadmap/src/pulse/pulse-activity.tsx',
+    ])
+      assert.doesNotMatch(read(file), staticChart, file);
+    assert.match(
+      "import { ChartBars } from '@tuturuuu/ui/chart-bars';",
+      staticChart
     );
-    assert.match(chart, /tabIndex=\{index === roving \? 0 : -1\}/);
-    assert.match(chart, /role="status" aria-live="polite"/);
-    assert.match(chart, /<table className="sr-only">/);
-    assert.match(chart, /onPointerMove=\{onPointerMove\}/);
-    assert.ok(!chart.includes('<details'), 'no "show the numbers" disclosure');
-  });
-
-  it('is one pointer target: a tap or drag selects the day under it', () => {
-    // 14 days across a 290px plot that starts at x = 50.
-    assert.equal(dayAt(50, 50, 290, 14), 0);
-    assert.equal(dayAt(50 + 290 / 14 - 0.01, 50, 290, 14), 0);
-    assert.equal(dayAt(50 + 290 / 14 + 0.01, 50, 290, 14), 1);
-    assert.equal(dayAt(339.99, 50, 290, 14), 13);
-    // A drag past either edge keeps the first or last day.
-    assert.equal(dayAt(10, 50, 290, 14), 0);
-    assert.equal(dayAt(900, 50, 290, 14), 13);
-    assert.equal(dayAt(100, 50, 0, 14), 0);
-    // Broken variant: an unclamped index past the edge selects no day.
-    const unclamped = (x: number) => Math.floor(((x - 50) / 290) * 14);
-    assert.equal(unclamped(900) < 14, false);
-    // The surface takes the pointer; the day buttons keep keyboard and
-    // assistive-technology use and never take a pointer hit.
-    const chart = readFileSync(
-      new URL('../components/insights/pulse-chart.tsx', import.meta.url),
-      'utf8'
-    );
-    for (const handler of ['onPointerDown', 'onPointerUp', 'onPointerCancel'])
-      assert.match(chart, new RegExp(`${handler}=\\{${handler}\\}`));
-    assert.match(chart, /aria-label=\{longDay\(point\.day, lang\)\}/);
-    const css = readStyles();
-    assert.match(css, /\.pchart-hit \{[^}]*pointer-events: none;/);
-    assert.match(css, /\.pchart-hits \{[^}]*touch-action: pan-y;/);
-  });
-
-  it('labels the axis without crowding', () => {
-    assert.equal(axisRank(0, 14, 2), 0);
-    assert.equal(axisRank(13, 14, 2), 0);
-    assert.equal(axisRank(12, 14, 2), null); // would touch "Today"
-    assert.equal(axisRank(2, 14, 2), 1);
-    assert.equal(niceMax(3), 4);
-    assert.equal(niceMax(37), 50);
-    assert.equal(niceMax(120), 200);
   });
 });
 

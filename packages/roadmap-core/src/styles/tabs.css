@@ -1,14 +1,15 @@
-/* Tabs (src/components/tabs.tsx). Every panel is in the server HTML; the
-   URL fragment picks the visible one before any script runs:
-   - a fragment naming a panel (#progress), or any element inside one
+/* Tabs (components/tabs.tsx, @tuturuuu/ui HashTabs). Every panel is in the
+   server HTML; the URL fragment picks the visible one before any script
+   runs:
+   - a fragment naming a panel (#tracks), or any element inside one
      (#pulse, #track-cms), shows that panel;
    - otherwise Overview (data-default) shows.
-   Once hydrated, React sets data-active on the root and data-current on
-   the selected panel, and only that rule applies. Browsers without :has()
+   Once hydrated, the Tabs root carries data-ready and the selected panel
+   data-state="active", and only that rule applies. Browsers without :has()
    show every panel until then. */
 
 /* The roadmap page: a 16px gutter on phones, one spacing rhythm (tokens.css)
-   between the hero, the tab bar, the panels and the footer. */
+   between the summary, the tabs and the footer. */
 .rm-page {
   padding: 0 var(--rm-space-4) var(--rm-space-5);
   gap: var(--rm-space-6);
@@ -20,132 +21,64 @@
   scroll-margin-top: calc(var(--shell-nav-offset, 76px) + 16px);
 }
 /* The skip link's target takes focus only as a starting point: the tab
-   bar inside it shows the focus ring once a key moves on. */
+   list inside it shows the focus ring once a key moves on. */
 .rm-tabs:focus {
   outline: none;
 }
-@supports selector(:has(*)) {
-  .rm-tabs:not([data-active]):has(> .rm-panel:target, > .rm-panel :target)
-    > .rm-panel:not(:target):not(:has(:target)),
-  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
-    > .rm-panel:not([data-default]) {
-    display: none;
-  }
+.rm-tabs > [data-slot="tabs-list"] {
+  max-width: 100%;
+  scrollbar-width: none;
 }
-.rm-tabs[data-active] > .rm-panel:not([data-current]) {
+.rm-tabs > [data-slot="tabs-list"]::-webkit-scrollbar {
   display: none;
 }
 .rm-panel {
   display: grid;
+  align-content: start;
   gap: var(--rm-space-7);
   min-width: 0;
   border-radius: var(--rm-radius);
 }
-.rm-panel:focus-visible {
-  outline-offset: 8px;
-}
-
-/* The bar: one row of tabs on a hairline. On phones the four tabs share
-   the width, icon above label, so every tab is visible at 390px; the row
-   can still scroll sideways (never the page) if a label cannot fit. */
-.rm-tabbar {
-  min-width: 0;
-  border-bottom: 1px solid var(--rm-line);
-}
-.rm-tablist {
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-}
-.rm-tablist::-webkit-scrollbar {
+.rm-tabs[data-ready] > .rm-panel[data-state="inactive"] {
   display: none;
 }
-.rm-tab {
-  position: relative;
-  flex: 1 0 auto;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  min-height: 56px;
-  min-width: 64px;
-  padding: var(--rm-space-1) var(--rm-space-2) 6px;
-  border-radius: var(--rm-radius-sm) var(--rm-radius-sm) 0 0;
-  color: var(--rm-muted);
-  font-size: var(--rm-text-xs);
-  font-weight: 600;
-  text-decoration: none;
-  white-space: nowrap;
-}
-.rm-tab svg {
-  flex: none;
-}
-.rm-tab::after {
-  content: "";
-  position: absolute;
-  left: 10px;
-  right: 10px;
-  bottom: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: transparent;
-}
-/* Hover only where a pointer hovers: a tap must not leave a tab tinted. */
-@media (hover: hover) {
-  .rm-tab:hover {
-    color: var(--rm-ink);
-    background: var(--rm-soft);
-  }
-}
-/* The overflow container clips outer outlines, so the ring sits inside. */
-.rm-tab:focus-visible {
-  outline-offset: -2px;
-  border-radius: var(--rm-radius-sm) var(--rm-radius-sm) 0 0;
-}
-/* The selected tab: before hydration the fragment decides (as for the
-   panels above), after it aria-selected does. Same look either way, so
-   the upgrade changes nothing on screen. */
-.rm-tab[aria-selected="true"] {
-  color: var(--rm-ink);
-}
-.rm-tab[aria-selected="true"]::after {
-  background: var(--rm-ink);
-}
 @supports selector(:has(*)) {
-  .rm-tabs:not([data-active]):has(> #overview:target, > #overview :target)
-    .rm-tab[data-tab="overview"],
-  .rm-tabs:not([data-active]):has(> #progress:target, > #progress :target)
-    .rm-tab[data-tab="progress"],
-  .rm-tabs:not([data-active]):has(> #activity:target, > #activity :target)
-    .rm-tab[data-tab="activity"],
-  .rm-tabs:not([data-active]):has(
-      > #infrastructure:target,
-      > #infrastructure :target
-    )
-    .rm-tab[data-tab="infrastructure"],
-  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
-    .rm-tab[data-tab="overview"] {
-    color: var(--rm-ink);
+  .rm-tabs:not([data-ready]):has(> .rm-panel:target, > .rm-panel :target)
+    > .rm-panel:not(:target):not(:has(:target)),
+  .rm-tabs:not([data-ready]):not(:has(> .rm-panel:target, > .rm-panel :target))
+    > .rm-panel:not([data-default]) {
+    display: none;
   }
-  .rm-tabs:not([data-active]):has(> #overview:target, > #overview :target)
-    .rm-tab[data-tab="overview"]::after,
-  .rm-tabs:not([data-active]):has(> #progress:target, > #progress :target)
-    .rm-tab[data-tab="progress"]::after,
-  .rm-tabs:not([data-active]):has(> #activity:target, > #activity :target)
-    .rm-tab[data-tab="activity"]::after,
-  .rm-tabs:not([data-active]):has(
-      > #infrastructure:target,
-      > #infrastructure :target
-    )
-    .rm-tab[data-tab="infrastructure"]::after,
-  .rm-tabs:not([data-active]):not(:has(> .rm-panel:target, > .rm-panel :target))
-    .rm-tab[data-tab="overview"]::after {
-    background: var(--rm-ink);
+  /* The tab list shows the same selection before hydration: the default
+     tab's active look is lifted, and the tab the fragment names takes it. */
+  .rm-tabs:not([data-ready]):has(> .rm-panel:target, > .rm-panel :target)
+    > [data-slot="tabs-list"]
+    [data-state="active"] {
+    background: transparent;
+    color: var(--muted-foreground);
+    box-shadow: none;
   }
+  .rm-tabs:not([data-ready]):has(> #overview:target, > #overview :target)
+    #tab-overview,
+  .rm-tabs:not([data-ready]):has(> #tracks:target, > #tracks :target)
+    #tab-tracks,
+  .rm-tabs:not([data-ready]):has(> #activity:target, > #activity :target)
+    #tab-activity,
+  .rm-tabs:not([data-ready]):has(> #releases:target, > #releases :target)
+    #tab-releases,
+  .rm-tabs:not([data-ready]):has(> #stack:target, > #stack :target) #tab-stack {
+    background: var(--background);
+    color: var(--foreground);
+    box-shadow: 0 1px 2px
+      color-mix(in oklab, var(--foreground) 12%, transparent);
+  }
+}
+/* A panel takes focus when a fragment link lands on it, not from Tab: it
+   needs no ring of its own (its controls keep theirs). */
+.rm-panel:focus,
+.rm-panel:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 /* Hero: when the public data was read, and whether it is live. The state
@@ -258,14 +191,5 @@
   }
   .rm-panel {
     gap: var(--rm-space-8);
-  }
-  .rm-tab {
-    flex: none;
-    flex-direction: row;
-    gap: var(--rm-space-2);
-    min-height: 44px;
-    padding: 0 var(--rm-space-4);
-    font-size: var(--rm-text-md);
-    font-weight: 500;
   }
 }

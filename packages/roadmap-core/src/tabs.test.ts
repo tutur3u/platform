@@ -8,8 +8,8 @@ import {
   DEFAULT_TAB,
   fragmentId,
   TAB_IDS,
+  TAB_ALIASES,
   tabForFragment,
-  tabForKey,
 } from './components/tab-model.ts';
 import { shownState } from './components/live-label.ts';
 import { readStyles } from './style-source.ts';
@@ -17,14 +17,16 @@ import { readStyles } from './style-source.ts';
 /** Where old section anchors live now (the page's panels). */
 const OWNERS: Record<string, string> = {
   'glance-title': 'overview',
-  tracks: 'progress',
-  'track-cms': 'progress',
-  'timeline-title': 'progress',
+  tracks: 'tracks',
+  'track-cms': 'tracks',
+  'timeline-title': 'tracks',
   pulse: 'activity',
   updates: 'activity',
   'patch-notes': 'activity',
-  'hosting-title': 'infrastructure',
-  'migration-title': 'infrastructure',
+  'store-releases': 'releases',
+  'tech-stack': 'stack',
+  'hosting-title': 'stack',
+  'migration-title': 'stack',
 };
 const panelOf = (id: string) => OWNERS[id] ?? null;
 
@@ -32,9 +34,10 @@ describe('tabs: a fragment selects a tab', () => {
   it('a tab id selects itself; no fragment selects Overview', () => {
     assert.deepEqual(TAB_IDS, [
       'overview',
-      'progress',
+      'tracks',
       'activity',
-      'infrastructure',
+      'releases',
+      'stack',
     ]);
     assert.equal(DEFAULT_TAB, 'overview');
     for (const tab of TAB_IDS)
@@ -50,6 +53,21 @@ describe('tabs: a fragment selects a tab', () => {
     // #pulse (the hero's "PRs merged" link) to Overview, where it is hidden.
     const tabsOnly = (hash: string) => tabForFragment(hash, () => null);
     assert.notEqual(tabsOnly('#pulse'), 'activity');
+  });
+
+  it('links of the earlier layout keep landing on their tab', () => {
+    assert.deepEqual(TAB_ALIASES, {
+      progress: 'tracks',
+      infrastructure: 'stack',
+    });
+    assert.equal(
+      tabForFragment('#progress', () => null),
+      'tracks'
+    );
+    assert.equal(
+      tabForFragment('#infrastructure', () => null),
+      'stack'
+    );
   });
 
   it('anything else selects Overview: unknown, malformed or outside the panels', () => {
@@ -70,8 +88,8 @@ describe('tabs: a fragment selects a tab', () => {
   });
 
   it('the rule never reads the selection it replaces (a pure function)', () => {
-    // The history round trips run through the real component in
-    // scripts/tabs-selection.test.mjs; this pins the rule's signature.
+    // The history round trips run through HashTabs in packages/ui
+    // (custom/hash-tabs.test.tsx); this pins the rule's signature.
     assert.equal(tabForFragment.length, 2);
   });
 
@@ -79,20 +97,7 @@ describe('tabs: a fragment selects a tab', () => {
     assert.equal(fragmentId('#track-cms'), 'track-cms');
     assert.equal(fragmentId('#caf%C3%A9'), 'café');
     assert.equal(fragmentId('#100%'), '100%');
-    assert.equal(fragmentId('progress'), 'progress');
-  });
-});
-
-describe('tabs: roving focus keys (WAI-ARIA tabs)', () => {
-  it('arrows move and wrap; Home and End jump; other keys do nothing', () => {
-    assert.equal(tabForKey('ArrowRight', 'overview'), 'progress');
-    assert.equal(tabForKey('ArrowRight', 'infrastructure'), 'overview');
-    assert.equal(tabForKey('ArrowLeft', 'overview'), 'infrastructure');
-    assert.equal(tabForKey('ArrowLeft', 'activity'), 'progress');
-    assert.equal(tabForKey('Home', 'activity'), 'overview');
-    assert.equal(tabForKey('End', 'progress'), 'infrastructure');
-    for (const key of ['ArrowUp', 'ArrowDown', 'Tab', 'a', 'Enter'])
-      assert.equal(tabForKey(key, 'progress'), null, key);
+    assert.equal(fragmentId('tracks'), 'tracks');
   });
 });
 
@@ -108,7 +113,7 @@ describe('tabs: the right panel paints before any script', () => {
 
   it('the fragment, or Overview by default, picks the panel in CSS', () => {
     const rules = preHydration(css);
-    assert.match(rules, /\.rm-tabs:not\(\[data-active\]\)/);
+    assert.match(rules, /\.rm-tabs:not\(\[data-ready\]\)/);
     assert.match(rules, /:has\(> \.rm-panel:target, > \.rm-panel :target\)/);
     assert.match(rules, /\.rm-panel:not\(:target\):not\(:has\(:target\)\)/);
     assert.match(rules, /\.rm-panel:not\(\[data-default\]\)/);
@@ -121,17 +126,16 @@ describe('tabs: the right panel paints before any script', () => {
   it('after hydration only the selected panel shows', () => {
     assert.match(
       css,
-      /\.rm-tabs\[data-active\] > \.rm-panel:not\(\[data-current\]\) \{\s*display: none;\s*\}/
+      /\.rm-tabs\[data-ready\] > \.rm-panel\[data-state="inactive"\] \{\s*display: none;\s*\}/
     );
   });
 
-  it('the selected tab looks the same before and after hydration', () => {
-    const preTab = /\.rm-tab\[data-tab="(\w+)"\]::after/g;
-    const tabs = new Set([...css.matchAll(preTab)].map((m) => m[1]));
-    assert.deepEqual([...tabs].sort(), [...TAB_IDS].sort());
-    assert.match(
-      css,
-      /\.rm-tab\[aria-selected="true"\]::after \{\s*background: var\(--rm-ink\);/
+  it('the tab list shows the same selection before hydration', () => {
+    const pre = /> #(\w+):target, > #\w+ :target\)\s*#tab-(\w+)/g;
+    const tabs = new Set([...css.matchAll(pre)].map((m) => `${m[1]}:${m[2]}`));
+    assert.deepEqual(
+      [...tabs].sort(),
+      TAB_IDS.map((tab) => `${tab}:${tab}`).sort()
     );
   });
 });

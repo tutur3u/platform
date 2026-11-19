@@ -1,111 +1,56 @@
-import android from '../../../../apps/mobile/store/metadata/android.json';
-import ios from '../../../../apps/mobile/store/metadata/ios.json';
-import macos from '../../../../apps/mobile/store/metadata/macos.json';
-import windows from '../../../../apps/mobile/store/metadata/windows.json';
-import type en from '../../messages/en.json';
-import type { Lang } from './shared';
+import { CalendarClock } from '@tuturuuu/icons';
+import { nextRelease } from '../content/store-releases';
+import { StoreCard } from './ds/store-card';
+import { STORES } from './ds/store-data';
+import { fill } from './insights/format';
+import type { Lang, Messages } from './shared';
 
-const screenshotUrls = import.meta.glob<string>(
-  '../../../../apps/mobile/store/screenshots/{ios,macos,android,windows}/web/*.webp',
-  { eager: true, import: 'default', query: '?no-inline' }
-);
-
-const stores = [
-  ['iOS App Store', ios],
-  ['Mac App Store', macos],
-  ['Google Play', android],
-  ['Microsoft Store', windows],
-] as const;
-
-const dateFields = [
-  'targetSubmitDate',
-  'submittedAt',
-  'approvedAt',
-  'targetLiveDate',
-  'liveAt',
-] as const;
-
+/**
+ * Release status and listing screenshots for each store, under one line
+ * naming the next scheduled release.
+ */
 export function StoreReleases({
   lang,
   t,
+  now,
 }: {
   lang: Lang;
-  t: typeof en.storeReleases;
+  t: Messages['storeReleases'];
+  now: number;
 }) {
-  const statuses = new Map(Object.entries(t.statuses));
-  const dateFormat = new Intl.DateTimeFormat(lang, {
-    dateStyle: 'medium',
+  const next = nextRelease(STORES, now);
+  const date = new Intl.DateTimeFormat(lang, {
+    dateStyle: 'long',
     timeZone: 'Asia/Ho_Chi_Minh',
   });
-
   return (
     <section
-      className="rm-store-releases"
+      className="grid gap-4"
       id="store-releases"
       aria-labelledby="store-releases-title"
     >
-      <h2 id="store-releases-title">{t.heading}</h2>
-      {stores.map(([name, { release, listing, gallery }]) => {
-        const title = 'title' in listing ? listing.title : listing.name;
-        const description =
-          'fullDescription' in listing
-            ? listing.fullDescription
-            : listing.description;
-        const status = statuses.get(release.status) ?? t.pending;
-
-        return (
-          <article className="rm-store-release" key={name}>
-            <h3>{name}</h3>
-            <p>
-              {status} · {release.version} ({t.build} {release.build})
-            </p>
-            <dl>
-              {dateFields.map((field) => {
-                const date = release[field];
-                return (
-                  <div key={field}>
-                    <dt>{t.dates[field]}</dt>
-                    <dd>
-                      {date ? (
-                        <time dateTime={date}>
-                          {dateFormat.format(new Date(date))}
-                        </time>
-                      ) : (
-                        t.pending
-                      )}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-            <details>
-              <summary>
-                {t.listing} · {title[lang]}
-              </summary>
-              <p className="rm-store-description">{description[lang]}</p>
-            </details>
-            <ul className="rm-store-gallery" aria-label={t.screenshots}>
-              {gallery.map(({ file, width, height, alt }) => {
-                const url = screenshotUrls[`../../../../${file}`];
-                if (!url) return null;
-                return (
-                  <li key={file}>
-                    <a href={url}>
-                      <img
-                        src={url}
-                        alt={alt[lang]}
-                        width={width}
-                        height={height}
-                        loading="lazy"
-                      />
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </article>
-        );
-      })}
+      <header className="grid gap-1.5">
+        <h2
+          id="store-releases-title"
+          className="font-semibold text-xl tracking-tight"
+        >
+          {t.heading}
+        </h2>
+        <p className="flex items-center gap-2 text-muted-foreground text-sm">
+          <CalendarClock size={16} aria-hidden />
+          {next
+            ? fill(t.nextBody, {
+                store: next.store.name,
+                date: date.format(new Date(next.at)),
+              })
+            : t.noNext}
+        </p>
+      </header>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {STORES.map((store) => (
+          <StoreCard key={store.id} store={store} lang={lang} t={t} />
+        ))}
+      </div>
     </section>
   );
 }

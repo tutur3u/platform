@@ -51,6 +51,28 @@
       "approved": "Đã được duyệt",
       "live": "Đã phát hành",
       "rejected": "Bị từ chối"
+    },
+    "nextBody": "Bản phát hành tiếp theo: {store}, {date}",
+    "noNext": "Chưa có bản phát hành nào được lên lịch.",
+    "open": "Xem trước {title}",
+    "devices": {
+      "iphone-6.9": "iPhone",
+      "mac": "Mac",
+      "phone": "Điện thoại Android",
+      "desktop": "Máy tính Windows"
+    },
+    "locales": {
+      "en": "Tiếng Anh",
+      "vi": "Tiếng Việt"
+    },
+    "preview": {
+      "close": "Đóng xem trước",
+      "previous": "Ảnh chụp trước",
+      "next": "Ảnh chụp sau",
+      "zoomIn": "Phóng to",
+      "zoomOut": "Thu nhỏ",
+      "thumbnails": "Tất cả ảnh chụp màn hình",
+      "counter": "{n} trên {total}"
     }
   },
   "meta": {
@@ -130,7 +152,9 @@
     "unavailable": "Chưa có dữ liệu hoạt động.",
     "updated": "Cập nhật {age} trước",
     "week": "7 ngày",
-    "weekly": "Commit lên main tuần này"
+    "weekly": "Commit lên main tuần này",
+    "commitOne": "{count} commit",
+    "commitMany": "{count} commit"
   },
   "commitSummary": {
     "title": "Commit trên nhánh main",
@@ -143,9 +167,10 @@
   "tabs": {
     "label": "Các mục của lộ trình",
     "overview": "Tổng quan",
-    "progress": "Tiến độ",
+    "tracks": "Lộ trình",
     "activity": "Hoạt động",
-    "infrastructure": "Hạ tầng"
+    "releases": "Phát hành",
+    "stack": "Công nghệ"
   },
   "info": {
     "about": "Giải thích về {title}",
@@ -344,7 +369,9 @@
     "minutes": "{n} phút",
     "hours": "{n} giờ",
     "days": "{n} ngày",
-    "otherWork": "Việc nội bộ, dự án khách hàng và thay đổi chưa phân loại"
+    "otherWork": "Việc nội bộ, dự án khách hàng và thay đổi chưa phân loại",
+    "trackedWaiting": "Đã theo dõi, chưa lên production",
+    "untracked": "PR khác đã hợp nhất"
   },
   "commits": {
     "flow": "Đếm theo",
@@ -409,5 +436,9 @@
     "updates": "Chưa có cập nhật bản chính thức",
     "tracks": "Không có hạng mục phù hợp",
     "period": "Chưa có thay đổi"
+  },
+  "summary": {
+    "commitsWeek": "Commit vào nhánh chính tuần này",
+    "previous": "{count} tuần trước"
   }
 }

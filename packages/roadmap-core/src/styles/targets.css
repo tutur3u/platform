@@ -7,7 +7,8 @@
    On touch screens the period buttons also grow for real. The pulse chart
    is one pointer target (section-7.css). The only exceptions are inline
    targets (WCAG 2.5.8): PR numbers inside a metadata line and links in
-   running text. The browser self-test measures every control at 1440 (fine
+   running text, and the heatmap's cells (24px with 4px between them, which
+   meets 2.5.8's spacing rule; a dense grid cannot hold 44px cells). The browser self-test measures every control at 1440 (fine
    pointer) and 390 (coarse), docked and undocked. */
 .segmented button,
 .tip-btn,
@@ -39,6 +40,21 @@
 .segmented button {
   min-width: 44px;
 }
+/* The design-system tabs and segmented filters keep their shared look and
+   gain the same hit area. */
+[data-slot="tabs-trigger"],
+[data-slot="toggle-group-item"] {
+  position: relative;
+}
+[data-slot="tabs-trigger"]::after,
+[data-slot="toggle-group-item"]::after {
+  content: "";
+  position: absolute;
+  inset: min(0px, calc(50% - 22px)) 0;
+}
+[data-slot="toggle-group-item"] {
+  min-width: 44px;
+}
 .skip-link {
   display: inline-flex;
   align-items: center;
@@ -61,8 +77,7 @@
 /* Legend rows and the timeline footer: room for the 44px hit areas of
    stacked rows. */
 .legend,
-.rm-panel > .overall .legend,
-.pulse-legend {
+.rm-panel > .overall .legend {
   row-gap: 20px;
 }
 .period-group footer {

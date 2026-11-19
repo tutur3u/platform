@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { buildCommitPulse } from '../../insights/commit-pulse';
 import type { CommitWindow } from '../../insights/commits';
 import type { Range } from '../../insights/series';
-import { Tooltip } from '../info';
 import type { Lang, Messages } from '../shared';
 import { Breakdown } from './breakdown';
 import { Delta } from './delta';
@@ -49,24 +48,6 @@ export function CommitPulse({
   return (
     <div className="pulse-layout">
       <figure className="pulse-card">
-        <figcaption className="pulse-legend">
-          <Tooltip
-            id="tip-commits-scope"
-            tip={t.commits.scope}
-            className="key key-prod"
-          >
-            <i aria-hidden />
-            <span className="tip-label">{t.commits.inProd}</span>
-          </Tooltip>
-          <span className="key key-tracked">
-            <i aria-hidden />
-            {t.commits.waiting}
-          </span>
-          <span className="key key-ma">
-            <i aria-hidden />
-            {t.pulse.average}
-          </span>
-        </figcaption>
         <PulseChart
           points={pulse.points}
           t={t}

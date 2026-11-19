@@ -21,11 +21,11 @@ import '@tuturuuu/roadmap-core/hydration-loader.test.ts';
 import '@tuturuuu/roadmap-core/a11y.test.ts';
 import '@tuturuuu/roadmap-core/hosting.test.ts';
 import '@tuturuuu/roadmap-core/insights/insights.test.ts';
-import '@tuturuuu/roadmap-core/insights/chart-press.test.ts';
 import '@tuturuuu/roadmap-core/info.test.ts';
 import '@tuturuuu/roadmap-core/tabs.test.ts';
 import '@tuturuuu/roadmap-core/sorbet-tokens.test.ts';
 import '@tuturuuu/roadmap-core/glance.test.ts';
+import '@tuturuuu/roadmap-core/content/store-releases.test.ts';
 import {
   comingSoon,
   visibleComingSoon,

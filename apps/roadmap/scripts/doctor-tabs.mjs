@@ -1,18 +1,26 @@
 /**
- * The roadmap's tabs as the server renders them (src/components/tabs.tsx).
- * Every panel must be in the HTML (crawlers, no-JS readers, the live
- * refresh and old section links all rely on it), and before hydration the
- * tab bar is plain fragment links: the WAI-ARIA tab roles arrive with the
- * keyboard behaviour, never without it.
+ * The roadmap's tabs as the server renders them (src/components/tabs.tsx,
+ * the shared Tabs through HashTabs). Every panel must be in the HTML
+ * (crawlers, no-JS readers, the live refresh and old section links all rely
+ * on it), and each tab is a link to its panel, so it works before any
+ * script runs. The server never selects a tab beyond the default: the
+ * fragment picks the visible panel in CSS until the page hydrates.
  */
-export const TABS = ['overview', 'progress', 'activity', 'infrastructure'];
+export const TABS = ['overview', 'tracks', 'activity', 'releases', 'stack'];
 
-/** Element ids each panel must hold: its sections, by their old anchors. */
+/** Element ids each panel must hold: its sections, by their anchors. */
 export const PANEL_SECTIONS = {
-  overview: ['glance-title', 'latest-updates-title'],
-  progress: ['status-method', 'tracks', 'timeline-title'],
-  activity: ['pulse', 'updates'],
-  infrastructure: ['hosting-title', 'migration-title'],
+  overview: ['glance-title', 'status-method', 'latest-updates-title'],
+  tracks: ['tracks', 'timeline-title'],
+  activity: [
+    'pulse',
+    'pulse-products-title',
+    'pulse-heat-title',
+    'pulse-train-title',
+    'updates',
+  ],
+  releases: ['store-releases'],
+  stack: ['tech-stack', 'hosting-title', 'migration-title'],
 };
 
 function attr(tag, name) {
@@ -31,17 +39,21 @@ export function tabFailures(html) {
   const body = String(html);
   const failures = [];
   const root = openingTag(body, 'sections');
-  if (!root || !/\sclass="rm-tabs"/.test(root.tag))
+  if (!root || !/\sclass="[^"]*\brm-tabs\b/.test(root.tag))
     return ['the tabs root (#sections) is missing'];
-  if (/\sdata-active=/.test(root.tag))
-    failures.push('the server HTML already selects a tab (data-active)');
+  if (/\sdata-ready=/.test(root.tag))
+    failures.push('the server HTML is already marked hydrated (data-ready)');
   const panels = [];
   for (const [index, tab] of TABS.entries()) {
     const link = openingTag(body, `tab-${tab}`);
-    if (!link || attr(link.tag, 'href') !== `#${tab}`)
+    if (
+      !link ||
+      !link.tag.startsWith('<a ') ||
+      attr(link.tag, 'href') !== `#${tab}`
+    )
       failures.push(`tab ${tab} is not a link to #${tab}`);
-    else if (/\s(role|aria-selected|aria-controls|tabindex)=/.test(link.tag))
-      failures.push(`tab ${tab} has tab semantics before hydration`);
+    else if (attr(link.tag, 'aria-controls') !== tab)
+      failures.push(`tab ${tab} does not control its panel`);
     const panel = openingTag(body, tab);
     if (!panel) {
       failures.push(`panel ${tab} is not in the server HTML`);
@@ -52,8 +64,8 @@ export function tabFailures(html) {
       attr(panel.tag, 'aria-labelledby') !== `tab-${tab}`
     )
       failures.push(`panel ${tab} is not labelled by its tab`);
-    if (/\s(hidden|role|data-current)[\s=>]/.test(panel.tag))
-      failures.push(`panel ${tab} is hidden or selected in the server HTML`);
+    if (/\shidden[\s=>]/.test(panel.tag))
+      failures.push(`panel ${tab} is hidden in the server HTML`);
     if ((attr(panel.tag, 'data-default') !== null) !== (index === 0))
       failures.push(`panel ${tab} has the wrong default`);
     if (link && panel.at < link.at)

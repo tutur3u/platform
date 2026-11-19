@@ -1,6 +1,12 @@
 import {
+  ChartCard,
+  ChartTable,
+} from '@tuturuuu/roadmap-core/components/ds/chart-card.tsx';
+import { LazyChartHeatmap } from '@tuturuuu/roadmap-core/components/ds/lazy-chart.tsx';
+import {
   fill,
   formatNumber,
+  longDay,
   shortDay,
 } from '@tuturuuu/roadmap-core/components/insights/format.ts';
 import {
@@ -9,13 +15,15 @@ import {
   type Messages,
 } from '@tuturuuu/roadmap-core/components/shared.tsx';
 import { REPO_URL } from '@tuturuuu/roadmap-core/live/model.ts';
-import type { CSSProperties } from 'react';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import type { RoadmapSnapshot } from '../roadmap-snapshot';
 import { calendarDays, PRODUCT_KEYS } from './pulse-data';
 import { ProductIcon } from './pulse-icons';
 
 const environments = ['production', 'database', 'staging'] as const;
 
+/** Deployments by environment, newest first; the one serving now is marked. */
 export function ReleaseTrain({
   copy,
   lang,
@@ -28,63 +36,61 @@ export function ReleaseTrain({
   const deployments = [...(snapshot?.deploys ?? [])].sort((a, b) =>
     b.at.localeCompare(a.at)
   );
-  const slot = new Map(deployments.map((row, index) => [row.sha, index + 1]));
   return (
-    <section className="pulse-section" aria-labelledby="pulse-train-title">
-      <header className="pulse-section-head">
-        <div>
-          <h2 id="pulse-train-title">{copy.train}</h2>
-          <p>{copy.trainSubtitle}</p>
-        </div>
-      </header>
-      <div
-        className="pulse-train"
-        style={
-          {
-            '--pulse-release-slots': Math.max(1, deployments.length),
-          } as CSSProperties
-        }
-      >
-        {deployments.length === 0 && <p>{copy.emptyTrain}</p>}
+    <ChartCard
+      id="pulse-train-title"
+      title={copy.train}
+      description={copy.trainSubtitle}
+    >
+      {deployments.length === 0 && (
+        <p className="text-muted-foreground text-sm">{copy.emptyTrain}</p>
+      )}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {environments.map((environment) => {
           const rows = deployments.filter(({ env }) => env === environment);
           if (rows.length === 0) return null;
           return (
-            <div
-              key={environment}
-              className="pulse-lane"
-              data-env={environment}
-            >
-              <h3>{copy.environments[environment]}</h3>
-              <ol aria-label={copy.environments[environment]}>
-                {rows.map(({ sha, at, apps }) => (
-                  <li
-                    key={sha}
-                    style={
-                      { '--pulse-release-slot': slot.get(sha) } as CSSProperties
-                    }
-                    data-current={sha === snapshot?.productionSha || undefined}
-                  >
-                    <a href={`${REPO_URL}/commit/${sha}`}>
-                      <code>{sha.slice(0, 7)}</code>
-                      <time dateTime={at}>{formatDate(at, lang, true)}</time>
-                      <span>
-                        {fill(copy.appCount, {
-                          count: formatNumber(apps ?? 1, lang),
-                        })}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            <Card key={environment} className="shadow-none">
+              <CardContent className="grid gap-2 p-4">
+                <h3 className="font-medium text-sm">
+                  {copy.environments[environment]}
+                </h3>
+                <ol className="grid gap-1">
+                  {rows.slice(0, 6).map(({ sha, at, apps }) => (
+                    <li key={sha}>
+                      <a
+                        href={`${REPO_URL}/commit/${sha}`}
+                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 text-sm outline-ring/50 hover:bg-accent focus-visible:outline-2"
+                      >
+                        <code>{sha.slice(0, 7)}</code>
+                        <time
+                          dateTime={at}
+                          className="text-muted-foreground tabular-nums"
+                        >
+                          {formatDate(at, lang, true)}
+                        </time>
+                        <span className="ml-auto flex items-center gap-2 text-muted-foreground">
+                          {sha === snapshot?.productionSha && (
+                            <Badge variant="success">{copy.live}</Badge>
+                          )}
+                          {fill(copy.appCount, {
+                            count: formatNumber(apps ?? 1, lang),
+                          })}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
-    </section>
+    </ChartCard>
   );
 }
 
+/** Commits per product and Vietnam calendar day as one hover, focus and tap grid. */
 export function ProductHeatmap({
   copy,
   lang,
@@ -102,85 +108,59 @@ export function ProductHeatmap({
     const product = byKey.get(key);
     return product ? [{ ...product, key }] : [];
   }).sort((a, b) => b.commits30d - a.commits30d);
+  const count = (value: number) =>
+    fill(value === 1 ? copy.commitOne : copy.commitMany, {
+      count: formatNumber(value, lang),
+    });
+
   return (
-    <section className="pulse-section" aria-labelledby="pulse-heat-title">
-      <header className="pulse-section-head">
-        <div>
-          <h2 id="pulse-heat-title">{copy.heat}</h2>
-          <p>{copy.heatSubtitle}</p>
-        </div>
-      </header>
-      <div className="pulse-heat">
-        {rows.length === 0 ? (
-          <p>{copy.unavailable}</p>
-        ) : (
-          <>
-            <table aria-labelledby="pulse-heat-title">
-              <thead>
-                <tr>
-                  <th scope="col">
-                    <span className="sr-only">{copy.productsTitle}</span>
-                  </th>
-                  {dates.map((day, index) => (
-                    <th
-                      key={day}
-                      scope="col"
-                      data-extended={index < 16 || undefined}
-                    >
-                      <span className="sr-only">{shortDay(day, lang)}</span>
-                      {(index === 0 || index === 16 || index === 29) && (
-                        <span aria-hidden="true">{day.slice(-2)}</span>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((product) => {
-                  const max = Math.max(1, ...product.daily);
-                  return (
-                    <tr key={product.key} data-product={product.key}>
-                      <th scope="row">
-                        <ProductIcon product={product.key} size={15} />
-                        {copy.product[product.key]}
-                      </th>
-                      {product.daily.map((count, index) => {
-                        const level =
-                          count === 0 ? 0 : Math.ceil((4 * count) / max);
-                        return (
-                          <td
-                            key={dates[index]}
-                            data-extended={index < 16 || undefined}
-                          >
-                            <span
-                              className="pulse-heat-cell"
-                              data-level={level}
-                              title={`${shortDay(dates[index], lang)} · ${count}`}
-                            >
-                              <span className="sr-only">{count}</span>
-                            </span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div className="pulse-heat-key" aria-hidden="true">
-              {copy.less}
-              {[0, 1, 2, 3, 4].map((level) => (
-                <span
-                  key={level}
-                  className="pulse-heat-cell"
-                  data-level={level}
-                />
-              ))}
-              {copy.more}
-            </div>
-          </>
-        )}
-      </div>
-    </section>
+    <ChartCard
+      id="pulse-heat-title"
+      title={copy.heat}
+      description={copy.heatSubtitle}
+    >
+      {rows.length === 0 ? (
+        <p className="text-muted-foreground text-sm">{copy.unavailable}</p>
+      ) : (
+        <>
+          <LazyChartHeatmap
+            slotClassName="h-[30rem]"
+            label={copy.heat}
+            valueLabel={count}
+            legend={{ less: copy.less, more: copy.more }}
+            columns={dates.map((day, index) => ({
+              key: day,
+              label: longDay(day, lang),
+              tick:
+                index === 0 || index === 14 || index === dates.length - 1
+                  ? shortDay(day, lang)
+                  : undefined,
+            }))}
+            rows={rows.map((product) => ({
+              key: product.key,
+              name: copy.product[product.key],
+              values: product.daily,
+              label: (
+                <>
+                  <ProductIcon product={product.key} size={15} />
+                  {copy.product[product.key]}
+                </>
+              ),
+            }))}
+          />
+          <ChartTable
+            caption={copy.heat}
+            columns={[copy.week, copy.month]}
+            rows={rows.map((product) => ({
+              label: copy.product[product.key],
+              values: [
+                formatNumber(product.commits7d, lang),
+                formatNumber(product.commits30d, lang),
+              ],
+            }))}
+          />
+        </>
+      )}
+    </ChartCard>
   );
 }

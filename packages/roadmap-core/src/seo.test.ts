@@ -237,41 +237,40 @@ describe('SEO: hero font preloads', () => {
 describe('SEO: every tab panel is in the server HTML', () => {
   const read = (file: string) =>
     readFileSync(new URL(file, import.meta.url), 'utf8');
-  /** Each panel renders its content whether or not it is selected. */
+  /** Each panel mounts (forceMount) whether or not it is selected. */
   const allRendered = (source: string) =>
-    /\{TAB_IDS\.map\(\(tab\) => \(\s*<section[^]*?>\s*\{panels\[tab\]\}\s*<\/section>/.test(
-      source
-    ) &&
-    !/\bhidden=|active === tab \?\s*panels|active === tab &&\s*panels/.test(
+    /<TabsContent[^>]*\bforceMount\b/.test(source) &&
+    /\{panels\[id\]\}/.test(source) &&
+    !/\bhidden=|selected === id \?\s*panels|selected === id &&\s*panels/.test(
       source
     );
 
-  it('panels are siblings of the tab bar, all rendered, none hidden by markup', () => {
-    const tabs = read('./components/tabs.tsx');
+  it('panels are siblings of the tab list, all rendered, none hidden by markup', () => {
+    const tabs = read('../../ui/src/components/ui/custom/hash-tabs.tsx');
     assert.equal(allRendered(tabs), true);
     // Broken variants: client-only panels (crawlers and no-JS readers see
     // one tab) and the hidden attribute (the fragment cannot reveal it).
+    assert.equal(allRendered(tabs.replaceAll('forceMount', '')), false);
     assert.equal(
       allRendered(
-        tabs.replace('{panels[tab]}', '{active === tab ? panels[tab] : null}')
+        tabs.replace('{panels[id]}', '{selected === id ? panels[id] : null}')
       ),
       false
     );
     assert.equal(
       allRendered(
-        tabs.replace(
-          'className="rm-panel"',
-          'className="rm-panel" hidden={active !== tab}'
-        )
+        tabs.replaceAll('forceMount', 'forceMount hidden={selected !== id}')
       ),
       false
     );
+    // Each trigger is a link to its panel before any script runs.
+    assert.match(tabs, /href=\{`#\$\{id\}`\}/);
   });
 
-  it('the page passes all four panels and the skip link reaches them', () => {
+  it('the page passes all five panels and the skip link reaches them', () => {
     const page = read('./pages/roadmap.tsx');
-    for (const tab of ['overview', 'progress', 'activity', 'infrastructure'])
-      assert.match(page, new RegExp(`\\n    ${tab}: \\(`), tab);
+    for (const tab of ['overview', 'tracks', 'activity', 'releases', 'stack'])
+      assert.match(page, new RegExp(`\\n    ${tab}: [(<]`), tab);
     assert.match(page, /<RoadmapTabs\b[^>]*panels=\{panels\}/);
     assert.match(page, /className="skip-link" href="#sections"/);
     assert.match(read('./components/tabs.tsx'), /id="sections"/);

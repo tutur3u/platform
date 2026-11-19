@@ -23,38 +23,72 @@ Build-time observations land in the untracked `packages/roadmap-core/.generated/
 
 ## Page layout and tabs
 
-A compact hero (title, three headline figures, when the public data was
-read, labelled Snapshot, Live or Snapshot only for the data on screen) sits above four tabs:
-**Overview** (track glance, coming soon, the three latest production updates),
-**Progress** (status summary, tracks, timeline), **Activity** (deliverables
-shipped this week, shipping pulse, every production update, patch notes) and
-**Infrastructure** (hosting, the move to tuturuuu.com). `packages/roadmap-core/src/components/tabs.tsx`
-renders every panel on the server, so crawlers, no-JS readers, structured data
-and the live refresh cover all of them. The tab bar is fragment links
-(`#overview`, `#progress`, `#activity`, `#infrastructure`); `packages/roadmap-core/src/styles/tabs.css`
-shows the panel the fragment names, or the panel holding the element it names
-(old links such as `#pulse` or `#track-cms`), with `:target` and `:has()`.
-Where `:has()` is supported the right panel paints first without script and
-nothing shifts; without it every panel shows until hydration. After hydration
-the same markup becomes the WAI-ARIA tabs pattern (roles, `aria-selected`,
-`aria-controls`, a roving tabindex, arrow keys with Home and End). The tab is a
-pure function of the URL (`packages/roadmap-core/src/components/tab-model.ts`): a tab id selects
-itself, an id inside a panel selects that panel's tab, and anything else (no
-fragment, an unknown or malformed one, an element outside the panels) selects
-Overview. Before hydration CSS applies that rule; after it the selected tab is
-derived on every render from the router location and nothing else, so a tab
-click, a router navigation (which fires no `hashchange`), a plain fragment
-link, back and forward all select the tab their URL names. A tab click only
-navigates through the router, with `resetScroll: false` and
-`hashScrollIntoView: false`, so the page does not scroll; a link into another
-tab opens it and scrolls to its section. `scripts/tabs-selection.test.mjs` drives
-the real component through these changes. The skip link targets `#sections`
-(focusable with `tabindex="-1"`); once hydrated it focuses the selected tab and
-keeps the URL. Known limit: before hydration, following it selects Overview. The tab bar is
-not sticky: the tracks filter bar already docks into the navbar pill.
-`@tuturuuu/ui` tabs (Radix) are not used: they render button triggers that do
-nothing without script and leave inactive panels out of the server HTML.
-`scripts/doctor-tabs.mjs` checks the built page's tab markup.
+A compact summary (the live production commit, when the public data was read,
+labelled Snapshot, Live or Snapshot only for the data on screen, and four
+headline figures) sits above five tabs, the shared `@tuturuuu/ui` Tabs:
+**Overview** (status bar, every track at a glance, coming soon, the latest
+production updates), **Tracks** (milestones, deliverables and the timeline),
+**Activity** (shipped this week, the shipping pulse, commits per product, the
+product-by-day heatmap, the release train, every production update, patch
+notes), **Releases** (each store's status, dates, listing and screenshots)
+and **Tech stack** (the move to TanStack Start on Cloudflare, hosting and the
+move to tuturuuu.com).
+
+`packages/ui/src/components/ui/custom/hash-tabs.tsx` (HashTabs) renders every
+panel on the server (`forceMount`), so crawlers, no-JS readers, structured
+data and the live refresh cover all of them. Each trigger is an anchor to
+`#tracks`, `#activity`, `#releases` or `#stack`, so it works as a link before
+hydration; `packages/roadmap-core/src/styles/tabs.css` shows the panel the
+fragment names, or the panel holding the element it names (older links such
+as `#progress`, `#infrastructure`, `#pulse` or `#track-cms` still land), with
+`:target` and `:has()`, and the tab list shows the same selection. Where
+`:has()` is unsupported every panel shows until hydration. After hydration the
+Tabs root carries `data-ready` and the selected tab is derived on every render
+from the router location and nothing else
+(`packages/roadmap-core/src/components/tab-model.ts`): a tab id (or an alias of
+an earlier layout) selects itself, an id inside a panel selects that panel's
+tab, and anything else selects Overview. A tab click navigates through the
+router (a key replaces the history entry, a click pushes one) with
+`resetScroll: false` and `hashScrollIntoView: false`, so the page does not
+scroll; a link into another tab's section opens the tab and scrolls to the
+section. Modified clicks keep the native link. Radix provides the roles,
+`aria-selected`, `aria-controls` and the arrow, Home and End keys.
+`packages/ui/src/components/ui/custom/hash-tabs.test.tsx` drives it with a
+fragment-based location (click, back and forward, keys) and
+`packages/roadmap-core/src/tabs.test.ts` pins the fragment rule. The skip link
+targets `#sections` (focusable with `tabindex="-1"`); once hydrated it focuses
+the selected tab and keeps the URL. Known limit: before hydration, following it
+selects Overview. `scripts/doctor-tabs.mjs` checks the built page's tab markup.
+
+## Charts, heatmap and screenshots
+
+Every chart uses the shared chart components, so each has a tooltip on hover,
+focus and tap, a legend and quiet axes from the Sorbet tokens:
+
+- `ChartBars` (`@tuturuuu/ui/chart-bars`, on `ChartContainer`, `ChartTooltip`
+  and `ChartLegend`): the shipping pulse (stacked, with the 7-day average as a
+  line and the day's products in the tooltip) and commits per product
+  (horizontal). Arrow keys move the tooltip between categories.
+- `ChartHeatmap` (`@tuturuuu/ui/chart-heatmap`): commits per product and day.
+  One tooltip follows hover, focus and tap; arrow keys, Home and End move
+  between cells, each of which is named "product, day: value". Wide grids scroll
+  under sticky row labels. Cells are 24px with 4px between them (WCAG 2.5.8's
+  spacing rule); a dense grid cannot hold 44px cells.
+- Recharts is a separate chunk (`components/ds/lazy-chart.tsx`): a chart is a
+  fixed-size skeleton until it is within 240px of the viewport, then loads.
+  Each chart also has its figures in a visually hidden table
+  (`ChartCard`/`ChartTable`), which keeps the server HTML complete.
+
+The Releases tab (`components/store-releases.tsx`, `components/ds/store-*.tsx`)
+shows each store's status, the five release dates and the listing, then its
+screenshots as equal-height thumbnails (intrinsic aspect ratio, `object-cover`,
+lazy loading, a skeleton until decoded). A thumbnail opens
+`MediaPreviewDialog` (`@tuturuuu/ui/custom/media-preview-dialog`, on `Dialog`,
+loaded on the first open): focus is trapped and returned to the thumbnail,
+Escape closes, Left and Right, swipes and edge buttons move between
+screenshots, + and - (or the buttons or a double tap) zoom and a drag pans,
+and the caption names the screenshot, store, device and language. Captions,
+device and language come from `apps/mobile/store` (`content/store-releases.ts`).
 
 ## Design tokens (Sorbet)
 
@@ -90,11 +124,11 @@ allows only the stable Sorbet names, and checks every text pair the page
 draws for WCAG AA (4.5:1; focus ring and status marks 3:1) in light and dark,
 so a Sorbet change fails CI here until the roadmap is reviewed against it.
 It also composites every pulse-chart mark (all PRs, tracked, in production,
-the moving average and the no-data outline) over the card and over the hover
-band and requires 3:1 (WCAG 1.4.11) in both modes; stacked series also have a
-card-coloured edge, so they never rely on colour alone. The hover band itself
-is a highlight behind the selected day (ink at 7%), not a mark: it makes no
-3:1 claim, and the marks stay at 3:1 or more on top of it.
+the moving average and the no-data outline) over the card and over the chart's
+cursor band (`--accent` at 60%) and requires 3:1 (WCAG 1.4.11) in both modes;
+stacked series also have a card-coloured edge, so they never rely on colour
+alone. The cursor band is a highlight behind the hovered day, not a mark: it
+makes no 3:1 claim, and the marks stay at 3:1 or more on top of it.
 
 Every control is at least 44 x 44 CSS px on every pointer
 (`packages/roadmap-core/src/styles/targets.css`): compact controls keep their look and gain an
@@ -102,14 +136,10 @@ invisible, centred hit area inside the control; rows that scroll sideways
 (the track chips and the status filters) get room inside them for those hit
 areas, and stacked rows open up so no two hit areas overlap. Docked into the
 44px compact navbar, the chip row is a 44px scroll row 4px inside the header
-and each chip's hit area spans it. On the pulse chart the whole plot is one
-pointer target: a tap, a click or a horizontal drag selects the day under
-the pointer (`dayAt` in `packages/roadmap-core/src/insights/chart-nav.ts`), a vertical drag still
-scrolls (and, cancelled, leaves no day selected), a mouse or pen is captured
-so a drag past an edge keeps the first or last day, and every end of a press
-(release, cancel, lost capture, a move with no button held) clears it
-(`packages/roadmap-core/src/insights/chart-press.ts`), and the per-day buttons keep keyboard and screen-reader use (roving
-focus, each day's name, the live readout). The only exceptions are inline
+and each chip's hit area spans it. The shared tabs and segmented filters keep their look and gain the same hit
+area; the charts take the pointer as one surface (a tap or a hover selects the
+category under it) and keep keyboard and screen-reader use through Recharts'
+accessibility layer and the hidden table. The only exceptions are inline
 targets under WCAG 2.5.8: PR numbers inside a metadata line and links in
 running text. The shared marketing shell's own controls are measured but
 owned by `packages/marketing-shell`.
@@ -287,9 +317,8 @@ zero or an earlier build's value.
   Release dates use Vietnam calendar days. Release details mount when opened,
   keeping the initial document small even for large fallback releases. A missing, invalid or empty file
   hides the section and leaves production updates in a single column.
-- **Chart access.** Each day is a real button: hover, tap or arrow keys
-  (Home, End, PageUp, PageDown) select it, a polite live region reads the
-  day, and a visually hidden table holds every figure.
+- **Chart access.** Hover, tap or the arrow keys open a day's tooltip, and a
+  visually hidden table holds every figure.
 
 ## Performance on low-end phones
 

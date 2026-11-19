@@ -178,17 +178,16 @@ const SECTION_7 = read('./styles/section-7.css');
 
 /**
  * The pulse chart as drawn: each series' effective colour (after any
- * opacity) against the card and against the hover band (ink at its
- * opacity, composited over the card), both 3:1. The legend swatches use
+ * opacity) against the card and against the hover band (the accent
+ * at its opacity, composited over the card), both 3:1. The legend swatches use
  * the same series variables on the card.
  */
 export function chartFailures(tokens: Map<string, string>, css = SECTION_7) {
   const series = properties(block(css, '.pulse-section {'));
-  const hoverFill = /\.pchart-hover \{\s*fill: ([^;]+);/.exec(css)?.[1];
-  assert.ok(hoverFill, 'the hover band fill');
   const lookup = (n: string) => series.get(n) ?? tokens.get(n);
   const panel = tokens.get('--rm-panel') as string;
-  const hover = evaluate(hoverFill, lookup);
+  // The shared chart's cursor band: --accent (--rm-soft) at 60% (chart-bars).
+  const hover = { hex: tokens.get('--rm-soft') as string, alpha: 0.6 };
   const backgrounds = {
     card: panel,
     'hover band': composite(hover.hex, hover.alpha, panel),
