@@ -164,11 +164,11 @@ jobs:
       - name: Deploy the family Worker
         working-directory: apps/web
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
           ROOT_WORKSPACE_ID: '00000000-0000-0000-0000-000000000000'
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::WEB_OPENNEXT_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
           # The family Worker has no routes; nothing serves it until the
           # gateway binds and flags it.
           bun x --no-install wrangler deploy -c "cloudflare/opennext/wrangler.$FAMILY.jsonc" \
@@ -214,9 +214,9 @@ jobs:
       - run: bun run --cwd apps/gateway test
       - name: Capture the live gateway settings
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::COLAB_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::WEB_OPENNEXT_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
           curl --fail-with-body --silent --show-error --retry 3 \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/tuturuuu-gateway/settings" \
@@ -227,7 +227,7 @@ jobs:
       # requires before the gateway sends traffic to it.
       - name: Verify flagged family Workers and secret names
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
           for id in $(echo "$GATEWAY_WEB_FAMILIES" | tr ',' ' '); do
             [[ "$id" =~ ^[a-z0-9-]+$ ]] || { echo "::error::invalid family id in GATEWAY_WEB_FAMILIES"; exit 1; }
@@ -248,7 +248,7 @@ jobs:
       - name: Upload and deploy the gateway version
         working-directory: apps/gateway
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
           bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           bun x --no-install wrangler versions upload -c wrangler.deploy.json \

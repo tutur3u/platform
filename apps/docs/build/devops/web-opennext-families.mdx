@@ -60,7 +60,10 @@ touches `apps/web`, `apps/gateway`, `packages` or the lockfile, and on dispatch
 from `production` (one `family`, and whether to deploy the gateway). Both
 deploy jobs run only on `refs/heads/production`, in the `colab-production`
 environment that holds the account deployment token, so the production
-promotion is the human gate:
+promotion is the human gate. The token is the environment secret
+`WEB_OPENNEXT_CLOUDFLARE_API_TOKEN`, used only by this workflow, with Workers
+Scripts edit on the Tuturuuu account; it creates the family Workers and
+reads and versions `tuturuuu-gateway`:
 
 1. **family** (one job per enabled family): exact-commit checkout, workspace
    package build, prune, family build, size gate, local smoke, then
