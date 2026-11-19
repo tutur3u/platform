@@ -26,6 +26,12 @@ deployment ID before any cutover.
 - Build from the app directory with `bun run build:cloudflare`. If workspace
   outputs are missing, run `bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2` first.
 
+The `nova-cutover-artifact` job compiles the production profile before setting
+the release variables in the emitted config. The archive uploads only after
+the sealed output and a fresh restore both pass workerd acceptance on the
+subdomain and apex profiles. Hosted staging and private upload remain separate
+release gates.
+
 ## Smoke probes
 
 After Rex enables a candidate route, check each host and the public build identity:
@@ -35,8 +41,8 @@ for host in nova.tuturuuu.com nova.ai.vn nova.tutur3u.com; do
   curl -sSI "https://$host/"
   curl -sS "https://$host/api/build-info"
 done
-curl -sSI https://tuturuuu.com/nova/
-curl -sS https://tuturuuu.com/api/build-info
+curl -sSI 'https://tuturuuu.com/nova?source=smoke'
+curl -sS https://tuturuuu.com/nova/api/build-info
 ```
 
 Confirm the root hosts serve Nova, `/nova` works on `tuturuuu.com`, build-info
