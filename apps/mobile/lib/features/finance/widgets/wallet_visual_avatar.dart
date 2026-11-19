@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/finance/utils/wallet_images.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class WalletVisualAvatar extends StatelessWidget {
   const WalletVisualAvatar({
@@ -24,8 +25,8 @@ class WalletVisualAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    final bg = backgroundColor ?? colorScheme.primary.withValues(alpha: 0.14);
+    final colorScheme = context.tokens.colorScheme;
+    final bg = backgroundColor ?? AppTone.primary.fill(colorScheme);
     final ink = foregroundColor ?? colorScheme.primary;
     final resolvedIcon = resolvePlatformIcon(icon, fallback: fallbackIcon);
 
@@ -38,7 +39,7 @@ class WalletVisualAvatar extends StatelessWidget {
           : Padding(
               padding: EdgeInsets.all(size * 0.18),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
                 child: SvgPicture.network(
                   walletImageUrl(imageSrc!),
                   placeholderBuilder: (_) =>

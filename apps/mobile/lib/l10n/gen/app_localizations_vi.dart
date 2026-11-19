@@ -3362,6 +3362,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeCheckpointsAmountRequired => 'Nhập số dư thực tế hợp lệ';
 
   @override
+  String get financeCheckpointsBalancePlaceholder => 'Nhập số dư';
+
+  @override
   String get financeCheckpointsBatchDescription => 'Nhập số dư thực tế cho từng ví bạn muốn kiểm tra tại cùng một thời điểm.';
 
   @override
@@ -3378,6 +3381,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeCheckpointsCheckedAtRequired => 'Nhập thời điểm kiểm tra hợp lệ';
+
+  @override
+  String get financeCheckpointsCreateAdjustment => 'Tạo giao dịch điều chỉnh';
 
   @override
   String get financeCheckpointsCreateReconciliation => 'Tạo đối chiếu';
@@ -3466,6 +3472,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String financeCheckpointsRecordDescription(String wallet) {
     return 'Lưu số dư thực tế đang hiển thị trong $wallet.';
   }
+
+  @override
+  String get financeCheckpointsSaveReview => 'Lưu số dư đã kiểm tra';
 
   @override
   String get financeCheckpointsSaved => 'Đã lưu điểm kiểm tra';

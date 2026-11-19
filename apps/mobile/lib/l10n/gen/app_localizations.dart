@@ -6463,6 +6463,12 @@ abstract class AppLocalizations {
   /// **'Enter a valid actual balance'**
   String get financeCheckpointsAmountRequired;
 
+  /// No description provided for @financeCheckpointsBalancePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter balance'**
+  String get financeCheckpointsBalancePlaceholder;
+
   /// No description provided for @financeCheckpointsBatchDescription.
   ///
   /// In en, this message translates to:
@@ -6498,6 +6504,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a valid checked-at time'**
   String get financeCheckpointsCheckedAtRequired;
+
+  /// No description provided for @financeCheckpointsCreateAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Create adjustment transaction'**
+  String get financeCheckpointsCreateAdjustment;
 
   /// No description provided for @financeCheckpointsCreateReconciliation.
   ///
@@ -6666,6 +6678,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save the actual balance visible in {wallet}.'**
   String financeCheckpointsRecordDescription(String wallet);
+
+  /// No description provided for @financeCheckpointsSaveReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Save reviewed balance'**
+  String get financeCheckpointsSaveReview;
 
   /// No description provided for @financeCheckpointsSaved.
   ///

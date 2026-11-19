@@ -227,6 +227,19 @@ class FinanceOverviewContent extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             balances,
+            if (state.wallets.isNotEmpty) ...[
+              const SizedBox(height: AppLayout.itemGap),
+              AppGroupedCard(
+                children: [
+                  AppRichRow(
+                    key: const ValueKey('finance-overview-checkpoints'),
+                    title: l10n.financeCheckpointsBatchRecord,
+                    leading: const AppIconTile(icon: LucideIcons.listChecks),
+                    onTap: () => context.push(Routes.financeCheckpoints),
+                  ),
+                ],
+              ),
+            ],
             const SizedBox(height: AppLayout.sectionGap),
             if (wide)
               Row(

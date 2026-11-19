@@ -32,6 +32,16 @@ mixin FinanceRepositoryCheckpoints {
   }) async {
     T decodePayload(Object? json) =>
         decode(Map<String, dynamic>.from(json! as Map));
+    final userId = key.userId;
+    void checkScope() {
+      if (_cacheUserId() != userId) {
+        throw const ApiException(
+          message: 'Account changed during checkpoint read',
+          statusCode: 401,
+        );
+      }
+    }
+
     CacheReadResult<T> cached;
     try {
       cached = await _cacheStore.prefetch<T>(
@@ -43,9 +53,15 @@ mixin FinanceRepositoryCheckpoints {
           'workspace:${key.workspaceId}',
         ],
         decode: decodePayload,
+        checkScope: checkScope,
         fetch: () async {
           try {
-            return await fetch();
+            checkScope();
+            final data = userId == null
+                ? await fetch()
+                : await ApiClient.runForUser(userId, fetch);
+            checkScope();
+            return data;
           } on ApiException catch (error) {
             if (error.statusCode == 401 ||
                 (error.statusCode == 403 && !error.isVerificationRequired)) {
@@ -61,6 +77,7 @@ mixin FinanceRepositoryCheckpoints {
       cached = await _cacheStore.read<T>(key: key, decode: decodePayload);
       if (!cached.hasValue) rethrow;
     }
+    checkScope();
     if (cached.data == null) {
       throw StateError('Wallet checkpoints are unavailable.');
     }
@@ -88,6 +105,7 @@ mixin FinanceRepositoryCheckpoints {
     int limit = 50,
     bool forceRefresh = false,
   }) async {
+    final userId = _cacheUserId();
     final query = Uri(queryParameters: {'limit': limit.toString()}).query;
     WalletCheckpointListResponse confirmed;
     try {
@@ -107,7 +125,7 @@ mixin FinanceRepositoryCheckpoints {
       wsId,
       walletId,
       confirmed,
-      _mutationQueue.pending.value,
+      _mutationQueue.pending.value.where((edit) => edit.userId == userId),
     );
   }
 
@@ -126,6 +144,8 @@ mixin FinanceRepositoryCheckpoints {
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
       queue: _mutationQueue,
+      apiClient: _api,
+      expectedUserId: _cacheUserId(),
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -157,6 +177,8 @@ mixin FinanceRepositoryCheckpoints {
     };
     final batch = await queueOrSendValue<WalletCheckpointBatchResponse>(
       queue: _mutationQueue,
+      apiClient: _api,
+      expectedUserId: _cacheUserId(),
       feature: 'finance',
       method: 'POST',
       path: path,
@@ -192,6 +214,8 @@ mixin FinanceRepositoryCheckpoints {
     };
     final checkpoint = await queueOrSendValue<WalletCheckpoint>(
       queue: _mutationQueue,
+      apiClient: _api,
+      expectedUserId: _cacheUserId(),
       feature: 'finance',
       method: 'PATCH',
       path: path,
@@ -224,6 +248,8 @@ mixin FinanceRepositoryCheckpoints {
     );
     await queueOrSendVoid(
       queue: _mutationQueue,
+      apiClient: _api,
+      expectedUserId: _cacheUserId(),
       feature: 'finance',
       method: 'DELETE',
       path: path,
@@ -257,6 +283,8 @@ mixin FinanceRepositoryCheckpoints {
     final response =
         await queueOrSendValue<WalletCheckpointReconciliationResponse>(
           queue: _mutationQueue,
+          apiClient: _api,
+          expectedUserId: _cacheUserId(),
           feature: 'finance',
           method: 'POST',
           path: path,
@@ -304,7 +332,7 @@ WalletCheckpointListResponse _overlayPendingCheckpoints(
   String wsId,
   String walletId,
   WalletCheckpointListResponse confirmed,
-  List<PendingMutationRecord> pending,
+  Iterable<PendingMutationRecord> pending,
 ) {
   final rows = {for (final row in confirmed.data) row.id: row};
   final collectionPath = FinanceEndpoints.walletCheckpoints(wsId, walletId);
@@ -376,7 +404,11 @@ WalletCheckpointListResponse _overlayPendingCheckpoints(
     }
   }
   return WalletCheckpointListResponse(
-    data: rows.values.toList(growable: false),
+    data: rows.values.toList()
+      ..sort((a, b) {
+        final byCheck = b.checkedAt.compareTo(a.checkedAt);
+        return byCheck != 0 ? byCheck : b.createdAt.compareTo(a.createdAt);
+      }),
     intervals: confirmed.intervals,
     latest: confirmed.latest,
   );

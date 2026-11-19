@@ -15,9 +15,12 @@ void main() {
     await CacheStore.instance.clearScope();
     OfflineMutationQueue.instance.pending.value = [];
   });
-  test('shows queued checkpoints during an offline refresh', () async {
+  test('shows only the current actor’s queued checkpoints offline', () async {
     final apiClient = _MockApiClient();
-    final repository = FinanceRepository(apiClient: apiClient);
+    final repository = FinanceRepository(
+      apiClient: apiClient,
+      cacheUserId: () => 'user-1',
+    );
     when(
       () => apiClient.getJson(any()),
     ).thenThrow(const ApiException.transport(message: 'Offline'));
@@ -36,6 +39,17 @@ void main() {
           'note': 'Counted in person',
         },
         optimisticPatch: const {'entityId': 'local-checkpoint'},
+      ),
+      PendingMutationRecord(
+        id: 'other-actor-edit',
+        feature: 'finance',
+        method: 'POST',
+        path: FinanceEndpoints.walletCheckpoints('ws-offline', 'wallet-1'),
+        createdAt: DateTime.utc(2026, 9, 29),
+        userId: 'user-2',
+        workspaceId: 'ws-offline',
+        payload: const {'actual_balance': 99},
+        optimisticPatch: const {'entityId': 'other-local-checkpoint'},
       ),
     ];
 

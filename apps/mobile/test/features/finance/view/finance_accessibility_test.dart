@@ -31,7 +31,7 @@ void main() {
     FinanceScene.budgets: '3[,.]250[,.]000',
     FinanceScene.wallets: '1[,.]250[,.]000',
     FinanceScene.walletDetail: '1[,.]250[,.]000',
-    FinanceScene.checkpoints: '1[,.]250[,.]000',
+    FinanceScene.checkpoints: '0 ₫',
     FinanceScene.categories: '420[,.]000',
   };
   for (final MapEntry(key: scene, value: pattern) in displayedAmounts.entries) {

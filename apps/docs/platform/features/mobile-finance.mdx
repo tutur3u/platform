@@ -28,6 +28,7 @@ destination shown), the shell shows it as a filled top-bar button instead.
 The dock holds Overview, Transactions, Budgets and Wallets; More opens
 Categories and Checkpoints. Finance has no separate Manage page: creating a
 wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
+Overview also opens All-wallet check directly.
 Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
 
 ## Periods
@@ -51,13 +52,33 @@ as a filter:
 ## Wallet page
 
 A balance card (with a workspace-currency estimate for foreign wallets and the
-credit limit for credit wallets) offers Transfer, Edit and the wallet's
-checkpoints. Below the pinned period bar, the period's income, expense and net
+credit limit for credit wallets) offers Transfer and Edit. Below the balance, Reconcile opens the wallet's
+balance review and the checkpoint timeline opens its recorded checks. Below
+the pinned period bar, the period's income, expense and net
 keep their labels on one line at any supported width and text size; amounts
 shrink to fit rather than clip, and the figures stack when three columns would
 be too narrow. A daily in/out chart (monthly for a year) appears once every
 row of the period is loaded. Transactions follow, grouped by day with each
 day's net.
+
+## Wallet reconciliation
+
+Enter the observed balance to preview the signed variance against the wallet
+ledger. Save reviewed balance records a checkpoint without changing
+transactions. When a check uses a different date or time, its saved details
+show the server-calculated historical variance.
+
+Open a checkpoint in the timeline to compare the observed and ledger balances.
+People with transaction-create permission can post a non-reporting adjustment
+for the checkpoint or for an unresolved interval between two checks. The server
+calculates the adjustment from the current ledger and skips it when the
+difference is zero. Wallet-update permission controls recording, editing and
+deleting checks. Each check uses its wallet's currency.
+
+All-wallet check records several observations at one time. Its vertical list
+opens the relevant wallet, and the amount-visibility control masks variances as
+well as balances. The focused `wallet_checkpoint_ui_test.dart` covers signed
+balance inputs, variance direction and light and dark renders.
 
 ## Budgets
 
@@ -98,7 +119,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | Open |
 | Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Open |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Monthly overview and wallet-period cash flow. Dedicated reports are open |
-| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Single and batch recording, history and interval adjustments |
+| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, type and period. Advanced filters are open |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Open |

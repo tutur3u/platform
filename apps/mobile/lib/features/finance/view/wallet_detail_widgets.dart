@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart' show LucideIcons;
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/utils/currency_conversion.dart';
@@ -23,7 +22,6 @@ class WalletBalanceHero extends StatelessWidget {
     required this.exchangeRates,
     this.onTransfer,
     this.onEdit,
-    this.onCheckpoints,
     super.key,
   });
 
@@ -32,7 +30,6 @@ class WalletBalanceHero extends StatelessWidget {
   final List<ExchangeRate> exchangeRates;
   final VoidCallback? onTransfer;
   final VoidCallback? onEdit;
-  final VoidCallback? onCheckpoints;
 
   @override
   Widget build(BuildContext context) {
@@ -93,15 +90,6 @@ class WalletBalanceHero extends StatelessWidget {
                   style: caption,
                 ),
               ),
-              if (onCheckpoints != null)
-                IconTheme.merge(
-                  data: IconThemeData(color: ink),
-                  child: AppIconButton(
-                    icon: Icon(LucideIcons.listChecks, color: ink),
-                    tooltip: l10n.financeCheckpointsShortLabel,
-                    onPressed: onCheckpoints,
-                  ),
-                ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),

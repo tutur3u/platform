@@ -20,6 +20,7 @@ class WalletDetailBody extends StatelessWidget {
   const WalletDetailBody({
     required this.controller,
     required this.hero,
+    required this.checkpointHistory,
     required this.period,
     required this.now,
     required this.onPeriodChanged,
@@ -37,6 +38,7 @@ class WalletDetailBody extends StatelessWidget {
 
   final ScrollController controller;
   final Widget hero;
+  final Widget checkpointHistory;
   final FinancePeriod period;
   final DateTime now;
   final ValueChanged<FinancePeriod> onPeriodChanged;
@@ -65,6 +67,12 @@ class WalletDetailBody extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         SliverToBoxAdapter(child: hero),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppLayout.sectionGap),
+            child: checkpointHistory,
+          ),
+        ),
         const SliverToBoxAdapter(child: SizedBox(height: AppLayout.itemGap)),
         SliverPersistentHeader(
           pinned: true,

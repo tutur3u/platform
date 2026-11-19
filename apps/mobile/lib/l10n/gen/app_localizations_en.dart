@@ -3376,6 +3376,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeCheckpointsAmountRequired => 'Enter a valid actual balance';
 
   @override
+  String get financeCheckpointsBalancePlaceholder => 'Enter balance';
+
+  @override
   String get financeCheckpointsBatchDescription => 'Enter actual balances for every wallet you want to checkpoint at the same time.';
 
   @override
@@ -3392,6 +3395,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeCheckpointsCheckedAtRequired => 'Enter a valid checked-at time';
+
+  @override
+  String get financeCheckpointsCreateAdjustment => 'Create adjustment transaction';
 
   @override
   String get financeCheckpointsCreateReconciliation => 'Create reconciliation';
@@ -3480,6 +3486,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String financeCheckpointsRecordDescription(String wallet) {
     return 'Save the actual balance visible in $wallet.';
   }
+
+  @override
+  String get financeCheckpointsSaveReview => 'Save reviewed balance';
 
   @override
   String get financeCheckpointsSaved => 'Checkpoint saved';

@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
@@ -17,6 +16,7 @@ import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
+import 'package:mobile/features/finance/view/wallet_reconciliation_panel.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
@@ -363,9 +363,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         onEdit: canManageFinance(context, 'update_wallets')
             ? () => unawaited(_edit())
             : null,
-        onCheckpoints: () => unawaited(
-          context.push(Routes.financeCheckpointsPath(walletId: wallet.id)),
-        ),
+      ),
+      checkpointHistory: WalletReconciliationPanel(
+        wallet: wallet,
+        currency: (wallet.currency ?? _workspaceCurrency).toUpperCase(),
+        revision: _generation,
+        onAdjustment: _load,
       ),
       period: _period,
       now: _now,
