@@ -77,6 +77,9 @@ const production = defineConfig({
       // because a deploy replaces vars and dropping these would turn Meet AI back on.
       // Lifting containment is a reviewed change to these two lines.
       MEET_CLASSROOM_LIMITS_ENABLED: 'false',
+      // Class attendance and the class timer stay off unless the exact string true.
+      MEET_CLASS_ATTENDANCE_ENABLED: 'false',
+      MEET_CLASS_TIMER_ENABLED: 'false',
       MEET_AI_DISABLED: 'true',
       MEET_AI_ENABLED_WORKSPACE_IDS: '',
     },

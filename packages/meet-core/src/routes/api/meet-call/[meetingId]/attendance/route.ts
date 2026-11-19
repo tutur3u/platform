@@ -5,7 +5,10 @@ import {
   resolveMeetClassRole,
 } from '@tuturuuu/meet-core/features/call/server/class-role';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
-import { attendanceCsv } from '@tuturuuu/realtime/meet';
+import {
+  attendanceCsv,
+  meetClassAttendanceEnabled,
+} from '@tuturuuu/realtime/meet';
 import { connection } from 'next/server';
 
 export async function GET(
@@ -13,6 +16,7 @@ export async function GET(
   { params }: { params: Promise<{ meetingId: string }> }
 ) {
   await connection();
+  if (!meetClassAttendanceEnabled()) return new Response(null, { status: 404 });
   const { meetingId } = await params;
   const format = new URL(request.url).searchParams.get('format');
   return roomRoute(request, meetingId, async (access) => {

@@ -4,6 +4,7 @@ import {
   openAttendanceInterval,
   renameOpenAttendance,
 } from './attendance-ledger';
+import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import {
   classTimerServerMessage,
   meetClassRole,
@@ -47,7 +48,8 @@ import { transcriptionAnnouncements } from './transcription';
 export function admitOrHold(
   state: MeetRoomSnapshot,
   token: MeetRealtimeTokenPayload,
-  now: string
+  now: string,
+  features: MeetClassFeatures = meetClassFeatures()
 ): MeetRoomOutcome {
   state = accountRoomTime(state, Date.parse(now));
   if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
@@ -122,7 +124,7 @@ export function admitOrHold(
     };
 
     return outcome(next, {
-      reply: [buildReady(next, token, 'waiting', now)],
+      reply: [buildReady(next, token, 'waiting', now, features)],
       toManagers: [meetAdmissionPendingMessage(next)],
     });
   }
@@ -146,16 +148,18 @@ export function admitOrHold(
   }
   const waiting = { ...state.waiting };
   delete waiting[token.userId];
-  const attendance = previous
-    ? renameOpenAttendance(state.attendance, token.userId, person.displayName)
-    : openAttendanceInterval(state.attendance, {
-        deviceUserId: token.userId,
-        joinedAt: person.joinedAt,
-        ...attendanceIdentity({ ...token, displayName: person.displayName }),
-      });
+  const attendance = features.attendance
+    ? previous
+      ? renameOpenAttendance(state.attendance, token.userId, person.displayName)
+      : openAttendanceInterval(state.attendance, {
+          deviceUserId: token.userId,
+          joinedAt: person.joinedAt,
+          ...attendanceIdentity({ ...token, displayName: person.displayName }),
+        })
+    : undefined;
   const next: MeetRoomSnapshot = {
     ...state,
-    ...attendancePatch(state, attendance),
+    ...(attendance ? attendancePatch(state, attendance) : {}),
     waiting,
     approved: rememberAdmission(state, person),
     presence: {
@@ -173,7 +177,10 @@ export function admitOrHold(
         : []),
     ],
     reply: [
-      { ...buildReady(next, token, 'admitted', now), resumed: !!previous },
+      {
+        ...buildReady(next, token, 'admitted', now, features),
+        resumed: !!previous,
+      },
       roomSettingsMessage(next),
       recordingMessage(next),
       ...transcriptionAnnouncements(next, token.userId),
@@ -190,14 +197,21 @@ function buildReady(
   state: MeetRoomSnapshot,
   token: MeetRealtimeTokenPayload,
   admission: 'admitted' | 'waiting',
-  now: string
+  now: string,
+  features: MeetClassFeatures
 ): Extract<MeetRealtimeServerMessage, { type: 'ready' }> {
-  const timer = presentClassTimer(state.classTimer, now);
+  const timer = features.timer
+    ? presentClassTimer(state.classTimer, now)
+    : null;
   return {
     admission,
     canManageParticipants: canMeetRealtimeManageParticipants(token),
     classRole: meetClassRole(token),
-    ...(admission === 'admitted' ? { classTimer: timer, serverNow: now } : {}),
+    classAttendanceEnabled: features.attendance,
+    classTimerEnabled: features.timer,
+    ...(admission === 'admitted' && features.timer
+      ? { classTimer: timer, serverNow: now }
+      : {}),
     tracks: admission === 'admitted' ? Object.values(state.tracks) : [],
     expiresAt: new Date(token.exp * 1000).toISOString(),
     roomExpiresAt: state.budget
@@ -225,7 +239,8 @@ function decideParticipant(
   admit: boolean,
   token: MeetRealtimeTokenPayload,
   now: string,
-  requestId?: string
+  requestId?: string,
+  features: MeetClassFeatures = meetClassFeatures()
 ): MeetRoomOutcome {
   const { userId, roomId } = token;
   const pending = state.waiting[targetId];
@@ -264,18 +279,20 @@ function decideParticipant(
   const admittedKind =
     pending.participantKind ?? (pending.guest ? 'guest' : 'member');
   const admittedId = pending.accountId ?? targetId;
-  const attendance = openAttendanceInterval(state.attendance, {
-    deviceUserId: targetId,
-    kind: admittedKind,
-    displayName: pending.displayName,
-    joinedAt: now,
-    ...(admittedKind === 'member'
-      ? { userId: admittedId }
-      : { guestId: admittedId }),
-  });
+  const attendance = features.attendance
+    ? openAttendanceInterval(state.attendance, {
+        deviceUserId: targetId,
+        kind: admittedKind,
+        displayName: pending.displayName,
+        joinedAt: now,
+        ...(admittedKind === 'member'
+          ? { userId: admittedId }
+          : { guestId: admittedId }),
+      })
+    : undefined;
   const next: MeetRoomSnapshot = {
     ...state,
-    ...attendancePatch(state, attendance),
+    ...(attendance ? attendancePatch(state, attendance) : {}),
     presence: {
       ...state.presence,
       [targetId]: {
@@ -337,13 +354,17 @@ function decideParticipant(
         userId: targetId,
       },
       { userId: targetId, message: roomSettingsMessage(next) },
-      {
-        userId: targetId,
-        message: classTimerServerMessage(
-          presentClassTimer(next.classTimer, now),
-          now
-        ),
-      },
+      ...(features.timer
+        ? [
+            {
+              userId: targetId,
+              message: classTimerServerMessage(
+                presentClassTimer(next.classTimer, now),
+                now
+              ),
+            },
+          ]
+        : []),
       { userId: targetId, message: recordingMessage(next) },
       ...transcriptionAnnouncements(next, targetId).map((message) => ({
         userId: pending.userId,
@@ -377,7 +398,8 @@ export function decideRoomAdmission(
     { type: 'admission.decide' | 'admission.decideAll' }
   >,
   token: MeetRealtimeTokenPayload,
-  now: string
+  now: string,
+  features: MeetClassFeatures = meetClassFeatures()
 ): MeetRoomOutcome {
   if (
     !canMeetRealtimeManageParticipants(token) ||
@@ -391,7 +413,8 @@ export function decideRoomAdmission(
       message.admit,
       token,
       now,
-      message.requestId
+      message.requestId,
+      features
     );
 
   const result = outcome(state);
@@ -405,7 +428,9 @@ export function decideRoomAdmission(
       person.userId,
       message.admit,
       token,
-      now
+      now,
+      undefined,
+      features
     );
     if (next.reply.length) break;
     result.state = next.state;

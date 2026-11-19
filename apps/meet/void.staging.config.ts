@@ -68,6 +68,8 @@ export function meetStagingConfig() {
       vars: {
         MEET_AI_DISABLED: 'true',
         MEET_AI_ENABLED_WORKSPACE_IDS: '',
+        MEET_CLASS_ATTENDANCE_ENABLED: 'false',
+        MEET_CLASS_TIMER_ENABLED: 'false',
         NEXT_PUBLIC_APP_URL: `https://tuturuuu-meet-wave1-staging.${subdomain}.workers.dev`,
         NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
         MEET_REALTIME_URL: `wss://tuturuuu-meet-realtime-wave1-staging.${subdomain}.workers.dev/realtime`,

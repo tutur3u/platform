@@ -72,7 +72,17 @@ root invokes its preload and redirects to the monorepo test suite instead.
 
 ## Class timer and attendance
 
-The class timer is a shared countdown on the existing Meet realtime channel. The
+The class timer and attendance stay off unless the server sets
+`MEET_CLASS_TIMER_ENABLED` or `MEET_CLASS_ATTENDANCE_ENABLED` to the exact
+string `true`. Production Meet and Meet Realtime set both to `false`. An
+absent value is off. While attendance is off, the room does not record join
+or leave intervals, the Attendance panel stays hidden, and
+`GET /api/meet-call/{meetingId}/attendance` returns 404 without reading
+storage. While the timer is off, timer commands are rejected and the
+countdown is not shown.
+
+When the timer is enabled, it is a shared countdown on the existing Meet
+realtime channel. The
 host, or a workspace admin co-host, starts it for 1, 3, 5, or 10 minutes, or for
 a custom length from 1 to 180 minutes. Everyone admitted to the room sees the
 same remaining time. The server clock is the source of truth, and each client
@@ -99,8 +109,9 @@ reads and writes through the service role. The realtime worker does not receive
 database credentials. Opening the panel copies the room ledger into the table
 so the record survives room eviction. Production migrations ship through CI.
 
-Regression coverage lives in `class-timer.test.ts`, `attendance-ledger.test.ts`,
-`call-clock.test.tsx`, and the attendance route tests.
+Regression coverage lives in `class-features.test.ts`, `class-timer.test.ts`,
+`attendance-ledger.test.ts`, `call-clock.test.tsx`, and the attendance route
+tests.
 
 ## Pieces
 

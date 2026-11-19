@@ -71,6 +71,7 @@ function request(format?: string) {
 }
 
 beforeEach(() => {
+  vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
   fixture.access.isHost = false;
   fixture.access.canReadWorkspace = true;
   fixture.admin.mockReset();
@@ -84,6 +85,16 @@ beforeEach(() => {
       userId: fixture.access.user.id,
     },
   ]);
+});
+
+it('returns 404 and does not read attendance while the server switch is off', async () => {
+  vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'false');
+  fixture.access.isHost = true;
+  const response = await GET(request(), {
+    params: Promise.resolve({ meetingId }),
+  });
+  expect(response.status).toBe(404);
+  expect(fixture.sync).not.toHaveBeenCalled();
 });
 
 it('hides attendance from a workspace member who is not a host or admin', async () => {

@@ -8,6 +8,7 @@ import {
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
+  meetClassFeatures,
   meetRoomStateView,
   closeBudgetPublications,
   createMeetRoomSnapshot,
@@ -269,7 +270,8 @@ export class MeetRoomDurableObject implements DurableObject {
           const result = releaseParticipant(
             this.snapshot,
             person.userId,
-            token.roomId
+            token.roomId,
+            meetClassFeatures(this.env)
           );
           this.snapshot = result.state;
           released.push({ person, result });
@@ -316,9 +318,12 @@ export class MeetRoomDurableObject implements DurableObject {
           await this.scheduleSweep(Date.now());
         this.broadcast(updated.broadcast);
       }
-      return Response.json(meetRoomStateView(this.snapshot, token), {
-        headers: { 'Cache-Control': 'private, no-store' },
-      });
+      return Response.json(
+        meetRoomStateView(this.snapshot, token, meetClassFeatures(this.env)),
+        {
+          headers: { 'Cache-Control': 'private, no-store' },
+        }
+      );
     }
     const previous = this.snapshot.presence[token.userId];
     if (
@@ -333,7 +338,8 @@ export class MeetRoomDurableObject implements DurableObject {
       const expired = releaseParticipant(
         this.snapshot,
         token.userId,
-        token.roomId
+        token.roomId,
+        meetClassFeatures(this.env)
       );
       this.snapshot = expired.state;
       await this.persist();
@@ -349,7 +355,12 @@ export class MeetRoomDurableObject implements DurableObject {
     } satisfies MeetRoomSocketAttachment);
     this.state.acceptWebSocket(server);
 
-    const outcome = admitOrHold(this.snapshot, token, new Date().toISOString());
+    const outcome = admitOrHold(
+      this.snapshot,
+      token,
+      new Date().toISOString(),
+      meetClassFeatures(this.env)
+    );
     this.snapshot = outcome.state;
     this.snapshot = this.connectionState(undefined, token);
     if (this.snapshot.budget?.pendingPublications?.length)
@@ -519,7 +530,8 @@ export class MeetRoomDurableObject implements DurableObject {
     const outcome = releaseParticipant(
       this.snapshot,
       token.userId,
-      token.roomId
+      token.roomId,
+      meetClassFeatures(this.env)
     );
     this.snapshot = outcome.state;
     this.snapshot = this.connectionState(socket, token);
@@ -621,7 +633,12 @@ export class MeetRoomDurableObject implements DurableObject {
           (firstSocket
             ? this.delivery.tokenOf(firstSocket)?.roomId
             : undefined);
-        const outcome = releaseParticipant(this.snapshot, userId, roomId ?? '');
+        const outcome = releaseParticipant(
+          this.snapshot,
+          userId,
+          roomId ?? '',
+          meetClassFeatures(this.env)
+        );
         this.snapshot = outcome.state;
         releases.push(outcome);
       }

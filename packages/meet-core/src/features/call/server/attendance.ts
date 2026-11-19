@@ -1,6 +1,9 @@
 import 'server-only';
 import type { AttendanceInterval } from '@tuturuuu/realtime/meet';
-import { aggregateAttendance } from '@tuturuuu/realtime/meet';
+import {
+  aggregateAttendance,
+  meetClassAttendanceEnabled,
+} from '@tuturuuu/realtime/meet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MeetCallAccessError } from '../lib/call-access';
 import { getMeetCallSession } from '../lib/call-session';
@@ -157,6 +160,8 @@ export async function syncMeetAttendance(
     store: AttendanceStore;
   }
 ) {
+  if (!meetClassAttendanceEnabled())
+    throw new MeetCallAccessError(404, 'Attendance is unavailable');
   const readLedger = deps?.readLedger ?? (() => readRoomLedger(input));
   const store = deps?.store ?? (await createAttendanceStore());
   const ledger = await readLedger().catch(() => null);

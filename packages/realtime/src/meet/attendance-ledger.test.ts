@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   admitOrHold,
   aggregateAttendance,
@@ -39,6 +39,14 @@ function token(
 }
 
 describe('attendance ledger', () => {
+  beforeEach(() => {
+    vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+    vi.stubEnv('MEET_CLASS_TIMER_ENABLED', 'true');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('records a member on admit and does not open a second interval on reconnect', () => {
     const host = token();
     const admitted = admitOrHold(createMeetRoomSnapshot(), host, NOW);

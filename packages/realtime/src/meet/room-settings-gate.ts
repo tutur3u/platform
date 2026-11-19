@@ -2,6 +2,7 @@ import {
   isMeetAiEnabledForWorkspace,
   type MeetAiGateEnv,
 } from './ai-workspace-gate';
+import { meetClassFeatures } from './class-features';
 import type { MeetRealtimeClientMessage } from './messages';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomCommand } from './room';
@@ -52,5 +53,6 @@ export function roomCommand(
     now: new Date().toISOString(),
     token,
     notesEligible: isMeetAiEnabledForWorkspace(token.wsId, env),
+    classFeatures: meetClassFeatures(env),
   };
 }

@@ -3,6 +3,7 @@ import {
   closeAttendanceInterval,
 } from './attendance-ledger';
 import type { ClassTimer } from './class-timer';
+import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import { canMeetRealtimeManageParticipants } from './permissions';
 import type { RoomBudget } from './room-budget';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
@@ -95,6 +96,8 @@ export interface MeetRoomCommand {
   notesEligible?: boolean;
   requireAdmission?: boolean;
   canCloseSubscriptions?: () => boolean;
+  /** Absent uses the process environment. An omitted switch stays off. */
+  classFeatures?: MeetClassFeatures;
 }
 
 export function createMeetRoomSnapshot(): MeetRoomSnapshot {
@@ -192,8 +195,12 @@ export function releaseParticipant(
   state: MeetRoomSnapshot,
   userId: string,
   roomId: string,
-  now = new Date().toISOString()
+  now: string | MeetClassFeatures = new Date().toISOString(),
+  featureOverride?: MeetClassFeatures
 ): MeetRoomOutcome {
+  const features =
+    typeof now === 'string' ? (featureOverride ?? meetClassFeatures()) : now;
+  const leftAt = typeof now === 'string' ? now : new Date().toISOString();
   const presence = { ...state.presence };
   const waiting = { ...state.waiting };
   const lastReactionAt = { ...state.lastReactionAt };
@@ -204,7 +211,9 @@ export function releaseParticipant(
   const tracks = Object.fromEntries(
     Object.entries(state.tracks).filter(([, track]) => track.userId !== userId)
   );
-  const attendance = closeAttendanceInterval(state.attendance, userId, now);
+  const attendance = features.attendance
+    ? closeAttendanceInterval(state.attendance, userId, leftAt)
+    : state.attendance;
   const next: MeetRoomSnapshot = {
     ...(state.recording.ownerDeviceId === userId
       ? failActiveRecording(state)

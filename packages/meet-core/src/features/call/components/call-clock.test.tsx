@@ -46,6 +46,8 @@ function running(role: CallState['classRole']): CallState {
   return {
     ...INITIAL_CALL_STATE,
     classRole: role,
+    classAttendanceEnabled: true,
+    classTimerEnabled: true,
     classTimerServerNow: NOW,
     role: role === 'host' ? 'host' : 'speaker',
     classTimer: {
@@ -104,12 +106,30 @@ it('hides pause, resume, and stop from a co-host and shows the end cue without s
 });
 
 it('offers attendance only to the host and a co-host', () => {
-  renderClock({ ...INITIAL_CALL_STATE, classRole: 'participant' });
+  renderClock({
+    ...INITIAL_CALL_STATE,
+    classRole: 'participant',
+    classAttendanceEnabled: true,
+  });
   expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
   cleanup();
-  renderClock({ ...INITIAL_CALL_STATE, classRole: 'cohost' });
+  renderClock({
+    ...INITIAL_CALL_STATE,
+    classRole: 'cohost',
+    classAttendanceEnabled: true,
+  });
   expect(
     (screen.getByRole('button', { name: 'Attendance' }) as HTMLButtonElement)
       .disabled
   ).toBe(false);
+});
+
+it('hides the class timer and attendance while the server switches are off', () => {
+  renderClock({
+    ...running('host'),
+    classAttendanceEnabled: false,
+    classTimerEnabled: false,
+  });
+  expect(screen.queryByRole('button', { name: 'Class timer' })).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Attendance' })).toBeNull();
 });

@@ -39,6 +39,14 @@ export {
   closeAttendanceInterval,
   openAttendanceInterval,
 } from './attendance-ledger';
+export type { MeetClassFeatureEnv, MeetClassFeatures } from './class-features';
+export {
+  MEET_CLASS_ATTENDANCE_ENV,
+  MEET_CLASS_TIMER_ENV,
+  meetClassAttendanceEnabled,
+  meetClassFeatures,
+  meetClassTimerEnabled,
+} from './class-features';
 export type { ClassTimer, ClassTimerStatus } from './class-timer';
 export {
   CLASS_TIMER_MAX_MS,

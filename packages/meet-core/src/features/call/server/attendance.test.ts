@@ -64,6 +64,18 @@ const input = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+});
+
+it('does not read or write attendance while the server switch is off', async () => {
+  vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'false');
+  const saved = store();
+  const readLedger = vi.fn(async () => [interval]);
+  await expect(
+    syncMeetAttendance(input, { readLedger, store: saved })
+  ).rejects.toMatchObject({ status: 404 });
+  expect(readLedger).not.toHaveBeenCalled();
+  expect(saved.upserts).toEqual([]);
 });
 
 it('upserts the live ledger and returns stored minutes', async () => {

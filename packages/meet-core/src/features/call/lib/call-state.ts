@@ -81,6 +81,8 @@ export interface CallState {
   remoteTracks: Record<string, MeetRealtimeRoomTrack>;
   role: MeetRealtimeRole | null;
   classRole: 'host' | 'cohost' | 'participant';
+  classAttendanceEnabled: boolean;
+  classTimerEnabled: boolean;
   classTimer: ClassTimer | null;
   classTimerServerNow: string | null;
   selfUserId: string | null;
@@ -101,6 +103,8 @@ export const INITIAL_CALL_STATE: CallState = {
   remoteTracks: {},
   role: null,
   classRole: 'participant',
+  classAttendanceEnabled: false,
+  classTimerEnabled: false,
   classTimer: null,
   classTimerServerNow: null,
   selfUserId: null,
@@ -172,6 +176,8 @@ export function reduceCallState(
         classRole:
           message.classRole ??
           (message.role === 'host' ? 'host' : 'participant'),
+        classAttendanceEnabled: message.classAttendanceEnabled === true,
+        classTimerEnabled: message.classTimerEnabled === true,
         classTimer:
           message.admission === 'waiting' ? null : (message.classTimer ?? null),
         classTimerServerNow:

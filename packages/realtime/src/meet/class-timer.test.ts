@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   admitOrHold,
   applyMeetRoomCommand,
@@ -36,6 +36,14 @@ function token(
     ...overrides,
   });
 }
+
+beforeEach(() => {
+  vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+  vi.stubEnv('MEET_CLASS_TIMER_ENABLED', 'true');
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 function run(
   state: ReturnType<typeof createMeetRoomSnapshot>,

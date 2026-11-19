@@ -4,6 +4,7 @@ import {
   openAttendanceInterval,
   renameOpenAttendance,
 } from './attendance-ledger';
+import { meetClassFeatures } from './class-features';
 import {
   applyClassTimerCommand,
   classTimerServerMessage,
@@ -46,6 +47,8 @@ export function applyMeetRoomCommand(
   state: MeetRoomSnapshot,
   command: MeetRoomCommand
 ): MeetRoomOutcome {
+  if (!(command.classFeatures ?? meetClassFeatures()).timer)
+    return dispatchMeetRoomCommand(state, command);
   const current = state.classTimer ?? null;
   const presented = presentClassTimer(current, command.now);
   const statusFlipped =
@@ -76,6 +79,7 @@ function dispatchMeetRoomCommand(
     notesEligible,
     canCloseSubscriptions,
     requireAdmission,
+    classFeatures = meetClassFeatures(),
   }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
@@ -164,19 +168,21 @@ function dispatchMeetRoomCommand(
         joinedAt: prior?.joinedAt ?? now,
         assistantAudio: prior?.assistantAudio,
       };
-      const attendance = prior
-        ? renameOpenAttendance(state.attendance, userId, joined.displayName)
-        : openAttendanceInterval(state.attendance, {
-            deviceUserId: userId,
-            joinedAt: joined.joinedAt,
-            ...attendanceIdentity({
-              ...token,
-              displayName: joined.displayName,
-            }),
-          });
+      const attendance = classFeatures.attendance
+        ? prior
+          ? renameOpenAttendance(state.attendance, userId, joined.displayName)
+          : openAttendanceInterval(state.attendance, {
+              deviceUserId: userId,
+              joinedAt: joined.joinedAt,
+              ...attendanceIdentity({
+                ...token,
+                displayName: joined.displayName,
+              }),
+            })
+        : undefined;
       const next = {
         ...state,
-        ...attendancePatch(state, attendance),
+        ...(attendance ? attendancePatch(state, attendance) : {}),
         presence: {
           ...state.presence,
           [userId]: joined,
@@ -255,7 +261,7 @@ function dispatchMeetRoomCommand(
 
     case 'admission.decide':
     case 'admission.decideAll':
-      return decideRoomAdmission(state, message, token, now);
+      return decideRoomAdmission(state, message, token, now, classFeatures);
     case 'presence.resync':
       return state.presence[userId]
         ? outcome(state, { reply: [meetPresenceMessage(state, roomId)] })
@@ -320,7 +326,8 @@ function dispatchMeetRoomCommand(
         blockAutoAdmission({ ...state, approved }, accountId ?? message.userId),
         message.userId,
         roomId,
-        now
+        now,
+        classFeatures
       );
       const removedAt = Date.parse(now);
       const nextState = recordRemovedGuest(
@@ -356,6 +363,8 @@ function dispatchMeetRoomCommand(
       return applyRecording(state, message, token, now);
 
     case 'classTimer.command': {
+      if (!classFeatures.timer)
+        return denied(state, 'unavailable', message.requestId);
       const applied = applyClassTimerCommand(
         state.classTimer,
         message,

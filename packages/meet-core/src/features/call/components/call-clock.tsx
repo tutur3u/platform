@@ -29,11 +29,11 @@ export function CallClock({
   };
 }) {
   const canStart = state.classRole === 'host' || state.classRole === 'cohost';
-  const canView = canStart;
+  const canView = canStart && state.classAttendanceEnabled;
   return (
     <div className="flex max-w-full flex-wrap items-center gap-1">
       <RoomCountdown expiresAt={state.roomExpiresAt} />
-      {(canStart || state.classTimer) && (
+      {state.classTimerEnabled && (canStart || state.classTimer) && (
         <ClassTimerControl
           canControl={state.classRole === 'host'}
           canStart={canStart}

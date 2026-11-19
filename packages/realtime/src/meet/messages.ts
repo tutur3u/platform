@@ -252,6 +252,8 @@ export type MeetRealtimeServerMessage =
       mode: MeetRealtimeRoomMode;
       role: MeetRealtimeRole;
       classRole?: 'host' | 'cohost' | 'participant';
+      classAttendanceEnabled?: boolean;
+      classTimerEnabled?: boolean;
       classTimer?: ClassTimer | null;
       serverNow?: string;
       roomId: string;
