@@ -32,6 +32,12 @@ async function decorate({
 }
 
 describe('Forms root-only admission', () => {
+  const rootOnlyMounts = {
+    app: 'forms',
+    rootHosts: [],
+    ...appConfig.mounts,
+    mountHosts: [],
+  };
   it.each([
     'https://tuturuuu.com/forms',
     'https://tuturuuu.com/forms/api/v1/shared/forms/example',
@@ -46,7 +52,7 @@ describe('Forms root-only admission', () => {
     const forwardApi = vi.fn(async () => new Response('central'));
     const ctx = { waitUntil: vi.fn() };
     const handle = createBridgeHandler<typeof env, typeof ctx>({
-      mounts: { app: 'forms', rootHosts: [], ...appConfig.mounts },
+      mounts: rootOnlyMounts,
       start: { fetch: start },
       proxy,
       assets,
@@ -72,7 +78,7 @@ describe('Forms root-only admission', () => {
     async (host) => {
       const ctx = { waitUntil: vi.fn() };
       const handle = createBridgeHandler<typeof env, typeof ctx>({
-        mounts: { app: 'forms', rootHosts: [], ...appConfig.mounts },
+        mounts: rootOnlyMounts,
         start: { fetch: async () => new Response('Forms root') },
         proxy: async () => NextResponse.next(),
         assets: () => undefined,
@@ -131,6 +137,16 @@ describe('Forms response security', () => {
       );
     }
   );
+
+  it('marks a successful fingerprinted asset immutable', async () => {
+    const response = await decorate({
+      path: '/assets/app-BuVS9pT7.js',
+      headers: { 'Content-Type': 'application/javascript' },
+    });
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=31536000, immutable'
+    );
+  });
 
   it.each([
     {

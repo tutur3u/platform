@@ -1,6 +1,10 @@
 import 'server-only';
 
 import crypto from 'node:crypto';
+import {
+  createRequestLocal,
+  maybeBridgeRequest,
+} from '@tuturuuu/start-bridge/request-context/reader';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import {
@@ -35,7 +39,26 @@ interface LoadedSharedFormRecord {
   accessMode: 'anonymous' | 'authenticated' | 'authenticated_email';
 }
 
-async function loadSharedFormRecord(
+const sharedForms = createRequestLocal<
+  Map<string, Promise<LoadedSharedFormRecord>>
+>('forms shared records');
+
+function loadSharedFormRecord(shareCode: string) {
+  if (!maybeBridgeRequest()) return fetchSharedFormRecord(shareCode);
+
+  let records = sharedForms.get();
+  if (!records) {
+    records = new Map();
+    sharedForms.set(records);
+  }
+  const existing = records.get(shareCode);
+  if (existing) return existing;
+  const record = fetchSharedFormRecord(shareCode);
+  records.set(shareCode, record);
+  return record;
+}
+
+async function fetchSharedFormRecord(
   shareCode: string
 ): Promise<LoadedSharedFormRecord> {
   const adminClient = await createAdminClient();

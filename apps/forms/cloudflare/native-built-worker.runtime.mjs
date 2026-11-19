@@ -125,6 +125,7 @@ test(
 
     // Every outbound request is denied and recorded; nothing leaves the host.
     const egress = [];
+    let shareLookups = 0;
     const sdk = require('wrangler');
     const worker = await sdk.unstable_startWorker({
       config: staged.configPath,
@@ -177,7 +178,12 @@ test(
           throw new Error('Provider auth forbidden in the forms smoke test');
         },
         outboundService: (request) => {
-          egress.push(new URL(request.url).origin);
+          const url = new URL(request.url);
+          egress.push(url.origin);
+          if (url.pathname === '/rest/v1/form_share_links') {
+            shareLookups++;
+            return Response.json([]);
+          }
           return new Response('{"error":"denied by the smoke test"}', {
             status: 401,
             headers: { 'content-type': 'application/json' },
@@ -234,6 +240,27 @@ test(
         { host: ROOT_HOST, path: '/' },
         ...(MOUNTED ? [{ host: APEX, path: BASE, base: BASE }] : []),
       ])
+    );
+
+    await t.test(
+      'metadata and landing reuse one share lookup per request',
+      async () => {
+        const profiles = [
+          { host: ROOT_HOST, base: '' },
+          ...(MOUNTED ? [{ host: APEX, base: BASE }] : []),
+        ];
+        for (const { host, base } of profiles) {
+          const before = shareLookups;
+          const response = await call(`${base}/f/native-fixture-absent`, host);
+          assert.equal(response.status, 200);
+          assert.match(response.headers['content-type'] ?? '', /^text\/html/u);
+          assert.match(
+            response.headers['cache-control'] ?? '',
+            /\bno-store\b/u
+          );
+          assert.equal(shareLookups - before, 1, host);
+        }
+      }
     );
 
     await t.test('build identity is the exact compiled source', async () => {

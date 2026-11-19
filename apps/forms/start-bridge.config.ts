@@ -6,6 +6,8 @@ import { framablePathRegexes } from '@tuturuuu/utils/framable-paths';
 import type { FormsEnvironment } from './cloudflare/worker';
 
 const PUBLIC_FILES = new Set(['/embed.js', '/robots.txt', '/sitemap.xml']);
+const FINGERPRINTED_ASSET =
+  /^\/assets\/.+-[\w-]{8}\.(?:css|js|mjs|woff2?|wasm|png|svg|webp)$/u;
 const upstreamFramablePaths = framablePathRegexes();
 const EMBED_PAGE = /^\/embed\/[^/]+(?:\/|$)/u;
 const profile =
@@ -60,6 +62,9 @@ export default defineBridgeAppConfig<FormsEnvironment>({
       !headers.get('Content-Type')?.toLowerCase().includes('text/html') &&
       !headers.has('Set-Cookie') &&
       (path.startsWith('/assets/') || PUBLIC_FILES.has(path));
+    if (isStatic && FINGERPRINTED_ASSET.test(path)) {
+      headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+    }
     if (!isStatic) {
       headers.set('Cache-Control', 'private, no-store');
       for (const name of [
