@@ -1840,6 +1840,16 @@
       },
       "digest": "fe37858bda0354e17c57d35ee1796ee164eeac39a8ad0793989fbf2942f8d5fe"
     },
+    "apps/roadmap/src/pulse/pulse-tech-stack.test.tsx": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Roadmap pulse tests stack rows including deployCli wrangler versus cf; inventory detection only, no CLI invocation."
+      },
+      "digest": "39710875b2546e668e8a720c2c56213c5111fa61483ef6bf2ec69b1fd6ed574b"
+    },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,
       "uses": 1,
@@ -2232,6 +2242,56 @@
       },
       "digest": "4283b03fe4c29d3e83ff34ba068277dfb043a2bb44e5f58bf7242eadb16c1290"
     },
+    "packages/roadmap-core/messages/en.json": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Deploy CLI label strings distinguish wrangler and cf in roadmap stack inventory; no CLI invocation."
+      },
+      "digest": "347bd689c6616d075b438e2f3496639da70fcd6edf20a9507fff880cf921b54f"
+    },
+    "packages/roadmap-core/messages/vi.json": {
+      "lines": 1,
+      "uses": 2,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Deploy CLI label strings distinguish wrangler and cf in roadmap stack inventory; no CLI invocation."
+      },
+      "digest": "347bd689c6616d075b438e2f3496639da70fcd6edf20a9507fff880cf921b54f"
+    },
+    "packages/roadmap-core/src/collect-tech-stack.ts": {
+      "lines": 6,
+      "uses": 10,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Filesystem inventory recognizes wrangler.jsonc filenames and classifies deployCli; no CLI invocation."
+      },
+      "digest": "d9637cef47fa0a8a185fa046533365d21ccd62953ff20e4452a47b39a95341b5"
+    },
+    "packages/roadmap-core/src/tech-stack.test.ts": {
+      "lines": 7,
+      "uses": 7,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Fixtures assert wrangler versus cf deployCli classification; no CLI invocation."
+      },
+      "digest": "1429ac90f428ce3cf550bc295601a2b6e350be59d8abc975a5ae6e5f07f66112"
+    },
+    "packages/roadmap-core/src/tech-stack.ts": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "producer-inventory",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6c36b7f5b8f7d0ec0d43e9815b8ec0a5a2e06e48",
+        "reason": "Type union includes wrangler as a deploy CLI inventory value; no CLI invocation."
+      },
+      "digest": "e4158ec7beb186acfed5d1dcfd92548c949f674d5f688c72a6156992677cf1aa"
+    },
     "packages/sdk/src/cli/storage-scratch.ts": {
       "lines": 1,
       "uses": 1,
@@ -2461,6 +2521,26 @@
         "reason": "Data-only fixture tests pre-existing wrangler types and cf types producer detection; no invocation."
       },
       "digest": "44a2d124db1b7ab13e5cfab56303a465538920ea32ada7d464a755611ffb3497"
+    },
+    "scripts/ci/calendar-cf-publisher.mjs": {
+      "lines": 13,
+      "uses": 14,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Calendar cf publisher rehearses wrangler dry-run module names against cf Build Output, then publishes with cf deploy --prebuilt; wrangler deploy publication retired for Calendar."
+      },
+      "digest": "4628cea1784467f5d50d8af02655d3892e519b4b40744be7853cb7bd400a15a2"
+    },
+    "scripts/ci/calendar-cf-publisher.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Calendar cf publisher rehearses wrangler dry-run module names against cf Build Output, then publishes with cf deploy --prebuilt; wrangler deploy publication retired for Calendar."
+      },
+      "digest": "34a552cd8a3eb5e5e2bcc54f09151869bfef0b9979fefe9c7cd7ac4ed724ebf2"
     },
     "scripts/ci/calendar-emitted-defaults.mjs": {
       "lines": 6,
@@ -2743,14 +2823,24 @@
       "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
     },
     "scripts/ci/fixtures/cf-toolchain-receipts.json": {
-      "lines": 20,
-      "uses": 27,
+      "lines": 23,
+      "uses": 29,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "Records per-operation cf toolchain receipts and allowlist deltas; data-only Wrangler gap references, no CLI invocation."
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Extends toolchain receipts with calendar publisher switch and native worker gateway qualification entries."
       },
-      "digest": "c0e40c47f50f674a7fae48f5d5603fb057adfce4fcf0b67ae2f87a31a7ffb458"
+      "digest": "5d0e34fedf1452809c2dcfe3444b82fb4b48dabb4399b81de7f5ad3783bb06c5"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/api.json": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Pending-migration parity baseline naming wrangler.jsonc source; no CLI invocation."
+      },
+      "digest": "2b492c342711d27e2a6d3af1bc9dbccf16383d6efb53e0316c8b864a087866a0"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
@@ -2771,6 +2861,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "7bb4ae9947213258a577a33c2de7a5886266c02267f7edd54e82515d876dcdce"
+    },
+    "scripts/ci/fixtures/cf-worker-parity/gateway.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Pending-migration parity baseline naming wrangler.jsonc source; no CLI invocation."
+      },
+      "digest": "5e2fd80955b3f1867b00401def0b4295a90c047b7c7a7bcf561cd4cb4cc50a82"
     },
     "scripts/ci/fixtures/native-abuse-guard.mjs": {
       "kind": "script",
@@ -3103,6 +3203,16 @@
         "reason": "Shared signed-in native root-browser gate (#6818) loads the app's Wrangler SDK to start its built Worker; every Start + Void app on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "23238e55e45b6b35303bdc58ddbf3e07d58fd8aeda1dd60b3dbea2e5e7e1a9fd"
+    },
+    "scripts/ci/native-simple-workers-template.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+        "reason": "Template test references wrangler.jsonc baselines for api and gateway; no CLI invocation."
+      },
+      "digest": "f55e9f280f6180195f92aca855f81b13ac63cf94d61bf73b3ee3e1afed89f6ad"
     },
     "scripts/ci/native-worker-cf-artifact.test.js": {
       "gap": "do-publication-rehearsal",

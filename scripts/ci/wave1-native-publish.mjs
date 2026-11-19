@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
   appendFileSync,
+  existsSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
@@ -216,6 +217,7 @@ export async function main({
       p: receipt.profile,
       exec,
       dryRun: true,
+      appRoot,
     });
     console.log(JSON.stringify({ uploadMeasurements: measurements }));
     assertUploadLimits(measurements);
@@ -379,6 +381,7 @@ export async function main({
     exec,
     dryRun: true,
     secretNames: names,
+    appRoot,
   });
   save();
   try {
@@ -491,6 +494,7 @@ export async function main({
       p,
       measurements: record.measurements,
       exec,
+      appRoot,
     });
   try {
     record.versionId = await write();
@@ -525,7 +529,29 @@ export async function uploadArtifact({
   dryRun = false,
   measurements,
   secretNames = [],
+  appRoot,
 }) {
+  const resolvedAppRoot = appRoot ?? resolve('apps', app);
+  if (
+    app === 'calendar' &&
+    existsSync(resolve(resolvedAppRoot, 'calendar-artifact.json'))
+  ) {
+    const { publishCalendarArtifact } =
+      await import('./calendar-cf-publisher.mjs');
+    return publishCalendarArtifact({
+      env,
+      appRoot: resolvedAppRoot,
+      sourceSha: sha,
+      config,
+      sha,
+      digest,
+      cfToken,
+      p,
+      exec,
+      dryRun,
+      secretNames,
+    });
+  }
   if (dryRun)
     assert.equal(
       cfToken,

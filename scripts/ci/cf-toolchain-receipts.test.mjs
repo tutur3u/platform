@@ -30,3 +30,18 @@ test('settings readback production template names cron-control cf publisher', ()
   );
   assert.match(settings.productionTemplate.publisher, /cf deploy --prebuilt/);
 });
+
+test('calendar publisher and native worker templates are recorded as switched or qualified', () => {
+  const receipts = readReceipts().operations;
+  assert.equal(receipts['calendar-build-output'].status, 'switched');
+  assert.match(
+    receipts['calendar-build-output'].implementation,
+    /calendar-cf-publisher/
+  );
+  assert.equal(receipts['native-workers-gateway'].status, 'qualified');
+  assert.ok(
+    receipts['native-workers-gateway'].parityEvidence.includes(
+      'scripts/ci/fixtures/cf-worker-parity/gateway.json'
+    )
+  );
+});

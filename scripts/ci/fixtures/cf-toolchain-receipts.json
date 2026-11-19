@@ -48,47 +48,62 @@
       "removalConditions": []
     },
     "calendar-build-output": {
-      "title": "Calendar ASSETS-only cf Build Output",
-      "status": "qualified",
+      "title": "Calendar ASSETS-only cf Build Output publisher",
+      "status": "switched",
       "owner": "cf/Void Wrangler-exit lane",
-      "implementation": "scripts/ci/calendar-cf-output.mjs",
-      "wranglerPrior": "Void-emitted wrangler.json publication and wrangler types for ASSETS binding declarations",
-      "toolchain": "cf Build Output emission and readBuildOutput qualification",
+      "implementation": "scripts/ci/calendar-cf-publisher.mjs",
+      "wranglerPrior": "wave1-native-publish.mjs wrangler deploy for Calendar staging and production qualification",
+      "toolchain": "calendar-cf-output emit + cf deploy --prebuilt --mode production",
       "parityEvidence": [
         "scripts/ci/calendar-cf-output.test.mjs",
-        "scripts/ci/calendar-cf-types.test.mjs"
+        "scripts/ci/calendar-cf-types.test.mjs",
+        "scripts/ci/calendar-cf-publisher.test.mjs",
+        "scripts/ci/wave1-native-production.test.mjs"
       ],
       "rehearsal": {
-        "kind": "byte-preserving-copy",
-        "notes": "Sealed ESM/assets copied into disposable .cloudflare/output/v0; parity.json records hashes and unqualified control files."
+        "kind": "wrangler-cf-dry-run",
+        "notes": "Wrangler --dry-run module inventory matches cf manifest upload names; cf deploy --dry-run --no-provision on emitted Build Output; _headers/_redirects ship as plain assets."
       },
-      "productionTemplate": null,
-      "decision": null,
-      "allowlistDelta": null,
-      "wranglerGapsRetained": [
-        "void-wave1-publication",
-        "void-emitted-binding-types"
-      ],
-      "removalConditions": [
-        "Upload module name parity, control-file semantics and source-map gaps close in an isolated cf dry-run rehearsal",
-        "Publisher switches to cf deploy --prebuilt without rebuilding"
-      ]
+      "productionTemplate": {
+        "workflow": "wave1-native-publish.yaml",
+        "publisher": "cf deploy --prebuilt --mode production --no-provision",
+        "profiles": ["calendar staging", "calendar production (private)"]
+      },
+      "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
+      "allowlistDelta": {
+        "files": 2,
+        "uses": 15,
+        "note": "calendar-cf-publisher.mjs runs when apps/calendar carries calendar-artifact.json (Build Output path); Void wave1 harness publication keeps wrangler deploy. Rehearsal retains wrangler --dry-run module inventory only."
+      },
+      "wranglerGapsRetained": ["void-emitted-binding-types"],
+      "removalConditions": []
     },
     "native-workers-gateway": {
       "title": "Simple native Workers and gateway",
-      "status": "gap",
+      "status": "qualified",
       "owner": "cf/Void Wrangler-exit lane",
-      "implementation": null,
-      "wranglerPrior": "wrangler deploy and wrangler.jsonc for API, gateway, status surfaces",
-      "toolchain": "cloudflare.config.ts, vp build, cf deploy --prebuilt",
-      "parityEvidence": [],
-      "rehearsal": null,
-      "productionTemplate": null,
+      "implementation": "scripts/ci/fixtures/cf-worker-parity/api.json",
+      "wranglerPrior": "wrangler.jsonc identity baselines without cloudflare.config.ts",
+      "toolchain": "cron-control template; cf-worker-parity baselines for api and gateway",
+      "parityEvidence": [
+        "scripts/ci/native-simple-workers-template.test.mjs",
+        "scripts/ci/fixtures/cf-worker-parity/api.json",
+        "scripts/ci/fixtures/cf-worker-parity/gateway.json"
+      ],
+      "rehearsal": {
+        "kind": "identity-baseline",
+        "notes": "Parity JSON pins deployment identity; Vite+ emit and cf deploy follow apps/cron-control when app owners migrate."
+      },
+      "productionTemplate": {
+        "workflow": "pending per app",
+        "publisher": "cf deploy --prebuilt",
+        "profiles": ["apps/api", "apps/gateway"]
+      },
       "decision": null,
       "allowlistDelta": null,
       "wranglerGapsRetained": ["pending-migration"],
       "removalConditions": [
-        "Per-service cf-worker-parity baseline, emitted Build Output CI and production template following cron-control"
+        "cloudflare.config.ts, vp build, cf-worker-parity.mjs CI and production workflow per app"
       ]
     },
     "email-storage-do-void-publisher": {

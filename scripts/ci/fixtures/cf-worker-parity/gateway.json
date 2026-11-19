@@ -1,0 +1,35 @@
+{
+  "source": "apps/gateway/wrangler.jsonc",
+  "identity": {
+    "name": "tuturuuu-gateway",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": false,
+    "previewUrls": false,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.01,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.01,
+        "invocationLogs": true
+      }
+    },
+    "crons": [],
+    "routes": [{ "pattern": "tuturuuu.com/*", "zoneName": "tuturuuu.com" }],
+    "vars": {
+      "GATEWAY_MODE": "active",
+      "PUBLIC_HOST": "tuturuuu.com",
+      "GATEWAY_MARKETING_GROUPS": "legal,company,products,solutions,blog,home",
+      "GATEWAY_MARKETING_LEGACY_ROBOTS": "1",
+      "GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL": "false",
+      "GATEWAY_MOUNTED_PATHS": ""
+    },
+    "secrets": [],
+    "durableObjects": {},
+    "limits": { "cpuMs": 50 }
+  },
+  "migrationTemplate": "apps/cron-control",
+  "note": "Route and service-binding migration stays operator-owned; baseline pins deployment identity fields only."
+}

@@ -1,0 +1,28 @@
+{
+  "source": "apps/api/wrangler.jsonc",
+  "identity": {
+    "name": "tuturuuu-api",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-06-20",
+    "compatibilityFlags": ["nodejs_compat"],
+    "workersDev": false,
+    "previewUrls": false,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": false
+      }
+    },
+    "crons": [],
+    "routes": [],
+    "vars": {},
+    "secrets": [],
+    "durableObjects": {},
+    "limits": { "cpuMs": 50 }
+  },
+  "migrationTemplate": "apps/cron-control",
+  "note": "Baseline from apps/api/wrangler.jsonc; cloudflare.config.ts and Vite+ emit pending."
+}
