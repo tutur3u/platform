@@ -489,7 +489,7 @@
       "uses": 14,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/96590cc8d9a39af2dfe7345c2f061ee380b372d5",
+        "decision": "https://github.com/tutur3u/platform/commit/1d68096a7cdb96b553ecb3272d238c963806941d",
         "reason": "The web route family workflow builds each family with OpenNext, measures it with wrangler deploy --dry-run, deploys it with wrangler deploy and uploads/deploys the gateway version with wrangler versions upload/deploy, because cf has no OpenNext adapter or versions command parity yet."
       },
       "digest": "b647f2d23ffd98a41d6ed6a6bcc7d8fa5c3cbca20f4997231e0d4dfa41082e33"
@@ -969,7 +969,7 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "The gateway config adds the web route family service bindings and the GATEWAY_WEB_FAMILIES variable next to its existing variables, and a config file digest covers every line. No Wrangler invocation or route changes; the single Wrangler line and use are unchanged, and the pending-migration gap and its removal condition remain."
       },
       "digest": "d40af6ec1d5e53a8701fd46615cc73599eda96ae6b4cf110cba077450dde1f31"
@@ -2045,7 +2045,7 @@
       "uses": 11,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/ccbbd316e97a4ac87b1a6ee18fbd6f648ebd2b48",
+        "decision": "https://github.com/tutur3u/platform/commit/aadeedb9ddde364c8d4187665c6a20be7afe73a3",
         "reason": "The family table holds api-identity without a build config, so its wrangler config path is no longer named there; Wrangler usage in the table falls by one use and the digest covers the changed line."
       },
       "digest": "9e2982f073efc01970f41fb7e8d0f9413e1333224d991a3992bcb7e9916f1011"
@@ -2055,7 +2055,7 @@
       "uses": 4,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/98a7dc989af1daacb58632ef0adf6ec7322fae24",
+        "decision": "https://github.com/tutur3u/platform/commit/4fa7fa801773c5dec8b7bbbecab90f627cd31516",
         "reason": "Family table tests read each family wrangler config to keep Worker names, deployment ids and the gateway table in agreement."
       },
       "digest": "6ca201c9ef69e0a9c9bff7b9565e938724513418c56ee5ec47139050d5e04d38"
@@ -2065,7 +2065,7 @@
       "uses": 1,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/98a7dc989af1daacb58632ef0adf6ec7322fae24",
+        "decision": "https://github.com/tutur3u/platform/commit/4fa7fa801773c5dec8b7bbbecab90f627cd31516",
         "reason": "The disposable-checkout prune keeps the family wrangler config that OpenNext reads while removing routes the family does not own."
       },
       "digest": "b7d5671abe8ad37541376522dc5d654908046c6d40b8074488d9c42586e98071"
@@ -2075,7 +2075,7 @@
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/a21f15165a35e8a0d7853c82519c61a4a0b9db4a",
+        "decision": "https://github.com/tutur3u/platform/commit/3500457da3037cb9d2072b71974083aee8a04c3c",
         "reason": "OpenNext reads this Wrangler config for the api-identity family Worker; it carries no routes, so only the gateway binding serves it."
       },
       "digest": "2072446dedef671025765ad9a6e64c13eb2873c4067884e881dc2c07730720bd"
@@ -2085,7 +2085,7 @@
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/98a7dc989af1daacb58632ef0adf6ec7322fae24",
+        "decision": "https://github.com/tutur3u/platform/commit/4fa7fa801773c5dec8b7bbbecab90f627cd31516",
         "reason": "OpenNext reads this Wrangler config for the public-docs family Worker; it carries no routes, so only the gateway binding serves it."
       },
       "digest": "7a4bb815f66296179dbc8e6c4c6452777831e7bc77ea4c1b6af5d941e863ab03"
@@ -2105,7 +2105,7 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/f28ad34e1afc8b3f8aba6f074dba3268540fe698",
+        "decision": "https://github.com/tutur3u/platform/commit/300fe9fe8c7f309ba60d8c00476c8e82e2b2fa24",
         "reason": "apps/web pins @opennextjs/cloudflare next to the existing Wrangler devDependency; the OpenNext adapter invokes Wrangler to build and deploy the route family Workers. The void-wave1-publication gap and its removal condition remain for the existing usage."
       },
       "digest": "3560a099c5baeb232c85182ae178cb45af61f9ec64dab5a3b80fcfdf7ac3f85a"
@@ -2736,7 +2736,7 @@
       "uses": 5,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "Writes the gateway Wrangler deploy config from the committed config plus live settings and lists the secret names each family wrangler config requires."
       },
       "digest": "02a90047e3f8af075b839b50b2cfa48380de194c7221f2748ec58b855df655f3"
@@ -2746,7 +2746,7 @@
       "uses": 1,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "Tests the gateway Wrangler deploy-config writer and required-secret listing."
       },
       "digest": "14ffa5a0710c37ce3ea3a05e70c6fe4b0fb0b1187818ba5f5210ab6cf9cec151"
@@ -3477,7 +3477,7 @@
       "uses": 10,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "Enforces the 9.5 MiB family budget from the wrangler deploy --dry-run upload output."
       },
       "digest": "962891be487a4847a70a1350c9bb7a2051e7e58fdf801a909ee431dc88d1bfab"
@@ -3487,7 +3487,7 @@
       "uses": 3,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "Tests the family size gate against Wrangler dry-run output shapes."
       },
       "digest": "fe7798bc58a6c0db0582dbd934b607a870bf6c7dcb735e49059e9e161d32a8ff"
@@ -3497,7 +3497,7 @@
       "uses": 4,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/2371719f19dc23c478dc5adae457d5a956f96d0b",
+        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
         "reason": "Starts the emitted family Worker locally through the Wrangler SDK (unstable_startWorker) for the pre-deploy smoke."
       },
       "digest": "d47154e4d25710ab16a28b0508840ffffd81b3b5ce14c281d44ace9ec9f8d1b4"
