@@ -20,7 +20,8 @@ class WiringTests(unittest.TestCase):
         for filename in ("plugin.json", "mcp.json", ".mcp.json"):
             shutil.copyfile(ROOT / filename, self.root / filename)
         (self.root / "mcp").mkdir()
-        (self.root / "mcp/server.py").touch()
+        for filename in ("launch.py", "server.py", "requirements.lock"):
+            (self.root / "mcp" / filename).touch()
         self.manifest = json.loads((ROOT / ".codex-plugin/plugin.json").read_text())
 
     def check(self):

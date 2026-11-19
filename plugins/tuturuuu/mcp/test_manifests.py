@@ -25,7 +25,7 @@ class ManifestTests(unittest.TestCase):
         server = json.loads(manifest.read_text())['mcpServers']['tuturuuu-readonly']
         self.assertEqual(server['command'], 'python3')
         self.assertEqual(server['cwd'], './')
-        self.assertEqual(server['args'], ['mcp/server.py'])
+        self.assertEqual(server['args'], ['mcp/launch.py'])
         self.assertNotIn('env', server)
         if portable:
             self.assertEqual(server['type'], 'stdio')

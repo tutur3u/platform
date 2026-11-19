@@ -609,6 +609,15 @@ The Codex skill validator imports `yaml`, so it requires `PyYAML` in the active
 Python environment. The plugin-local validator uses only the Python standard
 library.
 
+## Local read-only MCP startup
+
+Both plugin manifests launch the packaged read-only server. If the launcher
+Python lacks the MCP SDK, the launcher uses uv to create a Python 3.12
+environment from the packaged, hash-locked requirements. Install uv on your
+machine if it is missing. The first launch provisions dependencies and later
+launches reuse the environment under the user cache. A changed lockfile selects
+a fresh environment on the next plugin launch.
+
 ## Maintenance Rules
 
 - Keep `plugins/tuturuuu/.codex-plugin/plugin.json` aligned with the plugin
