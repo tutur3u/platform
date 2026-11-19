@@ -82,6 +82,18 @@ function actor() {
   };
 }
 
+it('deletes the workspace while attendance is off without loading erasure', async () => {
+  flags.attendance = false;
+  openMock.mockRejectedValue(new Error('missing migration'));
+  const deleted = await deleteWorkspaceForActor(actor(), 'Class');
+  expect(deleted.status).toBe(200);
+  expect(deleted.body.code).toBe('deleted');
+  expect(rpcMock).toHaveBeenCalledOnce();
+  expect(openMock).not.toHaveBeenCalled();
+  expect(commitMock).not.toHaveBeenCalled();
+  expect(releaseMock).not.toHaveBeenCalled();
+});
+
 it('erases attendance only after the database confirms deletion', async () => {
   const order: string[] = [];
   openMock.mockImplementation(async () => {
@@ -120,16 +132,6 @@ it('does not delete the workspace when planning fails', async () => {
     'timeout'
   );
   expect(rpcMock).not.toHaveBeenCalled();
-});
-
-it('still requires an erasure plan while attendance is off', async () => {
-  flags.attendance = false;
-  openMock.mockRejectedValue(new Error('plan failed'));
-  await expect(deleteWorkspaceForActor(actor(), 'Class')).rejects.toThrow(
-    'plan failed'
-  );
-  expect(rpcMock).not.toHaveBeenCalled();
-  expect(commitMock).not.toHaveBeenCalled();
 });
 
 it('reports failure when confirmed erasure fails while attendance is on', async () => {

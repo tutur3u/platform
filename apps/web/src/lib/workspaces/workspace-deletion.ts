@@ -1,3 +1,4 @@
+import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -94,6 +95,31 @@ export async function deleteWorkspaceForActor(
     return audit('confirmation_mismatch');
   }
 
+  const args = {
+    p_ws_id: workspaceId,
+    p_actor_id: actorId,
+    p_confirmation: confirmation.trim(),
+  };
+  if (!meetClassAttendanceEnabled()) {
+    const admin = await createAdminClient({ noCookie: true });
+    const { data, error } = await admin.rpc('delete_owned_workspace', args);
+    if (error) {
+      console.error('Workspace deletion failed', { code: error.code });
+      return audit('failed');
+    }
+    const result: unknown = data;
+    switch (result) {
+      case 'deleted':
+      case 'forbidden':
+      case 'not_found':
+      case 'confirmation_mismatch':
+      case 'subscription_active':
+        return audit(result);
+      default:
+        return audit('failed');
+    }
+  }
+
   const erasure =
     await import('@tuturuuu/meet-core/features/call/server/attendance-erasure').catch(
       (error: unknown) => {
@@ -110,11 +136,6 @@ export async function deleteWorkspaceForActor(
     });
 
   const admin = await createAdminClient({ noCookie: true });
-  const args = {
-    p_ws_id: workspaceId,
-    p_actor_id: actorId,
-    p_confirmation: confirmation.trim(),
-  };
   const { data, error } = await admin.rpc('delete_owned_workspace', args);
   if (error) {
     console.error('Workspace deletion failed', { code: error.code });

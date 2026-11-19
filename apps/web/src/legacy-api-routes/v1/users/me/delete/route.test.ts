@@ -64,6 +64,9 @@ const erasure = vi.hoisted(() => ({
   commit: vi.fn(),
   release: vi.fn(),
 }));
+vi.mock('@tuturuuu/realtime/meet', () => ({
+  meetClassAttendanceEnabled: () => true,
+}));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
   withWorkspaceAttendanceErasure: (...args: unknown[]) =>
     erasure.withWorkspace(...args),

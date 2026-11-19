@@ -1,5 +1,6 @@
 'use server';
 
+import { deleteWorkspaceRowWithAttendance } from '@tuturuuu/meet-core/features/call/server/attendance-deletion-gate';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { getOrCreatePolarCustomer } from '@tuturuuu/payment-core/customer-helper';
 import { createFreeSubscription } from '@tuturuuu/payment-core/subscription-helper';
@@ -283,9 +284,7 @@ export async function createWorkspaceFromOnboarding(
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
       try {
-        const { withWorkspaceAttendanceErasure } =
-          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-        await withWorkspaceAttendanceErasure(workspace.id, () =>
+        await deleteWorkspaceRowWithAttendance(workspace.id, () =>
           sbAdmin.from('workspaces').delete().eq('id', workspace.id)
         );
       } catch (cleanupError) {

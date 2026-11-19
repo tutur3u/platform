@@ -77,8 +77,9 @@ to the exact string `true`. Production sets it to `false`. An absent value is
 off. While attendance is off, the room does not record join or leave
 intervals, the Attendance panel stays hidden, and
 `GET /api/meet-call/{meetingId}/attendance` returns 404 without reading
-storage. Deleting a meeting, a workspace, or an account still removes
-attendance copies, including copies recorded during an enabled period.
+storage. While attendance is off, deleting a meeting, a workspace, or an
+account does not read or write attendance: no erasure plan, no directory
+lookup, no pending-erasure query, and no attendance fence call.
 An interval that is already open
 is still closed when the switch is off and when the room ends.
 
@@ -159,8 +160,10 @@ the delete is confirmed, a private pending record remains. A later retry or
 the room alarm finishes it. Account deletion saves that plan, removes the
 account, and only then erases the person's copies. That erasure also matches
 a signed-in guest stored under the same id, and rooms that were indexed but
-not yet stored in Postgres. These deletion paths still run while the switch
-is off. A failure while planning the erasure stops the delete. Restoring a
+not yet stored in Postgres. These deletion paths run only while the attendance
+switch is on. While it is off, those deletes do not read or write attendance.
+A failure while planning the erasure stops the delete only while the switch is
+on. Restoring a
 room clears its end time, so attendance after the restore is not capped at
 the old end. The attendance directory stores a room name so a cold alarm can
 still publish and forget, writes only when the room's subjects change, and

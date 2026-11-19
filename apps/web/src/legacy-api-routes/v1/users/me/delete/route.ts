@@ -1,7 +1,9 @@
+import { deleteWorkspaceRowWithAttendance } from '@tuturuuu/meet-core/features/call/server/attendance-deletion-gate';
 import { isPolarSubscriptionEnded } from '@tuturuuu/payment/polar/errors';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { revokeSeatFromMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -217,15 +219,12 @@ export const POST = withSessionAuth(
       }
 
       // Delete single-member non-personal workspaces before deleting the account.
-      // Attendance copies are removed with the workspace, including copies from
-      // an enabled period while the switch is off.
-      const { withWorkspaceAttendanceErasure } =
-        await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+      // While the attendance switch is off, these deletes do not read or write attendance.
       const workspaceDeletions = categorized.singleMemberFree
         .filter((ws) => !ws.wsPersonal)
         .map(async (ws) => {
           try {
-            await withWorkspaceAttendanceErasure(ws.wsId, () =>
+            await deleteWorkspaceRowWithAttendance(ws.wsId, () =>
               sbAdmin.from('workspaces').delete().eq('id', ws.wsId)
             );
             console.log(`Deleted orphaned workspace ${ws.wsId}`);
@@ -241,6 +240,20 @@ export const POST = withSessionAuth(
           { message: 'Failed to clean up workspaces' },
           { status: 502 }
         );
+      }
+
+      if (!meetClassAttendanceEnabled()) {
+        const { error: deleteError } = await sbAdmin.auth.admin.deleteUser(
+          user.id
+        );
+        if (deleteError) {
+          console.error('Error deleting user:', deleteError);
+          return NextResponse.json(
+            { message: 'Failed to delete account' },
+            { status: 500 }
+          );
+        }
+        return NextResponse.json({ message: 'Account deleted successfully' });
       }
 
       // Save the plan first. Commit it only after the account delete succeeds,

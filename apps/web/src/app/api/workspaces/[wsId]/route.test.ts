@@ -49,14 +49,12 @@ vi.mock('@/lib/api-auth', () => ({ withSessionAuth: mocks.withSessionAuth }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
-vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
-  openWorkspaceAttendanceErasure: vi.fn(async () => ({
-    plan: { phase: 'planned' },
-    preexisting: false,
-  })),
-  releaseAttendanceErasure: vi.fn(async () => undefined),
-  commitAttendanceErasure: vi.fn(async () => undefined),
+vi.mock('@tuturuuu/realtime/meet', () => ({
+  meetClassAttendanceEnabled: () => false,
 }));
+vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => {
+  throw new Error('missing migration');
+});
 
 const ownedWorkspace = {
   id: WORKSPACE_ID,

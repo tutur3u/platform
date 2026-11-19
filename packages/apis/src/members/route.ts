@@ -30,9 +30,9 @@ export interface MembersRouteAuthContext {
 export type WorkspaceRowDelete = () => Promise<{ error: unknown }>;
 
 export interface OrphanedWorkspaceCleanup {
-  /** Finish a pending erasure when the workspace row is already gone. */
+  /** Called when the workspace row is already gone. */
   resume(wsId: string): Promise<void>;
-  /** Delete the workspace row after attendance erasure is prepared. */
+  /** Deletes the workspace row. */
   deleteWorkspace(wsId: string, remove: WorkspaceRowDelete): Promise<void>;
 }
 
@@ -466,8 +466,7 @@ async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
       // Continue — Polar webhook reconciliation will catch this
     }
 
-    // Delete the workspace (cascades to all related tables). A registered
-    // cleanup removes attendance copies only after this delete succeeds.
+    // Delete the workspace. Related rows cascade with it.
     try {
       await orphanedWorkspaceCleanup.deleteWorkspace(wsId, () =>
         sbAdmin.from('workspaces').delete().eq('id', wsId)

@@ -1,3 +1,4 @@
+import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -199,38 +200,26 @@ export async function DELETE(
       );
     }
 
-    // Verify the meeting exists and belongs to this workspace
-    const { data: existingMeeting } = await supabase
+    // Verify the meeting exists and belongs to this workspace.
+    // PGRST116 is the missing-row result. Any other lookup error is a failure,
+    // not a missing meeting, and must not resume an erasure.
+    const { data: existingMeeting, error: meetingError } = await supabase
       .from('workspace_meetings')
       .select('*')
       .eq('id', meetingId)
       .eq('ws_id', wsId)
       .single();
 
+    if (meetingError && meetingError.code !== 'PGRST116') {
+      console.error('Error loading meeting:', meetingError);
+      return NextResponse.json(
+        { error: 'Failed to delete meeting' },
+        { status: 500 }
+      );
+    }
+
     if (!existingMeeting) {
-      try {
-        const pendingErasure =
-          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-        const pending = await pendingErasure.readPendingAttendanceErasure({
-          op: 'meeting',
-          meetingId,
-        });
-        if (!pending)
-          return NextResponse.json(
-            { error: 'Meeting not found' },
-            { status: 404 }
-          );
-        await pendingErasure.commitAttendanceErasure(pending);
-        return NextResponse.json({ success: true });
-      } catch (erasureError) {
-        console.error('Meet attendance erasure failed', {
-          name: erasureError instanceof Error ? erasureError.name : 'unknown',
-        });
-        return NextResponse.json(
-          { error: 'Failed to delete meeting' },
-          { status: 500 }
-        );
-      }
+      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
     }
 
     if (
@@ -249,6 +238,31 @@ export async function DELETE(
         { status: 403 }
       );
     }
+
+    if (!meetClassAttendanceEnabled()) {
+      const { data: deleted, error } = await supabase
+        .from('workspace_meetings')
+        .delete()
+        .eq('id', meetingId)
+        .eq('ws_id', wsId)
+        .select('id');
+
+      if (error?.code === '42501' || (!error && !deleted?.length)) {
+        return NextResponse.json(
+          { error: 'You no longer have permission to delete this meeting' },
+          { status: 403 }
+        );
+      }
+      if (error) {
+        console.error('Error deleting meeting:', error);
+        return NextResponse.json(
+          { error: 'Failed to delete meeting' },
+          { status: 500 }
+        );
+      }
+      return NextResponse.json({ success: true });
+    }
+
     const erasure =
       await import('@tuturuuu/meet-core/features/call/server/attendance-erasure').catch(
         (erasureError: unknown) => {

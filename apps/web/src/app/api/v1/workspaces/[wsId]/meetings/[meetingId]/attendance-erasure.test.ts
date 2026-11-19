@@ -143,29 +143,51 @@ it('does not delete the meeting when planning erasure fails', async () => {
   expect(deleteMock).not.toHaveBeenCalled();
 });
 
-it('still blocks the meeting delete when attendance erasure is off', async () => {
+it('deletes the meeting while attendance is off without calling erasure', async () => {
   flags.attendance = false;
-  openMock.mockRejectedValue(new Error('timeout'));
+  openMock.mockRejectedValue(new Error('missing migration'));
   const response = await call();
-  expect(response.status).toBe(500);
-  expect(deleteMock).not.toHaveBeenCalled();
+  expect(response.status).toBe(200);
+  expect(deleteMock).toHaveBeenCalledOnce();
+  expect(openMock).not.toHaveBeenCalled();
+  expect(readPendingMock).not.toHaveBeenCalled();
+  expect(commitMock).not.toHaveBeenCalled();
 });
 
-it('finishes a pending erasure when the meeting is already gone', async () => {
-  meetingMock.mockResolvedValue({ data: null });
+it('does not resume an erasure for a meeting outside this workspace', async () => {
+  meetingMock.mockResolvedValue({
+    data: null,
+    error: { code: 'PGRST116', message: 'missing' },
+  });
   readPendingMock.mockResolvedValue({
     rooms: [],
     sql: { op: 'meeting', meetingId: MEETING },
     phase: 'confirmed',
   });
   const response = await call();
-  expect(response.status).toBe(200);
-  expect(commitMock).toHaveBeenCalledOnce();
-  expect(deleteMock).not.toHaveBeenCalled();
-
-  commitMock.mockClear();
-  readPendingMock.mockResolvedValue(null);
-  const missing = await call();
-  expect(missing.status).toBe(404);
+  expect(response.status).toBe(404);
+  expect(readPendingMock).not.toHaveBeenCalled();
   expect(commitMock).not.toHaveBeenCalled();
+  expect(deleteMock).not.toHaveBeenCalled();
+  expect(openMock).not.toHaveBeenCalled();
+});
+
+it('treats a meeting lookup error as a failure instead of a missing meeting', async () => {
+  meetingMock.mockResolvedValue({
+    data: null,
+    error: {
+      code: '57014',
+      message: 'canceling statement due to statement timeout',
+    },
+  });
+  readPendingMock.mockResolvedValue({
+    rooms: [],
+    sql: { op: 'meeting', meetingId: MEETING },
+    phase: 'confirmed',
+  });
+  const response = await call();
+  expect(response.status).toBe(500);
+  expect(readPendingMock).not.toHaveBeenCalled();
+  expect(commitMock).not.toHaveBeenCalled();
+  expect(deleteMock).not.toHaveBeenCalled();
 });
