@@ -25,6 +25,8 @@ class FinancePeriodBar extends StatelessWidget {
     required this.onChanged,
     required this.now,
     this.onAllTime,
+    this.onCustomRange,
+    this.customLabel,
     super.key,
   });
 
@@ -32,6 +34,8 @@ class FinancePeriodBar extends StatelessWidget {
   final ValueChanged<FinancePeriod> onChanged;
   final DateTime now;
   final VoidCallback? onAllTime;
+  final Future<void> Function()? onCustomRange;
+  final String? customLabel;
 
   String _kindLabel(BuildContext context, FinancePeriodKind kind) =>
       switch (kind) {
@@ -42,19 +46,33 @@ class FinancePeriodBar extends StatelessWidget {
 
   Future<void> _pickKind(BuildContext context) async {
     const allTime = 'all';
+    const custom = 'custom';
     final period = this.period;
+    final selected = customLabel == null
+        ? period?.kind.name ?? allTime
+        : custom;
     final picked = await showAppChoiceSheet<String>(
       context: context,
       title: context.l10n.financeBudgetPeriod,
-      selected: period?.kind.name ?? allTime,
+      selected: selected,
       choices: [
         for (final kind in FinancePeriodKind.values)
           AppSheetChoice(value: kind.name, label: _kindLabel(context, kind)),
+        if (onCustomRange != null)
+          AppSheetChoice(
+            value: custom,
+            label: context.l10n.financeCustomDateRange,
+          ),
         if (onAllTime != null)
           AppSheetChoice(value: allTime, label: context.l10n.financeAllTime),
       ],
     );
-    if (picked == null || picked == (period?.kind.name ?? allTime)) return;
+    if (!context.mounted || picked == null) return;
+    if (picked == custom) {
+      await onCustomRange?.call();
+      return;
+    }
+    if (picked == selected) return;
     if (picked == allTime) {
       onAllTime?.call();
       return;
@@ -94,7 +112,7 @@ class FinancePeriodBar extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              period?.label(locale) ?? l10n.financeAllTime,
+              customLabel ?? period?.label(locale) ?? l10n.financeAllTime,
               key: const ValueKey('finance-period-label'),
               textAlign: TextAlign.center,
               maxLines: 1,

@@ -39,6 +39,7 @@ import 'package:mobile/features/finance/utils/money_lover_import.dart';
 part 'finance_repository_attachments.dart';
 part 'finance_repository_budgets.dart';
 part 'finance_repository_checkpoints.dart';
+part 'finance_repository_creators.dart';
 part 'finance_repository_export.dart';
 part 'finance_repository_import.dart';
 part 'finance_repository_invoices.dart';

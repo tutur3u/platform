@@ -5,13 +5,15 @@ import 'package:mobile/data/models/finance/transaction.dart';
 enum FinanceTransactionKind { all, income, expense, transfer }
 
 /// Filters for transaction lists and totals beyond search and wallet: kind,
-/// one category, one tag and a local date range (start inclusive, end
+/// a category, tag, creator and local date range (start inclusive, end
 /// exclusive).
 class FinanceTransactionQuery extends Equatable {
   const FinanceTransactionQuery({
     this.kind = FinanceTransactionKind.all,
     this.categoryId,
     this.tagId,
+    this.creatorId,
+    this.isCustomDateRange = false,
     this.start,
     this.end,
   });
@@ -31,13 +33,30 @@ class FinanceTransactionQuery extends Equatable {
   final FinanceTransactionKind kind;
   final String? categoryId;
   final String? tagId;
+  final String? creatorId;
+  final bool isCustomDateRange;
   final DateTime? start;
   final DateTime? end;
+
+  DateTime? get inclusiveEnd {
+    final bound = end;
+    return bound == null
+        ? null
+        : DateTime(bound.year, bound.month, bound.day - 1);
+  }
+
+  FinanceTransactionQuery withDateRange(DateTime first, DateTime last) =>
+      copyWith(
+        start: DateTime(first.year, first.month, first.day),
+        end: DateTime(last.year, last.month, last.day + 1),
+        isCustomDateRange: true,
+      );
 
   bool get isEmpty =>
       kind == FinanceTransactionKind.all &&
       categoryId == null &&
       tagId == null &&
+      creatorId == null &&
       start == null &&
       end == null;
 
@@ -45,12 +64,16 @@ class FinanceTransactionQuery extends Equatable {
     FinanceTransactionKind? kind,
     Object? categoryId = _keep,
     Object? tagId = _keep,
+    Object? creatorId = _keep,
+    bool? isCustomDateRange,
     Object? start = _keep,
     Object? end = _keep,
   }) => FinanceTransactionQuery(
     kind: kind ?? this.kind,
     categoryId: categoryId == _keep ? this.categoryId : categoryId as String?,
     tagId: tagId == _keep ? this.tagId : tagId as String?,
+    creatorId: creatorId == _keep ? this.creatorId : creatorId as String?,
+    isCustomDateRange: isCustomDateRange ?? this.isCustomDateRange,
     start: start == _keep ? this.start : start as DateTime?,
     end: end == _keep ? this.end : end as DateTime?,
   );
@@ -62,6 +85,7 @@ class FinanceTransactionQuery extends Equatable {
     if (kind == FinanceTransactionKind.expense) 'transactionType': 'expense',
     if (categoryId != null) 'categoryIds': categoryId!,
     if (tagId != null) 'tagIds': tagId!,
+    if (creatorId != null) 'userIds': creatorId!,
     if (start != null) 'start': start!.toUtc().toIso8601String(),
     if (end != null)
       'end': end!
@@ -88,6 +112,12 @@ class FinanceTransactionQuery extends Equatable {
     if (tag != null && !transaction.tags.any((item) => item.id == tag)) {
       return false;
     }
+    final creator = creatorId;
+    if (creator != null &&
+        transaction.creatorId != creator &&
+        transaction.platformCreatorId != creator) {
+      return false;
+    }
     final at = (transaction.takenAt ?? transaction.createdAt)?.toLocal();
     if (start != null && (at == null || at.isBefore(start!))) return false;
     if (end != null && (at == null || !at.isBefore(end!))) return false;
@@ -102,11 +132,20 @@ class FinanceTransactionQuery extends Equatable {
           categoryId ?? '',
           start?.toIso8601String() ?? '',
           end?.toIso8601String() ?? '',
-          if (tagId case final tag?) tag,
+          if (tagId != null || creatorId != null) tagId ?? '',
+          if (creatorId case final creator?) creator,
         ].join('|');
 
   @override
-  List<Object?> get props => [kind, categoryId, start, end, tagId];
+  List<Object?> get props => [
+    kind,
+    categoryId,
+    start,
+    end,
+    tagId,
+    creatorId,
+    isCustomDateRange,
+  ];
 }
 
 const _keep = Object();

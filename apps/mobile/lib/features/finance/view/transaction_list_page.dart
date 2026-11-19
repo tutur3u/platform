@@ -223,6 +223,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
         query: FinanceTransactionQuery(
           start: state.query.start,
           end: state.query.end,
+          isCustomDateRange: state.query.isCustomDateRange,
         ),
         walletId: null,
       ),
@@ -313,6 +314,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                   ?.id,
               now: widget.now,
               showTagFilter: canManageFinance(context, 'manage_finance'),
+              showCreatorFilter: canManageFinance(context, 'view_transactions'),
               onRefresh: _onRefresh,
               onTransactionTap: (transaction) =>
                   unawaited(_openTransaction(transaction)),

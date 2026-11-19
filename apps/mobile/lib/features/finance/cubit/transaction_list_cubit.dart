@@ -253,7 +253,7 @@ class TransactionListCubit extends Cubit<TransactionListState> {
     await _reloadScope(
       state.copyWith(
         search: query,
-        query: query.isEmpty
+        query: query.isEmpty || state.query.isCustomDateRange
             ? state.query
             : state.query.copyWith(start: null, end: null),
       ),

@@ -8,6 +8,7 @@ import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
+import 'package:mobile/features/finance/view/transaction_creator_picker.dart';
 import 'package:mobile/features/finance/view/transaction_tag_picker.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -22,12 +23,14 @@ class TransactionListFilters extends StatelessWidget {
     required this.state,
     required this.onChanged,
     this.showTagFilter = false,
+    this.showCreatorFilter = false,
     super.key,
   });
 
   final TransactionListState state;
   final TransactionFiltersChanged onChanged;
   final bool showTagFilter;
+  final bool showCreatorFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +101,14 @@ class TransactionListFilters extends StatelessWidget {
                       active: query.tagId != null,
                       onPressed: () => unawaited(_pickTag(context)),
                     ),
+                  if (showCreatorFilter)
+                    AppFilterButton(
+                      key: const ValueKey('finance-filter-creator'),
+                      icon: LucideIcons.userRound,
+                      label: l10n.financeCreator,
+                      active: query.creatorId != null,
+                      onPressed: () => unawaited(_pickCreator(context)),
+                    ),
                 ],
               ),
             ),
@@ -136,6 +147,18 @@ class TransactionListFilters extends StatelessWidget {
     if (!context.mounted || picked == null) return;
     onChanged(
       state.query.copyWith(tagId: picked.isEmpty ? null : picked),
+      state.walletId,
+    );
+  }
+
+  Future<void> _pickCreator(BuildContext context) async {
+    final picked = await showTransactionCreatorPicker(
+      context,
+      state.query.creatorId,
+    );
+    if (!context.mounted || picked == null) return;
+    onChanged(
+      state.query.copyWith(creatorId: picked.isEmpty ? null : picked),
       state.walletId,
     );
   }

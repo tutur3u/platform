@@ -16440,4 +16440,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String financeImportResult(int imported, int total) {
     return '$imported of $total transactions imported';
   }
+
+  @override
+  String get financeCreator => 'Creator';
+
+  @override
+  String get financeNoCreators => 'No transaction creators';
+
+  @override
+  String get financeUnknownCreator => 'Unknown creator';
+
+  @override
+  String get financeCustomDateRange => 'Custom date range';
+
+  @override
+  String get financeStartDate => 'Start date';
+
+  @override
+  String get financeEndDate => 'End date';
 }

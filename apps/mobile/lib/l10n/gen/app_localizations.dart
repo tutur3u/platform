@@ -30462,6 +30462,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{imported} of {total} transactions imported'**
   String financeImportResult(int imported, int total);
+
+  /// No description provided for @financeCreator.
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get financeCreator;
+
+  /// No description provided for @financeNoCreators.
+  ///
+  /// In en, this message translates to:
+  /// **'No transaction creators'**
+  String get financeNoCreators;
+
+  /// No description provided for @financeUnknownCreator.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown creator'**
+  String get financeUnknownCreator;
+
+  /// No description provided for @financeCustomDateRange.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom date range'**
+  String get financeCustomDateRange;
+
+  /// No description provided for @financeStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get financeStartDate;
+
+  /// No description provided for @financeEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get financeEndDate;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

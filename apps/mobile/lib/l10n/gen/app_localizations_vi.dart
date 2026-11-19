@@ -16240,4 +16240,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String financeImportResult(int imported, int total) {
     return 'Đã nhập $imported trong số $total giao dịch';
   }
+
+  @override
+  String get financeCreator => 'Người tạo';
+
+  @override
+  String get financeNoCreators => 'Chưa có người tạo giao dịch';
+
+  @override
+  String get financeUnknownCreator => 'Không rõ người tạo';
+
+  @override
+  String get financeCustomDateRange => 'Khoảng ngày tùy chỉnh';
+
+  @override
+  String get financeStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get financeEndDate => 'Ngày kết thúc';
 }

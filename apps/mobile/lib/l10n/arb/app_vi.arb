@@ -7146,5 +7146,11 @@
   "financeImportInvalid": "Kiểm tra định dạng tệp, dấu phân cách và giới hạn số dòng.",
   "financeImportWalletMismatch": "Tạo hoặc đổi tên ví để mỗi ví trong tệp khớp với một ví trong không gian làm việc có cùng loại tiền.",
   "financeImportUnconfirmed": "Kiểm tra sổ giao dịch trước khi nhập lại.",
-  "financeImportResult": "Đã nhập {imported} trong số {total} giao dịch"
+  "financeImportResult": "Đã nhập {imported} trong số {total} giao dịch",
+  "financeCreator": "Người tạo",
+  "financeNoCreators": "Chưa có người tạo giao dịch",
+  "financeUnknownCreator": "Không rõ người tạo",
+  "financeCustomDateRange": "Khoảng ngày tùy chỉnh",
+  "financeStartDate": "Ngày bắt đầu",
+  "financeEndDate": "Ngày kết thúc"
 }

@@ -7830,5 +7830,11 @@
       }
     }
   },
-  "financeImportResult": "{imported} of {total} transactions imported"
+  "financeImportResult": "{imported} of {total} transactions imported",
+  "financeCreator": "Creator",
+  "financeNoCreators": "No transaction creators",
+  "financeUnknownCreator": "Unknown creator",
+  "financeCustomDateRange": "Custom date range",
+  "financeStartDate": "Start date",
+  "financeEndDate": "End date"
 }

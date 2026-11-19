@@ -46,7 +46,7 @@ as a filter:
 
 - Nothing in the period: "No transactions in {period}" with Add first
   transaction.
-- Kind, category, tag or wallet filters hide every row: "No matching
+- Kind, category, tag, creator or wallet filters hide every row: "No matching
   transactions" with Clear filters, which keeps the period.
 - A search query matches nothing: "No results for {query}" with Clear search.
 
@@ -120,6 +120,12 @@ charts and all financial figures. For a large report, choose a shorter period.
 
 `finance_report_test.dart` covers period and category totals.
 
+## Transaction filters
+
+The creator filter matches both workspace and platform creator records. A
+custom date range includes the selected end date in the device's local time.
+Search and CSV export use the selected creator and custom date range.
+
 ## Import and export
 
 Finance managers can import Money Lover files from Transactions. Choose the
@@ -167,7 +173,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet cash flow, cumulative movement, and category totals. Cross-wallet and invoice reports remain open |
 | Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
-| Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, type and period. Creator and arbitrary date ranges are open |
+| Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export and Money Lover import. Invoice spreadsheet exports remain open |
 | Debts, promotions and inventory reconciliation | Dedicated web workflows | Open |
 

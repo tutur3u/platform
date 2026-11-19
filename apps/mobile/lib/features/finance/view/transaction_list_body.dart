@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
+import 'package:mobile/features/finance/view/transaction_custom_range_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_list_empty.dart';
 import 'package:mobile/features/finance/view/transaction_list_filters.dart';
 import 'package:mobile/features/finance/widgets/finance_period_bar.dart';
@@ -24,6 +25,7 @@ class TransactionListBody extends StatelessWidget {
     this.onLoadMore,
     this.workspaceId,
     this.showTagFilter = false,
+    this.showCreatorFilter = false,
     this.now,
     super.key,
   });
@@ -41,13 +43,33 @@ class TransactionListBody extends StatelessWidget {
   final VoidCallback? onLoadMore;
   final String? workspaceId;
   final bool showTagFilter;
+  final bool showCreatorFilter;
   final DateTime? now;
+
+  Future<void> _pickDateRange(BuildContext context, DateTime today) async {
+    final selection = await showTransactionDateRange(
+      context,
+      state.query,
+      today,
+    );
+    if (!context.mounted || selection == null) return;
+    onFiltersChanged(
+      state.query.withDateRange(selection.start, selection.end),
+      state.walletId,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final groups = groupTransactionsByDay(state.transactions);
     final today = now ?? DateTime.now();
     final query = state.query;
+    final start = query.start;
+    final end = query.inclusiveEnd;
+    final dates = MaterialLocalizations.of(context);
+    final customLabel = query.isCustomDateRange && start != null && end != null
+        ? '${dates.formatCompactDate(start)} – ${dates.formatCompactDate(end)}'
+        : null;
     return NovaRefreshIndicator(
       onRefresh: onRefresh,
       child: CustomScrollView(
@@ -63,14 +85,24 @@ class TransactionListBody extends StatelessWidget {
                 extent: financePeriodBarExtent(context),
                 child: FinancePeriodBar(
                   key: const ValueKey('finance-transactions-period'),
-                  period: financePeriodOf(query),
+                  period: customLabel == null ? financePeriodOf(query) : null,
+                  customLabel: customLabel,
+                  onCustomRange: () => _pickDateRange(context, today),
                   now: today,
                   onChanged: (period) => onFiltersChanged(
-                    query.copyWith(start: period.start, end: period.end),
+                    query.copyWith(
+                      start: period.start,
+                      end: period.end,
+                      isCustomDateRange: false,
+                    ),
                     state.walletId,
                   ),
                   onAllTime: () => onFiltersChanged(
-                    query.copyWith(start: null, end: null),
+                    query.copyWith(
+                      start: null,
+                      end: null,
+                      isCustomDateRange: false,
+                    ),
                     state.walletId,
                   ),
                 ),
@@ -82,6 +114,7 @@ class TransactionListBody extends StatelessWidget {
               state: state,
               onChanged: onFiltersChanged,
               showTagFilter: showTagFilter,
+              showCreatorFilter: showCreatorFilter,
             ),
           ),
           SliverAppPage(

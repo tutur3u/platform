@@ -280,6 +280,9 @@ Transaction _buildSyntheticTransferTransaction(
     isCategoryConfidential: false,
     tags: _mergeTransactionTags(origin.tags, destination.tags),
     creatorFullName: origin.creatorFullName ?? destination.creatorFullName,
+    creatorId: origin.creatorId ?? destination.creatorId,
+    platformCreatorId:
+        origin.platformCreatorId ?? destination.platformCreatorId,
     transfer: TransactionTransfer(
       linkedTransactionId: destination.id,
       linkedWalletId: destination.walletId ?? '',
@@ -329,6 +332,8 @@ class Transaction extends Equatable {
     this.isCategoryConfidential,
     this.tags = const [],
     this.creatorFullName,
+    this.creatorId,
+    this.platformCreatorId,
     this.transfer,
   });
 
@@ -395,6 +400,8 @@ class Transaction extends Equatable {
       isDescriptionConfidential: json['is_description_confidential'] as bool?,
       isCategoryConfidential: json['is_category_confidential'] as bool?,
       tags: tags,
+      creatorId: json['creator_id'] as String?,
+      platformCreatorId: json['platform_creator_id'] as String?,
       creatorFullName:
           userRaw?['full_name'] as String? ??
           json['creator_full_name'] as String?,
@@ -423,6 +430,8 @@ class Transaction extends Equatable {
     bool? isCategoryConfidential,
     List<TransactionTag>? tags,
     String? creatorFullName,
+    String? creatorId,
+    String? platformCreatorId,
     TransactionTransfer? transfer,
   }) => Transaction(
     id: id ?? this.id,
@@ -447,6 +456,8 @@ class Transaction extends Equatable {
         isCategoryConfidential ?? this.isCategoryConfidential,
     tags: tags ?? this.tags,
     creatorFullName: creatorFullName ?? this.creatorFullName,
+    creatorId: creatorId ?? this.creatorId,
+    platformCreatorId: platformCreatorId ?? this.platformCreatorId,
     transfer: transfer ?? this.transfer,
   );
 
@@ -489,6 +500,8 @@ class Transaction extends Equatable {
 
   /// Full name of the creator.
   final String? creatorFullName;
+  final String? creatorId;
+  final String? platformCreatorId;
 
   /// Transfer metadata (if this is one side of a wallet transfer).
   final TransactionTransfer? transfer;
@@ -515,6 +528,8 @@ class Transaction extends Equatable {
     'wallet_icon': walletIcon,
     'wallet_image_src': walletImageSrc,
     'creator_full_name': creatorFullName,
+    'creator_id': creatorId,
+    'platform_creator_id': platformCreatorId,
     'tags': tags
         .map((tag) => {'id': tag.id, 'name': tag.name, 'color': tag.color})
         .toList(),
@@ -553,6 +568,8 @@ class Transaction extends Equatable {
     isCategoryConfidential,
     tags,
     creatorFullName,
+    creatorId,
+    platformCreatorId,
     transfer,
   ];
 }
