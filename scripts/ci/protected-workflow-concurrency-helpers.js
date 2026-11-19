@@ -83,10 +83,6 @@ const prExceptions = {
 };
 const mainExceptions = {
   ...prExceptions,
-  'turbo-unit-tests.yaml':
-    'Each main SHA keeps its own non-cancelling Test run',
-  'type-check.yaml':
-    'Each main SHA keeps its own non-cancelling Type Check run',
   'supabase-staging.yaml':
     'Protected main migrations serialize exact-SHA marker evidence',
   'release-sdk-dev.yaml':
@@ -104,21 +100,11 @@ const mainExceptions = {
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
 };
 // These workflows do not cancel a main push, and each main SHA has its own
-// group. A shared "latest" group still drops the previous pending run when
+// group. A shared "latest" group drops the previous pending run when
 // cancel-in-progress is false, so the proof tests require distinct groups.
-// Feature branches and pull requests still supersede. Every Cloudflare Source
-// workflow joins this set from its workflow name, so a new app cannot copy
-// the old shared main group without failing the proof.
-const queuedMainBaselines = new Set([
-  'codeql.yml',
-  'docs-seo-check.yaml',
-  'oxc-check.yaml',
-  'turbo-unit-tests.yaml',
-  'type-check.yaml',
-]);
-// Every other main-push validation workflow keeps its active main run and
-// shares one pending slot: a newer push replaces only the queued run, so long
-// workflows still finish under frequent pushes instead of cancelling forever.
+// CodeQL keeps an analysis per pushed tip for the security baseline; Oxc keeps
+// job-level mutation locks outside a shared group.
+const queuedMainBaselines = new Set(['codeql.yml', 'oxc-check.yaml']);
 const boundedMainProducers = new Set();
 // Main pushes may still supersede these: their newest run is the only signal.
 const mainSupersedeAllowed = {
@@ -135,10 +121,6 @@ const workflows = Object.fromEntries(
     .filter((file) => /\.ya?ml$/.test(file))
     .map((file) => [file, readWorkflow(file)])
 );
-for (const [file, workflow] of Object.entries(workflows)) {
-  if (String(workflow.name || '').endsWith(' Cloudflare Source'))
-    queuedMainBaselines.add(file);
-}
 function pushesMain(workflow) {
   if (!Object.hasOwn(events(workflow), 'push')) return false;
   const push = events(workflow).push;

@@ -686,11 +686,8 @@ test('security review writers share one non-cancelling group per pull request', 
   );
 });
 
-test('Type Check, Oxc and Test keep each main push', () => {
-  const proof = [
-    ['type-check.yaml', workflows['type-check.yaml'].concurrency],
-    ['turbo-unit-tests.yaml', workflows['turbo-unit-tests.yaml'].concurrency],
-  ];
+test('Oxc keeps each main push', () => {
+  const proof = [];
   for (const id of ['check-ci', 'duplicate-validation', 'format', 'lint']) {
     proof.push([
       `oxc-check.yaml:${id}`,
@@ -741,7 +738,7 @@ test('Type Check, Oxc and Test keep each main push', () => {
   }
 });
 
-test('Cloudflare Source workflows and the docs contract keep each main push', () => {
+test('Cloudflare Source, docs, Test and Type Check coalesce main pushes without cancelling', () => {
   const files = Object.entries(workflows)
     .filter(([, workflow]) =>
       String(workflow.name || '').endsWith(' Cloudflare Source')
@@ -751,9 +748,11 @@ test('Cloudflare Source workflows and the docs contract keep each main push', ()
   assert.ok(files.includes('finance-cloudflare.yaml'));
   assert.ok(files.includes('nova-cloudflare.yaml'));
   assert.equal(files.length, 23);
-  files.push('docs-seo-check.yaml');
+  files.push('docs-seo-check.yaml', 'turbo-unit-tests.yaml', 'type-check.yaml');
   for (const file of files) {
-    assert.equal(queuedMainBaselines.has(file), true, file);
+    // The active main run always finishes; a newer push replaces only the
+    // pending run, so the newest head gets its own complete run.
+    assert.equal(queuedMainBaselines.has(file), false, file);
     const policy = workflows[file].concurrency;
     const first = {
       ...context('refs/heads/main', 'a'.repeat(40), 11),
@@ -763,7 +762,7 @@ test('Cloudflare Source workflows and the docs contract keep each main push', ()
       ...context('refs/heads/main', 'b'.repeat(40), 22),
       workflow: workflows[file].name,
     };
-    assert.notEqual(
+    assert.equal(
       render(policy.group, first),
       render(policy.group, second),
       file
@@ -802,7 +801,7 @@ test('Test reruns, dispatch and production stay immutable while feature branches
   assert.ok(events(workflow).push.branches.includes('main'));
   const first = { ...context('refs/heads/main'), workflow: workflow.name };
   const later = { ...first, sha: 'later', run_id: 2 };
-  assert.notEqual(
+  assert.equal(
     render(workflow.concurrency.group, first),
     render(workflow.concurrency.group, later)
   );

@@ -721,8 +721,12 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `cancel-in-progress` enabled. Safe push validation coalesces `main` by workflow
   and ref without cancelling the active run: `cancel-in-progress` exempts
   `refs/heads/main`, so a newer push replaces only the pending run and long
-  workflows still finish under frequent pushes. Only report-only smoke and
-  preview workflows supersede active main runs. Production, generated Release Please refs and manual qualification
+  workflows still finish under frequent pushes. This includes Test, Type Check,
+  docs/SEO and every Cloudflare Source workflow: per-SHA main groups queued a
+  full run per push and made the newest head wait behind older SHAs. Only
+  CodeQL (per-tip security baseline) and Oxc (job-level locks) keep per-SHA
+  main groups; only report-only smoke and preview workflows supersede active
+  main runs. Production, generated Release Please refs and manual qualification
   retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
   must also disable cancellation and use that isolated identity; changing only
   the cancellation flag leaves candidates vulnerable to later main pushes. Never

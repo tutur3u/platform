@@ -442,7 +442,7 @@ function evaluateConcurrency(value, github) {
   return value.replace(/\$\{\{(.*?)\}\}/g, (_, body) => String(evaluate(body)));
 }
 
-test('feature branches supersede while each main push, production and manual attempts stay independent', () => {
+test('feature branches supersede, main coalesces without cancelling, production and manual attempts stay independent', () => {
   assert.ok(
     workflow.concurrency,
     'Type Check needs bounded branch supersession'
@@ -465,7 +465,8 @@ test('feature branches supersede while each main push, production and manual att
   assert.equal(group({}), group({ sha: 'latest', run_id: 2 }));
   assert.equal(cancel({}), true);
   assert.equal(cancel({ ref: 'refs/heads/main' }), false);
-  assert.notEqual(
+  // A newer main push replaces only the pending run; the active run finishes.
+  assert.equal(
     group({ ref: 'refs/heads/main' }),
     group({ ref: 'refs/heads/main', sha: 'latest', run_id: 2 })
   );
