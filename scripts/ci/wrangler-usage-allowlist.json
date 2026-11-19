@@ -969,10 +969,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
-        "reason": "The gateway config adds the web route family service bindings and the GATEWAY_WEB_FAMILIES variable next to its existing variables, and a config file digest covers every line. No Wrangler invocation or route changes; the single Wrangler line and use are unchanged, and the pending-migration gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
+        "reason": "The gateway config pins the Tuturuuu account id so any credential deploys to that account, and a config file digest covers every line. No Wrangler invocation or route changes; the single Wrangler line and use are unchanged, and the pending-migration gap and its removal condition remain."
       },
-      "digest": "d40af6ec1d5e53a8701fd46615cc73599eda96ae6b4cf110cba077450dde1f31"
+      "digest": "782214f22a0e82ed1e17825b036b3dfb3c13e8eb378e5cd950379ac446fa2b43"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -2075,20 +2075,20 @@
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/3500457da3037cb9d2072b71974083aee8a04c3c",
-        "reason": "OpenNext reads this Wrangler config for the api-identity family Worker; it carries no routes, so only the gateway binding serves it."
+        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
+        "reason": "OpenNext reads this Wrangler config for the api-identity family Worker; it pins the Tuturuuu account id and carries no routes, so only the gateway binding serves it."
       },
-      "digest": "2072446dedef671025765ad9a6e64c13eb2873c4067884e881dc2c07730720bd"
+      "digest": "5787503b051bcd0b3f645155c68f57816bf3bb66c84d4d6cffe256ef371c2e44"
     },
     "apps/web/cloudflare/opennext/wrangler.public-docs.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/4fa7fa801773c5dec8b7bbbecab90f627cd31516",
-        "reason": "OpenNext reads this Wrangler config for the public-docs family Worker; it carries no routes, so only the gateway binding serves it."
+        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
+        "reason": "OpenNext reads this Wrangler config for the public-docs family Worker; it pins the Tuturuuu account id and carries no routes, so only the gateway binding serves it."
       },
-      "digest": "7a4bb815f66296179dbc8e6c4c6452777831e7bc77ea4c1b6af5d941e863ab03"
+      "digest": "009c1253ba4181bb4baf14219ee1f408dba1461b4b2f45685552159211d80382"
     },
     "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
       "lines": 3,
