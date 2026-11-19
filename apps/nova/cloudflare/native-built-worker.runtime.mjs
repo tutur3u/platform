@@ -284,6 +284,7 @@ test(
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
                 cacheControl: response.headers['cache-control'] ?? null,
+                headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
               });
             });

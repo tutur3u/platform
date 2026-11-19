@@ -29,7 +29,8 @@ const worker = new Miniflare(
                 new Response(request.body, { headers: { 'Content-Type': 'text/html' } }),
                 url,
                 base,
-                new Set(['/site.webmanifest', '/favicon.svg'])
+                new Set(['/site.webmanifest', '/favicon.svg']),
+                '/assets/tuturuuu-favicon.ico'
               );
             },
           };
@@ -58,6 +59,7 @@ it('scopes only owned resource attributes for each request', async () => {
     '<link rel="preload" as="font" href="/assets/font.woff2">',
     '<link rel="manifest" href="/site.webmanifest">',
     '<link rel="icon" href="/favicon.svg">',
+    '<link rel="shortcut icon" href="https://tuturuuu.com/favicon.ico">',
     '<img src="/assets/picture.svg?fit=1#mark">',
     '<link rel="canonical" href="/assets/canonical">',
     '<a href="/assets/navigation">link</a>',
@@ -78,6 +80,7 @@ it('scopes only owned resource attributes for each request', async () => {
     'assets/font.woff2',
     'site.webmanifest',
     'favicon.svg',
+    'assets/tuturuuu-favicon.ico',
     'assets/picture.svg?fit=1#mark',
   ])
     expect(html).toContain(`="/tools/${asset}"`);
