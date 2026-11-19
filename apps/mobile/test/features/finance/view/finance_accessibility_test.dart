@@ -107,6 +107,18 @@ void main() {
         }
         if (action.icon == AppIcons.add) expect(index, greaterThan(eyeIndex));
       }
+      // Search stays in the top bar; create takes the dock's priority slot.
+      expect(
+        actions.where((action) => action.icon == LucideIcons.search),
+        everyElement(
+          isA<ShellActionSpec>().having((a) => a.inDock, 'inDock', isFalse),
+        ),
+      );
+      if (financeSceneCreates.contains(scene)) {
+        final dock = actions.firstWhere((action) => action.inDock);
+        expect(dock.icon, AppIcons.add);
+        expect(dock.filled, isTrue);
+      }
       eye.onPressed!();
       await tester.pumpAndSettle();
       expect(

@@ -247,11 +247,16 @@ void main() {
       wrap: wrap,
     );
     await tester.pumpAndSettle();
-    expect(find.text('Everyday'), findsWidgets);
+    const hero = ValueKey('finance-wallet-hero');
+    expect(find.byKey(hero), findsOneWidget);
+    expect(
+      titles.state.resolveForLocation(Routes.walletDetailPath('wallet-vnd')),
+      'Everyday',
+    );
     switchWorkspace();
     await tester.pump();
     await tester.pump();
-    expect(find.text('Everyday'), findsNothing);
+    expect(find.byKey(hero), findsNothing);
 
     repository.newWallet.complete(
       const Wallet(id: 'wallet-vnd', name: 'New wallet', currency: 'VND'),

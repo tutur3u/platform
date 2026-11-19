@@ -123,7 +123,7 @@ class _FinanceView extends StatelessWidget {
               actions: [
                 ShellActionSpec(
                   id: 'finance-search',
-                  icon: LucideIcons.search,
+                  icon: AppIcons.search,
                   tooltip: context.l10n.commonSearch,
                   onPressed: () =>
                       context.push('${Routes.transactions}?search=1'),
@@ -133,11 +133,9 @@ class _FinanceView extends StatelessWidget {
                   showAmounts: showAmounts,
                 ),
                 if (canManageFinance(context, 'create_transactions'))
-                  ShellActionSpec(
+                  financeCreateAction(
                     id: 'finance-create',
-                    icon: AppIcons.add,
                     tooltip: context.l10n.financeNewTransaction,
-                    filled: true,
                     onPressed: () => unawaited(_create(context, state)),
                   ),
               ],

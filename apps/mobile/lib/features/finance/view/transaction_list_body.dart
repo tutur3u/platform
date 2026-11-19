@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
+import 'package:mobile/features/finance/view/transaction_list_empty.dart';
 import 'package:mobile/features/finance/view/transaction_list_filters.dart';
 import 'package:mobile/features/finance/widgets/finance_transaction_row.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -18,6 +18,7 @@ class TransactionListBody extends StatelessWidget {
     required this.onFiltersChanged,
     required this.onClearFilters,
     required this.onCreate,
+    this.onClearSearch,
     this.onLoadMore,
     this.workspaceId,
     this.now,
@@ -30,6 +31,9 @@ class TransactionListBody extends StatelessWidget {
   final ValueChanged<Transaction> onTransactionTap;
   final TransactionFiltersChanged onFiltersChanged;
   final VoidCallback onClearFilters;
+
+  /// Clears the query; defaults to [onClearFilters].
+  final VoidCallback? onClearSearch;
   final VoidCallback? onCreate;
   final VoidCallback? onLoadMore;
   final String? workspaceId;
@@ -39,8 +43,6 @@ class TransactionListBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final groups = groupTransactionsByDay(state.transactions);
-    final hasSearch = state.search.isNotEmpty;
-    final canClear = state.hasFilters || hasSearch;
     return NovaRefreshIndicator(
       onRefresh: onRefresh,
       child: AppPageListView.builder(
@@ -87,18 +89,11 @@ class TransactionListBody extends StatelessWidget {
             return groups.isEmpty
                 ? Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.lg),
-                    child: AppStateMessage(
-                      icon: hasSearch
-                          ? LucideIcons.search
-                          : LucideIcons.receipt,
-                      title: l10n.financeNoTransactions,
-                      message: canClear
-                          ? l10n.financeActivitySearchEmptyBody
-                          : l10n.financeOverviewNoTransactionsBody,
-                      actionLabel: canClear
-                          ? l10n.financeActivityClearSearch
-                          : l10n.financeAddFirstTransaction,
-                      onAction: canClear ? onClearFilters : onCreate,
+                    child: TransactionListEmptyState(
+                      state: state,
+                      onCreate: onCreate,
+                      onClearFilters: onClearFilters,
+                      onClearSearch: onClearSearch ?? onClearFilters,
                     ),
                   )
                 : const SizedBox.shrink();

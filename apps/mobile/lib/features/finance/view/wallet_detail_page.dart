@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Card, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
-import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
@@ -13,70 +13,93 @@ import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/view/wallet_detail_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/finance/widgets/grouped_transaction_accordion.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
-import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
+/// Rows fetched per page; a period that fits in one page draws its chart.
+const walletDetailPageSize = 100;
+
+/// One wallet: balance card, a pinned period switcher, the period's
+/// income, expense and net with a daily chart, and its transactions grouped
+/// by day. Adding a transaction to the wallet is the dock's primary action.
 class WalletDetailPage extends StatelessWidget {
-  const WalletDetailPage({required this.walletId, this.repository, super.key});
+  const WalletDetailPage({
+    required this.walletId,
+    this.repository,
+    this.now,
+    super.key,
+  });
 
   final FinanceRepository? repository;
-
   final String walletId;
+
+  /// Reference time for the opening period and day labels; defaults to now.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
       create: (_) => repository ?? FinanceRepository(),
-      child: _WalletDetailView(walletId: walletId),
+      child: _WalletDetailView(walletId: walletId, now: now),
     );
   }
 }
 
 class _WalletDetailView extends StatefulWidget {
-  const _WalletDetailView({required this.walletId});
+  const _WalletDetailView({required this.walletId, this.now});
 
   final String walletId;
+  final DateTime? now;
 
   @override
   State<_WalletDetailView> createState() => _WalletDetailViewState();
 }
 
 class _WalletDetailViewState extends State<_WalletDetailView> {
-  final ScrollController _scrollController = ScrollController();
+  final _scrollController = ScrollController();
+  late FinancePeriod _period = FinancePeriod.containing(
+    FinancePeriodKind.month,
+    _now,
+  );
 
   Wallet? _wallet;
+  bool _walletMissing = false;
+  String _workspaceCurrency = '';
+  List<ExchangeRate> _exchangeRates = const [];
+
+  /// Period the stats and rows below belong to; null before the first load.
+  FinancePeriod? _loadedPeriod;
   TransactionStats? _stats;
   List<Transaction> _transactions = const [];
-  List<ExchangeRate> _exchangeRates = const [];
-  String _workspaceCurrency = '';
-  String? _nextCursor;
-  bool _hasMore = true;
-  bool _isLoadingInitial = false;
-  bool _isLoadingMore = false;
+  String? _cursor;
+  bool _hasMore = false;
+  bool _loadingMore = false;
   String? _error;
-  int _requestToken = 0;
-  int _initialLoadGeneration = 0;
+  int _generation = 0;
+
+  DateTime get _now => widget.now ?? DateTime.now();
+
+  String? get _wsId =>
+      context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    unawaited(_loadInitial());
+    unawaited(_load());
   }
 
   @override
@@ -87,367 +110,165 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final showAmounts = context.select<FinancePreferencesCubit, bool>(
-      (cubit) => cubit.state.showAmounts,
-    );
-    final wallet = _wallet;
-    final location = Routes.walletDetailPath(widget.walletId);
+  bool _isCurrent(int generation, String wsId) =>
+      mounted && generation == _generation && _wsId == wsId;
 
-    return shad.Scaffold(
-      child: BlocListener<WorkspaceCubit, WorkspaceState>(
-        listenWhen: (prev, curr) =>
-            prev.currentWorkspace?.id != curr.currentWorkspace?.id,
-        listener: (context, _) {
-          ++_requestToken;
-          setState(() {
-            _wallet = null;
-            _transactions = const [];
-            _stats = null;
-            _exchangeRates = const [];
-            _workspaceCurrency = '';
-            _nextCursor = null;
-            _hasMore = false;
-          });
-          unawaited(_loadInitial());
-        },
-        child: Stack(
-          children: [
-            ShellTitleOverride(
-              ownerId: 'finance-wallet-detail',
-              locations: {location},
-              title: wallet?.name ?? l10n.financeWallet,
-              showLeadingBrand: false,
-              showAvatar: false,
-            ),
-            Column(
-              children: [
-                Expanded(
-                  child: NovaRefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: _isLoadingInitial && wallet == null
-                        ? const FinanceListSkeleton()
-                        : _error != null
-                        ? AppPageListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              const SizedBox(height: 120),
-                              Center(
-                                child: Text(
-                                  _error!,
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          )
-                        : wallet == null
-                        ? AppPageListView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            children: [
-                              const SizedBox(height: 120),
-                              Center(child: Text(l10n.financeWalletNotFound)),
-                            ],
-                          )
-                        : LayoutBuilder(
-                            builder: (context, constraints) =>
-                                GroupedTransactionAccordion(
-                                  workspaceId: context
-                                      .read<WorkspaceCubit>()
-                                      .state
-                                      .currentWorkspace
-                                      ?.id,
-                                  transactions: _transactions,
-                                  workspaceCurrency: _workspaceCurrency,
-                                  exchangeRates: _exchangeRates,
-                                  showLoadingMore: _isLoadingMore,
-                                  showAmounts: showAmounts,
-                                  compactHorizontalPadding: 0,
-                                  lazy: true,
-                                  usePanelChrome: false,
-                                  emphasizeTransactionRows: true,
-                                  collapseBreakdownByDefault: true,
-                                  scrollController: _scrollController,
-                                  listPadding: AppPageInsets.of(
-                                    context,
-                                    width: constraints.maxWidth,
-                                  ),
-                                  headerChildren: [
-                                    WalletDetailSummaryCard(
-                                      wallet: wallet,
-                                      stats: _stats,
-                                      workspaceCurrency: _workspaceCurrency,
-                                      exchangeRates: _exchangeRates,
-                                      showAmounts: showAmounts,
-                                      onEdit:
-                                          _isLoadingInitial ||
-                                              !canManageFinance(
-                                                context,
-                                                'update_wallets',
-                                              )
-                                          ? null
-                                          : _onEditWallet,
-                                      onOpenCheckpoints: () => context.push(
-                                        Routes.financeCheckpointsPath(
-                                          walletId: wallet.id,
-                                        ),
-                                      ),
-                                    ),
-                                    const shad.Gap(AppLayout.itemGap),
-                                  ],
-                                  emptyState: FinanceEmptyState(
-                                    icon: Icons.receipt_long_outlined,
-                                    title: l10n.financeNoTransactions,
-                                    body:
-                                        l10n.financeOverviewNoTransactionsBody,
-                                    action:
-                                        canManageFinance(
-                                          context,
-                                          'create_transactions',
-                                        )
-                                        ? shad.SecondaryButton(
-                                            onPressed: _onCreateTransaction,
-                                            child: Text(
-                                              l10n.financeAddFirstTransaction,
-                                            ),
-                                          )
-                                        : null,
-                                  ),
-                                  onTransactionTap: _openTransaction,
-                                ),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-            ShellChromeActions(
-              ownerId: 'finance-wallet-detail',
-              locations: {location},
-              actions: [
-                financeAmountVisibilityAction(
-                  context,
-                  showAmounts: showAmounts,
-                ),
-                if (wallet != null &&
-                    !_isLoadingInitial &&
-                    canManageFinance(context, 'create_transactions'))
-                  ShellActionSpec(
-                    id: 'finance-wallet-create-transaction',
-                    icon: Icons.add,
-                    tooltip: l10n.financeCreateTransaction,
-                    filled: true,
-                    onPressed: _onCreateTransaction,
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
+  void _reset() {
+    _wallet = null;
+    _walletMissing = false;
+    _loadedPeriod = null;
+    _stats = null;
+    _transactions = const [];
+    _cursor = null;
+    _hasMore = false;
+    _error = null;
+  }
+
+  Future<void> _load() async {
+    final wsId = _wsId;
+    final generation = ++_generation;
+    if (wsId == null) {
+      setState(_reset);
+      return;
+    }
+    setState(() {
+      _error = null;
+      _loadingMore = false;
+    });
+    try {
+      await CacheStore.readWithRevalidation(
+        () => _fetch(wsId, _period, generation),
+        onSnapshot: (_) {},
+      );
+    } on Object catch (error) {
+      if (!_isCurrent(generation, wsId)) return;
+      final message = error is ApiException ? error.message.trim() : '';
+      setState(
+        () => _error = message.isEmpty
+            ? context.l10n.commonSomethingWentWrong
+            : message,
+      );
+    }
+  }
+
+  Future<void> _fetch(String wsId, FinancePeriod period, int generation) async {
+    final repository = context.read<FinanceRepository>();
+    final wallet = await repository.getWalletById(
+      wsId: wsId,
+      walletId: widget.walletId,
     );
+    if (!_isCurrent(generation, wsId)) return;
+    if (wallet == null) {
+      setState(() {
+        _reset();
+        _walletMissing = true;
+      });
+      return;
+    }
+    // The balance card shows while the period's figures load.
+    setState(() => _wallet = wallet);
+    final (currency, rates, stats, page) = await (
+      repository.getWorkspaceDefaultCurrency(wsId),
+      repository.getExchangeRates().catchError((_) => const <ExchangeRate>[]),
+      repository
+          .getTransactionStats(
+            wsId: wsId,
+            walletId: widget.walletId,
+            filters: period.query,
+          )
+          .then<TransactionStats?>((value) => value)
+          .catchError((_) => null),
+      repository.getTransactionsInfinite(
+        wsId: wsId,
+        walletId: widget.walletId,
+        query: period.query,
+        limit: walletDetailPageSize,
+      ),
+    ).wait;
+    if (!_isCurrent(generation, wsId)) return;
+    setState(() {
+      _workspaceCurrency = currency;
+      _exchangeRates = rates;
+      _loadedPeriod = period;
+      _stats = stats;
+      _transactions = collapseTransferTransactions(page.data);
+      _cursor = page.nextCursor;
+      _hasMore = page.hasMore;
+      _error = null;
+    });
   }
 
   void _onScroll() {
-    if (!_scrollController.hasClients || _isLoadingMore || !_hasMore) {
-      return;
-    }
-
-    final maxScroll = _scrollController.position.maxScrollExtent;
-    final currentScroll = _scrollController.offset;
-    if (currentScroll >= maxScroll - 180) {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
       unawaited(_loadMore());
     }
   }
 
-  Future<void> _onRefresh() async {
-    await _loadInitial(showLoader: false);
-  }
-
-  Future<void> _loadInitial({bool showLoader = true}) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) {
-      ++_initialLoadGeneration;
-      ++_requestToken;
-      if (mounted) {
-        setState(() {
-          _isLoadingInitial = false;
-          _isLoadingMore = false;
-          _wallet = null;
-          _transactions = const [];
-          _stats = null;
-          _exchangeRates = const [];
-          _workspaceCurrency = '';
-          _nextCursor = null;
-          _hasMore = false;
-          _error = null;
-        });
-      }
-      return;
-    }
-    final loadGeneration = ++_initialLoadGeneration;
-    setState(() {
-      _isLoadingInitial = true;
-      _isLoadingMore = false;
-      _error = null;
-    });
-    try {
-      await CacheStore.readWithRevalidation(() async {
-        if (!mounted ||
-            loadGeneration != _initialLoadGeneration ||
-            context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
-          return;
-        }
-        await _loadInitialPhase(
-          showLoader: showLoader && !CacheStore.awaitingRevalidation,
-        );
-      }, onSnapshot: (_) {});
-    } finally {
-      if (mounted &&
-          loadGeneration == _initialLoadGeneration &&
-          context.read<WorkspaceCubit>().state.currentWorkspace?.id == wsId) {
-        setState(() => _isLoadingInitial = false);
-      }
-    }
-  }
-
-  Future<void> _loadInitialPhase({bool showLoader = true}) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    final requestToken = ++_requestToken;
-    final repository = context.read<FinanceRepository>();
-
-    if (showLoader) {
-      setState(() {
-        _isLoadingInitial = true;
-        _isLoadingMore = false;
-        _error = null;
-      });
-    }
-
-    try {
-      final walletFuture = repository.getWalletById(
-        wsId: wsId,
-        walletId: widget.walletId,
-      );
-      final wallet = await walletFuture;
-      if (!mounted || requestToken != _requestToken) return;
-      if (wallet == null) {
-        setState(() {
-          _wallet = null;
-          _stats = null;
-          _transactions = const [];
-          _exchangeRates = const [];
-          _nextCursor = null;
-          _hasMore = false;
-          _error = null;
-        });
-        return;
-      }
-
-      // Publish the retained wallet before awaiting an uncached page.
-      setState(() => _wallet = wallet);
-      final workspaceCurrencyFuture = repository.getWorkspaceDefaultCurrency(
-        wsId,
-        forceRefresh: showLoader && CacheStore.awaitingRevalidation,
-      );
-      final exchangeRatesFuture = repository.getExchangeRates().catchError(
-        (_) => const <ExchangeRate>[],
-      );
-      final statsFuture = repository
-          .getTransactionStats(wsId: wsId, walletId: widget.walletId)
-          .then<TransactionStats?>((value) => value)
-          .catchError((_) => null);
-      final transactionsFuture = repository.getTransactionsInfinite(
-        wsId: wsId,
-        walletId: widget.walletId,
-      );
-
-      final (workspaceCurrency, exchangeRates, stats, firstPage) = await (
-        workspaceCurrencyFuture,
-        exchangeRatesFuture,
-        statsFuture,
-        transactionsFuture,
-      ).wait;
-
-      if (!mounted || requestToken != _requestToken) return;
-
-      setState(() {
-        _wallet = wallet;
-        _workspaceCurrency = workspaceCurrency;
-        _exchangeRates = exchangeRates;
-        _stats = _normalizeStatsCurrency(stats, wallet.currency);
-        _transactions = collapseTransferTransactions(firstPage.data);
-        _hasMore = firstPage.hasMore;
-        _nextCursor = firstPage.nextCursor;
-        _error = null;
-      });
-    } on ApiException catch (e) {
-      if (!mounted || requestToken != _requestToken) return;
-      final commonSomethingWentWrong = context.l10n.commonSomethingWentWrong;
-      setState(
-        () => _error = e.message.isNotEmpty
-            ? e.message
-            : commonSomethingWentWrong,
-      );
-    } on Exception {
-      if (!mounted || requestToken != _requestToken) return;
-      setState(() => _error = context.l10n.commonSomethingWentWrong);
-    }
-  }
-
   Future<void> _loadMore() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final nextCursor = _nextCursor;
-    final requestToken = _requestToken;
-    if (wsId == null || nextCursor == null || !_hasMore || _isLoadingInitial) {
-      return;
-    }
-
-    setState(() => _isLoadingMore = true);
-
+    final wsId = _wsId;
+    final cursor = _cursor;
+    final period = _loadedPeriod;
+    if (wsId == null || cursor == null || period == null) return;
+    if (!_hasMore || _loadingMore) return;
+    final generation = _generation;
+    setState(() => _loadingMore = true);
     try {
       final page = await context
           .read<FinanceRepository>()
           .getTransactionsInfinite(
             wsId: wsId,
             walletId: widget.walletId,
-            cursor: nextCursor,
+            cursor: cursor,
+            query: period.query,
+            limit: walletDetailPageSize,
           );
-
-      if (!mounted || requestToken != _requestToken) {
-        if (mounted && _isLoadingMore) {
-          setState(() => _isLoadingMore = false);
-        }
-        return;
-      }
+      if (!_isCurrent(generation, wsId)) return;
       setState(() {
         _transactions = collapseTransferTransactions([
           ..._transactions,
           ...page.data,
         ]);
+        _cursor = page.nextCursor;
         _hasMore = page.hasMore;
-        _nextCursor = page.nextCursor;
       });
-    } on Exception {
-      if (!mounted || requestToken != _requestToken) {
-        if (mounted && _isLoadingMore) {
-          setState(() => _isLoadingMore = false);
-        }
-        return;
-      }
-      setState(() => _hasMore = false);
+    } on Object {
+      if (_isCurrent(generation, wsId)) setState(() => _hasMore = false);
     } finally {
-      if (mounted && _isLoadingMore) {
-        setState(() => _isLoadingMore = false);
+      if (mounted && generation == _generation) {
+        setState(() => _loadingMore = false);
       }
     }
   }
 
-  Future<void> _onEditWallet() async {
-    final wallet = _wallet;
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wallet == null || wsId == null) return;
+  void _setPeriod(FinancePeriod period) {
+    if (period == _period) return;
+    setState(() => _period = period);
+    unawaited(_load());
+  }
 
+  Future<void> _create({bool transfer = false}) async {
+    final wsId = _wsId;
+    final wallet = _wallet;
+    if (wsId == null || wallet == null) return;
+    final created = await openCreateTransactionSheet(
+      context,
+      wsId: wsId,
+      repository: context.read<FinanceRepository>(),
+      exchangeRates: _exchangeRates,
+      initialWalletId: wallet.id,
+      initialTransfer: transfer,
+    );
+    if (!mounted || !created) return;
+    showAppToast(context, message: context.l10n.financeTransactionSaved);
+    await _load();
+  }
+
+  Future<void> _edit() async {
+    final wallet = _wallet;
+    final wsId = _wsId;
+    if (wallet == null || wsId == null) return;
     final changed = await showFinanceFullscreenModal<bool>(
       context: context,
       builder: (_) => WalletDialog(
@@ -456,41 +277,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
         repository: context.read<FinanceRepository>(),
       ),
     );
-
-    if (!mounted || changed != true) return;
-    await _loadInitial(showLoader: false);
-  }
-
-  Future<void> _onCreateTransaction() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    final wallet = _wallet;
-    if (wsId == null || wallet == null) return;
-
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final created = await openCreateTransactionSheet(
-      context,
-      wsId: wsId,
-      repository: context.read<FinanceRepository>(),
-      exchangeRates: _exchangeRates,
-      initialWalletId: wallet.id,
-    );
-
-    if (!mounted || !created) return;
-    await _loadInitial(showLoader: false);
-
-    if (toastContext.mounted) {
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, _) =>
-            shad.Alert(content: Text(ctx.l10n.financeTransactionCreated)),
-      );
-    }
+    if (mounted && changed == true) await _load();
   }
 
   Future<void> _openTransaction(Transaction transaction) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = _wsId;
     if (wsId == null) return;
-
     final changed = await openTransactionDetailSheet(
       context,
       wsId: wsId,
@@ -499,29 +291,97 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
       workspaceCurrency: _workspaceCurrency,
       exchangeRates: _exchangeRates,
     );
-
-    if (!mounted ||
-        !changed ||
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id != wsId) {
-      return;
-    }
-    await _loadInitial(showLoader: false);
+    if (mounted && changed && _wsId == wsId) await _load();
   }
 
-  TransactionStats? _normalizeStatsCurrency(
-    TransactionStats? stats,
-    String? fallbackSourceCurrency,
-  ) {
-    if (stats == null) return null;
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final wallet = _wallet;
+    final location = Routes.walletDetailPath(widget.walletId);
+    return BlocListener<WorkspaceCubit, WorkspaceState>(
+      listenWhen: (prev, curr) =>
+          prev.currentWorkspace?.id != curr.currentWorkspace?.id,
+      listener: (context, _) {
+        setState(_reset);
+        unawaited(_load());
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ShellTitleOverride(
+            ownerId: 'finance-wallet-detail',
+            locations: {location},
+            title: wallet?.name ?? l10n.financeWallet,
+            showLeadingBrand: false,
+            showAvatar: false,
+          ),
+          ShellChromeActions(
+            ownerId: 'finance-wallet-detail',
+            locations: {location},
+            actions: [
+              financeAmountVisibilityAction(
+                context,
+                showAmounts: financeAmountsVisible(context),
+              ),
+              if (canManageFinance(context, 'create_transactions'))
+                financeCreateAction(
+                  id: 'finance-wallet-create-transaction',
+                  tooltip: l10n.financeCreateTransaction,
+                  onPressed: wallet == null ? null : () => unawaited(_create()),
+                ),
+            ],
+          ),
+          NovaRefreshIndicator(onRefresh: _load, child: _body(wallet)),
+        ],
+      ),
+    );
+  }
 
-    final sourceCurrency = (stats.currency ?? fallbackSourceCurrency)
-        ?.trim()
-        .toUpperCase();
-
-    if (sourceCurrency == null || sourceCurrency.isEmpty) {
-      return stats;
+  Widget _body(Wallet? wallet) {
+    final l10n = context.l10n;
+    if (wallet == null) {
+      if (_walletMissing || _error != null) {
+        return FinanceProblemView(
+          problem: FinanceProblem.error,
+          message: _walletMissing ? l10n.financeWalletNotFound : _error,
+          onRetry: () => unawaited(_load()),
+        );
+      }
+      return const WalletDetailSkeleton();
     }
-
-    return stats.copyWith(currency: sourceCurrency);
+    final loaded = _loadedPeriod == _period;
+    return WalletDetailBody(
+      controller: _scrollController,
+      hero: WalletBalanceHero(
+        wallet: wallet,
+        workspaceCurrency: _workspaceCurrency,
+        exchangeRates: _exchangeRates,
+        onTransfer: canManageFinance(context, 'create_transactions')
+            ? () => unawaited(_create(transfer: true))
+            : null,
+        onEdit: canManageFinance(context, 'update_wallets')
+            ? () => unawaited(_edit())
+            : null,
+        onCheckpoints: () => unawaited(
+          context.push(Routes.financeCheckpointsPath(walletId: wallet.id)),
+        ),
+      ),
+      period: _period,
+      now: _now,
+      onPeriodChanged: _setPeriod,
+      currency: (wallet.currency ?? _workspaceCurrency).toUpperCase(),
+      stats: loaded ? _stats : null,
+      transactions: loaded ? _transactions : null,
+      complete: loaded && !_hasMore,
+      loadingMore: _loadingMore,
+      error: loaded ? null : _error,
+      onRetry: () => unawaited(_load()),
+      onTransactionTap: (transaction) =>
+          unawaited(_openTransaction(transaction)),
+      onCreate: canManageFinance(context, 'create_transactions')
+          ? () => unawaited(_create())
+          : null,
+    );
   }
 }

@@ -42,6 +42,7 @@ Future<bool> showCreateTransactionSheet(
   List<ExchangeRate>? exchangeRates,
   String? initialWalletId,
   DateTime? initialTakenAt,
+  bool initialTransfer = false,
 }) async {
   final result = await _showTransactionComposerRoute<bool>(
     context,
@@ -52,6 +53,7 @@ Future<bool> showCreateTransactionSheet(
       exchangeRates: exchangeRates,
       initialWalletId: initialWalletId,
       initialTakenAt: initialTakenAt,
+      initialTransfer: initialTransfer,
     ),
   );
 

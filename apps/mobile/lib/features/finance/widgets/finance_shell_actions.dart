@@ -76,3 +76,46 @@ class FinanceAmountVisibilityButton extends StatelessWidget {
     );
   }
 }
+
+/// The screen's primary create action. It takes the dock's priority slot
+/// beside navigation, and falls back to a filled top-bar button where the
+/// dock has no room for it.
+ShellActionSpec financeCreateAction({
+  required String id,
+  required String tooltip,
+  required VoidCallback? onPressed,
+  IconData icon = AppIcons.add,
+}) => ShellActionSpec(
+  id: id,
+  icon: icon,
+  tooltip: tooltip,
+  onPressed: onPressed,
+  enabled: onPressed != null,
+  filled: true,
+  inDock: true,
+);
+
+/// Search as a top-bar icon. While [active] the shell swaps its title for
+/// the query field (with its own close control); a kept query stays
+/// highlighted on the icon.
+ShellActionSpec financeSearchAction({
+  required String id,
+  required bool active,
+  required String hint,
+  required TextEditingController controller,
+  required VoidCallback onOpen,
+  required VoidCallback onClose,
+  ValueChanged<String>? onChanged,
+  bool hasQuery = false,
+}) => ShellActionSpec(
+  id: id,
+  icon: AppIcons.search,
+  tooltip: hint,
+  onPressed: active ? onClose : onOpen,
+  callbackToken: (active, hasQuery),
+  highlighted: active || hasQuery,
+  searchController: active ? controller : null,
+  searchHint: hint,
+  onSearchChanged: onChanged,
+  onCloseSearch: onClose,
+);

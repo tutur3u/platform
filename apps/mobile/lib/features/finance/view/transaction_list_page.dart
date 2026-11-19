@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -14,7 +13,6 @@ import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -213,14 +211,16 @@ class _TransactionListViewState extends State<_TransactionListView> {
     await _onRefresh();
   }
 
+  /// Drops the kind, category and wallet filters and keeps the period.
   void _clearFilters() {
-    _debounce?.cancel();
-    _searchController.clear();
+    final state = context.read<TransactionListCubit>().state;
     unawaited(
       context.read<TransactionListCubit>().setFilters(
-        query: const FinanceTransactionQuery(),
+        query: FinanceTransactionQuery(
+          start: state.query.start,
+          end: state.query.end,
+        ),
         walletId: null,
-        clearSearch: true,
       ),
     );
   }
@@ -252,23 +252,17 @@ class _TransactionListViewState extends State<_TransactionListView> {
             ownerId: 'finance-transactions',
             locations: const {Routes.transactions},
             actions: [
-              ShellActionSpec.search(
+              financeSearchAction(
                 id: 'finance-transactions-search',
                 active: _isSearchVisible,
-                tooltip: _isSearchVisible
-                    ? l10n.financeActivityClearSearch
-                    : l10n.financeSearchTransactions,
+                hint: l10n.financeSearchTransactions,
                 controller: _searchController,
-                searchHint: l10n.financeSearchTransactions,
-                onSearchChanged: _onSearchChanged,
-                onCloseSearch: _closeSearch,
-                onPressed: () {
-                  if (_isSearchVisible) {
-                    _closeSearch();
-                  } else {
-                    setState(() => _isSearchVisible = true);
-                  }
-                },
+                onChanged: _onSearchChanged,
+                hasQuery: context.select<TransactionListCubit, bool>(
+                  (cubit) => cubit.state.search.isNotEmpty,
+                ),
+                onOpen: () => setState(() => _isSearchVisible = true),
+                onClose: _closeSearch,
               ),
               financeAmountVisibilityAction(
                 context,
@@ -276,11 +270,9 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 id: 'finance-transactions-amount-visibility',
               ),
               if (canManageFinance(context, 'create_transactions'))
-                ShellActionSpec(
+                financeCreateAction(
                   id: 'finance-transactions-create',
-                  icon: AppIcons.add,
                   tooltip: l10n.financeNewTransaction,
-                  filled: true,
                   onPressed: () => unawaited(_onCreateTransaction()),
                 ),
             ],
@@ -305,6 +297,7 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 ),
               ),
               onClearFilters: _clearFilters,
+              onClearSearch: _closeSearch,
               onLoadMore: () =>
                   unawaited(context.read<TransactionListCubit>().loadMore()),
               onCreate: canManageFinance(context, 'create_transactions')

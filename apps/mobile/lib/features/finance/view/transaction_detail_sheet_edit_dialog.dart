@@ -14,6 +14,7 @@ class _TransactionFormDialog extends StatefulWidget {
     this.exchangeRates,
     this.initialWalletId,
     this.initialTakenAt,
+    this.initialTransfer = false,
   }) : assert(
          transaction == null ? onCreate != null : onSave != null,
          'Create mode requires onCreate; edit mode requires onSave.',
@@ -28,6 +29,9 @@ class _TransactionFormDialog extends StatefulWidget {
   final String? initialWalletId;
   final DateTime? initialTakenAt;
 
+  /// Opens a new entry in transfer mode.
+  final bool initialTransfer;
+
   @override
   State<_TransactionFormDialog> createState() => _TransactionFormDialogState();
 }
@@ -40,7 +44,9 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     setState(() {});
   }
 
-  _CreateTransactionMode _createMode = _CreateTransactionMode.expense;
+  late _CreateTransactionMode _createMode = widget.initialTransfer
+      ? _CreateTransactionMode.transfer
+      : _CreateTransactionMode.expense;
 
   void _setCreateMode(_CreateTransactionMode mode) {
     if (_isSaving || mode == _createMode) return;
@@ -517,10 +523,8 @@ class _TransactionFormDialogState extends State<_TransactionFormDialog>
     _tagIds =
         widget.transaction?.tags.map((tag) => tag.id).toList(growable: false) ??
         const [];
-    _isTransfer = widget.transaction?.isTransfer ?? false;
-    _reportOptIn =
-        widget.transaction?.reportOptIn ??
-        !(widget.transaction?.isTransfer ?? false);
+    _isTransfer = widget.transaction?.isTransfer ?? widget.initialTransfer;
+    _reportOptIn = widget.transaction?.reportOptIn ?? !_isTransfer;
     _isAmountConfidential = widget.transaction?.isAmountConfidential ?? false;
     _isDescriptionConfidential =
         widget.transaction?.isDescriptionConfidential ?? false;

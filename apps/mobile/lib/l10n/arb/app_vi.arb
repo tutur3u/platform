@@ -1374,14 +1374,18 @@
   "assistantAskName": "Hỏi {name}",
   "@assistantAskName": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "assistantConversationsLoadFailed": "Không thể tải cuộc trò chuyện",
   "assistantReplying": "{name} đang trả lời",
   "@assistantReplying": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "assistantArchiveConversationTitle": "Lưu trữ cuộc trò chuyện?",
@@ -1813,7 +1817,13 @@
   "calendarAgendaEmpty": "Không có sự kiện sắp tới",
   "calendarAgendaView": "Lịch trình",
   "calendarEventCount": "{count} sự kiện",
-  "@calendarEventCount": {"placeholders": {"count": {"type": "int"}}},
+  "@calendarEventCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "calendarExpandMonth": "Mở rộng lịch tháng",
   "calendarCollapseMonth": "Thu gọn lịch tháng",
   "calendarHasEvents": "Có sự kiện",
@@ -2519,30 +2529,72 @@
   "financeAllTime": "Mọi thời điểm",
   "financeAllWallets": "Tất cả ví",
   "financeBudgetAlertAt": "Cảnh báo ở mức {percent}%",
-  "@financeBudgetAlertAt": {"placeholders": {"percent": {"type": "int"}}},
+  "@financeBudgetAlertAt": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "financeBudgetAmountRequired": "Nhập hạn mức lớn hơn không",
   "financeBudgetCustom": "Tùy chỉnh",
   "financeBudgetDaysLeft": "Còn {days} ngày",
-  "@financeBudgetDaysLeft": {"placeholders": {"days": {"type": "int"}}},
+  "@financeBudgetDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "financeBudgetDeleted": "Đã xóa ngân sách",
   "financeBudgetEnd": "Ngày kết thúc",
   "financeBudgetEndAfterStart": "Chọn ngày kết thúc từ ngày bắt đầu trở đi",
   "financeBudgetLeft": "Còn {amount}",
-  "@financeBudgetLeft": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetLimit": "Hạn mức ({currency})",
-  "@financeBudgetLimit": {"placeholders": {"currency": {"type": "String"}}},
+  "@financeBudgetLimit": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetMonthly": "Hằng tháng",
   "financeBudgetNamePlaceholder": "Ví dụ: Thực phẩm",
   "financeBudgetDescriptionPlaceholder": "Các khoản chi trong ngân sách này",
   "financeBudgetDeleteFailed": "Không thể xóa ngân sách",
   "financeMonthlyBudgetScope": "Ngân sách hằng tháng đang hoạt động bằng {currency}",
-  "@financeMonthlyBudgetScope": {"placeholders": {"currency": {"type": "String"}}},
+  "@financeMonthlyBudgetScope": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetName": "Tên ngân sách",
   "financeBudgetNameRequired": "Nhập tên ngân sách",
   "financeBudgetOfLimit": "trên {amount}",
-  "@financeBudgetOfLimit": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetOfLimit": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetOver": "Vượt ngân sách {amount}",
-  "@financeBudgetOver": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetSaveFailed": "Không thể cập nhật ngân sách",
   "financeBudgetSaved": "Đã lưu ngân sách",
   "financeBudgetStart": "Ngày bắt đầu",
@@ -2567,7 +2619,13 @@
   "financeTotal": "Tổng",
   "financeTransfers": "Chuyển tiền",
   "financeWalletCount": "{count} ví",
-  "@financeWalletCount": {"placeholders": {"count": {"type": "int"}}},
+  "@financeWalletCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "financeWallets": "Ví",
   "financeWalletsMustBeDifferent": "Ví nguồn và ví đích phải khác nhau",
   "financeYesterday": "Hôm qua",
@@ -6899,5 +6957,22 @@
   "fleetUpdatedAgo": "{span} trước",
   "fleetEtaIn": "sau {span}",
   "fleetEtaOverdueBy": "quá hạn {span}",
-  "fleetBlockedByTasks": "{count} tác vụ đang chặn"
+  "fleetBlockedByTasks": "{count} tác vụ đang chặn",
+  "financeSearchNoResults": "Không có kết quả cho “{query}”",
+  "financeFiltersHideResults": "Bộ lọc đang ẩn mọi giao dịch trong kỳ này.",
+  "financeClearFilters": "Xóa bộ lọc",
+  "financeNoTransactionsInPeriod": "Không có giao dịch trong {period}",
+  "financePeriodWeek": "Tuần",
+  "financePeriodYear": "Năm",
+  "financePreviousPeriod": "Kỳ trước",
+  "financeNextPeriod": "Kỳ sau",
+  "financePeriodChart": "Tiền vào và ra theo ngày",
+  "financeBudgetPerDay": "{amount}/ngày",
+  "financeBudgetPerDayLabel": "Mỗi ngày",
+  "financeBudgetSpent": "Đã chi",
+  "financeBudgetRemaining": "Còn lại",
+  "financeBudgetOnTrack": "Đúng kế hoạch",
+  "financeBudgetNearLimit": "Sắp chạm hạn mức",
+  "financeBudgetOverLabel": "Vượt ngân sách",
+  "financeBudgetPeriod": "Kỳ"
 }

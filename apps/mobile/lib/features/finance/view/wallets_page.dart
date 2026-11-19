@@ -29,7 +29,6 @@ import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/finance/widgets/wallet_visual_avatar.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -234,34 +233,24 @@ class _WalletsViewState extends State<_WalletsView> {
               ownerId: 'finance-wallets',
               locations: const {Routes.wallets},
               actions: [
-                ShellActionSpec.search(
+                financeSearchAction(
                   id: 'finance-wallet-search',
                   active: _isSearchVisible,
-                  tooltip: _isSearchVisible
-                      ? l10n.financeActivityClearSearch
-                      : l10n.financeSearchWallets,
+                  hint: l10n.financeSearchWallets,
                   controller: _searchController,
-                  searchHint: l10n.financeSearchWallets,
-                  onSearchChanged: (_) => setState(() {}),
-                  onCloseSearch: _closeSearch,
-                  onPressed: () {
-                    if (_isSearchVisible) {
-                      _closeSearch();
-                    } else {
-                      setState(() => _isSearchVisible = true);
-                    }
-                  },
+                  onChanged: (_) => setState(() {}),
+                  hasQuery: _searchController.text.trim().isNotEmpty,
+                  onOpen: () => setState(() => _isSearchVisible = true),
+                  onClose: _closeSearch,
                 ),
                 financeAmountVisibilityAction(
                   context,
                   showAmounts: showAmounts,
                 ),
                 if (canManageFinance(context, 'create_wallets'))
-                  ShellActionSpec(
+                  financeCreateAction(
                     id: 'finance-create-wallet',
-                    icon: Icons.add,
                     tooltip: l10n.financeCreateWallet,
-                    filled: true,
                     onPressed: _onCreate,
                   ),
               ],

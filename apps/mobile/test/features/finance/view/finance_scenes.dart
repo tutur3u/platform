@@ -37,8 +37,11 @@ import 'package:mobile/features/finance/view/transaction_list_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
 import 'package:mobile/features/finance/view/wallets_page.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -326,6 +329,15 @@ enum FinanceScene {
   final String route;
 }
 
+/// Scenes whose primary create action sits in the dock's priority slot.
+const Set<FinanceScene> financeSceneCreates = {
+  FinanceScene.overview,
+  FinanceScene.transactions,
+  FinanceScene.budgets,
+  FinanceScene.wallets,
+  FinanceScene.walletDetail,
+};
+
 class FinanceScreenScene extends StatefulWidget {
   const FinanceScreenScene({
     required this.scene,
@@ -432,6 +444,7 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
     FinanceScene.walletDetail => WalletDetailPage(
       walletId: 'wallet-vnd',
       repository: _repository,
+      now: financeSceneDate,
     ),
     FinanceScene.checkpoints => FinanceCheckpointsPage(repository: _repository),
     FinanceScene.categories => TransactionCategoriesPage(
@@ -452,6 +465,14 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
           financePrimaryNavItems,
         )];
     final extra = financeExtraNavItems.any((item) => item.route == scene.route);
+    // The shell keeps the create action in the dock only where it fits.
+    final dockCreate =
+        financeSceneCreates.contains(scene) &&
+        shellDockFitsPageAction(
+          width: ShellDockMetrics.widthFor(media.size.width),
+          destinations: financePrimaryNavItems.length + 1,
+          hasBack: true,
+        );
     return MultiBlocProvider(
       providers: [
         BlocProvider<WorkspaceCubit>.value(value: _workspace),
@@ -507,14 +528,8 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
                     highlighted: !widget.showAmounts,
                     onPressed: _preferences.toggleShowAmounts,
                   ),
-                  if ({
-                    FinanceScene.overview,
-                    FinanceScene.transactions,
-                    FinanceScene.budgets,
-                    FinanceScene.wallets,
-                    FinanceScene.walletDetail,
-                    FinanceScene.categories,
-                  }.contains(scene))
+                  if (scene == FinanceScene.categories ||
+                      (financeSceneCreates.contains(scene) && !dockCreate))
                     ShellTopBarButton(
                       icon: const Icon(AppIcons.add),
                       filled: true,
@@ -565,6 +580,20 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
                             onSelected: (_) {},
                           ),
                         ),
+                        if (dockCreate) ...[
+                          const SizedBox(width: ShellDockMetrics.zoneGap),
+                          ShellDockActionButton(
+                            key: const ValueKey('finance-scene-create'),
+                            action: ShellActionSpec(
+                              id: 'create',
+                              icon: AppIcons.add,
+                              tooltip: l10n.financeNewTransaction,
+                              filled: true,
+                              inDock: true,
+                              onPressed: () {},
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

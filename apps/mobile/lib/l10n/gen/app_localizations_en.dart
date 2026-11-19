@@ -15847,4 +15847,61 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String financeSearchNoResults(String query) {
+    return 'No results for “$query”';
+  }
+
+  @override
+  String get financeFiltersHideResults => 'Your filters hide every transaction in this period.';
+
+  @override
+  String get financeClearFilters => 'Clear filters';
+
+  @override
+  String financeNoTransactionsInPeriod(String period) {
+    return 'No transactions in $period';
+  }
+
+  @override
+  String get financePeriodWeek => 'Week';
+
+  @override
+  String get financePeriodYear => 'Year';
+
+  @override
+  String get financePreviousPeriod => 'Previous period';
+
+  @override
+  String get financeNextPeriod => 'Next period';
+
+  @override
+  String get financePeriodChart => 'Daily money in and out';
+
+  @override
+  String financeBudgetPerDay(String amount) {
+    return '$amount/day';
+  }
+
+  @override
+  String get financeBudgetPerDayLabel => 'Per day';
+
+  @override
+  String get financeBudgetSpent => 'Spent';
+
+  @override
+  String get financeBudgetRemaining => 'Remaining';
+
+  @override
+  String get financeBudgetOnTrack => 'On track';
+
+  @override
+  String get financeBudgetNearLimit => 'Near limit';
+
+  @override
+  String get financeBudgetOverLabel => 'Over budget';
+
+  @override
+  String get financeBudgetPeriod => 'Period';
 }

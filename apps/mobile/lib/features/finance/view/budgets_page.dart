@@ -10,12 +10,12 @@ import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/budgets_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/view/budget_detail_sheet.dart';
 import 'package:mobile/features/finance/view/budget_form_page.dart';
 import 'package:mobile/features/finance/view/budget_widgets.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -64,6 +64,22 @@ class BudgetsView extends StatelessWidget {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
     await context.read<BudgetsCubit>().load(wsId, forceRefresh: true);
+  }
+
+  Future<void> _openDetail(BuildContext context, FinanceBudget budget) async {
+    final state = context.read<BudgetsCubit>().state;
+    final edit = await showBudgetDetailSheet(
+      context,
+      budget: budget,
+      currency: state.workspaceCurrency,
+      now: now ?? DateTime.now(),
+      canEdit: canManageFinance(context, 'manage_finance'),
+      category: state.categoryFor(budget.categoryId),
+      wallet: state.wallets
+          .where((wallet) => wallet.id == budget.walletId)
+          .firstOrNull,
+    );
+    if (edit && context.mounted) await _openForm(context, budget);
   }
 
   Future<void> _openForm(BuildContext context, [FinanceBudget? budget]) async {
@@ -120,14 +136,13 @@ class BudgetsView extends StatelessWidget {
                   showAmounts: showAmounts,
                   id: 'finance-budgets-amount-visibility',
                 ),
-                if (state.status == BudgetsStatus.loaded &&
-                    canManageFinance(context, 'manage_finance'))
-                  ShellActionSpec(
+                if (canManageFinance(context, 'manage_finance'))
+                  financeCreateAction(
                     id: 'finance-budget-create',
-                    icon: AppIcons.add,
                     tooltip: l10n.financeNewBudget,
-                    filled: true,
-                    onPressed: () => unawaited(_openForm(context)),
+                    onPressed: state.status == BudgetsStatus.loaded
+                        ? () => unawaited(_openForm(context))
+                        : null,
                   ),
               ],
             ),
@@ -153,9 +168,7 @@ class BudgetsView extends StatelessWidget {
                 child: _BudgetsList(
                   state: state,
                   now: now ?? DateTime.now(),
-                  onOpen: canManageFinance(context, 'manage_finance')
-                      ? (budget) => unawaited(_openForm(context, budget))
-                      : null,
+                  onOpen: (budget) => unawaited(_openDetail(context, budget)),
                   onCreate: canManageFinance(context, 'manage_finance')
                       ? () => unawaited(_openForm(context))
                       : null,
@@ -179,7 +192,7 @@ class _BudgetsList extends StatelessWidget {
 
   final BudgetsState state;
   final DateTime now;
-  final ValueChanged<FinanceBudget>? onOpen;
+  final ValueChanged<FinanceBudget> onOpen;
   final VoidCallback? onCreate;
 
   @override
@@ -222,9 +235,10 @@ class _BudgetsList extends StatelessWidget {
             category: state.categoryFor(budget.categoryId),
             currency: currency,
             pending: state.pendingIds.contains(budget.id),
-            onTap: state.pendingIds.contains(budget.id) || onOpen == null
+            now: now,
+            onTap: state.pendingIds.contains(budget.id)
                 ? null
-                : () => onOpen!(budget),
+                : () => onOpen(budget),
           ),
         ],
       ],

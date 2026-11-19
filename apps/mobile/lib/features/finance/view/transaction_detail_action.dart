@@ -98,6 +98,7 @@ Future<bool> openCreateTransactionSheet(
   required FinanceRepository repository,
   List<ExchangeRate>? exchangeRates,
   String? initialWalletId,
+  bool initialTransfer = false,
 }) {
   return showCreateTransactionSheet(
     context,
@@ -105,6 +106,7 @@ Future<bool> openCreateTransactionSheet(
     repository: repository,
     exchangeRates: exchangeRates,
     initialWalletId: initialWalletId,
+    initialTransfer: initialTransfer,
     onCreate:
         ({
           required amount,

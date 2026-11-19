@@ -15653,4 +15653,61 @@ class AppLocalizationsVi extends AppLocalizations {
   String fleetBlockedByTasks(int count) {
     return '$count tác vụ đang chặn';
   }
+
+  @override
+  String financeSearchNoResults(String query) {
+    return 'Không có kết quả cho “$query”';
+  }
+
+  @override
+  String get financeFiltersHideResults => 'Bộ lọc đang ẩn mọi giao dịch trong kỳ này.';
+
+  @override
+  String get financeClearFilters => 'Xóa bộ lọc';
+
+  @override
+  String financeNoTransactionsInPeriod(String period) {
+    return 'Không có giao dịch trong $period';
+  }
+
+  @override
+  String get financePeriodWeek => 'Tuần';
+
+  @override
+  String get financePeriodYear => 'Năm';
+
+  @override
+  String get financePreviousPeriod => 'Kỳ trước';
+
+  @override
+  String get financeNextPeriod => 'Kỳ sau';
+
+  @override
+  String get financePeriodChart => 'Tiền vào và ra theo ngày';
+
+  @override
+  String financeBudgetPerDay(String amount) {
+    return '$amount/ngày';
+  }
+
+  @override
+  String get financeBudgetPerDayLabel => 'Mỗi ngày';
+
+  @override
+  String get financeBudgetSpent => 'Đã chi';
+
+  @override
+  String get financeBudgetRemaining => 'Còn lại';
+
+  @override
+  String get financeBudgetOnTrack => 'Đúng kế hoạch';
+
+  @override
+  String get financeBudgetNearLimit => 'Sắp chạm hạn mức';
+
+  @override
+  String get financeBudgetOverLabel => 'Vượt ngân sách';
+
+  @override
+  String get financeBudgetPeriod => 'Kỳ';
 }

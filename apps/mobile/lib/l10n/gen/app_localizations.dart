@@ -29328,6 +29328,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, one{1 blocking task} other{{count} blocking tasks}}'**
   String fleetBlockedByTasks(int count);
+
+  /// No description provided for @financeSearchNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results for “{query}”'**
+  String financeSearchNoResults(String query);
+
+  /// No description provided for @financeFiltersHideResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Your filters hide every transaction in this period.'**
+  String get financeFiltersHideResults;
+
+  /// No description provided for @financeClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get financeClearFilters;
+
+  /// No description provided for @financeNoTransactionsInPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'No transactions in {period}'**
+  String financeNoTransactionsInPeriod(String period);
+
+  /// No description provided for @financePeriodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get financePeriodWeek;
+
+  /// No description provided for @financePeriodYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get financePeriodYear;
+
+  /// No description provided for @financePreviousPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous period'**
+  String get financePreviousPeriod;
+
+  /// No description provided for @financeNextPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Next period'**
+  String get financeNextPeriod;
+
+  /// No description provided for @financePeriodChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily money in and out'**
+  String get financePeriodChart;
+
+  /// No description provided for @financeBudgetPerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount}/day'**
+  String financeBudgetPerDay(String amount);
+
+  /// No description provided for @financeBudgetPerDayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Per day'**
+  String get financeBudgetPerDayLabel;
+
+  /// No description provided for @financeBudgetSpent.
+  ///
+  /// In en, this message translates to:
+  /// **'Spent'**
+  String get financeBudgetSpent;
+
+  /// No description provided for @financeBudgetRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get financeBudgetRemaining;
+
+  /// No description provided for @financeBudgetOnTrack.
+  ///
+  /// In en, this message translates to:
+  /// **'On track'**
+  String get financeBudgetOnTrack;
+
+  /// No description provided for @financeBudgetNearLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Near limit'**
+  String get financeBudgetNearLimit;
+
+  /// No description provided for @financeBudgetOverLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Over budget'**
+  String get financeBudgetOverLabel;
+
+  /// No description provided for @financeBudgetPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period'**
+  String get financeBudgetPeriod;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

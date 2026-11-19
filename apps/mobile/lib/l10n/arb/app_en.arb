@@ -1353,13 +1353,17 @@
   "appsPin": "Pin {app}",
   "@appsPin": {
     "placeholders": {
-      "app": { "type": "String" }
+      "app": {
+        "type": "String"
+      }
     }
   },
   "appsUnpin": "Unpin {app}",
   "@appsUnpin": {
     "placeholders": {
-      "app": { "type": "String" }
+      "app": {
+        "type": "String"
+      }
     }
   },
   "appsCustomize": "Customize apps",
@@ -1411,14 +1415,18 @@
   "assistantAskName": "Ask {name}",
   "@assistantAskName": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "assistantConversationsLoadFailed": "Could not load conversations",
   "assistantReplying": "{name} is replying",
   "@assistantReplying": {
     "placeholders": {
-      "name": { "type": "String" }
+      "name": {
+        "type": "String"
+      }
     }
   },
   "assistantArchiveConversationTitle": "Archive conversation?",
@@ -1881,7 +1889,13 @@
   "calendarAgendaEmpty": "No upcoming events",
   "calendarAgendaView": "Agenda",
   "calendarEventCount": "{count, plural, =1{1 event} other{{count} events}}",
-  "@calendarEventCount": {"placeholders": {"count": {"type": "int"}}},
+  "@calendarEventCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "calendarExpandMonth": "Expand month",
   "calendarCollapseMonth": "Collapse month",
   "calendarHasEvents": "Has events",
@@ -2621,30 +2635,72 @@
   "financeAllTime": "All time",
   "financeAllWallets": "All wallets",
   "financeBudgetAlertAt": "Alert at {percent}%",
-  "@financeBudgetAlertAt": {"placeholders": {"percent": {"type": "int"}}},
+  "@financeBudgetAlertAt": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "financeBudgetAmountRequired": "Enter a limit greater than zero",
   "financeBudgetCustom": "Custom",
   "financeBudgetDaysLeft": "{days, plural, one{1 day left} other{{days} days left}}",
-  "@financeBudgetDaysLeft": {"placeholders": {"days": {"type": "int"}}},
+  "@financeBudgetDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
   "financeBudgetDeleted": "Budget deleted",
   "financeBudgetEnd": "End date",
   "financeBudgetEndAfterStart": "Choose an end date on or after the start date",
   "financeBudgetLeft": "{amount} left",
-  "@financeBudgetLeft": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetLeft": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetLimit": "Limit ({currency})",
-  "@financeBudgetLimit": {"placeholders": {"currency": {"type": "String"}}},
+  "@financeBudgetLimit": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetMonthly": "Monthly",
   "financeBudgetNamePlaceholder": "e.g. Groceries",
   "financeBudgetDescriptionPlaceholder": "What this budget covers",
   "financeBudgetDeleteFailed": "Could not delete the budget",
   "financeMonthlyBudgetScope": "Active monthly budgets in {currency}",
-  "@financeMonthlyBudgetScope": {"placeholders": {"currency": {"type": "String"}}},
+  "@financeMonthlyBudgetScope": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetName": "Budget name",
   "financeBudgetNameRequired": "Enter a budget name",
   "financeBudgetOfLimit": "of {amount}",
-  "@financeBudgetOfLimit": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetOfLimit": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetOver": "{amount} over budget",
-  "@financeBudgetOver": {"placeholders": {"amount": {"type": "String"}}},
+  "@financeBudgetOver": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
   "financeBudgetSaveFailed": "Could not update the budget",
   "financeBudgetSaved": "Budget saved",
   "financeBudgetStart": "Start date",
@@ -2669,7 +2725,13 @@
   "financeTotal": "Total",
   "financeTransfers": "Transfers",
   "financeWalletCount": "{count, plural, one{1 wallet} other{{count} wallets}}",
-  "@financeWalletCount": {"placeholders": {"count": {"type": "int"}}},
+  "@financeWalletCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "financeWallets": "Wallets",
   "financeWalletsMustBeDifferent": "Source and destination wallets must be different",
   "financeYesterday": "Yesterday",
@@ -7506,5 +7568,43 @@
         "type": "int"
       }
     }
-  }
+  },
+  "financeSearchNoResults": "No results for “{query}”",
+  "@financeSearchNoResults": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "financeFiltersHideResults": "Your filters hide every transaction in this period.",
+  "financeClearFilters": "Clear filters",
+  "financeNoTransactionsInPeriod": "No transactions in {period}",
+  "@financeNoTransactionsInPeriod": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "financePeriodWeek": "Week",
+  "financePeriodYear": "Year",
+  "financePreviousPeriod": "Previous period",
+  "financeNextPeriod": "Next period",
+  "financePeriodChart": "Daily money in and out",
+  "financeBudgetPerDay": "{amount}/day",
+  "@financeBudgetPerDay": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "financeBudgetPerDayLabel": "Per day",
+  "financeBudgetSpent": "Spent",
+  "financeBudgetRemaining": "Remaining",
+  "financeBudgetOnTrack": "On track",
+  "financeBudgetNearLimit": "Near limit",
+  "financeBudgetOverLabel": "Over budget",
+  "financeBudgetPeriod": "Period"
 }
