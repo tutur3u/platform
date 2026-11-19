@@ -13,8 +13,9 @@ serverless and bandwidth cost for traffic that does not need a render.
 The route `tuturuuu.com/*` is attached by the provider owner. Versions are
 uploaded and deployed by the `gateway` job of `.github/workflows/web-opennext.yaml`
 (see [Web route families](/build/devops/web-opennext-families#deploying)); more
-specific routes (for example the roadmap Worker on
-`tuturuuu.com/roadmap*`) keep winning over `tuturuuu.com/*`.
+specific routes, such as `tuturuuu.com/roadmap` and
+`tuturuuu.com/roadmap/*`, take precedence over `tuturuuu.com/*` for
+requests they match.
 
 ## Behavior
 
@@ -211,10 +212,15 @@ to `WEB_ORIGIN`. Regression coverage lives in
 
 An exact `tuturuuu.com/roadmap` zone route excludes requests such as
 `/roadmap?x=1`. If they reach Web, Web's Roadmap proxy fetches the same apex URL
-again and hits the loop guard. The Roadmap route configuration uses
-`tuturuuu.com/roadmap*` to include those queries. Test the deployed Roadmap
-route and its lookalike pass-through before marking the query fix live. See
-the [Roadmap cutover packet](/build/devops/wave1-cutover-packets#roadmap).
+again and hits the loop guard. Keep the exact and subtree zone routes in
+place. Add only `/roadmap` to `GATEWAY_MOUNTED_PATHS` and bind
+`MOUNT_ROADMAP` to the Roadmap Worker to handle bare requests with queries.
+The exact path keeps `/roadmapping` on its existing Web route.
+
+Check the bare path, `?x=1`, and a UTM query in English and Vietnamese.
+Confirm the Roadmap version and Tech stack section on all six responses, and
+check that `/roadmapping` still reaches Web. See the
+[Roadmap cutover packet](/build/devops/wave1-cutover-packets#roadmap).
 
 ### One-action rollback for a gateway mount
 
