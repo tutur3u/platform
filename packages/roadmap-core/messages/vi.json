@@ -28,7 +28,10 @@
     "target": "Mục tiêu",
     "title": "Công nghệ ứng dụng",
     "unavailable": "Chưa có dữ liệu về công nghệ của ứng dụng.",
-    "unspecified": "Chưa xác định"
+    "unspecified": "Chưa xác định",
+    "filterLabel": "Hiển thị",
+    "filterMigrating": "Đang chuyển đổi",
+    "filterAll": "Tất cả ứng dụng"
   },
   "storeReleases": {
     "heading": "Phát hành trên cửa hàng",

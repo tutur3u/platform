@@ -40,6 +40,10 @@ it('renders bilingual stack status, target routes and migration progress', () =>
   expect(en).toContain('Wrangler');
   expect(en).toContain('cf CLI');
   expect(en).toContain('Outside this migration');
+  // Apps outside the migration sit behind the filter, not in the default list.
+  expect(en).toContain('Migrating');
+  expect(en).not.toContain('Mobile app');
+  expect(vi).toContain('Đang chuyển đổi');
   expect(vi).toContain('Công nghệ ứng dụng');
   expect(vi).toContain('Đã chuyển đổi');
   expect(vi).toContain('Đang tạm giữ');

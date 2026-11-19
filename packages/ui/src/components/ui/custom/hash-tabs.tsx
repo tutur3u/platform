@@ -113,6 +113,12 @@ export function HashTabs({
               // Before hydration no roving tab stop exists, so every link
               // stays reachable by Tab like any anchor.
               {...(ready ? {} : { tabIndex: 0 })}
+              // A pointer selects on click: Radix would focus the trigger on
+              // mousedown, which draws the keyboard focus ring.
+              onMouseDown={(event) => {
+                if (ready && event.button === 0 && !event.ctrlKey)
+                  event.preventDefault();
+              }}
               onClick={(event) => follow(event, id)}
             >
               {icon}

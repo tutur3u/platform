@@ -28,7 +28,10 @@
     "target": "Target",
     "title": "Tech stack",
     "unavailable": "App stack data is unavailable.",
-    "unspecified": "Unspecified"
+    "unspecified": "Unspecified",
+    "filterLabel": "Show",
+    "filterMigrating": "Migrating",
+    "filterAll": "All apps"
   },
   "storeReleases": {
     "heading": "Store releases",

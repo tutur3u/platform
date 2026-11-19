@@ -22,10 +22,22 @@ const Heatmap = lazy(() =>
   }))
 );
 
-/** True once the element is within `margin` of the viewport. */
+/**
+ * True while the element is laid out and, once it has been, within `margin`
+ * of the viewport. A hidden element (a tab panel that is not selected) has
+ * no size, and a chart drawn into it would measure zero.
+ */
 function useNearViewport<T extends HTMLElement>(margin = 240) {
   const ref = useRef<T>(null);
   const [near, setNear] = useState(false);
+  const [laidOut, setLaidOut] = useState(true);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => setLaidOut(node.offsetWidth > 0));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   useEffect(() => {
     const node = ref.current;
     if (!node || near) return;
@@ -42,7 +54,7 @@ function useNearViewport<T extends HTMLElement>(margin = 240) {
     observer.observe(node);
     return () => observer.disconnect();
   }, [near, margin]);
-  return [ref, near] as const;
+  return [ref, near && laidOut] as const;
 }
 
 /**

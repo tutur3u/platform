@@ -92,7 +92,11 @@ describe('HashTabs', () => {
 
   it('writes the fragment on click and follows back and forward', () => {
     render(<UrlTabs />);
+    const entries = window.history.length;
+    // A pointer click pushes an entry, so Back returns to the previous tab.
     fireEvent.mouseDown(screen.getByRole('tab', { name: 'Activity' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Activity' }));
+    expect(window.history.length).toBe(entries + 1);
     expect(window.location.hash).toBe('#activity');
     expect(selected()).toBe('Activity');
     act(() => {
@@ -100,6 +104,13 @@ describe('HashTabs', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     expect(selected()).toBe('Tracks');
+  });
+
+  it('does not move focus on a pointer press, so no focus ring appears', () => {
+    render(<UrlTabs />);
+    const link = screen.getByRole('tab', { name: 'Tracks' });
+    // A prevented mousedown keeps the browser from focusing the link.
+    expect(fireEvent.mouseDown(link)).toBe(false);
   });
 
   it('does not intercept modified clicks', () => {

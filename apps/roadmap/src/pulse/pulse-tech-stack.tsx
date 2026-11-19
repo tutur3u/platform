@@ -10,6 +10,8 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
+import { Segmented } from '@tuturuuu/roadmap-core/components/ds/segmented.tsx';
+import { useState } from 'react';
 
 const variant = {
   cutOver: 'success',
@@ -37,26 +39,34 @@ function StackDetails({
   copy: typeof en.techStack;
   stack: TechStack;
 }) {
+  const framework = copy.stack[stack.framework];
+  const bundler =
+    stack.bundler === 'next'
+      ? copy.nextBundler
+      : stack.bundler === 'other'
+        ? copy.unspecified
+        : copy.stack[stack.bundler];
+  const hosting = stack.hosting ? copy.stack[stack.hosting] : copy.unspecified;
   return (
     <>
-      <p>
-        {copy.stack[stack.framework]} ·{' '}
-        {stack.bundler === 'next'
-          ? copy.nextBundler
-          : stack.bundler === 'other'
-            ? copy.unspecified
-            : copy.stack[stack.bundler]}
-      </p>
-      <p>
-        {stack.hosting ? copy.stack[stack.hosting] : copy.unspecified}
+      <span>
+        {framework} · {bundler}
+      </span>
+      <span>
+        {hosting}
         {stack.deployCli && ` · ${copy.stack[stack.deployCli]}`}
-      </p>
+      </span>
       {stack.url && (
-        <p className="wrap-anywhere">{stack.url.replace(/^https:\/\//, '')}</p>
+        <span className="wrap-anywhere">
+          {stack.url.replace(/^https:\/\//, '')}
+        </span>
       )}
     </>
   );
 }
+
+type Show = 'migrating' | 'outside' | 'all';
+const OUTSIDE = new Set<AppTechStack['status']>(['paused', 'outside']);
 
 /**
  * How far the move to TanStack Start on Cloudflare has come: one progress
@@ -76,7 +86,11 @@ export function PulseTechStack({
   const progress = copy.progress
     .replace('{done}', String(cutOver))
     .replace('{total}', String(total));
-  const sorted = [...apps].sort(
+  const [show, setShow] = useState<Show>('migrating');
+  const shown = apps.filter((app) =>
+    show === 'all' ? true : OUTSIDE.has(app.status) === (show === 'outside')
+  );
+  const sorted = [...shown].sort(
     (a, b) =>
       ORDER[a.status] - ORDER[b.status] ||
       (APP_NAMES[a.id] ?? a.id).localeCompare(APP_NAMES[b.id] ?? b.id)
@@ -114,6 +128,18 @@ export function PulseTechStack({
           </CardContent>
         </Card>
       )}
+      {apps.length > 0 && (
+        <Segmented
+          label={copy.filterLabel}
+          value={show}
+          onChange={setShow}
+          options={[
+            { value: 'migrating', label: copy.filterMigrating },
+            { value: 'outside', label: copy.status.outside },
+            { value: 'all', label: copy.filterAll },
+          ]}
+        />
+      )}
       {apps.length > 0 ? (
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {sorted.map(({ id, status, current, targetUrl }) => (
@@ -129,24 +155,28 @@ export function PulseTechStack({
                   </CardTitle>
                   <Badge variant={variant[status]}>{copy.status[status]}</Badge>
                 </CardHeader>
-                <CardContent className="grid gap-2 p-4 pt-0 text-sm">
-                  <div>
-                    <p className="text-muted-foreground text-xs">
+                <CardContent className="p-4 pt-0 text-sm">
+                  <dl className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-3 gap-y-2">
+                    <dt className="text-muted-foreground text-xs">
                       {copy.current}
-                    </p>
-                    <StackDetails copy={copy} stack={current} />
-                  </div>
-                  {targetUrl && (
-                    <div>
-                      <p className="text-muted-foreground text-xs">
-                        {copy.target}
-                      </p>
-                      <StackDetails
-                        copy={copy}
-                        stack={{ ...TARGET_TECH_STACK, url: targetUrl }}
-                      />
-                    </div>
-                  )}
+                    </dt>
+                    <dd className="grid">
+                      <StackDetails copy={copy} stack={current} />
+                    </dd>
+                    {targetUrl && (
+                      <>
+                        <dt className="text-muted-foreground text-xs">
+                          {copy.target}
+                        </dt>
+                        <dd className="grid">
+                          <StackDetails
+                            copy={copy}
+                            stack={{ ...TARGET_TECH_STACK, url: targetUrl }}
+                          />
+                        </dd>
+                      </>
+                    )}
+                  </dl>
                 </CardContent>
               </Card>
             </li>
