@@ -20,7 +20,7 @@
       "localized": true,
       "assetPrefix": "/_f/public-docs",
       "wrangler": "cloudflare/opennext/wrangler.public-docs.jsonc",
-      "exact": ["/changelog", "/docs", "/ui"],
+      "exact": ["/changelog", "/docs", "/ui", "/visualizations"],
       "prefix": ["/changelog/", "/visualizations/", "/ui/"],
       "exclude": []
     },

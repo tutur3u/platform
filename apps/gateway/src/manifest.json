@@ -178,7 +178,7 @@
         "binding": "WEB_FAMILY_PUBLIC_DOCS",
         "localized": true,
         "assetPrefix": "/_f/public-docs",
-        "exact": ["/changelog", "/docs", "/ui"],
+        "exact": ["/changelog", "/docs", "/ui", "/visualizations"],
         "prefix": ["/changelog/", "/visualizations/", "/ui/"],
         "exclude": []
       }
