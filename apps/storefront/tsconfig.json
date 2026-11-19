@@ -2,6 +2,7 @@
   "extends": "@tuturuuu/typescript-config/nextjs.json",
   "compilerOptions": {
     "module": "ESNext",
+    "allowImportingTsExtensions": true,
     "plugins": [
       {
         "name": "next"

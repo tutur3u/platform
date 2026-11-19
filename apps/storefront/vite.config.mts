@@ -7,42 +7,47 @@ import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import { applyStorefrontNativeProfileEnv } from './cloudflare/native-profile.ts';
 
-const bridge = startBridgePreset({
-  appRoot: import.meta.url,
-  app: 'storefront',
-  rsc: true,
-  serverOnlySpecifiers: [
-    '@tuturuuu/satellite/auth',
-    '@tuturuuu/utils/api-proxy-guard',
-    '@tuturuuu/supabase/next/server',
-  ],
+export default defineConfig(({ command }) => {
+  // Resolve the native profile before the preset reads NEXT_PUBLIC_* so the
+  // browser bundle cannot carry another profile's public values.
+  if (command === 'build') applyStorefrontNativeProfileEnv(process.env);
+  const bridge = startBridgePreset({
+    appRoot: import.meta.url,
+    app: 'storefront',
+    rsc: true,
+    serverOnlySpecifiers: [
+      '@tuturuuu/satellite/auth',
+      '@tuturuuu/utils/api-proxy-guard',
+      '@tuturuuu/supabase/next/server',
+    ],
+  });
+  return {
+    base: bridge.base,
+    define: bridge.define,
+    plugins: [
+      startBridgeRscPlugin({
+        rscEntries: {
+          'bridge-api': new URL(
+            './src/start-bridge/api-entry.ts',
+            import.meta.url
+          ),
+          'bridge-pages': new URL(
+            './src/start-bridge/page-modules.bridge.gen.ts',
+            import.meta.url
+          ),
+        },
+      }),
+      voidPlugin(),
+      tanstackStart(bridge.tanstackStart),
+      rsc(),
+      react(),
+      tailwindcss(),
+    ],
+    environments: {
+      client: { define: bridge.clientDefine(command) },
+    },
+    resolve: { alias: bridge.alias },
+  };
 });
-
-export default defineConfig(({ command }) => ({
-  base: bridge.base,
-  define: bridge.define,
-  plugins: [
-    startBridgeRscPlugin({
-      rscEntries: {
-        'bridge-api': new URL(
-          './src/start-bridge/api-entry.ts',
-          import.meta.url
-        ),
-        'bridge-pages': new URL(
-          './src/start-bridge/page-modules.bridge.gen.ts',
-          import.meta.url
-        ),
-      },
-    }),
-    voidPlugin(),
-    tanstackStart(bridge.tanstackStart),
-    rsc(),
-    react(),
-    tailwindcss(),
-  ],
-  environments: {
-    client: { define: bridge.clientDefine(command) },
-  },
-  resolve: { alias: bridge.alias },
-}));

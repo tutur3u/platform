@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   DEFAULT_CONFIG,
+  judgeAlias,
   judgeBuildInfo,
   judgeRoot,
   parseArgs,
@@ -19,6 +20,7 @@ test('parseArgs reads the four positionals and defaults', () => {
     sha: SHA,
     expectRedirect: false,
     expectLocation: null,
+    aliasOf: null,
     config: DEFAULT_CONFIG,
   });
 });
@@ -153,5 +155,112 @@ test('judgeBuildInfo requires 200 JSON whose commitHash equals the expected sha'
       options
     )[0],
     /reports commitHash local/u
+  );
+});
+
+test('judgeRoot resolves a Storefront same-host path redirect before comparing', () => {
+  const options = {
+    app: 'storefront',
+    host: HOST,
+    expectRedirect: false,
+    expectLocation: `https://${HOST}/demo`,
+  };
+  assert.deepEqual(judgeRoot({ status: 307, location: '/demo' }, options), []);
+  assert.match(
+    judgeRoot({ status: 307, location: '/other' }, options)[0],
+    /redirected to "https:\/\/nova\.tuturuuu\.com\/other"/u
+  );
+  assert.match(
+    judgeRoot({ status: 307, location: '//evil.example/demo' }, options)[0],
+    /redirected to "\/\/evil\.example\/demo"/u
+  );
+});
+
+test('parseArgs --expect-alias-of takes a bare https origin only', () => {
+  assert.equal(
+    parseArgs([
+      'storefront',
+      'apps/storefront',
+      'storefront.tuturuuu.com',
+      SHA,
+      '--expect-alias-of',
+      'https://store.tuturuuu.com',
+    ]).aliasOf,
+    'https://store.tuturuuu.com'
+  );
+  for (const value of [
+    undefined,
+    'store.tuturuuu.com',
+    'http://store.tuturuuu.com',
+    'https://store.tuturuuu.com/',
+    'https://store.tuturuuu.com/path',
+    'https://store.tuturuuu.com?x=1',
+    'https://user@store.tuturuuu.com',
+    'https://store.tuturuuu.com:8443',
+  ]) {
+    assert.throws(
+      () =>
+        parseArgs(
+          value === undefined
+            ? [...ok, '--expect-alias-of']
+            : [...ok, '--expect-alias-of', value]
+        ),
+      /--expect-alias-of/u,
+      String(value)
+    );
+  }
+});
+
+test('judgeAlias accepts only a 307 to the same path on the target origin', () => {
+  const options = { host: HOST, aliasOf: 'https://store.tuturuuu.com' };
+  assert.deepEqual(
+    judgeAlias(
+      { status: 307, location: 'https://store.tuturuuu.com/' },
+      '/',
+      options
+    ),
+    []
+  );
+  assert.deepEqual(
+    judgeAlias(
+      { status: 307, location: 'https://store.tuturuuu.com/api/build-info' },
+      '/api/build-info',
+      options
+    ),
+    []
+  );
+  assert.match(
+    judgeAlias({ status: 200 }, '/api/build-info', options)[0],
+    /answered 200; expected 307 to https:\/\/store\.tuturuuu\.com\/api\/build-info/u
+  );
+  assert.match(
+    judgeAlias({ status: 308, location: null }, '/', options)[0],
+    /answered 308/u
+  );
+  assert.match(
+    judgeAlias(
+      { status: 307, location: 'https://evil.example/' },
+      '/',
+      options
+    )[0],
+    /redirected to "https:\/\/evil\.example\/"/u
+  );
+  assert.match(
+    judgeAlias({ status: 307, location: null }, '/', options)[0],
+    /redirected to ""/u
+  );
+});
+
+test('redirect-alias mode cannot bypass identity checks for other apps', () => {
+  assert.throws(
+    () => parseArgs([...ok, '--expect-alias-of', 'https://store.tuturuuu.com']),
+    /admitted only for storefront/u
+  );
+  assert.match(
+    judgeRoot(
+      { status: 307, location: '/demo' },
+      { app: 'nova', host: HOST, expectLocation: `https://${HOST}/demo` }
+    )[0],
+    /redirected/u
   );
 });

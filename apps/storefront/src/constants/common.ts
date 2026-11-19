@@ -18,7 +18,7 @@ export const INVENTORY_PORT = process.env.INVENTORY_PORT || 7815;
 
 const DEFAULT_STOREFRONT_APP_URL =
   process.env.NODE_ENV === 'production'
-    ? 'https://storefront.tuturuuu.com'
+    ? 'https://store.tuturuuu.com'
     : getLocalInternalAppUrl('storefront', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =

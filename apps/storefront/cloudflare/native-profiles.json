@@ -1,0 +1,27 @@
+{
+  "staging": {
+    "workerName": "tuturuuu-storefront-vite-staging",
+    "vars": {
+      "TUTURUUU_NOINDEX": "1"
+    }
+  },
+  "production": {
+    "workerName": "tuturuuu-storefront-wave1",
+    "rootHost": "store.tuturuuu.com",
+    "aliasHosts": [
+      "storefront.tuturuuu.com",
+      "stores.tuturuuu.com",
+      "storefronts.tuturuuu.com"
+    ],
+    "vars": {
+      "TUTURUUU_NOINDEX": "0",
+      "NODE_ENV": "production",
+      "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com",
+      "INVENTORY_APP_URL": "https://inventory.tuturuuu.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+      "NEXT_PUBLIC_APP_URL": "https://store.tuturuuu.com",
+      "NEXT_PUBLIC_STOREFRONT_APP_URL": "https://store.tuturuuu.com",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
+    }
+  }
+}

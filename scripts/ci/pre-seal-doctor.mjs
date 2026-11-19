@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 // gateway variable (503) before bytes are sealed, not after a DNS flip.
 
 const USAGE =
-  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--expect-location <https-url>] [--wave1 | --config <path-inside-artifact-dir>]';
+  'Usage: pre-seal-doctor.mjs <app> <artifact-dir> <production-host> <expected-commit-sha> [--expect-redirect] [--expect-location <https-url>] [--expect-alias-of <https-origin>] [--wave1 | --config <path-inside-artifact-dir>]';
 export const DEFAULT_CONFIG = 'dist/server/wrangler.json';
 // The wave-1 profile writes its sealed publication config here.
 export const WAVE1_CONFIG = 'dist/wave1/wrangler.json';
@@ -49,6 +49,7 @@ export function parseArgs(argv) {
   const options = {
     expectRedirect: false,
     expectLocation: null,
+    aliasOf: null,
     config: DEFAULT_CONFIG,
   };
   for (let index = 0; index < argv.length; index += 1) {
@@ -77,6 +78,28 @@ export function parseArgs(argv) {
           `--expect-location must be an https URL with no query, hash, userinfo, or trailing slash\n${USAGE}`
         );
       options.expectLocation = location.href;
+    } else if (arg === '--expect-alias-of') {
+      const value = argv[(index += 1)];
+      let origin;
+      try {
+        origin = new URL(value ?? '');
+      } catch {
+        throw new Error(`--expect-alias-of needs an https origin\n${USAGE}`);
+      }
+      if (
+        origin.protocol !== 'https:' ||
+        origin.username ||
+        origin.password ||
+        origin.port ||
+        origin.pathname !== '/' ||
+        origin.search ||
+        origin.hash ||
+        value.endsWith('/')
+      )
+        throw new Error(
+          `--expect-alias-of must be a bare https origin\n${USAGE}`
+        );
+      options.aliasOf = origin.origin;
     } else if (arg === '--wave1') options.config = WAVE1_CONFIG;
     else if (arg === '--config') {
       const value = argv[(index += 1)];
@@ -98,6 +121,8 @@ export function parseArgs(argv) {
     throw new Error('Expected commit sha must be 40 lowercase hex characters');
   if (isAbsolute(options.config) || options.config.split('/').includes('..'))
     throw new Error('--config must stay inside the artifact directory');
+  if (options.aliasOf && app !== 'storefront')
+    throw new Error('--expect-alias-of is admitted only for storefront');
   return { app, artifactDir, host, sha, ...options };
 }
 
@@ -105,7 +130,10 @@ const describe = (response) =>
   `${response.status}${response.location ? ` -> ${response.location}` : ''}`;
 
 /** Judge the response to `GET /`. Returns a list of problems (empty = pass). */
-export function judgeRoot(response, { host, expectRedirect, expectLocation }) {
+export function judgeRoot(
+  response,
+  { app, host, expectRedirect, expectLocation }
+) {
   const where = `GET / with Host ${host}`;
   const { status } = response;
   if (expectLocation) {
@@ -113,7 +141,12 @@ export function judgeRoot(response, { host, expectRedirect, expectLocation }) {
       return [
         `${where} answered ${status}; expected a redirect to ${expectLocation}`,
       ];
-    const location = response.location ?? '';
+    const raw = response.location ?? '';
+    // A same-host path redirect is compared as the absolute URL it resolves to.
+    const location =
+      app === 'storefront' && raw.startsWith('/') && !raw.startsWith('//')
+        ? new URL(raw, `https://${host}`).href
+        : raw;
     return location === expectLocation
       ? []
       : [`${where} redirected to "${location}", expected ${expectLocation}`];
@@ -155,6 +188,24 @@ export function judgeRoot(response, { host, expectRedirect, expectLocation }) {
   return [
     `${where} answered ${status}${why}; expected 200${expectRedirect ? ' or an auth redirect' : ''}`,
   ];
+}
+
+/**
+ * Judge a host that only redirects to another origin, path and query kept
+ * (a redirect alias): `path` must answer 307 to `${aliasOf}${path}`.
+ */
+export function judgeAlias(response, path, { host, aliasOf }) {
+  const where = `GET ${path} with Host ${host}`;
+  const expected = `${aliasOf}${path}`;
+  if (response.status !== 307)
+    return [
+      `${where} answered ${response.status}; expected 307 to ${expected}`,
+    ];
+  return response.location === expected
+    ? []
+    : [
+        `${where} redirected to "${response.location ?? ''}", expected ${expected}`,
+      ];
 }
 
 /** Judge the response to `GET /api/build-info`. */
@@ -338,10 +389,12 @@ export async function runDoctor(args, { log = console.log } = {}) {
     const origin = (await worker.url).origin;
     const root = await call(origin, '/', args.host);
     const identity = await call(origin, '/api/build-info', args.host);
-    const problems = [
-      ...judgeRoot(root, args),
-      ...judgeBuildInfo(identity, args),
-    ];
+    const problems = args.aliasOf
+      ? [
+          ...judgeAlias(root, '/', args),
+          ...judgeAlias(identity, '/api/build-info', args),
+        ]
+      : [...judgeRoot(root, args), ...judgeBuildInfo(identity, args)];
     log(`GET /               Host ${args.host} -> ${describe(root)}`);
     log(`GET /api/build-info Host ${args.host} -> ${identity.status}`);
     if (problems.length) {

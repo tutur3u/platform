@@ -5,6 +5,11 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  exerciseStorefrontHost,
+  storefrontAssetFile,
+  storefrontRuntimeHosts,
+} from './storefront-native-runtime.mjs';
 import { verify } from './wave1-native-artifact.mjs';
 import { runInfrastructureProductionRuntime } from './infrastructure-production-runtime.mjs';
 
@@ -85,6 +90,9 @@ async function runRuntimeAcceptance() {
     if (app === 'apps' && environment === 'staging')
       hosts.push('apps.tuturuuu.com');
     if (foreignHost) hosts.push(foreignHost);
+    // Storefront serves its root host and redirects its aliases to it.
+    if (app === 'storefront' && environment === 'production')
+      hosts.splice(0, hosts.length, ...storefrontRuntimeHosts(receipt.profile));
     for (const host of hosts) {
       let worker;
       try {
@@ -150,6 +158,19 @@ async function runRuntimeAcceptance() {
             assert.equal(refused.status, 404, `${host}${path} must 404`);
             assert.deepEqual(refused.headers.getSetCookie(), []);
           }
+          continue;
+        }
+        if (app === 'storefront' && environment === 'production') {
+          const assetFile = storefrontAssetFile(receipt);
+          const observed = await exerciseStorefrontHost({
+            host,
+            fetchWorker,
+            sha,
+            environment,
+            assetFile,
+            assetBytes: await readFile(join(appRoot, 'dist/client', assetFile)),
+          });
+          for (const line of observed) console.log(`storefront ${line}`);
           continue;
         }
         if (access) {

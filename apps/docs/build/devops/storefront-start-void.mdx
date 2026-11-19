@@ -1,7 +1,7 @@
 ---
 title: "Storefront on Start + Void"
 description: "Native Storefront Worker, the cutover artifact, and the cutover and Vercel rollback packet."
-updatedAt: "2026-11-09"
+updatedAt: "2026-11-19"
 audience: developers
 ---
 
@@ -11,12 +11,29 @@ Components plugin. The Next.js build (`build`) and the Vercel project stay in
 place until the cutover has been stable, so the canonical host keeps a one-step
 route back.
 
+## Canonical host and runtime verification
+
+`store.tuturuuu.com` is canonical. `storefront.tuturuuu.com` is a redirect
+alias; its provider can differ from the canonical host. A Cloudflare response
+header alone does not identify a Worker. Compare `/api/build-info` with the
+accepted deployment and inspect the served HTML for native `/assets/` modules
+rather than Next.js `/_next/` chunks. Confirm the actual Worker mapping and
+version through read-only provider inventory before planning a replacement.
+The source workflow is build-only and cannot establish which version is live.
+
+Build metadata can report `production` while responses still forbid indexing.
+Storefront intentionally sets `X-Robots-Tag: noindex, nofollow` in
+`start-bridge.config.ts` for every profile. `TUTURUUU_NOINDEX=0` does not
+override that app policy. Treat search indexing as a separate product decision,
+not as proof that the production profile failed to load.
+
 ## Worker profiles
 
 | Profile | Worker | Notes |
 | --- | --- | --- |
 | Source default (`void.config.ts`) | the staging Worker name | `TUTURUUU_NOINDEX=1`, no routes, `workers_dev` and `preview_urls` off |
 | Cutover artifact | `tuturuuu-storefront` | `storefront-cloudflare.yaml` rewrites the emitted Wrangler config: `TUTURUUU_NOINDEX=0`, `TUTURUUU_REQUIRE_SECRETS=1`, `preview_urls=false`, source maps off |
+| Wave-1 production profile (`VITE_STOREFRONT_NATIVE_PROFILE=production`) | `tuturuuu-storefront-wave1` | emits the production vars of `cloudflare/native-profiles.json` itself, so the sealed Worker is the built Worker |
 
 The Worker declares no routes. The hostname is attached at cutover by the
 release operator. With `TUTURUUU_REQUIRE_SECRETS=1` the Worker answers `503
@@ -47,6 +64,62 @@ suites (`cloudflare/*.runtime.mjs`) and uploads `storefront-cutover-production-<
 (14 days). It never deploys. Do not run `build:cloudflare` on a shared
 development machine.
 
+## Wave-1 production profile
+
+`wave1-native-production.yaml` publishes a route-free upload of the sealed
+production Worker; the hostname is attached later by the release owner.
+`cloudflare/native-profiles.json` is the single source of the profile:
+
+- Vars: the canonical public URLs (`https://store.tuturuuu.com`,
+  `https://tuturuuu.com`), `INVENTORY_APP_URL`, `INTERNAL_WEB_API_ORIGIN`,
+  the pinned production Supabase URL, `NODE_ENV=production` and
+  `TUTURUUU_NOINDEX=0`.
+- Required secret names: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`.
+- `applyStorefrontNativeProfileEnv` runs before the bridge preset inlines
+  `NEXT_PUBLIC_*`. Unset values are filled from the profile. A redirect alias
+  passed as `NEXT_PUBLIC_APP_URL` or `NEXT_PUBLIC_STOREFRONT_APP_URL` becomes
+  the canonical origin, because the publisher passes the host it attaches.
+  Any other conflicting value, and the CI placeholder publishable key, fail the
+  build.
+- Staging stays the default profile; the staging build is unchanged.
+
+The sealed Worker answers by host:
+
+| Host | Every probe |
+| --- | --- |
+| `store.tuturuuu.com` | Build identity `200`, `/` to `/demo`, a signed-out `/orders` to `/login?next=%2Forders` on the same host, `/login` to central Web login, static assets and `robots.txt` `200`, an unknown asset `404`, an unregistered `/api/*` path `401` |
+| `storefront.tuturuuu.com`, `stores.tuturuuu.com`, `storefronts.tuturuuu.com` | `307` to the same path and query on `store.tuturuuu.com`, including `/api/build-info` |
+| any other host | `404 Not Found` before any app code runs |
+
+A path that is not an asset or an API route is a storefront slug and asks
+Inventory for the store, so anonymous runtime acceptance probes only asset and
+API paths for unknown resources.
+
+### Qualification commands
+
+After `bun run --cwd apps/storefront build:cloudflare` with
+`VITE_STOREFRONT_NATIVE_PROFILE=production`, the publisher's gates run in this
+order. The pre-seal doctor needs the redirect-alias flag for an alias host and
+the exact root redirect for the root host:
+
+```bash
+node scripts/ci/wave1-native-artifact.mjs prepare storefront production "$SHA"
+node scripts/ci/pre-seal-doctor.mjs storefront apps/storefront storefront.tuturuuu.com "$SHA" --wave1 --expect-alias-of https://store.tuturuuu.com
+node scripts/ci/pre-seal-doctor.mjs storefront apps/storefront store.tuturuuu.com "$SHA" --wave1 --expect-location https://store.tuturuuu.com/demo
+node scripts/ci/wave1-native-runtime.mjs storefront production "$SHA"
+node scripts/ci/wave1-native-publish.mjs dry-run storefront production "$SHA"
+```
+
+`wave1-native-runtime.mjs` exercises the attached host, the root host, one
+alias host and an unknown host (`scripts/ci/storefront-native-runtime.mjs`).
+The dry run checks the Worker upload budget; the sealed profile sets
+`upload_source_maps=false`. Record the total `.map` bytes separately and keep
+them below 60 MiB, even when upload is disabled. Record the gzip upload size
+and scan the sealed server files for forbidden staging identities and private
+files before release. A build with synthetic public inputs qualifies only the
+local mechanics; production requires the approved public inputs.
+
 ## Cutover packet
 
 | Item | Value |
@@ -73,7 +146,7 @@ development machine.
 ```bash
 # Entry route and no 5xx
 curl -sI https://store.tuturuuu.com/ | head -5
-# Login page renders
+# Login hands off to central Web
 curl -s -o /dev/null -w '%{http_code}\n' https://store.tuturuuu.com/login
 # Build identity matches the accepted SHA
 curl -s https://store.tuturuuu.com/api/build-info
@@ -81,8 +154,30 @@ curl -s https://store.tuturuuu.com/api/build-info
 curl -sI https://storefront.tuturuuu.com/ | head -3
 ```
 
-Expected: a redirect to `/demo`, `200`, the accepted commit, and a `307` to
+Expected: a redirect to `/demo`, a `307` to central Web login, the accepted commit, and a `307` to
 `store.tuturuuu.com`.
+
+### Redirect-alias provider migration
+
+If the canonical host already serves the accepted native Worker, leave that
+mapping intact. Capture the `tuturuuu.com` zone ID, alias DNS record and proxy
+state, existing redirect rules, Worker routes and custom domains, and the
+immutable Vercel deployment. Hold the change on a conflicting mapping.
+
+The release authority can move the alias independently: keep its Vercel DNS
+origin, enable Cloudflare proxying if necessary, then attach the exact
+`storefront.tuturuuu.com/*` Worker route to the accepted Storefront Worker.
+Its app wrapper returns a `307` preserving path and query on the canonical
+host. Read back the route and Worker version, then test `/`, `/api/build-info`
+and `/orders?tag=a&tag=b` on the alias with redirects disabled. Each must
+redirect to the identical path and query on `https://store.tuturuuu.com`.
+Never use a custom domain that replaces the retained origin for this plan.
+
+Rollback removes only the captured newly-created alias route via
+`DELETE /zones/{zone_id}/workers/routes/{route_id}`; the retained Vercel origin
+keeps serving its redirect. Keep the route ID privately in the release packet.
+Restoring the captured DNS proxy state is a separate cleanup after rollback
+verification. Provider writes require release-authority approval.
 
 ### Rollback
 
