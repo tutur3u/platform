@@ -1,4 +1,5 @@
 import { LayoutGrid, Sparkles } from '@tuturuuu/icons';
+import { appPath } from '@tuturuuu/start-bridge/app-url';
 import {
   LAUNCHABLE_APP_CATEGORIES,
   LAUNCHABLE_APPS,
@@ -19,7 +20,7 @@ export function AppsGatewayPage() {
     aliases: app.aliases,
     category: app.category,
     description: launcherT(`app_descriptions.${app.slug}`),
-    href: `/${app.slug}`,
+    href: appPath(`/${app.slug}`),
     slug: app.slug,
     title: launcherT(`app_names.${app.slug}`),
   }));

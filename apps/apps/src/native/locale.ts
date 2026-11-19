@@ -32,12 +32,13 @@ export function localeCookie(request: Request, locale: Locale) {
   const sharedDomain = resolveTuturuuuSharedCookieDomain(request);
   return `NEXT_LOCALE=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${sharedDomain ? `; Domain=${sharedDomain.cookieDomain}` : ''}${sharedDomain?.secure || new URL(request.url).protocol === 'https:' ? '; Secure' : ''}`;
 }
-export function canonicalLocaleRedirect(request: Request) {
+export function canonicalLocaleRedirect(request: Request, basePath = '') {
   const url = new URL(request.url);
   const segments = url.pathname.split('/').filter(Boolean);
   const locale = segments[0];
   if (locale !== 'en' && locale !== 'vi') return null;
-  url.pathname = `/${segments.slice(1).join('/')}`;
+  const suffix = segments.slice(1).join('/');
+  url.pathname = suffix ? `${basePath}/${suffix}` : basePath || '/';
   return new Response(null, {
     status: 307,
     headers: {

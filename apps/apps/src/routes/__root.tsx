@@ -4,6 +4,10 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
+import {
+  appBaseHeadScript,
+  appPath,
+} from '@tuturuuu/start-bridge/start/base-path';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactNode } from 'react';
@@ -21,6 +25,7 @@ export const Route = createRootRoute({
     const copy = (locale === 'vi' ? vi : en).appsGateway.metadata;
     const canonical = 'https://apps.tuturuuu.com/';
     return {
+      scripts: [appBaseHeadScript()],
       meta: [
         { charSet: 'utf-8' },
         {
@@ -139,7 +144,7 @@ export function Missing() {
   const data = Route.useLoaderData();
   return (
     <StatusPage
-      appHref="/"
+      appHref={appPath('/')}
       appName="Apps"
       locale={data?.locale}
       variant="not-found"

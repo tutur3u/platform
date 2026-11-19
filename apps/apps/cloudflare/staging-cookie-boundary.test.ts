@@ -1,7 +1,7 @@
 import { expect, it, vi } from 'vitest';
 
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: vi.fn() },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: vi.fn() }),
 }));
 vi.mock('../src/native/api.server', () => ({ apiRequest: vi.fn() }));
 
