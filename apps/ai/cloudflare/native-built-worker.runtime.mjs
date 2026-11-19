@@ -205,6 +205,7 @@ test(
               );
               resolve({
                 status: response.statusCode ?? 0,
+                headers: response.headers,
                 location: response.headers.location ?? null,
                 body: Buffer.concat(chunks).toString('utf8'),
               });
