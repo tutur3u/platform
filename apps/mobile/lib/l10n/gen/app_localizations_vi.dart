@@ -3266,6 +3266,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get educationAttemptsLabel => 'Lượt làm bài';
 
   @override
+  String get educationContinueLearning => 'Tiếp tục học';
+
+  @override
   String get educationAttemptsSubtitle => 'Xem bài nộp, trạng thái hoàn thành và chi tiết câu trả lời của người học.';
 
   @override
@@ -3273,6 +3276,16 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get educationCourseDescriptionLabel => 'Mô tả';
+
+  @override
+  String educationCourseModules(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count học phần',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get educationCourseNameLabel => 'Tên khóa học';
@@ -3345,6 +3358,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get educationFlashcardFrontLabel => 'Mặt trước';
 
   @override
+  String get educationFlashcardShowAnswer => 'Xem đáp án';
+
+  @override
+  String get educationFlashcardShowPrompt => 'Xem câu hỏi';
+
+  @override
   String get educationLibraryFlashcardsLabel => 'Flashcard';
 
   @override
@@ -3384,6 +3403,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get educationOverviewSubtitle => 'Theo dõi cấu trúc học tập, tài nguyên luyện tập và tiến độ người học trong một workspace di động.';
 
   @override
+  String get educationPracticeTitle => 'Luyện tập';
+
+  @override
   String get educationQuizOptionExplanationLabel => 'Giải thích';
 
   @override
@@ -3395,7 +3417,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get educationQuizOptionValueLabel => 'Nội dung đáp án';
 
   @override
+  String get educationQuizCheck => 'Kiểm tra';
+
+  @override
+  String get educationQuizCorrect => 'Đúng';
+
+  @override
+  String get educationQuizIncorrect => 'Chưa đúng';
+
+  @override
+  String get educationQuizLocalNote => 'Điểm này chỉ lưu trên máy này.';
+
+  @override
   String get educationQuizQuestionLabel => 'Câu hỏi';
+
+  @override
+  String educationQuizScore(Object correct, Object total) {
+    return '$correct/$total';
+  }
 
   @override
   String get educationQuizSetNameLabel => 'Tên bộ câu hỏi';

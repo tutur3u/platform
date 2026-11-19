@@ -22,15 +22,8 @@ extension _EducationPageLayout on _EducationPageState {
             deepLinkBackRoute: Routes.apps,
             items: [
               ShellMiniNavItemSpec(
-                id: 'education-back',
-                icon: Icons.chevron_left,
-                label: l10n.navBack,
-                callbackToken: 'back',
-                onPressed: () => context.go(Routes.apps),
-              ),
-              ShellMiniNavItemSpec(
                 id: 'education-overview',
-                icon: Icons.home_outlined,
+                icon: LucideIcons.house,
                 label: l10n.educationOverviewLabel,
                 callbackToken: _tab == _EducationTab.overview,
                 selected: _tab == _EducationTab.overview,
@@ -39,7 +32,7 @@ extension _EducationPageLayout on _EducationPageState {
               ),
               ShellMiniNavItemSpec(
                 id: 'education-courses',
-                icon: Icons.school_outlined,
+                icon: LucideIcons.graduationCap,
                 label: l10n.educationCoursesLabel,
                 callbackToken: _tab == _EducationTab.courses,
                 selected: _tab == _EducationTab.courses,
@@ -48,7 +41,7 @@ extension _EducationPageLayout on _EducationPageState {
               ),
               ShellMiniNavItemSpec(
                 id: 'education-library',
-                icon: Icons.library_books_outlined,
+                icon: LucideIcons.library,
                 label: l10n.educationLibraryLabel,
                 callbackToken: _tab == _EducationTab.library,
                 selected: _tab == _EducationTab.library,
@@ -57,7 +50,7 @@ extension _EducationPageLayout on _EducationPageState {
               ),
               ShellMiniNavItemSpec(
                 id: 'education-attempts',
-                icon: Icons.assignment_turned_in_outlined,
+                icon: LucideIcons.clipboardCheck,
                 label: l10n.educationAttemptsLabel,
                 callbackToken: _tab == _EducationTab.attempts,
                 selected: _tab == _EducationTab.attempts,
@@ -87,7 +80,7 @@ extension _EducationPageLayout on _EducationPageState {
               if (_tab == _EducationTab.attempts)
                 ShellActionSpec(
                   id: 'education-attempt-filters',
-                  icon: Icons.filter_list_rounded,
+                  icon: LucideIcons.listFilter,
                   tooltip: l10n.commonFilters,
                   callbackToken: '$_attemptStatus:${_attemptSetId ?? 'all'}',
                   enabled: hasWorkspace,
@@ -98,7 +91,7 @@ extension _EducationPageLayout on _EducationPageState {
                   _tab == _EducationTab.library)
                 ShellActionSpec(
                   id: 'education-create',
-                  icon: Icons.add_rounded,
+                  icon: LucideIcons.plus,
                   tooltip: _createTooltip(l10n),
                   callbackToken: '${_tab.name}:${_libraryTab.name}',
                   enabled: hasWorkspace,
@@ -131,100 +124,68 @@ extension _EducationPageLayout on _EducationPageState {
   }
 
   List<Widget> _buildOverview(BuildContext context) {
-    final l10n = context.l10n;
     return [
-      FinanceSectionHeader(
-        title: l10n.educationOverviewHighlightsTitle,
-        subtitle: l10n.educationOverviewSubtitle,
+      EducationHome(
+        workspaceId: _wsId,
+        courses: _coursePreview,
+        courseCount: _courseSummaryCount,
+        quizCount: _quizSummaryCount,
+        quizSetCount: _quizSetSummaryCount,
+        flashcardCount: _flashcardSummaryCount,
+        attemptCount: _attemptSummaryCount,
+        attempts: _attemptPreview,
+        onOpenCourse: _openCourseDetail,
+        onOpenQuizzes: _openQuizPractice,
+        onOpenQuizSets: () {
+          _selectLibraryTab(_EducationLibraryTab.quizSets);
+          _selectTab(_EducationTab.library);
+        },
+        onOpenFlashcards: _openFlashcardStudy,
+        onOpenAttempt: (attempt) => unawaited(_openAttemptDetail(attempt)),
+        onSeeCourses: () => _selectTab(_EducationTab.courses),
+        onSeeAttempts: () => _selectTab(_EducationTab.attempts),
       ),
-      const SizedBox(height: 14),
-      Wrap(
-        spacing: AppLayout.itemGap,
-        runSpacing: AppLayout.itemGap,
-        children: [
-          _EducationSummaryTile(
-            label: l10n.educationCoursesLabel,
-            value: _courseSummaryCount,
-            icon: Icons.school_outlined,
-            tint: shad.Theme.of(context).colorScheme.primary,
-            onTap: () => _selectTab(_EducationTab.courses),
-          ),
-          _EducationSummaryTile(
-            label: l10n.educationLibraryQuizzesLabel,
-            value: _quizSummaryCount,
-            icon: Icons.quiz_outlined,
-            tint: shad.Theme.of(context).colorScheme.primary,
-            onTap: () {
-              _selectLibraryTab(_EducationLibraryTab.quizzes);
-              _selectTab(_EducationTab.library);
-            },
-          ),
-          _EducationSummaryTile(
-            label: l10n.educationLibraryQuizSetsLabel,
-            value: _quizSetSummaryCount,
-            icon: Icons.layers_outlined,
-            tint: shad.Theme.of(context).colorScheme.primary,
-            onTap: () {
-              _selectLibraryTab(_EducationLibraryTab.quizSets);
-              _selectTab(_EducationTab.library);
-            },
-          ),
-          _EducationSummaryTile(
-            label: l10n.educationLibraryFlashcardsLabel,
-            value: _flashcardSummaryCount,
-            icon: Icons.style_outlined,
-            tint: shad.Theme.of(context).colorScheme.primary,
-            onTap: () {
-              _selectLibraryTab(_EducationLibraryTab.flashcards);
-              _selectTab(_EducationTab.library);
-            },
-          ),
-          _EducationSummaryTile(
-            label: l10n.educationAttemptsLabel,
-            value: _attemptSummaryCount,
-            icon: Icons.assignment_turned_in_outlined,
-            tint: shad.Theme.of(context).colorScheme.primary,
-            onTap: () => _selectTab(_EducationTab.attempts),
-          ),
-        ],
-      ),
-      const SizedBox(height: AppLayout.sectionGap),
-      FinanceSectionHeader(title: l10n.educationOverviewRecentCoursesTitle),
-      const SizedBox(height: AppLayout.itemGap),
-      if (_coursePreview.isEmpty)
-        FinanceEmptyState(
-          icon: Icons.school_outlined,
-          title: l10n.educationCoursesLabel,
-          body: l10n.educationEmptyCourses,
-        )
-      else
-        ..._coursePreview.map(
-          (course) => PendingSyncFrame(
-            workspaceId: _wsId,
-            entityId: course.id,
-            feature: 'education',
-            child: _CourseCard(
-              course: course,
-              onTap: () => _selectTab(_EducationTab.courses),
-            ),
-          ),
-        ),
-      const SizedBox(height: AppLayout.sectionGap),
-      FinanceSectionHeader(title: l10n.educationOverviewRecentAttemptsTitle),
-      const SizedBox(height: AppLayout.itemGap),
-      if (_attemptPreview.isEmpty)
-        FinanceEmptyState(
-          icon: Icons.assignment_outlined,
-          title: l10n.educationAttemptsLabel,
-          body: l10n.educationEmptyAttempts,
-        )
-      else
-        ..._attemptPreview.map(
-          (attempt) => _AttemptCard(
-            attempt: attempt,
-            onTap: () => _openAttemptDetail(attempt),
-          ),
-        ),
     ];
+  }
+
+  void _openCourseDetail(EducationCourse course) {
+    unawaited(
+      showAppSheet<void>(
+        context: context,
+        builder: (_) => EducationCourseDetail(course: course),
+      ),
+    );
+  }
+
+  void _openQuizPractice() {
+    unawaited(
+      showAppSheet<void>(
+        context: context,
+        size: AppSheetSize.large,
+        builder: (_) => EducationQuizPractice(
+          loadQuizzes: () async {
+            if (_quizPreview.isNotEmpty) return _quizPreview;
+            final page = await _repository.getQuizzes(_wsId);
+            return page.items;
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openFlashcardStudy() {
+    unawaited(
+      showAppSheet<void>(
+        context: context,
+        size: AppSheetSize.large,
+        builder: (_) => EducationFlashcardStudy(
+          loadCards: () async {
+            if (_flashcardPreview.isNotEmpty) return _flashcardPreview;
+            final page = await _repository.getFlashcards(_wsId);
+            return page.items;
+          },
+        ),
+      ),
+    );
   }
 }

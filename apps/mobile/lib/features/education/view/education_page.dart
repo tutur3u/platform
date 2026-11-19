@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/overlays/show_app_sheet.dart' show showAppSheet;
+import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
 import 'package:mobile/data/models/education/education_models.dart';
 import 'package:mobile/data/repositories/education_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/education/view/education_course_detail.dart';
+import 'package:mobile/features/education/view/education_flashcard_study.dart';
+import 'package:mobile/features/education/view/education_home.dart';
+import 'package:mobile/features/education/view/education_quiz_practice.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -95,6 +98,7 @@ class _EducationPageState extends State<EducationWorkspace> {
   int _coursesCount = 0;
 
   int _quizSummaryCount = 0;
+  List<EducationQuiz> _quizPreview = const <EducationQuiz>[];
   List<EducationQuiz> _quizzes = const <EducationQuiz>[];
   int _quizzesPage = 1;
   int _quizzesCount = 0;
@@ -105,6 +109,7 @@ class _EducationPageState extends State<EducationWorkspace> {
   int _quizSetsCount = 0;
 
   int _flashcardSummaryCount = 0;
+  List<EducationFlashcard> _flashcardPreview = const <EducationFlashcard>[];
   List<EducationFlashcard> _flashcards = const <EducationFlashcard>[];
   int _flashcardsPage = 1;
   int _flashcardsCount = 0;

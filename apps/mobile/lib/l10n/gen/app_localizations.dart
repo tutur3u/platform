@@ -6379,6 +6379,12 @@ abstract class AppLocalizations {
   /// **'Attempts'**
   String get educationAttemptsLabel;
 
+  /// No description provided for @educationContinueLearning.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue learning'**
+  String get educationContinueLearning;
+
   /// No description provided for @educationAttemptsSubtitle.
   ///
   /// In en, this message translates to:
@@ -6396,6 +6402,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Description'**
   String get educationCourseDescriptionLabel;
+
+  /// No description provided for @educationCourseModules.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} module} other{{count} modules}}'**
+  String educationCourseModules(num count);
 
   /// No description provided for @educationCourseNameLabel.
   ///
@@ -6529,6 +6541,18 @@ abstract class AppLocalizations {
   /// **'Front'**
   String get educationFlashcardFrontLabel;
 
+  /// No description provided for @educationFlashcardShowAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Show answer'**
+  String get educationFlashcardShowAnswer;
+
+  /// No description provided for @educationFlashcardShowPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Show prompt'**
+  String get educationFlashcardShowPrompt;
+
   /// No description provided for @educationLibraryFlashcardsLabel.
   ///
   /// In en, this message translates to:
@@ -6607,6 +6631,12 @@ abstract class AppLocalizations {
   /// **'Track learning structure, practice assets, and learner progress in one mobile workspace.'**
   String get educationOverviewSubtitle;
 
+  /// No description provided for @educationPracticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice'**
+  String get educationPracticeTitle;
+
   /// No description provided for @educationQuizOptionExplanationLabel.
   ///
   /// In en, this message translates to:
@@ -6625,11 +6655,41 @@ abstract class AppLocalizations {
   /// **'Option text'**
   String get educationQuizOptionValueLabel;
 
+  /// No description provided for @educationQuizCheck.
+  ///
+  /// In en, this message translates to:
+  /// **'Check'**
+  String get educationQuizCheck;
+
+  /// No description provided for @educationQuizCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get educationQuizCorrect;
+
+  /// No description provided for @educationQuizIncorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Not quite'**
+  String get educationQuizIncorrect;
+
+  /// No description provided for @educationQuizLocalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This score stays on this device.'**
+  String get educationQuizLocalNote;
+
   /// No description provided for @educationQuizQuestionLabel.
   ///
   /// In en, this message translates to:
   /// **'Question'**
   String get educationQuizQuestionLabel;
+
+  /// No description provided for @educationQuizScore.
+  ///
+  /// In en, this message translates to:
+  /// **'{correct} of {total}'**
+  String educationQuizScore(Object correct, Object total);
 
   /// No description provided for @educationQuizSetNameLabel.
   ///

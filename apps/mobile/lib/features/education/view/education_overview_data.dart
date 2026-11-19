@@ -52,8 +52,12 @@ extension _EducationOverviewData on _EducationPageState {
       ),
       source(
         () => _repository.getQuizzes(_wsId, pageSize: 3),
-        (value) => _quizSummaryCount = value.count,
+        (value) {
+          _quizPreview = value.items;
+          _quizSummaryCount = value.count;
+        },
         () {
+          _quizPreview = const [];
           _quizzes = const [];
           _quizzesCount = 0;
           _quizSummaryCount = 0;
@@ -70,8 +74,12 @@ extension _EducationOverviewData on _EducationPageState {
       ),
       source(
         () => _repository.getFlashcards(_wsId, pageSize: 3),
-        (value) => _flashcardSummaryCount = value.count,
+        (value) {
+          _flashcardPreview = value.items;
+          _flashcardSummaryCount = value.count;
+        },
         () {
+          _flashcardPreview = const [];
           _flashcards = const [];
           _flashcardsCount = 0;
           _flashcardSummaryCount = 0;

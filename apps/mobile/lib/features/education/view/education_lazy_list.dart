@@ -124,6 +124,7 @@ extension _EducationLazyList on _EducationPageState {
       id = course.id;
       child = _CourseCard(
         course: course,
+        onTap: () => _openCourseDetail(course),
         onEdit: () => _showCourseSheet(course: course),
         onDelete: () => _confirmDelete(
           title: l10n.educationDeleteCourseConfirm(course.name),

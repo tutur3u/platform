@@ -3280,6 +3280,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get educationAttemptsLabel => 'Attempts';
 
   @override
+  String get educationContinueLearning => 'Continue learning';
+
+  @override
   String get educationAttemptsSubtitle => 'Review learner submissions, completion state, and answer detail.';
 
   @override
@@ -3287,6 +3290,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get educationCourseDescriptionLabel => 'Description';
+
+  @override
+  String educationCourseModules(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count modules',
+      one: '$count module',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get educationCourseNameLabel => 'Course name';
@@ -3359,6 +3373,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get educationFlashcardFrontLabel => 'Front';
 
   @override
+  String get educationFlashcardShowAnswer => 'Show answer';
+
+  @override
+  String get educationFlashcardShowPrompt => 'Show prompt';
+
+  @override
   String get educationLibraryFlashcardsLabel => 'Flashcards';
 
   @override
@@ -3398,6 +3418,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get educationOverviewSubtitle => 'Track learning structure, practice assets, and learner progress in one mobile workspace.';
 
   @override
+  String get educationPracticeTitle => 'Practice';
+
+  @override
   String get educationQuizOptionExplanationLabel => 'Explanation';
 
   @override
@@ -3409,7 +3432,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get educationQuizOptionValueLabel => 'Option text';
 
   @override
+  String get educationQuizCheck => 'Check';
+
+  @override
+  String get educationQuizCorrect => 'Correct';
+
+  @override
+  String get educationQuizIncorrect => 'Not quite';
+
+  @override
+  String get educationQuizLocalNote => 'This score stays on this device.';
+
+  @override
   String get educationQuizQuestionLabel => 'Question';
+
+  @override
+  String educationQuizScore(Object correct, Object total) {
+    return '$correct of $total';
+  }
 
   @override
   String get educationQuizSetNameLabel => 'Quiz set name';
