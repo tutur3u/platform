@@ -170,7 +170,7 @@ import { GET as getUnread } from '@/legacy-api-routes/v1/notifications/unread-co
 import { GET as getConfig } from '@/legacy-api-routes/v1/users/me/configs/[configId]/route';
 import { GET as getWorkspaces } from '@/legacy-api-routes/v1/workspaces/route';
 import { GET as getInvitations } from '@/legacy-api-routes/workspaces/invitations/route';
-import { GET as getWorkspace } from '@/legacy-api-routes/workspaces/[wsId]/route';
+import { GET as getWorkspace } from '@/app/api/workspaces/[wsId]/route';
 import { GET as getBootstrap } from './route';
 
 const SECTIONS =

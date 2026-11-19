@@ -12,12 +12,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   deleteWorkspace: vi.fn(),
+  getWorkspaceDeletionStatus: vi.fn(),
   error: vi.fn(),
   push: vi.fn(),
   refresh: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api/workspaces', () => ({
   deleteWorkspace: mocks.deleteWorkspace,
+  getWorkspaceDeletionStatus: mocks.getWorkspaceDeletionStatus,
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({ toast: { error: mocks.error } }));
 vi.mock('next/navigation', () => ({
@@ -28,27 +30,30 @@ vi.mock('next-intl', () => ({
     Object.assign((key: string) => key, { rich: (key: string) => key }),
 }));
 
-import Security from './security';
+import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 
 const workspace = {
   id: '00000000-0000-4000-8000-000000000011',
   name: 'Fixture Workspace',
+  creator_id: 'owner',
   personal: false,
 };
 
-function renderSecurity(ws = workspace) {
+function renderSecurity(ws = workspace, actorId = workspace.creator_id) {
   return render(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { mutations: { retry: false } } })
       }
     >
-      <Security workspace={ws} />
+      <WorkspaceDeletionSettings workspace={ws} actorId={actorId} />
     </QueryClientProvider>
   );
 }
-function confirmDeletion() {
-  fireEvent.click(screen.getByRole('button', { name: 'delete' }));
+async function confirmDeletion() {
+  const trigger = screen.getByRole('button', { name: 'delete' });
+  await waitFor(() => expect(trigger).toBeEnabled());
+  fireEvent.click(trigger);
   const dialog = screen.getByRole('alertdialog');
   fireEvent.change(within(dialog).getByRole('textbox'), {
     target: { value: workspace.name },
@@ -61,6 +66,7 @@ function confirmDeletion() {
 describe('Workspace deletion failure UI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getWorkspaceDeletionStatus.mockResolvedValue({ status: 'ready' });
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(new Response('{}', { status: 500 }))
@@ -106,7 +112,7 @@ describe('Workspace deletion failure UI', () => {
     async (error, description) => {
       mocks.deleteWorkspace.mockRejectedValue(error);
       renderSecurity();
-      confirmDeletion();
+      await confirmDeletion();
       await waitFor(() =>
         expect(mocks.error).toHaveBeenCalledWith('delete_failed', {
           description,
@@ -134,7 +140,7 @@ describe('Workspace deletion failure UI', () => {
         })
     );
     renderSecurity();
-    confirmDeletion();
+    await confirmDeletion();
     await waitFor(() =>
       expect(mocks.deleteWorkspace).toHaveBeenCalledWith(
         workspace.id,
@@ -142,7 +148,7 @@ describe('Workspace deletion failure UI', () => {
       )
     );
     const action = within(screen.getByRole('alertdialog')).getByRole('button', {
-      name: 'deleting...',
+      name: 'deleting',
     });
     expect(action).toBeDisabled();
     fireEvent.click(action);
@@ -159,7 +165,39 @@ describe('Workspace deletion failure UI', () => {
     { ...workspace, id: '00000000-0000-0000-0000-000000000000' },
   ])('does not allow deleting personal or root workspaces', (ws) => {
     renderSecurity(ws);
+    expect(screen.queryByRole('button', { name: 'delete' })).toBeNull();
+    expect(mocks.getWorkspaceDeletionStatus).not.toHaveBeenCalled();
+    expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+  });
+
+  it('does not offer deletion to a non-owner', () => {
+    renderSecurity(workspace, 'settings-manager');
+    expect(screen.queryByText('danger_zone')).toBeNull();
+    expect(mocks.getWorkspaceDeletionStatus).not.toHaveBeenCalled();
+  });
+
+  it('displays an active-subscription warning and disables deletion', async () => {
+    mocks.getWorkspaceDeletionStatus.mockResolvedValue({
+      status: 'subscription_active',
+    });
+    renderSecurity();
+    expect(await screen.findByText('delete_subscription_active')).toBeVisible();
     expect(screen.getByRole('button', { name: 'delete' })).toBeDisabled();
+  });
+
+  it('associates the typed-name label and blocks an incorrect name', async () => {
+    renderSecurity();
+    const trigger = screen.getByRole('button', { name: 'delete' });
+    await waitFor(() => expect(trigger).toBeEnabled());
+    fireEvent.click(trigger);
+    const dialog = within(screen.getByRole('alertdialog'));
+    fireEvent.change(
+      dialog.getByRole('textbox', { name: 'delete_confirmation_prompt' }),
+      {
+        target: { value: 'Wrong name' },
+      }
+    );
+    expect(dialog.getByRole('button', { name: 'delete' })).toBeDisabled();
     expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
   });
 });

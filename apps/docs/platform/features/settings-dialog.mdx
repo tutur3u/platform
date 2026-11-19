@@ -257,24 +257,13 @@ exchange-rate handlers, and in Users Core's referral-discount route tests.
 
 ### Workspace deletion
 
-Scope: `DELETE /api/workspaces/{wsId}` and the delete card in workspace
-settings (Web and Workspace). Both use `getWorkspaceDeletionBlock` from
-`@tuturuuu/utils/workspace-deletion`, so the card shows exactly when the API
-would allow the request; the server still decides.
+In Web and Workspace, the current owner of a team workspace can open **Settings → General → Danger zone**. Personal and platform workspaces are protected from deletion. The check uses the workspace’s current type after any [owner-authorized type change](/platform/architecture/workspaces-permissions#ownership-and-personal-status). A protection flag disables deletion. Active paid plans, active paid domain add-ons, and subscriptions with an unverified price block deletion until billing is resolved. Free subscriptions can be left in place. The owner confirms by entering the workspace name.
 
-Deletion requires `manage_workspace_security`. It is refused for the root
-workspace, personal workspaces and workspaces with the
-`PREVENT_WORKSPACE_DELETION` secret (403, one generic message). A workspace with
-a paid subscription that is not canceled returns 409 until the subscription is
-canceled in Billing. The request body must carry `confirmation`, the workspace
-name or handle the user typed (400 otherwise). Each attempt logs a structured
-`[audit] workspace.delete` event with the actor, workspace and outcome.
+The API checks ownership again inside the database transaction. A successful deletion removes the workspace and records deleted by its configured foreign-key cascades, including membership records, settings, and workspace content. Member accounts and their other workspaces are retained. The transaction also records the workspace ID, actor ID, and deletion time in a private audit log.
 
-Exception: when the last member leaves, the members route deletes the orphaned
-workspace (never root or personal workspaces).
+Deletion is permanent. Changing the existing workspace marker can leave tasks accessible through membership. Service routes and storage use independent access checks. A workspace with dependencies that must be retained can fail deletion; the transaction leaves its records intact. Account deletion and last-member cleanup are separate flows.
 
-Regression coverage: `packages/utils/src/workspace-deletion.test.ts` and
-`apps/web/src/legacy-api-routes/workspaces/[wsId]/route.test.ts`.
+Regression coverage includes [the workspace deletion route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/workspaces/%5BwsId%5D/route.test.ts) and [the database deletion policy tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/owner-only-workspace-deletion.sql).
 
 ## Layout and contrast
 

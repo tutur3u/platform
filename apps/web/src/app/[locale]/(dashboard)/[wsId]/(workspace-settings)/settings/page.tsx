@@ -1,14 +1,10 @@
 import { UserPlus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import {
-  getWorkspaceDeletionBlock,
-  lookupActivePaidWorkspaceSubscription,
-} from '@tuturuuu/utils/workspace-deletion';
 import {
   getPermissions,
   getSecrets,
@@ -30,7 +26,6 @@ import NewsletterSettings from './newsletter-settings';
 import WorkspaceLogoSettings from './logo';
 import ProfileLinkDefaultsSettings from './profile-link-defaults';
 import RemoveYourself from './remove-yourself';
-import Security from './security';
 
 export const metadata: Metadata = {
   title: 'Settings',
@@ -83,22 +78,6 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
     !isRootWorkspace &&
     !preventWorkspaceDeletion &&
     containsPermission('manage_workspace_security');
-  // The delete card follows the same rule the DELETE API enforces. The
-  // subscription head-count uses the service role, like the API: caller RLS
-  // hides subscriptions from members without manage_subscription.
-  const { active: hasActivePaidSubscription } =
-    await lookupActivePaidWorkspaceSubscription(
-      await createAdminClient({ noCookie: true }),
-      wsId
-    );
-  const canDeleteWorkspace =
-    getWorkspaceDeletionBlock({
-      workspaceId: wsId,
-      personal: Boolean(ws.personal),
-      permissions,
-      deletionPrevented: preventWorkspaceDeletion,
-      hasActivePaidSubscription,
-    }) === null;
   const rootPermissions = await getPermissions({
     wsId: ROOT_WORKSPACE_ID,
   });
@@ -182,11 +161,13 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           />
         ) : null}
 
-        {canDeleteWorkspace && <Security workspace={ws} />}
         {id !== 'personal' && (
           <RemoveYourself workspace={ws} currentUserId={user?.id} />
         )}
         {isRootWorkspace && <AdminTaskEmbeddings />}
+      </div>
+      <div className="mt-8">
+        <WorkspaceDeletionSettings workspace={ws} actorId={user?.id} />
       </div>
     </>
   );

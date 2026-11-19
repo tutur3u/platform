@@ -9,6 +9,7 @@ import {
   SettingsSectionMessage,
 } from '@tuturuuu/ui/custom/settings-section';
 import { StandardWorkspaceAccessPage } from '@tuturuuu/ui/custom/workspace-access';
+import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 import { HiddenWorkspacesSettings } from '@tuturuuu/ui/custom/workspace-select';
 import { useTranslations } from 'next-intl';
 import { GuestSelfJoinSetting } from '../../app/[locale]/(dashboard)/[wsId]/(workspace-settings)/members/_components/guest-self-join-setting';
@@ -115,6 +116,7 @@ export function WorkspaceGeneralSettingsPanel({
         />
       </BasicInfo>
       <HiddenWorkspacesSettings />
+      <WorkspaceDeletionSettings workspace={workspace} actorId={user?.id} />
     </div>
   );
 }

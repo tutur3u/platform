@@ -404,6 +404,10 @@
       "types": "./src/components/ui/custom/version-badge.tsx",
       "import": "./src/components/ui/custom/version-badge.tsx"
     },
+    "./custom/workspace-deletion-settings": {
+      "types": "./src/components/ui/custom/workspace-deletion-settings.tsx",
+      "import": "./src/components/ui/custom/workspace-deletion-settings.tsx"
+    },
     "./custom/settings-section": {
       "types": "./src/components/ui/custom/settings-section.tsx",
       "import": "./src/components/ui/custom/settings-section.tsx"

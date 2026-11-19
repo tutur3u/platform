@@ -6530,6 +6530,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/workspaces/{wsId}/deletion-status",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/workspaces/[wsId]/deletion-status/route.ts",
+    "sourceSha256": "a3e3433e18f4fc7306c78ba38d457a11291aa58689088130ebfad408f54a585d",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/workspaces/{wsId}/invite-links/{linkId}",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -6604,7 +6614,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/workspaces/[wsId]/route.ts",
-    "sourceSha256": "01ffefc3d91398b3d70ac9cea903bd6bff57d13fd97026efb6bd3db13c377fb8",
+    "sourceSha256": "d5ad9a36cb41b36c1b2f84ec4f2d850fc963df829b04e50c887b122a97a74f4e",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

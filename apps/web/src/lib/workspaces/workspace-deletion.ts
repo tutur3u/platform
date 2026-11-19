@@ -1,139 +1,114 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
-  getWorkspaceDeletionBlock,
   isWorkspaceDeletionConfirmed,
-  lookupActivePaidWorkspaceSubscription,
-  type WorkspaceDeletionFacts,
+  isWorkspaceDeletionOwner,
 } from '@tuturuuu/utils/workspace-deletion';
 
-export type WorkspaceDeletionResult = {
-  status: 200 | 400 | 403 | 404 | 409 | 500;
-  body: { code: string; message: string };
-};
+const RESPONSES = {
+  deleted: { status: 200, message: 'success' },
+  confirmation_mismatch: {
+    status: 400,
+    message: 'Type the workspace name to confirm.',
+  },
+  forbidden: { status: 403, message: 'This workspace cannot be deleted.' },
+  not_found: { status: 404, message: 'Workspace not found.' },
+  subscription_active: {
+    status: 409,
+    message:
+      'Resolve paid or unverified billing before deleting the workspace.',
+  },
+  failed: { status: 500, message: 'The workspace could not be deleted.' },
+} as const;
 
-export type WorkspaceDeletionDependencies = {
+type DeletionCode = keyof typeof RESPONSES;
+
+export function workspaceDeletionResponse(code: DeletionCode) {
+  const { status, message } = RESPONSES[code];
+  return { status, body: { code, message } };
+}
+
+type WorkspaceDeletionActor = {
+  actorId: string;
+  workspaceId: string;
   supabase: TypedSupabaseClient;
-  /**
-   * Service-role client for the subscription head-count. The caller's client
-   * cannot see `workspace_subscriptions` without `manage_subscription`.
-   */
-  subscriptionClient: () => Promise<TypedSupabaseClient>;
-  getPermissions: () => Promise<WorkspaceDeletionFacts['permissions']>;
-  isDeletionPrevented: () => Promise<boolean>;
-  audit: (event: {
-    action: 'workspace.delete';
-    actorId: string;
-    workspaceId: string;
-    outcome: 'deleted' | 'denied' | 'failed';
-    reason?: string;
-  }) => void;
 };
 
-const DENIED: WorkspaceDeletionResult = {
-  status: 403,
-  body: { code: 'forbidden', message: 'This workspace cannot be deleted.' },
-};
-
-/**
- * Deletes a workspace when every server-side rule passes. The caller supplies
- * the parsed request body; the typed confirmation must name the workspace.
- */
-export async function deleteWorkspaceForActor(
-  input: { actorId: string; workspaceId: string; confirmation: unknown },
-  deps: WorkspaceDeletionDependencies
-): Promise<WorkspaceDeletionResult> {
-  const { actorId, workspaceId } = input;
-  const audit = (outcome: 'deleted' | 'denied' | 'failed', reason?: string) =>
-    deps.audit({
-      action: 'workspace.delete',
-      actorId,
-      workspaceId,
-      outcome,
-      reason,
-    });
-
-  const { data: workspace } = await deps.supabase
+export async function readWorkspaceDeletionOwner({
+  actorId,
+  workspaceId,
+  supabase,
+}: WorkspaceDeletionActor) {
+  const { data: workspace, error } = await supabase
     .from('workspaces')
-    .select('id, name, handle, personal')
+    .select('id, name, personal, creator_id')
     .eq('id', workspaceId)
     .maybeSingle();
 
-  if (!workspace) {
-    return {
-      status: 404,
-      body: { code: 'not_found', message: 'Workspace not found.' },
-    };
-  }
-
-  const [permissions, deletionPrevented, subscription] = await Promise.all([
-    deps.getPermissions(),
-    deps.isDeletionPrevented(),
-    deps
-      .subscriptionClient()
-      .then((client) =>
-        lookupActivePaidWorkspaceSubscription(client, workspaceId)
-      ),
-  ]);
-
-  if (subscription.error) {
-    console.error('Workspace deletion subscription lookup failed', {
-      code: subscription.error.code,
+  if (error) {
+    console.error('Workspace deletion owner lookup failed', {
+      code: error.code,
     });
-    audit('failed', 'subscription_lookup');
-    return {
-      status: 500,
-      body: { code: 'failed', message: 'The workspace could not be deleted.' },
-    };
+    return { code: 'failed' } as const;
+  }
+  if (!workspace) return { code: 'not_found' } as const;
+  if (!isWorkspaceDeletionOwner(workspace, actorId)) {
+    return { code: 'forbidden' } as const;
+  }
+  return { code: 'allowed', workspace } as const;
+}
+
+export async function deleteWorkspaceForActor(
+  actor: WorkspaceDeletionActor,
+  confirmation: unknown
+) {
+  const { actorId, workspaceId } = actor;
+  const audit = (code: DeletionCode) => {
+    console.info('[audit] workspace.delete', {
+      action: 'workspace.delete',
+      actorId,
+      workspaceId,
+      outcome:
+        code === 'deleted'
+          ? 'deleted'
+          : code === 'failed'
+            ? 'failed'
+            : 'denied',
+      ...(code === 'deleted' ? {} : { reason: code }),
+    });
+    return workspaceDeletionResponse(code);
+  };
+
+  const authorization = await readWorkspaceDeletionOwner(actor);
+  if (authorization.code !== 'allowed') return audit(authorization.code);
+  if (
+    typeof confirmation !== 'string' ||
+    !isWorkspaceDeletionConfirmed(confirmation, authorization.workspace)
+  ) {
+    return audit('confirmation_mismatch');
   }
 
-  const block = getWorkspaceDeletionBlock({
-    workspaceId: workspace.id,
-    personal: Boolean(workspace.personal),
-    permissions,
-    deletionPrevented,
-    hasActivePaidSubscription: subscription.active,
-  });
-
-  if (block === 'subscription') {
-    audit('denied', block);
-    return {
-      status: 409,
-      body: {
-        code: 'subscription_active',
-        message: 'Cancel the workspace subscription before deleting it.',
-      },
-    };
-  }
-  if (block) {
-    audit('denied', block);
-    return DENIED;
-  }
-
-  if (!isWorkspaceDeletionConfirmed(input.confirmation, workspace)) {
-    audit('denied', 'confirmation');
-    return {
-      status: 400,
-      body: {
-        code: 'confirmation_mismatch',
-        message: 'Type the workspace name to confirm.',
-      },
-    };
-  }
-
-  const { error } = await deps.supabase
-    .from('workspaces')
-    .delete()
-    .eq('id', workspaceId);
-
+  const admin = await createAdminClient({ noCookie: true });
+  const args = {
+    p_ws_id: workspaceId,
+    p_actor_id: actorId,
+    p_confirmation: confirmation.trim(),
+  };
+  const { data, error } = await admin.rpc('delete_owned_workspace', args);
   if (error) {
     console.error('Workspace deletion failed', { code: error.code });
-    audit('failed', 'delete');
-    return {
-      status: 500,
-      body: { code: 'failed', message: 'The workspace could not be deleted.' },
-    };
+    return audit('failed');
   }
 
-  audit('deleted');
-  return { status: 200, body: { code: 'deleted', message: 'success' } };
+  const result: unknown = data;
+  switch (result) {
+    case 'deleted':
+    case 'forbidden':
+    case 'not_found':
+    case 'confirmation_mismatch':
+    case 'subscription_active':
+      return audit(result);
+    default:
+      return audit('failed');
+  }
 }

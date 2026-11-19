@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 861,
+    "total": 869,
     "categories": {
-      "api": 665,
+      "api": 672,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 165,
+      "page": 166,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 849 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 857 }
   },
   "routes": [
     {
@@ -1357,6 +1357,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/[locale]/cite",
+      "source": "apps/web/src/app/[locale]/cite/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/[locale]/games/farm",
       "source": "apps/web/src/app/[locale]/games/farm/page.tsx",
       "category": "page",
@@ -2303,6 +2311,14 @@
     {
       "pattern": "/api/v1/calendar/auth/accounts",
       "source": "apps/web/src/app/api/v1/calendar/auth/accounts/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/cite/[...path]",
+      "source": "apps/web/src/app/api/v1/cite/[...path]/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3333,6 +3349,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/users/me/bootstrap",
+      "source": "apps/web/src/app/api/v1/users/me/bootstrap/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/users/me/configs/[configId]",
       "source": "apps/web/src/app/api/v1/users/me/configs/[configId]/route.ts",
       "category": "api",
@@ -3863,6 +3887,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/chat/search",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/chat/search/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/cite/library/[[...segments]]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/cite/library/[[...segments]]/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -5047,6 +5079,30 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/notes/voice-jobs",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people/contacts",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/contacts/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people/resolve",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/resolve/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/people",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -6615,6 +6671,14 @@
     {
       "pattern": "/api/workspaces/[wsId]/decline-invite",
       "source": "apps/web/src/app/api/workspaces/[wsId]/decline-invite/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/workspaces/[wsId]/deletion-status",
+      "source": "apps/web/src/app/api/workspaces/[wsId]/deletion-status/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

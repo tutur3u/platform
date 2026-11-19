@@ -170,6 +170,22 @@ export async function getWorkspace(
   );
 }
 
+export type WorkspaceDeletionStatus =
+  | 'ready'
+  | 'protected'
+  | 'subscription_active';
+
+export async function getWorkspaceDeletionStatus(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ status: WorkspaceDeletionStatus }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/deletion-status`,
+    { cache: 'no-store' }
+  );
+}
+
 /** Deletes a workspace; `confirmation` is the workspace name the user typed. */
 export async function deleteWorkspace(
   workspaceId: string,

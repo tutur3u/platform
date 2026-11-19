@@ -19920,6 +19920,28 @@ export type Database = {
           },
         ];
       };
+      workspace_deletion_audit: {
+        Row: {
+          actor_id: string;
+          deleted_at: string;
+          id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          deleted_at?: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          deleted_at?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_domain_addons: {
         Row: {
           created_at: string;
@@ -26776,6 +26798,10 @@ export type Database = {
           _start_date: string;
         };
         Returns: Json;
+      };
+      workspace_has_blocking_subscription: {
+        Args: { p_ws_id: string };
+        Returns: boolean;
       };
       workspace_role_creator_grants_owned_by_actor:
         | { Args: { p_actor_id: string; p_role_id: string }; Returns: boolean }
@@ -51639,6 +51665,10 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      delete_owned_workspace: {
+        Args: { p_actor_id: string; p_confirmation: string; p_ws_id: string };
+        Returns: string;
       };
       detect_duplicate_workspace_users: {
         Args: { _ws_id: string };

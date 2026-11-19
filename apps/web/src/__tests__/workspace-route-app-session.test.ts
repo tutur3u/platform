@@ -109,8 +109,8 @@ describe('workspace API route app-session bridge', () => {
     });
   });
 
-  it('allows internal app-session auth on legacy workspace GET, PUT, and DELETE', async () => {
-    await import('@/legacy-api-routes/workspaces/[wsId]/route');
+  it('allows internal app-session auth on workspace GET, PUT, and DELETE', async () => {
+    await import('@/app/api/workspaces/[wsId]/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
