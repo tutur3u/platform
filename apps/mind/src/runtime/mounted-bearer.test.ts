@@ -60,11 +60,15 @@ describe('mounted explicit bearer boundary', () => {
       expect(refuses(`Bearer ${token}`)).toBe(true);
   });
 
+  it('refuses a Supabase-style JWT', () => {
+    const token = ['{"alg":"HS256"}', '{"sub":"fixture"}', 'signature']
+      .map((segment) => Buffer.from(segment).toString('base64url'))
+      .join('.');
+
+    expect(refuses(`Bearer ${token}`)).toBe(true);
+  });
+
   it.each([
-    [
-      'a Supabase-style JWT',
-      'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.c2lnbmF0dXJl',
-    ],
     ['Basic credentials', 'Basic Zml4dHVyZTpzZWNyZXQ='],
     ['an empty Bearer', 'Bearer '],
     ['a bare scheme', 'Bearer'],
