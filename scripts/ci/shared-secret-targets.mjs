@@ -5,8 +5,9 @@
 // listed secret and a listed environment, never a free-text destination.
 // Nothing in this module reads or prints a secret value.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { readJsonc } from './gateway-deploy-config.mjs';
 
 export const CLOUDFLARE_ACCOUNT_ID = 'e8912e2867beecc673d171907bf09649';
 export const VERCEL_PROJECT_ID = 'prj_RlDllxkTSo5mjpzycCRQY4tGONYu';
@@ -116,11 +117,51 @@ export function resolveSharedSecret({ secret, environment, root = '.' }) {
   };
 }
 
+function readSupabaseFamilyWorkers(root) {
+  const { families } = JSON.parse(
+    readFileSync(join(root, FAMILIES_FILE), 'utf8')
+  );
+  assert.ok(Array.isArray(families), 'family inventory has no families');
+  const optedIn = families.filter((family) => family?.supabaseSecret === true);
+  assert.ok(optedIn.length > 0, 'no families opted in to the Supabase key');
+  const workers = optedIn.map(({ id, worker }) => {
+    const name = assertWorkerName(worker);
+    assert.ok(
+      typeof id === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(id),
+      'invalid family id for Supabase key delivery'
+    );
+    const configPath = join(
+      root,
+      dirname(FAMILIES_FILE),
+      'wrangler.' + id + '.jsonc'
+    );
+    assert.ok(existsSync(configPath), 'missing family Worker config for ' + id);
+    const config = readJsonc(configPath);
+    assert.ok(
+      config?.name === name,
+      'family Worker name does not match its config'
+    );
+    assert.ok(
+      config.account_id === CLOUDFLARE_ACCOUNT_ID &&
+        Array.isArray(config.secrets?.required) &&
+        config.secrets.required.includes(SUPABASE_FAMILY_BINDING),
+      'family Worker config must declare the reviewed account and require SUPABASE_SECRET_KEY'
+    );
+    return name;
+  });
+  assert.equal(
+    new Set(workers).size,
+    workers.length,
+    'family inventory repeats a Worker'
+  );
+  return workers;
+}
+
 export function resolveSupabaseFamilyTargets(root = '.') {
   return {
     projectRef: SUPABASE_PROJECT_REF,
     keyName: SUPABASE_FAMILY_KEY_NAME,
-    workers: readFamilyWorkers(root).map((name) => ({
+    workers: readSupabaseFamilyWorkers(root).map((name) => ({
       name,
       binding: SUPABASE_FAMILY_BINDING,
       type: 'secret_text',

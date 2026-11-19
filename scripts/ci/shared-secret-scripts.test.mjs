@@ -3,6 +3,8 @@
 // contract itself is pinned by shared-secret-write.test.mjs.
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +19,7 @@ import {
 import * as familyKey from './supabase-family-key.mjs';
 import * as sharedSecret from './shared-secret.mjs';
 import {
+  FAMILIES_FILE,
   readFamilyWorkers,
   resolveSharedSecret,
   resolveSupabaseFamilyTargets,
@@ -243,9 +246,7 @@ test('targets are fixed per secret and environment', () => {
     assert.throws(() => resolveSharedSecret({ ...input, root: here }));
 });
 
-test('family Workers come from the inventory at the checked-out commit', async () => {
-  const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
-  const { tmpdir } = await import('node:os');
+test('family Workers come from the inventory at the checked-out commit', () => {
   const root = mkdtempSync(join(tmpdir(), 'families-'));
   assert.deepEqual(readFamilyWorkers(root), ['tuturuuu-web-api-identity']);
   mkdirSync(join(root, 'apps/web/cloudflare/opennext'), { recursive: true });
@@ -276,10 +277,6 @@ test('family Workers come from the inventory at the checked-out commit', async (
     web.workers.map(({ name }) => name),
     ['tuturuuu-web-api-identity-staging']
   );
-  assert.deepEqual(
-    resolveSupabaseFamilyTargets(root).workers.map(({ name }) => name),
-    ['tuturuuu-web-api-identity', 'tuturuuu-web-public']
-  );
   for (const bad of [
     { families: [{ worker: 'evil/../name' }] },
     { families: [{ worker: 'tuturuuu-web-a' }, { worker: 'tuturuuu-web-a' }] },
@@ -288,6 +285,95 @@ test('family Workers come from the inventory at the checked-out commit', async (
     writeFileSync(file, JSON.stringify(bad));
     assert.throws(() => readFamilyWorkers(root));
   }
+});
+
+test('the repository opts in only the seven approved Supabase key recipients', () => {
+  const { families } = JSON.parse(
+    readFileSync(join(repoRoot, FAMILIES_FILE), 'utf8')
+  );
+  const names = families
+    .filter(({ supabaseSecret }) => supabaseSecret === true)
+    .map(({ worker }) => worker)
+    .sort();
+  assert.deepEqual(names, [
+    'tuturuuu-web-api-auth',
+    'tuturuuu-web-api-identity',
+    'tuturuuu-web-api-platform',
+    'tuturuuu-web-api-workspace',
+    'tuturuuu-web-dashboard-core',
+    'tuturuuu-web-finance-billing',
+    'tuturuuu-web-public-auth',
+  ]);
+  assert.ok(
+    !Object.hasOwn(
+      families.find(({ id }) => id === 'public-docs'),
+      'supabaseSecret'
+    )
+  );
+});
+
+test('Supabase delivery requires an explicit opt-in and a matching Worker config', () => {
+  const root = mkdtempSync(join(tmpdir(), 'supabase-families-'));
+  const inventory = join(root, FAMILIES_FILE);
+  mkdirSync(dirname(inventory), { recursive: true });
+  assert.throws(() => resolveSupabaseFamilyTargets(root), { code: 'ENOENT' });
+
+  const optedIn = {
+    id: 'example',
+    worker: 'tuturuuu-web-example',
+    enabled: false,
+    supabaseSecret: true,
+  };
+  const families = [
+    { id: 'public-docs', worker: 'tuturuuu-web-public-docs', enabled: true },
+    {
+      id: 'other',
+      worker: 'tuturuuu-web-other',
+      enabled: true,
+      supabaseSecret: 'true',
+    },
+  ];
+  writeFileSync(inventory, JSON.stringify({ families }));
+  assert.throws(
+    () => resolveSupabaseFamilyTargets(root),
+    /no families opted in/
+  );
+  writeFileSync(
+    inventory,
+    JSON.stringify({ families: [...families, optedIn] })
+  );
+  assert.throws(
+    () => resolveSupabaseFamilyTargets(root),
+    /missing family Worker config for example/
+  );
+
+  const file = join(dirname(inventory), 'wrangler.example.jsonc');
+  const config = {
+    name: optedIn.worker,
+    account_id: ACCOUNT,
+    secrets: { required: ['SUPABASE_SECRET_KEY'] },
+  };
+  writeFileSync(
+    file,
+    JSON.stringify({ ...config, name: 'tuturuuu-elsewhere' })
+  );
+  assert.throws(
+    () => resolveSupabaseFamilyTargets(root),
+    /does not match its config/
+  );
+  writeFileSync(file, JSON.stringify({ ...config, secrets: { required: [] } }));
+  assert.throws(
+    () => resolveSupabaseFamilyTargets(root),
+    /require SUPABASE_SECRET_KEY/
+  );
+  writeFileSync(file, '// production family config\n' + JSON.stringify(config));
+  assert.deepEqual(resolveSupabaseFamilyTargets(root).workers, [
+    {
+      name: optedIn.worker,
+      binding: 'SUPABASE_SECRET_KEY',
+      type: 'secret_text',
+    },
+  ]);
 });
 
 // CLI flows -----------------------------------------------------------------

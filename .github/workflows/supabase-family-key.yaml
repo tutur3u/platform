@@ -1,8 +1,8 @@
 name: Supabase Family Key
 
 # Dispatch-only operator job. It creates the `cf-web-families` Supabase secret
-# key once and writes its value to SUPABASE_SECRET_KEY on every web route
-# family Worker (apps/web/cloudflare/opennext/families.json). The value is
+# key once and writes its value to SUPABASE_SECRET_KEY on opted-in web
+# route family Workers (apps/web/cloudflare/opennext/families.json). The value is
 # held in a shell variable only: never a GitHub secret, output, environment
 # file, artifact, log line or command argument. A second run refuses to create
 # a second key.

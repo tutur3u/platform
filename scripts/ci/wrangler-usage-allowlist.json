@@ -3322,6 +3322,28 @@
       },
       "digest": "99d635ce313af1ff602ce34891806c8cf6893d6ed07702d1d19d68dbb4ea1ddc"
     },
+    "scripts/ci/shared-secret-scripts.test.mjs": {
+      "kind": "script",
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-web-families",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
+        "reason": "Fixture configuration paths exercise missing and mismatched Worker identities before key delivery."
+      },
+      "digest": "7f99d25f88b58dd1219e7d29c9f033d03d2b2231f06f29ba32d07570229c34d1"
+    },
+    "scripts/ci/shared-secret-targets.mjs": {
+      "kind": "script",
+      "lines": 1,
+      "uses": 1,
+      "gap": "opennext-web-families",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
+        "reason": "The Supabase family key job checks the exact Worker identity and required binding in each opted-in family configuration before creating a key."
+      },
+      "digest": "8a663ce023f48685742b0507d3e9edfa2e9abe0e3dde15b8b8087e8c1b7bfa6d"
+    },
     "scripts/ci/shortener-native-artifact.test.py": {
       "lines": 6,
       "uses": 7,
