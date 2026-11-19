@@ -153,26 +153,6 @@
       },
       "digest": "fd80840e0ca9aeb24af8ad5857f1f12fe9748dd81423e412cc05154218cb2241"
     },
-    ".github/workflows/coordination-cloudflare.yaml": {
-      "lines": 12,
-      "uses": 16,
-      "gap": "do-publication-rehearsal",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6628",
-        "reason": "Reuse existing bounded cf settings snapshots for both required-secret gates; remove two redundant CLI reads and preserve publication checks."
-      },
-      "digest": "d69c48ecdd7092efd00e91c3a95ea607ca8303d5c5f7839b7f583228fe79fa04"
-    },
-    ".github/workflows/devbox-control-cloudflare.yaml": {
-      "lines": 12,
-      "uses": 16,
-      "gap": "do-publication-rehearsal",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8443",
-        "reason": "Atomic release: code and runtime secrets publish as one version with deploy --secrets-file; the separate secret bulk write is removed (1 fewer Wrangler line)."
-      },
-      "digest": "4977dd032e461a7ec30b4c5e6f87722203348a7e474a723987296e399215a460"
-    },
     ".github/workflows/drive-cloudflare-artifact.yaml": {
       "lines": 1,
       "uses": 1,
@@ -1469,20 +1449,20 @@
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 disabled public Worker development origins (workers_dev/preview_urls false); config content only."
+        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
+        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
       },
-      "digest": "e80ec4dcdcf68e5259c959f087ec35422fe51af5f6161055d4b8bf773c1988d6"
+      "digest": "951616c963ece614faca181183e0af053a9b8e7de2ef6ddad66662ff20657943"
     },
     "apps/meet-realtime/wrangler.staging.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7518",
-        "reason": "FIX-7518-R2: SR-919 containment pins change existing config bytes; the new containment scanner and its negative fixtures only read legacy config names and never invoke the CLI."
+        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
+        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
       },
-      "digest": "45c171b76efaba3b69a14183e4efcb91f144937aaea28eff3d4ff67313af7649"
+      "digest": "5684c24cd2a13fe36ab102e9692818ee5fd26dc60a5213dd48df18a05c2d5900"
     },
     "apps/meet/.gitignore": {
       "lines": 1,
@@ -1519,10 +1499,10 @@
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 disabled public Worker development origins (workers_dev/preview_urls false); config content only."
+        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
+        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
       },
-      "digest": "3f4f26f169ae69156d717ae06905f6d91b125c5fa7209aa715a4f66226c63c1b"
+      "digest": "2816f469474953f2daa4b8c711947ba843910132b5d998a9049b3f409769a1ec"
     },
     "apps/mind/.gitignore": {
       "lines": 1,
@@ -1681,10 +1661,10 @@
       "uses": 2,
       "gap": "opennext-adapter",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 disabled public Worker development origins (workers_dev/preview_urls false); config content only."
+        "decision": "https://github.com/tutur3u/platform/commit/a7d1bd0c69ef3e6a3ff8185c2055ecc884bf3d1f",
+        "reason": "Refresh config digest after main advanced; Wrangler token counts unchanged."
       },
-      "digest": "c49b2fb34987eb295814e1c54f30b61019d758333178b2dd3cc598e6906a759a"
+      "digest": "7d1c89e4bd73b31e03b181cc95bd5a96350d358e07972bdbb3a3f438d40352f1"
     },
     "apps/pay/.gitignore": {
       "lines": 1,
@@ -2522,26 +2502,6 @@
       },
       "digest": "44a2d124db1b7ab13e5cfab56303a465538920ea32ada7d464a755611ffb3497"
     },
-    "scripts/ci/calendar-cf-publisher.mjs": {
-      "lines": 13,
-      "uses": 14,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Calendar cf publisher rehearses wrangler dry-run module names against cf Build Output, then publishes with cf deploy --prebuilt; wrangler deploy publication retired for Calendar."
-      },
-      "digest": "4628cea1784467f5d50d8af02655d3892e519b4b40744be7853cb7bd400a15a2"
-    },
-    "scripts/ci/calendar-cf-publisher.test.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "gap": "parity-tooling",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Calendar cf publisher rehearses wrangler dry-run module names against cf Build Output, then publishes with cf deploy --prebuilt; wrangler deploy publication retired for Calendar."
-      },
-      "digest": "34a552cd8a3eb5e5e2bcc54f09151869bfef0b9979fefe9c7cd7ac4ed724ebf2"
-    },
     "scripts/ci/calendar-emitted-defaults.mjs": {
       "lines": 6,
       "uses": 9,
@@ -2827,10 +2787,10 @@
       "uses": 29,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
-        "reason": "Extends toolchain receipts with calendar publisher switch and native worker gateway qualification entries."
+        "decision": "https://github.com/tutur3u/platform/commit/ab5a1a37206e068cbc67fb521c2eeab625e4bbe8",
+        "reason": "Records email-storage-do cf publisher qualification and calendar emit-only bundle parity; allowlist deltas reference net Wrangler retirements."
       },
-      "digest": "5d0e34fedf1452809c2dcfe3444b82fb4b48dabb4399b81de7f5ad3783bb06c5"
+      "digest": "5e891da6196ad4dc378b9e087d28f16c6a6726ac8931483611b0b5ec23afd84a"
     },
     "scripts/ci/fixtures/cf-worker-parity/api.json": {
       "lines": 2,
@@ -3213,16 +3173,6 @@
         "reason": "Template test references wrangler.jsonc baselines for api and gateway; no CLI invocation."
       },
       "digest": "f55e9f280f6180195f92aca855f81b13ac63cf94d61bf73b3ee3e1afed89f6ad"
-    },
-    "scripts/ci/native-worker-cf-artifact.test.js": {
-      "gap": "do-publication-rehearsal",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6487",
-        "reason": "REV-6487-4: qualify real Vite metadata while preserving DO publication validation"
-      },
-      "lines": 7,
-      "uses": 8,
-      "digest": "c91cade7b1b459a859749acb3467f583f2a9299bb5ce49594e152fad4f4ecad7"
     },
     "scripts/ci/native-wrangler-evidence.mjs": {
       "lines": 17,

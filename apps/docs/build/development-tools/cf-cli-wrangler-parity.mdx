@@ -36,6 +36,7 @@ lists gaps whose removal conditions are still open.
 | Worker settings preflight readback | switched | `scripts/ci/cf-worker-settings.mjs` | 0 / 0 | `deployment-source-compatibility` |
 | Calendar ASSETS-only Build Output publisher | switched | `scripts/ci/calendar-cf-publisher.mjs` | Calendar publication path only | `void-emitted-binding-types` |
 | Simple native Workers and gateway | qualified | `scripts/ci/fixtures/cf-worker-parity/{api,gateway}.json` | baselines only | `pending-migration` |
+| Email, storage, DO and Void publishers (SQLite DO) | qualified | `.github/workflows/{coordination,devbox-control}-cloudflare.yaml` | cf `--prebuilt` production | `void-wave1-publication` |
 | Email, storage, DO and Void publisher | gap | — | — | `do-publication-rehearsal`, `void-wave1-publication`, `pending-migration` |
 | Observability and remaining callers | gap | — | — | `shared-toolchain` |
 

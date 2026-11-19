@@ -31,6 +31,13 @@ test('settings readback production template names cron-control cf publisher', ()
   assert.match(settings.productionTemplate.publisher, /cf deploy --prebuilt/);
 });
 
+test('DO sqlite publisher is qualified with cf deploy evidence', () => {
+  const item = readReceipts().operations['email-storage-do-void-publisher'];
+  assert.equal(item.status, 'qualified');
+  assert.match(item.implementation, /coordination/);
+  assert.match(item.productionTemplate.publisher, /cf deploy --prebuilt/);
+});
+
 test('calendar publisher and native worker templates are recorded as switched or qualified', () => {
   const receipts = readReceipts().operations;
   assert.equal(receipts['calendar-build-output'].status, 'switched');

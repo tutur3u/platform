@@ -21,28 +21,29 @@ import { NativeUploadError } from './wave1-native-upload-error.mjs';
 const prefix = '.cloudflare/output/v0/';
 const VERSION_ID = /^[0-9a-f-]{36}$/i;
 
-function wranglerModules(outdir) {
+function cfBundleModuleNames(buildRoot) {
+  const bundleRoot = join(buildRoot, prefix, 'workers/default/bundle');
   const modules = [];
   function visit(directory) {
     for (const name of readdirSync(directory)) {
       const path = join(directory, name);
       const stat = lstatSync(path);
-      assert.ok(!stat.isSymbolicLink(), 'Wrangler dry-run symlink forbidden');
+      assert.ok(!stat.isSymbolicLink(), 'cf bundle symlink forbidden');
       if (stat.isDirectory()) visit(path);
       else if (/\.(?:m?js)$/u.test(name) && !name.endsWith('.map'))
-        modules.push(relative(outdir, path).split('\\').join('/'));
+        modules.push(relative(bundleRoot, path).split('\\').join('/'));
     }
   }
-  visit(outdir);
+  visit(bundleRoot);
   return modules.sort();
 }
 
-export function assertUploadNameParity(receipt, wranglerModuleNames) {
+export function assertUploadNameParity(receipt, secondaryModuleNames) {
   const expected = receipt.secondaryModuleNames ?? [];
   assert.deepEqual(
-    [...wranglerModuleNames].sort(),
+    [...secondaryModuleNames].sort(),
     expected.map((item) => item.source).sort(),
-    'Wrangler dry-run modules differ from cf Build Output manifest'
+    'cf Build Output bundle modules differ from emit manifest'
   );
   for (const item of expected) {
     assert.equal(
@@ -188,44 +189,7 @@ export async function rehearseCalendarPublication({
     sourceSha,
     destination: buildRoot,
   });
-  const wranglerOut = realpathSync(
-    mkdtempSync(resolve(env.RUNNER_TEMP, 'calendar-wrangler-dry-run-'))
-  );
-  try {
-    exec(
-      'bun',
-      [
-        'x',
-        '--no-install',
-        'wrangler',
-        'deploy',
-        '--dry-run',
-        '--outdir',
-        wranglerOut,
-        '--config',
-        config,
-      ],
-      {
-        cwd: resolve(dirname(config), '../..'),
-        env: {
-          ...Object.fromEntries(
-            ['PATH', 'HOME', 'USER', 'TMPDIR', 'LANG', 'LC_ALL'].flatMap(
-              (name) => (env[name] === undefined ? [] : [[name, env[name]]])
-            )
-          ),
-          CI: 'true',
-          WRANGLER_SEND_METRICS: 'false',
-          WRANGLER_WRITE_LOGS: 'false',
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: 120000,
-        maxBuffer: 1024 * 1024,
-      }
-    );
-  } catch (error) {
-    throw new NativeUploadError(error, []);
-  }
-  assertUploadNameParity(receipt, wranglerModules(wranglerOut));
+  assertUploadNameParity(receipt, cfBundleModuleNames(buildRoot));
   assertControlFileParity(receipt);
   stageBuildOutput(appRoot, buildRoot);
   try {
@@ -266,7 +230,7 @@ export async function rehearseCalendarPublication({
   return {
     ...receipt,
     publicationQualified: true,
-    uploadNameParity: 'wrangler-dry-run-and-cf-manifest',
+    uploadNameParity: 'cf-build-output-manifest',
     assetControlFilesQualified: true,
     buildRoot,
   };

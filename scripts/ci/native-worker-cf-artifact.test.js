@@ -1,5 +1,5 @@
 // Native Workers on cf: build once, qualify the emitted Build Output, and let the
-// gated production job publish that exact artifact with retained Wrangler migrations.
+// gated production job publish that exact artifact with cf deploy --prebuilt.
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
@@ -35,6 +35,12 @@ for (const { app, runtimeEnv } of WORKERS) {
       );
     assert.match(steps[dryRun].run, /--dry-run --no-provision$/);
     assert.equal(steps[upload].with.name, `${app}-worker-\${{ github.sha }}`);
+    assert.ok(
+      !steps.some((step) =>
+        (step.name ?? '').toLowerCase().includes('publication profile')
+      ),
+      'qualification must not prepare a legacy publication profile'
+    );
 
     assert.equal(
       workflow.jobs.deploy.if,
@@ -48,7 +54,7 @@ for (const { app, runtimeEnv } of WORKERS) {
       (step) => step.run === `${parityRun} "$CLOUDFLARE_ACCOUNT_ID"`
     );
     const publishing = deployment.filter((step) =>
-      step.run?.includes('wrangler deploy --no-bundle')
+      step.run?.includes('cf deploy --prebuilt --mode production --no-provision')
     );
     assert.equal(publishing.length, 1, 'publish exactly once');
     const publishIndex = deployment.indexOf(publishing[0]);
@@ -59,39 +65,9 @@ for (const { app, runtimeEnv } of WORKERS) {
       `apps/${app}/.cloudflare/output`
     );
     assert.match(
-      publishing[0].run.trim().split('\n').at(-1),
-      /wrangler deploy --no-bundle -c \.cloudflare\/wrangler-publication\.json --message "\$GITHUB_SHA"/
+      publishing[0].run,
+      /--message "\$GITHUB_SHA" --secrets-file "\$secrets_file"/
     );
-    assert.ok(
-      !deployment.some((step) =>
-        /cf deploy|workers versions create/.test(step.run ?? '')
-      ),
-      'cf DO publication remains disabled until a separate rehearsal-backed change'
-    );
-    const prepare = deployment.findIndex((step) =>
-      step.run?.includes('cf-wrangler-publication.mjs')
-    );
-    assert.ok(prepare > recheck && prepare < publishIndex);
-    assert.match(deployment[prepare].run, /"\$CLOUDFLARE_ACCOUNT_ID"$/);
-    const realPublication = steps.findIndex(
-      (step) =>
-        step.run ===
-        'node --test scripts/ci/cf-wrangler-publication.runtime.mjs'
-    );
-    assert.ok(realPublication > build && realPublication < upload);
-    assert.equal(steps[realPublication].env.CF_PUBLICATION_TEST_APP, app);
-    assert.equal(steps[realPublication]['continue-on-error'], undefined);
-    for (const event of ['pull_request', 'push']) {
-      assert.ok(
-        workflow.on[event].paths.includes(
-          'scripts/ci/cf-wrangler-publication.runtime.mjs'
-        )
-      );
-    }
-    const retainedCheck = steps.findIndex((step) =>
-      step.run?.includes('wrangler deploy --dry-run --no-bundle')
-    );
-    assert.ok(retainedCheck > build && retainedCheck < upload);
     if (app === 'coordination') {
       const secretCheck = deployment.findIndex(
         (step) =>

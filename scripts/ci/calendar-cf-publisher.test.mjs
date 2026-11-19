@@ -13,6 +13,6 @@ test('upload name parity normalizes secondary modules to cf ./ paths', () => {
   );
   assert.throws(
     () => assertUploadNameParity(receipt, ['other.js']),
-    /Wrangler dry-run modules differ/
+    /cf Build Output bundle modules differ/
   );
 });

@@ -10,8 +10,6 @@ on:
       - 'scripts/ci/cf-worker-settings.mjs'
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/cf-worker-parity.mjs'
-      - 'scripts/ci/cf-wrangler-publication.mjs'
-      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
   push:
@@ -24,8 +22,6 @@ on:
       - 'scripts/ci/cf-worker-settings.mjs'
       - 'scripts/ci/cf-vite-worker.mjs'
       - 'scripts/ci/cf-worker-parity.mjs'
-      - 'scripts/ci/cf-wrangler-publication.mjs'
-      - 'scripts/ci/cf-wrangler-publication.runtime.mjs'
       - 'scripts/ci/fixtures/cf-worker-parity/coordination.json'
       - 'tuturuuu.ci.ts'
   workflow_dispatch:
@@ -127,15 +123,6 @@ jobs:
         working-directory: apps/coordination
         env:
           CF_SEND_TELEMETRY: 'false'
-      - name: Verify publication against real Vite output
-        env:
-          CF_PUBLICATION_TEST_APP: coordination
-        run: node --test scripts/ci/cf-wrangler-publication.runtime.mjs
-      - name: Prepare the retained Wrangler publication profile
-        run: node scripts/ci/cf-wrangler-publication.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json apps/coordination/wrangler.publish.jsonc
-      - name: Check Wrangler publication without credentials
-        run: bun x --no-install wrangler deploy --dry-run --no-bundle -c .cloudflare/wrangler-publication.json
-        working-directory: apps/coordination
       # upload-artifact skips hidden paths, so stage the Build Output first.
       - name: Stage the cf Build Output artifact
         run: cp -R apps/coordination/.cloudflare/output "$RUNNER_TEMP/coordination-build-output"
@@ -184,14 +171,18 @@ jobs:
           path: apps/coordination/.cloudflare/output
       - name: Recheck the downloaded artifact identity
         run: node scripts/ci/cf-worker-parity.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json "$CLOUDFLARE_ACCOUNT_ID"
-      - name: Prepare the retained Wrangler production publisher
-        run: node scripts/ci/cf-wrangler-publication.mjs apps/coordination scripts/ci/fixtures/cf-worker-parity/coordination.json apps/coordination/wrangler.publish.jsonc "$CLOUDFLARE_ACCOUNT_ID"
-      - name: Publish the exact artifact with retained migration tags
+      - name: Publish the exact prebuilt artifact
         working-directory: apps/coordination
-        run: bun x --no-install wrangler deploy --no-bundle -c .cloudflare/wrangler-publication.json --message "$GITHUB_SHA"
         env:
           CF_SEND_TELEMETRY: 'false'
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          COORDINATION_TOKEN: ${{ secrets.COORDINATION_TOKEN }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$COORDINATION_TOKEN" || { echo 'Missing coordination credential'; exit 1; }
+          secrets_file="$RUNNER_TEMP/coordination-secrets.json"
+          trap 'rm -f "$secrets_file"' EXIT
+          node -e 'const fs = require("node:fs"); fs.writeFileSync(process.argv[1], JSON.stringify({ COORDINATION_TOKEN: process.env.COORDINATION_TOKEN }), { mode: 0o600 });' "$secrets_file"
+          bun x --no-install cf deploy --prebuilt --mode production --no-provision --message "$GITHUB_SHA" --secrets-file "$secrets_file"
       - name: Capture and compare settings after publication
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.COORDINATION_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}

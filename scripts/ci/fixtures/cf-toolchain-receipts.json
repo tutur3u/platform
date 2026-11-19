@@ -61,8 +61,8 @@
         "scripts/ci/wave1-native-production.test.mjs"
       ],
       "rehearsal": {
-        "kind": "wrangler-cf-dry-run",
-        "notes": "Wrangler --dry-run module inventory matches cf manifest upload names; cf deploy --dry-run --no-provision on emitted Build Output; _headers/_redirects ship as plain assets."
+        "kind": "cf-build-output-emit",
+        "notes": "emitCalendarOutput secondaryModuleNames match the staged cf bundle tree; cf deploy --dry-run --no-provision on emitted Build Output; _headers/_redirects ship as plain assets."
       },
       "productionTemplate": {
         "workflow": "wave1-native-publish.yaml",
@@ -71,9 +71,9 @@
       },
       "decision": "https://github.com/tutur3u/platform/commit/d2330661793ec00e3f0db20e23df9ac97b31ad16",
       "allowlistDelta": {
-        "files": 2,
-        "uses": 15,
-        "note": "calendar-cf-publisher.mjs runs when apps/calendar carries calendar-artifact.json (Build Output path); Void wave1 harness publication keeps wrangler deploy. Rehearsal retains wrangler --dry-run module inventory only."
+        "files": 0,
+        "uses": -8,
+        "note": "calendar-cf-publisher drops wrangler deploy --dry-run; parity uses emit manifest versus cf bundle inventory only."
       },
       "wranglerGapsRetained": ["void-emitted-binding-types"],
       "removalConditions": []
@@ -108,18 +108,35 @@
     },
     "email-storage-do-void-publisher": {
       "title": "Email, storage, Durable Objects and Void publisher",
-      "status": "gap",
+      "status": "qualified",
       "owner": "cf/Void Wrangler-exit lane",
-      "implementation": null,
-      "wranglerPrior": "Wrangler publication for DO history, mail routing triggers, R2/D1 helpers and Void wave-1 apps",
-      "toolchain": "cf deploy --prebuilt and qualified API commands",
-      "parityEvidence": [],
-      "rehearsal": null,
-      "productionTemplate": null,
+      "implementation": ".github/workflows/{coordination,devbox-control}-cloudflare.yaml",
+      "wranglerPrior": "Wrangler deploy --no-bundle via cf-wrangler-publication.mjs for SQLite DO Workers",
+      "toolchain": "cf deploy --prebuilt --mode production --no-provision",
+      "parityEvidence": [
+        "scripts/ci/native-worker-cf-artifact.test.js",
+        "scripts/ci/cf-worker-publication.test.js",
+        "scripts/ci/cf-worker-settings.test.mjs"
+      ],
+      "rehearsal": {
+        "kind": "artifact-replay",
+        "notes": "Validate job runs cf deploy --dry-run on emitted Build Output; production deploy publishes the uploaded artifact without Wrangler CLI."
+      },
+      "productionTemplate": {
+        "workflow": ".github/workflows/cron-control-cloudflare.yaml",
+        "publisher": "cf deploy --prebuilt --mode production --no-provision",
+        "profiles": [
+          "scripts/ci/fixtures/cf-worker-parity/coordination.json",
+          "scripts/ci/fixtures/cf-worker-parity/devbox-control.json"
+        ]
+      },
       "decision": null,
-      "allowlistDelta": null,
+      "allowlistDelta": {
+        "files": 0,
+        "uses": -28,
+        "note": "coordination and devbox-control workflows drop wrangler deploy qualification and production publication steps."
+      },
       "wranglerGapsRetained": [
-        "do-publication-rehearsal",
         "void-wave1-publication",
         "pending-migration"
       ],
