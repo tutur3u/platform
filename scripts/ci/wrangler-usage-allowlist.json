@@ -1214,6 +1214,16 @@
       },
       "digest": "dbc358b6220131da89f722215f22be6661759b1176b954d0186830775dca1bec"
     },
+    "apps/mail/cloudflare/acceptance/run.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/2042ecfd7132f37f98712ea62d9f961f70444b8c",
+        "reason": "Local Mail acceptance loads the pinned Wrangler SDK once and calls unstable_startWorker on the copied emitted dist/wave1/wrangler.json with bundle and processEntrypoint disabled, remote false, an empty env file, metrics off and fixture bindings; Supabase is limited to staging or loopback, object storage and the send provider are in-process fakes. No build, publication or deployment is admitted. Remove when a qualified cf/Vite harness runs the sealed Void artifact with the same isolation."
+      },
+      "digest": "a3aa4be681c29deddaeac37d4fb11aa3129051c3ad3e81d9402134d0222e44fc"
+    },
     "apps/mail/package.json": {
       "lines": 2,
       "uses": 2,
