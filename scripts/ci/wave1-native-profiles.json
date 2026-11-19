@@ -92,7 +92,8 @@
             "GOOGLE_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/callback",
             "MICROSOFT_REDIRECT_URI": "https://{{host}}/api/v1/calendar/auth/microsoft/callback",
             "TUTURUUU_NOINDEX": "1"
-          }
+          },
+          "admittedSourceServices": []
         }
       }
     },
@@ -202,7 +203,8 @@
             "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
             "MAIL_R2_BUCKET_NAME": "tuturuuu-mail-wave1-staging",
             "TUTURUUU_NOINDEX": "1"
-          }
+          },
+          "admittedSourceServices": []
         }
       }
     },
@@ -276,7 +278,8 @@
             "APPS_CANONICAL_HOST_ENABLED": "0",
             "INTERNAL_WEB_API_ORIGIN": "https://web.tutur3u.com",
             "TUTURUUU_NOINDEX": "1"
-          }
+          },
+          "admittedSourceServices": []
         }
       }
     },
@@ -337,7 +340,8 @@
             "FINANCE_APP_URL": "https://finance.tuturuuu.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co"
           },
-          "stagingPublicationVars": {}
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
         },
         "buildRecipe": {
           "appConfig": "apps/finance/void.config.ts",
@@ -428,7 +432,8 @@
           "sourceVars": {
             "TUTURUUU_NOINDEX": "0"
           },
-          "stagingPublicationVars": {}
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
         }
       }
     },
@@ -508,7 +513,8 @@
           "sourceVars": {
             "TUTURUUU_NOINDEX": "0"
           },
-          "stagingPublicationVars": {}
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
         }
       }
     },
@@ -586,7 +592,256 @@
           "sourceVars": {
             "TUTURUUU_NOINDEX": "0"
           },
-          "stagingPublicationVars": {}
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
+        }
+      }
+    },
+    "ai": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-ai",
+      "canonicalHost": "ai.tuturuuu.com",
+      "secrets": [
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "SUPABASE_SECRET_KEY",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "ai",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://ai.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "TUTURUUU_APP_COORDINATION_SECRET",
+          "SUPABASE_SECRET_KEY",
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "1"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/ai/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/v1/models",
+              "status": 401,
+              "redirectOrigin": null,
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-ai",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public",
+            "enable_request_signal"
+          ],
+          "sourceIdentity": "tuturuuu-ai-vite-staging",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": false
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "1"
+          },
+          "stagingPublicationVars": {},
+          "admittedSourceServices": []
+        }
+      }
+    },
+    "nova": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-nova",
+      "canonicalHost": "nova.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "nova",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://nova.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0",
+          "NODE_ENV": "production",
+          "TUTURUUU_REQUIRE_SECRETS": "1",
+          "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/nova",
+          "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/nova/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://tuturuuu.com",
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/robots.txt",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": false
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-nova",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-nova-vite-staging",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "1"
+          },
+          "stagingPublicationVars": {},
+          "admittedSourceServices": [
+            {
+              "binding": "ABUSE_GUARD",
+              "service": "tuturuuu-abuse-guard",
+              "entrypoint": "AbuseGuardEntrypoint"
+            }
+          ]
+        }
+      }
+    },
+    "rewise": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-rewise",
+      "canonicalHost": "rewise.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "rewise",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://rewise.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/rewise/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://tuturuuu.com",
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/robots.txt",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": false
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-rewise",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-rewise-vite-staging",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "1"
+          },
+          "stagingPublicationVars": {},
+          "admittedSourceServices": [
+            {
+              "binding": "ABUSE_GUARD",
+              "service": "tuturuuu-abuse-guard",
+              "entrypoint": "AbuseGuardEntrypoint"
+            }
+          ]
         }
       }
     }

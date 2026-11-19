@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import {
+  assertAllowedNoindex,
+  assertProductionOnlyVars,
+  allowsNonSecretVarName,
+  validateAdmittedSourceServices,
+} from './wave1-source-admissions.mjs';
 
 export function closedRecord(value, keys) {
   assert.ok(value && typeof value === 'object' && !Array.isArray(value));
@@ -83,8 +89,7 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
     assert.match(name, /^[A-Z][A-Z0-9_]*$/);
     assert.ok(!record.requiredSecretNames.includes(name));
     assert.ok(
-      !credentialName.test(name) ||
-        name === 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
+      !credentialName.test(name) || allowsNonSecretVarName(record.app, name)
     );
     assert.equal(typeof value, 'string');
     assert.ok(!/staging|tutur3u\.com|fxefojytwimjiqxseqag/i.test(value));
@@ -95,11 +100,7 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
       productionOrigin(url.origin, record.publicInputPins.includes(url.origin));
     }
   }
-  assert.ok(
-    !Object.hasOwn(record.allowedVars, 'TUTURUUU_NOINDEX') ||
-      record.allowedVars.TUTURUUU_NOINDEX === '0',
-    'Production noindex flag'
-  );
+  assertAllowedNoindex(record.app, record.allowedVars);
   closedRecord(record.buildRecipe, ['appConfig', 'script', 'command']);
   assert.equal(
     record.buildRecipe.appConfig,
@@ -153,6 +154,7 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
       'doctorExpectations',
       'sourceVars',
       'stagingPublicationVars',
+      'admittedSourceServices',
     ]);
     for (const vars of [
       record.cf.sourceVars,
@@ -162,19 +164,23 @@ export function validateReleaseRecipe(record, { validateVercelSection } = {}) {
       for (const [name, value] of Object.entries(vars)) {
         assert.match(name, /^[A-Z][A-Z0-9_]*$/);
         assert.ok(
-          !credentialName.test(name) ||
-            name === 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
+          !credentialName.test(name) || allowsNonSecretVarName(record.app, name)
         );
         assert.equal(typeof value, 'string');
         assert.ok(!value.replaceAll('{{host}}', '').includes('{{'));
       }
     }
-    if (record.cf.productionOnly)
-      assert.deepEqual(
+    validateAdmittedSourceServices(
+      record.app,
+      record.cf.admittedSourceServices ?? []
+    );
+    if (record.cf.productionOnly) {
+      assertProductionOnlyVars(
+        record.app,
         record.allowedVars,
-        record.cf.sourceVars,
-        'Production-only recipes publish exactly emitted vars'
+        record.cf.sourceVars
       );
+    }
     for (const [name, value] of Object.entries(
       record.cf.stagingPublicationVars
     )) {

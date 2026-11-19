@@ -5,6 +5,7 @@ import {
   assertRecipeSettings,
   validateReleaseRecipe,
 } from './release-recipe-config.mjs';
+import { assertSourceResources } from './wave1-source-admissions.mjs';
 
 export const profiles = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url), 'utf8')
@@ -210,8 +211,11 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
     recipe.cf.sourceVars,
     'Source vars require explicit profile review'
   );
-  for (const key of resourceKeys)
+  assertSourceResources(base, recipe);
+  for (const key of resourceKeys) {
+    if (key === 'services') continue;
     assert.ok(empty(base[key]), `Unadmitted source resource: ${key}`);
+  }
   assert.ok(empty(base.env), 'Named source environments are not admitted');
   if (base.account_id) assert.equal(base.account_id, profile.accountId);
   const production = profile.environment === 'production';
