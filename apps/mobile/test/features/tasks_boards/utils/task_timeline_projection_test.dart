@@ -130,6 +130,12 @@ void main() {
         '[design]',
         'design-a',
       ]);
+      expect(
+        projection.rows.whereType<TaskTimelineLane>().map(
+          (lane) => lane.bars.length,
+        ),
+        [2, 2, 1],
+      );
       final caption = projection.rows.first as TaskTimelineCaption;
       expect(caption.overdueCount, 2);
       expect(_bar(projection, 'late-1').daysLate, 1);
