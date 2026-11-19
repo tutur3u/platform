@@ -3514,7 +3514,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route.ts",
-    "sourceSha256": "9b3e019e2f5e7c526c483fdb474a0bf0a39fd9993dc42505fe027913386332a6",
+    "sourceSha256": "c2de04d2aa859be25e284a6dac242e78024e6a895842f73fbf018fe5f4f994fe",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
