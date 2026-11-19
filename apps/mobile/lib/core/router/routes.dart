@@ -52,7 +52,11 @@ abstract final class Routes {
   static String noteDetailPath(String noteId) =>
       Uri(path: notes, queryParameters: {'noteId': noteId}).toString();
   static const cms = '/cms';
+  static const contacts = '/contacts';
+
+  /// Previous Contacts route. Opens the same module as [contacts].
   static const crm = '/crm';
+  static const Set<String> contactLocations = {contacts, crm};
   static const meet = '/meet';
   static const mastermind = '/mastermind';
   static const mastermindInbox = '/mastermind/inbox';
@@ -298,8 +302,11 @@ abstract final class Routes {
     if (normalized == cms || normalized.startsWith('$cms/')) {
       return cms;
     }
-    if (normalized == crm || normalized.startsWith('$crm/')) {
-      return crm;
+    if (normalized == contacts ||
+        normalized.startsWith('$contacts/') ||
+        normalized == crm ||
+        normalized.startsWith('$crm/')) {
+      return contacts;
     }
     if (normalized == meet || normalized.startsWith('$meet/')) {
       return meet;

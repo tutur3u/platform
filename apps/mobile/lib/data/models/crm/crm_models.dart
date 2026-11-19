@@ -209,6 +209,42 @@ class CrmGroup extends Equatable {
   List<Object?> get props => [id, name];
 }
 
+class CrmGroupTag extends Equatable {
+  const CrmGroupTag({
+    required this.id,
+    required this.name,
+    this.groupIds = const <String>[],
+  });
+
+  factory CrmGroupTag.fromJson(Map<String, dynamic> json) {
+    final raw = json['group_ids'];
+    final ids = <String>[];
+    if (raw is List) {
+      for (final item in raw) {
+        if (item is Map) {
+          final id = crmAsString(item['group_id'] ?? item['id']);
+          if (id != null) ids.add(id);
+        } else {
+          final id = crmAsString(item);
+          if (id != null) ids.add(id);
+        }
+      }
+    }
+    return CrmGroupTag(
+      id: crmAsString(json['id']) ?? '',
+      name: crmAsString(json['name']) ?? '',
+      groupIds: ids,
+    );
+  }
+
+  final String id;
+  final String name;
+  final List<String> groupIds;
+
+  @override
+  List<Object?> get props => [id, name, groupIds];
+}
+
 class CrmFeedbackActor extends Equatable {
   const CrmFeedbackActor({
     required this.id,

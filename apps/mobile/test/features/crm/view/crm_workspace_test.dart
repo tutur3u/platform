@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -24,6 +25,13 @@ class Repository extends Mock implements CrmRepository {
   final requests = <(String, int, String)>[];
   Future<CrmUsersResult> Function(String, int, String)? read;
   Future<List<CrmGroup>> Function()? readGroups;
+  @override
+  Future<List<CrmGroupTag>> getGroupTags(
+    String wsId, {
+    int page = 1,
+    int pageSize = 100,
+  }) async => const <CrmGroupTag>[];
+
   @override
   Future<List<CrmGroup>> getGroups(
     String wsId, {
@@ -150,7 +158,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.longPress(find.text('Customer'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Edit'));
     await tester.pumpAndSettle();
@@ -169,11 +177,11 @@ void main() {
     repository.read = (_, _, _) => pending.future;
     await tester.pumpApp(page());
     await tester.pump(const Duration(milliseconds: 1));
-    expect(find.byKey(const ValueKey('crm-skeleton-0')), findsOneWidget);
-    expect(find.byKey(const ValueKey('crm-skeleton-2')), findsOneWidget);
+    expect(find.byType(AppSkeletonRows), findsOneWidget);
+    expect(find.bySemanticsLabel('Loading'), findsOneWidget);
     pending.complete(rows('Customer'));
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('crm-skeleton-0')), findsNothing);
+    expect(find.byType(AppSkeletonRows), findsNothing);
   });
 
   testWidgets(

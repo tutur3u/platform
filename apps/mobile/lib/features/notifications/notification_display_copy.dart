@@ -84,7 +84,7 @@ String notificationAppLabel(
   'drive' => l10n.driveTitle,
   'education' => l10n.educationTitle,
   'cms' => l10n.cmsTitleApp,
-  'crm' => l10n.crmTitle,
+  'crm' => l10n.contactsTitle,
   'habits' => l10n.navHabits,
   'timer' => l10n.navTimer,
   'storefront' => l10n.storefrontTitle,

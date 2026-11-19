@@ -126,8 +126,21 @@ extension _CrmPageData on _CrmPageState {
           }
         }
       }
+      var tags = _tags;
+      if (_canViewFeedbacks) {
+        try {
+          tags = await _repository.getGroupTags(wsId);
+        } on Object {
+          tags = _tags;
+        }
+      } else {
+        tags = const <CrmGroupTag>[];
+      }
       if (mounted && requestToken == _requestToken) {
-        _updateState(() => _groups = groups);
+        _updateState(() {
+          _groups = groups;
+          _tags = tags;
+        });
       }
     }
 

@@ -2439,6 +2439,42 @@ class AppLocalizationsVi extends AppLocalizations {
   String get counterAppBarTitle => 'Bộ đếm';
 
   @override
+  String get contactsDetails => 'Chi tiết';
+
+  @override
+  String get contactsEmpty => 'Chưa có liên hệ';
+
+  @override
+  String get contactsEmptyGroups => 'Chưa có nhóm';
+
+  @override
+  String get contactsEmptySearch => 'Không có liên hệ khớp với tìm kiếm';
+
+  @override
+  String get contactsEmptyTags => 'Chưa có thẻ';
+
+  @override
+  String get contactsGroups => 'Nhóm';
+
+  @override
+  String get contactsHeroQuestion => 'Ai cần được chú ý?';
+
+  @override
+  String get contactsPeople => 'Mọi người';
+
+  @override
+  String get contactsPermissionDenied => 'Bạn không có quyền xem danh bạ này.';
+
+  @override
+  String get contactsSearchHint => 'Tìm liên hệ theo tên, email hoặc số điện thoại';
+
+  @override
+  String get contactsTags => 'Thẻ';
+
+  @override
+  String get contactsTitle => 'Danh bạ';
+
+  @override
   String get crmAddFeedback => 'Thêm phản hồi';
 
   @override

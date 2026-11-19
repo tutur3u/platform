@@ -44,174 +44,129 @@ class _UsersFilterSheetState extends State<_UsersFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.commonFilters,
+            style: tokens.typography.large.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _FilterChoice(
+            title: l10n.crmStatus,
+            value: _status,
+            options: {
+              for (final value in [
+                'active',
+                'archived',
+                'archived_until',
+                'all',
+              ])
+                value: _crmStatusLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _status = value),
+          ),
+          _FilterChoice(
+            title: l10n.crmLinkStatus,
+            value: _linkStatus,
+            options: {
+              for (final value in ['all', 'linked', 'virtual'])
+                value: _crmLinkStatusLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _linkStatus = value),
+          ),
+          _FilterChoice(
+            title: l10n.crmRequireAttention,
+            value: _requireAttention,
+            options: {
+              for (final value in ['all', 'true', 'false'])
+                value: _crmRequireAttentionLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _requireAttention = value),
+          ),
+          _FilterChoice(
+            title: l10n.crmGroupMembership,
+            value: _groupMembership,
+            options: {
+              for (final value in ['all', 'with_groups', 'without_groups'])
+                value: _crmGroupMembershipLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _groupMembership = value),
+          ),
+          Text(
+            l10n.crmIncludedGroups,
+            style: tokens.typography.small.copyWith(
+              color: tokens.colorScheme.mutedForeground,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
-              Text(
-                context.l10n.commonFilters,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _status,
-                items: [
-                  DropdownMenuItem(
-                    value: 'active',
-                    child: Text(_crmStatusLabel(context, 'active')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'archived',
-                    child: Text(_crmStatusLabel(context, 'archived')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'archived_until',
-                    child: Text(_crmStatusLabel(context, 'archived_until')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'all',
-                    child: Text(_crmStatusLabel(context, 'all')),
-                  ),
-                ],
-                onChanged: (value) =>
-                    setState(() => _status = value ?? 'active'),
-                decoration: InputDecoration(labelText: context.l10n.crmStatus),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _linkStatus,
-                items: [
-                  DropdownMenuItem(
-                    value: 'all',
-                    child: Text(_crmLinkStatusLabel(context, 'all')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'linked',
-                    child: Text(_crmLinkStatusLabel(context, 'linked')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'virtual',
-                    child: Text(_crmLinkStatusLabel(context, 'virtual')),
-                  ),
-                ],
-                onChanged: (value) =>
-                    setState(() => _linkStatus = value ?? 'all'),
-                decoration: InputDecoration(
-                  labelText: context.l10n.crmLinkStatus,
+              for (final group in widget.groups)
+                AppChip(
+                  label: Text(group.name),
+                  selected: _includedGroups.contains(group.id),
+                  onSelected: (value) {
+                    setState(() {
+                      if (value) {
+                        _includedGroups.add(group.id);
+                      } else {
+                        _includedGroups.remove(group.id);
+                      }
+                    });
+                  },
                 ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _requireAttention,
-                items: [
-                  DropdownMenuItem(
-                    value: 'all',
-                    child: Text(_crmRequireAttentionLabel(context, 'all')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'true',
-                    child: Text(_crmRequireAttentionLabel(context, 'true')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'false',
-                    child: Text(_crmRequireAttentionLabel(context, 'false')),
-                  ),
-                ],
-                onChanged: (value) =>
-                    setState(() => _requireAttention = value ?? 'all'),
-                decoration: InputDecoration(
-                  labelText: context.l10n.crmRequireAttention,
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _groupMembership,
-                items: [
-                  DropdownMenuItem(
-                    value: 'all',
-                    child: Text(_crmGroupMembershipLabel(context, 'all')),
-                  ),
-                  DropdownMenuItem(
-                    value: 'with_groups',
-                    child: Text(
-                      _crmGroupMembershipLabel(context, 'with_groups'),
-                    ),
-                  ),
-                  DropdownMenuItem(
-                    value: 'without_groups',
-                    child: Text(
-                      _crmGroupMembershipLabel(context, 'without_groups'),
-                    ),
-                  ),
-                ],
-                onChanged: (value) =>
-                    setState(() => _groupMembership = value ?? 'all'),
-                decoration: InputDecoration(
-                  labelText: context.l10n.crmGroupMembership,
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(context.l10n.crmIncludedGroups),
-              Wrap(
-                spacing: 8,
-                children: widget.groups
-                    .map(
-                      (group) => FilterChip(
-                        label: Text(group.name),
-                        selected: _includedGroups.contains(group.id),
-                        onSelected: (value) {
-                          setState(() {
-                            if (value) {
-                              _includedGroups.add(group.id);
-                            } else {
-                              _includedGroups.remove(group.id);
-                            }
-                          });
-                        },
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-              const SizedBox(height: 16),
-              Text(context.l10n.crmExcludedGroups),
-              Wrap(
-                spacing: 8,
-                children: widget.groups
-                    .map(
-                      (group) => FilterChip(
-                        label: Text(group.name),
-                        selected: _excludedGroups.contains(group.id),
-                        onSelected: (value) {
-                          setState(() {
-                            if (value) {
-                              _excludedGroups.add(group.id);
-                            } else {
-                              _excludedGroups.remove(group.id);
-                            }
-                          });
-                        },
-                      ),
-                    )
-                    .toList(growable: false),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => Navigator.of(context).pop({
-                  'status': _status,
-                  'linkStatus': _linkStatus,
-                  'requireAttention': _requireAttention,
-                  'groupMembership': _groupMembership,
-                  'includedGroups': _includedGroups,
-                  'excludedGroups': _excludedGroups,
-                }),
-                child: Text(context.l10n.commonApply),
-              ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            l10n.crmExcludedGroups,
+            style: tokens.typography.small.copyWith(
+              color: tokens.colorScheme.mutedForeground,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final group in widget.groups)
+                AppChip(
+                  label: Text(group.name),
+                  selected: _excludedGroups.contains(group.id),
+                  onSelected: (value) {
+                    setState(() {
+                      if (value) {
+                        _excludedGroups.add(group.id);
+                      } else {
+                        _excludedGroups.remove(group.id);
+                      }
+                    });
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppButton.primary(
+            onPressed: () => Navigator.of(context).pop({
+              'status': _status,
+              'linkStatus': _linkStatus,
+              'requireAttention': _requireAttention,
+              'groupMembership': _groupMembership,
+              'includedGroups': _includedGroups,
+              'excludedGroups': _excludedGroups,
+            }),
+            child: Text(l10n.commonApply),
+          ),
+        ],
       ),
     );
   }
@@ -262,118 +217,122 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              context.l10n.commonFilters,
-              style: Theme.of(context).textTheme.titleLarge,
+    final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.commonFilters,
+            style: tokens.typography.large.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(context.l10n.crmAuditRange),
-              subtitle: Text(
-                '${DateFormat.yMMMd().format(_range.start)} - '
-                '${DateFormat.yMMMd().format(_range.end)}',
-              ),
-              onTap: () async {
-                final picked = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now(),
-                  initialDateRange: _range,
-                );
-                if (picked != null) setState(() => _range = picked);
-              },
+          ),
+          AppGroupedRow(
+            title: Text(l10n.crmAuditRange),
+            subtitle: Text(
+              '${DateFormat.yMMMd().format(_range.start)} - '
+              '${DateFormat.yMMMd().format(_range.end)}',
             ),
-            DropdownButtonFormField<String>(
-              initialValue: _eventKind,
-              items: [
-                DropdownMenuItem(
-                  value: 'all',
-                  child: Text(_crmAuditEventLabel(context, 'all')),
-                ),
-                DropdownMenuItem(
-                  value: 'created',
-                  child: Text(_crmAuditEventLabel(context, 'created')),
-                ),
-                DropdownMenuItem(
-                  value: 'updated',
-                  child: Text(_crmAuditEventLabel(context, 'updated')),
-                ),
-                DropdownMenuItem(
-                  value: 'archived',
-                  child: Text(_crmAuditEventLabel(context, 'archived')),
-                ),
-                DropdownMenuItem(
-                  value: 'reactivated',
-                  child: Text(_crmAuditEventLabel(context, 'reactivated')),
-                ),
-                DropdownMenuItem(
-                  value: 'deleted',
-                  child: Text(_crmAuditEventLabel(context, 'deleted')),
-                ),
-              ],
-              onChanged: (value) => setState(() => _eventKind = value ?? 'all'),
-              decoration: InputDecoration(
-                labelText: context.l10n.crmAuditEvent,
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _source,
-              items: [
-                DropdownMenuItem(
-                  value: 'all',
-                  child: Text(_crmAuditSourceLabel(context, 'all')),
-                ),
-                DropdownMenuItem(
-                  value: 'live',
-                  child: Text(_crmAuditSourceLabel(context, 'live')),
-                ),
-                DropdownMenuItem(
-                  value: 'backfilled',
-                  child: Text(_crmAuditSourceLabel(context, 'backfilled')),
-                ),
-              ],
-              onChanged: (value) => setState(() => _source = value ?? 'all'),
-              decoration: InputDecoration(
-                labelText: context.l10n.crmAuditSource,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _affectedController,
-              decoration: InputDecoration(
-                hintText: context.l10n.inputPlaceholderUserId,
-                labelText: context.l10n.crmAuditAffectedUser,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _actorController,
-              decoration: InputDecoration(
-                hintText: context.l10n.inputPlaceholderUserId,
-                labelText: context.l10n.crmAuditActor,
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop({
-                'range': _range,
-                'eventKind': _eventKind,
-                'source': _source,
-                'affectedUserQuery': _affectedController.text.trim(),
-                'actorQuery': _actorController.text.trim(),
-              }),
-              child: Text(context.l10n.commonApply),
-            ),
-          ],
-        ),
+            onTap: () async {
+              final start = await showAppDatePicker(
+                context: context,
+                initialDate: _range.start,
+                firstDate: DateTime(2020),
+                lastDate: DateTime.now(),
+              );
+              if (start == null || !context.mounted) return;
+              final end = await showAppDatePicker(
+                context: context,
+                initialDate: _range.end.isBefore(start) ? start : _range.end,
+                firstDate: start,
+                lastDate: DateTime.now(),
+              );
+              if (end == null || !context.mounted) return;
+              setState(() => _range = DateTimeRange(start: start, end: end));
+            },
+          ),
+          _FilterChoice(
+            title: l10n.crmAuditEvent,
+            value: _eventKind,
+            options: {
+              for (final value in [
+                'all',
+                'created',
+                'updated',
+                'archived',
+                'reactivated',
+                'deleted',
+              ])
+                value: _crmAuditEventLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _eventKind = value),
+          ),
+          _FilterChoice(
+            title: l10n.crmAuditSource,
+            value: _source,
+            options: {
+              for (final value in ['all', 'live', 'backfilled'])
+                value: _crmAuditSourceLabel(context, value),
+            },
+            onChanged: (value) => setState(() => _source = value),
+          ),
+          AppTextField(
+            controller: _affectedController,
+            label: l10n.crmAuditAffectedUser,
+            placeholder: l10n.inputPlaceholderUserId,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _actorController,
+            label: l10n.crmAuditActor,
+            placeholder: l10n.inputPlaceholderUserId,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppButton.primary(
+            onPressed: () => Navigator.of(context).pop({
+              'range': _range,
+              'eventKind': _eventKind,
+              'source': _source,
+              'affectedUserQuery': _affectedController.text.trim(),
+              'actorQuery': _actorController.text.trim(),
+            }),
+            child: Text(l10n.commonApply),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FilterChoice extends StatelessWidget {
+  const _FilterChoice({
+    required this.title,
+    required this.value,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String value;
+  final Map<String, String> options;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: AppSelect<String>(
+        title: title,
+        placeholder: title,
+        value: value,
+        options: [
+          for (final entry in options.entries)
+            AppSelectOption(value: entry.key, label: entry.value),
+        ],
+        onChanged: onChanged,
       ),
     );
   }

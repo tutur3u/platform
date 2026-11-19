@@ -2,6 +2,8 @@ part of 'crm_page.dart';
 
 enum _CrmTab { users, audit }
 
+enum _ContactDirectory { people, groups, tags }
+
 String _crmStatusLabel(BuildContext context, String value) {
   switch (value) {
     case 'archived':

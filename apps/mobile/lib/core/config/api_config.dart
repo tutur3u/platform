@@ -583,6 +583,20 @@ abstract final class CrmEndpoints {
     return '/api/v1/workspaces/$wsId/users/groups$suffix';
   }
 
+  static String groupTags(String wsId, {int? page, int? pageSize}) {
+    final params = <String, String>{};
+    if (page != null) {
+      params['page'] = '$page';
+    }
+    if (pageSize != null) {
+      params['pageSize'] = '$pageSize';
+    }
+    final suffix = params.isEmpty
+        ? ''
+        : '?${Uri(queryParameters: params).query}';
+    return '/api/v1/workspaces/$wsId/group-tags$suffix';
+  }
+
   static String feedbacks(
     String wsId, {
     String? query,

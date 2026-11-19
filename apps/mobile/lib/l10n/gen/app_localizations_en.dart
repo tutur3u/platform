@@ -2453,6 +2453,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get counterAppBarTitle => 'Counter';
 
   @override
+  String get contactsDetails => 'Details';
+
+  @override
+  String get contactsEmpty => 'No contacts yet';
+
+  @override
+  String get contactsEmptyGroups => 'No groups yet';
+
+  @override
+  String get contactsEmptySearch => 'No contacts match this search';
+
+  @override
+  String get contactsEmptyTags => 'No tags yet';
+
+  @override
+  String get contactsGroups => 'Groups';
+
+  @override
+  String get contactsHeroQuestion => 'Who needs attention?';
+
+  @override
+  String get contactsPeople => 'People';
+
+  @override
+  String get contactsPermissionDenied => 'You do not have permission to view contacts.';
+
+  @override
+  String get contactsSearchHint => 'Search contacts by name, email, or phone';
+
+  @override
+  String get contactsTags => 'Tags';
+
+  @override
+  String get contactsTitle => 'Contacts';
+
+  @override
   String get crmAddFeedback => 'Add feedback';
 
   @override

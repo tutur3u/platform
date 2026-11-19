@@ -51,6 +51,7 @@ class AppRegistry {
       builder: (context, state) =>
           CalendarPage(initialEventId: state.pathParameters['eventId']),
     ),
+    GoRoute(path: Routes.crm, redirect: (_, _) => Routes.contacts),
   ];
 
   static const Set<String> coreModuleIds = {'tasks', 'calendar', 'finance'};
@@ -154,7 +155,7 @@ class AppRegistry {
     ),
     AppModule(
       id: 'crm',
-      route: Routes.crm,
+      route: Routes.contacts,
       icon: Icons.badge_outlined,
       labelBuilder: _labelCrm,
       pageBuilder: _pageCrm,
@@ -348,7 +349,7 @@ class AppRegistry {
   static const List<MiniAppNavItem> _crmMiniNav = [
     MiniAppNavItem(
       id: 'crm_home',
-      route: Routes.crm,
+      route: Routes.contacts,
       icon: Icons.badge_outlined,
       labelBuilder: _labelCrm,
     ),
@@ -530,6 +531,10 @@ class AppRegistry {
     final normalizedLocation = normalize(location);
     if (Routes.isSettingsHubLocation(normalizedLocation)) {
       return moduleById('settings');
+    }
+    if (normalizedLocation == Routes.crm ||
+        normalizedLocation.startsWith('${Routes.crm}/')) {
+      return moduleById('crm');
     }
     for (final module in allModules) {
       final normalizedRoute = normalize(module.route);

@@ -190,6 +190,22 @@ class CrmRepository {
         .toList(growable: false);
   }
 
+  Future<List<CrmGroupTag>> getGroupTags(
+    String wsId, {
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    final response = await _read(
+      wsId,
+      'group-tags',
+      CrmEndpoints.groupTags(wsId, page: page, pageSize: pageSize),
+    );
+    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(CrmGroupTag.fromJson)
+        .toList(growable: false);
+  }
+
   Future<CrmFeedbackResult> getFeedbacks(
     String wsId, {
     String? query,

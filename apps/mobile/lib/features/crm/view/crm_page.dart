@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,6 +13,7 @@ import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
@@ -20,32 +21,30 @@ import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/crm/utils/contact_identity.dart';
 import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/crm/view/contact_list_row.dart';
+import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:share_plus/share_plus.dart';
 
-part 'crm_duplicate_users_sheet.dart';
 part 'crm_feedback_sheet.dart';
 part 'crm_filter_sheets.dart';
-part 'crm_loading_rows.dart';
 part 'crm_owned_overlay.dart';
 part 'crm_page_actions.dart';
 part 'crm_page_data.dart';
 part 'crm_page_helpers.dart';
 part 'crm_page_layout.dart';
-part 'crm_user_card.dart';
 part 'crm_user_detail.dart';
 part 'crm_user_form.dart';
 part 'crm_view_components.dart';
@@ -96,7 +95,9 @@ class _CrmPageState extends State<CrmWorkspace> {
   Timer? _searchDebounce;
 
   _CrmTab _tab = _CrmTab.users;
+  _ContactDirectory _directory = _ContactDirectory.people;
   List<CrmUser> _users = const <CrmUser>[];
+  List<CrmGroupTag> _tags = const <CrmGroupTag>[];
   List<CrmAuditEvent> _auditEvents = const <CrmAuditEvent>[];
   List<CrmGroup> _groups = const <CrmGroup>[];
   bool _isLoading = true;
@@ -183,6 +184,7 @@ class _CrmPageState extends State<CrmWorkspace> {
   void _maybeLoadMore() {
     if (_selectedUser == null &&
         !_pagingFailed &&
+        (_tab != _CrmTab.users || _directory == _ContactDirectory.people) &&
         _scrollController.hasClients &&
         _scrollController.position.extentAfter < 400) {
       unawaited(_loadMore());

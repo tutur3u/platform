@@ -65,31 +65,25 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
           builder: (context, setState) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButtonFormField<String>(
-                initialValue: selectedGroupId,
-                items: widget.groups
-                    .map(
-                      (group) => DropdownMenuItem(
-                        value: group.id,
-                        child: Text(group.name),
-                      ),
-                    )
-                    .toList(growable: false),
+              AppSelect<String>(
+                title: context.l10n.crmGroup,
+                placeholder: context.l10n.crmGroup,
+                value: selectedGroupId,
+                options: [
+                  for (final group in widget.groups)
+                    AppSelectOption(value: group.id, label: group.name),
+                ],
                 onChanged: (value) => setState(() => selectedGroupId = value),
-                decoration: InputDecoration(labelText: context.l10n.crmGroup),
               ),
-              const SizedBox(height: 12),
-              TextField(
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
                 controller: contentController,
                 minLines: 3,
                 maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderFeedback,
-                  labelText: context.l10n.crmFeedback,
-                ),
+                placeholder: context.l10n.inputPlaceholderFeedback,
+                label: context.l10n.crmFeedback,
               ),
               AppToggleRow(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
                 value: requireAttention,
                 onChanged: (value) => setState(() => requireAttention = value),
                 title: Text(context.l10n.crmRequireAttention),
@@ -140,84 +134,91 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
     await _load();
   }
 
+  Future<void> _feedbackActions(CrmFeedback item) async {
+    final l10n = context.l10n;
+    final action = await showAppActionSheet<String>(
+      context: context,
+      title: item.groupName ?? item.group?.name ?? l10n.crmFeedback,
+      actions: [
+        AppSheetAction(
+          label: l10n.commonEdit,
+          value: 'edit',
+          icon: LucideIcons.pencil,
+        ),
+        AppSheetAction(
+          label: l10n.commonDelete,
+          value: 'delete',
+          icon: LucideIcons.trash2,
+          destructive: true,
+        ),
+      ],
+    );
+    if (!mounted || action == null) return;
+    if (action == 'edit') {
+      await _editFeedback(item);
+    } else if (action == 'delete') {
+      await _deleteFeedback(item);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.l10n.crmFeedbackFor(widget.user.label),
-              style: Theme.of(context).textTheme.titleLarge,
+    final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.crmFeedbackFor(contactPrimaryNameFor(widget.user)),
+            style: tokens.typography.large.copyWith(
+              fontWeight: FontWeight.w600,
             ),
-            const SizedBox(height: 16),
-            if (widget.canManageFeedbacks)
-              FilledButton.tonalIcon(
-                onPressed: _editFeedback,
-                icon: const Icon(Icons.add_comment_outlined),
-                label: Text(context.l10n.crmAddFeedback),
-              ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _loading
-                  ? const AppLoadingIndicator.page()
-                  : NovaRefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: _items
-                            .map(
-                              (item) => PendingSyncFrame(
-                                workspaceId: widget.wsId,
-                                feature: 'crm',
-                                entityId: item.id,
-                                child: Card(
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  child: ListTile(
-                                    title: Text(
-                                      item.groupName ?? item.group?.name ?? '',
-                                    ),
-                                    subtitle: Text(item.content),
-                                    trailing: widget.canManageFeedbacks
-                                        ? PopupMenuButton<String>(
-                                            onSelected: (value) {
-                                              if (value == 'edit') {
-                                                unawaited(_editFeedback(item));
-                                              }
-                                              if (value == 'delete') {
-                                                unawaited(
-                                                  _deleteFeedback(item),
-                                                );
-                                              }
-                                            },
-                                            itemBuilder: (context) => [
-                                              PopupMenuItem(
-                                                value: 'edit',
-                                                child: Text(
-                                                  context.l10n.commonEdit,
-                                                ),
-                                              ),
-                                              PopupMenuItem(
-                                                value: 'delete',
-                                                child: Text(
-                                                  context.l10n.commonDelete,
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        : null,
-                                  ),
-                                ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          if (widget.canManageFeedbacks)
+            AppButton.secondary(
+              onPressed: _editFeedback,
+              leading: const Icon(LucideIcons.messageCircle),
+              child: Text(l10n.crmAddFeedback),
+            ),
+          const SizedBox(height: AppSpacing.lg),
+          Expanded(
+            child: _loading
+                ? const AppLoadingIndicator.page()
+                : NovaRefreshIndicator(
+                    onRefresh: _load,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        for (var index = 0; index < _items.length; index++)
+                          PendingSyncFrame(
+                            workspaceId: widget.wsId,
+                            feature: 'crm',
+                            entityId: _items[index].id,
+                            child: AppGroupedSlice(
+                              position: AppSlicePosition.of(
+                                index,
+                                _items.length,
                               ),
-                            )
-                            .toList(growable: false),
-                      ),
+                              child: AppRichRow(
+                                title:
+                                    _items[index].groupName ??
+                                    _items[index].group?.name ??
+                                    '',
+                                subtitle: _items[index].content,
+                                onLongPress: widget.canManageFeedbacks
+                                    ? () => _feedbackActions(_items[index])
+                                    : null,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-            ),
-          ],
-        ),
+                  ),
+          ),
+        ],
       ),
     );
   }

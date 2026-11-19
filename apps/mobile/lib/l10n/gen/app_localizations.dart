@@ -4765,6 +4765,78 @@ abstract class AppLocalizations {
   /// **'Counter'**
   String get counterAppBarTitle;
 
+  /// No description provided for @contactsDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get contactsDetails;
+
+  /// No description provided for @contactsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet'**
+  String get contactsEmpty;
+
+  /// No description provided for @contactsEmptyGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'No groups yet'**
+  String get contactsEmptyGroups;
+
+  /// No description provided for @contactsEmptySearch.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts match this search'**
+  String get contactsEmptySearch;
+
+  /// No description provided for @contactsEmptyTags.
+  ///
+  /// In en, this message translates to:
+  /// **'No tags yet'**
+  String get contactsEmptyTags;
+
+  /// No description provided for @contactsGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get contactsGroups;
+
+  /// No description provided for @contactsHeroQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Who needs attention?'**
+  String get contactsHeroQuestion;
+
+  /// No description provided for @contactsPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'People'**
+  String get contactsPeople;
+
+  /// No description provided for @contactsPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission to view contacts.'**
+  String get contactsPermissionDenied;
+
+  /// No description provided for @contactsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contacts by name, email, or phone'**
+  String get contactsSearchHint;
+
+  /// No description provided for @contactsTags.
+  ///
+  /// In en, this message translates to:
+  /// **'Tags'**
+  String get contactsTags;
+
+  /// No description provided for @contactsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Contacts'**
+  String get contactsTitle;
+
   /// No description provided for @crmAddFeedback.
   ///
   /// In en, this message translates to:

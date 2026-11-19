@@ -55,17 +55,12 @@ extension _CrmPageActions on _CrmPageState {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(dialogContext.l10n.crmImportPreview(items.length)),
-              const SizedBox(height: 12),
-              ...items
-                  .take(5)
-                  .map(
-                    (item) => ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(item['fullName'] as String),
-                      subtitle: Text(item['email'] as String),
-                    ),
-                  ),
+              const SizedBox(height: AppSpacing.md),
+              for (final item in items.take(5))
+                AppRichRow(
+                  title: collapseContactName(item['fullName'] as String),
+                  subtitle: item['email'] as String,
+                ),
             ],
           ),
         ),
@@ -204,7 +199,7 @@ extension _CrmPageActions on _CrmPageState {
         context: context,
         builder: (context) => FractionallySizedBox(
           heightFactor: 0.88,
-          child: _DuplicateUsersSheet(
+          child: ContactMergeSheet(
             result: result,
             onMerge: (sourceId, targetId) => _repository.mergeUsers(
               wsId,
@@ -273,34 +268,33 @@ extension _CrmPageActions on _CrmPageState {
   }
 
   Future<void> _showCrmToolsSheet() async {
+    final l10n = context.l10n;
     final action = await _showOwnedSheet<String>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_canCreateUsers)
-              ListTile(
-                leading: const Icon(Icons.upload_file_outlined),
-                title: Text(context.l10n.crmImportUsers),
-                onTap: () => Navigator.of(context).pop('import'),
-              ),
-            if (_canViewUsers)
-              ListTile(
-                leading: const Icon(Icons.download_outlined),
-                title: Text(context.l10n.crmExportUsers),
-                onTap: () => Navigator.of(context).pop('export'),
-              ),
-            if (_canViewUsers &&
-                _workspacePermissions.containsPermission('delete_users') &&
-                _workspacePermissions.containsPermission('update_users'))
-              ListTile(
-                leading: const Icon(Icons.merge_type_rounded),
-                title: Text(context.l10n.crmDetectDuplicates),
-                onTap: () => Navigator.of(context).pop('duplicates'),
-              ),
-          ],
-        ),
+      builder: (context) => AppActionSheet<String>(
+        title: l10n.appsHubMoreTools,
+        actions: [
+          if (_canCreateUsers)
+            AppSheetAction(
+              label: l10n.crmImportUsers,
+              value: 'import',
+              icon: LucideIcons.upload,
+            ),
+          if (_canViewUsers)
+            AppSheetAction(
+              label: l10n.crmExportUsers,
+              value: 'export',
+              icon: LucideIcons.download,
+            ),
+          if (_canViewUsers &&
+              _workspacePermissions.containsPermission('delete_users') &&
+              _workspacePermissions.containsPermission('update_users'))
+            AppSheetAction(
+              label: l10n.crmDetectDuplicates,
+              value: 'duplicates',
+              icon: LucideIcons.gitMerge,
+            ),
+        ],
       ),
     );
 
@@ -316,20 +310,54 @@ extension _CrmPageActions on _CrmPageState {
     }
   }
 
-  void _toast(String message, {bool destructive = false}) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => shad.SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(color: destructive ? Colors.red : null),
-          ),
-        ),
+  Future<void> _showContactActions(CrmUser user) async {
+    final l10n = context.l10n;
+    final action = await _showOwnedSheet<String>(
+      context: context,
+      builder: (context) => AppActionSheet<String>(
+        title: contactPrimaryNameFor(user),
+        actions: [
+          if (_canUpdateUsers)
+            AppSheetAction(
+              label: l10n.commonEdit,
+              value: 'edit',
+              icon: LucideIcons.pencil,
+            ),
+          if (_canViewFeedbacks)
+            AppSheetAction(
+              label: l10n.crmFeedbackAction,
+              value: 'feedback',
+              icon: LucideIcons.messageCircle,
+            ),
+          if (_canDeleteUsers)
+            AppSheetAction(
+              label: l10n.commonDelete,
+              value: 'delete',
+              icon: LucideIcons.trash2,
+              destructive: true,
+            ),
+        ],
       ),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'edit':
+        await _showUserSheet(user: user);
+      case 'feedback':
+        await _showFeedbackSheet(user);
+      case 'delete':
+        await _deleteUser(user);
+    }
+  }
+
+  void _toast(String message, {bool destructive = false}) {
+    if (!mounted) return;
+    showAppToast(
+      context,
+      message: message,
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.neutral,
     );
   }
 }

@@ -129,21 +129,11 @@ class _UserFormSheetState extends State<_UserFormSheet> {
   }
 
   void _showError(String message) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) return;
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => shad.SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(
-              color: shad.Theme.of(context).colorScheme.destructive,
-            ),
-          ),
-        ),
-      ),
+    if (!mounted) return;
+    showAppToast(
+      context,
+      message: message,
+      variant: AppAlertVariant.destructive,
     );
   }
 
@@ -172,155 +162,130 @@ class _UserFormSheetState extends State<_UserFormSheet> {
     final fallbackImage = widget.initialUser?.avatarUrl == null
         ? null
         : NetworkImage(widget.initialUser!.avatarUrl!);
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final tokens = AppTokens.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.initialUser == null ? l10n.crmCreateUser : l10n.commonEdit,
+            style: tokens.typography.large.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
             children: [
-              Text(
-                widget.initialUser == null
-                    ? l10n.crmCreateUser
-                    : l10n.commonEdit,
-                style: Theme.of(context).textTheme.titleLarge,
+              CircleAvatar(
+                radius: 28,
+                backgroundColor: AppTone.info.fill(tokens.colorScheme),
+                backgroundImage: avatarImage ?? fallbackImage,
+                foregroundColor: AppTone.info.foreground(tokens.colorScheme),
+                child: avatarImage == null && fallbackImage == null
+                    ? Text(avatarLabel)
+                    : null,
               ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundImage: avatarImage ?? fallbackImage,
-                    child: avatarImage == null && fallbackImage == null
-                        ? Text(avatarLabel)
-                        : null,
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.tonalIcon(
-                    onPressed: widget.canEdit ? _pickAvatar : null,
-                    icon: const Icon(Icons.image_outlined),
-                    label: Text(l10n.crmUploadAvatar),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _fullNameController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderFullName,
-                  labelText: l10n.crmFullName,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _displayNameController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderDisplayName,
-                  labelText: l10n.crmDisplayName,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.profileEmailHint,
-                  labelText: l10n.emailLabel,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderPhone,
-                  labelText: l10n.crmPhone,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _addressController,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderAddress,
-                  labelText: l10n.crmAddress,
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _noteController,
-                minLines: 3,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: context.l10n.inputPlaceholderNote,
-                  labelText: l10n.crmNote,
-                ),
-              ),
-              const SizedBox(height: 12),
-              AppToggleRow(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                value: _isGuest,
-                onChanged: (value) => setState(() => _isGuest = value),
-                title: Text(l10n.crmGuestUser),
-              ),
-              AppToggleRow(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                value: _archived,
-                onChanged: (value) => setState(() => _archived = value),
-                title: Text(l10n.crmArchived),
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.crmBirthday),
-                subtitle: Text(
-                  _birthday == null
-                      ? l10n.commonSelectDate
-                      : DateFormat.yMMMd().format(_birthday!),
-                ),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _birthday ?? DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) setState(() => _birthday = picked);
-                },
-              ),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(l10n.crmArchivedUntil),
-                subtitle: Text(
-                  _archivedUntil == null
-                      ? l10n.commonSelectDate
-                      : DateFormat.yMMMd().format(_archivedUntil!),
-                ),
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _archivedUntil ?? DateTime.now(),
-                    firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  );
-                  if (picked != null) setState(() => _archivedUntil = picked);
-                },
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _saving || !widget.canEdit ? null : _submit,
-                child: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: NovaLoadingIndicator(size: 20),
-                      )
-                    : Text(l10n.commonSave),
+              const SizedBox(width: AppSpacing.md),
+              AppButton.outline(
+                onPressed: widget.canEdit ? _pickAvatar : null,
+                leading: const Icon(LucideIcons.image),
+                child: Text(l10n.crmUploadAvatar),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: AppSpacing.lg),
+          AppTextField(
+            controller: _fullNameController,
+            label: l10n.crmFullName,
+            placeholder: l10n.inputPlaceholderFullName,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _displayNameController,
+            label: l10n.crmDisplayName,
+            placeholder: l10n.inputPlaceholderDisplayName,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _emailController,
+            label: l10n.emailLabel,
+            placeholder: l10n.profileEmailHint,
+            keyboardType: TextInputType.emailAddress,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _phoneController,
+            label: l10n.crmPhone,
+            placeholder: l10n.inputPlaceholderPhone,
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _addressController,
+            label: l10n.crmAddress,
+            placeholder: l10n.inputPlaceholderAddress,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            controller: _noteController,
+            label: l10n.crmNote,
+            placeholder: l10n.inputPlaceholderNote,
+            minLines: 3,
+            maxLines: 5,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppToggleRow(
+            value: _isGuest,
+            onChanged: (value) => setState(() => _isGuest = value),
+            title: Text(l10n.crmGuestUser),
+          ),
+          AppToggleRow(
+            value: _archived,
+            onChanged: (value) => setState(() => _archived = value),
+            title: Text(l10n.crmArchived),
+          ),
+          AppGroupedRow(
+            title: Text(l10n.crmBirthday),
+            subtitle: Text(
+              _birthday == null
+                  ? l10n.commonSelectDate
+                  : DateFormat.yMMMd().format(_birthday!),
+            ),
+            onTap: () async {
+              final picked = await showAppDatePicker(
+                context: context,
+                initialDate: _birthday ?? DateTime.now(),
+                firstDate: DateTime(1900),
+                lastDate: DateTime.now(),
+              );
+              if (picked != null) setState(() => _birthday = picked);
+            },
+          ),
+          AppGroupedRow(
+            title: Text(l10n.crmArchivedUntil),
+            subtitle: Text(
+              _archivedUntil == null
+                  ? l10n.commonSelectDate
+                  : DateFormat.yMMMd().format(_archivedUntil!),
+            ),
+            onTap: () async {
+              final picked = await showAppDatePicker(
+                context: context,
+                initialDate: _archivedUntil ?? DateTime.now(),
+                firstDate: DateTime.now(),
+                lastDate: DateTime.now().add(const Duration(days: 3650)),
+              );
+              if (picked != null) setState(() => _archivedUntil = picked);
+            },
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppButton.primary(
+            loading: _saving,
+            onPressed: !widget.canEdit || _saving ? null : _submit,
+            child: Text(l10n.commonSave),
+          ),
+        ],
       ),
     );
   }
