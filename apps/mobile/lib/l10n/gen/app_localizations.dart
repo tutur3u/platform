@@ -24157,11 +24157,23 @@ abstract class AppLocalizations {
   /// **'Try another name or plan, or clear the search.'**
   String get workspacePickerNoResultsMessage;
 
+  /// No description provided for @workspacePickerRootSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Root workspace'**
+  String get workspacePickerRootSection;
+
   /// No description provided for @workspacePickerTeamBadge.
   ///
   /// In en, this message translates to:
   /// **'Team'**
   String get workspacePickerTeamBadge;
+
+  /// No description provided for @workspacePickerTeamsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Teams'**
+  String get workspacePickerTeamsSection;
 
   /// No description provided for @mastermindAccountFilter.
   ///

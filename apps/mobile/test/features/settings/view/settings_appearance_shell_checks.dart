@@ -85,7 +85,7 @@ void registerSettingsAppearanceShellChecks() {
 
       await _tapRow(tester, const ValueKey('settings-appearance-row'));
       expect(h.router.state.matchedLocation, Routes.settingsAppearance);
-      expect(find.byType(MorphingNavigationBar), findsOneWidget);
+      expect(_settingsDockBack(), findsOneWidget);
       // Gallery swatches add static previews; the page layer stays single.
       expect(
         _ambientLayers(tester).where((layer) => layer.motion != null),
@@ -294,10 +294,7 @@ void registerSettingsAppearanceShellChecks() {
       final reset = tester.getRect(
         find.byKey(const ValueKey('appearance-reset')),
       );
-      expect(
-        reset.bottom,
-        lessThan(tester.getRect(find.byType(MorphingNavigationBar)).top),
-      );
+      expect(reset.bottom, lessThan(tester.getRect(_settingsDockBack()).top));
       await _capture(tester, 'appearance-ember-$locale-large-text');
       expect(tester.takeException(), isNull);
     });

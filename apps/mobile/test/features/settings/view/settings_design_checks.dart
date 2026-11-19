@@ -131,7 +131,7 @@ void registerSettingsDesignChecks() {
     await tester.pump(const Duration(seconds: 2));
     await _settle(tester);
     final lastRow = find.byType(SettingsTile).last;
-    final dock = find.byType(MorphingNavigationBar);
+    final dock = _settingsDockBack();
     expect(tester.getRect(lastRow).bottom, lessThan(tester.getRect(dock).top));
     await _capture(tester, 'settings-root-end');
     expect(find.byType(AppBar), findsNothing);
@@ -207,7 +207,7 @@ void registerSettingsDesignChecks() {
         await _capture(tester, 'settings-$locale-${mode.name}-large-text');
         await _tapRow(tester, const ValueKey('settings-offline-row'));
         expect(find.byType(OfflinePage), findsOneWidget);
-        expect(find.byType(MorphingNavigationBar), findsOneWidget);
+        expect(_settingsDockBack(), findsOneWidget);
         expect(tester.takeException(), isNull);
         // Dispose immediately after repeated scroll-end notifications. Every
         // dock return timer must be cancelled without advancing fake time.

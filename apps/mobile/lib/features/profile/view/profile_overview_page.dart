@@ -11,13 +11,10 @@ import 'package:mobile/features/profile/view/profile_focus_time_section.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
 import 'package:mobile/features/profile/view/profile_sections.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
-import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
-import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
-import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
@@ -123,18 +120,6 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
           ownerId: _ownerId,
           locations: _locations,
           title: l10n.profileTitle,
-        ),
-        ShellChromeActions(
-          ownerId: _ownerId,
-          locations: _locations,
-          actions: [
-            ShellActionSpec(
-              id: 'profile-workspace-picker',
-              icon: LucideIcons.building2,
-              tooltip: l10n.settingsSwitchWorkspace,
-              onPressed: () => showWorkspacePickerSheet(context),
-            ),
-          ],
         ),
       ],
     );

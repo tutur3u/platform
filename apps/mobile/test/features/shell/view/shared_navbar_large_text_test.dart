@@ -35,6 +35,7 @@ import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
+import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -411,9 +412,7 @@ void main() {
           );
           Rect? selectorRect;
           if (profileSection) {
-            final selector = find.byKey(
-              const ValueKey('shell-action-button-profile-workspace-picker'),
-            );
+            final selector = find.byType(ShellWorkspacePicker);
             expect(selector, findsOneWidget);
             selectorRect = tester.getRect(selector);
             expect(selectorRect.width, greaterThanOrEqualTo(44));

@@ -38,7 +38,7 @@ Future<void> _pump(
   WidgetTester tester, {
   ShellDockEntry? back,
   bool labelled = true,
-  double width = 306,
+  double width = 366,
   SorbetTheme? sorbet,
   List<ShellDockEntry>? entries,
   Key? selectedKey = const ValueKey('Home'),
@@ -97,7 +97,7 @@ void main() {
     expect(find.byKey(const ValueKey('shell-dock-back')), findsNothing);
   });
 
-  testWidgets('Back appears at the leading edge inside the same pill', (
+  testWidgets('Back appears in its own circle to the left of the pill', (
     tester,
   ) async {
     Key? selected;
@@ -114,7 +114,7 @@ void main() {
     );
     expect(tester.getRect(find.byKey(_pill)), pillAtRest);
     final back = tester.getRect(find.byKey(const ValueKey('shell-dock-back')));
-    expect(back.left, pillAtRest.left + ShellDockMetrics.padding);
+    expect(back.right + ShellDockMetrics.zoneGap, pillAtRest.left);
     expect(back.size, const Size.square(ShellDockMetrics.slot));
     expect(back.center.dy, pillAtRest.center.dy);
     expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
@@ -152,7 +152,7 @@ void main() {
     expect(find.bySemanticsLabel('Tasks'), findsOneWidget);
 
     // A cramped pill shows fewer, still labelled 44dp slots plus More.
-    await _pump(tester, back: _back, width: 240);
+    await _pump(tester, back: _back, width: 270);
     expect(find.byKey(const ValueKey('Calendar')), findsNothing);
     expect(find.byKey(const ValueKey('shell-dock-more')), findsOneWidget);
     for (final slot in ['Home', 'Tasks', 'shell-dock-more']) {
@@ -226,7 +226,7 @@ void main() {
         home: Align(
           alignment: Alignment.bottomCenter,
           child: SizedBox(
-            width: 306,
+            width: 366,
             // The harness disables animations; this test needs them.
             child: Builder(
               builder: (context) => MediaQuery(
@@ -286,7 +286,7 @@ void main() {
         home: Align(
           alignment: Alignment.bottomCenter,
           child: SizedBox(
-            width: 306,
+            width: 366,
             child: ValueListenableBuilder<Key?>(
               valueListenable: selected,
               builder: (context, key, _) => ShellDockBar(
@@ -461,8 +461,9 @@ void main() {
         radius,
       );
 
+      final dock = find.byKey(const ValueKey('shell-dock-bar'));
       final controls = find.descendant(
-        of: material,
+        of: dock,
         matching: find.byType(ShellDockControl),
       );
       expect(controls, findsNWidgets(6));
@@ -484,7 +485,7 @@ void main() {
       await tester.pumpAndSettle();
       final ring = tester.widget<DecoratedBox>(
         find.descendant(
-          of: material,
+          of: dock,
           matching: find.byWidgetPredicate(
             (widget) =>
                 widget is DecoratedBox &&

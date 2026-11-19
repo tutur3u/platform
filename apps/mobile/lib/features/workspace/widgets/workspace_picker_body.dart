@@ -8,6 +8,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_row.dart';
 import 'package:mobile/features/workspace/widgets/workspace_result_tile.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Key of the picker's filter field.
@@ -74,7 +75,7 @@ class WorkspacePickerBodyActions {
 
 const _gap = SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md));
 
-/// Picker content: a visibility warning, the filter, one list of rows, then
+/// Picker content: a visibility warning, the filter, workspace sections, then
 /// the Create and Manage rows. Rows build lazily.
 List<Widget> buildWorkspacePickerBody(
   BuildContext context,
@@ -128,20 +129,38 @@ List<Widget> buildWorkspacePickerBody(
     ];
   }
 
-  final rows = data.rows;
-  if (rows.isEmpty) {
+  if (data.rows.isEmpty) {
     slivers.add(SliverToBoxAdapter(child: _emptyState(context, data, actions)));
   } else {
-    slivers.add(
-      SliverList.builder(
-        itemCount: rows.length,
-        itemBuilder: (context, index) => AppGroupedSlice(
-          position: AppSlicePosition.of(index, rows.length),
-          dividerInset: AppSpacing.md + 32 + AppSpacing.md,
-          child: _row(context, data, actions, rows[index]),
+    final sections = splitWorkspaceSections(data.rows, sortByName: false);
+    for (final (title, rows) in [
+      if (data.hiddenOnly)
+        (null, data.rows)
+      else ...[
+        (l10n.workspacePickerRootSection, sections.system),
+        (l10n.workspacePersonalSection, sections.personal),
+        (l10n.workspacePickerTeamsSection, sections.team),
+      ],
+    ]) {
+      if (rows.isEmpty) continue;
+      slivers.addAll([
+        if (title != null)
+          SliverToBoxAdapter(
+            child: AppSectionHeader(
+              title: title,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            ),
+          ),
+        SliverList.builder(
+          itemCount: rows.length,
+          itemBuilder: (context, index) => AppGroupedSlice(
+            position: AppSlicePosition.of(index, rows.length),
+            dividerInset: AppSpacing.md + 32 + AppSpacing.md,
+            child: _row(context, data, actions, rows[index]),
+          ),
         ),
-      ),
-    );
+      ]);
+    }
   }
 
   final tail = [

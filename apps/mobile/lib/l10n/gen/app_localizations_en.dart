@@ -12824,7 +12824,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workspacePickerNoResultsMessage => 'Try another name or plan, or clear the search.';
 
   @override
+  String get workspacePickerRootSection => 'Root workspace';
+
+  @override
   String get workspacePickerTeamBadge => 'Team';
+
+  @override
+  String get workspacePickerTeamsSection => 'Teams';
 
   @override
   String get mastermindAccountFilter => 'Account';

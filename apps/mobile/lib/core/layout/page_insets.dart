@@ -15,7 +15,7 @@ abstract final class ShellDockMetrics {
   /// Height of the dock pill (`mobile.dockHeight`).
   static const double height = 64;
 
-  /// Gap between the pill and the left, right and bottom edges; the bottom
+  /// Gap between the dock and the left, right and bottom edges; the bottom
   /// gap sits above the system safe area (`mobile.dockInset`).
   static const double inset = 12;
 
@@ -25,7 +25,7 @@ abstract final class ShellDockMetrics {
   /// Height of one destination slot and diameter of the Back circle.
   static const double slot = height - padding * 2;
 
-  /// Gap between the navigation and its page action.
+  /// Gap between the navigation and each side circle.
   static const double zoneGap = 8;
 
   static const double glyphSize = 22;
@@ -34,14 +34,14 @@ abstract final class ShellDockMetrics {
   static const double dropdownGlyphWidth =
       dropdownGlyphSize + dropdownChevronSize + AppSpacing.xxs;
 
-  /// Space for a primary action and the gap before it.
+  /// Space for one circle and its gap to the navigation pill.
   static const double actionSlot = slot + zoneGap;
 
   /// Narrowest destination slot; the pill shows fewer slots (more behind
   /// More) rather than shrink them below this target.
   static const double minSlotWidth = 44;
 
-  /// Widest the pill grows; tablets centre it (`mobile.dockMaxWidth`).
+  /// Widest the dock grows; tablets centre it (`mobile.dockMaxWidth`).
   static double get dockMaxWidth => _contract.dockMaxWidth;
 
   /// Width from which the tablet chrome applies (`mobile.tabletBreakpoint`).
@@ -82,8 +82,8 @@ abstract final class ShellDockMetrics {
   static double clearanceFor(double safeBottom) =>
       height + inset + bottomOffset(safeBottom) - math.max(0, safeBottom);
 
-  /// Pill width for a window [width]: full width minus the side insets on
-  /// phones, centred and capped from the tablet breakpoint.
+  /// Total dock width for a window [width]: full width minus the side
+  /// insets on phones, centred and capped from the tablet breakpoint.
   static double widthFor(double width, {double horizontalSafeArea = 0}) {
     final available = math
         .max(0, width - inset * 2 - horizontalSafeArea)

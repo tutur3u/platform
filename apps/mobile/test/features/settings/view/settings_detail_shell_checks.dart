@@ -16,19 +16,8 @@ void registerSettingsDetailShellChecks() {
       expect(h.router.state.matchedLocation, Routes.settingsOffline);
       expect(find.byType(OfflinePage), findsOneWidget);
       expect(find.text('Offline'), findsOneWidget);
-      // One shell title: "Settings" appears only as the dock's section label.
-      expect(
-        find.text('Settings'),
-        findsNWidgets(
-          find
-              .descendant(
-                of: find.byType(MorphingNavigationBar),
-                matching: find.text('Settings'),
-              )
-              .evaluate()
-              .length,
-        ),
-      );
+      expect(find.text('Settings'), findsNothing);
+      expect(find.byType(MorphingNavigationBar), findsNothing);
       expect(find.byType(AppBar), findsNothing);
       expect(find.byKey(const ValueKey('shell-settings-back')), findsNothing);
       final list = find
@@ -61,9 +50,7 @@ void registerSettingsDetailShellChecks() {
         tester.getTopLeft(list).dy,
         closeTo(tester.getBottomLeft(header).dy, 1),
       );
-      tester
-          .widget<MorphingNavigationBar>(find.byType(MorphingNavigationBar))
-          .onSelected(const ValueKey('back-to-root'));
+      await tester.tap(_settingsDockBack());
       await _settle(tester);
       expect(h.router.state.matchedLocation, Routes.settings);
       expect(tester.takeException(), isNull);
@@ -93,10 +80,7 @@ void registerSettingsDetailShellChecks() {
         h.router.routeInformationProvider.value.uri.path,
         Routes.settingsOffline,
       );
-      final nav = tester.widget<MorphingNavigationBar>(
-        find.byType(MorphingNavigationBar),
-      );
-      nav.onSelected(const ValueKey('back-to-root'));
+      await tester.tap(_settingsDockBack());
       await _settle(tester);
       expect(h.router.routeInformationProvider.value.uri.path, Routes.settings);
       expect(tester.takeException(), isNull);

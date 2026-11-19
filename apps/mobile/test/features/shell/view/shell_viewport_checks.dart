@@ -5,6 +5,7 @@ import 'package:mobile/features/apps/view/apps_hub_page.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
+import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 
@@ -50,8 +51,11 @@ void registerShellViewportChecks(
           await _expectRailViewport(tester, size);
           return;
         }
-        // Five icon-only tabs keep their names and 44dp targets.
-        for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'Profile']) {
+        final narrow = size.width == 320;
+        final labels = narrow
+            ? ['Home', 'Apps', 'More']
+            : ['Home', 'Apps', 'Mira', 'Alerts', 'Profile'];
+        for (final label in labels) {
           final node = tester.getSemantics(
             find
                 .descendant(
@@ -63,13 +67,16 @@ void registerShellViewportChecks(
           expect(node.rect.width, greaterThanOrEqualTo(44), reason: label);
         }
         expect(find.bySemanticsLabel('Home'), findsOneWidget);
-        expect(find.bySemanticsLabel('Mira'), findsOneWidget);
+        expect(
+          find.bySemanticsLabel('Mira'),
+          narrow ? findsNothing : findsOneWidget,
+        );
         expect(
           find.descendant(
             of: find.byType(MorphingNavigationBar),
             matching: find.byType(Tooltip),
           ),
-          findsNWidgets(5),
+          findsNWidgets(labels.length),
         );
         expect(
           find.descendant(
@@ -124,7 +131,7 @@ void registerShellViewportChecks(
                 widget.image ==
                     const AssetImage('assets/logos/nova-transparent.png'),
           ),
-          findsOneWidget,
+          narrow ? findsNothing : findsOneWidget,
         );
         // The dock overlays the viewport; clearance lives in scroll padding.
         final body = tester.getRect(find.byType(AppsHubPage));
@@ -143,6 +150,13 @@ void registerShellViewportChecks(
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
         expect(tester.element(find.byType(AppsHubPage)), same(bodyElement));
+        if (narrow) {
+          await tester.tap(find.byKey(shellDockMoreKey));
+          await tester.pumpAndSettle();
+          for (final label in ['Mira', 'Alerts', 'Profile']) {
+            expect(find.text(label), findsOneWidget);
+          }
+        }
         expect(tester.takeException(), isNull);
       },
     );

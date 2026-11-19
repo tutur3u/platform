@@ -27,9 +27,11 @@ Future<void> showWorkspacePicker(
   bool hiddenOnly = false,
 }) {
   final cubit = context.read<WorkspaceCubit>();
-  unawaited(cubit.refreshHiddenWorkspaces());
-  final count = cubit.state.visibleWorkspaces.length;
-  return showAppSheet<void>(
+  final state = cubit.state;
+  final count = hiddenOnly
+      ? state.hiddenWorkspaces.length
+      : state.visibleWorkspaces.length;
+  final sheet = showAppSheet<void>(
     context: context,
     size: count > workspacePickerFilterThreshold
         ? AppSheetSize.large
@@ -43,6 +45,13 @@ Future<void> showWorkspacePicker(
       ),
     ),
   );
+  if (hiddenOnly || mode == WorkspacePickerMode.defaultWorkspace) {
+    unawaited(cubit.refreshHiddenWorkspaces());
+  } else if (cubit.hasAuthenticatedActor &&
+      state.status != WorkspaceStatus.loading) {
+    unawaited(cubit.loadWorkspaces());
+  }
+  return sheet;
 }
 
 /// Fire-and-forget form of [showWorkspacePicker] for button callbacks.
@@ -56,9 +65,9 @@ void showWorkspacePickerSheet(
 
 /// Body of the workspace picker sheet; open it with [showWorkspacePicker].
 ///
-/// The selected workspace is the checked first row; the rest follow by
-/// recent use. Create and Manage are plain rows at the end, and a filter
-/// field appears only above [workspacePickerFilterThreshold] workspaces.
+/// Each section shows its selected workspace first, then recent choices.
+/// Create and Manage are rows at the end, and the filter appears only above
+/// [workspacePickerFilterThreshold] workspaces.
 class WorkspacePickerSheet extends StatefulWidget {
   const WorkspacePickerSheet({
     required this.parentContext,
@@ -192,9 +201,11 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
                 filter: showFilter ? _filter : null,
                 query: query,
                 loading:
-                    needsVisibility &&
-                    !state.visibilityResolved &&
-                    state.visibilityStatus == WorkspaceStatus.loading,
+                    choices.isEmpty &&
+                    ((!hiddenOnly && state.status == WorkspaceStatus.loading) ||
+                        (needsVisibility &&
+                            !state.visibilityResolved &&
+                            state.visibilityStatus == WorkspaceStatus.loading)),
                 canRestore: needsVisibility && state.visibilityResolved,
               ),
               WorkspacePickerBodyActions(

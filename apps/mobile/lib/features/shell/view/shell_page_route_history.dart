@@ -6,7 +6,7 @@ extension _ShellPageRouteHistory on _ShellPageState {
   /// transition scope, so the routes and the chrome share one timeline.
   Widget _buildBodyWithFloatingNav({
     required Widget body,
-    required Widget navigationBar,
+    required Widget? navigationBar,
     Widget? header,
     double bodyBottomInset = 0,
     double navigationBottomOffset = 0,

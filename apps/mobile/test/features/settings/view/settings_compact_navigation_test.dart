@@ -68,6 +68,7 @@ import 'package:mobile/features/shell/cubit/shell_profile_state.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
+import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -161,19 +162,9 @@ void main() {
         [Routes.settings],
       );
       expect(find.byType(ShellPage), findsOneWidget);
-      expect(find.byType(MorphingNavigationBar), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('mini-nav-settings-settings_app')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('mini-nav-settings-settings_workspace')),
-        findsNothing,
-      );
-      expect(
-        find.byKey(const ValueKey('mini-nav-settings-settings_you')),
-        findsNothing,
-      );
+      expect(find.byType(PersistentShellDock), findsOneWidget);
+      expect(_settingsDockBack(), findsOneWidget);
+      expect(find.byType(MorphingNavigationBar), findsNothing);
       expect(find.byType(shad.Switch), findsNothing);
       await _tapRow(tester, const ValueKey('settings-workspace-row'));
       expect(h.router.state.matchedLocation, Routes.settingsWorkspace);
@@ -459,22 +450,13 @@ void main() {
         await tester.pump();
         await h.dispose();
       });
-      double dockOpacity() => tester
-          .widget<AnimatedOpacity>(
-            find.ancestor(
-              of: find.byType(MorphingNavigationBar),
-              matching: find.byType(AnimatedOpacity),
-            ),
-          )
-          .opacity;
-
       await h.pump(tester, scale: 2);
       final prefs = await SharedPreferences.getInstance();
       final before = prefs.get('finance-amounts-visible');
       final row = find.byKey(const ValueKey('settings-finance-row'));
       await tester.ensureVisible(row);
       await _settle(tester);
-      expect(dockOpacity(), 1);
+      expect(_settingsDockOpacity(tester), 1);
       await tester.tap(row);
       await _settle(tester);
       expect(find.byType(AppSheetScaffold), findsOneWidget);
@@ -501,14 +483,14 @@ void main() {
       expect(position.outOfRange, isFalse);
       await gesture.up();
       await tester.pump();
-      expect(dockOpacity(), 1);
+      expect(_settingsDockOpacity(tester), 1);
       await _capture(tester, 'settings-finance-scroll-large');
       await tester.binding.handlePopRoute();
       await _settle(tester);
       expect(find.text('Cancel'), findsNothing);
       expect(find.byType(AppSheetScaffold), findsNothing);
       expect(h.router.state.matchedLocation, finance);
-      expect(dockOpacity(), 1);
+      expect(_settingsDockOpacity(tester), 1);
       expect(prefs.get('finance-amounts-visible'), before);
       expect(tester.takeException(), isNull);
     },
@@ -588,17 +570,8 @@ void main() {
       await tester.pump();
       await h.dispose();
     });
-    double dockOpacity() => tester
-        .widget<AnimatedOpacity>(
-          find.ancestor(
-            of: find.byType(MorphingNavigationBar),
-            matching: find.byType(AnimatedOpacity),
-          ),
-        )
-        .opacity;
-
     await h.pump(tester, scale: 2);
-    expect(dockOpacity(), 1);
+    expect(_settingsDockOpacity(tester), 1);
     // The header and search field put this row below the first screen.
     await tester.scrollUntilVisible(
       find.text('Personal timezone'),
@@ -624,7 +597,7 @@ void main() {
           .first,
     );
     await _settle(tester);
-    expect(find.byType(MorphingNavigationBar), findsNothing);
+    expect(_settingsDockBack().hitTestable(), findsNothing);
     await _capture(tester, 'settings-timezone-keyboard-large');
     await tester.tap(paris);
     await _settle(tester);
@@ -633,7 +606,7 @@ void main() {
 
     tester.view.resetViewInsets();
     await tester.pump();
-    expect(dockOpacity(), 1);
+    expect(_settingsDockOpacity(tester), 1);
     final rootScroll = find.byType(Scrollable).first;
     final position = tester.state<ScrollableState>(rootScroll).position;
     expect(position.extentAfter, greaterThan(180));
@@ -647,7 +620,7 @@ void main() {
       greaterThan(0),
     );
     expect(position.outOfRange, isFalse);
-    expect(dockOpacity(), 0);
+    expect(_settingsDockOpacity(tester), 0);
     final downOffset = position.pixels;
     final reverseDistance = (downOffset - position.minScrollExtent) / 2;
     await gesture.moveBy(Offset(0, reverseDistance));
@@ -657,7 +630,7 @@ void main() {
       greaterThan(0),
     );
     expect(position.outOfRange, isFalse);
-    expect(dockOpacity(), 1);
+    expect(_settingsDockOpacity(tester), 1);
     await gesture.up();
     await _settle(tester);
     expect(tester.takeException(), isNull);

@@ -111,6 +111,10 @@ class ShellChromeSceneView extends StatelessWidget {
               home:
                   scene == ShellChromeScene.topBar ||
                   scene == ShellChromeScene.dockRest,
+              showsPicker:
+                  scene != ShellChromeScene.dockBack &&
+                  scene != ShellChromeScene.overflow &&
+                  scene != ShellChromeScene.overflowSheet,
             ),
           ),
           if (scene != ShellChromeScene.topBar)
@@ -181,9 +185,14 @@ class ShellChromeSceneView extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title, required this.home});
+  const _TopBar({
+    required this.title,
+    required this.home,
+    required this.showsPicker,
+  });
   final String title;
   final bool home;
+  final bool showsPicker;
 
   @override
   Widget build(BuildContext context) {
@@ -211,20 +220,12 @@ class _TopBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (home) ...[
+                if (home)
                   ShellTopBarButton(
                     icon: const Icon(Icons.tune_rounded),
                     onPressed: () {},
-                  ),
-                  ShellTopBarButton(
-                    icon: const WorkspaceAvatar(
-                      workspace: sceneWorkspace,
-                      radius: 16,
-                      circular: true,
-                    ),
-                    onPressed: () {},
-                  ),
-                ] else ...[
+                  )
+                else ...[
                   ShellTopBarButton(
                     icon: const Icon(LucideIcons.checkCheck),
                     onPressed: () {},
@@ -234,6 +235,15 @@ class _TopBar extends StatelessWidget {
                     onPressed: () {},
                   ),
                 ],
+                if (showsPicker)
+                  ShellTopBarButton(
+                    icon: const WorkspaceAvatar(
+                      workspace: sceneWorkspace,
+                      radius: 16,
+                      circular: true,
+                    ),
+                    onPressed: () {},
+                  ),
               ],
             ),
           ),

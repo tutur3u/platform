@@ -27,7 +27,7 @@ void registerSettingsSecretsShellChecks() {
           tester.element(find.byType(SettingsWorkspaceSecretsPage)),
         );
         expect(find.byType(ShellPage), findsOneWidget);
-        expect(find.byType(MorphingNavigationBar), findsOneWidget);
+        expect(_settingsDockBack(), findsOneWidget);
         expect(find.byType(AppBar), findsNothing);
         expect(find.text(l10n.settingsWorkspaceSecretsTitle), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -64,21 +64,22 @@ void registerSettingsSecretsShellChecks() {
               .first,
         );
         await _settle(tester);
+        await tester.pump(const Duration(seconds: 2));
+        await _settle(tester);
         final header = find.byKey(
           const ValueKey('floating-shell-header-surface'),
         );
-        final dock = find.byType(MorphingNavigationBar);
+        final back = _settingsDockBack();
+        expect(back.hitTestable(), findsOneWidget);
         expect(
           tester.getTopLeft(denial).dy,
           greaterThanOrEqualTo(tester.getBottomLeft(header).dy),
         );
         expect(
           tester.getBottomLeft(denial).dy,
-          lessThanOrEqualTo(tester.getTopLeft(dock).dy),
+          lessThanOrEqualTo(tester.getTopLeft(back).dy),
         );
-        tester
-            .widget<MorphingNavigationBar>(dock)
-            .onSelected(const ValueKey('back-to-root'));
+        await tester.tap(back);
         await _settle(tester);
         expect(find.byType(SettingsWorkspaceSecretsPage), findsNothing);
         expect(find.byType(ShellPage), findsOneWidget);

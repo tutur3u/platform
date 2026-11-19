@@ -1,26 +1,21 @@
 part of 'shell_page.dart';
 
-/// Registered page actions and the workspace trigger on its two root tabs.
+/// Registered page actions and the workspace trigger on root tabs.
 class _ShellTrailingActions extends StatelessWidget {
   const _ShellTrailingActions({
     required this.matchedLocation,
-    required this.dockPageAction,
+    required this.showsWorkspacePicker,
   });
 
   final String matchedLocation;
-  final bool dockPageAction;
+  final bool showsWorkspacePicker;
 
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      ShellInjectedActionsHost(
-        matchedLocation: matchedLocation,
-        dockPageAction: dockPageAction,
-      ),
-      if (matchedLocation == Routes.home ||
-          matchedLocation == Routes.profileRoot)
-        const ShellWorkspacePicker(),
+      ShellInjectedActionsHost(matchedLocation: matchedLocation),
+      if (showsWorkspacePicker) const ShellWorkspacePicker(),
     ],
   );
 }

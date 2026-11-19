@@ -360,21 +360,12 @@ extension _ShellPageLayout on _ShellPageState {
     );
     final globalBody = _buildGlobalBody();
     final floatingNavInset = showBottomNav ? _floatingNavBodyInset() : 0.0;
-    final media = MediaQuery.of(context);
     final railMode =
-        shellNavigationModeFor(media.size) == ShellNavigationMode.rail;
-    final railItems = navChildren.where((item) => item.key != backKey).toList();
-    final dockWidth = ShellDockMetrics.widthFor(
-      media.size.width,
-      horizontalSafeArea: media.padding.horizontal,
-    );
-    final dockPageAction =
-        railMode ||
-        shellDockFitsPageAction(
-          width: dockWidth,
-          destinations: navChildren.length - (back == null ? 0 : 1),
-          hasBack: back != null,
-        );
+        shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
+        ShellNavigationMode.rail;
+    final destinations = navChildren
+        .where((item) => item.key != backKey)
+        .toList();
 
     return shad.Scaffold(
       footers: showBottomNav && isCompact && !composerVisible
@@ -388,11 +379,11 @@ extension _ShellPageLayout on _ShellPageState {
       // Preserve Assistant state when keyboard/fullscreen hides navigation.
       child: AdaptiveShellFrame(
         rail: railMode && showBottomNav
-            ? railItems.isEmpty && dockBack == null
+            ? destinations.isEmpty && dockBack == null
                   ? const SizedBox.shrink()
                   : ShellNavigationRail(
                       leading: dockBack,
-                      items: railItems,
+                      items: destinations,
                       selectedKey: selectedKey,
                       onSelected: navContent.onSelected,
                     )
@@ -403,14 +394,16 @@ extension _ShellPageLayout on _ShellPageState {
               ? null
               : _buildAppBar(
                   context,
-                  dockPageAction: dockPageAction,
                   activeModule: activeModule,
                   injectedMiniNavRegistration: injectedMiniNavRegistration,
                 ),
           navigationBar:
-              showBottomNav && !railMode && (!isCompact || composerVisible)
+              showBottomNav &&
+                  !railMode &&
+                  destinations.length > 1 &&
+                  (!isCompact || composerVisible)
               ? navigationBar
-              : const SizedBox.shrink(),
+              : null,
           bodyBottomInset: floatingNavInset,
           composerVisible: composerVisible,
           navigationWidth: ShellDockMetrics.widthFor(
@@ -419,7 +412,6 @@ extension _ShellPageLayout on _ShellPageState {
           hideIdleNavigation: railMode,
           fixedZones: true,
           dockLeading: showBottomNav && !railMode ? dockBack : null,
-          dockPageAction: dockPageAction,
         ),
       ),
     );
@@ -574,7 +566,6 @@ extension _ShellPageLayout on _ShellPageState {
 
   shad.AppBar _buildAppBar(
     BuildContext context, {
-    required bool dockPageAction,
     AppModule? activeModule,
     ShellMiniNavRegistration? injectedMiniNavRegistration,
   }) {
@@ -595,6 +586,11 @@ extension _ShellPageLayout on _ShellPageState {
         ),
         padding: shellTopBarPaddingFor(MediaQuery.sizeOf(context).width),
         backgroundColor: Colors.transparent,
+        trailingGap: 4,
+        trailing: [
+          if (_isRootTabLocation(widget.matchedLocation))
+            const ShellWorkspacePicker(),
+        ],
         child: ShellSearchField(
           key: ValueKey(searchAction.id),
           action: searchAction,
@@ -622,7 +618,7 @@ extension _ShellPageLayout on _ShellPageState {
           height: mobileSectionAppBarHeight,
           child: _ShellTrailingActions(
             matchedLocation: widget.matchedLocation,
-            dockPageAction: dockPageAction,
+            showsWorkspacePicker: _isRootTabLocation(widget.matchedLocation),
           ),
         ),
       ],

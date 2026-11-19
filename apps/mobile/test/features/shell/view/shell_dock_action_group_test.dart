@@ -411,6 +411,12 @@ void main() {
           onPressed: () {},
         ),
       ],
+      primary: ShellDockGroupAction(
+        id: 'Save',
+        icon: Icons.check,
+        label: 'Save',
+        onPressed: () {},
+      ),
     );
     final pushed = navigator.currentState!.push(
       MaterialPageRoute<void>(
@@ -425,9 +431,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 60));
     }
     await tester.pumpAndSettle();
-    expect(find.byKey(shellDockGroupSlotKey('Edit')), findsOneWidget);
+    expect(find.byKey(shellDockGroupSlotKey('Edit')), findsNothing);
+    expect(find.byType(ShellDockActionGroupBar), findsNothing);
     expect(find.byKey(shellDockGroupMoreKey), findsNothing);
     expect(find.byKey(_primaryKey('Archive')), findsNothing);
+    expect(find.byKey(_primaryKey('Save')), findsOneWidget);
 
     navigator.currentState!.pop();
     for (var i = 0; i < 6; i++) {
@@ -438,6 +446,7 @@ void main() {
     expect(find.byKey(shellDockGroupSlotKey('Edit')), findsNothing);
     expect(find.byKey(shellDockGroupSlotKey('Reply')), findsOneWidget);
     expect(find.byKey(_primaryKey('Archive')), findsOneWidget);
+    expect(find.byKey(_primaryKey('Save')), findsNothing);
     expect(tester.takeException(), isNull);
   });
 }

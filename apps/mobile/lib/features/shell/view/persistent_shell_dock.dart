@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
-import 'package:mobile/features/shell/view/shell_dock_content.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 
@@ -20,7 +19,7 @@ class PersistentShellDock extends StatefulWidget {
     this.showPrimary = true,
     super.key,
   });
-  final Widget content;
+  final Widget? content;
   final double navigationWidth;
   final bool composing;
   final bool expandContent;
@@ -29,8 +28,8 @@ class PersistentShellDock extends StatefulWidget {
   /// shows only page actions. Composer slots keep the [navigationWidth].
   final bool hideIdleNavigation;
 
-  /// Lays idle navigation out in fixed zones: [leading], the navigation
-  /// material filling the available width, and a page-action slot. See
+  /// Lays idle navigation out in fixed zones: a Back circle, the navigation
+  /// material filling the center, and a priority circle. See
   /// [FloatingDockRail.fixedZones].
   final bool fixedZones;
 
@@ -75,7 +74,9 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
             child: KeyedSubtree(
               key: ValueKey(widget.composing),
               // A push fades the contents through inside the same material.
-              child: ShellRouteFade(child: widget.content),
+              child: ShellRouteFade(
+                child: widget.content ?? const SizedBox.shrink(),
+              ),
             ),
           );
           // One material for navigation and composers alike, so it keeps its
@@ -85,8 +86,11 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
               width: fixedZones ? target : null,
               child: FloatingDockRail(
                 fixedZones: fixedZones,
-                navigation: widget.hideIdleNavigation && !widget.composing
-                    ? const SizedBox.shrink()
+                leading: widget.leading,
+                navigation:
+                    widget.content == null ||
+                        (widget.hideIdleNavigation && !widget.composing)
+                    ? SizedBox(height: fixedZones ? ShellDockMetrics.height : 0)
                     : LayoutBuilder(
                         builder: (context, available) => ShellDockSurface(
                           key: const ValueKey('persistent-shell-dock-material'),
@@ -94,10 +98,7 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
                             width: fixedZones
                                 ? available.maxWidth
                                 : width.clamp(0.0, available.maxWidth),
-                            child: ShellDockContent(
-                              leading: fixedZones ? widget.leading : null,
-                              child: switcher,
-                            ),
+                            child: switcher,
                           ),
                         ),
                       ),

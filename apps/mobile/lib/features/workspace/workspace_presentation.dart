@@ -86,19 +86,22 @@ class WorkspaceSections {
   final List<Workspace> team;
 }
 
-WorkspaceSections splitWorkspaceSections(Iterable<Workspace> workspaces) {
+WorkspaceSections splitWorkspaceSections(
+  Iterable<Workspace> workspaces, {
+  bool sortByName = true,
+}) {
   final personal = <Workspace>[];
   final system = <Workspace>[];
   final team = <Workspace>[];
 
   for (final workspace in workspaces) {
-    if (workspace.personal) {
-      personal.add(workspace);
+    if (isSystemWorkspace(workspace)) {
+      system.add(workspace);
       continue;
     }
 
-    if (isSystemWorkspace(workspace)) {
-      system.add(workspace);
+    if (workspace.personal) {
+      personal.add(workspace);
       continue;
     }
 
@@ -111,9 +114,11 @@ WorkspaceSections splitWorkspaceSections(Iterable<Workspace> workspaces) {
     return aName.toLowerCase().compareTo(bName.toLowerCase());
   }
 
-  personal.sort(compareWorkspaces);
-  system.sort(compareWorkspaces);
-  team.sort(compareWorkspaces);
+  if (sortByName) {
+    personal.sort(compareWorkspaces);
+    system.sort(compareWorkspaces);
+    team.sort(compareWorkspaces);
+  }
 
   return WorkspaceSections(personal: personal, system: system, team: team);
 }

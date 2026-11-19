@@ -277,6 +277,14 @@ class _SettingsHarness {
   }
 }
 
+Finder _settingsDockBack() => find.byKey(const ValueKey('shell-dock-back'));
+
+double _settingsDockOpacity(WidgetTester tester) => tester
+    .widget<AnimatedOpacity>(
+      find.byKey(const ValueKey('floating-shell-dock-opacity')),
+    )
+    .opacity;
+
 Future<void> _settle(WidgetTester tester) async {
   for (var i = 0; i < 12; i++) {
     await tester.pump(const Duration(milliseconds: 50));

@@ -38,7 +38,7 @@ void _registerDockOverflowCheck(
           of: find.byType(MorphingNavigationBar),
           matching: find.text(text),
         );
-        // Back leads four sections and More, all icon-only.
+        // Narrow layouts keep one more section inside More.
         expect(find.text(l10n.inventorySalesLabel), findsOneWidget);
         expect(find.text(l10n.navBack), findsNothing);
         expect(inDock(l10n.inventoryProductsLabel), findsNothing);
@@ -57,7 +57,10 @@ void _registerDockOverflowCheck(
         expect(find.byType(BottomSheet), findsOneWidget);
         expect(find.text(l10n.inventoryAuditLabel), findsOneWidget);
         expect(find.text(l10n.storefrontTitle), findsOneWidget);
-        expect(find.text(l10n.inventoryManageLabel), findsNothing);
+        expect(
+          find.text(l10n.inventoryManageLabel),
+          width == 360 ? findsOneWidget : findsNothing,
+        );
         await tester.tap(find.text(l10n.inventoryAuditLabel));
         await _pumpForTransitions(tester);
         expect(

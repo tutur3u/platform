@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/features/shell/view/floating_dock_rail.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_back.dart';
-import 'package:mobile/features/shell/view/shell_dock_content.dart';
 import 'package:mobile/features/shell/view/shell_dock_control.dart';
 import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
@@ -107,7 +107,7 @@ class ShellDockBar extends StatelessWidget {
                             : entry.key == selectedKey,
                         showLabel:
                             labelled &&
-                            slots.length < shellDockMaxSlots &&
+                            entries.length < shellDockMaxSlots &&
                             slotWidth >= ShellDockMetrics.minSlotWidth,
                         style: style,
                         onTap: () => entry.key == shellDockMoreKey
@@ -129,22 +129,23 @@ class ShellDockBar extends StatelessWidget {
         child: pill,
       );
     }
-    return SizedBox(
+    final backEntry = back;
+    return FloatingDockRail(
       key: const ValueKey('shell-dock-bar'),
-      height: ShellDockMetrics.height,
-      child: ShellDockSurface(
-        key: const ValueKey('persistent-shell-dock-material'),
-        child: ShellDockContent(
-          leading: back == null
-              ? null
-              : ShellDockBackZone(
-                  back: back!,
-                  onTap: () => onSelected(back!.key),
-                  onLongPress: onBackLongPress,
-                ),
-          child: pill,
-        ),
-      ),
+      fixedZones: true,
+      leading: backEntry == null
+          ? null
+          : ShellDockBackZone(
+              back: backEntry,
+              onTap: () => onSelected(backEntry.key),
+              onLongPress: onBackLongPress,
+            ),
+      navigation: entries.length < 2
+          ? const SizedBox(height: ShellDockMetrics.height)
+          : ShellDockSurface(
+              key: const ValueKey('persistent-shell-dock-material'),
+              child: pill,
+            ),
     );
   }
 

@@ -200,14 +200,19 @@ localization changes.
   a paused session (stopped with an open break, `type=paused`) like a running
   one and stops it before starting; a failed start resumes and re-pauses it
   rather than losing it.
-- The dock is three fixed zones (Back, a pill of at most five labelled 44dp+
-  slots with More for the rest, one page action); only the first `inDock`
-  action stays in the dock and the top bar shows the rest. Keep the dock
-  material owned by `PersistentShellDock` and the rail's widget tree identical
-  across navigation and composer modes, or the material and composer remount.
-  `shell_viewport_checks.dart` asserts 44dp named slots. Home, Inbox and
-  You have no Search action; a screen offers Search only for its own content,
-  always through `ShellActionSpec.search` (one glyph, dock slot and target).
+- The dock reserves a 52dp Back circle and a 52dp priority circle around the
+  center pill even when either action is absent. The pill hides with zero or
+  one destination. Five visible destinations use icons with accessible names;
+  More preserves 44dp targets on narrow windows. The first `inDock` action
+  uses the priority circle, and the top bar shows the rest.
+  `PersistentShellDock` keeps the material mounted across navigation and
+  composer modes when both use it. See `shell_root_tabs_test.dart` and
+  `shell_viewport_checks.dart` for bound and touch-target coverage.
+- The shell owns one workspace picker in the trailing header position on
+  each of Home, Apps, Mira, Alerts and Profile. Route-local search leaves
+  that position available on root tabs. Open the picker using the active
+  account's cached memberships and keep the grouped rows visible during
+  background refresh. See the [mobile shell decision](../../../../../apps/docs/platform/features/mobile-settings-shell.mdx#workspace-picker).
 - A page whose actions replace dock navigation (the Mail reader) passes a
   `ShellDockActionGroup` to `ShellChromeActions(actionGroup:)`; never build a
   second dock or a body action bar. The group renders inside the same
@@ -226,13 +231,9 @@ localization changes.
   it. Chrome that changes per location inside the dock or title
   needs no per-route animation of its own; give it equal heights so the
   material never resizes (`shell_route_transition_test.dart`).
-- Root tabs: the phone dock pins up to four `ShellRootTab`s (default Home,
-  Tasks, Calendar, Mail; Mira, then Apps, Notifications, You fill an
-  unavailable Mail) plus a More destination that lists the rest and Edit tabs.
-  Gate module tabs on `AppModule.visibleIn` during build, persist only ids
-  through `ShellRootTabsCubit`, and keep the tablet rail on its fixed five
-  destinations. Module tabs reuse the Apps origin flow, so Back returns to
-  the root that opened them; `shell_root_tabs_test.dart` covers it.
+- Root tabs use the same five `ShellRootTab`s in the dock and tablet rail.
+  App destinations reuse the Apps origin flow so Back returns to the root
+  that opened them. `shell_root_tabs_test.dart` covers the root destinations.
 - Timeline grids build their day columns lazily (`ListView` with a fixed
   item extent and a key-to-index callback); never lay out a whole scrollable
   date window eagerly, and memoize derived event lists such as

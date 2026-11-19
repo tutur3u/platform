@@ -83,6 +83,11 @@ void _registerDockReselectionChecks(
                     label: 'Feed',
                     selected: true,
                   ),
+                  ShellMiniNavItemSpec(
+                    id: 'settings',
+                    icon: Icons.settings,
+                    label: 'Task settings',
+                  ),
                 ],
               ),
               ShellChromeActions(

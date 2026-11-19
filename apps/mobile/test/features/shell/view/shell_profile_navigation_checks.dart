@@ -96,7 +96,7 @@ void _registerProfileNavigationChecks(
       ValueKey('notifications'),
       ValueKey<String>('profile'),
     ]);
-    expect(find.byType(ShellWorkspacePicker), findsNothing);
+    expect(find.byType(ShellWorkspacePicker), findsOneWidget);
     // Notifications is a dock destination, not a top bar bell.
     expect(find.byType(NotificationsActionButton), findsNothing);
 
@@ -112,6 +112,7 @@ void _registerProfileNavigationChecks(
       );
       expect(nav.children.first.key, const ValueKey<String>('home'));
       expect(nav.selectedKey, selected);
+      expect(find.byType(ShellWorkspacePicker), findsOneWidget);
     }
 
     router.go(Routes.tasks);

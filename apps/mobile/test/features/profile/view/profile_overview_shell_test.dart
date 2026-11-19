@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
+import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -30,6 +31,7 @@ import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
+import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -125,6 +127,7 @@ void main() {
     when(() => auth.isClosed).thenReturn(false);
     workspaces = _Workspaces();
     when(() => workspaces.hasAuthenticatedActor).thenReturn(true);
+    when(() => workspaces.loadWorkspaces()).thenAnswer((_) async {});
     profile = _Profile();
     whenListen(
       auth,
@@ -311,13 +314,23 @@ void main() {
   ) async {
     await mount(tester);
     expect(find.text('Profile'), findsWidgets);
-    // The workspace picker sits in the top bar, not in the page body.
-    final picker = find.byTooltip('Switch workspace');
+    final picker = find.byWidgetPredicate(
+      (widget) =>
+          widget is Tooltip &&
+          (widget.message?.startsWith('Switch workspace') ?? false),
+    );
     expect(picker, findsOneWidget);
+    expect(find.byType(ShellWorkspacePicker), findsOneWidget);
     expect(
       find.descendant(of: find.byType(ProfileOverviewPage), matching: picker),
       findsNothing,
     );
+    await tester.tap(picker);
+    await _pump(tester);
+    final sheet = find.byType(AppSheetScaffold);
+    expect(sheet, findsOneWidget);
+    Navigator.of(tester.element(sheet)).pop();
+    await _pump(tester);
     for (final key in [
       'profile-identity',
       'profile-switch-account',

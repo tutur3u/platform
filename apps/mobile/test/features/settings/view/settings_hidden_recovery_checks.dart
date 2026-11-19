@@ -56,10 +56,7 @@ void registerHiddenRecoveryChecks() {
       });
       await h.pump(tester, scale: sample.$4);
       expect(h.allowed, isFalse);
-      expect(
-        find.byKey(const ValueKey('mini-nav-settings-settings_app')),
-        findsOneWidget,
-      );
+      expect(_settingsDockBack(), findsOneWidget);
       expect(
         AppRegistry.moduleById(
           'settings',

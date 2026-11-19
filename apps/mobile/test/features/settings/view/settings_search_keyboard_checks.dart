@@ -31,7 +31,7 @@ void registerSettingsSearchKeyboardChecks() {
 
     tester.view.viewInsets = const FakeViewPadding(bottom: keyboard);
     await _settle(tester);
-    expect(find.byType(MorphingNavigationBar).hitTestable(), findsNothing);
+    expect(_settingsDockBack().hitTestable(), findsNothing);
     final list = find
         .descendant(
           of: find.byType(SettingsPage),

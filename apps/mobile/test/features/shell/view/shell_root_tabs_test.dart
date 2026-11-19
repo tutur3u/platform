@@ -167,7 +167,7 @@ List<Key?> _expectIconSlots(WidgetTester tester, int count) {
 }
 
 void main() {
-  for (final width in [320.0, 360.0, 390.0, 834.0]) {
+  for (final width in [390.0, 834.0]) {
     testWidgets('root shows five accessible icons at ${width}dp', (
       tester,
     ) async {
@@ -206,7 +206,7 @@ void main() {
   for (final width in [320.0, 360.0]) {
     for (final route in [Routes.home, Routes.inventorySales]) {
       testWidgets(
-        'icon and labelled actions preserve dock slots at ${width}dp on $route',
+        'priority actions preserve overflow slots at ${width}dp on $route',
         (tester) async {
           await _pumpShell(
             tester,
@@ -214,7 +214,13 @@ void main() {
             location: route,
             safeRight: route == Routes.home ? 8 : 0,
           );
-          final expected = _expectIconSlots(tester, 5);
+          final slots = find.byType(ShellDockSlotButton);
+          List<Key?> slotKeys() => tester
+              .widgetList<ShellDockSlotButton>(slots)
+              .map((slot) => slot.key)
+              .toList();
+          final expected = slotKeys();
+          expect(expected, contains(shellDockMoreKey));
           final chrome = tester
               .element(find.byType(ShellPage))
               .read<ShellChromeActionsCubit>();
@@ -236,9 +242,9 @@ void main() {
               ],
             );
             await tester.pump();
-            expect(_expectIconSlots(tester, 5), expected);
+            expect(slotKeys(), expected);
             await _settle(tester);
-            expect(_expectIconSlots(tester, 5), expected);
+            expect(slotKeys(), expected);
 
             final dockAction = find.byKey(
               const ValueKey(('dock-primary', 'fixture-action')),
@@ -246,15 +252,14 @@ void main() {
             final headerAction = find.byKey(
               const ValueKey('shell-action-button-fixture-action'),
             );
-            final fits = route == Routes.home && width == 360;
-            expect(dockAction, fits ? findsOneWidget : findsNothing);
-            expect(headerAction, fits ? findsNothing : findsOneWidget);
-            await tester.tap(fits ? dockAction : headerAction);
+            expect(dockAction, findsOneWidget);
+            expect(headerAction, findsNothing);
+            await tester.tap(dockAction);
           }
           expect(taps, 2);
           chrome.unregister('fixture-action');
           await _settle(tester);
-          expect(_expectIconSlots(tester, 5), expected);
+          expect(slotKeys(), expected);
         },
       );
     }
@@ -292,15 +297,13 @@ void main() {
         const ValueKey('persistent-shell-dock-material'),
       );
       final back = find.byKey(const ValueKey('shell-dock-back'));
-      final rect = tester.getRect(surface);
-      expect(
-        rect.size,
-        Size(ShellDockMetrics.widthFor(width), ShellDockMetrics.height),
+      final center = tester.getRect(
+        find.byKey(const ValueKey('floating-dock-navigation-slot')),
       );
-      expect(rect.bottom, 844 - ShellDockMetrics.bottomOffset(34));
-      expect(find.descendant(of: surface, matching: back), findsOneWidget);
+      expect(center.bottom, 844 - ShellDockMetrics.bottomOffset(34));
+      expect(surface, findsNothing);
       final button = tester.getRect(back);
-      expect(button.left, rect.left + ShellDockMetrics.padding);
+      expect(button.right + ShellDockMetrics.zoneGap, center.left);
       expect(button.size, const Size.square(ShellDockMetrics.slot));
       await tester.tap(back);
       await tester.pumpAndSettle();
@@ -308,31 +311,24 @@ void main() {
     });
   }
 
-  testWidgets('active workspace opens from Home and Profile headers only', (
+  testWidgets('all root headers show one workspace picker in the same place', (
     tester,
   ) async {
     final router = await _pumpShell(tester);
     final picker = find.byType(ShellWorkspacePicker);
+    final bounds = tester.getRect(picker);
     for (final tab in ShellRootTab.values) {
       router.go(tab.route);
       await _settle(tester);
-      final showsPicker =
-          tab == ShellRootTab.home || tab == ShellRootTab.profile;
-      expect(
-        picker,
-        showsPicker ? findsOneWidget : findsNothing,
-        reason: tab.name,
-      );
-      if (showsPicker) {
-        expect(tester.getSize(picker), const Size.square(44));
-        expect(tester.getTopLeft(picker).dy, lessThan(56));
-        await tester.tap(picker);
-        await _settle(tester);
-        expect(find.byType(AppSheetScaffold), findsOneWidget);
-        expect(find.text('Studio'), findsOneWidget);
-        Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
-        await _settle(tester);
-      }
+      expect(picker, findsOneWidget, reason: tab.name);
+      expect(tester.getRect(picker), bounds, reason: tab.name);
+      expect(bounds.size, const Size.square(44));
+      await tester.tap(picker);
+      await _settle(tester);
+      expect(find.byType(AppSheetScaffold), findsOneWidget);
+      expect(find.text('Studio'), findsOneWidget);
+      Navigator.of(tester.element(find.byType(AppSheetScaffold))).pop();
+      await _settle(tester);
     }
     for (final route in [Routes.settings, Routes.tasks, Routes.finance]) {
       router.go(route);
@@ -341,20 +337,67 @@ void main() {
     }
   });
 
+  testWidgets('a root search keeps the workspace picker in place', (
+    tester,
+  ) async {
+    await _pumpShell(tester);
+    final picker = find.byType(ShellWorkspacePicker);
+    final bounds = tester.getRect(picker);
+    final search = TextEditingController();
+    addTearDown(search.dispose);
+    tester
+        .element(find.byType(ShellPage))
+        .read<ShellChromeActionsCubit>()
+        .register(
+          registrationId: 'fixture-search',
+          ownerId: 'fixture-search',
+          locations: const {Routes.home},
+          actions: [
+            ShellActionSpec(
+              id: 'fixture-search',
+              icon: Icons.search,
+              searchController: search,
+            ),
+          ],
+        );
+    await _settle(tester);
+    expect(find.byKey(const ValueKey('shell-search-query')), findsOneWidget);
+    expect(picker, findsOneWidget);
+    expect(tester.getRect(picker), bounds);
+  });
+
   for (final size in [const Size(390, 844), const Size(834, 1194)]) {
     testWidgets(
-      'Back stays inside the dock at the same position at ${size.width}dp',
+      'dock keeps three fixed slots across routed screens at ${size.width}dp',
       (tester) async {
         final router = await _pumpShell(tester, size: size);
         final material = find.byKey(
           const ValueKey('persistent-shell-dock-material'),
         );
         final back = find.byKey(const ValueKey('shell-dock-back'));
-        final root = tester.getRect(material);
-        expect(root.width, ShellDockMetrics.widthFor(size.width));
+        final left = find.byKey(const ValueKey('floating-dock-back-slot'));
+        final center = find.byKey(
+          const ValueKey('floating-dock-navigation-slot'),
+        );
+        final right = find.byKey(const ValueKey('floating-dock-primary-slot'));
+        final slots = [left, center, right];
+        final bounds = slots.map(tester.getRect).toList();
+        final [leftRect, centerRect, rightRect] = bounds;
+        expect(leftRect.size, const Size.square(ShellDockMetrics.slot));
+        expect(rightRect.size, leftRect.size);
+        expect(centerRect.center.dx, size.width / 2);
+        expect(leftRect.right + ShellDockMetrics.zoneGap, centerRect.left);
+        expect(centerRect.right + ShellDockMetrics.zoneGap, rightRect.left);
+        expect(leftRect.center.dy, centerRect.center.dy);
+        expect(rightRect.center.dy, centerRect.center.dy);
+        expect(
+          centerRect.width,
+          ShellDockMetrics.widthFor(size.width) -
+              2 * ShellDockMetrics.actionSlot,
+        );
         expect(back, findsNothing);
+        expect(tester.getRect(material), centerRect);
 
-        Rect? firstBack;
         for (final route in [
           Routes.notificationsArchive,
           Routes.finance,
@@ -364,14 +407,14 @@ void main() {
         ]) {
           router.go(route);
           await _settle(tester);
-          expect(find.descendant(of: material, matching: back), findsOneWidget);
-          expect(tester.getRect(material), root);
-          final rect = tester.getRect(back);
-          expect(rect.size, const Size.square(ShellDockMetrics.slot));
-          expect(rect.left, root.left + ShellDockMetrics.padding);
-          expect(rect.center.dy, root.center.dy);
-          firstBack ??= rect;
-          expect(rect, firstBack, reason: route);
+          expect(slots.map(tester.getRect), bounds, reason: route);
+          expect(tester.getRect(back), leftRect, reason: route);
+          if (route == Routes.settings || route == Routes.calendar) {
+            expect(material, findsNothing);
+            expect(find.byType(ShellDockSlotButton), findsNothing);
+          } else {
+            expect(tester.getRect(material), centerRect, reason: route);
+          }
         }
 
         var saves = 0;
@@ -393,8 +436,10 @@ void main() {
               ],
             );
         await _settle(tester);
-        expect(tester.getRect(back), firstBack);
-        await tester.tap(find.byTooltip('Save fixture'));
+        expect(slots.map(tester.getRect), bounds);
+        final save = find.byTooltip('Save fixture');
+        expect(tester.getRect(save), rightRect);
+        await tester.tap(save);
         expect(saves, 1);
       },
     );

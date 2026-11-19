@@ -1,7 +1,7 @@
 ---
 title: Mobile settings shell
 description: Shared shell chrome, profile settings routes and accessible edit entry
-updatedAt: "2026-10-27"
+updatedAt: "2026-11-19"
 audience: users
 ---
 
@@ -166,20 +166,21 @@ ownership.
 
 ### Floating dock layout
 
-Back is a 52dp button at the leading edge of the floating navbar, inside its
-shared material. The frame fills the phone width within safe-area margins and
-centres at up to 480dp on portrait tablets. The page action moves to the top
-bar when its dock slot would reduce the number of visible destinations.
-Expanded windows keep Back and section destinations in the leading rail.
-Root destinations have no Back unless the page registers an in-place Back
-handler. System Back and deep-link fallbacks use the same route handling.
+The floating dock has three fixed slots. A 52dp Back circle sits to the left
+of the navigation pill, and a 52dp priority action circle sits to its right.
+An empty side slot keeps its space. The frame fills the phone width within
+safe-area margins and centres at up to 480dp on portrait tablets. The pill
+fills the space between the two circles and their gutters. It disappears when
+the section has zero or one destination, as in Settings. Scroll content keeps
+the shell's dock clearance. Expanded windows keep Back and destinations in
+the leading rail. Root destinations show Back only when the page registers
+an in-place Back handler. System Back and deep links use the same route handling.
 
-Five destinations show icons only, with localized accessibility names and
-tooltips on touch and hover. A sub-shell with more than five sections shows Back,
-four sections and More, which opens a bottom sheet with the remaining
-sections in order. Back and the trailing page action each have their own
-space outside the destination count. Narrow windows can
-fold extra destinations into More sooner to preserve 44dp targets. The More
+Five or more destinations use icons only, with localized accessibility names and
+tooltips on touch and hover. A sub-shell with more than five sections shows
+four sections and More, which opens a bottom sheet with the remaining sections
+in order. Narrow windows can fold extra destinations into More sooner to
+preserve 44dp targets. The More
 slot is selected when its sheet contains the active destination. Shorter
 docks show labels where space permits. The rule also applies to page action
 groups, such as the Mail reader.
@@ -212,11 +213,32 @@ the bar and the scrolling content, that hairline marks the bottom of the whole
 composite header, never the edge between the bar and the strip. Ambient
 appearances keep their clear or frosted header without it
 (`floating_shell_dock_separator_test.dart`).
-Coverage: `shell_dock_bar_test.dart` (in-bar Back, overflow, sliding highlight
-timing), `dock_action_choreography_test.dart`, `persistent_shell_dock_test.dart`,
+Coverage: `shell_root_tabs_test.dart` and `persistent_shell_dock_test.dart`
+verify the three slot positions at 390dp and 834dp, including missing controls
+and the hidden Settings pill. `shell_dock_bar_test.dart` covers Back, overflow
+and highlight timing. Other regression checks include `dock_action_choreography_test.dart`,
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
 `shell_assistant_composer_test.dart`.
+
+### Workspace picker
+
+Home, Apps, Mira, Alerts and Profile each show one workspace avatar button
+at the trailing edge of the shell header. Detail screens leave that button
+out. Account switching stays in Profile's account row.
+
+The sheet opens with the current account's cached list while membership and
+visibility refresh in the background. It shows nonempty Root workspace,
+Personal and Teams sections in that order. Root workspace appears for members
+with a visible platform workspace. Within each section, the selected workspace
+comes first, followed by recent choices. The sheet retains the selection check,
+avatars, plan badges, and Create and Manage actions. Long lists scroll within
+the sheet and offer a filter above eight workspaces.
+
+`shell_root_tabs_test.dart` covers picker placement and opening on every
+root. `profile_overview_shell_test.dart` exercises the real Profile header.
+`workspace_picker_sheet_test.dart` covers grouping, selection, cached opening
+and scrolling.
 
 ### Push and pop
 
@@ -232,8 +254,7 @@ shell's chrome stays in place and changes on the same 220ms timeline.
 - Destination and action-group contents fade out over 0-90ms, then the next
   contents fade in over 90-220ms. Back keeps its position and touch target.
   When both pages have a dock action, the circle keeps its material and only
-  the icon changes. A circle entering or leaving changes the width available
-  to the navigation slots.
+  the icon changes. A circle enters or leaves within its reserved slot.
 - A pop runs the same timeline in reverse. Back from the dock or the system
   button usually replaces the page rather than popping it; that arrival still
   plays as a pop, with the leaving page sliding off towards the end edge.

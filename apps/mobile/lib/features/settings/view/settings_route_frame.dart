@@ -5,7 +5,6 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/mobile_section_app_bar.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Shell chrome for settings routes presented by a standalone navigator.
@@ -40,7 +39,7 @@ class SettingsRouteFrame extends StatelessWidget {
         ),
         onTap: onBack,
       ),
-      navigation: const SizedBox(height: ShellDockSurface.contentHeight),
+      navigation: null,
       child: child,
     ),
   );

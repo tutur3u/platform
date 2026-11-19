@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:bloc_test/bloc_test.dart';
@@ -16,6 +17,7 @@ import 'package:mobile/features/workspace/widgets/hidden_workspaces_settings_row
 import 'package:mobile/features/workspace/widgets/workspace_picker_body.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_sheet.dart';
 import 'package:mobile/features/workspace/widgets/workspace_visibility_sheet.dart';
+import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/helpers.dart';
@@ -30,6 +32,7 @@ const _personal = Workspace(
 const _product = Workspace(id: 'ws_1', name: 'Product', tier: workspaceTierPro);
 const _design = Workspace(id: 'ws_2', name: 'Design');
 const _ops = Workspace(id: 'ws_3', name: 'Ops');
+const _root = Workspace(id: rootWorkspaceId, name: 'Demo Platform');
 
 const _loaded = WorkspaceState(
   status: WorkspaceStatus.loaded,
@@ -54,6 +57,7 @@ Future<_Workspaces> _open(
   WorkspaceState state, {
   Brightness brightness = Brightness.light,
   ShellChromeActionsCubit? chrome,
+  Future<void>? refresh,
   WorkspacePickerMode mode = WorkspacePickerMode.current,
   bool authenticated = false,
   Size size = const Size(390, 844),
@@ -66,6 +70,7 @@ Future<_Workspaces> _open(
   final cubit = _Workspaces();
   when(() => cubit.hasAuthenticatedActor).thenReturn(authenticated);
   when(cubit.refreshHiddenWorkspaces).thenAnswer((_) async {});
+  when(cubit.loadWorkspaces).thenAnswer((_) => refresh ?? Future<void>.value());
   when(() => cubit.selectWorkspace(any())).thenAnswer((_) async {});
   when(() => cubit.setDefaultWorkspace(any())).thenAnswer((_) async {});
   when(() => cubit.state).thenReturn(state);
@@ -127,20 +132,45 @@ void _expectSelectedChoice(WidgetTester tester, Finder row, String label) {
 void main() {
   setUpAll(() => registerFallbackValue(_product));
 
-  testWidgets('the current workspace is the checked first row', (tester) async {
+  testWidgets('no root section is shown without membership', (tester) async {
     await _open(tester, _loaded);
     _expectSelectedChoice(tester, _row('ws_1'), 'Product, Pro');
     expect(find.byIcon(AppIcons.check), findsOneWidget);
-    // Without recent use, the rest keep their listed order.
-    _expectAscending(_tops(tester, ['ws_1', 'ws_3', 'personal_ws', 'ws_2']));
+    expect(find.text('Root workspace'), findsNothing);
+    _expectAscending([
+      tester.getTopLeft(find.text('Personal')).dy,
+      tester.getTopLeft(_row('personal_ws')).dy,
+      tester.getTopLeft(find.text('Teams')).dy,
+      ..._tops(tester, ['ws_1', 'ws_3', 'ws_2']),
+    ]);
   });
 
-  testWidgets('the rest follow by recent use', (tester) async {
+  testWidgets('root membership has a section before personal and teams', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      _loaded.copyWith(workspaces: [..._loaded.workspaces, _root]),
+    );
+    _expectAscending([
+      tester.getTopLeft(find.text('Root workspace')).dy,
+      tester.getTopLeft(_row(rootWorkspaceId)).dy,
+      tester.getTopLeft(find.text('Personal')).dy,
+      tester.getTopLeft(_row('personal_ws')).dy,
+      tester.getTopLeft(find.text('Teams')).dy,
+      tester.getTopLeft(_row('ws_1')).dy,
+    ]);
+    _expectSelectedChoice(tester, _row('ws_1'), 'Product, Pro');
+  });
+
+  testWidgets('the rest follow by recent use within their section', (
+    tester,
+  ) async {
     await _open(
       tester,
       _loaded.copyWith(recentWorkspaceIds: ['ws_2', 'ws_1', 'personal_ws']),
     );
-    _expectAscending(_tops(tester, ['ws_1', 'ws_2', 'personal_ws', 'ws_3']));
+    _expectAscending(_tops(tester, ['personal_ws', 'ws_1', 'ws_2', 'ws_3']));
   });
 
   testWidgets('Pro has an outlined marker and Free has none', (tester) async {
@@ -296,10 +326,26 @@ void main() {
     });
   }
 
-  testWidgets('first visibility load shows skeleton rows', (tester) async {
-    await _open(
+  testWidgets('cached rows show while workspace refresh is pending', (
+    tester,
+  ) async {
+    final refresh = Completer<void>();
+    final cubit = await _open(
       tester,
       _loaded.copyWith(visibilityStatus: WorkspaceStatus.loading),
+      authenticated: true,
+      refresh: refresh.future,
+    );
+    expect(find.byType(AppSkeletonRows), findsNothing);
+    expect(_row('ws_3'), findsOneWidget);
+    verify(cubit.loadWorkspaces).called(1);
+    refresh.complete();
+  });
+
+  testWidgets('a cold visibility load shows skeleton rows', (tester) async {
+    await _open(
+      tester,
+      const WorkspaceState(visibilityStatus: WorkspaceStatus.loading),
       authenticated: true,
       settle: false,
     );

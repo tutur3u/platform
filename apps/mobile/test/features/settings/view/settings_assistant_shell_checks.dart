@@ -168,7 +168,7 @@ void registerSettingsAssistantShellChecks() {
               final scrollable = find
                   .descendant(of: hub, matching: find.byType(Scrollable))
                   .first;
-              final back = find.byType(MorphingNavigationBar);
+              final back = _settingsDockBack();
               final dockRect = tester.getRect(back);
               // At large text the whole tile can exceed the viewport. The
               // interactive switch itself must remain reachable and clear Back.

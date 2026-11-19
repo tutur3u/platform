@@ -1,11 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/layout/page_insets.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/persistent_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 
 void main() {
+  for (final width in [390.0, 834.0]) {
+    testWidgets('idle dock reserves all three slots at ${width}dp', (
+      tester,
+    ) async {
+      tester.view
+        ..physicalSize = Size(width, 1000)
+        ..devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final back = OutlinedButton(onPressed: () {}, child: const Text('Back'));
+      final primary = OutlinedButton(
+        onPressed: () {},
+        child: const Text('Add'),
+      );
+      final slots = [
+        find.byKey(const ValueKey('floating-dock-back-slot')),
+        find.byKey(const ValueKey('floating-dock-navigation-slot')),
+        find.byKey(const ValueKey('floating-dock-primary-slot')),
+      ];
+      Future<void> show({
+        Widget? leading,
+        Widget? action,
+        bool hasNavigation = true,
+      }) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Align(
+              alignment: Alignment.bottomCenter,
+              child: PersistentShellDock(
+                fixedZones: true,
+                leading: leading,
+                primary: action,
+                content: hasNavigation
+                    ? const SizedBox(height: ShellDockSurface.contentHeight)
+                    : null,
+              ),
+            ),
+          ),
+        );
+      }
+
+      await show();
+      final bounds = slots.map(tester.getRect).toList();
+      expect(bounds.first.size, const Size.square(ShellDockMetrics.slot));
+      expect(bounds.last.size, bounds.first.size);
+
+      for (final hasNavigation in [true, false]) {
+        for (final leading in [null, back]) {
+          for (final action in [null, primary]) {
+            await show(
+              leading: leading,
+              action: action,
+              hasNavigation: hasNavigation,
+            );
+            expect(slots.map(tester.getRect), bounds);
+            await tester.pumpAndSettle();
+            expect(slots.map(tester.getRect), bounds);
+            expect(
+              find.byType(ShellDockSurface),
+              hasNavigation ? findsOneWidget : findsNothing,
+            );
+            expect(
+              find.byWidget(back),
+              leading == null ? findsNothing : findsOne,
+            );
+            expect(
+              find.byWidget(primary),
+              action == null ? findsNothing : findsOne,
+            );
+          }
+        }
+      }
+    });
+  }
+
   testWidgets(
     'material bounds interpolate with one current interactive content',
     (tester) async {

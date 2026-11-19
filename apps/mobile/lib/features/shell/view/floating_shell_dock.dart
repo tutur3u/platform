@@ -78,7 +78,7 @@ class FloatingShellDock extends StatefulWidget {
   final bool allowDockSlot;
   final String location;
   final double bottomInset;
-  final Widget navigation;
+  final Widget? navigation;
   final Widget child;
   final Widget? header;
   final double minimumHeaderContentHeight;
@@ -535,7 +535,7 @@ class _DockActions extends StatefulWidget {
   final Widget? leading;
   final bool dockPageAction;
   final String location;
-  final Widget navigation;
+  final Widget? navigation;
   final double navigationWidth;
   final bool allowDockSlot;
 
@@ -574,7 +574,7 @@ class _DockActionsState extends State<_DockActions> {
   }
 
   Widget _registeredDock(
-    Widget navigation, {
+    Widget? navigation, {
     required String? workspaceId,
     Widget? primary,
     bool grouped = false,
@@ -625,9 +625,12 @@ class _DockActionsState extends State<_DockActions> {
         final group = state.actionGroupForLocation(widget.location);
         if (group != null) {
           final primary = group.primary;
+          final itemCount =
+              group.pillActions.length +
+              group.moreSections.expand((section) => section).length;
           // The group replaces navigation and the page action; Back stays.
           return _registeredDock(
-            ShellDockActionGroupBar(group: group),
+            itemCount > 1 ? ShellDockActionGroupBar(group: group) : null,
             workspaceId: workspaceId,
             grouped: true,
             primary: primary == null

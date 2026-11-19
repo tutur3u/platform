@@ -12666,7 +12666,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get workspacePickerNoResultsMessage => 'Thử tên hoặc gói khác, hoặc xóa nội dung tìm kiếm.';
 
   @override
+  String get workspacePickerRootSection => 'Không gian làm việc gốc';
+
+  @override
   String get workspacePickerTeamBadge => 'Nhóm';
+
+  @override
+  String get workspacePickerTeamsSection => 'Nhóm';
 
   @override
   String get mastermindAccountFilter => 'Tài khoản';
