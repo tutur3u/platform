@@ -173,6 +173,7 @@ class _MyTaskQuickAddSheetState extends State<MyTaskQuickAddSheet> {
             key: const ValueKey('my-task-title'),
             controller: _title,
             label: l10n.taskBoardDetailTaskTitleLabel,
+            placeholder: l10n.taskBoardDetailUntitledTask,
             autofocus: true,
             enabled: !_saving,
             textCapitalization: TextCapitalization.sentences,
