@@ -54,8 +54,9 @@ class TaskTimelineEmpty extends StatelessWidget {
           : showUndated
           ? onShowUndated
           : onLoadMore,
-      secondaryActionLabel:
-          schedule && showUndated ? l10n.taskTimelineUndatedCount(undatedCount) : null,
+      secondaryActionLabel: schedule && showUndated
+          ? l10n.taskTimelineUndatedCount(undatedCount)
+          : null,
       onSecondaryAction: schedule && showUndated ? onShowUndated : null,
     );
   }

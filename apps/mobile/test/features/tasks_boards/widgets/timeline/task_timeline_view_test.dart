@@ -9,7 +9,6 @@ import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_caption_row.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_grid_painter.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_rows.dart';
-import 'package:mobile/features/tasks_boards/utils/task_timeline_projection.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_view.dart';
 
 import '../../../../helpers/helpers.dart';
@@ -117,7 +116,7 @@ List<String> _rowOrder(WidgetTester tester) {
           )
           .evaluate()) {
     switch (element.widget) {
-      case TaskTimelineCaptionRow(label: final label):
+      case TaskTimelineCaptionRow(:final label):
         ordered.add('[$label]');
       case TaskTimelineLaneRow(:final bars):
         ordered.add(bars.map((bar) => bar.task.id).join(','));

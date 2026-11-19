@@ -50,16 +50,23 @@ TaskTimelineProjection _project(
 
 List<String> _ids(TaskTimelineProjection projection) => [
   for (final row in projection.rows)
-    switch (row) {
-      TaskTimelineCaption(isOverdue: true) => 'overdue',
-      TaskTimelineCaption(:final listId) => '[$listId]',
-      TaskTimelineBar(:final task) => task.id,
+    ...switch (row) {
+      TaskTimelineCaption(isOverdue: true) => ['overdue'],
+      TaskTimelineCaption(:final listId) => ['[$listId]'],
+      TaskTimelineLane(:final bars) => bars.map((bar) => bar.task.id),
+      TaskTimelineBar(:final task) => [task.id],
     },
 ];
 
 TaskTimelineBar _bar(TaskTimelineProjection projection, String id) => projection
     .rows
-    .whereType<TaskTimelineBar>()
+    .expand(
+      (row) => switch (row) {
+        TaskTimelineCaption() => const <TaskTimelineBar>[],
+        TaskTimelineLane(:final bars) => bars,
+        TaskTimelineBar() => [row],
+      },
+    )
     .firstWhere((bar) => bar.task.id == id);
 
 void main() {

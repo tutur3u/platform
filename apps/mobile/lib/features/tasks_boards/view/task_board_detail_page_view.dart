@@ -380,10 +380,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onToggleTaskSelection: (task) => context
                             .read<TaskBoardDetailCubit>()
                             .toggleBulkTaskSelection(task.id),
-                        onQuickAdd: () => _openTaskCreateSheet(
-                          context,
-                          lists: sortedLists,
-                        ),
+                        onQuickAdd: () =>
+                            _openTaskCreateSheet(context, lists: sortedLists),
                         onLoadMore: () {
                           _loadMoreVisibleLists(
                             context,
@@ -453,10 +451,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
                         onShowUndated: () => _showUndated(isPersonalBoard),
-                        onScheduleTask: () => _openTaskCreateSheet(
-                          context,
-                          lists: sortedLists,
-                        ),
+                        onScheduleTask: () =>
+                            _openTaskCreateSheet(context, lists: sortedLists),
                         onBarShift: (task, deltaDays) => _shiftTaskTimeline(
                           context,
                           task: task,
@@ -1204,7 +1200,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     required int deltaDays,
   }) async {
     if (deltaDays == 0) return;
-
     DateTime? shift(DateTime? date) {
       if (date == null) return null;
       final wall = taskInZone(date, taskTimezone(context));
@@ -1215,6 +1210,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         ? task.name!.trim()
         : context.l10n.taskBoardDetailUntitledTask;
     final cubit = context.read<TaskBoardDetailCubit>();
+    final toastContext = Navigator.of(context, rootNavigator: true).context;
     try {
       await cubit.updateTask(
         taskId: task.id,
@@ -1223,9 +1219,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         endDate: shift(task.endDate),
       );
     } on Exception {
-      if (!context.mounted) return;
+      if (!context.mounted || !toastContext.mounted) return;
       shad.showToast(
-        context: Navigator.of(context, rootNavigator: true).context,
+        context: toastContext,
         builder: (context, overlay) => shad.Alert.destructive(
           content: Text(context.l10n.commonSomethingWentWrong),
         ),

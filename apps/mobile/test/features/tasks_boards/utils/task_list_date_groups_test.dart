@@ -5,9 +5,7 @@ import 'package:mobile/features/tasks_boards/utils/task_list_date_groups.dart';
 
 void main() {
   final now = DateTime(2026, 11, 18, 12);
-  const lists = [
-    TaskBoardList(id: 'todo', boardId: 'b', name: 'To do'),
-  ];
+  const lists = [TaskBoardList(id: 'todo', boardId: 'b', name: 'To do')];
 
   TaskBoardTask task(
     String id, {
