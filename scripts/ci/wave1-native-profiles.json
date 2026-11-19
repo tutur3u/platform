@@ -511,6 +511,84 @@
           "stagingPublicationVars": {}
         }
       }
+    },
+    "git": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-git",
+      "canonicalHost": "git.tuturuuu.com",
+      "secrets": [
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+        "SUPABASE_SECRET_KEY",
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "ENCRYPTION_MASTER_KEY"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "git",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://git.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+          "SUPABASE_SECRET_KEY",
+          "TUTURUUU_APP_COORDINATION_SECRET",
+          "ENCRYPTION_MASTER_KEY"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/git/void.config.ts",
+          "script": "build:cloudflare",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 307,
+              "redirectOrigin": "https://git.tuturuuu.com",
+              "noStore": true
+            },
+            {
+              "path": "/vi/tutur3u/platform?source=smoke",
+              "status": 307,
+              "redirectOrigin": "https://git.tuturuuu.com",
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-git",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-git",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": true
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "0"
+          },
+          "stagingPublicationVars": {}
+        }
+      }
     }
   },
   "stagingAdmission": {
