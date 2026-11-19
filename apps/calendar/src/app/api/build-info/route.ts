@@ -1,3 +1,3 @@
-import { createBuildInfoHandler } from '@tuturuuu/utils/build-info-route';
+import { createPublicBuildInfoHandler } from '@tuturuuu/utils/build-info-route';
 
-export const GET = createBuildInfoHandler('calendar');
+export const GET = createPublicBuildInfoHandler('calendar');

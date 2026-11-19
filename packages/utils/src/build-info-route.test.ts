@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createBuildInfoHandler } from './build-info-route';
+import {
+  createBuildInfoHandler,
+  createPublicBuildInfoHandler,
+  isPublicBuildInfoRequest,
+} from './build-info-route';
 
 describe('createBuildInfoHandler', () => {
   it('reports the app name and the build the bundle was made from', async () => {
@@ -23,5 +27,47 @@ describe('createBuildInfoHandler', () => {
     const response = createBuildInfoHandler('web')();
 
     expect(response.headers.get('cache-control')).toContain('no-store');
+  });
+});
+
+describe('createPublicBuildInfoHandler', () => {
+  it('exposes only the commit and build time', async () => {
+    const response = createPublicBuildInfoHandler('mail')();
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Object.keys(body).sort()).toEqual([
+      'appName',
+      'builtAt',
+      'commitHash',
+      'shortCommitHash',
+    ]);
+    expect(body.appName).toBe('mail');
+    expect(response.headers.get('cache-control')).toContain('no-store');
+  });
+});
+
+describe('isPublicBuildInfoRequest', () => {
+  const request = (method: string, pathname: string) => ({
+    method,
+    nextUrl: { pathname },
+  });
+
+  it('admits only GET and HEAD on the exact build-info path', () => {
+    expect(isPublicBuildInfoRequest(request('GET', '/api/build-info'))).toBe(
+      true
+    );
+    expect(isPublicBuildInfoRequest(request('HEAD', '/api/build-info'))).toBe(
+      true
+    );
+    expect(isPublicBuildInfoRequest(request('POST', '/api/build-info'))).toBe(
+      false
+    );
+    expect(
+      isPublicBuildInfoRequest(request('GET', '/api/build-info/extra'))
+    ).toBe(false);
+    expect(isPublicBuildInfoRequest(request('GET', '/api/v1/build-info'))).toBe(
+      false
+    );
   });
 });

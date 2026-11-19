@@ -1,3 +1,4 @@
+import { isPublicBuildInfoRequest } from '@tuturuuu/utils/build-info-route';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
@@ -97,6 +98,8 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 async function routeProxy(req: NextRequest): Promise<NextResponse> {
   const mounted = isApexMountedRequest(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (isPublicBuildInfoRequest(req)) return NextResponse.next();
+
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );

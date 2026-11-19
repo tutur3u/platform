@@ -27,3 +27,45 @@ export function createBuildInfoHandler(appName: string) {
     });
   };
 }
+
+/**
+ * Minimal public variant: the serving commit and build time only, with no
+ * release notes or version fields. Apps whose API sits behind an app-session
+ * guard expose this so a deploy can be verified without credentials.
+ */
+export function createPublicBuildInfoHandler(appName: string) {
+  return function GET(): Response {
+    const info = getPlatformReleaseInfo(appName);
+
+    return new Response(
+      JSON.stringify(
+        {
+          appName: info.appName,
+          commitHash: info.commitHash,
+          shortCommitHash: info.shortCommitHash,
+          builtAt: info.builtAt,
+        },
+        null,
+        2
+      ),
+      {
+        headers: {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store, max-age=0',
+        },
+        status: 200,
+      }
+    );
+  };
+}
+
+/** True for the unauthenticated build-stamp probe (GET or HEAD /api/build-info). */
+export function isPublicBuildInfoRequest(request: {
+  method: string;
+  nextUrl: { pathname: string };
+}): boolean {
+  return (
+    (request.method === 'GET' || request.method === 'HEAD') &&
+    request.nextUrl.pathname === '/api/build-info'
+  );
+}
