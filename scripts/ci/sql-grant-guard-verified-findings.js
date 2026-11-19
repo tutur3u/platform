@@ -516,4 +516,74 @@ module.exports = [
     reason:
       'Reviewed static bounded DO block: one capped repair of notifications already consumed in Mail state, with a 50000-row guard; no EXECUTE, routine creation, grants or caller-controlled SQL; preserve staging-applied 20261119003000 bytes',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql',
+    line: 7,
+    rule: 'function-acl',
+    fileDigest:
+      'c27fd01b36e0aa95bcb6fd2e178a22c53b57c23a04b691af7124945107b4352d',
+    digest: '331d3bd30c5ff38765b0db0207f9c9744949eee2d7e0e9c0b7417dcead1ed54e',
+    reason:
+      'SECURITY INVOKER trigger private.meet_attendance_reject_workspace_move() rejects moving an attendance interval to a different workspace. REVOKE ALL at line 22 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120020700_wallet_checkpoint_review.sql',
+    line: 7,
+    rule: 'function-acl',
+    fileDigest:
+      '78480f97d8e1e35e5835aeaa7dca45800976c3fd0305bb02ccf7ffe69760a198',
+    digest: 'c8926b1c57f2081477482a4691ae0d9429b8ae8475de6a99735a35727637c5c8',
+    reason:
+      'SECURITY INVOKER trigger private.invalidate_wallet_checkpoint_review() invalidates a saved review if the wallet, balance or checkpoint changes. REVOKE ALL at line 23 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120025200_meet_attendance_meeting_fence.sql',
+    line: 7,
+    rule: 'function-acl',
+    fileDigest:
+      '347da58bb3539759f62172cb2f0d040ae556db5ea9aeea9f4939bd2ae55e591c',
+    digest: '194644af907b6821a7dee626b529e170aceff5e1ce0bad01d0aa73693616912e',
+    reason:
+      'SECURITY INVOKER trigger private.meet_attendance_reject_meeting_move() rejects moving an attendance interval to another meeting. REVOKE ALL at line 22 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120031300_education_learner_progress.sql',
+    line: 75,
+    rule: 'function-acl',
+    fileDigest:
+      'a8ce39411bc5a28eca284189e613d355a16e42780c387d9b6f2fdbea4000a393',
+    digest: '5e70b39126fe047e06449fca5f6f14c03d415b0f1e69c954b91941ed3169e37a',
+    reason:
+      'SECURITY INVOKER trigger private.enforce_education_learner_quiz_attempt_scope() validates quiz-attempt scope before writes. REVOKE ALL at line 232 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120031300_education_learner_progress.sql',
+    line: 99,
+    rule: 'function-acl',
+    fileDigest:
+      'a8ce39411bc5a28eca284189e613d355a16e42780c387d9b6f2fdbea4000a393',
+    digest: 'dbf78a3db404c497a651914f4fdc7a9a8a674640c0f06551527f9f7c35df7726',
+    reason:
+      'SECURITY INVOKER trigger private.enforce_education_learner_answer_scope() validates quiz-answer scope before writes. REVOKE ALL at line 233 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120031300_education_learner_progress.sql',
+    line: 124,
+    rule: 'function-acl',
+    fileDigest:
+      'a8ce39411bc5a28eca284189e613d355a16e42780c387d9b6f2fdbea4000a393',
+    digest: 'ee88e82c6f9cb51a1881ccc8b7367ebb4e8604dae0c66307fba4c59a6014a382',
+    reason:
+      'SECURITY INVOKER trigger private.enforce_education_learner_module_progress_scope() validates module-progress scope before writes. REVOKE ALL at line 234 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
+  {
+    path: 'apps/database/supabase/migrations/20261120031301_workspace_documents_owner_and_updated_at.sql',
+    line: 22,
+    rule: 'function-acl',
+    fileDigest:
+      'e2ab6fbc21bd9792b14314648e3bb1343fbe77e01c44a4982ac255cb635f65e8',
+    digest: 'f88f1d26137195858b45a2ab3f55c4ae0cd16161bf01de89f493f306448cb291',
+    reason:
+      'SECURITY INVOKER trigger private.workspace_documents_touch_updated_at() sets the document update timestamp on writes. REVOKE ALL at line 41 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
+  },
 ];
