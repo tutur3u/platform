@@ -69,6 +69,9 @@ export interface MeetRoomSnapshot extends TranscriptionRoomState {
   classTimer?: ClassTimer | null;
   attendance?: AttendanceInterval[];
   attendanceEpoch?: number;
+  /** Durable room id so a cold alarm can still publish the attendance directory. */
+  roomName?: string;
+  attendanceIndex?: import('./attendance-directory').AttendanceIndexState;
   endedAt?: string;
   serviceLimits?: Record<string, { resetAt: number; count: number }>;
 }

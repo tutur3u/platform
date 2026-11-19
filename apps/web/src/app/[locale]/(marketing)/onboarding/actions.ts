@@ -282,11 +282,13 @@ export async function createWorkspaceFromOnboarding(
     if (memberError) {
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
-      const { error: cleanupError } = await sbAdmin
-        .from('workspaces')
-        .delete()
-        .eq('id', workspace.id);
-      if (cleanupError) {
+      try {
+        const { withWorkspaceAttendanceErasure } =
+          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+        await withWorkspaceAttendanceErasure(workspace.id, () =>
+          sbAdmin.from('workspaces').delete().eq('id', workspace.id)
+        );
+      } catch (cleanupError) {
         console.error('Error cleaning up workspace:', cleanupError);
         return { success: false, error: 'Failed to clean up workspace' };
       }

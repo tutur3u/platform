@@ -44,6 +44,7 @@
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
+    "@tuturuuu/meet-core": "workspace:*",
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",

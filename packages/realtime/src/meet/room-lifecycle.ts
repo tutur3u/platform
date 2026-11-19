@@ -146,25 +146,27 @@ export function applyRoomRestore(
     return fail('Room resource allowance exhausted', 409);
   const version = (state.lifecycle?.version ?? 0) + 1;
   const clean = endMeetRoom(state, new Date(now).toISOString(), features);
-  return {
-    state: {
-      ...clean,
-      ended: false,
-      liveAssistant: undefined,
-      miraPrivate: undefined,
-      liveShares: {},
-      budget: {
-        ...clean.budget!,
-        nextCleanupAt: state.budget.nextCleanupAt,
-        accountedAt: Math.max(state.budget.accountedAt, now),
-      },
-      lifecycle: {
-        version,
-        hadConnection: true,
-        ownerAccountId: accountId,
-        emptySince: now,
-      },
+  const restored: RoomServiceState = {
+    ...clean,
+    ended: false,
+    liveAssistant: undefined,
+    miraPrivate: undefined,
+    liveShares: {},
+    budget: {
+      ...clean.budget!,
+      nextCleanupAt: state.budget.nextCleanupAt,
+      accountedAt: Math.max(state.budget.accountedAt, now),
     },
+    lifecycle: {
+      version,
+      hadConnection: true,
+      ownerAccountId: accountId,
+      emptySince: now,
+    },
+  };
+  delete restored.endedAt;
+  return {
+    state: restored,
     body: { ended: false, lifecycleVersion: version },
   };
 }

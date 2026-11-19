@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => {
 vi.mock('@tuturuuu/apis/members/route', () => ({
   DELETE: mocks.deleteMembers,
   GET: mocks.getMembers,
+  registerOrphanedWorkspaceCleanup: vi.fn(),
 }));
 
 vi.mock('@/lib/api-auth', () => ({

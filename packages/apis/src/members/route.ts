@@ -27,6 +27,37 @@ export interface MembersRouteAuthContext {
   };
 }
 
+export type WorkspaceRowDelete = () => Promise<{ error: unknown }>;
+
+export interface OrphanedWorkspaceCleanup {
+  /** Finish a pending erasure when the workspace row is already gone. */
+  resume(wsId: string): Promise<void>;
+  /** Delete the workspace row after attendance erasure is prepared. */
+  deleteWorkspace(wsId: string, remove: WorkspaceRowDelete): Promise<void>;
+}
+
+async function deleteWorkspaceRow(
+  _wsId: string,
+  remove: WorkspaceRowDelete
+): Promise<void> {
+  const removed = await remove();
+  if (removed.error) throw removed.error;
+}
+
+const directOrphanedWorkspaceCleanup: OrphanedWorkspaceCleanup = {
+  resume: async () => {},
+  deleteWorkspace: deleteWorkspaceRow,
+};
+
+let orphanedWorkspaceCleanup = directOrphanedWorkspaceCleanup;
+
+/** Member-removal apps register attendance erasure around orphaned deletes. */
+export function registerOrphanedWorkspaceCleanup(
+  cleanup: OrphanedWorkspaceCleanup
+) {
+  orphanedWorkspaceCleanup = cleanup;
+}
+
 interface WorkspaceMemberRow {
   user_id: string;
   users: {
@@ -382,7 +413,19 @@ async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
       .eq('id', wsId)
       .single();
 
-    if (!workspaceData || workspaceData.personal) return false;
+    if (!workspaceData || workspaceData.personal) {
+      if (!workspaceData) {
+        try {
+          await orphanedWorkspaceCleanup.resume(wsId);
+        } catch (resumeError) {
+          console.error(
+            `Failed to finish attendance erasure for workspace ${wsId}:`,
+            resumeError
+          );
+        }
+      }
+      return false;
+    }
 
     // Count remaining members (admin client needed since user just left)
     const { count, error: countError } = await sbAdmin
@@ -423,13 +466,13 @@ async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
       // Continue — Polar webhook reconciliation will catch this
     }
 
-    // Delete the workspace (cascades to all related tables)
-    const { error: deleteError } = await sbAdmin
-      .from('workspaces')
-      .delete()
-      .eq('id', wsId);
-
-    if (deleteError) {
+    // Delete the workspace (cascades to all related tables). A registered
+    // cleanup removes attendance copies only after this delete succeeds.
+    try {
+      await orphanedWorkspaceCleanup.deleteWorkspace(wsId, () =>
+        sbAdmin.from('workspaces').delete().eq('id', wsId)
+      );
+    } catch (deleteError) {
       console.error(
         `Failed to delete orphaned workspace ${wsId}:`,
         deleteError

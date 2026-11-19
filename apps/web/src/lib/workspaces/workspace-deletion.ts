@@ -1,4 +1,3 @@
-import type { AttendanceErasurePlan } from '@tuturuuu/meet-core/features/call/server/attendance-erasure';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -23,16 +22,6 @@ const RESPONSES = {
 } as const;
 
 type DeletionCode = keyof typeof RESPONSES;
-
-async function attendanceCollectionEnabled() {
-  try {
-    const { meetClassAttendanceEnabled } =
-      await import('@tuturuuu/realtime/meet');
-    return meetClassAttendanceEnabled();
-  } catch {
-    return false;
-  }
-}
 
 function erasureFailure(error: unknown) {
   console.error('Meet attendance erasure failed', {
@@ -105,21 +94,20 @@ export async function deleteWorkspaceForActor(
     return audit('confirmation_mismatch');
   }
 
-  let commitAttendanceErasure:
-    | ((plan: AttendanceErasurePlan | null) => Promise<void>)
-    | null = null;
-  let attendancePlan: AttendanceErasurePlan | null = null;
-  try {
-    const erasure =
-      await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-    // Read former room names before the delete cascades those rows away.
-    attendancePlan =
-      await erasure.prepareWorkspaceAttendanceErasure(workspaceId);
-    commitAttendanceErasure = erasure.commitAttendanceErasure;
-  } catch (error) {
-    if (await attendanceCollectionEnabled()) throw error;
-    erasureFailure(error);
-  }
+  const erasure =
+    await import('@tuturuuu/meet-core/features/call/server/attendance-erasure').catch(
+      (error: unknown) => {
+        erasureFailure(error);
+        throw error;
+      }
+    );
+  // Read former room names before the delete cascades those rows away.
+  const begun = await erasure
+    .openWorkspaceAttendanceErasure(workspaceId)
+    .catch((error: unknown) => {
+      erasureFailure(error);
+      throw error;
+    });
 
   const admin = await createAdminClient({ noCookie: true });
   const args = {
@@ -130,27 +118,40 @@ export async function deleteWorkspaceForActor(
   const { data, error } = await admin.rpc('delete_owned_workspace', args);
   if (error) {
     console.error('Workspace deletion failed', { code: error.code });
+    if (begun.preexisting && begun.plan.phase === 'confirmed') {
+      try {
+        await erasure.commitAttendanceErasure(begun.plan);
+        return audit('deleted');
+      } catch (commitError) {
+        erasureFailure(commitError);
+        return audit('failed');
+      }
+    }
+    await erasure.releaseAttendanceErasure(begun);
     return audit('failed');
   }
 
   const result: unknown = data;
-  switch (result) {
-    case 'deleted':
-      try {
-        if (commitAttendanceErasure)
-          await commitAttendanceErasure(attendancePlan);
-      } catch (error) {
-        erasureFailure(error);
-        if (!(await attendanceCollectionEnabled())) return audit('deleted');
-        return audit('failed');
-      }
-      return audit('deleted');
-    case 'forbidden':
-    case 'not_found':
-    case 'confirmation_mismatch':
-    case 'subscription_active':
+  const confirmed =
+    result === 'deleted' || (result === 'not_found' && begun.preexisting);
+  if (!confirmed) {
+    if (
+      result === 'forbidden' ||
+      result === 'not_found' ||
+      result === 'confirmation_mismatch' ||
+      result === 'subscription_active'
+    ) {
+      await erasure.releaseAttendanceErasure(begun);
       return audit(result);
-    default:
-      return audit('failed');
+    }
+    await erasure.releaseAttendanceErasure(begun);
+    return audit('failed');
   }
+  try {
+    await erasure.commitAttendanceErasure(begun.plan);
+  } catch (error) {
+    erasureFailure(error);
+    return audit('failed');
+  }
+  return audit('deleted');
 }

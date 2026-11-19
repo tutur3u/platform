@@ -40,6 +40,16 @@ vi.mock('@tuturuuu/payment-core/subscription-helper', () => ({
 
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 
+vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
+  withWorkspaceAttendanceErasure: async (
+    _wsId: string,
+    remove: () => Promise<{ error: unknown }>
+  ) => {
+    const removed = await remove();
+    if (removed.error) throw removed.error;
+  },
+}));
+
 interface Call {
   table: string;
   op: string;

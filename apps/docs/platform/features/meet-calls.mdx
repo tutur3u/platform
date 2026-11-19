@@ -77,8 +77,9 @@ to the exact string `true`. Production sets it to `false`. An absent value is
 off. While attendance is off, the room does not record join or leave
 intervals, the Attendance panel stays hidden, and
 `GET /api/meet-call/{meetingId}/attendance` returns 404 without reading
-storage. Deleting a meeting, a workspace, or an account does not read or
-erase attendance while the switch is off. An interval that is already open
+storage. Deleting a meeting, a workspace, or an account still removes
+attendance copies, including copies recorded during an enabled period.
+An interval that is already open
 is still closed when the switch is off and when the room ends.
 
 The class timer is on when `MEET_CLASS_TIMER_ENABLED` is the exact string
@@ -143,18 +144,27 @@ includes that copy. The Meet API reads it with the server credential after the
 host or co-host check, then stores it. The realtime worker does not receive
 database credentials.
 
-Deleting a meeting or a workspace removes the Postgres rows only after the
-database confirms the delete, and only while the attendance switch is on. The
-app reads the room names first, because the cascade removes the rows that name
-former rooms. It then bumps an erasure generation, drops the room copy
-(including a copy still stored under a former workspace), and deletes the
-rows. A direct meeting delete does this after the meeting row is gone, so a
-recreated meeting id cannot read the old room copy. A sync that started before
-erasure cannot write the rows back. Account deletion calls
-`eraseMeetAttendanceSubject` for that user id before the account is removed.
-That call also matches a signed-in guest stored under the same id, and rooms
-that were indexed but not yet stored in Postgres. While the switch is off,
-these deletion paths do nothing and cannot fail the delete.
+Deleting a meeting or a workspace removes the Postgres rows after the
+database confirms the delete. The app reads the room names first, because the
+cascade removes the rows that name former rooms. One SQL statement increments
+the erasure generation and returns it. The room sets its attendance epoch to
+that generation and does not lower it when an older generation arrives. The
+same generation on both subject posts does not advance the epoch twice. The
+app then drops the room copy (including a copy still stored under a former
+workspace) and deletes the rows. A room that never existed does not gain an
+empty snapshot. A direct meeting delete does this after the meeting row is
+gone, so a recreated meeting id cannot read the old room copy. A sync that
+started before erasure cannot write the rows back. If that commit fails after
+the delete is confirmed, a private pending record remains. A later retry or
+the room alarm finishes it. Account deletion saves that plan, removes the
+account, and only then erases the person's copies. That erasure also matches
+a signed-in guest stored under the same id, and rooms that were indexed but
+not yet stored in Postgres. These deletion paths still run while the switch
+is off. A failure while planning the erasure stops the delete. Restoring a
+room clears its end time, so attendance after the restore is not capped at
+the old end. The attendance directory stores a room name so a cold alarm can
+still publish and forget, writes only when the room's subjects change, and
+keeps a bounded set of rooms.
 
 Row level security allows only the meeting creator to select rows, and client
 roles have no grants. Co-hosts are workspace admins. The Meet API checks that

@@ -8,7 +8,6 @@ import {
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
-  ATTENDANCE_DIRECTORY_ROOM,
   meetClassFeatures,
   meetRoomStateView,
   createMeetRoomSnapshot,
@@ -39,13 +38,15 @@ import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage'
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import {
   handleAttendanceDirectoryRequest,
-  publishRoomAttendanceIndex,
+  publishStoredAttendance,
 } from './attendance-directory-request';
 import { handleMeetClassServiceRequest } from './room-class-service';
 import {
   cleanupRoomPublications,
+  countRoomHttpRequest,
   retainRoomAttendance,
   scheduleRoomFollowUps,
+  wakeAttendanceCopies,
 } from './room-maintenance';
 import { handleMeetRoomDevice } from './room-device-request';
 import { privateRoomStorage } from './private-room-storage';
@@ -71,6 +72,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private readonly state: DurableObjectState;
   private snapshot: RoomServiceState = createMeetRoomSnapshot();
   private roomName: string | undefined;
+  private snapshotStored = false;
   private loading: Promise<void> | null = null;
   private readonly presence = new MeetPresencePublisher();
   private commands = new MeetCommandExecutor();
@@ -94,11 +96,13 @@ export class MeetRoomDurableObject implements DurableObject {
     this.loading ??= this.state.blockConcurrencyWhile(async () => {
       const stored =
         await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
-      if (stored)
+      if (stored) {
+        this.snapshotStored = true;
         this.snapshot = normalizeTranscriptionConsent({
           ...createMeetRoomSnapshot(),
           ...stored,
         });
+      }
       this.presence.restore(this.snapshot);
       this.delivery.resyncRestoredSockets();
       const counter = await this.state.storage.get<
@@ -133,18 +137,16 @@ export class MeetRoomDurableObject implements DurableObject {
 
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
+    this.snapshotStored = true;
     // Output gating keeps acknowledgements behind the durable write.
     const snapshot = this.snapshot;
-    publishRoomAttendanceIndex({
-      roomId: this.roomName,
-      intervals: snapshot.attendance,
-      secret: this.env.MEET_REALTIME_TOKEN_SECRET,
-      waitUntil: (task) => this.state.waitUntil?.(task),
-      fetchRoom: (request) =>
-        this.env.MEET_ROOM.get(
-          this.env.MEET_ROOM.idFromName(ATTENDANCE_DIRECTORY_ROOM)
-        ).fetch(request),
-    });
+    publishStoredAttendance(
+      this.env,
+      this.state.storage,
+      snapshot,
+      this.roomName,
+      (task) => this.state.waitUntil?.(task)
+    );
     return this.presence.persist(
       snapshot,
       () =>
@@ -220,16 +222,10 @@ export class MeetRoomDurableObject implements DurableObject {
         secret: this.env.MEET_REALTIME_TOKEN_SECRET,
       });
     await this.load();
-    this.snapshot.usage ??= createRoomUsage();
-    this.snapshot.usage.httpRequests++;
-    this.snapshot.usage.httpCounterWrites =
-      (this.snapshot.usage.httpCounterWrites ?? 0) + 1;
-    this.state.waitUntil(
-      this.state.storage.put('usage-http-requests', {
-        requests: this.snapshot.usage.httpRequests,
-        writes: this.snapshot.usage.httpCounterWrites,
-      })
-    );
+    if (url.pathname !== '/class-service' || this.snapshotStored)
+      countRoomHttpRequest(this.snapshot, this.state.storage, (task) =>
+        this.state.waitUntil?.(task)
+      );
 
     if (url.pathname === '/class-service')
       return handleMeetClassServiceRequest({
@@ -238,6 +234,7 @@ export class MeetRoomDurableObject implements DurableObject {
         features: meetClassFeatures(this.env),
         snapshot: this.snapshot,
         now: new Date().toISOString(),
+        existed: this.snapshotStored,
         commit: async (snapshot, broadcast) => {
           this.snapshot = snapshot;
           await this.persist();
@@ -574,6 +571,18 @@ export class MeetRoomDurableObject implements DurableObject {
   async alarm() {
     await this.load();
     const now = Date.now();
+    if (
+      await wakeAttendanceCopies({
+        env: this.env,
+        storage: this.state.storage,
+        now,
+        snapshot: this.snapshot,
+        roomName: this.roomName,
+        waitUntil: (task) => this.state.waitUntil?.(task),
+        persist: () => this.persist(),
+      })
+    )
+      return;
     const features = meetClassFeatures(this.env);
     const retained = retainRoomAttendance(this.snapshot, features, now);
     if (retained !== this.snapshot) {

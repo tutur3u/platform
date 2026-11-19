@@ -58,6 +58,20 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     }),
   }),
 }));
+const erasure = vi.hoisted(() => ({
+  withWorkspace: vi.fn(),
+  openSubject: vi.fn(),
+  commit: vi.fn(),
+  release: vi.fn(),
+}));
+vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
+  withWorkspaceAttendanceErasure: (...args: unknown[]) =>
+    erasure.withWorkspace(...args),
+  openSubjectAttendanceErasure: (...args: unknown[]) =>
+    erasure.openSubject(...args),
+  commitAttendanceErasure: (...args: unknown[]) => erasure.commit(...args),
+  releaseAttendanceErasure: (...args: unknown[]) => erasure.release(...args),
+}));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
     (handler: (req: Request, context: unknown) => Promise<Response>) =>
@@ -103,6 +117,22 @@ beforeEach(() => {
   f.deleteWorkspace.mockResolvedValue({ error: null });
   f.revoke.mockResolvedValue({});
   f.revokeSeat.mockResolvedValue(undefined);
+  erasure.withWorkspace.mockImplementation(
+    async (_wsId: unknown, remove: unknown) => {
+      const removed = await (remove as () => Promise<{ error?: unknown }>)();
+      if (removed?.error) throw removed.error;
+    }
+  );
+  erasure.openSubject.mockResolvedValue({
+    plan: {
+      rooms: [],
+      sql: { op: 'subject', userId: 'user' },
+      phase: 'planned',
+    },
+    preexisting: false,
+  });
+  erasure.commit.mockResolvedValue(undefined);
+  erasure.release.mockResolvedValue(undefined);
 });
 
 it.each(['seat', 'subscription', 'workspace result', 'workspace throw'])(
@@ -221,3 +251,48 @@ it.each(['missing customer', 'revoked seat', '5xx', 'network', 'timeout'])(
     }
   }
 );
+
+it('commits subject erasure only after the account delete succeeds', async () => {
+  const order: string[] = [];
+  erasure.withWorkspace.mockImplementation(async (_wsId, remove) => {
+    order.push('workspace');
+    const removed = await (remove as () => Promise<{ error?: unknown }>)();
+    if (removed?.error) throw removed.error;
+  });
+  erasure.openSubject.mockImplementation(async () => {
+    order.push('open');
+    return {
+      plan: { rooms: [], sql: { op: 'subject', userId: 'user' } },
+      preexisting: false,
+    };
+  });
+  f.deleteUser.mockImplementation(async () => {
+    order.push('deleteUser');
+    return { error: null };
+  });
+  erasure.commit.mockImplementation(async () => {
+    order.push('commit');
+  });
+  const response = await POST(request() as never);
+  expect(response.status).toBe(200);
+  expect(order).toEqual(['workspace', 'open', 'deleteUser', 'commit']);
+
+  order.length = 0;
+  f.deleteUser.mockResolvedValue({ error: new Error('denied') });
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const denied = await POST(request() as never);
+  expect(denied.status).toBe(500);
+  expect(erasure.release).toHaveBeenCalled();
+  expect(order).not.toContain('commit');
+  log.mockRestore();
+});
+
+it('returns success when the account is gone and erasure commit fails', async () => {
+  erasure.commit.mockRejectedValue(new Error('timeout'));
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const response = await POST(request() as never);
+  expect(response.status).toBe(200);
+  expect(f.deleteUser).toHaveBeenCalledOnce();
+  expect(erasure.commit).toHaveBeenCalled();
+  log.mockRestore();
+});

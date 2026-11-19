@@ -20,6 +20,8 @@ export type MeetServiceClaims = {
   erase?: 'meeting' | 'subject';
   userId?: string;
   guestId?: string;
+  /** Fence generation assigned by SQL. Both subject posts share one value. */
+  generation?: number;
 };
 
 export function signMeetServiceCredential(
@@ -75,6 +77,12 @@ export function verifyMeetServiceCredential(
       return null;
   }
   if (parsed.purpose === 'attendance-erase') {
+    if (
+      typeof parsed.generation !== 'number' ||
+      !Number.isInteger(parsed.generation) ||
+      parsed.generation < 0
+    )
+      return null;
     if (parsed.erase === 'meeting') {
       if (parsed.userId !== undefined || parsed.guestId !== undefined)
         return null;

@@ -79,12 +79,101 @@ it('does not return the ledger unless attendance is on, and still erases when it
       exp: 1_800_000_000,
       erase: 'subject',
       userId: USER,
+      generation: 1,
     },
     { attendance: false, timer: false },
     NOW
   );
   expect(erased.snapshot.attendance).toEqual([]);
+  expect(erased.snapshot.attendanceEpoch).toBe(1);
   expect(erased.persist).toBe(true);
+});
+
+it('sets the epoch from the erasure generation and does not store a missing room', () => {
+  const claims = {
+    aud: 'meet-service' as const,
+    purpose: 'attendance-erase' as const,
+    roomId: ROOM,
+    exp: 1_800_000_000,
+    erase: 'meeting' as const,
+    generation: 1,
+  };
+  const snapshot = { ...createMeetRoomSnapshot(), attendance: [interval()] };
+  const once = applyMeetClassService(
+    snapshot,
+    claims,
+    { attendance: false, timer: false },
+    NOW
+  );
+  const twice = applyMeetClassService(
+    once.snapshot,
+    claims,
+    { attendance: false, timer: false },
+    NOW
+  );
+  expect(twice.snapshot.attendanceEpoch).toBe(1);
+  expect(twice.persist).toBe(false);
+  const raised = applyMeetClassService(
+    twice.snapshot,
+    { ...claims, generation: 4 },
+    { attendance: false, timer: false },
+    NOW
+  );
+  const older = applyMeetClassService(
+    raised.snapshot,
+    { ...claims, generation: 2 },
+    { attendance: false, timer: false },
+    NOW
+  );
+  expect(older.snapshot.attendanceEpoch).toBe(4);
+  expect(older.persist).toBe(false);
+  const missing = applyMeetClassService(
+    createMeetRoomSnapshot(),
+    { ...claims, generation: undefined },
+    { attendance: false, timer: false },
+    NOW
+  );
+  expect(missing.status).toBe(400);
+  expect(missing.persist).toBe(false);
+  const empty = createMeetRoomSnapshot();
+  const fenced = applyMeetClassService(
+    empty,
+    { ...claims, generation: 5 },
+    { attendance: false, timer: false },
+    NOW,
+    true
+  );
+  expect(fenced.persist).toBe(true);
+  expect(fenced.snapshot.attendanceEpoch).toBe(5);
+  const absent = applyMeetClassService(
+    snapshot,
+    claims,
+    { attendance: false, timer: false },
+    NOW,
+    false
+  );
+  expect(absent.status).toBe(200);
+  expect(absent.body).toEqual({ ok: true, absent: true });
+  expect(absent.persist).toBe(false);
+  expect(absent.snapshot).toBe(snapshot);
+  expect(snapshot.attendance?.[0]).not.toHaveProperty('leftAt');
+  const unsigned = signMeetServiceCredential(
+    {
+      aud: 'meet-service',
+      purpose: 'attendance-erase',
+      roomId: ROOM,
+      exp: 1_800_000_000,
+      erase: 'meeting',
+    },
+    SECRET
+  );
+  expect(
+    verifyMeetServiceCredential(unsigned, SECRET, 1_700_000_000_000)
+  ).toBeNull();
+  const signed = signMeetServiceCredential(claims, SECRET);
+  expect(
+    verifyMeetServiceCredential(signed, SECRET, 1_700_000_000_000)?.generation
+  ).toBe(1);
 });
 
 it('lets a rechecked host start the timer and refuses a co-host pause', () => {

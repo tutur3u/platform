@@ -1,20 +1,27 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const { flags, createAdminClientMock, prepareMock, commitMock, rpcMock } =
-  vi.hoisted(() => ({
-    flags: { attendance: true },
-    createAdminClientMock: vi.fn(),
-    prepareMock: vi.fn(),
-    commitMock: vi.fn(),
-    rpcMock: vi.fn(),
-  }));
+const {
+  flags,
+  createAdminClientMock,
+  openMock,
+  releaseMock,
+  commitMock,
+  rpcMock,
+} = vi.hoisted(() => ({
+  flags: { attendance: true },
+  createAdminClientMock: vi.fn(),
+  openMock: vi.fn(),
+  releaseMock: vi.fn(),
+  commitMock: vi.fn(),
+  rpcMock: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: unknown[]) => createAdminClientMock(...args),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
-  prepareWorkspaceAttendanceErasure: (...args: unknown[]) =>
-    prepareMock(...args),
+  openWorkspaceAttendanceErasure: (...args: unknown[]) => openMock(...args),
+  releaseAttendanceErasure: (...args: unknown[]) => releaseMock(...args),
   commitAttendanceErasure: (...args: unknown[]) => commitMock(...args),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
@@ -47,12 +54,21 @@ const supabase = {
 beforeEach(() => {
   vi.clearAllMocks();
   flags.attendance = true;
-  prepareMock.mockResolvedValue({
-    rooms: [
-      { roomId: `${WORKSPACE}:meeting`, wsId: WORKSPACE, meetingId: 'meeting' },
-    ],
-    sql: { op: 'workspace', wsId: WORKSPACE },
+  openMock.mockResolvedValue({
+    plan: {
+      rooms: [
+        {
+          roomId: `${WORKSPACE}:meeting`,
+          wsId: WORKSPACE,
+          meetingId: 'meeting',
+        },
+      ],
+      sql: { op: 'workspace', wsId: WORKSPACE },
+      phase: 'planned',
+    },
+    preexisting: false,
   });
+  releaseMock.mockResolvedValue(undefined);
   commitMock.mockResolvedValue(undefined);
   rpcMock.mockResolvedValue({ data: 'deleted', error: null });
   createAdminClientMock.mockResolvedValue({ rpc: rpcMock });
@@ -68,9 +84,12 @@ function actor() {
 
 it('erases attendance only after the database confirms deletion', async () => {
   const order: string[] = [];
-  prepareMock.mockImplementation(async () => {
-    order.push('prepare');
-    return { rooms: [], sql: { op: 'workspace', wsId: WORKSPACE } };
+  openMock.mockImplementation(async () => {
+    order.push('open');
+    return {
+      plan: { rooms: [], sql: { op: 'workspace', wsId: WORKSPACE } },
+      preexisting: false,
+    };
   });
   rpcMock.mockImplementation(async () => {
     order.push('delete');
@@ -81,7 +100,7 @@ it('erases attendance only after the database confirms deletion', async () => {
   });
   const deleted = await deleteWorkspaceForActor(actor(), 'Class');
   expect(deleted.status).toBe(200);
-  expect(order).toEqual(['prepare', 'delete', 'commit']);
+  expect(order).toEqual(['open', 'delete', 'commit']);
 
   order.length = 0;
   rpcMock.mockImplementation(async () => {
@@ -90,23 +109,26 @@ it('erases attendance only after the database confirms deletion', async () => {
   });
   const denied = await deleteWorkspaceForActor(actor(), 'Class');
   expect(denied.status).toBe(409);
-  expect(order).toEqual(['prepare', 'delete']);
+  expect(order).toEqual(['open', 'delete']);
   expect(commitMock).toHaveBeenCalledTimes(1);
+  expect(releaseMock).toHaveBeenCalledTimes(1);
 });
 
-it('does not delete the workspace when planning fails while attendance is on', async () => {
-  prepareMock.mockRejectedValue(new Error('timeout'));
+it('does not delete the workspace when planning fails', async () => {
+  openMock.mockRejectedValue(new Error('timeout'));
   await expect(deleteWorkspaceForActor(actor(), 'Class')).rejects.toThrow(
     'timeout'
   );
   expect(rpcMock).not.toHaveBeenCalled();
 });
 
-it('does not fail workspace deletion when attendance erasure is off', async () => {
+it('still requires an erasure plan while attendance is off', async () => {
   flags.attendance = false;
-  prepareMock.mockRejectedValue(new Error('type error'));
-  const deleted = await deleteWorkspaceForActor(actor(), 'Class');
-  expect(deleted.status).toBe(200);
+  openMock.mockRejectedValue(new Error('plan failed'));
+  await expect(deleteWorkspaceForActor(actor(), 'Class')).rejects.toThrow(
+    'plan failed'
+  );
+  expect(rpcMock).not.toHaveBeenCalled();
   expect(commitMock).not.toHaveBeenCalled();
 });
 

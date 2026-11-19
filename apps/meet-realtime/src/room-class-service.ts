@@ -12,6 +12,7 @@ export async function handleMeetClassServiceRequest(input: {
   features: MeetClassFeatures;
   snapshot: MeetRoomSnapshot;
   now: string;
+  existed?: boolean;
   commit: (
     snapshot: MeetRoomSnapshot,
     broadcast: MeetRealtimeServerMessage[]
@@ -29,7 +30,8 @@ export async function handleMeetClassServiceRequest(input: {
     input.snapshot,
     claims,
     input.features,
-    input.now
+    input.now,
+    input.existed !== false
   );
   if (result.persist || result.broadcast.length)
     await input.commit(result.snapshot, result.broadcast);

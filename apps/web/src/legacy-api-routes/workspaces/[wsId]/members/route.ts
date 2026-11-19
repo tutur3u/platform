@@ -4,7 +4,10 @@ import {
 } from '@tuturuuu/apis/members/route';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/legacy-api-routes/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { registerWebOrphanedWorkspaceCleanup } from '@/lib/meet/register-orphaned-workspace-cleanup';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+
+registerWebOrphanedWorkspaceCleanup();
 
 interface Params {
   wsId: string;

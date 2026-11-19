@@ -13,6 +13,7 @@ import {
   observeRoomConnections,
 } from './room-lifecycle';
 import type { RoomServiceState } from './room-service';
+import { aggregateAttendance } from './attendance-ledger';
 
 const now = Date.parse('2026-10-06T00:00:00Z');
 const host = meetRealtimeTokenPayloadSchema.parse({
@@ -237,6 +238,30 @@ describe('empty-room lifecycle', () => {
     expect(result.state.lifecycle!.version).toBe(state.lifecycle!.version + 1);
     expect(emptyRoomDeadline(result.state)).toBe(now + 303000);
     expect(restore(result.state).status).toBe(409);
+  });
+  it('clears the ended time so attendance after restore is not capped at the old end', () => {
+    const state = ended();
+    const endedAt = state.endedAt;
+    expect(endedAt).toBeTruthy();
+    const result = restore(state);
+    expect(result.state.endedAt).toBeUndefined();
+    const joinedAt = new Date(now + 4_000).toISOString();
+    const later = new Date(now + 124_000).toISOString();
+    const interval = {
+      sourceKey: `${host.userId}:${joinedAt}`,
+      deviceUserId: host.userId,
+      kind: 'member' as const,
+      userId: host.userId,
+      displayName: 'Ada',
+      joinedAt,
+    };
+    expect(
+      aggregateAttendance([interval], later, endedAt)[0]?.totalMinutes
+    ).toBe(0);
+    expect(
+      aggregateAttendance([interval], later, result.state.endedAt)[0]
+        ?.totalMinutes
+    ).toBe(2);
   });
 });
 

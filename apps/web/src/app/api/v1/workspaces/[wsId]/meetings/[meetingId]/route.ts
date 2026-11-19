@@ -208,7 +208,29 @@ export async function DELETE(
       .single();
 
     if (!existingMeeting) {
-      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
+      try {
+        const pendingErasure =
+          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+        const pending = await pendingErasure.readPendingAttendanceErasure({
+          op: 'meeting',
+          meetingId,
+        });
+        if (!pending)
+          return NextResponse.json(
+            { error: 'Meeting not found' },
+            { status: 404 }
+          );
+        await pendingErasure.commitAttendanceErasure(pending);
+        return NextResponse.json({ success: true });
+      } catch (erasureError) {
+        console.error('Meet attendance erasure failed', {
+          name: erasureError instanceof Error ? erasureError.name : 'unknown',
+        });
+        return NextResponse.json(
+          { error: 'Failed to delete meeting' },
+          { status: 500 }
+        );
+      }
     }
 
     if (
@@ -227,39 +249,24 @@ export async function DELETE(
         { status: 403 }
       );
     }
-    let commitAttendanceErasure:
-      | ((
-          plan:
-            | import('@tuturuuu/meet-core/features/call/server/attendance-erasure').AttendanceErasurePlan
-            | null
-        ) => Promise<void>)
-      | null = null;
-    let attendancePlan:
-      | import('@tuturuuu/meet-core/features/call/server/attendance-erasure').AttendanceErasurePlan
-      | null = null;
-    try {
-      const erasure =
-        await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-      // Read former room names before the delete cascades those rows away.
-      attendancePlan = await erasure.prepareMeetingAttendanceErasure(
-        wsId,
-        meetingId
+    const erasure =
+      await import('@tuturuuu/meet-core/features/call/server/attendance-erasure').catch(
+        (erasureError: unknown) => {
+          console.error('Meet attendance erasure failed', {
+            name: erasureError instanceof Error ? erasureError.name : 'unknown',
+          });
+          throw erasureError;
+        }
       );
-      commitAttendanceErasure = erasure.commitAttendanceErasure;
-    } catch (erasureError) {
-      let enabled = false;
-      try {
-        const { meetClassAttendanceEnabled } =
-          await import('@tuturuuu/realtime/meet');
-        enabled = meetClassAttendanceEnabled();
-      } catch {
-        enabled = false;
-      }
-      if (enabled) throw erasureError;
-      console.error('Meet attendance erasure failed', {
-        name: erasureError instanceof Error ? erasureError.name : 'unknown',
+    // Read former room names before the delete cascades those rows away.
+    const begun = await erasure
+      .openMeetingAttendanceErasure(wsId, meetingId)
+      .catch((erasureError: unknown) => {
+        console.error('Meet attendance erasure failed', {
+          name: erasureError instanceof Error ? erasureError.name : 'unknown',
+        });
+        throw erasureError;
       });
-    }
     const { data: deleted, error } = await supabase
       .from('workspace_meetings')
       .delete()
@@ -268,6 +275,22 @@ export async function DELETE(
       .select('id');
 
     if (error?.code === '42501' || (!error && !deleted?.length)) {
+      if (!(begun.preexisting && begun.plan.phase === 'confirmed'))
+        await erasure.releaseAttendanceErasure(begun);
+      else {
+        try {
+          await erasure.commitAttendanceErasure(begun.plan);
+          return NextResponse.json({ success: true });
+        } catch (erasureError) {
+          console.error('Meet attendance erasure failed', {
+            name: erasureError instanceof Error ? erasureError.name : 'unknown',
+          });
+          return NextResponse.json(
+            { error: 'Failed to delete meeting' },
+            { status: 500 }
+          );
+        }
+      }
       return NextResponse.json(
         { error: 'You no longer have permission to delete this meeting' },
         { status: 403 }
@@ -275,27 +298,19 @@ export async function DELETE(
     }
     if (error) {
       console.error('Error deleting meeting:', error);
+      if (begun.plan.phase !== 'confirmed')
+        await erasure.releaseAttendanceErasure(begun);
       return NextResponse.json(
         { error: 'Failed to delete meeting' },
         { status: 500 }
       );
     }
     try {
-      if (commitAttendanceErasure)
-        await commitAttendanceErasure(attendancePlan);
+      await erasure.commitAttendanceErasure(begun.plan);
     } catch (erasureError) {
-      let enabled = true;
-      try {
-        const { meetClassAttendanceEnabled } =
-          await import('@tuturuuu/realtime/meet');
-        enabled = meetClassAttendanceEnabled();
-      } catch {
-        enabled = false;
-      }
       console.error('Meet attendance erasure failed', {
         name: erasureError instanceof Error ? erasureError.name : 'unknown',
       });
-      if (!enabled) return NextResponse.json({ success: true });
       return NextResponse.json(
         { error: 'Failed to delete meeting' },
         { status: 500 }

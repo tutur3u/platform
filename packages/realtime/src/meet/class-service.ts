@@ -76,8 +76,17 @@ export function applyMeetClassService(
   snapshot: MeetRoomSnapshot,
   claims: MeetServiceClaims,
   features: MeetClassFeatures,
-  now: string
+  now: string,
+  existed = true
 ): MeetClassServiceResult {
+  if (claims.purpose === 'attendance-erase' && !existed)
+    return {
+      snapshot,
+      status: 200,
+      body: { ok: true, absent: true },
+      persist: false,
+      broadcast: [],
+    };
   const current = sealedSnapshot(snapshot, features, now);
   const sealed = current !== snapshot;
   if (claims.purpose === 'attendance-ledger') {
@@ -184,20 +193,30 @@ export function applyMeetClassService(
   }
   if (claims.purpose !== 'attendance-erase')
     return unchanged(current, 404, { error: 'unavailable' });
+  const generation = claims.generation;
+  if (!Number.isInteger(generation) || (generation ?? -1) < 0)
+    return unchanged(current, 400, { error: 'generation' });
   const attendance = eraseAttendanceCopy(current.attendance, {
     all: claims.erase === 'meeting',
     userId: claims.userId,
     guestId: claims.guestId,
   });
+  const epoch = current.attendanceEpoch ?? 0;
+  const nextEpoch = Math.max(epoch, generation ?? epoch);
+  const nextAttendance = attendance ?? [];
+  const sameCopy =
+    nextEpoch === epoch &&
+    (attendance === current.attendance ||
+      (nextAttendance.length === 0 && !(current.attendance ?? []).length));
   return {
     snapshot: {
       ...current,
-      attendance: attendance ?? [],
-      attendanceEpoch: (current.attendanceEpoch ?? 0) + 1,
+      attendance: nextAttendance,
+      attendanceEpoch: nextEpoch,
     },
     status: 200,
     body: { ok: true },
-    persist: true,
+    persist: !sameCopy,
     broadcast: [],
   };
 }

@@ -2,10 +2,16 @@ import { expect, it } from 'vitest';
 import type { AttendanceInterval } from './attendance-ledger';
 import {
   applyAttendanceDirectory,
+  ATTENDANCE_DIRECTORY_OVERFLOW_CAP,
   ATTENDANCE_DIRECTORY_PAGE,
+  ATTENDANCE_DIRECTORY_ROOM_CAP,
+  ATTENDANCE_INDEX_RETRY_MS,
   emptyAttendanceDirectory,
   forgetAttendanceRooms,
+  noteAttendanceIndexPublish,
   pageAttendanceDirectory,
+  planAttendanceEraseDrain,
+  recordAttendanceIndexResult,
   rememberAttendanceRoom,
 } from './attendance-directory';
 
@@ -89,4 +95,131 @@ it('applies remember and forget on the directory copy', () => {
     applyAttendanceDirectory(forgotten.directory, { op: 'list', userId: USER })
       .result
   ).toMatchObject({ roomIds: [] });
+});
+
+it('keeps the same directory when subjects do not change', () => {
+  const directory = rememberAttendanceRoom(
+    emptyAttendanceDirectory(),
+    'ws-a:meeting',
+    'meeting',
+    [guestInterval()]
+  );
+  expect(
+    rememberAttendanceRoom(directory, 'ws-a:meeting', 'meeting', [
+      guestInterval(),
+    ])
+  ).toBe(directory);
+  expect(forgetAttendanceRooms(directory, ['missing'])).toBe(directory);
+});
+
+it('bounds the directory and still lists overflow rooms', () => {
+  let directory = emptyAttendanceDirectory();
+  for (let index = 0; index < ATTENDANCE_DIRECTORY_ROOM_CAP; index += 1) {
+    directory = rememberAttendanceRoom(
+      directory,
+      `ws-a:meeting-${index}`,
+      `meeting-${index}`,
+      [guestInterval()]
+    );
+  }
+  const overflowed = rememberAttendanceRoom(directory, 'ws-a:extra', 'extra', [
+    guestInterval(),
+  ]);
+  expect(overflowed.rooms['ws-a:extra']).toBeUndefined();
+  expect(
+    pageAttendanceDirectory(overflowed, { guestId: GUEST }).roomIds
+  ).toContain('ws-a:extra');
+  let full = overflowed;
+  for (
+    let index = 0;
+    index < ATTENDANCE_DIRECTORY_OVERFLOW_CAP - 1;
+    index += 1
+  ) {
+    full = rememberAttendanceRoom(
+      full,
+      `ws-b:overflow-${index}`,
+      `overflow-${index}`,
+      [guestInterval()]
+    );
+  }
+  const blocked = applyAttendanceDirectory(full, {
+    op: 'remember',
+    roomId: 'ws-b:too-many',
+    meetingId: 'too-many',
+    users: [],
+    guests: [GUEST],
+  });
+  expect(blocked.result).toEqual({ ok: false, error: 'directory_full' });
+  expect(blocked.directory).toBe(full);
+});
+
+it('keeps erase attempts for one generation and stops when the budget is spent', () => {
+  const queued = applyAttendanceDirectory(emptyAttendanceDirectory(), {
+    op: 'queue-erase',
+    rooms: [
+      {
+        roomId: 'ws-a:meeting',
+        generation: 2,
+        claims: [{ erase: 'meeting' }],
+      },
+    ],
+  });
+  const same = applyAttendanceDirectory(queued.directory, {
+    op: 'queue-erase',
+    rooms: [
+      {
+        roomId: 'ws-a:meeting',
+        generation: 2,
+        claims: [{ erase: 'meeting' }],
+      },
+    ],
+  });
+  expect(same.directory).toBe(queued.directory);
+  expect(queued.directory.pending?.['ws-a:meeting']?.attempts).toBe(0);
+  const older = applyAttendanceDirectory(queued.directory, {
+    op: 'queue-erase',
+    rooms: [{ roomId: 'ws-a:meeting', generation: 1 }],
+  });
+  expect(older.directory).toBe(queued.directory);
+  let drained = queued.directory;
+  let rescheduleAt: number | null = 0;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const next = planAttendanceEraseDrain(drained, attempt * 1_000);
+    expect(next.posts).toHaveLength(1);
+    expect(next.directory.pending?.['ws-a:meeting']?.attempts).toBe(attempt);
+    drained = next.directory;
+    rescheduleAt = next.rescheduleAt;
+  }
+  expect(rescheduleAt).toBeNull();
+  const stopped = planAttendanceEraseDrain(drained, 9_000);
+  expect(stopped.posts).toEqual([]);
+  expect(stopped.rescheduleAt).toBeNull();
+  expect(stopped.directory).toBe(drained);
+  const idle = planAttendanceEraseDrain(emptyAttendanceDirectory(), 1_000);
+  expect(idle.posts).toEqual([]);
+  expect(idle.rescheduleAt).toBeNull();
+  expect(idle.directory).toEqual(emptyAttendanceDirectory());
+});
+
+it('does not republish an unchanged or stopped attendance index', () => {
+  const signature = 'user';
+  const started = noteAttendanceIndexPublish(undefined, signature, 1_000);
+  expect(started.publish).toBe(true);
+  expect(started.state?.nextAt).toBe(1_000 + ATTENDANCE_INDEX_RETRY_MS);
+  const waiting = noteAttendanceIndexPublish(started.state, signature, 2_000);
+  expect(waiting.publish).toBe(false);
+  expect(waiting.state).toBe(started.state);
+  const success = recordAttendanceIndexResult(started.state!, true, 2_000);
+  expect(success.state.nextAt).toBeUndefined();
+  expect(
+    noteAttendanceIndexPublish(success.state, signature, 3_000).publish
+  ).toBe(false);
+  const failed = [1, 2, 3].reduce(
+    (state) => recordAttendanceIndexResult(state, false, 1_000).state,
+    started.state!
+  );
+  expect(failed.stopped).toBe(true);
+  const stopped = noteAttendanceIndexPublish(failed, signature, 99_000);
+  expect(stopped.publish).toBe(false);
+  expect(stopped.state).toBe(failed);
 });

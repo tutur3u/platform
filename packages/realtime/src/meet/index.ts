@@ -48,15 +48,26 @@ export {
   openAttendanceInterval,
 } from './attendance-ledger';
 export {
+  ATTENDANCE_DIRECTORY_OVERFLOW_CAP,
   ATTENDANCE_DIRECTORY_PAGE,
+  ATTENDANCE_DIRECTORY_PENDING_CAP,
   ATTENDANCE_DIRECTORY_ROOM,
+  ATTENDANCE_DIRECTORY_ROOM_CAP,
+  ATTENDANCE_ERASE_ATTEMPT_LIMIT,
+  ATTENDANCE_INDEX_RETRY_MS,
   type AttendanceDirectory,
+  type AttendanceIndexState,
+  type AttendancePendingErase,
   applyAttendanceDirectory,
+  attendanceIndexSignature,
   attendanceSubjects,
   emptyAttendanceDirectory,
   forgetAttendanceRooms,
+  noteAttendanceIndexPublish,
   pageAttendanceDirectory,
   parseAttendanceRoomId,
+  planAttendanceEraseDrain,
+  recordAttendanceIndexResult,
   rememberAttendanceRoom,
 } from './attendance-directory';
 export {

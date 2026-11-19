@@ -216,21 +216,19 @@ export const POST = withSessionAuth(
         );
       }
 
-      // Delete single-member non-personal workspaces before deleting the account
+      // Delete single-member non-personal workspaces before deleting the account.
+      // Attendance copies are removed with the workspace, including copies from
+      // an enabled period while the switch is off.
+      const { withWorkspaceAttendanceErasure } =
+        await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
       const workspaceDeletions = categorized.singleMemberFree
         .filter((ws) => !ws.wsPersonal)
         .map(async (ws) => {
           try {
-            const { error } = await sbAdmin
-              .from('workspaces')
-              .delete()
-              .eq('id', ws.wsId);
-
-            if (error) {
-              throw error;
-            } else {
-              console.log(`Deleted orphaned workspace ${ws.wsId}`);
-            }
+            await withWorkspaceAttendanceErasure(ws.wsId, () =>
+              sbAdmin.from('workspaces').delete().eq('id', ws.wsId)
+            );
+            console.log(`Deleted orphaned workspace ${ws.wsId}`);
           } catch (error) {
             console.error(`Error deleting workspace ${ws.wsId}:`, error);
             throw error;
@@ -245,23 +243,29 @@ export const POST = withSessionAuth(
         );
       }
 
+      // Save the plan first. Commit it only after the account delete succeeds,
+      // so a refused delete does not remove attendance for a live account.
+      const {
+        openSubjectAttendanceErasure,
+        commitAttendanceErasure,
+        releaseAttendanceErasure,
+      } =
+        await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+      let subjectErasure: Awaited<
+        ReturnType<typeof openSubjectAttendanceErasure>
+      >;
       try {
-        const { eraseMeetAttendanceSubject } =
-          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-        await eraseMeetAttendanceSubject({ userId: user.id });
+        subjectErasure = await openSubjectAttendanceErasure({
+          userId: user.id,
+        });
       } catch (error) {
-        let enabled = false;
-        try {
-          const { meetClassAttendanceEnabled } =
-            await import('@tuturuuu/realtime/meet');
-          enabled = meetClassAttendanceEnabled();
-        } catch {
-          enabled = false;
-        }
-        if (enabled) throw error;
         console.error('Meet attendance subject erasure failed', {
           name: error instanceof Error ? error.name : 'unknown',
         });
+        return NextResponse.json(
+          { message: 'Failed to delete account' },
+          { status: 500 }
+        );
       }
 
       // Delete the user from auth.users
@@ -274,10 +278,32 @@ export const POST = withSessionAuth(
 
       if (deleteError) {
         console.error('Error deleting user:', deleteError);
+        try {
+          await releaseAttendanceErasure(subjectErasure);
+        } catch (releaseError) {
+          console.error('Meet attendance subject erasure failed', {
+            name: releaseError instanceof Error ? releaseError.name : 'unknown',
+          });
+        }
         return NextResponse.json(
           { message: 'Failed to delete account' },
           { status: 500 }
         );
+      }
+
+      try {
+        await commitAttendanceErasure(subjectErasure.plan);
+      } catch (error) {
+        console.error('Meet attendance subject erasure failed', {
+          name: error instanceof Error ? error.name : 'unknown',
+        });
+        try {
+          await commitAttendanceErasure(subjectErasure.plan);
+        } catch (retryError) {
+          console.error('Meet attendance subject erasure failed', {
+            name: retryError instanceof Error ? retryError.name : 'unknown',
+          });
+        }
       }
 
       return NextResponse.json({ message: 'Account deleted successfully' });

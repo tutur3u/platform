@@ -340,6 +340,18 @@ prove bounds under repeated wakes in isolated fixtures and the real local Worker
 Exact-commit CI must exercise the emitted artifact. Keep live account settings,
 alert delivery and hosted shutdown verification as separate production evidence.
 
+Meet class attendance erasure is bounded. A successful delete is one fence SQL
+statement, one room post per room (two for a subject), one directory queue,
+one directory forget, and one SQL delete. An unchanged subject list does not
+write the directory. A failure stores one pending row, posts at most four
+rooms at a time, and drains at most eight directory erasures per alarm. Each
+directory attempt is durable: three failures stop that entry, and an index
+publish retries three times, a minute apart, and then stops. The daily purge
+finishes at most 50 confirmed pending rows. An empty erase queue does not
+schedule another alarm. A repeated generation does not reset attempt counts.
+A changed directory publish writes the room snapshot once more to clear its
+retry deadline.
+
 Cron Control's default-off checkout Worker uses a 5,000-item combined active and
 quarantine bound, pre-expiry capacity checks, three durable attempts per item,
 per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is

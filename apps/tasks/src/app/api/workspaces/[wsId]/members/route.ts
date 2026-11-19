@@ -3,6 +3,9 @@ import {
   GET as getMembers,
 } from '@tuturuuu/apis/members/route';
 import { withSessionAuth } from '@/lib/api-auth';
+import { registerTasksOrphanedWorkspaceCleanup } from '@/lib/meet/register-orphaned-workspace-cleanup';
+
+registerTasksOrphanedWorkspaceCleanup();
 
 interface Params {
   wsId: string;

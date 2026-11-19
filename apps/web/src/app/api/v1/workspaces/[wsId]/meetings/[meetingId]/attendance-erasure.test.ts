@@ -1,11 +1,22 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const { flags, prepareMock, commitMock, deleteMock } = vi.hoisted(() => ({
+const {
+  flags,
+  openMock,
+  readPendingMock,
+  releaseMock,
+  commitMock,
+  deleteMock,
+  meetingMock,
+} = vi.hoisted(() => ({
   flags: { attendance: true },
-  prepareMock: vi.fn(),
+  openMock: vi.fn(),
+  readPendingMock: vi.fn(),
+  releaseMock: vi.fn(),
   commitMock: vi.fn(),
   deleteMock: vi.fn(),
+  meetingMock: vi.fn(),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -17,12 +28,7 @@ vi.mock('@/lib/api-auth', () => ({
         select: () => ({
           eq: () => ({
             eq: () => ({
-              single: async () => ({
-                data: {
-                  id: '5e5217de-9bb3-4e20-8d99-526ad3e7e34f',
-                  creator_id: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
-                },
-              }),
+              single: () => meetingMock(),
             }),
           }),
         }),
@@ -45,7 +51,10 @@ vi.mock('./_lib/recording-access', () => ({
   canManageLegacyRecording: async () => true,
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
-  prepareMeetingAttendanceErasure: (...args: unknown[]) => prepareMock(...args),
+  openMeetingAttendanceErasure: (...args: unknown[]) => openMock(...args),
+  readPendingAttendanceErasure: (...args: unknown[]) =>
+    readPendingMock(...args),
+  releaseAttendanceErasure: (...args: unknown[]) => releaseMock(...args),
   commitAttendanceErasure: (...args: unknown[]) => commitMock(...args),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
@@ -60,10 +69,22 @@ const MEETING = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
 beforeEach(() => {
   vi.clearAllMocks();
   flags.attendance = true;
-  prepareMock.mockResolvedValue({
-    rooms: [{ roomId: `${WS}:${MEETING}`, wsId: WS, meetingId: MEETING }],
-    sql: { op: 'meeting', meetingId: MEETING },
+  meetingMock.mockResolvedValue({
+    data: {
+      id: MEETING,
+      creator_id: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
+    },
   });
+  openMock.mockResolvedValue({
+    plan: {
+      rooms: [{ roomId: `${WS}:${MEETING}`, wsId: WS, meetingId: MEETING }],
+      sql: { op: 'meeting', meetingId: MEETING },
+      phase: 'planned',
+    },
+    preexisting: false,
+  });
+  readPendingMock.mockResolvedValue(null);
+  releaseMock.mockResolvedValue(undefined);
   commitMock.mockResolvedValue(undefined);
   deleteMock.mockResolvedValue({ data: [{ id: MEETING }], error: null });
 });
@@ -82,9 +103,16 @@ function call() {
 
 it('erases the room copy only after the meeting row is deleted', async () => {
   const order: string[] = [];
-  prepareMock.mockImplementation(async () => {
-    order.push('prepare');
-    return null;
+  openMock.mockImplementation(async () => {
+    order.push('open');
+    return {
+      plan: {
+        rooms: [],
+        sql: { op: 'meeting', meetingId: MEETING },
+        phase: 'planned',
+      },
+      preexisting: false,
+    };
   });
   deleteMock.mockImplementation(async () => {
     order.push('delete');
@@ -95,7 +123,7 @@ it('erases the room copy only after the meeting row is deleted', async () => {
   });
   const response = await call();
   expect(response.status).toBe(200);
-  expect(order).toEqual(['prepare', 'delete', 'commit']);
+  expect(order).toEqual(['open', 'delete', 'commit']);
 
   order.length = 0;
   deleteMock.mockImplementation(async () => {
@@ -104,21 +132,40 @@ it('erases the room copy only after the meeting row is deleted', async () => {
   });
   const denied = await call();
   expect(denied.status).toBe(403);
-  expect(order).toEqual(['prepare', 'delete']);
+  expect(order).toEqual(['open', 'delete']);
+  expect(releaseMock).toHaveBeenCalledTimes(1);
 });
 
-it('does not delete the meeting when planning erasure fails while attendance is on', async () => {
-  prepareMock.mockRejectedValue(new Error('timeout'));
+it('does not delete the meeting when planning erasure fails', async () => {
+  openMock.mockRejectedValue(new Error('timeout'));
   const response = await call();
   expect(response.status).toBe(500);
   expect(deleteMock).not.toHaveBeenCalled();
 });
 
-it('still deletes the meeting when attendance erasure is off', async () => {
+it('still blocks the meeting delete when attendance erasure is off', async () => {
   flags.attendance = false;
-  prepareMock.mockRejectedValue(new Error('timeout'));
-  commitMock.mockRejectedValue(new Error('timeout'));
+  openMock.mockRejectedValue(new Error('timeout'));
+  const response = await call();
+  expect(response.status).toBe(500);
+  expect(deleteMock).not.toHaveBeenCalled();
+});
+
+it('finishes a pending erasure when the meeting is already gone', async () => {
+  meetingMock.mockResolvedValue({ data: null });
+  readPendingMock.mockResolvedValue({
+    rooms: [],
+    sql: { op: 'meeting', meetingId: MEETING },
+    phase: 'confirmed',
+  });
   const response = await call();
   expect(response.status).toBe(200);
-  expect(deleteMock).toHaveBeenCalled();
+  expect(commitMock).toHaveBeenCalledOnce();
+  expect(deleteMock).not.toHaveBeenCalled();
+
+  commitMock.mockClear();
+  readPendingMock.mockResolvedValue(null);
+  const missing = await call();
+  expect(missing.status).toBe(404);
+  expect(commitMock).not.toHaveBeenCalled();
 });

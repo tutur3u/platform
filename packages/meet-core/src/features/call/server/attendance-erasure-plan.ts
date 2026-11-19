@@ -4,6 +4,10 @@ export type AttendanceRoomTarget = {
   roomId: string;
   wsId: string;
   meetingId: string;
+  /** SQL fence generation already assigned to this room. */
+  generation?: number;
+  /** Claim keys already accepted by the room copy. */
+  posted?: string[];
 };
 
 export type AttendanceErasureSql =
@@ -14,7 +18,27 @@ export type AttendanceErasureSql =
 export type AttendanceErasurePlan = {
   rooms: AttendanceRoomTarget[];
   sql: AttendanceErasureSql;
+  /** Planned work is cancelled when the delete is denied. Confirmed work is finished. */
+  phase?: 'planned' | 'confirmed';
+  attempts?: number;
 };
+
+export function attendanceErasureKey(sql: AttendanceErasureSql) {
+  if (sql.op === 'meeting')
+    return { kind: 'meeting' as const, subjectKey: sql.meetingId };
+  if (sql.op === 'workspace')
+    return { kind: 'workspace' as const, subjectKey: sql.wsId };
+  const subjectKey = sql.userId
+    ? `user:${sql.userId}`
+    : `guest:${sql.guestId ?? ''}`;
+  return { kind: 'subject' as const, subjectKey };
+}
+
+export function eraseClaimKey(claim: { userId?: string; guestId?: string }) {
+  if (claim.userId) return `user:${claim.userId}`;
+  if (claim.guestId) return `guest:${claim.guestId}`;
+  return 'meeting';
+}
 
 function addRoom(
   rooms: Map<string, AttendanceRoomTarget>,
