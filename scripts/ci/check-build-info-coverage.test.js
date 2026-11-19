@@ -44,6 +44,24 @@ function nextTarget(app, buildInfoApp = app) {
   };
 }
 
+test('accepts the public minimal build-info handler for guarded apps', (t) => {
+  const rootDir = createFixture(t);
+  const routePath = path.join(rootDir, 'apps/guarded', BUILD_INFO_ROUTE);
+  fs.mkdirSync(path.dirname(routePath), { recursive: true });
+  fs.writeFileSync(
+    routePath,
+    `import { createPublicBuildInfoHandler } from '@tuturuuu/utils/build-info-route';\n\nexport const GET = createPublicBuildInfoHandler('guarded');\n`
+  );
+
+  assert.deepEqual(
+    validateBuildInfoCoverage({
+      rootDir,
+      targets: [nextTarget('guarded')],
+    }),
+    []
+  );
+});
+
 test('accepts complete Next coverage and skips route coverage for TanStack Start', (t) => {
   const rootDir = createFixture(t);
   writeBuildInfoRoute(rootDir, 'apps/alpha', 'alpha-info');

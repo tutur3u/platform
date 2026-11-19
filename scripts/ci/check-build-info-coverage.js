@@ -116,7 +116,7 @@ function validateBuildInfoCoverage({
 
     const expectedIdentity = escapeRegExp(target.buildInfoApp);
     const handlerPattern = new RegExp(
-      `createBuildInfoHandler\\(\\s*(['"])${expectedIdentity}\\1\\s*\\)`
+      `create(?:Public)?BuildInfoHandler\\(\\s*(['"])${expectedIdentity}\\1\\s*\\)`
     );
 
     if (!handlerPattern.test(routeSource)) {
