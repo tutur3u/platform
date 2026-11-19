@@ -284,9 +284,13 @@ export async function createWorkspaceFromOnboarding(
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
       try {
-        await deleteWorkspaceRowWithAttendance(workspace.id, () =>
-          sbAdmin.from('workspaces').delete().eq('id', workspace.id)
-        );
+        await deleteWorkspaceRowWithAttendance(workspace.id, async () => {
+          const removed = await sbAdmin
+            .from('workspaces')
+            .delete()
+            .eq('id', workspace.id);
+          return removed;
+        });
       } catch (cleanupError) {
         console.error('Error cleaning up workspace:', cleanupError);
         return { success: false, error: 'Failed to clean up workspace' };

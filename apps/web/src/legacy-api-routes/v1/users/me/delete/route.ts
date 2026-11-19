@@ -224,9 +224,13 @@ export const POST = withSessionAuth(
         .filter((ws) => !ws.wsPersonal)
         .map(async (ws) => {
           try {
-            await deleteWorkspaceRowWithAttendance(ws.wsId, () =>
-              sbAdmin.from('workspaces').delete().eq('id', ws.wsId)
-            );
+            await deleteWorkspaceRowWithAttendance(ws.wsId, async () => {
+              const removed = await sbAdmin
+                .from('workspaces')
+                .delete()
+                .eq('id', ws.wsId);
+              return removed;
+            });
             console.log(`Deleted orphaned workspace ${ws.wsId}`);
           } catch (error) {
             console.error(`Error deleting workspace ${ws.wsId}:`, error);

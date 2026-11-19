@@ -468,9 +468,13 @@ async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
 
     // Delete the workspace. Related rows cascade with it.
     try {
-      await orphanedWorkspaceCleanup.deleteWorkspace(wsId, () =>
-        sbAdmin.from('workspaces').delete().eq('id', wsId)
-      );
+      await orphanedWorkspaceCleanup.deleteWorkspace(wsId, async () => {
+        const removed = await sbAdmin
+          .from('workspaces')
+          .delete()
+          .eq('id', wsId);
+        return removed;
+      });
     } catch (deleteError) {
       console.error(
         `Failed to delete orphaned workspace ${wsId}:`,
