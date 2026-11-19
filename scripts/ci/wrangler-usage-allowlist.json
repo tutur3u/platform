@@ -1084,6 +1084,16 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
+    "apps/infrastructure/cloudflare/production.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/6ccb29db0d4df77c1ca357a7d27cd8589d79e043",
+        "reason": "The Infrastructure production runtime gate starts the sealed Worker on a local workerd through the Wrangler startWorker API to exercise HTTPS production requests; it runs locally against the sealed bytes, publishes nothing, and the publication gap and its removal condition remain."
+      },
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
     "apps/infrastructure/package.json": {
       "lines": 1,
       "uses": 1,
@@ -3451,6 +3461,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "4f41e3aa75ca0ec32716503de90d11cc3a57286063f86b7183fb63f44a5bce2c"
+    },
+    "scripts/ci/wave1-native-source-maps.mjs": {
+      "lines": 3,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/b8aa0955e5f0786f78f5d504adbf9ec9f61aa20b",
+        "reason": "The wave-1 seal strips server source maps before sealing; its comments explain which maps Wrangler would upload. No Wrangler CLI or SDK is invoked and nothing is published; the publication gap and its removal condition remain."
+      },
+      "digest": "d24565a47a4d4ee68e35472490b2984eccc5aa7f99cc2dd425bac099ff26b171"
+    },
+    "scripts/ci/wave1-native-source-maps.test.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/b8aa0955e5f0786f78f5d504adbf9ec9f61aa20b",
+        "reason": "The source-map seal test reads the sealed dist/wave1/wrangler.json path to measure what an upload would carry. It reads a file only; no Wrangler CLI or SDK is invoked and nothing is published; the publication gap and its removal condition remain."
+      },
+      "digest": "046c42401505f10e78e15e7e9d47550d2c33fcd02f5107897ab9c9a61bb38e33"
     },
     "scripts/ci/wave1-native-test-fixture.cjs": {
       "lines": 4,
