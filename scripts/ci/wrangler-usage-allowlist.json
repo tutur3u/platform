@@ -2743,14 +2743,14 @@
       "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
     },
     "scripts/ci/fixtures/cf-toolchain-receipts.json": {
-      "lines": 25,
-      "uses": 33,
+      "lines": 29,
+      "uses": 39,
       "gap": "parity-tooling",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/commit/4122fb86eb1a341571439d050b2604d4c1eb3fed",
-        "reason": "Native worker gateway switched to cf Build Output workflows; receipts record per-item allowlist deltas."
+        "reason": "Records void-wave1 cf Build Output publisher switch and email-storage DO receipt closure."
       },
-      "digest": "c1dbc54f321e22d53b54e50e378b1e139f676128bf22067394f1775dbdbc4f01"
+      "digest": "bb3c6493a77fa37259b486904afbe0885d2244e89ddac996c2bd06b3c54288f3"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
@@ -3465,26 +3465,6 @@
         "reason": "CI repair after the reviewed diagnostic extraction: lower retained CLI counts and admit only the relocated fixture output-file contract; no new invocation."
       },
       "digest": "636e3d58aed2915baf22884c8958aac4ed5c43e3f5be9e4a52e441c150f53e5c"
-    },
-    "scripts/ci/wave1-native-publication-harness.cjs": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7320",
-        "reason": "Moved unchanged from wave1-native-publication.test.js (admitted in #6485): the shared harness asserts the publisher's single `wrangler deploy` of the sealed Void config and reads its WRANGLER_OUTPUT_FILE_PATH receipt. cf cannot publish that artifact (Void emits no cf Build Output). Remove with the gap: when the wave-1 publisher moves to `cf deploy --prebuilt`, these fixture assertions move with it."
-      },
-      "digest": "337188d6eb8a642ffba63d4c5903066f6a151b1155140045d7f0c235df8500d3"
-    },
-    "scripts/ci/wave1-native-publish.mjs": {
-      "lines": 5,
-      "uses": 5,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6963",
-        "reason": "CI repair after the reviewed diagnostic extraction: lower retained CLI counts and admit only the relocated fixture output-file contract; no new invocation."
-      },
-      "digest": "482b740bb7addd160c4e69c62b997ddfecf457a920ab0fb5017cef100c84a113"
     },
     "scripts/ci/wave1-native-publishers.test.js": {
       "lines": 4,

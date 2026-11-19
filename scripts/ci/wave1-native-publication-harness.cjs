@@ -41,6 +41,7 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     CLOUDFLARE_STAGING_ACCOUNT_ID: profiles.accountId,
     CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example',
     WAVE1_CONTROL_READ_TOKEN: 'control-fixture',
+    WAVE1_PUBLICATION_TEST: '1',
     STAGING_TUTUR3U_ZONE_ID: ingress.fixtureZoneId,
     STAGING_ACCESS_APP_IDS: JSON.stringify(ingress.fixtureAppIds),
     STAGING_ACCESS_STAFF_GROUP_ID: ingress.fixtureStaffGroupId,
@@ -190,31 +191,16 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
   const exec = (command, args, options) => {
     if (args.includes('--dry-run')) {
       assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
-      assert.equal(options.timeout, 60000);
-      fs.copyFileSync(
-        path.join(dir, 'dist/server/index.js'),
-        path.join(args[args.indexOf('--outdir') + 1], 'index.js')
-      );
-      emit({
-        type: 'deploy',
-        worker_name: receipt.profile.name,
-        version_id: null,
-        bundle_size: {
-          raw_bytes: fs.readFileSync(path.join(dir, 'dist/server/index.js'))
-            .length,
-          gzip_bytes: 1,
-        },
-      });
-      return;
+      assert.equal(options.timeout, 120000);
+      assert.equal(args[2], 'cf');
+      return '';
     }
+    if (args.includes('versions') && args.includes('create'))
+      return `Worker Version ID: ${newId}\n`;
     state.writes++;
     assert.equal(command, 'bun');
-    assert.deepEqual(args.slice(0, 4), [
-      'x',
-      '--no-install',
-      'wrangler',
-      'deploy',
-    ]);
+    assert.equal(args[0], 'x');
+    assert.equal(args[2], 'cf');
     assert.equal(
       options.env.CLOUDFLARE_API_TOKEN,
       env.CLOUDFLARE_STAGING_API_TOKEN
@@ -230,18 +216,8 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     });
     if (state.failUpload) throw new Error('timeout after upload');
     state.active = newId;
-    if (!state.loseReceipt)
-      emit({
-        type: 'deploy',
-        worker_name: receipt.profile.name,
-        version_id: newId,
-      });
-    function emit(payload) {
-      fs.writeFileSync(
-        options.env.WRANGLER_OUTPUT_FILE_PATH,
-        JSON.stringify(payload)
-      );
-    }
+    if (!state.loseReceipt) return `Worker Version ID: ${newId}\n`;
+    return '';
   };
   const { signAttemptState } = await import('./wave1-native-attempt.mjs');
   const ledgerData = {

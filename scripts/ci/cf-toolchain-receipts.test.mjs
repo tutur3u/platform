@@ -31,9 +31,9 @@ test('settings readback production template names cron-control cf publisher', ()
   assert.match(settings.productionTemplate.publisher, /cf deploy --prebuilt/);
 });
 
-test('DO sqlite publisher is qualified with cf deploy evidence', () => {
+test('DO sqlite publisher is switched with cf deploy evidence', () => {
   const item = readReceipts().operations['email-storage-do-void-publisher'];
-  assert.equal(item.status, 'qualified');
+  assert.equal(item.status, 'switched');
   assert.match(item.implementation, /coordination/);
   assert.match(item.productionTemplate.publisher, /cf deploy --prebuilt/);
 });
@@ -46,6 +46,11 @@ test('calendar publisher and native worker templates are recorded as switched or
     /calendar-cf-publisher/
   );
   assert.equal(receipts['native-workers-gateway'].status, 'switched');
+  assert.equal(receipts['void-wave1-cf-publisher'].status, 'switched');
+  assert.match(
+    receipts['void-wave1-cf-publisher'].implementation,
+    /wave1-cf-publisher/
+  );
   assert.ok(
     receipts['native-workers-gateway'].parityEvidence.includes(
       'scripts/ci/fixtures/cf-worker-parity/gateway.json'

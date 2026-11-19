@@ -1,0 +1,288 @@
+import assert from 'node:assert/strict';
+import {
+  cpSync,
+  lstatSync,
+  readdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+} from 'node:fs';
+import { join, relative, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
+import {
+  assertUploadLimits,
+  uploadLimits,
+} from './wave1-native-upload-limits.mjs';
+
+export const BUILD_OUTPUT_PREFIX = '.cloudflare/output/v0/';
+export const VERSION_ID = /^[0-9a-f-]{36}$/i;
+
+export function cfBundleModuleNames(buildRoot) {
+  const bundleRoot = join(
+    buildRoot,
+    BUILD_OUTPUT_PREFIX,
+    'workers/default/bundle'
+  );
+  const modules = [];
+  function visit(directory) {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      const stat = lstatSync(path);
+      assert.ok(!stat.isSymbolicLink(), 'cf bundle symlink forbidden');
+      if (stat.isDirectory()) visit(path);
+      else if (/\.(?:m?js)$/u.test(name) && !name.endsWith('.map'))
+        modules.push(relative(bundleRoot, path).split('\\').join('/'));
+    }
+  }
+  visit(bundleRoot);
+  return modules.sort();
+}
+
+export function assertUploadNameParity(receipt, secondaryModuleNames) {
+  const expected = receipt.secondaryModuleNames ?? [];
+  assert.deepEqual(
+    [...secondaryModuleNames].sort(),
+    expected.map((item) => item.source).sort(),
+    'cf Build Output bundle modules differ from emit manifest'
+  );
+  for (const item of expected) {
+    assert.equal(
+      item.cfUpload,
+      item.source.startsWith('./') ? item.source : `./${item.source}`,
+      'cf upload module name drift'
+    );
+  }
+}
+
+export function stageBuildOutput(appRoot, buildRoot) {
+  const source = join(buildRoot, '.cloudflare', 'output');
+  const target = join(appRoot, '.cloudflare', 'output');
+  rmSync(target, { recursive: true, force: true });
+  cpSync(source, target, { recursive: true });
+  return target;
+}
+
+export function measureBuildOutputUpload(
+  configPath,
+  buildRoot,
+  secretNames = []
+) {
+  const config = JSON.parse(readFileSync(configPath, 'utf8'));
+  const bundleRoot = join(
+    buildRoot,
+    BUILD_OUTPUT_PREFIX,
+    'workers/default/bundle'
+  );
+  const assetRoot = join(
+    buildRoot,
+    BUILD_OUTPUT_PREFIX,
+    'workers/default/assets'
+  );
+  const modules = [];
+  function visit(directory, root) {
+    for (const name of readdirSync(directory)) {
+      const path = join(directory, name);
+      const stat = lstatSync(path);
+      if (stat.isDirectory()) visit(path, root);
+      else if (/\.(?:m?js)$/u.test(name) && !name.endsWith('.map')) {
+        const rel = relative(root, path).split('\\').join('/');
+        modules.push({ name: rel, bytes: stat.size, path });
+      }
+    }
+  }
+  visit(bundleRoot, bundleRoot);
+  assert.ok(modules.length > 0, 'cf Build Output bundle is empty');
+  const scriptBytes = modules.reduce((total, item) => total + item.bytes, 0);
+  const gzipBytes = gzipSync(
+    Buffer.concat(modules.map((item) => readFileSync(item.path)))
+  ).length;
+  let assetCount = 0;
+  let maxAsset = 0;
+  try {
+    const walk = (directory) => {
+      for (const name of readdirSync(directory)) {
+        const path = join(directory, name);
+        const stat = lstatSync(path);
+        if (stat.isDirectory()) walk(path);
+        else {
+          assetCount += 1;
+          maxAsset = Math.max(maxAsset, stat.size);
+        }
+      }
+    };
+    walk(assetRoot);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+  const plainSizes = Object.values(config.vars ?? {}).map((value) =>
+    Buffer.byteLength(typeof value === 'string' ? value : JSON.stringify(value))
+  );
+  return {
+    schema: 1,
+    limits: uploadLimits,
+    script: {
+      bytes: scriptBytes,
+      gzipBytes,
+      gzipOrder: 'cf Build Output bundle paths',
+      moduleCount: modules.length,
+      maxModuleBytes: Math.max(...modules.map((item) => item.bytes)),
+      modules: modules.map(({ name, bytes }) => ({ name, bytes })),
+    },
+    sourcemaps: {
+      enabled: false,
+      count: 0,
+      encodedBytes: 0,
+      gzipBytes: 0,
+      unexpectedFiles: 0,
+      measured: true,
+    },
+    assets: { count: assetCount, maxFileBytes: maxAsset },
+    variables: {
+      count: new Set([
+        ...secretNames,
+        ...(config.secrets?.required ?? []),
+        ...Object.keys(config.vars ?? {}),
+      ]).size,
+      maxPlainValueBytes: Math.max(0, ...plainSizes),
+      secretValues: 'existing provider bindings, not uploaded',
+    },
+    warnings:
+      gzipBytes > 10 * 1024 ** 2
+        ? ['Worker gzip exceeds 10 MiB; informational, no provider size limit']
+        : [],
+    startup: { cpuLimitMs: 1000, status: 'requires hosted native acceptance' },
+  };
+}
+
+export function parseCfVersionId(output) {
+  const combined = String(output);
+  try {
+    const json = JSON.parse(combined);
+    const candidate =
+      json.version_id ?? json.id ?? json.result?.id ?? json.result?.version_id;
+    if (typeof candidate === 'string' && VERSION_ID.test(candidate))
+      return candidate;
+  } catch {
+    // Fall through to table/text parsing.
+  }
+  const match = combined.match(
+    /(?:version[_\s-]*id|Worker Version ID):\s*([0-9a-f-]{36})/i
+  );
+  return match?.[1];
+}
+
+const CF_ENV_KEYS = [
+  'PATH',
+  'HOME',
+  'USER',
+  'TMPDIR',
+  'TMP',
+  'TEMP',
+  'LANG',
+  'LC_ALL',
+];
+
+export function cfChildEnv(env, { cfToken, accountId } = {}) {
+  return {
+    ...Object.fromEntries(
+      CF_ENV_KEYS.flatMap((name) =>
+        env[name] === undefined ? [] : [[name, env[name]]]
+      )
+    ),
+    CI: 'true',
+    CF_SEND_TELEMETRY: 'false',
+    ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
+    ...(accountId ? { CLOUDFLARE_ACCOUNT_ID: accountId } : {}),
+  };
+}
+
+/**
+ * @typedef {'activate' | 'version-only'} CfPublicationTraffic
+ * activate: cf deploy --prebuilt (private staging accept path).
+ * version-only: cf workers versions create --prebuilt without changing traffic.
+ */
+
+export function cfPrebuiltArgs({
+  traffic,
+  dryRun,
+  sha,
+  digest,
+  workerName,
+  outdir,
+}) {
+  if (traffic === 'version-only') {
+    assert.ok(!dryRun, 'version-only upload forbids dry-run');
+    return [
+      'x',
+      '--no-install',
+      'cf',
+      'workers',
+      'versions',
+      'create',
+      '--prebuilt',
+      '--worker',
+      workerName,
+      '--message',
+      sha,
+      '--tag',
+      digest,
+    ];
+  }
+  return [
+    'x',
+    '--no-install',
+    'cf',
+    'deploy',
+    '--prebuilt',
+    '--mode',
+    'production',
+    ...(dryRun
+      ? ['--dry-run', '--no-provision']
+      : ['--no-provision', '--message', sha, '--tag', digest]),
+    ...(outdir ? [] : []),
+  ];
+}
+
+export function runCfPrebuilt({
+  env,
+  appRoot,
+  exec,
+  traffic,
+  dryRun,
+  sha,
+  digest,
+  workerName,
+  cfToken,
+  accountId,
+}) {
+  const args = cfPrebuiltArgs({
+    traffic,
+    dryRun,
+    sha,
+    digest,
+    workerName,
+  });
+  const cwd = resolve(appRoot);
+  if (dryRun) assert.equal(cfToken, undefined);
+  const stdio = dryRun ? ['ignore', 'pipe', 'pipe'] : 'pipe';
+  const encoding = dryRun ? undefined : 'utf8';
+  const result = exec('bun', args, {
+    cwd,
+    env: cfChildEnv(env, { cfToken, accountId }),
+    stdio,
+    encoding,
+    timeout: dryRun ? 120000 : 180000,
+    maxBuffer: 4 * 1024 * 1024,
+  });
+  return typeof result === 'string' ? result : '';
+}
+
+export function teardownStagedOutput(appRoot) {
+  rmSync(join(appRoot, '.cloudflare'), { recursive: true, force: true });
+}
+
+export function assertMeasuredLimits(configPath, buildRoot, secretNames) {
+  assertUploadLimits(
+    measureBuildOutputUpload(configPath, buildRoot, secretNames)
+  );
+}

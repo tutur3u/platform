@@ -8,6 +8,7 @@
     "settings-readback",
     "calendar-build-output",
     "native-workers-gateway",
+    "void-wave1-cf-publisher",
     "email-storage-do-void-publisher",
     "observability-remaining-callers"
   ],
@@ -114,9 +115,40 @@
         "gateway-deploy-config.mjs reads cloudflare.config.ts instead of wrangler.jsonc"
       ]
     },
+    "void-wave1-cf-publisher": {
+      "title": "Wave-1 Start+Void cf Build Output publisher",
+      "status": "switched",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": "scripts/ci/wave1-cf-publisher.mjs",
+      "wranglerPrior": "wave1-native-publish.mjs wrangler deploy of dist/wave1/wrangler.json",
+      "toolchain": "wave1-cf-output emit + cf deploy --prebuilt and cf workers versions create --prebuilt",
+      "parityEvidence": [
+        "scripts/ci/wave1-cf-publisher.test.mjs",
+        "scripts/ci/wave1-native-publication.test.js",
+        "scripts/ci/cf-build-output-publisher.mjs",
+        "scripts/ci/wave1-cf-output.mjs"
+      ],
+      "rehearsal": {
+        "kind": "cf-build-output-emit",
+        "notes": "emitWave1Output inventory matches staged output; cf deploy --dry-run for activation; version-only path uses cf workers versions create with no traffic change."
+      },
+      "productionTemplate": {
+        "workflow": "wave1-native-publish.yaml",
+        "publisher": "cf deploy --prebuilt --no-provision | cf workers versions create --prebuilt",
+        "profiles": ["wave1-artifact.json sealed Void profiles"]
+      },
+      "decision": null,
+      "allowlistDelta": {
+        "files": -2,
+        "uses": -9,
+        "note": "wave1-native-publish and publication-harness retire wrangler deploy; shared cf-build-output-publisher centralizes calendar and wave-1 upload paths."
+      },
+      "wranglerGapsRetained": ["void-emitted-binding-types"],
+      "removalConditions": []
+    },
     "email-storage-do-void-publisher": {
       "title": "Email, storage, Durable Objects and Void publisher",
-      "status": "qualified",
+      "status": "switched",
       "owner": "cf/Void Wrangler-exit lane",
       "implementation": ".github/workflows/{coordination,devbox-control}-cloudflare.yaml",
       "wranglerPrior": "Wrangler deploy --no-bundle via cf-wrangler-publication.mjs for SQLite DO Workers",
@@ -144,11 +176,8 @@
         "uses": -28,
         "note": "coordination and devbox-control workflows drop wrangler deploy qualification and production publication steps."
       },
-      "wranglerGapsRetained": ["void-wave1-publication", "pending-migration"],
-      "removalConditions": [
-        "Disposable DO migration/data rehearsal receipt before production publisher switch",
-        "Void prebuilt deploy path proves byte identity"
-      ]
+      "wranglerGapsRetained": ["pending-migration"],
+      "removalConditions": []
     },
     "observability-remaining-callers": {
       "title": "Qualified observability and remaining Wrangler callers",

@@ -3,12 +3,11 @@ import { execFileSync } from 'node:child_process';
 import {
   appendFileSync,
   existsSync,
-  mkdtempSync,
   readFileSync,
   realpathSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
@@ -23,10 +22,7 @@ import {
   NativeUploadError,
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
-import {
-  assertUploadLimits,
-  measureUpload,
-} from './wave1-native-upload-limits.mjs';
+import { assertUploadLimits } from './wave1-native-upload-limits.mjs';
 
 export function publicationAdmission({
   environment,
@@ -530,6 +526,7 @@ export async function uploadArtifact({
   measurements,
   secretNames = [],
   appRoot,
+  traffic = 'activate',
 }) {
   const resolvedAppRoot = appRoot ?? resolve('apps', app);
   if (
@@ -552,89 +549,27 @@ export async function uploadArtifact({
       secretNames,
     });
   }
-  if (dryRun)
-    assert.equal(
+  if (existsSync(resolve(resolvedAppRoot, 'wave1-artifact.json'))) {
+    const { publishWave1Artifact } = await import('./wave1-cf-publisher.mjs');
+    return publishWave1Artifact({
+      env,
+      appRoot: resolvedAppRoot,
+      app,
+      environment,
+      config,
+      sha,
+      digest,
       cfToken,
-      undefined,
-      'Deploy credential forbidden in measurement'
-    );
-  if (!dryRun) assertUploadLimits(measurements);
-  const outdir = dryRun
-    ? realpathSync(
-        mkdtempSync(resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run-`))
-      )
-    : undefined;
-  let outputFile = resolve(
-    env.RUNNER_TEMP,
-    `${app}-${environment}-wrangler.ndjson`
+      p,
+      exec,
+      dryRun,
+      secretNames,
+      traffic,
+    });
+  }
+  assert.fail(
+    'Wave-1 publication requires a sealed calendar-artifact.json or wave1-artifact.json'
   );
-  if (dryRun) outputFile += `.${basename(outdir)}`;
-  try {
-    exec(
-      'bun',
-      [
-        'x',
-        '--no-install',
-        'wrangler',
-        'deploy',
-        ...(dryRun ? ['--dry-run', '--outdir', outdir] : []),
-        '--config',
-        config,
-        '--message',
-        sha,
-        '--tag',
-        digest,
-      ],
-      {
-        cwd: resolve(dirname(config), '../..'),
-        env: {
-          ...Object.fromEntries(
-            [
-              'PATH',
-              'HOME',
-              'USER',
-              'TMPDIR',
-              'TMP',
-              'TEMP',
-              'LANG',
-              'LC_ALL',
-            ].flatMap((name) =>
-              env[name] === undefined ? [] : [[name, env[name]]]
-            )
-          ),
-          CI: 'true',
-          ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
-          CLOUDFLARE_ACCOUNT_ID: p.accountId,
-          WRANGLER_OUTPUT_FILE_PATH: outputFile,
-          WRANGLER_SEND_METRICS: 'false',
-          WRANGLER_WRITE_LOGS: 'false',
-        },
-        stdio: ['ignore', 'pipe', 'pipe'],
-        timeout: dryRun ? 60000 : 180000,
-        maxBuffer: 1024 * 1024,
-      }
-    );
-  } catch (error) {
-    throw new NativeUploadError(error, [cfToken]);
-  }
-  const writes = readFileSync(outputFile, 'utf8')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line))
-    .filter((item) => item.type === 'deploy');
-  assert.equal(writes.length, 1, 'Expected one publication receipt');
-  assert.equal(writes[0].worker_name, p.name);
-  if (dryRun) {
-    assert.equal(
-      writes[0].version_id,
-      null,
-      'Dry-run must not upload a version'
-    );
-    assert.ok(writes[0].bundle_size, 'Missing exact CLI bundle measurements');
-    return measureUpload(config, outdir, secretNames, writes[0].bundle_size);
-  }
-  assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
-  return writes[0].version_id;
 }
 
 if (
