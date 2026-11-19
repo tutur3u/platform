@@ -102,7 +102,7 @@ The existing native profiles qualify only their declared configuration fields.
 | Versions | `wrangler versions list` | `cf workers versions list --worker-id <name>` | Parity |
 | Deployments | `wrangler deployments list` | `cf workers deployments list --worker <name>` | Parity |
 | Rollback | `wrangler rollback <version>` | `cf workers deployments create --worker <name> --strategy percentage --versions '[{"version_id":"<id>","percentage":100}]'` | Parity |
-| Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create` | Parity |
+| Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create` | Parity; M4 gateway rehearses version-only upload via `scripts/ci/gateway-cf-publication.mjs` while Wrangler remains the live publisher until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
 | Settings preflight readback | none (no bounded snapshot in legacy deploy jobs) | `scripts/ci/cf-worker-settings.mjs` (28 bounded GETs on the Workers API) | switched; receipt `settings-readback` |
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
 | Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | Manual conversion; needs a disposable rehearsal before production |
@@ -355,13 +355,15 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 
 | Service | Current publisher | Status | Gap |
 | --- | --- | --- | --- |
-| Cron Control | cf (after its parity PR) | Template | — |
-| Devbox Control, Coordination | Wrangler until a rehearsal-backed publisher change | Template with DO `exports`, runtime SQLite namespace checks | — |
+| Cron Control | cf | Switched | — |
+| Devbox Control, Coordination | cf `deploy --prebuilt` | Switched | `pending-migration` only for remaining binding history |
+| API, Status API, Gateway (qualification) | cf Build Output + dry-run | Switched | — |
+| Gateway (M4 production) | Wrangler `versions upload` / `versions deploy` live; cf version-only rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Qualified rehearsal | `opennext-adapter` until live flip |
+| Wave 1 Start+Void apps | cf Build Output (`wave1-cf-publisher.mjs`) | Switched | `void-emitted-binding-types` for sealed runtime harness only |
+| Calendar (wave-1) | cf Build Output (`calendar-cf-publisher.mjs`) | Switched | — |
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
-| API | None yet; Vite+ build from `wrangler.jsonc` | Needs `cloudflare.config.ts` and a cf runtime harness | `pending-migration` |
-| Meet, Apps, Calendar, Mail, Shortener; CMS, Finance, Tasks and Track native candidates | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
 

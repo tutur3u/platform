@@ -64,7 +64,7 @@ const PROTECTED_TRIGGERS = {
   // Finance also watches its owning input-cache action; other trigger fields stay fixed.
   'finance-cloudflare.yaml': 'fabf7d45e110e58d',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
-  'gateway-cloudflare.yaml': '04f02377a3fb0a51',
+  'gateway-cloudflare.yaml': '115ed9d5a84c7391',
   'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '56aef454e313add1',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',

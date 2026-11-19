@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "result": {
+    "bindings": [
+      {
+        "type": "plain_text",
+        "name": "WEB_ORIGIN",
+        "text": "https://web.example.vercel.app"
+      },
+      {
+        "type": "plain_text",
+        "name": "MARKETING_ORIGIN",
+        "text": "https://marketing.example.workers.dev"
+      },
+      {
+        "type": "plain_text",
+        "name": "GATEWAY_MOUNTED_PATHS",
+        "text": ""
+      }
+    ]
+  }
+}

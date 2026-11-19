@@ -8,6 +8,8 @@ on:
       - 'scripts/ci/cf-worker-parity.mjs'
       - 'scripts/ci/gateway-cloudflare-workflow.test.js'
       - 'scripts/ci/fixtures/cf-worker-parity/gateway.json'
+      - 'scripts/ci/gateway-cf-publication.mjs'
+      - 'scripts/ci/fixtures/gateway-settings-fixture.json'
       - 'bun.lock'
       - 'package.json'
   push:
@@ -18,6 +20,8 @@ on:
       - 'scripts/ci/cf-worker-parity.mjs'
       - 'scripts/ci/gateway-cloudflare-workflow.test.js'
       - 'scripts/ci/fixtures/cf-worker-parity/gateway.json'
+      - 'scripts/ci/gateway-cf-publication.mjs'
+      - 'scripts/ci/fixtures/gateway-settings-fixture.json'
       - 'bun.lock'
       - 'package.json'
   workflow_dispatch:
@@ -72,6 +76,12 @@ jobs:
       - name: Check the prebuilt artifact without credentials
         run: bun x --no-install cf deploy --prebuilt --mode production --dry-run --no-provision
         working-directory: apps/gateway
+      - name: Rehearse M4 gateway cf version-only publication merge
+        env:
+          GATEWAY_PUBLICATION_REHEARSAL: '1'
+        run: |
+          node scripts/ci/gateway-cf-publication.mjs rehearse \
+            scripts/ci/fixtures/gateway-settings-fixture.json
       - name: Stage the cf Build Output artifact
         run: cp -R apps/gateway/.cloudflare/output "$RUNNER_TEMP/gateway-build-output"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

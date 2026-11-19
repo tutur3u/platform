@@ -2743,14 +2743,14 @@
       "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
     },
     "scripts/ci/fixtures/cf-toolchain-receipts.json": {
-      "lines": 29,
-      "uses": 39,
+      "lines": 36,
+      "uses": 47,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/4122fb86eb1a341571439d050b2604d4c1eb3fed",
-        "reason": "Records void-wave1 cf Build Output publisher switch and email-storage DO receipt closure."
+        "decision": "https://github.com/tutur3u/platform/commit/66efe40514443839360781f130807325630d9f56",
+        "reason": "Adds gateway-m4-cf-version-rehearsal qualified receipt alongside prior void-wave1 and DO switches."
       },
-      "digest": "bb3c6493a77fa37259b486904afbe0885d2244e89ddac996c2bd06b3c54288f3"
+      "digest": "794546ca73fd71c3a5c39ea3036517987cbec9303d38a9f3135d5aa61ba32100"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
