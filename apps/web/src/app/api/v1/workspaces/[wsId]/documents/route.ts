@@ -106,7 +106,8 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const rows = (data ?? []) as WorkspaceDocumentRow[];
+  // documentColumns() is not a select literal, so the client types the rows as a parser error.
+  const rows = (data ?? []) as unknown as WorkspaceDocumentRow[];
   const ownerIds: string[] = [];
   const seenOwners = new Set<string>();
   for (const row of rows) {
