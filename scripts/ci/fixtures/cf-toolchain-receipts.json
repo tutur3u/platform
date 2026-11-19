@@ -1,0 +1,134 @@
+{
+  "$schemaNote": "Shrink-only cf toolchain operation queue. Each switched operation records parity evidence, allowlist deltas and Wrangler gaps that remain.",
+  "pin": {
+    "cf": "1.0.0-beta.20",
+    "allowlistPath": "scripts/ci/wrangler-usage-allowlist.json"
+  },
+  "order": [
+    "settings-readback",
+    "calendar-build-output",
+    "native-workers-gateway",
+    "email-storage-do-void-publisher",
+    "observability-remaining-callers"
+  ],
+  "operations": {
+    "settings-readback": {
+      "title": "Worker settings preflight readback",
+      "status": "switched",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": "scripts/ci/cf-worker-settings.mjs",
+      "wranglerPrior": "No Wrangler CLI; production deploy jobs previously lacked bounded settings snapshots.",
+      "toolchain": "Cloudflare Workers API GET snapshots (cf-aligned publisher contract)",
+      "parityEvidence": [
+        "scripts/ci/cf-worker-settings.test.mjs",
+        "scripts/ci/cf-worker-settings-cli.test.mjs",
+        "scripts/ci/cf-worker-settings-transition.test.mjs",
+        "scripts/ci/cf-worker-publication.test.js"
+      ],
+      "rehearsal": {
+        "kind": "fixture-isolated",
+        "notes": "Hostile fetch fixtures bound at 28 GETs; cli child process proves stdout never echoes credentials."
+      },
+      "productionTemplate": {
+        "workflow": ".github/workflows/cron-control-cloudflare.yaml",
+        "publisher": "cf deploy --prebuilt --mode production --no-provision",
+        "profiles": [
+          "scripts/ci/fixtures/cf-worker-parity/cron-control.json",
+          "scripts/ci/fixtures/cf-worker-parity/devbox-control.json",
+          "scripts/ci/fixtures/cf-worker-parity/coordination.json"
+        ]
+      },
+      "decision": "https://github.com/tutur3u/platform/pull/7308",
+      "allowlistDelta": {
+        "files": 0,
+        "uses": 0,
+        "note": "Readback never invoked Wrangler; deployment-source compatibility strings remain under deployment-source-compatibility."
+      },
+      "wranglerGapsRetained": ["deployment-source-compatibility"],
+      "removalConditions": []
+    },
+    "calendar-build-output": {
+      "title": "Calendar ASSETS-only cf Build Output",
+      "status": "qualified",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": "scripts/ci/calendar-cf-output.mjs",
+      "wranglerPrior": "Void-emitted wrangler.json publication and wrangler types for ASSETS binding declarations",
+      "toolchain": "cf Build Output emission and readBuildOutput qualification",
+      "parityEvidence": [
+        "scripts/ci/calendar-cf-output.test.mjs",
+        "scripts/ci/calendar-cf-types.test.mjs"
+      ],
+      "rehearsal": {
+        "kind": "byte-preserving-copy",
+        "notes": "Sealed ESM/assets copied into disposable .cloudflare/output/v0; parity.json records hashes and unqualified control files."
+      },
+      "productionTemplate": null,
+      "decision": null,
+      "allowlistDelta": null,
+      "wranglerGapsRetained": [
+        "void-wave1-publication",
+        "void-emitted-binding-types"
+      ],
+      "removalConditions": [
+        "Upload module name parity, control-file semantics and source-map gaps close in an isolated cf dry-run rehearsal",
+        "Publisher switches to cf deploy --prebuilt without rebuilding"
+      ]
+    },
+    "native-workers-gateway": {
+      "title": "Simple native Workers and gateway",
+      "status": "gap",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": null,
+      "wranglerPrior": "wrangler deploy and wrangler.jsonc for API, gateway, status surfaces",
+      "toolchain": "cloudflare.config.ts, vp build, cf deploy --prebuilt",
+      "parityEvidence": [],
+      "rehearsal": null,
+      "productionTemplate": null,
+      "decision": null,
+      "allowlistDelta": null,
+      "wranglerGapsRetained": ["pending-migration"],
+      "removalConditions": [
+        "Per-service cf-worker-parity baseline, emitted Build Output CI and production template following cron-control"
+      ]
+    },
+    "email-storage-do-void-publisher": {
+      "title": "Email, storage, Durable Objects and Void publisher",
+      "status": "gap",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": null,
+      "wranglerPrior": "Wrangler publication for DO history, mail routing triggers, R2/D1 helpers and Void wave-1 apps",
+      "toolchain": "cf deploy --prebuilt and qualified API commands",
+      "parityEvidence": [],
+      "rehearsal": null,
+      "productionTemplate": null,
+      "decision": null,
+      "allowlistDelta": null,
+      "wranglerGapsRetained": [
+        "do-publication-rehearsal",
+        "void-wave1-publication",
+        "pending-migration"
+      ],
+      "removalConditions": [
+        "Disposable DO migration/data rehearsal receipt before production publisher switch",
+        "Void prebuilt deploy path proves byte identity"
+      ]
+    },
+    "observability-remaining-callers": {
+      "title": "Qualified observability and remaining Wrangler callers",
+      "status": "gap",
+      "owner": "cf/Void Wrangler-exit lane",
+      "implementation": null,
+      "wranglerPrior": "wrangler tail and unmatched CLI operations",
+      "toolchain": "cf o11y telemetry query or retained Wrangler gap",
+      "parityEvidence": [],
+      "rehearsal": null,
+      "productionTemplate": null,
+      "decision": null,
+      "allowlistDelta": null,
+      "wranglerGapsRetained": ["shared-toolchain"],
+      "removalConditions": [
+        "Each residual caller documents an owner, test and explicit allowlist removal condition"
+      ]
+    }
+  }
+}

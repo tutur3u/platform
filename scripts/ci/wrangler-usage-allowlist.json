@@ -2592,6 +2592,26 @@
       "uses": 4,
       "digest": "48585ca106a27db7328e296491f15c6aadccd9da518c3c65f5dd2e966a033820"
     },
+    "scripts/ci/cf-toolchain-receipts.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "Records per-operation cf toolchain receipts and allowlist deltas; data-only Wrangler gap references, no CLI invocation."
+      },
+      "digest": "4915c2708dd25a6066aa4f946bee9f9c21cf53bf0f834fa054b0593bf2d98ca6"
+    },
+    "scripts/ci/cf-toolchain-receipts.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "Records per-operation cf toolchain receipts and allowlist deltas; data-only Wrangler gap references, no CLI invocation."
+      },
+      "digest": "3342c271751202c64ee541902cad816239bc1977103859a419fa394c447a28af"
+    },
     "scripts/ci/cf-worker-parity.mjs": {
       "lines": 9,
       "uses": 10,
@@ -2721,6 +2741,16 @@
         "reason": "Finance native candidate (#6757, #6822) pins the Wrangler devDependency, runs its runtime fixture in the Wrangler SDK, ignores .void-wrangler.jsonc and tests the emitted wrangler.json artifact; Finance on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       },
       "digest": "52abc5e63cf83a7f8f5716f6a3ca8b20c7cc1b778417bda1a4c7d9d6e3d2cf87"
+    },
+    "scripts/ci/fixtures/cf-toolchain-receipts.json": {
+      "lines": 20,
+      "uses": 27,
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/6485",
+        "reason": "Records per-operation cf toolchain receipts and allowlist deltas; data-only Wrangler gap references, no CLI invocation."
+      },
+      "digest": "c0e40c47f50f674a7fae48f5d5603fb057adfce4fcf0b67ae2f87a31a7ffb458"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,

@@ -1,7 +1,7 @@
 ---
 title: "cf CLI and Void over Wrangler"
 description: "Per-operation parity matrix, native Worker template, rollback, the Wrangler usage guard and the per-service cutover checklist."
-updatedAt: '2026-11-13'
+updatedAt: '2026-11-20'
 audience: developers
 ---
 
@@ -18,6 +18,36 @@ This page refines the cf adoption gates in [Oxc and Cloudflare adoption](/build/
 A merged tooling switch is CI-verified, not production-delivered: every deploy
 target change still needs the gated production workflow, exact-commit evidence
 and the cutover checklist below.
+
+## Per-operation receipts
+
+The shrink-only Wrangler usage allowlist counts conservative token mentions; it
+does not track toolchain switches by itself. The cf toolchain queue in
+`scripts/ci/fixtures/cf-toolchain-receipts.json` records each operation in plan
+order: settings readback, Calendar Build Output, native Workers and the gateway,
+email/storage/Durable Object/Void publisher gaps, then observability and remaining
+callers. For every operation the lane proves behavioural or byte parity in an
+isolated rehearsal, switches the authoritative implementation to cf (or documents
+the retained Wrangler gap), records allowlist `files`/`uses` before and after, and
+lists gaps whose removal conditions are still open.
+
+| Operation | Status | Implementation | Allowlist delta (files / uses) | Wrangler gaps retained |
+| --- | --- | --- | --- | --- |
+| Worker settings preflight readback | switched | `scripts/ci/cf-worker-settings.mjs` | 0 / 0 | `deployment-source-compatibility` |
+| Calendar ASSETS-only Build Output | qualified | `scripts/ci/calendar-cf-output.mjs` | pending publisher switch | `void-wave1-publication`, `void-emitted-binding-types` |
+| Simple native Workers and gateway | gap | — | — | `pending-migration` |
+| Email, storage, DO and Void publisher | gap | — | — | `do-publication-rehearsal`, `void-wave1-publication`, `pending-migration` |
+| Observability and remaining callers | gap | — | — | `shared-toolchain` |
+
+Cron Control is the production template for switched native publication:
+`cf deploy --prebuilt --mode production --no-provision` on the exact CI artifact,
+with `cf-worker-settings.mjs before` and `after` bounding drift. Devbox Control and
+Coordination reuse the same readback contract; their publishers stay on Wrangler
+until the disposable Durable Object rehearsal receipt lands.
+
+Validate the queue with `node scripts/ci/cf-toolchain-receipts.mjs`. Extend the JSON
+only when an operation's rehearsal and allowlist accounting are complete; shrink the
+allowlist in the same change when a switch retires Wrangler lines.
 
 ## Toolchain shape
 
@@ -72,6 +102,7 @@ The existing native profiles qualify only their declared configuration fields.
 | Deployments | `wrangler deployments list` | `cf workers deployments list --worker <name>` | Parity |
 | Rollback | `wrangler rollback <version>` | `cf workers deployments create --worker <name> --strategy percentage --versions '[{"version_id":"<id>","percentage":100}]'` | Parity |
 | Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create` | Parity |
+| Settings preflight readback | none (no bounded snapshot in legacy deploy jobs) | `scripts/ci/cf-worker-settings.mjs` (28 bounded GETs on the Workers API) | switched; receipt `settings-readback` |
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
 | Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | Manual conversion; needs a disposable rehearsal before production |
 | D1 migrations | `wrangler d1 migrations apply` | `cf d1 migrations apply <database-id> --dir <directory>`; remote unless `--local` | Requires UUID, migration directory/table and local-persistence parity; binding names are rejected |

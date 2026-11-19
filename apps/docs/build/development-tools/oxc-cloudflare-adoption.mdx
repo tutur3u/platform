@@ -64,13 +64,23 @@ limit on the program. Retained paused applications remain excluded until resumed
 Mobile continues to use its native Flutter toolchain; shared services and web
 surfaces follow the platform target without implying a rewrite of native UI.
 
+The **cf/Void Wrangler-exit lane** drains a single checked-in operation queue in
+`scripts/ci/fixtures/cf-toolchain-receipts.json`. Each operation records isolated
+rehearsal evidence, the implementation path, production template (when
+applicable), allowlist deltas and Wrangler gaps that stay until their explicit
+removal conditions pass. `node scripts/ci/cf-toolchain-receipts.mjs` validates the
+queue; `node --test scripts/ci/cf-toolchain-receipts.test.mjs` proves referenced
+parity fixtures exist. A `switched` receipt marks the authoritative toolchain for
+that operation; `qualified` keeps Wrangler publication or CLI until the next gate
+closes; `gap` names the owner and remaining conditions only.
+
 Keep per-app ownership, prerequisites and exact-head receipts in the private
 request backlog and coordination board. Record per-operation receipts and explicit
 removal conditions for each Wrangler/cf operation. Separate implemented,
 CI-verified, runtime-accepted and production-delivered states. A merge does not
 establish hosting cutover. Capture new Worker/app scope and compatibility
-findings before dispatching the next unit; avoid competing migration and product
-owners in the same files.
+findings before dispatching the next operation; avoid competing migration and
+product owners in the same files.
 
 ## Complete Worker migration scope
 
