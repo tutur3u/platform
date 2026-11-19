@@ -2,7 +2,9 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_mini_nav_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
@@ -13,7 +15,7 @@ import '../../../helpers/helpers.dart';
 import 'task_board_row_actions_fixture.dart';
 
 void main() {
-  testWidgets('personal board dock reads Tasks, Kanban, Timeline, Settings', (
+  testWidgets('a board dock reads Tasks, Kanban, Timeline, no Settings', (
     tester,
   ) async {
     tester.view
@@ -61,13 +63,23 @@ void main() {
       'tasks',
       'kanban',
       'timeline',
-      'settings',
     ]);
     expect(registration.items.skip(1).map((item) => item.label), [
       'Tasks',
       'Kanban',
       'Timeline',
-      'Settings',
     ]);
+  });
+
+  test('Settings stays on the Tasks root mini-nav', () {
+    final tasks = AppRegistry.allModules.singleWhere(
+      (module) => module.id == 'tasks',
+    );
+    expect(tasks.miniAppNavItems.map((item) => item.id), [
+      'tasks_home',
+      'tasks_assigned',
+      'tasks_settings',
+    ]);
+    expect(tasks.miniAppNavItems.last.route, Routes.taskSettings);
   });
 }

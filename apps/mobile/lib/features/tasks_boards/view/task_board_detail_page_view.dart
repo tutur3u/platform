@@ -615,13 +615,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
         onPressed: () =>
             _openBoardViewRoute(context, TaskBoardDetailView.timeline),
       ),
-      ShellMiniNavItemSpec(
-        id: 'settings',
-        icon: LucideIcons.settings,
-        label: context.l10n.taskSettingsDockLabel,
-        callbackToken: 'settings',
-        onPressed: () => _goIfMounted(context, Routes.taskSettings),
-      ),
     ];
   }
 
