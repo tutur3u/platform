@@ -317,9 +317,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appsHubFinanceDescription => 'Manage wallets, categories, tags, and transaction history.';
 
   @override
-  String get appsHubGridView => 'Grid';
-
-  @override
   String get appsHubHabitsDescription => 'Track shared routines, streaks, and recurring progress.';
 
   @override
@@ -330,9 +327,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Run products, stock, sales, and booth operations in one place.';
-
-  @override
-  String get appsHubListView => 'List';
 
   @override
   String get appsHubMailDescription => 'Read and send email, manage drafts, and organize your inbox.';
@@ -375,6 +369,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appsNoMatches => 'No matching apps';
+
+  @override
+  String get appsPinSaveFailed => 'Couldn\'t save pins. Try again.';
 
   @override
   String get appsReorder => 'Drag to reorder';

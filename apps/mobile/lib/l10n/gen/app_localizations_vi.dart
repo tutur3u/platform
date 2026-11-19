@@ -317,9 +317,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appsHubFinanceDescription => 'Quản lý ví, danh mục, thẻ và lịch sử giao dịch.';
 
   @override
-  String get appsHubGridView => 'Lưới';
-
-  @override
   String get appsHubHabitsDescription => 'Theo dõi thói quen chung, chuỗi ngày và tiến độ lặp lại.';
 
   @override
@@ -330,9 +327,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appsHubInventoryDescription => 'Quản lý sản phẩm, tồn kho, bán hàng và vận hành quầy tại một nơi.';
-
-  @override
-  String get appsHubListView => 'Danh sách';
 
   @override
   String get appsHubMailDescription => 'Đọc và gửi email, quản lý thư nháp và sắp xếp hộp thư đến.';
@@ -375,6 +369,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appsNoMatches => 'Không có ứng dụng phù hợp';
+
+  @override
+  String get appsPinSaveFailed => 'Không thể lưu ứng dụng đã ghim. Hãy thử lại.';
 
   @override
   String get appsReorder => 'Kéo để sắp xếp';

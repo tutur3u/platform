@@ -21,6 +21,16 @@ class _DelayedSettingsRepository extends SettingsRepository {
   }
 }
 
+class _FailingShortcutRead extends SettingsRepository {
+  bool failRead = true;
+
+  @override
+  Future<List<String>> getRecentApps() async {
+    if (failRead) throw StateError('Preferences unavailable');
+    return await super.getRecentApps();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -109,6 +119,29 @@ void main() {
     await restored.loadLastApp();
     expect(restored.state.pinnedAppIds, ['calendar']);
   });
+
+  test(
+    'shortcut writes preserve saved pins and recents after a failed read',
+    () async {
+      final settings = _FailingShortcutRead();
+      await settings.setPinnedApps(['finance']);
+      await settings.setRecentApps(['finance']);
+      final cubit = AppTabCubit(settingsRepository: settings);
+      addTearDown(cubit.close);
+
+      await cubit.loadLastApp();
+      expect(await cubit.setAppPinned('tasks', pinned: true), isFalse);
+      await cubit.select(AppRegistry.moduleById('calendar')!);
+      expect(await settings.getPinnedApps(), ['finance']);
+      expect(await SettingsRepository().getRecentApps(), ['finance']);
+
+      settings.failRead = false;
+      expect(await cubit.setAppPinned('tasks', pinned: true), isTrue);
+      await cubit.select(AppRegistry.moduleById('calendar')!);
+      expect(await settings.getPinnedApps(), ['finance', 'tasks']);
+      expect(await settings.getRecentApps(), ['calendar', 'finance']);
+    },
+  );
 
   test(
     'recent apps deduplicate repeated launches and persist their order',

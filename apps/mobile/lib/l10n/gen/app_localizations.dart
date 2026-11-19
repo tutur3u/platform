@@ -679,12 +679,6 @@ abstract class AppLocalizations {
   /// **'Manage wallets, categories, tags, and transaction history.'**
   String get appsHubFinanceDescription;
 
-  /// No description provided for @appsHubGridView.
-  ///
-  /// In en, this message translates to:
-  /// **'Grid'**
-  String get appsHubGridView;
-
   /// No description provided for @appsHubHabitsDescription.
   ///
   /// In en, this message translates to:
@@ -708,12 +702,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Run products, stock, sales, and booth operations in one place.'**
   String get appsHubInventoryDescription;
-
-  /// No description provided for @appsHubListView.
-  ///
-  /// In en, this message translates to:
-  /// **'List'**
-  String get appsHubListView;
 
   /// No description provided for @appsHubMailDescription.
   ///
@@ -798,6 +786,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No matching apps'**
   String get appsNoMatches;
+
+  /// No description provided for @appsPinSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save pins. Try again.'**
+  String get appsPinSaveFailed;
 
   /// No description provided for @appsReorder.
   ///

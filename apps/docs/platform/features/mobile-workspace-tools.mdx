@@ -17,14 +17,16 @@ These modules are registered in the Apps hub and available through the mini-app 
 
 The Apps screen groups available tools under Work, Money, Communication,
 Learning, and Tools. Phones use two tiles per row at standard text sizes.
-Wider layouts can show more columns. The search field matches app names and
-descriptions in place.
+Wider layouts can show more columns. Search matches app names, descriptions,
+and module IDs regardless of case or Vietnamese accents.
 
-Customize apps lets you pin or unpin apps, reorder tools within their category,
-and hide or restore apps. Pinned appears above the categories with an Add pin
-shortcut. Recents shows up to four available apps, most recent first. Pin
-choices and recent launches are stored on the device. Hidden apps are omitted from browsing and shortcuts and can still be
-found under Hidden apps in search. Workspace permissions and experiment settings
+Customize apps uses the same category headings as the launcher. Drag an app
+within its category to reorder it. You can also pin, unpin, hide, or restore
+apps. Pinned appears above the categories with an Add pin shortcut. Recents
+shows up to four available apps, most recent first. The device stores pins and
+recent launches. If a pin fails to save, the editor shows a message and keeps
+the saved pin state. Hidden apps appear under Hidden apps in search and stay
+out of categories and shortcuts. Workspace permissions and experiment settings
 apply to categories, search, pins, and recents.
 
 [Launcher widget tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/apps/apps_hub_page_test.dart)
@@ -71,24 +73,12 @@ Tasks opens the current workspace's board list. Select a board to open its
 details. Dock and Android system Back return from a selected board to the list;
 direct board links use the shell's deep-link fallback. My tasks in the Tasks dock
 opens assigned work. Task overlays return to their owning board.
-Apps is always available in the root dock. The Apps grid supports long-press
-reordering: nearby icons shift across rows during the drag, with a subtle
-motion cue, and the new order is saved on release. Tapping an app's icon or
-label exits reorder and opens that app. Empty cell margins, row gaps, and unused
-grid space never open an app; tapping them exits reorder. Leaving Apps through
-any route also exits reorder, while preserving its search and scroll state.
-Long-press pickup and ordinary scrolling retain their existing gesture thresholds.
-App taps provide selection haptics. The list editor provides drag handles and visibility controls. Hiding
-an app requires confirmation. Hidden apps remain accessible at the bottom of
-Apps, separated from shown apps by a divider, and can be shown again without a
-confirmation. The editor places hidden experiments below Hidden Apps; enabled
-experiments appear in the regular shown order, while disabled or locally hidden
-experiments can be enabled or shown from Hidden Experiments. App order and hidden
-choices persist on the device. The editor disables Show when current account or
-workspace access would still prevent an experiment from appearing; access changes
-can make that control available later. Workspace permissions and experimental-app
-visibility still take precedence; a locally hidden app is only moved out of
-the shown launcher section, not disabled or removed from navigation.
+Apps is always available in the root dock. Tap an app to open it with selection
+haptics. Use the top bar's Customize apps action to reorder apps within a
+category or change their visibility. Hiding an app requires confirmation.
+Hidden apps and hidden experiments have separate editor sections. You can show
+an app again when your current account and workspace have access. App order and
+visibility choices persist on the device. Hiding an app keeps its route available.
 
 Home's task, calendar, Finance, daily summary, and eligible Mail, Meet, and Notes
 cards can be reordered or hidden through the compact top-bar Customize action.
@@ -1245,15 +1235,16 @@ destination scrolls its content to the top. Reselecting again resets its top
 section to the default; if already at the top, reset happens immediately. Rapid
 third taps during scrolling must also reset. Notifications returns to Inbox and
 Profile to Overview within at most three taps; scrolling manually restarts the
-sequence. Apps resets to Grid, Finance taxonomy to Categories, and Calendar to
-Three days on phones or Week on tablets. Notes returns to Inbox and Assistant
-to Chat through their existing guarded handlers. Time Tracker sections remain
-separate routed destinations. Home has one view; Calendar's own Agenda view is
-the agenda surface. Apps defaults to Grid before List. Shared search replaces the top navbar; empty submission dismisses and unfocuses. IME visibility
-and hardware search focus animate the whole dock and its actions out together;
+sequence. Resetting Apps clears its search. Finance taxonomy resets to
+Categories. Calendar resets to Three days on phones and Week on tablets. Notes
+returns to Inbox and Assistant to Chat. Time Tracker sections have separate
+routes. Calendar has its own Agenda view. Shared shell search replaces the top
+navbar. Apps uses an inline search field. IME visibility and hardware search
+focus animate the whole dock and its actions out together;
 route changes clear focus. Workspace visibility has a subtle icon, a named tooltip,
-and a 44-pixel target. Regression coverage: `shell_keyboard_chrome_test.dart`,
-and `apps_search_submit_test.dart`. Apps opens with one tap and keeps its picker on long press.
+and a 44-pixel target. Regression coverage lives in
+`shell_keyboard_chrome_test.dart` and `apps_search_submit_test.dart`. Tap Apps
+to open the launcher or long-press Apps to focus search.
 
 Profile uses the shell title for Overview and Timeline, with no duplicate
 body heading. Place the day-trail action before the rightmost Overview/Timeline
@@ -1384,13 +1375,14 @@ stutter is resolved.
 ## Apps search submission
 
 Submitting a nonempty Apps query with exactly one current matching app clears
-the field, closes search mode, and opens that app. Zero or multiple matches
-keep the query and results visible while unfocusing the keyboard. Empty queries
-close search mode. Submission uses the same current localized
-results as the hub, and repeated submissions cannot launch the app twice.
+the field and opens that app. Zero or multiple matches keep the query and
+results visible. Submitting an empty query dismisses the keyboard. Submission
+uses the same localized results as the hub and opens an app once even when the
+keyboard submits the same query more than once.
 
-Apps discovery retains its case-insensitive substring matching over the localized
-label, description, and module ID; this submission change adds no plural stemming.
+Search matches substrings in the localized label, description, and module ID.
+It ignores case and Vietnamese accents, so `lich` finds **Lịch** and
+`tai chinh` finds **Tài chính**.
 A queued selection is canceled if workspace, account, experiment, access, or
 locale inputs change after its match was resolved and before navigation.
 

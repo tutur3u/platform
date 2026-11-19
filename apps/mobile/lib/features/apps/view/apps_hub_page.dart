@@ -18,7 +18,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
-class AppsHubPage extends StatefulWidget {
+class AppsHubPage extends StatelessWidget {
   const AppsHubPage({
     this.query = '',
     this.onSelected,
@@ -31,19 +31,6 @@ class AppsHubPage extends StatefulWidget {
   final ValueChanged<AppModule>? onSelected;
   final VoidCallback? onManage;
   final Widget? search;
-
-  @override
-  State<AppsHubPage> createState() => _AppsHubPageState();
-}
-
-class _AppsHubPageState extends State<AppsHubPage> {
-  final _scroll = ScrollController();
-
-  @override
-  void dispose() {
-    _scroll.dispose();
-    super.dispose();
-  }
 
   // Pull to refresh also retries the workspace's app access check.
   Future<void> _refresh(BuildContext context) async {
@@ -59,14 +46,14 @@ class _AppsHubPageState extends State<AppsHubPage> {
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
     final state = cubit.state;
-    final matching = appsHubResults(context, cubit, widget.query);
+    final matching = appsHubResults(context, cubit, query);
     final hidden = state.hiddenAppIds.toSet();
     final visible = {
       for (final app in matching)
         if (!hidden.contains(app.id)) app.id: app,
     };
     final l10n = context.l10n;
-    final searching = widget.query.trim().isNotEmpty;
+    final searching = query.trim().isNotEmpty;
     final pinned = state.pinnedAppIds
         .map((id) => visible[id])
         .nonNulls
@@ -98,7 +85,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
 
     void open(AppModule app) {
       unawaited(AppHaptics.selection());
-      if (widget.onSelected case final select?) {
+      if (onSelected case final select?) {
         select(app);
       } else {
         unawaited(cubit.select(app));
@@ -110,20 +97,19 @@ class _AppsHubPageState extends State<AppsHubPage> {
       onRefresh: () => _refresh(context),
       child: AppPageScrollView(
         kind: AppPageKind.root,
-        controller: _scroll,
         topInset: floatingShellHeaderInset(context),
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
         slivers: [
-          if (widget.search case final field?)
+          if (search case final field?)
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
                 child: field,
               ),
             ),
-          if (!searching && (pinned.isNotEmpty || widget.onManage != null))
+          if (!searching && (pinned.isNotEmpty || onManage != null))
             SliverToBoxAdapter(
               key: const ValueKey('apps-section-pinned'),
               child: _AppsSection(
@@ -131,7 +117,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
                 child: AppLauncherPins(
                   apps: pinned,
                   onSelected: open,
-                  onManage: widget.onManage,
+                  onManage: onManage,
                 ),
               ),
             ),
@@ -155,7 +141,11 @@ class _AppsHubPageState extends State<AppsHubPage> {
               key: ValueKey('apps-section-$id'),
               child: _AppsSection(
                 title: title,
-                child: _AppsGrid(apps: apps, onSelected: open),
+                child: _AppsGrid(
+                  keyPrefix: searching ? id : 'app',
+                  apps: apps,
+                  onSelected: open,
+                ),
               ),
             ),
         ],
@@ -184,7 +174,13 @@ class _AppsSection extends StatelessWidget {
 }
 
 class _AppsGrid extends StatelessWidget {
-  const _AppsGrid({required this.apps, required this.onSelected});
+  const _AppsGrid({
+    required this.keyPrefix,
+    required this.apps,
+    required this.onSelected,
+  });
+
+  final String keyPrefix;
 
   final List<AppModule> apps;
   final ValueChanged<AppModule> onSelected;
@@ -211,7 +207,7 @@ class _AppsGrid extends StatelessWidget {
         children: [
           for (final module in apps)
             SizedBox(
-              key: ValueKey(module.id),
+              key: ValueKey('$keyPrefix-${module.id}'),
               width: tileWidth,
               child: AppLauncherTile(
                 module: module,

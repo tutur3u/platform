@@ -10,6 +10,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -261,7 +262,7 @@ void main() {
       final target = tapIcon
           ? find
                 .descendant(
-                  of: find.byKey(const ValueKey('calendar')),
+                  of: find.byKey(const ValueKey('app-calendar')),
                   matching: find.byType(Icon),
                 )
                 .first
@@ -298,9 +299,13 @@ void main() {
   testWidgets('tapping the gap between app tiles does not launch an app', (
     tester,
   ) async {
+    await apps.setAppPinned('tasks', pinned: true);
+    await apps.select(AppRegistry.moduleById('tasks')!);
     await mount(tester);
-    final left = tester.getRect(find.byKey(const ValueKey('tasks')));
-    final right = tester.getRect(find.byKey(const ValueKey('calendar')));
+    expect(find.byKey(const ValueKey('pinned-tasks')), findsOneWidget);
+    expect(find.byKey(const ValueKey('recent-tasks')), findsOneWidget);
+    final left = tester.getRect(find.byKey(const ValueKey('app-tasks')));
+    final right = tester.getRect(find.byKey(const ValueKey('app-calendar')));
     await tester.tapAt(Offset((left.right + right.left) / 2, left.center.dy));
     await _pump(tester);
     expect(router.routeInformationProvider.value.uri.path, Routes.apps);

@@ -93,6 +93,7 @@ void main() {
           routes: [
             GoRoute(path: Routes.apps, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.home, builder: (_, _) => const SizedBox()),
+            GoRoute(path: Routes.timeline, builder: (_, _) => const SizedBox()),
             GoRoute(path: Routes.tasks, builder: (_, _) => const SizedBox()),
             GoRoute(
               path: Routes.calendar,
@@ -227,6 +228,60 @@ void main() {
     expect(homeActions.map((action) => action.id), contains('home-customize'));
     expect(homeActions.where((action) => action.segmentGroup != null), isEmpty);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Home timeline action opens the Timeline', (tester) async {
+    await mount(tester);
+    router.go(Routes.home);
+    await _pump(tester);
+    final chrome = tester
+        .element(find.byType(ShellPage))
+        .read<ShellChromeActionsCubit>();
+    expect(
+      chrome.state.resolveForLocation(Routes.home).map((action) => action.id),
+      contains('home-timeline'),
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('shell-action-button-home-timeline')),
+    );
+    await _pump(tester);
+    // Timeline is pushed above Home, so Back returns there.
+    expect(router.state.uri.path, Routes.timeline);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('reselecting Apps scrolls to the top then clears the query', (
+    tester,
+  ) async {
+    for (final id in ['chat', 'documents', 'drive', 'meet', 'notes', 'timer']) {
+      await experiments.setModuleEnabled(moduleId: id, enabled: true);
+    }
+    await mount(tester);
+    tester.view.physicalSize = const Size(430, 400);
+    await _pump(tester);
+    await tester.enterText(searchField, 'a');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await _pump(tester);
+    final scrollable = find.descendant(
+      of: find.byKey(const ValueKey('apps-screen')),
+      matching: find.byType(Scrollable),
+    );
+    final position = tester.state<ScrollableState>(scrollable.first).position;
+    expect(position.maxScrollExtent, greaterThan(position.minScrollExtent));
+    position.jumpTo(position.maxScrollExtent);
+    await _pump(tester);
+
+    final appsTab = find.byKey(const ValueKey<String>('apps'));
+    await tester.tap(appsTab);
+    await _pump(tester);
+    expect(position.pixels, position.minScrollExtent);
+    expect(tester.widget<TextField>(searchInput).controller!.text, 'a');
+
+    await tester.tap(appsTab);
+    await _pump(tester);
+    expect(tester.widget<TextField>(searchInput).controller!.text, isEmpty);
+    expect(find.byKey(const ValueKey('app-calendar')), findsOneWidget);
+    expect(position.pixels, position.minScrollExtent);
   });
 
   testWidgets(

@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/core/utils/search_text.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/cubit/app_tab_state.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
@@ -65,7 +66,16 @@ class AppsScreen extends StatefulWidget {
   State<AppsScreen> createState() => _AppsScreenState();
 }
 
-class _AppsScreenState extends State<AppsScreen> {
+class _AppsScreenState extends State<AppsScreen>
+    with SingleTickerProviderStateMixin {
+  late final _entrance = AnimationController(
+    vsync: this,
+    duration: AppMotion.normal,
+    value: 1,
+  );
+  late final Animation<double> _opacity = _entrance.drive(
+    Tween<double>(begin: 0.9, end: 1),
+  );
   final _search = TextEditingController();
   final _searchFocus = FocusNode(debugLabel: 'apps-search');
   String? _pendingSubmit;
@@ -98,10 +108,16 @@ class _AppsScreenState extends State<AppsScreen> {
       });
     }
     if (!oldWidget.isActive && widget.isActive) _focusFromRequest();
+    if (widget.isActive &&
+        oldWidget.replayToken != widget.replayToken &&
+        !MediaQuery.disableAnimationsOf(context)) {
+      unawaited(_entrance.forward(from: 0));
+    }
   }
 
   @override
   void dispose() {
+    _entrance.dispose();
     _search.dispose();
     _searchFocus.dispose();
     super.dispose();
@@ -111,8 +127,8 @@ class _AppsScreenState extends State<AppsScreen> {
     if (!widget.isActive || _pendingSubmit != null || _launchQueued) {
       return;
     }
-    final query = _search.text.trim().toLowerCase();
-    if (submitted.trim().toLowerCase() != query) return;
+    final query = foldSearchText(_search.text);
+    if (foldSearchText(submitted) != query) return;
     if (query.isEmpty) {
       _search.clear();
       _searchFocus.unfocus();
@@ -137,7 +153,7 @@ class _AppsScreenState extends State<AppsScreen> {
       _launchQueued = false;
       if (!mounted ||
           !widget.isActive ||
-          _search.text.trim().toLowerCase() != query ||
+          foldSearchText(_search.text) != query ||
           GoRouter.of(context).routeInformationProvider.value.uri.path !=
               Routes.apps) {
         return;
@@ -154,11 +170,15 @@ class _AppsScreenState extends State<AppsScreen> {
   }
 
   void _open(AppModule module) {
-    setState(() => _pendingSubmit = null);
-    _search.clear();
-    _searchFocus.unfocus();
+    _resetSearch();
     unawaited(context.read<AppTabCubit>().select(module));
     context.go(module.route);
+  }
+
+  void _resetSearch() {
+    _pendingSubmit = null;
+    _search.clear();
+    _searchFocus.unfocus();
   }
 
   void _manage() {
@@ -193,6 +213,7 @@ class _AppsScreenState extends State<AppsScreen> {
           ShellChromeActions(
             ownerId: 'apps-screen',
             locations: const {Routes.apps},
+            onResetSection: _resetSearch,
             actions: [
               ShellActionSpec(
                 id: 'apps-arrange',
@@ -203,39 +224,44 @@ class _AppsScreenState extends State<AppsScreen> {
             ],
           ),
           Expanded(
-            child: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _search,
-              builder: (context, value, _) {
-                final tokens = AppTokens.of(context);
-                return AppsHubPage(
-                  query: value.text,
-                  onSelected: _open,
-                  onManage: _manage,
-                  search: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: tokens.colorScheme.card,
-                      borderRadius: BorderRadius.circular(tokens.shapes.field),
+            child: FadeTransition(
+              opacity: _opacity,
+              child: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _search,
+                builder: (context, value, _) {
+                  final tokens = AppTokens.of(context);
+                  return AppsHubPage(
+                    query: value.text,
+                    onSelected: _open,
+                    onManage: _manage,
+                    search: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: tokens.colorScheme.card,
+                        borderRadius: BorderRadius.circular(
+                          tokens.shapes.field,
+                        ),
+                      ),
+                      child: AppTextField(
+                        key: const ValueKey('apps-search-field'),
+                        controller: _search,
+                        focusNode: _searchFocus,
+                        placeholder: context.l10n.appsHubSearchHint,
+                        leading: const Icon(LucideIcons.search, size: 20),
+                        trailing: value.text.isEmpty
+                            ? null
+                            : AppIconButton(
+                                icon: const Icon(LucideIcons.x),
+                                tooltip: context.l10n.commonClearSearch,
+                                onPressed: _search.clear,
+                              ),
+                        onSubmitted: _submitSearch,
+                        onTapOutside: (_) => _searchFocus.unfocus(),
+                        textInputAction: TextInputAction.search,
+                      ),
                     ),
-                    child: AppTextField(
-                      key: const ValueKey('apps-search-field'),
-                      controller: _search,
-                      focusNode: _searchFocus,
-                      placeholder: context.l10n.appsHubSearchHint,
-                      leading: const Icon(LucideIcons.search, size: 20),
-                      trailing: value.text.isEmpty
-                          ? null
-                          : AppIconButton(
-                              icon: const Icon(LucideIcons.x),
-                              tooltip: context.l10n.commonClearSearch,
-                              onPressed: _search.clear,
-                            ),
-                      onSubmitted: _submitSearch,
-                      onTapOutside: (_) => _searchFocus.unfocus(),
-                      textInputAction: TextInputAction.search,
-                    ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],

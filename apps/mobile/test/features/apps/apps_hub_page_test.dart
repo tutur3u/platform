@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -22,8 +23,22 @@ Finder section(String id) => find.byKey(ValueKey('apps-section-$id'));
 
 Finder tile(String sectionId, String appId) => find.descendant(
   of: section(sectionId),
-  matching: find.byKey(ValueKey(appId)),
+  matching: find.byKey(
+    ValueKey(
+      '${switch (sectionId) {
+        'pinned' || 'recent' || 'results' || 'hidden' => sectionId,
+        _ => 'app',
+      }}-$appId',
+    ),
+  ),
 );
+
+class _FailingPinSettings extends SettingsRepository {
+  @override
+  Future<void> setPinnedApps(List<String> ids) async {
+    throw StateError('Could not save pinned apps');
+  }
+}
 
 void main() {
   late AppTabCubit tabs;
@@ -178,6 +193,79 @@ void main() {
     expect(find.text('No matching apps'), findsOneWidget);
   });
 
+  for (final (query, id, label) in [
+    ('  LiCh  ', 'calendar', 'Lịch'),
+    ('tai chinh', 'finance', 'Tài chính'),
+    ('Ta\u0300i chi\u0301nh', 'finance', 'Tài chính'),
+  ]) {
+    testWidgets('Vietnamese Apps search finds $label for $query', (
+      tester,
+    ) async {
+      tester.platformDispatcher.localesTestValue = const [Locale('vi')];
+      addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+      await mount(tester, AppsHubPage(query: query));
+      expect(tile('results', id), findsOneWidget);
+      expect(find.text(label), findsOneWidget);
+    });
+  }
+
+  for (final brightness in Brightness.values) {
+    testWidgets('Classic product icons use distinct AA tones in $brightness', (
+      tester,
+    ) async {
+      const ids = [
+        'tasks',
+        'finance',
+        'calendar',
+        'documents',
+        'chat',
+        'crm',
+        'notes',
+      ];
+      await tester.pumpThemedHome(
+        Scaffold(
+          body: Row(
+            children: [
+              for (final id in ids)
+                AppProductIcon(
+                  key: ValueKey(id),
+                  module: AppRegistry.moduleById(id)!,
+                ),
+            ],
+          ),
+        ),
+        brightness: brightness,
+      );
+      final inks = <Color>{};
+      for (final id in ids) {
+        final product = find.byKey(ValueKey(id));
+        final ink = tester
+            .widget<Icon>(
+              find.descendant(of: product, matching: find.byType(Icon)),
+            )
+            .color!;
+        final fill =
+            (tester
+                        .widget<DecoratedBox>(
+                          find.descendant(
+                            of: product,
+                            matching: find.byType(DecoratedBox),
+                          ),
+                        )
+                        .decoration
+                    as BoxDecoration)
+                .color!;
+        expect(
+          AppearanceContrast.ratio(ink, fill),
+          greaterThanOrEqualTo(AppearanceContrast.aaText),
+          reason: id,
+        );
+        inks.add(ink);
+      }
+      expect(inks, hasLength(ids.length));
+    });
+  }
+
   testWidgets('hidden apps can still be found by description', (tester) async {
     await tabs.setAppHidden('calendar', hidden: true);
     await mount(tester, const AppsHubPage(query: 'Upcoming events'));
@@ -214,18 +302,44 @@ void main() {
 
     final task = find.byKey(const ValueKey('tasks'));
     final calendar = find.byKey(const ValueKey('calendar'));
-    final drag = await tester.startGesture(
-      tester.getCenter(
-        find.descendant(of: task, matching: find.byTooltip('Drag to reorder')),
+    final finance = find.byKey(const ValueKey('finance'));
+    expect(
+      tester.getTopLeft(find.text('Work')).dy,
+      lessThan(tester.getTopLeft(task).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text('Money')).dy,
+      lessThan(tester.getTopLeft(finance).dy),
+    );
+    expect(
+      find.descendant(of: finance, matching: find.byTooltip('Drag to reorder')),
+      findsNothing,
+    );
+    final workList = find.ancestor(
+      of: task,
+      matching: find.byType(SliverReorderableList),
+    );
+    expect(find.descendant(of: workList, matching: calendar), findsOneWidget);
+    expect(find.descendant(of: workList, matching: finance), findsNothing);
+    final handle = tester.getCenter(
+      find.descendant(
+        of: calendar,
+        matching: find.byTooltip('Drag to reorder'),
       ),
     );
-    await drag.moveBy(const Offset(0, 24));
-    await tester.pump();
-    await drag.moveTo(tester.getCenter(calendar) + const Offset(60, 18));
-    await tester.pump(const Duration(milliseconds: 300));
+    final distance = tester.getCenter(task).dy - handle.dy;
+    final drag = await tester.startGesture(handle);
+    for (var step = 0; step < 4; step++) {
+      await drag.moveBy(Offset(0, distance / 4));
+      await tester.pump();
+    }
     await drag.up();
     await tester.pumpAndSettle();
     expect(tabs.state.appOrder.take(2), ['calendar', 'tasks']);
+    expect(
+      tester.getTopLeft(calendar).dy,
+      lessThan(tester.getTopLeft(task).dy),
+    );
 
     await tester.tap(
       find.descendant(of: task, matching: find.byTooltip('Hide app')),
@@ -245,7 +359,30 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(tabs.state.hiddenAppIds, isEmpty);
+
+    await mount(tester, const AppsHubPage());
+    expect(
+      tester.getTopLeft(tile('work', 'calendar')).dx,
+      lessThan(tester.getTopLeft(tile('work', 'tasks')).dx),
+    );
   });
+
+  testWidgets(
+    'Customize reports a pin write failure without changing its state',
+    (tester) async {
+      await tabs.close();
+      tabs = AppTabCubit(settingsRepository: _FailingPinSettings());
+      await mount(tester, const AppsPickerEditor());
+      await tester.tap(find.byTooltip('Pin Tasks'));
+      await tester.pumpAndSettle();
+
+      expect(find.text("Couldn't save pins. Try again."), findsOneWidget);
+      expect(find.byTooltip('Pin Tasks'), findsOneWidget);
+      expect(tabs.state.pinnedAppIds, isEmpty);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+    },
+  );
 
   testWidgets('Customize enables only accessible experiments', (tester) async {
     await mount(tester, const AppsPickerEditor(), size: const Size(430, 2400));

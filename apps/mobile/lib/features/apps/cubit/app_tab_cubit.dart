@@ -16,6 +16,7 @@ class AppTabCubit extends Cubit<AppTabState> {
   final SettingsRepository _settings;
   int _selectionRequestVersion = 0;
   Future<void>? _launcherPreferences;
+  bool _launcherPreferencesLoaded = false;
   static const _recentLimit = 12;
 
   void _bumpSelectionVersion() {
@@ -90,6 +91,7 @@ class AppTabCubit extends Cubit<AppTabState> {
       final pinned = await _settings.getPinnedApps();
       final recent = await _settings.getRecentApps();
       if (isClosed) return;
+      _launcherPreferencesLoaded = true;
       emit(
         state.copyWith(
           pinnedAppIds: List.unmodifiable(pinned.toSet()),
@@ -103,19 +105,25 @@ class AppTabCubit extends Cubit<AppTabState> {
 
   // Queue writes behind the initial read and each other so a rapid pair of
   // launches or pin changes preserves both the on-screen and stored order.
-  Future<void> _updateLauncherPreferences(Future<void> Function() update) {
-    final previous = _launcherPreferences ?? _loadLauncherPreferences();
-    return _launcherPreferences = previous.then((_) async {
-      if (isClosed) return;
+  Future<bool> _updateLauncherPreferences(Future<void> Function() update) {
+    final previous = _launcherPreferences ?? Future<void>.value();
+    final result = previous.then((_) async {
+      if (isClosed) return false;
+      if (!_launcherPreferencesLoaded) await _loadLauncherPreferences();
+      if (isClosed || !_launcherPreferencesLoaded) return false;
       try {
         await update();
+        return true;
       } on Object catch (error, stack) {
         log('Failed to save app shortcuts', error: error, stackTrace: stack);
+        return false;
       }
     });
+    _launcherPreferences = result.then<void>((_) {});
+    return result;
   }
 
-  Future<void> setAppPinned(String id, {required bool pinned}) =>
+  Future<bool> setAppPinned(String id, {required bool pinned}) =>
       _updateLauncherPreferences(() async {
         if (state.pinnedAppIds.contains(id) == pinned) return;
         final ids = List<String>.unmodifiable([
@@ -126,18 +134,19 @@ class AppTabCubit extends Cubit<AppTabState> {
         if (!isClosed) emit(state.copyWith(pinnedAppIds: ids));
       });
 
-  Future<void> _recordRecentApp(String id) =>
-      _updateLauncherPreferences(() async {
-        if (state.recentAppIds.firstOrNull == id) return;
-        final ids = List<String>.unmodifiable(
-          [
-            id,
-            ...state.recentAppIds.where((existing) => existing != id),
-          ].take(_recentLimit),
-        );
-        await _settings.setRecentApps(ids);
-        if (!isClosed) emit(state.copyWith(recentAppIds: ids));
-      });
+  Future<void> _recordRecentApp(String id) async {
+    await _updateLauncherPreferences(() async {
+      if (state.recentAppIds.firstOrNull == id) return;
+      final ids = List<String>.unmodifiable(
+        [
+          id,
+          ...state.recentAppIds.where((existing) => existing != id),
+        ].take(_recentLimit),
+      );
+      await _settings.setRecentApps(ids);
+      if (!isClosed) emit(state.copyWith(recentAppIds: ids));
+    });
+  }
 
   Future<void> loadLastApp() async {
     final requestVersion = ++_selectionRequestVersion;

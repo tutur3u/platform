@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/utils/search_text.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/models/app_description.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
@@ -20,13 +21,12 @@ List<AppModule> appsHubResults(
   AppTabCubit cubit,
   String query,
 ) {
-  final normalized = query.trim().toLowerCase();
+  final normalized = foldSearchText(query);
   final matches = arrangeApps(AppRegistry.modules(context), cubit).where(
-    (module) =>
-        '${module.label(context.l10n)} '
-                '${appDescription(context, module.id)} ${module.id}'
-            .toLowerCase()
-            .contains(normalized),
+    (module) => foldSearchText(
+      '${module.label(context.l10n)} '
+      '${appDescription(context, module.id)} ${module.id}',
+    ).contains(normalized),
   );
   return {for (final module in matches) module.id: module}.values.toList();
 }

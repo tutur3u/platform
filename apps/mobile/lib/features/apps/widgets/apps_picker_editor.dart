@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/ui/kit/app_section_header.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
+import 'package:mobile/features/apps/models/app_category.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/apps/widgets/app_visibility_button.dart';
@@ -84,115 +86,173 @@ class AppsPickerEditor extends StatelessWidget {
                   cubit.state.hiddenAppIds.contains(module.id)),
         )
         .toList();
-    final modules = [...shown, ...hiddenApps, ...hiddenExperiments];
-    final shownCount = shown.length;
-    final experimentAccess = {
-      for (final module in hiddenExperiments)
-        module.id: AppRegistry.experimentalAccessAvailable(context, module.id),
-    };
-    // Hosted below the order editor sheet's own title row, so it needs no
-    // floating shell header clearance.
-    return ReorderableListView.builder(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.sm + MediaQuery.paddingOf(context).bottom,
-      ),
-      buildDefaultDragHandles: false,
-      itemCount: modules.length,
-      onReorderItem: (oldIndex, newIndex) {
-        if (oldIndex >= shownCount || shownCount < 2) return;
-        final moved = modules.removeAt(oldIndex);
-        modules.insert(newIndex.clamp(0, shownCount - 1), moved);
-        unawaited(cubit.setAppOrder(modules.map((app) => app.id).toList()));
-      },
-      itemBuilder: (context, index) {
-        final module = modules[index];
-        final hidden = index >= shownCount;
-        final canShow =
-            !hidden ||
-            !AppRegistry.experimentalModuleIds.contains(module.id) ||
-            (experiments != null && experimentAccess[module.id] == true);
-        final pinned = cubit.state.pinnedAppIds.contains(module.id);
-        final label = module.label(context.l10n);
-        return Column(
-          key: ValueKey(module.id),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hiddenApps.isNotEmpty && index == shownCount) ...[
-              const Divider(height: 24),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  context.l10n.appsHiddenSection,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ),
-            ],
-            if (hiddenExperiments.isNotEmpty &&
-                index == shownCount + hiddenApps.length) ...[
-              const Divider(height: 24),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  context.l10n.appsHiddenExperimentsSection,
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-              ),
-            ],
-            ListTile(
-              leading: Icon(module.icon),
-              title: Text(label),
-              textColor: hidden
-                  ? Theme.of(context).colorScheme.onSurfaceVariant
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (!hidden)
-                    AppIconButton(
-                      icon: Icon(
-                        pinned ? Icons.push_pin : Icons.push_pin_outlined,
-                      ),
-                      tooltip: pinned
-                          ? context.l10n.appsUnpin(label)
-                          : context.l10n.appsPin(label),
-                      onPressed: () => unawaited(
-                        cubit.setAppPinned(module.id, pinned: !pinned),
-                      ),
+    final groups = <AppCategory, List<AppModule>>{};
+    for (final module in shown) {
+      (groups[AppCategory.forModule(module.id)] ??= []).add(module);
+    }
+
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            0,
+          ),
+          sliver: SliverMainAxisGroup(
+            slivers: [
+              for (final category in AppCategory.values)
+                if (groups[category] case final modules?) ...[
+                  SliverToBoxAdapter(
+                    child: AppSectionHeader(
+                      title: category.label(context.l10n),
                     ),
-                  AppVisibilityButton(
-                    hidden: hidden,
-                    onPressed: canShow
-                        ? () => unawaited(
-                            _changeEditorVisibility(
-                              context: context,
-                              apps: cubit,
-                              experiments: experiments,
-                              module: module,
-                              hidden: hidden,
-                            ),
-                          )
-                        : null,
                   ),
-                  if (!hidden)
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Tooltip(
-                        message: context.l10n.appsReorder,
-                        child: const SizedBox.square(
-                          dimension: 48,
-                          child: Icon(Icons.drag_handle_rounded),
-                        ),
-                      ),
+                  SliverReorderableList(
+                    key: ValueKey(category),
+                    itemCount: modules.length,
+                    proxyDecorator: (child, _, _) => Material(
+                      color: AppTokens.of(context).colorScheme.card,
+                      child: child,
                     ),
+                    onReorderItem: (oldIndex, newIndex) {
+                      final reordered = [...modules];
+                      final moved = reordered.removeAt(oldIndex);
+                      reordered.insert(newIndex, moved);
+                      unawaited(
+                        cubit.setAppOrder([
+                          for (final group in AppCategory.values)
+                            for (final module
+                                in (group == category
+                                        ? reordered
+                                        : groups[group]) ??
+                                    const <AppModule>[])
+                              module.id,
+                        ]),
+                      );
+                    },
+                    itemBuilder: (context, index) => _AppEditorRow(
+                      key: ValueKey(modules[index].id),
+                      module: modules[index],
+                      apps: cubit,
+                      experiments: experiments,
+                      dragIndex: modules.length > 1 ? index : null,
+                    ),
+                  ),
                 ],
+              for (final (title, modules) in [
+                (context.l10n.appsHiddenSection, hiddenApps),
+                (context.l10n.appsHiddenExperimentsSection, hiddenExperiments),
+              ])
+                if (modules.isNotEmpty) ...[
+                  SliverToBoxAdapter(child: AppSectionHeader(title: title)),
+                  SliverList.list(
+                    children: [
+                      for (final module in modules)
+                        _AppEditorRow(
+                          key: ValueKey(module.id),
+                          module: module,
+                          apps: cubit,
+                          experiments: experiments,
+                          hidden: true,
+                        ),
+                    ],
+                  ),
+                ],
+            ],
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: AppSpacing.sm + MediaQuery.paddingOf(context).bottom,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AppEditorRow extends StatelessWidget {
+  const _AppEditorRow({
+    required this.module,
+    required this.apps,
+    required this.experiments,
+    super.key,
+    this.hidden = false,
+    this.dragIndex,
+  });
+
+  final AppModule module;
+  final AppTabCubit apps;
+  final ExperimentalAppsCubit? experiments;
+  final bool hidden;
+  final int? dragIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final canShow =
+        !hidden ||
+        !AppRegistry.experimentalModuleIds.contains(module.id) ||
+        (experiments != null &&
+            AppRegistry.experimentalAccessAvailable(context, module.id));
+    final pinned = apps.state.pinnedAppIds.contains(module.id);
+    final label = module.label(context.l10n);
+
+    return ListTile(
+      leading: Icon(module.icon),
+      title: Text(label),
+      textColor: hidden ? Theme.of(context).colorScheme.onSurfaceVariant : null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!hidden)
+            AppIconButton(
+              icon: Icon(pinned ? Icons.push_pin : Icons.push_pin_outlined),
+              tooltip: pinned
+                  ? context.l10n.appsUnpin(label)
+                  : context.l10n.appsPin(label),
+              onPressed: () async {
+                final saved = await apps.setAppPinned(
+                  module.id,
+                  pinned: !pinned,
+                );
+                if (!saved && context.mounted) {
+                  showAppToast(
+                    context,
+                    message: context.l10n.appsPinSaveFailed,
+                    variant: AppAlertVariant.destructive,
+                  );
+                }
+              },
+            ),
+          AppVisibilityButton(
+            hidden: hidden,
+            onPressed: canShow
+                ? () => unawaited(
+                    _changeEditorVisibility(
+                      context: context,
+                      apps: apps,
+                      experiments: experiments,
+                      module: module,
+                      hidden: hidden,
+                    ),
+                  )
+                : null,
+          ),
+          if (dragIndex case final index?)
+            ReorderableDragStartListener(
+              index: index,
+              child: Tooltip(
+                message: context.l10n.appsReorder,
+                child: const SizedBox.square(
+                  dimension: 48,
+                  child: Icon(Icons.drag_handle_rounded),
+                ),
               ),
             ),
-          ],
-        );
-      },
+        ],
+      ),
     );
   }
 }

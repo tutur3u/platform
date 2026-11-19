@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/theme/sorbet/sorbet_tokens.dart';
+import 'package:mobile/core/theme/appearance/appearance_contrast.dart';
+import 'package:mobile/core/ui/kit/app_event_block.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -89,24 +89,27 @@ class AppProductIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppTokens.of(context).colorScheme;
-    final hues = SorbetTokens.maybeOf(context)?.hues;
-    final (hue, tone) = switch (module.id) {
-      'tasks' || 'meet' || 'mastermind' => (hues?.blue, AppTone.info),
-      'finance' || 'timer' || 'habits' => (hues?.green, AppTone.success),
-      'calendar' => (hues?.orange, AppTone.warning),
-      'documents' ||
-      'education' ||
-      'mail' ||
-      'cms' => (hues?.purple, AppTone.primary),
-      'chat' => (hues?.pink, AppTone.primary),
-      'crm' || 'drive' || 'inventory' => (hues?.teal, AppTone.success),
-      'notes' => (hues?.yellow, AppTone.warning),
-      _ => (null, AppTone.neutral),
+    final tone = switch (module.id) {
+      'tasks' || 'meet' || 'mastermind' => 'blue',
+      'finance' || 'timer' || 'habits' => 'green',
+      'calendar' => 'orange',
+      'documents' || 'education' || 'mail' || 'cms' => 'purple',
+      'chat' => 'pink',
+      'crm' || 'drive' || 'inventory' => 'teal',
+      'notes' => 'yellow',
+      _ => null,
     };
-    final ink = hue?.ink ?? tone.foreground(colors);
+    final tint = tone == null
+        ? colors.mutedForeground
+        : AppEventBlock.hueOf(context, tone).ink;
     final fill = Color.alphaBlend(
-      ink.withValues(alpha: colors.isDark ? 0.2 : 0.14),
+      tint.withValues(alpha: colors.isDark ? 0.2 : 0.14),
       colors.card,
+    );
+    final ink = AppearanceContrast.ensureContrast(
+      tint,
+      against: fill,
+      target: AppearanceContrast.aaText,
     );
     return ExcludeSemantics(
       child: DecoratedBox(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/core/utils/search_text.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -29,40 +30,18 @@ class SettingsSearchEntry {
   final List<String> terms;
 }
 
-const _folds = {
-  'a': 'àáạảãâầấậẩẫăằắặẳẵ',
-  'e': 'èéẹẻẽêềếệểễ',
-  'i': 'ìíịỉĩ',
-  'o': 'òóọỏõôồốộổỗơờớợởỡ',
-  'u': 'ùúụủũưừứựửữ',
-  'y': 'ỳýỵỷỹ',
-  'd': 'đ',
-};
-
-final Map<String, String> _foldTable = {
-  for (final fold in _folds.entries)
-    for (final char in fold.value.split('')) char: fold.key,
-};
-
-/// Lowercase and strip Vietnamese diacritics so "mui gio" finds "Múi giờ".
-/// Keyboards may send decomposed text (a base letter plus combining marks,
-/// U+0300 to U+036F); those marks are dropped before the precomposed table.
-String foldSettingsSearch(String value) => String.fromCharCodes(
-  value.toLowerCase().runes.where((rune) => rune < 0x0300 || rune > 0x036F),
-).split('').map((char) => _foldTable[char] ?? char).join().trim();
-
 List<SettingsSearchEntry> filterSettingsSearch(
   List<SettingsSearchEntry> entries,
   String query,
 ) {
-  final words = foldSettingsSearch(
+  final words = foldSearchText(
     query,
   ).split(RegExp(r'\s+')).where((word) => word.isNotEmpty).toList();
   if (words.isEmpty) return const [];
   return [
     for (final entry in entries)
       if (words.every(
-        foldSettingsSearch(
+        foldSearchText(
           [entry.title, entry.section, ...entry.terms].join(' '),
         ).contains,
       ))

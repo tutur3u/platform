@@ -37,7 +37,7 @@ class AppLauncherPins extends StatelessWidget {
         children: [
           for (final app in apps)
             _PinShortcut(
-              key: ValueKey(app.id),
+              key: ValueKey('pinned-${app.id}'),
               width: width,
               label: app.label(context.l10n),
               onPressed: () => onSelected(app),
@@ -134,7 +134,7 @@ class AppLauncherRecents extends StatelessWidget {
         children: [
           for (final app in apps)
             AppLauncherButton(
-              key: ValueKey(app.id),
+              key: ValueKey('recent-${app.id}'),
               radius: AppRadius.pill,
               onPressed: () => onSelected(app),
               child: Padding(

@@ -356,7 +356,7 @@ void main() {
 
       router.go(Routes.apps);
       await _pumpForTransitions(tester);
-      final appsState = tester.state(find.byType(AppsHubPage));
+      final appsElement = tester.element(find.byType(AppsHubPage));
       // The dock frame never moves or resizes between destinations.
       final dock = find.byKey(const ValueKey('persistent-shell-dock-material'));
       final initialRect = tester.getRect(dock);
@@ -373,7 +373,7 @@ void main() {
       await _pumpForTransitions(tester);
 
       expect(router.routeInformationProvider.value.uri.path, Routes.apps);
-      expect(tester.state(find.byType(AppsHubPage)), same(appsState));
+      expect(tester.element(find.byType(AppsHubPage)), same(appsElement));
       expect(
         find.byKey(const ValueKey('apps-picker-fullscreen')),
         findsNothing,

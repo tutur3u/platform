@@ -134,15 +134,15 @@ void registerShellViewportChecks(
           tester.getSemantics(find.byKey(const ValueKey('apps'))),
           isSemantics(isSelected: true),
         );
-        final bodyState = tester.state(find.byType(AppsHubPage));
+        final bodyElement = tester.element(find.byType(AppsHubPage));
         tester.view.viewInsets = const FakeViewPadding(bottom: 300);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
-        expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+        expect(tester.element(find.byType(AppsHubPage)), same(bodyElement));
         tester.view.resetViewInsets();
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 300));
-        expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+        expect(tester.element(find.byType(AppsHubPage)), same(bodyElement));
         expect(tester.takeException(), isNull);
       },
     );
@@ -257,16 +257,16 @@ Future<void> _expectRailViewport(WidgetTester tester, Size size) async {
     findsOneWidget,
   );
   expect(find.bySemanticsLabel('Apps'), findsWidgets);
-  final bodyState = tester.state(find.byType(AppsHubPage));
+  final bodyElement = tester.element(find.byType(AppsHubPage));
   tester.view.viewInsets = const FakeViewPadding(bottom: 300);
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
-  expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(tester.element(find.byType(AppsHubPage)), same(bodyElement));
   expect(find.byKey(railKey), findsOneWidget);
   tester.view.resetViewInsets();
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
-  expect(tester.state(find.byType(AppsHubPage)), same(bodyState));
+  expect(tester.element(find.byType(AppsHubPage)), same(bodyElement));
   expect(find.byKey(railKey), findsOneWidget);
   expect(tester.takeException(), isNull);
 }
