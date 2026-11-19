@@ -1,3 +1,5 @@
+import { spreadsheetCsvCell } from './csv-cell';
+
 export const ATTENDANCE_INTERVAL_CAP = 4096;
 
 export type AttendanceKind = 'member' | 'guest';
@@ -13,13 +15,15 @@ export type AttendanceInterval = {
   leftAt?: string;
 };
 
+export const ATTENDANCE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
+export const ATTENDANCE_PAGE_SIZE = 1000;
+
+/** Exported attendance. Account and guest ids stay in storage and are not included. */
 export type AttendanceRow = {
   name: string;
   firstJoin: string;
   totalMinutes: number;
   kind: AttendanceKind;
-  userId?: string;
-  guestId?: string;
 };
 
 export function attendanceIdentity(input: {
@@ -142,7 +146,6 @@ export function aggregateAttendance(
       const kind: AttendanceKind = key.startsWith('guest:')
         ? 'guest'
         : 'member';
-      const id = key.slice(kind.length + 1);
       const sorted = [...list].sort((a, b) =>
         a.joinedAt.localeCompare(b.joinedAt)
       );
@@ -176,7 +179,6 @@ export function aggregateAttendance(
         firstJoin: sorted[0]?.joinedAt ?? new Date(nowMs).toISOString(),
         totalMinutes: Math.round(total / 60_000),
         kind,
-        ...(kind === 'member' ? { userId: id } : { guestId: id }),
       };
     })
     .sort(
@@ -185,22 +187,43 @@ export function aggregateAttendance(
     );
 }
 
-function csvCell(value: string) {
-  return /[",\n\r]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+export function closeOpenAttendanceIntervals(
+  intervals: AttendanceInterval[] | undefined,
+  now: string
+) {
+  if (!intervals?.some((row) => !row.leftAt)) return intervals;
+  return intervals.map((row) => (row.leftAt ? row : { ...row, leftAt: now }));
+}
+
+export function expireAttendanceIntervals(
+  intervals: AttendanceInterval[] | undefined,
+  now: string
+) {
+  if (!intervals?.length) return intervals;
+  const cutoff = Date.parse(now) - ATTENDANCE_RETENTION_MS;
+  const next = intervals.filter((row) => Date.parse(row.joinedAt) >= cutoff);
+  return next.length === intervals.length ? intervals : next;
+}
+
+export function eraseAttendanceCopy(
+  intervals: AttendanceInterval[] | undefined,
+  target: { all?: boolean; userId?: string; guestId?: string }
+) {
+  if (!intervals?.length) return intervals;
+  if (target.all) return [];
+  const next = intervals.filter((row) => {
+    if (target.userId && row.userId === target.userId) return false;
+    if (target.guestId && row.guestId === target.guestId) return false;
+    return true;
+  });
+  return next.length === intervals.length ? intervals : next;
 }
 
 export function attendanceCsv(rows: AttendanceRow[]) {
-  const header = 'name,first_join,total_minutes,kind,user_id,guest_id';
+  const header = 'name,first_join,total_minutes,kind';
   const lines = rows.map((row) =>
-    [
-      row.name,
-      row.firstJoin,
-      String(row.totalMinutes),
-      row.kind,
-      row.userId ?? '',
-      row.guestId ?? '',
-    ]
-      .map(csvCell)
+    [row.name, row.firstJoin, String(row.totalMinutes), row.kind]
+      .map(spreadsheetCsvCell)
       .join(',')
   );
   return [header, ...lines].join('\n');

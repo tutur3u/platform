@@ -8,6 +8,7 @@ import { collaborationRequest } from './collaboration-worker';
 
 export { CollaborationRoomDurableObject } from './collaboration-room-do';
 
+import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
 import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import type { MeetRoomEnv } from './room-do';
 
@@ -46,6 +47,20 @@ export default {
 
     if (url.pathname === '/health') {
       return Response.json({ ok: true });
+    }
+
+    if (url.pathname === '/class-service' && request.method === 'POST') {
+      const credential = verifyMeetServiceCredential(
+        request.headers
+          .get('Authorization')
+          ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '',
+        env.MEET_REALTIME_TOKEN_SECRET
+      );
+      if (!credential) return new Response('Unauthorized', { status: 401 });
+      const room = env.MEET_ROOM.get(
+        env.MEET_ROOM.idFromName(credential.roomId)
+      );
+      return room.fetch(request);
     }
 
     const roomStateRequest =

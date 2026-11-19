@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/meet-core/features/call/server/class-role';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import {
+  allowMeetActorAction,
   attendanceCsv,
   meetClassAttendanceEnabled,
 } from '@tuturuuu/realtime/meet';
@@ -23,16 +24,31 @@ export async function GET(
     const classRole = await resolveMeetClassRole(access, { required: true });
     if (!canViewMeetAttendance(access, classRole.coHost))
       throw new MeetCallAccessError(403, 'Only the host can view attendance');
-    const rows = await syncMeetAttendance({
-      meetingId: access.meeting.id,
-      wsId: access.meeting.ws_id,
-      userId: access.user.id,
-      isHost: access.isHost,
-      displayName: access.displayName,
-      canReadWorkspace: access.canReadWorkspace,
-      coHost: classRole.coHost,
-      now: new Date().toISOString(),
-    });
+    if (
+      !allowMeetActorAction(
+        'attendance',
+        access.user.id,
+        `${access.meeting.ws_id}:${access.meeting.id}`
+      )
+    )
+      throw new MeetCallAccessError(429, 'Too many requests');
+    const rows = (
+      await syncMeetAttendance({
+        meetingId: access.meeting.id,
+        wsId: access.meeting.ws_id,
+        userId: access.user.id,
+        isHost: access.isHost,
+        displayName: access.displayName,
+        canReadWorkspace: access.canReadWorkspace,
+        coHost: classRole.coHost,
+        now: new Date().toISOString(),
+      })
+    ).map(({ name, firstJoin, totalMinutes, kind }) => ({
+      name,
+      firstJoin,
+      totalMinutes,
+      kind,
+    }));
     if (format === 'csv') {
       return new Response(attendanceCsv(rows), {
         headers: {

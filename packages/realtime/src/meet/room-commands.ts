@@ -5,11 +5,7 @@ import {
   renameOpenAttendance,
 } from './attendance-ledger';
 import { meetClassFeatures } from './class-features';
-import {
-  applyClassTimerCommand,
-  classTimerServerMessage,
-  presentClassTimer,
-} from './class-timer';
+import { classTimerServerMessage, presentClassTimer } from './class-timer';
 import type { MeetRealtimeSfuClientMessage } from './messages';
 import {
   canMeetRealtimeManageParticipants,
@@ -84,7 +80,7 @@ function dispatchMeetRoomCommand(
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
   state = accountRoomTime(state, Date.parse(now));
-  const expired = expireRoomBudget(state, Date.parse(now));
+  const expired = expireRoomBudget(state, Date.parse(now), classFeatures);
   if (expired) return expired;
   if (state.ended)
     return outcome(state, {
@@ -99,7 +95,14 @@ function dispatchMeetRoomCommand(
     return denied(state, 'awaiting_admission');
   }
 
-  const control = applyRoomControl(state, message, token, now, notesEligible);
+  const control = applyRoomControl(
+    state,
+    message,
+    token,
+    now,
+    notesEligible,
+    classFeatures
+  );
   if (control) return control;
   switch (message.type) {
     case 'assistant.preferences': {
@@ -362,23 +365,8 @@ function dispatchMeetRoomCommand(
     case 'recording.state':
       return applyRecording(state, message, token, now);
 
-    case 'classTimer.command': {
-      if (!classFeatures.timer)
-        return denied(state, 'unavailable', message.requestId);
-      const applied = applyClassTimerCommand(
-        state.classTimer,
-        message,
-        token,
-        now
-      );
-      if (!applied.ok) return denied(state, applied.error, message.requestId);
-      if ((state.classTimer ?? null) === null && applied.timer === null)
-        return outcome(state);
-      const next = { ...state, classTimer: applied.timer };
-      return outcome(next, {
-        broadcast: [classTimerServerMessage(applied.timer, now)],
-      });
-    }
+    case 'classTimer.command':
+      return denied(state, 'unavailable', message.requestId);
 
     case 'stream.state': {
       if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.streamControl)) {

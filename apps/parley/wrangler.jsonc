@@ -58,7 +58,7 @@
     "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
     "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime",
     "MEET_CLASS_ATTENDANCE_ENABLED": "false",
-    "MEET_CLASS_TIMER_ENABLED": "false",
+    "MEET_CLASS_TIMER_ENABLED": "true",
   },
   "durable_objects": {
     "bindings": [

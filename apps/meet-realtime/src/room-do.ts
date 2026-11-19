@@ -39,6 +39,8 @@ import {
 } from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
+import { handleMeetClassServiceRequest } from './room-class-service';
+import { handleMeetRoomDevice } from './room-device-request';
 import { privateRoomStorage } from './private-room-storage';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
@@ -205,6 +207,20 @@ export class MeetRoomDurableObject implements DurableObject {
       })
     );
 
+    if (url.pathname === '/class-service')
+      return handleMeetClassServiceRequest({
+        request,
+        secret: this.env.MEET_REALTIME_TOKEN_SECRET,
+        features: meetClassFeatures(this.env),
+        snapshot: this.snapshot,
+        now: new Date().toISOString(),
+        commit: async (snapshot, broadcast) => {
+          this.snapshot = snapshot;
+          await this.persist();
+          if (broadcast.length) this.broadcast(broadcast);
+        },
+      });
+
     const rawToken = request.headers.get('x-meet-token');
     if (!rawToken) return new Response('Unauthorized', { status: 401 });
 
@@ -224,7 +240,12 @@ export class MeetRoomDurableObject implements DurableObject {
         body
       );
       if (owned) return owned;
-      const result = roomService(this.snapshot, token, body);
+      const result = roomService(
+        this.snapshot,
+        token,
+        body,
+        meetClassFeatures(this.env)
+      );
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;
       if (!result.status) {
@@ -258,44 +279,21 @@ export class MeetRoomDurableObject implements DurableObject {
       const body = (await request.json().catch(() => null)) as {
         mode?: string;
       } | null;
-      const accountId = token.accountId ?? token.userId;
-      const others = Object.values(this.snapshot.presence).filter(
-        (person) =>
-          (person.accountId ?? person.userId) === accountId &&
-          person.userId !== token.userId
-      );
-      if (body?.mode === 'switch') {
-        const released = [];
-        for (const person of others) {
-          const result = releaseParticipant(
-            this.snapshot,
-            person.userId,
-            token.roomId,
-            meetClassFeatures(this.env)
-          );
-          this.snapshot = result.state;
-          released.push({ person, result });
-        }
-        this.snapshot = this.connectionState();
-        await this.persist();
-        await this.scheduleEmptyRoom();
-        for (const { person, result } of released) {
-          this.delivery.sendToUser(person.userId, [
-            {
-              type: 'participant.removed',
-              by: token.userId,
-              userId: person.userId,
-            },
-          ]);
-          this.broadcast(result.broadcast);
-          this.delivery.sendToManagers(result.toManagers);
-          this.delivery.disconnect([person.userId]);
-        }
-      }
-      return Response.json(
-        { otherDeviceCount: others.length },
-        { headers: { 'Cache-Control': 'private, no-store' } }
-      );
+      return handleMeetRoomDevice({
+        snapshot: this.snapshot,
+        token,
+        features: meetClassFeatures(this.env),
+        body,
+        assign: (snapshot) => void (this.snapshot = snapshot),
+        connectionState: () => this.connectionState(),
+        persist: () => this.persist(),
+        scheduleEmptyRoom: () => this.scheduleEmptyRoom(),
+        sendToUser: (userId, messages) =>
+          this.delivery.sendToUser(userId, messages),
+        broadcast: (messages) => this.broadcast(messages),
+        sendToManagers: (messages) => this.delivery.sendToManagers(messages),
+        disconnect: (userIds) => this.delivery.disconnect(userIds),
+      });
     }
     if (url.pathname === '/room-state') {
       if (request.method === 'PATCH') {
@@ -318,12 +316,9 @@ export class MeetRoomDurableObject implements DurableObject {
           await this.scheduleSweep(Date.now());
         this.broadcast(updated.broadcast);
       }
-      return Response.json(
-        meetRoomStateView(this.snapshot, token, meetClassFeatures(this.env)),
-        {
-          headers: { 'Cache-Control': 'private, no-store' },
-        }
-      );
+      return Response.json(meetRoomStateView(this.snapshot, token), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
     }
     const previous = this.snapshot.presence[token.userId];
     if (
@@ -550,7 +545,11 @@ export class MeetRoomDurableObject implements DurableObject {
   async alarm() {
     await this.load();
     const emptyVersion = this.snapshot.lifecycle?.version;
-    const expiredBudget = expireRoomBudget(this.snapshot);
+    const expiredBudget = expireRoomBudget(
+      this.snapshot,
+      Date.now(),
+      meetClassFeatures(this.env)
+    );
     if (expiredBudget) {
       this.snapshot = expiredBudget.state;
       await this.persist();
@@ -669,7 +668,8 @@ export class MeetRoomDurableObject implements DurableObject {
       this.snapshot,
       emptyVersion,
       connectedUserIds,
-      Date.now()
+      Date.now(),
+      meetClassFeatures(this.env)
     );
     if (empty) {
       this.snapshot = empty.state;

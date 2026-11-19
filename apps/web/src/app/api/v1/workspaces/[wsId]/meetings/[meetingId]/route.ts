@@ -227,6 +227,15 @@ export async function DELETE(
         { status: 403 }
       );
     }
+    try {
+      const { eraseMeetAttendanceForMeeting } =
+        await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+      await eraseMeetAttendanceForMeeting(wsId, meetingId);
+    } catch (error) {
+      console.error('Meet attendance erasure failed', {
+        name: error instanceof Error ? error.name : 'unknown',
+      });
+    }
     // Delete the meeting
     const { data: deleted, error } = await supabase
       .from('workspace_meetings')

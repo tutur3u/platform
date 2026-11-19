@@ -416,8 +416,20 @@ export interface MeetAttendanceRow {
   firstJoin: string;
   totalMinutes: number;
   kind: 'member' | 'guest';
-  userId?: string;
-  guestId?: string;
+}
+
+export function commandMeetClassTimer(
+  meetingId: string,
+  command: {
+    action: 'start' | 'pause' | 'resume' | 'stop';
+    durationMs?: number;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: true }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/class-timer`,
+    { method: 'POST', body: JSON.stringify(command) }
+  );
 }
 
 export function getMeetAttendance(

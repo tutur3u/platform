@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { meetClassFeatures } from './class-features';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
 import { accountRoomTime } from './room-budget';
@@ -66,7 +67,8 @@ export function expireEmptyRoom(
   state: RoomServiceState,
   expectedVersion: number | undefined,
   connectedUserIds: ReadonlySet<string>,
-  now: number
+  now: number,
+  features = meetClassFeatures()
 ) {
   const deadline = emptyRoomDeadline(state);
   if (
@@ -78,7 +80,11 @@ export function expireEmptyRoom(
     return null;
   return outcome(
     {
-      ...endMeetRoom(accountRoomTime(state, now), new Date(now).toISOString()),
+      ...endMeetRoom(
+        accountRoomTime(state, now),
+        new Date(now).toISOString(),
+        features
+      ),
     },
     {
       broadcast: [{ type: 'room.ended' }],
@@ -102,7 +108,8 @@ export function applyRoomRestore(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
-  now = Date.now()
+  now = Date.now(),
+  features = meetClassFeatures()
 ): { state: RoomServiceState; body: unknown; status?: number } | null {
   if (
     !input ||
@@ -138,7 +145,7 @@ export function applyRoomRestore(
   )
     return fail('Room resource allowance exhausted', 409);
   const version = (state.lifecycle?.version ?? 0) + 1;
-  const clean = endMeetRoom(state, new Date(now).toISOString());
+  const clean = endMeetRoom(state, new Date(now).toISOString(), features);
   return {
     state: {
       ...clean,

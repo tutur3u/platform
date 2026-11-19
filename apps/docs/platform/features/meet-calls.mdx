@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-11-19'
+updatedAt: '2026-11-20'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 audience: users
 ---
@@ -72,24 +72,30 @@ root invokes its preload and redirects to the monorepo test suite instead.
 
 ## Class timer and attendance
 
-The class timer and attendance stay off unless the server sets
-`MEET_CLASS_TIMER_ENABLED` or `MEET_CLASS_ATTENDANCE_ENABLED` to the exact
-string `true`. Production Meet and Meet Realtime set both to `false`. An
-absent value is off. While attendance is off, the room does not record join
-or leave intervals, the Attendance panel stays hidden, and
+Attendance stays off unless the server sets `MEET_CLASS_ATTENDANCE_ENABLED`
+to the exact string `true`. Production sets it to `false`. An absent value is
+off. While attendance is off, the room does not record join or leave
+intervals, the Attendance panel stays hidden, and
 `GET /api/meet-call/{meetingId}/attendance` returns 404 without reading
-storage. While the timer is off, timer commands are rejected and the
-countdown is not shown.
+storage. Erasure still runs while the switch is off.
 
-When the timer is enabled, it is a shared countdown on the existing Meet
-realtime channel. The
-host, or a workspace admin co-host, starts it for 1, 3, 5, or 10 minutes, or for
-a custom length from 1 to 180 minutes. Everyone admitted to the room sees the
-same remaining time. The server clock is the source of truth, and each client
-corrects its display from the server timestamp on the timer message. Pause,
-resume, and stop are host-only. When the timer reaches zero, the room shows a
-quiet "Time's up" / "Hết giờ" cue. The cue does not play sound. The meeting
-deadline clock is separate and still counts the room’s resource limit.
+The class timer is on when `MEET_CLASS_TIMER_ENABLED` is the exact string
+`true`. Production Meet and Meet Realtime set that value. A browser socket
+cannot start, pause, resume, or stop it. `POST /api/meet-call/{meetingId}/class-timer`
+checks the caller against the current meeting: the host or a workspace admin
+co-host may start it, and only the host may pause, resume, or stop it. The
+API then sends one short-lived server credential to the room. That credential
+is signed with the realtime token secret, expires in 60 seconds, and is not a
+browser join token. Revoking a co-host takes effect on the next command.
+
+When the timer is enabled, it is a shared countdown. The host, or a workspace
+admin co-host, starts it for 1, 3, 5, or 10 minutes, or for a custom length
+from 1 to 180 minutes. Everyone admitted to the room sees the same remaining
+time. The server clock is the source of truth, and each client corrects its
+display from the server timestamp on the timer message. When the timer reaches
+zero, the room shows a quiet "Time's up" / "Hết giờ" cue. The cue does not
+play sound. The meeting deadline clock is separate and still counts the room’s
+resource limit. Timer commands are limited to 20 per person per room per minute.
 
 Attendance is recorded on the room from the same admit, reconnect, and leave
 events that already update presence. Lobby waiting does not count. Account
@@ -101,17 +107,50 @@ devices, count once.
 
 The host and co-hosts open an Attendance panel with the name, first join, total
 minutes, and whether the person is a guest or a member, plus a CSV download.
-Other participants do not see it. Intervals live in the private
-`meet_attendance_sessions` table. Row level security allows only the meeting
-creator to select rows, and client roles have no grants. Co-hosts are workspace
-admins. The Meet API checks that the caller is the host or a co-host, then
-reads and writes through the service role. The realtime worker does not receive
-database credentials. Opening the panel copies the room ledger into the table
-so the record survives room eviction. Production migrations ship through CI.
+The JSON and CSV exports do not include account ids or guest ids. CSV cells
+use the same spreadsheet-safe quoting as the quiz export, so a name that
+begins with `=`, `+`, `-`, or `@` cannot become a formula. Other participants
+do not see the panel. Attendance reads are limited to 30 per person per room
+per minute.
 
-Regression coverage lives in `class-features.test.ts`, `class-timer.test.ts`,
-`attendance-ledger.test.ts`, `call-clock.test.tsx`, and the attendance route
-tests.
+Each interval stores the workspace id that collected it. Moving a meeting to
+another workspace does not rewrite that id, and the database rejects a change
+to it. The panel lists rows only when that stored workspace id matches the
+meeting's current workspace, so intervals collected before the move stay with
+the original workspace and are not readable from the new one. New joins after
+the move are collected under the new workspace.
+
+Intervals live in the private `meet_attendance_sessions` table. The retention
+clock is `joined_at`. Rows expire 90 days after that timestamp, the same
+ceiling as raw interaction events. `private.purge_expired_meet_attendance`
+deletes expired rows, and a daily job runs it when pg_cron is installed.
+Opening the panel also deletes expired rows for that meeting and workspace and
+pages the rest in stable `joined_at`, `source_key` order past the 1,000-row
+API limit. Unchanged rows are not written again.
+
+The room keeps a copy of the open and closed intervals. Ending the room, or
+reaching the room's resource deadline, closes every open interval. The browser
+room-state response never includes that copy. The Meet API reads it with the
+server credential after the host or co-host check, then stores it. The
+realtime worker does not receive database credentials.
+
+Deleting a meeting or a workspace removes the Postgres rows. Meeting deletion
+cascades from `workspace_meetings`, and workspace deletion cascades from
+`workspaces`. Those delete paths also tell the room to drop its copy. Account
+deletion calls `eraseMeetAttendanceSubject` for that user id, which removes
+the person's rows from Postgres and from each room that stored them. The same
+function accepts a guest id. Erasure does not require the attendance switch to
+be on.
+
+Row level security allows only the meeting creator to select rows, and client
+roles have no grants. Co-hosts are workspace admins. The Meet API checks that
+the caller is the host or a co-host, then reads and writes through the service
+role. Production migrations ship through CI.
+
+Regression coverage lives in `class-features.test.ts`, `class-service.test.ts`,
+`class-timer.test.ts`, `attendance-ledger.test.ts`, `attendance-scope.test.ts`,
+`call-clock.test.tsx`, the attendance route tests, and
+`meet-class-attendance-acl.test.mjs`.
 
 ## Pieces
 

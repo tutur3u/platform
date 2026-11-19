@@ -26,6 +26,8 @@ const api9 = () => import('../app/api/meet-call/[meetingId]/assistant/route');
 const api10 = () => import('../app/api/meet-call/[meetingId]/costs/route');
 const apiAttendance = () =>
   import('../app/api/meet-call/[meetingId]/attendance/route');
+const apiClassTimer = () =>
+  import('../app/api/meet-call/[meetingId]/class-timer/route');
 const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
 const apiGuest = () => import('../app/api/meet-call/[meetingId]/guest/route');
@@ -188,6 +190,17 @@ export const meetEndpoints: Endpoint[] = [
     methods: {
       GET: async (request, params) =>
         (await apiAttendance()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/class-timer',
+    methods: {
+      POST: async (request, params) =>
+        (await apiClassTimer()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),

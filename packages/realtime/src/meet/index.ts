@@ -33,12 +33,25 @@ export type {
   AttendanceRow,
 } from './attendance-ledger';
 export {
+  ATTENDANCE_PAGE_SIZE,
+  ATTENDANCE_RETENTION_MS,
   aggregateAttendance,
   attendanceCsv,
   attendanceIdentity,
   closeAttendanceInterval,
+  closeOpenAttendanceIntervals,
+  eraseAttendanceCopy,
+  expireAttendanceIntervals,
   openAttendanceInterval,
 } from './attendance-ledger';
+export {
+  MEET_ACTOR_LIMIT_WINDOW_MS,
+  MEET_ATTENDANCE_READ_LIMIT,
+  MEET_TIMER_COMMAND_LIMIT,
+  allowMeetActorAction,
+} from './actor-rate-limit';
+export { applyMeetClassService } from './class-service';
+export { spreadsheetCsvCell } from './csv-cell';
 export type { MeetClassFeatureEnv, MeetClassFeatures } from './class-features';
 export {
   MEET_CLASS_ATTENDANCE_ENV,

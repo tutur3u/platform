@@ -423,7 +423,7 @@ function CallShellContent({
             outputDeviceId={outputDeviceId}
             onOutput={setOutputDeviceId}
           />
-          <CallClock meetingId={meetingId} state={state} room={room} />
+          <CallClock meetingId={meetingId} state={state} />
           <CallTopBarMore
             mailContext={{
               workspaceId: wsId,

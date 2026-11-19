@@ -53,7 +53,7 @@ export function admitOrHold(
 ): MeetRoomOutcome {
   state = accountRoomTime(state, Date.parse(now));
   if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
-  const expired = expireRoomBudget(state, Date.parse(now));
+  const expired = expireRoomBudget(state, Date.parse(now), features);
   if (expired) return expired;
   if (state.ended)
     return outcome(state, {

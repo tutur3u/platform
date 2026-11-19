@@ -1,0 +1,41 @@
+import {
+  applyMeetClassService,
+  type MeetClassFeatures,
+  type MeetRoomSnapshot,
+} from '../../../packages/realtime/src/meet';
+import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
+import type { classTimerServerMessage } from '../../../packages/realtime/src/meet/class-timer';
+
+type TimerMessage = ReturnType<typeof classTimerServerMessage>;
+
+export async function handleMeetClassServiceRequest(input: {
+  request: Request;
+  secret: string;
+  features: MeetClassFeatures;
+  snapshot: MeetRoomSnapshot;
+  now: string;
+  commit: (
+    snapshot: MeetRoomSnapshot,
+    broadcast: TimerMessage[]
+  ) => Promise<void>;
+}): Promise<Response> {
+  const credential =
+    input.request.headers
+      .get('Authorization')
+      ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '';
+  const claims = verifyMeetServiceCredential(credential, input.secret);
+  if (!claims) return new Response('Unauthorized', { status: 401 });
+  const result = applyMeetClassService(
+    input.snapshot,
+    claims,
+    input.features,
+    input.now
+  );
+  if (result.persist || result.broadcast.length)
+    await input.commit(result.snapshot, result.broadcast);
+  if (result.status === 404) return new Response(null, { status: 404 });
+  return Response.json(result.body, {
+    status: result.status,
+    headers: { 'Cache-Control': 'private, no-store' },
+  });
+}

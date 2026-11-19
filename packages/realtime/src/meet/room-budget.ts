@@ -1,3 +1,5 @@
+import { closeOpenAttendanceIntervals } from './attendance-ledger';
+import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import type { MeetRealtimeRoomTrack } from './messages';
 import type { MeetRealtimeRole, MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomSnapshot } from './room';
@@ -193,10 +195,18 @@ export function roomCapacityError(
     ? 'publisher_limit_reached'
     : null;
 }
-export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
+export function expireRoomBudget(
+  state: MeetRoomSnapshot,
+  now = Date.now(),
+  features: MeetClassFeatures = meetClassFeatures()
+) {
   const accounted = accountRoomTime(state, now);
   if (accounted.ended || !accounted.budget || now < accounted.budget.expiresAt)
     return null;
+  const leftAt = new Date(now).toISOString();
+  const attendance = features.attendance
+    ? closeOpenAttendanceIntervals(accounted.attendance, leftAt)
+    : undefined;
   const budget = {
     ...accounted.budget,
     nextCleanupAt: 0,
@@ -211,7 +221,8 @@ export function expireRoomBudget(state: MeetRoomSnapshot, now = Date.now()) {
   };
   return outcome(
     {
-      ...failActiveRecording(accounted, new Date(now).toISOString()),
+      ...failActiveRecording(accounted, leftAt),
+      ...(attendance === undefined ? {} : { attendance }),
       budget,
       ended: true,
       presence: {},

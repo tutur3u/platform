@@ -1,3 +1,4 @@
+import { spreadsheetCsvCell as csvCell } from './csv-cell';
 import type { ArenaTile, RoomQuizArenaState } from './room-quiz-arena-schema';
 import {
   arenaWagerKey,
@@ -5,15 +6,6 @@ import {
   playedArenaRounds,
   rankArenaEntries,
 } from './room-quiz-arena-scoring';
-
-/** Spreadsheet-safe cell, matching the live-poll export. */
-function csvCell(value: string | number) {
-  const text = String(value);
-  const safe = /^(?:\s*[=+@-]|[^\S\t\r]*[\t\r])/u.test(text)
-    ? `'${text}`
-    : text;
-  return `"${safe.replaceAll('"', '""')}"`;
-}
 
 function correctAnswer(tile: ArenaTile) {
   const { question } = tile;

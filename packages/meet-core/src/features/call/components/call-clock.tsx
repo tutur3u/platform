@@ -1,6 +1,8 @@
 'use client';
 
+import { useMutation } from '@tanstack/react-query';
 import { Clock3 } from '@tuturuuu/icons';
+import { commandMeetClassTimer } from '@tuturuuu/internal-api/meet-call';
 import {
   CLASS_TIMER_PRESETS_MS,
   formatClassTimer,
@@ -20,16 +22,16 @@ type TimerAction = 'start' | 'pause' | 'resume' | 'stop';
 export function CallClock({
   meetingId,
   state,
-  room,
 }: {
   meetingId: string;
   state: CallState;
-  room: {
-    commandClassTimer: (action: TimerAction, durationMs?: number) => void;
-  };
 }) {
   const canStart = state.classRole === 'host' || state.classRole === 'cohost';
   const canView = canStart && state.classAttendanceEnabled;
+  const command = useMutation({
+    mutationFn: (input: { action: TimerAction; durationMs?: number }) =>
+      commandMeetClassTimer(meetingId, input),
+  });
   return (
     <div className="flex max-w-full flex-wrap items-center gap-1">
       <RoomCountdown expiresAt={state.roomExpiresAt} />
@@ -37,7 +39,9 @@ export function CallClock({
         <ClassTimerControl
           canControl={state.classRole === 'host'}
           canStart={canStart}
-          onCommand={room.commandClassTimer}
+          onCommand={(action, durationMs) =>
+            command.mutate({ action, durationMs })
+          }
           serverNow={state.classTimerServerNow}
           timer={state.classTimer}
         />

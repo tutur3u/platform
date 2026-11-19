@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   admitOrHold,
+  applyMeetClassService,
   applyMeetRoomCommand,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
@@ -129,6 +130,26 @@ describe('class feature switches', () => {
       now: NOW,
       token: host,
     });
-    expect(started.state.classTimer).toMatchObject({ status: 'running' });
+    expect(started.state.classTimer ?? null).toBeNull();
+    expect(started.reply[0]).toMatchObject({
+      type: 'error',
+      error: 'unavailable',
+    });
+    const service = applyMeetClassService(
+      admitted.state,
+      {
+        aud: 'meet-service',
+        purpose: 'class-timer',
+        roomId: host.roomId,
+        exp: Math.floor(Date.parse(NOW) / 1000) + 60,
+        action: 'start',
+        durationMs: 60_000,
+        actorUserId: HOST_ID,
+        actorRole: 'host',
+      },
+      { attendance: true, timer: true },
+      NOW
+    );
+    expect(service.snapshot.classTimer).toMatchObject({ status: 'running' });
   });
 });

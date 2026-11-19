@@ -1,15 +1,24 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { NextIntlClientProvider } from 'next-intl';
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import { INITIAL_CALL_STATE, type CallState } from '../lib/call-state';
 import { CallClock } from './call-clock';
 
+const command = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
 vi.mock('@tuturuuu/internal-api/meet-call', () => ({
   getMeetAttendance: vi.fn(async () => ({ rows: [] })),
+  commandMeetClassTimer: command,
 }));
 vi.mock('./meeting-local-time', () => ({
   useMeetingTimeZone: () => 'Asia/Ho_Chi_Minh',
@@ -17,12 +26,13 @@ vi.mock('./meeting-local-time', () => ({
 
 afterEach(() => {
   cleanup();
+  command.mockClear();
   vi.useRealTimers();
 });
 
-function renderClock(state: CallState, command = vi.fn()) {
+function renderClock(state: CallState) {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   const view = render(
     <QueryClientProvider client={client}>
@@ -30,14 +40,13 @@ function renderClock(state: CallState, command = vi.fn()) {
         <TooltipProvider>
           <CallClock
             meetingId="5e5217de-9bb3-4e20-8d99-526ad3e7e34f"
-            room={{ commandClassTimer: command }}
             state={state}
           />
         </TooltipProvider>
       </NextIntlClientProvider>
     </QueryClientProvider>
   );
-  return { ...view, command };
+  return view;
 }
 
 const NOW = '2026-09-15T10:00:00.000Z';
@@ -61,25 +70,34 @@ function running(role: CallState['classRole']): CallState {
   };
 }
 
-it('shows a synced countdown, phone-width controls, and no autoplay media', () => {
+it('shows a synced countdown, phone-width controls, and no autoplay media', async () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
-  const { command, container } = renderClock(running('host'));
+  const { container } = renderClock(running('host'));
   expect(screen.getByRole('status').textContent).toContain('05:00 left');
   expect(container.querySelector('audio, video')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Class timer' }));
   expect(document.body.innerHTML).toContain('w-[min(18rem,calc(100vw-2rem))]');
   expect(document.body.innerHTML).toContain('grid-cols-2');
   fireEvent.click(screen.getByRole('button', { name: '1 min' }));
-  expect(command).toHaveBeenCalledWith('start', 60_000);
   fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
-  expect(command).toHaveBeenCalledWith('pause');
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(command).toHaveBeenCalledWith('5e5217de-9bb3-4e20-8d99-526ad3e7e34f', {
+    action: 'start',
+    durationMs: 60_000,
+  });
+  expect(command).toHaveBeenCalledWith('5e5217de-9bb3-4e20-8d99-526ad3e7e34f', {
+    action: 'pause',
+    durationMs: undefined,
+  });
 });
 
 it('hides pause, resume, and stop from a co-host and shows the end cue without sound', () => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date(NOW));
-  const { command, container } = renderClock(running('cohost'));
+  const { container } = renderClock(running('cohost'));
   fireEvent.click(screen.getByRole('button', { name: 'Class timer' }));
   expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
   expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull();

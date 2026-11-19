@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { applyClassTimerCommand } from './class-timer';
+import { applyMeetClassService } from './class-service';
 import {
   admitOrHold,
   applyMeetRoomCommand,
@@ -6,6 +8,7 @@ import {
   formatClassTimer,
   getMeetRealtimeScopesForRole,
   MEET_CLASS_COHOST_SCOPE,
+  meetClassFeatures,
   type MeetRealtimeTokenPayload,
   meetRealtimeClientMessageSchema,
   meetRealtimeTokenPayloadSchema,
@@ -51,7 +54,54 @@ function run(
   as: MeetRealtimeTokenPayload,
   now = NOW
 ) {
-  return applyMeetRoomCommand(state, { message, now, token: as });
+  if (message.type !== 'classTimer.command')
+    return applyMeetRoomCommand(state, { message, now, token: as });
+  const actorRole =
+    as.role === 'host'
+      ? 'host'
+      : as.scopes.includes(MEET_CLASS_COHOST_SCOPE)
+        ? 'cohost'
+        : null;
+  if (!actorRole) {
+    const applied = applyClassTimerCommand(
+      state.classTimer,
+      { action: message.action, durationMs: message.durationMs },
+      as,
+      now
+    );
+    return {
+      state,
+      reply: applied.ok ? [] : [{ error: applied.error }],
+      broadcast: [],
+    };
+  }
+  const applied = applyMeetClassService(
+    state,
+    {
+      aud: 'meet-service',
+      purpose: 'class-timer',
+      roomId: as.roomId,
+      exp: Math.floor(Date.parse(now) / 1000) + 60,
+      action: message.action,
+      durationMs: message.durationMs,
+      actorUserId: as.userId,
+      actorRole,
+    },
+    meetClassFeatures(),
+    now
+  );
+  const error =
+    applied.body &&
+    typeof applied.body === 'object' &&
+    'error' in applied.body &&
+    typeof applied.body.error === 'string'
+      ? applied.body.error
+      : null;
+  return {
+    state: applied.snapshot,
+    reply: error ? [{ error }] : [],
+    broadcast: applied.broadcast,
+  };
 }
 
 describe('class timer', () => {
@@ -95,6 +145,18 @@ describe('class timer', () => {
     const speaker = token({ role: 'speaker' });
     let state = admitOrHold(createMeetRoomSnapshot(), host, NOW).state;
     state = admitOrHold(state, cohost, NOW).state;
+
+    const socket = applyMeetRoomCommand(state, {
+      message: {
+        type: 'classTimer.command',
+        action: 'start',
+        durationMs: 60_000,
+      },
+      now: NOW,
+      token: cohost,
+    });
+    expect(socket.reply[0]).toMatchObject({ error: 'unavailable' });
+    expect(socket.state.classTimer ?? null).toBeNull();
 
     const denied = run(
       state,

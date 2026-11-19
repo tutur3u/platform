@@ -21,6 +21,7 @@ import {
 import { startRoomBudget } from './room-budget';
 import type { MeetRoomSettings } from './room-options';
 import { publicationCleanupKey } from './room-tracks';
+import { meetClassFeatures } from './class-features';
 import { endMeetRoom } from './room-ending';
 import { denied, outcome } from './room-outcome';
 import { applyTranscription } from './transcription';
@@ -79,7 +80,8 @@ export function applyRoomControl(
   message: MeetRealtimeClientMessage,
   token: MeetRealtimeTokenPayload,
   now: string,
-  notesEligible = false
+  notesEligible = false,
+  features = meetClassFeatures()
 ) {
   const transcription = applyTranscription(state, message, token);
   if (transcription) return transcription;
@@ -209,7 +211,7 @@ export function applyRoomControl(
     return outcome(next, { toManagers: [approvedParticipantsMessage(next)] });
   }
   if (message.type === 'room.end') {
-    return outcome(endMeetRoom(state, now), {
+    return outcome(endMeetRoom(state, now, features), {
       reply: [
         {
           type: 'room.ended',

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { meetClassFeatures } from './class-features';
 import {
   hasMeetAssistantMention,
   MEET_ASSISTANT_USER_ID,
@@ -143,7 +144,8 @@ const command = z.union([
 export function roomService(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
-  input: unknown
+  input: unknown,
+  features = meetClassFeatures()
 ): {
   state: RoomServiceState;
   body: unknown;
@@ -169,7 +171,13 @@ export function roomService(
   }
   const privateMira = applyPrivateMira(snapshot, token, input);
   if (privateMira) return privateMira;
-  const restored = applyRoomRestore(snapshot, token, input);
+  const restored = applyRoomRestore(
+    snapshot,
+    token,
+    input,
+    Date.now(),
+    features
+  );
   if (restored) return restored;
   const live =
     applyRoomProgramming(snapshot, token, input) ??

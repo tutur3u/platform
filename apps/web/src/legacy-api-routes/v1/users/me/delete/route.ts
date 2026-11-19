@@ -245,6 +245,16 @@ export const POST = withSessionAuth(
         );
       }
 
+      try {
+        const { eraseMeetAttendanceSubject } =
+          await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+        await eraseMeetAttendanceSubject({ userId: user.id });
+      } catch (error) {
+        console.error('Meet attendance subject erasure failed', {
+          name: error instanceof Error ? error.name : 'unknown',
+        });
+      }
+
       // Delete the user from auth.users
       // This fires the existing on_delete_user trigger which:
       // 1. Sets public.user_private_details.deleted = true (soft-delete)

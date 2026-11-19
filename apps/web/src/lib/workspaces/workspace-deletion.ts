@@ -88,6 +88,16 @@ export async function deleteWorkspaceForActor(
     return audit('confirmation_mismatch');
   }
 
+  try {
+    const { eraseMeetAttendanceForWorkspace } =
+      await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
+    await eraseMeetAttendanceForWorkspace(workspaceId);
+  } catch (error) {
+    console.error('Meet attendance erasure failed', {
+      name: error instanceof Error ? error.name : 'unknown',
+    });
+  }
+
   const admin = await createAdminClient({ noCookie: true });
   const args = {
     p_ws_id: workspaceId,

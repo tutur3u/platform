@@ -63,7 +63,7 @@ export function AttendancePanel({ meetingId }: { meetingId: string }) {
             {rows.map((row) => (
               <li
                 className="grid grid-cols-1 gap-1 border-b border-border pb-2 sm:grid-cols-[minmax(0,1fr)_auto]"
-                key={`${row.kind}:${row.userId ?? row.guestId}`}
+                key={`${row.kind}:${row.firstJoin}:${row.name}`}
               >
                 <span className="truncate font-medium">
                   <span className="sr-only">{t('attendance_name')}: </span>

@@ -110,9 +110,12 @@ it('returns rows to the host and to a co-host admin', async () => {
   fixture.access.isHost = true;
   const host = await GET(request(), { params: Promise.resolve({ meetingId }) });
   expect(host.status).toBe(200);
-  expect(await host.json()).toEqual({
+  const payload = await host.json();
+  expect(payload).toEqual({
     rows: [expect.objectContaining({ name: 'Ada', totalMinutes: 12 })],
   });
+  expect(payload.rows[0]).not.toHaveProperty('userId');
+  expect(payload.rows[0]).not.toHaveProperty('guestId');
   expect(fixture.admin).not.toHaveBeenCalled();
 
   fixture.access.isHost = false;
@@ -138,6 +141,8 @@ it('fails closed when the admin lookup fails and downloads CSV for an authorized
   });
   expect(csv.headers.get('Content-Type')).toContain('text/csv');
   const body = await csv.text();
-  expect(body).toContain('name,first_join,total_minutes,kind,user_id,guest_id');
+  expect(body).toContain('name,first_join,total_minutes,kind');
+  expect(body).not.toContain('user_id');
+  expect(body).not.toContain('guest_id');
   expect(body).toContain('Ada');
 });

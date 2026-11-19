@@ -1,11 +1,21 @@
+import { closeOpenAttendanceIntervals } from './attendance-ledger';
+import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import type { MeetRoomSnapshot } from './room';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
 
 /** Ending never discards provider cleanup or creates another resource allowance. */
-export function endMeetRoom(state: MeetRoomSnapshot, now: string) {
+export function endMeetRoom(
+  state: MeetRoomSnapshot,
+  now: string,
+  features: MeetClassFeatures = meetClassFeatures()
+) {
+  const attendance = features.attendance
+    ? closeOpenAttendanceIntervals(state.attendance, now)
+    : undefined;
   return {
     ...failActiveRecording(state, now),
+    ...(attendance === undefined ? {} : { attendance }),
     budget: state.budget
       ? {
           ...state.budget,

@@ -156,30 +156,37 @@ describe('attendance ledger', () => {
       ],
       '2026-07-31T13:00:00.000Z'
     );
-    expect(rows.find((row) => row.userId === HOST_ID)).toMatchObject({
+    expect(rows.find((row) => row.name === 'Later')).toMatchObject({
       name: 'Later',
       firstJoin: NOW,
       totalMinutes: 15,
       kind: 'member',
     });
+    expect(rows.some((row) => 'userId' in row || 'guestId' in row)).toBe(false);
     expect(rows.find((row) => row.name === 'Short')?.totalMinutes).toBe(0);
     expect(rows.find((row) => row.name === 'Half')?.totalMinutes).toBe(1);
   });
 
-  it('escapes CSV cells and hides the ledger from ordinary speakers', () => {
+  it('escapes CSV cells and hides the ledger from the browser room view', () => {
     const csv = attendanceCsv([
       {
-        name: 'A "Bee"',
+        name: '=HYPERLINK("http://evil")',
         firstJoin: NOW,
         totalMinutes: 4,
         kind: 'guest',
-        guestId: GUEST_ID,
+      },
+      {
+        name: 'A "Bee"',
+        firstJoin: NOW,
+        totalMinutes: 1,
+        kind: 'member',
       },
     ]);
-    expect(csv.split('\n')[0]).toBe(
-      'name,first_join,total_minutes,kind,user_id,guest_id'
-    );
+    expect(csv.split('\n')[0]).toBe('name,first_join,total_minutes,kind');
+    expect(csv).toContain('"\'=HYPERLINK(""http://evil"")"');
     expect(csv).toContain('"A ""Bee"""');
+    expect(csv).not.toContain('user_id');
+    expect(csv).not.toContain(GUEST_ID);
     const host = token();
     const speaker = token({
       role: 'speaker',
@@ -199,7 +206,7 @@ describe('attendance ledger', () => {
         },
       ],
     };
-    expect(meetRoomStateView(state, host).attendance).toHaveLength(1);
+    expect(meetRoomStateView(state, host)).not.toHaveProperty('attendance');
     expect(meetRoomStateView(state, speaker)).not.toHaveProperty('attendance');
     expect(meetRoomStateView(state, speaker).settings).toBeUndefined();
   });

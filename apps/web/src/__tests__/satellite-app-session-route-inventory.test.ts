@@ -120,6 +120,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   // Host and co-host attendance. App session plus the host or workspace-admin check.
   // Rows live in a private table. The service client reads them after that check.
   'apps/meet/src/app/api/meet-call/[meetingId]/attendance/route.ts',
+  // Class timer commands recheck the current host or co-host, then forward a
+  // short-lived server credential. The browser socket cannot run them.
+  'apps/meet/src/app/api/meet-call/[meetingId]/class-timer/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
   // Collaboration requires Meet room admission; preview assets use scoped capabilities.
   'apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts',
