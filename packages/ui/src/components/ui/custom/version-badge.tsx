@@ -82,7 +82,9 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
           type="button"
           aria-label={t('trigger_label')}
           className={cn(
-            'fixed right-3 bottom-3 z-1000 rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue',
+            // Hidden until the pointer reaches the corner, keyboard focus lands on
+            // it or its details are open, so it never covers app content.
+            'fixed right-3 bottom-3 z-1000 rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs opacity-0 shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue data-[state=open]:opacity-100 motion-reduce:transition-none',
             className
           )}
         >

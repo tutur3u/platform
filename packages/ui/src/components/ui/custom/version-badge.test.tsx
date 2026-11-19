@@ -91,6 +91,23 @@ describe('VersionBadge', () => {
     expect(screen.getByText('feat: ship version badge')).toBeInTheDocument();
     expect(screen.getByText('2026-05-27T10:00:00.000Z')).toBeInTheDocument();
   });
+
+  it('stays hidden until hover, keyboard focus or open details', () => {
+    mockUseUserBooleanConfig.mockReturnValue({
+      isLoading: false,
+      value: true,
+    });
+
+    render(<VersionBadge release={release} />);
+
+    const trigger = screen.getByRole('button', { name: 'trigger_label' });
+    expect(trigger).toHaveClass(
+      'opacity-0',
+      'hover:opacity-100',
+      'focus-visible:opacity-100',
+      'data-[state=open]:opacity-100'
+    );
+  });
 });
 
 describe('VersionBadgeSetting', () => {
