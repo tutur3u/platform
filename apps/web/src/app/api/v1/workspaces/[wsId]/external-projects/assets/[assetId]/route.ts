@@ -163,7 +163,7 @@ export async function GET(
       });
 
       if (!access.ok) {
-        return privateJson({ error: 'Asset not available' }, 404);
+        return privateJson({ error: 'Asset not found' }, 404);
       }
     }
 

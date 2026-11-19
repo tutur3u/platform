@@ -126,6 +126,39 @@ describe('external project asset route', () => {
     }
   });
 
+  it('returns the same response for missing and inaccessible draft assets', async () => {
+    const single = vi
+      .fn()
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({
+        data: { workspace_external_project_entries: { status: 'draft' } },
+        error: null,
+      });
+    mocks.createAdminClient.mockResolvedValue({
+      from: () => ({
+        select: () => ({ eq: () => ({ eq: () => ({ single }) }) }),
+      }),
+    });
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: false,
+    });
+    const { GET } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route');
+    const read = () =>
+      GET(
+        new Request(
+          'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1'
+        ),
+        { params: Promise.resolve({ wsId: 'ws-1', assetId: 'asset-1' }) }
+      );
+    const missing = await read();
+    const denied = await read();
+
+    expect(missing.status).toBe(404);
+    expect(denied.status).toBe(missing.status);
+    expect(await denied.json()).toEqual(await missing.json());
+  });
+
   it('forwards Supabase image transform params when resolving an asset', async () => {
     const singleMock = vi.fn().mockResolvedValue({
       data: {

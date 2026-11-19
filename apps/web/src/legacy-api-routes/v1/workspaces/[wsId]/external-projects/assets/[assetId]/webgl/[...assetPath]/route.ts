@@ -425,10 +425,7 @@ export async function GET(
       });
 
       if (!access.ok) {
-        return NextResponse.json(
-          { error: 'Asset not available' },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
       }
     }
 

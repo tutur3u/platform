@@ -136,6 +136,9 @@ describe('WebGL package asset route', () => {
     const response = await callRoute(['index.html']);
 
     expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Asset not found',
+    });
     expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'read',
