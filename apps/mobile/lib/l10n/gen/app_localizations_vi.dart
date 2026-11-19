@@ -2511,6 +2511,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsHeroQuestion => 'Ai cần được chú ý?';
 
   @override
+  String get contactsLinkedAccounts => 'Tài khoản đã liên kết';
+
+  @override
   String get contactsPeople => 'Mọi người';
 
   @override

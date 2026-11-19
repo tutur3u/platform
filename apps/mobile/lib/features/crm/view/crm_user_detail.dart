@@ -78,6 +78,31 @@ class _CrmUserDetail extends StatelessWidget {
               ],
             ),
           ),
+        if (publicInfo && user.linkedUsers.isNotEmpty) ...[
+          const SizedBox(height: AppLayout.sectionGap),
+          AppPanel(
+            title: l10n.contactsLinkedAccounts,
+            padded: false,
+            child: Column(
+              children: [
+                for (var index = 0; index < user.linkedUsers.length; index++)
+                  AppGroupedSlice(
+                    position: AppSlicePosition.of(
+                      index,
+                      user.linkedUsers.length,
+                    ),
+                    child: AppRichRow(
+                      title: user.linkedUsers[index].label,
+                      leading: const AppIconTile(
+                        icon: LucideIcons.link,
+                        tone: AppTone.info,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

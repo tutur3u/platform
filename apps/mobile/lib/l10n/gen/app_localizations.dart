@@ -4909,6 +4909,12 @@ abstract class AppLocalizations {
   /// **'Who needs attention?'**
   String get contactsHeroQuestion;
 
+  /// No description provided for @contactsLinkedAccounts.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked accounts'**
+  String get contactsLinkedAccounts;
+
   /// No description provided for @contactsPeople.
   ///
   /// In en, this message translates to:

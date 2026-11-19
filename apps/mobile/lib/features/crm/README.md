@@ -21,7 +21,7 @@ mobile directory against that surface.
 | Filters | Status, link, attention, group membership, included and excluded groups | Same filters in the filter sheet |
 | Groups | Group pages, members, calendar, attendance | Create, edit and delete (name, notes, guest, dates). Opening a group filters people. No calendar or attendance |
 | Tags | Group-tag list and editor | Create, edit and delete. Colour is one of the four brand marks. Group membership uses the tag group routes. Opening a tag filters people |
-| Detail | Profile fields, note, linked platform users, promotions | Permission-redacted fields and note. Private values stay selectable. Linked platform users are a filter, not a detail list |
+| Detail | Profile fields, note, linked platform users, promotions | Permission-redacted fields, note, and linked platform accounts when public info is allowed. Private values stay selectable |
 | Create and edit | User form, including archive | Sheet form: name, email, phone, address, note, guest, archive, birthday, avatar |
 | Delete | Row action | Action sheet, gated by `delete_users` |
 | Duplicates and merge | Detect and merge into a chosen target | Same flow in a sheet |

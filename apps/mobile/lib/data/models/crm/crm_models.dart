@@ -57,6 +57,22 @@ class CrmUserPermissions extends Equatable {
   ];
 }
 
+class CrmLinkedUser extends Equatable {
+  const CrmLinkedUser({required this.id, this.displayName});
+
+  final String id;
+  final String? displayName;
+
+  String get label {
+    final name = displayName?.trim();
+    if (name == null || name.isEmpty) return id;
+    return name;
+  }
+
+  @override
+  List<Object?> get props => [id, displayName];
+}
+
 class CrmUser extends Equatable {
   const CrmUser({
     required this.id,
@@ -81,6 +97,7 @@ class CrmUser extends Equatable {
     this.attendanceCount = 0,
     this.linkedPromotionsCount = 0,
     this.linkedPromotionNames,
+    this.linkedUsers = const <CrmLinkedUser>[],
   });
 
   factory CrmUser.fromJson(Map<String, dynamic> json) {
@@ -107,6 +124,7 @@ class CrmUser extends Equatable {
       attendanceCount: crmAsInt(json['attendance_count']),
       linkedPromotionsCount: crmAsInt(json['linked_promotions_count']),
       linkedPromotionNames: crmAsString(json['linked_promotion_names']),
+      linkedUsers: _linkedUsers(json['linked_users']),
     );
   }
 
@@ -132,6 +150,7 @@ class CrmUser extends Equatable {
   final int attendanceCount;
   final int linkedPromotionsCount;
   final String? linkedPromotionNames;
+  final List<CrmLinkedUser> linkedUsers;
 
   String get label => displayName ?? fullName ?? email ?? phone ?? id;
 
@@ -159,7 +178,22 @@ class CrmUser extends Equatable {
     attendanceCount,
     linkedPromotionsCount,
     linkedPromotionNames,
+    linkedUsers,
   ];
+}
+
+List<CrmLinkedUser> _linkedUsers(Object? value) {
+  if (value is! List) return const <CrmLinkedUser>[];
+  return value
+      .whereType<Map<dynamic, dynamic>>()
+      .map(
+        (item) => CrmLinkedUser(
+          id: crmAsString(item['id']) ?? '',
+          displayName: crmAsString(item['display_name']),
+        ),
+      )
+      .where((user) => user.id.isNotEmpty)
+      .toList(growable: false);
 }
 
 class CrmUsersResult extends Equatable {

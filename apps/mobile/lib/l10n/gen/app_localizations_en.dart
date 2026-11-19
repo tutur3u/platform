@@ -2525,6 +2525,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsHeroQuestion => 'Who needs attention?';
 
   @override
+  String get contactsLinkedAccounts => 'Linked accounts';
+
+  @override
   String get contactsPeople => 'People';
 
   @override

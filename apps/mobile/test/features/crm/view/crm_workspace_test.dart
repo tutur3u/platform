@@ -371,4 +371,32 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.drainShadToastTimers();
   });
+
+  testWidgets('public detail lists linked platform accounts', (tester) async {
+    repository.read = (_, _, _) async => const CrmUsersResult(
+      users: [
+        CrmUser(
+          id: 'Customer',
+          workspaceId: 'ws',
+          fullName: 'Customer',
+          linkedUsers: [
+            CrmLinkedUser(id: 'platform-1', displayName: 'Platform User'),
+          ],
+        ),
+      ],
+      count: 1,
+      permissions: CrmUserPermissions(
+        hasPrivateInfo: false,
+        hasPublicInfo: true,
+        canCheckUserAttendance: false,
+      ),
+    );
+    await tester.pumpApp(page());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Customer'));
+    await tester.pumpAndSettle();
+    expect(find.text('Linked accounts'), findsOneWidget);
+    expect(find.text('Platform User'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

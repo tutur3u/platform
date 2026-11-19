@@ -63,4 +63,7 @@ CrmUser crmVisibleUser(CrmUser user, CrmUserPermissions permissions) => CrmUser(
       : 0,
   linkedPromotionsCount: user.linkedPromotionsCount,
   linkedPromotionNames: user.linkedPromotionNames,
+  linkedUsers: permissions.hasPublicInfo
+      ? user.linkedUsers
+      : const <CrmLinkedUser>[],
 );
