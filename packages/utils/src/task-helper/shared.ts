@@ -31,10 +31,26 @@ export function getTaskTicketProject(task: {
   })[0];
 }
 
-export function getTaskTicketLabel(task: {
+type TaskTicketLabels = {
   projects?: Task['projects'] | null;
   ticket_projects?: Task['projects'] | null;
-}): string | null {
+  ticket_prefix?: string | null;
+  display_number?: number | null;
+};
+
+export function getTaskBoardTicketLabel(
+  task: Pick<TaskTicketLabels, 'ticket_prefix' | 'display_number'>
+): string | null {
+  const number = task.display_number;
+  return task.ticket_prefix?.trim() &&
+    typeof number === 'number' &&
+    Number.isSafeInteger(number) &&
+    number > 0
+    ? getTicketIdentifier(task.ticket_prefix, number)
+    : null;
+}
+
+export function getTaskTicketLabel(task: TaskTicketLabels): string | null {
   const first = getTaskTicketProject(task);
   if (
     !first?.ticket_key ||
@@ -42,8 +58,18 @@ export function getTaskTicketLabel(task: {
     !Number.isSafeInteger(first.ticket_number) ||
     (first.ticket_number ?? 0) < 1
   )
-    return null;
+    return getTaskBoardTicketLabel(task);
   return `${first.ticket_key}-${first.ticket_number}`;
+}
+
+export function getTaskDisplayTicketLabel(
+  task: TaskTicketLabels
+): string | null {
+  const primary = getTaskTicketLabel(task);
+  const board = getTaskBoardTicketLabel(task);
+  return primary && board && primary !== board
+    ? `${primary} · ${board}`
+    : primary;
 }
 
 export function normalizeTaskSearchValue(value: string) {
@@ -51,9 +77,19 @@ export function normalizeTaskSearchValue(value: string) {
 }
 
 export function isTicketIdentifierLikeQuery(query: string) {
-  const normalized = normalizeTaskSearchValue(query);
-  if (!normalized) return false;
-  return /^\d+$/.test(normalized) || /^[a-z][a-z0-9_-]*-\d+$/.test(normalized);
+  return parseTaskIdentifierQuery(query) !== null;
+}
+
+export function parseTaskIdentifierQuery(identifier: string) {
+  const normalized = identifier.trim().toUpperCase();
+  const match = /^([A-Z][A-Z0-9_-]{0,255})-(\d+)$/.exec(normalized);
+  const number = match?.[2] ?? normalized;
+  if (!/^\d+$/.test(number)) return null;
+
+  const displayNumber = Number(number);
+  if (displayNumber < 1 || displayNumber > 2_147_483_647) return null;
+
+  return { displayNumber, ticketPrefix: match?.[1] ?? null };
 }
 
 export function getTaskIdentifierForSearch(task: {

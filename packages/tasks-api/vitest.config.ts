@@ -27,6 +27,10 @@ export default defineConfig({
         replacement: `${resolve(__dirname, '../types/src/primitives')}/$1.ts`,
       },
       {
+        find: '@tuturuuu/types/supabase',
+        replacement: resolve(__dirname, '../types/src/supabase.ts'),
+      },
+      {
         find: '@tuturuuu/supabase/next/auth-session-user',
         replacement: resolve(
           __dirname,

@@ -23,7 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { MAX_TASK_DESCRIPTION_LENGTH } from '@tuturuuu/utils/constants';
 import { convertListItemToTask } from '@tuturuuu/utils/editor';
 import {
-  getTaskTicketLabel,
+  getTaskDisplayTicketLabel,
   invalidateTaskCaches,
 } from '@tuturuuu/utils/task-helper';
 import {
@@ -313,7 +313,10 @@ export function TaskEditDialog({
   });
   const ticketLabel = isCreateMode
     ? null
-    : getTaskTicketLabel({ ...task, projects: formState.selectedProjects });
+    : getTaskDisplayTicketLabel({
+        ...task,
+        projects: formState.selectedProjects,
+      });
 
   // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);

@@ -8,12 +8,15 @@ export * from './task-helper/personal-external-staging';
 export * from './task-helper/recycle-bin';
 export * from './task-helper/relationships';
 export {
+  getTaskBoardTicketLabel,
+  getTaskDisplayTicketLabel,
   getTaskIdentifierForSearch,
   getTaskTicketLabel,
   getTaskTicketProject,
   getTicketIdentifier,
   isTicketIdentifierLikeQuery,
   normalizeTaskSearchValue,
+  parseTaskIdentifierQuery,
 } from './task-helper/shared';
 export * from './task-helper/sort-keys';
 export * from './task-helper/task-hooks-basic';

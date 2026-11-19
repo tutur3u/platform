@@ -159,9 +159,10 @@ import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
-  getShownTaskTicketLabel,
+  formatTaskCardTicketLabels,
   getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
+  getTaskCardTicketLabels,
   getTaskCardTitleName,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
@@ -210,7 +211,8 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   const priorityT = useTranslations('ws-task-boards.dialog.priority');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
-  const ticketIdentifier = getShownTaskTicketLabel(task, taskList?.status);
+  const ticketLabels = getTaskCardTicketLabels(task, taskList?.status);
+  const ticketIdentifier = ticketLabels[0] ?? null;
   const dueDate = task.end_date
     ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
     : null;
@@ -245,7 +247,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
         >
           {ticketIdentifier ? (
             <span className="mr-1 whitespace-nowrap font-mono">
-              [{ticketIdentifier}]
+              {formatTaskCardTicketLabels(...ticketLabels)}
             </span>
           ) : null}
           {task.name}
@@ -645,22 +647,21 @@ function TaskCardInner({
         return null;
       }
 
-      const response = await enqueueTaskCardRelationshipRequest(() =>
-        getWorkspaceTask(effectiveWorkspaceId, summaryParentTaskId)
+      const fetchedTask = await enqueueTaskCardRelationshipRequest(
+        async () =>
+          (await getWorkspaceTask(effectiveWorkspaceId, summaryParentTaskId))
+            .task
       );
-      const fetchedTask = response.task;
 
       return {
         id: fetchedTask.id,
         name: fetchedTask.name,
         display_number: fetchedTask.display_number,
         ticket_prefix:
-          'ticket_prefix' in fetchedTask &&
-          typeof fetchedTask.ticket_prefix === 'string'
-            ? fetchedTask.ticket_prefix
-            : fetchedTask.board_id === boardId
-              ? (boardConfig?.ticket_prefix ?? null)
-              : null,
+          fetchedTask.ticket_prefix ??
+          (fetchedTask.board_id === boardId
+            ? (boardConfig?.ticket_prefix ?? null)
+            : null),
       };
     },
     enabled: shouldHydrateParentTask,
@@ -936,8 +937,12 @@ function TaskCardInner({
   ].filter(
     (item): item is { href: string | undefined; label: string } => item !== null
   );
-  // Documents lists show no ticket ID, so the project badge stays there.
-  const taskTicketIdentifier = getShownTaskTicketLabel(task, taskList?.status);
+  const ticketLabels = getTaskCardTicketLabels(
+    task,
+    taskList?.status,
+    boardConfig?.ticket_prefix
+  );
+  const taskTicketIdentifier = ticketLabels[0] ?? null;
   const externalSourceLabel =
     task.source_workspace_name ??
     task.source_board_name ??
@@ -1900,7 +1905,6 @@ function TaskCardInner({
         isMultiSelectMode && 'cursor-pointer'
       )}
     >
-      {/* Overdue indicator */}
       {isOverdue &&
         !isResolvedListStatus &&
         !(!!task.closed_at || !!task.completed_at) && (
@@ -1909,7 +1913,6 @@ function TaskCardInner({
           </div>
         )}
       <div className="p-3">
-        {/* Header */}
         <div className="flex items-start gap-1">
           <div className="min-w-0 flex-1">
             <TaskCardIdentifierRow
@@ -1936,7 +1939,6 @@ function TaskCardInner({
               taskListStatus={taskList?.status}
             />
             <div className="mb-1">
-              {/* Task Name */}
               <button
                 type="button"
                 className={cn(
@@ -1947,7 +1949,7 @@ function TaskCardInner({
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
                 aria-label={t('edit_task_aria', {
-                  name: getTaskCardTitleName(task.name, taskTicketIdentifier),
+                  name: getTaskCardTitleName(task.name, ...ticketLabels),
                 })}
                 title={t('click_to_edit_task')}
               >
@@ -1956,7 +1958,7 @@ function TaskCardInner({
                     className="mr-1 whitespace-nowrap font-mono"
                     data-testid="task-card-ticket-identifier"
                   >
-                    [{taskTicketIdentifier}]
+                    {formatTaskCardTicketLabels(...ticketLabels)}
                   </span>
                 ) : null}
                 {task.name}

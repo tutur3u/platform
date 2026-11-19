@@ -11,6 +11,7 @@ export interface Task {
   description?: string;
   list_id: string;
   display_number: number;
+  ticket_prefix?: string | null;
   priority?: TaskPriority | null;
   start_date?: string;
   end_date?: string | null;

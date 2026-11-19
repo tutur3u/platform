@@ -177,29 +177,43 @@ export const POST = withSessionAuth<Params>(
 
       const tasks = data ?? [];
       const taskIds = tasks.map((task) => task.id);
-      const assignedTaskIds = new Set<string>();
+      const detailsById = new Map<
+        string,
+        {
+          display_number: number | null;
+          ticket_prefix: string | null;
+          is_assigned_to_current_user: boolean;
+        }
+      >();
 
       if (taskIds.length > 0) {
-        const { data: assignments, error: assignmentsError } = await sbAdmin
-          .from('task_assignees')
-          .select('task_id')
-          .eq('user_id', user.id)
-          .in('task_id', taskIds);
+        const { data: details, error: detailsError } = await sbAdmin
+          .from('tasks')
+          .select(
+            'id, display_number, list:task_lists!inner(board:workspace_boards!inner(ws_id, ticket_prefix)), assignees:task_assignees(user_id)'
+          )
+          .eq('list.board.ws_id', wsId)
+          .eq('assignees.user_id', user.id)
+          .in('id', taskIds);
 
-        if (assignmentsError) {
-          console.error('Error loading task search assignments', {
-            error: assignmentsError,
+        if (detailsError) {
+          console.error('Error loading task search details', {
+            error: detailsError,
             userId: user.id,
             wsId,
           });
           return NextResponse.json(
-            { message: 'Error loading task search assignments' },
+            { message: 'Error loading task search details' },
             { status: 500 }
           );
         }
 
-        for (const assignment of assignments ?? []) {
-          assignedTaskIds.add(assignment.task_id);
+        for (const task of details ?? []) {
+          detailsById.set(task.id, {
+            display_number: task.display_number,
+            ticket_prefix: task.list?.board?.ticket_prefix ?? null,
+            is_assigned_to_current_user: task.assignees.length > 0,
+          });
         }
       }
 
@@ -210,11 +224,12 @@ export const POST = withSessionAuth<Params>(
               reason: fallbackReason,
             }
           : {}),
-        tasks: tasks.map((task) => ({
-          ...task,
-          completed: Boolean(task.completed_at),
-          is_assigned_to_current_user: assignedTaskIds.has(task.id),
-        })),
+        tasks: tasks.flatMap((task) => {
+          const details = detailsById.get(task.id);
+          return details
+            ? [{ ...task, ...details, completed: Boolean(task.completed_at) }]
+            : [];
+        }),
       });
     } catch (error) {
       console.error('Error in task search', error);

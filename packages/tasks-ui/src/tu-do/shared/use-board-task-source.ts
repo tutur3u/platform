@@ -11,6 +11,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import {
   getPersonalExternalStagingListId,
+  parseTaskIdentifierQuery,
   type UnprioritizedPosition,
 } from '@tuturuuu/utils/task-helper';
 import { useCallback, useMemo } from 'react';
@@ -31,8 +32,8 @@ import { useProgressiveLoader } from './progressive-loader-context';
 /**
  * The tasks a board view shows and the list counts behind its filters.
  * Filters, search and sort on the board's own tasks run in the browser over
- * one unfiltered copy (or the board cache once every list is loaded); only
- * another source scope is filtered on the server.
+ * one unfiltered copy (or the board cache once every list is loaded). The
+ * server resolves full ticket IDs and matches tasks in other source scopes.
  */
 export function useBoardTaskSource({
   autoCollapseEmptyTaskLists,
@@ -91,10 +92,11 @@ export function useBoardTaskSource({
     [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
   );
   const hasServerTaskQuery = hasTaskFilters || !!filters.sortBy;
-  // Filters, search and sort on this board run in the browser over one
-  // unfiltered copy of its tasks, so changing them sends no request. Only
-  // another source scope (tasks from other boards) is filtered on the server.
-  const filterOnServer = !localTaskState && sourceScope !== 'all_visible';
+  const ticketSearch = filters.searchQuery
+    ? parseTaskIdentifierQuery(filters.searchQuery)?.ticketPrefix
+    : null;
+  const filterOnServer =
+    !localTaskState && (sourceScope !== 'all_visible' || Boolean(ticketSearch));
   const { pagination } = useProgressiveLoader();
   // Every list's pages, a personal board's external tasks included, are in
   // the board cache, so it holds every task.
@@ -350,7 +352,6 @@ export function useBoardTaskSource({
 
   const sourceTasks = useMemo(() => {
     if (!filterOnServer) return locallyFilteredTasks;
-    // Another source scope: the server's result, empty until it lands.
     return shouldEagerLoadTasks ? fullTasks : tasks;
   }, [
     filterOnServer,

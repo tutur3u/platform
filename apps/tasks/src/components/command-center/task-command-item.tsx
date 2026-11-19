@@ -12,15 +12,16 @@ import {
 } from '@tuturuuu/icons';
 import { CommandItem } from '@tuturuuu/ui/command';
 import { cn } from '@tuturuuu/utils/format';
+import { getTaskBoardTicketLabel } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
 import type { TaskCommandResult } from './use-task-command-data';
 
-const PRIORITY_ICON = {
-  critical: AlertTriangle,
-  high: ArrowUp,
-  normal: ArrowRight,
-  low: ArrowDown,
-} as const;
+const PRIORITY_ICONS = new Map([
+  ['critical', AlertTriangle],
+  ['high', ArrowUp],
+  ['normal', ArrowRight],
+  ['low', ArrowDown],
+]);
 
 export function TaskCommandItem({
   busy,
@@ -34,7 +35,8 @@ export function TaskCommandItem({
   task: TaskCommandResult;
 }) {
   const t = useTranslations('command_palette');
-  const PriorityIcon = task.priority ? PRIORITY_ICON[task.priority] : null;
+  const boardTicket = getTaskBoardTicketLabel(task);
+  const PriorityIcon = task.priority ? PRIORITY_ICONS.get(task.priority) : null;
   const overdue = Boolean(
     task.end_date && !task.completed && new Date(task.end_date) < new Date()
   );
@@ -76,6 +78,11 @@ export function TaskCommandItem({
             task.completed && 'text-muted-foreground line-through'
           )}
         >
+          {boardTicket && (
+            <span className="mr-1 font-mono text-muted-foreground">
+              [{boardTicket}]
+            </span>
+          )}
           {task.name}
         </p>
         <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">

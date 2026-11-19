@@ -71,7 +71,7 @@ type TaskListContext = Pick<
   workspace_boards:
     | (Pick<
         Database['public']['Tables']['workspace_boards']['Row'],
-        'id' | 'ws_id' | 'name'
+        'id' | 'ws_id' | 'name' | 'ticket_prefix'
       > & {
         workspace: Pick<
           Database['public']['Tables']['workspaces']['Row'],

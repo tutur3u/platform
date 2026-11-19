@@ -4,6 +4,7 @@ import { isPersonalExternalOverlayTask } from '@tuturuuu/ui/lib/task-personal-ex
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import {
   type BoardConfig,
+  getTaskBoardTicketLabel,
   getTaskTicketLabel,
   getTaskTicketProject,
 } from '@tuturuuu/utils/task-helper';
@@ -46,19 +47,24 @@ function normalizeSourceListStatus(status?: string | null): TaskList['status'] {
 }
 
 function getTaskTicketPrefix(task: Task) {
-  return 'ticket_prefix' in task && typeof task.ticket_prefix === 'string'
-    ? task.ticket_prefix
-    : undefined;
+  return task.ticket_prefix ?? undefined;
 }
 
 export function getTaskCardTicketIdentifier({
+  boardConfig,
+  isExternalTask,
   task,
 }: {
   boardConfig: BoardConfig | null | undefined;
   isExternalTask: boolean;
   task: Task;
 }) {
-  return getTaskTicketLabel(task);
+  return getTaskTicketLabel({
+    ...task,
+    ticket_prefix:
+      task.ticket_prefix ??
+      (isExternalTask ? null : boardConfig?.ticket_prefix),
+  });
 }
 
 /** The ticket ID a card shows; Documents lists show none. */
@@ -77,6 +83,27 @@ export function getShownTaskTicketLabel(
   return getShownTicketIdentifier(getTaskTicketLabel(task), listStatus);
 }
 
+export function getTaskCardTicketLabels(
+  task: Task,
+  listStatus: TaskList['status'] | null | undefined,
+  boardPrefix?: string | null
+) {
+  if (listStatus === 'documents') return [];
+
+  const sourceTask = {
+    ...task,
+    ticket_prefix:
+      task.ticket_prefix ?? (isExternalTaskSnapshot(task) ? null : boardPrefix),
+  };
+  const preferred = getTaskTicketLabel(sourceTask);
+  const board = getTaskBoardTicketLabel(sourceTask);
+  return preferred
+    ? board && board !== preferred
+      ? [preferred, board]
+      : [preferred]
+    : [];
+}
+
 /**
  * Projects to show as a card badge. The `[KEY-N]` prefix already names the
  * project it comes from, so a card whose only project is that one drops the
@@ -88,7 +115,13 @@ export function getTaskCardBadgeProjects(
   ticketIdentifier: string | null
 ): NonNullable<Task['projects']> {
   const projects = task.projects ?? [];
-  if (!ticketIdentifier || projects.length !== 1) return projects;
+  if (
+    !ticketIdentifier ||
+    projects.length !== 1 ||
+    getTaskTicketLabel({ projects, ticket_projects: task.ticket_projects }) !==
+      ticketIdentifier
+  )
+    return projects;
   return getTaskTicketProject(task)?.id === projects[0]?.id ? [] : projects;
 }
 
@@ -196,10 +229,27 @@ export function getTaskCardHydratingOpenOptions({
   };
 }
 
-/** The card title's accessible name keeps the visible "[ID] Title" prefix. */
+export function formatTaskCardTicketLabels(
+  ...identifiers: Array<string | null | undefined>
+) {
+  return identifiers
+    .filter(Boolean)
+    .map((id) => `[${id}]`)
+    .join(' ');
+}
+
+/** The card title's accessible name keeps the same identifiers as the title. */
 export function getTaskCardTitleName(
   name: string,
-  ticketIdentifier: string | null | undefined
+  ...identifiers: Array<string | null | undefined>
 ) {
-  return ticketIdentifier ? `[${ticketIdentifier}] ${name}` : name;
+  const labels = formatTaskCardTicketLabels(...identifiers);
+  return labels ? `${labels} ${name}` : name;
+}
+
+export function getTaskCardTitle(task: Task, status?: TaskList['status']) {
+  return getTaskCardTitleName(
+    task.name,
+    ...getTaskCardTicketLabels(task, status)
+  );
 }

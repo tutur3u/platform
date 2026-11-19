@@ -53,4 +53,22 @@ describe('command task server controls', () => {
       false
     );
   });
+
+  it('looks up a single-letter board key with no extra filters', () => {
+    expect(shouldUseFilteredTaskList('F-12', 'all', 'all', 'relevance')).toBe(
+      true
+    );
+    expect(
+      buildCommandTaskListOptions('F-12', {
+        priority: 'all',
+        sort: 'relevance',
+        status: 'all',
+      })
+    ).toEqual({
+      identifier: 'F-12',
+      limit: 40,
+      priorities: undefined,
+      sortBy: 'created-date-desc',
+    });
+  });
 });

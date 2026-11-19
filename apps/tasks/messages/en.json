@@ -14789,9 +14789,12 @@
     "select_or_create_list": "Select or create a list",
     "settings": {
       "configure_description": "Configure board-specific settings.",
-      "ticket_prefix": "Ticket Prefix",
-      "ticket_prefix_description": "A short prefix for task IDs (e.g., PROJ-123). Leave empty for no prefix.",
-      "ticket_prefix_placeholder": "e.g. PROJ"
+      "ticket_prefix": "Board key",
+      "ticket_prefix_description": "Appears in task IDs such as F-12. Leave blank to generate a key. Existing references keep working after a change.",
+      "ticket_prefix_invalid": "Enter up to 12 letters, numbers, hyphens, or underscores, starting with a letter.",
+      "ticket_prefix_placeholder": "e.g. F",
+      "ticket_prefix_taken": "This key is reserved in this workspace.",
+      "ticket_prefix_unavailable": "Board keys are temporarily unavailable. Try again later."
     },
     "share": {
       "action": "Share board",

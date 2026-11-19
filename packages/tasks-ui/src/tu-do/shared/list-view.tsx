@@ -70,7 +70,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBulkOperations } from '../boards/boardId/kanban/bulk/bulk-operations';
 import type { TaskCardAssigneeMemberSource } from '../boards/boardId/task-card/task-card';
 import { TASK_CARD_SELECTION_CHECKBOX_BASE_CLASSES } from '../boards/boardId/task-card/task-card-checkbox-style';
-import { getTaskCardHydratingOpenOptions } from '../boards/boardId/task-card/task-card-open-options';
+import {
+  getTaskCardHydratingOpenOptions,
+  getTaskCardTitle,
+} from '../boards/boardId/task-card/task-card-open-options';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { taskDetailQuery } from '../providers/task-detail-query';
 import { computeAccessibleLabelStyles } from '../utils/label-colors';
@@ -254,7 +257,7 @@ function ReadOnlyListView({
                               'text-muted-foreground line-through'
                           )}
                         >
-                          {task.name}
+                          {getTaskCardTitle(task, list?.status)}
                         </div>
                         {(task.labels?.length || task.projects?.length) && (
                           <div className="flex flex-wrap items-center gap-1">
@@ -370,10 +373,8 @@ function InteractiveListView({
   const effectiveAssigneeMemberSource =
     assigneeMemberSource ?? (isPersonalWorkspace ? 'board' : 'workspace');
 
-  // Infinite scroll
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Column visibility
   const [columnVisibility] = useState<ColumnVisibility>({
     status: true,
     name: true,
@@ -384,11 +385,9 @@ function InteractiveListView({
     actions: true,
   });
 
-  // Bulk actions state
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [bulkWorking, setBulkWorking] = useState(false);
 
-  // Clear selection helper
   const clearSelection = useCallback(() => {
     setSelectedTasks(new Set());
   }, []);
@@ -818,7 +817,7 @@ function InteractiveListView({
                                   'text-muted-foreground line-through'
                               )}
                             >
-                              {task.name}
+                              {getTaskCardTitle(task, taskList?.status)}
                             </span>
                             {isExternalSource && (
                               <Badge

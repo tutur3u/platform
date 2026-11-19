@@ -11,9 +11,12 @@ const project = {
 };
 
 describe('getTaskTicketLabel', () => {
-  it('omits IDs for tasks without projects, including legacy board numbered tasks', () => {
+  it('uses the board identity for a task with no project', () => {
     expect(getTaskTicketLabel({})).toBeNull();
     expect(getTaskTicketLabel({ projects: [] })).toBeNull();
+    expect(getTaskTicketLabel({ ticket_prefix: 'F', display_number: 12 })).toBe(
+      'F-12'
+    );
     expect(getTicketIdentifier('DEV', 248)).toBe('DEV-248');
   });
   it('uses the earliest link regardless of response order without mutating it', () => {

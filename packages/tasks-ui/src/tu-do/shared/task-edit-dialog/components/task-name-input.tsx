@@ -32,7 +32,7 @@ interface TaskNameInputProps {
    * not momentarily read as a brand-new, empty task.
    */
   isHydrating?: boolean;
-  /** The task's project key. It sits before the title and only goes when the project does. */
+  /** The identifiers sit before the task name. */
   ticketLabel?: string | null;
 }
 
@@ -207,7 +207,10 @@ export function TaskNameInput({
     return (
       <div className="group flex items-start gap-2">
         {ticketLabel ? (
-          <span className="shrink-0 font-semibold text-base text-muted-foreground leading-tight md:text-lg">
+          <span
+            className="max-w-1/2 shrink-0 truncate font-semibold text-base text-muted-foreground leading-tight md:text-lg"
+            title={ticketLabel}
+          >
             {ticketLabel}
           </span>
         ) : null}
@@ -232,7 +235,10 @@ export function TaskNameInput({
   return (
     <div className="group flex items-baseline">
       {ticketLabel ? (
-        <span className="shrink-0 py-3 pl-4 font-bold text-2xl text-muted-foreground leading-tight tracking-tight md:pl-8">
+        <span
+          className="max-w-1/2 shrink-0 truncate py-3 pl-4 font-bold text-2xl text-muted-foreground leading-tight tracking-tight md:pl-8"
+          title={ticketLabel}
+        >
           {ticketLabel}
         </span>
       ) : null}

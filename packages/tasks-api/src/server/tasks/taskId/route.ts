@@ -25,11 +25,10 @@ import {
   type TaskDetailRouteAuthContext,
   type TaskDetailRouteContext,
 } from './access';
-import { getWorkspaceTask } from './load-workspace-task';
+import { getWorkspaceTask, serializeTask } from './load-workspace-task';
 import {
   restoreTaskSchema,
   type TaskPriority,
-  type TaskRecord,
   updateTaskSchema,
 } from './schema';
 
@@ -286,56 +285,6 @@ async function validateTaskAssigneeIds({
     assigneeIds: uniqueAssigneeIds.filter((assigneeId) =>
       validAssigneeIds.has(assigneeId)
     ),
-  };
-}
-
-function serializeTask(task: TaskRecord) {
-  const assigneeIds = Array.isArray(task.assignees)
-    ? task.assignees
-        .map((entry) => entry?.id)
-        .filter((id): id is string => !!id)
-    : [];
-
-  const labelIds = Array.isArray(task.labels)
-    ? task.labels.map((entry) => entry?.id).filter((id): id is string => !!id)
-    : [];
-
-  const projectIds = Array.isArray(task.projects)
-    ? task.projects.map((entry) => entry?.id).filter((id): id is string => !!id)
-    : [];
-
-  const uniqueAssigneeIds = [...new Set(assigneeIds)];
-  const uniqueLabelIds = [...new Set(labelIds)];
-  const uniqueProjectIds = [...new Set(projectIds)];
-
-  return {
-    id: task.id,
-    display_number: task.display_number,
-    name: task.name,
-    description: task.description,
-    priority: task.priority,
-    completed: task.completed,
-    completed_at: task.completed_at,
-    start_date: task.start_date,
-    end_date: task.end_date,
-    estimation_points: task.estimation_points,
-    sort_key: task.sort_key,
-    created_at: task.created_at,
-    closed_at: task.closed_at,
-    deleted_at: task.deleted_at,
-    list_id: task.list_id,
-    board_id: task.task_lists?.board_id ?? null,
-    board_name: task.task_lists?.workspace_boards?.name ?? null,
-    list_name: task.task_lists?.name ?? null,
-    list_status: task.task_lists?.status ?? null,
-    assignees: task.assignees ?? [],
-    labels: task.labels ?? [],
-    projects: task.projects ?? [],
-    assignee_ids: uniqueAssigneeIds,
-    label_ids: uniqueLabelIds,
-    project_ids: uniqueProjectIds,
-    is_personal_external: false,
-    is_personal_external_default: false,
   };
 }
 

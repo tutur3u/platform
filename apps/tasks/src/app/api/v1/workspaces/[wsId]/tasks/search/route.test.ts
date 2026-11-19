@@ -93,16 +93,22 @@ describe('workspace task search route', () => {
       from: mocks.from,
       rpc: mocks.rpc,
     });
-    mocks.from.mockReturnValue({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          in: vi.fn().mockResolvedValue({
-            data: [{ task_id: 'task-1' }],
-            error: null,
-          }),
-        })),
-      })),
-    });
+    const detailsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: 'task-1',
+            display_number: 12,
+            list: { board: { ticket_prefix: 'F' } },
+            assignees: [{ user_id: USER_ID }],
+          },
+        ],
+        error: null,
+      }),
+    };
+    mocks.from.mockReturnValue(detailsQuery);
     mocks.normalizeWorkspaceId.mockResolvedValue(NORMALIZED_WORKSPACE_ID);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({
       membershipType: 'MEMBER',
@@ -178,6 +184,8 @@ describe('workspace task search route', () => {
           completed: false,
           id: 'task-1',
           is_assigned_to_current_user: true,
+          display_number: 12,
+          ticket_prefix: 'F',
           name: 'Deadline review',
           similarity: 0.9,
         },
@@ -285,10 +293,12 @@ describe('workspace task search route', () => {
       tasks: [
         {
           completed: false,
+          display_number: 12,
           id: 'task-1',
           is_assigned_to_current_user: true,
           name: 'Deadline review',
           similarity: 0.9,
+          ticket_prefix: 'F',
         },
       ],
     });

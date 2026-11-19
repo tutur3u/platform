@@ -5,7 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type { Database } from '@tuturuuu/types';
+import { Constants, type Database } from '@tuturuuu/types/supabase';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -44,7 +44,7 @@ const TASK_BOARD_NAME_EXISTS_ERROR =
   'A task board with this name already exists';
 const TASK_BOARD_TICKET_PREFIX_TAKEN_CODE = 'TASK_BOARD_TICKET_PREFIX_TAKEN';
 const TASK_BOARD_TICKET_PREFIX_TAKEN_ERROR =
-  'Ticket prefix is already used by a project in this workspace';
+  'This board key is reserved in this workspace';
 const DEFAULT_LIST_COLUMN_UNAVAILABLE_ERROR =
   'Default task list settings are not available until the database migration is applied';
 const DEFAULT_LIST_COLUMNS = [
@@ -64,16 +64,38 @@ function isUniqueViolation(error: unknown) {
   return error instanceof Object && 'code' in error && error.code === '23505';
 }
 
-/** The board prefix trigger refuses a prefix that equals a project key. */
 function isTicketPrefixTaken(error: unknown) {
   return (
     isUniqueViolation(error) &&
     error instanceof Object &&
     'message' in error &&
     typeof error.message === 'string' &&
-    error.message.includes('TASK_BOARD_TICKET_PREFIX_PROJECT_KEY')
+    (error.message.includes('TASK_BOARD_TICKET_PREFIX_PROJECT_KEY') ||
+      error.message.includes('TASK_BOARD_TICKET_PREFIX_RESERVED') ||
+      error.message.includes('workspace_boards_workspace_ticket_prefix_unique'))
   );
 }
+
+const boardTicketPrefixSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .refine((value) => !value || /^[A-Z][A-Z0-9_-]{0,11}$/.test(value))
+  .transform((value) => value || null)
+  .nullish();
+
+const boardUpdateSchema = z.strictObject({
+  name: z.string().nullish(),
+  icon: z.enum(Constants.public.Enums.platform_icon).nullish(),
+  ticket_prefix: z.unknown().optional(),
+  default_list_id: z.string().nullish(),
+  default_done_list_id: z.string().nullish(),
+  default_closed_list_id: z.string().nullish(),
+  archived: z.boolean().optional(),
+  deleted: z.boolean().optional(),
+  restore: z.boolean().optional(),
+  group_ids: z.array(z.string()).optional(),
+});
 
 function isDefaultListColumnUnavailable(error: unknown) {
   if (!(error instanceof Object)) {
@@ -220,25 +242,42 @@ export async function handleBoardRoutePUT(
     );
   }
 
-  const data = (await req.json()) as {
-    name?: string;
-    icon?: Database['public']['Enums']['platform_icon'] | null;
-    ticket_prefix?: string | null;
-    default_list_id?: string | null;
-    default_done_list_id?: string | null;
-    default_closed_list_id?: string | null;
-    archived?: boolean;
-    deleted?: boolean;
-    restore?: boolean;
-    group_ids?: string[];
-  };
+  const body: unknown = await req.json().catch(() => null);
+  const parsedUpdate = boardUpdateSchema.safeParse(body);
+  if (!parsedUpdate.success) {
+    return NextResponse.json(
+      { message: 'Invalid board update' },
+      { status: 400 }
+    );
+  }
+  const data = parsedUpdate.data;
   const hasDefaultListUpdate = DEFAULT_LIST_COLUMNS.some((column) =>
     Object.hasOwn(data, column)
   );
 
-  const { group_ids: _, archived, deleted, restore, ...coreData } = data;
+  const {
+    group_ids: _,
+    archived,
+    deleted,
+    restore,
+    ticket_prefix: ticketPrefix,
+    ...coreData
+  } = data;
+  const updateData: BoardUpdatePayload = coreData;
 
-  const updateData: BoardUpdatePayload = { ...coreData };
+  if (Object.hasOwn(data, 'ticket_prefix')) {
+    const prefix = boardTicketPrefixSchema.safeParse(ticketPrefix);
+    if (!prefix.success) {
+      return NextResponse.json(
+        {
+          code: 'TASK_BOARD_TICKET_PREFIX_INVALID',
+          error: 'Invalid board key',
+        },
+        { status: 400 }
+      );
+    }
+    updateData.ticket_prefix = prefix.data ?? null;
+  }
 
   const now = new Date().toISOString();
   if (archived !== undefined) {
@@ -253,6 +292,26 @@ export async function handleBoardRoutePUT(
 
   const sbAdmin =
     auth.sbAdmin ?? ((await createAdminClient()) as TypedSupabaseClient);
+
+  if (Object.hasOwn(updateData, 'ticket_prefix')) {
+    const { error } = await sbAdmin
+      .schema('private')
+      .from('task_board_ticket_keys')
+      .select('board_id', { head: true })
+      .eq('ws_id', wsId)
+      .limit(1);
+
+    if (error) {
+      return NextResponse.json(
+        {
+          code: 'TASK_BOARD_TICKET_PREFIX_UNAVAILABLE',
+          error:
+            'Board keys cannot be edited until the database migration is available',
+        },
+        { status: 503 }
+      );
+    }
+  }
 
   // Default list columns intentionally have no database foreign keys, so the
   // API validates board ownership/status before persisting them. Null clears.

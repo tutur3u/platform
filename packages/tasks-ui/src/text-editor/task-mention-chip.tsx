@@ -16,6 +16,7 @@ import {
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api';
+import type { WorkspaceTaskApiTask } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -68,6 +69,7 @@ import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
 import {
   getRouteTaskBoardIdFromPathname,
   getRouteWorkspaceIdFromPathname,
+  getTaskMentionIdentifier,
   resolveTaskMentionPayload,
 } from './task-mention-resolution';
 import { TaskSummaryPopover } from './task-summary-popover';
@@ -131,11 +133,6 @@ const cleanupTaskMentionsGlobally = async (
     console.error('Failed to clean up task mentions globally:', error);
   }
 };
-
-// Extended Task type that includes board_id (denormalized field in database)
-interface TaskWithBoardId extends Task {
-  board_id: string;
-}
 
 interface TaskMentionChipProps {
   entityId: string;
@@ -256,7 +253,7 @@ export function TaskMentionChip({
     retry: false,
   });
 
-  const task = taskPayload?.task as TaskWithBoardId | undefined;
+  const task = taskPayload?.task;
   const resolvedTaskId = task?.id ?? entityId;
   const taskWorkspaceId = taskPayload?.taskWsId;
   const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
@@ -276,7 +273,7 @@ export function TaskMentionChip({
 
   // Get board config - only fetch when menu opens and we have task data
   const { data: boardConfig } = useBoardConfig(
-    task?.board_id,
+    task?.board_id ?? undefined,
     boardWorkspaceId
   );
   const actionWorkspaceId = boardConfig?.ws_id ?? canonicalWorkspaceId;
@@ -430,15 +427,15 @@ export function TaskMentionChip({
   const syncTaskCache = useCallback(
     (
       updatesOrFn:
-        | Partial<TaskWithBoardId>
-        | ((current: TaskWithBoardId) => Partial<TaskWithBoardId>)
+        | Partial<WorkspaceTaskApiTask>
+        | ((current: WorkspaceTaskApiTask) => Partial<WorkspaceTaskApiTask>)
     ) => {
       const cacheTaskIds = Array.from(new Set([entityId, resolvedTaskId]));
 
       for (const cacheTaskId of cacheTaskIds) {
         queryClient.setQueryData(
           ['task', cacheTaskId],
-          (old: TaskWithBoardId | undefined) => {
+          (old: WorkspaceTaskApiTask | undefined) => {
             if (!old) return old;
             const updates =
               typeof updatesOrFn === 'function'
@@ -555,7 +552,7 @@ export function TaskMentionChip({
         ...(targetList?.status === 'done'
           ? { completed_at: now }
           : { completed_at: undefined }),
-      } as Partial<TaskWithBoardId>);
+      });
       return baseHandleMoveToList(targetListId);
     },
     [baseHandleMoveToList, syncTaskCache, availableLists]
@@ -667,16 +664,9 @@ export function TaskMentionChip({
     [menuGuardUntil]
   );
 
-  // Derive actual display number - prefer fetched task data over props
-  // This fixes legacy mentions where task name was stored instead of display number
-  const actualDisplayNumber = useMemo(() => {
-    // If we have task data with a valid display_number, use it
-    if (task?.display_number !== undefined && task.display_number !== null) {
-      return String(task.display_number);
-    }
-    // Otherwise use the prop (for new mentions, this should be correct)
-    return displayNumber;
-  }, [task?.display_number, displayNumber]);
+  const actualDisplayNumber = task
+    ? (getTaskMentionIdentifier(task) ?? displayNumber)
+    : displayNumber;
 
   // Derive actual task name - prefer fetched task data over subtitle prop
   const actualTaskName = useMemo(() => {
@@ -703,10 +693,7 @@ export function TaskMentionChip({
     resolvedMentionRef.current = task.id;
     onResolvedTaskMention?.({
       avatarUrl,
-      displayName:
-        typeof task.display_number === 'number'
-          ? String(task.display_number)
-          : actualDisplayNumber,
+      displayName: actualDisplayNumber,
       entityId: task.id,
       priority: task.priority ?? null,
       subtitle: task.name ?? subtitle ?? null,

@@ -118,11 +118,13 @@ export function TaskCommandSections({
         initialTask: {
           completed_at: task.completed_at ?? undefined,
           created_at: task.created_at ?? new Date().toISOString(),
+          display_number: task.display_number ?? undefined,
           end_date: task.end_date ?? null,
           id: task.id,
           list_id: task.list_id ?? '',
           name: task.name,
           priority: task.priority ?? null,
+          ticket_prefix: task.ticket_prefix,
         },
         taskWorkspacePersonal: isPersonalWorkspace,
         taskWsId: wsId,

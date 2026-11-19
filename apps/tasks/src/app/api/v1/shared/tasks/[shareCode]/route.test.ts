@@ -308,6 +308,10 @@ describe('shared task GET permission-shaped responses', () => {
 
     expect(response.status).toBe(200);
     expect(body.permission).toBe('view');
+    expect(body.task).toMatchObject({
+      display_number: 7,
+      ticket_prefix: 'TASK',
+    });
     expect(body.task.assignees).toEqual([
       expect.objectContaining({ display_name: 'Attached Person' }),
     ]);

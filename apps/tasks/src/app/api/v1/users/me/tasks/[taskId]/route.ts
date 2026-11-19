@@ -76,6 +76,7 @@ export async function GET(
           board:workspace_boards(
             id,
             ws_id,
+            ticket_prefix,
             workspace:workspaces(personal)
           )
         ),

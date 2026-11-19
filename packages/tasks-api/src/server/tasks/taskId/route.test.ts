@@ -85,6 +85,7 @@ describe('task detail route CLI app-session auth', () => {
             workspace_boards: {
               id: '00000000-0000-4000-8000-000000000456',
               name: 'Tasks',
+              ticket_prefix: 'F',
               workspace: {
                 personal: false,
               },
@@ -184,6 +185,8 @@ describe('task detail route CLI app-session auth', () => {
         id: taskId,
         name: 'Ensure finance operations work via Tuturuuu CLI',
         board_name: 'Tasks',
+        display_number: 123,
+        ticket_prefix: 'F',
         list_name: 'In Progress',
       },
       taskWorkspacePersonal: false,

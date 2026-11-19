@@ -17112,6 +17112,25 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_board_ticket_keys: {
+        Row: {
+          board_id: string;
+          ticket_prefix: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          board_id: string;
+          ticket_prefix: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          ticket_prefix?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       task_description_chunk_sessions: {
         Row: {
           created_at: string;
@@ -24997,6 +25016,16 @@ export type Database = {
           source_type: string;
           status: string;
           unmetered_credits: number;
+        }[];
+      };
+      list_board_task_ids_by_ticket_prefix: {
+        Args: {
+          p_display_number: number;
+          p_ticket_prefix: string;
+          p_workspace_ids: string[];
+        };
+        Returns: {
+          id: string;
         }[];
       };
       list_enabled_managed_cron_domains: {

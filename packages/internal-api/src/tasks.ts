@@ -4,7 +4,6 @@ export {
 } from './task-project-mutations';
 
 import { getCurrentUserTask } from './tasks-dashboard';
-
 export * from './tasks-dashboard';
 
 import type { ListWorkspaceTasksOptions } from './task-list-options';
@@ -319,7 +318,6 @@ export interface WorkspaceTaskApiTask extends Task {
   description_yjs_state?: number[] | null;
   board_id?: string | null;
   board_name?: string;
-  ticket_prefix?: string | null;
   deleted_at?: string;
   list_deleted?: boolean;
   source_workspace_id?: string | null;
@@ -431,6 +429,7 @@ export interface WorkspaceTaskSearchResult {
   completed_at?: string | null;
   created_at?: string | null;
   description?: string | null;
+  display_number?: number | null;
   end_date?: string | null;
   id: string;
   is_assigned_to_current_user?: boolean;
@@ -441,6 +440,7 @@ export interface WorkspaceTaskSearchResult {
   priority?: TaskPriority | null;
   similarity?: number;
   start_date?: string | null;
+  ticket_prefix?: string | null;
 }
 
 export interface SearchWorkspaceTasksPayload {

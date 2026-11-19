@@ -229,13 +229,28 @@ Additional coverage:
 `packages/utils/src/task-helper/sprints.test.ts` and
 `packages/internal-api/src/task-sprints.test.ts`.
 
-## Project ticket keys
+## Board and project ticket keys
 
-Task cards in Kanban and List, Timeline rows and task panel headers show
-`[KEY-N]` for the project the task joined first. Project-less tasks have no
-identifier prefix. My Tasks lists keep showing task names only, as they did
-before project keys. Document cards keep their existing omission of the badge.
-Personal project overlays do not replace the source task's ticket identity.
+Board keys identify tasks with a per-board number, for example `F-12`. Kanban
+cards, List and Timeline rows, and task details show the board identifier.
+Where a task has a project identifier, the identifier for the first project
+it joined appears first. My Tasks lists keep their name-only layout. Document
+cards omit the badges. Personal overlays retain the task's source identity.
+
+Edit **Board key** under **Board settings → Details** in Tasks or Web. Use 1–12
+ASCII letters, digits, underscores or hyphens, starting with a letter. Input is
+uppercased. Blank keys are generated from the board name. A workspace reserves
+each current or retired board key for its original board, including after board
+deletion. An eligible board cannot use a key reserved by another board or a
+project. The excluded legacy workspace retains its board keys and numbering.
+
+Each board advances its own task counter. Backfill assigns missing numbers in
+creation order with task ID as the tiebreaker and preserves assigned numbers,
+including for tasks in the recycle bin. Changing the board key keeps the task
+number and adds the old key to exact lookup. Existing UUID links and mentions
+remain tied to the same task. Search, mention resolution, and `ttr tasks get F-12`
+accept current and retired keys within the task's visibility scope. If a legacy
+key matched multiple tasks, use the current key or a task UUID.
 
 Each project receives a workspace-unique key from the first three ASCII letters
 or digits of its name, uppercased with leading digits removed. Names producing
@@ -262,12 +277,13 @@ membership keeps its number and join time. Removing and later rejoining a projec
 allocates a fresh number; removed numbers are never reused.
 
 Search accepts any linked project's current key and number, including a secondary
-project. Legacy board prefix/display-number lookups remain supported for every
-task, including project-less tasks. Historical project keys are not aliases after
-a key edit. Workspace and board visibility still apply before pagination/counts.
+project. Historical project keys are not aliases after a key edit. Workspace and
+board visibility still apply before pagination and counts.
 
 Regression coverage: `apps/database/supabase/tests/task-project-ticket-keys.sql`,
 `packages/utils/src/task-helper/shared.test.ts`,
+`packages/tasks-api/src/server/tasks/load-ticket-identifier-task-ids.test.ts`,
+`packages/tasks-ui/src/text-editor/__tests__/task-mention-chip.test.tsx`,
 `packages/utils/src/task-project-ticket-key.test.ts`,
 `packages/tasks-ui/src/tu-do/shared/__tests__/board-task-search.test.ts`,
 `packages/tasks-ui/src/tu-do/projects/projectId/components/project-ticket-key-field.test.tsx`

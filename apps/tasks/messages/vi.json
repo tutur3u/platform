@@ -14789,9 +14789,12 @@
     "select_or_create_list": "Chọn hoặc tạo danh sách",
     "settings": {
       "configure_description": "Cấu hình các cài đặt riêng của bảng.",
-      "ticket_prefix": "Tiền tố Phiếu",
-      "ticket_prefix_description": "Tiền tố ngắn cho ID công việc (VD: PROJ-123). Để trống nếu không cần tiền tố.",
-      "ticket_prefix_placeholder": "VD: PROJ"
+      "ticket_prefix": "Mã bảng",
+      "ticket_prefix_description": "Xuất hiện trong mã công việc như F-12. Để trống để tạo mã tự động. Mã tham chiếu cũ vẫn dùng được sau khi đổi.",
+      "ticket_prefix_invalid": "Nhập tối đa 12 chữ cái, chữ số, dấu gạch nối hoặc dấu gạch dưới, bắt đầu bằng chữ cái.",
+      "ticket_prefix_placeholder": "Ví dụ F",
+      "ticket_prefix_taken": "Mã này đã được giữ trong không gian làm việc.",
+      "ticket_prefix_unavailable": "Hiện chưa thể đổi mã bảng. Vui lòng thử lại sau."
     },
     "share": {
       "action": "Chia sẻ bảng",

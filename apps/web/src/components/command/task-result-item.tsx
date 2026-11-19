@@ -17,6 +17,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { CommandItem } from '@tuturuuu/ui/command';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
+import { getTaskBoardTicketLabel } from '@tuturuuu/utils/task-helper';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
@@ -51,6 +52,7 @@ export function TaskResultItem({
   wsId,
 }: TaskResultItemProps) {
   const t = useTranslations('command_palette');
+  const boardTicket = getTaskBoardTicketLabel(task);
   const overdue = isTaskOverdue(task, now);
   const dueSoon = isTaskDueSoon(task, now);
   const PriorityIcon = task.priority ? PRIORITY_ICON[task.priority] : null;
@@ -104,6 +106,11 @@ export function TaskResultItem({
               task.completed && 'text-muted-foreground line-through'
             )}
           >
+            {boardTicket && (
+              <span className="mr-1 font-mono text-muted-foreground">
+                [{boardTicket}]
+              </span>
+            )}
             {task.name}
           </span>
           {task.is_assigned_to_current_user ? (

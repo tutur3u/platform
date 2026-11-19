@@ -30,7 +30,8 @@ vi.mock('@tuturuuu/ui/hooks/use-workspace-members', () => ({
   useWorkspaceMembers: () => ({ data: [], isLoading: false }),
 }));
 
-vi.mock('@tuturuuu/utils/task-helper', () => ({
+vi.mock('@tuturuuu/utils/task-helper', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/utils/task-helper')>()),
   useBoardConfig: () => ({ data: undefined }),
   useWorkspaceLabels: () => ({ data: [], isLoading: false }),
 }));
@@ -155,7 +156,7 @@ describe('TaskMentionChip', () => {
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
 
-  it('repairs stale mention IDs by resolving the visible task identifier in the current board', async () => {
+  it('repairs a mention through its retained key and displays the current board key', async () => {
     const resolvedTask = {
       assignees: [],
       board_id: 'board-1',
@@ -165,7 +166,7 @@ describe('TaskMentionChip', () => {
       list_id: 'list-1',
       name: 'Complete Team Charter V1.0',
       projects: [],
-      ticket_prefix: null,
+      ticket_prefix: 'NEW',
     };
     const onResolvedTaskMention = vi.fn();
 
@@ -182,12 +183,14 @@ describe('TaskMentionChip', () => {
         taskWsId: 'ws-1',
       };
     });
-    mocks.listWorkspaceTasks.mockResolvedValue({ tasks: [resolvedTask] });
+    mocks.listWorkspaceTasks.mockImplementation(async (_, options) => ({
+      tasks: options.identifier === 'OLD-3' ? [resolvedTask] : [],
+    }));
 
     renderWithQueryClient(
       <TaskMentionChip
         entityId="stale-task-id"
-        displayNumber="3"
+        displayNumber="OLD-3"
         subtitle="Complete Team Charter V1.0"
         onResolvedTaskMention={onResolvedTaskMention}
       />
@@ -198,7 +201,7 @@ describe('TaskMentionChip', () => {
         'ws-1',
         expect.objectContaining({
           boardId: 'board-1',
-          identifier: '3',
+          identifier: 'OLD-3',
         })
       );
     });
@@ -206,7 +209,7 @@ describe('TaskMentionChip', () => {
     await waitFor(() => {
       expect(onResolvedTaskMention).toHaveBeenCalledWith(
         expect.objectContaining({
-          displayName: '3',
+          displayName: 'NEW-3',
           entityId: 'live-task-id',
           subtitle: 'Complete Team Charter V1.0',
         })
@@ -215,7 +218,7 @@ describe('TaskMentionChip', () => {
 
     expect(
       screen
-        .getByText('#3')
+        .getByText('#NEW-3')
         .closest('[data-mention="true"]')
         ?.getAttribute('data-entity-id')
     ).toBe('live-task-id');

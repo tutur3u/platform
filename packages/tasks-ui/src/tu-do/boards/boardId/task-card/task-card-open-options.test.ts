@@ -8,6 +8,7 @@ import {
   getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
+  getTaskCardTicketLabels,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
 
@@ -171,7 +172,33 @@ describe('getTaskCardHydratingOpenOptions', () => {
 });
 
 describe('getTaskCardTicketIdentifier', () => {
-  it('omits the identifier for project-less tasks', () => {
+  it('shows the board identifier alongside the preferred project identifier', () => {
+    const linked = {
+      ...task,
+      projects: [
+        {
+          id: 'p1',
+          name: 'Platform',
+          status: 'active',
+          ticket_key: 'PLA',
+          ticket_number: 2,
+        },
+      ],
+    };
+    expect(getTaskCardTicketLabels(linked, 'active', 'F')).toEqual([
+      'PLA-2',
+      'F-7',
+    ]);
+    expect(
+      getTaskCardTicketLabels(
+        { ...linked, source_workspace_id: 'source' },
+        'active',
+        'F'
+      )
+    ).toEqual(['PLA-2']);
+  });
+
+  it('uses the source board identity for project-less tasks', () => {
     expect(
       getTaskCardTicketIdentifier({
         boardConfig: undefined,
@@ -179,6 +206,9 @@ describe('getTaskCardTicketIdentifier', () => {
         task,
       })
     ).toBeNull();
+    expect(
+      getShownTaskTicketLabel({ ...task, ticket_prefix: 'F' }, 'active')
+    ).toBe('F-7');
   });
 
   it('uses project identity for both local and external cards', () => {

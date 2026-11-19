@@ -4,6 +4,10 @@ import {
   listWorkspaceTasks,
   type WorkspaceTaskApiTask,
 } from '@tuturuuu/internal-api/tasks';
+import {
+  getTaskBoardTicketLabel,
+  parseTaskIdentifierQuery,
+} from '@tuturuuu/utils/task-helper';
 
 const LOCALE_SEGMENTS = new Set(['en', 'vi']);
 
@@ -50,14 +54,12 @@ function normalizeIdentifier(value: string) {
   return value.trim().replace(/^#/, '');
 }
 
-function getTaskIdentifier(task: WorkspaceTaskApiTask) {
+export function getTaskMentionIdentifier(task: WorkspaceTaskApiTask) {
   if (typeof task.display_number !== 'number') {
     return null;
   }
 
-  return task.ticket_prefix
-    ? `${task.ticket_prefix}-${task.display_number}`
-    : String(task.display_number);
+  return getTaskBoardTicketLabel(task) ?? String(task.display_number);
 }
 
 function scoreTaskMentionCandidate(
@@ -65,7 +67,7 @@ function scoreTaskMentionCandidate(
   context: TaskMentionCandidateContext
 ) {
   const normalizedIdentifier = normalizeIdentifier(context.displayNumber);
-  const taskIdentifier = getTaskIdentifier(task);
+  const taskIdentifier = getTaskMentionIdentifier(task);
   let score = 0;
 
   if (
@@ -156,9 +158,17 @@ async function findTaskMentionCandidate({
   }
 
   const seenSearches = new Set<string>();
+  const prefersIdentifier = Boolean(
+    parseTaskIdentifierQuery(identifier)?.ticketPrefix
+  );
+  const identifierCandidates = new Map<string, WorkspaceTaskApiTask>();
   const candidatesById = new Map<string, WorkspaceTaskApiTask>();
+  const context = { displayNumber, routeBoardId, subtitle };
 
   for (const search of searches) {
+    if (!search.identifier && identifierCandidates.size > 0) {
+      break;
+    }
     const searchKey = JSON.stringify(search);
     if (seenSearches.has(searchKey)) {
       continue;
@@ -175,14 +185,15 @@ async function findTaskMentionCandidate({
 
     for (const task of tasks) {
       candidatesById.set(task.id, task);
+      if (prefersIdentifier && search.identifier) {
+        identifierCandidates.set(task.id, task);
+      }
     }
   }
 
-  return chooseTaskMentionCandidate([...candidatesById.values()], {
-    displayNumber,
-    routeBoardId,
-    subtitle,
-  });
+  const candidates =
+    identifierCandidates.size > 0 ? identifierCandidates : candidatesById;
+  return chooseTaskMentionCandidate([...candidates.values()], context);
 }
 
 function buildFallbackPayload({

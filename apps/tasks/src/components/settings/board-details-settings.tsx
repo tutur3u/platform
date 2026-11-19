@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   updateWorkspaceTaskBoard,
   type WorkspaceTaskBoardDetail,
@@ -22,7 +23,6 @@ function getBrowserInternalApiOptions() {
     : undefined;
 }
 
-/** Name, icon and default list. Task ID prefixes belong to projects. */
 export function BoardDetailsSettings({
   board,
   onRefresh,
@@ -36,6 +36,7 @@ export function BoardDetailsSettings({
   const queryClient = useQueryClient();
   const [boardName, setBoardName] = useState(board.name ?? '');
   const [boardIcon, setBoardIcon] = useState<string | null>(board.icon ?? null);
+  const [ticketPrefix, setTicketPrefix] = useState(board.ticket_prefix ?? '');
   const [defaultListId, setDefaultListId] = useState(
     board.default_list_id ?? '__none__'
   );
@@ -43,8 +44,9 @@ export function BoardDetailsSettings({
   useEffect(() => {
     setBoardName(board.name ?? '');
     setBoardIcon(board.icon ?? null);
+    setTicketPrefix(board.ticket_prefix ?? '');
     setDefaultListId(board.default_list_id ?? '__none__');
-  }, [board.default_list_id, board.icon, board.name]);
+  }, [board.default_list_id, board.icon, board.name, board.ticket_prefix]);
 
   const listOptions = useMemo(
     () => [
@@ -64,11 +66,15 @@ export function BoardDetailsSettings({
 
   const normalizedBoardName =
     boardName.trim() || t('ws-task-boards.unnamed_board');
+  const normalizedTicketPrefix = ticketPrefix.trim().toUpperCase() || null;
   const normalizedDefaultListId =
     defaultListId === '__none__' ? null : defaultListId;
+  const ticketPrefixChanged =
+    normalizedTicketPrefix !== (board.ticket_prefix ?? null);
   const isDirty =
     normalizedBoardName !== (board.name || t('ws-task-boards.unnamed_board')) ||
     (boardIcon ?? null) !== (board.icon ?? null) ||
+    ticketPrefixChanged ||
     normalizedDefaultListId !== (board.default_list_id ?? null);
 
   const updateBoardMutation = useMutation({
@@ -80,12 +86,27 @@ export function BoardDetailsSettings({
           default_list_id: normalizedDefaultListId,
           icon: boardIcon as WorkspaceTaskBoardDetail['icon'],
           name: normalizedBoardName,
+          ticket_prefix: ticketPrefixChanged
+            ? normalizedTicketPrefix
+            : undefined,
         },
         getBrowserInternalApiOptions()
       ),
     onSuccess: async () => {
       toast.success(t('ws-task-boards.toast.update_success'));
       await Promise.all([
+        ...(ticketPrefixChanged
+          ? [
+              queryClient.invalidateQueries({ queryKey: ['task-detail'] }),
+              queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
+              queryClient.invalidateQueries({
+                queryKey: ['tasks-full', board.id],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: ['task-list-counts', board.id],
+              }),
+            ]
+          : []),
         queryClient.invalidateQueries({
           queryKey: ['task-board-settings', wsId, board.id],
         }),
@@ -95,10 +116,27 @@ export function BoardDetailsSettings({
         queryClient.invalidateQueries({
           queryKey: ['boards', wsId],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['board-config', wsId, board.id],
+        }),
       ]);
       onRefresh();
     },
     onError: (error) => {
+      if (error instanceof InternalApiError && 'code' in error) {
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_INVALID') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_invalid'));
+          return;
+        }
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_TAKEN') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_taken'));
+          return;
+        }
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_UNAVAILABLE') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_unavailable'));
+          return;
+        }
+      }
       toast.error(t('ws-task-boards.errors.unexpected'), {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -147,6 +185,25 @@ export function BoardDetailsSettings({
           onChange={(event) => setBoardName(event.target.value)}
           placeholder={t('ws-task-boards.unnamed_board')}
           value={boardName}
+        />
+      </SettingItemTab>
+      <SettingItemTab
+        controlWidth="xl"
+        description={t('ws-task-boards.settings.ticket_prefix_description')}
+        title={
+          <label htmlFor="board-ticket-prefix">
+            {t('ws-task-boards.settings.ticket_prefix')}
+          </label>
+        }
+      >
+        <Input
+          autoComplete="off"
+          disabled={updateBoardMutation.isPending}
+          id="board-ticket-prefix"
+          maxLength={12}
+          onChange={(event) => setTicketPrefix(event.target.value)}
+          placeholder={t('ws-task-boards.settings.ticket_prefix_placeholder')}
+          value={ticketPrefix}
         />
       </SettingItemTab>
       <SettingItemTab

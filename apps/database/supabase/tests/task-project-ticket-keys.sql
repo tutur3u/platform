@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(54);
+select plan(68);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -167,10 +167,16 @@ select throws_ok($$insert into public.task_project_tasks (project_id, task_id)
   'a member session cannot link a task directly; the invoker allocator needs server-only task_projects access');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
--- Project keys avoid board ticket prefixes in the same workspace. A board
--- without a prefix shows TASK-N, so TASK is taken too.
+-- Project keys avoid current and historical board keys in the same workspace.
 insert into public.workspace_boards (id, ws_id, name, creator_id, ticket_prefix) values
-  ('00000000-0000-4000-8000-0000000e6022', '00000000-0000-4000-8000-0000000e6010', 'Prefixed Board', '00000000-0000-4000-8000-0000000e6001', ' brd ');
+  ('00000000-0000-4000-8000-0000000e6022', '00000000-0000-4000-8000-0000000e6010', 'Prefixed Board', '00000000-0000-4000-8000-0000000e6001', ' brd '),
+  ('00000000-0000-4000-8000-0000000e6023', '00000000-0000-4000-8000-0000000e6010', 'Other Board', '00000000-0000-4000-8000-0000000e6001', 'TASK');
+select is((select ticket_prefix from public.workspace_boards where id = '00000000-0000-4000-8000-0000000e6022'), 'BRD', 'explicit board keys are normalized');
+insert into public.tasks (id, name, list_id) values
+  ('00000000-0000-4000-8000-0000000e6107', 'First board task', (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e6022' and status = 'active' limit 1)),
+  ('00000000-0000-4000-8000-0000000e6108', 'Second board task', (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e6022' and status = 'active' limit 1));
+select is((select display_number from public.tasks where id = '00000000-0000-4000-8000-0000000e6107'), 1, 'a board starts at one');
+select is((select display_number from public.tasks where id = '00000000-0000-4000-8000-0000000e6108'), 2, 'board task numbers increase');
 insert into public.task_projects (id, ws_id, name, creator_id) values
   ('00000000-0000-4000-8000-0000000e6034', '00000000-0000-4000-8000-0000000e6010', 'Brd Launch', '00000000-0000-4000-8000-0000000e6001'),
   ('00000000-0000-4000-8000-0000000e6035', '00000000-0000-4000-8000-0000000e6010', 'Task Force', '00000000-0000-4000-8000-0000000e6001');
@@ -182,7 +188,7 @@ select throws_ok($$insert into public.task_projects (ws_id, name, creator_id, ti
 select throws_ok($$update public.task_projects set ticket_key = 'BRD' where id = '00000000-0000-4000-8000-0000000e6031'$$,
   '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'an edited key cannot equal a board prefix');
 select throws_ok($$update public.task_projects set ticket_key = 'TASK' where id = '00000000-0000-4000-8000-0000000e6031'$$,
-  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'TASK is taken while a board has no prefix');
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'TASK is reserved for the board that uses it');
 select lives_ok($$update public.task_projects set name = 'Platform Crew' where id = '00000000-0000-4000-8000-0000000e6031'$$,
   'edits that keep the key skip the board prefix check');
 select is((select ticket_key from public.task_projects where id = '00000000-0000-4000-8000-0000000e6031'), 'PLA2', 'the existing key stays');
@@ -196,8 +202,25 @@ select throws_ok($$insert into public.workspace_boards (ws_id, name, creator_id,
   '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'a new board cannot take a project key as its prefix');
 select lives_ok($$update public.workspace_boards set ticket_prefix = 'NEWP' where id = '00000000-0000-4000-8000-0000000e6022'$$,
   'a free prefix is accepted');
+select results_eq(
+  $$select task_id from private.list_task_source_filter_ids(
+    p_actor_id := '00000000-0000-4000-8000-0000000e6001', p_workspace_id := '00000000-0000-4000-8000-0000000e6010',
+    p_ticket_prefix := 'BRD', p_display_number := 1)$$,
+  $$values ('00000000-0000-4000-8000-0000000e6107'::uuid)$$, 'an old board key resolves the same task'
+);
+select is((select sum(total_count)::integer from private.count_task_source_filter_lists(
+    p_actor_id := '00000000-0000-4000-8000-0000000e6001', p_workspace_id := '00000000-0000-4000-8000-0000000e6010',
+    p_ticket_prefix := 'NEWP', p_display_number := 1)), 1, 'the current board key has the same task number');
+select is((select sum(total_count)::integer from private.count_task_source_filter_lists(
+    p_actor_id := '00000000-0000-4000-8000-0000000e6001', p_workspace_id := '00000000-0000-4000-8000-0000000e6010',
+    p_ticket_prefix := 'BRD', p_display_number := 1)), 1, 'retained board keys are counted');
+select throws_ok($$update public.workspace_boards set ticket_prefix = 'BRD' where id = '00000000-0000-4000-8000-0000000e6023'$$,
+  '23505', 'TASK_BOARD_TICKET_PREFIX_RESERVED', 'another board cannot take the retired key');
+select throws_ok($$update public.task_projects set ticket_key = 'BRD' where id = '00000000-0000-4000-8000-0000000e6031'$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'a project cannot take the retired key');
 select lives_ok($$update public.workspace_boards set ticket_prefix = null where id = '00000000-0000-4000-8000-0000000e6022'$$,
-  'clearing a prefix is not checked');
+  'clearing a prefix restores a generated key');
+select is((select ticket_prefix from public.workspace_boards where id = '00000000-0000-4000-8000-0000000e6022'), 'PRE', 'clearing generates the board name key');
 -- The excluded workspace is left alone: its boards may share a key.
 insert into public.task_projects (id, ws_id, name, creator_id, ticket_key) values
   ('00000000-0000-4000-8000-0000000e6036', '42529372-c669-4833-bb32-2cab1f4ffd83', 'Legacy Keyed', '00000000-0000-4000-8000-0000000e6001', 'LEGK');
@@ -205,6 +228,13 @@ select lives_ok($$update public.workspace_boards set ticket_prefix = 'LEGK' wher
   'the excluded workspace skips the board prefix check');
 select lives_ok($$update public.workspace_boards set name = 'Legacy Board Renamed' where id = '00000000-0000-4000-8000-0000000e6021'$$,
   'edits that keep the prefix skip the check');
+insert into public.workspace_boards (id, ws_id, name, creator_id, ticket_prefix) values
+  ('00000000-0000-4000-8000-0000000e6024', '42529372-c669-4833-bb32-2cab1f4ffd83', 'Legacy Board Two', '00000000-0000-4000-8000-0000000e6001', 'LEGACY');
+select throws_ok($$insert into public.task_projects (ws_id, name, creator_id, ticket_key) values
+  ('42529372-c669-4833-bb32-2cab1f4ffd83', 'New Legacy Project', '00000000-0000-4000-8000-0000000e6001', 'LEGACY')$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'project creation still avoids board keys in the excluded workspace');
+select throws_ok($$update public.task_projects set ticket_key = 'LEGACY' where id = '00000000-0000-4000-8000-0000000e6036'$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'project key changes still avoid board keys in the excluded workspace');
 -- End-user board writes fail closed. task_projects is server-only: like every
 -- public table with a description column, it has no end-user policies or
 -- grants (20260312113000_lock_description_tables_to_server_apis.sql), so the
@@ -226,16 +256,27 @@ set local role authenticated;
 set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6004"}';
 select throws_ok($$select count(*) from public.task_projects$$,
   '42501', 'permission denied for table task_projects', 'members cannot read task_projects');
-with written as (
-  update public.workspace_boards set ticket_prefix = null
-  where id = '00000000-0000-4000-8000-0000000e6022' returning id
-)
-select is((select count(*)::integer from written), 1, 'a member prefix write reaches the board when it skips the check');
+select throws_ok($$update public.workspace_boards set ticket_prefix = null where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '42501', null, 'regenerating a board key also checks the reserved namespace');
 select throws_ok($$update public.workspace_boards set ticket_prefix = 'MEMBR' where id = '00000000-0000-4000-8000-0000000e6022'$$,
   '42501', 'permission denied for table task_projects', 'a free member prefix fails closed');
 select throws_ok($$update public.workspace_boards set ticket_prefix = 'CORE' where id = '00000000-0000-4000-8000-0000000e6022'$$,
   '42501', 'permission denied for table task_projects', 'a colliding member prefix fails closed');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
+select results_eq(
+  $$select id from private.list_board_task_ids_by_ticket_prefix(
+    array['00000000-0000-4000-8000-0000000e6010']::uuid[], 'BRD', 1)$$,
+  $$values ('00000000-0000-4000-8000-0000000e6107'::uuid)$$,
+  'retained keys resolve through the placement and guest lookup'
+);
+select is_empty(
+  $$select id from private.list_board_task_ids_by_ticket_prefix(
+    array['42529372-c669-4833-bb32-2cab1f4ffd83']::uuid[], 'BRD', 1)$$,
+  'retained keys cannot resolve outside the supplied tenant scope'
+);
+select ok(not has_function_privilege('authenticated',
+  'private.list_board_task_ids_by_ticket_prefix(uuid[],text,integer)', 'EXECUTE'),
+  'the board lookup is server-only');
 select * from finish();
 rollback;

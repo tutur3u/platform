@@ -117,6 +117,29 @@ describe('useBoardTaskSource', () => {
     expect(mocks.copy).not.toHaveBeenCalled();
   });
 
+  it('finds a task through a retained board key even when the loaded board shows its current key', async () => {
+    const renamedBoardTask = {
+      ...shown,
+      display_number: 12,
+      ticket_prefix: 'F',
+    };
+    mocks.pagination = { 'list-1': loaded, 'list-2': loaded };
+    mocks.copy.mockResolvedValue([renamedBoardTask]);
+    mocks.counts.mockResolvedValue([{ count: 1, list_id: 'list-1' }]);
+    const { result } = renderSource({
+      filters: { searchQuery: 'OLD-12' },
+      tasks: [renamedBoardTask, other],
+    });
+
+    await waitFor(() =>
+      expect(result.current.sourceTasks).toEqual([renamedBoardTask])
+    );
+    expect(mocks.copy).toHaveBeenCalledWith(
+      'ws-1',
+      expect.objectContaining({ boardId: 'board-1', q: 'OLD-12' })
+    );
+  });
+
   it('loads the copy while a personal board has external pages to go', async () => {
     const stagingId = getPersonalExternalStagingListId('board-1');
     const external = task('external-1', stagingId, 'External timeline');

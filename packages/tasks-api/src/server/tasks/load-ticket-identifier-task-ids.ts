@@ -1,5 +1,40 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
+type TicketIdentifier = { displayNumber: number; ticketPrefix: string };
+
+async function loadBoardTicketPage(
+  client: TypedSupabaseClient,
+  workspaceIds: string[],
+  identifier: TicketIdentifier,
+  offset: number
+) {
+  const result = await client
+    .schema('private')
+    .rpc('list_board_task_ids_by_ticket_prefix', {
+      p_workspace_ids: workspaceIds,
+      p_ticket_prefix: identifier.ticketPrefix,
+      p_display_number: identifier.displayNumber,
+    })
+    .order('id')
+    .range(offset, offset + 199);
+
+  // The web deploy and database migration have separate rollout gates.
+  if (result.error?.code !== 'PGRST202' && result.error?.code !== '42883') {
+    return result;
+  }
+
+  return client
+    .from('tasks')
+    .select(
+      'id, list:task_lists!inner(board:workspace_boards!inner(ws_id, ticket_prefix))'
+    )
+    .eq('display_number', identifier.displayNumber)
+    .eq('list.board.ticket_prefix', identifier.ticketPrefix)
+    .in('list.board.ws_id', workspaceIds)
+    .order('id')
+    .range(offset, offset + 199);
+}
+
 /** Resolve exact identifier candidates before pagination in personal-placement queries.
  * Call only after admitting the requested workspace. The caller still applies
  * board, assignment, placement and source-workspace visibility checks to each ID.
@@ -8,7 +43,7 @@ export async function loadTicketIdentifierTaskIds(
   client: TypedSupabaseClient,
   userId: string,
   workspaceId: string,
-  identifier: { displayNumber: number; ticketPrefix: string }
+  identifier: TicketIdentifier
 ): Promise<string[]> {
   const { data: memberships, error } = await client
     .from('workspace_members')
@@ -26,9 +61,9 @@ export async function loadTicketIdentifierTaskIds(
     const chunk = workspaceIds.slice(index, index + 100);
     for (const kind of ['project', 'board'] as const) {
       for (let offset = 0; ; offset += 200) {
-        const query =
+        const { data, error: lookupError } =
           kind === 'project'
-            ? client
+            ? await client
                 .from('task_project_tasks')
                 .select(
                   'task_id, project:task_projects!inner(ws_id, ticket_key)'
@@ -37,19 +72,8 @@ export async function loadTicketIdentifierTaskIds(
                 .eq('project.ticket_key', identifier.ticketPrefix)
                 .in('project.ws_id', chunk)
                 .order('task_id')
-            : client
-                .from('tasks')
-                .select(
-                  'id, list:task_lists!inner(board:workspace_boards!inner(ws_id, ticket_prefix))'
-                )
-                .eq('display_number', identifier.displayNumber)
-                .eq('list.board.ticket_prefix', identifier.ticketPrefix)
-                .in('list.board.ws_id', chunk)
-                .order('id');
-        const { data, error: lookupError } = await query.range(
-          offset,
-          offset + 199
-        );
+                .range(offset, offset + 199)
+            : await loadBoardTicketPage(client, chunk, identifier, offset);
         if (lookupError)
           throw new Error('TICKET_IDENTIFIER_LOOKUP_FAILED', {
             cause: lookupError,

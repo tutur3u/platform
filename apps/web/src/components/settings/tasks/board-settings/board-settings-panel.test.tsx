@@ -292,9 +292,9 @@ describe('BoardSettingsPanel', () => {
     expect(
       screen.getByText('ws-task-boards.icon_label').parentElement
     ).toHaveTextContent('icon-picker:ListTodo');
-    expect(screen.getByLabelText('settings.tasks.ticket_prefix')).toHaveValue(
-      'RD'
-    );
+    expect(
+      screen.getByLabelText('ws-task-boards.settings.ticket_prefix')
+    ).toHaveValue('RD');
     expect(screen.queryByTestId('task-board-form')).not.toBeInTheDocument();
     expect(screen.queryByText('ws-task-boards.create')).not.toBeInTheDocument();
   });

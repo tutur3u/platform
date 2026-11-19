@@ -32,22 +32,25 @@ describe('CLI selection', () => {
     expect(client.tasks.list).not.toHaveBeenCalled();
   });
 
-  it('resolves prefixed task identifiers without the saved list scope', async () => {
-    const client = createClient([{ id: 'task-1' }]);
+  it.each(['F-12', 'VHP-12'])(
+    'resolves %s without the saved board or list scope',
+    async (identifier) => {
+      const client = createClient([{ id: 'task-1' }]);
 
-    await expect(
-      selectTaskId(client, config, 'personal', {}, true, 'VHP-12')
-    ).resolves.toEqual({ config, taskId: 'task-1' });
-    expect(client.tasks.list).toHaveBeenCalledWith('personal', {
-      boardId: undefined,
-      completed: undefined,
-      closed: undefined,
-      identifier: 'VHP-12',
-      includeDeleted: false,
-      limit: 2,
-      listId: undefined,
-    });
-  });
+      await expect(
+        selectTaskId(client, config, 'personal', {}, true, identifier)
+      ).resolves.toEqual({ config, taskId: 'task-1' });
+      expect(client.tasks.list).toHaveBeenCalledWith('personal', {
+        boardId: undefined,
+        completed: undefined,
+        closed: undefined,
+        identifier,
+        includeDeleted: false,
+        limit: 2,
+        listId: undefined,
+      });
+    }
+  );
 
   it('keeps explicit list scope when resolving a task identifier', async () => {
     const client = createClient([{ id: 'task-1' }]);

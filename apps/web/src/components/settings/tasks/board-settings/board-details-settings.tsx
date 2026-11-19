@@ -2,9 +2,11 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save } from '@tuturuuu/icons';
+import { InternalApiError } from '@tuturuuu/internal-api/client';
 import {
   updateWorkspaceTaskBoard,
   type WorkspaceTaskBoardDetail,
+  type WorkspaceTaskListSummary,
 } from '@tuturuuu/internal-api/tasks';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
@@ -63,8 +65,11 @@ export function BoardDetailsSettings({
     board.ticket_prefix,
   ]);
 
-  const activeLists = useMemo(
-    () => (board.task_lists ?? []).filter((list) => !list.deleted),
+  const activeLists = useMemo<WorkspaceTaskListSummary[]>(
+    () =>
+      (board.task_lists ?? []).filter(
+        (list: WorkspaceTaskListSummary) => !list.deleted
+      ),
     [board.task_lists]
   );
 
@@ -126,10 +131,12 @@ export function BoardDetailsSettings({
     defaultDoneListId === NO_DEFAULT_LIST ? null : defaultDoneListId;
   const normalizedDefaultClosedListId =
     defaultClosedListId === NO_DEFAULT_LIST ? null : defaultClosedListId;
+  const ticketPrefixChanged =
+    normalizedTicketPrefix !== (board.ticket_prefix ?? null);
   const isDirty =
     normalizedBoardName !== (board.name || t('ws-task-boards.unnamed_board')) ||
     (boardIcon ?? null) !== (board.icon ?? null) ||
-    normalizedTicketPrefix !== (board.ticket_prefix ?? null) ||
+    ticketPrefixChanged ||
     normalizedDefaultListId !== (board.default_list_id ?? null) ||
     normalizedDefaultDoneListId !== (board.default_done_list_id ?? null) ||
     normalizedDefaultClosedListId !== (board.default_closed_list_id ?? null);
@@ -145,13 +152,27 @@ export function BoardDetailsSettings({
           default_closed_list_id: normalizedDefaultClosedListId,
           icon: boardIcon as WorkspaceTaskBoardDetail['icon'],
           name: normalizedBoardName,
-          ticket_prefix: normalizedTicketPrefix,
+          ticket_prefix: ticketPrefixChanged
+            ? normalizedTicketPrefix
+            : undefined,
         },
         getBrowserInternalApiOptions()
       ),
     onSuccess: async () => {
       toast.success(t('settings.tasks.board_preferences_saved'));
       await Promise.all([
+        ...(ticketPrefixChanged
+          ? [
+              queryClient.invalidateQueries({ queryKey: ['task-detail'] }),
+              queryClient.invalidateQueries({ queryKey: ['tasks', board.id] }),
+              queryClient.invalidateQueries({
+                queryKey: ['tasks-full', board.id],
+              }),
+              queryClient.invalidateQueries({
+                queryKey: ['task-list-counts', board.id],
+              }),
+            ]
+          : []),
         queryClient.invalidateQueries({
           queryKey: ['task-board', wsId, board.id],
         }),
@@ -171,6 +192,20 @@ export function BoardDetailsSettings({
       onRefresh();
     },
     onError: (error) => {
+      if (error instanceof InternalApiError && 'code' in error) {
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_INVALID') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_invalid'));
+          return;
+        }
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_TAKEN') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_taken'));
+          return;
+        }
+        if (error.code === 'TASK_BOARD_TICKET_PREFIX_UNAVAILABLE') {
+          toast.error(t('ws-task-boards.settings.ticket_prefix_unavailable'));
+          return;
+        }
+      }
       toast.error(t('settings.tasks.board_preferences_update_failed'), {
         description: error instanceof Error ? error.message : undefined,
       });
@@ -227,15 +262,26 @@ export function BoardDetailsSettings({
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-2">
             <Label htmlFor="board-ticket-prefix">
-              {t('settings.tasks.ticket_prefix')}
+              {t('ws-task-boards.settings.ticket_prefix')}
             </Label>
             <Input
+              aria-describedby="board-ticket-prefix-description"
+              autoComplete="off"
+              disabled={updateBoardMutation.isPending}
               id="board-ticket-prefix"
               maxLength={12}
               onChange={(event) => setTicketPrefix(event.target.value)}
-              placeholder={t('settings.tasks.ticket_prefix_placeholder')}
+              placeholder={t(
+                'ws-task-boards.settings.ticket_prefix_placeholder'
+              )}
               value={ticketPrefix}
             />
+            <p
+              className="text-muted-foreground text-sm"
+              id="board-ticket-prefix-description"
+            >
+              {t('ws-task-boards.settings.ticket_prefix_description')}
+            </p>
           </div>
 
           <div className="space-y-2">

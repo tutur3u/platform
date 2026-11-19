@@ -3,6 +3,7 @@ import type {
   WorkspaceTaskBoardWithLists,
 } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { parseTaskIdentifierQuery } from '@tuturuuu/utils/task-helper';
 
 export type TaskCommandStatus =
   | 'all'
@@ -65,10 +66,15 @@ export function buildTaskCommandListOptions(
   parsed: ParsedTaskCommandQuery,
   now = new Date()
 ): ListWorkspaceTasksOptions {
+  const isTicket = Boolean(
+    parseTaskIdentifierQuery(parsed.query)?.ticketPrefix
+  );
   const options: ListWorkspaceTasksOptions = {
     limit: parsed.query || parsed.tokens.length ? 40 : 12,
     priorities: parsed.priority ? [parsed.priority] : undefined,
-    q: parsed.query || undefined,
+    ...(isTicket
+      ? { identifier: parsed.query }
+      : { q: parsed.query || undefined }),
     sortBy: parsed.status === 'overdue' ? 'due-date-asc' : 'created-date-desc',
   };
 

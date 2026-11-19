@@ -300,6 +300,7 @@ export async function GET(
       closed_at: taskSource.closed_at ?? undefined,
       estimation_points: taskSource.estimation_points,
       display_number: taskSource.display_number ?? 0,
+      ticket_prefix: boardSource.ticket_prefix,
       list_id: taskSource.list_id ?? listSource.id,
       assignees:
         assigneeResult.data?.flatMap((a) =>

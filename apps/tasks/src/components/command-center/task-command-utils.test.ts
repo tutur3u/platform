@@ -43,6 +43,17 @@ describe('task command query parsing', () => {
     });
   });
 
+  it('sends a board identifier through the exact lookup with task filters', () => {
+    expect(
+      buildTaskCommandListOptions(parseTaskCommandQuery('F-12 priority:high'))
+    ).toEqual({
+      identifier: 'F-12',
+      limit: 40,
+      priorities: ['high'],
+      sortBy: 'created-date-desc',
+    });
+  });
+
   it('defaults the launcher to a compact list of recent open work', () => {
     expect(
       buildTaskCommandListOptions(parseTaskCommandQuery(''))

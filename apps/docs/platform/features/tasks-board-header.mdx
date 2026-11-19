@@ -72,8 +72,9 @@ tasks column) is already loaded; every later filter,
 search or sort change, and the per-list counts that hide empty lists, come from
 that copy with no request. Hovering over, focusing, or opening Filters starts loading the copy early. While it loads, the loaded matches show and lists stop loading
 more pages. Search here also matches labels, projects and assignee names.
-Tasks from other boards (another source scope) are still filtered on the
-server, and the previous result stays on screen until the next one arrives.
+Searches for full identifiers such as `F-12` use the server to resolve current
+and retired keys. Tasks from other boards (another source scope) are also
+filtered on the server. The last result stays visible until the next arrives.
 A filtered list's count is its matches, not the unfiltered list total.
 
 ## More and button styles

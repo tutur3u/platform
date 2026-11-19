@@ -1,6 +1,6 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { getTaskTicketLabel } from '@tuturuuu/utils/task-helper';
+import { getTaskDisplayTicketLabel } from '@tuturuuu/utils/task-helper';
 import type { useTranslations } from 'next-intl';
 import type { buildTimelineModel } from './timeline-utils';
 
@@ -93,7 +93,7 @@ export function getListName(
 
 export function getTaskEyebrow(task: Task) {
   const sourceWorkspace = task.source_workspace_name;
-  const identifier = getTaskTicketLabel(task);
+  const identifier = getTaskDisplayTicketLabel(task);
 
   return [sourceWorkspace, identifier].filter(Boolean).join(' ');
 }

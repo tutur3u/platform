@@ -5,6 +5,7 @@ import {
   searchWorkspaceTasks,
   type WorkspaceTaskSearchResult,
 } from '@tuturuuu/internal-api/tasks';
+import { parseTaskIdentifierQuery } from '@tuturuuu/utils/task-helper';
 import * as React from 'react';
 import type {
   TaskPriorityFilter,
@@ -110,11 +111,12 @@ export function buildCommandTaskListOptions(
   controls: TaskResultControls,
   now = new Date()
 ): ListWorkspaceTasksOptions {
+  const isTicket = Boolean(parseTaskIdentifierQuery(query)?.ticketPrefix);
   return {
     ...getStatusOptions(controls.status, now),
     limit: query ? 40 : 30,
     priorities: controls.priority === 'all' ? undefined : [controls.priority],
-    q: query || undefined,
+    ...(isTicket ? { identifier: query } : { q: query || undefined }),
     sortBy: getServerSort(controls.sort),
   };
 }
@@ -126,7 +128,11 @@ export function shouldUseFilteredTaskList(
   sort: TaskSort
 ): boolean {
   return Boolean(
-    query && (status !== 'all' || priority !== 'all' || sort !== 'relevance')
+    query &&
+    (parseTaskIdentifierQuery(query)?.ticketPrefix ||
+      status !== 'all' ||
+      priority !== 'all' ||
+      sort !== 'relevance')
   );
 }
 

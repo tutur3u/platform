@@ -7,6 +7,7 @@ import {
   searchWorkspaceTasks,
   type WorkspaceTaskSearchResult,
 } from '@tuturuuu/internal-api/tasks';
+import { parseTaskIdentifierQuery } from '@tuturuuu/utils/task-helper';
 import { useEffect, useMemo, useState } from 'react';
 import {
   buildTaskCommandListOptions,
@@ -36,7 +37,11 @@ export function useTaskCommandData({
     () => parseTaskCommandQuery(deferredQuery),
     [deferredQuery]
   );
-  const usesFilteredList = Boolean(parsed.tokens.length || !parsed.query);
+  const usesFilteredList = Boolean(
+    parsed.tokens.length ||
+    !parsed.query ||
+    parseTaskIdentifierQuery(parsed.query)?.ticketPrefix
+  );
   const taskQuery = useQuery({
     enabled,
     queryFn: async () => {

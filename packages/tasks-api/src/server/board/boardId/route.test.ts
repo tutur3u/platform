@@ -5,6 +5,7 @@ const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const resolveAuthenticatedSessionUserMock = vi.fn();
+const ticketKeyCatalogMock = vi.fn();
 const taskListMaybeSingleMock = vi.fn();
 const updateEqBoardMock = vi.fn();
 const updateEqWorkspaceMock = vi.fn();
@@ -57,7 +58,15 @@ describe('task board boardId route PUT', () => {
     updateEqWorkspaceMock.mockResolvedValue({ error: null });
     updateEqBoardMock.mockReturnValue({ eq: updateEqWorkspaceMock });
     updateMock.mockReturnValue({ eq: updateEqBoardMock });
+    ticketKeyCatalogMock.mockResolvedValue({ error: null });
     createAdminClientMock.mockResolvedValue({
+      schema: vi.fn(() => ({
+        from: vi.fn(() => ({
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({ limit: ticketKeyCatalogMock })),
+          })),
+        })),
+      })),
       from: vi.fn((table: string) => {
         if (table === 'workspace_boards') {
           return {
@@ -80,6 +89,50 @@ describe('task board boardId route PUT', () => {
       }),
     });
   });
+
+  it('keeps the existing key when the database cannot reserve its historical reference', async () => {
+    ticketKeyCatalogMock.mockResolvedValueOnce({ error: { code: 'PGRST205' } });
+    const boardId = '00000000-0000-4000-8000-000000000456';
+    const response = await PUT(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/task-boards/${boardId}`,
+        {
+          method: 'PUT',
+          body: JSON.stringify({ ticket_prefix: 'F' }),
+        }
+      ),
+      { params: Promise.resolve({ boardId, wsId: 'ws-1' }) }
+    );
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toMatchObject({
+      code: 'TASK_BOARD_TICKET_PREFIX_UNAVAILABLE',
+    });
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it.each(['id', 'ws_id', 'creator_id', 'next_task_number'])(
+    'rejects immutable field %s before updating a workspace board',
+    async (field) => {
+      const boardId = '00000000-0000-4000-8000-000000000456';
+      const response = await PUT(
+        new NextRequest(
+          `http://localhost/api/v1/workspaces/ws-1/task-boards/${boardId}`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({ ticket_prefix: 'F', [field]: null }),
+          }
+        ),
+        { params: Promise.resolve({ boardId, wsId: 'ws-1' }) }
+      );
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Invalid board update',
+      });
+      expect(createAdminClientMock).not.toHaveBeenCalled();
+      expect(updateMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('fails visibly when a default-list-only update cannot be persisted', async () => {
     updateEqWorkspaceMock.mockResolvedValueOnce({
@@ -296,34 +349,41 @@ describe('task board boardId route PUT', () => {
     });
   });
 
-  it('returns a stable error when the ticket prefix is a project key', async () => {
-    updateEqWorkspaceMock.mockResolvedValueOnce({
-      error: { code: '23505', message: 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY' },
-    });
+  it.each([
+    'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY',
+    'TASK_BOARD_TICKET_PREFIX_RESERVED',
+  ])(
+    'returns a stable error for a reserved board key (%s)',
+    async (message) => {
+      updateEqWorkspaceMock.mockResolvedValueOnce({
+        error: { code: '23505', message },
+      });
 
-    const response = await PUT(
-      new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+      const response = await PUT(
+        new NextRequest(
+          'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+          {
+            method: 'PUT',
+            body: JSON.stringify({ ticket_prefix: ' pla ' }),
+            headers: { 'Content-Type': 'application/json' },
+          }
+        ),
         {
-          method: 'PUT',
-          body: JSON.stringify({ ticket_prefix: 'PLA' }),
-          headers: { 'Content-Type': 'application/json' },
+          params: Promise.resolve({
+            wsId: 'ws-1',
+            boardId: '00000000-0000-4000-8000-000000000456',
+          }),
         }
-      ),
-      {
-        params: Promise.resolve({
-          wsId: 'ws-1',
-          boardId: '00000000-0000-4000-8000-000000000456',
-        }),
-      }
-    );
+      );
 
-    expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toEqual({
-      code: 'TASK_BOARD_TICKET_PREFIX_TAKEN',
-      error: 'Ticket prefix is already used by a project in this workspace',
-    });
-  });
+      expect(response.status).toBe(409);
+      await expect(response.json()).resolves.toEqual({
+        code: 'TASK_BOARD_TICKET_PREFIX_TAKEN',
+        error: 'This board key is reserved in this workspace',
+      });
+      expect(updateMock).toHaveBeenCalledWith({ ticket_prefix: 'PLA' });
+    }
+  );
 
   it('maps mobile archive, restore, and soft-delete flags onto board metadata', async () => {
     const response = await PUT(
