@@ -202,13 +202,18 @@ class FinanceDayHeader extends StatelessWidget {
           ),
           if (net.isNotEmpty && visible)
             Flexible(
-              child: Text(
-                net,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: tokens.typography.numeric.copyWith(
-                  color: tokens.colorScheme.mutedForeground,
-                  fontWeight: FontWeight.w600,
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: Text(
+                  net,
+                  key: const ValueKey('finance-day-net'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tokens.typography.numeric.copyWith(
+                    color: tokens.colorScheme.mutedForeground,
+                    fontWeight: FontWeight.w600,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
                 ),
               ),
             ),

@@ -5,6 +5,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/widgets/finance_flow_summary.dart';
+import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_period_bar.dart';
 import 'package:mobile/features/finance/widgets/finance_period_bars.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
@@ -125,7 +126,8 @@ class WalletDetailBody extends StatelessWidget {
       income: income,
       expense: expense,
       currency: currency,
-      chart: complete && rows.isNotEmpty
+      // The chart would reveal relative sizes, so it hides with amounts.
+      chart: complete && rows.isNotEmpty && financeAmountsVisible(context)
           ? FinancePeriodBars(
               income: buckets.income,
               expense: buckets.expense,

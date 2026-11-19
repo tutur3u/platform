@@ -1,0 +1,72 @@
+---
+title: Native mobile Finance
+description: Create-first actions, period views, empty states, and hidden amounts in mobile Finance.
+updatedAt: "2026-11-19"
+audience: users
+---
+
+## Primary action
+
+Each Finance list puts its most-used action in the floating dock's priority
+slot, because people add records far more often than they search:
+
+| Screen | Primary action |
+| --- | --- |
+| Overview | New transaction |
+| Transactions | New transaction |
+| Wallet | New transaction in that wallet |
+| Budgets | New budget |
+| Wallets | New wallet |
+
+Search is a top-bar icon on Transactions and Wallets (Overview's search opens
+Transactions in search). The action is only offered with the matching
+permission. Where the dock has no room for it (narrow phones with every
+destination shown), the shell shows it as a filled top-bar button instead.
+
+## Periods
+
+Transactions and a wallet page pin a period bar: previous, the period, next
+(never past today) and a Week / Month / Year chooser. Both open on the current
+month; Transactions also offers All time, which search uses. Weeks start on
+Monday.
+
+## Empty transactions
+
+The empty message follows what hides the rows; the period alone never counts
+as a filter:
+
+- Nothing in the period: "No transactions in {period}" with Add first
+  transaction.
+- Kind, category or wallet filters hide every row: "No matching
+  transactions" with Clear filters, which keeps the period.
+- A search query matches nothing: "No results for {query}" with Clear search.
+
+## Wallet page
+
+A balance card (with a workspace-currency estimate for foreign wallets and the
+credit limit for credit wallets) offers Transfer, Edit and the wallet's
+checkpoints. Below the pinned period bar, the period's income, expense and net
+keep their labels on one line at any supported width and text size; amounts
+shrink to fit rather than clip, and the figures stack when three columns would
+be too narrow. A daily in/out chart (monthly for a year) appears once every
+row of the period is loaded. Transactions follow, grouped by day with each
+day's net.
+
+## Budgets
+
+Each budget shows its health (on track, near limit, over), what is left and
+what can still be spent per remaining day, counting today. Tapping a budget
+opens its details; Edit is offered with budget permission.
+
+## Hidden amounts
+
+The eye toggle masks every figure on these screens, including balances,
+totals, day nets, budget meters and per-day allowances. The wallet chart is
+omitted while amounts are hidden, since bar heights would reveal relative
+sizes.
+
+Regression coverage: `finance_redesign_test.dart` (label fit at 320 dp and
+1.3x text, empty-state variants, wallet masking, period and budget-pace
+rules), `finance_accessibility_test.dart` (create in the dock, search in the
+top bar, masking on every screen) and the Linux goldens in
+`finance_goldens_test.dart`.

@@ -208,7 +208,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 ),
               ),
               if (perDay != null)
-                Flexible(
+                Expanded(
                   child: FinanceMaskedText(
                     context,
                     l10n.financeBudgetPerDay(
@@ -217,6 +217,7 @@ class BudgetSummaryCard extends StatelessWidget {
                     key: const ValueKey('finance-budget-summary-per-day'),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
                     style: muted.copyWith(color: colors.foreground),
                   ),
                 ),
@@ -282,6 +283,7 @@ class BudgetCard extends StatelessWidget {
                 hue: hueName,
               ),
               Expanded(
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -306,15 +308,18 @@ class BudgetCard extends StatelessWidget {
                 ),
               ),
               Flexible(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
+                flex: 2,
+                child: Align(
                   alignment: AlignmentDirectional.centerEnd,
-                  child: FinanceAmountText(
-                    budget.spent,
-                    currency,
-                    style: tokens.typography.numeric.copyWith(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: FinanceAmountText(
+                      budget.spent,
+                      currency,
+                      style: tokens.typography.numeric.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),

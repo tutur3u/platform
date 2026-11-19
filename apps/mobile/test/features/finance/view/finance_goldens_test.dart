@@ -56,6 +56,9 @@ void main() {
   for (final (scene, showAmounts) in [
     (FinanceScene.overview, false),
     (FinanceScene.overview, true),
+    (FinanceScene.transactions, true),
+    (FinanceScene.budgets, true),
+    (FinanceScene.walletDetail, true),
     for (final scene in FinanceScene.values.skip(1)) (scene, false),
     (null, false),
   ]) {
