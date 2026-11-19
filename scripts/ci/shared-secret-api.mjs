@@ -208,6 +208,16 @@ export async function createSupabaseKey({
   return assertSecretValue(body.api_key);
 }
 
+export async function deleteSupabaseKey({ token, ref, id, fetchImpl = fetch }) {
+  assert.ok(UUID.test(id), 'Supabase key has an unexpected id shape');
+  await send(
+    fetchImpl,
+    'Supabase key deletion',
+    `${keysPath(ref)}/${id}?reveal=false`,
+    { token, method: 'DELETE' }
+  );
+}
+
 // Readback verification (names and types only) ------------------------------
 
 function unique(entries, predicate, label) {

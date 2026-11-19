@@ -6,6 +6,7 @@
 //               only stdout, for the caller to capture into a variable
 //   put         value on stdin -> SUPABASE_SECRET_KEY on every family Worker
 //   verify      name/id/type readback of the key and each Worker secret
+//   revoke      deletes the named Supabase key and verifies its absence
 //
 // Credentials come from the environment by name: SUPABASE_ACCESS_TOKEN and
 // CLOUDFLARE_API_TOKEN. A value is never printed except by `create`.
@@ -16,6 +17,7 @@ import {
   assertDeclaredIdentity,
   assertSecretValue,
   createSupabaseKey,
+  deleteSupabaseKey,
   listSupabaseKeys,
   listWorkerSecrets,
   putWorkerSecret,
@@ -24,7 +26,11 @@ import {
   verifyWorkerSecret,
   workerExists,
 } from './shared-secret-api.mjs';
-import { resolveSupabaseFamilyTargets } from './shared-secret-targets.mjs';
+import {
+  resolveSupabaseFamilyTargets,
+  SUPABASE_FAMILY_KEY_NAME,
+  SUPABASE_PROJECT_REF,
+} from './shared-secret-targets.mjs';
 
 function requiredEnv(env, name) {
   assert.ok(env[name], `${name} is not set`);
@@ -99,16 +105,53 @@ export async function verify(plan, { env, fetchImpl = fetch, log, retry }) {
     );
 }
 
+export async function revoke({ env, fetchImpl = fetch, log, retry }) {
+  const name = SUPABASE_FAMILY_KEY_NAME;
+  const request = {
+    token: requiredEnv(env, 'SUPABASE_ACCESS_TOKEN'),
+    ref: SUPABASE_PROJECT_REF,
+    fetchImpl,
+  };
+  const list = () => listSupabaseKeys(request);
+  const keys = await list();
+  const key = keys.find((entry) => entry.name === name);
+  if (!key) {
+    log(`key ${name} already absent`);
+    return;
+  }
+  verifySupabaseKey(keys, name);
+  await deleteSupabaseKey({ ...request, id: key.id });
+  log(
+    await readBack(
+      list,
+      (entries) => {
+        assert.ok(
+          !entries.some((entry) => entry.id === key.id || entry.name === name),
+          `key ${name} is still present`
+        );
+        return `key ${name} revoked`;
+      },
+      retry
+    )
+  );
+}
+
 export async function main(
   argv,
   { env = process.env, fetchImpl = fetch, readStdin } = {}
 ) {
+  const commands = ['preflight', 'create', 'put', 'verify', 'revoke'];
   const [command] = argv;
+  assert.ok(
+    argv.length === 1 && commands.includes(command),
+    `usage: ${commands.join('|')}`
+  );
   assertDeclaredIdentity(env);
-  const root = fileURLToPath(new URL('../..', import.meta.url));
-  const plan = resolveSupabaseFamilyTargets(root);
   const log = (line) => console.log(line);
   const retry = { attempts: 5, delayMs: 3000 };
+  if (command === 'revoke') return revoke({ env, fetchImpl, log, retry });
+  const root = fileURLToPath(new URL('../..', import.meta.url));
+  const plan = resolveSupabaseFamilyTargets(root);
   if (command === 'preflight') return preflight(plan, { env, fetchImpl, log });
   if (command === 'create') {
     process.stdout.write(await create(plan, { env, fetchImpl }));
@@ -120,7 +163,6 @@ export async function main(
     );
     return put(plan, value, { env, fetchImpl, log });
   }
-  assert.equal(command, 'verify', 'usage: preflight|create|put|verify');
   return verify(plan, { env, fetchImpl, log, retry });
 }
 

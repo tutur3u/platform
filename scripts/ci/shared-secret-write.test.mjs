@@ -32,14 +32,14 @@ const WORKFLOWS = {
     },
   },
   'supabase-family-key.yaml': {
-    job: 'create',
+    job: 'manage',
     environment: 'supabase-family-key',
     secrets: [
       'SUPABASE_FAMILY_KEY_CLOUDFLARE_API_TOKEN',
       'SUPABASE_ACCESS_TOKEN',
     ],
     consumers: ['node scripts/ci/supabase-family-key.mjs put'],
-    inputs: { action: ['create'] },
+    inputs: { action: ['create', 'revoke'] },
   },
 };
 
@@ -171,8 +171,8 @@ test('shared-secret-write: assignment generates the value in memory', () => {
 test('supabase-family-key: refuses a second key before creating one', () => {
   const { run } = readWorkflow('supabase-family-key.yaml', {
     raw: true,
-  }).jobs.create.steps.at(-1);
-  assert.ok(run.indexOf(' preflight') < run.indexOf(' create'));
+  }).jobs.manage.steps.at(-1);
+  assert.ok(run.indexOf('mjs preflight') < run.indexOf('mjs create'));
   const text = readFileSync(
     join(workflowsDir, 'supabase-family-key.yaml'),
     'utf8'
@@ -183,7 +183,7 @@ test('supabase-family-key: refuses a second key before creating one', () => {
 test('supabase-family-key: masks both tokens before invoking scripts', () => {
   const { env, run } = readWorkflow('supabase-family-key.yaml', {
     raw: true,
-  }).jobs.create.steps.at(-1);
+  }).jobs.manage.steps.at(-1);
   assert.equal(
     env.CLOUDFLARE_API_TOKEN,
     '$' + '{{ secrets.SUPABASE_FAMILY_KEY_CLOUDFLARE_API_TOKEN }}'
@@ -192,8 +192,32 @@ test('supabase-family-key: masks both tokens before invoking scripts', () => {
     env.SUPABASE_ACCESS_TOKEN,
     '$' + '{{ secrets.SUPABASE_ACCESS_TOKEN }}'
   );
+  for (const name of ['SUPABASE_ACCESS_TOKEN', 'CLOUDFLARE_API_TOKEN']) {
+    const mask = `printf '::add-mask::%s\\n' "$${name}"`;
+    assert.ok(run.includes(mask));
+    assert.ok(run.indexOf(mask) < run.indexOf('mjs preflight'));
+  }
+  assert.ok(
+    run.indexOf('"$SUPABASE_ACCESS_TOKEN"') < run.indexOf('mjs revoke')
+  );
+  assert.ok(
+    run.indexOf('CLOUDFLARE_API_TOKEN:?Missing') <
+      run.indexOf('case "$KEY_ACTION"')
+  );
+  assert.ok(run.indexOf('"$CLOUDFLARE_API_TOKEN"') < run.indexOf('mjs revoke'));
+  assert.ok(
+    run.indexOf('unset CLOUDFLARE_API_TOKEN') < run.indexOf('mjs revoke')
+  );
+});
+
+test('supabase-family-key: dispatch revokes under the same job protections', () => {
+  const { env, run } = readWorkflow('supabase-family-key.yaml', {
+    raw: true,
+  }).jobs.manage.steps.at(-1);
+  assert.equal(env.KEY_ACTION, '$' + '{{ inputs.action }}');
   assert.match(
     run,
-    /printf '::add-mask::%s\\n' "\$CLOUDFLARE_API_TOKEN" "\$SUPABASE_ACCESS_TOKEN"\nnode /
+    /revoke\)\s+unset CLOUDFLARE_API_TOKEN\s+node scripts\/ci\/supabase-family-key\.mjs revoke\s+exit\s+;;/
   );
+  assert.match(run, /\*\).*exit 1/);
 });

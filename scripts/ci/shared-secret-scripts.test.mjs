@@ -596,6 +596,65 @@ test('family key readback prints key name, id and type, and each Worker secret',
   ]);
 });
 
+test('revoke deletes only the matching secret key and reads absence back', async () => {
+  const id = '123e4567-e89b-12d3-a456-426614174000';
+  const key = { name: keyPlan.keyName, id, type: 'secret' };
+  const other = { ...key, name: 'another-family' };
+  let listed = [key, { ...other, id: 'a23e4567-e89b-12d3-a456-426614174000' }];
+  const { fetchImpl, calls } = provider([
+    { match: 'api-keys', reply: () => ({ body: listed }) },
+    {
+      match: id,
+      method: 'DELETE',
+      reply: () => {
+        listed = listed.slice(1);
+        return { body: { ...key, api_key: VALUE } };
+      },
+    },
+  ]);
+  const out = capture();
+  await familyKey.revoke({
+    env: KEY_ENV,
+    fetchImpl,
+    log: out.log,
+    retry: { attempts: 1 },
+  });
+  assert.deepEqual(
+    calls.map(({ init }) => init.method),
+    ['GET', 'DELETE', 'GET']
+  );
+  assert.equal(
+    calls[1].url,
+    `https://api.supabase.com/v1/projects/${keyPlan.projectRef}/api-keys/${id}?reveal=false`
+  );
+  assert.equal(calls[1].init.body, undefined);
+  assert.deepEqual(out.lines, ['key cf-web-families revoked']);
+});
+
+test('revoke is a no-op when absent and refuses ambiguous or invalid matches', async () => {
+  const key = {
+    name: keyPlan.keyName,
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    type: 'secret',
+  };
+  for (const [keys, refusal] of [
+    [[], null],
+    [[key, key], /exactly one entry/],
+    [[{ ...key, type: 'publishable' }], /wrong type/],
+    [[{ ...key, id: 'invalid-id' }], /unexpected id shape/],
+  ]) {
+    const { fetchImpl, calls } = provider([
+      { match: 'api-keys', reply: { body: keys } },
+    ]);
+    const options = { env: KEY_ENV, fetchImpl, log: () => {} };
+    if (refusal) await assert.rejects(familyKey.revoke(options), refusal);
+    else await familyKey.revoke(options);
+    assert.deepEqual(
+      calls.map(({ init }) => init.method),
+      ['GET']
+    );
+  }
+});
 test('the real CLIs never print a value they were given', () => {
   for (const args of [
     [
