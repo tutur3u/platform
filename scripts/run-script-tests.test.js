@@ -10,11 +10,12 @@ const {
   runScriptTests,
 } = require('./run-script-tests.js');
 
-test('the root Node job owns both Hive maintenance suites', () => {
+test('the root Node job owns the app suites that register with Node', () => {
   const files = discoverScriptTests();
   for (const file of [
     'apps/hive/maintenance/prepare-tunnel.test.mjs',
     'apps/hive/maintenance/worker.test.mjs',
+    'apps/infrastructure/cloudflare/server-artifact.test.mjs',
   ]) {
     assert.equal(files.filter((entry) => entry === file).length, 1);
   }

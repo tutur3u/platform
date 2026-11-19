@@ -17,7 +17,12 @@ export default defineConfig({
         inline: ['next-intl'],
       },
     },
-    exclude: ['**/.next/**', '**/e2e/**', '**/node_modules/**'],
+    exclude: [
+      '**/.next/**',
+      '**/e2e/**',
+      '**/node_modules/**',
+      'cloudflare/server-artifact.test.mjs',
+    ],
     environment: 'node',
     setupFiles: ['./vitest.setup.ts'],
     testTimeout: 30_000,
