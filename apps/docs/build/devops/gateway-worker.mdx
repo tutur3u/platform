@@ -252,12 +252,17 @@ wrangler rollback 74cd2de2-0603-4b3e-b294-e21dd29a4c4e --name tuturuuu-gateway \
   --message "Restore gateway routing"
 ```
 
-The isolated rehearsal Worker has a `workers.dev` endpoint. Its bootstrap
-template still answers requests. The gateway bundle was prepared
-on the Studio, and the dashboard editor readback still showed the template
-after the upload attempt. The hosted rehearsal remains open until two versions
-of the gateway source serve distinct staging responses and one rollback restores
-the first version and its response.
+The hosted CLI rehearsal used the same Studio-built gateway bundle for both
+versions, with a service binding and the bare and subtree paths enabled in the
+second version. All probes were anonymous.
+
+| Step | Version at 100% | Deployment | Bare, query and subtree response |
+| --- | --- | --- | --- |
+| Baseline | `88acd487-300c-482a-961d-e41458ed2ace` | `cdc246da-0a9c-4604-a90b-ee856305a495` | `404 BYPASS` from the fixture origin |
+| Mount active | `e6f20bff-0652-423e-bcba-a2494660160f` | `d57c72c4-05cc-4c17-bed3-f38f3cc5694d` | `200 MOUNT` from Roadmap `6c36b7f536` |
+| One rollback | `88acd487-300c-482a-961d-e41458ed2ace` | `9e000dc3-434e-4898-bd7e-29cedc498f15` | `404 BYPASS` restored |
+
+The lookalike `/roadmapping` stayed on the fixture origin in all three steps.
 
 ## Web route families
 
