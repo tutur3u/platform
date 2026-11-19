@@ -77,3 +77,32 @@ Regression coverage: `finance_redesign_test.dart` (label fit at 320 dp and
 rules), `finance_accessibility_test.dart` (create in the dock, search in the
 top bar, masking on every screen) and the Linux goldens in
 `finance_goldens_test.dart`.
+
+## Parity with web Finance
+
+Compare the native mini app with the standalone web Finance dashboard in
+`apps/finance/src/app/[locale]/(dashboard)/[wsId]`, its shared UI in
+`packages/ui/src/components/ui/finance`, and the mounted APIs in
+`apps/finance/src/app/api` and `packages/apis/src/finance`. The entry in
+`apps/web` links to standalone Finance.
+
+| Feature | Web Finance | Mobile Finance |
+| --- | --- | --- |
+| Overview | Balances, income and expense, category and balance trends | Balances, workspace-currency estimate, monthly cash-flow chart and recent activity |
+| Wallets | List, detail, create, edit, delete, credit and interest tools | List, detail, create, edit and delete. Dedicated interest tools are open |
+| Transactions | List, detail, create, edit, delete, attachments, confidentiality and reporting preferences | Core transaction lifecycle, attachments, confidentiality and reporting preferences |
+| Categories | Create, edit, delete and migrate | Create, edit and delete. Migration is open |
+| Tags | Manage workspace tags and assign them to transactions | Transaction tag assignment. Dedicated tag management is open |
+| Budgets | Create, edit, delete and track category budgets | Create, edit, delete, detail, status and daily spending pace |
+| Transfers | Linked wallet entries with source and destination amounts | Create and edit transfers, including cross-currency amounts. Linked entries collapse in activity |
+| Recurring transactions | Schedule and manage recurring rules and view upcoming entries | Open |
+| Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Open |
+| Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Monthly overview and wallet-period cash flow. Dedicated reports are open |
+| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Single and batch recording, history and interval adjustments |
+| Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
+| Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, type and period. Advanced filters are open |
+| Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Open |
+| Debts, promotions and inventory reconciliation | Dedicated web workflows | Open |
+
+Mobile requests use the Finance repository and its bearer-authenticated endpoint
+mappings. Verify routes and response contracts before adding a new client call.
