@@ -16258,4 +16258,98 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeEndDate => 'Ngày kết thúc';
+
+  @override
+  String get financeWalletInterest => 'Theo dõi tiền lãi';
+
+  @override
+  String get financeInterestEnable => 'Bật theo dõi tiền lãi';
+
+  @override
+  String get financeInterestSettings => 'Cài đặt tiền lãi';
+
+  @override
+  String get financeInterestOff => 'Theo dõi tiền lãi đang tắt';
+
+  @override
+  String get financeInterestProvider => 'Nhà cung cấp';
+
+  @override
+  String get financeInterestTier => 'Hạng ZaloPay';
+
+  @override
+  String get financeInterestStandard => 'Tiêu chuẩn';
+
+  @override
+  String get financeInterestGold => 'Vàng';
+
+  @override
+  String get financeInterestDiamond => 'Kim cương';
+
+  @override
+  String get financeInterestWalletCreation => 'Ngày tạo ví';
+
+  @override
+  String get financeInterestOngoing => 'Đang tiếp tục';
+
+  @override
+  String get financeInterestClearStart => 'Xóa ngày bắt đầu';
+
+  @override
+  String get financeInterestClearEnd => 'Xóa ngày kết thúc';
+
+  @override
+  String get financeInterestAddRate => 'Thêm lãi suất';
+
+  @override
+  String get financeInterestAnnualRate => 'Lãi suất hằng năm (%)';
+
+  @override
+  String get financeInterestEffectiveDate => 'Ngày hiệu lực';
+
+  @override
+  String get financeInterestRemove => 'Xóa theo dõi tiền lãi';
+
+  @override
+  String get financeInterestRemoveDescription => 'Thao tác này sẽ xóa cài đặt theo dõi và lịch sử lãi suất của ví.';
+
+  @override
+  String get financeInterestPaused => 'Đã tạm dừng theo dõi';
+
+  @override
+  String get financeInterestPause => 'Tạm dừng theo dõi';
+
+  @override
+  String get financeInterestResume => 'Tiếp tục theo dõi';
+
+  @override
+  String get financeInterestUnconfirmed => 'Làm mới cài đặt tiền lãi để kiểm tra thay đổi đã được lưu chưa.';
+
+  @override
+  String get financeInterestMonthToDate => 'Từ đầu tháng';
+
+  @override
+  String get financeInterestYearToDate => 'Từ đầu năm';
+
+  @override
+  String get financeInterestTotal => 'Tiền lãi đã nhận';
+
+  @override
+  String get financeInterestProjection => 'Tiền lãi dự kiến';
+
+  @override
+  String get financeInterestHistorical => 'Tính tiền lãi quá khứ';
+
+  @override
+  String get financeInterestRateHistory => 'Lịch sử lãi suất';
+
+  @override
+  String financeInterestPercent(num rate) {
+    return '$rate%';
+  }
+
+  @override
+  String financeInterestDays(int count) {
+    return '$count ngày';
+  }
 }

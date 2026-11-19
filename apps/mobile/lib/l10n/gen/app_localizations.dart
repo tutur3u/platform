@@ -30498,6 +30498,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'End date'**
   String get financeEndDate;
+
+  /// No description provided for @financeWalletInterest.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest tracking'**
+  String get financeWalletInterest;
+
+  /// No description provided for @financeInterestEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable interest tracking'**
+  String get financeInterestEnable;
+
+  /// No description provided for @financeInterestSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest settings'**
+  String get financeInterestSettings;
+
+  /// No description provided for @financeInterestOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest tracking is off'**
+  String get financeInterestOff;
+
+  /// No description provided for @financeInterestProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Provider'**
+  String get financeInterestProvider;
+
+  /// No description provided for @financeInterestTier.
+  ///
+  /// In en, this message translates to:
+  /// **'ZaloPay tier'**
+  String get financeInterestTier;
+
+  /// No description provided for @financeInterestStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get financeInterestStandard;
+
+  /// No description provided for @financeInterestGold.
+  ///
+  /// In en, this message translates to:
+  /// **'Gold'**
+  String get financeInterestGold;
+
+  /// No description provided for @financeInterestDiamond.
+  ///
+  /// In en, this message translates to:
+  /// **'Diamond'**
+  String get financeInterestDiamond;
+
+  /// No description provided for @financeInterestWalletCreation.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet creation date'**
+  String get financeInterestWalletCreation;
+
+  /// No description provided for @financeInterestOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Ongoing'**
+  String get financeInterestOngoing;
+
+  /// No description provided for @financeInterestClearStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear start date'**
+  String get financeInterestClearStart;
+
+  /// No description provided for @financeInterestClearEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear end date'**
+  String get financeInterestClearEnd;
+
+  /// No description provided for @financeInterestAddRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add interest rate'**
+  String get financeInterestAddRate;
+
+  /// No description provided for @financeInterestAnnualRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual interest rate (%)'**
+  String get financeInterestAnnualRate;
+
+  /// No description provided for @financeInterestEffectiveDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective date'**
+  String get financeInterestEffectiveDate;
+
+  /// No description provided for @financeInterestRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove interest tracking'**
+  String get financeInterestRemove;
+
+  /// No description provided for @financeInterestRemoveDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'This removes the tracking settings and rate history for this wallet.'**
+  String get financeInterestRemoveDescription;
+
+  /// No description provided for @financeInterestPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking paused'**
+  String get financeInterestPaused;
+
+  /// No description provided for @financeInterestPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause tracking'**
+  String get financeInterestPause;
+
+  /// No description provided for @financeInterestResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume tracking'**
+  String get financeInterestResume;
+
+  /// No description provided for @financeInterestUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh interest settings to check whether the change saved.'**
+  String get financeInterestUnconfirmed;
+
+  /// No description provided for @financeInterestMonthToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Month to date'**
+  String get financeInterestMonthToDate;
+
+  /// No description provided for @financeInterestYearToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Year to date'**
+  String get financeInterestYearToDate;
+
+  /// No description provided for @financeInterestTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest earned'**
+  String get financeInterestTotal;
+
+  /// No description provided for @financeInterestProjection.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected interest'**
+  String get financeInterestProjection;
+
+  /// No description provided for @financeInterestHistorical.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculate historical interest'**
+  String get financeInterestHistorical;
+
+  /// No description provided for @financeInterestRateHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate history'**
+  String get financeInterestRateHistory;
+
+  /// No description provided for @financeInterestPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate}%'**
+  String financeInterestPercent(num rate);
+
+  /// No description provided for @financeInterestDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days'**
+  String financeInterestDays(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

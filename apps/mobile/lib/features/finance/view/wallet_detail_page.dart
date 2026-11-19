@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
@@ -16,12 +17,14 @@ import 'package:mobile/features/finance/utils/finance_period.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/view/wallet_detail_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
+import 'package:mobile/features/finance/view/wallet_interest_sheet.dart';
 import 'package:mobile/features/finance/view/wallet_reconciliation_panel.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
 import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -324,6 +327,22 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                 context,
                 showAmounts: financeAmountsVisible(context),
               ),
+              if (wallet != null &&
+                  _workspaceCurrency.isNotEmpty &&
+                  canManageFinance(context, 'view_transactions'))
+                ShellActionSpec(
+                  id: 'finance-wallet-interest',
+                  icon: LucideIcons.trendingUp,
+                  tooltip: l10n.financeWalletInterest,
+                  onPressed: () => unawaited(
+                    showWalletInterest(
+                      context,
+                      wallet: wallet.id,
+                      currency: (wallet.currency ?? _workspaceCurrency)
+                          .toUpperCase(),
+                    ),
+                  ),
+                ),
               if (canManageFinance(context, 'create_transactions'))
                 financeCreateAction(
                   id: 'finance-wallet-create-transaction',

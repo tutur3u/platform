@@ -120,6 +120,13 @@ charts and all financial figures. For a large report, choose a shorter period.
 
 `finance_report_test.dart` covers period and category totals.
 
+## Wallet interest
+
+Open Interest tracking in a wallet to view accruals, projections, historical
+interest, and rate history. Wallet editors can opt in to MoMo or ZaloPay
+tracking when Experimental Finance is on for the workspace. Existing
+configurations remain visible and editable with the matching wallet permissions.
+
 ## Transaction filters
 
 The creator filter matches both workspace and platform creator records. A
@@ -162,7 +169,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Feature | Web Finance | Mobile Finance |
 | --- | --- | --- |
 | Overview | Balances, income and expense, category and balance trends | Balances, workspace-currency estimate, monthly cash-flow chart and recent activity |
-| Wallets | List, detail, create, edit, delete, credit and interest tools | List, detail, create, edit and delete. Dedicated interest tools are open |
+| Wallets | List, detail, create, edit, delete, credit and interest tools | List, detail, create, edit, delete and wallet interest tools. Credit tools remain open |
 | Transactions | List, detail, create, edit, delete, attachments, confidentiality and reporting preferences | Core transaction lifecycle, attachments, confidentiality and reporting preferences |
 | Categories | Create, edit, delete and migrate | Create, edit and delete. Migration is open |
 | Tags | Manage workspace tags and assign them to transactions | Create, edit and delete tags in Categories. Assign tags to transactions |
@@ -171,7 +178,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
 | Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, and collect outstanding subscriptions. Fee locks, manual subscription setup, wallet reassignment, and recovery remain open |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet cash flow, cumulative movement, and category totals. Cross-wallet and invoice reports remain open |
-| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check |
+| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. A separate persisted review status is open |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export and Money Lover import. Invoice spreadsheet exports remain open |

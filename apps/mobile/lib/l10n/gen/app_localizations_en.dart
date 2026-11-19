@@ -16458,4 +16458,98 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeEndDate => 'End date';
+
+  @override
+  String get financeWalletInterest => 'Interest tracking';
+
+  @override
+  String get financeInterestEnable => 'Enable interest tracking';
+
+  @override
+  String get financeInterestSettings => 'Interest settings';
+
+  @override
+  String get financeInterestOff => 'Interest tracking is off';
+
+  @override
+  String get financeInterestProvider => 'Provider';
+
+  @override
+  String get financeInterestTier => 'ZaloPay tier';
+
+  @override
+  String get financeInterestStandard => 'Standard';
+
+  @override
+  String get financeInterestGold => 'Gold';
+
+  @override
+  String get financeInterestDiamond => 'Diamond';
+
+  @override
+  String get financeInterestWalletCreation => 'Wallet creation date';
+
+  @override
+  String get financeInterestOngoing => 'Ongoing';
+
+  @override
+  String get financeInterestClearStart => 'Clear start date';
+
+  @override
+  String get financeInterestClearEnd => 'Clear end date';
+
+  @override
+  String get financeInterestAddRate => 'Add interest rate';
+
+  @override
+  String get financeInterestAnnualRate => 'Annual interest rate (%)';
+
+  @override
+  String get financeInterestEffectiveDate => 'Effective date';
+
+  @override
+  String get financeInterestRemove => 'Remove interest tracking';
+
+  @override
+  String get financeInterestRemoveDescription => 'This removes the tracking settings and rate history for this wallet.';
+
+  @override
+  String get financeInterestPaused => 'Tracking paused';
+
+  @override
+  String get financeInterestPause => 'Pause tracking';
+
+  @override
+  String get financeInterestResume => 'Resume tracking';
+
+  @override
+  String get financeInterestUnconfirmed => 'Refresh interest settings to check whether the change saved.';
+
+  @override
+  String get financeInterestMonthToDate => 'Month to date';
+
+  @override
+  String get financeInterestYearToDate => 'Year to date';
+
+  @override
+  String get financeInterestTotal => 'Interest earned';
+
+  @override
+  String get financeInterestProjection => 'Projected interest';
+
+  @override
+  String get financeInterestHistorical => 'Calculate historical interest';
+
+  @override
+  String get financeInterestRateHistory => 'Rate history';
+
+  @override
+  String financeInterestPercent(num rate) {
+    return '$rate%';
+  }
+
+  @override
+  String financeInterestDays(int count) {
+    return '$count days';
+  }
 }

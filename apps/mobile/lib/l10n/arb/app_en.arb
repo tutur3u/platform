@@ -7836,5 +7836,49 @@
   "financeUnknownCreator": "Unknown creator",
   "financeCustomDateRange": "Custom date range",
   "financeStartDate": "Start date",
-  "financeEndDate": "End date"
+  "financeEndDate": "End date",
+  "financeWalletInterest": "Interest tracking",
+  "financeInterestEnable": "Enable interest tracking",
+  "financeInterestSettings": "Interest settings",
+  "financeInterestOff": "Interest tracking is off",
+  "financeInterestProvider": "Provider",
+  "financeInterestTier": "ZaloPay tier",
+  "financeInterestStandard": "Standard",
+  "financeInterestGold": "Gold",
+  "financeInterestDiamond": "Diamond",
+  "financeInterestWalletCreation": "Wallet creation date",
+  "financeInterestOngoing": "Ongoing",
+  "financeInterestClearStart": "Clear start date",
+  "financeInterestClearEnd": "Clear end date",
+  "financeInterestAddRate": "Add interest rate",
+  "financeInterestAnnualRate": "Annual interest rate (%)",
+  "financeInterestEffectiveDate": "Effective date",
+  "financeInterestRemove": "Remove interest tracking",
+  "financeInterestRemoveDescription": "This removes the tracking settings and rate history for this wallet.",
+  "financeInterestPaused": "Tracking paused",
+  "financeInterestPause": "Pause tracking",
+  "financeInterestResume": "Resume tracking",
+  "financeInterestUnconfirmed": "Refresh interest settings to check whether the change saved.",
+  "financeInterestMonthToDate": "Month to date",
+  "financeInterestYearToDate": "Year to date",
+  "financeInterestTotal": "Interest earned",
+  "financeInterestProjection": "Projected interest",
+  "financeInterestHistorical": "Calculate historical interest",
+  "financeInterestRateHistory": "Rate history",
+  "@financeInterestPercent": {
+    "placeholders": {
+      "rate": {
+        "type": "num"
+      }
+    }
+  },
+  "financeInterestPercent": "{rate}%",
+  "@financeInterestDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeInterestDays": "{count} days"
 }
