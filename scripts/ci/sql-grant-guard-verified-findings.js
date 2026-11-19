@@ -586,4 +586,14 @@ module.exports = [
     reason:
       'SECURITY INVOKER trigger private.workspace_documents_touch_updated_at() sets the document update timestamp on writes. REVOKE ALL at line 41 removes PUBLIC, anon and authenticated. The routine is attached as a trigger, cannot be called directly and has no later grant in the migration history. The trigger-only annotation is missing.',
   },
+  {
+    path: 'apps/database/supabase/migrations/20261120051322_workspace_documents_owner_attribution.sql',
+    line: 8,
+    rule: 'function-acl',
+    fileDigest:
+      '3268e9f2b910dd9fc4b16367745aea0b0ec4ef127078e98ab553f7a0e1acb3fc',
+    digest: 'e9ae2918284ae90f36251bd51f70f1c276f49fe0460c4eb9682eef0eb80c8246',
+    reason:
+      'SECURITY INVOKER trigger private.workspace_documents_assign_owner() assigns owner attribution and rejects owner changes during document writes. The same-file REVOKE ALL at line 41 removes PUBLIC, anon and authenticated; the function requires trigger context and has no later grant. The trigger-only annotation is missing.',
+  },
 ];
