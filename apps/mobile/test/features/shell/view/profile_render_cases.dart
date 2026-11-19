@@ -59,8 +59,14 @@ void _profileRenderCases() {
       ) async {
         await _pumpProfile(tester, size: size.value, look: look.value);
 
-        expect(find.text('Linh Tran'), findsOneWidget);
         final identity = find.byType(ProfileIdentityHeader);
+        final switchRow = find.byKey(const ValueKey('profile-switch-account'));
+        for (final section in [identity, switchRow]) {
+          expect(
+            find.descendant(of: section, matching: find.text('Linh Tran')),
+            findsOneWidget,
+          );
+        }
         if (size.key == 'phone') {
           expect(
             tester.getTopLeft(identity).dx,
