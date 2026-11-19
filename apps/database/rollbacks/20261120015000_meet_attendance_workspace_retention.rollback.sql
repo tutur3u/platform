@@ -2,6 +2,7 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
+-- tuturuuu: reviewed(dynamic-sql-review): Unschedules only the fixed attendance-retention job if present. No dynamic command text or grants.
 do $$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
