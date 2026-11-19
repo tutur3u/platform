@@ -255,8 +255,16 @@ jobs:
             --message "gateway $GITHUB_SHA families=${GATEWAY_WEB_FAMILIES:-none}" | tee "$RUNNER_TEMP/gateway-upload.txt"
           version=$(grep -oE 'Worker Version ID: [0-9a-f-]{36}' "$RUNNER_TEMP/gateway-upload.txt" | awk '{print $4}')
           test -n "$version" || { echo "::error::no version id in the upload output"; exit 1; }
-          bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
-            --message "gateway $GITHUB_SHA"
+          # A just-uploaded version can be briefly invisible to the deploy
+          # API (code 100146), so retry with backoff before failing.
+          for attempt in 1 2 3 4 5 6; do
+            if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
+              --message "gateway $GITHUB_SHA"; then
+              break
+            fi
+            test "$attempt" -lt 6 || { echo "::error::gateway version $version did not deploy"; exit 1; }
+            sleep $((attempt * 10))
+          done
           echo "Deployed gateway version $version. The previous deployment is above; roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
       - name: Verify the gateway answers
         run: |
