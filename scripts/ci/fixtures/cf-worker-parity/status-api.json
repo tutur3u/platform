@@ -18,10 +18,17 @@
     },
     "crons": [],
     "routes": [],
-    "vars": {},
+    "vars": {
+      "STATUS_CLIENT_CONSENT_IDS": "",
+      "STATUS_PUBLIC_COMPONENT_IDS": ""
+    },
     "secrets": [],
     "durableObjects": {},
-    "limits": { "cpuMs": 10 }
+    "durableObjectClasses": {},
+    "unmapped": {
+      "env.STATUS_SNAPSHOTS": [{ "type": "kv" }],
+      "limits": [{ "cpuMs": 10 }]
+    }
   },
   "migrationTemplate": "apps/cron-control"
 }

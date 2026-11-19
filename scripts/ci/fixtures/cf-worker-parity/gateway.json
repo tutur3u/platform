@@ -17,7 +17,7 @@
       }
     },
     "crons": [],
-    "routes": [{ "pattern": "tuturuuu.com/*", "zoneName": "tuturuuu.com" }],
+    "routes": [{ "pattern": "tuturuuu.com/*", "zone": "tuturuuu.com" }],
     "vars": {
       "GATEWAY_MODE": "active",
       "PUBLIC_HOST": "tuturuuu.com",
@@ -28,7 +28,8 @@
     },
     "secrets": [],
     "durableObjects": {},
-    "limits": { "cpuMs": 50 }
+    "durableObjectClasses": {},
+    "unmapped": { "limits": [{ "cpuMs": 50 }] }
   },
   "migrationTemplate": "apps/cron-control",
   "note": "Route and service-binding migration stays operator-owned; baseline pins deployment identity fields only."

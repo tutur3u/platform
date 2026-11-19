@@ -7,7 +7,6 @@
     "compatibilityFlags": ["nodejs_compat"],
     "workersDev": false,
     "previewUrls": false,
-    "sourceMaps": true,
     "observability": {
       "enabled": true,
       "headSamplingRate": 0.05,

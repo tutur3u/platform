@@ -1,4 +1,4 @@
-import { bindings, defineConfig } from 'cf/config';
+import { bindings, defineConfig, triggers } from 'cf/config';
 
 export default defineConfig({
   accountId: 'e8912e2867beecc673d171907bf09649',
@@ -8,9 +8,15 @@ export default defineConfig({
     compatibilityDate: '2026-09-28',
     workersDev: false,
     previewUrls: false,
-    observability: { enabled: true, headSamplingRate: 0.01 },
+    observability: {
+      enabled: true,
+      headSamplingRate: 0.01,
+      logs: { enabled: true, headSamplingRate: 0.01, invocationLogs: true },
+    },
     limits: { cpuMs: 50 },
-    routes: [{ pattern: 'tuturuuu.com/*', zoneName: 'tuturuuu.com' }],
+    triggers: [
+      triggers.fetch({ pattern: 'tuturuuu.com/*', zone: 'tuturuuu.com' }),
+    ],
     env: {
       GATEWAY_MODE: bindings.text('active'),
       PUBLIC_HOST: bindings.text('tuturuuu.com'),

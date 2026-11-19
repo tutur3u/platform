@@ -342,9 +342,9 @@ test('bindings map to the same identity in both shapes', () => {
   assert.equal(cf.durableObjects.REMOTE.scriptName, 'other');
 });
 
-// Each baseline was normalized from the service's final wrangler.jsonc. Until a
-// service migrates, that file must still match; afterwards cloudflare.config.ts
-// must. CI separately compares the emitted Build Output after the build.
+// CI separately compares the emitted Build Output after the build.
+// Gateway's live OpenNext publisher still consumes its committed legacy config
+// through gateway-deploy-config.mjs while the cf candidate uses its own config.
 for (const fixture of readdirSync(FIXTURES).filter((f) =>
   f.endsWith('.json')
 )) {
@@ -355,10 +355,12 @@ for (const fixture of readdirSync(FIXTURES).filter((f) =>
     const cfConfig = join(appDir, 'cloudflare.config.ts');
     const wranglerConfig = join(appDir, 'wrangler.jsonc');
     assert.ok(
-      existsSync(cfConfig) !== existsSync(wranglerConfig),
-      `${app} must have exactly one authoritative Worker configuration`
+      app === 'gateway'
+        ? existsSync(cfConfig) && existsSync(wranglerConfig)
+        : existsSync(cfConfig) !== existsSync(wranglerConfig),
+      `${app} Worker configuration files must match the publisher contract`
     );
-    if (existsSync(wranglerConfig)) {
+    if (!existsSync(cfConfig)) {
       const raw = parseJsonc(readFileSync(wranglerConfig, 'utf8'));
       assert.deepEqual(normalizeWranglerRaw(raw), baseline.identity);
       return;
