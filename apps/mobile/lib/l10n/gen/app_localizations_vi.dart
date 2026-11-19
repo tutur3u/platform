@@ -16185,4 +16185,59 @@ class AppLocalizationsVi extends AppLocalizations {
   String financeReportByCategory(String kind) {
     return '$kind theo danh mục';
   }
+
+  @override
+  String get financeExportReady => 'Tệp CSV đã sẵn sàng.';
+
+  @override
+  String get financeExportTransactions => 'Xuất giao dịch';
+
+  @override
+  String get financeExportTransactionsDescription => 'Tạo tệp CSV theo tìm kiếm và bộ lọc hiện tại.';
+
+  @override
+  String get financeShareCsv => 'Chia sẻ tệp CSV';
+
+  @override
+  String get financeImportMoneyLover => 'Nhập từ Money Lover';
+
+  @override
+  String get financeImportConfirm => 'Nhập giao dịch';
+
+  @override
+  String get financeImportHelp => 'Chọn tệp xuất Money Lover tối đa 5 MB và 10.000 giao dịch.';
+
+  @override
+  String get financeImportDelimiter => 'Dấu phân cách';
+
+  @override
+  String get financeImportTab => 'Tab';
+
+  @override
+  String get financeImportComma => 'Dấu phẩy';
+
+  @override
+  String get financeImportSemicolon => 'Dấu chấm phẩy';
+
+  @override
+  String get financeImportPickFile => 'Chọn tệp';
+
+  @override
+  String financeImportPreview(int count) {
+    return '$count giao dịch đã sẵn sàng';
+  }
+
+  @override
+  String get financeImportInvalid => 'Kiểm tra định dạng tệp, dấu phân cách và giới hạn số dòng.';
+
+  @override
+  String get financeImportWalletMismatch => 'Tạo hoặc đổi tên ví để mỗi ví trong tệp khớp với một ví trong không gian làm việc có cùng loại tiền.';
+
+  @override
+  String get financeImportUnconfirmed => 'Kiểm tra sổ giao dịch trước khi nhập lại.';
+
+  @override
+  String financeImportResult(int imported, int total) {
+    return 'Đã nhập $imported trong số $total giao dịch';
+  }
 }

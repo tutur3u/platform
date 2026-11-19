@@ -16385,4 +16385,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String financeReportByCategory(String kind) {
     return '$kind by category';
   }
+
+  @override
+  String get financeExportReady => 'Your CSV is ready.';
+
+  @override
+  String get financeExportTransactions => 'Export transactions';
+
+  @override
+  String get financeExportTransactionsDescription => 'Create a CSV with the current search and filters.';
+
+  @override
+  String get financeShareCsv => 'Share CSV';
+
+  @override
+  String get financeImportMoneyLover => 'Import from Money Lover';
+
+  @override
+  String get financeImportConfirm => 'Import transactions';
+
+  @override
+  String get financeImportHelp => 'Choose a Money Lover export up to 5 MB and 10,000 transactions.';
+
+  @override
+  String get financeImportDelimiter => 'Delimiter';
+
+  @override
+  String get financeImportTab => 'Tab';
+
+  @override
+  String get financeImportComma => 'Comma';
+
+  @override
+  String get financeImportSemicolon => 'Semicolon';
+
+  @override
+  String get financeImportPickFile => 'Choose file';
+
+  @override
+  String financeImportPreview(int count) {
+    return '$count transactions ready';
+  }
+
+  @override
+  String get financeImportInvalid => 'Check the file format, delimiter, and row limit.';
+
+  @override
+  String get financeImportWalletMismatch => 'Create or rename wallets so each file wallet matches one workspace wallet with the same currency.';
+
+  @override
+  String get financeImportUnconfirmed => 'Check the ledger before trying the import again.';
+
+  @override
+  String financeImportResult(int imported, int total) {
+    return '$imported of $total transactions imported';
+  }
 }

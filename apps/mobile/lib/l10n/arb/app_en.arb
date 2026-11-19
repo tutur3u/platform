@@ -7796,5 +7796,39 @@
       }
     }
   },
-  "financeReportByCategory": "{kind} by category"
+  "financeReportByCategory": "{kind} by category",
+  "financeExportReady": "Your CSV is ready.",
+  "financeExportTransactions": "Export transactions",
+  "financeExportTransactionsDescription": "Create a CSV with the current search and filters.",
+  "financeShareCsv": "Share CSV",
+  "financeImportMoneyLover": "Import from Money Lover",
+  "financeImportConfirm": "Import transactions",
+  "financeImportHelp": "Choose a Money Lover export up to 5 MB and 10,000 transactions.",
+  "financeImportDelimiter": "Delimiter",
+  "financeImportTab": "Tab",
+  "financeImportComma": "Comma",
+  "financeImportSemicolon": "Semicolon",
+  "financeImportPickFile": "Choose file",
+  "@financeImportPreview": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeImportPreview": "{count} transactions ready",
+  "financeImportInvalid": "Check the file format, delimiter, and row limit.",
+  "financeImportWalletMismatch": "Create or rename wallets so each file wallet matches one workspace wallet with the same currency.",
+  "financeImportUnconfirmed": "Check the ledger before trying the import again.",
+  "@financeImportResult": {
+    "placeholders": {
+      "imported": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "financeImportResult": "{imported} of {total} transactions imported"
 }

@@ -30360,6 +30360,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{kind} by category'**
   String financeReportByCategory(String kind);
+
+  /// No description provided for @financeExportReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Your CSV is ready.'**
+  String get financeExportReady;
+
+  /// No description provided for @financeExportTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'Export transactions'**
+  String get financeExportTransactions;
+
+  /// No description provided for @financeExportTransactionsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a CSV with the current search and filters.'**
+  String get financeExportTransactionsDescription;
+
+  /// No description provided for @financeShareCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Share CSV'**
+  String get financeShareCsv;
+
+  /// No description provided for @financeImportMoneyLover.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Money Lover'**
+  String get financeImportMoneyLover;
+
+  /// No description provided for @financeImportConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Import transactions'**
+  String get financeImportConfirm;
+
+  /// No description provided for @financeImportHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a Money Lover export up to 5 MB and 10,000 transactions.'**
+  String get financeImportHelp;
+
+  /// No description provided for @financeImportDelimiter.
+  ///
+  /// In en, this message translates to:
+  /// **'Delimiter'**
+  String get financeImportDelimiter;
+
+  /// No description provided for @financeImportTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab'**
+  String get financeImportTab;
+
+  /// No description provided for @financeImportComma.
+  ///
+  /// In en, this message translates to:
+  /// **'Comma'**
+  String get financeImportComma;
+
+  /// No description provided for @financeImportSemicolon.
+  ///
+  /// In en, this message translates to:
+  /// **'Semicolon'**
+  String get financeImportSemicolon;
+
+  /// No description provided for @financeImportPickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose file'**
+  String get financeImportPickFile;
+
+  /// No description provided for @financeImportPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} transactions ready'**
+  String financeImportPreview(int count);
+
+  /// No description provided for @financeImportInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the file format, delimiter, and row limit.'**
+  String get financeImportInvalid;
+
+  /// No description provided for @financeImportWalletMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or rename wallets so each file wallet matches one workspace wallet with the same currency.'**
+  String get financeImportWalletMismatch;
+
+  /// No description provided for @financeImportUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the ledger before trying the import again.'**
+  String get financeImportUnconfirmed;
+
+  /// No description provided for @financeImportResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{imported} of {total} transactions imported'**
+  String financeImportResult(int imported, int total);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -22,6 +22,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 export 'api_exception.dart';
 export 'api_multipart_file.dart';
 
+part 'api_client_multipart.dart';
 part 'api_client_mutations.dart';
 part 'api_client_integrity.dart';
 part 'api_client_conditional.dart';
@@ -452,42 +453,34 @@ class ApiClient {
     List<ApiMultipartFile> files = const [],
     bool requiresAuth = true,
   }) async {
-    final url = _url(path);
-
-    final streamedResponse = await _performStreamedRequest(() async {
-      final userId = requiresAuth ? _auth.currentUser?.id : null;
-      final request = http.MultipartRequest(method, url)
-        ..headers.addAll(await _getHeaders(requiresAuth: requiresAuth));
-
-      if (fields != null) {
-        request.fields.addAll(fields);
-      }
-
-      for (final file in files) {
-        request.files.add(
-          file.bytes != null
-              ? http.MultipartFile.fromBytes(
-                  file.field,
-                  file.bytes!,
-                  filename: file.filename,
-                  contentType: file.contentType,
-                )
-              : await http.MultipartFile.fromPath(
-                  file.field,
-                  file.filePath!,
-                  filename: file.filename,
-                  contentType: file.contentType,
-                ),
-        );
-      }
-
-      if (requiresAuth) _checkRequestUser(userId);
-      return await _client.send(request).timeout(_requestTimeout);
-    }, requiresAuth: requiresAuth);
-
-    final response = await http.Response.fromStream(streamedResponse);
-    return _handleResponse(response);
+    final streamedResponse = await _sendMultipart(
+      method,
+      path,
+      fields: fields,
+      files: files,
+      requiresAuth: requiresAuth,
+      accept: 'application/json',
+      followRedirects: true,
+    );
+    return _handleResponse(await http.Response.fromStream(streamedResponse));
   }
+
+  Future<http.StreamedResponse> sendMultipartStream(
+    String method,
+    String path, {
+    required Map<String, String> fields,
+    required String accept,
+    required bool Function() active,
+  }) => _sendMultipart(
+    method,
+    path,
+    fields: fields,
+    files: const [],
+    requiresAuth: true,
+    accept: accept,
+    followRedirects: false,
+    active: active,
+  );
 
   /// Verifies the captured cache owner against the current authenticated user.
   void checkUser(String expectedUserId) => _checkRequestUser(expectedUserId);

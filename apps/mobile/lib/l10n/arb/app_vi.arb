@@ -7129,5 +7129,22 @@
   "financeReportNetMovement": "Biến động ròng lũy kế",
   "financeReportUncategorized": "Chưa phân loại",
   "financeReportUnavailable": "Không thể tải báo cáo. Hãy thử khoảng thời gian ngắn hơn.",
-  "financeReportByCategory": "{kind} theo danh mục"
+  "financeReportByCategory": "{kind} theo danh mục",
+  "financeExportReady": "Tệp CSV đã sẵn sàng.",
+  "financeExportTransactions": "Xuất giao dịch",
+  "financeExportTransactionsDescription": "Tạo tệp CSV theo tìm kiếm và bộ lọc hiện tại.",
+  "financeShareCsv": "Chia sẻ tệp CSV",
+  "financeImportMoneyLover": "Nhập từ Money Lover",
+  "financeImportConfirm": "Nhập giao dịch",
+  "financeImportHelp": "Chọn tệp xuất Money Lover tối đa 5 MB và 10.000 giao dịch.",
+  "financeImportDelimiter": "Dấu phân cách",
+  "financeImportTab": "Tab",
+  "financeImportComma": "Dấu phẩy",
+  "financeImportSemicolon": "Dấu chấm phẩy",
+  "financeImportPickFile": "Chọn tệp",
+  "financeImportPreview": "{count} giao dịch đã sẵn sàng",
+  "financeImportInvalid": "Kiểm tra định dạng tệp, dấu phân cách và giới hạn số dòng.",
+  "financeImportWalletMismatch": "Tạo hoặc đổi tên ví để mỗi ví trong tệp khớp với một ví trong không gian làm việc có cùng loại tiền.",
+  "financeImportUnconfirmed": "Kiểm tra sổ giao dịch trước khi nhập lại.",
+  "financeImportResult": "Đã nhập {imported} trong số {total} giao dịch"
 }

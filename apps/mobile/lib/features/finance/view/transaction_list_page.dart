@@ -4,15 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/view/transaction_export_sheet.dart';
+import 'package:mobile/features/finance/view/transaction_import_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -269,6 +273,27 @@ class _TransactionListViewState extends State<_TransactionListView> {
                 showAmounts: showAmounts,
                 id: 'finance-transactions-amount-visibility',
               ),
+              if (canManageFinance(context, 'manage_finance'))
+                ShellActionSpec(
+                  id: 'finance-import-transactions',
+                  icon: LucideIcons.upload,
+                  tooltip: l10n.financeImportMoneyLover,
+                  onPressed: () =>
+                      unawaited(openFinanceImport(context, _onRefresh)),
+                ),
+              if (canManageFinance(context, 'export_finance_data') &&
+                  context.select<TransactionListCubit, bool>(
+                    (cubit) =>
+                        cubit.state.hasWorkspaceCurrency &&
+                        cubit.state.query.kind !=
+                            FinanceTransactionKind.transfer,
+                  ))
+                ShellActionSpec(
+                  id: 'finance-export-transactions',
+                  icon: LucideIcons.download,
+                  tooltip: l10n.financeExportTransactions,
+                  onPressed: () => unawaited(showTransactionExport(context)),
+                ),
               if (canManageFinance(context, 'create_transactions'))
                 financeCreateAction(
                   id: 'finance-transactions-create',

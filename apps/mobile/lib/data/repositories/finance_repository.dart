@@ -34,10 +34,13 @@ import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/data/repositories/finance_pending_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/finance/utils/money_lover_import.dart';
 
 part 'finance_repository_attachments.dart';
 part 'finance_repository_budgets.dart';
 part 'finance_repository_checkpoints.dart';
+part 'finance_repository_export.dart';
+part 'finance_repository_import.dart';
 part 'finance_repository_invoices.dart';
 part 'finance_repository_local.dart';
 part 'finance_repository_mutations.dart';
@@ -55,6 +58,8 @@ class FinanceRepository
         FinanceRepositoryTaxonomy,
         FinanceRepositoryBudgets,
         FinanceRepositoryCheckpoints,
+        FinanceRepositoryExport,
+        FinanceRepositoryImport,
         FinanceRepositoryInvoices,
         FinanceRepositoryRecurring,
         FinanceRepositoryReports {
