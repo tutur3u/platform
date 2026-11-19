@@ -7751,5 +7751,31 @@
   "financeBudgetOnTrack": "On track",
   "financeBudgetNearLimit": "Near limit",
   "financeBudgetOverLabel": "Over budget",
-  "financeBudgetPeriod": "Period"
+  "financeBudgetPeriod": "Period",
+  "financeInvoices": "Invoices",
+  "financeInvoice": "Invoice",
+  "financeInvoiceSubscriptions": "Subscriptions",
+  "financeInvoiceNew": "New invoice",
+  "financeInvoiceSubscriptionNew": "Collect subscription payment",
+  "financeInvoiceEmpty": "No invoices found",
+  "financeInvoiceNoPending": "No outstanding subscriptions found",
+  "financeInvoiceContent": "Invoice description",
+  "financeInvoiceNotes": "Notes",
+  "financeInvoiceCreator": "Created by",
+  "financeInvoiceCustomer": "Customer",
+  "financeInvoiceNoCustomers": "No customers found",
+  "financeInvoiceNoStockRows": "This product has no available stock variants",
+  "financeInvoiceCoverage": "Coverage month",
+  "financeInvoicePrepaidMonths": "Prepaid months",
+  "@financeInvoiceMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeInvoiceMonths": "{count, plural, one{1 month} other{{count} months}}",
+  "financeInvoiceAddProduct": "Add product",
+  "financeInvoiceDelete": "Delete invoice",
+  "financeInvoiceUnconfirmed": "Save could not be confirmed. Check the invoice list before trying again."
 }

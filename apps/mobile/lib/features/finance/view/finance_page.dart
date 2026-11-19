@@ -14,6 +14,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/view/finance_invoices_sheet.dart';
 import 'package:mobile/features/finance/view/finance_overview_balances.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
 import 'package:mobile/features/finance/view/recurring_transactions_sheet.dart';
@@ -168,6 +169,15 @@ class _FinanceView extends StatelessWidget {
         state: state,
         onTransactionTap: (transaction) =>
             _openTransaction(context, state, transaction),
+        onInvoices: canManageFinance(context, 'view_invoices')
+            ? () => unawaited(
+                openFinanceInvoices(
+                  context,
+                  wallets: state.wallets,
+                  currency: state.workspaceCurrency,
+                ),
+              )
+            : null,
         onRecurring: () => unawaited(
           openRecurringTransactionsSheet(
             context,
@@ -190,12 +200,14 @@ class FinanceOverviewContent extends StatelessWidget {
     required this.onTransactionTap,
     required this.onCreate,
     this.onRecurring,
+    this.onInvoices,
     this.now,
     super.key,
   });
 
   final FinanceState state;
   final VoidCallback? onRecurring;
+  final VoidCallback? onInvoices;
   final ValueChanged<Transaction> onTransactionTap;
   final VoidCallback? onCreate;
 
@@ -236,7 +248,9 @@ class FinanceOverviewContent extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             balances,
-            if (state.wallets.isNotEmpty || onRecurring != null) ...[
+            if (state.wallets.isNotEmpty ||
+                onRecurring != null ||
+                onInvoices != null) ...[
               const SizedBox(height: AppLayout.itemGap),
               AppGroupedCard(
                 children: [
@@ -246,6 +260,12 @@ class FinanceOverviewContent extends StatelessWidget {
                       title: l10n.financeCheckpointsBatchRecord,
                       leading: const AppIconTile(icon: LucideIcons.listChecks),
                       onTap: () => context.push(Routes.financeCheckpoints),
+                    ),
+                  if (onInvoices != null)
+                    AppRichRow(
+                      title: l10n.financeInvoices,
+                      leading: const AppIconTile(icon: LucideIcons.receipt),
+                      onTap: onInvoices,
                     ),
                   if (onRecurring != null)
                     AppRichRow(

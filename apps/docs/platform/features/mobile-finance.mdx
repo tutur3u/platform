@@ -94,6 +94,22 @@ next scheduled date. Finance managers can create, edit or delete rules. Use a
 negative amount for an expense and a positive amount for income. A rule uses
 the selected wallet's currency and can end on a date.
 
+## Invoices and subscriptions
+
+Open Invoices from the Overview. Search by customer, open an invoice to edit
+its description or notes, and create invoices from catalog products. Each line
+uses the selected unit and warehouse. The server checks the prices and issues
+the invoice.
+
+Subscriptions lists outstanding group payments. Pick an entry to collect a
+payment for a month and select the number of months covered. Finance
+permissions control access, creation, editing, and deletion. Mobile keeps
+ambiguous saves from being submitted again until the invoice list can be
+checked.
+
+`finance_invoices_test.dart` covers opening the list, editing an invoice, and
+selecting an outstanding subscription.
+
 ## Hidden amounts
 
 The eye toggle masks every figure on these screens, including balances,
@@ -125,7 +141,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Budgets | Create, edit, delete and track category budgets | Create, edit, delete, detail, status and daily spending pace |
 | Transfers | Linked wallet entries with source and destination amounts | Create and edit transfers, including cross-currency amounts. Linked entries collapse in activity |
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
-| Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Open |
+| Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, and collect outstanding subscriptions. Fee locks, manual subscription setup, wallet reassignment, and recovery remain open |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Monthly overview and wallet-period cash flow. Dedicated reports are open |
 | Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |

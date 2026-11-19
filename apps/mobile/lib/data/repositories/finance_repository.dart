@@ -23,6 +23,7 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
+import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/recurring_transaction.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
@@ -37,6 +38,7 @@ import 'package:mobile/data/sources/supabase_client.dart';
 part 'finance_repository_attachments.dart';
 part 'finance_repository_budgets.dart';
 part 'finance_repository_checkpoints.dart';
+part 'finance_repository_invoices.dart';
 part 'finance_repository_local.dart';
 part 'finance_repository_mutations.dart';
 part 'finance_repository_offline_preparation.dart';
@@ -52,6 +54,7 @@ class FinanceRepository
         FinanceRepositoryTaxonomy,
         FinanceRepositoryBudgets,
         FinanceRepositoryCheckpoints,
+        FinanceRepositoryInvoices,
         FinanceRepositoryRecurring {
   FinanceRepository({
     ApiClient? apiClient,

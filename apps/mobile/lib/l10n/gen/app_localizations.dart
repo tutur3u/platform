@@ -30174,6 +30174,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Period'**
   String get financeBudgetPeriod;
+
+  /// No description provided for @financeInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices'**
+  String get financeInvoices;
+
+  /// No description provided for @financeInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice'**
+  String get financeInvoice;
+
+  /// No description provided for @financeInvoiceSubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscriptions'**
+  String get financeInvoiceSubscriptions;
+
+  /// No description provided for @financeInvoiceNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New invoice'**
+  String get financeInvoiceNew;
+
+  /// No description provided for @financeInvoiceSubscriptionNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect subscription payment'**
+  String get financeInvoiceSubscriptionNew;
+
+  /// No description provided for @financeInvoiceEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices found'**
+  String get financeInvoiceEmpty;
+
+  /// No description provided for @financeInvoiceNoPending.
+  ///
+  /// In en, this message translates to:
+  /// **'No outstanding subscriptions found'**
+  String get financeInvoiceNoPending;
+
+  /// No description provided for @financeInvoiceContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice description'**
+  String get financeInvoiceContent;
+
+  /// No description provided for @financeInvoiceNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get financeInvoiceNotes;
+
+  /// No description provided for @financeInvoiceCreator.
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get financeInvoiceCreator;
+
+  /// No description provided for @financeInvoiceCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get financeInvoiceCustomer;
+
+  /// No description provided for @financeInvoiceNoCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'No customers found'**
+  String get financeInvoiceNoCustomers;
+
+  /// No description provided for @financeInvoiceNoStockRows.
+  ///
+  /// In en, this message translates to:
+  /// **'This product has no available stock variants'**
+  String get financeInvoiceNoStockRows;
+
+  /// No description provided for @financeInvoiceCoverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Coverage month'**
+  String get financeInvoiceCoverage;
+
+  /// No description provided for @financeInvoicePrepaidMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'Prepaid months'**
+  String get financeInvoicePrepaidMonths;
+
+  /// No description provided for @financeInvoiceMonths.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 month} other{{count} months}}'**
+  String financeInvoiceMonths(int count);
+
+  /// No description provided for @financeInvoiceAddProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'Add product'**
+  String get financeInvoiceAddProduct;
+
+  /// No description provided for @financeInvoiceDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete invoice'**
+  String get financeInvoiceDelete;
+
+  /// No description provided for @financeInvoiceUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Save could not be confirmed. Check the invoice list before trying again.'**
+  String get financeInvoiceUnconfirmed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

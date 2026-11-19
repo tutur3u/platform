@@ -16088,4 +16088,63 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeBudgetPeriod => 'Kỳ';
+
+  @override
+  String get financeInvoices => 'Hóa đơn';
+
+  @override
+  String get financeInvoice => 'Hóa đơn';
+
+  @override
+  String get financeInvoiceSubscriptions => 'Đăng ký';
+
+  @override
+  String get financeInvoiceNew => 'Hóa đơn mới';
+
+  @override
+  String get financeInvoiceSubscriptionNew => 'Thu phí đăng ký';
+
+  @override
+  String get financeInvoiceEmpty => 'Không tìm thấy hóa đơn';
+
+  @override
+  String get financeInvoiceNoPending => 'Không tìm thấy khoản đăng ký chưa thanh toán';
+
+  @override
+  String get financeInvoiceContent => 'Nội dung hóa đơn';
+
+  @override
+  String get financeInvoiceNotes => 'Ghi chú';
+
+  @override
+  String get financeInvoiceCreator => 'Người tạo';
+
+  @override
+  String get financeInvoiceCustomer => 'Khách hàng';
+
+  @override
+  String get financeInvoiceNoCustomers => 'Không tìm thấy khách hàng';
+
+  @override
+  String get financeInvoiceNoStockRows => 'Sản phẩm này không có biến thể tồn kho khả dụng';
+
+  @override
+  String get financeInvoiceCoverage => 'Tháng áp dụng';
+
+  @override
+  String get financeInvoicePrepaidMonths => 'Số tháng trả trước';
+
+  @override
+  String financeInvoiceMonths(int count) {
+    return '$count tháng';
+  }
+
+  @override
+  String get financeInvoiceAddProduct => 'Thêm sản phẩm';
+
+  @override
+  String get financeInvoiceDelete => 'Xóa hóa đơn';
+
+  @override
+  String get financeInvoiceUnconfirmed => 'Chưa xác nhận được việc lưu. Hãy kiểm tra danh sách hóa đơn trước khi thử lại.';
 }

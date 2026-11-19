@@ -16282,4 +16282,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeBudgetPeriod => 'Period';
+
+  @override
+  String get financeInvoices => 'Invoices';
+
+  @override
+  String get financeInvoice => 'Invoice';
+
+  @override
+  String get financeInvoiceSubscriptions => 'Subscriptions';
+
+  @override
+  String get financeInvoiceNew => 'New invoice';
+
+  @override
+  String get financeInvoiceSubscriptionNew => 'Collect subscription payment';
+
+  @override
+  String get financeInvoiceEmpty => 'No invoices found';
+
+  @override
+  String get financeInvoiceNoPending => 'No outstanding subscriptions found';
+
+  @override
+  String get financeInvoiceContent => 'Invoice description';
+
+  @override
+  String get financeInvoiceNotes => 'Notes';
+
+  @override
+  String get financeInvoiceCreator => 'Created by';
+
+  @override
+  String get financeInvoiceCustomer => 'Customer';
+
+  @override
+  String get financeInvoiceNoCustomers => 'No customers found';
+
+  @override
+  String get financeInvoiceNoStockRows => 'This product has no available stock variants';
+
+  @override
+  String get financeInvoiceCoverage => 'Coverage month';
+
+  @override
+  String get financeInvoicePrepaidMonths => 'Prepaid months';
+
+  @override
+  String financeInvoiceMonths(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count months',
+      one: '1 month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeInvoiceAddProduct => 'Add product';
+
+  @override
+  String get financeInvoiceDelete => 'Delete invoice';
+
+  @override
+  String get financeInvoiceUnconfirmed => 'Save could not be confirmed. Check the invoice list before trying again.';
 }
