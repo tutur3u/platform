@@ -5,9 +5,10 @@ import 'package:mobile/l10n/l10n.dart';
 /// Short relative age of a notification ("5m ago"), or a date after a week.
 String formatNotificationRelativeTime(
   BuildContext context,
-  DateTime timestamp,
-) {
-  final difference = DateTime.now().difference(timestamp);
+  DateTime timestamp, {
+  DateTime? now,
+}) {
+  final difference = (now ?? DateTime.now()).difference(timestamp);
   if (difference.inSeconds < 45) {
     return context.l10n.notificationsJustNow;
   }

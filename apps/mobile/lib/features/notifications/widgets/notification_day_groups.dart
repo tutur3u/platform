@@ -5,13 +5,11 @@ import 'package:mobile/l10n/gen/app_localizations.dart';
 enum NotificationDayBucket {
   today,
   yesterday,
-  lastWeek,
   earlier;
 
   String label(AppLocalizations l10n) => switch (this) {
     NotificationDayBucket.today => l10n.notificationsGroupToday,
     NotificationDayBucket.yesterday => l10n.notificationsGroupYesterday,
-    NotificationDayBucket.lastWeek => l10n.notificationsGroupLastWeek,
     NotificationDayBucket.earlier => l10n.notificationsGroupEarlier,
   };
 }
@@ -24,16 +22,18 @@ class NotificationDayGroup {
   final List<AppNotification> items;
 }
 
+/// Calendar-day bucket of [createdAt] relative to [now], both read in the
+/// device's local time zone.
 NotificationDayBucket notificationDayBucket(DateTime createdAt, DateTime now) {
   final local = createdAt.toLocal();
+  final localNow = now.toLocal();
   // Compare calendar dates, not elapsed time: local midnights are 23 or 25
   // hours apart across a DST change, which `inDays` would miscount.
-  final today = DateTime.utc(now.year, now.month, now.day);
+  final today = DateTime.utc(localNow.year, localNow.month, localNow.day);
   final day = DateTime.utc(local.year, local.month, local.day);
   final days = today.difference(day).inDays;
   if (days <= 0) return NotificationDayBucket.today;
   if (days == 1) return NotificationDayBucket.yesterday;
-  if (days < 7) return NotificationDayBucket.lastWeek;
   return NotificationDayBucket.earlier;
 }
 

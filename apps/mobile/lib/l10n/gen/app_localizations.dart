@@ -13327,6 +13327,96 @@ abstract class AppLocalizations {
   /// **'{count} unread'**
   String notificationsSubtitle(int count);
 
+  /// No description provided for @notificationsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get notificationsFilterAll;
+
+  /// No description provided for @notificationsFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notificationsFilterUnread;
+
+  /// No description provided for @notificationsFilterRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Read'**
+  String get notificationsFilterRead;
+
+  /// No description provided for @notificationsMarkAllRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark all as read'**
+  String get notificationsMarkAllRead;
+
+  /// No description provided for @notificationsMarkedRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as read'**
+  String get notificationsMarkedRead;
+
+  /// No description provided for @notificationsMarkedUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as unread'**
+  String get notificationsMarkedUnread;
+
+  /// No description provided for @notificationsUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get notificationsUndo;
+
+  /// No description provided for @notificationsAllCaughtUp.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get notificationsAllCaughtUp;
+
+  /// No description provided for @notificationsReadEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No read notifications'**
+  String get notificationsReadEmptyTitle;
+
+  /// No description provided for @notificationsOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline'**
+  String get notificationsOfflineTitle;
+
+  /// No description provided for @notificationsOfflineMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to load notifications.'**
+  String get notificationsOfflineMessage;
+
+  /// No description provided for @notificationsOfflineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline. Showing saved notifications.'**
+  String get notificationsOfflineBanner;
+
+  /// No description provided for @notificationsRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh notifications'**
+  String get notificationsRefreshFailed;
+
+  /// No description provided for @notificationsTargetUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This item is no longer available.'**
+  String get notificationsTargetUnavailable;
+
+  /// No description provided for @notificationsSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification settings'**
+  String get notificationsSettings;
+
   /// No description provided for @notificationsTitle.
   ///
   /// In en, this message translates to:

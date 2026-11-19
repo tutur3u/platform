@@ -9,10 +9,12 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
-
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/notifications/data/notification_read_cleanup.dart';
+import 'package:mobile/features/notifications/data/notifications_unread_count.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 
+part 'notifications_cache_codec.dart';
 part 'notifications_state.dart';
 
 class NotificationsCubit extends Cubit<NotificationsState> {
@@ -36,6 +38,14 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   Future<bool>? _unreadRefresh;
   final _tabRefreshes = <NotificationsTab, Future<bool>>{};
   final _tabGenerations = <NotificationsTab, int>{};
+
+  @override
+  void onChange(Change<NotificationsState> change) {
+    super.onChange(change);
+    if (change.currentState.unreadCount != change.nextState.unreadCount) {
+      NotificationsUnreadCount.instance.publish(change.nextState.unreadCount);
+    }
+  }
 
   bool _isCurrentScope(int epoch, String? userId) =>
       !isClosed && epoch == _scopeEpoch && userId == _currentUserId();
@@ -64,7 +74,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   static NotificationsState? seedStateForWorkspace(String? wsId) {
     final cached = CacheStore.instance.peek<NotificationsState>(
       key: _cacheKey(wsId: wsId),
-      decode: _stateFromCacheJson,
+      decode: _notificationsStateFromCacheJson,
     );
     final state = cached.data;
     if (!cached.hasValue || state == null) {
@@ -91,7 +101,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     _tabGenerations.clear();
     final isSeededState =
         state.scopeWorkspaceId == nextScopeWorkspaceId &&
-        (state.inbox.hasLoadedOnce ||
+        (state.all.hasLoadedOnce ||
+            state.inbox.hasLoadedOnce ||
             state.archive.hasLoadedOnce ||
             state.unreadCount > 0);
     if (isSeededState) {
@@ -119,6 +130,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         pendingIds: const [],
         isArchivingAll: false,
         isUnreadCountLoading: false,
+        all: const NotificationFeedState(),
         inbox: const NotificationFeedState(),
         archive: const NotificationFeedState(),
       ),
@@ -241,6 +253,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
               .feedFor(tab)
               .copyWith(
                 status: NotificationFeedStatus.error,
+                isOffline: _isOfflineError(error),
                 error: error.toString(),
               ),
           targetTab: tab,
@@ -315,6 +328,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           feed: feed.copyWith(
             status: NotificationFeedStatus.error,
             isLoadingMore: false,
+            isOffline: _isOfflineError(error),
             error: error.toString(),
           ),
           targetTab: tab,
@@ -354,6 +368,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         pendingIds: _sortedPendingIds({...state.pendingIds, notification.id}),
       ),
     );
+    final beforeRead = state;
+    applyLocalRead(notification.id, read: notification.isUnread);
     try {
       final result = await readWithDeliveredCleanup(
         actor: actor,
@@ -366,10 +382,12 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           read: notification.isUnread,
         ),
       );
-      if (result == NotificationReadResult.notAdmitted) return result;
+      if (result == NotificationReadResult.notAdmitted) {
+        _revertLocalRead(beforeRead, notification, current);
+        return result;
+      }
       if (!current()) return NotificationReadResult.acceptedScopeChanged;
-      if (result == NotificationReadResult.notAdmitted ||
-          result == NotificationReadResult.acceptedScopeChanged) {
+      if (result == NotificationReadResult.acceptedScopeChanged) {
         return result;
       }
       try {
@@ -386,11 +404,61 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         return _failedReadRefreshResult(result, current());
       }
       return current() ? result : NotificationReadResult.acceptedScopeChanged;
+    } on Object {
+      _revertLocalRead(beforeRead, notification, current);
+      rethrow;
     } finally {
       if (_isCurrentScope(epoch, actor)) {
         final pending = [...state.pendingIds]..remove(notification.id);
         emit(state.copyWith(pendingIds: _sortedPendingIds(pending.toSet())));
       }
+    }
+  }
+
+  /// Shows [read] on every loaded copy of [notificationId] and adjusts the
+  /// unread count before the server confirms, so rows and badges respond on
+  /// tap. A later feed refresh replaces the patched rows.
+  void applyLocalRead(String notificationId, {required bool read}) {
+    if (isClosed) return;
+    NotificationFeedState patch(NotificationFeedState feed) {
+      final index = feed.items.indexWhere(
+        (item) => item.id == notificationId && item.isUnread == read,
+      );
+      if (index < 0) return feed;
+      final items = [...feed.items];
+      items[index] = items[index].copyWith(
+        readAt: read ? DateTime.now() : null,
+      );
+      return feed.copyWith(items: items);
+    }
+
+    final source = [
+      ...state.all.items,
+      ...state.inbox.items,
+      ...state.archive.items,
+    ].where((item) => item.id == notificationId).firstOrNull;
+    final delta = source == null || source.isUnread != read
+        ? 0
+        : (read ? -1 : 1);
+    emit(
+      state.copyWith(
+        all: patch(state.all),
+        inbox: patch(state.inbox),
+        archive: patch(state.archive),
+        unreadCount: (state.unreadCount + delta).clamp(0, 1 << 30),
+      ),
+    );
+  }
+
+  void _revertLocalRead(
+    NotificationsState before,
+    AppNotification notification,
+    bool Function() current,
+  ) {
+    if (isClosed || !current()) return;
+    applyLocalRead(notification.id, read: !notification.isUnread);
+    if (state.unreadCount != before.unreadCount) {
+      emit(state.copyWith(unreadCount: before.unreadCount));
     }
   }
 
@@ -541,21 +609,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     var succeeded = await _refreshUnreadCountResult();
     if (!current()) return false;
 
-    final inboxLoaded = state.inbox.hasLoadedOnce;
-    final archiveLoaded = state.archive.hasLoadedOnce;
-
-    if (inboxLoaded) {
-      succeeded =
-          await _loadTabResult(NotificationsTab.inbox, refresh: true) &&
-          succeeded;
+    final loadedTabs = [
+      for (final tab in NotificationsTab.values)
+        if (state.feedFor(tab).hasLoadedOnce) tab,
+    ];
+    for (final tab in loadedTabs) {
+      succeeded = await _loadTabResult(tab, refresh: true) && succeeded;
+      if (!current()) return false;
     }
-    if (!current()) return false;
-    if (archiveLoaded) {
-      succeeded =
-          await _loadTabResult(NotificationsTab.archive, refresh: true) &&
-          succeeded;
-    }
-    if (!inboxLoaded && !archiveLoaded && preferredTab != null) {
+    if (loadedTabs.isEmpty && preferredTab != null) {
       succeeded =
           await _loadTabResult(preferredTab, refresh: true) && succeeded;
     }
@@ -566,7 +628,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     await CacheStore.instance.write(
       key: _cacheKey(wsId: state.scopeWorkspaceId),
       policy: _cachePolicy,
-      payload: _stateToCacheJson(state),
+      payload: _notificationsStateToCacheJson(state),
       tags: [
         _cacheTag,
         if (state.scopeWorkspaceId != null)
@@ -576,61 +638,13 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     );
   }
 
-  static NotificationsState _stateFromCacheJson(Object? json) {
-    if (json is! Map) {
-      throw const FormatException('Invalid notifications cache payload.');
-    }
-
-    final payload = Map<String, dynamic>.from(json);
-    return NotificationsState(
-      scopeWorkspaceId: payload['scopeWorkspaceId'] as String?,
-      unreadCount: payload['unreadCount'] as int? ?? 0,
-      inbox: _feedFromCacheJson(payload['inbox']),
-      archive: _feedFromCacheJson(payload['archive']),
-    );
-  }
-
-  static Map<String, dynamic> _stateToCacheJson(NotificationsState state) => {
-    'scopeWorkspaceId': state.scopeWorkspaceId,
-    'unreadCount': state.unreadCount,
-    'inbox': _feedToCacheJson(state.inbox),
-    'archive': _feedToCacheJson(state.archive),
-  };
-
-  static NotificationFeedState _feedFromCacheJson(Object? json) {
-    if (json is! Map) {
-      return const NotificationFeedState();
-    }
-
-    final payload = Map<String, dynamic>.from(json);
-    final statusName = payload['status'] as String?;
-    final itemsRaw = payload['items'] as List<dynamic>? ?? const [];
-    return NotificationFeedState(
-      status: statusName == null
-          ? NotificationFeedStatus.initial
-          : NotificationFeedStatus.values.byName(statusName),
-      items: itemsRaw
-          .whereType<Map<Object?, Object?>>()
-          .map(
-            (item) => AppNotification.fromJson(Map<String, dynamic>.from(item)),
-          )
-          .toList(growable: false),
-      totalCount: payload['totalCount'] as int? ?? 0,
-      pageSize: payload['pageSize'] as int? ?? 20,
-    );
-  }
-
-  static Map<String, dynamic> _feedToCacheJson(NotificationFeedState state) => {
-    'status': state.status.name,
-    'items': state.items.map((item) => item.toJson()).toList(growable: false),
-    'totalCount': state.totalCount,
-    'pageSize': state.pageSize,
-  };
-
   String? _resolveScopeWorkspaceId(Workspace? workspace) {
     if (workspace == null || workspace.personal) {
       return null;
     }
     return workspace.id;
   }
+
+  static bool _isOfflineError(Object error) =>
+      error is ApiException && error.failureKind == ApiFailureKind.transport;
 }

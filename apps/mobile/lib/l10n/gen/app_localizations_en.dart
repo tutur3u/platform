@@ -7008,6 +7008,51 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get notificationsFilterAll => 'All';
+
+  @override
+  String get notificationsFilterUnread => 'Unread';
+
+  @override
+  String get notificationsFilterRead => 'Read';
+
+  @override
+  String get notificationsMarkAllRead => 'Mark all as read';
+
+  @override
+  String get notificationsMarkedRead => 'Marked as read';
+
+  @override
+  String get notificationsMarkedUnread => 'Marked as unread';
+
+  @override
+  String get notificationsUndo => 'Undo';
+
+  @override
+  String get notificationsAllCaughtUp => 'You\'re all caught up';
+
+  @override
+  String get notificationsReadEmptyTitle => 'No read notifications';
+
+  @override
+  String get notificationsOfflineTitle => 'You\'re offline';
+
+  @override
+  String get notificationsOfflineMessage => 'Connect to the internet to load notifications.';
+
+  @override
+  String get notificationsOfflineBanner => 'Offline. Showing saved notifications.';
+
+  @override
+  String get notificationsRefreshFailed => 'Couldn\'t refresh notifications';
+
+  @override
+  String get notificationsTargetUnavailable => 'This item is no longer available.';
+
+  @override
+  String get notificationsSettings => 'Notification settings';
+
+  @override
   String get notificationsTitle => 'Notifications';
 
   @override

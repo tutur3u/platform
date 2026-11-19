@@ -76,7 +76,6 @@ lib/features/mail/view/mail_page.dart
 lib/features/meet/view/meet_page.dart
 lib/features/mobile_versions/view/mobile_version_settings_page.dart
 lib/features/notes/notes_page.dart
-lib/features/notifications/view/notifications_page.dart
 lib/features/notifications/widgets/notification_read_feedback.dart
 lib/features/notifications/widgets/notifications_sheet.dart
 lib/features/onboarding/view/onboarding_page.dart

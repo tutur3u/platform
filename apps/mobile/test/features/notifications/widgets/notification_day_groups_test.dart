@@ -25,7 +25,7 @@ void main() {
     );
     expect(
       notificationDayBucket(DateTime(2026, 10, 19, 8), now),
-      NotificationDayBucket.lastWeek,
+      NotificationDayBucket.earlier,
     );
     expect(
       notificationDayBucket(DateTime(2026, 10, 18, 23), now),
@@ -85,11 +85,11 @@ void main() {
     );
     expect(
       notificationDayBucket(DateTime(2026, 3, 7, 10), now),
-      NotificationDayBucket.lastWeek,
+      NotificationDayBucket.earlier,
     );
     expect(
       notificationDayBucket(DateTime(2026, 3, 3, 10), now),
-      NotificationDayBucket.lastWeek,
+      NotificationDayBucket.earlier,
     );
     expect(
       notificationDayBucket(DateTime(2026, 3, 2, 10), now),
@@ -109,11 +109,11 @@ void main() {
     );
     expect(
       notificationDayBucket(DateTime(2026, 10, 31, 10), now),
-      NotificationDayBucket.lastWeek,
+      NotificationDayBucket.earlier,
     );
     expect(
       notificationDayBucket(DateTime(2026, 10, 27, 10), now),
-      NotificationDayBucket.lastWeek,
+      NotificationDayBucket.earlier,
     );
     expect(
       notificationDayBucket(DateTime(2026, 10, 26, 10), now),
@@ -128,5 +128,45 @@ void main() {
       notificationDayBucket(localYesterday.toUtc(), now),
       NotificationDayBucket.yesterday,
     );
+  });
+
+  test('midnight splits today from yesterday to the second', () {
+    final now = DateTime(2026, 11, 19, 0, 0, 30);
+    expect(
+      notificationDayBucket(DateTime(2026, 11, 19), now),
+      NotificationDayBucket.today,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 11, 18, 23, 59, 59), now),
+      NotificationDayBucket.yesterday,
+    );
+    expect(
+      notificationDayBucket(DateTime(2026, 11, 17, 23, 59, 59), now),
+      NotificationDayBucket.earlier,
+    );
+  });
+
+  test('a UTC clock and UTC timestamps still group by local days', () {
+    final localNow = DateTime(2026, 11, 19, 0, 30);
+    final localLateYesterday = DateTime(2026, 11, 18, 23, 45);
+    final localEarlyToday = DateTime(2026, 11, 19, 0, 5);
+    expect(
+      notificationDayBucket(localLateYesterday.toUtc(), localNow.toUtc()),
+      NotificationDayBucket.yesterday,
+    );
+    expect(
+      notificationDayBucket(localEarlyToday.toUtc(), localNow.toUtc()),
+      NotificationDayBucket.today,
+    );
+    final groups = groupNotificationsByDay([
+      _at('today', localEarlyToday.toUtc()),
+      _at('yesterday', localLateYesterday.toUtc()),
+      _at('older', DateTime(2026, 11, 2).toUtc()),
+    ], localNow.toUtc());
+    expect(groups.map((group) => group.bucket), [
+      NotificationDayBucket.today,
+      NotificationDayBucket.yesterday,
+      NotificationDayBucket.earlier,
+    ]);
   });
 }

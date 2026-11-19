@@ -113,28 +113,24 @@ void _notificationsRenderCases() {
         );
         await settleShell(tester);
 
-        for (final caption in [
-          'Today',
-          'Yesterday',
-          'Last 7 days',
-          'Earlier',
-        ]) {
+        for (final caption in ['Today', 'Yesterday', 'Earlier']) {
           expect(find.text(caption), findsOneWidget, reason: caption);
         }
-        // The open invite offers both decisions.
+        // The open invite offers both decisions inline.
         expect(find.text('Accept'), findsOneWidget);
         expect(find.text('Decline'), findsOneWidget);
-        final markRead = find.byTooltip('Mark as read');
-        expect(markRead, findsNWidgets(2));
-        expect(tester.getSize(markRead.first).height, greaterThanOrEqualTo(44));
-        final firstCard = find.byType(AppGroupedCard).first;
-        final left = tester.getTopLeft(firstCard).dx;
+        expect(
+          find.byKey(const ValueKey('notification-unread-dot')),
+          findsNWidgets(2),
+        );
+        final firstRow = find.byKey(const ValueKey('notification-row-n1'));
+        expect(tester.getSize(firstRow).height, greaterThanOrEqualTo(44));
+        final left = tester.getTopLeft(firstRow).dx;
         if (size.key == 'phone') {
           expect(left, AppLayout.gutter(DeviceClass.compact));
         } else {
-          // Wider windows centre the list at the detail page width.
-          final width = tester.getSize(firstCard).width;
-          expect(width, lessThanOrEqualTo(720));
+          // Wider windows centre the feed at the detail page width.
+          expect(tester.getSize(firstRow).width, lessThanOrEqualTo(720));
         }
         // Search belongs to screens that search their own content.
         expect(find.byIcon(AppIcons.search), findsNothing);
@@ -145,17 +141,27 @@ void _notificationsRenderCases() {
             .resolveForLocation(Routes.notifications)
             .map((action) => action.id)
             .toList();
-        // Unread notifications exist, so Archive all is offered.
-        expect(ids(), contains('notifications-archive-all'));
+        // Unread notifications exist, so Mark all as read is offered.
+        expect(ids(), contains('notifications-mark-all-read'));
+        expect(ids(), contains('notifications-settings'));
         await _capture(tester, 'notifications-${size.key}-${look.key}');
         if (size.key == 'phone') {
-          // The Archive tab never offers it.
-          chrome.state
-              .resolveForLocation(Routes.notifications)
-              .firstWhere((action) => action.id == 'notifications-tab-archive')
-              .onPressed!();
+          // The Unread filter asks the server for unread rows only.
+          await tester.tap(
+            find.byKey(const ValueKey('notifications-filter-inbox')),
+          );
+          await tester.runAsync(
+            () => Future<void>.delayed(const Duration(milliseconds: 50)),
+          );
           await settleShell(tester);
-          expect(ids(), isNot(contains('notifications-archive-all')));
+          verify(
+            () => repository.fetchNotifications(
+              wsId: any(named: 'wsId'),
+              unreadOnly: true,
+              limit: any(named: 'limit'),
+              offset: any(named: 'offset'),
+            ),
+          ).called(greaterThanOrEqualTo(1));
         }
         expect(tester.takeException(), isNull);
       });
@@ -201,11 +207,11 @@ void _notificationsRenderCases() {
       await settleShell(tester);
 
       expect(
-        find.text(failing ? 'Retry' : 'No unread notifications'),
+        find.text(failing ? 'Retry' : "You're all caught up"),
         findsOneWidget,
       );
       expect(find.textContaining('synthetic-offline'), findsNothing);
-      // Nothing unread: no Archive all, rather than a disabled control.
+      // Nothing unread: no Mark all as read, rather than a disabled control.
       expect(
         tester
             .element(find.byType(NotificationsPage))
@@ -213,7 +219,7 @@ void _notificationsRenderCases() {
             .state
             .resolveForLocation(Routes.notifications)
             .map((action) => action.id),
-        isNot(contains('notifications-archive-all')),
+        isNot(contains('notifications-mark-all-read')),
       );
       expect(find.byIcon(AppIcons.search), findsNothing);
       await _capture(tester, 'notifications-phone-$state');

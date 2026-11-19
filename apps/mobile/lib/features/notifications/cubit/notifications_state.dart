@@ -2,7 +2,9 @@ part of 'notifications_cubit.dart';
 
 const _notificationsStateSentinel = Object();
 
-enum NotificationsTab { inbox, archive }
+/// Server-backed feeds: [all] notifications, unread ([inbox]) and read
+/// ([archive]).
+enum NotificationsTab { all, inbox, archive }
 
 enum NotificationFeedStatus { initial, loading, loaded, error }
 
@@ -13,6 +15,7 @@ class NotificationFeedState extends Equatable {
     this.totalCount = 0,
     this.pageSize = 20,
     this.isLoadingMore = false,
+    this.isOffline = false,
     this.error,
   });
 
@@ -21,6 +24,9 @@ class NotificationFeedState extends Equatable {
   final int totalCount;
   final int pageSize;
   final bool isLoadingMore;
+
+  /// The last fetch failed because the device could not reach the API.
+  final bool isOffline;
   final String? error;
 
   bool get hasLoadedOnce =>
@@ -34,6 +40,7 @@ class NotificationFeedState extends Equatable {
     int? totalCount,
     int? pageSize,
     bool? isLoadingMore,
+    bool? isOffline,
     Object? error = _notificationsStateSentinel,
     bool clearError = false,
   }) {
@@ -43,6 +50,7 @@ class NotificationFeedState extends Equatable {
       totalCount: totalCount ?? this.totalCount,
       pageSize: pageSize ?? this.pageSize,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isOffline: !clearError && (isOffline ?? this.isOffline),
       error: clearError
           ? null
           : error == _notificationsStateSentinel
@@ -58,6 +66,7 @@ class NotificationFeedState extends Equatable {
     totalCount,
     pageSize,
     isLoadingMore,
+    isOffline,
     error,
   ];
 }
@@ -69,6 +78,7 @@ class NotificationsState extends Equatable {
     this.isUnreadCountLoading = false,
     this.pendingIds = const [],
     this.isArchivingAll = false,
+    this.all = const NotificationFeedState(),
     this.inbox = const NotificationFeedState(),
     this.archive = const NotificationFeedState(),
   });
@@ -78,12 +88,15 @@ class NotificationsState extends Equatable {
   final bool isUnreadCountLoading;
   final List<String> pendingIds;
   final bool isArchivingAll;
+  final NotificationFeedState all;
   final NotificationFeedState inbox;
   final NotificationFeedState archive;
 
-  NotificationFeedState feedFor(NotificationsTab tab) {
-    return tab == NotificationsTab.inbox ? inbox : archive;
-  }
+  NotificationFeedState feedFor(NotificationsTab tab) => switch (tab) {
+    NotificationsTab.all => all,
+    NotificationsTab.inbox => inbox,
+    NotificationsTab.archive => archive,
+  };
 
   bool isPending(String notificationId) => pendingIds.contains(notificationId);
 
@@ -95,9 +108,13 @@ class NotificationsState extends Equatable {
     bool? isArchivingAll,
     NotificationFeedState? feed,
     NotificationsTab? targetTab,
+    NotificationFeedState? all,
     NotificationFeedState? inbox,
     NotificationFeedState? archive,
   }) {
+    final nextAll = targetTab == NotificationsTab.all
+        ? (feed ?? this.all)
+        : (all ?? this.all);
     final nextInbox = targetTab == NotificationsTab.inbox
         ? (feed ?? this.inbox)
         : (inbox ?? this.inbox);
@@ -113,6 +130,7 @@ class NotificationsState extends Equatable {
       isUnreadCountLoading: isUnreadCountLoading ?? this.isUnreadCountLoading,
       pendingIds: pendingIds ?? this.pendingIds,
       isArchivingAll: isArchivingAll ?? this.isArchivingAll,
+      all: nextAll,
       inbox: nextInbox,
       archive: nextArchive,
     );
@@ -125,6 +143,7 @@ class NotificationsState extends Equatable {
     isUnreadCountLoading,
     pendingIds,
     isArchivingAll,
+    all,
     inbox,
     archive,
   ];

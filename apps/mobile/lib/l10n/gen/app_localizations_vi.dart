@@ -6933,6 +6933,51 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get notificationsFilterAll => 'Tất cả';
+
+  @override
+  String get notificationsFilterUnread => 'Chưa đọc';
+
+  @override
+  String get notificationsFilterRead => 'Đã đọc';
+
+  @override
+  String get notificationsMarkAllRead => 'Đánh dấu tất cả là đã đọc';
+
+  @override
+  String get notificationsMarkedRead => 'Đã đánh dấu là đã đọc';
+
+  @override
+  String get notificationsMarkedUnread => 'Đã đánh dấu là chưa đọc';
+
+  @override
+  String get notificationsUndo => 'Hoàn tác';
+
+  @override
+  String get notificationsAllCaughtUp => 'Bạn đã xem hết thông báo';
+
+  @override
+  String get notificationsReadEmptyTitle => 'Chưa có thông báo đã đọc';
+
+  @override
+  String get notificationsOfflineTitle => 'Bạn đang ngoại tuyến';
+
+  @override
+  String get notificationsOfflineMessage => 'Hãy kết nối internet để tải thông báo.';
+
+  @override
+  String get notificationsOfflineBanner => 'Đang ngoại tuyến. Đang hiển thị thông báo đã lưu.';
+
+  @override
+  String get notificationsRefreshFailed => 'Không thể làm mới thông báo';
+
+  @override
+  String get notificationsTargetUnavailable => 'Mục này không còn khả dụng.';
+
+  @override
+  String get notificationsSettings => 'Cài đặt thông báo';
+
+  @override
   String get notificationsTitle => 'Thông báo';
 
   @override
