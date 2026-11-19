@@ -10,6 +10,16 @@ For a shard change, compare the old and new exact test inventories, command exit
 
 Keep the daily entry short. Record the UTC sampling window, measurement scope and missing data, previous and current queue and execution percentiles, recovered and unconfirmed failures, accepted change and rollback conditions. Link the evidence and exact source. Use the existing CI optimization cadence and record results only when the workflow or measurement changed.
 
+## Daily routine
+
+A scheduled agent runs once a day. It appends the measured sample with
+`node scripts/ci/ci-daily-sample.js --append plugins/tuturuuu/skills/tuturuuu-development-tooling/references/ci-learnings.md --note "<lesson>"`,
+investigates the slowest jobs, the longest queues and any failed-then-passed
+job, lands one verified improvement or flake fix on `main`, and records the
+lesson in the note: the cause, the change with its commit, and the rollback
+condition. When nothing changed, the note says what was checked. Run
+`bun fleet:ci` to validate a change across the fleet before pushing.
+
 ## 2026-11-19 | Main timing and retry sample
 
 GitHub Actions listed 16,675 workflows on main from 12 November at 10:00 through 19 November at 10:00 ICT. There were 6,369 canceled and 59 unfinished workflows. The job sample covered 1,525 workflows, including all 37 workflows with retries, and returned 6,359 job records. It recorded 942 canceled jobs, 79 unfinished jobs and 6,393 observed runner-minutes. The runner-minute estimate includes jobs canceled after starting and omits jobs without a terminal execution interval.
