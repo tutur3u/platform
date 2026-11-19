@@ -19,6 +19,11 @@ import {
   profiles,
   publicationConfig,
 } from './wave1-native-profile.mjs';
+import {
+  assertNoServerSourceMaps,
+  assertWorkerModuleRoot,
+  stripServerSourceMaps,
+} from './wave1-native-source-maps.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const json = (path) => JSON.parse(readFileSync(path, 'utf8'));
@@ -99,6 +104,12 @@ export function prepare(appRoot, app, environment, subdomain, sha) {
     resolve(dirname(emitted), base.assets.directory)
   );
   assert.equal(assets, resolve(dist, 'client'));
+  if (environment === 'production') {
+    assertWorkerModuleRoot(dist, dirname(main), assets);
+    const removed = stripServerSourceMaps(dirname(main));
+    if (removed.count || removed.references)
+      console.log(JSON.stringify({ serverSourceMapsRemoved: removed }));
+  }
   assertMailNodeImports(dist, app, Object.keys(inventory(dist)));
   const profile = profileFor(app, environment, subdomain);
   const config = resolve(dist, 'wave1/wrangler.json');
@@ -166,6 +177,10 @@ export function verify(appRoot, app, environment, sha) {
     dist,
     resolve(dirname(emitted), base.assets.directory)
   );
+  if (environment === 'production') {
+    assertWorkerModuleRoot(dist, dirname(main), assets);
+    assertNoServerSourceMaps(dirname(main));
+  }
   assert.deepEqual(
     json(config),
     publicationConfig(base, receipt.profile, {

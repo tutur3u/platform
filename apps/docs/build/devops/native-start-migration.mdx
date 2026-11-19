@@ -306,6 +306,17 @@ the emitted Worker startup probes. A dry run alone does not certify either
 hosted upload acceptance or production behavior. The focused upload regression
 coverage lives in `scripts/ci/wave1-native-upload-limits.test.mjs`.
 
+Wave-1 production seals carry no server source maps. Publication configs set
+`upload_source_maps: false`, and `wave1-native-artifact.mjs prepare` removes
+every `.map` file and external `sourceMappingURL` reference under the Worker
+module root before taking the inventory. The seal therefore covers exactly the
+modules Wrangler uploads, and `verify` refuses a production seal that still
+holds either. Calendar's production build emits about 91 MiB of server maps,
+above the 60 MiB encoded limit. Mail emits about 25 MiB. Staging seals keep
+their maps, and client assets are not modified. The `serverSourceMapsRemoved`
+log line reports the removed count and bytes. Regression coverage lives in
+`scripts/ci/wave1-native-source-maps.test.mjs`.
+
 ### Finance held-profile host acceptance
 
 Finance's native staging and production qualification profiles admit only their
