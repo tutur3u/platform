@@ -1,3 +1,7 @@
+import { authorize } from './board/assertion';
+import { job } from './board/contracts';
+import { errorResponse, reject } from './board/store';
+import { boardName } from './board/tasks';
 import {
   ASSERTION_HEADER,
   allowedUsers,
@@ -13,6 +17,7 @@ import {
 } from './protocol';
 
 export { OpsHub } from './hub';
+export { FleetBoard } from './board';
 
 async function handle(request: Request, env: Env) {
   const url = new URL(request.url);
@@ -75,6 +80,29 @@ async function handle(request: Request, env: Env) {
 }
 export default {
   async fetch(request: Request, env: Env) {
+    if (new URL(request.url).pathname.startsWith('/board/')) {
+      try {
+        const { actor } = await authorize(request.clone(), env);
+        const name = boardName(actor.workspaceId, actor.boardId);
+        if (name !== env.BOARD_TASKS_SCOPE) reject(404, 'not_found');
+        const headers = new Headers();
+        for (const key of [
+          'Content-Type',
+          'Idempotency-Key',
+          'X-Board-Assertion',
+        ]) {
+          const value = request.headers.get(key);
+          if (value !== null) headers.set(key, value);
+        }
+        return env.BOARD.getByName(name).fetch(request.url, {
+          method: request.method,
+          body: request.body,
+          headers,
+        });
+      } catch (error) {
+        return errorResponse(error);
+      }
+    }
     let response: Response;
     try {
       response = await handle(request, env);
@@ -98,5 +126,25 @@ export default {
       : '/unknown';
     console.info(JSON.stringify({ status: response.status, route }));
     return response;
+  },
+  async queue(batch: MessageBatch<unknown>, env: Env) {
+    for (const message of batch.messages) {
+      const envelope = job.safeParse(message.body);
+      if (envelope.success) {
+        const { workspaceId, boardId } = envelope.data;
+        const name = boardName(workspaceId, boardId);
+        if (name === env.BOARD_TASKS_SCOPE) {
+          const response = await env.BOARD.getByName(name).fetch(
+            'https://board.internal/_queue',
+            {
+              method: 'POST',
+              body: JSON.stringify(envelope.data),
+            }
+          );
+          if (!response.ok) console.error('Board queue delivery failed');
+        }
+      }
+      message.ack();
+    }
   },
 } satisfies ExportedHandler<Env>;

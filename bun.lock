@@ -1553,6 +1553,7 @@
     "apps/ops-hub": {
       "name": "@tuturuuu/ops-hub",
       "dependencies": {
+        "@tuturuuu/fleet-board-schemas": "workspace:*",
         "zod": "^4.6.7",
       },
       "devDependencies": {
@@ -2973,6 +2974,12 @@
         "@types/node": "^26.6.5",
         "typescript": "7.0.2",
         "vitest": "^5.0.5",
+      },
+    },
+    "packages/fleet-board-schemas": {
+      "name": "@tuturuuu/fleet-board-schemas",
+      "dependencies": {
+        "zod": "^4.6.7",
       },
     },
     "packages/games": {
@@ -6009,6 +6016,8 @@
     "@tuturuuu/finance": ["@tuturuuu/finance@workspace:apps/finance"],
 
     "@tuturuuu/finance-core": ["@tuturuuu/finance-core@workspace:packages/finance-core"],
+
+    "@tuturuuu/fleet-board-schemas": ["@tuturuuu/fleet-board-schemas@workspace:packages/fleet-board-schemas"],
 
     "@tuturuuu/forms": ["@tuturuuu/forms@workspace:apps/forms"],
 

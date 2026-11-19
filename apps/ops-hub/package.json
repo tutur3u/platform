@@ -15,6 +15,7 @@
     "lint": "vp lint --config .oxlintrc.json src cloudflare.config.ts vite.config.ts vitest.config.ts --deny-warnings"
   },
   "dependencies": {
+    "@tuturuuu/fleet-board-schemas": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {

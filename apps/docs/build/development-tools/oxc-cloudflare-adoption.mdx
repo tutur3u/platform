@@ -469,3 +469,21 @@ CI; a migration direction does not authorize production cutover.
 - [Oxfmt configuration](https://oxc.rs/docs/guide/usage/formatter/config.html)
 - [Vite+ migration](https://viteplus.dev/guide/migrate)
 - [TanStack Start on Cloudflare](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
+
+### Fleet Board coordination cost bounds
+
+The Ops Hub Fleet Board source declares a SQLite Durable Object and a follow-up
+Queue. Each board starts stopped. Its control row holds the stop generation and
+hourly admission counters. The stop action advances the generation. Stale Queue
+envelopes cannot start work, and persisted retry state uses at most three
+attempts. Operators can inspect the fence with `GET /board/control/stop` and
+change it with a fresh manager assertion and a matching generation.
+
+Per board and fixed UTC hour, the source allows up to 120 Tasks reads, 60 Queue
+sends and 120 alarm writes. Claims read at most four candidate pages and check
+user access to the selected task before committing a lease. Watcher fan-out
+allows up to eight deliveries per event. Outbound notification adapters remain
+unavailable until the recipient audience can be verified. SQLite tests cover
+stopped dispatch, stale generations and lease expiry. Hosted Queue and alarm
+behavior, account-level ingress budgets and the operator stop rehearsal remain
+activation evidence.
