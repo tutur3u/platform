@@ -1,0 +1,98 @@
+---
+title: "Fleet CI"
+description: "Run the CI-equivalent check set for one commit, sharded across trusted development machines over SSH."
+updatedAt: "2026-11-19"
+audience: developers
+---
+
+## What it runs
+
+`bun fleet:ci` checks one exact commit on several machines at once. Each shard
+mirrors the command a GitHub workflow runs for the same check:
+
+| Shard | Workflow | Notes |
+| --- | --- | --- |
+| `type-check` | `type-check.yaml` | Builds workspace packages; never on the local host |
+| `unit-0` to `unit-3` | `turbo-unit-tests.yaml` | Same planner as CI shards; Web suites get a disposable Redis |
+| `root-scripts-0` to `root-scripts-2` | `turbo-unit-tests.yaml` | The complete root suite, split with `--test-shard` |
+| `oxlint`, `oxfmt` | `oxc-check.yaml` | Workspace binaries at the workflow's pinned versions |
+| `i18n` | `i18n-check.yaml` | Sort, translation, key parity and namespace checks |
+| `docs-seo` | `docs-seo-check.yaml` | Inventory, SEO assets and docs audit |
+| `codex-plugin` | `codex-plugin.yaml` | Plugin and docs navigation validation |
+
+App builds, E2E, CodeQL and deploy workflows stay in GitHub Actions.
+
+## Usage
+
+```bash
+bun fleet:ci --plan                    # admission and placement only
+bun fleet:ci                           # HEAD on every admitted host
+bun fleet:ci --sha origin/main         # an exact pushed commit
+bun fleet:ci --only 'root-scripts-*,oxlint' --hosts build-box
+bun fleet:ci --sweep                   # after an interrupted run
+```
+
+Logs land in `$TMPDIR/fleet-ci-<sha>/<shard>.log` (or `--out`). The summary
+prints each shard's host, status and minutes, followed by the last lines of
+every failed shard. The exit code is non-zero when any shard fails, times out
+or cannot be placed.
+
+## Hosts and admission
+
+Machine-specific hosts live outside the repository, in the JSON array named by
+`$FLEET_CI_HOSTS` or `~/.tuturuuu/fleet-ci/hosts.json`:
+
+```json
+[
+  {
+    "id": "build-box",
+    "ssh": "build-box",
+    "repo": "/srv/checkouts/tuturuuu",
+    "slots": 4,
+    "builds": true,
+    "minFreeGiB": 60
+  }
+]
+```
+
+The checkout running the command is always added as `local` (one slot,
+`builds: false`, 24 GiB floor) unless the file defines `local`. The production
+server and each of its aliases are refused before any connection, including
+when listed in the file.
+
+Before scheduling, each host is probed over SSH:
+
+- free space on the repository volume must meet the host's `minFreeGiB`, which
+  stays at or above that host's own `ttr resources` heavy-admission floor;
+- Node must be 24, the CI version. The probe prefers `~/tools/pinned-24.*`,
+  then nvm or Homebrew `node@24`;
+- slots shrink when the host is already loaded;
+- shards that need Redis go only to hosts with `redis-server` or a running
+  Docker daemon.
+
+A host with `builds: false` only receives light shards, so app and package
+builds never run on the machine you are working on.
+Hosts that run `ttr resources` execute install and every shard through their
+own queue; a refused admission (exit 75) requeues the shard on another host.
+When a host's shims need a pinned runtime, set `ttrRuntime` for that host.
+
+## Lifecycle
+
+1. Resolve the commit. A commit that is not on `origin` travels as a Git
+   bundle containing only the commits after `origin/main`.
+2. On each admitted host: `git worktree add --detach` under
+   `<repo>/.worktrees/fleet-ci-<sha>-<pid>`, then `bun install --frozen-lockfile`.
+3. Shards are pulled heaviest first. A shared setup step, such as the
+   workspace package build, runs once per host before the first shard that
+   needs it.
+4. Cleanup always runs: it stops leftover shard processes, removes the
+   worktree, prunes worktree metadata and deletes the bundle. If the controller
+   is killed, run `bun fleet:ci --sweep`; it removes every `fleet-ci-*`
+   worktree, so never run it while another fleet run is active.
+
+## Interpreting results
+
+macOS hosts can differ from the Linux CI runners. A failure that depends on
+process-group signals, filesystem case or timing should be confirmed on a CI
+runner before treating it as a regression. Record confirmed flakes and timing
+evidence in the development-tooling skill's `references/ci-learnings.md`.

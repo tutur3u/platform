@@ -269,6 +269,7 @@
     "format": "oxfmt --check .",
     "format:fix": "oxfmt --write .",
     "ff": "oxlint --fix . && oxfmt --write .",
+    "fleet:ci": "node scripts/fleet-ci.js",
     "lint": "oxlint --deny-warnings --threads 2 .",
     "lint:fix": "oxlint --fix .",
     "format-and-lint": "oxfmt --check . && oxlint --deny-warnings --threads 2 .",

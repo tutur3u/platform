@@ -295,6 +295,7 @@
               "build/development-tools/git-conventions",
               "build/development-tools/feature-flags",
               "build/development-tools/pre-push-checks",
+              "build/development-tools/fleet-ci",
               "build/development-tools/git-guard",
               "build/development-tools/browser-session-surface",
               "build/development-tools/tsrs-shadow-type-check",
