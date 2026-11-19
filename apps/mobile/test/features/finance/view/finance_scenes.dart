@@ -30,7 +30,6 @@ import 'package:mobile/features/finance/utils/finance_flow.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
-import 'package:mobile/features/finance/view/finance_secondary_pages.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
@@ -319,8 +318,7 @@ enum FinanceScene {
   wallets('Wallets', Routes.wallets),
   walletDetail('Everyday', Routes.walletDetail),
   checkpoints('Checkpoints', Routes.financeCheckpoints),
-  categories('Categories', Routes.categories),
-  manage('Manage', Routes.financeManage);
+  categories('Categories', Routes.categories);
 
   const FinanceScene(this.title, this.route);
 
@@ -449,7 +447,6 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
     FinanceScene.categories => TransactionCategoriesPage(
       repository: _repository,
     ),
-    FinanceScene.manage => const FinanceManagePage(),
   };
 
   @override

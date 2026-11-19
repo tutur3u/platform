@@ -111,9 +111,10 @@ void main() {
     dock.items.last.onReselect!();
     await tester.pumpAndSettle();
     expect(find.text('Checkpoints'), findsOneWidget);
-    expect(find.text('Manage'), findsOneWidget);
+    expect(find.text('Manage'), findsNothing);
+    expect(find.text('Create wallet'), findsNothing);
     expect(find.text('Reports'), findsNothing);
-    Navigator.of(tester.element(find.text('Manage'))).pop();
+    Navigator.of(tester.element(find.text('Checkpoints'))).pop();
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Tags').first);

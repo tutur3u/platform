@@ -23,6 +23,13 @@ Transactions in search). The action is only offered with the matching
 permission. Where the dock has no room for it (narrow phones with every
 destination shown), the shell shows it as a filled top-bar button instead.
 
+## Destinations
+
+The dock holds Overview, Transactions, Budgets and Wallets; More opens
+Categories and Checkpoints. Finance has no separate Manage page: creating a
+wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
+Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
+
 ## Periods
 
 Transactions and a wallet page pin a period bar: previous, the period, next

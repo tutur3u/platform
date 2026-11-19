@@ -51,6 +51,7 @@ const financeExtraNavItems = <MiniAppNavItem>[
   MiniAppNavItem(
     id: 'finance_categories',
     route: Routes.categories,
+    aliasRoutes: [Routes.financeMore],
     icon: LucideIcons.tags,
     labelBuilder: _categories,
   ),
@@ -60,13 +61,6 @@ const financeExtraNavItems = <MiniAppNavItem>[
     icon: LucideIcons.listChecks,
     labelBuilder: _checkpoints,
   ),
-  MiniAppNavItem(
-    id: 'finance_manage',
-    route: Routes.financeManage,
-    aliasRoutes: [Routes.financeMore],
-    icon: Icons.tune_rounded,
-    labelBuilder: _manage,
-  ),
 ];
 
 const _fallbackNavItems = <MiniAppNavItem>[
@@ -74,11 +68,7 @@ const _fallbackNavItems = <MiniAppNavItem>[
   MiniAppNavItem(
     id: 'finance_more',
     route: Routes.financeMore,
-    aliasRoutes: [
-      Routes.financeManage,
-      Routes.categories,
-      Routes.financeCheckpoints,
-    ],
+    aliasRoutes: [Routes.categories, Routes.financeCheckpoints],
     icon: Icons.more_horiz,
     labelBuilder: _more,
   ),
@@ -203,7 +193,6 @@ String _wallets(AppLocalizations l10n) => l10n.financeWallets;
 String _budgets(AppLocalizations l10n) => l10n.financeBudgets;
 String _categories(AppLocalizations l10n) => l10n.financeCategories;
 String _checkpoints(AppLocalizations l10n) => l10n.financeCheckpointsShortLabel;
-String _manage(AppLocalizations l10n) => l10n.financeManageLabel;
 Widget _page(BuildContext context) => const FinanceDockRegistration(
   location: Routes.finance,
   child: FinancePage(),

@@ -3598,22 +3598,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeManageCategoriesEmptyBody => 'Create categories for recurring income and expense patterns.';
 
   @override
-  String get financeManageCategoriesSubtitle => 'Group transactions into clear spending and income buckets.';
-
-  @override
-  String get financeManageCategoriesTitle => 'Categories';
-
-  @override
-  String get financeManageLabel => 'Manage';
-
-  @override
   String get financeManageTagsEmptyBody => 'Create tags for ad-hoc labels like trips, subscriptions, or projects.';
-
-  @override
-  String get financeManageTagsSubtitle => 'Use tags for lightweight labels and flexible reporting.';
-
-  @override
-  String get financeManageTagsTitle => 'Tags';
 
   @override
   String get financeNet => 'Net';

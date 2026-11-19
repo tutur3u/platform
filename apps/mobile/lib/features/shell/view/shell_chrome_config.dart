@@ -63,7 +63,7 @@ class ShellChromeConfig {
       Routes.storefronts => l10n.storefrontTitle,
       Routes.transactions => l10n.financeActivityLabel,
       Routes.financeCheckpoints => l10n.financeCheckpointsTitle,
-      Routes.categories => l10n.financeManageLabel,
+      Routes.categories => l10n.financeCategories,
       Routes.wallets => l10n.financeWallets,
       Routes.timer => l10n.timerTitle,
       Routes.timerHistory => l10n.timerHistory,

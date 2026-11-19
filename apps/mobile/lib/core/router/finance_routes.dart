@@ -3,7 +3,6 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
-import 'package:mobile/features/finance/view/finance_secondary_pages.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -44,13 +43,8 @@ List<RouteBase> financeRoutes() => [
       child: BudgetsPage(),
     ),
   ),
-  GoRoute(
-    path: Routes.financeManage,
-    builder: (context, state) => const FinanceDockRegistration(
-      location: Routes.financeManage,
-      child: FinanceManagePage(),
-    ),
-  ),
+  // Wallet creation lives on Wallets; old Manage links land there.
+  GoRoute(path: Routes.financeManage, redirect: (_, _) => Routes.wallets),
   GoRoute(path: Routes.financeMore, builder: financeMoreFallback),
   GoRoute(path: Routes.financeReports, redirect: (_, _) => Routes.finance),
   GoRoute(

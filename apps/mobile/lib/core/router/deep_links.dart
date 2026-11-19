@@ -308,9 +308,7 @@ String _financeLocation(List<String> segments) {
   if (segments.length > 1 && segments[1] == 'reports') {
     return Routes.financeReports;
   }
-  if (segments.length > 1 && segments[1] == 'manage') {
-    return Routes.financeManage;
-  }
+  if (segments.length > 1 && segments[1] == 'manage') return Routes.wallets;
   if (segments.length > 1 && segments[1] == 'budgets') {
     return Routes.financeBudgets;
   }

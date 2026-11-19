@@ -3584,22 +3584,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeManageCategoriesEmptyBody => 'Tạo danh mục cho các mẫu thu nhập và chi tiêu lặp lại.';
 
   @override
-  String get financeManageCategoriesSubtitle => 'Nhóm giao dịch vào các nhóm thu và chi rõ ràng.';
-
-  @override
-  String get financeManageCategoriesTitle => 'Danh mục';
-
-  @override
-  String get financeManageLabel => 'Quản lý';
-
-  @override
   String get financeManageTagsEmptyBody => 'Tạo thẻ cho nhãn linh hoạt như chuyến đi, đăng ký hoặc dự án.';
-
-  @override
-  String get financeManageTagsSubtitle => 'Dùng thẻ cho các nhãn linh hoạt và báo cáo nhanh.';
-
-  @override
-  String get financeManageTagsTitle => 'Thẻ';
 
   @override
   String get financeNet => 'Ròng';

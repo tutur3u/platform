@@ -6895,41 +6895,11 @@ abstract class AppLocalizations {
   /// **'Create categories for recurring income and expense patterns.'**
   String get financeManageCategoriesEmptyBody;
 
-  /// No description provided for @financeManageCategoriesSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Group transactions into clear spending and income buckets.'**
-  String get financeManageCategoriesSubtitle;
-
-  /// No description provided for @financeManageCategoriesTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Categories'**
-  String get financeManageCategoriesTitle;
-
-  /// No description provided for @financeManageLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Manage'**
-  String get financeManageLabel;
-
   /// No description provided for @financeManageTagsEmptyBody.
   ///
   /// In en, this message translates to:
   /// **'Create tags for ad-hoc labels like trips, subscriptions, or projects.'**
   String get financeManageTagsEmptyBody;
-
-  /// No description provided for @financeManageTagsSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Use tags for lightweight labels and flexible reporting.'**
-  String get financeManageTagsSubtitle;
-
-  /// No description provided for @financeManageTagsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Tags'**
-  String get financeManageTagsTitle;
 
   /// No description provided for @financeNet.
   ///

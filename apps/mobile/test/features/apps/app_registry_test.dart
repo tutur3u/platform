@@ -71,7 +71,6 @@ void main() {
       expect(financeExtraNavItems.map((item) => item.route), [
         Routes.categories,
         Routes.financeCheckpoints,
-        Routes.financeManage,
       ]);
     });
 
