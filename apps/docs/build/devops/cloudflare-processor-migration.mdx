@@ -17,7 +17,8 @@ rules for every move.
 `apps/cron-control/src/processors/checkout-expiry.ts` ports Inventory's
 checkout-expiry processor. It runs only when `inventory-checkout-expiry` is in
 both `CRON_CONTROL_ENABLED_JOBS` and `CRON_CONTROL_WORKER_PROCESSORS`, so the
-schedule can move first and the processor later. Both vars are empty by default.
+schedule and processor can be selected independently. The Inventory job is
+absent from both selectors in source.
 
 - **Same claim.** The Worker calls the private `expire_inventory_checkout_sessions`
   RPC directly with the service key in `apikey`. The RPC locks candidates with
@@ -67,13 +68,12 @@ remain separate gates. Database expiry and recording a ledger obligation are
 separate writes; an interruption between them still requires reconciliation
 before claiming crash-atomic end-to-end invalidation.
 
-**Cutover.** Deploy the Inventory per-workspace receipt adapter before selecting
-this Worker port; an older adapter's aggregate receipt cannot settle work. Both
-Cron Control vars remain empty in source. Enable the job first (it calls the Next route), verify one slot, then
-add it to `CRON_CONTROL_WORKER_PROCESSORS` in a separate change. Verify one slot
-with `detail.expired` and storefront freshness for a test checkout, then remove the
-Vercel cron. Roll back by removing the id from `CRON_CONTROL_WORKER_PROCESSORS`;
-the job returns to calling the Next route.
+**Cutover.** Verify the per-workspace receipt adapter and Worker processor before
+the production handoff. The Inventory job is absent from both selectors in
+source. Disable and drain the Vercel schedule before selecting the job and its
+Worker processor in production. Verify `detail.expired`, storefront freshness,
+and the durable stop before the Inventory route cutover. Follow the
+[Inventory scheduler handoff and rollback](/build/devops/inventory-start-void#move-checkout-expiry-to-cron-control).
 
 Regression coverage: `src/processors/checkout-expiry.test.ts` counts RPC and
 revalidation calls for idle, draining, capped, stopped, partially failed, deadline,

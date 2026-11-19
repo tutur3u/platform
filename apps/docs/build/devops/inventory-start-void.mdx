@@ -23,7 +23,7 @@ available as the rollback target through cutover.
 | Secret names | `CRON_SECRET`, `SEPAY_OAUTH_CLIENT_ID`, `SEPAY_OAUTH_CLIENT_SECRET`, `SEPAY_OAUTH_STATE_SECRET`, `SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET`, `ENCRYPTION_MASTER_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and one of `SEPAY_WEBHOOK_API_KEY` or `SEPAY_WEBHOOK_SECRET` |
 | Build | `VITE_INVENTORY_NATIVE_PROFILE=production bun run --cwd apps/inventory build:cloudflare` |
 | Prior Vercel deployment | No immutable deployment ID is recorded in the repository. Rex must capture the active Inventory Vercel deployment ID and URL before cutover. |
-| Data | No database writes or migrations are part of this cutover. |
+| Data | Checkout-expiry acceptance uses disposable reservations. The routing and scheduler handoff requires no schema migration. |
 
 ## Acceptance and smoke
 
@@ -47,6 +47,46 @@ info, and `x-tuturuuu-runtime: native`. Smoke the canonical subdomain and the
 `https://tuturuuu.com/inventory` mount if it is admitted by the cutover. This
 packet does not authorize routing or provider changes.
 
+## Move checkout expiry to Cron Control
+
+Before the Inventory cutover, transfer `inventory-checkout-expiry` to the
+existing `tuturuuu-cron-control` Worker at `*/5 * * * *`. Select the job in
+both `CRON_CONTROL_ENABLED_JOBS` and `CRON_CONTROL_WORKER_PROCESSORS` to run
+the Worker processor. The legacy HTTP `GET` processor shares the database
+claim, while Cron Control's durable stop fence covers its own dispatch.
+Switch owners between slots and drain the former owner before starting the next.
+
+1. Capture the current Vercel deployment, schedule state, and last checkout-expiry
+   run. Capture the Cron Control deployment, trigger, selector, and ledger state.
+   Confirm the Worker has `CRON_SECRET_INVENTORY` and the target Inventory host
+   accepts it for the bounded `POST /api/cron/inventory/checkout-expiry` adapter.
+   Use binding names and test receipts in the release record.
+2. Prove the Worker processor against a disposable reservation and storefront in
+   the hosted test environment. Confirm a single `reserved` → expired transition,
+   a rejected duplicate slot, and a positive per-workspace revalidation receipt.
+   Verify the storefront read on its serving host. A native Inventory response
+   cannot invalidate a cache on the retained Next.js deployment.
+3. Stop the hosted test job through the authenticated
+   `POST /control/jobs/inventory-checkout-expiry/stop` endpoint. Observe the next
+   due slot skip processor work and verify the stop survives a restart. Reconcile
+   any expiry RPC that might have committed before the revalidation obligation was
+   recorded. Review pending and quarantined obligations before resuming.
+4. In the authorized production handoff, disable the Vercel schedule and confirm
+   its last invocation has completed. Activate the Cloudflare job with the Worker
+   processor selected. Verify a successful slot, the expired count, storefront
+   freshness, and subsequent slots with Cloudflare as the sole scheduler.
+5. Remove the checkout-expiry entry from `apps/inventory/vercel.json` and remove
+   its backend-ownership allowlist entry. Verify the Vercel schedule is absent in
+   provider readback before releasing the Inventory routes. Keep the authenticated
+   `POST` adapter for Cron Control's follow-up work.
+
+The processor runs once per slot. It caps expiry at ten batches of 1,000 rows,
+uses a 240-second deadline within a 270-second lease, and revalidates in chunks of
+100 workspaces. The database claims only reserved rows. A SQLite Durable Object
+persists the slot, stop state, and follow-up obligations. Verify these bounds,
+retry and quarantine behavior, and the stop fence in the existing processor and
+dispatch tests. See [the processor runbook](/build/devops/cloudflare-processor-migration).
+
 ## Rollback
 
 Before switching, Rex records the active Vercel deployment ID, immutable URL,
@@ -54,3 +94,8 @@ and routing it serves. If smoke, authentication, error rate or latency regresses
 restore the captured host routing to that Vercel deployment in one step; do not
 rebuild during rollback. Retain the Vercel deployment and routing until the
 native Worker completes its stable release window.
+
+If checkout expiry regresses, stop the Cron Control job and reconcile the last
+slot and outstanding revalidations before resuming. A route rollback to Vercel
+keeps Cron Control as the scheduler. Confirm that its authenticated revalidation
+callback reaches the Inventory deployment serving the storefront reads.
