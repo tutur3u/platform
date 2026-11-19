@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-10-31'
+updatedAt: '2026-11-19'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 audience: users
 ---
@@ -69,6 +69,38 @@ alarm behavior or browser reconnection; verify both on the deployed commit.
 Cloudflare validation runs the explicit durable-object test files from
 `RUNNER_TEMP`, using absolute checkout paths. Running `bun test` from the repository
 root invokes its preload and redirects to the monorepo test suite instead.
+
+## Class timer and attendance
+
+The class timer is a shared countdown on the existing Meet realtime channel. The
+host, or a workspace admin co-host, starts it for 1, 3, 5, or 10 minutes, or for
+a custom length from 1 to 180 minutes. Everyone admitted to the room sees the
+same remaining time. The server clock is the source of truth, and each client
+corrects its display from the server timestamp on the timer message. Pause,
+resume, and stop are host-only. When the timer reaches zero, the room shows a
+quiet "Time's up" / "Hết giờ" cue. The cue does not play sound. The meeting
+deadline clock is separate and still counts the room’s resource limit.
+
+Attendance is recorded on the room from the same admit, reconnect, and leave
+events that already update presence. Lobby waiting does not count. Account
+members are stored by user id. Guests, including anonymous guests and signed-in
+people who are not workspace members, are stored by guest id with the display
+name they used. A reconnect during the presence grace period keeps the open
+interval. Leaving closes it. Overlapping intervals for one person, such as two
+devices, count once.
+
+The host and co-hosts open an Attendance panel with the name, first join, total
+minutes, and whether the person is a guest or a member, plus a CSV download.
+Other participants do not see it. Intervals live in the private
+`meet_attendance_sessions` table. Row level security allows only the meeting
+creator to select rows, and client roles have no grants. Co-hosts are workspace
+admins. The Meet API checks that the caller is the host or a co-host, then
+reads and writes through the service role. The realtime worker does not receive
+database credentials. Opening the panel copies the room ledger into the table
+so the record survives room eviction. Production migrations ship through CI.
+
+Regression coverage lives in `class-timer.test.ts`, `attendance-ledger.test.ts`,
+`call-clock.test.tsx`, and the attendance route tests.
 
 ## Pieces
 

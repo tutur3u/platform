@@ -102,6 +102,40 @@ describe('call state admission', () => {
     expect(state.admission).toBe('admitted');
     expect(state.selfUserId).toBe(SELF);
     expect(state.role).toBe('host');
+    expect(state.classRole).toBe('host');
+    expect(state.classTimer).toBeNull();
+  });
+
+  it('keeps the class timer in sync and hides it while waiting', () => {
+    const admitted = reduceAll([
+      {
+        ...READY,
+        classRole: 'cohost',
+        role: 'speaker',
+        classTimer: {
+          id: 'timer',
+          status: 'running',
+          durationMs: 60_000,
+          remainingMs: 60_000,
+          endsAt: '2026-08-01T01:01:00.000Z',
+          updatedAt: '2026-08-01T01:00:00.000Z',
+        },
+        serverNow: '2026-08-01T01:00:00.000Z',
+      },
+    ]);
+    expect(admitted.classRole).toBe('cohost');
+    expect(admitted.classTimer?.status).toBe('running');
+    const waiting = reduceAll([
+      { ...READY, admission: 'waiting', classTimer: null },
+    ]);
+    expect(waiting.classTimer).toBeNull();
+    const ended = reduceCallState(admitted, {
+      type: 'classTimer',
+      timer: { ...admitted.classTimer!, status: 'ended', remainingMs: 0 },
+      serverNow: '2026-08-01T01:01:00.000Z',
+    });
+    expect(ended.classTimer?.status).toBe('ended');
+    expect(ended.classTimerServerNow).toBe('2026-08-01T01:01:00.000Z');
   });
 
   it('holds in the waiting room until admitted', () => {

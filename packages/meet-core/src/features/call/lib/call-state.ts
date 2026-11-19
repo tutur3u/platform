@@ -10,6 +10,7 @@ import type {
   MeetRealtimeStageState,
   MeetRealtimeWaitingParticipant,
   MeetRoomSettings,
+  ClassTimer,
 } from '@tuturuuu/realtime/meet';
 import {
   applyPresenceDelta,
@@ -79,6 +80,9 @@ export interface CallState {
   };
   remoteTracks: Record<string, MeetRealtimeRoomTrack>;
   role: MeetRealtimeRole | null;
+  classRole: 'host' | 'cohost' | 'participant';
+  classTimer: ClassTimer | null;
+  classTimerServerNow: string | null;
   selfUserId: string | null;
   stage: MeetRealtimeStageState;
   waiting: MeetRealtimeWaitingParticipant[];
@@ -96,6 +100,9 @@ export const INITIAL_CALL_STATE: CallState = {
   recording: { sessionId: null, state: 'idle' },
   remoteTracks: {},
   role: null,
+  classRole: 'participant',
+  classTimer: null,
+  classTimerServerNow: null,
   selfUserId: null,
   stage: {
     activeSpeakerIds: [],
@@ -162,6 +169,13 @@ export function reduceCallState(
             ? state.remoteTracks
             : {},
         role: message.role,
+        classRole:
+          message.classRole ??
+          (message.role === 'host' ? 'host' : 'participant'),
+        classTimer:
+          message.admission === 'waiting' ? null : (message.classTimer ?? null),
+        classTimerServerNow:
+          message.admission === 'waiting' ? null : (message.serverNow ?? null),
         canManageParticipants:
           message.canManageParticipants ?? message.role === 'host',
         roomId: message.roomId,
@@ -322,6 +336,13 @@ export function reduceCallState(
         },
       };
 
+    case 'classTimer':
+      return {
+        ...state,
+        classTimer: message.timer,
+        classTimerServerNow: message.serverNow,
+        error: null,
+      };
     case 'error':
       return { ...state, error: message.error };
 

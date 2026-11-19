@@ -27,6 +27,33 @@ export type {
 } from './messages';
 export { meetRealtimeClientMessageSchema } from './messages';
 export type { MeetRealtimeScope } from './permissions';
+export type {
+  AttendanceInterval,
+  AttendanceKind,
+  AttendanceRow,
+} from './attendance-ledger';
+export {
+  aggregateAttendance,
+  attendanceCsv,
+  attendanceIdentity,
+  closeAttendanceInterval,
+  openAttendanceInterval,
+} from './attendance-ledger';
+export type { ClassTimer, ClassTimerStatus } from './class-timer';
+export {
+  CLASS_TIMER_MAX_MS,
+  CLASS_TIMER_MIN_MS,
+  CLASS_TIMER_PRESETS_MS,
+  MEET_CLASS_COHOST_SCOPE,
+  applyClassTimerCommand,
+  canControlClassTimer,
+  canStartClassTimer,
+  canViewClassAttendance,
+  formatClassTimer,
+  meetClassRole,
+  presentClassTimer,
+} from './class-timer';
+export { meetRoomStateView } from './room-class-view';
 export {
   canMeetRealtimeControlRecording,
   clampMeetMedia,

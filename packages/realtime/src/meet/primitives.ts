@@ -110,6 +110,8 @@ export const meetRealtimeTokenPayloadSchema = z.object({
     .refine((value) => value.startsWith('https://'))
     .optional(),
   displayName: z.string().trim().min(1).max(120).optional(),
+  /** Account members are recorded by user id. Guests are recorded by guest id. */
+  participantKind: z.enum(['member', 'guest']).optional(),
   exp: z.number().int().positive(),
   limits: meetRoomLimitsSchema,
   meetingId: z.string().uuid(),
@@ -162,6 +164,7 @@ export const meetRealtimeWaitingParticipantSchema = z.object({
     .refine((value) => value.startsWith('https://'))
     .optional(),
   displayName: z.string().trim().min(1).max(120),
+  participantKind: z.enum(['member', 'guest']).optional(),
   requestedAt: z.string(),
   userId: z.string().uuid(),
 });

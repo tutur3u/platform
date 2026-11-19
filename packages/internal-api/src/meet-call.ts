@@ -411,6 +411,24 @@ export interface MeetingDocumentJoin {
   role: 'editor';
   user: { id: string; user_metadata: { display_name: string } };
 }
+export interface MeetAttendanceRow {
+  name: string;
+  firstJoin: string;
+  totalMinutes: number;
+  kind: 'member' | 'guest';
+  userId?: string;
+  guestId?: string;
+}
+
+export function getMeetAttendance(
+  meetingId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ rows: MeetAttendanceRow[] }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/attendance`
+  );
+}
+
 export function getMeetDocument(
   meetingId: string,
   options?: InternalApiClientOptions,

@@ -1,3 +1,14 @@
+import {
+  attendanceIdentity,
+  attendancePatch,
+  openAttendanceInterval,
+  renameOpenAttendance,
+} from './attendance-ledger';
+import {
+  classTimerServerMessage,
+  meetClassRole,
+  presentClassTimer,
+} from './class-timer';
 import type {
   MeetRealtimeClientMessage,
   MeetRealtimeServerMessage,
@@ -98,6 +109,9 @@ export function admitOrHold(
             ? { canManageParticipants: true }
             : {}),
           ...(token.guest ? { guest: true as const } : {}),
+          ...(token.participantKind
+            ? { participantKind: token.participantKind }
+            : {}),
           accountId: token.accountId,
           avatarUrl: token.avatarUrl,
           displayName: lobbyDisplayName(getMeetDisplayName(token)),
@@ -108,7 +122,7 @@ export function admitOrHold(
     };
 
     return outcome(next, {
-      reply: [buildReady(next, token, 'waiting')],
+      reply: [buildReady(next, token, 'waiting', now)],
       toManagers: [meetAdmissionPendingMessage(next)],
     });
   }
@@ -132,8 +146,16 @@ export function admitOrHold(
   }
   const waiting = { ...state.waiting };
   delete waiting[token.userId];
+  const attendance = previous
+    ? renameOpenAttendance(state.attendance, token.userId, person.displayName)
+    : openAttendanceInterval(state.attendance, {
+        deviceUserId: token.userId,
+        joinedAt: person.joinedAt,
+        ...attendanceIdentity({ ...token, displayName: person.displayName }),
+      });
   const next: MeetRoomSnapshot = {
     ...state,
+    ...attendancePatch(state, attendance),
     waiting,
     approved: rememberAdmission(state, person),
     presence: {
@@ -151,7 +173,7 @@ export function admitOrHold(
         : []),
     ],
     reply: [
-      { ...buildReady(next, token, 'admitted'), resumed: !!previous },
+      { ...buildReady(next, token, 'admitted', now), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
       ...transcriptionAnnouncements(next, token.userId),
@@ -167,11 +189,15 @@ export function admitOrHold(
 function buildReady(
   state: MeetRoomSnapshot,
   token: MeetRealtimeTokenPayload,
-  admission: 'admitted' | 'waiting'
+  admission: 'admitted' | 'waiting',
+  now: string
 ): Extract<MeetRealtimeServerMessage, { type: 'ready' }> {
+  const timer = presentClassTimer(state.classTimer, now);
   return {
     admission,
     canManageParticipants: canMeetRealtimeManageParticipants(token),
+    classRole: meetClassRole(token),
+    ...(admission === 'admitted' ? { classTimer: timer, serverNow: now } : {}),
     tracks: admission === 'admitted' ? Object.values(state.tracks) : [],
     expiresAt: new Date(token.exp * 1000).toISOString(),
     roomExpiresAt: state.budget
@@ -235,8 +261,21 @@ function decideParticipant(
   const capacityError = roomCapacityError(state, token, targetId, 'speaker');
   if (capacityError) return denied(state, capacityError);
   state = startRoomBudget(state, token, Date.parse(now));
+  const admittedKind =
+    pending.participantKind ?? (pending.guest ? 'guest' : 'member');
+  const admittedId = pending.accountId ?? targetId;
+  const attendance = openAttendanceInterval(state.attendance, {
+    deviceUserId: targetId,
+    kind: admittedKind,
+    displayName: pending.displayName,
+    joinedAt: now,
+    ...(admittedKind === 'member'
+      ? { userId: admittedId }
+      : { guestId: admittedId }),
+  });
   const next: MeetRoomSnapshot = {
     ...state,
+    ...attendancePatch(state, attendance),
     presence: {
       ...state.presence,
       [targetId]: {
@@ -298,6 +337,13 @@ function decideParticipant(
         userId: targetId,
       },
       { userId: targetId, message: roomSettingsMessage(next) },
+      {
+        userId: targetId,
+        message: classTimerServerMessage(
+          presentClassTimer(next.classTimer, now),
+          now
+        ),
+      },
       { userId: targetId, message: recordingMessage(next) },
       ...transcriptionAnnouncements(next, targetId).map((message) => ({
         userId: pending.userId,

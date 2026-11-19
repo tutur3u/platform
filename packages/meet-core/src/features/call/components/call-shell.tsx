@@ -61,7 +61,7 @@ import {
   PlaybackVolumeProvider,
 } from './playback-volume';
 import { ReactionOverlay } from './reaction-overlay';
-import { RoomCountdown } from './room-countdown';
+import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
@@ -423,7 +423,7 @@ function CallShellContent({
             outputDeviceId={outputDeviceId}
             onOutput={setOutputDeviceId}
           />
-          <RoomCountdown expiresAt={state.roomExpiresAt} />
+          <CallClock meetingId={meetingId} state={state} room={room} />
           <CallTopBarMore
             mailContext={{
               workspaceId: wsId,

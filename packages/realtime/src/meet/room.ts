@@ -1,3 +1,8 @@
+import {
+  type AttendanceInterval,
+  closeAttendanceInterval,
+} from './attendance-ledger';
+import type { ClassTimer } from './class-timer';
 import { canMeetRealtimeManageParticipants } from './permissions';
 import type { RoomBudget } from './room-budget';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
@@ -60,6 +65,8 @@ export interface MeetRoomSnapshot extends TranscriptionRoomState {
   streamState: MeetRealtimeStreamState;
   tracks: Record<string, MeetRealtimeRoomTrack>;
   waiting: Record<string, MeetRealtimeWaitingParticipant>;
+  classTimer?: ClassTimer | null;
+  attendance?: AttendanceInterval[];
 }
 
 export type MeetSfuIntent = {
@@ -184,7 +191,8 @@ export { admitOrHold } from './room-admission';
 export function releaseParticipant(
   state: MeetRoomSnapshot,
   userId: string,
-  roomId: string
+  roomId: string,
+  now = new Date().toISOString()
 ): MeetRoomOutcome {
   const presence = { ...state.presence };
   const waiting = { ...state.waiting };
@@ -196,10 +204,12 @@ export function releaseParticipant(
   const tracks = Object.fromEntries(
     Object.entries(state.tracks).filter(([, track]) => track.userId !== userId)
   );
+  const attendance = closeAttendanceInterval(state.attendance, userId, now);
   const next: MeetRoomSnapshot = {
     ...(state.recording.ownerDeviceId === userId
       ? failActiveRecording(state)
       : state),
+    ...(attendance === state.attendance ? {} : { attendance }),
     lastReactionAt,
     retiredSessions: Object.fromEntries(
       Object.entries(state.retiredSessions ?? {}).filter(

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ClassTimer } from './class-timer';
 import {
   cloudflareSfuSessionDescriptionSchema,
   cloudflareSfuTrackSchema,
@@ -180,6 +181,17 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     state: meetRealtimeStreamStateSchema,
     type: z.literal('stream.state'),
   }),
+  z.object({
+    action: z.enum(['start', 'pause', 'resume', 'stop']),
+    durationMs: z
+      .number()
+      .int()
+      .min(60_000)
+      .max(180 * 60_000)
+      .optional(),
+    requestId,
+    type: z.literal('classTimer.command'),
+  }),
 ]);
 
 export type MeetRealtimeClientMessage = z.infer<
@@ -239,12 +251,20 @@ export type MeetRealtimeServerMessage =
       limits: MeetRealtimeTokenPayload['limits'];
       mode: MeetRealtimeRoomMode;
       role: MeetRealtimeRole;
+      classRole?: 'host' | 'cohost' | 'participant';
+      classTimer?: ClassTimer | null;
+      serverNow?: string;
       roomId: string;
       stage: MeetRealtimeStageState;
       type: 'ready';
       resumed?: boolean;
       tracks?: MeetRealtimeRoomTrack[];
       userId: string;
+    }
+  | {
+      type: 'classTimer';
+      timer: ClassTimer | null;
+      serverNow: string;
     }
   | {
       presence: MeetRealtimePresence[];

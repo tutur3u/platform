@@ -8,7 +8,7 @@ import {
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
-  canReadRoomNotes,
+  meetRoomStateView,
   closeBudgetPublications,
   createMeetRoomSnapshot,
   deferBudgetCleanup,
@@ -316,17 +316,9 @@ export class MeetRoomDurableObject implements DurableObject {
           await this.scheduleSweep(Date.now());
         this.broadcast(updated.broadcast);
       }
-      return Response.json(
-        {
-          canReadNotes: canReadRoomNotes(this.snapshot, token),
-          ended: !!this.snapshot.ended,
-          lifecycleVersion: this.snapshot.lifecycle?.version ?? 0,
-          ...(token.role === 'host'
-            ? { settings: this.snapshot.settings ?? { shareNotes: false } }
-            : {}),
-        },
-        { headers: { 'Cache-Control': 'private, no-store' } }
-      );
+      return Response.json(meetRoomStateView(this.snapshot, token), {
+        headers: { 'Cache-Control': 'private, no-store' },
+      });
     }
     const previous = this.snapshot.presence[token.userId];
     if (

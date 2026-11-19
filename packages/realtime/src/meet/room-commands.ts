@@ -1,3 +1,14 @@
+import {
+  attendanceIdentity,
+  attendancePatch,
+  openAttendanceInterval,
+  renameOpenAttendance,
+} from './attendance-ledger';
+import {
+  applyClassTimerCommand,
+  classTimerServerMessage,
+  presentClassTimer,
+} from './class-timer';
 import type { MeetRealtimeSfuClientMessage } from './messages';
 import {
   canMeetRealtimeManageParticipants,
@@ -32,6 +43,31 @@ import { applyUsageReport, createRoomUsage } from './room-usage';
 import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
 
 export function applyMeetRoomCommand(
+  state: MeetRoomSnapshot,
+  command: MeetRoomCommand
+): MeetRoomOutcome {
+  const current = state.classTimer ?? null;
+  const presented = presentClassTimer(current, command.now);
+  const statusFlipped =
+    (current?.status ?? null) !== (presented?.status ?? null);
+  const settled =
+    presented === current ? state : { ...state, classTimer: presented };
+  const result = dispatchMeetRoomCommand(settled, command);
+  if (
+    !statusFlipped ||
+    result.broadcast.some((entry) => entry.type === 'classTimer')
+  )
+    return result;
+  return {
+    ...result,
+    broadcast: [
+      classTimerServerMessage(result.state.classTimer ?? null, command.now),
+      ...result.broadcast,
+    ],
+  };
+}
+
+function dispatchMeetRoomCommand(
   state: MeetRoomSnapshot,
   {
     message,
@@ -122,16 +158,28 @@ export function applyMeetRoomCommand(
         now,
         message.media
       );
+      const joined = {
+        ...person,
+        media: clampMeetMedia(state.settings, person, person.media),
+        joinedAt: prior?.joinedAt ?? now,
+        assistantAudio: prior?.assistantAudio,
+      };
+      const attendance = prior
+        ? renameOpenAttendance(state.attendance, userId, joined.displayName)
+        : openAttendanceInterval(state.attendance, {
+            deviceUserId: userId,
+            joinedAt: joined.joinedAt,
+            ...attendanceIdentity({
+              ...token,
+              displayName: joined.displayName,
+            }),
+          });
       const next = {
         ...state,
+        ...attendancePatch(state, attendance),
         presence: {
           ...state.presence,
-          [userId]: {
-            ...person,
-            media: clampMeetMedia(state.settings, person, person.media),
-            joinedAt: prior?.joinedAt ?? now,
-            assistantAudio: prior?.assistantAudio,
-          },
+          [userId]: joined,
         },
       };
       return outcome(next, {
@@ -271,7 +319,8 @@ export function applyMeetRoomCommand(
       const released = releaseParticipant(
         blockAutoAdmission({ ...state, approved }, accountId ?? message.userId),
         message.userId,
-        roomId
+        roomId,
+        now
       );
       const removedAt = Date.parse(now);
       const nextState = recordRemovedGuest(
@@ -305,6 +354,22 @@ export function applyMeetRoomCommand(
 
     case 'recording.state':
       return applyRecording(state, message, token, now);
+
+    case 'classTimer.command': {
+      const applied = applyClassTimerCommand(
+        state.classTimer,
+        message,
+        token,
+        now
+      );
+      if (!applied.ok) return denied(state, applied.error, message.requestId);
+      if ((state.classTimer ?? null) === null && applied.timer === null)
+        return outcome(state);
+      const next = { ...state, classTimer: applied.timer };
+      return outcome(next, {
+        broadcast: [classTimerServerMessage(applied.timer, now)],
+      });
+    }
 
     case 'stream.state': {
       if (!hasMeetRealtimeScope(token, MEET_REALTIME_SCOPES.streamControl)) {

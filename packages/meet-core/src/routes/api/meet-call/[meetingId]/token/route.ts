@@ -3,6 +3,7 @@ import {
   MeetCallAccessError,
 } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { getMeetCallSession } from '@tuturuuu/meet-core/features/call/lib/call-session';
+import { resolveMeetClassRole } from '@tuturuuu/meet-core/features/call/server/class-role';
 import { getMeetGuestCallAccess } from '@tuturuuu/meet-core/features/call/lib/guest-access';
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
@@ -33,21 +34,25 @@ export async function POST(
       (await cookies()).get(LOCALE_COOKIE_NAME)?.value === 'vi' ? 'vi' : 'en';
     const t = await getTranslations({ locale, namespace: 'meet.call' });
     const cookieStore = await cookies();
+    const resolved = await getMeetCallAccess(meetingId, t('guest'))
+      .then((access) => ({ ...access, guest: false as const }))
+      .catch(async (error: unknown) => {
+        if (!(error instanceof MeetCallAccessError) || error.status !== 401)
+          throw error;
+        const access = await getMeetGuestCallAccess(
+          meetingId,
+          cookieStore.get(MEET_GUEST_COOKIE)?.value
+        );
+        if (!access) throw error;
+        return access;
+      });
     const { user, meeting, isHost, admission, displayName, avatarUrl, guest } =
-      await getMeetCallAccess(meetingId, t('guest'))
-        .then((access) => ({ ...access, guest: false }))
-        .catch(async (error: unknown) => {
-          if (!(error instanceof MeetCallAccessError) || error.status !== 401)
-            throw error;
-          const access = await getMeetGuestCallAccess(
-            meetingId,
-            cookieStore.get(MEET_GUEST_COOKIE)?.value
-          );
-          if (!access) throw error;
-          return access;
-        });
+      resolved;
+    const classRole = await resolveMeetClassRole(resolved);
     const session = await getMeetCallSession({
       guest,
+      coHost: classRole.coHost,
+      participantKind: classRole.participantKind,
       maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
         meeting.creator_id
       ),

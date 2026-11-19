@@ -147,6 +147,15 @@ export function createRoomActions(
     },
     react: (reaction: MeetReaction) =>
       signaling.current?.send({ type: 'reaction.send', reaction }),
+    commandClassTimer: (
+      action: 'start' | 'pause' | 'resume' | 'stop',
+      durationMs?: number
+    ) =>
+      signaling.current?.send({
+        type: 'classTimer.command',
+        action,
+        ...(durationMs === undefined ? {} : { durationMs }),
+      }),
     setRecordingState: (state: 'recording' | 'idle', sessionId?: string) =>
       signaling.current?.send({
         type: 'recording.state',
