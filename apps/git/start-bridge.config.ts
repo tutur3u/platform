@@ -10,7 +10,10 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: ['git.tuturuuu.com'],
-    mountHosts: [],
+    mountHosts:
+      import.meta.env?.VITE_GIT_NATIVE_PROFILE === 'production'
+        ? ['tuturuuu.com']
+        : [],
     unknownHost: 'reject',
   },
   worker: { workersDev: false },

@@ -13,7 +13,7 @@ keeps serving until the route is flipped.
 
 - Worker: `tuturuuu-git` when `VITE_GIT_NATIVE_PROFILE=production`, and the staging Worker name by default. `workers_dev` and `preview_urls` stay off. Production sets `TUTURUUU_NOINDEX=0`; the default build sets `1`. Nothing here attaches a route.
 - Entry: `apps/git/cloudflare/worker.ts`; Wrangler config is emitted by `void` into `dist`.
-- Host: `git.tuturuuu.com`. Root-only: `mountHosts` is empty and `unknownHost` is `reject`, so `tuturuuu.com/git` and any other host answer 404 before app code runs.
+- Hosts: `git.tuturuuu.com` at the root and, in the production profile, `tuturuuu.com/git`. The default staging profile serves the subdomain root. Both profiles reject unknown hosts.
 - Binding: `ASSETS` (static output, `run_worker_first`).
 - Variables (names): `TUTURUUU_NOINDEX`, optional `INTERNAL_WEB_API_ORIGIN` (default `https://tuturuuu.com`).
 - Secrets (names, set in the Worker, never in the repo): `NEXT_PUBLIC_SUPABASE_URL`,
@@ -34,10 +34,11 @@ CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/git test:runtime
 ```
 
 `git-cloudflare.yaml` runs the same steps for the default build, records the emitted config receipt and packages
-`dist` with the receipt. `git-cutover-artifact` builds with `VITE_GIT_NATIVE_PROFILE=production` and seals that output with `scripts/ci/git-native-artifact.py` (`config`, `seal`, `pack`). `cloudflare/anonymous.runtime.mjs` starts the emitted Worker in
-workerd: the canonical host answers the public root (a redirect to `/tutur3u/platform`, or
-`200`), an unknown host answers `404`, and closed public ingress such as
-`/api/storage/probe` answers `403`.
+`dist` with the receipt. `git-cutover-artifact` builds the production profile,
+seals it, runs workerd acceptance, and repeats the suite from a fresh restore
+before uploading the archive. The suite checks the root redirect, unknown-host
+refusal, the bare apex path with a query string, localized URL canonicalization
+and exact source identity on both variants.
 
 `productionPublicationPolicy` in `tuturuuu.ci.ts` admits `git` for the `frontend` surface: a manual
 route-free upload of the sealed artifact, a private smoke and a one-step route rollback. No workflow
@@ -65,7 +66,8 @@ curl -sI https://git.tuturuuu.com/api/build-info          # 200, JSON, no-store
 curl -sI https://git.tuturuuu.com/                        # redirect to /tutur3u/platform
 curl -sI https://git.tuturuuu.com/tutur3u/platform        # 200, renders
 curl -sI https://git.tuturuuu.com/api/storage/probe       # 403, ingress closed
-curl -sI https://tuturuuu.com/git                         # 404 (root-only app)
+curl -sI 'https://tuturuuu.com/git?source=smoke'           # redirect to /git/tutur3u/platform
+curl -sI https://tuturuuu.com/git/api/build-info           # 200, JSON, no-store
 ```
 
 No smoke request may return `5xx`.

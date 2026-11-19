@@ -8,7 +8,7 @@ import test from 'node:test';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 
 const app = 'git';
-const gated = true;
+const production = process.env.VITE_GIT_NATIVE_PROFILE === 'production';
 const require = createRequire(import.meta.url);
 test(
   'anonymous root and closed public ingress on the emitted Worker',
@@ -79,11 +79,13 @@ test(
             headers: { host },
           },
           (response) => {
-            response.resume();
+            const chunks = [];
+            response.on('data', (chunk) => chunks.push(chunk));
             response.on('end', () =>
               resolveResponse({
                 status: response.statusCode,
                 location: response.headers.location,
+                body: Buffer.concat(chunks).toString('utf8'),
               })
             );
           }
@@ -92,17 +94,43 @@ test(
           .end();
       });
     const canonical = `${app}.tuturuuu.com`;
-    const response = await get(canonical);
-    if (gated) {
+    const assertRedirect = (response, host, path) => {
       assert.ok([301, 302, 303, 307, 308].includes(response.status));
-      const target = new URL(response.location, `https://${canonical}`);
-      assert.equal(target.host, canonical);
-      assert.equal(target.pathname, '/tutur3u/platform');
-    } else {
-      assert.equal(response.status, 200);
-    }
+      const target = new URL(response.location, `https://${host}`);
+      assert.equal(target.host, host);
+      assert.equal(`${target.pathname}${target.search}`, path);
+    };
+    assertRedirect(await get(canonical), canonical, '/tutur3u/platform');
     assert.equal((await get('unknown.invalid')).status, 404);
-    if (app === 'external')
-      assert.equal((await get(canonical, '/api/storage/probe')).status, 403);
+
+    const apex = 'tuturuuu.com';
+    if (!production) {
+      assert.equal((await get(apex, '/git')).status, 404);
+      return;
+    }
+
+    assertRedirect(
+      await get(apex, '/git?source=smoke'),
+      apex,
+      '/git/tutur3u/platform'
+    );
+    assertRedirect(
+      await get(apex, '/git/vi/tutur3u/platform?source=smoke'),
+      apex,
+      '/git/tutur3u/platform?source=smoke'
+    );
+    assert.equal((await get(apex, '/api/build-info')).status, 404);
+    const source = process.env.CI_SOURCE_SHA;
+    assert.match(source ?? '', /^[a-f0-9]{40}$/u);
+    for (const [host, path] of [
+      [canonical, '/api/build-info'],
+      [apex, '/git/api/build-info'],
+    ]) {
+      const response = await get(host, path);
+      assert.equal(response.status, 200, `${host}${path}`);
+      const build = JSON.parse(response.body);
+      assert.equal(build.appName, 'git');
+      assert.equal(build.commitHash, source);
+    }
   }
 );
