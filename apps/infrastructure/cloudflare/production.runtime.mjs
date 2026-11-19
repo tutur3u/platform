@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { request } from 'node:http';
 import { createRequire } from 'node:module';
 import {
   cp,
@@ -68,6 +67,7 @@ test(
         enableContainers: false,
         registry: join(scratch, 'registry'),
         server: { hostname: '127.0.0.1', port: 0 },
+        origin: { secure: true },
         inferOriginFromRoutes: false,
         routeRequestsByRoutes: false,
         auth: () => {
@@ -81,31 +81,16 @@ test(
     });
     t.after(() => worker.dispose());
     await worker.ready;
-    const origin = await worker.url;
-    const get = (path, hostname = host) =>
-      new Promise((done, reject) => {
-        request(
-          {
-            hostname: origin.hostname,
-            port: origin.port,
-            path,
-            headers: { host: hostname },
-          },
-          (res) => {
-            const chunks = [];
-            res.on('data', (chunk) => chunks.push(chunk));
-            res.on('end', () =>
-              done({
-                status: res.statusCode,
-                headers: res.headers,
-                body: Buffer.concat(chunks),
-              })
-            );
-          }
-        )
-          .on('error', reject)
-          .end();
+    const get = async (path, hostname = host) => {
+      const res = await worker.fetch(`https://${hostname}${path}`, {
+        redirect: 'manual',
       });
+      return {
+        status: res.status,
+        headers: Object.fromEntries(res.headers),
+        body: Buffer.from(await res.arrayBuffer()),
+      };
+    };
     for (const path of [
       '/',
       '/00000000-0000-4000-8000-000000000001',

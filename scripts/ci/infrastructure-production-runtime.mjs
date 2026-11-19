@@ -27,7 +27,11 @@ export async function runInfrastructureProductionRuntime(
       timeout: 240000,
       maxBuffer: 4 * 1024 * 1024,
     }
-  );
+  ).catch((error) => {
+    if (error.stdout) process.stdout.write(error.stdout);
+    if (error.stderr) process.stderr.write(error.stderr);
+    throw error;
+  });
   process.stdout.write(result.stdout);
   process.stderr.write(result.stderr);
 }
