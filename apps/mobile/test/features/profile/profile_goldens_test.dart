@@ -19,6 +19,7 @@ import 'package:mobile/features/profile/view/profile_focus_time_card.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_timeline_view.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../helpers/golden_tolerance.dart';
 import '../../helpers/pump_app.dart';
@@ -107,26 +108,36 @@ void main() {
     whenListen(
       auth,
       const Stream<AuthState>.empty(),
-      initialState: const AuthState.unauthenticated().copyWith(
-        activeAccountId: 'user',
-        accounts: const [
-          StoredAuthAccount(
-            id: 'user',
-            refreshToken: '',
-            lastActiveAt: 3,
-            addedAt: 1,
-            displayName: 'Linh Tran',
+      initialState:
+          const AuthState.authenticated(
+            User(
+              id: 'user',
+              email: 'linh@example.test',
+              appMetadata: {},
+              userMetadata: {},
+              aud: 'authenticated',
+              createdAt: '',
+            ),
+          ).copyWith(
+            activeAccountId: 'user',
+            accounts: const [
+              StoredAuthAccount(
+                id: 'user',
+                refreshToken: '',
+                lastActiveAt: 3,
+                addedAt: 1,
+                displayName: 'Linh Tran',
+              ),
+              StoredAuthAccount(
+                id: 'work',
+                refreshToken: '',
+                lastActiveAt: 2,
+                addedAt: 1,
+                displayName: 'Linh at Studio',
+                email: 'linh@studio.example.test',
+              ),
+            ],
           ),
-          StoredAuthAccount(
-            id: 'work',
-            refreshToken: '',
-            lastActiveAt: 2,
-            addedAt: 1,
-            displayName: 'Linh at Studio',
-            email: 'linh@studio.example.test',
-          ),
-        ],
-      ),
     );
   });
   tearDown(() => auth.close());
