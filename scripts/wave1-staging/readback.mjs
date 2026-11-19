@@ -1,6 +1,6 @@
 // Read-only staging ingress readback (staging-web-publisher design §9).
 //
-//   node scripts/wave1-staging/readback.mjs [--app web|calendar] [--expect-sha <sha>]
+//   node scripts/wave1-staging/readback.mjs [--app web|calendar|mail] [--expect-sha <sha>]
 //
 // Provider reads (R1–R3, N10 records, Access, workers.dev state) reuse the
 // publisher's bounded topology preflight; HTTP probes (R4, N1–N5) carry no

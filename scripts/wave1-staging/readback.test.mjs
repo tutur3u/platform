@@ -33,17 +33,20 @@ function world(overrides = {}) {
   const topology = {
     web: healthyTopology('web'),
     calendar: healthyTopology('calendar'),
+    mail: healthyTopology('mail'),
   };
-  // Custom Domains are account-wide: one list holds both staging hosts.
+  // Custom Domains are account-wide: one list holds every staging host.
   const domains = {
     ...topology.web.domains,
     result: [
       ...topology.web.domains.result,
       topology.calendar.domains.result[0],
+      topology.mail.domains.result[0],
     ],
   };
   topology.web.domains = domains;
   topology.calendar.domains = domains;
+  topology.mail.domains = domains;
   const calls = [];
   const fetcher = async (url, init = {}) => {
     const u = new URL(url);
@@ -62,7 +65,11 @@ function world(overrides = {}) {
         url.includes('calendar') ||
         url.includes(fixtureAppIds['calendar.tutur3u.com'])
           ? 'calendar'
-          : 'web';
+          : url.includes('mail.tutur3u.com') ||
+              url.includes('tuturuuu-mail-wave1-staging') ||
+              url.includes(fixtureAppIds['mail.tutur3u.com'])
+            ? 'mail'
+            : 'web';
       if (u.pathname.endsWith('/deployments'))
         return Response.json({
           success: true,
@@ -288,7 +295,7 @@ test('readback fails closed when a topology read errors or credentials are missi
     })
   );
   await assert.rejects(
-    readback({ argv: ['--app', 'mail'], env, fetcher, resolver: nxdomain }),
+    readback({ argv: ['--app', 'apps'], env, fetcher, resolver: nxdomain }),
     /No ingress-admitted/
   );
 });
