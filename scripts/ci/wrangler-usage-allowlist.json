@@ -797,12 +797,12 @@
     "apps/drive/cloudflare/cutover.runtime.mjs": {
       "lines": 2,
       "uses": 2,
-      "gap": "void-wave1-publication",
+      "gap": "void-emitted-runtime",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7928",
-        "reason": "Start + Void candidate (#7928) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/commit/205f95bdadb604386476ae9448fa8908f639854e",
+        "reason": "The runtime uses the same installed SDK to load the sealed artifact; the local require binding now resolves it. No publication operation was added."
       },
-      "digest": "66f103085b57e80756d101f8e6d643838195b02c80731d24fd147f834120c634"
+      "digest": "efa63ee8a15a58db35d263e004c5527abbd61e8264e5aad27a11ba782f9073d8"
     },
     "apps/drive/package.json": {
       "lines": 1,
@@ -1103,6 +1103,16 @@
         "reason": "Start + Void candidate (#7961) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
       },
       "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/learn/cloudflare/cutover.runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/585e11fdc5233b7c243e355296cdcd0168a96fe2",
+        "reason": "The native apex qualification harness writes a temporary runtime config and resolves the installed SDK for isolated Workerd acceptance. It invokes no publishing command."
+      },
+      "digest": "efa63ee8a15a58db35d263e004c5527abbd61e8264e5aad27a11ba782f9073d8"
     },
     "apps/learn/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
