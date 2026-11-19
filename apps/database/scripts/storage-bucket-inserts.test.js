@@ -36,6 +36,19 @@ const defaults = [
     allowed_mime_types: ['image/*'],
     avif_autodetection: false,
   },
+  {
+    id: 'forms-respondent-uploads',
+    name: 'forms-respondent-uploads',
+    public: false,
+    file_size_limit: 10485760,
+    allowed_mime_types: [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+    ],
+    avif_autodetection: false,
+  },
 ];
 
 test('bucket creation replays while preserving existing bucket settings', async () => {

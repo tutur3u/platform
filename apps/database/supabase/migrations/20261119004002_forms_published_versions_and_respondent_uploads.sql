@@ -189,7 +189,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'forms-respondent-uploads', 'forms-respondent-uploads', false, 10485760,
   array['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
-);
+) on conflict (id) do nothing;
 
 -- Restrictive policy also fences future permissive client storage policies.
 -- The trusted Forms server locates objects only via scoped upload records.
