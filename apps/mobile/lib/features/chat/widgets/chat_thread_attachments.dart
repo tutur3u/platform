@@ -1,6 +1,8 @@
 part of 'chat_thread_view.dart';
 
 class _NoConversationSelected extends StatelessWidget {
+  const _NoConversationSelected();
+
   @override
   Widget build(BuildContext context) {
     return _ThreadEmpty(
@@ -11,45 +13,35 @@ class _NoConversationSelected extends StatelessWidget {
 }
 
 class _ThreadEmpty extends StatelessWidget {
-  const _ThreadEmpty({required this.title, required this.description});
+  const _ThreadEmpty({
+    required this.title,
+    required this.description,
+    this.icon = LucideIcons.messageCircle,
+    this.tone = AppTone.neutral,
+  });
 
   final String title;
   final String description;
+  final IconData icon;
+  final AppTone tone;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    return Center(
-      child: SingleChildScrollView(
-        primary: false,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              LucideIcons.messageCircle,
-              color: colorScheme.mutedForeground,
-              size: 34,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          primary: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: AppStateMessage(
+              icon: icon,
+              title: title,
+              message: description,
+              tone: tone,
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colorScheme.mutedForeground,
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

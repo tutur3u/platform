@@ -4,17 +4,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_attachment_preview.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class ChatComposer extends StatefulWidget {
   const ChatComposer({
@@ -62,34 +58,39 @@ class _ChatComposerState extends State<ChatComposer> {
       }
     } on Exception {
       if (!mounted) return;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(context.l10n.assistantGalleryPickError)),
+      showAppToast(
+        context,
+        message: context.l10n.assistantGalleryPickError,
+        variant: AppAlertVariant.destructive,
       );
     }
   }
 
   Future<void> _showAttachmentOptions() async {
-    await showAdaptiveSheet<void>(
+    final l10n = context.l10n;
+    await showAppSheet<void>(
       context: context,
-      builder: (sheetContext) => SafeArea(
+      builder: (sheetContext) => AppSheetScaffold(
+        title: l10n.chatAttach,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ListTile(
-              leading: const Icon(Icons.attach_file_rounded),
-              title: Text(context.l10n.assistantAttachFilesAction),
-              onTap: () {
+            AppButton.ghost(
+              leading: const Icon(LucideIcons.paperclip),
+              onPressed: () {
                 Navigator.of(sheetContext).pop();
                 unawaited(_pickAttachment());
               },
+              child: Text(l10n.assistantAttachFilesAction),
             ),
-            ListTile(
-              leading: const Icon(Icons.photo_library_outlined),
-              title: Text(context.l10n.assistantAttachGalleryMediaAction),
-              onTap: () {
+            AppButton.ghost(
+              leading: const Icon(LucideIcons.image),
+              onPressed: () {
                 Navigator.of(sheetContext).pop();
                 unawaited(_pickGalleryMedia());
               },
+              child: Text(l10n.assistantAttachGalleryMediaAction),
             ),
           ],
         ),
@@ -107,16 +108,18 @@ class _ChatComposerState extends State<ChatComposer> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-
+    final colors = AppTokens.of(context).colorScheme;
+    final busy = widget.isSending || widget.isUploadingAttachment;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colorScheme.background,
-        border: Border(top: BorderSide(color: colorScheme.border)),
+        color: colors.card,
+        border: Border(top: BorderSide(color: colors.border)),
       ),
       child: Padding(
-        // The chat surface already reserves the system and floating dock inset.
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,50 +129,38 @@ class _ChatComposerState extends State<ChatComposer> {
                 attachments: widget.pendingAttachments,
                 onRemove: widget.onRemoveAttachment,
               ),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Tooltip(
-                  message: context.l10n.chatAttach,
-                  child: shad.IconButton.ghost(
-                    icon: widget.isUploadingAttachment
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: NovaLoadingIndicator(size: 20),
-                          )
-                        : const Icon(LucideIcons.paperclip, size: 18),
-                    onPressed: widget.isUploadingAttachment || widget.isSending
-                        ? null
-                        : () => unawaited(_showAttachmentOptions()),
-                  ),
+            AppComposerRow(
+              minHeight: AppLayout.rowMinHeight,
+              leading: [
+                AppIconButton(
+                  tooltip: context.l10n.chatAttach,
+                  icon: widget.isUploadingAttachment
+                      ? const AppLoadingIndicator.inline()
+                      : const Icon(LucideIcons.paperclip),
+                  onPressed: busy
+                      ? null
+                      : () => unawaited(_showAttachmentOptions()),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: shad.TextField(
-                    selectionControls: platformTextSelectionControls(),
-                    contextMenuBuilder: platformTextContextMenuBuilder(),
-                    controller: _controller,
-                    hintText: context.l10n.chatMessagePlaceholder,
-                    minLines: 1,
-                    maxLines: 5,
-                    enabled: !widget.isSending,
-                    onSubmitted: (_) => _send(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Tooltip(
-                  message: context.l10n.assistantSendAction,
-                  child: shad.PrimaryButton(
-                    onPressed: widget.isSending || widget.isUploadingAttachment
-                        ? null
-                        : _send,
-                    child: widget.isSending
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: NovaLoadingIndicator(size: 20),
-                          )
-                        : const Icon(LucideIcons.send, size: 18),
-                  ),
+              ],
+              field: AppTextField(
+                controller: _controller,
+                filled: true,
+                borderless: true,
+                placeholder: context.l10n.chatMessagePlaceholder,
+                minLines: 1,
+                maxLines: 5,
+                enabled: !widget.isSending,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
+              ),
+              trailing: [
+                AppIconButton(
+                  tooltip: context.l10n.assistantSendAction,
+                  variant: AppButtonVariant.primary,
+                  icon: widget.isSending
+                      ? const AppLoadingIndicator.inline()
+                      : const Icon(LucideIcons.send),
+                  onPressed: busy ? null : _send,
                 ),
               ],
             ),
@@ -192,10 +183,10 @@ class _PendingAttachmentStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
         children: attachments
             .map(
               (attachment) => PendingSyncFrame(

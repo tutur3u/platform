@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/features/chat/widgets/chat_composer.dart';
@@ -42,14 +43,12 @@ void main() {
           onPickAttachment: (_) async {},
           onRemoveAttachment: (_) {},
           onReaction: (_, value) => reaction = value,
-          onDetails: () {},
-          onPin: () {},
         ),
       ),
     );
     expect(find.text('Hello'), findsOneWidget);
     expect(find.text('+1'), findsNothing);
-    await tester.tap(find.byIcon(Icons.add_reaction_outlined));
+    await tester.tap(find.byIcon(LucideIcons.smile));
     await tester.pumpAndSettle();
     await tester.tap(find.text('+1'));
     expect(reaction, '+1');
@@ -87,8 +86,6 @@ void main() {
                   onPickAttachment: (_) async {},
                   onRemoveAttachment: (_) {},
                   onReaction: (_, _) {},
-                  onDetails: () {},
-                  onPin: () {},
                 ),
               ),
             ),

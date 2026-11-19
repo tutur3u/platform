@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'chat_conversation_tile.dart';
 
@@ -18,10 +19,16 @@ class ChatConversationList extends StatefulWidget {
     required this.hasMore,
     required this.isLoadingMore,
     this.header,
+    this.currentUserId,
+    this.onArchive,
+    this.onDelete,
     super.key,
   });
 
   final Widget? header;
+  final String? currentUserId;
+  final Future<void> Function(ChatConversation conversation)? onArchive;
+  final Future<void> Function(ChatConversation conversation)? onDelete;
   final List<ChatConversation> conversations;
   final String? selectedConversationId;
   final ValueChanged<String> onSelected;
@@ -107,8 +114,8 @@ class _ChatConversationListState extends State<ChatConversationList> {
               itemCount: widget.conversations.length,
               separatorBuilder: (_, _) => Divider(
                 height: 1,
-                indent: 64,
-                color: shad.Theme.of(context).colorScheme.border,
+                indent: AppLayout.rowDividerInset,
+                color: AppTokens.of(context).colorScheme.border,
               ),
               itemBuilder: (context, index) {
                 final conversation = widget.conversations[index];
@@ -118,8 +125,11 @@ class _ChatConversationListState extends State<ChatConversationList> {
                   entityId: conversation.id,
                   child: _ConversationTile(
                     conversation: conversation,
+                    currentUserId: widget.currentUserId,
                     selected: conversation.id == widget.selectedConversationId,
                     onTap: () => widget.onSelected(conversation.id),
+                    onArchive: widget.onArchive,
+                    onDelete: widget.onDelete,
                   ),
                 );
               },
@@ -128,13 +138,11 @@ class _ChatConversationListState extends State<ChatConversationList> {
         if (widget.hasMore)
           SliverToBoxAdapter(
             child: Center(
-              child: shad.OutlineButton(
+              child: AppButton.secondary(
                 onPressed: widget.isLoadingMore ? null : widget.onLoadMore,
-                child: Text(
-                  widget.isLoadingMore
-                      ? context.l10n.chatLoading
-                      : context.l10n.chatLoadMore,
-                ),
+                child: widget.isLoadingMore
+                    ? const AppLoadingIndicator.inline()
+                    : Text(context.l10n.chatLoadMore),
               ),
             ),
           ),

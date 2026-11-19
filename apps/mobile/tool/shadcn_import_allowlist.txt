@@ -26,11 +26,7 @@ lib/features/auth/widgets/auth_section_card.dart
 lib/features/auth/widgets/security_check_dialog.dart
 lib/features/calendar/view/calendar_page.dart
 lib/features/calendar/widgets/year_view.dart
-lib/features/chat/view/chat_page.dart
-lib/features/chat/widgets/chat_composer.dart
-lib/features/chat/widgets/chat_conversation_list.dart
 lib/features/chat/widgets/chat_sheets.dart
-lib/features/chat/widgets/chat_thread_view.dart
 lib/features/dashboard/view/dashboard_page.dart
 lib/features/desktop_update/desktop_update_gate.dart
 lib/features/drive/view/drive_page.dart

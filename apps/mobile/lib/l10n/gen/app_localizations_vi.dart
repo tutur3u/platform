@@ -1875,6 +1875,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatAll => 'Tất cả';
 
   @override
+  String get chatArchive => 'Lưu trữ';
+
+  @override
   String get chatArchived => 'Đã lưu trữ';
 
   @override
@@ -1903,6 +1906,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatDecline => 'Từ chối';
+
+  @override
+  String get chatDeleteConversation => 'Xóa cuộc trò chuyện';
+
+  @override
+  String get chatDeleteConversationConfirm => 'Thao tác này lưu trữ cuộc trò chuyện với bạn, hoặc rời nhóm. Tin nhắn không bị xóa với mọi người.';
 
   @override
   String get chatDetails => 'Chi tiết';
@@ -2003,6 +2012,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatPhotos => 'Ảnh';
 
   @override
+  String get chatPin => 'Ghim';
+
+  @override
   String get chatPinned => 'Đã ghim';
 
   @override
@@ -2034,6 +2046,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatTokens => 'Token';
+
+  @override
+  String get chatUnpin => 'Bỏ ghim';
 
   @override
   String get chatUntitled => 'Cuộc trò chuyện chưa đặt tên';

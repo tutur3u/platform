@@ -38,7 +38,12 @@ class _MessageList extends StatelessWidget {
 
     return ListView.builder(
       reverse: true,
-      padding: const EdgeInsets.fromLTRB(10, 12, 10, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.lg,
+      ),
       itemCount: effectiveMessages.length,
       itemBuilder: (context, index) {
         final message = effectiveMessages[effectiveMessages.length - 1 - index];
@@ -47,7 +52,7 @@ class _MessageList extends StatelessWidget {
             message.senderId != null &&
             message.senderId == currentUserId;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: PendingSyncFrame(
             workspaceId: workspaceId,
             feature: 'chat',
@@ -77,10 +82,11 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
     final bubbleColor = isMine
-        ? colorScheme.primary.withValues(alpha: 0.20)
-        : colorScheme.muted;
+        ? colors.primary.withValues(alpha: colors.isDark ? 0.28 : 0.16)
+        : colors.muted;
     final alignment = isMine ? Alignment.centerRight : Alignment.centerLeft;
 
     return Align(
@@ -95,14 +101,21 @@ class _MessageBubble extends StatelessWidget {
           decoration: BoxDecoration(
             color: bubbleColor,
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isMine ? 18 : 5),
-              bottomRight: Radius.circular(isMine ? 5 : 18),
+              topLeft: const Radius.circular(AppRadius.md),
+              topRight: const Radius.circular(AppRadius.md),
+              bottomLeft: Radius.circular(isMine ? AppRadius.md : AppRadius.xs),
+              bottomRight: Radius.circular(
+                isMine ? AppRadius.xs : AppRadius.md,
+              ),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 9, 8, 7),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.sm,
+              AppSpacing.sm,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -111,21 +124,35 @@ class _MessageBubble extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 4),
                     child: Text(
                       message.sender!.displayName,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: colorScheme.mutedForeground,
+                      style: tokens.typography.small.copyWith(
+                        color: colors.mutedForeground,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 if (message.content.isNotEmpty)
-                  Text(
-                    message.content,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(height: 1.35),
+                  MarkdownBody(
+                    data: message.content,
+                    selectable: true,
+                    softLineBreak: true,
+                    styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context))
+                        .copyWith(
+                          p: tokens.typography.body.copyWith(
+                            color: colors.foreground,
+                            height: 1.35,
+                          ),
+                        ),
+                    imageBuilder: (uri, title, alt) => Text(alt ?? ''),
+                    onTapLink: (text, href, title) {
+                      final uri = href == null ? null : Uri.tryParse(href);
+                      if (uri != null &&
+                          (uri.scheme == 'https' || uri.scheme == 'http')) {
+                        unawaited(openMobileLink(context, uri));
+                      }
+                    },
                   ),
                 if (message.attachments.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   ...message.attachments.map(
                     (attachment) => ChatAttachmentPreview(
                       key: ValueKey(attachment.id),
@@ -134,12 +161,13 @@ class _MessageBubble extends StatelessWidget {
                   ),
                 ],
                 if (message.reactions.isNotEmpty) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   Wrap(
-                    spacing: 6,
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
                     children: message.reactions
                         .map(
-                          (reaction) => ActionChip(
+                          (reaction) => AppChip(
                             label: Text('${reaction.emoji} ${reaction.count}'),
                             onPressed: () => onReaction(reaction.emoji),
                           ),
@@ -147,7 +175,7 @@ class _MessageBubble extends StatelessWidget {
                         .toList(growable: false),
                   ),
                 ],
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xxs),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -158,29 +186,24 @@ class _MessageBubble extends StatelessWidget {
                           alwaysUse24HourFormat:
                               MediaQuery.alwaysUse24HourFormatOf(context),
                         ),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.mutedForeground,
+                        style: tokens.typography.xSmall.copyWith(
+                          color: colors.mutedForeground,
                         ),
                       ),
-                    SizedBox(
-                      height: 28,
-                      width: 30,
-                      child: PopupMenuButton<String>(
-                        tooltip: MaterialLocalizations.of(
-                          context,
-                        ).showMenuTooltip,
-                        padding: EdgeInsets.zero,
-                        icon: Icon(
-                          Icons.add_reaction_outlined,
-                          size: 16,
-                          color: colorScheme.mutedForeground,
-                        ),
-                        onSelected: onReaction,
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(value: '+1', child: Text('+1')),
-                          PopupMenuItem(value: 'ok', child: Text('ok')),
-                        ],
+                    PopupMenuButton<String>(
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).showMenuTooltip,
+                      icon: Icon(
+                        LucideIcons.smile,
+                        size: 16,
+                        color: colors.mutedForeground,
                       ),
+                      onSelected: onReaction,
+                      itemBuilder: (context) => const [
+                        PopupMenuItem(value: '+1', child: Text('+1')),
+                        PopupMenuItem(value: 'ok', child: Text('ok')),
+                      ],
                     ),
                   ],
                 ),

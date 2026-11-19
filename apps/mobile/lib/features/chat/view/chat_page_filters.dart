@@ -9,55 +9,34 @@ class _ChatFilters extends StatelessWidget {
   Widget build(BuildContext context) {
     final cubit = context.read<ChatCubit>();
     final l10n = context.l10n;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              _TypeChip(
-                type: ChatConversationType.channel,
-                label: l10n.chatChannels,
-              ),
-              const SizedBox(width: 6),
-              _TypeChip(
-                type: ChatConversationType.direct,
-                label: l10n.chatDirect,
-              ),
-              const SizedBox(width: 6),
-              _TypeChip(
-                type: ChatConversationType.group,
-                label: l10n.chatGroups,
-              ),
-              const SizedBox(width: 6),
-              _TypeChip(type: ChatConversationType.ai, label: l10n.chatAi),
-              const SizedBox(width: 10),
-              ChoiceChip(
-                label: Text(l10n.chatActive),
-                selected: state.archivedFilter == ChatArchivedFilter.active,
-                onSelected: (_) => unawaited(
-                  cubit.setArchivedFilter(ChatArchivedFilter.active),
-                ),
-              ),
-              const SizedBox(width: 6),
-              ChoiceChip(
-                label: Text(l10n.chatArchived),
-                selected: state.archivedFilter == ChatArchivedFilter.archived,
-                onSelected: (_) => unawaited(
-                  cubit.setArchivedFilter(ChatArchivedFilter.archived),
-                ),
-              ),
-              const SizedBox(width: 6),
-              ChoiceChip(
-                label: Text(l10n.chatAll),
-                selected: state.archivedFilter == ChatArchivedFilter.all,
-                onSelected: (_) =>
-                    unawaited(cubit.setArchivedFilter(ChatArchivedFilter.all)),
-              ),
-            ],
-          ),
+        _TypeChip(type: ChatConversationType.channel, label: l10n.chatChannels),
+        _TypeChip(type: ChatConversationType.direct, label: l10n.chatDirect),
+        _TypeChip(type: ChatConversationType.group, label: l10n.chatGroups),
+        _TypeChip(type: ChatConversationType.ai, label: l10n.chatAi),
+        AppChip(
+          label: Text(l10n.chatActive),
+          selected: state.archivedFilter == ChatArchivedFilter.active,
+          inMutuallyExclusiveGroup: true,
+          onSelected: (_) =>
+              unawaited(cubit.setArchivedFilter(ChatArchivedFilter.active)),
+        ),
+        AppChip(
+          label: Text(l10n.chatArchived),
+          selected: state.archivedFilter == ChatArchivedFilter.archived,
+          inMutuallyExclusiveGroup: true,
+          onSelected: (_) =>
+              unawaited(cubit.setArchivedFilter(ChatArchivedFilter.archived)),
+        ),
+        AppChip(
+          label: Text(l10n.chatAll),
+          selected: state.archivedFilter == ChatArchivedFilter.all,
+          inMutuallyExclusiveGroup: true,
+          onSelected: (_) =>
+              unawaited(cubit.setArchivedFilter(ChatArchivedFilter.all)),
         ),
       ],
     );
@@ -76,61 +55,10 @@ class _TypeChip extends StatelessWidget {
     final selected = context.select<ChatCubit, bool>(
       (cubit) => cubit.state.typeFilters.contains(type),
     );
-    return FilterChip(
+    return AppChip(
       label: Text(label),
       selected: selected,
       onSelected: (_) => cubit.toggleType(type),
-    );
-  }
-}
-
-class _CenteredMessage extends StatelessWidget {
-  const _CenteredMessage({
-    required this.title,
-    required this.description,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String description;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return AppPageBody(
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                description,
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium,
-              ),
-              if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 16),
-                shad.PrimaryButton(
-                  onPressed: onAction,
-                  child: Text(actionLabel!),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

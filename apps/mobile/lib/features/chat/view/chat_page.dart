@@ -4,9 +4,8 @@ import 'package:flutter/material.dart' hide AppBar, Scaffold;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
@@ -20,9 +19,7 @@ import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/app_dialog_scaffold.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 part 'chat_page_surface.dart';
 part 'chat_page_filters.dart';
@@ -125,9 +122,10 @@ class _ChatPageState extends State<_ChatActorHost> {
                 children: [
                   shellActions,
                   miniNav,
-                  _CenteredMessage(
+                  AppStateMessage(
+                    icon: LucideIcons.messagesSquare,
                     title: l10n.chatTitle,
-                    description: l10n.chatNoWorkspace,
+                    message: l10n.chatNoWorkspace,
                   ),
                 ],
               );
@@ -152,11 +150,13 @@ class _ChatPageState extends State<_ChatActorHost> {
                 children: [
                   shellActions,
                   miniNav,
-                  _CenteredMessage(
+                  AppStateMessage(
+                    icon: isForbidden ? LucideIcons.lock : AppIcons.error,
+                    tone: isForbidden ? AppTone.neutral : AppTone.destructive,
                     title: isForbidden
                         ? l10n.chatNoAccessTitle
                         : l10n.commonSomethingWentWrong,
-                    description: isForbidden
+                    message: isForbidden
                         ? l10n.chatNoAccessDescription
                         : (state.error ?? l10n.commonSomethingWentWrong),
                     actionLabel: l10n.chatRetry,
@@ -202,12 +202,6 @@ class _ChatPageState extends State<_ChatActorHost> {
           ? Routes.apps
           : null,
       items: [
-        ShellMiniNavItemSpec(
-          id: 'back',
-          icon: Icons.chevron_left,
-          label: l10n.navBack,
-          onPressed: _backFromChat,
-        ),
         ShellMiniNavItemSpec(
           id: 'workspace',
           icon: LucideIcons.building2,
@@ -266,14 +260,12 @@ class _ChatPageState extends State<_ChatActorHost> {
     }
   }
 
-  Future<void> _showFilters(BuildContext context) => showAdaptiveSheet<void>(
+  Future<void> _showFilters(BuildContext context) => showAppSheet<void>(
     context: context,
-    useRootNavigator: true,
-    backgroundColor: Colors.transparent,
     builder: (_) => BlocProvider.value(
       value: _chatCubit,
       child: BlocBuilder<ChatCubit, ChatState>(
-        builder: (context, state) => AppDialogScaffold(
+        builder: (context, state) => AppSheetScaffold(
           title: context.l10n.commonFilters,
           child: _ChatFilters(state: state),
         ),
@@ -290,17 +282,6 @@ class _ChatPageState extends State<_ChatActorHost> {
           ? _handleChatBack
           : null,
       actions: [
-        ShellActionSpec(
-          id: 'chat-new',
-          icon: LucideIcons.messageSquarePlus,
-          tooltip: l10n.chatNew,
-          onPressed: () => unawaited(
-            showChatCreateConversationSheet(
-              context: context,
-              cubit: _chatCubit,
-            ),
-          ),
-        ),
         ShellActionSpec.search(
           id: 'chat-search',
           active: _searchVisible,
@@ -319,6 +300,17 @@ class _ChatPageState extends State<_ChatActorHost> {
           },
         ),
         ShellActionSpec(
+          id: 'chat-new',
+          icon: LucideIcons.messageSquarePlus,
+          tooltip: l10n.chatNew,
+          onPressed: () => unawaited(
+            showChatCreateConversationSheet(
+              context: context,
+              cubit: _chatCubit,
+            ),
+          ),
+        ),
+        ShellActionSpec(
           id: 'chat-directory',
           icon: LucideIcons.contact,
           tooltip: l10n.chatDirectory,
@@ -326,6 +318,20 @@ class _ChatPageState extends State<_ChatActorHost> {
             showChatDirectorySheet(context: context, cubit: _chatCubit),
           ),
         ),
+        if (state.selectedConversation != null &&
+            !state.selectedConversation!.isReadOnlyAgent)
+          ShellActionSpec(
+            id: 'chat-pin',
+            icon: state.selectedConversation!.isPinned
+                ? LucideIcons.pinOff
+                : LucideIcons.pin,
+            tooltip: state.selectedConversation!.isPinned
+                ? l10n.chatUnpin
+                : l10n.chatPin,
+            highlighted: state.selectedConversation!.isPinned,
+            onPressed: () =>
+                unawaited(_chatCubit.togglePin(state.selectedConversation!)),
+          ),
         if (state.selectedConversationId != null)
           ShellActionSpec(
             id: 'chat-details',

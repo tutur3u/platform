@@ -68,14 +68,45 @@ class _ConversationPane extends StatelessWidget {
       child: ChatConversationList(
         conversations: state.visibleConversations,
         selectedConversationId: state.selectedConversationId,
+        currentUserId: context.select<AuthCubit, String?>(
+          (auth) => auth.state.user?.id,
+        ),
         isLoadingMore: state.isLoadingMore,
         hasMore: state.nextOffset != null,
         onLoadMore: () => unawaited(cubit.loadMoreConversations()),
         onSelected: (conversationId) =>
             unawaited(cubit.selectConversation(conversationId)),
+        onArchive: cubit.deleteConversation,
+        onDelete: (conversation) =>
+            _confirmDelete(context, cubit, conversation),
       ),
     );
   }
+}
+
+Future<void> _confirmDelete(
+  BuildContext context,
+  ChatCubit cubit,
+  ChatConversation conversation,
+) async {
+  final confirmed = await showAppDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AppDialog(
+      title: dialogContext.l10n.chatDeleteConversation,
+      content: Text(dialogContext.l10n.chatDeleteConversationConfirm),
+      actions: [
+        AppButton.ghost(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(dialogContext.l10n.commonCancel),
+        ),
+        AppButton.destructive(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(dialogContext.l10n.commonDelete),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) await cubit.deleteConversation(conversation);
 }
 
 class _ThreadPane extends StatelessWidget {
@@ -106,11 +137,6 @@ class _ThreadPane extends StatelessWidget {
         onRemoveAttachment: cubit.removePendingAttachment,
         onReaction: (message, reaction) =>
             unawaited(cubit.toggleReaction(message, reaction)),
-        onDetails: () =>
-            unawaited(showChatDetailsSheet(context: context, cubit: cubit)),
-        onPin: state.selectedConversation == null
-            ? () {}
-            : () => unawaited(cubit.togglePin(state.selectedConversation!)),
       ),
     );
   }

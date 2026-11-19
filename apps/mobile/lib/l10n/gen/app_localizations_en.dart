@@ -1888,6 +1888,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatAll => 'All';
 
   @override
+  String get chatArchive => 'Archive';
+
+  @override
   String get chatArchived => 'Archived';
 
   @override
@@ -1916,6 +1919,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatDecline => 'Decline';
+
+  @override
+  String get chatDeleteConversation => 'Delete conversation';
+
+  @override
+  String get chatDeleteConversationConfirm => 'This archives the chat for you, or leaves a group. It does not erase messages for everyone.';
 
   @override
   String get chatDetails => 'Details';
@@ -2016,6 +2025,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatPhotos => 'Photos';
 
   @override
+  String get chatPin => 'Pin';
+
+  @override
   String get chatPinned => 'Pinned';
 
   @override
@@ -2047,6 +2059,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatTokens => 'Tokens';
+
+  @override
+  String get chatUnpin => 'Unpin';
 
   @override
   String get chatUntitled => 'Untitled chat';

@@ -3679,6 +3679,12 @@ abstract class AppLocalizations {
   /// **'All'**
   String get chatAll;
 
+  /// No description provided for @chatArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get chatArchive;
+
   /// No description provided for @chatArchived.
   ///
   /// In en, this message translates to:
@@ -3738,6 +3744,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Decline'**
   String get chatDecline;
+
+  /// No description provided for @chatDeleteConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete conversation'**
+  String get chatDeleteConversation;
+
+  /// No description provided for @chatDeleteConversationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This archives the chat for you, or leaves a group. It does not erase messages for everyone.'**
+  String get chatDeleteConversationConfirm;
 
   /// No description provided for @chatDetails.
   ///
@@ -3919,6 +3937,12 @@ abstract class AppLocalizations {
   /// **'Photos'**
   String get chatPhotos;
 
+  /// No description provided for @chatPin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin'**
+  String get chatPin;
+
   /// No description provided for @chatPinned.
   ///
   /// In en, this message translates to:
@@ -3984,6 +4008,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tokens'**
   String get chatTokens;
+
+  /// No description provided for @chatUnpin.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpin'**
+  String get chatUnpin;
 
   /// No description provided for @chatUntitled.
   ///
