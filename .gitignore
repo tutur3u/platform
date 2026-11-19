@@ -92,3 +92,6 @@ apps/database/supabase/.temp/project-names.json
 
 # Codex
 **/.codex/config.*
+
+# bun check:changed writes this wrapper in nested worktrees and removes it after each run
+.check-changed.vitest.config.mjs

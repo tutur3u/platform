@@ -136,6 +136,19 @@ an existing `TSRS_BIN`, with no network fetch. Outside hooks, pinned npm
 resolution disables install lifecycle scripts. See the
 [qualification limits](/build/development-tools/tsrs-shadow-type-check).
 
+## Worktrees nested inside another checkout
+
+Oxc's tsconfig discovery walks upward past tsconfig files that do not include a
+file, and most workspaces exclude their tests. In a standalone checkout the walk
+finds nothing and the transform uses defaults, as in CI. In a worktree under
+another checkout's `.worktrees/`, the walk reaches that checkout's root
+`tsconfig.json`; without its `node_modules`, its package configs cannot resolve
+`@tuturuuu/typescript-config` and tests fail with `TSCONFIG_ERROR`. When the gate
+detects a `tsconfig.json` above the repository root, each `vitest related` step
+runs through a temporary `.check-changed.vitest.config.mjs` wrapper that pins
+the workspace `tsconfig.json`, then removes it. Web tests pin
+`apps/web/tsconfig.json` in their own config for direct runs.
+
 ## Optional pre-push hook
 
 `bun install` already points `core.hooksPath` at `.githooks`. The pre-push hook
