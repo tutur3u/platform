@@ -7,7 +7,8 @@ audience: developers
 
 ## Current operating decision
 
-The supported application path is `apps/web` on Next.js, the satellite apps
+The supported application path is `apps/web` on Next.js (scheduled for native
+TanStack Start + Void + Vite+ on Cloudflare Workers), the satellite apps
 (Next.js today, moving per app to native TanStack Start + Void + Vite+ on
 Cloudflare Workers), shared TypeScript packages, and their owning hosted
 services. **The Docker cron runner and `apps/tanstack-web` are retired; do not
@@ -23,11 +24,11 @@ or separately approved resumption can use those artifacts; it must not silently
 become a prerequisite for the active path.
 
 TanStack **Query** remains in use for client fetching/caching. Per-app
-TanStack **Start** on Cloudflare Workers is the active target for every web app
-except `apps/web`; it is unrelated to the retired `apps/tanstack-web` tree,
-whose source refreshes, tests, dependency updates and CI stay disabled. Shared
-contracts still belong in reusable packages; do not require updates to the
-retired trees for a live change.
+TanStack **Start** on Cloudflare Workers is the active target for every web app,
+including `apps/web` (scheduled); it is unrelated to the retired
+`apps/tanstack-web` tree, whose source refreshes, tests, dependency updates and
+CI stay disabled. Shared contracts still belong in reusable packages; do not
+require updates to the retired trees for a live change.
 
 Each app migrates under the [native Start migration runbook](/build/devops/native-start-migration):
 one integration writer per app, `next/*` only through
@@ -39,6 +40,17 @@ production acceptance and a 30–60 minute watch; hosted staging is not a flip g
 hosting (Vercel or Next.js/OpenNext Workers) stays canonical until that app's
 explicit cutover PR. See
 [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
+
+## Scope and readiness
+
+- **Browser apps** take apex mounts; **services** keep their own ingress and are
+  not browser mounts.
+- Qualification, upload admission, actual upload, subdomain cutover and apex
+  cutover are separate tracked facts per app.
+- Apps drain through a continuously evaluated per-app readiness queue; there is
+  no global lowest-risk-first order or fixed wave labels.
+- Post-deploy watch is 30–60 minutes with immediate rollback, not 5 minutes.
+
 
 ## Wave-1 production publication hold
 
@@ -60,7 +72,7 @@ See the wave-1 cutover runbook.
 
 | Boundary | Active source/owner | What to verify |
 | --- | --- | --- |
-| Main platform | `apps/web` Next.js | Exact commit build/deployment and authenticated route behavior |
+| Main platform | `apps/web` Next.js (native Start scheduled) | Exact commit build/deployment and authenticated route behavior |
 | Satellite products | Owning Next.js apps, or native Start Workers after cutover | Per-app session audience, route owner, and deployment marker |
 | Database | Hosted Supabase and authorized migration workflows | Schema promotion results, RLS, and relevant domain records |
 | Realtime/edge services | Owning Cloudflare Worker/service configuration | Worker deployment, runtime health, and product result |

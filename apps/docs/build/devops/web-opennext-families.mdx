@@ -131,3 +131,10 @@ has no routes, so leaving it deployed serves nothing.
 Regression coverage: `apps/web/cloudflare/opennext/families.test.ts` (route
 ownership, gateway parity, disposable-checkout guard, Next config gating) and
 `apps/gateway/src/web-family.test.ts` (dispatch, deny list, header contract).
+
+## Path ownership
+
+Each served path has one owner. Alias collisions are rejected by the family
+and gateway manifest tests. Rollback is one action (remove the family id or
+roll the gateway version), including bare-query fallback paths through the
+gateway.

@@ -5,8 +5,32 @@ updatedAt: '2026-10-25'
 audience: developers
 ---
 
-Every web app except `apps/web` moves to its own TanStack Start + Void + Vite+
-Worker on Cloudflare. `apps/web` now has a separately scheduled Web 1 candidate; all existing Web routes remain on Next.js.
+Every web app, including `apps/web` (scheduled), moves to its own TanStack
+Start + Void + Vite+ Worker on Cloudflare. `apps/web` keeps its Web 1
+staging candidate; all existing Web routes remain on Next.js until cutover.
+
+## Scope
+
+- **Browser apps** (web apps with UI routes): migrate to per-app TanStack Start
+  Workers and may take an apex mount at `tuturuuu.com/<app>`.
+- **Services** (APIs, realtime, storage, schedulers and private Workers): keep
+  their own ingress and runtime contracts; they are not apex browser mounts.
+
+## Tracked facts (separate)
+
+Qualification, upload admission, actual upload, subdomain cutover and apex
+cutover are tracked as separate facts per app. None implies another.
+
+## Readiness queue
+
+There is no global lowest-risk-first order or fixed wave labels. Apps drain
+through a continuously evaluated per-app readiness queue based on their own
+evidence and ownership.
+
+## Watch wording
+
+Use a 30–60 minute post-deploy watch with immediate rollback on any regression.
+Do not use a 5-minute watch.
 The retired `apps/tanstack-web` tree is not part of this program and is not
 revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
 for an app until its explicit cutover PR merges.

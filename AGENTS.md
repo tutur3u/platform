@@ -229,8 +229,8 @@ time.
   by root command guards, test discovery, CI job/switchboard gates, and dependency
   policy; see `apps/docs/build/devops/active-runtime.mdx`.
   - Per-app TanStack Start + Void + Vite+ on Cloudflare Workers is the active
-    target for every web app except `apps/web`, delivered under the
-    [native Start migration runbook](apps/docs/build/devops/native-start-migration.mdx).
+    target for every web app, including `apps/web` (scheduled), delivered under
+    the [native Start migration runbook](apps/docs/build/devops/native-start-migration.mdx).
     Each app has one integration writer, reaches `next/*` only through
     `@tuturuuu/start-bridge`, and is basePath-ready (its subdomain and
     `tuturuuu.com/<app>`). Require exact-commit CI, sealed emitted-Worker

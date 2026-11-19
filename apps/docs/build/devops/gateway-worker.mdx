@@ -260,3 +260,10 @@ lives in `apps/gateway/src/web-family.test.ts`.
 **All families:** `GATEWAY_MODE=passthrough`. Enabling a family is a change of the
 `GATEWAY_WEB_FAMILIES` repository variable followed by a run of the gateway job,
 which adds the family's service binding.
+
+## Path ownership and rollback
+
+Each gateway path has one owner. Alias collisions are rejected at manifest
+validation. A one-action rollback restores all affected surfaces, including
+bare-query fallback paths. Mounted app traffic bypasses the gateway cache and
+forwarding headers are stripped.
