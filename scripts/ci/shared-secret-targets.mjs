@@ -147,6 +147,10 @@ function readSupabaseFamilyWorkers(root) {
         config.secrets.required.includes(SUPABASE_FAMILY_BINDING),
       'family Worker config must declare the reviewed account and require SUPABASE_SECRET_KEY'
     );
+    assert.ok(
+      config.vars?.APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK === '1',
+      'family Worker config must disable the Supabase coordination token fallback'
+    );
     return name;
   });
   assert.equal(

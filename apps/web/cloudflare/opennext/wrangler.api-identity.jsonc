@@ -34,6 +34,7 @@
     ],
   },
   "vars": {
+    "APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK": "1",
     // Production identity without Vercel markers: VERCEL/VERCEL_ENV would
     // select Vercel client-IP trust, so the deploy env is stated directly.
     "TUTURUUU_DEPLOY_ENV": "production",

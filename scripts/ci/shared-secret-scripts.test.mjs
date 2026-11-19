@@ -366,6 +366,12 @@ test('Supabase delivery requires an explicit opt-in and a matching Worker config
     () => resolveSupabaseFamilyTargets(root),
     /require SUPABASE_SECRET_KEY/
   );
+  writeFileSync(file, JSON.stringify(config));
+  assert.throws(
+    () => resolveSupabaseFamilyTargets(root),
+    /must disable the Supabase coordination token fallback/
+  );
+  config.vars = { APP_COORDINATION_TOKEN_DISABLE_SUPABASE_FALLBACK: '1' };
   writeFileSync(file, '// production family config\n' + JSON.stringify(config));
   assert.deepEqual(resolveSupabaseFamilyTargets(root).workers, [
     {
