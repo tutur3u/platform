@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { join } from 'node:path';
+import { setup, sha } from './wave1-native-production-test-helper.mjs';
 import { uploadArtifact } from './wave1-native-publish.mjs';
 import {
   NativeUploadError,
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
-import { uploadLimits } from './wave1-native-upload-limits.mjs';
 
-test('upload failure exposes only numeric exit, signal and CF code metadata', async () => {
+test('upload failure exposes only numeric exit, signal and CF code metadata', async (t) => {
+  const { appRoot, env } = setup(t);
   const secret = [
     'cf_secr',
     'et_fixt',
@@ -26,29 +28,20 @@ test('upload failure exposes only numeric exit, signal and CF code metadata', as
   });
   await assert.rejects(
     uploadArtifact({
-      env: { RUNNER_TEMP: '/tmp' },
+      env: { RUNNER_TEMP: env.RUNNER_TEMP },
+      appRoot,
       app: 'calendar',
       environment: 'production',
-      config: '/tmp/calendar/dist/wave1/upload-config.json',
-      sha: 'a'.repeat(40),
+      config: join(appRoot, 'dist/wave1/wrangler.json'),
+      sha,
       digest: 'b'.repeat(64),
       cfToken: secret,
-      p: { accountId: 'c'.repeat(32) },
-      exec: () => {
-        throw failure;
+      p: {
+        name: 'tuturuuu-calendar-path-candidate',
+        accountId: 'c'.repeat(32),
       },
-      measurements: {
-        schema: 1,
-        limits: uploadLimits,
-        script: {
-          bytes: 1,
-          moduleCount: 1,
-          maxModuleBytes: 1,
-          modules: [{ bytes: 1 }],
-        },
-        sourcemaps: { enabled: false, count: 0, encodedBytes: 0, gzipBytes: 0 },
-        assets: { count: 0, maxFileBytes: 0 },
-        variables: { count: 0, maxPlainValueBytes: 0 },
+      exec: (_command, args) => {
+        if (!args.includes('--dry-run')) throw failure;
       },
     }),
     (error) => {

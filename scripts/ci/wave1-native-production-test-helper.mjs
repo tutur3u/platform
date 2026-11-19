@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import {
-  copyFileSync,
+  mkdtempSync,
   readFileSync,
+  realpathSync,
+  rmSync,
   truncateSync,
-  writeFileSync,
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import {
@@ -26,7 +28,7 @@ const publicInputs = {
   ),
 };
 
-export function setup(t, { admitted = true } = {}) {
+export function setup(t, { admitted = true, oversized = false } = {}) {
   const previous = productionPublicationPolicy.calendar;
   const previousExclusion = productionAppExclusions.calendar;
   delete productionAppExclusions.calendar;
@@ -55,6 +57,10 @@ export function setup(t, { admitted = true } = {}) {
     });
   }
   const appRoot = fixture(t, 'calendar');
+  const runnerTemp = realpathSync(mkdtempSync(join(tmpdir(), 'wave1-runner-')));
+  t.after(() => rmSync(runnerTemp, { recursive: true, force: true }));
+  if (oversized)
+    truncateSync(join(appRoot, 'dist/server/index.js'), 64 * 1024 ** 2 + 1);
   const receipt = prepare(appRoot, 'calendar', 'production', 'fixture', sha);
   const digest = artifactDigest(receipt);
   const state = {
@@ -82,7 +88,7 @@ export function setup(t, { admitted = true } = {}) {
     GITHUB_TOKEN: ['github', 'fixture'].join('-'),
     WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN: ['production', 'fixture'].join('-'),
     WAVE1_PRODUCTION_CLOUDFLARE_READ_TOKEN: ['topology', 'fixture'].join('-'),
-    RUNNER_TEMP: appRoot,
+    RUNNER_TEMP: runnerTemp,
   };
   const version = (id) => ({
     id,
@@ -224,37 +230,27 @@ export function setup(t, { admitted = true } = {}) {
     return Response.json({ success: true, result });
   };
   const exec = (command, args, options) => {
+    assert.equal(command, 'bun');
+    assert.deepEqual(args.slice(0, 5), [
+      'x',
+      '--no-install',
+      'cf',
+      'deploy',
+      '--prebuilt',
+    ]);
+    assert.equal(options.cwd, appRoot);
+    assert.equal(options.env.GITHUB_TOKEN, undefined);
+    assertRouteFree(
+      JSON.parse(
+        readFileSync(join(appRoot, 'dist/wave1/wrangler.json'), 'utf8')
+      )
+    );
     if (args.includes('--dry-run')) {
       assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
-      assert.equal(options.env.GITHUB_TOKEN, undefined);
-      assert.equal(options.timeout, 60000);
-      const out = args[args.indexOf('--outdir') + 1];
-      copyFileSync(
-        join(appRoot, 'dist/server/index.js'),
-        join(out, 'index.js')
-      );
-      if (state.oversized)
-        truncateSync(join(out, 'index.js'), 64 * 1024 ** 2 + 1);
-      emit({
-        type: 'deploy',
-        worker_name: receipt.profile.name,
-        version_id: null,
-        bundle_size: {
-          raw_bytes: state.oversized
-            ? 67108865
-            : readFileSync(join(appRoot, 'dist/server/index.js')).length,
-          gzip_bytes: 1,
-        },
-      });
+      assert.equal(options.timeout, 120000);
       return;
     }
     state.writes++;
-    assert.equal(command, 'bun');
-    assert.equal(args.includes('deploy'), true);
-    const config = JSON.parse(
-      readFileSync(args[args.indexOf('--config') + 1], 'utf8')
-    );
-    assertRouteFree(config);
     assert.equal(
       options.env.CLOUDFLARE_API_TOKEN,
       env.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN
@@ -278,17 +274,7 @@ export function setup(t, { admitted = true } = {}) {
     if (state.duringUpload) state.attached = true;
     state.active = newId;
     state.ids = [newId];
-    emit({
-      type: 'deploy',
-      worker_name: receipt.profile.name,
-      version_id: newId,
-    });
-    function emit(payload) {
-      writeFileSync(
-        options.env.WRANGLER_OUTPUT_FILE_PATH,
-        `${JSON.stringify(payload)}\n`
-      );
-    }
+    return JSON.stringify({ version_id: newId });
   };
   return {
     state,

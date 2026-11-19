@@ -21,7 +21,7 @@ import {
   NativeUploadError,
   productionFailureMessage,
 } from './wave1-native-upload-error.mjs';
-import { assertUploadLimits } from './wave1-native-upload-limits.mjs';
+import { UploadLimitsError } from './wave1-native-upload-limits.mjs';
 
 export function assertRouteFree(config) {
   assert.equal(
@@ -281,30 +281,33 @@ export async function main({
         rollback,
         fetcher: boundedFetch,
       });
-    record.measurements = await uploadArtifact({
-      env,
-      app,
-      environment: 'production',
-      config,
-      sha,
-      digest,
-      p,
-      exec,
-      dryRun: true,
-      secretNames: names.map((secret) => secret.name),
-    });
+    try {
+      record.measurements = await uploadArtifact({
+        env,
+        appRoot,
+        app,
+        environment: 'production',
+        config,
+        sha,
+        digest,
+        p,
+        exec,
+        dryRun: true,
+        secretNames: names.map((secret) => secret.name),
+      });
+    } catch (error) {
+      if (error instanceof UploadLimitsError) {
+        record.measurements = error.measurements;
+        record.state = 'refused-before-upload';
+        writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
+          mode: 0o600,
+        });
+      }
+      throw error;
+    }
     writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
       mode: 0o600,
     });
-    try {
-      assertUploadLimits(record.measurements);
-    } catch (error) {
-      record.state = 'refused-before-upload';
-      writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, {
-        mode: 0o600,
-      });
-      throw error;
-    }
     assert.deepEqual(
       await topology(),
       before,
@@ -363,6 +366,7 @@ export async function main({
       try {
         record.versionId = await uploadArtifact({
           env,
+          appRoot,
           app,
           environment: 'production',
           config,

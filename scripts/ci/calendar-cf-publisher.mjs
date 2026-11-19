@@ -113,6 +113,7 @@ export async function publishCalendarArtifact({
     return measurements;
   }
   assert.ok(cfToken, 'Missing Cloudflare deploy credential');
+  assertMeasuredLimits(config, rehearsal.buildRoot, secretNames);
   stageBuildOutput(appRoot, rehearsal.buildRoot);
   let stdout = '';
   let stderr = '';
@@ -141,6 +142,5 @@ export async function publishCalendarArtifact({
     VERSION_ID.test(versionId ?? ''),
     'cf deploy returned no version id'
   );
-  assertMeasuredLimits(config, rehearsal.buildRoot, secretNames);
   return versionId;
 }

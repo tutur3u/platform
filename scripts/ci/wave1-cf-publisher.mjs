@@ -152,6 +152,7 @@ export async function publishWave1Artifact({
     return measurements;
   }
   assert.ok(cfToken, 'Missing Cloudflare deploy credential');
+  assertMeasuredLimits(configFile, rehearsal.buildRoot, secretNames);
   stageBuildOutput(appRoot, rehearsal.buildRoot);
   let stdout = '';
   let stderr = '';
@@ -180,6 +181,5 @@ export async function publishWave1Artifact({
     VERSION_ID.test(versionId ?? ''),
     'cf publication returned no version id'
   );
-  assertMeasuredLimits(configFile, rehearsal.buildRoot, secretNames);
   return versionId;
 }

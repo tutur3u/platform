@@ -528,6 +528,13 @@ export async function uploadArtifact({
   appRoot,
   traffic = 'activate',
 }) {
+  if (dryRun)
+    assert.equal(
+      cfToken,
+      undefined,
+      'Deploy credential forbidden in measurement'
+    );
+  else if (measurements) assertUploadLimits(measurements);
   const resolvedAppRoot = appRoot ?? resolve('apps', app);
   if (
     app === 'calendar' &&
