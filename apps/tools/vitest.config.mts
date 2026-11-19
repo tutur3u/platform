@@ -20,6 +20,19 @@ export default defineConfig({
     },
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/supabase\/(.+)$/,
+        replacement: resolve(__dirname, '../../packages/supabase/src/$1.ts'),
+      },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
+    ],
   },
 });

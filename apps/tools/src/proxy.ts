@@ -1,3 +1,4 @@
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import {
   getLocaleCookieOptions,
@@ -46,9 +47,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
     return null;
   }
 
-  const url = new URL(
-    `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
-    request.url
+  const url = new URL(request.url);
+  url.pathname = withAppBase(
+    stripLocale(request.nextUrl.pathname),
+    request.nextUrl.basePath
   );
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, pathLocale);

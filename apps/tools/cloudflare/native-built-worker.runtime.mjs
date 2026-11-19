@@ -295,6 +295,9 @@ test(
           }
         }
       );
+      await t.test('the bare apex mount accepts a query string', async () => {
+        assert.equal((await call(`${BASE}?source=smoke`, APEX)).status, 200);
+      });
     } else {
       await t.test(
         'a root-only app rejects the apex before any app code runs',
