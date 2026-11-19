@@ -25,8 +25,10 @@ import 'package:mobile/features/crm/utils/contact_identity.dart';
 import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
+import 'package:mobile/features/crm/view/contact_group_editor.dart';
 import 'package:mobile/features/crm/view/contact_list_row.dart';
 import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
+import 'package:mobile/features/crm/view/contact_tag_editor.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -146,6 +148,12 @@ class _CrmPageState extends State<CrmWorkspace> {
       _workspacePermissions.containsPermission('manage_workspace_audit_logs');
   bool get _canViewFeedbacks =>
       _workspacePermissions.containsPermission('view_user_groups');
+  bool get _canCreateGroups =>
+      _workspacePermissions.containsPermission('create_user_groups');
+  bool get _canUpdateGroups =>
+      _workspacePermissions.containsPermission('update_user_groups');
+  bool get _canDeleteGroups =>
+      _workspacePermissions.containsPermission('delete_user_groups');
   bool get _canManageFeedbacks =>
       _workspacePermissions.containsPermission('update_user_groups_scores');
 

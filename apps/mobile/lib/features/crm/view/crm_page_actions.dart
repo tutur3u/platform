@@ -310,6 +310,184 @@ extension _CrmPageActions on _CrmPageState {
     }
   }
 
+  Future<void> _showGroupEditor({CrmGroup? group}) async {
+    final saved = await _showOwnedSheet<bool>(
+      context: context,
+      builder: (context) => ContactGroupEditor(
+        group: group,
+        onSubmit: (payload) {
+          final wsId = _wsId;
+          if (wsId == null) return Future<void>.value();
+          if (group == null) return _repository.createGroup(wsId, payload);
+          return _repository.updateGroup(wsId, group.id, payload);
+        },
+      ),
+    );
+    if (saved == true && mounted) await _loadInitial();
+  }
+
+  Future<void> _showTagEditor({CrmGroupTag? tag}) async {
+    final saved = await _showOwnedSheet<bool>(
+      context: context,
+      builder: (context) => ContactTagEditor(
+        groups: _groups,
+        tag: tag,
+        onSubmit: ({required color, required groupIds, required name}) {
+          final wsId = _wsId;
+          if (wsId == null) return Future<void>.value();
+          if (tag == null) {
+            return _repository.createGroupTag(
+              wsId,
+              name: name,
+              color: color,
+              groupIds: groupIds,
+            );
+          }
+          return _repository.updateGroupTag(
+            wsId,
+            tagId: tag.id,
+            name: name,
+            color: color,
+            previousGroupIds: tag.groupIds,
+            groupIds: groupIds,
+          );
+        },
+      ),
+    );
+    if (saved == true && mounted) await _loadInitial();
+  }
+
+  Future<void> _showGroupActions(CrmGroup group) async {
+    final l10n = context.l10n;
+    final action = await _showOwnedSheet<String>(
+      context: context,
+      builder: (context) => AppActionSheet<String>(
+        title: group.name,
+        actions: [
+          AppSheetAction(
+            label: l10n.contactsPeople,
+            value: 'people',
+            icon: LucideIcons.contact,
+          ),
+          if (_canUpdateGroups)
+            AppSheetAction(
+              label: l10n.commonEdit,
+              value: 'edit',
+              icon: LucideIcons.pencil,
+            ),
+          if (_canDeleteGroups)
+            AppSheetAction(
+              label: l10n.commonDelete,
+              value: 'delete',
+              icon: LucideIcons.trash2,
+              destructive: true,
+            ),
+        ],
+      ),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'people':
+        _filterByGroups([group.id]);
+      case 'edit':
+        await _showGroupEditor(group: group);
+      case 'delete':
+        await _deleteGroup(group);
+    }
+  }
+
+  Future<void> _showTagActions(CrmGroupTag tag) async {
+    final l10n = context.l10n;
+    final action = await _showOwnedSheet<String>(
+      context: context,
+      builder: (context) => AppActionSheet<String>(
+        title: tag.name,
+        actions: [
+          if (tag.groupIds.isNotEmpty)
+            AppSheetAction(
+              label: l10n.contactsPeople,
+              value: 'people',
+              icon: LucideIcons.contact,
+            ),
+          if (_canUpdateGroups)
+            AppSheetAction(
+              label: l10n.commonEdit,
+              value: 'edit',
+              icon: LucideIcons.pencil,
+            ),
+          if (_canDeleteGroups)
+            AppSheetAction(
+              label: l10n.commonDelete,
+              value: 'delete',
+              icon: LucideIcons.trash2,
+              destructive: true,
+            ),
+        ],
+      ),
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case 'people':
+        _filterByGroups(tag.groupIds);
+      case 'edit':
+        await _showTagEditor(tag: tag);
+      case 'delete':
+        await _deleteGroupTag(tag);
+    }
+  }
+
+  Future<void> _deleteGroup(CrmGroup group) async {
+    final confirmed = await _confirmDelete(
+      context.l10n.contactsDeleteGroupConfirm,
+    );
+    if (confirmed != true || !mounted || _wsId == null) return;
+    try {
+      await _repository.deleteGroup(_wsId!, group.id);
+      if (!mounted) return;
+      _toast(context.l10n.contactsSaved);
+      await _loadInitial();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _toast(error.message, destructive: true);
+    }
+  }
+
+  Future<void> _deleteGroupTag(CrmGroupTag tag) async {
+    final confirmed = await _confirmDelete(
+      context.l10n.contactsDeleteTagConfirm,
+    );
+    if (confirmed != true || !mounted || _wsId == null) return;
+    try {
+      await _repository.deleteGroupTag(_wsId!, tag.id);
+      if (!mounted) return;
+      _toast(context.l10n.contactsSaved);
+      await _loadInitial();
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      _toast(error.message, destructive: true);
+    }
+  }
+
+  Future<bool?> _confirmDelete(String message) {
+    return _showOwnedDialog<bool>(
+      context: context,
+      builder: (context) => AppDialog(
+        title: context.l10n.commonDelete,
+        content: Text(message),
+        actions: [
+          AppButton.ghost(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(context.l10n.commonCancel),
+          ),
+          AppButton.primary(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(context.l10n.commonDelete),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showContactActions(CrmUser user) async {
     final l10n = context.l10n;
     final action = await _showOwnedSheet<String>(

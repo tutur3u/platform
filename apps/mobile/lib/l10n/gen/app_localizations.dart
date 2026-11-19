@@ -4777,11 +4777,71 @@ abstract class AppLocalizations {
   /// **'Counter'**
   String get counterAppBarTitle;
 
+  /// No description provided for @contactsColorEnergy.
+  ///
+  /// In en, this message translates to:
+  /// **'Energy'**
+  String get contactsColorEnergy;
+
+  /// No description provided for @contactsColorGrowth.
+  ///
+  /// In en, this message translates to:
+  /// **'Growth'**
+  String get contactsColorGrowth;
+
+  /// No description provided for @contactsColorImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact'**
+  String get contactsColorImpact;
+
+  /// No description provided for @contactsColorInnovation.
+  ///
+  /// In en, this message translates to:
+  /// **'Innovation'**
+  String get contactsColorInnovation;
+
+  /// No description provided for @contactsCreateGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Create group'**
+  String get contactsCreateGroup;
+
+  /// No description provided for @contactsCreateTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Create tag'**
+  String get contactsCreateTag;
+
+  /// No description provided for @contactsDeleteGroupConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this group?'**
+  String get contactsDeleteGroupConfirm;
+
+  /// No description provided for @contactsDeleteTagConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this tag?'**
+  String get contactsDeleteTagConfirm;
+
   /// No description provided for @contactsDetails.
   ///
   /// In en, this message translates to:
   /// **'Details'**
   String get contactsDetails;
+
+  /// No description provided for @contactsEditGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit group'**
+  String get contactsEditGroup;
+
+  /// No description provided for @contactsEditTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit tag'**
+  String get contactsEditTag;
 
   /// No description provided for @contactsEmpty.
   ///
@@ -4807,6 +4867,36 @@ abstract class AppLocalizations {
   /// **'No tags yet'**
   String get contactsEmptyTags;
 
+  /// No description provided for @contactsEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get contactsEndDate;
+
+  /// No description provided for @contactsGroupGuest.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest group'**
+  String get contactsGroupGuest;
+
+  /// No description provided for @contactsGroupName.
+  ///
+  /// In en, this message translates to:
+  /// **'Group name'**
+  String get contactsGroupName;
+
+  /// No description provided for @contactsGroupNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Morning class'**
+  String get contactsGroupNameHint;
+
+  /// No description provided for @contactsGroupNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get contactsGroupNotes;
+
   /// No description provided for @contactsGroups.
   ///
   /// In en, this message translates to:
@@ -4831,11 +4921,41 @@ abstract class AppLocalizations {
   /// **'You do not have permission to view contacts.'**
   String get contactsPermissionDenied;
 
+  /// No description provided for @contactsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get contactsSaved;
+
   /// No description provided for @contactsSearchHint.
   ///
   /// In en, this message translates to:
   /// **'Search contacts by name, email, or phone'**
   String get contactsSearchHint;
+
+  /// No description provided for @contactsStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get contactsStartDate;
+
+  /// No description provided for @contactsTagColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get contactsTagColor;
+
+  /// No description provided for @contactsTagName.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag name'**
+  String get contactsTagName;
+
+  /// No description provided for @contactsTagNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Beginner'**
+  String get contactsTagNameHint;
 
   /// No description provided for @contactsTags.
   ///

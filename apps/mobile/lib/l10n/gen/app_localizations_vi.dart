@@ -2445,7 +2445,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get counterAppBarTitle => 'Bộ đếm';
 
   @override
+  String get contactsColorEnergy => 'Năng lượng';
+
+  @override
+  String get contactsColorGrowth => 'Tăng trưởng';
+
+  @override
+  String get contactsColorImpact => 'Tác động';
+
+  @override
+  String get contactsColorInnovation => 'Đổi mới';
+
+  @override
+  String get contactsCreateGroup => 'Tạo nhóm';
+
+  @override
+  String get contactsCreateTag => 'Tạo thẻ';
+
+  @override
+  String get contactsDeleteGroupConfirm => 'Xóa nhóm này?';
+
+  @override
+  String get contactsDeleteTagConfirm => 'Xóa thẻ này?';
+
+  @override
   String get contactsDetails => 'Chi tiết';
+
+  @override
+  String get contactsEditGroup => 'Sửa nhóm';
+
+  @override
+  String get contactsEditTag => 'Sửa thẻ';
 
   @override
   String get contactsEmpty => 'Chưa có liên hệ';
@@ -2460,6 +2490,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsEmptyTags => 'Chưa có thẻ';
 
   @override
+  String get contactsEndDate => 'Ngày kết thúc';
+
+  @override
+  String get contactsGroupGuest => 'Nhóm khách';
+
+  @override
+  String get contactsGroupName => 'Tên nhóm';
+
+  @override
+  String get contactsGroupNameHint => 'ví dụ: Lớp sáng';
+
+  @override
+  String get contactsGroupNotes => 'Ghi chú';
+
+  @override
   String get contactsGroups => 'Nhóm';
 
   @override
@@ -2472,7 +2517,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsPermissionDenied => 'Bạn không có quyền xem danh bạ này.';
 
   @override
+  String get contactsSaved => 'Đã lưu.';
+
+  @override
   String get contactsSearchHint => 'Tìm liên hệ theo tên, email hoặc số điện thoại';
+
+  @override
+  String get contactsStartDate => 'Ngày bắt đầu';
+
+  @override
+  String get contactsTagColor => 'Màu';
+
+  @override
+  String get contactsTagName => 'Tên thẻ';
+
+  @override
+  String get contactsTagNameHint => 'ví dụ: Sơ cấp';
 
   @override
   String get contactsTags => 'Thẻ';

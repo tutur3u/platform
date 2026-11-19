@@ -81,13 +81,38 @@ extension _CrmPageLayout on _CrmPageState {
                       ? _showUsersFilterSheet
                       : _showAuditFilterSheet,
                 ),
-              if (selected == null && usersTab && _canCreateUsers)
+              if (selected == null &&
+                  usersTab &&
+                  _directory == _ContactDirectory.people &&
+                  _canCreateUsers)
                 ShellActionSpec(
                   id: 'crm-create',
                   icon: LucideIcons.userPlus,
                   tooltip: l10n.crmCreateUser,
                   callbackToken: widget.workspaceId,
                   onPressed: _showUserSheet,
+                ),
+              if (selected == null &&
+                  usersTab &&
+                  _directory == _ContactDirectory.groups &&
+                  _canCreateGroups)
+                ShellActionSpec(
+                  id: 'crm-create-group',
+                  icon: LucideIcons.plus,
+                  tooltip: l10n.contactsCreateGroup,
+                  callbackToken: widget.workspaceId,
+                  onPressed: _showGroupEditor,
+                ),
+              if (selected == null &&
+                  usersTab &&
+                  _directory == _ContactDirectory.tags &&
+                  _canCreateGroups)
+                ShellActionSpec(
+                  id: 'crm-create-tag',
+                  icon: LucideIcons.plus,
+                  tooltip: l10n.contactsCreateTag,
+                  callbackToken: widget.workspaceId,
+                  onPressed: _showTagEditor,
                 ),
               if (selected == null &&
                   usersTab &&
@@ -279,6 +304,7 @@ extension _CrmPageLayout on _CrmPageState {
     }
     if (_directoryCount == 0 && !_isLoading) {
       final searching = _searchController.text.trim().isNotEmpty;
+      final createLabel = _emptyCreateLabel(l10n, usersTab);
       slots.add(
         AppStateMessage(
           icon: usersTab ? LucideIcons.contact : LucideIcons.history,
@@ -286,6 +312,8 @@ extension _CrmPageLayout on _CrmPageState {
           message: searching && usersTab
               ? l10n.contactsEmptySearch
               : _emptyMessage(l10n, usersTab),
+          actionLabel: searching ? null : createLabel,
+          onAction: searching ? null : _emptyCreateAction(usersTab),
           illustration: searching
               ? const AppIllustration(
                   AppIllustrationKind.searchNoResults,
@@ -343,11 +371,15 @@ extension _CrmPageLayout on _CrmPageState {
           final group = _visibleGroups[index];
           return AppRichRow(
             title: group.name,
+            subtitle: group.notes,
             leading: const AppIconTile(
               icon: LucideIcons.users,
               tone: AppTone.info,
             ),
             onTap: () => _filterByGroups([group.id]),
+            onLongPress: _canUpdateGroups || _canDeleteGroups
+                ? () => _showGroupActions(group)
+                : null,
           );
         }),
       );
@@ -365,6 +397,9 @@ extension _CrmPageLayout on _CrmPageState {
             onTap: tag.groupIds.isEmpty
                 ? null
                 : () => _filterByGroups(tag.groupIds),
+            onLongPress: _canUpdateGroups || _canDeleteGroups
+                ? () => _showTagActions(tag)
+                : null,
           );
         }),
       );
@@ -419,6 +454,24 @@ extension _CrmPageLayout on _CrmPageState {
       _ContactDirectory.people => l10n.contactsEmpty,
       _ContactDirectory.groups => l10n.contactsEmptyGroups,
       _ContactDirectory.tags => l10n.contactsEmptyTags,
+    };
+  }
+
+  String? _emptyCreateLabel(AppLocalizations l10n, bool usersTab) {
+    if (!usersTab || !_canCreateGroups) return null;
+    return switch (_directory) {
+      _ContactDirectory.groups => l10n.contactsCreateGroup,
+      _ContactDirectory.tags => l10n.contactsCreateTag,
+      _ContactDirectory.people => null,
+    };
+  }
+
+  Future<void> Function()? _emptyCreateAction(bool usersTab) {
+    if (!usersTab || !_canCreateGroups) return null;
+    return switch (_directory) {
+      _ContactDirectory.groups => _showGroupEditor,
+      _ContactDirectory.tags => _showTagEditor,
+      _ContactDirectory.people => null,
     };
   }
 

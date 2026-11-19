@@ -583,6 +583,12 @@ abstract final class CrmEndpoints {
     return '/api/v1/workspaces/$wsId/users/groups$suffix';
   }
 
+  static String userGroupCollection(String wsId) =>
+      '/api/v1/workspaces/$wsId/user-groups';
+
+  static String userGroup(String wsId, String groupId) =>
+      '${userGroupCollection(wsId)}/${Uri.encodeComponent(groupId)}';
+
   static String groupTags(String wsId, {int? page, int? pageSize}) {
     final params = <String, String>{};
     if (page != null) {
@@ -596,6 +602,15 @@ abstract final class CrmEndpoints {
         : '?${Uri(queryParameters: params).query}';
     return '/api/v1/workspaces/$wsId/group-tags$suffix';
   }
+
+  static String groupTag(String wsId, String tagId) =>
+      '/api/v1/workspaces/$wsId/group-tags/${Uri.encodeComponent(tagId)}';
+
+  static String groupTagGroups(String wsId, String tagId) =>
+      '${groupTag(wsId, tagId)}/user-groups';
+
+  static String groupTagGroup(String wsId, String tagId, String groupId) =>
+      '${groupTagGroups(wsId, tagId)}/${Uri.encodeComponent(groupId)}';
 
   static String feedbacks(
     String wsId, {

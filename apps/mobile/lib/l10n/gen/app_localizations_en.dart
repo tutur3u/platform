@@ -2459,7 +2459,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get counterAppBarTitle => 'Counter';
 
   @override
+  String get contactsColorEnergy => 'Energy';
+
+  @override
+  String get contactsColorGrowth => 'Growth';
+
+  @override
+  String get contactsColorImpact => 'Impact';
+
+  @override
+  String get contactsColorInnovation => 'Innovation';
+
+  @override
+  String get contactsCreateGroup => 'Create group';
+
+  @override
+  String get contactsCreateTag => 'Create tag';
+
+  @override
+  String get contactsDeleteGroupConfirm => 'Delete this group?';
+
+  @override
+  String get contactsDeleteTagConfirm => 'Delete this tag?';
+
+  @override
   String get contactsDetails => 'Details';
+
+  @override
+  String get contactsEditGroup => 'Edit group';
+
+  @override
+  String get contactsEditTag => 'Edit tag';
 
   @override
   String get contactsEmpty => 'No contacts yet';
@@ -2474,6 +2504,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsEmptyTags => 'No tags yet';
 
   @override
+  String get contactsEndDate => 'End date';
+
+  @override
+  String get contactsGroupGuest => 'Guest group';
+
+  @override
+  String get contactsGroupName => 'Group name';
+
+  @override
+  String get contactsGroupNameHint => 'e.g. Morning class';
+
+  @override
+  String get contactsGroupNotes => 'Notes';
+
+  @override
   String get contactsGroups => 'Groups';
 
   @override
@@ -2486,7 +2531,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsPermissionDenied => 'You do not have permission to view contacts.';
 
   @override
+  String get contactsSaved => 'Saved.';
+
+  @override
   String get contactsSearchHint => 'Search contacts by name, email, or phone';
+
+  @override
+  String get contactsStartDate => 'Start date';
+
+  @override
+  String get contactsTagColor => 'Color';
+
+  @override
+  String get contactsTagName => 'Tag name';
+
+  @override
+  String get contactsTagNameHint => 'e.g. Beginner';
 
   @override
   String get contactsTags => 'Tags';

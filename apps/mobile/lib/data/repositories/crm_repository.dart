@@ -206,6 +206,101 @@ class CrmRepository {
         .toList(growable: false);
   }
 
+  Future<void> createGroup(String wsId, Map<String, dynamic> payload) {
+    return _write(
+      wsId,
+      'POST',
+      CrmEndpoints.userGroupCollection(wsId),
+      payload: payload,
+    );
+  }
+
+  Future<void> updateGroup(
+    String wsId,
+    String groupId,
+    Map<String, dynamic> payload,
+  ) {
+    return _write(
+      wsId,
+      'PUT',
+      CrmEndpoints.userGroup(wsId, groupId),
+      payload: payload,
+      entityId: groupId,
+    );
+  }
+
+  Future<void> deleteGroup(String wsId, String groupId) {
+    return _write(
+      wsId,
+      'DELETE',
+      CrmEndpoints.userGroup(wsId, groupId),
+      entityId: groupId,
+    );
+  }
+
+  Future<void> createGroupTag(
+    String wsId, {
+    required String name,
+    required String color,
+    required List<String> groupIds,
+  }) {
+    return _write(
+      wsId,
+      'POST',
+      CrmEndpoints.groupTags(wsId),
+      payload: {'name': name, 'color': color, 'group_ids': groupIds},
+    );
+  }
+
+  /// Name and colour use the tag update. Membership changes use the tag's
+  /// group routes, because the tag update does not replace `group_ids`.
+  Future<void> updateGroupTag(
+    String wsId, {
+    required String tagId,
+    required String name,
+    required String color,
+    required List<String> previousGroupIds,
+    required List<String> groupIds,
+  }) async {
+    await _write(
+      wsId,
+      'PUT',
+      CrmEndpoints.groupTag(wsId, tagId),
+      payload: {'name': name, 'color': color},
+      entityId: tagId,
+    );
+    final added = groupIds
+        .where((id) => !previousGroupIds.contains(id))
+        .toList(growable: false);
+    if (added.isNotEmpty) {
+      await _write(
+        wsId,
+        'POST',
+        CrmEndpoints.groupTagGroups(wsId, tagId),
+        payload: {'groupIds': added},
+        entityId: tagId,
+      );
+    }
+    for (final groupId in previousGroupIds) {
+      if (groupIds.contains(groupId)) continue;
+      await _write(
+        wsId,
+        'DELETE',
+        CrmEndpoints.groupTagGroup(wsId, tagId, groupId),
+        entityId: tagId,
+      );
+    }
+  }
+
+  Future<void> deleteGroupTag(String wsId, String tagId) {
+    return _write(
+      wsId,
+      'DELETE',
+      CrmEndpoints.groupTag(wsId, tagId),
+      entityId: tagId,
+    );
+  }
+
   Future<CrmFeedbackResult> getFeedbacks(
     String wsId, {
     String? query,
