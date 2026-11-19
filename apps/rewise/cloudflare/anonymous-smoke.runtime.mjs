@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
-import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -16,7 +15,6 @@ const require = createRequire(join(app, 'package.json'));
 const ROOT_HOST = 'rewise.tuturuuu.com';
 const APEX_HOST = 'tuturuuu.com';
 const production = process.env.VITE_REWISE_NATIVE_PROFILE === 'production';
-// The local Worker receives HTTP; the native /login page has a fixed HTTPS return target.
 const EXPECTED = {
   '/': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
   '/?smoke=return':
@@ -112,32 +110,19 @@ async function startWorker(t, secrets) {
   });
   t.after(() => worker.dispose());
   await worker.ready;
-  const target = await worker.url;
-  return (path, host = ROOT_HOST, headers = {}) =>
-    new Promise((resolve, reject) => {
-      httpRequest(
-        {
-          host: target.hostname,
-          port: target.port,
-          path,
-          headers: { ...headers, host },
-        },
-        (response) => {
-          const chunks = [];
-          response.on('data', (chunk) => chunks.push(chunk));
-          response.on('end', () =>
-            resolve({
-              status: response.statusCode ?? 0,
-              location: response.headers.location ?? '',
-              headers: response.headers,
-              body: Buffer.concat(chunks).toString('utf8'),
-            })
-          );
-        }
-      )
-        .on('error', reject)
-        .end();
+  return async (path, host = ROOT_HOST, headers = {}) => {
+    // The local Worker fetch carries the HTTPS URL through the fixture.
+    const response = await worker.fetch(`https://${host}${path}`, {
+      headers,
+      redirect: 'manual',
     });
+    return {
+      status: response.status,
+      location: response.headers.get('location') ?? '',
+      headers: Object.fromEntries(response.headers),
+      body: await response.text(),
+    };
+  };
 }
 
 test('the emitted config exposes no default Cloudflare hostname', () => {
