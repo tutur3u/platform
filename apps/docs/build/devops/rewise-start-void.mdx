@@ -17,9 +17,10 @@ stable, so the canonical host keeps a one-step route back.
 | Staging (default) | no profile variable | the staging Worker name | `1` |
 | Production | `VITE_REWISE_NATIVE_PROFILE=production` | `tuturuuu-rewise` | `0` |
 
-Neither profile declares routes; `workers_dev` and `preview_urls` are off. The
-only canonical host is `rewise.tuturuuu.com` (the retired `rewise.me` and
-`rewise.school` origins are rejected). Any other host answers `404`.
+Both profiles serve `rewise.tuturuuu.com`. The production candidate also
+accepts the `tuturuuu.com/rewise` mount. Other hosts and apex paths outside
+that mount answer `404`. The candidate declares no routes and disables
+`workers_dev` and `preview_urls`.
 
 A Worker missing any required secret or an abuse guard configuration,
 refuses to serve (`cloudflare/required-secrets.ts`) instead of running on a
@@ -37,8 +38,8 @@ fallback. Names only are recorded here.
 `VITE_REWISE_NATIVE_PROFILE=production`, seals the Worker, assets and emitted
 Wrangler config with `scripts/ci/rewise-native-artifact.py`, records the
 emitted configuration receipt, runs
-`node --test cloudflare/anonymous-smoke.runtime.mjs` against the sealed output in
-workerd with synthetic secrets only, and uploads
+`node --test cloudflare/anonymous-smoke.runtime.mjs` against the sealed output
+and a fresh restore in workerd, and uploads
 `rewise-cutover-production-<source SHA>` on `main` pushes and dispatches, and `rewise-cutover-fixture-<source SHA>` for every other run (pull requests), so a PR build can never carry a production name. It never deploys. Do not run
 `build:cloudflare` on a shared development machine.
 

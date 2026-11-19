@@ -16,6 +16,33 @@ export default defineConfig({
     environment: 'jsdom',
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/supabase\/(.+)$/,
+        replacement: resolve(__dirname, '../../packages/supabase/src/$1.ts'),
+      },
+      {
+        find: '#secret-env',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/secret-env.ts'
+        ),
+      },
+    ],
   },
 });

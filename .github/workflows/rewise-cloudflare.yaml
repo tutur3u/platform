@@ -261,6 +261,15 @@ jobs:
       - name: Anonymous smoke on the sealed output in workerd
         working-directory: apps/rewise
         run: node --test cloudflare/anonymous-smoke.runtime.mjs
+      - name: Restore and qualify the sealed production archive
+        run: |
+          python3 scripts/ci/rewise-native-artifact.py verify apps/rewise --receipt "$RUNNER_TEMP/receipt.json"
+          git worktree add --detach "$RUNNER_TEMP/rewise-restore" "$SOURCE_SHA"
+          cd "$RUNNER_TEMP/rewise-restore"
+          bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+          python3 scripts/ci/rewise-native-artifact.py restore apps/rewise --archive "$RUNNER_TEMP/rewise-cutover.tar.gz" --receipt "$RUNNER_TEMP/rewise-restored-artifact.json"
+          (cd apps/rewise && node --test cloudflare/anonymous-smoke.runtime.mjs)
+          python3 scripts/ci/rewise-native-artifact.py verify apps/rewise --receipt "$RUNNER_TEMP/rewise-restored-artifact.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rewise-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}

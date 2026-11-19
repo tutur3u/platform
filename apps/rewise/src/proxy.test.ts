@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => ({
   guardApiProxyRequest: vi.fn(),
@@ -50,7 +51,6 @@ describe('rewise proxy build identity', () => {
   it.each(['GET', 'HEAD'])(
     'admits an anonymous %s /api/build-info without a session check',
     async (method) => {
-      const { proxy } = await import('./proxy');
       const response = await proxy(
         new NextRequest('https://rewise.tuturuuu.com/api/build-info', {
           headers: { authorization: 'Bearer x', cookie: 'a=b' },
@@ -67,7 +67,6 @@ describe('rewise proxy build identity', () => {
     mocks.guardApiProxyRequest.mockResolvedValueOnce(
       new Response('limited', { status: 429 })
     );
-    const { proxy } = await import('./proxy');
     const response = await proxy(
       new NextRequest('https://rewise.tuturuuu.com/api/build-info')
     );
@@ -76,7 +75,6 @@ describe('rewise proxy build identity', () => {
   });
 
   it('keeps other API routes behind the session check', async () => {
-    const { proxy } = await import('./proxy');
     const response = await proxy(
       new NextRequest('https://rewise.tuturuuu.com/api/v1/chats')
     );
@@ -85,7 +83,6 @@ describe('rewise proxy build identity', () => {
   });
 
   it('does not exempt a write to the build identity path', async () => {
-    const { proxy } = await import('./proxy');
     const response = await proxy(
       new NextRequest('https://rewise.tuturuuu.com/api/build-info', {
         method: 'POST',

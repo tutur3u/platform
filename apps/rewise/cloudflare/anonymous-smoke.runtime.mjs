@@ -13,6 +13,8 @@ import { assertCentralLoginRedirect } from './central-login-redirect.mjs';
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
 const ROOT_HOST = 'rewise.tuturuuu.com';
+const APEX_HOST = 'tuturuuu.com';
+const production = process.env.VITE_REWISE_NATIVE_PROFILE === 'production';
 // The local Worker receives HTTP; the native /login page has a fixed HTTPS return target.
 const EXPECTED = {
   '/': 'https://rewise.tuturuuu.com/verify-token?nextUrl=%2F',
@@ -159,7 +161,18 @@ test(
       assertUncacheableWithoutCookies(response, path);
     }
     assert.equal((await call('/', 'unknown.example')).status, 404);
-    assert.equal((await call('/', 'tuturuuu.com')).status, 404);
+    assert.equal((await call('/', APEX_HOST)).status, 404);
+    const mountedPath = '/rewise?smoke=return';
+    const mounted = await call(mountedPath, APEX_HOST);
+    if (production) {
+      assertCentralLoginRedirect(
+        mounted,
+        'https://tuturuuu.com/rewise/verify-token?nextUrl=%2F%3Fsmoke%3Dreturn'
+      );
+      assertUncacheableWithoutCookies(mounted, mountedPath);
+    } else {
+      assert.equal(mounted.status, 404);
+    }
   }
 );
 
