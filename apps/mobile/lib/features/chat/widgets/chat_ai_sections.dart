@@ -43,61 +43,68 @@ class _AiSettingsSectionState extends State<_AiSettingsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     if (widget.settings == null) {
-      return _Section(
-        title: context.l10n.chatAiSettings,
-        children: const [NovaLoadingIndicator(size: 28)],
+      return AppPanel(
+        title: l10n.chatAiSettings,
+        child: const AppLoadingIndicator(),
       );
     }
-    return _Section(
-      title: context.l10n.chatAiSettings,
-      children: [
-        shad.TextField(
-          selectionControls: platformTextSelectionControls(),
-          contextMenuBuilder: platformTextContextMenuBuilder(),
-          controller: _modelController,
-          hintText: context.l10n.chatAiModel,
-        ),
-        const SizedBox(height: 10),
-        shad.TextField(
-          selectionControls: platformTextSelectionControls(),
-          contextMenuBuilder: platformTextContextMenuBuilder(),
-          controller: _promptController,
-          hintText: context.l10n.chatSystemPrompt,
-          minLines: 2,
-          maxLines: 5,
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          children: ChatAiThinkingMode.values
-              .map(
-                (mode) => ChoiceChip(
+    return AppPanel(
+      title: l10n.chatAiSettings,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppTextField(
+            selectionControls: platformTextSelectionControls(),
+            contextMenuBuilder: platformTextContextMenuBuilder(),
+            controller: _modelController,
+            label: l10n.chatAiModel,
+            placeholder: l10n.chatAiModel,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppTextField(
+            selectionControls: platformTextSelectionControls(),
+            contextMenuBuilder: platformTextContextMenuBuilder(),
+            controller: _promptController,
+            label: l10n.chatSystemPrompt,
+            placeholder: l10n.chatSystemPrompt,
+            minLines: 2,
+            maxLines: 5,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              for (final mode in ChatAiThinkingMode.values)
+                AppChip(
                   label: Text(
                     mode == ChatAiThinkingMode.fast
-                        ? context.l10n.assistantModeFast
-                        : context.l10n.assistantModeThinking,
+                        ? l10n.assistantModeFast
+                        : l10n.assistantModeThinking,
                   ),
                   selected: _thinkingMode == mode,
+                  inMutuallyExclusiveGroup: true,
                   onSelected: (_) => setState(() => _thinkingMode = mode),
                 ),
-              )
-              .toList(growable: false),
-        ),
-        const SizedBox(height: 10),
-        shad.PrimaryButton(
-          onPressed: () => unawaited(
-            context.read<ChatCubit>().updateAiSettings(
-              modelId: _modelController.text.trim().isEmpty
-                  ? null
-                  : _modelController.text.trim(),
-              systemPrompt: _promptController.text.trim(),
-              thinkingMode: _thinkingMode,
-            ),
+            ],
           ),
-          child: Text(context.l10n.chatSaveSettings),
-        ),
-      ],
+          const SizedBox(height: AppSpacing.md),
+          AppButton.primary(
+            onPressed: () => unawaited(
+              context.read<ChatCubit>().updateAiSettings(
+                modelId: _modelController.text.trim().isEmpty
+                    ? null
+                    : _modelController.text.trim(),
+                systemPrompt: _promptController.text.trim(),
+                thinkingMode: _thinkingMode,
+              ),
+            ),
+            child: Text(l10n.chatSaveSettings),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -109,64 +116,30 @@ class _AiObservabilitySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final data = observability;
     if (data == null) {
-      return _Section(
-        title: context.l10n.chatObservability,
-        children: const [NovaLoadingIndicator(size: 28)],
+      return AppPanel(
+        title: l10n.chatObservability,
+        child: const AppLoadingIndicator(),
       );
     }
-    return _Section(
-      title: context.l10n.chatObservability,
-      children: [
-        Text('${context.l10n.chatTokens}: ${data.totals.totalTokens}'),
-        Text(
-          '${context.l10n.chatCost}: '
-          '\$${data.totals.costUsd.toStringAsFixed(4)}',
-        ),
-        const SizedBox(height: 8),
-        ...data.messages
-            .take(5)
-            .map(
-              (message) => Text(
-                '${message.role}: ${message.usage.totalTokens} '
-                '${context.l10n.chatTokens}',
-              ),
-            ),
-      ],
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.children});
-
-  final String title;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.border),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+    final tokens = AppTokens.of(context);
+    return AppPanel(
+      title: l10n.chatObservability,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${l10n.chatTokens}: ${data.totals.totalTokens}'),
+          Text('${l10n.chatCost}: \$${data.totals.costUsd.toStringAsFixed(4)}'),
+          const SizedBox(height: AppSpacing.sm),
+          for (final message in data.messages.take(5))
             Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              '${message.role}: ${message.usage.totalTokens} '
+              '${l10n.chatTokens}',
+              style: tokens.typography.small,
             ),
-            const SizedBox(height: 10),
-            ...children,
-          ],
-        ),
+        ],
       ),
     );
   }

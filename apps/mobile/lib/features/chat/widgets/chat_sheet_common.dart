@@ -1,31 +1,5 @@
 part of 'chat_sheets.dart';
 
-class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-          ),
-        ),
-        shad.IconButton.ghost(
-          icon: const Icon(LucideIcons.x, size: 18),
-          onPressed: () => unawaited(Navigator.maybePop(context)),
-        ),
-      ],
-    );
-  }
-}
-
 class _UserSelectionList extends StatelessWidget {
   const _UserSelectionList({
     required this.users,
@@ -40,21 +14,16 @@ class _UserSelectionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (users.isEmpty) return Text(context.l10n.chatNoDirectoryResults);
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 220),
-      child: ListView.builder(
-        shrinkWrap: true,
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          final user = users[index];
-          return CheckboxListTile(
+    return Column(
+      children: [
+        for (final user in users)
+          AppCheckboxRow(
             value: selectedUserIds.contains(user.id),
             onChanged: (_) => onToggle(user.id),
             title: Text(user.displayName),
             subtitle: user.handle == null ? null : Text(user.handle!),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 }
@@ -67,17 +36,15 @@ class _DirectoryResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (users.isEmpty) return Text(context.l10n.chatNoDirectoryResults);
-    return Column(
-      children: users
-          .map(
-            (user) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const CircleAvatar(child: Icon(Icons.person_outline)),
-              title: Text(user.displayName),
-              subtitle: user.handle == null ? null : Text(user.handle!),
-            ),
-          )
-          .toList(growable: false),
+    return AppGroupedSection(
+      children: [
+        for (final user in users)
+          AppRichRow(
+            title: user.displayName,
+            subtitle: user.handle,
+            leading: const AppIconTile(icon: LucideIcons.user),
+          ),
+      ],
     );
   }
 }
@@ -97,20 +64,18 @@ class _FriendRequestGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     if (requests.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 6),
-          ...requests.map(
-            (request) => PendingSyncFrame(
-              workspaceId: context.read<ChatCubit>().state.wsId ?? '',
-              feature: 'chat',
-              entityId: request.id,
-              child: Card(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: AppPanel(
+        title: title,
+        child: Column(
+          children: [
+            for (final request in requests)
+              PendingSyncFrame(
+                workspaceId: context.read<ChatCubit>().state.wsId ?? '',
+                feature: 'chat',
+                entityId: request.id,
                 child: Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Row(
                     children: [
                       Expanded(
@@ -120,14 +85,16 @@ class _FriendRequestGroup extends StatelessWidget {
                         ),
                       ),
                       if (actionsBuilder != null)
-                        Wrap(spacing: 6, children: actionsBuilder!(request)),
+                        Wrap(
+                          spacing: AppSpacing.xs,
+                          children: actionsBuilder!(request),
+                        ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

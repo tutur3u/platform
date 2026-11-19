@@ -4,14 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/responsive/adaptive_sheet.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'chat_create_conversation_sheet.dart';
 part 'chat_directory_sheet.dart';
@@ -24,9 +22,10 @@ Future<void> showChatCreateConversationSheet({
   required BuildContext context,
   required ChatCubit cubit,
 }) {
-  return showAdaptiveSheet<void>(
+  return showAppSheet<void>(
     context: context,
     useRootNavigator: true,
+    size: AppSheetSize.large,
     builder: (_) => BlocProvider.value(
       value: cubit,
       child: const ChatCreateConversationSheet(),
@@ -38,9 +37,10 @@ Future<void> showChatDirectorySheet({
   required BuildContext context,
   required ChatCubit cubit,
 }) {
-  return showAdaptiveSheet<void>(
+  return showAppSheet<void>(
     context: context,
     useRootNavigator: true,
+    size: AppSheetSize.large,
     builder: (_) =>
         BlocProvider.value(value: cubit, child: const ChatDirectorySheet()),
   );
@@ -50,9 +50,10 @@ Future<void> showChatDetailsSheet({
   required BuildContext context,
   required ChatCubit cubit,
 }) {
-  return showAdaptiveSheet<void>(
+  return showAppSheet<void>(
     context: context,
     useRootNavigator: true,
+    size: AppSheetSize.large,
     maxDialogWidth: 680,
     builder: (_) =>
         BlocProvider.value(value: cubit, child: const ChatDetailsSheet()),

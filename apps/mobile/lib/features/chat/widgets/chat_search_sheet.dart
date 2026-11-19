@@ -13,22 +13,22 @@ class ChatSearchResults extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (state.searchResults.isEmpty) {
-      return Center(child: Text(context.l10n.chatNoSearchResults));
+      return AppStateMessage(
+        icon: LucideIcons.search,
+        title: context.l10n.chatNoSearchResults,
+      );
     }
     return LayoutBuilder(
       builder: (context, constraints) => ListView.separated(
         padding: AppPageInsets.of(context, width: constraints.maxWidth),
         itemCount: state.searchResults.length,
-        separatorBuilder: (_, _) => const shad.Divider(height: 1),
+        separatorBuilder: (_, _) => const AppDivider(),
         itemBuilder: (context, index) {
           final message = state.searchResults[index];
-          return ListTile(
-            title: Text(
-              message.content,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(message.sender?.displayName ?? ''),
+          return AppRichRow(
+            title: message.content,
+            subtitle: message.sender?.displayName,
+            leading: const AppIconTile(icon: LucideIcons.messageSquare),
             onTap: () => onSelect(message.conversationId),
           );
         },

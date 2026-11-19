@@ -20,115 +20,95 @@ class _ChatDirectorySheetState extends State<ChatDirectorySheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = shad.Theme.of(context).colorScheme;
-    return SafeArea(
-      child: ColoredBox(
-        color: colorScheme.background,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20,
-            12,
-            20,
-            20 + MediaQuery.paddingOf(context).bottom,
-          ),
-          child: BlocBuilder<ChatCubit, ChatState>(
-            builder: (context, state) {
-              final cubit = context.read<ChatCubit>();
-              return SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _SheetHeader(title: context.l10n.chatDirectory),
-                    const SizedBox(height: 16),
-                    shad.TextField(
-                      selectionControls: platformTextSelectionControls(),
-                      contextMenuBuilder: platformTextContextMenuBuilder(),
-                      controller: _searchController,
-                      hintText: context.l10n.chatSearchPeople,
-                      onChanged: (value) =>
-                          unawaited(cubit.searchDirectory(value)),
-                    ),
-                    const SizedBox(height: 12),
-                    _DirectoryResults(users: state.directoryResults),
-                    const SizedBox(height: 20),
-                    Text(
-                      context.l10n.chatFriendRequests,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+    final l10n = context.l10n;
+    return BlocBuilder<ChatCubit, ChatState>(
+      builder: (context, state) {
+        final cubit = context.read<ChatCubit>();
+        return AppSheetScaffold(
+          title: l10n.chatDirectory,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AppTextField(
+                controller: _searchController,
+                label: l10n.chatSearchPeople,
+                placeholder: l10n.chatSearchPeople,
+                selectionControls: platformTextSelectionControls(),
+                contextMenuBuilder: platformTextContextMenuBuilder(),
+                onChanged: (value) => unawaited(cubit.searchDirectory(value)),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _DirectoryResults(users: state.directoryResults),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                l10n.chatFriendRequests,
+                style: AppTokens.of(
+                  context,
+                ).typography.large.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                controller: _emailController,
+                label: l10n.chatEmailHint,
+                placeholder: l10n.chatEmailHint,
+                keyboardType: TextInputType.emailAddress,
+                selectionControls: platformTextSelectionControls(),
+                contextMenuBuilder: platformTextContextMenuBuilder(),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppButton.primary(
+                onPressed: () {
+                  unawaited(cubit.createFriendRequest(_emailController.text));
+                  _emailController.clear();
+                },
+                child: Text(l10n.commonCreate),
+              ),
+              _FriendRequestGroup(
+                title: l10n.chatIncoming,
+                requests: state.friendRequests.incoming,
+                actionsBuilder: (request) => [
+                  AppButton.primary(
+                    density: AppButtonDensity.compact,
+                    onPressed: () => unawaited(
+                      cubit.respondFriendRequest(
+                        request,
+                        ChatFriendRequestStatus.accepted,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: shad.TextField(
-                            selectionControls: platformTextSelectionControls(),
-                            contextMenuBuilder:
-                                platformTextContextMenuBuilder(),
-                            controller: _emailController,
-                            hintText: context.l10n.chatEmailHint,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        shad.PrimaryButton(
-                          onPressed: () {
-                            unawaited(
-                              cubit.createFriendRequest(_emailController.text),
-                            );
-                            _emailController.clear();
-                          },
-                          child: Text(context.l10n.commonCreate),
-                        ),
-                      ],
+                    child: Text(l10n.chatAccept),
+                  ),
+                  AppButton.outline(
+                    density: AppButtonDensity.compact,
+                    onPressed: () => unawaited(
+                      cubit.respondFriendRequest(
+                        request,
+                        ChatFriendRequestStatus.declined,
+                      ),
                     ),
-                    const SizedBox(height: 14),
-                    _FriendRequestGroup(
-                      title: context.l10n.chatIncoming,
-                      requests: state.friendRequests.incoming,
-                      actionsBuilder: (request) => [
-                        shad.PrimaryButton(
-                          onPressed: () => unawaited(
-                            cubit.respondFriendRequest(
-                              request,
-                              ChatFriendRequestStatus.accepted,
-                            ),
-                          ),
-                          child: Text(context.l10n.chatAccept),
-                        ),
-                        shad.OutlineButton(
-                          onPressed: () => unawaited(
-                            cubit.respondFriendRequest(
-                              request,
-                              ChatFriendRequestStatus.declined,
-                            ),
-                          ),
-                          child: Text(context.l10n.chatDecline),
-                        ),
-                      ],
-                    ),
-                    _FriendRequestGroup(
-                      title: context.l10n.chatOutgoing,
-                      requests: state.friendRequests.outgoing,
-                      actionsBuilder: (request) => [
-                        shad.OutlineButton(
-                          onPressed: () =>
-                              unawaited(cubit.revokeFriendRequest(request)),
-                          child: Text(context.l10n.commonCancel),
-                        ),
-                      ],
-                    ),
-                    _FriendRequestGroup(
-                      title: context.l10n.chatAccepted,
-                      requests: state.friendRequests.accepted,
-                    ),
-                  ],
-                ),
-              );
-            },
+                    child: Text(l10n.chatDecline),
+                  ),
+                ],
+              ),
+              _FriendRequestGroup(
+                title: l10n.chatOutgoing,
+                requests: state.friendRequests.outgoing,
+                actionsBuilder: (request) => [
+                  AppButton.outline(
+                    density: AppButtonDensity.compact,
+                    onPressed: () =>
+                        unawaited(cubit.revokeFriendRequest(request)),
+                    child: Text(l10n.commonCancel),
+                  ),
+                ],
+              ),
+              _FriendRequestGroup(
+                title: l10n.chatAccepted,
+                requests: state.friendRequests.accepted,
+              ),
+            ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
