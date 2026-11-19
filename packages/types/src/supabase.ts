@@ -6406,6 +6406,7 @@ export type Database = {
         Row: {
           activated_at: string | null;
           id: string;
+          purged_at: string | null;
           reserved_at: string;
           retired_at: string | null;
           state: string;
@@ -6415,6 +6416,7 @@ export type Database = {
         Insert: {
           activated_at?: string | null;
           id: string;
+          purged_at?: string | null;
           reserved_at?: string;
           retired_at?: string | null;
           state: string;
@@ -6423,6 +6425,7 @@ export type Database = {
         Update: {
           activated_at?: string | null;
           id?: string;
+          purged_at?: string | null;
           reserved_at?: string;
           retired_at?: string | null;
           state?: string;

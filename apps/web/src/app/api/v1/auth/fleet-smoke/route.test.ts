@@ -136,6 +136,20 @@ describe('fleet smoke provisioner', () => {
     ).toEqual(['read', 'read', 'retire']);
   });
 
+  it('maps a provision-limit failure to a redacted 503 before creating an Auth identity', async () => {
+    fixtures.rpc.mockResolvedValue({
+      data: null,
+      error: { code: '54000', message: 'Fleet smoke provision limit reached' },
+    });
+    const result = await POST(request());
+    expect(result.status).toBe(503);
+    expect(await result.json()).toEqual({
+      error: 'Operation unavailable; reconcile by request ID',
+      requestId,
+    });
+    expect(fixtures.createAuth).not.toHaveBeenCalled();
+  });
+
   it.each([false, true])(
     'activates only after verified TOTP and credential setup (verification fails: %s)',
     async (failVerification) => {
