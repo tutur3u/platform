@@ -22,12 +22,36 @@ const page = z.object({
     .max(50),
   nextCursor: z.string().min(1).max(1024).nullable(),
 });
-const access = z.object({
-  allowed: z.boolean(),
-  done: z.boolean(),
-  labelIds: z.array(uuid).max(100),
-});
+const access = z.discriminatedUnion('allowed', [
+  z.object({ allowed: z.literal(false) }),
+  z.object({
+    allowed: z.literal(true),
+    done: z.boolean(),
+    labelIds: z.array(uuid).max(100),
+  }),
+]);
 const project = z.object({ allowed: z.boolean() });
+const taskNotFound = z.object({
+  error: z.object({ code: z.literal('not_found') }),
+});
+const denialReason = z.enum([
+  'inactive',
+  'deactivated',
+  'not_member',
+  'rate_limited',
+  'error',
+]);
+export type DenialReason = z.infer<typeof denialReason>;
+
+// N-176 confirms assignee deactivation only with an explicit denial reason.
+const eligibility = z.discriminatedUnion('allowed', [
+  z.strictObject({ allowed: z.literal(true) }),
+  z.strictObject({ allowed: z.literal(false), reason: denialReason }),
+]);
+type DispatchIdentity =
+  | { allowed: true; actor: Actor }
+  | { allowed: false; reason: DenialReason };
+
 const threads = z.object({
   items: z
     .array(
@@ -50,7 +74,11 @@ export class Tasks {
     generation: number,
     path: string,
     shape: z.ZodType<T>,
-    options?: { checkEligibility?: boolean; candidate?: boolean }
+    options?: {
+      checkEligibility?: boolean;
+      candidate?: boolean;
+      taskAccess?: boolean;
+    }
   ) {
     const [, workspace, board] = this.name.split(':');
     if (
@@ -90,13 +118,18 @@ export class Tasks {
       });
       if (response.status === 404 && options?.candidate)
         reject(404, 'not_found');
-      if (response.status === 429) reject(429, 'budget_exhausted');
-      if (!response.ok) throw new Error();
-      return shape.parse(
-        JSON.parse(
-          new TextDecoder().decode(await readBounded(response.body, 256 * 1024))
-        )
+      if (response.status === 429 && !options?.checkEligibility)
+        reject(429, 'budget_exhausted');
+      if (!response.ok && !(response.status === 404 && options?.taskAccess))
+        throw new Error();
+      const body: unknown = JSON.parse(
+        new TextDecoder().decode(await readBounded(response.body, 256 * 1024))
       );
+      if (!response.ok) {
+        if (taskNotFound.safeParse(body).success) reject(404, 'not_found');
+        throw new Error();
+      }
+      return shape.parse(body);
     } catch (error) {
       if (error instanceof BoardError) throw error;
       reject(503, 'tasks_unavailable');
@@ -126,7 +159,7 @@ export class Tasks {
       generation,
       `tasks/${taskId}?projectId=${projectId}`,
       access,
-      options
+      { ...options, taskAccess: true }
     );
     if (!result.allowed) reject(404, 'not_found');
     return result;
@@ -162,21 +195,29 @@ export class Tasks {
   async dispatchActor(
     owner: Pick<Actor, 'actor' | 'userId'>,
     generation: number
-  ): Promise<Actor> {
+  ): Promise<DispatchIdentity> {
     const actor = { ...owner, manager: false, agentActive: false };
-    if (!owner.actor.startsWith('agent:')) return actor;
+    if (!owner.actor.startsWith('agent:')) return { allowed: true, actor };
     const query = new URLSearchParams({
       principal: owner.actor,
       executor: owner.userId,
     });
-    const state = await this.read(
-      actor,
-      generation,
-      `principals/eligibility?${query}`,
-      project,
-      { checkEligibility: true }
-    );
-    return { ...actor, agentActive: state.allowed };
+    try {
+      const state = await this.read(
+        actor,
+        generation,
+        `principals/eligibility?${query}`,
+        eligibility,
+        { checkEligibility: true }
+      );
+      return state.allowed
+        ? { allowed: true, actor: { ...actor, agentActive: true } }
+        : state;
+    } catch (error) {
+      if (!(error instanceof BoardError) || error.code !== 'tasks_unavailable')
+        throw error;
+      return { allowed: false, reason: 'error' };
+    }
   }
 
   threads(

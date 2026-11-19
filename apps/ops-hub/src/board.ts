@@ -1,4 +1,3 @@
-import { removeDelegation } from './board/revocation';
 import { DurableObject } from 'cloudflare:workers';
 import { authorize, boardPath } from './board/assertion';
 import { job } from './board/contracts';
@@ -62,19 +61,8 @@ export class FleetBoard extends DurableObject<Env> {
         this.#name !== this.env.BOARD_TASKS_SCOPE
       )
         reject(404, 'not_found');
-      if (input.actor.actor.startsWith('agent:') && !input.actor.agentActive) {
-        this.#store.tx(() =>
-          removeDelegation(
-            this.#store,
-            input.actor,
-            input.actor.actor.slice(6),
-            input.actor.userId,
-            Date.now(),
-            'delegation.deactivated'
-          )
-        );
+      if (input.actor.actor.startsWith('agent:') && !input.actor.agentActive)
         reject(403, 'forbidden');
-      }
       const path = boardPath(input.url.pathname);
       const result =
         request.method === 'GET'

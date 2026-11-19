@@ -245,7 +245,9 @@ describe('Board dispatch fences', () => {
     enableAndDelegate();
     seed('queued');
     watch();
-    transport.mockResolvedValueOnce(Response.json({ allowed: false }));
+    transport.mockResolvedValueOnce(
+      Response.json({ allowed: false, reason: 'inactive' })
+    );
     expect(await followups.consume(envelope)).toBe(true);
     expect(followups.get(followupId)?.state).toBe('cancelled');
     expect(

@@ -2,6 +2,7 @@ import { expect, it, vi } from 'vitest';
 import { changeGrant } from './admin';
 import { boardPath } from './assertion';
 import { Reads } from './reads';
+import { errorResponse } from './store';
 import { watch } from './write-actions';
 import {
   agent,
@@ -86,7 +87,13 @@ it('fails closed on unavailable Tasks and rechecks the channel grant after autho
     );
     return allow();
   });
-  await expect(reads.fetch(agent, path, url)).rejects.toThrow('not_found');
+  await expect(
+    reads.fetch(
+      agent,
+      ['channels', project, 'threads', id(32), 'messages'],
+      url
+    )
+  ).rejects.toThrow('not_found');
   expect(transport).toHaveBeenCalledTimes(3);
 });
 
@@ -203,3 +210,73 @@ it('returns 400 for malformed URI escapes', () => {
   expect(() => boardPath('/board/channels/%ff')).toThrow('invalid_request');
   expect(boardPath('/board/channels/a%20b')).toEqual(['channels', 'a b']);
 });
+
+it('limits random message lookups to 30 per actor without exhausting board reads', async () => {
+  enableAndDelegate();
+  store.run(
+    "UPDATE channels SET policy='standard',slug='team' WHERE id=?",
+    project
+  );
+  const reads = read();
+  transport.mockImplementation(async () => Response.json({ allowed: false }));
+  for (let index = 0; index < 30; index++) {
+    const lookup = [
+      'channels',
+      project,
+      'threads',
+      id(100 + index),
+      'messages',
+    ];
+    await expect(reads.fetch(otherUser, lookup, url)).rejects.toMatchObject({
+      status: 404,
+    });
+  }
+  const overflow = ['channels', project, 'threads', id(130), 'messages'];
+  const response = await reads.fetch(otherUser, overflow, url).then(() => {
+    throw new Error('Unexpected success');
+  }, errorResponse);
+  expect(response.status).toBe(429);
+  expect(response.headers.get('Retry-After')).toBe('3600');
+  expect(await response.json()).toMatchObject({
+    error: { code: 'budget_exhausted' },
+  });
+  expect(transport).toHaveBeenCalledTimes(30);
+  expect(store.control().tasks_reads).toBe(30);
+  await expect(reads.fetch(manager, overflow, url)).rejects.toMatchObject({
+    status: 404,
+  });
+  expect(transport).toHaveBeenCalledTimes(31);
+});
+
+it.each([
+  ['denied', () => Response.json({ allowed: false })],
+  [
+    'not found',
+    () => Response.json({ error: { code: 'not_found' } }, { status: 404 }),
+  ],
+] as const)(
+  'caches a %s result for only the requesting user and only for 60 seconds',
+  async (_label, denied) => {
+    enableAndDelegate();
+    giveOtherUserAccess();
+    const reads = read();
+    transport.mockImplementation(async () => denied());
+    await expect(reads.fetch(agent, path, url)).rejects.toMatchObject({
+      status: 404,
+    });
+    vi.mocked(Date.now).mockReturnValue(now + 59_999);
+    await expect(reads.fetch(agent, path, url)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(transport).toHaveBeenCalledTimes(1);
+    await expect(reads.fetch(otherUser, path, url)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(transport).toHaveBeenCalledTimes(2);
+    vi.mocked(Date.now).mockReturnValue(now + 60_000);
+    await expect(reads.fetch(agent, path, url)).rejects.toMatchObject({
+      status: 404,
+    });
+    expect(transport).toHaveBeenCalledTimes(3);
+  }
+);

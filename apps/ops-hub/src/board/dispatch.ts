@@ -1,6 +1,6 @@
 import type { Job } from './contracts';
 import type { Followups } from './followups';
-import { removeDelegation } from './revocation';
+import { recordDispatchDenial } from './revocation';
 import { BoardError, reject, system } from './store';
 
 export async function consume(followups: Followups, envelope: Job) {
@@ -30,22 +30,30 @@ export async function consume(followups: Followups, envelope: Job) {
       store.requireRole(row.channel_id, owner.actor, 'operator', Date.now());
       if (row.kind !== 'verify_task') reject(503, 'adapter_unavailable');
     });
-    const actor = await tasks.dispatchActor(owner, row.generation);
+    const identity = await tasks.dispatchActor(owner, row.generation);
     const started = store.tx(() => {
       const current = queued();
       if (!current) return false;
-      if (owner.actor.startsWith('agent:') && !actor.agentActive) {
-        removeDelegation(
+      if (!identity.allowed) {
+        recordDispatchDenial(
           store,
-          system,
-          owner.actor.slice(6),
-          owner.userId,
-          Date.now(),
-          'delegation.deactivated'
+          owner,
+          identity.reason,
+          current.id,
+          current.channel_id
         );
+        if (followups.get(current.id)?.state === 'queued')
+          followups.finish(
+            current,
+            'cancelled',
+            'authorization_lost',
+            system,
+            null,
+            false
+          );
         return true;
       }
-      store.require(current.channel_id, actor, 'operator', Date.now());
+      store.require(current.channel_id, identity.actor, 'operator', Date.now());
       store.run(
         "UPDATE followups SET state='delivering',updated_at=? WHERE id=?",
         Date.now(),
@@ -62,9 +70,14 @@ export async function consume(followups: Followups, envelope: Job) {
       return true;
     });
     if (!started) return false;
-    if (owner.actor.startsWith('agent:') && !actor.agentActive) return true;
+    if (!identity.allowed) return true;
     done = (
-      await tasks.access(actor, row.generation, row.channel_id, row.task_id)
+      await tasks.access(
+        identity.actor,
+        row.generation,
+        row.channel_id,
+        row.task_id
+      )
     ).done;
   } catch (error) {
     code = error instanceof BoardError ? error.code : 'tasks_unavailable';

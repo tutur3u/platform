@@ -327,7 +327,8 @@ export class Store {
       | 'followup'
       | 'renew'
       | 'watcher'
-      | 'cancel',
+      | 'cancel'
+      | 'task_read',
     now: number
   ) {
     const window = now - (now % 3_600_000);

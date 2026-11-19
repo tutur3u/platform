@@ -1,4 +1,4 @@
-import { removeDelegation } from './revocation';
+import { recordDispatchDenial } from './revocation';
 import { BoardError, type Store, system } from './store';
 import type { Tasks } from './tasks';
 
@@ -79,21 +79,21 @@ export class WatcherEvents {
             return true;
           });
           if (!delegated) continue;
-          const actor = await this.tasks.dispatchActor(owner, generation);
-          if (owner.actor.startsWith('agent:') && !actor.agentActive) {
+          const identity = await this.tasks.dispatchActor(owner, generation);
+          if (!identity.allowed) {
             this.store.tx(() => {
               this.store.enabled(generation);
-              removeDelegation(
+              recordDispatchDenial(
                 this.store,
-                system,
-                owner.actor.slice(6),
-                owner.userId,
-                Date.now(),
-                'delegation.deactivated'
+                owner,
+                identity.reason,
+                watch.id,
+                event.channel_id
               );
             });
             continue;
           }
+          const { actor } = identity;
           if (watch.label_id) {
             if (!event.task_id) continue;
             const state = await this.tasks.access(

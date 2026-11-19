@@ -9,7 +9,7 @@ import {
 import { decodeBoardPayload, encode } from './assertion';
 import { principal, uuid, type Identity } from './contracts';
 import { followupView, type Followups } from './followups';
-import { reject, type Store } from './store';
+import { BoardError, reject, type Store } from './store';
 import type { Tasks } from './tasks';
 
 const limitSchema = z
@@ -23,7 +23,10 @@ const seqSchema = z
   .transform(Number);
 
 export class Reads {
-  private readonly taskAccess = new Map<string, number>();
+  private readonly taskAccess = new Map<
+    string,
+    { expiresAt: number; allowed: boolean }
+  >();
 
   constructor(
     readonly store: Store,
@@ -256,19 +259,31 @@ export class Reads {
     });
     const key = JSON.stringify([actor.userId, task, channel, generation]);
     const startedAt = Date.now();
-    if ((this.taskAccess.get(key) ?? 0) <= startedAt) {
+    const cached = this.taskAccess.get(key);
+    if (cached && cached.expiresAt > startedAt) {
+      if (!cached.allowed) reject(404, 'not_found');
+      return generation;
+    }
+    this.store.tx(() => this.store.charge(actor, 'task_read', startedAt));
+    let allowed = true;
+    try {
       await this.tasks.access(
         { ...actor, actor: `user:${actor.userId}`, agentActive: false },
         generation,
         channel,
         task
       );
-      if (this.taskAccess.size >= 512) {
-        const oldest = this.taskAccess.keys().next().value;
-        if (oldest !== undefined) this.taskAccess.delete(oldest);
-      }
-      this.taskAccess.set(key, startedAt + 60_000);
+    } catch (error) {
+      if (!(error instanceof BoardError) || error.code !== 'not_found')
+        throw error;
+      allowed = false;
     }
+    if (this.taskAccess.size >= 512) {
+      const oldest = this.taskAccess.keys().next().value;
+      if (oldest !== undefined) this.taskAccess.delete(oldest);
+    }
+    this.taskAccess.set(key, { expiresAt: startedAt + 60_000, allowed });
+    if (!allowed) reject(404, 'not_found');
     return generation;
   }
 

@@ -1,4 +1,5 @@
-import type { Actor, Store } from './store';
+import { type Actor, type Store, system } from './store';
+import type { DenialReason } from './tasks';
 
 export function cancelOwnerWork(
   store: Store,
@@ -72,4 +73,32 @@ export function removeDelegation(
     });
   }
   return !!before;
+}
+
+export function recordDispatchDenial(
+  store: Store,
+  owner: Pick<Actor, 'actor' | 'userId'>,
+  reason: DenialReason,
+  target: string,
+  channel: string
+) {
+  if (reason === 'inactive' || reason === 'deactivated') {
+    removeDelegation(
+      store,
+      system,
+      owner.actor.slice(6),
+      owner.userId,
+      Date.now(),
+      'delegation.deactivated'
+    );
+  } else {
+    store.audit(
+      system,
+      'authorization.dispatch_denied',
+      target,
+      channel,
+      null,
+      { reason }
+    );
+  }
 }
