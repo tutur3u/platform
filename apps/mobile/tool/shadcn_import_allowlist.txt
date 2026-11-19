@@ -33,8 +33,6 @@ lib/features/chat/widgets/chat_sheets.dart
 lib/features/chat/widgets/chat_thread_view.dart
 lib/features/dashboard/view/dashboard_page.dart
 lib/features/desktop_update/desktop_update_gate.dart
-lib/features/documents/view/document_detail_page.dart
-lib/features/documents/view/documents_page.dart
 lib/features/drive/view/drive_page.dart
 lib/features/education/view/education_page.dart
 lib/features/finance/view/transaction_categories_page.dart

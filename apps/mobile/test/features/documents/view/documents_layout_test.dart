@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
+import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
@@ -26,7 +29,12 @@ const _document = WorkspaceDocument(
   isPublic: false,
 );
 
-Future<void> _pump(WidgetTester tester, Widget page, Size size) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Widget page,
+  Size size, {
+  double keyboard = 0,
+}) async {
   tester.view
     ..devicePixelRatio = 1
     ..physicalSize = size;
@@ -48,9 +56,10 @@ Future<void> _pump(WidgetTester tester, Widget page, Size size) async {
       // Publish dock clearance the way the shell's floating dock does.
       child: Builder(
         builder: (context) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(padding: const EdgeInsets.only(bottom: _clearance)),
+          data: MediaQuery.of(context).copyWith(
+            padding: const EdgeInsets.only(bottom: _clearance),
+            viewInsets: EdgeInsets.only(bottom: keyboard),
+          ),
           child: page,
         ),
       ),
@@ -93,11 +102,13 @@ void main() {
       testWidgets('content starts at $left at ${size.width}', (tester) async {
         await _pump(tester, DocumentsPage(repository: _repository()), size);
         expect(find.byType(AppPageListView), findsOneWidget);
-        final search = tester.getRect(find.byType(TextField));
-        expect(search.left, closeTo(left, 0.5));
-        expect(search.right, closeTo(size.width - left, 0.5));
+        expect(find.text('Documents'), findsNothing);
         expect(find.text('Roadmap'), findsOneWidget);
-        // The scrollable stays full width while content is centred.
+        expect(find.text('You'), findsOneWidget);
+        final list = tester.widget<ListView>(find.byType(ListView));
+        final padding = list.padding!.resolve(TextDirection.ltr);
+        expect(padding.left, closeTo(left, 0.5));
+        expect(padding.right, closeTo(left, 0.5));
         expect(tester.getSize(find.byType(ListView)).width, size.width);
       });
     }
@@ -128,27 +139,40 @@ void main() {
       final body = find.byType(AppPageBody);
       expect(body, findsOneWidget);
       expect(tester.widget<AppPageBody>(body).kind, AppPageKind.reading);
+      expect(find.text('Document name'), findsNothing);
       final title = tester.getRect(find.byType(TextField).first);
       // Expanded reading width 680, centred in 1200 with a 32dp gutter.
       expect(title.left, closeTo(32 + 260, 0.5));
       expect(title.width, closeTo(680 - 64, 0.5));
+      final nav = tester.widget<ShellMiniNav>(find.byType(ShellMiniNav));
+      expect(nav.items, isEmpty);
+      expect(nav.deepLinkBackRoute, Routes.documents);
     });
 
-    testWidgets('the editor scrolls beneath the dock with clearance', (
+    testWidgets('the formatting toolbar sits above the dock', (tester) async {
+      await _pump(
+        tester,
+        DocumentDetailPage(documentId: 'doc-1', repository: _repository()),
+        const Size(390, 844),
+      );
+      final toolbar = tester.getRect(find.byType(AppFormatToolbar));
+      expect(toolbar.left, 0);
+      expect(toolbar.width, 390);
+      expect(toolbar.bottom, closeTo(844 - _clearance, 0.5));
+      expect(tester.getRect(find.byType(TextField).first).left, 16);
+    });
+
+    testWidgets('the formatting toolbar lifts with the keyboard', (
       tester,
     ) async {
       await _pump(
         tester,
         DocumentDetailPage(documentId: 'doc-1', repository: _repository()),
         const Size(390, 844),
+        keyboard: 300,
       );
-      final editor = tester.widget<TextField>(find.byType(TextField).last);
-      final padding = editor.decoration!.contentPadding!.resolve(
-        TextDirection.ltr,
-      );
-      expect(padding.bottom, _clearance + AppLayout.scrollEndGap);
-      expect(padding.left, 0);
-      expect(tester.getRect(find.byType(TextField).last).left, 16);
+      final toolbar = tester.getRect(find.byType(AppFormatToolbar));
+      expect(toolbar.bottom, closeTo(844 - 300, 0.5));
     });
   });
 }

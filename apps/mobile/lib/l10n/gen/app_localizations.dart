@@ -5785,11 +5785,113 @@ abstract class AppLocalizations {
   /// **'No documents yet. Create one to capture decisions, notes, or plans.'**
   String get documentsEmptyDescription;
 
+  /// No description provided for @documentsEmptyFiltered.
+  ///
+  /// In en, this message translates to:
+  /// **'No documents match this filter.'**
+  String get documentsEmptyFiltered;
+
+  /// No description provided for @documentsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get documentsFilterAll;
+
+  /// No description provided for @documentsFilterPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get documentsFilterPrivate;
+
+  /// No description provided for @documentsFilterPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get documentsFilterPublic;
+
+  /// No description provided for @documentsFormatBold.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold'**
+  String get documentsFormatBold;
+
+  /// No description provided for @documentsFormatBullets.
+  ///
+  /// In en, this message translates to:
+  /// **'Bulleted list'**
+  String get documentsFormatBullets;
+
+  /// No description provided for @documentsFormatChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get documentsFormatChecklist;
+
+  /// No description provided for @documentsFormatHeading1.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 1'**
+  String get documentsFormatHeading1;
+
+  /// No description provided for @documentsFormatHeading2.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 2'**
+  String get documentsFormatHeading2;
+
+  /// No description provided for @documentsFormatHeading3.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading 3'**
+  String get documentsFormatHeading3;
+
+  /// No description provided for @documentsFormatItalic.
+  ///
+  /// In en, this message translates to:
+  /// **'Italic'**
+  String get documentsFormatItalic;
+
+  /// No description provided for @documentsFormatLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get documentsFormatLink;
+
+  /// No description provided for @documentsFormatNumbers.
+  ///
+  /// In en, this message translates to:
+  /// **'Numbered list'**
+  String get documentsFormatNumbers;
+
+  /// No description provided for @documentsLinkPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'https://'**
+  String get documentsLinkPlaceholder;
+
+  /// No description provided for @documentsLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get documentsLinkTitle;
+
   /// No description provided for @documentsNewDocument.
   ///
   /// In en, this message translates to:
   /// **'New document'**
   String get documentsNewDocument;
+
+  /// No description provided for @documentsOwnerWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get documentsOwnerWorkspace;
+
+  /// No description provided for @documentsOwnerYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get documentsOwnerYou;
 
   /// No description provided for @documentsPublic.
   ///
@@ -5797,11 +5899,53 @@ abstract class AppLocalizations {
   /// **'Public document'**
   String get documentsPublic;
 
+  /// No description provided for @documentsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save'**
+  String get documentsSaveError;
+
+  /// No description provided for @documentsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get documentsSaved;
+
+  /// No description provided for @documentsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving'**
+  String get documentsSaving;
+
   /// No description provided for @documentsSearchHint.
   ///
   /// In en, this message translates to:
   /// **'Search documents'**
   String get documentsSearchHint;
+
+  /// No description provided for @documentsShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get documentsShare;
+
+  /// No description provided for @documentsSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get documentsSort;
+
+  /// No description provided for @documentsSortEdited.
+  ///
+  /// In en, this message translates to:
+  /// **'Last edited'**
+  String get documentsSortEdited;
+
+  /// No description provided for @documentsSortTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get documentsSortTitle;
 
   /// No description provided for @documentsSubtitle.
   ///
@@ -5815,11 +5959,35 @@ abstract class AppLocalizations {
   /// **'Documents'**
   String get documentsTitle;
 
+  /// No description provided for @documentsTitlePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get documentsTitlePlaceholder;
+
+  /// No description provided for @documentsUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled'**
+  String get documentsUntitled;
+
   /// No description provided for @documentsUpdated.
   ///
   /// In en, this message translates to:
   /// **'Document saved.'**
   String get documentsUpdated;
+
+  /// No description provided for @documentsVisibilityPrivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Only workspace members'**
+  String get documentsVisibilityPrivate;
+
+  /// No description provided for @documentsVisibilityPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone with the link'**
+  String get documentsVisibilityPublic;
 
   /// No description provided for @downloadNetworkContinue.
   ///

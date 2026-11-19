@@ -2965,13 +2965,85 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsEmptyDescription => 'Chưa có tài liệu nào. Tạo một tài liệu để ghi lại quyết định, ghi chú hoặc kế hoạch.';
 
   @override
+  String get documentsEmptyFiltered => 'Không có tài liệu nào khớp với bộ lọc.';
+
+  @override
+  String get documentsFilterAll => 'Tất cả';
+
+  @override
+  String get documentsFilterPrivate => 'Riêng tư';
+
+  @override
+  String get documentsFilterPublic => 'Công khai';
+
+  @override
+  String get documentsFormatBold => 'Đậm';
+
+  @override
+  String get documentsFormatBullets => 'Danh sách';
+
+  @override
+  String get documentsFormatChecklist => 'Danh sách việc';
+
+  @override
+  String get documentsFormatHeading1 => 'Tiêu đề 1';
+
+  @override
+  String get documentsFormatHeading2 => 'Tiêu đề 2';
+
+  @override
+  String get documentsFormatHeading3 => 'Tiêu đề 3';
+
+  @override
+  String get documentsFormatItalic => 'Nghiêng';
+
+  @override
+  String get documentsFormatLink => 'Liên kết';
+
+  @override
+  String get documentsFormatNumbers => 'Danh sách số';
+
+  @override
+  String get documentsLinkPlaceholder => 'https://';
+
+  @override
+  String get documentsLinkTitle => 'Liên kết';
+
+  @override
   String get documentsNewDocument => 'Tài liệu mới';
+
+  @override
+  String get documentsOwnerWorkspace => 'Không gian làm việc';
+
+  @override
+  String get documentsOwnerYou => 'Bạn';
 
   @override
   String get documentsPublic => 'Tài liệu công khai';
 
   @override
+  String get documentsSaveError => 'Không lưu được';
+
+  @override
+  String get documentsSaved => 'Đã lưu';
+
+  @override
+  String get documentsSaving => 'Đang lưu';
+
+  @override
   String get documentsSearchHint => 'Tìm tài liệu';
+
+  @override
+  String get documentsShare => 'Chia sẻ';
+
+  @override
+  String get documentsSort => 'Sắp xếp';
+
+  @override
+  String get documentsSortEdited => 'Sửa gần đây';
+
+  @override
+  String get documentsSortTitle => 'Tiêu đề';
 
   @override
   String get documentsSubtitle => 'Soạn thảo và duy trì tri thức workspace.';
@@ -2980,7 +3052,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get documentsTitle => 'Tài liệu';
 
   @override
+  String get documentsTitlePlaceholder => 'Tiêu đề';
+
+  @override
+  String get documentsUntitled => 'Chưa đặt tên';
+
+  @override
   String get documentsUpdated => 'Đã lưu tài liệu.';
+
+  @override
+  String get documentsVisibilityPrivate => 'Chỉ thành viên không gian làm việc';
+
+  @override
+  String get documentsVisibilityPublic => 'Bất kỳ ai có liên kết';
 
   @override
   String get downloadNetworkContinue => 'Tiếp tục';

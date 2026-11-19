@@ -1,21 +1,26 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/documents/documents_content.dart';
+import 'package:mobile/features/documents/view/document_editor.dart';
+import 'package:mobile/features/documents/view/document_share_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DocumentDetailPage extends StatefulWidget {
   const DocumentDetailPage({
@@ -32,40 +37,77 @@ class DocumentDetailPage extends StatefulWidget {
 }
 
 class _DocumentDetailPageState extends State<DocumentDetailPage> {
+  static const Duration _autosaveDelay = Duration(milliseconds: 800);
+
   late final DocumentRepository _repository;
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _contentController = TextEditingController();
+  final TextEditingController _title = TextEditingController();
+  final QuillController _editor = QuillController.basic();
+  final FocusNode _editorFocus = FocusNode();
+  final ScrollController _editorScroll = ScrollController();
 
   WorkspaceDocument? _document;
-  bool _isLoading = false;
-  bool _isSaving = false;
+  bool _isLoading = true;
   bool _isPublic = false;
+  bool _hydrating = false;
+  bool _dirty = false;
+  bool _closed = false;
+  DocumentSaveStatus _status = DocumentSaveStatus.idle;
   String? _error;
+  String? _wsIdCache;
   int _requestToken = 0;
-
-  String? get _wsId =>
-      context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  Timer? _saveTimer;
+  StreamSubscription<DocChange>? _changes;
 
   @override
   void initState() {
     super.initState();
     _repository = widget.repository ?? DocumentRepository();
+    _editor.addListener(_onEditorNotice);
     unawaited(Future<void>.delayed(Duration.zero, _load));
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
+    _saveTimer?.cancel();
+    unawaited(_changes?.cancel());
+    _editor.removeListener(_onEditorNotice);
+    _closed = true;
+    final pending = _persist();
+    _editor.dispose();
+    _editorFocus.dispose();
+    _editorScroll.dispose();
+    _title.dispose();
     if (widget.repository == null) {
-      _repository.dispose();
+      unawaited(pending.whenComplete(_repository.dispose));
     }
     super.dispose();
   }
 
+  void _rememberWorkspace() {
+    final id = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (id != null && id.isNotEmpty) _wsIdCache = id;
+  }
+
+  void _watchDocument() {
+    unawaited(_changes?.cancel());
+    _changes = _editor.document.changes.listen((_) {
+      if (_hydrating || _closed) return;
+      _scheduleSave();
+    });
+  }
+
+  void _onEditorNotice() {
+    if (!mounted || _hydrating || _closed) return;
+    setState(() {});
+  }
+
   Future<void> _load() async {
-    final wsId = _wsId;
-    if (wsId == null || wsId.isEmpty) return;
+    _rememberWorkspace();
+    final wsId = _wsIdCache;
+    if (wsId == null || wsId.isEmpty) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
     final requestToken = ++_requestToken;
     setState(() {
@@ -75,12 +117,17 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
 
     try {
       final document = await _repository.getDocument(wsId, widget.documentId);
-      if (!mounted || requestToken != _requestToken) return;
+      if (!mounted || requestToken != _requestToken || _closed) return;
+      _hydrating = true;
+      _title.text = document.name;
+      _editor.document = documentQuillFromContent(document.content);
+      _watchDocument();
+      _hydrating = false;
+      _dirty = false;
       setState(() {
         _document = document;
-        _titleController.text = document.name;
-        _contentController.text = document.content;
         _isPublic = document.isPublic;
+        _status = DocumentSaveStatus.idle;
       });
     } on ApiException catch (error) {
       if (!mounted || requestToken != _requestToken) return;
@@ -95,49 +142,80 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     }
   }
 
-  Future<void> _save() async {
-    final wsId = _wsId;
-    final name = _titleController.text.trim();
-    if (wsId == null || wsId.isEmpty || name.isEmpty || _isSaving) return;
+  void _scheduleSave() {
+    if (_hydrating || _closed || _document == null) return;
+    _dirty = true;
+    _rememberWorkspace();
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_autosaveDelay, () => unawaited(_persist()));
+  }
 
-    setState(() => _isSaving = true);
+  Future<void> _persist() async {
+    if (!_dirty || _document == null) return;
+    final wsId = _wsIdCache;
+    if (wsId == null || wsId.isEmpty) return;
+    _dirty = false;
+    _saveTimer?.cancel();
+    final name = _title.text;
+    final content = documentContentPayload(_editor.document);
+    final document = _document!;
+    if (mounted && !_closed) {
+      setState(() => _status = DocumentSaveStatus.saving);
+    }
     try {
       await _repository.updateDocument(
         wsId,
         widget.documentId,
         name: name,
-        content: _contentController.text,
-        isPublic: _isPublic,
+        content: content,
       );
-      if (!mounted) return;
+      if (!mounted || _closed) return;
       setState(() {
-        _document =
-            (_document ??
-                    WorkspaceDocument(
-                      id: widget.documentId,
-                      name: name,
-                      content: _contentController.text,
-                      isPublic: _isPublic,
-                    ))
-                .copyWith(
-                  name: name,
-                  content: _contentController.text,
-                  isPublic: _isPublic,
-                );
+        _status = DocumentSaveStatus.saved;
+        _document = document.copyWith(
+          name: name,
+          content: content is String ? content : jsonEncode(content),
+        );
       });
-      _toast(context.l10n.documentsUpdated);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      _toast(error.message, destructive: true);
-    } finally {
+    } on Object {
+      _dirty = true;
+      if (!mounted || _closed) return;
+      setState(() => _status = DocumentSaveStatus.error);
+    }
+  }
+
+  Future<bool> _setPublic(bool value) async {
+    _rememberWorkspace();
+    final wsId = _wsIdCache;
+    final document = _document;
+    if (wsId == null || wsId.isEmpty || document == null) return false;
+    try {
+      await _repository.updateDocument(
+        wsId,
+        widget.documentId,
+        isPublic: value,
+      );
       if (mounted) {
-        setState(() => _isSaving = false);
+        setState(() {
+          _isPublic = value;
+          _document = document.copyWith(isPublic: value);
+        });
       }
+      return true;
+    } on ApiException catch (error) {
+      if (mounted) _toast(error.message, destructive: true);
+      return false;
+    } on Object {
+      if (mounted) {
+        _toast(context.l10n.commonSomethingWentWrong, destructive: true);
+      }
+      return false;
     }
   }
 
   Future<void> _delete() async {
-    final wsId = _wsId;
+    _rememberWorkspace();
+    final wsId = _wsIdCache;
     if (wsId == null || wsId.isEmpty) return;
 
     final confirmed = await showAppDialog<bool>(
@@ -150,181 +228,211 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          AppButton.primary(
+          AppButton.destructive(
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     try {
+      _closed = true;
+      _dirty = false;
+      _saveTimer?.cancel();
       await _repository.deleteDocument(wsId, widget.documentId);
       if (!mounted) return;
       _toast(context.l10n.documentsDeleted);
       context.go(Routes.documents);
     } on ApiException catch (error) {
+      _closed = false;
       if (!mounted) return;
       _toast(error.message, destructive: true);
     }
   }
 
-  void _toast(String message, {bool destructive = false}) {
-    shad.showToast(
+  Future<void> _editLink() async {
+    final current = _editor
+        .getSelectionStyle()
+        .attributes[Attribute.link.key]
+        ?.value;
+    final initial = current is String ? current : '';
+    final url = await showAppDialog<String>(
       context: context,
-      builder: (context, overlay) => shad.SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(color: destructive ? Colors.red : null),
-          ),
-        ),
+      builder: (context) => _LinkDialog(initial: initial),
+    );
+    if (url == null || !mounted) return;
+    if (url.isEmpty) {
+      _editor.formatSelection(const LinkAttribute(null));
+    } else {
+      final href = url.contains('://') ? url : 'https://$url';
+      _editor.formatSelection(LinkAttribute(href));
+    }
+  }
+
+  Future<void> _openShare() {
+    return showAppSheet<void>(
+      context: context,
+      builder: (context) => DocumentShareSheet(
+        isPublic: _isPublic,
+        onPublicChanged: _setPublic,
+        onDelete: () {
+          Navigator.of(context).pop();
+          unawaited(_delete());
+        },
       ),
+    );
+  }
+
+  void _toast(String message, {bool destructive = false}) {
+    showAppToast(
+      context,
+      message: message,
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.neutral,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = _titleController.text.trim().isEmpty
-        ? context.l10n.documentsTitle
-        : _titleController.text.trim();
+    final l10n = context.l10n;
+    final ready = !_isLoading && _error == null && _document != null;
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final dock = MediaQuery.paddingOf(context).bottom;
+    final lift = keyboard > 0 ? keyboard : dock;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
-      listener: (context, state) => context.go(Routes.documents),
-      child: shad.Scaffold(
+      listener: (context, state) {
+        if (_closed) return;
+        _closed = true;
+        _saveTimer?.cancel();
+        unawaited(_persist());
+        context.go(Routes.documents);
+      },
+      child: AppScaffold(
         child: Stack(
           children: [
             ShellMiniNav(
               ownerId: 'document-detail-nav',
               locations: {Routes.documentDetailPath(widget.documentId)},
               deepLinkBackRoute: Routes.documents,
-              items: [
-                ShellMiniNavItemSpec(
-                  id: 'document-detail-back',
-                  icon: Icons.chevron_left,
-                  label: context.l10n.navBack,
-                  callbackToken: 'back',
-                  onPressed: () => context.go(Routes.documents),
-                ),
-                ShellMiniNavItemSpec(
-                  id: 'document-detail-editor',
-                  icon: Icons.description_outlined,
-                  label: context.l10n.documentsEditor,
-                  callbackToken: widget.documentId,
-                  selected: true,
-                  onPressed: () {},
-                ),
-              ],
+              items: const [],
             ),
             ShellChromeActions(
               ownerId: 'document-detail-actions',
               locations: {Routes.documentDetailPath(widget.documentId)},
               actions: [
                 ShellActionSpec(
-                  id: 'document-save',
-                  icon: Icons.check_rounded,
-                  tooltip: context.l10n.commonSave,
-                  callbackToken: _isSaving,
-                  enabled: !_isSaving,
-                  highlighted: true,
-                  onPressed: _save,
-                ),
-                ShellActionSpec(
-                  id: 'document-delete',
-                  icon: Icons.delete_outline_rounded,
-                  tooltip: context.l10n.commonDelete,
-                  callbackToken: widget.documentId,
-                  enabled: !_isSaving && _document != null,
-                  onPressed: _delete,
+                  id: 'document-share',
+                  icon: LucideIcons.share2,
+                  tooltip: l10n.documentsShare,
+                  callbackToken: _isPublic,
+                  enabled: ready,
+                  onPressed: () => unawaited(_openShare()),
                 ),
               ],
             ),
-            // The editor scrolls beneath the dock, so it reads the clearance.
-            // The transparent Material gives the switch row its ink surface
-            // above the scaffold's coloured background.
-            AppPageBody(
-              kind: AppPageKind.reading,
-              consumeBottomClearance: false,
-              child: Material(
-                type: MaterialType.transparency,
-                child: _isLoading
-                    ? const AppLoadingIndicator.page()
-                    : _error != null
-                    ? Center(child: Text(_error!))
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: AppSpacing.xs,
-                              bottom: AppSpacing.md,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                TextField(
-                                  controller: _titleController,
-                                  decoration: InputDecoration(
-                                    hintText: context
-                                        .l10n
-                                        .inputPlaceholderDocumentName,
-                                    labelText:
-                                        context.l10n.documentsDocumentName,
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                                const SizedBox(height: 10),
-                                AppToggleRow(
-                                  title: Text(context.l10n.documentsPublic),
-                                  value: _isPublic,
-                                  onChanged: (value) {
-                                    setState(() => _isPublic = value);
-                                  },
-                                ),
-                              ],
-                            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: AppPageBody(
+                    kind: AppPageKind.reading,
+                    consumeBottomClearance: false,
+                    child: _isLoading
+                        ? const AppLoadingIndicator.page()
+                        : _error != null
+                        ? AppStateMessage(
+                            icon: LucideIcons.circleAlert,
+                            title: l10n.commonSomethingWentWrong,
+                            message: _error,
+                            tone: AppTone.destructive,
+                            actionLabel: l10n.commonRetry,
+                            onAction: _load,
+                          )
+                        : _document == null
+                        ? AppStateMessage(
+                            icon: LucideIcons.fileText,
+                            title: l10n.documentsTitle,
+                            message: l10n.documentsEmptyDescription,
+                          )
+                        : DocumentEditor(
+                            title: _title,
+                            editor: _editor,
+                            focusNode: _editorFocus,
+                            scrollController: _editorScroll,
+                            status: _status,
+                            onTitleChanged: (_) => _scheduleSave(),
                           ),
-                          const Divider(height: 1),
-                          Expanded(
-                            child: TextField(
-                              controller: _contentController,
-                              expands: true,
-                              maxLines: null,
-                              textAlignVertical: TextAlignVertical.top,
-                              keyboardType: TextInputType.multiline,
-                              decoration: InputDecoration(
-                                hintText: context.l10n.documentsContentHint,
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.only(
-                                  top: AppSpacing.xl,
-                                  bottom:
-                                      AppLayout.scrollEndGap +
-                                      MediaQuery.paddingOf(context).bottom,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                  ),
+                ),
+                if (ready)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: lift),
+                    child: AppFormatToolbar(
+                      actions: documentFormatActions(
+                        context: context,
+                        editor: _editor,
+                        onLink: () => unawaited(_editLink()),
                       ),
-              ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _LinkDialog extends StatefulWidget {
+  const _LinkDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_LinkDialog> createState() => _LinkDialogState();
+}
+
+class _LinkDialogState extends State<_LinkDialog> {
+  late final TextEditingController _url = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _url.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return AppDialog(
+      title: l10n.documentsLinkTitle,
+      content: AppTextField(
+        controller: _url,
+        autofocus: true,
+        placeholder: l10n.documentsLinkPlaceholder,
+        keyboardType: TextInputType.url,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (value) => Navigator.of(context).pop(value.trim()),
+      ),
+      actions: [
+        AppButton.ghost(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.commonCancel),
+        ),
+        AppButton.primary(
+          onPressed: () => Navigator.of(context).pop(_url.text.trim()),
+          child: Text(l10n.commonSave),
+        ),
+      ],
     );
   }
 }

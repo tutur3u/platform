@@ -2979,13 +2979,85 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsEmptyDescription => 'No documents yet. Create one to capture decisions, notes, or plans.';
 
   @override
+  String get documentsEmptyFiltered => 'No documents match this filter.';
+
+  @override
+  String get documentsFilterAll => 'All';
+
+  @override
+  String get documentsFilterPrivate => 'Private';
+
+  @override
+  String get documentsFilterPublic => 'Public';
+
+  @override
+  String get documentsFormatBold => 'Bold';
+
+  @override
+  String get documentsFormatBullets => 'Bulleted list';
+
+  @override
+  String get documentsFormatChecklist => 'Checklist';
+
+  @override
+  String get documentsFormatHeading1 => 'Heading 1';
+
+  @override
+  String get documentsFormatHeading2 => 'Heading 2';
+
+  @override
+  String get documentsFormatHeading3 => 'Heading 3';
+
+  @override
+  String get documentsFormatItalic => 'Italic';
+
+  @override
+  String get documentsFormatLink => 'Link';
+
+  @override
+  String get documentsFormatNumbers => 'Numbered list';
+
+  @override
+  String get documentsLinkPlaceholder => 'https://';
+
+  @override
+  String get documentsLinkTitle => 'Link';
+
+  @override
   String get documentsNewDocument => 'New document';
+
+  @override
+  String get documentsOwnerWorkspace => 'Workspace';
+
+  @override
+  String get documentsOwnerYou => 'You';
 
   @override
   String get documentsPublic => 'Public document';
 
   @override
+  String get documentsSaveError => 'Could not save';
+
+  @override
+  String get documentsSaved => 'Saved';
+
+  @override
+  String get documentsSaving => 'Saving';
+
+  @override
   String get documentsSearchHint => 'Search documents';
+
+  @override
+  String get documentsShare => 'Share';
+
+  @override
+  String get documentsSort => 'Sort';
+
+  @override
+  String get documentsSortEdited => 'Last edited';
+
+  @override
+  String get documentsSortTitle => 'Title';
 
   @override
   String get documentsSubtitle => 'Draft and maintain workspace knowledge.';
@@ -2994,7 +3066,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get documentsTitle => 'Documents';
 
   @override
+  String get documentsTitlePlaceholder => 'Title';
+
+  @override
+  String get documentsUntitled => 'Untitled';
+
+  @override
   String get documentsUpdated => 'Document saved.';
+
+  @override
+  String get documentsVisibilityPrivate => 'Only workspace members';
+
+  @override
+  String get documentsVisibilityPublic => 'Anyone with the link';
 
   @override
   String get downloadNetworkContinue => 'Continue';

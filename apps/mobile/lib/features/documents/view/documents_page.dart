@@ -1,25 +1,25 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Card;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/core/utils/tiptap_description_parser.dart';
 import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/documents/documents_labels.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class DocumentsPage extends StatefulWidget {
   const DocumentsPage({super.key, this.repository});
@@ -40,10 +40,14 @@ class _DocumentsPageState extends State<DocumentsPage> {
   List<WorkspaceDocument> _documents = const <WorkspaceDocument>[];
   bool _isLoading = false;
   bool _isLoadingMore = false;
+  bool _isCreating = false;
+  bool _searching = false;
   String? _error;
   int _offset = 0;
   int _total = 0;
   int _requestToken = 0;
+  DocumentVisibilityFilter _visibility = DocumentVisibilityFilter.all;
+  DocumentSort _sort = DocumentSort.edited;
 
   String? get _wsId =>
       context.read<WorkspaceCubit>().state.currentWorkspace?.id;
@@ -120,71 +124,113 @@ class _DocumentsPageState extends State<DocumentsPage> {
     });
   }
 
+  void _closeSearch() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
+    setState(() => _searching = false);
+    unawaited(_reload());
+  }
+
   Future<void> _loadMore() async {
     if (_isLoading || _isLoadingMore || !_hasMore) return;
     await _reload(append: true);
   }
 
   Future<void> _createDocument() async {
-    final controller = TextEditingController();
-    final created = await showAppSheet<bool>(
-      context: context,
-      builder: (context) => AppSheetScaffold(
-        title: context.l10n.documentsNewDocument,
-        actions: [
-          AppButton.primary(
-            key: const ValueKey('documents-create-submit'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(context.l10n.commonCreate),
-          ),
-        ],
-        child: AppTextField(
-          controller: controller,
-          autofocus: true,
-          label: context.l10n.documentsDocumentName,
-          placeholder: context.l10n.inputPlaceholderDocumentName,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => Navigator.of(context).pop(true),
-        ),
-      ),
-    );
-
     final wsId = _wsId;
-    final name = controller.text.trim();
-    controller.dispose();
-    if (created != true || wsId == null || name.isEmpty) return;
-
+    if (wsId == null || wsId.isEmpty || _isCreating) return;
+    setState(() => _isCreating = true);
     try {
-      final documentId = await _repository.createDocument(wsId, name: name);
+      final documentId = await _repository.createDocument(wsId, name: '');
       if (!mounted) return;
-      _toast(context.l10n.documentsCreated);
-      await _reload();
-      if (!mounted || documentId.isEmpty) return;
+      if (documentId.isEmpty) return;
       unawaited(context.push(Routes.documentDetailPath(documentId)));
     } on ApiException catch (error) {
       if (!mounted) return;
       _toast(error.message, destructive: true);
+    } finally {
+      if (mounted) setState(() => _isCreating = false);
     }
   }
 
-  void _toast(String message, {bool destructive = false}) {
-    shad.showToast(
+  Future<void> _pickSort() async {
+    final picked = await showAppChoiceSheet<DocumentSort>(
       context: context,
-      builder: (context, overlay) => shad.SurfaceCard(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Text(
-            message,
-            style: TextStyle(color: destructive ? Colors.red : null),
-          ),
+      title: context.l10n.documentsSort,
+      selected: _sort,
+      choices: [
+        AppSheetChoice(
+          value: DocumentSort.edited,
+          label: context.l10n.documentsSortEdited,
+          icon: LucideIcons.clock,
         ),
-      ),
+        AppSheetChoice(
+          value: DocumentSort.title,
+          label: context.l10n.documentsSortTitle,
+          icon: LucideIcons.caseSensitive,
+        ),
+      ],
     );
+    if (picked == null || !mounted) return;
+    setState(() => _sort = picked);
+  }
+
+  void _toast(String message, {bool destructive = false}) {
+    showAppToast(
+      context,
+      message: message,
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.neutral,
+    );
+  }
+
+  List<WorkspaceDocument> _visible(String locale) {
+    final filtered =
+        _documents.where((document) {
+          return switch (_visibility) {
+            DocumentVisibilityFilter.all => true,
+            DocumentVisibilityFilter.privateOnly => !document.isPublic,
+            DocumentVisibilityFilter.publicOnly => document.isPublic,
+          };
+        }).toList()..sort((a, b) {
+          if (_sort == DocumentSort.title) {
+            final titleA = documentDisplayTitle(
+              name: a.name,
+              untitled: '',
+              editedAt: documentEditedAt(a.createdAt),
+              locale: locale,
+            );
+            final titleB = documentDisplayTitle(
+              name: b.name,
+              untitled: '',
+              editedAt: documentEditedAt(b.createdAt),
+              locale: locale,
+            );
+            return titleA.toLowerCase().compareTo(titleB.toLowerCase());
+          }
+          final aTime = documentEditedAt(a.createdAt);
+          final bTime = documentEditedAt(b.createdAt);
+          if (aTime == null && bTime == null) return 0;
+          if (aTime == null) return 1;
+          if (bTime == null) return -1;
+          return bTime.compareTo(aTime);
+        });
+    return filtered;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final hasWorkspace = _wsId != null && _wsId!.isNotEmpty;
+    final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
+    final owner = (workspace?.name?.trim().isNotEmpty ?? false)
+        ? workspace!.name!.trim()
+        : (workspace?.personal ?? false)
+        ? l10n.documentsOwnerYou
+        : l10n.documentsOwnerWorkspace;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final visible = _visible(locale);
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
@@ -193,7 +239,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         setState(() => _documents = const <WorkspaceDocument>[]);
         unawaited(_reload());
       },
-      child: shad.Scaffold(
+      child: AppScaffold(
         child: Stack(
           children: [
             ShellMiniNav(
@@ -202,16 +248,9 @@ class _DocumentsPageState extends State<DocumentsPage> {
               deepLinkBackRoute: Routes.apps,
               items: [
                 ShellMiniNavItemSpec(
-                  id: 'documents-back',
-                  icon: Icons.chevron_left,
-                  label: context.l10n.navBack,
-                  callbackToken: 'back',
-                  onPressed: () => context.go(Routes.apps),
-                ),
-                ShellMiniNavItemSpec(
                   id: 'documents-home',
-                  icon: Icons.description_outlined,
-                  label: context.l10n.documentsTitle,
+                  icon: LucideIcons.fileText,
+                  label: l10n.documentsTitle,
                   callbackToken: true,
                   selected: true,
                   enabled: hasWorkspace,
@@ -222,21 +261,40 @@ class _DocumentsPageState extends State<DocumentsPage> {
             ShellChromeActions(
               ownerId: 'documents-root-actions',
               locations: const {Routes.documents},
+              onResetSection: _closeSearch,
               actions: [
+                ShellActionSpec.search(
+                  id: 'documents-search',
+                  active: _searching,
+                  tooltip: l10n.documentsSearchHint,
+                  controller: _searchController,
+                  searchHint: l10n.documentsSearchHint,
+                  hasQuery: _searchController.text.trim().isNotEmpty,
+                  onSearchChanged: _onSearchChanged,
+                  onCloseSearch: _closeSearch,
+                  onPressed: () {
+                    if (_searching) {
+                      _closeSearch();
+                    } else {
+                      setState(() => _searching = true);
+                    }
+                  },
+                ),
                 ShellActionSpec(
-                  id: 'documents-refresh',
-                  icon: Icons.refresh_rounded,
-                  tooltip: context.l10n.commonRefresh,
-                  callbackToken: _isLoading,
-                  enabled: hasWorkspace && !_isLoading,
-                  onPressed: _reload,
+                  id: 'documents-sort',
+                  icon: LucideIcons.arrowUpDown,
+                  tooltip: l10n.documentsSort,
+                  callbackToken: _sort,
+                  enabled: hasWorkspace,
+                  highlighted: _sort != DocumentSort.edited,
+                  onPressed: _pickSort,
                 ),
                 ShellActionSpec(
                   id: 'documents-create',
-                  icon: Icons.add_rounded,
-                  tooltip: context.l10n.documentsNewDocument,
-                  callbackToken: hasWorkspace,
-                  enabled: hasWorkspace,
+                  icon: LucideIcons.plus,
+                  tooltip: l10n.documentsNewDocument,
+                  callbackToken: _isCreating,
+                  enabled: hasWorkspace && !_isCreating,
                   onPressed: _createDocument,
                 ),
               ],
@@ -246,62 +304,79 @@ class _DocumentsPageState extends State<DocumentsPage> {
               child: AppPageListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  FinanceSectionHeader(
-                    title: context.l10n.documentsTitle,
-                    subtitle: context.l10n.documentsSubtitle,
+                  AppFilterBar<DocumentVisibilityFilter>(
+                    options: [
+                      AppFilterOption(
+                        value: DocumentVisibilityFilter.all,
+                        label: l10n.documentsFilterAll,
+                      ),
+                      AppFilterOption(
+                        value: DocumentVisibilityFilter.privateOnly,
+                        label: l10n.documentsFilterPrivate,
+                        icon: LucideIcons.lock,
+                      ),
+                      AppFilterOption(
+                        value: DocumentVisibilityFilter.publicOnly,
+                        label: l10n.documentsFilterPublic,
+                        icon: LucideIcons.globe,
+                      ),
+                    ],
+                    selected: _visibility,
+                    onSelected: (value) => setState(() => _visibility = value),
                   ),
                   const SizedBox(height: AppLayout.itemGap),
-                  TextField(
-                    controller: _searchController,
-                    onChanged: _onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: context.l10n.documentsSearchHint,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (_isLoading && _documents.isEmpty)
-                    const SizedBox(
-                      height: 240,
-                      child: AppLoadingIndicator.page(),
+                  if (!hasWorkspace)
+                    AppStateMessage(
+                      icon: LucideIcons.fileText,
+                      title: l10n.documentsTitle,
+                      message: l10n.documentsEmptyDescription,
                     )
+                  else if (_isLoading && _documents.isEmpty)
+                    const AppSkeletonRows(count: 6)
                   else if (_error != null)
-                    _DocumentsMessageCard(message: _error!)
-                  else if (_documents.isEmpty)
-                    _DocumentsMessageCard(
-                      message: context.l10n.documentsEmptyDescription,
+                    AppStateMessage(
+                      icon: LucideIcons.circleAlert,
+                      title: l10n.commonSomethingWentWrong,
+                      message: _error,
+                      tone: AppTone.destructive,
+                      actionLabel: l10n.commonRetry,
+                      onAction: _reload,
+                    )
+                  else if (visible.isEmpty)
+                    AppStateMessage(
+                      icon: LucideIcons.fileText,
+                      title: l10n.documentsTitle,
+                      message: _documents.isEmpty
+                          ? l10n.documentsEmptyDescription
+                          : l10n.documentsEmptyFiltered,
                     )
                   else
-                    ..._documents.map(
-                      (document) => Padding(
-                        padding: const EdgeInsets.only(
-                          bottom: AppLayout.itemGap,
-                        ),
-                        child: PendingSyncFrame(
-                          workspaceId: _wsId ?? '',
-                          feature: 'documents',
-                          entityId: document.id,
-                          child: _DocumentTile(
-                            document: document,
-                            onTap: () => context.push(
-                              Routes.documentDetailPath(document.id),
+                    AppGroupedCard(
+                      children: [
+                        for (final document in visible)
+                          PendingSyncFrame(
+                            workspaceId: _wsId ?? '',
+                            feature: 'documents',
+                            entityId: document.id,
+                            child: _DocumentRow(
+                              document: document,
+                              owner: owner,
+                              locale: locale,
+                              onTap: () => context.push(
+                                Routes.documentDetailPath(document.id),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
+                      ],
                     ),
                   if (_hasMore) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     Center(
-                      child: FilledButton.tonal(
+                      child: AppButton.secondary(
                         onPressed: _isLoadingMore ? null : _loadMore,
                         child: _isLoadingMore
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: NovaLoadingIndicator(size: 20),
-                              )
-                            : Text(context.l10n.commonLoadMore),
+                            ? const AppLoadingIndicator.inline()
+                            : Text(l10n.commonLoadMore),
                       ),
                     ),
                   ],
@@ -315,89 +390,51 @@ class _DocumentsPageState extends State<DocumentsPage> {
   }
 }
 
-class _DocumentTile extends StatelessWidget {
-  const _DocumentTile({required this.document, required this.onTap});
+class _DocumentRow extends StatelessWidget {
+  const _DocumentRow({
+    required this.document,
+    required this.owner,
+    required this.locale,
+    required this.onTap,
+  });
 
   final WorkspaceDocument document;
+  final String owner;
+  final String locale;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final preview =
-        parseTipTapTaskDescription(document.content)?.plainText ?? '';
-    return FinancePanel(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      borderColor: document.isPublic
-          ? theme.colorScheme.primary.withValues(alpha: 0.45)
-          : null,
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(
-              Icons.description_outlined,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  document.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                if (preview.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    preview,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: theme.colorScheme.mutedForeground),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Icon(
-            document.isPublic
-                ? Icons.public_rounded
-                : Icons.lock_outline_rounded,
-            color: theme.colorScheme.mutedForeground,
-          ),
-        ],
-      ),
+    final l10n = context.l10n;
+    final editedAt = documentEditedAt(document.createdAt);
+    final title = documentDisplayTitle(
+      name: document.name,
+      untitled: l10n.documentsUntitled,
+      editedAt: editedAt,
+      locale: locale,
     );
-  }
-}
-
-class _DocumentsMessageCard extends StatelessWidget {
-  const _DocumentsMessageCard({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return FinancePanel(
-      child: Text(
-        message,
-        textAlign: TextAlign.center,
-        style: TextStyle(color: shad.Theme.of(context).colorScheme.foreground),
+    final edited = editedAt == null
+        ? null
+        : DateFormat.MMMd(locale).format(editedAt.toLocal());
+    final visibility = document.isPublic
+        ? l10n.documentsVisibilityPublic
+        : l10n.documentsVisibilityPrivate;
+    return AppRichRow(
+      title: title,
+      leading: const AppIconTile(
+        icon: LucideIcons.fileText,
+        tone: AppTone.primary,
       ),
+      meta: [
+        if (edited != null) AppMetaItem(icon: LucideIcons.clock, label: edited),
+        AppMetaItem(icon: LucideIcons.user, label: owner),
+      ],
+      trailing: Icon(
+        document.isPublic ? LucideIcons.globe : LucideIcons.lock,
+        size: 16,
+      ),
+      semanticLabel: '$title, $owner, $visibility',
+      onTap: onTap,
     );
   }
 }

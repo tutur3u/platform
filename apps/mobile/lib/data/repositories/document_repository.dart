@@ -93,7 +93,7 @@ class DocumentRepository {
   Future<String> createDocument(
     String wsId, {
     required String name,
-    String content = '',
+    Object? content = '',
     bool isPublic = false,
   }) async {
     final path = DocumentsEndpoints.documents(wsId);
@@ -140,7 +140,7 @@ class DocumentRepository {
     String wsId,
     String documentId, {
     String? name,
-    String? content,
+    Object? content,
     bool? isPublic,
   }) async {
     final path = DocumentsEndpoints.document(wsId, documentId);

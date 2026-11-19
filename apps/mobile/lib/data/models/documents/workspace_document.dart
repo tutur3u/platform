@@ -1,8 +1,18 @@
+import 'dart:convert';
+
 import 'package:equatable/equatable.dart';
 
 String _stringValue(Object? value, {String fallback = ''}) {
   if (value is String) return value;
   return fallback;
+}
+
+/// TipTap content arrives as a JSON object. Keep it as text so the editor
+/// codec can read it, without dropping the document when it is not a string.
+String _contentValue(Object? value) {
+  if (value is String) return value;
+  if (value is Map || value is List) return jsonEncode(value);
+  return '';
 }
 
 bool _boolValue(Object? value) {
@@ -23,8 +33,8 @@ class WorkspaceDocument extends Equatable {
   factory WorkspaceDocument.fromJson(Map<String, dynamic> json) {
     return WorkspaceDocument(
       id: _stringValue(json['id']),
-      name: _stringValue(json['name'], fallback: 'Untitled document'),
-      content: _stringValue(json['content']),
+      name: _stringValue(json['name']),
+      content: _contentValue(json['content']),
       isPublic: _boolValue(json['is_public'] ?? json['isPublic']),
       createdAt: _stringValue(json['created_at'] ?? json['createdAt']),
     );
