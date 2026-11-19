@@ -10,31 +10,6 @@ import {
 } from './rsc';
 
 describe('RSC plugin', () => {
-  it('publishes the shared favicon through the client asset build', () => {
-    const plugin = startBridgeRscPlugin();
-    const emitted: { fileName?: string; source: Uint8Array }[] = [];
-    const context = {
-      emitFile(file: { fileName?: string; source: Uint8Array }) {
-        emitted.push(file);
-        return 'ref';
-      },
-      getFileName: () => '',
-    };
-    plugin.generateBundle.call({ ...context, environment: { name: 'ssr' } });
-    expect(emitted).toEqual([]);
-    plugin.generateBundle.call({ ...context, environment: { name: 'client' } });
-    expect(emitted.map(({ fileName }) => fileName)).toEqual([
-      'assets/tuturuuu-favicon.ico',
-    ]);
-    expect(Array.from(emitted[0]?.source.slice(0, 4) ?? [])).toEqual([
-      0, 0, 1, 0,
-    ]);
-    expect(plugin.config({}, { command: 'build' })?.define).toEqual({
-      'import.meta.env.VITE_TUTURUUU_BRIDGE_FAVICON':
-        '"/assets/tuturuuu-favicon.ico"',
-    });
-  });
-
   it('reads imported font names, including default and aliases', () => {
     const source = [
       "import { Noto_Sans, Inter as Body, type NextFont } from 'next/font/google';",

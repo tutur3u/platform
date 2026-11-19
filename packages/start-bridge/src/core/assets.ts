@@ -31,8 +31,6 @@ export interface AssetsBinding {
   fetch(input: string, init: AssetsRequestInit): Promise<AssetsResponse>;
 }
 
-export const BRIDGE_FAVICON_PATH = '/assets/tuturuuu-favicon.ico';
-
 const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
 
 /** Serves `request` from the assets binding as a web `Response`. */

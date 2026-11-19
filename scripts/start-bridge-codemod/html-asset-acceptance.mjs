@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
+const SHARED_APEX_ASSETS = new Map([
+  ['https://tuturuuu.com/favicon.ico', /^image\//u],
+]);
+
 // Parse with the same HTML standard implementation as workerd. In particular,
 // resource-looking text in scripts and comments is not a URL.
 const parserWorker = `
@@ -30,7 +34,13 @@ export default {
 };
 `;
 
-export async function assertRenderedAssets(t, require, call, pages) {
+export async function assertRenderedAssets(
+  t,
+  require,
+  call,
+  pages,
+  fetchSharedAsset = fetch
+) {
   const wranglerRequire = createRequire(require.resolve('wrangler'));
   const { Miniflare, convertV4MiniflareOptions } = wranglerRequire('miniflare');
   const parser = new Miniflare(
@@ -42,6 +52,7 @@ export async function assertRenderedAssets(t, require, call, pages) {
     })
   );
   t.after(() => parser.dispose());
+  const checkedSharedAssets = new Set();
 
   for (const { host, path, base = '', status = 200 } of pages) {
     const page = await call(path, host);
@@ -67,6 +78,25 @@ export async function assertRenderedAssets(t, require, call, pages) {
       const url = URL.parse(reference, document);
       assert.ok(url, `Invalid resource URL in ${document.href}`);
       if (url.origin !== document.origin) continue;
+      url.hash = '';
+      const sharedContentType = SHARED_APEX_ASSETS.get(url.href);
+      if (sharedContentType) {
+        if (!checkedSharedAssets.has(url.href)) {
+          const result = await fetchSharedAsset(url, {
+            redirect: 'error',
+            signal: AbortSignal.timeout(15_000),
+          });
+          await result.body?.cancel();
+          assert.equal(result.status, 200, url.href);
+          assert.match(
+            result.headers.get('content-type') ?? '',
+            sharedContentType,
+            url.href
+          );
+          checkedSharedAssets.add(url.href);
+        }
+        continue;
+      }
       assert.ok(
         !base || url.pathname.startsWith(`${base}/`),
         `${document.href} emitted ${reference} outside ${base}`

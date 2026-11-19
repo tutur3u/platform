@@ -1,4 +1,3 @@
-/// <reference path="../core/import-meta-env.d.ts" />
 import { prefixBase } from '../core/base-path';
 
 type Element = {
@@ -31,8 +30,7 @@ export function prefixHtmlAssets(
   response: Response,
   requestUrl: URL,
   basePath: string,
-  publicAssets: ReadonlySet<string>,
-  bundledFavicon = import.meta.env?.VITE_TUTURUUU_BRIDGE_FAVICON
+  publicAssets: ReadonlySet<string>
 ): Response {
   if (
     !basePath ||
@@ -45,28 +43,14 @@ export function prefixHtmlAssets(
 
   const rewrite = (element: Element, attribute: string) => {
     const value = element.getAttribute(attribute);
-    if (!value || value.startsWith('#')) return;
+    if (!value || value.startsWith('#') || value.startsWith('//')) return;
     let url: URL;
     try {
       url = new URL(value, requestUrl);
     } catch {
       return;
     }
-    // The common metadata default points to Web's favicon. Bundle the same
-    // bytes locally so a mount can serve it with the rest of its assets.
-    if (
-      bundledFavicon &&
-      requestUrl.hostname === 'tuturuuu.com' &&
-      url.href === 'https://tuturuuu.com/favicon.ico'
-    ) {
-      element.setAttribute(attribute, prefixBase(bundledFavicon, basePath));
-      return;
-    }
-    if (
-      url.host !== requestUrl.host ||
-      (url.protocol !== 'https:' && url.protocol !== 'http:')
-    )
-      return;
+    if (url.origin !== requestUrl.origin) return;
     if (!url.pathname.startsWith('/assets/') && !publicAssets.has(url.pathname))
       return;
     element.setAttribute(

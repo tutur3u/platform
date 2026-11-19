@@ -3,7 +3,6 @@ import { builtinModules } from 'node:module';
 import { basename, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { esmExternalRequirePlugin } from 'vite';
-import { BRIDGE_FAVICON_PATH } from '../core/assets';
 
 /**
  * Environment-aware resolution for RSC mode. Vite aliases are global, so the
@@ -137,7 +136,6 @@ interface RenderContext {
     type: 'asset';
     name: string;
     originalFileName: string;
-    fileName?: string;
     source: Uint8Array;
   }): string;
   getFileName(referenceId: string): string;
@@ -169,26 +167,6 @@ export function startBridgeRscPlugin(
   return {
     name: 'tuturuuu-start-bridge:rsc',
     enforce: 'pre' as const,
-    config(_config: unknown, { command }: { command: 'serve' | 'build' }) {
-      if (command !== 'build') return;
-      return {
-        define: {
-          'import.meta.env.VITE_TUTURUUU_BRIDGE_FAVICON':
-            JSON.stringify(BRIDGE_FAVICON_PATH),
-        },
-      };
-    },
-    generateBundle(this: RenderContext) {
-      if (this.environment?.name !== 'client') return;
-      const source = own('core/tuturuuu-favicon.ico');
-      this.emitFile({
-        type: 'asset',
-        name: basename(source),
-        originalFileName: source,
-        fileName: BRIDGE_FAVICON_PATH.slice(1),
-        source: readFileSync(source),
-      });
-    },
     // plugin-rsc imports the rsc entry as `<name>.js` from SSR, while Void's
     // Cloudflare output names server entries `.mjs`; pin the rsc naming.
     configEnvironment(name: string) {
