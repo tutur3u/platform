@@ -29,6 +29,8 @@ placement decisions and realistic routing checks.
 - For scripts and CI behavior, consult the relevant section of
   `references/ci-tooling-patterns.md`; for protected production publication, use
   `references/production-publication-policy.md`.
+- For CI performance, flake triage and test sharding reviews, read
+  `references/ci-learnings.md`.
 - For explicit wave-1 production publication holds, use the
   [cutover runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-cutover.mdx).
 - For shared-checkout ownership, use `$tuturuuu-agent-coordination`.
