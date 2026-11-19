@@ -87,7 +87,9 @@ export default {
         headers: { 'Cache-Control': 'no-store' },
       });
     }
-    if (!resolveAppBase(new URL(request.url), mounts)) {
+    const url = new URL(request.url);
+    const mount = resolveAppBase(url, mounts);
+    if (!mount) {
       const notFound = new Response('Not Found', {
         status: 404,
         headers: { 'Strict-Transport-Security': 'max-age=63072000' },
@@ -100,11 +102,12 @@ export default {
         })) ?? notFound
       );
     }
-    if (
-      !(new URL(request.url).hostname === 'drive.tuturuuu.com'
-        ? isDriveProductionEnvironment(env)
-        : isDriveStagingEnvironment(env))
-    ) {
+    const production =
+      mount.mode === 'mounted' || url.hostname === 'drive.tuturuuu.com';
+    const validEnvironment = production
+      ? isDriveProductionEnvironment(env)
+      : isDriveStagingEnvironment(env);
+    if (!validEnvironment) {
       return new Response('Drive configuration unavailable', {
         status: 503,
         headers: {

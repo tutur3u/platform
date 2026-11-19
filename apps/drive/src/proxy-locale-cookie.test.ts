@@ -10,12 +10,15 @@ vi.hoisted(() => {
   vi.stubEnv('TUTURUUU_GATEWAY_ORIGIN_HOSTS', '');
 });
 
-const mocks = vi.hoisted(() => ({ workspace: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  hasSession: vi.fn(() => false),
+  workspace: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
   clearSupabaseAuthCookies: (_request: unknown, response: unknown) => response,
   getAppSessionClaimsFromRequest: () => null,
-  hasSupportedSupabaseAuthCookie: () => false,
+  hasSupportedSupabaseAuthCookie: mocks.hasSession,
   hasWebAppSessionTokenFromRequest: () => false,
 }));
 vi.mock('@tuturuuu/auth/proxy', () => ({
@@ -81,7 +84,28 @@ const requestHeaders: [string, Record<string, string>][] = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.hasSession.mockReturnValue(false);
 });
+
+it.each([
+  [DRIVE, '', '/'],
+  ['https://tuturuuu.com', '/drive', '/drive'],
+])(
+  'keeps the signed-in workspace redirect under the app base on %s',
+  async (origin, basePath, path) => {
+    mocks.hasSession.mockReturnValue(true);
+    mocks.workspace.mockResolvedValue({ personal: true });
+    const response = await proxy(
+      new NextRequest(`${origin}${path}?x=1&x=2`, {
+        nextConfig: { basePath },
+      })
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      `${origin}${basePath}/personal?x=1&x=2`
+    );
+  }
+);
 
 afterAll(() => {
   vi.unstubAllEnvs();

@@ -12,7 +12,8 @@ const production = process.env.VITE_DRIVE_NATIVE_PROFILE === 'production';
 export default defineBridgeAppConfig({
   mounts: {
     rootHosts: [production ? 'drive.tuturuuu.com' : 'drive.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: production ? ['tuturuuu.com'] : [],
+    basePath: '/drive',
     unknownHost: 'reject',
   },
   worker: { workersDev: false },

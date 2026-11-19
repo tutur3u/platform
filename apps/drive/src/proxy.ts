@@ -19,6 +19,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { negotiateAcceptLanguage } from '@tuturuuu/satellite/accept-language';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -46,6 +47,12 @@ const authProxy = createCentralizedAuthProxy({
   mfa: { enabled: false },
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
+
+function workspaceRedirectUrl(req: NextRequest, path: string) {
+  const url = new URL(withAppBase(path, req.nextUrl.basePath), req.nextUrl);
+  url.search = req.nextUrl.search;
+  return url;
+}
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
@@ -166,8 +173,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 
     if (newPathSegments[wsIdIndex] !== 'internal') {
       newPathSegments[wsIdIndex] = 'internal';
-      const redirectUrl = new URL(`/${newPathSegments.join('/')}`, req.nextUrl);
-      redirectUrl.search = req.nextUrl.search;
+      const redirectUrl = workspaceRedirectUrl(
+        req,
+        `/${newPathSegments.join('/')}`
+      );
 
       const rootRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, rootRedirect);
@@ -187,12 +196,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
           const wsIdIndex = hasLocaleInPath ? 1 : 0;
           newPathSegments[wsIdIndex] = 'personal';
 
-          const redirectUrl = new URL(
-            `/${newPathSegments.join('/')}`,
-            req.nextUrl
+          const redirectUrl = workspaceRedirectUrl(
+            req,
+            `/${newPathSegments.join('/')}`
           );
-          // Preserve query parameters
-          redirectUrl.search = req.nextUrl.search;
 
           const personalRedirect = NextResponse.redirect(redirectUrl);
           propagateAuthCookies(authRes, personalRedirect);
@@ -234,14 +241,14 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
           : defaultWorkspace.id === ROOT_WORKSPACE_ID
             ? 'internal'
             : defaultWorkspace.id;
-        const redirectUrl = new URL(`/${target}`, req.nextUrl);
+        const redirectUrl = workspaceRedirectUrl(req, `/${target}`);
         const wsRedirect = NextResponse.redirect(redirectUrl);
         propagateAuthCookies(authRes, wsRedirect);
         return wsRedirect;
       }
 
       // Fallback to personal workspace if no default workspace found
-      const redirectUrl = new URL('/personal', req.nextUrl);
+      const redirectUrl = workspaceRedirectUrl(req, '/personal');
       const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return fallbackRedirect;

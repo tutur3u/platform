@@ -24,17 +24,20 @@ The production Worker answers every request with a refusal until
 `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
 `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` are present
 (`cloudflare/required-bindings.ts`). Names only are recorded here; values stay in
-the secret store. Hosts other than the canonical Drive host answer `404`.
+the secret store. The production profile admits `drive.tuturuuu.com` and the
+exact `/drive` mount and its descendants on `tuturuuu.com`. Both use the
+production configuration fence. The staging profile admits only its declared
+staging hostname, and unlisted hosts or apex paths answer `404`.
 
 ## Build and artifact
 
 `drive-cloudflare-artifact.yaml` runs on `ready-for-ci` pull requests and by
 manual dispatch. It builds with `bun run --cwd apps/drive build:cloudflare`,
-records the emitted configuration receipt, and runs
-`node --test apps/drive/cloudflare/cutover.runtime.mjs` against the emitted
-Worker in workerd. On manual dispatch it seals the output with
-`scripts/ci/drive-native-artifact.py` and uploads `drive-native-<source SHA>`
-(7 days). The workflow never deploys.
+checks the route registry, tests, types and lint, and stamps the exact source
+commit into the output. The emitted Worker runs in workerd on both production
+hosts. On manual dispatch CI seals the route-free archive with
+`scripts/ci/drive-native-artifact.py` and repeats the same runtime suite against
+a clean restore before uploading `drive-native-<source SHA>` (7 days).
 
 Do not run `build:cloudflare` on a shared development machine; use the workflow.
 
@@ -43,22 +46,23 @@ Do not run `build:cloudflare` on a shared development machine; use the workflow.
 | Item | Value |
 | --- | --- |
 | Worker | `tuturuuu-drive` |
-| Route | `drive.tuturuuu.com/*` attached by the operator; no other host |
+| Routes | Existing canonical subdomain, plus `/drive` and `/drive/*` via the gateway's `MOUNT_DRIVE` binding after acceptance |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
 | Build command | `VITE_DRIVE_NATIVE_PROFILE=production bun run --cwd apps/drive build:cloudflare` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Central API origin | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com` |
-| Prior Vercel deployment | record the immutable deployment ID and URL of the `drive` Vercel project before the switch |
+| Rollback | Record the serving subdomain provider and immutable deployment, plus the active gateway version, mount bindings and overlapping zone routes for the apex |
 | Data | no database writes and no migrations |
 
 ### Switch
 
 1. Record the source SHA, the sealed artifact name and the Vercel deployment ID.
 2. Provision the four secrets on `tuturuuu-drive`, then deploy the sealed output.
-3. Verify on the Worker before attaching the route: smoke below with the
-   Worker's own address.
-4. Attach `drive.tuturuuu.com` to the Worker (a proxied route in front of the
-   still-valid Vercel origin where possible).
+3. Run private version-pinned smoke for both production host variants before
+   routing traffic.
+4. Activate `/drive` and `/drive/*` with the same gateway version and
+   `MOUNT_DRIVE` binding. Keep the serving subdomain routing as its separate
+   rollback surface.
 
 ### Smoke
 
@@ -73,15 +77,25 @@ curl -s https://drive.tuturuuu.com/api/build-info
 curl -s -o /dev/null -w '%{http_code}\n' -H 'Host: untrusted.invalid' https://drive.tuturuuu.com/login
 ```
 
-Expected: a `30x` to `/login`, `200`, the accepted commit, and `404`.
+Check the bare apex mount with duplicate query keys, a Vietnamese deep link,
+and the exact build identity on both hosts. Signed-out protected pages
+redirect to the central login with the correct app verifier and complete
+return query. The public Start 404 under the verifier prefix emits loadable
+CSS and scripts on both hosts. Unauthenticated storage access returns 401,
+and the mounted app-session mint endpoint returns 409.
+
+With a fleet account and disposable workspace data, check root sessions,
+workspace isolation, signed upload and download, byte ranges, previews, API
+fallback, and unzip continuity. The local Worker fixtures verify delegated
+storage request bodies, ranges and response status.
 
 ### Rollback
 
-- **Triggers:** a 5xx rate above 1% or an authentication failure loop for 5
-  minutes, any cross-host response, or any storage permission regression.
-- **Action:** remove the Worker route (or repoint the mapping) so
-  `drive.tuturuuu.com` resolves to the recorded Vercel deployment again. Never
-  rebuild on the rollback path.
+- **Triggers:** roll back immediately on a smoke, authentication, error-rate,
+  latency or storage permission regression during the 30–60 minute watch.
+- **Action:** restore the captured gateway version for the apex. For a
+  subdomain change, restore the captured routing to its immutable prior
+  deployment.
 - **Data:** a route rollback changes no stored files or metadata.
 - **Stability:** keep the Vercel project and domain for 14 consecutive stable
   days before decommissioning, which is a separate approval.

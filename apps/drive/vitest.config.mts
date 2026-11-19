@@ -44,6 +44,13 @@ export default defineConfig({
           '../../packages/supabase/src/next/common.ts'
         ),
       },
+      {
+        find: '@tuturuuu/supabase/next/user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/user.ts'
+        ),
+      },
     ],
   },
 });

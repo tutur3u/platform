@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import productionVars from '../../cloudflare/production-profile.json';
 
 const runtime = vi.hoisted(() => ({
   loadModule: vi.fn().mockResolvedValue({ endpoints: [] }),
@@ -139,4 +140,83 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
     );
     expect(forwarded?.headers.get('authorization')).toBe('Bearer fixture');
   });
+});
+
+it('enforces the production fence and delegates storage on both admitted hosts', async () => {
+  vi.stubEnv('VITE_DRIVE_NATIVE_PROFILE', 'production');
+  vi.resetModules();
+  vi.stubGlobal('__driveTestRsc', { loadModule: runtime.loadModule });
+  const upstream = vi.fn(async (request: Request) => {
+    if (request.method === 'POST') {
+      return new Response(await request.text(), { status: 201 });
+    }
+    return new Response('partial', {
+      status: 206,
+      headers: { 'Content-Range': 'bytes 0-6/42' },
+    });
+  });
+  vi.stubGlobal('fetch', upstream);
+  try {
+    const { default: productionWorker } =
+      await import('../../cloudflare/worker');
+    const productionEnv = {
+      ...productionVars,
+      NEXT_PUBLIC_SUPABASE_URL: 'https://drive-production-fixture.invalid',
+      ASSETS: env.ASSETS,
+    };
+    const apex = 'https://tuturuuu.com';
+    const bare = new Request(`${apex}/drive?x=1&x=2`);
+    expect((await productionWorker.fetch(bare, env, ctx)).status).toBe(503);
+    expect(runtime.loadModule).not.toHaveBeenCalled();
+    for (const path of ['/', '/driveway', '/api/build-info']) {
+      expect(
+        (
+          await productionWorker.fetch(
+            new Request(apex + path),
+            productionEnv,
+            ctx
+          )
+        ).status
+      ).toBe(404);
+    }
+    expect(
+      await (await productionWorker.fetch(bare, productionEnv, ctx)).text()
+    ).toBe('start:/drive');
+
+    const storage = '/api/v1/workspaces/workspace-a/storage';
+    for (const origin of ['https://drive.tuturuuu.com', apex]) {
+      const base = origin === apex ? '/drive' : '';
+      const downloadPath = `${storage}/download?x=1&x=2`;
+      const download = await productionWorker.fetch(
+        new Request(`${origin}${base}${downloadPath}`, {
+          headers: { Range: 'bytes=0-6', Authorization: 'Bearer fixture' },
+        }),
+        productionEnv,
+        ctx
+      );
+      expect(download.status).toBe(206);
+      expect(download.headers.get('content-range')).toBe('bytes 0-6/42');
+      expect(await download.text()).toBe('partial');
+      expect(upstream.mock.lastCall?.[0]?.url).toBe(apex + downloadPath);
+      expect(upstream.mock.lastCall?.[0]?.headers.get('range')).toBe(
+        'bytes=0-6'
+      );
+
+      const uploadPath = `${storage}/upload-url?x=1&x=2`;
+      const upload = await productionWorker.fetch(
+        new Request(`${origin}${base}${uploadPath}`, {
+          method: 'POST',
+          headers: { Origin: origin, Authorization: 'Bearer fixture' },
+          body: 'fixture upload request',
+        }),
+        productionEnv,
+        ctx
+      );
+      expect(upload.status).toBe(201);
+      expect(await upload.text()).toBe('fixture upload request');
+      expect(upstream.mock.lastCall?.[0]?.url).toBe(apex + uploadPath);
+    }
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });
