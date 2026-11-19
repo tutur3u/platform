@@ -166,7 +166,6 @@ export default async function FormsPage({ params, searchParams }: PageProps) {
               <Card className="border-border/60 bg-card/80">
                 <CardContent className="flex flex-col gap-4 pt-6">
                   <form
-                    action={`/${resolvedParams.wsId}/forms`}
                     method="get"
                     className="flex w-full max-w-sm items-center gap-2"
                   >
