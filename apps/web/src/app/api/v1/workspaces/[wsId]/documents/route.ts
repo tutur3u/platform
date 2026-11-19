@@ -1,8 +1,10 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -19,6 +21,7 @@ import {
   attachDocumentOwner,
   documentColumns,
   type DocumentOwner,
+  type WorkspaceDocumentRow,
 } from '@/lib/documents/present';
 
 interface Params {
@@ -103,16 +106,16 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as WorkspaceDocumentRow[];
   const ownerIds: string[] = [];
   const seenOwners = new Set<string>();
   for (const row of rows) {
-    const ownerId = (row as { owner_id?: unknown }).owner_id;
+    const ownerId = row.owner_id;
     if (typeof ownerId !== 'string' || seenOwners.has(ownerId)) continue;
     seenOwners.add(ownerId);
     ownerIds.push(ownerId);
   }
-  const owners = await loadDocumentOwners(sbAdmin, ownerIds);
+  const owners = await loadDocumentOwners(supabase, ownerIds);
   if (owners == null) {
     return NextResponse.json(
       { message: 'Error listing documents' },
@@ -131,13 +134,15 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 async function loadDocumentOwners(
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  supabase: SupabaseClient<Database>,
   ownerIds: string[]
 ): Promise<DocumentOwner[] | null> {
   if (ownerIds.length === 0) return [];
-  const { data, error } = await sbAdmin
+  // The viewer's session applies profile RLS, so a former member's row is hidden.
+  // The display name is the only profile field this response may carry.
+  const { data, error } = await supabase
     .from('user_private_details')
-    .select('user_id, full_name, email')
+    .select('user_id, full_name')
     .in('user_id', ownerIds);
   if (error) {
     console.error('Error loading document owners:', error.message);

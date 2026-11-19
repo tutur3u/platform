@@ -1,8 +1,10 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -19,6 +21,7 @@ import {
   attachDocumentOwner,
   documentColumns,
   type DocumentOwner,
+  type WorkspaceDocumentRow,
 } from '@/lib/documents/present';
 
 interface Params {
@@ -31,7 +34,10 @@ interface Params {
 async function authorizeDocumentsRequest(
   request: Request,
   wsIdParam: string
-): Promise<{ error: Response } | { wsId: string; userId: string }> {
+): Promise<
+  | { error: Response }
+  | { wsId: string; userId: string; supabase: SupabaseClient<Database> }
+> {
   const supabase = await createClient(request);
   const wsId = await normalizeWorkspaceId(wsIdParam, supabase);
 
@@ -71,7 +77,7 @@ async function authorizeDocumentsRequest(
     };
   }
 
-  return { wsId, userId: user.id };
+  return { wsId, userId: user.id, supabase };
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -145,30 +151,42 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (!data) {
+  const document = data as WorkspaceDocumentRow | null;
+  if (!document) {
     return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
-  const owners: DocumentOwner[] = [];
-  if (data.owner_id) {
-    const owner = await sbAdmin
-      .from('user_private_details')
-      .select('user_id, full_name, email')
-      .eq('user_id', data.owner_id)
-      .maybeSingle();
-    if (owner.error) {
-      console.error('Error loading document owner:', owner.error.message);
-      return NextResponse.json(
-        { error: 'Error loading document' },
-        { status: 500 }
-      );
-    }
-    if (owner.data) owners.push(owner.data);
+  const owners = await loadViewerDocumentOwner(
+    auth.supabase,
+    document.owner_id
+  );
+  if (owners == null) {
+    return NextResponse.json(
+      { error: 'Error loading document' },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({
-    data: attachDocumentOwner(data, owners, auth.userId),
+    data: attachDocumentOwner(document, owners, auth.userId),
   });
+}
+
+async function loadViewerDocumentOwner(
+  supabase: SupabaseClient<Database>,
+  ownerId: string | null
+): Promise<DocumentOwner[] | null> {
+  if (!ownerId) return [];
+  const { data, error } = await supabase
+    .from('user_private_details')
+    .select('user_id, full_name')
+    .eq('user_id', ownerId)
+    .maybeSingle();
+  if (error) {
+    console.error('Error loading document owner:', error.message);
+    return null;
+  }
+  return data ? [data] : [];
 }
 
 export async function DELETE(request: Request, { params }: Params) {

@@ -1,3 +1,5 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@tuturuuu/types/db';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -6,6 +8,7 @@ import {
   gradeLearnerAttempt,
 } from '@/lib/education/grade-learner-attempt';
 import { requireLearnerWorkspace } from '@/lib/education/learner-access';
+import { learnerProgressRoutesEnabled } from '@/lib/education/learner-progress-flag';
 
 const bodySchema = z.object({
   course_id: z.uuid().optional(),
@@ -22,11 +25,7 @@ const bodySchema = z.object({
 });
 
 async function moduleQuizzes(
-  sbAdmin: Awaited<
-    ReturnType<
-      typeof import('@tuturuuu/supabase/next/server').createAdminClient
-    >
-  >,
+  sbAdmin: SupabaseClient<Database>,
   wsId: string,
   courseId: string
 ) {
@@ -94,6 +93,9 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   await connection();
+  if (!learnerProgressRoutesEnabled()) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
   const { wsId: wsIdParam } = await params;
   const access = await requireLearnerWorkspace(request, wsIdParam);
   if ('error' in access) return access.error;
@@ -135,12 +137,19 @@ export async function POST(
   try {
     graded = gradeLearnerAttempt({
       quizzes: quizzesResult.data ?? [],
-      options: (optionsResult.data ?? []).map((option) => ({
-        id: option.id,
-        quizId: option.quiz_id,
-        isCorrect: option.is_correct,
-        points: option.points,
-      })),
+      options: (optionsResult.data ?? []).map(
+        (option: {
+          id: string;
+          quiz_id: string;
+          is_correct: boolean;
+          points: number | null;
+        }) => ({
+          id: option.id,
+          quizId: option.quiz_id,
+          isCorrect: option.is_correct,
+          points: option.points,
+        })
+      ),
       answers: parsed.data.answers.map((answer) => ({
         quizId: answer.quiz_id,
         selectedOptionId: answer.selected_option_id,

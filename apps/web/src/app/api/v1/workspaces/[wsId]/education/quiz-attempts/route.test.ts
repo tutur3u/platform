@@ -35,6 +35,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/education/learner-access', () => mocks);
+vi.mock('@/lib/education/learner-progress-flag', () => ({
+  learnerProgressRoutesEnabled: () => true,
+}));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
   connection: async () => {},

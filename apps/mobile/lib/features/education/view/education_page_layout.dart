@@ -177,13 +177,14 @@ extension _EducationPageLayout on _EducationPageState {
             final page = await _repository.getQuizzes(_wsId);
             return page.items;
           },
-          submitAttempt: (answers, durationSeconds) =>
-              _repository.submitQuizAttempt(
-                _wsId,
-                courseId: courseId,
-                durationSeconds: durationSeconds,
-                answers: answers,
-              ),
+          submitAttempt: _learnerRecording
+              ? (answers, durationSeconds) => _repository.submitQuizAttempt(
+                  _wsId,
+                  courseId: courseId,
+                  durationSeconds: durationSeconds,
+                  answers: answers,
+                )
+              : null,
           onSubmitted: () {
             if (!mounted) return;
             unawaited(_loadOverview());

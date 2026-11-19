@@ -34,7 +34,7 @@ extension _EducationPageData on _EducationPageState {
             (append
                     ? _mergeEducation(_courses, result.items, (row) => row.id)
                     : result.items)
-                .map(_withCompletion)
+                .map(_presentCourse)
                 .toList(growable: false);
         _coursesPage = nextPage;
         _coursesCount = append && result.items.isEmpty

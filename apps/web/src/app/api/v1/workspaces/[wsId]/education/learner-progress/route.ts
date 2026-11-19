@@ -1,5 +1,6 @@
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { requireLearnerWorkspace } from '@/lib/education/learner-access';
+import { learnerProgressRoutesEnabled } from '@/lib/education/learner-progress-flag';
 
 const COURSE_LIMIT = 500;
 const ATTEMPT_LIMIT = 20;
@@ -22,6 +23,9 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   await connection();
+  if (!learnerProgressRoutesEnabled()) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
   const { wsId: wsIdParam } = await params;
   const access = await requireLearnerWorkspace(request, wsIdParam);
   if ('error' in access) return access.error;

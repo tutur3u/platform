@@ -1,7 +1,19 @@
 export interface DocumentOwner {
   user_id: string;
   full_name: string | null;
-  email: string | null;
+}
+
+/** Row shape for a dynamic documents select. The query string is not a literal. */
+export interface WorkspaceDocumentRow {
+  id: string;
+  name: string | null;
+  content: unknown;
+  is_public: boolean | null;
+  created_at: string;
+  updated_at: string;
+  owner_id: string | null;
+  parent_id?: string | null;
+  position?: number | null;
 }
 
 export function documentColumns(hierarchyEnabled: boolean) {

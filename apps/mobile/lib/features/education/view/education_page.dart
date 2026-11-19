@@ -123,6 +123,7 @@ class _EducationPageState extends State<EducationWorkspace> {
   String _attemptStatus = 'all';
   String? _attemptSetId;
   Map<String, double>? _courseCompletion;
+  bool _learnerRecording = false;
   List<EducationAttemptSummary> _learnerAttempts =
       const <EducationAttemptSummary>[];
   int _learnerAttemptCount = 0;
@@ -174,6 +175,7 @@ class _EducationPageState extends State<EducationWorkspace> {
   }
 
   void _rememberProgress(EducationLearnerProgress progress) {
+    _learnerRecording = true;
     _courseCompletion = {
       for (final course in progress.courses)
         course.courseId: course.completionRatio,
@@ -182,16 +184,32 @@ class _EducationPageState extends State<EducationWorkspace> {
     _learnerAttemptCount = progress.attemptCount;
   }
 
+  EducationCourse _withoutCompletion(EducationCourse course) {
+    if (course.completionRatio == null) return course;
+    return EducationCourse(
+      id: course.id,
+      name: course.name,
+      description: course.description,
+      certTemplate: course.certTemplate,
+      createdAt: course.createdAt,
+      modulesCount: course.modulesCount,
+    );
+  }
+
   EducationCourse _withCompletion(EducationCourse course) {
     final ratio = _courseCompletion?[course.id];
     if (ratio == null || course.completionRatio == ratio) return course;
     return course.copyWith(completionRatio: ratio);
   }
 
+  /// A disabled learner route must not keep a meter from an earlier payload.
+  EducationCourse _presentCourse(EducationCourse course) =>
+      _learnerRecording ? _withCompletion(course) : _withoutCompletion(course);
+
   void _paintCourses() {
-    _courses = [for (final course in _courses) _withCompletion(course)];
+    _courses = [for (final course in _courses) _presentCourse(course)];
     _coursePreview = [
-      for (final course in _coursePreview) _withCompletion(course),
+      for (final course in _coursePreview) _presentCourse(course),
     ];
   }
 
@@ -221,11 +239,28 @@ class _EducationPageState extends State<EducationWorkspace> {
         _requestToken++;
         _handleLoadFailure(error);
         _updateState(() => _isLoading = false);
+        return;
+      }
+      if (error is ApiException && error.statusCode == 404) {
+        _updateState(() {
+          _learnerRecording = false;
+          _courseCompletion = null;
+          _learnerAttempts = const [];
+          _learnerAttemptCount = 0;
+          _courses = [
+            for (final course in _courses) _withoutCompletion(course),
+          ];
+          _coursePreview = [
+            for (final course in _coursePreview) _withoutCompletion(course),
+          ];
+          _publishAttemptPreview();
+        });
       }
     }
   }
 
   void _clearLearnerProgress() {
+    _learnerRecording = false;
     _courseCompletion = null;
     _learnerAttempts = const [];
     _learnerAttemptCount = 0;

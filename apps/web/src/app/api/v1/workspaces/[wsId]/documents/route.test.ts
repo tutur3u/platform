@@ -19,6 +19,13 @@ const mocks = vi.hoisted(() => ({
     maybeSingle: vi.fn(),
   },
   from: vi.fn(),
+  viewerFrom: vi.fn(),
+  viewerQuery: {
+    select: vi.fn(),
+    in: vi.fn(),
+    eq: vi.fn(),
+    maybeSingle: vi.fn(),
+  },
 }));
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: async () => ({
@@ -26,7 +33,7 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   }),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createClient: async () => ({}),
+  createClient: async () => ({ from: mocks.viewerFrom }),
   createAdminClient: async () => ({ from: mocks.from }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -61,6 +68,11 @@ beforeEach(() => {
   mocks.enabled = false;
   mocks.user = true;
   mocks.from.mockReturnValue(mocks.query);
+  mocks.viewerFrom.mockReturnValue(mocks.viewerQuery);
+  mocks.viewerQuery.select.mockReturnValue(mocks.viewerQuery);
+  mocks.viewerQuery.eq.mockReturnValue(mocks.viewerQuery);
+  mocks.viewerQuery.in.mockResolvedValue({ data: [], error: null });
+  mocks.viewerQuery.maybeSingle.mockResolvedValue({ data: null, error: null });
   for (const key of [
     'select',
     'eq',
@@ -181,6 +193,60 @@ describe('workspace document API boundary', () => {
       expect(mocks.query.select).toHaveBeenCalledWith(columns);
     }
   );
+  it('shows the display name through the viewer and omits the email', async () => {
+    mocks.query.range.mockResolvedValue({
+      data: [
+        {
+          id: 'document',
+          name: 'Roadmap',
+          owner_id: 'former-member',
+        },
+      ],
+      count: 1,
+    });
+    mocks.viewerQuery.in.mockResolvedValue({
+      data: [{ user_id: 'former-member', full_name: 'Ada Lovelace' }],
+      error: null,
+    });
+
+    const response = await GET(new Request('https://example.test'), params);
+    const body = await response.json();
+
+    expect(mocks.viewerQuery.select).toHaveBeenCalledWith('user_id, full_name');
+    expect(mocks.from).not.toHaveBeenCalledWith('user_private_details');
+    expect(body.data[0].owner).toEqual({
+      user_id: 'former-member',
+      full_name: 'Ada Lovelace',
+    });
+    expect(body.data[0].owner.email).toBeUndefined();
+    expect(JSON.stringify(body)).not.toContain('email');
+  });
+  it('hides a former member the viewer profile policy does not return', async () => {
+    mocks.query.range.mockResolvedValue({
+      data: [{ id: 'document', name: 'Roadmap', owner_id: 'former-member' }],
+      count: 1,
+    });
+    mocks.query.maybeSingle.mockResolvedValue({
+      data: { id: 'document', name: 'Roadmap', owner_id: 'former-member' },
+    });
+    mocks.viewerQuery.in.mockResolvedValue({ data: [], error: null });
+    mocks.viewerQuery.maybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    const listed = await GET(new Request('https://example.test'), params);
+    const detailResponse = await detail(
+      new Request('https://example.test'),
+      params
+    );
+    const listBody = await listed.json();
+    const detailBody = await detailResponse.json();
+
+    expect(listBody.data[0].owner).toBeNull();
+    expect(detailBody.data.owner).toBeNull();
+    expect(JSON.stringify({ listBody, detailBody })).not.toContain('email');
+  });
   it.each(['member', 'permission', 'user'] as const)(
     'denies access without %s',
     async (gate) => {

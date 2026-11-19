@@ -40,7 +40,9 @@ extension _EducationOverviewData on _EducationPageState {
       source(
         () => _repository.getCourses(_wsId, pageSize: 3),
         (value) {
-          _coursePreview = value.items;
+          _coursePreview = [
+            for (final course in value.items) _presentCourse(course),
+          ];
           _courseSummaryCount = value.count;
         },
         () {

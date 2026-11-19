@@ -55,13 +55,17 @@ class Repository extends Mock implements EducationRepository {
         : result;
   }
 
+  List<EducationQuiz> practiceQuizzes = const [];
+  ApiException? progressFailure;
+  int submitCalls = 0;
+
   @override
   Future<EducationPagedResult<EducationQuiz>> getQuizzes(
     String wsId, {
     String query = '',
     int page = 1,
     int pageSize = 20,
-  }) async => pageRows([]);
+  }) async => pageRows(practiceQuizzes);
   @override
   Future<EducationPagedResult<EducationQuizSet>> getQuizSets(
     String wsId, {
@@ -98,12 +102,32 @@ class Repository extends Mock implements EducationRepository {
           ));
 
   @override
-  Future<EducationLearnerProgress> getLearnerProgress(String wsId) async =>
-      const EducationLearnerProgress(
-        courses: [],
-        attemptCount: 0,
-        attempts: [],
-      );
+  Future<EducationLearnerProgress> getLearnerProgress(String wsId) async {
+    final failure = progressFailure;
+    if (failure != null) throw failure;
+    return const EducationLearnerProgress(
+      courses: [],
+      attemptCount: 0,
+      attempts: [],
+    );
+  }
+
+  @override
+  Future<EducationQuizSubmission> submitQuizAttempt(
+    String wsId, {
+    required List<EducationQuizAnswer> answers,
+    String? courseId,
+    int? durationSeconds,
+  }) async {
+    submitCalls++;
+    return const EducationQuizSubmission(
+      id: 'attempt',
+      correctCount: 0,
+      questionCount: 1,
+      totalScore: 0,
+      completedModuleIds: [],
+    );
+  }
 }
 
 void main() {
@@ -385,4 +409,41 @@ void main() {
     expect(listPadding().left, (1200 - 720) / 2 + 32);
     expect(listPadding().right, (1200 - 720) / 2 + 32);
   });
+  testWidgets(
+    'a missing learner route hides the meter and keeps the score on device',
+    (tester) async {
+      repository
+        ..progressFailure = const ApiException(
+          message: 'Not found',
+          statusCode: 404,
+        )
+        ..practiceQuizzes = const [
+          EducationQuiz(
+            id: 'quiz',
+            question: 'Two plus two?',
+            options: [
+              EducationQuizOption(id: 'a', value: 'Four', isCorrect: true),
+              EducationQuizOption(id: 'b', value: 'Five', isCorrect: false),
+            ],
+          ),
+        ]
+        ..readCourses = (_, _, _) async => pageRows(const [
+          EducationCourse(id: 'course', name: 'Course', completionRatio: 0.5),
+        ]);
+      await tester.pumpApp(page());
+      await tester.pumpAndSettle();
+      expect(find.textContaining('% complete'), findsNothing);
+      await tester.tap(find.text('Quizzes').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Five'));
+      await tester.pump();
+      await tester.tap(find.text('Check'));
+      await tester.pump();
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('This score stays on this device.'), findsOneWidget);
+      expect(find.text('Saved to your attempts.'), findsNothing);
+      expect(repository.submitCalls, 0);
+    },
+  );
 }
