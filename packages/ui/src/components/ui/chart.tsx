@@ -138,6 +138,23 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
+/** The tooltip surface, shared by Recharts tooltips and non-Recharts charts. */
+const ChartTooltipFrame = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<'div'>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    data-slot="chart-tooltip"
+    className={cn(
+      'grid min-w-32 items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl',
+      className
+    )}
+    {...props}
+  />
+));
+ChartTooltipFrame.displayName = 'ChartTooltipFrame';
+
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<'div'> & {
@@ -153,6 +170,8 @@ const ChartTooltipContent = React.forwardRef<
     labelKey?: string;
     color?: string;
     labelClassName?: string;
+    /** Extra content under the rows, for example context for the point. */
+    footer?: React.ReactNode;
   }
 >(
   (
@@ -170,6 +189,7 @@ const ChartTooltipContent = React.forwardRef<
       color,
       nameKey,
       labelKey,
+      footer,
     },
     ref
   ) => {
@@ -233,13 +253,7 @@ const ChartTooltipContent = React.forwardRef<
     const nestLabel = payload.length === 1 && indicator !== 'dot';
 
     return (
-      <div
-        ref={ref}
-        className={cn(
-          'grid min-w-32 items-start gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl',
-          className
-        )}
-      >
+      <ChartTooltipFrame ref={ref} className={className}>
         {!nestLabel ? tooltipLabel : null}
         <div className="grid gap-1.5">
           {payload.map((item, index) => {
@@ -295,7 +309,7 @@ const ChartTooltipContent = React.forwardRef<
                           {itemConfig?.label || item.name}
                         </span>
                       </div>
-                      {item.value && (
+                      {item.value !== undefined && item.value !== null && (
                         <span className="font-medium font-mono text-foreground tabular-nums">
                           {item.value.toLocaleString()}
                         </span>
@@ -307,7 +321,8 @@ const ChartTooltipContent = React.forwardRef<
             );
           })}
         </div>
-      </div>
+        {footer}
+      </ChartTooltipFrame>
     );
   }
 );
@@ -420,4 +435,5 @@ export {
   ChartStyle,
   ChartTooltip,
   ChartTooltipContent,
+  ChartTooltipFrame,
 };
