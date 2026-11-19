@@ -205,7 +205,7 @@ Future<GoRouter> pumpTaskExperience(
   await tester.pumpAndSettle();
   if (initialLocation == Routes.taskAssigned) {
     await waitForTaskExperience(tester, find.byType(MyTaskRow));
-    if (repository.delayMine == null) {
+    if (!forGolden && repository.delayMine == null) {
       await waitForFreshMyTasks(tester);
     }
   }

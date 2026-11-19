@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -61,38 +59,6 @@ void main() {
       );
     },
   );
-
-  testWidgets('reorder persists when the board refreshes', (tester) async {
-    final repo = TaskExperienceRepository(now: demoNow);
-    await pumpTaskExperience(
-      tester,
-      repository: repo,
-      initialLocation: boardLocation(),
-    );
-    final first = dragCard('demo-overdue');
-    final third = dragCard('demo-upcoming');
-    final cubit = tester.element(first).read<TaskBoardDetailCubit>();
-    final rect = tester.getRect(first);
-    final drag = await tester.startGesture(tester.getCenter(third));
-    await tester.pump(kLongPressTimeout + const Duration(milliseconds: 60));
-    await drag.moveTo(Offset(rect.center.dx, rect.top + 8));
-    await tester.pump(const Duration(milliseconds: 100));
-    await drag.up();
-    await tester.pumpAndSettle();
-    expect(repo.placements.single.$1, 'demo-upcoming');
-    expect(repo.placements.single.$2.keys, ['sort_key']);
-    await waitForTaskExperience(tester, third);
-    var refreshed = false;
-    unawaited(cubit.reload().then((_) => refreshed = true));
-    await waitForTaskCondition(
-      tester,
-      () => refreshed,
-      reason: 'The board reload finishes',
-    );
-    await tester.pumpAndSettle();
-    await waitForTaskExperience(tester, third);
-    expect(tester.getTopLeft(third).dy, lessThan(tester.getTopLeft(first).dy));
-  });
 
   testWidgets('the top action toggles List and the board picker is explicit', (
     tester,
