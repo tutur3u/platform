@@ -43,6 +43,10 @@ export async function loadMail(result) {
     publicAssets: new Set(),
     applyMailResponsePolicy: (_request, response) => response,
     applyMailDocumentHeaders: (_request, response) => response,
+    bridgeRequest: () => ({ cloudflare: { env: {} } }),
+    isMailStagingArtifact: () => false,
+    denyWithoutStagingAccess: async () => undefined,
+    fetchOwner: emit,
   };
   const cache = new Map();
   async function source(file) {

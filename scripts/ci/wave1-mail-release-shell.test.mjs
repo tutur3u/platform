@@ -118,7 +118,7 @@ if [[ "\${1:-}" == "scripts/ci/wave1-native-artifact.mjs" && "\${2:-}" == "prepa
   exec "$real" ${JSON.stringify(receiptWriter)}
 fi
 case "\${1:-}" in
-  scripts/ci/wave1-native-artifact.mjs|scripts/ci/wave1-native-runtime.mjs|scripts/ci/wave1-native-publish.mjs)
+  scripts/ci/wave1-native-artifact.mjs|scripts/ci/wave1-native-runtime.mjs|scripts/ci/wave1-native-publish.mjs|scripts/ci/mail-host-scan.mjs)
     exit 0
     ;;
 esac
