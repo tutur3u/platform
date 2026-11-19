@@ -166,9 +166,6 @@ export const productionAppExclusions: Record<string, string> = {
   colab: 'held: Colab stays with its dedicated owner',
   track: 'held: Track stays with its dedicated owner',
   mind: 'held: Mind stays with its dedicated owner',
-  meet: 'held: Meet publication waits for its release gates',
-  tasks:
-    'held: Tasks publication waits for the Mail Calendar Tasks suite to pass',
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
