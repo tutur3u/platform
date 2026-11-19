@@ -145,6 +145,11 @@ export function ParticipantsPanel({
                     </Avatar>
                     <span className="min-w-0 flex-1 truncate text-sm">
                       {entry.displayName}
+                      {entry.guest ? (
+                        <Badge variant="outline" className="ml-1.5">
+                          {t('guest_join.badge')}
+                        </Badge>
+                      ) : null}
                     </span>
                     <Button
                       aria-label={`${t('admit')}: ${entry.displayName}`}
@@ -201,6 +206,11 @@ export function ParticipantsPanel({
                 </Avatar>
                 <span className="min-w-0 flex-1 truncate text-sm">
                   {participant.displayName}
+                  {participant.guest ? (
+                    <Badge variant="outline" className="ml-1.5">
+                      {t('guest_join.badge')}
+                    </Badge>
+                  ) : null}
                   {isSelf ? (
                     <span className="ml-1 text-muted-foreground">
                       ({t('you')})
@@ -320,6 +330,7 @@ export function RoomPermissionToggles({
   isHost: boolean;
 }) {
   const labels = useLargeRoomLabels();
+  const guestCopy = useTranslations('meet.call.guest_join');
   const entries = [
     { key: 'micsLocked', label: 'lock_mics', change: onSettingsChange },
     {
@@ -334,21 +345,42 @@ export function RoomPermissionToggles({
       change: isHost && onSettingsChange,
     },
   ] as const;
-  return entries
-    .filter(({ change }) => !!change)
-    .map(({ key, label }) => (
-      <SettingsField key={key} label={labels(label)} layout="compact">
-        {(field) => (
-          <Switch
-            {...field}
-            checked={settings?.[key] ?? false}
-            onCheckedChange={(value) => {
-              if (key === 'camerasLocked' && onCamerasLockedChange)
-                onCamerasLockedChange(value);
-              else onSettingsChange?.({ [key]: value });
-            }}
-          />
-        )}
-      </SettingsField>
-    ));
+  return (
+    <>
+      {entries
+        .filter(({ change }) => !!change)
+        .map(({ key, label }) => (
+          <SettingsField key={key} label={labels(label)} layout="compact">
+            {(field) => (
+              <Switch
+                {...field}
+                checked={settings?.[key] ?? false}
+                onCheckedChange={(value) => {
+                  if (key === 'camerasLocked' && onCamerasLockedChange)
+                    onCamerasLockedChange(value);
+                  else onSettingsChange?.({ [key]: value });
+                }}
+              />
+            )}
+          </SettingsField>
+        ))}
+      {isHost && onSettingsChange && (
+        <SettingsField
+          label={guestCopy('setting_title')}
+          description={guestCopy('setting_hint')}
+          layout="compact"
+        >
+          {(field) => (
+            <Switch
+              {...field}
+              checked={settings?.allowAnonymousGuests ?? false}
+              onCheckedChange={(value) =>
+                onSettingsChange({ allowAnonymousGuests: value })
+              }
+            />
+          )}
+        </SettingsField>
+      )}
+    </>
+  );
 }

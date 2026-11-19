@@ -115,6 +115,7 @@ export function createMeetPresence(
     ...(canMeetRealtimeManageParticipants(token) && token.role !== 'host'
       ? { canManageParticipants: true }
       : {}),
+    ...(token.guest ? { guest: true as const } : {}),
     accountId: token.accountId,
     avatarUrl: token.avatarUrl,
     displayName: getMeetDisplayName(token),

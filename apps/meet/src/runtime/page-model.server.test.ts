@@ -457,3 +457,48 @@ describe('signed-in document caching', () => {
     expect(mocks.responseHeaders.get('cache-control')).toBeNull();
   });
 });
+
+describe('anonymous guest join', () => {
+  const guestHostPolicy = {
+    ...hostPolicy,
+    settings: { shareNotes: false, allowAnonymousGuests: true },
+  };
+
+  it('offers guest join without caching when the host allows guests', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'site-key');
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret');
+    try {
+      signIn(null);
+      mocks.policy.mockResolvedValue(guestHostPolicy);
+      const model = await loadPageModel(`/r/${code}`);
+      expect(model).toMatchObject({
+        kind: 'guest-join',
+        meetingId,
+        siteKey: 'site-key',
+        returnTo: `/r/${code}`,
+      });
+      expect(model).not.toHaveProperty('meetingTitle', 'Weekly sync');
+      expect(mocks.responseHeaders.get('cache-control')).toBe(
+        'private, no-store'
+      );
+      expect(reads('workspace_meetings')).toBe(1);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('keeps people without an account out when the host plan cannot host', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', 'site-key');
+    vi.stubEnv('TURNSTILE_SECRET_KEY', 'secret');
+    try {
+      signIn(null);
+      mocks.policy.mockResolvedValue(guestHostPolicy);
+      mocks.canHost.mockResolvedValue(false);
+      await expect(loadPageModel(`/r/${code}`)).rejects.toEqual({
+        redirect: `/login?next=${encodeURIComponent(`/r/${code}`)}`,
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+});

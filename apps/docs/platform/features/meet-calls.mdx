@@ -293,6 +293,36 @@ Every non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
 
+### Guests without an account
+
+**Allow guests without an account** is off by default and only the host can turn
+it on, in the People panel or Settings under Permissions & locks. People without
+a Tuturuuu account can then open the meeting link, enter a display name and pass a
+Cloudflare Turnstile check. Every gate is checked on the server, on the join
+request and again on every page load and token refresh: the app is Meet (never
+Parley), the host's plan can host (Plus, Pro, Enterprise, or verified staff), the
+setting is on, the meeting has not ended, and both Turnstile keys are configured.
+Turning the setting off, ending the meeting or a lapsed plan stops guests at their
+next token.
+
+- The server mints a random participant id and stores it with the name in an
+  HttpOnly, host-only `__Host-meet-guest` cookie signed with a key derived from
+  `MEET_REALTIME_TOKEN_SECRET`; it is bound to one meeting and lasts 12 hours.
+- Guests always join through the lobby. **Admit everyone automatically** admits
+  them too; media locks apply to them like any participant; hosts see a Guest badge.
+- Each network may attempt five guest joins per meeting link every ten minutes.
+  Failed checks count. The shared abuse-guard store decides when it is bound;
+  otherwise attempts are counted per isolate, with Turnstile still required.
+- Guests get the call only. Notes, recordings, polls, documents and other
+  account-backed features stay unavailable to them.
+- The Meet Worker needs `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and
+  `TURNSTILE_SECRET_KEY`, with the Meet hostname allowed for that site key. Without
+  both, guest join stays closed. Development uses Cloudflare's test key.
+
+Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
+`guest-rate-limit.test.ts`, the guest `route.test.ts`, `room-guest.test.ts`, and
+the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.
+
 ### Who can read transcripts and notes
 
 Product decision (30 October 2026): a meeting's transcript and AI notes are

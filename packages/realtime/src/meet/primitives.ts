@@ -101,6 +101,8 @@ export const meetRoomLimitsSchema = z
 
 export const meetRealtimeTokenPayloadSchema = z.object({
   accountId: z.uuid().optional(),
+  /** An anonymous, Turnstile-verified guest without a Tuturuuu account. */
+  guest: z.literal(true).optional(),
   admission: meetRealtimeAdmissionSchema.default('open'),
   avatarUrl: z
     .url()
@@ -134,6 +136,7 @@ export const meetRealtimePresenceSchema = z.object({
   miraPrivate: z.boolean().optional(),
   assistantAudio: meetAssistantAudioSchema.optional(),
   accountId: z.uuid().optional(),
+  guest: z.literal(true).optional(),
   avatarUrl: z
     .url()
     .max(2048)
@@ -152,6 +155,7 @@ export type MeetRealtimePresence = z.infer<typeof meetRealtimePresenceSchema>;
 export const meetRealtimeWaitingParticipantSchema = z.object({
   canManageParticipants: z.boolean().optional(),
   accountId: z.uuid().optional(),
+  guest: z.literal(true).optional(),
   avatarUrl: z
     .url()
     .max(2048)

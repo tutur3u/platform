@@ -1,4 +1,5 @@
 import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-ended';
+import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
 import { MeetingPublicInvite } from '@tuturuuu/meet-core/features/call/components/meeting-public-invite';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
@@ -6,6 +7,12 @@ import {
   getMeetCallAccess,
   MeetCallAccessError,
 } from '@tuturuuu/meet-core/features/call/lib/call-access';
+import {
+  getMeetGuestCallAccess,
+  meetGuestTurnstileSiteKey,
+  resolveMeetGuestJoin,
+} from '@tuturuuu/meet-core/features/call/lib/guest-access';
+import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { meetingMetadata } from '@tuturuuu/meet-core/features/call/lib/meeting-metadata';
 import { getMeetingPublicInfo } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
 import { decodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
@@ -13,6 +20,7 @@ import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/s
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
@@ -58,8 +66,22 @@ export default async function RoomPage({
     async (error: unknown) => {
       if (error instanceof MeetCallAccessError) {
         if (error.status === 401) {
+          const guest = await getMeetGuestCallAccess(
+            meetingId,
+            (await cookies()).get(MEET_GUEST_COOKIE)?.value
+          );
+          if (guest) return guest;
           const invite = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
           const info = await getMeetingPublicInfo(code);
+          const siteKey = meetGuestTurnstileSiteKey();
+          if (
+            siteKey &&
+            (await resolveMeetGuestJoin(meetingId)).kind === 'available'
+          )
+            return {
+              guestJoin: { siteKey, title: info?.title },
+              returnTo: invite,
+            };
           if (info) return { publicInvite: info, returnTo: invite };
           redirect(`/login?next=${encodeURIComponent(invite)}`);
         }
@@ -68,6 +90,15 @@ export default async function RoomPage({
       throw error;
     }
   );
+  if ('guestJoin' in access && access.guestJoin)
+    return (
+      <MeetGuestJoin
+        meetingId={meetingId}
+        meetingTitle={access.guestJoin.title}
+        returnTo={access.returnTo}
+        siteKey={access.guestJoin.siteKey}
+      />
+    );
   if ('publicInvite' in access)
     return (
       <MeetingPublicInvite

@@ -3,6 +3,8 @@ import {
   MeetCallAccessError,
 } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { getMeetCallSession } from '@tuturuuu/meet-core/features/call/lib/call-session';
+import { getMeetGuestCallAccess } from '@tuturuuu/meet-core/features/call/lib/guest-access';
+import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
 import { z } from 'zod';
 
@@ -30,9 +32,22 @@ export async function POST(
     const locale =
       (await cookies()).get(LOCALE_COOKIE_NAME)?.value === 'vi' ? 'vi' : 'en';
     const t = await getTranslations({ locale, namespace: 'meet.call' });
-    const { user, meeting, isHost, admission, displayName, avatarUrl } =
-      await getMeetCallAccess(meetingId, t('guest'));
+    const cookieStore = await cookies();
+    const { user, meeting, isHost, admission, displayName, avatarUrl, guest } =
+      await getMeetCallAccess(meetingId, t('guest'))
+        .then((access) => ({ ...access, guest: false }))
+        .catch(async (error: unknown) => {
+          if (!(error instanceof MeetCallAccessError) || error.status !== 401)
+            throw error;
+          const access = await getMeetGuestCallAccess(
+            meetingId,
+            cookieStore.get(MEET_GUEST_COOKIE)?.value
+          );
+          if (!access) throw error;
+          return access;
+        });
     const session = await getMeetCallSession({
+      guest,
       maxRoomDurationSeconds: await getHostMeetingDurationSeconds(
         meeting.creator_id
       ),

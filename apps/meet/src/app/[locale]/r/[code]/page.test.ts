@@ -7,6 +7,19 @@ const mocks = vi.hoisted(() => ({
   publicInfo: vi.fn(),
   session: vi.fn(),
   policy: vi.fn(),
+  guestAccess: vi.fn(),
+  guestJoin: vi.fn(),
+}));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => ({ value: 'guest-cookie' }) }),
+}));
+vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
+  getMeetGuestCallAccess: mocks.guestAccess,
+  resolveMeetGuestJoin: mocks.guestJoin,
+  meetGuestTurnstileSiteKey: () => 'site-key',
+}));
+vi.mock('@tuturuuu/meet-core/features/call/components/guest-join', () => ({
+  MeetGuestJoin: () => null,
 }));
 vi.mock('@tuturuuu/meet-core/features/call/lib/meeting-public-info', () => ({
   getMeetingPublicInfo: mocks.publicInfo,
@@ -77,6 +90,8 @@ function callResult(result: Awaited<ReturnType<typeof RoomPage>>) {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.guestAccess.mockResolvedValue(null);
+  mocks.guestJoin.mockResolvedValue({ kind: 'unavailable' });
   mocks.publicInfo.mockResolvedValue(null);
   mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
   mocks.access.mockResolvedValue({
@@ -233,4 +248,43 @@ it('renders only opted-in public details before sign-in without granting room ac
   );
   expect(result.props).toEqual({ info, returnTo: `/vi/r/${code}` });
   expect(mocks.session).not.toHaveBeenCalled();
+});
+
+it('offers guest join without an account only when the gates allow it', async () => {
+  mocks.access.mockRejectedValue(new MeetCallAccessError(401, 'Sign in'));
+  mocks.guestJoin.mockResolvedValue({ kind: 'available', meeting: {} });
+  const result = await RoomPage({
+    params: Promise.resolve({ code, locale: 'en' }),
+  });
+  expect(result.props).toMatchObject({
+    meetingId: id,
+    siteKey: 'site-key',
+    returnTo: `/r/${code}`,
+  });
+  expect(mocks.session).not.toHaveBeenCalled();
+});
+
+it('opens the call for a verified guest cookie in the lobby only', async () => {
+  mocks.access.mockRejectedValue(new MeetCallAccessError(401, 'Sign in'));
+  mocks.guestAccess.mockResolvedValue({
+    guest: true,
+    user: { id: actorId },
+    meeting: { id, ws_id: id, name: 'Invited call' },
+    isHost: false,
+    canReadWorkspace: false,
+    admission: 'lobby',
+    displayName: 'Hà My',
+    needsDisplayName: false,
+    workspaceSlug: null,
+  });
+  const result = callResult(
+    await RoomPage({ params: Promise.resolve({ code, locale: 'en' }) })
+  );
+  expect(mocks.guestAccess).toHaveBeenCalledWith(id, 'guest-cookie');
+  expect(result.props).toMatchObject({
+    accountId: actorId,
+    canReadWorkspace: false,
+    defaultDisplayName: 'Hà My',
+    leaveHref: '/',
+  });
 });

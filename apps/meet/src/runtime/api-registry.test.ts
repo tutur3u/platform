@@ -145,3 +145,20 @@ it('routes shared document tab commands to the document POST handler', async () 
   expect(await response?.json()).toEqual({ meetingId });
   expect(documentPost).toHaveBeenCalledTimes(1);
 });
+
+it('handles OPTIONS and 405 for /api/meet-call/[meetingId]/guest lazily', async () => {
+  const id = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  const options = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${id}/guest`, {
+      method: 'OPTIONS',
+    })
+  );
+  expect(options?.status).toBe(204);
+  expect(options?.headers.get('Allow')).toBe('POST, DELETE, OPTIONS');
+  const notAllowed = await dispatchMeetEndpoint(
+    new NextRequest(`https://meet.test/api/meet-call/${id}/guest`, {
+      method: 'GET',
+    })
+  );
+  expect(notAllowed?.status).toBe(405);
+});

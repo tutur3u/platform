@@ -28,6 +28,8 @@ export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   ...mediaSettings,
   skipLobby: z.boolean().optional(),
+  /** Paid hosts only: people without an account join after a Turnstile check. */
+  allowAnonymousGuests: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),
@@ -41,6 +43,8 @@ export const meetRoomSettingsSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   ...mediaSettings,
   skipLobby: z.boolean().optional(),
+  /** Paid hosts only: people without an account join after a Turnstile check. */
+  allowAnonymousGuests: z.boolean().optional(),
   admissionClosed: z.boolean().optional(),
   publicLinkPreview: z.boolean().optional(),
   saveChat: z.boolean().optional(),

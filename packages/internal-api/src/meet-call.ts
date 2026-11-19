@@ -27,6 +27,25 @@ export function createMeetCallRealtimeToken(
   });
 }
 
+/** Anonymous guest join: the server verifies Turnstile and sets a signed cookie. */
+export function joinMeetCallAsGuest(
+  meetingId: string,
+  input: { displayName: string; turnstileToken?: string }
+) {
+  return getInternalApiClient().json<{ ok: true }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/guest`,
+    { method: 'POST', body: JSON.stringify(input) }
+  );
+}
+
+/** Forgets this browser's guest identity for the meeting. */
+export function forgetMeetCallGuest(meetingId: string) {
+  return getInternalApiClient().json<{ ok: true }>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/guest`,
+    { method: 'DELETE' }
+  );
+}
+
 /** Persist only the title; leave meeting time and calendar metadata intact. */
 export function updateMeetCallTitle(meetingId: string, name: string) {
   return getInternalApiClient().json<{ name: string }>(

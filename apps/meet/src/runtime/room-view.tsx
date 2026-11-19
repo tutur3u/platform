@@ -1,5 +1,6 @@
 import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-ended';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
+import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { useTranslations } from 'next-intl';
@@ -10,9 +11,21 @@ import { MeetingPublicInvite } from './public-invite-view';
 export function RoomView({
   model,
 }: {
-  model: Extract<MeetPageModel, { kind: 'room' | 'public-invite' }>;
+  model: Extract<
+    MeetPageModel,
+    { kind: 'room' | 'public-invite' | 'guest-join' }
+  >;
 }) {
   const t = useTranslations('meet.call');
+  if (model.kind === 'guest-join')
+    return (
+      <MeetGuestJoin
+        meetingId={model.meetingId}
+        meetingTitle={model.meetingTitle}
+        returnTo={model.returnTo}
+        siteKey={model.siteKey}
+      />
+    );
   if (model.kind === 'public-invite')
     return (
       <MeetingPublicInvite

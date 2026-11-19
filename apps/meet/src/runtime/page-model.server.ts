@@ -9,6 +9,12 @@ import {
   getMeetCallAccess,
   MeetCallAccessError,
 } from '@tuturuuu/meet-core/features/call/lib/call-access';
+import {
+  getMeetGuestCallAccess,
+  meetGuestTurnstileSiteKey,
+  resolveMeetGuestJoin,
+} from '@tuturuuu/meet-core/features/call/lib/guest-access';
+import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
 import {
   type MeetingPublicInfo,
@@ -105,12 +111,37 @@ async function roomModel(code: string, locale: string, url: URL) {
     canonical,
     image: `${canonical}/preview?lang=${locale}`,
   });
-  const access = await getMeetCallAccess(meetingId, t('guest'), sources).catch(
-    async (error: unknown) => {
-      const info = await infoPromise;
+  const guestSources = {
+    ...sources,
+    isParleySession: () => sources.isParleySession(false),
+  };
+  const access = await getMeetCallAccess(meetingId, t('guest'), sources)
+    .then((signedIn) => ({ ...signedIn, guest: false as const }))
+    .catch(async (error: unknown) => {
       if (error instanceof MeetCallAccessError) {
         if (error.status === 401) {
+          const guest = await getMeetGuestCallAccess(
+            meetingId,
+            (await cookies()).get(MEET_GUEST_COOKIE)?.value,
+            guestSources
+          );
+          if (guest) {
+            // Guest HTML carries a per-browser identity; never cache it.
+            markSignedInDocument();
+            return guest;
+          }
+          const info = await infoPromise;
           const returnTo = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
+          const siteKey = meetGuestTurnstileSiteKey();
+          if (
+            siteKey &&
+            (await resolveMeetGuestJoin(meetingId, guestSources)).kind ===
+              'available'
+          ) {
+            // Guest join follows live host settings; never serve a stale copy.
+            markSignedInDocument();
+            return { guestJoin: { meetingId, siteKey }, returnTo, info };
+          }
           if (info) return { publicInvite: info, returnTo, info };
           throw redirect({
             href: `/login?next=${encodeURIComponent(returnTo)}`,
@@ -119,8 +150,18 @@ async function roomModel(code: string, locale: string, url: URL) {
         if (error.status === 403 || error.status === 404) throw notFound();
       }
       throw error;
-    }
-  );
+    });
+  if ('guestJoin' in access && access.guestJoin) {
+    const { info, guestJoin, returnTo } = access;
+    return {
+      kind: 'guest-join' as const,
+      meetingId: guestJoin.meetingId,
+      siteKey: guestJoin.siteKey,
+      meetingTitle: info?.title,
+      returnTo,
+      meta: roomMeta(info),
+    };
+  }
   if ('publicInvite' in access) {
     const { info, ...invite } = access;
     return { kind: 'public-invite' as const, ...invite, meta: roomMeta(info) };

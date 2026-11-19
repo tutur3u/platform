@@ -11,7 +11,7 @@ import { signMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 
 const TOKEN_TTL_MS = 10 * 60_000;
 
-function getTokenSecret() {
+export function getMeetRealtimeTokenSecret() {
   const secret = process.env.MEET_REALTIME_TOKEN_SECRET;
 
   if (secret?.trim()) return secret.trim();
@@ -46,6 +46,7 @@ export async function getMeetCallSession({
   workspaceMember = false,
   avatarUrl,
   admission = 'open',
+  guest = false,
   isHost,
   meetingId,
   userId,
@@ -58,6 +59,8 @@ export async function getMeetCallSession({
   workspaceMember?: boolean;
   avatarUrl?: string;
   admission?: MeetRealtimeAdmission;
+  /** Anonymous guests always wait in the lobby and never host. */
+  guest?: boolean;
   isHost: boolean;
   meetingId: string;
   userId: string;
@@ -68,9 +71,10 @@ export async function getMeetCallSession({
   const deviceUserId = deviceId
     ? await meetDeviceIdentity(userId, deviceId)
     : userId;
-  const role: MeetRealtimeRole = isHost ? 'host' : 'speaker';
+  const role: MeetRealtimeRole = isHost && !guest ? 'host' : 'speaker';
   const payload = meetRealtimeTokenPayloadSchema.parse({
-    admission: isHost ? 'open' : admission,
+    admission: role === 'host' ? 'open' : guest ? 'lobby' : admission,
+    ...(guest ? { guest: true } : {}),
     avatarUrl,
     displayName,
     exp: Math.floor((Date.now() + TOKEN_TTL_MS) / 1000),
@@ -103,7 +107,7 @@ export async function getMeetCallSession({
     displayName,
     realtimeUrl: getMeetRealtimeUrl(),
     role,
-    token: signMeetRealtimeToken(payload, getTokenSecret()),
+    token: signMeetRealtimeToken(payload, getMeetRealtimeTokenSecret()),
   };
 }
 

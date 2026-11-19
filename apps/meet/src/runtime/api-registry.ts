@@ -26,6 +26,7 @@ const api9 = () => import('../app/api/meet-call/[meetingId]/assistant/route');
 const api10 = () => import('../app/api/meet-call/[meetingId]/costs/route');
 const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
+const apiGuest = () => import('../app/api/meet-call/[meetingId]/guest/route');
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
 const apiQuizArena = () =>
   import('../app/api/meet-call/[meetingId]/quiz-arena/route');
@@ -195,6 +196,18 @@ export const meetEndpoints: Endpoint[] = [
             meetingId: routeParam(params, 'meetingId'),
           }),
         }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/guest',
+    methods: {
+      POST: async (request, params) =>
+        (await apiGuest()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      DELETE: async (request) => (await apiGuest()).DELETE(request),
     },
   },
   {

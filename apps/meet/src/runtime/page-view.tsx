@@ -45,6 +45,7 @@ export function PageView({ model }: { model: MeetPageModel }) {
         </Suspense>
       );
     case 'public-invite':
+    case 'guest-join':
     case 'room':
       return (
         <Suspense fallback={<Pending />}>

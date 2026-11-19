@@ -84,6 +84,7 @@ export function admitOrHold(
           ...(canMeetRealtimeManageParticipants(token)
             ? { canManageParticipants: true }
             : {}),
+          ...(token.guest ? { guest: true as const } : {}),
           accountId: token.accountId,
           avatarUrl: token.avatarUrl,
           displayName: lobbyDisplayName(getMeetDisplayName(token)),
