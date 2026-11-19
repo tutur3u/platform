@@ -22,6 +22,30 @@ test('accepts supported permission helpers at call sites', () => {
     );
   }
 });
+test('accepts a supported helper called with a type argument', () => {
+  assert.equal(
+    missingPermissionHelper('export const GET = withSessionAuth<Params>(fn);'),
+    false
+  );
+  assert.equal(
+    missingPermissionHelper(
+      'export const GET = withSessionAuth<{ wsId: string }>(fn);'
+    ),
+    false
+  );
+});
+
+test('a generic reference without a call cannot hide an unguarded route', () => {
+  for (const source of [
+    'const handler = withSessionAuth<Params>;',
+    'const handler = unrelated<Params>(fn);',
+    'const text = "withSessionAuth<Params>(fn)";',
+    '// withSessionAuth<Params>(fn)',
+  ]) {
+    assert.equal(missingPermissionHelper(source), true);
+  }
+});
+
 test('comments, strings and bare imports cannot hide an unguarded route', () => {
   for (const prefix of [
     '// getPermissions({});\n',

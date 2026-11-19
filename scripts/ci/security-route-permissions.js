@@ -13,7 +13,7 @@ function codeOnly(source) {
 
 function missingPermissionHelper(source) {
   const code = codeOnly(source);
-  return !/\b(?:getPermissions|withSessionAuth|withWorkspaceAuth|requireWorkspacePermission)\s*\(/.test(
+  return !/\b(?:getPermissions|withSessionAuth|withWorkspaceAuth|requireWorkspacePermission)(?:<[^<>]+>)?\s*\(/.test(
     code
   );
 }
