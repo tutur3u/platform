@@ -21,6 +21,7 @@ export default defineBridgeAppConfig<FinanceEnvironment>({
   mounts: financeNativeMounts(rootHost),
   wrapResponse(response, { request }) {
     const secured = new Response(response.body, response);
+    secured.headers.set('x-tuturuuu-runtime', 'native');
     // Matches Vercel Finance, which sends this on every response.
     secured.headers.set('X-Robots-Tag', 'noindex, nofollow, nosnippet');
     const pathname = new URL(request.url).pathname;

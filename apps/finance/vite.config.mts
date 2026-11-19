@@ -92,6 +92,16 @@ ${code}`,
       tailwindcss(),
     ],
     environments: {
+      ssr: {
+        build: {
+          rolldownOptions: { output: { sourcemapExcludeSources: true } },
+        },
+      },
+      rsc: {
+        build: {
+          rolldownOptions: { output: { sourcemapExcludeSources: true } },
+        },
+      },
       client: { define: bridge.clientDefine(command) },
     },
     resolve: { alias: bridge.alias },

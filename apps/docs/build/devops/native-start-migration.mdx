@@ -302,6 +302,43 @@ its session, origin and cookie-isolation evidence. A 404 on an unadmitted apex
 host is a host-fence result, not evidence that the root build-info route is
 missing. Keep production publication held until the cutover gates are met.
 
+### Finance production publication qualification
+
+Build Finance with `VITE_FINANCE_NATIVE_PROFILE=production` and the production
+public Supabase publishable key. The profile pins `NEXT_PUBLIC_APP_URL` and
+`FINANCE_APP_URL` to `https://finance.tuturuuu.com` and the Web origin to
+`https://tuturuuu.com`; conflicting public URLs fail before bundling. Build its
+workspace suppliers, generate exact-source build metadata, then run
+`bun run build:cloudflare` in `apps/finance`. The ordinary package `build`
+command produces the separate Next deployment.
+
+Run the Finance artifact helper's `config` validation with the production
+profile and a writable `GITHUB_OUTPUT`, then prepare the shared production seal
+with `wave1-native-artifact.mjs`. Run `wave1-native-runtime.mjs` and the
+publisher's token-free `dry-run` with a canonical `RUNNER_TEMP`. The publication
+profile disables source-map upload. Finance omits embedded supplier source text
+from SSR and RSC maps, retaining mappings and paths. Retained diagnostic maps
+are distinct from uploaded maps; keep their total below 60 MiB and retain the exact CLI raw/gzip
+measurements from the dry run. Hosted startup CPU still requires provider
+acceptance.
+
+With an emitted production build, run the additional focused probes:
+
+```sh
+CI=true CI_SOURCE_SHA="$(git rev-parse HEAD)" VITE_FINANCE_NATIVE_PROFILE=production \
+  node --test apps/finance/cloudflare/production-publication.runtime.mjs
+```
+
+The probes require signed-out `/` and a protected workspace to return 307 to
+central `/login`, with a Finance `/verify-token` return URL preserving `nextUrl`.
+They check actual static bytes, a missing static asset's 404, outbound isolation,
+the server-map budget and forbidden development defaults. They use disposable
+runtime bindings and do not qualify real sign-in, session refresh or production
+supplier access. Compare the root status and complete Location against the
+serving deployment before attaching the public route. Every native response
+carries `x-tuturuuu-runtime: native` for route readback, including redirects,
+static assets and errors.
+
 ### Request reader qualification
 
 Use `@tuturuuu/start-bridge/request-context/reader` for request readers without

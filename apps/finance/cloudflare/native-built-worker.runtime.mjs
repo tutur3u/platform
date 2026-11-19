@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import test from 'node:test';
 import './native-signed-ssr-fixture.test.mjs';
+import './production-publication.runtime.mjs';
 import {
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
