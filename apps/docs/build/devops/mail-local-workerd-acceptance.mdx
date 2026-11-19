@@ -1,0 +1,128 @@
+---
+title: Mail local workerd acceptance
+description: Run the built Mail Worker in a local workerd against a staging Supabase project and a fixture mailbox, with every outbound request decided in process.
+---
+
+`apps/mail/cloudflare/acceptance/run.mjs` starts the emitted Mail Worker in a
+local workerd, through the same `unstable_startWorker` call the CI emitted-Worker
+acceptance uses (`scripts/ci/wave1-native-runtime.mjs`). It then exercises login,
+inbox, thread, compose, the three paste shapes, send, attachments and inline CID
+images over HTTP and writes a JSON evidence file. It runs on the Studio, never on
+the M4, and builds nothing itself.
+
+## What is real and what is a fixture
+
+| Boundary | State |
+| --- | --- |
+| Mail Worker bytes, routing, proxy, route handlers, response policy | Real: the emitted bundle, started in workerd. |
+| Supabase | Real: the staging project named by `NEXT_PUBLIC_SUPABASE_URL`. Sign-in, JWT checks, queries and writes all reach it. The harness refuses the production project. |
+| Login | The Supabase password sign-in is real and the Mail proxy validates the resulting cookie. The Web login page and its `verify-token` redirect are not exercised. |
+| Object store | Fixture: an in-process S3 handler (`fake-s3.mjs`) answers the Worker's fetches to `MAIL_R2_ENDPOINT` for PutObject, GetObject (with Range) and DeleteObject. No real R2 bucket is involved. |
+| Inbound mail | Fixture: signed events posted to `/api/v1/webhooks/mail/cloudflare`, as the Email Routing Worker would send them. The signature, schema and database ingest are real; MIME parsing is not run. |
+| Send | Fixture: the Cloudflare send API answers 401 in process. The Worker holds only the inert `MAIL_CLOUDFLARE_API_TOKEN` placeholder. |
+| Paste events | Not run: the handlers execute in a browser and are covered by `mail-composer-paste.test.ts`. The harness drives the server side each shape ends in. |
+| Access JWT, custom domain, DNS | Not exercised: the production profile does not verify Access and the Worker is reached in process, not through a hostname. |
+
+The Worker is reached with `worker.fetch` and an origin override, so its request
+host is `mail.tuturuuu.com` (the production profile's root host) and no DNS, port
+or TLS is involved. That host is also one the Supabase cookie policy accepts.
+
+Every outbound request from the Worker passes through the harness: the object
+store and send API fixtures answer, Supabase is forwarded, and any other host is
+denied with status 599 and listed in the evidence. A denied host such as
+`tuturuuu.com` means a page or route reached for Web, which this run does not
+provide.
+
+## Prerequisites
+
+- A checkout of the exact source SHA on the Studio, with `bun install --frozen-lockfile --ignore-scripts` done.
+- A build of that SHA with `MAIL_DEPLOYMENT_PROFILE=production` and the staging Supabase public values, so the Supabase project baked into the bundle is the staging one. This differs from the sealed CI artifact only in those baked public values.
+- A staging fixture: a user able to sign in, a workspace with the mailbox at `MAIL_ACCEPT_MAILBOX_ADDRESS`, an active Cloudflare-inbound mail domain row for `MAIL_ACCEPT_DOMAIN` with the Cloudflare outbound provider, and no customer data.
+- The inert placeholder `MAIL_CLOUDFLARE_API_TOKEN` (prefix `inert-staging-`), the staging `MAIL_CLOUDFLARE_INGEST_SECRET`, and the other staging secret names the Mail profile lists. All are read from a 0600 custody env file; none is written to the repository or the evidence.
+
+## Environment names
+
+| Name | Purpose |
+| --- | --- |
+| `MAIL_ACCEPT_SHA` | Full source SHA; the Worker must report it from `/api/build-info`. |
+| `MAIL_ACCEPT_PROFILE` | Build profile; defaults to `production`. |
+| `MAIL_ACCEPT_APP_ROOT` | Mail app directory; defaults to `apps/mail`. |
+| `MAIL_ACCEPT_HOST` | Request host seen by the Worker; defaults to the profile's host. |
+| `MAIL_ACCEPT_LOGIN_EMAIL`, `MAIL_ACCEPT_LOGIN_PASSWORD` | Fixture user. |
+| `MAIL_ACCEPT_WS_ID` | Workspace id or alias; defaults to `personal`. |
+| `MAIL_ACCEPT_MAILBOX_ADDRESS`, `MAIL_ACCEPT_DOMAIN` | Fixture mailbox and its domain. |
+| `MAIL_ACCEPT_RECIPIENT` | Send recipient; defaults to `acceptance-recipient@<domain>`. |
+| `MAIL_ACCEPT_EVIDENCE` | Evidence output path; defaults to `mail-acceptance-evidence.json`. |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` | Staging Supabase. |
+| `TUTURUUU_APP_COORDINATION_SECRET`, `MAIL_CONNECTED_ACCOUNTS_KEY`, `MAIL_CLOUDFLARE_INGEST_SECRET`, `MAIL_CLOUDFLARE_API_TOKEN` | Staging secrets. `MAIL_R2_*` and `MAIL_CLOUDFLARE_ACCOUNT_ID` default to fixture values; `MAIL_R2_BUCKET_NAME` defaults to the staging bucket name. |
+
+## Commands on the Studio
+
+Run one queued job so the build, seal and acceptance share a single slot. The
+custody file path is the one named in the fixture grant.
+
+```bash
+export PATH="$HOME/tools/pinned-24.22.3-1.4.4/bin:$PATH"
+TTR="$HOME/.bun/install/global/node_modules/tuturuuu/bin/ttr.cjs"
+cd "$HOME/.t3/worktrees/d394-mail-gate"
+node "$TTR" resources run -- bash -c '
+  set -euo pipefail
+  set -a; . "$MAIL_ACCEPT_ENV_FILE"; set +a
+  export MAIL_DEPLOYMENT_PROFILE=production
+  export MAIL_ACCEPT_SHA="$(git rev-parse HEAD)"
+  bun turbo:local run build --filter=@tuturuuu/mail --concurrency=2
+  node scripts/ci/wave1-native-artifact.mjs prepare mail production "$MAIL_ACCEPT_SHA" wave1-ci-fixture
+  node apps/mail/cloudflare/acceptance/run.mjs
+'
+```
+
+The process exits 0 only when every step passed. Re-running requires a clean
+build output because `prepare` refuses an existing publication profile.
+
+## Cleanup
+
+The harness removes its scratch copy and stops workerd on exit. In the Studio
+worktree, remove the rebuildable output before another run:
+
+```bash
+rm -rf apps/mail/dist apps/mail/.wrangler apps/mail/.void apps/mail/wave1-artifact.json
+```
+
+The harness binds no port and starts no server, so nothing else needs stopping.
+Messages and drafts it creates in the staging project carry the run id in their
+subjects and are fixture data.
+
+## Steps and assertions
+
+1. Build identity: `/api/build-info` reports the Mail app, the source SHA and the profile.
+2. Anonymous gate: an unauthenticated page answers 307 and an unauthenticated API call answers 401 with no cookie set.
+3. Login: Supabase password sign-in, the cookie in the `@supabase/ssr` layout, then the inbox page answers 200.
+4. Bootstrap lists the fixture mailbox.
+5. Inbound: a domain check, three signed ingests that import once and deduplicate on replay, and a forged and an unsigned event that answer 401.
+6. Inbox and thread lists contain the three messages.
+7. Thread and message detail return the expected attachments; the raw source matches its stored hash.
+8. Attachment download: bytes match, the headers are `attachment`, `nosniff`, `private, no-store`, a sandbox CSP and `SAMEORIGIN`; a Range read answers 206.
+9. Inline CID image: served inline as `image/png` with the same header policy and matching bytes.
+10. Compose and paste shapes: a draft, an inline image upload, a file attachment, and a rich HTML body whose embedded image is uploaded and referenced; the draft carries one attachment and two inline images.
+11. Send under the inert provider: the response is 502 `MAIL_SEND_UNCONFIRMED`, the provider is contacted exactly once, the message stays in the durable `sending` state, and a replay answers 200 without contacting the provider again. This is the fail-closed behavior: no retry and no fallback transport.
+12. Document and API headers: `X-Frame-Options: DENY`, `Cache-Control: private, no-store`, `X-Robots-Tag` and a content security policy on the document.
+13. Egress: no host outside the object-store fixture, the send fixture and Supabase was contacted.
+
+The evidence JSON lists each step with its status, header names, counts and
+hashes. It never contains a message body, a header value or a secret.
+
+## Browser paste
+
+The paste event handlers run in a browser, which this harness does not provide:
+the Worker is reached in process, with no browser-reachable origin. Their
+behavior is covered by `mail-composer-paste.test.ts`, and the harness covers the
+server side of each shape. A real browser paste check belongs to the hosted
+staging acceptance.
+
+## Remaining hosted-only dependencies
+
+- Cloudflare Access verification and the staging custom domain run only in the staging artifact, behind the hosted staging publication.
+- A real R2 bucket and its S3 credentials.
+- A real Cloudflare Email Sending call. The first real send is verified after cutover with the production token and a fleet-owned recipient.
+- The Web login page, `verify-token` and any Web-owned API the Mail pages call.
+- The route attach and the Vercel alias rollback.

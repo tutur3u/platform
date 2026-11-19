@@ -198,6 +198,7 @@
                   "build/devops/standalone-api",
                   "build/devops/native-start-migration",
                   "build/devops/wave1-cutover-packets",
+                  "build/devops/mail-local-workerd-acceptance",
                   "build/devops/mastermind-web",
                   "build/devops/tanstack-cloudflare-migration-inventory",
                   "build/devops/worker-services-reconciliation",
