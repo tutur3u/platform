@@ -85,7 +85,7 @@ class ShellPage extends StatefulWidget {
   final String? routePattern;
   final bool enableDebugLogs;
 
-  /// Unread count for the Alerts destination in the dock and rail.
+  /// Unread count for the Notifications destination in the dock and rail.
   final ValueListenable<int>? badgeCount;
 
   /// Keeps the selected root body mounted for a destination it owns.

@@ -54,7 +54,7 @@ void registerShellViewportChecks(
         final narrow = size.width == 320;
         final labels = narrow
             ? ['Home', 'Apps', 'More']
-            : ['Home', 'Apps', 'Mira', 'Alerts', 'Profile'];
+            : ['Home', 'Apps', 'Mira', 'Notifications', 'Profile'];
         for (final label in labels) {
           final node = tester.getSemantics(
             find
@@ -153,7 +153,7 @@ void registerShellViewportChecks(
         if (narrow) {
           await tester.tap(find.byKey(shellDockMoreKey));
           await tester.pumpAndSettle();
-          for (final label in ['Mira', 'Alerts', 'Profile']) {
+          for (final label in ['Mira', 'Notifications', 'Profile']) {
             expect(find.text(label), findsOneWidget);
           }
         }

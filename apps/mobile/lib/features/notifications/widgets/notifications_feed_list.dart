@@ -16,9 +16,15 @@ import 'package:mobile/widgets/pending_sync_frame.dart';
 /// Distance from the end of the feed that starts loading the next page.
 const double _loadMoreThreshold = 320;
 
-/// The inbox feed: day groups under sticky Today / Yesterday / Earlier
-/// headers, pull to refresh and infinite scroll, with skeleton, empty,
-/// offline and error states.
+/// Space between notification cards within a day group.
+const double notificationCardGap = AppSpacing.sm;
+
+/// Space after a day group's last card, before the next day header.
+const double notificationGroupGap = AppSpacing.md;
+
+/// The inbox feed: day groups of separated cards under sticky Today /
+/// Yesterday / Earlier headers, pull to refresh and infinite scroll, with
+/// skeleton, empty, offline and error states.
 class NotificationsFeedList extends StatefulWidget {
   const NotificationsFeedList({
     required this.tab,
@@ -199,8 +205,8 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
               AppIllustrationKind.notificationsClear,
             ),
             title: switch (widget.tab) {
-              NotificationsTab.all => l10n.notificationsAllCaughtUp,
-              NotificationsTab.inbox => l10n.notificationsInboxEmptyTitle,
+              NotificationsTab.all ||
+              NotificationsTab.inbox => l10n.notificationsAllCaughtUp,
               NotificationsTab.archive => l10n.notificationsReadEmptyTitle,
             },
           ),
@@ -225,15 +231,17 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
                   label: group.bucket.label(l10n),
                 ),
               ),
-              SliverList.separated(
-                itemCount: group.items.length,
-                itemBuilder: (context, index) => _row(group.items[index]),
-                separatorBuilder: (context, index) => const Divider(
-                  height: 1,
-                  indent:
-                      AppLayout.rowHorizontalPadding +
-                      notificationInboxLeadingSize +
-                      AppLayout.rowLeadingGap,
+              SliverPadding(
+                padding: const EdgeInsets.only(
+                  top: AppSpacing.xs,
+                  bottom: notificationGroupGap,
+                ),
+                sliver: SliverList.separated(
+                  itemCount: group.items.length,
+                  itemBuilder: (context, index) =>
+                      _row(context, group.items[index]),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: notificationCardGap),
                 ),
               ),
             ],
@@ -249,13 +257,15 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
     ];
   }
 
-  Widget _row(AppNotification notification) => PendingSyncFrame(
-    workspaceId: 'personal',
-    feature: 'notifications',
-    entityId: notification.id,
-    relatedEntityIds: [
-      if (notification.entityId != null) notification.entityId!,
-    ],
-    child: widget.itemBuilder(notification),
-  );
+  Widget _row(BuildContext context, AppNotification notification) =>
+      PendingSyncFrame(
+        workspaceId: 'personal',
+        borderRadius: notificationCardRadius(context),
+        feature: 'notifications',
+        entityId: notification.id,
+        relatedEntityIds: [
+          if (notification.entityId != null) notification.entityId!,
+        ],
+        child: widget.itemBuilder(notification),
+      );
 }

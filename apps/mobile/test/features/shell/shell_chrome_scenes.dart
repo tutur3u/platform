@@ -45,7 +45,7 @@ List<ShellDockEntry> _destinations() => [
     ('home', 'Home', LucideIcons.house),
     ('apps', 'Apps', LucideIcons.layoutGrid),
     ('assistant', 'Mira', LucideIcons.sparkles),
-    ('notifications', 'Alerts', LucideIcons.bell),
+    ('notifications', 'Notifications', LucideIcons.bell),
     ('profile', 'Profile', LucideIcons.circleUserRound),
   ])
     ShellDockEntry(key: ValueKey(id), label: label, glyph: Icon(icon)),
@@ -85,7 +85,7 @@ class ShellChromeSceneView extends StatelessWidget {
       _ => null,
     };
     final title = switch (scene) {
-      ShellChromeScene.notifications => 'Alerts',
+      ShellChromeScene.notifications => 'Notifications',
       ShellChromeScene.dockBack ||
       ShellChromeScene.overflow ||
       ShellChromeScene.overflowSheet => 'Finance',

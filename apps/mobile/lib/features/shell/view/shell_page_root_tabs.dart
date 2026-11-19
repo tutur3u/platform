@@ -72,7 +72,7 @@ extension _ShellPageRootTabs on _ShellPageState {
         ShellRootTab.home => l10n.navHome,
         ShellRootTab.assistant => l10n.navMira,
         ShellRootTab.apps => l10n.navApps,
-        ShellRootTab.notifications => l10n.navAlerts,
+        ShellRootTab.notifications => l10n.notificationsTitle,
         ShellRootTab.profile => l10n.profileTitle,
       },
     ),

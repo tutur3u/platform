@@ -17,11 +17,11 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The Alerts root tab: the notifications inbox with All / Unread / Read
+/// The Notifications root tab: the inbox with Unread / All / Read
 /// filters, plus Mark all as read and notification settings in the top bar.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({
-    this.initialTab = NotificationsTab.all,
+    this.initialTab = NotificationsTab.inbox,
     this.repository,
     this.now,
     super.key,
@@ -32,6 +32,8 @@ class NotificationsPage extends StatefulWidget {
       repository = null,
       now = null;
 
+  /// Filter shown on open. Unread by default, so new activity leads and
+  /// everything else stays one tap away under All.
   final NotificationsTab initialTab;
 
   /// Caller-owned repository for render tests; the page disposes only the
@@ -122,7 +124,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 builder: (context, state) => ShellChromeActions(
                   ownerId: 'notifications-root',
                   onResetSection: () =>
-                      setState(() => _tab = NotificationsTab.all),
+                      setState(() => _tab = NotificationsTab.inbox),
                   locations: const {
                     Routes.notifications,
                     Routes.notificationsArchive,

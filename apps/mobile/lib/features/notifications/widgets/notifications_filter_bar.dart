@@ -3,8 +3,8 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Mutually exclusive All / Unread / Read feed filters. Unread carries the
-/// current unread count.
+/// Mutually exclusive Unread / All / Read feed filters. Unread, the default,
+/// leads and carries the current unread count.
 class NotificationsFilterBar extends StatelessWidget {
   const NotificationsFilterBar({
     required this.selected,
@@ -16,6 +16,12 @@ class NotificationsFilterBar extends StatelessWidget {
   final NotificationsTab selected;
   final int unreadCount;
   final ValueChanged<NotificationsTab> onSelected;
+
+  static const List<NotificationsTab> order = [
+    NotificationsTab.inbox,
+    NotificationsTab.all,
+    NotificationsTab.archive,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +38,8 @@ class NotificationsFilterBar extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final tab in NotificationsTab.values) ...[
-            if (tab != NotificationsTab.values.first)
-              const SizedBox(width: AppSpacing.sm),
+          for (final tab in order) ...[
+            if (tab != order.first) const SizedBox(width: AppSpacing.sm),
             AppChip(
               key: ValueKey('notifications-filter-${tab.name}'),
               label: Text(label(tab)),

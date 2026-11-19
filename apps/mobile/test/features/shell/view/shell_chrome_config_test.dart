@@ -8,7 +8,7 @@ import '../../../helpers/helpers.dart';
 
 void main() {
   for (final (locale, title) in const [
-    (Locale('en'), 'Alerts'),
+    (Locale('en'), 'Notifications'),
     (Locale('vi'), 'Thông báo'),
   ]) {
     testWidgets('Notifications is titled like its dock tab in $locale', (
@@ -27,7 +27,7 @@ void main() {
                   context,
                   Routes.notifications,
                 ).title;
-                dockLabel = context.l10n.navAlerts;
+                dockLabel = context.l10n.notificationsTitle;
                 return const SizedBox.shrink();
               },
             ),

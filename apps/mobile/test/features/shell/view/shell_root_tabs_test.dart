@@ -170,7 +170,7 @@ List<Key?> _expectIconSlots(WidgetTester tester, int count) {
 
 void main() {
   for (final size in [const Size(390, 844), const Size(1024, 768)]) {
-    testWidgets('Alerts updates its badge in place at ${size.width}dp', (
+    testWidgets('Notifications updates its badge in place at ${size.width}dp', (
       tester,
     ) async {
       final count = ValueNotifier(0);
@@ -211,7 +211,13 @@ void main() {
         ShellRootTab.values.map((tab) => tab.key),
       );
       expect(find.byKey(shellDockMoreKey), findsNothing);
-      for (final label in ['Home', 'Apps', 'Mira', 'Alerts', 'Profile']) {
+      for (final label in [
+        'Home',
+        'Apps',
+        'Mira',
+        'Notifications',
+        'Profile',
+      ]) {
         expect(
           find.descendant(of: dock, matching: find.bySemanticsLabel(label)),
           findsOneWidget,

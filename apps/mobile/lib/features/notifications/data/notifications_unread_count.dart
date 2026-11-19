@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 /// App-wide unread notification count for the current actor and workspace.
 ///
 /// Every notifications cubit publishes its count here, so badges outside the
-/// inbox (the dock Alerts icon, the top-bar bell) follow reads, mark-all-read
-/// and refreshes without owning a cubit of their own.
+/// inbox (the dock Notifications icon, the top-bar bell) follow reads,
+/// mark-all-read and refreshes without owning a cubit of their own.
 class NotificationsUnreadCount extends ValueNotifier<int> {
   NotificationsUnreadCount._() : super(0);
 

@@ -11,8 +11,9 @@ import 'package:mobile/features/notifications/widgets/notifications_feed_list.da
 import 'package:mobile/features/notifications/widgets/notifications_filter_bar.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 
-/// The Alerts inbox body: feed filters above a day-grouped feed. Cached rows
-/// render at once and refresh on open, on push events and on pull.
+/// The Notifications inbox body: feed filters above a day-grouped feed.
+/// Cached rows render at once and refresh on open, on push events and on
+/// pull.
 class NotificationsInbox extends StatefulWidget {
   const NotificationsInbox({
     required this.actions,

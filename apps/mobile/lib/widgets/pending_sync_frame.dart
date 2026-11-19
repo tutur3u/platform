@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
+import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/pending_sync_outline_painter.dart';
 
-/// Makes a local edit distinguishable from a server-confirmed item.
+/// Makes a local edit distinguishable from a server-confirmed item: the item
+/// is dimmed under a muted dashed outline, with its sync status below.
 class PendingSyncFrame extends StatelessWidget {
   const PendingSyncFrame({
     required this.workspaceId,
@@ -11,6 +15,7 @@ class PendingSyncFrame extends StatelessWidget {
     required this.child,
     this.feature,
     this.relatedEntityIds = const [],
+    this.borderRadius,
     super.key,
   });
 
@@ -19,6 +24,10 @@ class PendingSyncFrame extends StatelessWidget {
   final String? feature;
   final List<String> relatedEntityIds;
   final Widget child;
+
+  /// Corners of [child], so the outline stays concentric with them. Defaults
+  /// to the card radius.
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -58,11 +67,7 @@ class PendingSyncFrame extends StatelessWidget {
       }
       if (mutation == null) return child;
       final status = mutation.status;
-      final color = switch (status) {
-        PendingMutationStatus.queued => Theme.of(context).colorScheme.primary,
-        PendingMutationStatus.conflict => Theme.of(context).colorScheme.error,
-        PendingMutationStatus.failed => Theme.of(context).colorScheme.error,
-      };
+      final colors = AppTokens.of(context).colorScheme;
       final label = switch (status) {
         PendingMutationStatus.queued =>
           OfflineMutationQueue.instance.syncingIds.value.contains(mutation.id)
@@ -73,58 +78,40 @@ class PendingSyncFrame extends StatelessWidget {
       };
       return Semantics(
         label: label,
-        child: CustomPaint(
-          foregroundPainter: _DashedBorderPainter(color),
-          child: Opacity(
-            opacity: 0.64,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                child,
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-                  child: Text(
-                    label,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelSmall?.copyWith(color: color),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomPaint(
+              foregroundPainter: PendingSyncOutlinePainter(
+                color: PendingSyncOutlinePainter.colorFor(colors, status),
+                outerRadius:
+                    borderRadius ??
+                    BorderRadius.circular(AppTokens.of(context).shapes.card),
+              ),
+              child: Opacity(opacity: 0.64, child: child),
+            ),
+            ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                  AppSpacing.md,
+                  AppSpacing.xs,
+                ),
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: status == PendingMutationStatus.queued
+                        ? colors.mutedForeground
+                        : colors.destructive,
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       );
     },
   );
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  const _DashedBorderPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(12)),
-      );
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    for (final metric in path.computeMetrics()) {
-      for (var distance = 0.0; distance < metric.length; distance += 10) {
-        canvas.drawPath(
-          metric.extractPath(distance, (distance + 5).clamp(0, metric.length)),
-          paint,
-        );
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedBorderPainter oldDelegate) =>
-      oldDelegate.color != color;
 }

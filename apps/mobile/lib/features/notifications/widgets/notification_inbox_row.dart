@@ -11,9 +11,10 @@ import 'package:mobile/l10n/l10n.dart';
 /// Leading tone tile size of an inbox row.
 const double notificationInboxLeadingSize = 40;
 
-/// One inbox notification: a source tile, title, one-line body, relative
-/// time and an unread dot. Tapping opens it; swiping toward the end edge
-/// toggles read. Open workspace invites add inline Accept and Decline.
+/// One inbox notification as a bordered card: a source tile, title, one-line
+/// body, relative time and an unread dot. Tapping opens it; swiping toward
+/// the end edge toggles read. Open workspace invites add inline Accept and
+/// Decline.
 class NotificationInboxRow extends StatelessWidget {
   const NotificationInboxRow({
     required this.notification,
@@ -161,25 +162,43 @@ class NotificationInboxRow extends StatelessWidget {
       ),
     );
 
-    return AppSwipeActions(
-      enabled: !isPending,
-      leading: AppSwipeAction(
-        key: ValueKey('notification-swipe-${notification.id}'),
-        label: unread
-            ? l10n.notificationsMarkRead
-            : l10n.notificationsMarkUnread,
-        icon: unread ? LucideIcons.checkCheck : LucideIcons.mailOpen,
-        tone: AppTone.info,
-        onPressed: onToggleRead,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: ValueKey('notification-row-${notification.id}'),
-          onTap: isPending ? null : onOpen,
-          child: content,
+    final radius = notificationCardRadius(context);
+    final solid = MediaQuery.highContrastOf(context);
+    return ClipRRect(
+      borderRadius: radius,
+      child: AppSwipeActions(
+        enabled: !isPending,
+        leading: AppSwipeAction(
+          key: ValueKey('notification-swipe-${notification.id}'),
+          label: unread
+              ? l10n.notificationsMarkRead
+              : l10n.notificationsMarkUnread,
+          icon: unread ? LucideIcons.checkCheck : LucideIcons.mailOpen,
+          tone: AppTone.info,
+          onPressed: onToggleRead,
+        ),
+        child: Material(
+          key: ValueKey('notification-card-${notification.id}'),
+          color: c.card,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(
+              color: c.border.withValues(alpha: solid ? 1 : 0.8),
+            ),
+          ),
+          child: InkWell(
+            key: ValueKey('notification-row-${notification.id}'),
+            customBorder: RoundedRectangleBorder(borderRadius: radius),
+            onTap: isPending ? null : onOpen,
+            child: content,
+          ),
         ),
       ),
     );
   }
 }
+
+/// Corner radius of an inbox card, shared with the pending-sync outline so
+/// both stay concentric.
+BorderRadius notificationCardRadius(BuildContext context) =>
+    BorderRadius.circular(AppTokens.of(context).shapes.card);

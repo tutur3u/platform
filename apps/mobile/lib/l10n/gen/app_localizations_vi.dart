@@ -6472,9 +6472,6 @@ class AppLocalizationsVi extends AppLocalizations {
   String get miraLiveTitle => 'Mira Live';
 
   @override
-  String get navAlerts => 'Thông báo';
-
-  @override
   String get navApps => 'Ứng dụng';
 
   @override

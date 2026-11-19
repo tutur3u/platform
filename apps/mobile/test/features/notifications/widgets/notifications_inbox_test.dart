@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/data/models/app_notification.dart';
+import 'package:mobile/data/models/app_notification.dart'
+    hide NotificationsPage;
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
 import 'package:mobile/features/notifications/data/notification_read_cleanup.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
+import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/notifications/widgets/notification_inbox_actions.dart';
+import 'package:mobile/features/notifications/widgets/notifications_feed_list.dart';
 import 'package:mobile/features/notifications/widgets/notifications_inbox.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -133,6 +136,47 @@ void main() {
     verify(() => cubit.loadTab(NotificationsTab.inbox)).called(1);
     expect(find.textContaining('Synthetic a'), findsOneWidget);
     expect(find.textContaining('Synthetic b'), findsNothing);
+  });
+
+  testWidgets('Unread is the default filter and leads the bar', (tester) async {
+    expect(const NotificationsPage().initialTab, NotificationsTab.inbox);
+    await mount(
+      tester,
+      NotificationsState(unreadCount: 1, inbox: _loaded([_item('a')])),
+      tab: const NotificationsPage().initialTab,
+    );
+    final unread = find.byKey(const ValueKey('notifications-filter-inbox'));
+    final all = find.byKey(const ValueKey('notifications-filter-all'));
+    expect(tester.getTopLeft(unread).dx, lessThan(tester.getTopLeft(all).dx));
+    expect(find.textContaining('Synthetic a'), findsOneWidget);
+
+    await tester.tap(all);
+    await tester.pumpAndSettle();
+    verify(() => cubit.loadTab(NotificationsTab.all)).called(1);
+  });
+
+  testWidgets('cards are spaced apart instead of divided', (tester) async {
+    await mount(
+      tester,
+      NotificationsState(all: _loaded([_item('a'), _item('b'), _item('c')])),
+    );
+    expect(
+      find.descendant(
+        of: find.byType(NotificationsFeedList),
+        matching: find.byType(Divider),
+      ),
+      findsNothing,
+    );
+    final a = tester.getRect(find.byKey(const ValueKey('notification-card-a')));
+    final b = tester.getRect(find.byKey(const ValueKey('notification-card-b')));
+    expect(b.top - a.bottom, notificationCardGap);
+    expect(notificationCardGap, greaterThanOrEqualTo(8));
+    final material = tester.widget<Material>(
+      find.byKey(const ValueKey('notification-card-a')),
+    );
+    final shape = material.shape! as RoundedRectangleBorder;
+    expect(shape.side.style, BorderStyle.solid);
+    expect(shape.borderRadius, isNot(BorderRadius.zero));
   });
 
   testWidgets('tapping marks read and opens the task', (tester) async {

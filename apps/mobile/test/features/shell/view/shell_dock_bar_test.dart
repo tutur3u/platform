@@ -437,7 +437,7 @@ void main() {
           'Calendar',
           'Mira',
           'Apps',
-          'Alerts',
+          'Notifications',
         ]),
         onSelected: (_) => activations++,
       );

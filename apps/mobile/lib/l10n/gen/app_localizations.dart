@@ -12421,12 +12421,6 @@ abstract class AppLocalizations {
   /// **'Mira Live'**
   String get miraLiveTitle;
 
-  /// No description provided for @navAlerts.
-  ///
-  /// In en, this message translates to:
-  /// **'Alerts'**
-  String get navAlerts;
-
   /// No description provided for @navApps.
   ///
   /// In en, this message translates to:

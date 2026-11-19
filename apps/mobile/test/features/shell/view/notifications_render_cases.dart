@@ -145,10 +145,20 @@ void _notificationsRenderCases() {
         expect(ids(), contains('notifications-mark-all-read'));
         expect(ids(), contains('notifications-settings'));
         await _capture(tester, 'notifications-${size.key}-${look.key}');
+        // Unread is the default filter and asks for unread rows only.
+        verify(
+          () => repository.fetchNotifications(
+            wsId: any(named: 'wsId'),
+            unreadOnly: true,
+            readOnly: any(named: 'readOnly'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
+        ).called(greaterThanOrEqualTo(1));
         if (size.key == 'phone') {
-          // The Unread filter asks the server for unread rows only.
+          // All stays one tap away.
           await tester.tap(
-            find.byKey(const ValueKey('notifications-filter-inbox')),
+            find.byKey(const ValueKey('notifications-filter-all')),
           );
           await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 50)),
@@ -157,7 +167,8 @@ void _notificationsRenderCases() {
           verify(
             () => repository.fetchNotifications(
               wsId: any(named: 'wsId'),
-              unreadOnly: true,
+              unreadOnly: any(named: 'unreadOnly', that: isFalse),
+              readOnly: any(named: 'readOnly', that: isFalse),
               limit: any(named: 'limit'),
               offset: any(named: 'offset'),
             ),

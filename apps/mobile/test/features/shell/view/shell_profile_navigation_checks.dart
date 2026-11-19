@@ -62,7 +62,7 @@ void _registerProfileNavigationChecks(
     },
   );
 
-  testWidgets('root dock pins Alerts and Profile without a top-bar Back', (
+  testWidgets('root dock pins Notifications and Profile with no top Back', (
     tester,
   ) async {
     tester.view.devicePixelRatio = 1;

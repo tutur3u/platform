@@ -94,8 +94,8 @@ NotificationFeedState _loaded(List<AppNotification> items) =>
       totalCount: items.length,
     );
 
-/// The Alerts inbox with day groups, an open invite and read/unread rows,
-/// and its all-caught-up state, in classic and Sorbet, light and dark.
+/// The Notifications inbox with day groups, an open invite and read/unread
+/// rows, and its all-caught-up state, in classic and Sorbet, light and dark.
 void main() {
   final original = goldenFileComparator;
   setUpAll(() {
