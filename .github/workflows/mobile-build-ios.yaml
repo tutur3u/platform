@@ -44,10 +44,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Select Xcode with the iOS 27 SDK
+        uses: ./.github/actions/select-xcode-ios-sdk
+
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       - name: Disable Flutter Swift Package Manager

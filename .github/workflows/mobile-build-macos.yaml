@@ -47,7 +47,7 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       - name: Enable macOS desktop
@@ -116,7 +116,7 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       - name: Enable macOS desktop

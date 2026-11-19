@@ -195,7 +195,7 @@ jobs:
         if: steps.plan.outputs.should_merge == 'true'
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       # `generate: true` in pubspec.yaml means this also runs gen-l10n, which

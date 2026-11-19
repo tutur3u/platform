@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/ui/kit/app_event_block.dart';

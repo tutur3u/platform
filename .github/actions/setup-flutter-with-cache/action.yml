@@ -3,7 +3,7 @@ description: Restore Flutter SDK/pub caches everywhere and save only from main.
 inputs:
   flutter-version:
     description: Flutter release selector
-    default: "3.47.x"
+    default: "3.50.0"
   channel:
     description: Flutter release channel
     default: stable

@@ -1,5 +1,12 @@
 include: package:very_good_analysis/analysis_options.yaml
 analyzer:
+  errors:
+    # Flutter 3.50 deprecates the material/cupertino libraries in favor of the
+    # material_ui/cupertino_ui packages, whose types are separate copies. Most
+    # third-party widgets still build on the framework copies, so the app keeps
+    # them until its dependencies move. This also hides other deprecation
+    # notices; drop it once the app imports material_ui/cupertino_ui.
+    deprecated_member_use: ignore
   exclude:
     - build/**
     - lib/l10n/gen/*

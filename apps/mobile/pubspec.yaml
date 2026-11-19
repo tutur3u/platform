@@ -5,7 +5,7 @@ publish_to: none
 
 environment:
   sdk: ^3.10.0
-  flutter: ^3.44.0
+  flutter: ^3.50.0
 
 dependencies:
   app_attest: 0.2.1

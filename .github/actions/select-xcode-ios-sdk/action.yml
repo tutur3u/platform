@@ -1,0 +1,26 @@
+name: Select Xcode with the required iOS SDK
+description: Selects the newest installed Xcode and fails unless its iOS SDK meets the minimum major version.
+inputs:
+  minimum-ios-sdk:
+    description: Minimum iOS SDK major version.
+    required: false
+    default: "27"
+runs:
+  using: composite
+  steps:
+    - name: Select Xcode
+      shell: bash
+      env:
+        MINIMUM_IOS_SDK: ${{ inputs.minimum-ios-sdk }}
+      run: |
+        set -euo pipefail
+        xcode="$(ls -d /Applications/Xcode_"${MINIMUM_IOS_SDK}"*.app /Applications/Xcode_[0-9]*.app /Applications/Xcode.app 2>/dev/null | sort -V | tail -1 || true)"
+        if [ -n "$xcode" ]; then
+          sudo xcode-select -s "$xcode/Contents/Developer"
+        fi
+        sdk="$(xcrun --sdk iphoneos --show-sdk-version)"
+        echo "Xcode: $(xcodebuild -version | head -1) at $(xcode-select -p); iOS SDK $sdk"
+        if [ "${sdk%%.*}" -lt "$MINIMUM_IOS_SDK" ]; then
+          echo "::error title=iOS SDK too old::iOS ${MINIMUM_IOS_SDK} SDK or newer is required; found ${sdk}."
+          exit 1
+        fi

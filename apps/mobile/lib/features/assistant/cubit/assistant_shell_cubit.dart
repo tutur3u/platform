@@ -1,6 +1,6 @@
 // Assistant feature parity module: targeted lint suppressions keep the shell
 // state wiring readable.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters
+// ignore_for_file: always_use_package_imports
 
 import 'dart:async';
 

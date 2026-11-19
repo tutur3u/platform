@@ -232,7 +232,7 @@ jobs:
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       - name: Fetch Android deployment bundle from Tuturuuu
@@ -356,10 +356,13 @@ jobs:
           name: mobile-beta-release-history
           path: apps/mobile/assets
 
+      - name: Select Xcode with the iOS 27 SDK
+        uses: ./.github/actions/select-xcode-ios-sdk
+
       - name: Setup Flutter
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       # Production jobs read caches populated by trusted main builds.
@@ -675,7 +678,7 @@ jobs:
         if: steps.ready.outputs.ready == 'true'
         uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
 
       - name: Install dependencies

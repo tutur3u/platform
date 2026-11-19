@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart' hide AppBar, Scaffold;
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/cache_context.dart';

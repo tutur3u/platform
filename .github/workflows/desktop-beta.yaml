@@ -77,7 +77,7 @@ jobs:
           node-version: 24
       - uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
       - name: Validate Windows smoke and updater scripts
         run: node --test scripts/desktop-deployment/installer-syntax.test.mjs scripts/desktop-deployment/windows-smoke.test.mjs
@@ -192,7 +192,7 @@ jobs:
           fi
       - uses: ./.github/actions/setup-flutter-with-cache
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
       - name: Validate public build configuration
         shell: bash

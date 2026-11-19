@@ -209,7 +209,7 @@ jobs:
       - uses: ./.github/actions/setup-flutter-with-cache
         if: inputs.include_chat_initial_settings == true
         with:
-          flutter-version: "3.47.x"
+          flutter-version: "3.50.0"
           channel: stable
       - name: Restore locked chat mobile dependencies
         if: inputs.include_chat_initial_settings == true

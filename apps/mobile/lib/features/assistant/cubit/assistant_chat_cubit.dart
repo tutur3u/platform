@@ -1,5 +1,5 @@
 // Relative imports preserve the existing Assistant module layout.
-// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars, avoid_positional_boolean_parameters
+// ignore_for_file: always_use_package_imports, lines_longer_than_80_chars
 
 import 'dart:async';
 
