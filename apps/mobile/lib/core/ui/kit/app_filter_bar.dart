@@ -35,6 +35,7 @@ class AppFilterBar<T> extends StatelessWidget {
     required this.selected,
     required this.onSelected,
     this.trailing,
+    this.scrollPadding = EdgeInsets.zero,
     super.key,
   });
 
@@ -42,12 +43,14 @@ class AppFilterBar<T> extends StatelessWidget {
   final T selected;
   final ValueChanged<T> onSelected;
   final Widget? trailing;
+  final EdgeInsetsGeometry scrollPadding;
 
   @override
   Widget build(BuildContext context) => Row(
     children: [
       Expanded(
         child: AppHorizontalScrollView(
+          padding: scrollPadding,
           child: Row(
             children: [
               for (final (index, option) in options.indexed) ...[

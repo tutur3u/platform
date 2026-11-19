@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/ui/tokens/app_color_tokens.dart';
+import 'package:mobile/core/ui/ui.dart' show AppButton;
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 import 'package:mobile/widgets/pending_sync_outline_painter.dart';
@@ -96,6 +97,54 @@ void main() {
       ),
     );
     expect(find.text('Syncing…'), findsOneWidget);
+    expect(find.text('Waiting to sync'), findsNothing);
+  });
+
+  testWidgets('a failed notification edit offers retry on the affected row', (
+    tester,
+  ) async {
+    OfflineMutationQueue.instance.pending.value = [
+      PendingMutationRecord(
+        id: 'mutation-1',
+        feature: 'notifications',
+        method: 'PATCH',
+        path: '/api/v1/notifications',
+        createdAt: DateTime.utc(2026, 9, 28),
+        userId: 'user-1',
+        workspaceId: 'personal',
+        payload: const {'action': 'mark_all_read', 'wsId': 'ws-1'},
+        status: PendingMutationStatus.failed,
+      ),
+    ];
+    await tester.pumpWidget(
+      const MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Column(
+            children: [
+              PendingSyncFrame(
+                workspaceId: 'personal',
+                notificationWorkspaceId: 'ws-1',
+                entityId: 'notification-1',
+                feature: 'notifications',
+                child: Text('Affected notification'),
+              ),
+              PendingSyncFrame(
+                workspaceId: 'personal',
+                notificationWorkspaceId: 'ws-2',
+                entityId: 'notification-2',
+                feature: 'notifications',
+                child: Text('Other workspace'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    final retry = find.widgetWithText(AppButton, 'Sync failed. Tap to retry');
+    expect(retry, findsOneWidget);
+    expect(tester.widget<AppButton>(retry).onPressed, isNotNull);
     expect(find.text('Waiting to sync'), findsNothing);
   });
 

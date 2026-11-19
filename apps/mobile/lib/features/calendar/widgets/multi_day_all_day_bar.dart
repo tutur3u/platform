@@ -110,10 +110,10 @@ class _MultiDayAllDayBar extends StatelessWidget {
                   child: hasSpans
                       ? Stack(
                           children: [
-                            SingleChildScrollView(
+                            AppHorizontalScrollView(
                               key: viewportKey,
                               controller: controller,
-                              scrollDirection: Axis.horizontal,
+
                               physics: DateSnapScrollPhysics(
                                 dayWidth: dayColumnWidth,
                               ),

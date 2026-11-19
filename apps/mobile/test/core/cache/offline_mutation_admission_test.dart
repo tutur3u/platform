@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -127,6 +128,30 @@ void main() {
       expect(await queue.listPending(), isEmpty);
     },
   );
+
+  test('resuming the app drains persisted notification reads', () async {
+    final synced = Completer<void>();
+    queue.registerDispatcher('notifications', (record) async {
+      sent.add(record);
+    });
+    await queue.enqueue(notificationRead('resume'));
+    await queue.synchronize();
+    void recordSync() {
+      if (queue.pending.value.isEmpty && !synced.isCompleted) {
+        synced.complete();
+      }
+    }
+
+    queue.pending.addListener(recordSync);
+    online = true;
+    queue.didChangeAppLifecycleState(AppLifecycleState.resumed);
+    try {
+      await synced.future.timeout(const Duration(seconds: 5));
+      expect(sent.map((record) => record.entityId), ['resume']);
+    } finally {
+      queue.pending.removeListener(recordSync);
+    }
+  });
 
   test(
     'repeated server failures stop replay and allow a manual retry',

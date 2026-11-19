@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
-import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_filter_bar.dart';
 import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
@@ -35,72 +34,84 @@ class TransactionListFilters extends StatelessWidget {
     final l10n = context.l10n;
     final query = state.query;
     final start = query.start;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppFilterBar<FinanceTransactionKind>(
-          options: [
-            AppFilterOption(
-              value: FinanceTransactionKind.all,
-              label: l10n.financeAll,
-            ),
-            AppFilterOption(
-              value: FinanceTransactionKind.income,
-              label: l10n.financeIncome,
-            ),
-            AppFilterOption(
-              value: FinanceTransactionKind.expense,
-              label: l10n.financeExpense,
-            ),
-            AppFilterOption(
-              value: FinanceTransactionKind.transfer,
-              label: l10n.financeTransfers,
-            ),
-          ],
-          selected: query.kind,
-          onSelected: (kind) =>
-              onChanged(query.copyWith(kind: kind), state.walletId),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        AppHorizontalScrollView(
-          child: Row(
-            spacing: AppSpacing.sm,
-            children: [
-              AppFilterButton(
-                key: const ValueKey('finance-filter-wallet'),
-                icon: LucideIcons.wallet,
-                label: state.selectedWallet?.name ?? l10n.financeAllWallets,
-                active: state.walletId != null,
-                onPressed: () => unawaited(_pickWallet(context)),
-              ),
-              AppFilterButton(
-                key: const ValueKey('finance-filter-category'),
-                icon: LucideIcons.tag,
-                label:
-                    state.categories
-                        .where((c) => c.id == query.categoryId)
-                        .firstOrNull
-                        ?.name ??
-                    l10n.financeCategory,
-                active: query.categoryId != null,
-                onPressed: () => unawaited(_pickCategory(context)),
-              ),
-              if (showTagFilter)
-                AppFilterButton(
-                  key: const ValueKey('finance-filter-tag'),
-                  icon: LucideIcons.tags,
-                  label: l10n.financeTags,
-                  active: query.tagId != null,
-                  onPressed: () => unawaited(_pickTag(context)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final insets = AppPageInsets.of(context, width: constraints.maxWidth);
+        final gutter = EdgeInsets.only(left: insets.left, right: insets.right);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppFilterBar<FinanceTransactionKind>(
+              scrollPadding: gutter,
+              options: [
+                AppFilterOption(
+                  value: FinanceTransactionKind.all,
+                  label: l10n.financeAll,
                 ),
+                AppFilterOption(
+                  value: FinanceTransactionKind.income,
+                  label: l10n.financeIncome,
+                ),
+                AppFilterOption(
+                  value: FinanceTransactionKind.expense,
+                  label: l10n.financeExpense,
+                ),
+                AppFilterOption(
+                  value: FinanceTransactionKind.transfer,
+                  label: l10n.financeTransfers,
+                ),
+              ],
+              selected: query.kind,
+              onSelected: (kind) =>
+                  onChanged(query.copyWith(kind: kind), state.walletId),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppHorizontalScrollView(
+              padding: gutter,
+              child: Row(
+                spacing: AppSpacing.sm,
+                children: [
+                  AppFilterButton(
+                    key: const ValueKey('finance-filter-wallet'),
+                    icon: LucideIcons.wallet,
+                    label: state.selectedWallet?.name ?? l10n.financeAllWallets,
+                    active: state.walletId != null,
+                    onPressed: () => unawaited(_pickWallet(context)),
+                  ),
+                  AppFilterButton(
+                    key: const ValueKey('finance-filter-category'),
+                    icon: LucideIcons.tag,
+                    label:
+                        state.categories
+                            .where((c) => c.id == query.categoryId)
+                            .firstOrNull
+                            ?.name ??
+                        l10n.financeCategory,
+                    active: query.categoryId != null,
+                    onPressed: () => unawaited(_pickCategory(context)),
+                  ),
+                  if (showTagFilter)
+                    AppFilterButton(
+                      key: const ValueKey('finance-filter-tag'),
+                      icon: LucideIcons.tags,
+                      label: l10n.financeTags,
+                      active: query.tagId != null,
+                      onPressed: () => unawaited(_pickTag(context)),
+                    ),
+                ],
+              ),
+            ),
+            if (start != null &&
+                query.kind != FinanceTransactionKind.transfer) ...[
+              const SizedBox(height: AppSpacing.md),
+              Padding(
+                padding: gutter,
+                child: _FlowRow(state: state),
+              ),
             ],
-          ),
-        ),
-        if (start != null && query.kind != FinanceTransactionKind.transfer) ...[
-          const SizedBox(height: AppSpacing.md),
-          _FlowRow(state: state),
-        ],
-      ],
+          ],
+        );
+      },
     );
   }
 

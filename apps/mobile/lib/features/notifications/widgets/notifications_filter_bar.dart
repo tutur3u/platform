@@ -36,6 +36,8 @@ class NotificationsFilterBar extends StatelessWidget {
       NotificationsTab.archive => l10n.notificationsFilterRead,
     };
     return AppHorizontalScrollView(
+      pageKind: AppPageKind.detail,
+      padding: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
       child: Row(
         children: [
           for (final tab in order) ...[

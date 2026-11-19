@@ -1,3 +1,5 @@
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
@@ -29,11 +31,13 @@ class NotificationsRepository {
       if (wsId != null) 'wsId': wsId,
     };
 
-    final json = await readThroughJson(
-      api: _apiClient,
-      namespace: 'notifications.feed',
-      workspaceId: wsId ?? 'personal',
-      path: NotificationEndpoints.notifications(params),
+    final json = await CacheStore.awaitRevalidation(
+      () => readThroughJson(
+        api: _apiClient,
+        namespace: 'notifications.feed',
+        workspaceId: wsId ?? 'personal',
+        path: NotificationEndpoints.notifications(params),
+      ),
     );
     final source = (json['notifications'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
@@ -41,6 +45,7 @@ class NotificationsRepository {
         .toList();
     final rows = {for (final row in source) row['id'] as String: row};
     var hasPendingReadChange = false;
+    final pendingReadAt = DateTime.now().toUtc().toIso8601String();
     for (final item in await OfflineMutationQueue.instance.listPending()) {
       if (item.status != PendingMutationStatus.queued) continue;
       if (item.isBulkNotificationRead) {
@@ -50,13 +55,13 @@ class NotificationsRepository {
           if (targetWorkspace != null && targetWorkspace != row['ws_id']) {
             continue;
           }
-          row['read_at'] = DateTime.now().toUtc().toIso8601String();
+          row['read_at'] = pendingReadAt;
         }
       } else if (item.isSingleNotificationRead &&
           rows.containsKey(item.entityId)) {
         hasPendingReadChange = true;
         rows[item.entityId]!['read_at'] = item.payload?['read'] == true
-            ? DateTime.now().toUtc().toIso8601String()
+            ? pendingReadAt
             : null;
       }
     }
@@ -83,11 +88,13 @@ class NotificationsRepository {
   }
 
   Future<int> fetchUnreadCount({String? wsId}) async {
-    final json = await readThroughJson(
-      api: _apiClient,
-      namespace: 'notifications.unreadCount',
-      workspaceId: wsId ?? 'personal',
-      path: NotificationEndpoints.unreadCount(wsId: wsId),
+    final json = await CacheStore.awaitRevalidation(
+      () => readThroughJson(
+        api: _apiClient,
+        namespace: 'notifications.unreadCount',
+        workspaceId: wsId ?? 'personal',
+        path: NotificationEndpoints.unreadCount(wsId: wsId),
+      ),
     );
     final pending = await OfflineMutationQueue.instance.listPending();
     if (pending.any(
@@ -104,6 +111,11 @@ class NotificationsRepository {
   Future<void> markRead({required String id, required bool read}) async {
     final path = NotificationEndpoints.notification(id);
     final payload = {'read': read};
+    final userId = currentCacheUserId();
+    Future<void> send() async {
+      await _apiClient.patchJson(path, payload);
+    }
+
     await queueOrSendVoid(
       feature: 'notifications',
       method: 'PATCH',
@@ -112,9 +124,8 @@ class NotificationsRepository {
       entityId: id,
       replaySafe: true,
       payload: payload,
-      send: () async {
-        await _apiClient.patchJson(path, payload);
-      },
+      expectedUserId: userId,
+      send: userId == null ? send : () => ApiClient.runForUser(userId, send),
     );
   }
 

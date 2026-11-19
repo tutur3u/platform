@@ -49,15 +49,13 @@ class _NotificationsInboxState extends State<NotificationsInbox>
     _pushEvents = PushNotificationService.instance.events.listen(
       (_) => _refresh(),
     );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && widget.isActive) _open();
-    });
+    _scheduleOpen();
   }
 
   @override
   void didUpdateWidget(covariant NotificationsInbox oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.isActive && widget.isActive) _open();
+    if (!oldWidget.isActive && widget.isActive) _scheduleOpen();
     if (oldWidget.tab != widget.tab) unawaited(_cubit.loadTab(widget.tab));
   }
 
@@ -67,9 +65,12 @@ class _NotificationsInboxState extends State<NotificationsInbox>
     super.dispose();
   }
 
-  void _open() {
-    _refresh();
-    unawaited(OfflineMutationQueue.instance.syncOnViewOpen('notifications'));
+  void _scheduleOpen() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isActive) return;
+      _refresh();
+      unawaited(OfflineMutationQueue.instance.syncOnViewOpen('notifications'));
+    });
   }
 
   void _refresh() {

@@ -50,26 +50,29 @@ class TransactionListBody extends StatelessWidget {
     final query = state.query;
     return NovaRefreshIndicator(
       onRefresh: onRefresh,
-      child: AppPageScrollView(
+      child: CustomScrollView(
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         slivers: [
-          SliverPersistentHeader(
-            pinned: true,
-            delegate: FinancePinnedHeaderDelegate(
-              extent: financePeriodBarExtent(context),
-              child: FinancePeriodBar(
-                key: const ValueKey('finance-transactions-period'),
-                period: financePeriodOf(query),
-                now: today,
-                onChanged: (period) => onFiltersChanged(
-                  query.copyWith(start: period.start, end: period.end),
-                  state.walletId,
-                ),
-                onAllTime: () => onFiltersChanged(
-                  query.copyWith(start: null, end: null),
-                  state.walletId,
+          SliverAppPage(
+            includeBottom: false,
+            sliver: SliverPersistentHeader(
+              pinned: true,
+              delegate: FinancePinnedHeaderDelegate(
+                extent: financePeriodBarExtent(context),
+                child: FinancePeriodBar(
+                  key: const ValueKey('finance-transactions-period'),
+                  period: financePeriodOf(query),
+                  now: today,
+                  onChanged: (period) => onFiltersChanged(
+                    query.copyWith(start: period.start, end: period.end),
+                    state.walletId,
+                  ),
+                  onAllTime: () => onFiltersChanged(
+                    query.copyWith(start: null, end: null),
+                    state.walletId,
+                  ),
                 ),
               ),
             ),
@@ -81,11 +84,14 @@ class TransactionListBody extends StatelessWidget {
               showTagFilter: showTagFilter,
             ),
           ),
-          SliverList.builder(
-            itemCount: groups.length + 1,
-            itemBuilder: (context, index) => index == groups.length
-                ? _footer(context, groups.isEmpty)
-                : _group(groups[index]),
+          SliverAppPage(
+            includeTop: false,
+            sliver: SliverList.builder(
+              itemCount: groups.length + 1,
+              itemBuilder: (context, index) => index == groups.length
+                  ? _footer(context, groups.isEmpty)
+                  : _group(groups[index]),
+            ),
           ),
         ],
       ),

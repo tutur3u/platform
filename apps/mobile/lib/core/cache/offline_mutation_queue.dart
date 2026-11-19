@@ -468,12 +468,11 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       admitted = true;
       return record.copyWith(
         status: PendingMutationStatus.queued,
-        attemptCount: 0,
+        attemptCount: record.feature == 'notifications' ? 0 : null,
       );
     });
     if (!admitted) return;
     await refresh();
-    await drain();
     await synchronize();
   }
 

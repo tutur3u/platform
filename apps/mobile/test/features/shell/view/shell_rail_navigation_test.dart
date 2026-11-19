@@ -142,19 +142,19 @@ void main() {
         ownerId: 'fixture',
         locations: {location},
         deepLinkBackRoute: Routes.apps,
-        items: [
-          const ShellMiniNavItemSpec(
+        items: const [
+          ShellMiniNavItemSpec(
             id: 'fixture-back',
             icon: Icons.chevron_left,
             label: 'Back',
           ),
-          const ShellMiniNavItemSpec(
+          ShellMiniNavItemSpec(
             id: 'fixture-sales',
             icon: Icons.receipt_long,
             label: 'Sales',
             selected: true,
           ),
-          const ShellMiniNavItemSpec(
+          ShellMiniNavItemSpec(
             id: 'fixture-products',
             icon: Icons.list,
             label: 'Products',

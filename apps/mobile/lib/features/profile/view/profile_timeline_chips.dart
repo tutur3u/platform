@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_chip.dart';
 import 'package:mobile/features/profile/view/profile_timeline_filter.dart';
 
@@ -22,9 +22,9 @@ class ProfileTimelineSourceChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return AppHorizontalScrollView(
       key: const ValueKey('timeline-source-chips'),
-      scrollDirection: Axis.horizontal,
+
       padding: EdgeInsets.only(left: padding.left, right: padding.right),
       child: Row(
         children: [

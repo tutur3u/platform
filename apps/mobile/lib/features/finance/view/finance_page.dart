@@ -257,63 +257,88 @@ class FinanceOverviewContent extends StatelessWidget {
         );
         final wide =
             Breakpoints.fromWidth(constraints.maxWidth) != DeviceClass.compact;
-        return AppPageListView(
-          kind: AppPageKind.root,
+        return CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            balances,
-            if (state.wallets.isNotEmpty ||
-                onRecurring != null ||
-                onInvoices != null) ...[
-              const SizedBox(height: AppLayout.itemGap),
-              AppGroupedCard(
-                children: [
-                  if (state.wallets.isNotEmpty)
-                    AppRichRow(
-                      key: const ValueKey('finance-overview-checkpoints'),
-                      title: l10n.financeCheckpointsBatchRecord,
-                      leading: const AppIconTile(icon: LucideIcons.listChecks),
-                      onTap: () => context.push(Routes.financeCheckpoints),
-                    ),
-                  if (onInvoices != null)
-                    AppRichRow(
-                      title: l10n.financeInvoices,
-                      leading: const AppIconTile(icon: LucideIcons.receipt),
-                      onTap: onInvoices,
-                    ),
-                  if (onReports != null)
-                    AppRichRow(
-                      title: l10n.financeReports,
-                      leading: const AppIconTile(
-                        icon: LucideIcons.chartNoAxesColumn,
-                      ),
-                      onTap: onReports,
-                    ),
-                  if (onRecurring != null)
-                    AppRichRow(
-                      key: const ValueKey('finance-overview-recurring'),
-                      title: l10n.financeRecurring,
-                      leading: const AppIconTile(icon: LucideIcons.repeat),
-                      onTap: onRecurring,
-                    ),
-                ],
-              ),
-            ],
-            const SizedBox(height: AppLayout.sectionGap),
-            if (wide)
-              Row(
-                spacing: AppLayout.sectionGap,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: month),
-                  Expanded(child: recent),
-                ],
+          slivers: [
+            if (state.wallets.isEmpty)
+              SliverAppPage(
+                kind: AppPageKind.root,
+                includeBottom: false,
+                sliver: SliverToBoxAdapter(child: balances),
               )
             else ...[
-              month,
-              const SizedBox(height: AppLayout.sectionGap),
-              recent,
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppLayout.pageTop),
+              ),
+              SliverToBoxAdapter(child: balances),
             ],
+            SliverAppPage(
+              kind: AppPageKind.root,
+              includeTop: false,
+              sliver: SliverList.list(
+                children: [
+                  if (state.wallets.isNotEmpty ||
+                      onRecurring != null ||
+                      onInvoices != null) ...[
+                    const SizedBox(height: AppLayout.itemGap),
+                    AppGroupedCard(
+                      children: [
+                        if (state.wallets.isNotEmpty)
+                          AppRichRow(
+                            key: const ValueKey('finance-overview-checkpoints'),
+                            title: l10n.financeCheckpointsBatchRecord,
+                            leading: const AppIconTile(
+                              icon: LucideIcons.listChecks,
+                            ),
+                            onTap: () =>
+                                context.push(Routes.financeCheckpoints),
+                          ),
+                        if (onInvoices != null)
+                          AppRichRow(
+                            title: l10n.financeInvoices,
+                            leading: const AppIconTile(
+                              icon: LucideIcons.receipt,
+                            ),
+                            onTap: onInvoices,
+                          ),
+                        if (onReports != null)
+                          AppRichRow(
+                            title: l10n.financeReports,
+                            leading: const AppIconTile(
+                              icon: LucideIcons.chartNoAxesColumn,
+                            ),
+                            onTap: onReports,
+                          ),
+                        if (onRecurring != null)
+                          AppRichRow(
+                            key: const ValueKey('finance-overview-recurring'),
+                            title: l10n.financeRecurring,
+                            leading: const AppIconTile(
+                              icon: LucideIcons.repeat,
+                            ),
+                            onTap: onRecurring,
+                          ),
+                      ],
+                    ),
+                  ],
+                  const SizedBox(height: AppLayout.sectionGap),
+                  if (wide)
+                    Row(
+                      spacing: AppLayout.sectionGap,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: month),
+                        Expanded(child: recent),
+                      ],
+                    )
+                  else ...[
+                    month,
+                    const SizedBox(height: AppLayout.sectionGap),
+                    recent,
+                  ],
+                ],
+              ),
+            ),
           ],
         );
       },

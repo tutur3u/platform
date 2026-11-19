@@ -116,6 +116,7 @@ GoRouter _router(String initialLocation) => GoRouter(
             routePattern: state.fullPath,
             enableDebugLogs: false,
             homePageBuilder: (_) => const SizedBox.shrink(),
+            notificationsPageBuilder: (_) => const SizedBox.shrink(),
             child: child,
           ),
         ),

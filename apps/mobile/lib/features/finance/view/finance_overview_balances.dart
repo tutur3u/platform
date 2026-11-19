@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
@@ -27,21 +27,31 @@ class FinanceBalanceStrip extends StatelessWidget {
                 double.infinity,
               ) *
               3,
-      child: AppHorizontalViewport(
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          clipBehavior: Clip.none,
-          children: [
-            _TotalCard(state: state),
-            for (final wallet in state.wallets) ...[
-              const SizedBox(width: 10),
-              FinanceWalletCard(
-                wallet: wallet,
-                fallbackCurrency: state.workspaceCurrency,
-              ),
-            ],
-          ],
-        ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final insets = AppPageInsets.of(
+            context,
+            width: constraints.maxWidth,
+            kind: AppPageKind.root,
+          );
+          return AppHorizontalViewport(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              padding: EdgeInsets.only(left: insets.left, right: insets.right),
+              children: [
+                _TotalCard(state: state),
+                for (final wallet in state.wallets) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  FinanceWalletCard(
+                    wallet: wallet,
+                    fallbackCurrency: state.workspaceCurrency,
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
     );
   }

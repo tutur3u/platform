@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/models/app_notification.dart'
     hide NotificationsPage;
 import 'package:mobile/data/models/workspace.dart';
@@ -117,6 +118,16 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('the visible feed reloads after offline replay', (tester) async {
+    when(() => cubit.reconcileAfterSync(any())).thenAnswer((_) async {});
+    await mount(tester, NotificationsState(all: _loaded([_item('cached')])));
+
+    OfflineMutationQueue.instance.syncRevision.value++;
+    await tester.pump();
+
+    verify(() => cubit.reconcileAfterSync(NotificationsTab.all)).called(1);
+  });
 
   testWidgets('filters switch feeds and load the chosen one', (tester) async {
     await mount(
