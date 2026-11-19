@@ -56,9 +56,11 @@ voice capture. Cancel discards the recording and restores the text draft.
 An untouched actor/workspace scope with no envelope, legacy selection/context,
 creation marker or in-process hold receives one serialized, acknowledged fresh
 envelope. Its first Send creates the chat without a reset dialog and retains the
-draft until the user-message acknowledgement. Missing envelopes with legacy
-state, a vanished inspected envelope, pending creation and held state still
-require informed recovery. If a
+draft until the user-message acknowledgement. Legacy selection or context alone
+also receives a clear envelope that keeps them. An unresolved legacy creation
+marker, a vanished inspected envelope, pending creation and a recorded unconfirmed
+attempt still require informed recovery; a stored hold that records no attempt is
+released when the workspace loads. If a
 text-only send has no selected conversation and local creation authority needs
 recovery, Send opens the existing informed New Chat confirmation. Cancel
 retains the draft without creating or sending anything. Confirmation resets the

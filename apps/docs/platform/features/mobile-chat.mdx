@@ -475,16 +475,19 @@ do not prove provider calls or an authenticated device session.
 Mobile Assistant stores the selected chat, workspace context, and creation hold
 in one private versioned actor/workspace envelope. Every owning reader and writer
 uses the same scope lock and reloads the host value. Legacy selected/context keys
-are read-only fallback only when the envelope is absent; a legacy clear marker
-never grants creation. Malformed or unsupported records require inspection and
+are read-only fallback only when the envelope is absent. Loading a workspace with
+no envelope and no unresolved legacy creation marker writes one clear envelope that
+keeps the legacy selection and context; an unresolved marker keeps the scope held.
+Malformed or unsupported records require inspection and
 cannot be overwritten or replaced by legacy fallback. The envelope contains IDs,
 status, revisions, and reset evidence, with no prompts, attachments, or credentials.
 
 Native reset prepares a pure, current shell capability before making any effect.
 An acknowledged pending intent first retains the selected/context beforeimage and
 holds creation. Only its known current receipt permits a second whole-tuple write
-that selects no chat, selects personal context, advances the generation, and binds
-informed consent to that operation and prior hold. Pending intent on restart stays
+that selects no chat, selects personal context, advances the generation, records
+the creation hold as clear, and binds informed consent to that operation and prior
+hold. Pending intent on restart stays
 held and retains the beforeimage; it is never finalized automatically. A known
 current final receipt publishes the prepared shell/chat reset synchronously.
 Loading a workspace reads its stored context without writing it back, preserving
@@ -500,7 +503,13 @@ that persistence stayed unchanged. An absent prepared adapter denies before effe
 The former effectful guarded callback cannot qualify this protocol. The owning
 page now prepares the pure shell capability and consumes the typed outcome.
 An uncertain or absent creation envelope offers localized Cancel, Check history,
-and Start a new chat choices. Consent is an opaque, one-use process capability
+and Start a new chat choices. The non-blocking "Your last chat may not have been
+saved" banner is narrower: it appears only for a recorded first-send attempt that
+never received its creation receipt (or an unresolved legacy creation marker), and
+only while no other chat is open. Dismissing it hides that attempt's banner for the
+app session; Start a new chat or a confirmed creation resolves it. A fresh scope, a
+committed reset, a confirmed first send, and read or migration holds never show it
+(`assistant_new_chat_reset_test.dart`, `assistant_fresh_scope_test.dart`). Consent is an opaque, one-use process capability
 bound to the observed actor, workspace, selection, context, and hold beforeimage;
 a changed hold or an observed departure cannot reuse it. Cancel, denial, stale
 completion, and uncertainty retain the current draft and attachments. Only a
@@ -529,8 +538,10 @@ Files gates, recording after the reset) and
 A known selected chat denies new creation before any hold write or POST; its clear
 status remains truthful and its history remains usable. Empty selection is required
 independently of clear status or informed consent.
-Only a current-process final receipt authorizes one next creation. Restart,
-lifecycle departure, or another selected/context write revokes that grant. Close
+A committed informed reset resolves the prior attempt, so restart, lifecycle
+departure, or a later selected/context write never raises the hold again. A stored
+hold that records no attempt, no pending intent and no unresolved legacy marker
+carries no evidence of a sent request; loading the workspace releases it. Close
 entry fences reset immediately, before waiting for stream cancellation. Creation
 rechecks its captured origin after host acknowledgement and immediately before
 transport admission. Beginning
