@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/features/notifications/cubit/notifications_cubit.dart';
@@ -138,6 +139,7 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
               key: const ValueKey('notifications-error'),
               icon: feed.isOffline ? LucideIcons.wifiOff : LucideIcons.cloudOff,
               tone: feed.isOffline ? AppTone.neutral : AppTone.destructive,
+              illustration: const AppIllustration(AppIllustrationKind.offline),
               title: feed.isOffline
                   ? l10n.notificationsOfflineTitle
                   : l10n.notificationsLoadErrorTitle,
@@ -193,6 +195,9 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
             icon: widget.tab == NotificationsTab.archive
                 ? LucideIcons.inbox
                 : LucideIcons.bellCheck,
+            illustration: const AppIllustration(
+              AppIllustrationKind.notificationsClear,
+            ),
             title: switch (widget.tab) {
               NotificationsTab.all => l10n.notificationsAllCaughtUp,
               NotificationsTab.inbox => l10n.notificationsInboxEmptyTitle,

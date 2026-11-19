@@ -202,6 +202,7 @@ class FinanceOverviewContent extends StatelessWidget {
         final balances = state.wallets.isEmpty
             ? AppStateMessage(
                 icon: LucideIcons.wallet,
+                illustration: const AppIllustration(AppIllustrationKind.wallet),
                 title: l10n.financeNoWallets,
                 message: l10n.financeOverviewNoWalletsBody,
                 actionLabel: l10n.financeCreateFirstWallet,
@@ -278,6 +279,9 @@ class _Recent extends StatelessWidget {
             padding: const EdgeInsets.only(top: AppSpacing.md),
             child: AppStateMessage(
               icon: LucideIcons.receipt,
+              illustration: const AppIllustration(
+                AppIllustrationKind.noTransactions,
+              ),
               title: l10n.financeNoTransactions,
               message: l10n.financeOverviewNoTransactionsBody,
               actionLabel: l10n.financeAddFirstTransaction,

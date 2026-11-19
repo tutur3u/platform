@@ -136,6 +136,9 @@ class _NotificationsListState extends State<_NotificationsList> {
         padding,
         AppStateMessage(
           icon: inbox ? LucideIcons.bellOff : LucideIcons.archive,
+          illustration: const AppIllustration(
+            AppIllustrationKind.notificationsClear,
+          ),
           title: inbox
               ? context.l10n.notificationsInboxEmptyTitle
               : context.l10n.notificationsArchiveEmptyTitle,

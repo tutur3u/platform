@@ -12,7 +12,7 @@ import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/kit/app_rich_row.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -342,6 +342,9 @@ class _WalletsViewState extends State<_WalletsView> {
         children: [
           AppStateMessage(
             icon: Icons.search_off_outlined,
+            illustration: const AppIllustration(
+              AppIllustrationKind.searchNoResults,
+            ),
             title: l10n.financeWalletSearchEmpty,
             actionLabel: l10n.financeActivityClearSearch,
             onAction: _closeSearch,

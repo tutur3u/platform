@@ -42,6 +42,7 @@ import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
+import 'package:mobile/features/notifications/data/notifications_unread_count.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/profile/view/profile_timeline_page.dart';
@@ -374,6 +375,7 @@ GoRouter createAppRouter(
                 state.uri.path == Routes.assistantConversations
                 ? Routes.assistant
                 : null,
+            badgeCount: NotificationsUnreadCount.instance,
             child: child,
           ),
         ),

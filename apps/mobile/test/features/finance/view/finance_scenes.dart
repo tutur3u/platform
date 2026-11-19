@@ -41,7 +41,6 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 import 'package:mobile/features/shell/view/shell_dock_action_button.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
-import 'package:mobile/features/shell/view/shell_dock_overflow.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -465,14 +464,8 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
           financePrimaryNavItems,
         )];
     final extra = financeExtraNavItems.any((item) => item.route == scene.route);
-    // The shell keeps the create action in the dock only where it fits.
-    final dockCreate =
-        financeSceneCreates.contains(scene) &&
-        shellDockFitsPageAction(
-          width: ShellDockMetrics.widthFor(media.size.width),
-          destinations: financePrimaryNavItems.length + 1,
-          hasBack: true,
-        );
+    // The dock always reserves the priority slot for the create action.
+    final dockCreate = financeSceneCreates.contains(scene);
     return MultiBlocProvider(
       providers: [
         BlocProvider<WorkspaceCubit>.value(value: _workspace),

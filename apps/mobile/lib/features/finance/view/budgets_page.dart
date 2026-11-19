@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/cubit/budgets_cubit.dart';
@@ -205,6 +206,7 @@ class _BudgetsList extends StatelessWidget {
           const SizedBox(height: AppSpacing.xxxl),
           AppStateMessage(
             icon: LucideIcons.target,
+            illustration: const AppIllustration(AppIllustrationKind.noBudgets),
             title: l10n.financeNoBudgets,
             message: l10n.financeNoBudgetsBody,
             actionLabel: l10n.financeNewBudget,

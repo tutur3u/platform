@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_stats.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
@@ -145,6 +146,7 @@ class WalletDetailBody extends StatelessWidget {
       child: AppStateMessage(
         key: const ValueKey('finance-wallet-empty'),
         icon: LucideIcons.receipt,
+        illustration: const AppIllustration(AppIllustrationKind.noTransactions),
         title: l10n.financeNoTransactionsInPeriod(period.label(locale)),
         actionLabel: onCreate == null ? null : l10n.financeCreateTransaction,
         onAction: onCreate,
