@@ -62,7 +62,15 @@ class FloatingDockRail extends StatelessWidget {
             SizedBox.square(
               key: const ValueKey('floating-dock-back-slot'),
               dimension: ShellDockMetrics.slot,
-              child: leading,
+              // Back keeps its circle's room while it fades and scales in or
+              // out, so the navigation beside it never moves.
+              child: DockActionTransition(
+                key: const ValueKey('floating-dock-back-transition'),
+                slotKey: const ValueKey('floating-dock-back-visible'),
+                identity: leading?.runtimeType,
+                reserveSpace: true,
+                child: leading,
+              ),
             ),
             const SizedBox(width: ShellDockMetrics.zoneGap),
           ],

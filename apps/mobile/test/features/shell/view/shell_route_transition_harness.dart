@@ -78,6 +78,14 @@ Widget _dockContent(String location) => switch (location) {
   _ => _CountedNavigation(location: location, labels: const ['General']),
 };
 
+/// Settings and About show the same navigation, so a move between them keeps
+/// the dock contents in place.
+Object? _dockIdentity(String location) => switch (location) {
+  messageLocation => null,
+  inboxLocation => 'inbox-navigation',
+  _ => 'general-navigation',
+};
+
 Widget _primary(String location) {
   final (id, icon) = switch (location) {
     messageLocation => ('Archive', Icons.archive_outlined),
@@ -156,6 +164,7 @@ class RouteHarnessShellState extends State<RouteHarnessShell> {
               fixedZones: true,
               leading: const SizedBox(key: dockBack, width: 52, height: 52),
               content: _dockContent(widget.location),
+              contentIdentity: _dockIdentity(widget.location),
               primary: _primary(widget.location),
             ),
           ),

@@ -21,17 +21,25 @@ enum ShellRouteFadeKind {
 ///
 /// The tree has the same shape with or without a transition, so the current
 /// content keeps its element and state.
+///
+/// When the previous and current content have the same non-null [identity],
+/// they show the same thing: the content stays fully visible and nothing
+/// fades.
 class ShellRouteFade extends StatefulWidget {
   const ShellRouteFade({
     required this.child,
     this.kind = ShellRouteFadeKind.content,
     this.alignment = AlignmentDirectional.center,
+    this.identity,
     super.key,
   });
 
   final Widget child;
   final ShellRouteFadeKind kind;
   final AlignmentGeometry alignment;
+
+  /// What [child] shows, as a value; null always fades.
+  final Object? identity;
 
   @override
   State<ShellRouteFade> createState() => _ShellRouteFadeState();
@@ -45,7 +53,9 @@ class _ShellRouteFadeState extends State<ShellRouteFade>
   @override
   Widget build(BuildContext context) {
     current = widget.child;
-    final retained = ghost;
+    currentIdentity = widget.identity;
+    final same = continuous;
+    final retained = same ? null : ghost;
     return Stack(
       alignment: widget.alignment,
       fit: StackFit.passthrough,
@@ -60,7 +70,11 @@ class _ShellRouteFadeState extends State<ShellRouteFade>
               ),
             ),
           ),
-        _layer(widget.child, liveOpacity, liveOffset),
+        _layer(
+          widget.child,
+          same ? kAlwaysCompleteAnimation : liveOpacity,
+          same ? kAlwaysDismissedAnimation : liveOffset,
+        ),
       ],
     );
   }
@@ -175,6 +189,14 @@ mixin _ShellRouteRetention<W extends StatefulWidget> on State<W> {
   /// The child built for the current location; set on each build.
   Widget? current;
 
+  /// The value identity of [current], when it has one; set on each build.
+  Object? currentIdentity;
+  Object? _retainedIdentity;
+
+  /// Whether the retained and current children show the same thing.
+  bool get continuous =>
+      currentIdentity != null && currentIdentity == _retainedIdentity;
+
   ShellRouteTransitionController? _controller;
   bool Function(String from, String to)? _animates;
   String? _location;
@@ -210,6 +232,7 @@ mixin _ShellRouteRetention<W extends StatefulWidget> on State<W> {
       _location = location;
       if (previous != null && location != null) {
         _retained = current;
+        _retainedIdentity = currentIdentity;
         _retainedLocation = previous;
         _showRetained =
             _retained != null && scope!.animates(previous, location);

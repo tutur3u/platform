@@ -1,15 +1,20 @@
 part of 'custom_navigation_bar.dart';
 
-/// The dock entry for a navigation [item]: its key, its semantics label as
-/// the visible label, and its child as the glyph.
+/// The dock entry for a navigation [item]: its key, its accessible name as
+/// the visible label, and its child as the glyph. A [ShellDockNavIcon] that
+/// opens a menu shows icon-only.
 ShellDockEntry shellDockEntryFor(shad.NavigationItem item) {
   final child = item.child;
-  final label = child is Semantics ? child.properties.label : null;
+  final icon = child is ShellDockNavIcon ? child : null;
+  final label =
+      icon?.label ?? (child is Semantics ? child.properties.label : null);
   return ShellDockEntry(
     key: item.key!,
     label: label ?? '',
     glyph: ExcludeSemantics(child: Center(child: child)),
     enabled: item.enabled ?? true,
+    iconOnly: icon?.dropdown ?? false,
+    glyphId: icon?.icon,
   );
 }
 
@@ -50,6 +55,20 @@ class MorphingNavigationBar extends StatefulWidget {
 
   /// Whether [fixedFrame] slots show labels.
   final bool labelled;
+
+  /// What the bar shows as a value: each destination's key, label, glyph,
+  /// presentation and enabled state, plus Back and the label mode. The
+  /// selection is left out because the highlight moves in place. Null when
+  /// a destination's glyph has no value form.
+  Object? get contentIdentity {
+    final values = <Object?>[fixedFrame, backKey, labelled];
+    for (final item in children) {
+      final identity = shellDockEntryFor(item).valueIdentity;
+      if (identity == null) return null;
+      values.add(identity);
+    }
+    return ShellDockContentIdentity(values);
+  }
 
   @override
   State<MorphingNavigationBar> createState() => _MorphingNavigationBarState();

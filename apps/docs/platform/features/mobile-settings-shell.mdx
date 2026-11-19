@@ -183,7 +183,24 @@ in order. Narrow windows can fold extra destinations into More sooner to
 preserve 44dp targets. The More
 slot is selected when its sheet contains the active destination. Shorter
 docks show labels where space permits. The rule also applies to page action
-groups, such as the Mail reader.
+groups, such as the Mail reader. A destination that opens a menu (the Mail
+folder, mailbox and label pickers, the Chat filters) always shows only its
+glyph and chevron, keeping its name for accessibility and its tooltip. Beside
+labelled destinations it keeps the label line's room, so every glyph sits on
+one line.
+
+Inside a task board, the dock lists only that board's views. Task settings
+stays a destination of the Tasks root, not of a board.
+
+Dock changes animate only what changed, on one shared timing (`motion.base`,
+ease-out cubic). A new destination fades and scales in, a removed one fades
+out where it was, the rest slide to their new places and the selection pill
+slides to the active slot. A changed glyph or label cross-fades. Back fades
+and scales in or out inside its reserved circle, so the pill never moves. When
+the destinations on both sides of a route change are equal by value (keys,
+labels, glyphs, enabled state and presentation), the dock contents stay the
+same elements and do not fade; only the selection moves. Reduced motion
+reaches each end state at once with no tween and the same layout and semantics.
 
 The selection pill, Back, and each slot's ink and focus outline share the
 dock's outer radius minus its inner padding. The More sheet uses its
@@ -216,7 +233,10 @@ appearances keep their clear or frosted header without it
 Coverage: `shell_root_tabs_test.dart` and `persistent_shell_dock_test.dart`
 verify the three slot positions at 390dp and 834dp, including missing controls
 and the hidden Settings pill. `shell_dock_bar_test.dart` covers Back, overflow
-and highlight timing. Other regression checks include `dock_action_choreography_test.dart`,
+and highlight timing. `shell_dock_motion_test.dart` covers icon-only menu
+destinations, slot, glyph and Back motion, value identity and reduced motion;
+`task_board_personal_dock_test.dart` covers the board and Tasks root
+destinations. Other regression checks include `dock_action_choreography_test.dart`,
 `floating_dock_rail_test.dart`, `shell_dock_modal_visibility_test.dart`,
 `shared_navbar_large_text_test.dart`, `shell_back_navigation_test.dart` and
 `shell_assistant_composer_test.dart`.
@@ -268,6 +288,8 @@ shell's chrome stays in place and changes on the same 220ms timeline.
 - Root destinations, sibling destinations of one mini app, and a change of
   location within one route pattern (another board or wallet) swap in place
   without this transition.
+- When both pages show equal dock destinations, the dock contents stay in
+  place and do not fade (`shell_route_transition_test.dart`).
 - When both pages have the same dock action, the circle does not change. A
   dock action that is not an icon button changes through the circle's own
   hide and reveal.

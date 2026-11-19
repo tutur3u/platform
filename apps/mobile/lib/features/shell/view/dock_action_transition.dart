@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/features/shell/view/shell_chrome_style.dart';
 
 /// One reversible timeline: reserve space, reveal; hide, then release space.
 /// Retained outgoing controls cannot receive gestures or accessibility focus.
@@ -34,11 +35,12 @@ class _DockActionTransitionState extends State<DockActionTransition>
     value: _wanted ? 1 : 0,
   )..addStatusListener(_settled);
 
+  /// The shell's dock motion (`motion.base`).
+  Duration _base = const Duration(milliseconds: 180);
+
   /// A reserved slot only fades, so it needs just the reveal's share of the
   /// timeline; a full hide-and-reveal swap then takes as long as one entry.
-  Duration get _duration => widget.reserveSpace
-      ? const Duration(milliseconds: 180)
-      : const Duration(milliseconds: 360);
+  Duration get _duration => widget.reserveSpace ? _base : _base * 2;
   Widget? _displayed;
   Object? _identity;
   bool _replacing = false;
@@ -60,6 +62,8 @@ class _DockActionTransitionState extends State<DockActionTransition>
   void didChangeDependencies() {
     super.didChangeDependencies();
     _reduced = MediaQuery.disableAnimationsOf(context);
+    _base = ShellChromeStyle.of(context).base;
+    _controller.duration = _duration;
     if (_reduced || widget.immediate) _reconcile();
   }
 
@@ -135,7 +139,7 @@ class _DockActionTransitionState extends State<DockActionTransition>
       // A reserved slot has no space to claim first, so the reveal uses the
       // whole timeline.
       final reveal = widget.reserveSpace
-          ? Curves.easeOutCubic.transform(_controller.value)
+          ? ShellChromeStyle.dockCurve.transform(_controller.value)
           : const Interval(
               .6,
               1,

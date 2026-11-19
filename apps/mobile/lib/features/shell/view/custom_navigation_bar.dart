@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/theme/appearance/glass_effects.dart';
 import 'package:mobile/features/shell/view/shell_dock_bar.dart';
+import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'morphing_navigation_bar.dart';

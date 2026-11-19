@@ -37,29 +37,11 @@ extension _ShellPageNavigation on _ShellPageState {
     required String semanticLabel,
     Widget? image,
     bool dropdown = false,
-  }) => Semantics(
+  }) => ShellDockNavIcon(
+    icon: icon,
     label: semanticLabel,
-    button: true,
-    child: ExcludeSemantics(
-      child: SizedBox(
-        width: dropdown
-            ? ShellDockMetrics.dropdownGlyphWidth
-            : ShellDockMetrics.glyphSize,
-        height: ShellDockMetrics.glyphSize,
-        child: dropdown
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: ShellDockMetrics.dropdownGlyphSize),
-                  const Icon(
-                    Icons.expand_more,
-                    size: ShellDockMetrics.dropdownChevronSize,
-                  ),
-                ],
-              )
-            : image ?? Icon(icon, size: ShellDockMetrics.glyphSize),
-      ),
-    ),
+    image: image,
+    dropdown: dropdown,
   );
 
   List<shad.NavigationItem> _buildMiniAppNavItems(

@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/page_insets.dart';
+import 'package:mobile/features/shell/view/custom_navigation_bar.dart';
 import 'package:mobile/features/shell/view/floating_dock_rail.dart';
+import 'package:mobile/features/shell/view/shell_dock_action_group_bar.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
+
+/// The value identity of dock [content]: navigation by its destinations and
+/// an action group by its actions. Null for other content, which always
+/// fades on a route change.
+Object? shellDockContentIdentity(Widget? content) => switch (content) {
+  final MorphingNavigationBar bar => bar.contentIdentity,
+  final ShellDockActionGroupBar bar => bar.group,
+  _ => null,
+};
 
 /// The shell retains this state, material and bounds across every destination.
 /// Only the current content is interactive: no outgoing composer/nav duplicates.
@@ -17,9 +28,15 @@ class PersistentShellDock extends StatefulWidget {
     this.leading,
     this.primary,
     this.showPrimary = true,
+    this.contentIdentity,
     super.key,
   });
   final Widget? content;
+
+  /// What [content] shows, as a value. Defaults to
+  /// [shellDockContentIdentity]; equal identities on both sides of a route
+  /// change keep the content in place without a fade.
+  final Object? contentIdentity;
   final double navigationWidth;
   final bool composing;
   final bool expandContent;
@@ -75,6 +92,9 @@ class _PersistentShellDockState extends State<PersistentShellDock> {
               key: ValueKey(widget.composing),
               // A push fades the contents through inside the same material.
               child: ShellRouteFade(
+                identity:
+                    widget.contentIdentity ??
+                    shellDockContentIdentity(widget.content),
                 child: widget.content ?? const SizedBox.shrink(),
               ),
             ),

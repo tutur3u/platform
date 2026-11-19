@@ -174,4 +174,11 @@ class ShellChromeStyle {
 
   Duration motion(BuildContext context, Duration duration) =>
       MediaQuery.disableAnimationsOf(context) ? Duration.zero : duration;
+
+  /// The curve every dock control and slot change shares.
+  static const Curve dockCurve = Curves.easeOutCubic;
+
+  /// The duration every dock control and slot change shares: [base], or zero
+  /// under reduced motion.
+  Duration dockMotion(BuildContext context) => motion(context, base);
 }

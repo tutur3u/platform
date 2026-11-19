@@ -122,6 +122,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('equal dock contents stay in place without a fade', (
+    tester,
+  ) async {
+    final router = await pumpRouteHarness(tester);
+    router.go(settingsLocation);
+    await tester.pumpAndSettle();
+    final before = dockGeometry(tester);
+    final contents = tester.element(find.text('General'));
+    unawaited(router.push(aboutLocation));
+    await _walkTimeline(tester, (ms) => ms / 220, (ms, v) {
+      expect(find.text('General'), findsOneWidget, reason: 'at ${ms}ms');
+      expect(tester.element(find.text('General')), same(contents));
+      _expectOpacity(
+        layerOpacity(tester, find.text('General')),
+        1,
+        'dock contents at ${ms}ms',
+      );
+      expect(dockGeometry(tester), before, reason: 'dock at ${ms}ms');
+    });
+    await tester.pumpAndSettle();
+    expect(tester.element(find.text('General')), same(contents));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('the circle keeps its material while only its icon swaps', (
     tester,
   ) async {

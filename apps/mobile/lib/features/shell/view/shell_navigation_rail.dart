@@ -5,6 +5,7 @@ import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/features/shell/view/shell_chrome_style.dart';
+import 'package:mobile/features/shell/view/shell_dock_nav_icon.dart';
 import 'package:mobile/features/shell/view/shell_dock_surface.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -151,12 +152,14 @@ class _RailDestination extends StatelessWidget {
   }
 }
 
-/// The localized label a shell destination already carries in its
-/// [Semantics] wrapper, reused as the rail's hover tooltip.
+/// The localized label a shell destination already carries as its
+/// accessible name, reused as the rail's hover tooltip.
 String? shellNavigationItemLabel(shad.NavigationItem item) {
-  final child = item.child;
-  if (child is! Semantics) return null;
-  final label = child.properties.label;
+  final label = switch (item.child) {
+    final ShellDockNavIcon icon => icon.label,
+    final Semantics semantics => semantics.properties.label,
+    _ => null,
+  };
   return label == null || label.isEmpty ? null : label;
 }
 

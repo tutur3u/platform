@@ -206,7 +206,13 @@ localization changes.
   More preserves 44dp targets on narrow windows. The first `inDock` action
   uses the priority circle, and the top bar shows the rest.
   `PersistentShellDock` keeps the material mounted across navigation and
-  composer modes when both use it. See `shell_root_tabs_test.dart` and
+  composer modes when both use it. Build destination glyphs with
+  `ShellDockNavIcon`; `dropdown: true` (a destination that opens a menu)
+  renders icon-only and gives the dock its value identity. Dock motion uses
+  `ShellChromeStyle.dockMotion`/`dockCurve` and must reach the end state at
+  once under reduced motion; `ShellDockAnimatedSlots` animates only changed
+  slots, and equal `contentIdentity` skips the route fade
+  (`shell_dock_motion_test.dart`). See `shell_root_tabs_test.dart` and
   `shell_viewport_checks.dart` for bound and touch-target coverage.
 - The shell owns one workspace picker in the trailing header position on
   each of Home, Apps, Mira, Alerts and Profile. Route-local search leaves
