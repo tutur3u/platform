@@ -28,8 +28,22 @@ export const mailMounts = {
     process.env.MAIL_DEPLOYMENT_PROFILE === 'staging' ? 'reject' : 'root',
 } satisfies AppMountConfig;
 
+// The production artifact serves unknown preview and rollback hosts at the
+// root, but never a staging-domain host it does not explicitly mount (N8/N9).
+const stagingDomainSuffix =
+  process.env.MAIL_DEPLOYMENT_PROFILE === 'production' ? '.tutur3u.com' : null;
+
+function isForeignEnvironmentHost(host: string) {
+  return (
+    stagingDomainSuffix !== null &&
+    host.endsWith(stagingDomainSuffix) &&
+    !(mailMounts.mountHosts as readonly string[]).includes(host)
+  );
+}
+
 export function mailAppPath(request: Request) {
   const url = new URL(request.url);
+  if (isForeignEnvironmentHost(url.host)) return null;
   const mount = resolveAppBase(url, mailMounts);
   return mount
     ? createBasePath({ app: 'mail', basePath: mount.basePath }).strip(

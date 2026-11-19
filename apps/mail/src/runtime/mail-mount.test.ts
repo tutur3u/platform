@@ -17,6 +17,8 @@ describe('Mail host and app mount boundaries', () => {
     ['https://tuturuuu.com/mail', '/'],
     ['https://tuturuuu.com/mailbox', null],
     ['https://tuturuuu.com/api/v1/mail/connected/callback', null],
+    ['https://mail.tutur3u.com/api/build-info', null],
+    ['https://mail.tutur3u.com/en/personal', null],
   ])('resolves only the app-owned path for %s', (url, expected) => {
     expect(mailAppPath(new Request(url))).toBe(expected);
   });
