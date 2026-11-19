@@ -30,7 +30,11 @@ import { getBoardSprintsQueryKey } from './board-sprints/use-board-sprints';
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
-import { readTaskBoardCache, writeTaskBoardCache } from './task-board-cache';
+import { readTaskBoardCache } from './task-board-cache';
+import {
+  flushTaskBoardCacheWrite,
+  scheduleTaskBoardCacheWrite,
+} from './task-board-cache-scheduler';
 import { TaskBoardLoadingState } from './task-board-loading-state';
 import { TaskCardHotkeysProvider } from './task-card-hotkeys-provider';
 import { useProgressiveBoardLoader } from './use-progressive-board-loader';
@@ -149,12 +153,16 @@ export function BoardClient({
 
   useEffect(() => {
     if (!board?.id) return;
-    writeTaskBoardCache(cacheScopeId, boardId, {
+    scheduleTaskBoardCacheWrite(cacheScopeId, boardId, {
       board,
       pagination: progressiveLoader.pagination,
       tasks,
     });
   }, [board, boardId, cacheScopeId, progressiveLoader.pagination, tasks]);
+  useEffect(
+    () => () => flushTaskBoardCacheWrite(cacheScopeId, boardId),
+    [boardId, cacheScopeId]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

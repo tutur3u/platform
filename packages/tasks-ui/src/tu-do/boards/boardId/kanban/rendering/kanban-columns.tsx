@@ -7,7 +7,13 @@ import {
 import { getBoardRealtimeChannelName } from '@tuturuuu/tasks-ui/hooks/useBoardRealtime.types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import type { ListStatusFilter } from '../../../../shared/board-header';
 import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-wrapper';
 import type {
@@ -17,9 +23,9 @@ import type {
 import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
-import { compareTasksByEffectiveSortKey } from '../dnd/task-sort-key';
 import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { isKanbanColumnCollapsed } from '../kanban-column-collapse';
+import { groupKanbanTasks } from './group-kanban-tasks';
 import { getKanbanColumnWidth } from './kanban-column-width';
 import {
   readKanbanScrollPosition,
@@ -150,6 +156,10 @@ export function KanbanColumns({
   const latestScrollLeftRef = useRef<number | null>(null);
   const saveScrollFrameRef = useRef<number | null>(null);
   const realColumns = columns.filter((column) => !column.is_external_staging);
+  const tasksByList = useMemo(
+    () => groupKanbanTasks(tasks, columns, disableSort),
+    [tasks, columns, disableSort]
+  );
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
   const collapsedColumnCount = columns.filter(isKanbanColumnCollapsed).length;
   const dynamicColumnWidth = getKanbanColumnWidth({
@@ -321,40 +331,7 @@ export function KanbanColumns({
           }}
         >
           {columns.map((list) => {
-            // Filter tasks for this list
-            let listTasks = tasks.filter((task) => task.list_id === list.id);
-
-            // Sort tasks - done/closed lists ALWAYS sort by timestamps only, others respect disableSort
-            listTasks = listTasks.sort((a, b) => {
-              // For done lists, ONLY sort by completed_at (most recent first) - no fallback to sort_key
-              if (list.status === 'done') {
-                const completionA = a.completed_at
-                  ? new Date(a.completed_at).getTime()
-                  : 0;
-                const completionB = b.completed_at
-                  ? new Date(b.completed_at).getTime()
-                  : 0;
-                return completionB - completionA; // Always return, never fall through
-              }
-
-              // For closed lists, ONLY sort by closed_at (most recent first) - no fallback to sort_key
-              if (list.status === 'closed') {
-                const closedA = a.closed_at
-                  ? new Date(a.closed_at).getTime()
-                  : 0;
-                const closedB = b.closed_at
-                  ? new Date(b.closed_at).getTime()
-                  : 0;
-                return closedB - closedA; // Always return, never fall through
-              }
-
-              // For all other lists, only sort by sort_key if parent hasn't already sorted
-              if (!disableSort) {
-                return compareTasksByEffectiveSortKey(a, b);
-              }
-
-              return 0;
-            });
+            const listTasks = tasksByList.get(list.id) ?? [];
 
             return (
               <BoardColumn

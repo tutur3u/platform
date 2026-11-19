@@ -110,6 +110,7 @@ import { TaskLabelsDisplay } from '../../../shared/task-labels-display';
 import { TaskShareDialog } from '../../../shared/task-share-dialog';
 import { TaskTimerMenuItem } from '../../../shared/task-timer-menu-item';
 import { useCachedBoardTasks } from '../../../shared/use-cached-board-tasks';
+import { useTaskCardBulkDisplay } from './use-task-card-bulk-display';
 import { TaskViewerAvatarsComponent } from '../../../shared/user-presence-avatars';
 import { useTasksHref } from '../../../tasks-route-context';
 import {
@@ -1747,101 +1748,17 @@ function TaskCardInner({
   const showBlockedByUnderTitle =
     showBlockedByCallout && !showBlockedByInlineWithCheckbox;
 
-  const { data: allTasksFromQuery } = useCachedBoardTasks(boardId);
-
   const {
     displayLabels,
     displayProjects,
     displayAssignees,
     displayEstimation,
-  } = useMemo(() => {
-    const shouldUseBulkMode =
-      isMultiSelectMode &&
-      selectedTasks &&
-      selectedTasks.size > 1 &&
-      selectedTasks.has(task.id);
-
-    if (!shouldUseBulkMode) {
-      return {
-        displayLabels: task.labels || [],
-        displayProjects: task.projects || [],
-        displayAssignees: task.assignees || [],
-        displayEstimation: task.estimation_points,
-      };
-    }
-
-    // Get all selected tasks data from query cache
-    const allTasks = (allTasksFromQuery as Task[]) || [];
-    const selectedTasksData = allTasks.filter((t) => selectedTasks?.has(t.id));
-
-    if (selectedTasksData.length === 0) {
-      return {
-        displayLabels: task.labels || [],
-        displayProjects: task.projects || [],
-        displayAssignees: task.assignees || [],
-        displayEstimation: task.estimation_points,
-      };
-    }
-
-    // Find attributes that ALL selected tasks have in common
-    // Start with all unique attributes from all selected tasks
-    const allLabels = new Map<string, any>();
-    const allProjects = new Map<string, any>();
-    const allAssignees = new Map<string, any>();
-
-    selectedTasksData.forEach((t) => {
-      t.labels?.forEach((label) => {
-        allLabels.set(label.id, label);
-      });
-      t.projects?.forEach((project) => {
-        allProjects.set(project.id, project);
-      });
-      t.assignees?.forEach((assignee) => {
-        allAssignees.set(assignee.id, assignee);
-      });
-    });
-
-    // Filter to only those present in ALL selected tasks
-    const commonLabels = Array.from(allLabels.values()).filter((label) =>
-      selectedTasksData.every((t) => t.labels?.some((l) => l.id === label.id))
-    );
-
-    const commonProjects = Array.from(allProjects.values()).filter((project) =>
-      selectedTasksData.every((t) =>
-        t.projects?.some((p) => p.id === project.id)
-      )
-    );
-
-    const commonAssignees = Array.from(allAssignees.values()).filter(
-      (assignee) =>
-        selectedTasksData.every((t) =>
-          t.assignees?.some((a) => a.id === assignee.id)
-        )
-    );
-
-    // Check if ALL selected tasks have the same estimation
-    const firstEstimation = selectedTasksData[0]?.estimation_points;
-    const allSameEstimation = selectedTasksData.every(
-      (t) => t.estimation_points === firstEstimation
-    );
-    const commonEstimation = allSameEstimation ? firstEstimation : undefined;
-
-    return {
-      displayLabels: commonLabels,
-      displayProjects: commonProjects,
-      displayAssignees: commonAssignees,
-      displayEstimation: commonEstimation,
-    };
-  }, [
+  } = useTaskCardBulkDisplay({
+    boardId,
+    task,
     isMultiSelectMode,
     selectedTasks,
-    task.id,
-    task.labels,
-    task.projects,
-    task.assignees,
-    task.estimation_points,
-    allTasksFromQuery,
-  ]);
+  });
 
   const availableLabelsForMenu = mergeTaskCardLabelOptions(
     workspaceLabels,
