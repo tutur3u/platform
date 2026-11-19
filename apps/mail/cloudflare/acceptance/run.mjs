@@ -19,8 +19,10 @@ import { CookieJar } from './session.mjs';
 import { composeSteps } from './steps-compose.mjs';
 import { readSteps } from './steps-read.mjs';
 
-// Public identifier of the production Supabase project; never a credential.
+// Public identifiers of the Supabase projects; never credentials.
 const PRODUCTION_SUPABASE_REF = 'nzamlzqfdwaaxdefwraj';
+const STAGING_SUPABASE_HOST = 'fxefojytwimjiqxseqag.supabase.co';
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
 const FIXTURE_VALUE = 'local-acceptance-fixture';
 
 const optional = (name, fallback) => process.env[name] || fallback;
@@ -30,10 +32,28 @@ const required = (name) => {
   return value;
 };
 
+// Only the staging project or a loopback Supabase may be used. Production is
+// refused by project ref, by any Tuturuuu-owned host (custom domains for the
+// production project) and by the presence of production Supabase variables.
+function assertStagingSupabase(supabaseUrl) {
+  const { hostname } = new URL(supabaseUrl);
+  const productionVariables = Object.keys(process.env).filter((name) =>
+    /^PRODUCTION_SUPABASE/u.test(name)
+  );
+  if (productionVariables.length)
+    throw new Error('Production Supabase variables must not be set');
+  if (
+    hostname.includes(PRODUCTION_SUPABASE_REF) ||
+    /(?:^|\.)tuturuuu\.com$/u.test(hostname)
+  )
+    throw new Error('Refusing to run against the production Supabase project');
+  if (hostname !== STAGING_SUPABASE_HOST && !LOOPBACK_HOSTS.has(hostname))
+    throw new Error('Supabase host is not the staging project or loopback');
+}
+
 function configuration() {
   const supabaseUrl = required('NEXT_PUBLIC_SUPABASE_URL');
-  if (new URL(supabaseUrl).hostname.startsWith(PRODUCTION_SUPABASE_REF))
-    throw new Error('Refusing to run against the production Supabase project');
+  assertStagingSupabase(supabaseUrl);
   if (process.env.CLOUDFLARE_API_TOKEN)
     throw new Error('No Cloudflare provider credential may be present');
   if (!required('MAIL_CLOUDFLARE_API_TOKEN').startsWith('inert-staging-'))
