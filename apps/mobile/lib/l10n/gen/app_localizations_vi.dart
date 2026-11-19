@@ -16162,4 +16162,21 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeInvoiceUnconfirmed => 'Chưa xác nhận được việc lưu. Hãy kiểm tra danh sách hóa đơn trước khi thử lại.';
+
+  @override
+  String get financeReports => 'Báo cáo';
+
+  @override
+  String get financeReportNetMovement => 'Biến động ròng lũy kế';
+
+  @override
+  String get financeReportUncategorized => 'Chưa phân loại';
+
+  @override
+  String get financeReportUnavailable => 'Không thể tải báo cáo. Hãy thử khoảng thời gian ngắn hơn.';
+
+  @override
+  String financeReportByCategory(String kind) {
+    return '$kind theo danh mục';
+  }
 }

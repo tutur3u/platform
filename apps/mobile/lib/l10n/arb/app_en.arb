@@ -7782,5 +7782,17 @@
   "financeInvoiceMonths": "{count, plural, one{1 month} other{{count} months}}",
   "financeInvoiceAddProduct": "Add product",
   "financeInvoiceDelete": "Delete invoice",
-  "financeInvoiceUnconfirmed": "Save could not be confirmed. Check the invoice list before trying again."
+  "financeInvoiceUnconfirmed": "Save could not be confirmed. Check the invoice list before trying again.",
+  "financeReports": "Reports",
+  "financeReportNetMovement": "Cumulative net movement",
+  "financeReportUncategorized": "Uncategorized",
+  "financeReportUnavailable": "Could not load report. Try a shorter period.",
+  "@financeReportByCategory": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      }
+    }
+  },
+  "financeReportByCategory": "{kind} by category"
 }

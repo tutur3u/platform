@@ -17,6 +17,7 @@ import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/finance_invoices_sheet.dart';
 import 'package:mobile/features/finance/view/finance_overview_balances.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
+import 'package:mobile/features/finance/view/finance_reports_sheet.dart';
 import 'package:mobile/features/finance/view/recurring_transactions_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
@@ -178,6 +179,17 @@ class _FinanceView extends StatelessWidget {
                 ),
               )
             : null,
+        onReports:
+            state.wallets.isNotEmpty &&
+                canManageFinance(context, 'view_finance_stats')
+            ? () => unawaited(
+                openFinanceReports(
+                  context,
+                  wallets: state.wallets,
+                  currency: state.workspaceCurrency,
+                ),
+              )
+            : null,
         onRecurring: () => unawaited(
           openRecurringTransactionsSheet(
             context,
@@ -201,6 +213,7 @@ class FinanceOverviewContent extends StatelessWidget {
     required this.onCreate,
     this.onRecurring,
     this.onInvoices,
+    this.onReports,
     this.now,
     super.key,
   });
@@ -208,6 +221,7 @@ class FinanceOverviewContent extends StatelessWidget {
   final FinanceState state;
   final VoidCallback? onRecurring;
   final VoidCallback? onInvoices;
+  final VoidCallback? onReports;
   final ValueChanged<Transaction> onTransactionTap;
   final VoidCallback? onCreate;
 
@@ -266,6 +280,14 @@ class FinanceOverviewContent extends StatelessWidget {
                       title: l10n.financeInvoices,
                       leading: const AppIconTile(icon: LucideIcons.receipt),
                       onTap: onInvoices,
+                    ),
+                  if (onReports != null)
+                    AppRichRow(
+                      title: l10n.financeReports,
+                      leading: const AppIconTile(
+                        icon: LucideIcons.chartNoAxesColumn,
+                      ),
+                      onTap: onReports,
                     ),
                   if (onRecurring != null)
                     AppRichRow(

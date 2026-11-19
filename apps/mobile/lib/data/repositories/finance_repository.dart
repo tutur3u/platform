@@ -43,6 +43,7 @@ part 'finance_repository_local.dart';
 part 'finance_repository_mutations.dart';
 part 'finance_repository_offline_preparation.dart';
 part 'finance_repository_recurring.dart';
+part 'finance_repository_reports.dart';
 part 'finance_repository_taxonomy.dart';
 part 'finance_repository_transaction_lookup.dart';
 
@@ -55,7 +56,8 @@ class FinanceRepository
         FinanceRepositoryBudgets,
         FinanceRepositoryCheckpoints,
         FinanceRepositoryInvoices,
-        FinanceRepositoryRecurring {
+        FinanceRepositoryRecurring,
+        FinanceRepositoryReports {
   FinanceRepository({
     ApiClient? apiClient,
     CacheStore? cacheStore,

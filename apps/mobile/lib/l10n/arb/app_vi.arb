@@ -7122,5 +7122,10 @@
   "financeInvoiceMonths": "{count} tháng",
   "financeInvoiceAddProduct": "Thêm sản phẩm",
   "financeInvoiceDelete": "Xóa hóa đơn",
-  "financeInvoiceUnconfirmed": "Chưa xác nhận được việc lưu. Hãy kiểm tra danh sách hóa đơn trước khi thử lại."
+  "financeInvoiceUnconfirmed": "Chưa xác nhận được việc lưu. Hãy kiểm tra danh sách hóa đơn trước khi thử lại.",
+  "financeReports": "Báo cáo",
+  "financeReportNetMovement": "Biến động ròng lũy kế",
+  "financeReportUncategorized": "Chưa phân loại",
+  "financeReportUnavailable": "Không thể tải báo cáo. Hãy thử khoảng thời gian ngắn hơn.",
+  "financeReportByCategory": "{kind} theo danh mục"
 }

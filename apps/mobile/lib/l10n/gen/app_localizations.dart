@@ -30318,6 +30318,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save could not be confirmed. Check the invoice list before trying again.'**
   String get financeInvoiceUnconfirmed;
+
+  /// No description provided for @financeReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports'**
+  String get financeReports;
+
+  /// No description provided for @financeReportNetMovement.
+  ///
+  /// In en, this message translates to:
+  /// **'Cumulative net movement'**
+  String get financeReportNetMovement;
+
+  /// No description provided for @financeReportUncategorized.
+  ///
+  /// In en, this message translates to:
+  /// **'Uncategorized'**
+  String get financeReportUncategorized;
+
+  /// No description provided for @financeReportUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load report. Try a shorter period.'**
+  String get financeReportUnavailable;
+
+  /// No description provided for @financeReportByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'{kind} by category'**
+  String financeReportByCategory(String kind);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

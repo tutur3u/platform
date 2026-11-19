@@ -16362,4 +16362,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeInvoiceUnconfirmed => 'Save could not be confirmed. Check the invoice list before trying again.';
+
+  @override
+  String get financeReports => 'Reports';
+
+  @override
+  String get financeReportNetMovement => 'Cumulative net movement';
+
+  @override
+  String get financeReportUncategorized => 'Uncategorized';
+
+  @override
+  String get financeReportUnavailable => 'Could not load report. Try a shorter period.';
+
+  @override
+  String financeReportByCategory(String kind) {
+    return '$kind by category';
+  }
 }
