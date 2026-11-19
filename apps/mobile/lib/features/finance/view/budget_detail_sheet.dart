@@ -27,13 +27,13 @@ Future<bool> showBudgetDetailSheet(
 }) async =>
     await showAppSheet<bool>(
       context: context,
-      builder: (_) => BudgetDetailSheet(
+      builder: (sheetContext) => BudgetDetailSheet(
         budget: budget,
         currency: currency,
         now: now,
         category: category,
         wallet: wallet,
-        onEdit: canEdit ? () => Navigator.of(context).pop(true) : null,
+        onEdit: canEdit ? () => Navigator.of(sheetContext).pop(true) : null,
       ),
     ) ??
     false;

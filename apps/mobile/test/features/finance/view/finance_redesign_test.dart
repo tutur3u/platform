@@ -7,6 +7,7 @@ import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/utils/budget_pace.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
+import 'package:mobile/features/finance/view/budget_detail_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
 import 'package:mobile/features/finance/view/transaction_list_empty.dart';
 import 'package:mobile/features/finance/widgets/finance_flow_summary.dart';
@@ -168,6 +169,53 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('1.250.000 ₫'), findsOneWidget);
     expect(find.text('+32.000.000 ₫'), findsWidgets);
+  });
+
+  testWidgets('a budget opens its details with pace and Edit', (tester) async {
+    await tester.pumpThemedHome(
+      const FinanceScreenScene(scene: FinanceScene.budgets, showAmounts: true),
+    );
+    await pumpFinanceUntilVisible(tester, find.text('Groceries'));
+    await tester.pumpAndSettle();
+    expect(find.text('1.750.000 ₫ left · 134.615 ₫/day'), findsOneWidget);
+    await tester.tap(find.text('Groceries'));
+    await tester.pumpAndSettle();
+    expect(find.text('Per day'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('finance-budget-detail-edit')),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('budget details show what is left per remaining day', (
+    tester,
+  ) async {
+    await tester.pumpThemedHome(
+      FinanceScreenScene(
+        scene: FinanceScene.budgets,
+        showAmounts: true,
+        page: BudgetDetailSheet(
+          budget: FinanceBudget(
+            id: 'groceries-budget',
+            name: 'Groceries',
+            amount: 5000000,
+            spent: 3250000,
+            startDate: DateTime(2026, 11),
+          ),
+          currency: 'VND',
+          now: financeSceneDate,
+          onEdit: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('134.615 ₫'), findsOneWidget);
+    expect(find.text('1.750.000 ₫'), findsOneWidget);
+    expect(find.text('13 days left'), findsOneWidget);
+    expect(find.text('Monthly'), findsOneWidget);
+    expect(find.text('On track'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   group('transactions empty state', () {
