@@ -208,6 +208,27 @@ lookalikes (`/learning`), other hosts and unlisted or unbound paths keep going
 to `WEB_ORIGIN`. Regression coverage lives in
 `apps/gateway/src/worker-mount.test.ts`.
 
+### Version-pinned asset smoke
+
+Before activating any mounted app, check the candidate HTML on both its
+subdomain and apex mount. Pass document URLs that should render HTML, then
+save the JSON receipt with the app's other version-pinned smoke results.
+
+```bash
+python3 apps/gateway/scripts/mounted_assets_smoke.py \
+  --subdomain-url "https://${APP_SUBDOMAIN}/" \
+  --apex-url "https://tuturuuu.com/${APP_MOUNT}" \
+  --app-worker "$APP_WORKER" --app-version "$APP_VERSION" \
+  --gateway-version "$GATEWAY_VERSION"
+```
+
+The check fetches each HTTP stylesheet, module preload, script, image
+(including responsive sources), font preload, manifest and icon URL declared
+in the HTML. It uses the emitted URL as the browser resolves it. A redirect,
+non-200 result, or HTML fallback on an asset fails the check. The version
+override header goes only to the two release origins. If the check fails,
+keep the candidate at 0% traffic.
+
 ### Roadmap query routing
 
 An exact `tuturuuu.com/roadmap` zone route excludes requests such as
