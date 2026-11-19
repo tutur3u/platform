@@ -15,5 +15,15 @@
     "blockDigest": "5e1c65ec619a3084f43b9267d124ac5896fa2a7d56ef10e402d86c36c7050e65",
     "grantedRoles": ["authenticated", "service_role"],
     "reason": "hardening block: revokes PUBLIC/anon(/authenticated) and conditionally re-grants service_role(/authenticated); no anon/PUBLIC grant"
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261119155020_workspace_board_ticket_keys.sql",
+    "blockDigest": "e71709aff5c2e330fd869c2acfd7e06f099ff7d253fc35eeb408748e424cd5e8",
+    "reason": "Security exception approved by vhpx (USER) via Iris, 20 Nov 2026, independent review attached: migration-time DO block over literal regprocedure signatures with constant replace() edits; pg_get_functiondef replay keeps each function's owner, security mode and ACL. Patches private.assign_project_ticket_key and private.protect_project_ticket_identity, SECURITY INVOKER triggers with no client grants. No GRANT; aborts on contract drift."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261119155020_workspace_board_ticket_keys.sql",
+    "blockDigest": "37e6c32593a2428c55b2f5e283708f60de80df1c3067f4323228bcc74025ac5e",
+    "reason": "Security exception approved by vhpx (USER) via Iris, 20 Nov 2026, independent review attached: migration-time DO block over literal regprocedure signatures with constant replace() edits; pg_get_functiondef replay keeps each function's owner, security mode and ACL. Patches private.list_task_source_filter_ids and private.count_task_source_filter_lists, SECURITY DEFINER RPCs granted only to service_role and left unchanged. No GRANT; aborts on contract drift."
   }
 ]
