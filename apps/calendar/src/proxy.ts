@@ -395,13 +395,17 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
         withAppBase(`/${target}`, req.nextUrl.basePath),
         req.nextUrl
       );
+      redirectUrl.search = req.nextUrl.search;
       const wsRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, wsRedirect);
       return wsRedirect;
     } catch {
-      const fallbackRedirect = NextResponse.redirect(
-        new URL(withAppBase('/personal', req.nextUrl.basePath), req.nextUrl)
+      const redirectUrl = new URL(
+        withAppBase('/personal', req.nextUrl.basePath),
+        req.nextUrl
       );
+      redirectUrl.search = req.nextUrl.search;
+      const fallbackRedirect = NextResponse.redirect(redirectUrl);
       propagateAuthCookies(authRes, fallbackRedirect);
       return fallbackRedirect;
     }

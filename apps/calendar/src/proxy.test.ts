@@ -511,26 +511,34 @@ describe('Calendar proxy redirect caching', () => {
     );
   });
 
-  it('marks the default-workspace redirect uncacheable', async () => {
+  it('preserves the query on the mounted default-workspace redirect', async () => {
     mocks.getCurrentUserDefaultWorkspace.mockResolvedValue({
       id: WORKSPACE_ID,
       personal: false,
     });
+    const query = '?view=week&filter=a%2Fb&filter=c';
     const response = await proxy(
-      new NextRequest('https://calendar.tuturuuu.com/')
+      new NextRequest(`https://tuturuuu.com/calendar${query}`, {
+        nextConfig: { basePath: '/calendar' },
+      })
     );
     expectPrivateRedirect(
       response,
-      `https://calendar.tuturuuu.com/${WORKSPACE_ID}`
+      `https://tuturuuu.com/calendar/${WORKSPACE_ID}${query}`
     );
   });
 
-  it('marks the default-workspace fallback redirect uncacheable', async () => {
+  it('preserves the query on the mounted localized fallback redirect', async () => {
     mocks.getCurrentUserDefaultWorkspace.mockRejectedValue(new Error('down'));
     const response = await proxy(
-      new NextRequest('https://calendar.tuturuuu.com/vi')
+      new NextRequest('https://tuturuuu.com/calendar/vi?view=week', {
+        nextConfig: { basePath: '/calendar' },
+      })
     );
-    expectPrivateRedirect(response, 'https://calendar.tuturuuu.com/personal');
+    expectPrivateRedirect(
+      response,
+      'https://tuturuuu.com/calendar/personal?view=week'
+    );
   });
 
   it('marks the signed-in login short-circuit uncacheable', async () => {

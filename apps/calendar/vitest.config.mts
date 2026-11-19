@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  tsconfig: resolve(import.meta.dirname, 'tsconfig.json'),
   plugins: [react()],
   test: {
     server: {
