@@ -53,7 +53,10 @@ import type {
   InventoryFinanceCurrencyAmount,
   InventoryFinanceReconciliationSummary,
 } from './finance-reconciliation';
-
+export {
+  deleteWalletCheckpoint,
+  setWalletCheckpointReview,
+} from './finance-checkpoint-review';
 export async function listWallets(
   workspaceId: string,
   options?: InternalApiClientOptions
@@ -181,6 +184,7 @@ export interface WalletCheckpoint {
   ledger_balance: number;
   note: string | null;
   original_variance: number;
+  reviewed_at?: string | null;
   updated_at: string;
   wallet_id: string;
 }
@@ -338,22 +342,6 @@ export async function updateWalletCheckpoint(
         'Content-Type': 'application/json',
       },
       method: 'PATCH',
-    }
-  );
-}
-
-export async function deleteWalletCheckpoint(
-  workspaceId: string,
-  walletId: string,
-  checkpointId: string,
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(withFinanceApiBaseUrl(options));
-  return client.json<{ message: string }>(
-    `/api/workspaces/${encodePathSegment(workspaceId)}/wallets/${encodePathSegment(walletId)}/checkpoints/${encodePathSegment(checkpointId)}`,
-    {
-      cache: 'no-store',
-      method: 'DELETE',
     }
   );
 }

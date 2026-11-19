@@ -11,6 +11,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/finance/wallet_checkpoint.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
@@ -216,6 +217,29 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
     }
   });
 
+  Future<void> _toggleReview(WalletCheckpoint checkpoint) => _mutate(() async {
+    bool allowed() =>
+        _active &&
+        canManageFinance(context, 'update_wallets', listen: false) &&
+        canManageFinance(context, 'view_transactions', listen: false);
+    if (!allowed()) return;
+    try {
+      await _repository.setWalletCheckpointReview(
+        wsId: widget.workspaceId,
+        checkpoint: checkpoint,
+        reviewed: checkpoint.reviewedAt == null,
+        active: allowed,
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode != 409 || !mounted || !_active) rethrow;
+      showAppToast(
+        context,
+        message: context.l10n.financeCheckpointReviewChanged,
+      );
+    }
+    if (_active) await _load(force: true);
+  });
+
   Future<void> _delete(WalletCheckpoint checkpoint) => _mutate(() async {
     final confirmed = await showAppActionSheet<bool>(
       context: context,
@@ -366,6 +390,11 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
                               Localizations.localeOf(context).toString(),
                             ).add_jm().format(checkpoint.checkedAt.toLocal()),
                             subtitle: checkpoint.note,
+                            trailingCaption: checkpoint.reviewAvailable
+                                ? checkpoint.reviewedAt == null
+                                      ? l10n.financeCheckpointNeedsReview
+                                      : l10n.financeCheckpointReviewed
+                                : null,
                             leading: const AppIconTile(
                               icon: LucideIcons.history,
                             ),
@@ -393,6 +422,10 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
                                     )
                                     .firstOrNull,
                                 canChange: canChange,
+                                canReview:
+                                    canChange &&
+                                    checkpoint.reviewAvailable &&
+                                    !pendingIds.contains(checkpoint.id),
                                 canAdjust:
                                     canAdjust &&
                                     !pendingIds.contains(checkpoint.id),
@@ -414,6 +447,7 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
     WalletCheckpoint checkpoint, {
     required WalletCheckpointInterval? interval,
     required bool canChange,
+    required bool canReview,
     required bool canAdjust,
   }) async {
     if (!_active || _busy) return;
@@ -452,11 +486,35 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
                 child: Text(l10n.financeCheckpointsWindows),
               ),
           ],
-          child: CheckpointAmounts(
-            actual: checkpoint.actualBalance,
-            ledger: checkpoint.currentLedgerBalance,
-            variance: checkpoint.currentVariance,
-            currency: checkpoint.currency,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: AppSpacing.md,
+            children: [
+              CheckpointAmounts(
+                actual: checkpoint.actualBalance,
+                ledger: checkpoint.currentLedgerBalance,
+                variance: checkpoint.currentVariance,
+                currency: checkpoint.currency,
+              ),
+              if (checkpoint.reviewAvailable)
+                AppRichRow(
+                  title: checkpoint.reviewedAt == null
+                      ? l10n.financeCheckpointNeedsReview
+                      : l10n.financeCheckpointReviewed,
+                  trailing: canReview
+                      ? AppButton.secondary(
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pop(_CheckpointAction.toggleReview),
+                          child: Text(
+                            checkpoint.reviewedAt == null
+                                ? l10n.financeCheckpointMarkReviewed
+                                : l10n.financeCheckpointReopen,
+                          ),
+                        )
+                      : null,
+                ),
+            ],
           ),
         );
         return preferences == null
@@ -474,10 +532,12 @@ class _WalletCheckpointHistoryState extends State<_WalletCheckpointHistory> {
         await _adjust(checkpoint);
       case _CheckpointAction.interval:
         await _adjust(checkpoint, interval: interval);
+      case _CheckpointAction.toggleReview:
+        await _toggleReview(checkpoint);
       case null:
         break;
     }
   }
 }
 
-enum _CheckpointAction { delete, edit, adjust, interval }
+enum _CheckpointAction { delete, edit, adjust, interval, toggleReview }

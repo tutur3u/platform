@@ -2467,7 +2467,7 @@
   "financeCheckpointsReconciliationCreated": "Đã tạo giao dịch đối chiếu",
   "financeCheckpointsRecord": "Ghi điểm kiểm tra",
   "financeCheckpointsRecordDescription": "Lưu số dư thực tế đang hiển thị trong {wallet}.",
-  "financeCheckpointsSaveReview": "Lưu số dư đã kiểm tra",
+  "financeCheckpointsSaveReview": "Lưu mốc kiểm tra",
   "financeCheckpointsSaved": "Đã lưu điểm kiểm tra",
   "financeCheckpointsSharedNote": "Ghi chú chung",
   "financeCheckpointsShortLabel": "Kiểm tra",
@@ -7192,5 +7192,10 @@
   "financeInterestHistorical": "Tính tiền lãi quá khứ",
   "financeInterestRateHistory": "Lịch sử lãi suất",
   "financeInterestPercent": "{rate}%",
-  "financeInterestDays": "{count} ngày"
+  "financeInterestDays": "{count} ngày",
+  "financeCheckpointReviewed": "Đã kiểm tra",
+  "financeCheckpointNeedsReview": "Cần kiểm tra",
+  "financeCheckpointMarkReviewed": "Đánh dấu đã kiểm tra",
+  "financeCheckpointReopen": "Mở lại",
+  "financeCheckpointReviewChanged": "Mốc kiểm tra đã thay đổi. Hãy kiểm tra số dư mới nhất."
 }

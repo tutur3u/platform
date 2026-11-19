@@ -3747,7 +3747,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get financeCheckpointsSaveReview => 'Save reviewed balance';
+  String get financeCheckpointsSaveReview => 'Save checkpoint';
 
   @override
   String get financeCheckpointsSaved => 'Checkpoint saved';
@@ -16592,4 +16592,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String financeInterestDays(int count) {
     return '$count days';
   }
+
+  @override
+  String get financeCheckpointReviewed => 'Reviewed';
+
+  @override
+  String get financeCheckpointNeedsReview => 'Needs review';
+
+  @override
+  String get financeCheckpointMarkReviewed => 'Mark reviewed';
+
+  @override
+  String get financeCheckpointReopen => 'Reopen';
+
+  @override
+  String get financeCheckpointReviewChanged => 'Checkpoint changed. Review the latest balance.';
 }

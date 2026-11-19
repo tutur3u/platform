@@ -88,19 +88,25 @@ void main() {
         final text = tester.widget<Text>(variance);
         final context = tester.element(variance);
         expect(text.style?.color, context.tokens.colorScheme.destructive);
-        expect(find.text('Save reviewed balance'), findsOneWidget);
+        expect(find.text('Save checkpoint'), findsOneWidget);
         FocusManager.instance.primaryFocus?.unfocus();
         await tester.pumpAndSettle();
         await DesignRender.capture(
           tester,
           'wallet-reconciliation-${brightness.name}',
         );
-        await tester.tap(find.text('Save reviewed balance'));
+        await tester.tap(find.text('Save checkpoint'));
         await tester.pumpAndSettle();
         expect(repository.review?.actualBalance, 100);
         expect(repository.adjustmentBasis, isNull);
         await tester.tap(find.byKey(const ValueKey('reviewed-checkpoint')));
         await tester.pumpAndSettle();
+        await tester.tap(find.text('Mark reviewed'));
+        await tester.pumpAndSettle();
+        expect(repository.review?.reviewedAt, isNotNull);
+        await tester.tap(find.byKey(const ValueKey('reviewed-checkpoint')));
+        await tester.pumpAndSettle();
+        expect(find.text('Reopen'), findsOneWidget);
         await tester.tap(find.text('Create adjustment transaction'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Create adjustment transaction'));
@@ -137,9 +143,25 @@ class _ReconciliationRepository extends FinanceSceneRepository {
       checkedAt: checkedAt,
       createdAt: checkedAt,
       updatedAt: checkedAt,
+      reviewAvailable: true,
     );
     review = checkpoint;
     return checkpoint;
+  }
+
+  @override
+  Future<void> setWalletCheckpointReview({
+    required String wsId,
+    required WalletCheckpoint checkpoint,
+    required bool reviewed,
+    required bool Function() active,
+  }) async {
+    if (active()) {
+      review = WalletCheckpoint.fromJson({
+        ...checkpoint.toJson(),
+        'reviewed_at': reviewed ? DateTime.now().toIso8601String() : null,
+      });
+    }
   }
 
   @override

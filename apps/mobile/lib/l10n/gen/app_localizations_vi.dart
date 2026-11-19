@@ -3732,7 +3732,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get financeCheckpointsSaveReview => 'Lưu số dư đã kiểm tra';
+  String get financeCheckpointsSaveReview => 'Lưu mốc kiểm tra';
 
   @override
   String get financeCheckpointsSaved => 'Đã lưu điểm kiểm tra';
@@ -16391,4 +16391,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String financeInterestDays(int count) {
     return '$count ngày';
   }
+
+  @override
+  String get financeCheckpointReviewed => 'Đã kiểm tra';
+
+  @override
+  String get financeCheckpointNeedsReview => 'Cần kiểm tra';
+
+  @override
+  String get financeCheckpointMarkReviewed => 'Đánh dấu đã kiểm tra';
+
+  @override
+  String get financeCheckpointReopen => 'Mở lại';
+
+  @override
+  String get financeCheckpointReviewChanged => 'Mốc kiểm tra đã thay đổi. Hãy kiểm tra số dư mới nhất.';
 }

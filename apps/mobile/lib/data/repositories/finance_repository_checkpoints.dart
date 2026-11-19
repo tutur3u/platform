@@ -236,6 +236,38 @@ mixin FinanceRepositoryCheckpoints {
     return checkpoint;
   }
 
+  Future<void> setWalletCheckpointReview({
+    required String wsId,
+    required WalletCheckpoint checkpoint,
+    required bool reviewed,
+    required bool Function() active,
+  }) async {
+    final actor = _cacheUserId();
+    if (actor == null || !active()) return;
+    final workspace = Uri.encodeComponent(wsId);
+    final wallet = Uri.encodeComponent(checkpoint.walletId);
+    final id = Uri.encodeComponent(checkpoint.id);
+    final path =
+        '/api/v1/workspaces/$workspace/finance/wallets/$wallet'
+        '/checkpoints/$id/review';
+    await _api.putJsonOperationAcknowledged(
+      path,
+      {
+        'reviewed': reviewed,
+        'expected_updated_at': checkpoint.updatedAt.toUtc().toIso8601String(),
+      },
+      admission: ApiMutationAdmission(
+        actorId: actor,
+        isCurrent: () => active() && _cacheUserId() == actor,
+      ),
+      onAcknowledged: (_) => _cacheStore.invalidateTags(
+        const ['finance:checkpoints'],
+        workspaceId: wsId,
+        userId: actor,
+      ),
+    );
+  }
+
   Future<void> deleteWalletCheckpoint({
     required String wsId,
     required String walletId,

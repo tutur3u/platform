@@ -20858,6 +20858,8 @@ export type Database = {
           id: string;
           ledger_balance: number;
           note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
           updated_at: string;
           wallet_id: string;
         };
@@ -20871,6 +20873,8 @@ export type Database = {
           id?: string;
           ledger_balance: number;
           note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
           updated_at?: string;
           wallet_id: string;
         };
@@ -20883,6 +20887,8 @@ export type Database = {
           id?: string;
           ledger_balance?: number;
           note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
           updated_at?: string;
           wallet_id?: string;
         };
@@ -20907,6 +20913,20 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'currencies';
             referencedColumns: ['code'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_wallet_checkpoints_reviewed_by_fkey';
+            columns: ['reviewed_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
           },
           {
             foreignKeyName: 'workspace_wallet_checkpoints_wallet_id_fkey';
@@ -22966,6 +22986,8 @@ export type Database = {
           id: string;
           ledger_balance: number;
           note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
           updated_at: string;
           wallet_id: string;
         }[];
@@ -26212,6 +26234,17 @@ export type Database = {
           p_user_id: string;
         };
         Returns: boolean;
+      };
+      set_wallet_checkpoint_review: {
+        Args: {
+          _actor_id: string;
+          _checkpoint_id: string;
+          _expected_updated_at: string;
+          _reviewed: boolean;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
       };
       set_workspace_invitation_roles: {
         Args: {

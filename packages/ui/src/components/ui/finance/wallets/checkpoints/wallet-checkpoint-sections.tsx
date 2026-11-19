@@ -10,6 +10,20 @@ import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
 
+export function WalletCheckpointReviewBadge({
+  reviewedAt,
+}: {
+  reviewedAt?: string | null;
+}) {
+  const t = useTranslations('wallet-checkpoints');
+  if (reviewedAt === undefined) return null;
+  return (
+    <Badge variant={reviewedAt ? 'secondary' : 'outline'}>
+      {t(reviewedAt ? 'reviewed' : 'needs_review')}
+    </Badge>
+  );
+}
+
 export function LatestCheckpoint({
   checkpoint,
   currency,
@@ -24,6 +38,7 @@ export function LatestCheckpoint({
     <div className="grid gap-2 rounded-md border p-3 text-sm md:grid-cols-3">
       <Metric label={t('latest_checkpoint')}>
         {formatDate(checkpoint.checked_at)}
+        <WalletCheckpointReviewBadge reviewedAt={checkpoint.reviewed_at} />
       </Metric>
       <Metric label={t('actual_balance')}>
         <WalletCheckpointAmount
@@ -129,12 +144,16 @@ export function WalletCheckpointTimeline({
   formatDate,
   onDelete,
   onEdit,
+  onReview,
+  reviewPending,
 }: {
   canUpdateWallets: boolean;
   checkpoints: WalletCheckpoint[];
   formatDate: (value: string) => string;
   onDelete: (checkpoint: WalletCheckpoint) => void;
   onEdit: (checkpoint: WalletCheckpoint) => void;
+  onReview: (checkpoint: WalletCheckpoint) => void;
+  reviewPending: boolean;
 }) {
   const t = useTranslations('wallet-checkpoints');
   if (checkpoints.length === 0) return null;
@@ -148,8 +167,11 @@ export function WalletCheckpointTimeline({
           className="flex flex-col gap-2 rounded-md border p-3 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <div className="font-medium text-sm">
+            <div className="flex flex-wrap items-center gap-2 font-medium text-sm">
               {formatDate(checkpoint.checked_at)}
+              <WalletCheckpointReviewBadge
+                reviewedAt={checkpoint.reviewed_at}
+              />
             </div>
             <div className="text-muted-foreground text-sm">
               <WalletCheckpointAmount
@@ -160,7 +182,19 @@ export function WalletCheckpointTimeline({
             </div>
           </div>
           {canUpdateWallets && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {checkpoint.reviewed_at !== undefined && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={reviewPending}
+                  onClick={() => onReview(checkpoint)}
+                >
+                  {t(
+                    checkpoint.reviewed_at ? 'reopen_review' : 'mark_reviewed'
+                  )}
+                </Button>
+              )}
               <Button
                 size="icon"
                 variant="ghost"

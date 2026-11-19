@@ -7,6 +7,7 @@ export type WalletCheckpointRow = {
   id: string;
   ledger_balance: number | string;
   note: string | null;
+  reviewed_at?: string | null;
   updated_at: string;
   wallet_id: string;
 };
@@ -22,6 +23,7 @@ export type WalletCheckpoint = {
   id: string;
   ledger_balance: number;
   note: string | null;
+  reviewed_at?: string | null;
   original_variance: number;
   updated_at: string;
   wallet_id: string;

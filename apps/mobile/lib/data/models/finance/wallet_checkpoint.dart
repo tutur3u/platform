@@ -16,6 +16,8 @@ class WalletCheckpoint extends Equatable {
     required this.updatedAt,
     this.createdBy,
     this.note,
+    this.reviewAvailable = false,
+    this.reviewedAt,
   });
 
   factory WalletCheckpoint.fromJson(Map<String, dynamic> json) =>
@@ -34,6 +36,8 @@ class WalletCheckpoint extends Equatable {
         updatedAt: DateTime.parse(json['updated_at'] as String),
         createdBy: json['created_by'] as String?,
         note: json['note'] as String?,
+        reviewAvailable: json.containsKey('reviewed_at'),
+        reviewedAt: DateTime.tryParse(json['reviewed_at'] as String? ?? ''),
       );
 
   final String id;
@@ -49,6 +53,8 @@ class WalletCheckpoint extends Equatable {
   final DateTime updatedAt;
   final String? createdBy;
   final String? note;
+  final bool reviewAvailable;
+  final DateTime? reviewedAt;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -64,6 +70,7 @@ class WalletCheckpoint extends Equatable {
     'updated_at': updatedAt.toIso8601String(),
     'created_by': createdBy,
     'note': note,
+    if (reviewAvailable) 'reviewed_at': reviewedAt?.toIso8601String(),
   };
 
   @override
@@ -81,6 +88,8 @@ class WalletCheckpoint extends Equatable {
     updatedAt,
     createdBy,
     note,
+    reviewAvailable,
+    reviewedAt,
   ];
 }
 

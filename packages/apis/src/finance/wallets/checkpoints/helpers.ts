@@ -11,8 +11,9 @@ import type {
   WalletCheckpointSummaryWallet,
 } from './types';
 
-export const WALLET_CHECKPOINT_SELECT =
-  'id,wallet_id,checked_at,actual_balance,ledger_balance,currency,note,created_by,created_at,updated_at';
+// Explicit response normalization keeps the rollout compatible with schemas
+// that do not yet carry review metadata.
+export const WALLET_CHECKPOINT_SELECT = '*';
 
 // Supabase returns numeric columns as strings in some runtimes and numbers in
 // others. Normalize at the API boundary so the UI and internal API stay typed.
@@ -44,6 +45,7 @@ export function normalizeCheckpoint(
     ledger_balance: ledgerBalance,
     note: row.note,
     original_variance: actualBalance - ledgerBalance,
+    ...(row.reviewed_at !== undefined ? { reviewed_at: row.reviewed_at } : {}),
     updated_at: row.updated_at,
     wallet_id: row.wallet_id,
   };

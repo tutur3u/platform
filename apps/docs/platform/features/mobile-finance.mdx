@@ -65,11 +65,15 @@ day's net.
 ## Wallet reconciliation
 
 Enter the observed balance to preview the signed variance against the wallet
-ledger. Save reviewed balance records a checkpoint without changing
+ledger. Save checkpoint records a checkpoint without changing
 transactions. When a check uses a different date or time, its saved details
 show the server-calculated historical variance.
 
 Open a checkpoint in the timeline to compare the observed and ledger balances.
+Wallet editors with access to the checkpoint can mark it reviewed or reopen
+it on web or mobile. Changes to the observed amount or time reopen the
+checkpoint. Review status is independent of the variance and updates across
+devices when the timeline refreshes.
 People with transaction-create permission can post a non-reporting adjustment
 for the checkpoint or for an unresolved interval between two checks. The server
 calculates the adjustment from the current ledger and skips it when the
@@ -178,7 +182,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
 | Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, and collect outstanding subscriptions. Fee locks, manual subscription setup, wallet reassignment, and recovery remain open |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet cash flow, cumulative movement, and category totals. Cross-wallet and invoice reports remain open |
-| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. A separate persisted review status is open |
+| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. Review status is shared with web |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export and Money Lover import. Invoice spreadsheet exports remain open |

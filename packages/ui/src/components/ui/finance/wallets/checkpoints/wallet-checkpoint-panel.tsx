@@ -6,6 +6,7 @@ import {
   createWalletCheckpoint,
   deleteWalletCheckpoint,
   listWalletCheckpoints,
+  setWalletCheckpointReview,
   updateWalletCheckpoint,
   type WalletCheckpoint,
   type WalletCheckpointInterval,
@@ -101,6 +102,18 @@ export function WalletCheckpointPanel({
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('delete_error')),
   });
+  const reviewMutation = useMutation({
+    mutationFn: (checkpoint: WalletCheckpoint) =>
+      setWalletCheckpointReview(wsId, walletId, checkpoint.id, {
+        reviewed: checkpoint.reviewed_at === null,
+        expected_updated_at: checkpoint.updated_at,
+      }),
+    onSuccess: refresh,
+    onError: () => {
+      toast.error(t('review_save_error'));
+      refresh();
+    },
+  });
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale, {
       dateStyle: 'medium',
@@ -154,6 +167,8 @@ export function WalletCheckpointPanel({
         formatDate={formatDate}
         onDelete={setDeleting}
         onEdit={setEditing}
+        onReview={(checkpoint) => reviewMutation.mutate(checkpoint)}
+        reviewPending={reviewMutation.isPending}
       />
       <WalletCheckpointDialog
         currency={currency}

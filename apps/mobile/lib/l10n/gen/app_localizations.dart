@@ -7180,7 +7180,7 @@ abstract class AppLocalizations {
   /// No description provided for @financeCheckpointsSaveReview.
   ///
   /// In en, this message translates to:
-  /// **'Save reviewed balance'**
+  /// **'Save checkpoint'**
   String get financeCheckpointsSaveReview;
 
   /// No description provided for @financeCheckpointsSaved.
@@ -30738,6 +30738,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} days'**
   String financeInterestDays(int count);
+
+  /// No description provided for @financeCheckpointReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reviewed'**
+  String get financeCheckpointReviewed;
+
+  /// No description provided for @financeCheckpointNeedsReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs review'**
+  String get financeCheckpointNeedsReview;
+
+  /// No description provided for @financeCheckpointMarkReviewed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark reviewed'**
+  String get financeCheckpointMarkReviewed;
+
+  /// No description provided for @financeCheckpointReopen.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get financeCheckpointReopen;
+
+  /// No description provided for @financeCheckpointReviewChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Checkpoint changed. Review the latest balance.'**
+  String get financeCheckpointReviewChanged;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

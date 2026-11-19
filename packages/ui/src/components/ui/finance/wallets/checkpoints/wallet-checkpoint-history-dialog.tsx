@@ -7,6 +7,7 @@ import {
   type WalletCheckpoint,
   type WalletCheckpointAuditStatus,
   type WalletCheckpointHistoryInterval,
+  type WalletCheckpointSummaryWallet,
 } from '@tuturuuu/internal-api/finance';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -34,6 +35,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { invalidateWalletMutationQueries } from '../query-invalidation';
 import { WalletCheckpointAdjustmentDialog } from './wallet-checkpoint-adjustment-dialog';
 import { WalletCheckpointAmount } from './wallet-checkpoint-amount';
+import { WalletCheckpointReviewBadge } from './wallet-checkpoint-sections';
 
 const ALL = 'all';
 
@@ -96,7 +98,13 @@ export function WalletCheckpointHistoryDialog({
     }).format(new Date(value));
   const wallets = query.data?.wallets ?? [];
   const walletById = useMemo(
-    () => new Map(wallets.map((wallet) => [wallet.id, wallet])),
+    () =>
+      new Map<string, WalletCheckpointSummaryWallet>(
+        wallets.map((wallet: WalletCheckpointSummaryWallet) => [
+          wallet.id,
+          wallet,
+        ])
+      ),
     [wallets]
   );
   const auditStatusByWalletId = useMemo(
@@ -482,6 +490,7 @@ function CheckpointRow({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge status={checkpointStatus} />
+          <WalletCheckpointReviewBadge reviewedAt={checkpoint.reviewed_at} />
           <Button size="sm" variant="ghost" asChild>
             <Link
               href={`/${wsId}${financePrefix}/wallets/${checkpoint.wallet_id}`}

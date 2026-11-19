@@ -2594,7 +2594,7 @@
   "financeCheckpointsReconciliationCreated": "Reconciliation transaction created",
   "financeCheckpointsRecord": "Record checkpoint",
   "financeCheckpointsRecordDescription": "Save the actual balance visible in {wallet}.",
-  "financeCheckpointsSaveReview": "Save reviewed balance",
+  "financeCheckpointsSaveReview": "Save checkpoint",
   "financeCheckpointsSaved": "Checkpoint saved",
   "financeCheckpointsSharedNote": "Shared note",
   "financeCheckpointsShortLabel": "Checkpoints",
@@ -7890,5 +7890,10 @@
       }
     }
   },
-  "financeInterestDays": "{count} days"
+  "financeInterestDays": "{count} days",
+  "financeCheckpointReviewed": "Reviewed",
+  "financeCheckpointNeedsReview": "Needs review",
+  "financeCheckpointMarkReviewed": "Mark reviewed",
+  "financeCheckpointReopen": "Reopen",
+  "financeCheckpointReviewChanged": "Checkpoint changed. Review the latest balance."
 }
