@@ -5,7 +5,7 @@ const APP_URL = BASE_URL;
 export const siteConfig = {
   name: 'Tuturuuu Nova',
   url: APP_URL,
-  ogImage: `${APP_URL}/api/og`,
+  ogImage: `${APP_URL}/media/logos/og-image.png`,
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',
