@@ -140,6 +140,8 @@ extension _CrmPageData on _CrmPageState {
         _updateState(() {
           _groups = groups;
           _tags = tags;
+          _groupTotal = _repository.groupDirectoryCount;
+          _tagTotal = _repository.tagDirectoryCount;
         });
       }
     }

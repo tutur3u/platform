@@ -4801,6 +4801,12 @@ abstract class AppLocalizations {
   /// **'Attendance saved.'**
   String get contactsAttendanceSaved;
 
+  /// No description provided for @contactsAttentionCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'In the loaded list'**
+  String get contactsAttentionCaption;
+
   /// No description provided for @contactsColorEnergy.
   ///
   /// In en, this message translates to:

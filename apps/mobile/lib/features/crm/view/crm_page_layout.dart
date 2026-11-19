@@ -245,14 +245,44 @@ extension _CrmPageLayout on _CrmPageState {
       slots.add(
         Padding(
           padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
-          child: AppSummaryHero(
-            tone: AppTone.info,
-            icon: LucideIcons.contact,
-            eyebrow: l10n.contactsTitle,
-            headline: '$_total',
-            supporting: l10n.contactsHeroQuestion,
-            facts: [
-              AppHeroFact(label: l10n.crmRequireAttention, value: '$attention'),
+          child: AppAdaptiveGrid(
+            equalHeight: true,
+            children: [
+              AppStatTile(
+                label: l10n.contactsPeople,
+                value: '$_total',
+                icon: LucideIcons.contact,
+                tone: AppTone.info,
+              ),
+              AppStatTile(
+                label: l10n.contactsGroups,
+                value: '$_groupTotal',
+                icon: LucideIcons.users,
+                tone: AppTone.info,
+                onTap: _canViewFeedbacks
+                    ? () => _updateState(
+                        () => _directory = _ContactDirectory.groups,
+                      )
+                    : null,
+              ),
+              AppStatTile(
+                label: l10n.contactsTags,
+                value: '$_tagTotal',
+                icon: LucideIcons.tags,
+                tone: AppTone.info,
+                onTap: _canViewFeedbacks
+                    ? () => _updateState(
+                        () => _directory = _ContactDirectory.tags,
+                      )
+                    : null,
+              ),
+              AppStatTile(
+                label: l10n.crmRequireAttention,
+                value: '$attention',
+                caption: l10n.contactsAttentionCaption,
+                icon: LucideIcons.triangleAlert,
+                tone: attention == 0 ? AppTone.neutral : AppTone.warning,
+              ),
             ],
           ),
         ),

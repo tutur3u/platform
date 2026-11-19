@@ -29,7 +29,7 @@ mobile directory against that surface.
 | Audit log | Workspace user audit API | Audit destination with actor, subject, time and field changes |
 | Notes | Feedback on a person and group | Feedback sheet, gated by group permissions |
 | Permissions | Public info, private info, group view, audit management, create/update/delete | Same permission keys. Missing private permission removes private fields from the row and the detail |
-| Overview | Users dashboard | Hero shows the loaded total and how many of those rows need attention. It is not the web statistics dashboard |
+| Overview | Users dashboard | Compact stat row: people, groups, tags, and how many loaded people need attention. It is not the web archived and report counters |
 | Attendance, reports, approvals, guest leads, tutoring, metrics, structure, topic announcements, workforce | Contacts navigation | Not in this module |
 
 Roles stay on the workspace permission set (`view_users_public_info`,

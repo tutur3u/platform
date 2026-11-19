@@ -2471,6 +2471,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsAttendanceSaved => 'Attendance saved.';
 
   @override
+  String get contactsAttentionCaption => 'In the loaded list';
+
+  @override
   String get contactsColorEnergy => 'Energy';
 
   @override

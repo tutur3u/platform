@@ -112,6 +112,8 @@ class _CrmPageState extends State<CrmWorkspace> {
   String? _error;
   int _page = 1;
   int _total = 0;
+  int _groupTotal = 0;
+  int _tagTotal = 0;
   int _auditOffset = 0;
   int _auditTotal = 0;
   int _requestToken = 0;

@@ -2457,6 +2457,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsAttendanceSaved => 'Đã lưu điểm danh.';
 
   @override
+  String get contactsAttentionCaption => 'Trong danh sách đã tải';
+
+  @override
   String get contactsColorEnergy => 'Năng lượng';
 
   @override

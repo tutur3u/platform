@@ -25,6 +25,8 @@ class CrmRepository {
   final String? expectedUserId;
   final ApiClient _api;
   final http.Client _http;
+  int groupDirectoryCount = 0;
+  int tagDirectoryCount = 0;
 
   Future<Map<String, dynamic>> _read(
     String wsId,
@@ -184,6 +186,7 @@ class CrmRepository {
       'groups',
       CrmEndpoints.userGroups(wsId, ids: ids, page: page, pageSize: pageSize),
     );
+    groupDirectoryCount = crmAsInt(response['count']);
     return (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .map(CrmGroup.fromJson)
@@ -200,6 +203,7 @@ class CrmRepository {
       'group-tags',
       CrmEndpoints.groupTags(wsId, page: page, pageSize: pageSize),
     );
+    tagDirectoryCount = crmAsInt(response['count']);
     return (response['data'] as List<dynamic>? ?? const <dynamic>[])
         .whereType<Map<String, dynamic>>()
         .map(CrmGroupTag.fromJson)
