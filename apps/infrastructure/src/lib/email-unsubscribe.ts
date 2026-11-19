@@ -8,7 +8,9 @@ import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 const EMAIL_UNSUBSCRIBE_TOKEN_TYPE = 'global_email_unsubscribe';
 const EMAIL_UNSUBSCRIBE_TOKEN_VERSION = 1;
 const LOCAL_DEVELOPMENT_SECRET =
-  'tuturuuu-local-development-email-unsubscribe-secret';
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : 'tuturuuu-local-development-email-unsubscribe-secret';
 
 export type EmailUnsubscribeTokenClaims = {
   email: string;

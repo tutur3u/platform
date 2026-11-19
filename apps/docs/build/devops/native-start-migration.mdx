@@ -241,11 +241,33 @@ regressions. These fixtures do not replace the emitted-Worker smoke gate.
 
 ### Artifact profile and runtime fixture contracts
 
+Infrastructure native builds remove server sourcemaps and their executable
+references before sealing. Client maps remain available.
+`cloudflare/server-artifact.test.mjs` covers idempotent preparation and rejection
+of executable development branches and JSON-escaped development-secret prefixes.
+The production runtime fixture measures executable and gzip bytes and rejects
+server maps above 60 MiB and scripts above 64 MiB. Hosted upload and startup
+acceptance remain separate gates.
+
 Infrastructure production qualification preserves the emitted producer metadata
 and validates the production Worker name, public app/Web URLs, production
 `NODE_ENV`, required-secret flag and disabled source-map upload. The production
 profile is explicit on config, seal and pack; staging remains the default.
 `infrastructure-native-artifact.test.py` covers profile selection and refusal.
+
+Infrastructure's `/api/build-info` requires an authenticated root-workspace
+member with infrastructure permission and sufficient MFA assurance. Production
+qualification uses `cloudflare/build-info-admin.runtime.mjs` to check the real
+bundled SHA through that boundary, including anonymous, membership, permission
+and MFA refusals. Never make the endpoint public to satisfy a publication probe.
+The Infrastructure branch of `wave1-native-runtime.mjs` runs that fixture with
+`cloudflare/production.runtime.mjs`, then verifies the artifact hashes again.
+The production fixture checks the canonical app/Web URLs, disabled public preview
+and source-map uploads, signed-out login redirects, static bytes and unknown-host
+404 responses with outbound requests denied. Its explicit
+`INFRASTRUCTURE_ARTIFACT_PROFILE=production` selector keeps the staging runtime
+suite separate. Unknown paths on the canonical host redirect signed-out users to
+`/login?next=...`; use an unadmitted host for the host-fence 404 probe.
 
 Rewise removes server maps before doctor and seal; Mind prepares server output
 as part of its native build. Client maps remain available. Their production-seal

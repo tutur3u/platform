@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { verify } from './wave1-native-artifact.mjs';
+import { runInfrastructureProductionRuntime } from './infrastructure-production-runtime.mjs';
 
 export function calendarProductionRuntimeTarget(profile) {
   assert.equal(
@@ -39,6 +40,11 @@ async function runRuntimeAcceptance() {
   const [app, environment, sha] = process.argv.slice(2);
   const appRoot = resolve('apps', app);
   const { receipt } = verify(appRoot, app, environment, sha);
+  if (app === 'infrastructure' && environment === 'production') {
+    await runInfrastructureProductionRuntime(appRoot, sha);
+    verify(appRoot, app, environment, sha);
+    return;
+  }
   assert.ok(
     !process.env.CLOUDFLARE_API_TOKEN,
     'No provider credential in runtime gate'
