@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { apexMetadataAssetTypes } from './apex-metadata-assets';
 import {
   createCommonMetadata,
   createPageMetadata,
@@ -19,6 +20,52 @@ const config = {
   name: 'Tuturuuu Test',
   url: 'https://test.tuturuuu.com',
 };
+
+function assetReferences(value: unknown): string[] {
+  if (value instanceof URL) return [value.href];
+  if (typeof value === 'string')
+    return /^(?:https?:\/\/|\/)/u.test(value) ? [value] : [];
+  if (value && typeof value === 'object')
+    return Object.values(value).flatMap(assetReferences);
+  return [];
+}
+
+it.each(['en', 'vi'])(
+  'lists every apex resource in default %s metadata',
+  (locale) => {
+    const pageUrl = new URL('https://tuturuuu.com/tools');
+    const common = createCommonMetadata({
+      config: { ...config, url: pageUrl.href },
+      locale,
+    });
+    const page = createPageMetadata({
+      baseUrl: pageUrl.href,
+      description: config.description.en,
+      locale,
+      pathname: '/',
+      title: config.name,
+    });
+    const references = new Set(
+      [common, page].flatMap(({ icons, manifest, openGraph, twitter }) =>
+        assetReferences([
+          icons,
+          manifest,
+          openGraph?.images,
+          openGraph?.audio,
+          openGraph?.videos,
+          twitter?.images,
+        ])
+      )
+    );
+    expect(references.size).toBeGreaterThan(0);
+    for (const reference of references) {
+      const url = new URL(reference, pageUrl);
+      if (url.origin === pageUrl.origin) {
+        expect(apexMetadataAssetTypes.has(url.href), url.href).toBe(true);
+      }
+    }
+  }
+);
 
 describe('createCommonMetadata', () => {
   it('builds localized, indexable product metadata', () => {

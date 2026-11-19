@@ -174,11 +174,18 @@ That includes React's RSC stylesheet and module preload hints, which can be
 emitted outside the Start manifest. Vite keeps stylesheet dependencies relative
 to their CSS and resolves client asset URLs from the browser's app base. The
 emitted-worker asset check parses the rendered HTML and requests every
-same-origin resource on both production host variants. The shared apex
-`/favicon.ico` is checked at its public URL for a 200 image response. Every
-other same-origin resource on the apex must stay inside the app mount.
+same-origin resource on both production host variants, including Open Graph
+and Twitter images. The shared apex metadata catalog in
+`packages/utils/src/common/apex-metadata-assets.ts` records the root icons,
+Web manifest and default social image with their media types. An emitted
+catalog URL must return HTTP 200 with its recorded media type. Other
+same-origin resources on the apex must stay inside the app mount.
 Redirects are checked separately, and an asset probe must reach an HTML page
 that emits resources.
+
+For Tools, dispatch `tools-cloudflare.yaml` with `audit_only=true` to run the
+production Workerd checks before sealing a cutover archive. Use `source_sha`
+to seal the same audited main commit if main advances between runs.
 
 The generated binding-type harness extends the owning app's base tsconfig and
 checks its full source graph with `noEmit` and `allowImportingTsExtensions`.

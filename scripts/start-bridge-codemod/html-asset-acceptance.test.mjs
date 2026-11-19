@@ -22,18 +22,43 @@ const fixture = (html) => async (path, originHost) => {
   return { status: 200, headers: { 'content-type': 'text/css' } };
 };
 
-test('accepts the shared apex favicon and still resolves mounted CSS', async (t) => {
+test('checks shared apex metadata resources and mounted CSS', async (t) => {
   const call = fixture(`
     <link rel="icon" href="https://tuturuuu.com/favicon.ico">
     <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="shortcut icon" href="https://tuturuuu.com/favicon-16x16.png">
+    <link rel="icon" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta property="og:image" content="https://tuturuuu.com/media/logos/og-image.jpg">
+    <meta name="twitter:image" content="/media/logos/og-image.jpg">
     <link rel="stylesheet" href="/tools/assets/main.css">
   `);
+  const contentTypes = {
+    '/favicon.ico': 'image/x-icon',
+    '/favicon-16x16.png': 'image/png',
+    '/favicon-32x32.png': 'image/png',
+    '/apple-touch-icon.png': 'image/png',
+    '/manifest.webmanifest': 'application/manifest+json',
+    '/media/logos/og-image.jpg': 'image/jpeg',
+  };
   const sharedRequests = [];
   await assertRenderedAssets(t, require, call, pages, async (url) => {
     sharedRequests.push(String(url));
-    return new Response(null, { headers: { 'content-type': 'image/x-icon' } });
+    return new Response(null, {
+      headers: {
+        'content-type': contentTypes[url.pathname],
+      },
+    });
   });
-  assert.deepEqual(sharedRequests, ['https://tuturuuu.com/favicon.ico']);
+  assert.deepEqual(sharedRequests, [
+    'https://tuturuuu.com/favicon.ico',
+    'https://tuturuuu.com/favicon-16x16.png',
+    'https://tuturuuu.com/favicon-32x32.png',
+    'https://tuturuuu.com/apple-touch-icon.png',
+    'https://tuturuuu.com/manifest.webmanifest',
+    'https://tuturuuu.com/media/logos/og-image.jpg',
+  ]);
 });
 
 test('requires the shared favicon response to be an image', async (t) => {
@@ -54,11 +79,29 @@ test('requires the shared favicon response to be an image', async (t) => {
 });
 
 test('rejects an app asset emitted outside its mount', async (t) => {
-  const call = fixture('<link rel="modulepreload" href="/assets/main.js">');
-  await assert.rejects(
-    assertRenderedAssets(t, require, call, pages, () => {
-      assert.fail('app assets must be checked against the mounted Worker');
-    }),
-    /emitted \/assets\/main\.js outside \/tools/u
-  );
+  for (const [html, message] of [
+    [
+      '<link rel="modulepreload" href="/assets/main.js">',
+      /\/assets\/main\.js outside \/tools/u,
+    ],
+    [
+      '<link rel="mask-icon" href="/mask-icon.svg">',
+      /\/mask-icon\.svg outside \/tools/u,
+    ],
+    [
+      '<link rel="manifest" href="/site.webmanifest">',
+      /\/site\.webmanifest outside \/tools/u,
+    ],
+    [
+      '<meta property="og:image" content="/preview.jpg">',
+      /\/preview\.jpg outside \/tools/u,
+    ],
+  ]) {
+    await assert.rejects(
+      assertRenderedAssets(t, require, fixture(html), pages, () => {
+        assert.fail('app assets must be checked against the mounted Worker');
+      }),
+      message
+    );
+  }
 });

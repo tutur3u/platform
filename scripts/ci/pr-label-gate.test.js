@@ -102,7 +102,7 @@ const PROTECTED_TRIGGERS = {
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
   'task-board-database-contract.yaml': '0a3cc2c97958f5cd',
   'time-tracker-control-contract.yaml': '25ad429ead647fb8',
-  'tools-cloudflare.yaml': 'a17e28a9976d224b',
+  'tools-cloudflare.yaml': '9fcd0d791395cdd0',
   'topic-delivery-foundation-contract.yaml': '6880af5bb579ac39',
   'track-cloudflare.yaml': 'f354cac2984f6165',
   'tsrs-shadow.yaml': '0b7a9bf95294a1fd',

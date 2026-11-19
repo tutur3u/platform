@@ -45,6 +45,11 @@ const worker = new Miniflare(
         path: 'core/base-path',
         contents: source('../core/base-path.ts'),
       },
+      {
+        type: 'ESModule',
+        path: 'core/metadata-assets',
+        contents: source('../core/metadata-assets.ts'),
+      },
     ],
   })
 );
@@ -58,6 +63,8 @@ it('scopes only owned resource attributes for each request', async () => {
     '<link rel="preload" as="font" href="/assets/font.woff2">',
     '<link rel="manifest" href="/site.webmanifest">',
     '<link rel="icon" href="/favicon.svg">',
+    '<meta property="og:image" content="/assets/preview.jpg">',
+    '<meta name="twitter:image" content="https://tuturuuu.com/media/logos/og-image.jpg">',
     '<img src="/assets/picture.svg?fit=1#mark">',
     '<link rel="canonical" href="/assets/canonical">',
     '<a href="/assets/navigation">link</a>',
@@ -78,6 +85,7 @@ it('scopes only owned resource attributes for each request', async () => {
     'assets/font.woff2',
     'site.webmanifest',
     'favicon.svg',
+    'assets/preview.jpg',
     'assets/picture.svg?fit=1#mark',
   ])
     expect(html).toContain(`="/tools/${asset}"`);
@@ -87,5 +95,8 @@ it('scopes only owned resource attributes for each request', async () => {
   expect(html).toContain('src="https://cdn.invalid/assets/fixed.js"');
   expect(html).toContain('src="https://%"');
   expect(html).toContain('src="/shared/image.png"');
+  expect(html).toContain(
+    'content="https://tuturuuu.com/media/logos/og-image.jpg"'
+  );
   expect(await root.text()).toBe(body);
 });

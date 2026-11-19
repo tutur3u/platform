@@ -1,4 +1,5 @@
 import { prefixBase } from '../core/base-path';
+import { METADATA_RESOURCE_SELECTOR } from '../core/metadata-assets';
 
 type Element = {
   getAttribute(name: string): string | null;
@@ -76,6 +77,9 @@ export function prefixHtmlAssets(
     )
     .on('image[href], use[href]', {
       element: (element) => rewrite(element, 'href'),
+    })
+    .on(METADATA_RESOURCE_SELECTOR, {
+      element: (element) => rewrite(element, 'content'),
     })
     .on('video[poster]', { element: (element) => rewrite(element, 'poster') })
     .on('object[data]', { element: (element) => rewrite(element, 'data') })

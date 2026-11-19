@@ -3,6 +3,14 @@ name: Tools Cloudflare Source
 on:
   workflow_call:
   workflow_dispatch:
+    inputs:
+      audit_only:
+        description: Run production Workerd acceptance without creating a cutover archive
+        type: boolean
+        default: false
+      source_sha:
+        description: Optional main commit to qualify and package
+        type: string
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
@@ -186,8 +194,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SOURCE_SHA: ${{ github.sha }}
-      TOOLS_SOURCE_SHA: ${{ github.sha }}
+      SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+      TOOLS_SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
       VITE_TOOLS_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -198,8 +206,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.SOURCE_SHA }}
+          ref: ${{ github.sha }}
+          fetch-depth: ${{ inputs.source_sha && '0' || '1' }}
           persist-credentials: false
+      - name: Check out the requested main commit
+        if: ${{ inputs.source_sha != '' }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
+          git checkout --detach "$SOURCE_SHA"
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
@@ -240,7 +257,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: tools-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: tools-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ runner.temp }}/tools-emitted-config.json
           if-no-files-found: error
           retention-days: 7
@@ -255,10 +272,12 @@ jobs:
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: bun run test:runtime
       - name: Package Worker, assets and emitted Wrangler config
+        if: ${{ !inputs.audit_only }}
         run: |
           python3 scripts/ci/tools-native-artifact.py verify apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json"
           python3 scripts/ci/tools-native-artifact.py pack apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json" --archive "$RUNNER_TEMP/tools-cutover.tar.gz"
       - name: Restore and qualify the archive in a fresh checkout
+        if: ${{ !inputs.audit_only }}
         env:
           CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
@@ -270,8 +289,9 @@ jobs:
           CI=true bun run --cwd apps/tools test:runtime
           python3 scripts/ci/tools-native-artifact.py verify apps/tools --receipt "$RUNNER_TEMP/tools-restored-artifact.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ !inputs.audit_only }}
         with:
-          name: tools-cutover-${{ github.sha }}
+          name: tools-cutover-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/tools-cutover.tar.gz
           if-no-files-found: error
           retention-days: 7

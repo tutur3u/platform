@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-
-const SHARED_APEX_ASSETS = new Map([
-  ['https://tuturuuu.com/favicon.ico', /^image\//u],
-]);
+import { METADATA_RESOURCE_SELECTOR } from '../../packages/start-bridge/src/core/metadata-assets.ts';
+import { apexMetadataAssetTypes } from '../../packages/utils/src/common/apex-metadata-assets.ts';
 
 // Parse with the same HTML standard implementation as workerd. In particular,
 // resource-looking text in scripts and comments is not a URL.
@@ -25,6 +23,7 @@ export default {
       })
       .on('[src]', { element: (element) => add(element, 'src') })
       .on('image[href], use[href]', { element: (element) => add(element, 'href') })
+      .on(${JSON.stringify(METADATA_RESOURCE_SELECTOR)}, { element: (element) => add(element, 'content') })
       .on('video[poster]', { element: (element) => add(element, 'poster') })
       .on('object[data]', { element: (element) => add(element, 'data') })
       .transform(new Response(request.body))
@@ -73,14 +72,14 @@ export async function assertRenderedAssets(
       'workerd could not parse the HTML fixture'
     );
     const resources = new Set();
+    const escaped = [];
     for (const reference of await parsed.json()) {
       if (reference.startsWith('#')) continue;
       const url = URL.parse(reference, document);
       assert.ok(url, `Invalid resource URL in ${document.href}`);
-      if (url.origin !== document.origin) continue;
       url.hash = '';
-      const sharedContentType = SHARED_APEX_ASSETS.get(url.href);
-      if (sharedContentType) {
+      const sharedContentTypes = apexMetadataAssetTypes.get(url.href);
+      if (sharedContentTypes) {
         if (!checkedSharedAssets.has(url.href)) {
           const result = await fetchSharedAsset(url, {
             redirect: 'error',
@@ -88,21 +87,29 @@ export async function assertRenderedAssets(
           });
           await result.body?.cancel();
           assert.equal(result.status, 200, url.href);
-          assert.match(
-            result.headers.get('content-type') ?? '',
-            sharedContentType,
-            url.href
+          const contentType = result.headers
+            .get('content-type')
+            ?.split(';', 1)[0];
+          assert.ok(
+            contentType && sharedContentTypes.includes(contentType),
+            `${url.href} returned ${contentType ?? 'no content type'}, expected ${sharedContentTypes.join(' or ')}`
           );
           checkedSharedAssets.add(url.href);
         }
         continue;
       }
-      assert.ok(
-        !base || url.pathname.startsWith(`${base}/`),
-        `${document.href} emitted ${reference} outside ${base}`
-      );
+      if (url.origin !== document.origin) continue;
+      if (base && !url.pathname.startsWith(`${base}/`)) {
+        escaped.push(reference);
+        continue;
+      }
       resources.add(`${url.pathname}${url.search}`);
     }
+    assert.equal(
+      escaped.length,
+      0,
+      `${document.href} emitted ${escaped.join(', ')} outside ${base}`
+    );
     assert.ok(
       resources.size > 0,
       `${document.href} emitted no same-origin assets`
