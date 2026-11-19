@@ -32,15 +32,51 @@ export async function GET(
   const { sbAdmin, userId, wsId, headers } = access;
   const learnerRows = sbAdmin.schema('private');
 
+  const linkResult = await sbAdmin
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('platform_user_id', userId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+  if (linkResult.error) {
+    return NextResponse.json(
+      { message: 'Failed to load learner progress' },
+      { status: 500, headers }
+    );
+  }
+
+  const virtualUserId = linkResult.data?.virtual_user_id;
+  let enrolledIds: string[] = [];
+  if (virtualUserId) {
+    const enrolledResult = await sbAdmin
+      .from('workspace_user_groups_users')
+      .select('group_id')
+      .eq('user_id', virtualUserId);
+    if (enrolledResult.error) {
+      return NextResponse.json(
+        { message: 'Failed to load learner progress' },
+        { status: 500, headers }
+      );
+    }
+    enrolledIds = (enrolledResult.data ?? []).map(
+      (row: { group_id: string }) => row.group_id
+    );
+  }
+
   const [coursesResult, progressResult, attemptsResult, learnerResult] =
     await Promise.all([
-      sbAdmin
-        .from('workspace_user_groups')
-        .select('id, workspace_course_modules(id)')
-        .eq('ws_id', wsId)
-        .eq('is_guest', false)
-        .order('created_at', { ascending: false })
-        .limit(COURSE_LIMIT),
+      enrolledIds.length === 0
+        ? Promise.resolve({ data: [], error: null })
+        : sbAdmin
+            .from('workspace_user_groups')
+            .select('id, workspace_course_modules(id)')
+            .in('id', enrolledIds)
+            .eq('ws_id', wsId)
+            .eq('archived', false)
+            .eq('is_guest', false)
+            .eq('is_course_published', true)
+            .order('created_at', { ascending: false })
+            .limit(COURSE_LIMIT),
       learnerRows
         .from('education_learner_module_progress')
         .select('course_id, module_id')
