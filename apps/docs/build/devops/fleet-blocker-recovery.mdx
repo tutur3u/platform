@@ -1,0 +1,38 @@
+---
+title: Fleet blocker recovery
+description: Triage stalled reviews and recover usage-limited fleet threads.
+---
+
+Quinn operates the reviewer blocker detector and D1336 v2 exhaustion handling
+through the existing fleet supervisor. Use the current owner registry and
+native task state for each decision.
+
+## Stuck reviewer detector
+
+1. On a detector wake, match the required review to the current immutable
+   head. Read the latest meaningful reviewer activity and native result.
+2. For a self-closable reviewer gap idle over 30 minutes, verify the review
+   owner, task parent, custody and reviewer independence. Reconcile any pending
+   result with the parent and have that owner reassign under D1619. Carry the
+   same exact head and review requirements into a fresh review task.
+3. Record the inactivity evidence, head, old and new reviewer, task and run IDs,
+   and acceptance. Include `latest-by YYYY-MM-DD HH:MM ICT` in the relay. If
+   authority or custody is missing, record the dependency, owner and resume
+   event. Continue independent work.
+
+## D1336 v2 exhaustion handling
+
+1. On confirmed usage exhaustion, record the error, observation time, owner,
+   provider and task/run IDs. Mark the exhausted destination `EXHAUSTED` and
+   block fresh assignments to it.
+2. Start recovery immediately. Verify actual resumption within five minutes of
+   observation or record the specific blocker and next event. Reconcile source,
+   pending effects and predecessor custody before continuing. Carry forward
+   the shared recovery attempt counter and current holds.
+3. If an essential prerequisite is temporarily unavailable, defer an eligible
+   case once. Record the reason, owner and next check in the existing ledger.
+   Keep the `EXHAUSTED` block in force. Atlas and Iris are never deferred.
+   Escalate their unresolved prerequisites immediately. Escalate any other
+   case still blocked after its one deferral.
+4. Verify the actual successor provider, binding and progress. Keep the
+   exhausted destination blocked until fresh evidence proves its eligibility.

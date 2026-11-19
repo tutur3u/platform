@@ -62,3 +62,11 @@ main CI passes, `bun git-sync` completes, and production verification passes.
 Clean up only the completed clean worktree and its task branch. Finish the note with
 verification and risks; archive your own `done` note under `archive/<YYYY>/` when no
 handoff needs visibility. Preserve blocked, unmerged, and other-owned work.
+
+## Close fleet blockers
+
+Follow the [fleet procedures](references/program-orchestration.md#fleet-blockers-and-release-follow-through)
+for owned blockers, review reassignment, quota recovery, scoped denials, release
+follow-through and promised-time verification. Use the
+[child brief templates](references/child-brief-templates.md) for assignments,
+reviews and relays.

@@ -254,6 +254,7 @@
                   "build/devops/status-api-revocation",
                   "build/devops/ai-studio-retention",
                   "build/devops/critical-app-rollout",
+                  "build/devops/fleet-blocker-recovery",
                   "build/devops/github-actions-runbook",
                   "build/devops/ci-reconciler",
                   "build/devops/caching",

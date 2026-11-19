@@ -35,6 +35,18 @@ observed runtime scope, resource admission and parent grants. Follow the
 [operating model and budget](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
 for roles, independent review, publication, receipts and retirement.
 
+### Fleet blocker ownership
+
+Close blockers you own immediately within current authority. Include a dated
+`latest-by YYYY-MM-DD HH:MM ICT` in every relay. Reassign an actionable reviewer
+gap idle over 30 minutes after verifying custody. Scope a tool denial to the
+denied action, recover usage-limited work within five minutes, and ship eligible
+batches promptly after applicable gates. Follow the
+[fleet procedures](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#fleet-blockers-and-release-follow-through)
+for recovery, release exceptions and credential custody. Use the earliest
+realistic agent ETA and schedule a one-off live T3 check for every promised
+time.
+
 ## 2. Hard Prohibitions
 
 - Start long-lived development servers only when requested or needed for an

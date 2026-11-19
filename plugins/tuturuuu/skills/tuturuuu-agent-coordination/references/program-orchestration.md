@@ -282,6 +282,53 @@ event in the existing ledger. Never hide unfinished work, include foreign/privat
 files, or retire recovery data just to report a clean tree. Worktree retirement
 still requires the existing cleanup authority.
 
+## Fleet blockers and release follow-through
+
+- **Owned blockers and relays.** Act immediately on blockers you can close
+  within current authority. Record the dependency, owner and next event for
+  anything that needs another party. Continue independent work. Put
+  `latest-by YYYY-MM-DD HH:MM ICT` in every relay. Preserve inherited deadlines
+  unless the accountable owner revises them.
+- **Reviewer inactivity (D1619).** For a self-closable review gap idle over
+  30 minutes, verify the exact head, actual task parent, latest meaningful
+  activity, pending results and reviewer custody. Have the verified owner
+  reconcile the prior task and assign a fresh independent review at the same
+  head. Record both reviewers, task IDs and acceptance.
+- **Denied actions (D1588).** Scope a denial to the action it covers and
+  continue other authorized work. Use an authorized alternative or escalate
+  that action if still needed. Honor an explicit stop at its stated scope.
+- **Release cadence (D1614/D807).** Batch verified work when it adds no delay.
+  The authorized owner ships promptly after applicable exact-head safety
+  gates. Preserve independent review, pinned scope and release holds.
+- **Upskii demo (D1588).** Selene's approval authorizes automatic shipment of
+  the approved demo scope once safety gates pass. The release owner proceeds
+  without a separate USER GO. Other scopes keep their existing release gates.
+- **Cloudflare setup (D1314).** The approved fleet custodian performs setup
+  and provisions credentials through the authorized secret path. Mint each
+  token only under a Desk credential grant that names the permissions,
+  account and applicable resources, expiry, and destination secret. Require
+  such a grant before broadening any existing shared token. Follow the Desk's
+  T1–T5 and pinned-helper rules for dashboard work. Route missing grants or
+  custody to the Desk. The fleet handles provisioning without asking the user
+  to mint or paste a token. Keep credential values out of relays and evidence.
+- **Usage limits (D1336/D1502).** Start recovery immediately on confirmed
+  exhaustion. Within five minutes of observation, verify actual resumption or
+  record the concrete remaining blocker and next event. Reconcile native
+  tasks, source, uncertain effects and predecessor custody first. Preserve
+  shared pstack attempt limits. Follow the [detector runbook](../../../../../apps/docs/build/devops/fleet-blocker-recovery.mdx)
+  for the EXHAUSTED block and one-time deferral.
+- **Promised times (D1629).** Estimate the earliest realistic agent completion
+  from measured comparable work or the remaining steps and live dependencies.
+  Use the host clock and omit human-paced padding. Record the owner, promised
+  time and observable success condition. At commitment, schedule a one-off
+  T3 verification for that exact time in addition to recurring watchers.
+  Bind it to the existing accountable thread, record its schedule ID and
+  confirm its one-time trigger. At firing, inspect live evidence against the
+  success condition and escalate a miss immediately to the accountable owner.
+  Reconcile revised commitments with their schedule IDs so superseded checks
+  cannot escalate stale deadlines. Record a scheduling failure as a blocker
+  and continue the underlying work.
+
 ## Evidence ledger
 
 A board unit uses the following shape (use real full SHAs and receipt locators):
