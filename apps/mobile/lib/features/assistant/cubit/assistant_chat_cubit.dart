@@ -37,6 +37,7 @@ part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_stream_events.dart';
 part 'assistant_chat_submission.dart';
+part 'assistant_chat_creation_notice.dart';
 part 'assistant_chat_creation_submission.dart';
 part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
@@ -587,6 +588,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     } finally {
       if (operation != null) _streamCancellations.remove(operation);
     }
+  }
+
+  @override
+  void onChange(Change<AssistantChatState> change) {
+    super.onChange(change);
+    _observeCreationNotice(change.currentState, change.nextState);
   }
 
   @override

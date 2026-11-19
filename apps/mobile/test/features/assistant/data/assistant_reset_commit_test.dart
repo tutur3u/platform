@@ -175,16 +175,17 @@ void main() {
     },
   );
   test(
-    'final consent is not a restart or revised-record creation grant',
+    'an informed reset stays resolved across restart and later edits',
     () async {
       await resetWithConsent();
       AssistantResetPreferences.revokeConsent(envelopeKey);
       SharedPreferences.resetStatic();
-      expect(await store.hasUnknownCreation(), true);
-      await resetWithConsent();
+      expect(await store.hasUnknownCreation(), false);
+      expect((await raw())['creation'], {'status': 'clear', 'attemptId': null});
       final prefs = AssistantPreferences(currentUserId: () => actor);
       await prefs.saveWorkspaceContextId(ws, 'changed');
-      expect(await store.hasUnknownCreation(), true);
+      expect(await store.hasUnknownCreation(), false);
+      expect(await store.unresolvedCreationAttempt(), isNull);
     },
   );
   for (final boundary in [1, 2]) {
@@ -225,7 +226,7 @@ void main() {
       AssistantResetDisposition.deniedBeforeEffect,
     );
     expect(host.writes, 2);
-    expect(await store.hasUnknownCreation(), true);
+    expect(await store.hasUnknownCreation(), false);
   });
   test('all owning selected/context wrappers preserve creation hold', () async {
     await resetWithConsent();

@@ -21,9 +21,12 @@ void main() {
       await (FontLoader(font.key)..addFont(rootBundle.load(font.value))).load();
     }
   });
+  // An unresolved pre-envelope creation marker is the legacy evidence that
+  // a first send may have created a chat.
   const legacy = {
     '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
         'personal',
+    '$repairActor::mira-chat-creation::$repairWorkspace': 'unknown:v1',
   };
   testWidgets('legacy send offers recovery and preserves a cancelled draft', (
     tester,

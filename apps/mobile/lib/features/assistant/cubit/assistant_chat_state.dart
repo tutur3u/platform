@@ -14,6 +14,7 @@ class AssistantChatState extends Equatable {
     this.status = AssistantChatStatus.idle,
     this.hasLoadedOnce = false,
     this.creationOutcomeUnknown = false,
+    this.unresolvedCreationAttempt,
     this.chat,
     this.storedChatId,
     required this.fallbackChatId,
@@ -34,6 +35,10 @@ class AssistantChatState extends Equatable {
   final AssistantChatStatus status;
   final bool hasLoadedOnce;
   final bool creationOutcomeUnknown;
+
+  /// The first send whose chat creation was never confirmed. Only this, not
+  /// every [creationOutcomeUnknown] hold, warrants the unsaved-chat notice.
+  final String? unresolvedCreationAttempt;
   final AssistantChatRecord? chat;
   final String? storedChatId;
   final String fallbackChatId;
@@ -58,6 +63,7 @@ class AssistantChatState extends Equatable {
     AssistantChatStatus? status,
     bool? hasLoadedOnce,
     bool? creationOutcomeUnknown,
+    Object? unresolvedCreationAttempt = _assistantChatSentinel,
     Object? chat = _assistantChatSentinel,
     Object? storedChatId = _assistantChatSentinel,
     String? fallbackChatId,
@@ -82,6 +88,10 @@ class AssistantChatState extends Equatable {
       hasLoadedOnce: hasLoadedOnce ?? this.hasLoadedOnce,
       creationOutcomeUnknown:
           creationOutcomeUnknown ?? this.creationOutcomeUnknown,
+      unresolvedCreationAttempt:
+          unresolvedCreationAttempt == _assistantChatSentinel
+          ? this.unresolvedCreationAttempt
+          : unresolvedCreationAttempt as String?,
       chat: chat == _assistantChatSentinel
           ? this.chat
           : chat as AssistantChatRecord?,
@@ -124,6 +134,7 @@ class AssistantChatState extends Equatable {
     status,
     hasLoadedOnce,
     creationOutcomeUnknown,
+    unresolvedCreationAttempt,
     chat,
     storedChatId,
     fallbackChatId,

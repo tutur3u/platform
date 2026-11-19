@@ -7,6 +7,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+part 'assistant_creation_notice.dart';
 part 'assistant_reset_consent_target.dart';
 
 enum AssistantResetDisposition {
@@ -403,15 +404,22 @@ final class AssistantResetPreferences {
       final inspectedEnvelope =
           AssistantResetConsentTarget._issued[key]?._hadEnvelope ?? false;
       final value = await _read(prefs);
-      if (value != null) return !_canCreate(value);
+      if (value != null) {
+        if (_canCreate(value)) return false;
+        if (!_attemptless(prefs, value)) return true;
+        final cleared = _next(value, {
+          'creation': {'status': 'clear', 'attemptId': null},
+          'resetConsent': null,
+        });
+        return await _write(prefs, cleared) !=
+            AssistantResetDisposition.committedCurrent;
+      }
       if (inspectedEnvelope) {
         hold();
         return true;
       }
       final legacy = _legacy(prefs);
-      if (legacy.selectedChatId != null ||
-          legacy.contextId != null ||
-          prefs.containsKey('$actorId::mira-chat-creation::$workspaceId') ||
+      if (_legacyCreationUnknown(prefs) ||
           _holds.contains(key) ||
           _tickets.containsKey(key)) {
         return true;
@@ -554,7 +562,8 @@ final class AssistantResetPreferences {
         'selectedChatId': null,
         'contextId': 'personal',
         'generation': generation,
-        'creation': {'status': 'unknown', 'attemptId': null},
+        // The informed reset resolves the prior attempt; nothing is in flight.
+        'creation': {'status': 'clear', 'attemptId': null},
         'resetIntent': null,
         'resetConsent': {
           'operationId': operationId,

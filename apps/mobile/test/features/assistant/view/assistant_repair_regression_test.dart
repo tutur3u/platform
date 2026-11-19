@@ -18,6 +18,7 @@ void main() {
       initialPreferences: {
         '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
             'personal',
+        '$repairActor::mira-chat-creation::$repairWorkspace': 'unknown:v1',
       },
     );
     final controller = h.composer(tester);
@@ -40,6 +41,7 @@ void main() {
       initialPreferences: {
         '$repairActor::mira-dashboard-workspace-context-$repairWorkspace':
             'personal',
+        '$repairActor::mira-chat-creation::$repairWorkspace': 'unknown:v1',
       },
     );
     expect(h.chat.state.creationOutcomeUnknown, isTrue);

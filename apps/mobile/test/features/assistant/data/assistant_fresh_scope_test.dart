@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
+import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
@@ -72,8 +74,24 @@ void main() {
     },
   );
 
-  for (final legacy in ['chat', 'context', 'creation']) {
-    test('legacy $legacy without an envelope never becomes fresh', () async {
+  test('an unresolved legacy creation marker never becomes fresh', () async {
+    await host.setValue(
+      'String',
+      'flutter.$actor::mira-chat-creation::$workspace',
+      'unknown:v1',
+    );
+    host.writes = 0;
+    expect(await store.hasUnknownCreation(), true);
+    expect(await store.read(), isNull);
+    expect(host.writes, 0);
+    expect(
+      await store.unresolvedCreationAttempt(),
+      AssistantCreationNotice.legacyAttempt,
+    );
+  });
+
+  for (final legacy in ['chat', 'context', 'clear creation']) {
+    test('legacy $legacy without an attempt initializes clear', () async {
       final key = switch (legacy) {
         'chat' => '$actor::mira-dashboard-chat-$workspace',
         'context' => '$actor::mira-dashboard-workspace-context-$workspace',
@@ -82,15 +100,76 @@ void main() {
       final value = switch (legacy) {
         'chat' => '44444444-4444-4444-8444-444444444444',
         'context' => 'personal',
-        _ => 'unknown:v1',
+        _ => 'clear:v1',
       };
       await host.setValue('String', 'flutter.$key', value);
       host.writes = 0;
-      expect(await store.hasUnknownCreation(), true);
-      expect(await store.read(), isNull);
-      expect(host.writes, 0);
+      expect(await store.hasUnknownCreation(), false);
+      expect(host.writes, 1);
+      final envelope = (await store.read())!;
+      expect(envelope.held, false);
+      expect(envelope.selectedChatId, legacy == 'chat' ? value : isNull);
+      expect(envelope.contextId, legacy == 'context' ? value : isNull);
+      expect(await store.unresolvedCreationAttempt(), isNull);
     });
   }
+
+  test('a stored hold without an attempt is released on load', () async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      store.key,
+      jsonEncode({
+        'schema': 1,
+        'actorId': actor,
+        'workspaceId': workspace,
+        'revision': 3,
+        'generation': 2,
+        'selectedChatId': null,
+        'contextId': 'personal',
+        'creation': {'status': 'unknown', 'attemptId': null},
+        'resetConsent': null,
+        'resetIntent': null,
+      }),
+    );
+    expect(await store.hasUnknownCreation(), false);
+    final envelope = (await store.read())!;
+    expect(envelope.held, false);
+    expect(envelope.revision, 4);
+    expect(await store.unresolvedCreationAttempt(), isNull);
+  });
+
+  test('a confirmed first send leaves nothing unsaved after restart', () async {
+    const attempt = '66666666-6666-4666-8666-666666666666';
+    const chat = '77777777-7777-4777-8777-777777777777';
+    expect(await store.hasUnknownCreation(), false);
+    final began = await store.beginCreation(attempt);
+    await store.finishCreation(
+      began,
+      acknowledged: AcknowledgedChatConversation.fromResponse({
+        'conversation': {
+          'id': chat,
+          'wsId': workspace,
+          'type': 'ai',
+          'createdAt': '2026-10-12T00:00:00Z',
+        },
+      }, wsId: workspace),
+    );
+    AssistantResetPreferences.revokeConsent(store.key);
+    SharedPreferences.resetStatic();
+    expect(await store.hasUnknownCreation(), false);
+    expect(await store.unresolvedCreationAttempt(), isNull);
+    expect((await store.read())!.selectedChatId, chat);
+  });
+
+  test('a recorded attempt stays held and is reported', () async {
+    const attempt = '66666666-6666-4666-8666-666666666666';
+    expect(await store.hasUnknownCreation(), false);
+    await store.beginCreation(attempt);
+    AssistantResetPreferences.revokeConsent(store.key);
+    expect(await store.hasUnknownCreation(), true);
+    expect(await store.unresolvedCreationAttempt(), attempt);
+    expect((await store.read())!.attemptId, attempt);
+  });
 
   test('an in-process hold without an envelope never becomes fresh', () async {
     store.hold();

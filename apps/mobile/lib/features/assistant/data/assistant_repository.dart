@@ -107,6 +107,10 @@ class AssistantRepository
   @override
   final String? Function() _currentUserId;
   String? get currentActorId => _currentUserId();
+
+  /// The first-message attempt whose creation receipt never arrived, if any.
+  Future<String?> unresolvedChatCreationAttempt(String wsId) =>
+      _creationStore(wsId).unresolvedCreationAttempt();
   Stream<AssistantStreamEvent> streamFirstChat({
     required AssistantFirstMessageCreation creation,
     required String chatId,

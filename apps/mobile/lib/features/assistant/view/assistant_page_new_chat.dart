@@ -29,10 +29,17 @@ extension _AssistantPageNewChat on _AssistantPageState {
     }
   }
 
-  String _creationBannerScope(String wsId) => '${_currentActor()}::$wsId';
+  /// Dismissal covers one unsaved attempt; a later failed send shows again.
+  String _creationBannerScope(String wsId) =>
+      '${_currentActor()}::$wsId::'
+      '${_chatCubit.state.unresolvedCreationAttempt}';
 
+  /// Only a first send whose chat creation was never confirmed shows the
+  /// notice, and only while no other chat is open.
   bool _showCreationBanner(AssistantChatState state, String wsId) =>
       state.creationOutcomeUnknown &&
+      state.unresolvedCreationAttempt != null &&
+      state.storedChatId == null &&
       state.status != AssistantChatStatus.restoring &&
       !AssistantCreationHoldBanner.isDismissed(_creationBannerScope(wsId));
 

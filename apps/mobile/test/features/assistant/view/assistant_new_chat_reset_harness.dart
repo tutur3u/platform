@@ -1,11 +1,18 @@
 part of 'assistant_new_chat_reset_test.dart';
 
+/// A held fixture records an unconfirmed first-send attempt. [chatOpen] keeps
+/// a saved chat selected; without it the page opens on a new chat.
 Future<_ResetHarness> _mount(
   WidgetTester tester, {
   bool held = true,
+  bool chatOpen = true,
   _CleanupApi? api,
 }) async {
-  final h = _ResetHarness(held: held, liveRepository: api?.repository);
+  final h = _ResetHarness(
+    held: held,
+    chatOpen: chatOpen,
+    liveRepository: api?.repository,
+  );
   addTearDown(() => h.dispose(tester));
   await h.mount(tester);
   return h;
@@ -29,6 +36,9 @@ class _ResetRepository extends ReplyRepository {
   Future<bool> hasUnknownChatCreation(String wsId) async =>
       await preferences.resetStore(wsId).hasUnknownCreation();
   @override
+  Future<String?> unresolvedChatCreationAttempt(String wsId) =>
+      preferences.resetStore(wsId).unresolvedCreationAttempt();
+  @override
   Future<AssistantRestoredChat?> restoreChat({
     required String wsId,
     required String chatId,
@@ -49,19 +59,28 @@ class _ResetRepository extends ReplyRepository {
 }
 
 class _ResetHost extends InMemorySharedPreferencesStore {
-  _ResetHost({bool held = true})
+  _ResetHost({bool held = true, bool chatOpen = true})
     : super.withData({
-        'flutter.$_envelopeKey': jsonEncode(_record(held: held)),
+        'flutter.$_envelopeKey': jsonEncode(
+          _record(held: held, chatOpen: chatOpen),
+        ),
       });
-  static Map<String, Object?> _record({int revision = 1, bool held = true}) => {
+  static Map<String, Object?> _record({
+    int revision = 1,
+    bool held = true,
+    bool chatOpen = true,
+  }) => {
     'schema': 1,
     'actorId': _actor,
     'workspaceId': _workspace,
     'revision': revision,
     'generation': revision,
-    'selectedChatId': _saved,
+    'selectedChatId': chatOpen ? _saved : null,
     'contextId': 'prior',
-    'creation': {'status': held ? 'unknown' : 'clear', 'attemptId': null},
+    'creation': {
+      'status': held ? 'unknown' : 'clear',
+      'attemptId': held ? _attempt : null,
+    },
     'resetConsent': null,
     'resetIntent': null,
   };
@@ -148,16 +167,17 @@ class _CleanupApi extends ApiClient {
 }
 
 class _ResetHarness {
-  _ResetHarness({this.held = true, this.liveRepository});
+  _ResetHarness({this.held = true, this.chatOpen = true, this.liveRepository});
   final AssistantLiveRepository? liveRepository;
   final bool held;
+  final bool chatOpen;
   final auth = ReplyAuth();
   final workspace = ReplyWorkspace();
   late final preferences = AssistantPreferences(
     currentUserId: () => auth.state.user?.id,
   );
   late final repository = _ResetRepository(preferences);
-  late final host = _ResetHost(held: held);
+  late final host = _ResetHost(held: held, chatOpen: chatOpen);
   final chrome = AssistantChromeCubit();
   final actions = ShellChromeActionsCubit();
   final dock = ShellDockSlotController();
