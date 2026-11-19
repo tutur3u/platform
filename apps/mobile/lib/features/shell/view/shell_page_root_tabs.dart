@@ -44,6 +44,24 @@ extension _ShellPageRootTabs on _ShellPageState {
           repeat: false,
           play: widget.matchedLocation == Routes.assistant,
         ),
+        ShellRootTab.notifications when widget.badgeCount != null =>
+          ValueListenableBuilder<int>(
+            valueListenable: widget.badgeCount!,
+            child: const Icon(LucideIcons.bell),
+            builder: (context, count, icon) => Stack(
+              clipBehavior: Clip.none,
+              fit: StackFit.expand,
+              children: [
+                icon!,
+                if (count > 0)
+                  const PositionedDirectional(
+                    top: -4,
+                    end: -4,
+                    child: ShellUnreadDot(),
+                  ),
+              ],
+            ),
+          ),
         ShellRootTab.profile
             when shellNavigationModeFor(MediaQuery.sizeOf(context)) ==
                 ShellNavigationMode.rail =>

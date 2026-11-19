@@ -38,6 +38,7 @@ import 'package:mobile/features/shell/view/shell_navigation_rail.dart';
 import 'package:mobile/features/shell/view/shell_route_fade.dart';
 import 'package:mobile/features/shell/view/shell_route_transition.dart';
 import 'package:mobile/features/shell/view/shell_search_field.dart';
+import 'package:mobile/features/shell/view/shell_top_bar_button.dart';
 import 'package:mobile/features/shell/view/shell_top_bar_title.dart';
 import 'package:mobile/features/shell/view/shell_workspace_picker.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -72,6 +73,7 @@ class ShellPage extends StatefulWidget {
     this.notificationsPageBuilder,
     this.profilePageBuilder,
     this.routePattern,
+    this.badgeCount,
     super.key,
   });
 
@@ -82,6 +84,9 @@ class ShellPage extends StatefulWidget {
   /// change within one pattern updates its page in place.
   final String? routePattern;
   final bool enableDebugLogs;
+
+  /// Unread count for the Alerts destination in the dock and rail.
+  final ValueListenable<int>? badgeCount;
 
   /// Keeps the selected root body mounted for a destination it owns.
   final String? retainedRootLocation;

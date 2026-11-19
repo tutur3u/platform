@@ -46,6 +46,7 @@ Future<GoRouter> _pumpShell(
   Size size = const Size(390, 844),
   List<String>? savedTabs,
   double safeRight = 0,
+  ValueNotifier<int>? badgeCount,
 }) async {
   SharedPreferences.setMockInitialValues({_storageKey: ?savedTabs});
   tester.view
@@ -92,6 +93,7 @@ Future<GoRouter> _pumpShell(
           homePageBuilder: (_) => const Text('home'),
           notificationsPageBuilder: (_) => const Text('notifications'),
           profilePageBuilder: (_) => const Text('profile'),
+          badgeCount: badgeCount,
           child: child,
         ),
         routes: [
@@ -167,6 +169,33 @@ List<Key?> _expectIconSlots(WidgetTester tester, int count) {
 }
 
 void main() {
+  for (final size in [const Size(390, 844), const Size(1024, 768)]) {
+    testWidgets('Alerts updates its badge in place at ${size.width}dp', (
+      tester,
+    ) async {
+      final count = ValueNotifier(0);
+      addTearDown(count.dispose);
+      await _pumpShell(tester, size: size, badgeCount: count);
+      final alerts = find.byKey(ShellRootTab.notifications.key);
+      final badge = find.descendant(
+        of: alerts,
+        matching: find.byKey(const ValueKey('notifications-unread-badge')),
+      );
+      final bounds = tester.getRect(alerts);
+      expect(badge, findsNothing);
+
+      count.value = 3;
+      await tester.pump();
+      expect(badge, findsOneWidget);
+      expect(tester.getRect(alerts), bounds);
+
+      count.value = 0;
+      await tester.pump();
+      expect(badge, findsNothing);
+      expect(tester.getRect(alerts), bounds);
+    });
+  }
+
   for (final width in [390.0, 834.0]) {
     testWidgets('root shows five accessible icons at ${width}dp', (
       tester,
