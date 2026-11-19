@@ -47,20 +47,24 @@ export function WorkspaceDeletionSettings({
   return <DangerZone key={workspace.id} workspace={workspace} />;
 }
 
-function getDeletionStatusMessageKey(status: unknown) {
+// Literal keys keep every rendered message visible to the i18n coverage scan.
+function getDeletionStatusMessage(
+  status: unknown,
+  t: ReturnType<typeof useTranslations<'ws-settings'>>
+) {
   switch (status) {
     case 'ready':
       return null;
     case 'name_required':
-      return 'delete_workspace_name_required';
+      return t('delete_workspace_name_required');
     case 'checking':
-      return 'delete_checking_status';
+      return t('delete_checking_status');
     case 'subscription_active':
-      return 'delete_subscription_active';
+      return t('delete_subscription_active');
     case 'protected':
-      return 'delete_workspace_protected';
+      return t('delete_workspace_protected');
     default:
-      return 'delete_status_failed';
+      return t('delete_status_failed');
   }
 }
 
@@ -111,8 +115,7 @@ function DangerZone({ workspace }: { workspace: DeletionWorkspace }) {
       ? 'failed'
       : (eligibility.data?.status ?? 'checking');
   const ready = status === 'ready' && !deletion.isSuccess;
-  const messageKey = getDeletionStatusMessageKey(status);
-  const blockedMessage = messageKey ? t(messageKey) : null;
+  const blockedMessage = getDeletionStatusMessage(status, t);
   const canSubmit =
     ready &&
     !deletion.isPending &&
