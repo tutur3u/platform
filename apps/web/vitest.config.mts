@@ -4,6 +4,11 @@ import { loadEnv } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Pin TypeScript transform settings to this app. Automatic discovery walks
+  // past tsconfig files that do not include a test (cloudflare/, root
+  // configs) and, in a worktree nested inside another checkout, reaches that
+  // checkout's tsconfig and its unresolvable package configs.
+  tsconfig: resolve(__dirname, 'tsconfig.json'),
   plugins: [react()],
   test: {
     server: {
