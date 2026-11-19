@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_focus_time_section.dart';
 import 'package:mobile/features/profile/view/profile_identity_header.dart';
@@ -95,6 +96,8 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
             return NovaRefreshIndicator(
               onRefresh: _refresh,
               child: ProfileOverviewList(
+                profile: profile,
+                avatarUrl: profile == null ? null : state.avatarUrl,
                 topInset: floatingShellHeaderInset(context),
                 header: ProfileIdentityHeader(
                   profile: profile,
@@ -142,12 +145,16 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
 class ProfileOverviewList extends StatelessWidget {
   const ProfileOverviewList({
     required this.header,
+    this.profile,
+    this.avatarUrl,
     this.focusTime,
     this.topInset = 0,
     super.key,
   });
 
   final Widget header;
+  final UserProfile? profile;
+  final String? avatarUrl;
 
   /// Focus Time; absent while signed out.
   final Widget? focusTime;
@@ -166,7 +173,11 @@ class ProfileOverviewList extends StatelessWidget {
           focusTime,
         ],
         const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),
-        const ProfileCard(children: [ProfileAccountSwitchRow()]),
+        ProfileCard(
+          children: [
+            ProfileAccountSwitchRow(profile: profile, avatarUrl: avatarUrl),
+          ],
+        ),
         const SizedBox(height: AppLayout.itemGap),
         const ProfileLinkGroups(),
         const SizedBox(height: AppLayout.sectionGap - AppSpacing.sm),

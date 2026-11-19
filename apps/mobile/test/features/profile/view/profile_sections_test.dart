@@ -8,6 +8,7 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/profile/view/profile_sections.dart';
 import 'package:mobile/features/settings/view/settings_delete_account_row.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show User;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../helpers/helpers.dart';
@@ -22,34 +23,44 @@ void main() {
     whenListen(
       auth,
       const Stream<AuthState>.empty(),
-      initialState: const AuthState.unauthenticated().copyWith(
-        activeAccountId: 'a',
-        accounts: const [
-          StoredAuthAccount(
-            id: 'a',
-            refreshToken: '',
-            lastActiveAt: 3,
-            addedAt: 1,
-            displayName: 'Current',
+      initialState:
+          const AuthState.authenticated(
+            User(
+              id: 'a',
+              email: 'alex@example.test',
+              aud: 'authenticated',
+              appMetadata: {},
+              userMetadata: {},
+              createdAt: '',
+            ),
+          ).copyWith(
+            activeAccountId: 'c',
+            accounts: const [
+              StoredAuthAccount(
+                id: 'a',
+                refreshToken: '',
+                lastActiveAt: 3,
+                addedAt: 1,
+                displayName: 'Alex Doe',
+              ),
+              StoredAuthAccount(
+                id: 'b',
+                refreshToken: '',
+                lastActiveAt: 1,
+                addedAt: 1,
+                displayName: 'Older',
+                email: 'older@example.test',
+              ),
+              StoredAuthAccount(
+                id: 'c',
+                refreshToken: '',
+                lastActiveAt: 2,
+                addedAt: 1,
+                displayName: 'Recent',
+                email: 'recent@example.test',
+              ),
+            ],
           ),
-          StoredAuthAccount(
-            id: 'b',
-            refreshToken: '',
-            lastActiveAt: 1,
-            addedAt: 1,
-            displayName: 'Older',
-            email: 'older@example.test',
-          ),
-          StoredAuthAccount(
-            id: 'c',
-            refreshToken: '',
-            lastActiveAt: 2,
-            addedAt: 1,
-            displayName: 'Recent',
-            email: 'recent@example.test',
-          ),
-        ],
-      ),
     );
     when(() => auth.signOutCurrentAccount()).thenAnswer((_) async => true);
   });
@@ -65,14 +76,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('switch row previews the most recent other account', (
-    tester,
-  ) async {
-    await pump(tester, const ProfileAccountSwitchRow());
-    expect(find.text('Switch account'), findsOneWidget);
-    expect(find.text('recent@example.test'), findsOneWidget);
-    expect(find.text('older@example.test'), findsNothing);
-  });
+  testWidgets(
+    'switch row follows the signed-in identity when stored active ID is stale',
+    (tester) async {
+      await pump(tester, const ProfileAccountSwitchRow());
+      expect(find.text('Switch account'), findsOneWidget);
+      expect(find.text('alex@example.test'), findsOneWidget);
+      expect(find.text('A'), findsOneWidget);
+      expect(find.text('recent@example.test'), findsNothing);
+      expect(find.text('older@example.test'), findsNothing);
+    },
+  );
 
   testWidgets('every quick link is present', (tester) async {
     await pump(tester, const ProfileLinkGroups());

@@ -345,8 +345,7 @@ void main() {
     tester,
   ) async {
     await mount(tester);
-    // The row previews the most recent other saved account.
-    expect(find.text('Account B'), findsOneWidget);
+    expect(find.text('Account B'), findsNothing);
     await tester.tap(find.byKey(const ValueKey('profile-switch-account')));
     await _pump(tester);
     await tester.tap(find.text('Account B').last);

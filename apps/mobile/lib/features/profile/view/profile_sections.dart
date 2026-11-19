@@ -8,79 +8,83 @@ import 'package:mobile/core/router/link_browser_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/data/models/stored_auth_account.dart';
+import 'package:mobile/core/widgets/profile_media_image.dart';
+import 'package:mobile/data/models/user_profile.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/profile/view/profile_account_actions.dart';
 import 'package:mobile/features/profile/view/profile_link_row.dart';
 import 'package:mobile/features/profile/view/profile_surface.dart';
 import 'package:mobile/features/settings/view/settings_delete_account_row.dart';
 import 'package:mobile/features/settings/view/settings_profile_parts.dart';
-import 'package:mobile/features/shell/view/account_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Switch account: the other saved accounts' avatars and the most recent
-/// one's email. It opens the account switcher, which also adds and manages
-/// accounts.
+/// Opens account switching from the signed-in account's profile.
 class ProfileAccountSwitchRow extends StatelessWidget {
-  const ProfileAccountSwitchRow({super.key});
+  const ProfileAccountSwitchRow({this.profile, this.avatarUrl, super.key});
+
+  final UserProfile? profile;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    // The two most recent other accounts: a stable
-    // value, so unrelated auth changes do not rebuild the row.
-    final (first, second) = context
-        .select<AuthCubit, (StoredAuthAccount?, StoredAuthAccount?)>((cubit) {
-          final others = sortStoredAccountsByRecent(
-            cubit.state.accounts.where(
-              (account) => account.id != cubit.state.activeAccountId,
-            ),
+    final (actorId, email, name, imageUrl) = context
+        .select<AuthCubit, (String?, String?, String?, String?)>((cubit) {
+          final user = cubit.state.user;
+          final saved = cubit.state.accounts
+              .where((account) => account.id == user?.id)
+              .firstOrNull;
+          final metadata = user?.userMetadata;
+          return (
+            user?.id,
+            user?.email ?? saved?.email,
+            saved?.displayName ??
+                _metadataString(metadata?['display_name']) ??
+                _metadataString(metadata?['full_name']),
+            saved?.avatarUrl ?? _metadataString(metadata?['avatar_url']),
           );
-          return (others.firstOrNull, others.elementAtOrNull(1));
         });
-    final surface = AppTokens.of(context).colorScheme.card;
-    // Two overlapping avatars fit the row's 40dp leading slot.
-    const avatarSize = 26.0;
-    const ring = 2.0;
-    Widget avatar(StoredAuthAccount account) => DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: surface, width: ring),
-      ),
-      child: SettingsProfileAvatar(
-        url: account.avatarUrl,
-        name: accountPrimaryLabel(account),
-        size: avatarSize,
-      ),
+    final currentProfile = actorId != null && profile?.id == actorId
+        ? profile
+        : null;
+    final currentEmail = currentProfile?.email ?? email;
+    final currentName =
+        [
+              currentProfile?.displayName,
+              currentProfile?.fullName,
+              name,
+              currentEmail,
+            ]
+            .whereType<String>()
+            .map((value) => value.trim())
+            .firstWhere(
+              (value) => value.isNotEmpty,
+              orElse: () => l10n.profileTitle,
+            );
+    final image = currentProfile == null ? imageUrl : avatarUrl ?? imageUrl;
+    const size = ProfileLinkRow.tileSize;
+    final fallback = SettingsProfileAvatar(
+      url: null,
+      name: currentName,
+      size: size,
     );
-    final shown = [?first, ?second];
     return ProfileLinkRow(
       key: const ValueKey('profile-switch-account'),
       title: l10n.authSwitchAccount,
-      subtitle: first == null
-          ? l10n.profileAddAnotherAccount
-          : first.email ?? accountPrimaryLabel(first),
+      subtitle: currentEmail ?? (actorId == null ? null : currentName),
       icon: LucideIcons.users,
       tone: AppTone.primary,
-      leading: shown.isEmpty
+      leading: actorId == null
           ? null
-          : SizedBox(
-              width: ProfileLinkRow.tileSize,
-              height: ProfileLinkRow.tileSize,
-              child: Stack(
-                alignment: AlignmentDirectional.centerStart,
-                children: [
-                  for (final (index, account) in shown.indexed)
-                    PositionedDirectional(
-                      start: shown.length == 1
-                          ? (ProfileLinkRow.tileSize - avatarSize) / 2 - ring
-                          : index *
-                                (ProfileLinkRow.tileSize -
-                                    avatarSize -
-                                    2 * ring),
-                      child: avatar(account),
-                    ),
-                ],
+          : image == null
+          ? fallback
+          : ClipOval(
+              child: Image(
+                image: profileMediaImage(image, actorId),
+                width: size,
+                height: size,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => fallback,
               ),
             ),
       showChevron: false,
@@ -88,6 +92,9 @@ class ProfileAccountSwitchRow extends StatelessWidget {
       onTap: () => unawaited(showProfileAccountSwitcher(context)),
     );
   }
+
+  static String? _metadataString(Object? value) =>
+      value is String && value.trim().isNotEmpty ? value.trim() : null;
 }
 
 /// Shortcuts to the settings people reach for from their profile.
