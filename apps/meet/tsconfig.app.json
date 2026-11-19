@@ -57,6 +57,7 @@
     "src/app/api/meet-call/[meetingId]/assistant/review/route.ts",
     "src/app/api/meet-call/[meetingId]/assistant/route.ts",
     "src/app/api/meet-call/[meetingId]/attendance/route.ts",
+    "src/app/api/meet-call/[meetingId]/class-timer/route.ts",
     "src/app/api/meet-call/[meetingId]/costs/route.ts",
     "src/app/api/meet-call/[meetingId]/document/route.ts",
     "src/app/api/meet-call/[meetingId]/files/route.ts",
