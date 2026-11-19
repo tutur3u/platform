@@ -30,6 +30,8 @@ const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // with a reviewed push, schedule or manual trigger change.
 // 4122fb86 dropped cf-wrangler-publication path filters from coordination and
 // devbox-control workflows; app sources and cf parity paths are unchanged.
+// CodeQL push and pull_request runs share one security-sensitive path list;
+// the nightly security-checks.yaml schedule is the complete scan.
 const PROTECTED_TRIGGERS = {
   'rewise-cloudflare.yaml': '45c4db71ea52982a',
   'git-cloudflare.yaml': '518ca2530d7a63ef',
@@ -44,7 +46,7 @@ const PROTECTED_TRIGGERS = {
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': 'c43009624296a37c',
   'cms-renderer.yaml': '94c592fa21fb7888',
-  'codeql.yml': '4a4a1b519370f1bc',
+  'codeql.yml': '18bb4fc8f0bc2cef',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
   'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',

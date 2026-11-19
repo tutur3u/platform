@@ -462,12 +462,6 @@ test('Calendar and Mail PR revisions supersede while main staging uploads never 
   }
 });
 
-test('PR path filters never apply to CodeQL main baselines', () => {
-  const push = events(workflows['codeql.yml']).push;
-  assert.deepEqual(push, { branches: ['main'] });
-  assert.ok(events(workflows['codeql.yml']).pull_request['paths-ignore']);
-});
-
 test('each CodeQL main push completes and pull requests still supersede', () => {
   const policy = workflows['codeql.yml'].concurrency;
   const first = {

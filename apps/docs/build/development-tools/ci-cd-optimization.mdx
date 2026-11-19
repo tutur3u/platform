@@ -371,11 +371,14 @@ Dependency resolution and the platform build always execute so a cache hit
 cannot skip validation. Managed uv and CodeQL caches remain owned by their
 upstream actions rather than being duplicated.
 
-Automatic CodeQL is owned by GitHub's organization-managed
-`dynamic/github-code-scanning/codeql` workflow, which scans
-JavaScript/TypeScript and Python. The checked-in `.github/workflows/codeql.yml`
-is manual-only: it preserves an explicit fallback and avoids the Security UI's
-missing-workflow warning without adding push, pull-request, or cron duplicates.
+CodeQL runs from the checked-in `.github/workflows/codeql.yml`; GitHub default
+setup stays off. The complete scan runs nightly: `security-checks.yaml`
+schedules it at 02:17 UTC with every language. Pull requests and `main` pushes
+run it only when they touch security-sensitive paths: auth, middleware and
+`proxy.ts`, API routes, SQL and migrations, Supabase, `packages/internal-api`,
+`packages/auth*`, workflows and actions, and files named for crypto, secrets,
+sessions or tokens. Both triggers share one path list. A release gate that needs
+a CodeQL run for an exact `main` SHA dispatches the workflow for that SHA.
 `bun git-sync` mirrors the already-scanned `main` SHA to `production`.
 
 The full Dockerized E2E graph is created for E2E specs, Playwright and Docker

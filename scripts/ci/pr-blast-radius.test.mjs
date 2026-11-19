@@ -15,7 +15,6 @@ const CALENDAR_FILE = 'apps/calendar/src/app/page.tsx';
 const CALENDAR_STARTS = [
   'app-builds-affected.yaml',
   'calendar-cloudflare.yaml',
-  'codeql.yml',
   'mail-calendar-tasks-builds.yaml',
   'pr-checks.yaml',
   'security-checks.yaml',
@@ -47,11 +46,11 @@ test('a flow path list and a block path list select the same file', () => {
   );
 });
 
-test('calendar-only page avoids 77 of 85 pull_request workflows', () => {
+test('calendar-only page avoids 81 of 88 pull_request workflows', () => {
   const result = runsAvoided(inventory, [CALENDAR_FILE]);
-  assert.equal(result.total, 85);
+  assert.equal(result.total, 88);
   assert.deepEqual(result.started, CALENDAR_STARTS);
-  assert.equal(result.avoided, 77);
+  assert.equal(result.avoided, 81);
   for (const unrelated of [
     'ai-cloudflare.yaml',
     'finance-cloudflare.yaml',
@@ -61,17 +60,32 @@ test('calendar-only page avoids 77 of 85 pull_request workflows', () => {
     assert.equal(result.started.includes(unrelated), false, unrelated);
 });
 
-test('security workflows stay selected for an app source file', () => {
+test('security workflows stay selected: Security Checks always, CodeQL for sensitive paths', () => {
   const started = workflowsForChanges(inventory, [CALENDAR_FILE]);
-  for (const file of SECURITY_WORKFLOWS) {
-    const workflow = inventory.find((item) => item.file === file);
-    assert.ok(workflow, file);
-    assert.deepEqual(
-      workflow.paths.filter((pattern) => !pattern.startsWith('!')),
-      []
+  const security = inventory.find(
+    (item) => item.file === 'security-checks.yaml'
+  );
+  assert.deepEqual(
+    security.paths.filter((pattern) => !pattern.startsWith('!')),
+    []
+  );
+  assert.equal(started.includes('security-checks.yaml'), true);
+  // A plain page change waits for the nightly CodeQL scan.
+  assert.equal(started.includes('codeql.yml'), false);
+  for (const file of [
+    'apps/web/src/app/api/v1/workspaces/[wsId]/route.ts',
+    'apps/database/supabase/migrations/20990101000000_example.sql',
+    'packages/auth/src/index.ts',
+    'packages/internal-api/src/tasks.ts',
+    'apps/calendar/src/proxy.ts',
+    'packages/utils/src/session-token.ts',
+    '.github/workflows/pr-checks.yaml',
+  ])
+    assert.equal(
+      workflowsForChanges(inventory, [file]).includes('codeql.yml'),
+      true,
+      file
     );
-    assert.equal(started.includes(file), true, file);
-  }
   const prose = runsAvoided(inventory, ['README.md']);
   assert.equal(prose.started.includes('security-checks.yaml'), true);
   assert.equal(prose.started.includes('codeql.yml'), false);
@@ -79,7 +93,6 @@ test('security workflows stay selected for an app source file', () => {
 
 const FULL_SUITE = [
   'app-builds-affected.yaml',
-  'codeql.yml',
   'pr-checks.yaml',
   'security-checks.yaml',
   'turbo-unit-tests.yaml',

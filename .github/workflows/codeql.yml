@@ -2,8 +2,13 @@ name: CodeQL Manual Fallback
 
 # Repository-owned CodeQL. GitHub default setup is not configured; do not enable
 # it alongside this workflow (code scanning rejects advanced-setup uploads while
-# default setup is on). Pull requests and main pushes scan the languages their
-# diff touches; security-checks.yaml calls this workflow on its daily schedule.
+# default setup is on). The full scan runs nightly: security-checks.yaml calls
+# this workflow on its daily schedule (the only timer) with every language.
+# Pull requests and main pushes scan only when they touch security-sensitive
+# paths (auth, middleware/proxy, API routes, SQL and migrations, Supabase,
+# internal-api, workflows, crypto/secret/session/token handling), and then only
+# the languages their diff touches. Release gates that need a CodeQL run for an
+# exact main SHA dispatch this workflow for it.
 # Merge queue (merge_group) runs scan the candidate merge commit M and gate it
 # against the default-branch baseline. They are untrusted candidate code: scope
 # and gate scripts load from the queue base B, every job stays on GitHub-hosted
@@ -12,15 +17,56 @@ name: CodeQL Manual Fallback
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
-    # Prose-only PRs have nothing to scan. Main pushes stay unfiltered so the
-    # baseline the PR new-alert gate compares against is always complete.
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.mdx'
-      - 'apps/docs/**'
+    paths:
+      - 'apps/database/**'
+      - 'packages/auth*/**'
+      - 'packages/internal-api/**'
+      - 'packages/supabase/**'
+      - '**/middleware.ts'
+      - '**/proxy.ts'
+      - '**/app/api/**'
+      - '**/legacy-api-routes/**'
+      - 'apps/api/**'
+      - 'apps/gateway/**'
+      - '**/auth/**'
+      - '**/*auth*'
+      - '**/*crypto*'
+      - '**/*secret*'
+      - '**/*session*'
+      - '**/*token*'
+      - '**/*.sql'
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/codeql/**'
+      - 'scripts/ci/codeql-*'
+      - 'scripts/ci/security-paths.js'
   push:
     branches:
       - main
+    # Keep identical to the pull_request paths above.
+    paths:
+      - 'apps/database/**'
+      - 'packages/auth*/**'
+      - 'packages/internal-api/**'
+      - 'packages/supabase/**'
+      - '**/middleware.ts'
+      - '**/proxy.ts'
+      - '**/app/api/**'
+      - '**/legacy-api-routes/**'
+      - 'apps/api/**'
+      - 'apps/gateway/**'
+      - '**/auth/**'
+      - '**/*auth*'
+      - '**/*crypto*'
+      - '**/*secret*'
+      - '**/*session*'
+      - '**/*token*'
+      - '**/*.sql'
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/codeql/**'
+      - 'scripts/ci/codeql-*'
+      - 'scripts/ci/security-paths.js'
   merge_group:
     types: [checks_requested]
   workflow_call:

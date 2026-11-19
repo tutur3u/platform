@@ -38,6 +38,8 @@ current release run. A successful Meet workflow whose `validate` job was skipped
 by the affected-path gate counts as green for this historical CI predicate. It is
 not an emitted-artifact qualification receipt: the release dispatch must execute
 its own validation, restored-artifact checks and production-input provenance.
+CodeQL runs on `main` pushes only for security-sensitive paths, so a candidate
+SHA may have no CodeQL run; dispatch `codeql.yml` on `main` for that SHA first.
 
 ## Dispatch and approve
 

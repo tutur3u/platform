@@ -724,7 +724,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   workflows still finish under frequent pushes. This includes Test, Type Check,
   docs/SEO and every Cloudflare Source workflow: per-SHA main groups queued a
   full run per push and made the newest head wait behind older SHAs. Only
-  CodeQL (per-tip security baseline) and Oxc (job-level locks) keep per-SHA
+  CodeQL (sensitive-path scans per tip) and Oxc (job-level locks) keep per-SHA
   main groups; only report-only smoke and preview workflows supersede active
   main runs. Production, generated Release Please refs and manual qualification
   retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
@@ -787,7 +787,9 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   primarily with exact-head local or remote-fleet runs, and batch pushes rather
   than pushing WIP. Path-filter heavy PR triggers only (append `'!**/*.md'` and
   `'!**/*.mdx'` to PR `paths`, or use docs-only `paths-ignore`). Leave main push
-  filters unchanged: promotion and CodeQL baselines need complete main runs.
+  filters unchanged for promotion gates. CodeQL is the exception: push and PR
+  runs share one security-sensitive path list and the nightly
+  `security-checks.yaml` run is the complete baseline.
   Check rulesets first, because a trigger-filtered required check never reports.
   Required checks need a job-level `check-ci` skip instead. Moving PR CI to
   self-hosted fleet runners is a follow-up and is not adopted. See the

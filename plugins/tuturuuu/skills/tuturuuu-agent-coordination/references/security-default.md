@@ -45,7 +45,7 @@ T3 timer, scheduler or second cadence for it.
 
 | Cadence | Mechanism | Status (2026-10-23) |
 | --- | --- | --- |
-| Daily automated audit | Existing admitted trusted CI: the scheduled security workflows under `.github/workflows/` | **Gap.** `codeql.yml` runs only on `workflow_dispatch`, and no scheduled security workflow is merged yet. Placeholder: [scheduled security workflows](https://github.com/tutur3u/platform/pulls?q=is%3Apr+label%3Asecurity+schedule) (pending, not yet merged). Owner: the CI security workstream under the project integration owner. Resume event: the scheduled workflow merges; then replace this placeholder with its path. |
+| Daily automated audit | `security-checks.yaml` schedule (02:17 UTC), which runs the complete `codeql.yml` scan, secret and dependency scans and the findings register (deeper on Mondays) | **Active.** CodeQL push and pull-request runs are limited to security-sensitive paths; the nightly scan covers every other change. |
 | Weekly deeper review | The existing admitted control cadence of the project integration owner | Runs only if that cadence is admitted. Otherwise the gap is recorded with the integration owner as owner, resuming at the next admitted control run. |
 
 The workflows are owned and maintained by their CI owner; this reference only
