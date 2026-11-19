@@ -369,6 +369,27 @@
       }
     }
   },
+  "@financeRecurringEndDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@financeRecurringNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@financeRecurringStartDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "@financeWalletImageCount": {
     "placeholders": {
       "count": {
@@ -2611,6 +2632,23 @@
   "financeTransferModeEditHint": "Transfer mode can only be edited for existing transfers.",
   "financeType": "Type",
   "financeViewAll": "View all",
+  "financeRecurring": "Recurring transactions",
+  "financeRecurringAddEnd": "Add end date",
+  "financeRecurringClearEnd": "Clear end date",
+  "financeRecurringDaily": "Daily",
+  "financeRecurringDelete": "Delete recurring transaction",
+  "financeRecurringEmpty": "No recurring transactions",
+  "financeRecurringEndDate": "Ends {date}",
+  "financeRecurringFrequency": "Frequency",
+  "financeRecurringInactive": "Inactive",
+  "financeRecurringMonthly": "Monthly",
+  "financeRecurringName": "Name",
+  "financeRecurringNew": "New recurring transaction",
+  "financeRecurringNext": "Next {date}",
+  "financeRecurringSignedAmount": "Amount (negative for expenses)",
+  "financeRecurringStartDate": "Starts {date}",
+  "financeRecurringWeekly": "Weekly",
+  "financeRecurringYearly": "Yearly",
   "financeWallet": "Wallet",
   "financeWalletBalance": "Balance",
   "financeWalletBankTab": "Bank",

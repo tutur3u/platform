@@ -3873,6 +3873,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeViewAll => 'View all';
 
   @override
+  String get financeRecurring => 'Recurring transactions';
+
+  @override
+  String get financeRecurringAddEnd => 'Add end date';
+
+  @override
+  String get financeRecurringClearEnd => 'Clear end date';
+
+  @override
+  String get financeRecurringDaily => 'Daily';
+
+  @override
+  String get financeRecurringDelete => 'Delete recurring transaction';
+
+  @override
+  String get financeRecurringEmpty => 'No recurring transactions';
+
+  @override
+  String financeRecurringEndDate(String date) {
+    return 'Ends $date';
+  }
+
+  @override
+  String get financeRecurringFrequency => 'Frequency';
+
+  @override
+  String get financeRecurringInactive => 'Inactive';
+
+  @override
+  String get financeRecurringMonthly => 'Monthly';
+
+  @override
+  String get financeRecurringName => 'Name';
+
+  @override
+  String get financeRecurringNew => 'New recurring transaction';
+
+  @override
+  String financeRecurringNext(String date) {
+    return 'Next $date';
+  }
+
+  @override
+  String get financeRecurringSignedAmount => 'Amount (negative for expenses)';
+
+  @override
+  String financeRecurringStartDate(String date) {
+    return 'Starts $date';
+  }
+
+  @override
+  String get financeRecurringWeekly => 'Weekly';
+
+  @override
+  String get financeRecurringYearly => 'Yearly';
+
+  @override
   String get financeWallet => 'Wallet';
 
   @override

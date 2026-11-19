@@ -16,6 +16,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/finance_overview_balances.dart';
 import 'package:mobile/features/finance/view/finance_overview_month.dart';
+import 'package:mobile/features/finance/view/recurring_transactions_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
@@ -167,6 +168,12 @@ class _FinanceView extends StatelessWidget {
         state: state,
         onTransactionTap: (transaction) =>
             _openTransaction(context, state, transaction),
+        onRecurring: () => unawaited(
+          openRecurringTransactionsSheet(
+            context,
+            currency: state.workspaceCurrency,
+          ),
+        ),
         onCreate: canManageFinance(context, 'create_transactions')
             ? () => _create(context, state)
             : null,
@@ -182,11 +189,13 @@ class FinanceOverviewContent extends StatelessWidget {
     required this.state,
     required this.onTransactionTap,
     required this.onCreate,
+    this.onRecurring,
     this.now,
     super.key,
   });
 
   final FinanceState state;
+  final VoidCallback? onRecurring;
   final ValueChanged<Transaction> onTransactionTap;
   final VoidCallback? onCreate;
 
@@ -227,16 +236,24 @@ class FinanceOverviewContent extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             balances,
-            if (state.wallets.isNotEmpty) ...[
+            if (state.wallets.isNotEmpty || onRecurring != null) ...[
               const SizedBox(height: AppLayout.itemGap),
               AppGroupedCard(
                 children: [
-                  AppRichRow(
-                    key: const ValueKey('finance-overview-checkpoints'),
-                    title: l10n.financeCheckpointsBatchRecord,
-                    leading: const AppIconTile(icon: LucideIcons.listChecks),
-                    onTap: () => context.push(Routes.financeCheckpoints),
-                  ),
+                  if (state.wallets.isNotEmpty)
+                    AppRichRow(
+                      key: const ValueKey('finance-overview-checkpoints'),
+                      title: l10n.financeCheckpointsBatchRecord,
+                      leading: const AppIconTile(icon: LucideIcons.listChecks),
+                      onTap: () => context.push(Routes.financeCheckpoints),
+                    ),
+                  if (onRecurring != null)
+                    AppRichRow(
+                      key: const ValueKey('finance-overview-recurring'),
+                      title: l10n.financeRecurring,
+                      leading: const AppIconTile(icon: LucideIcons.repeat),
+                      onTap: onRecurring,
+                    ),
                 ],
               ),
             ],

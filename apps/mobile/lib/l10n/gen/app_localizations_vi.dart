@@ -3847,6 +3847,63 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeViewAll => 'Xem tất cả';
 
   @override
+  String get financeRecurring => 'Giao dịch định kỳ';
+
+  @override
+  String get financeRecurringAddEnd => 'Thêm ngày kết thúc';
+
+  @override
+  String get financeRecurringClearEnd => 'Xóa ngày kết thúc';
+
+  @override
+  String get financeRecurringDaily => 'Hằng ngày';
+
+  @override
+  String get financeRecurringDelete => 'Xóa giao dịch định kỳ';
+
+  @override
+  String get financeRecurringEmpty => 'Chưa có giao dịch định kỳ';
+
+  @override
+  String financeRecurringEndDate(String date) {
+    return 'Kết thúc $date';
+  }
+
+  @override
+  String get financeRecurringFrequency => 'Tần suất';
+
+  @override
+  String get financeRecurringInactive => 'Không hoạt động';
+
+  @override
+  String get financeRecurringMonthly => 'Hằng tháng';
+
+  @override
+  String get financeRecurringName => 'Tên';
+
+  @override
+  String get financeRecurringNew => 'Giao dịch định kỳ mới';
+
+  @override
+  String financeRecurringNext(String date) {
+    return 'Tiếp theo $date';
+  }
+
+  @override
+  String get financeRecurringSignedAmount => 'Số tiền (âm cho khoản chi)';
+
+  @override
+  String financeRecurringStartDate(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String get financeRecurringWeekly => 'Hằng tuần';
+
+  @override
+  String get financeRecurringYearly => 'Hằng năm';
+
+  @override
   String get financeWallet => 'Ví';
 
   @override

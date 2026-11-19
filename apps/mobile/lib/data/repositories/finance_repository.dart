@@ -23,6 +23,7 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';
+import 'package:mobile/data/models/finance/recurring_transaction.dart';
 import 'package:mobile/data/models/finance/tag.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
@@ -39,6 +40,7 @@ part 'finance_repository_checkpoints.dart';
 part 'finance_repository_local.dart';
 part 'finance_repository_mutations.dart';
 part 'finance_repository_offline_preparation.dart';
+part 'finance_repository_recurring.dart';
 part 'finance_repository_taxonomy.dart';
 part 'finance_repository_transaction_lookup.dart';
 
@@ -49,7 +51,8 @@ class FinanceRepository
         FinanceRepositoryMutations,
         FinanceRepositoryTaxonomy,
         FinanceRepositoryBudgets,
-        FinanceRepositoryCheckpoints {
+        FinanceRepositoryCheckpoints,
+        FinanceRepositoryRecurring {
   FinanceRepository({
     ApiClient? apiClient,
     CacheStore? cacheStore,

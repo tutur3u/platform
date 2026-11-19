@@ -7405,6 +7405,108 @@ abstract class AppLocalizations {
   /// **'View all'**
   String get financeViewAll;
 
+  /// No description provided for @financeRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring transactions'**
+  String get financeRecurring;
+
+  /// No description provided for @financeRecurringAddEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add end date'**
+  String get financeRecurringAddEnd;
+
+  /// No description provided for @financeRecurringClearEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear end date'**
+  String get financeRecurringClearEnd;
+
+  /// No description provided for @financeRecurringDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get financeRecurringDaily;
+
+  /// No description provided for @financeRecurringDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete recurring transaction'**
+  String get financeRecurringDelete;
+
+  /// No description provided for @financeRecurringEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No recurring transactions'**
+  String get financeRecurringEmpty;
+
+  /// No description provided for @financeRecurringEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String financeRecurringEndDate(String date);
+
+  /// No description provided for @financeRecurringFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequency'**
+  String get financeRecurringFrequency;
+
+  /// No description provided for @financeRecurringInactive.
+  ///
+  /// In en, this message translates to:
+  /// **'Inactive'**
+  String get financeRecurringInactive;
+
+  /// No description provided for @financeRecurringMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get financeRecurringMonthly;
+
+  /// No description provided for @financeRecurringName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get financeRecurringName;
+
+  /// No description provided for @financeRecurringNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New recurring transaction'**
+  String get financeRecurringNew;
+
+  /// No description provided for @financeRecurringNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next {date}'**
+  String financeRecurringNext(String date);
+
+  /// No description provided for @financeRecurringSignedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount (negative for expenses)'**
+  String get financeRecurringSignedAmount;
+
+  /// No description provided for @financeRecurringStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {date}'**
+  String financeRecurringStartDate(String date);
+
+  /// No description provided for @financeRecurringWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get financeRecurringWeekly;
+
+  /// No description provided for @financeRecurringYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get financeRecurringYearly;
+
   /// No description provided for @financeWallet.
   ///
   /// In en, this message translates to:
