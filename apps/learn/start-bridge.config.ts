@@ -51,6 +51,9 @@ export default defineBridgeAppConfig({
   csp: defaultContentSecurityPolicy,
   async wrapResponse(response, context) {
     const secured = await rootPolicy(response, context);
+    if (response.headers.get('Referrer-Policy') === 'no-referrer') {
+      secured.headers.set('Referrer-Policy', 'no-referrer');
+    }
     return applyDocumentSecurityHeaders(
       secured,
       learnSecurityProfile(context.env),
