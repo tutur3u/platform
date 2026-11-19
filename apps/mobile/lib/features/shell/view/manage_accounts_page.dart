@@ -131,6 +131,7 @@ class _ManageAccountsPageState extends State<ManageAccountsPage> {
     }
 
     final authCubit = context.read<AuthCubit>();
+    if (success && authCubit.state.revocationUnconfirmed) return;
     shad.showToast(
       context: toastContext,
       builder: (context, overlay) => success

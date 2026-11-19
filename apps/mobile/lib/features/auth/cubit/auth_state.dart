@@ -32,6 +32,7 @@ class AuthState extends Equatable {
     this.switchingAccountId,
     this.expiredAccountIds = const {},
     this.addAccountEmail,
+    this.revocationUnconfirmed = false,
   });
 
   const AuthState.unknown() : this._();
@@ -56,6 +57,7 @@ class AuthState extends Equatable {
   final String? switchingAccountId;
   final Set<String> expiredAccountIds;
   final String? addAccountEmail;
+  final bool revocationUnconfirmed;
 
   @override
   bool get stringify => false;
@@ -72,6 +74,7 @@ class AuthState extends Equatable {
     Object? switchingAccountId = _sentinel,
     Set<String>? expiredAccountIds,
     Object? addAccountEmail = _sentinel,
+    bool? revocationUnconfirmed,
   }) => AuthState._(
     status: status ?? this.status,
     user: user ?? this.user,
@@ -92,6 +95,17 @@ class AuthState extends Equatable {
     addAccountEmail: addAccountEmail == _sentinel
         ? this.addAccountEmail
         : addAccountEmail as String?,
+    revocationUnconfirmed: revocationUnconfirmed ?? this.revocationUnconfirmed,
+  );
+
+  AuthState withDeviceRemoval({
+    bool isLoading = false,
+    bool revocationUnconfirmed = false,
+  }) => copyWith(
+    isLoading: isLoading,
+    error: null,
+    errorCode: null,
+    revocationUnconfirmed: revocationUnconfirmed,
   );
 
   @override
@@ -112,5 +126,6 @@ class AuthState extends Equatable {
     switchingAccountId,
     expiredAccountIds,
     addAccountEmail,
+    revocationUnconfirmed,
   ];
 }

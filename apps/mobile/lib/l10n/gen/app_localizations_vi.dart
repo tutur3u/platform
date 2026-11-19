@@ -1540,6 +1540,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authCurrentAccountTitle => 'Tài khoản hiện tại';
 
   @override
+  String get authDeviceRevocationUnconfirmed => 'Đã xóa tài khoản khỏi thiết bị này. Không thể xác nhận rằng phiên đăng nhập trên máy chủ đã kết thúc.';
+
+  @override
   String get authGithubBrowserLaunchFailed => 'Không thể mở đăng nhập GitHub lúc này.';
 
   @override
@@ -1561,7 +1564,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get authLogOutCurrent => 'Đăng xuất tài khoản hiện tại';
 
   @override
-  String get authLogOutCurrentConfirm => 'Đăng xuất tài khoản này khỏi thiết bị? Nếu có tài khoản khác, ứng dụng sẽ tự động chuyển sang tài khoản đó.';
+  String get authLogOutCurrentConfirm => 'Xóa tài khoản này khỏi thiết bị? Ứng dụng sẽ chuyển sang tài khoản đã lưu khác nếu phiên đăng nhập của tài khoản đó còn dùng được.';
 
   @override
   String get authLogOutCurrentDescription => 'Đăng xuất tài khoản này và tự động chuyển sang tài khoản đã lưu khác nếu có.';

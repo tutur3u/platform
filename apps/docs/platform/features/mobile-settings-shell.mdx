@@ -88,7 +88,7 @@ read-only values until a field is opened for editing. Manage accounts uses the
 same grouped Add account row and account panels; its shell title is not repeated
 in a hero card. The Profile account-management entry has one label, and What's
 new keeps its description and installed version without repeating the shell
-heading. Account removal confirmations and queued profile writes are unchanged.
+heading. Profile writes remain queued when offline.
 These defaults apply to both languages, light/dark themes and enlarged text.
 
 Avatar removal in Settings → Edit profile captures the authenticated account when its
@@ -146,7 +146,10 @@ Tap the row with your avatar, name and email to open **Switch account**. The
 signed-in account appears first with a check. Other saved accounts appear in
 recent order. The sheet shows the saved list immediately and refreshes in the
 background. Use **Add account** to sign in with another account, or **Manage
-accounts** to remove accounts from the device.
+accounts** to remove accounts from the device. Removal asks the server to
+end that device session before deleting its local copy. If the request fails
+temporarily, the account is still removed locally and the app shows a warning
+that the server session could not be confirmed as ended.
 
 A switch shows progress beside the chosen account. A valid saved session opens
 without a profile request. An expired session is refreshed when possible. If the

@@ -27,6 +27,7 @@ import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
+import 'package:mobile/core/ui/components/app_alert.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
@@ -655,15 +656,17 @@ class _AppState extends State<App> {
                                 .uri
                                 .path,
                             locationChanges: _router.routerDelegate,
-                            child: AuthSessionBoundary(
-                              identity: authIdentity,
-                              child: DismissKeyboardOnPointerDown(
-                                child: AppLockBoundary(
-                                  excluded: isAppLockExcludedRoute(
-                                    _router.currentMatchedLocation,
-                                  ),
-                                  child: MobileMfaApprovalListener(
-                                    child: AppVersionGate(child: child!),
+                            child: _showRevocationWarnings(
+                              AuthSessionBoundary(
+                                identity: authIdentity,
+                                child: DismissKeyboardOnPointerDown(
+                                  child: AppLockBoundary(
+                                    excluded: isAppLockExcludedRoute(
+                                      _router.currentMatchedLocation,
+                                    ),
+                                    child: MobileMfaApprovalListener(
+                                      child: AppVersionGate(child: child!),
+                                    ),
                                   ),
                                 ),
                               ),

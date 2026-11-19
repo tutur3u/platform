@@ -121,7 +121,7 @@ class AuthRepository {
     beforeActivate: beforeActivate,
   );
 
-  Future<({bool success, bool switched, String? error})> removeStoredAccount(
+  Future<StoredAccountRemovalResult> removeStoredAccount(
     String accountId,
   ) async {
     return await _multiAccountStorageService.removeStoredAccount(accountId);
@@ -133,7 +133,7 @@ class AuthRepository {
     );
   }
 
-  Future<({bool switched, String? error})> signOutCurrentAccount() async {
+  Future<StoredAccountRemovalResult> signOutCurrentAccount() async {
     return await _multiAccountStorageService.signOutCurrentAccount();
   }
 

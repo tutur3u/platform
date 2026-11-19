@@ -59,7 +59,12 @@ void main() {
     });
     when(() => repo.signOutCurrentAccount()).thenAnswer((_) async {
       events.add('repo');
-      return (switched: false, error: 'stop');
+      return (
+        success: false,
+        switched: false,
+        error: 'stop',
+        revocationUnconfirmed: false,
+      );
     });
     when(() => repo.signOutAllAccounts()).thenAnswer((_) async {
       events.add('repo');
@@ -67,7 +72,12 @@ void main() {
     });
     when(() => repo.removeStoredAccount(any())).thenAnswer((_) async {
       events.add('repo');
-      return (success: false, switched: false, error: 'stop');
+      return (
+        success: false,
+        switched: false,
+        error: 'stop',
+        revocationUnconfirmed: false,
+      );
     });
   });
 

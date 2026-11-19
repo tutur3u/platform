@@ -1547,6 +1547,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authCurrentAccountTitle => 'Current account';
 
   @override
+  String get authDeviceRevocationUnconfirmed => 'Account removed from this device. We couldn\'t confirm that its server session ended.';
+
+  @override
   String get authGithubBrowserLaunchFailed => 'Unable to open GitHub sign-in right now.';
 
   @override
@@ -1568,7 +1571,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLogOutCurrent => 'Log out current account';
 
   @override
-  String get authLogOutCurrentConfirm => 'Log out this account from this device? If another account exists, we will switch to it automatically.';
+  String get authLogOutCurrentConfirm => 'Remove this account from this device? We\'ll switch to another saved account if its session is available.';
 
   @override
   String get authLogOutCurrentDescription => 'Sign out this account and switch to another saved account if available.';

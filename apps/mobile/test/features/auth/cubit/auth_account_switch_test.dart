@@ -176,6 +176,24 @@ void main() {
     },
   );
 
+  test('publishes the warning when local removal succeeds offline', () async {
+    when(() => repo.removeStoredAccount(_target)).thenAnswer(
+      (_) async => (
+        success: true,
+        switched: false,
+        error: null,
+        revocationUnconfirmed: true,
+      ),
+    );
+    when(repo.getCurrentUser).thenAnswer((_) async => _user(_source));
+
+    expect(await auth.removeAccount(_target), isTrue);
+    expect(auth.state.user?.id, _source);
+    expect(auth.state.revocationUnconfirmed, isTrue);
+    expect(await readCache(_target), isNull);
+    expect(await readCache(_source), _source);
+  });
+
   for (final result in [
     StoredAccountSwitchResult.failed,
     StoredAccountSwitchResult.signInRequired,

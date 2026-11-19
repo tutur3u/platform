@@ -67,15 +67,25 @@ void main() {
     when(repo.refreshSession).thenAnswer((_) async {});
     when(repo.dispose).thenReturn(null);
     when(repo.signOut).thenAnswer((_) async {});
-    when(
-      repo.signOutCurrentAccount,
-    ).thenAnswer((_) async => (switched: false, error: null));
+    when(repo.signOutCurrentAccount).thenAnswer(
+      (_) async => (
+        success: true,
+        switched: false,
+        error: null,
+        revocationUnconfirmed: false,
+      ),
+    );
     when(
       repo.signOutAllAccounts,
     ).thenAnswer((_) async => (success: true, error: null));
-    when(
-      () => repo.removeStoredAccount(any()),
-    ).thenAnswer((_) async => (success: true, switched: false, error: null));
+    when(() => repo.removeStoredAccount(any())).thenAnswer(
+      (_) async => (
+        success: true,
+        switched: false,
+        error: null,
+        revocationUnconfirmed: false,
+      ),
+    );
     when(
       () => repo.switchToStoredAccount(
         any(),

@@ -3037,6 +3037,12 @@ abstract class AppLocalizations {
   /// **'Current account'**
   String get authCurrentAccountTitle;
 
+  /// No description provided for @authDeviceRevocationUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Account removed from this device. We couldn\'t confirm that its server session ended.'**
+  String get authDeviceRevocationUnconfirmed;
+
   /// No description provided for @authGithubBrowserLaunchFailed.
   ///
   /// In en, this message translates to:
@@ -3082,7 +3088,7 @@ abstract class AppLocalizations {
   /// No description provided for @authLogOutCurrentConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Log out this account from this device? If another account exists, we will switch to it automatically.'**
+  /// **'Remove this account from this device? We\'ll switch to another saved account if its session is available.'**
   String get authLogOutCurrentConfirm;
 
   /// No description provided for @authLogOutCurrentDescription.

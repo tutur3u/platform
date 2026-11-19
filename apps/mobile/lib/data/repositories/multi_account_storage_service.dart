@@ -4,7 +4,6 @@ import 'dart:developer' as developer;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:mobile/core/config/api_config.dart';
-import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/constants/storage_keys.dart';
 import 'package:mobile/data/models/multi_account_store.dart';
 import 'package:mobile/data/models/stored_account_switch_result.dart';
@@ -14,6 +13,13 @@ import 'package:mobile/data/repositories/stored_session_restore.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+typedef StoredAccountRemovalResult = ({
+  bool success,
+  bool switched,
+  String? error,
+  bool revocationUnconfirmed,
+});
 
 class MultiAccountStorageService {
   MultiAccountStorageService({
@@ -38,6 +44,7 @@ class MultiAccountStorageService {
   static const int _maxStoredAccounts = 5;
   Future<void>? _syncInFlight;
   bool _syncRequested = false;
+  final Set<String> _removingAccountIds = {};
   Future<void> _storeWrites = Future<void>.value();
 
   Future<T> _editStore<T>(Future<T> Function() edit) {
@@ -272,6 +279,9 @@ class MultiAccountStorageService {
     String accountId, {
     Future<void> Function()? beforeActivate,
   }) async {
+    if (_removingAccountIds.contains(accountId)) {
+      return StoredAccountSwitchResult.failed;
+    }
     final origin = _client.auth.currentUser?.id;
     final store = await _loadMultiAccountStore();
     final target = store.accounts.where((a) => a.id == accountId).firstOrNull;
@@ -339,6 +349,7 @@ class MultiAccountStorageService {
     final current = _client.auth.currentSession;
     if (latest == null ||
         latest.refreshToken != target.refreshToken ||
+        _removingAccountIds.contains(target.id) ||
         current?.user.id != origin ||
         candidate.isExpired) {
       return StoredAccountSwitchResult.failed;
@@ -397,77 +408,83 @@ class MultiAccountStorageService {
     lastActiveAt: active ? DateTime.now().millisecondsSinceEpoch : null,
   );
 
-  Future<({bool success, bool switched, String? error})> removeStoredAccount(
+  Future<StoredAccountRemovalResult> removeStoredAccount(
+    String accountId,
+  ) async {
+    if (!_removingAccountIds.add(accountId)) {
+      return _removalFailed('Account removal is already in progress');
+    }
+    try {
+      return await _removeStoredAccount(accountId);
+    } finally {
+      _removingAccountIds.remove(accountId);
+    }
+  }
+
+  Future<StoredAccountRemovalResult> _removeStoredAccount(
     String accountId,
   ) async {
     final store = await _loadMultiAccountStore();
-    final accountExists = store.accounts.any(
-      (account) => account.id == accountId,
+    final target = store.accounts.where((a) => a.id == accountId).firstOrNull;
+    final liveActor = _client.auth.currentUser?.id;
+    if (target == null && liveActor != accountId) {
+      return _removalFailed('Account not found');
+    }
+
+    final wasActive = (liveActor ?? store.activeAccountId) == accountId;
+    final liveToken = liveActor == accountId
+        ? _client.auth.currentSession?.refreshToken
+        : null;
+    final revocationUnconfirmed = !await _revokeStoredDeviceSession(
+      liveToken ?? target?.refreshToken ?? '',
     );
-    if (!accountExists && _client.auth.currentUser?.id != accountId) {
-      return (success: false, switched: false, error: 'Account not found');
-    }
 
-    final remaining = store.accounts
-        .where((account) => account.id != accountId)
-        .toList();
-
-    final wasActive =
-        (_client.auth.currentUser?.id ?? store.activeAccountId) == accountId;
-    if (!wasActive) {
-      final removed = await _removeInactiveAccount(accountId);
-      return (
-        success: removed,
-        switched: false,
-        error: removed ? null : 'Account changed during removal',
-      );
-    }
-
-    if (remaining.isEmpty) {
-      final signOutError = await _signOutSupabase(
-        logMessage: 'Supabase sign-out failed while removing final account',
-      );
-      if (signOutError != null) {
-        return (success: false, switched: false, error: signOutError);
+    var switched = false;
+    if (wasActive) {
+      final fallback = _sortAccountsByRecent(
+        store.accounts,
+      ).where((account) => account.id != accountId).firstOrNull;
+      if (fallback != null) {
+        switched = (await switchToStoredAccount(fallback.id)).success;
       }
-
-      try {
-        await _googleSignOutBestEffort();
-      } on Object catch (error, stackTrace) {
-        developer.log(
-          'Google sign-out failed while removing final account',
-          name: 'MultiAccountStorageService',
-          error: error,
-          stackTrace: stackTrace,
-          level: 900,
+      if (!switched && _client.auth.currentUser?.id == accountId) {
+        final signOutError = await _signOutSupabase(
+          logMessage: 'Supabase sign-out failed during account removal',
+          timeout: const Duration(seconds: 5),
         );
+        if (signOutError != null && _client.auth.currentUser?.id == accountId) {
+          return _removalFailed(signOutError);
+        }
+        await _googleSignOutBestEffort();
       }
-      await clearMultiAccountStore();
-      return (success: true, switched: false, error: null);
     }
 
-    final fallback = _sortAccountsByRecent(remaining).first;
-    final switchResult = await switchToStoredAccount(fallback.id);
-    if (!switchResult.success) {
-      return (
-        success: false,
-        switched: false,
-        error: switchResult.error ?? 'Failed to switch to another account',
-      );
-    }
-
-    final removed = await _removeInactiveAccount(accountId);
-    return (
-      success: removed,
-      switched: true,
-      error: removed ? null : 'Account changed during removal',
-    );
+    final removed = await _deleteStoredAccount(accountId);
+    return removed
+        ? (
+            success: true,
+            switched: switched,
+            error: null,
+            revocationUnconfirmed: revocationUnconfirmed,
+          )
+        : _removalFailed('Account changed during removal');
   }
 
-  Future<bool> _removeInactiveAccount(String accountId) => _editStore(() async {
+  StoredAccountRemovalResult _removalFailed(String error) => (
+    success: false,
+    switched: false,
+    error: error,
+    revocationUnconfirmed: false,
+  );
+
+  Future<bool> _deleteStoredAccount(String accountId) => _editStore(() async {
     final store = await _loadMultiAccountStore();
     if (_client.auth.currentUser?.id == accountId) return false;
     final remaining = store.accounts.where((a) => a.id != accountId).toList();
+    if (remaining.isEmpty) {
+      await _secureStorage.delete(key: StorageKeys.multiAccountStore);
+      return true;
+    }
     final activeId = _client.auth.currentUser?.id ?? store.activeAccountId;
     await _saveMultiAccountStore(
       store.copyWith(
@@ -496,39 +513,32 @@ class MultiAccountStorageService {
     });
   }
 
-  Future<({bool switched, String? error})> signOutCurrentAccount() async {
+  Future<StoredAccountRemovalResult> signOutCurrentAccount() async {
     final activeId =
         _client.auth.currentUser?.id ?? await getActiveStoredAccountId();
-    if (activeId == null) {
-      final signOutError = await _signOutSupabase(
-        logMessage: 'Supabase sign-out failed during current account sign-out',
-      );
-      if (signOutError != null) {
-        return (switched: false, error: signOutError);
-      }
-      await clearMultiAccountStore();
-      return (switched: false, error: null);
-    }
+    if (activeId != null) return removeStoredAccount(activeId);
 
-    final result = await removeStoredAccount(activeId);
-    if (!result.success) {
-      return (switched: false, error: result.error ?? 'Failed to sign out');
-    }
-    return (switched: result.switched, error: null);
+    final signOutError = await _signOutSupabase(
+      logMessage: 'Supabase sign-out failed during current account sign-out',
+    );
+    if (signOutError != null) return _removalFailed(signOutError);
+    await clearMultiAccountStore();
+    return (
+      success: true,
+      switched: false,
+      error: null,
+      revocationUnconfirmed: false,
+    );
   }
 
   Future<({bool success, String? error})> signOutAllAccounts() async {
     final store = await _loadMultiAccountStore();
     for (final account in store.accounts) {
       if (account.id == _client.auth.currentUser?.id) continue;
-      try {
-        await _revokeStoredDeviceSession(account.refreshToken);
-      } on Object catch (error, stackTrace) {
+      if (!await _revokeStoredDeviceSession(account.refreshToken)) {
         developer.log(
-          'Failed to revoke stored account refresh token',
+          'Stored device session revocation could not be confirmed',
           name: 'MultiAccountStorageService',
-          error: error,
-          stackTrace: stackTrace,
           level: 900,
         );
       }
@@ -560,88 +570,104 @@ class MultiAccountStorageService {
   Future<void> _googleSignOutBestEffort() async {
     try {
       await _googleIdentityClient.signOut();
-    } on Exception {
+    } on Object {
       // Ignore Google sign-out failures and continue account cleanup.
     }
   }
 
-  Future<void> _revokeStoredDeviceSession(String refreshToken) async {
-    if (refreshToken.trim().isEmpty) {
-      return;
-    }
+  Future<bool> _revokeStoredDeviceSession(String refreshToken) async {
+    if (refreshToken.trim().isEmpty) return true;
+    final client = _refreshHttpClient ?? http.Client();
 
-    final tokenUri = Uri.parse(
-      '${Env.supabaseUrl}/auth/v1/token?grant_type=refresh_token',
-    );
-    final tokenResponse = await http.post(
-      tokenUri,
-      headers: {
-        'apikey': Env.supabaseAnonKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'grant_type': 'refresh_token',
-        'refresh_token': refreshToken,
-      }),
-    );
-    if (tokenResponse.statusCode < 200 || tokenResponse.statusCode >= 300) {
-      throw AuthException(
-        'Failed to exchange refresh token '
-        '(${tokenResponse.statusCode}): ${tokenResponse.body}',
+    try {
+      final authUrl = Uri.parse(_client.rest.url).resolve('../auth/v1');
+      final apiKey = _client.auth.headers['apikey']!;
+
+      Future<http.Response> post(
+        String path,
+        Map<String, String> query,
+        Map<String, String> body, {
+        String? accessToken,
+      }) {
+        final request =
+            http.Request(
+                'POST',
+                authUrl.replace(
+                  path: '${authUrl.path}/$path',
+                  queryParameters: query,
+                ),
+              )
+              ..followRedirects = false
+              ..headers.addAll({
+                'apikey': apiKey,
+                'Content-Type': 'application/json',
+                if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+              })
+              ..body = jsonEncode(body);
+        return client
+            .send(request)
+            .then(http.Response.fromStream)
+            .timeout(const Duration(seconds: 4));
+      }
+
+      final exchange = await post(
+        'token',
+        {'grant_type': 'refresh_token'},
+        {'grant_type': 'refresh_token', 'refresh_token': refreshToken},
       );
-    }
+      if (_isRevokedSession(exchange)) return true;
+      if (!_isSuccess(exchange)) return false;
+      final payload = jsonDecode(exchange.body);
+      final accessToken = payload is Map<String, dynamic>
+          ? payload['access_token']
+          : null;
+      if (accessToken is! String || accessToken.isEmpty) return false;
 
-    final tokenBody = jsonDecode(tokenResponse.body);
-    if (tokenBody is! Map<String, dynamic>) {
-      throw const AuthException('Unexpected token exchange response payload');
-    }
-    final accessToken = tokenBody['access_token'] as String?;
-    if (accessToken == null || accessToken.trim().isEmpty) {
-      throw const AuthException('Token exchange did not return access_token');
-    }
-
-    final logoutUri = Uri.parse(
-      '${Env.supabaseUrl}/auth/v1/logout?scope=local',
-    );
-    final logoutResponse = await http.post(
-      logoutUri,
-      headers: {
-        'apikey': Env.supabaseAnonKey,
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'refresh_token': refreshToken}),
-    );
-    if (logoutResponse.statusCode < 200 || logoutResponse.statusCode >= 300) {
-      throw AuthException(
-        'Failed to revoke stored device session '
-        '(${logoutResponse.statusCode}): ${logoutResponse.body}',
+      final logout = await post(
+        'logout',
+        {'scope': 'local'},
+        {'refresh_token': refreshToken},
+        accessToken: accessToken,
       );
+      return _isSuccess(logout) || _isRevokedSession(logout);
+    } on Object {
+      return false;
+    } finally {
+      if (_refreshHttpClient == null) client.close();
     }
   }
 
-  Future<String?> _signOutSupabase({required String logMessage}) async {
+  bool _isSuccess(http.Response response) =>
+      response.statusCode >= 200 && response.statusCode < 300;
+
+  bool _isRevokedSession(http.Response response) {
+    if (response.statusCode == 401) return true;
+    if (response.statusCode != 400) return false;
+    final payload = jsonDecode(response.body);
+    return payload is Map<String, dynamic> &&
+        const {
+          'invalid_grant',
+          'session_not_found',
+          'session_expired',
+        }.contains(
+          payload['error_code'] ?? payload['code'] ?? payload['error'],
+        );
+  }
+
+  Future<String?> _signOutSupabase({
+    required String logMessage,
+    Duration? timeout,
+  }) async {
     try {
-      await _client.auth.signOut();
+      final logout = _client.auth.signOut();
+      await (timeout == null ? logout : logout.timeout(timeout));
       return null;
-    } on AuthException catch (error, stackTrace) {
-      developer.log(
-        logMessage,
-        name: 'MultiAccountStorageService',
-        error: error,
-        stackTrace: stackTrace,
-        level: 900,
-      );
+    } on AuthException catch (error) {
+      developer.log(logMessage, name: 'MultiAccountStorageService', level: 900);
       return error.message;
-    } on Object catch (error, stackTrace) {
-      developer.log(
-        logMessage,
-        name: 'MultiAccountStorageService',
-        error: error,
-        stackTrace: stackTrace,
-        level: 900,
-      );
-      return error.toString();
+    } on Object {
+      developer.log(logMessage, name: 'MultiAccountStorageService', level: 900);
+      return 'Sign-out failed';
     }
   }
 }

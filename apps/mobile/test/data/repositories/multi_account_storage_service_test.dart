@@ -149,7 +149,9 @@ void main() {
   });
 
   void seedSwitch({bool expired = false, String sessionOwner = 'target'}) {
-    final current = Session.fromJson(_sessionJson('current-user'))!;
+    final current = Session.fromJson(
+      _sessionJson('current-user', refreshToken: 'current-live-refresh'),
+    )!;
     when(() => goTrueClient.currentSession).thenReturn(current);
     secureStorageValues[StorageKeys.multiAccountStore] = jsonEncode({
       'version': 1,
@@ -381,18 +383,139 @@ void main() {
     expect(hasActiveAccount, isTrue);
   });
 
-  test('removing a saved account preserves the active session', () async {
-    seedSwitch(expired: true);
+  void clearSdkSession() {
+    when(goTrueClient.signOut).thenAnswer((_) async {
+      when(() => goTrueClient.currentUser).thenReturn(null);
+      when(() => goTrueClient.currentSession).thenReturn(null);
+    });
+  }
 
-    final result = await service.removeStoredAccount('target');
+  Future<http.Response> acceptRevocation(http.Request request) async {
+    final payload = jsonDecode(request.body) as Map<String, dynamic>;
+    expect(payload['refresh_token'], isNotEmpty);
+    return request.url.path.endsWith('/token')
+        ? http.Response('{"access_token":"synthetic-revoke-access"}', 200)
+        : http.Response('', 204);
+  }
 
-    expect(result.success, isTrue);
-    expect(readStore().accounts.single.id, 'current-user');
-    expect(readStore().activeAccountId, 'current-user');
-    expect(goTrueClient.currentUser!.id, 'current-user');
-    expect(refreshRequests, isEmpty);
-    verifyNever(() => goTrueClient.signOut());
-  });
+  test(
+    'revokes an inactive account before deleting it from secure storage',
+    () async {
+      seedSwitch(expired: true);
+      refreshResponse = (request) {
+        expect(readStore().accounts.any((a) => a.id == 'target'), isTrue);
+        expect(goTrueClient.currentUser!.id, 'current-user');
+        return acceptRevocation(request);
+      };
+
+      final result = await service.removeStoredAccount('target');
+
+      expect(result.success, isTrue);
+      expect(result.revocationUnconfirmed, isFalse);
+      expect(readStore().accounts.single.id, 'current-user');
+      expect(readStore().activeAccountId, 'current-user');
+      expect(goTrueClient.currentUser!.id, 'current-user');
+      expect(refreshRequests, hasLength(2));
+      for (final request in refreshRequests) {
+        final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(payload['refresh_token'], 'synthetic-refresh');
+      }
+      final logout = refreshRequests.last;
+      expect(logout.url.path, '/auth/v1/logout');
+      expect(logout.url.queryParameters, {'scope': 'local'});
+      expect(logout.headers['authorization'], 'Bearer synthetic-revoke-access');
+      verifyNever(() => goTrueClient.signOut());
+    },
+  );
+
+  test(
+    'revokes the live active token before switching to the fallback',
+    () async {
+      seedSwitch();
+      refreshResponse = (request) {
+        expect(goTrueClient.currentUser!.id, 'current-user');
+        expect(readStore().accounts.any((a) => a.id == 'current-user'), isTrue);
+        return acceptRevocation(request);
+      };
+
+      final result = await service.removeStoredAccount('current-user');
+
+      expect(result.success, isTrue);
+      expect(result.switched, isTrue);
+      expect(result.revocationUnconfirmed, isFalse);
+      expect(goTrueClient.currentUser!.id, 'target');
+      expect(readStore().accounts.single.id, 'target');
+      expect(readStore().activeAccountId, 'target');
+      expect(refreshRequests, hasLength(2));
+      for (final request in refreshRequests) {
+        final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(payload['refresh_token'], 'current-live-refresh');
+      }
+    },
+  );
+
+  test(
+    'a transient revoke failure still removes and reports the warning',
+    () async {
+      seedSwitch();
+      refreshResponse = (request) async {
+        if (request.url.path.endsWith('/logout')) {
+          throw http.ClientException('Synthetic network error');
+        }
+        return acceptRevocation(request);
+      };
+
+      final result = await service.removeStoredAccount('target');
+
+      expect(result.success, isTrue);
+      expect(result.revocationUnconfirmed, isTrue);
+      expect(readStore().accounts.single.id, 'current-user');
+      expect(refreshRequests, hasLength(2));
+    },
+  );
+
+  test(
+    'removes the active account even if the fallback needs sign-in',
+    () async {
+      seedSwitch(expired: true);
+      clearSdkSession();
+      refreshResponse = (request) {
+        final payload = jsonDecode(request.body) as Map<String, dynamic>;
+        if (payload['refresh_token'] == 'synthetic-refresh') {
+          return Future.value(http.Response('{"error":"invalid_grant"}', 400));
+        }
+        return acceptRevocation(request);
+      };
+
+      final result = await service.removeStoredAccount('current-user');
+
+      expect(result.success, isTrue);
+      expect(result.switched, isFalse);
+      expect(result.revocationUnconfirmed, isFalse);
+      expect(goTrueClient.currentUser, isNull);
+      expect(readStore().accounts.single.id, 'target');
+    },
+  );
+
+  for (final (status, body) in [
+    (400, '{"error":"invalid_grant"}'),
+    (401, ''),
+  ]) {
+    test(
+      'already-invalid session ($status) is removed without warning',
+      () async {
+        seedSwitch();
+        refreshResponse = (_) async => http.Response(body, status);
+
+        final result = await service.removeStoredAccount('target');
+
+        expect(result.success, isTrue);
+        expect(result.revocationUnconfirmed, isFalse);
+        expect(readStore().accounts.single.id, 'current-user');
+        expect(refreshRequests, hasLength(1));
+      },
+    );
+  }
 
   test(
     'removeStoredAccount signs out Google when removing final account',
@@ -406,6 +529,7 @@ void main() {
       });
 
       when(() => goTrueClient.currentUser).thenReturn(_user('only-user'));
+      clearSdkSession();
       when(() => googleIdentityClient.signOut()).thenThrow(Exception('ignore'));
 
       final result = await service.removeStoredAccount('only-user');

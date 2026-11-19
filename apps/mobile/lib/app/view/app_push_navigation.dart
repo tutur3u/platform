@@ -1,6 +1,21 @@
 part of 'app.dart';
 
 extension _AppPushNavigation on _AppState {
+  Widget _showRevocationWarnings(Widget child) =>
+      BlocListener<AuthCubit, AuthState>(
+        listenWhen: (previous, current) =>
+            current.revocationUnconfirmed && !previous.revocationUnconfirmed,
+        listener: (context, state) => shad.showToast(
+          context: context,
+          location: shad.ToastLocation.topCenter,
+          builder: (context, _) => AppAlert(
+            variant: AppAlertVariant.warning,
+            title: Text(context.l10n.authDeviceRevocationUnconfirmed),
+          ),
+        ),
+        child: child,
+      );
+
   Future<void> _stopAccountServices() async {
     // Stop private delivery and collection using the departing credentials.
     await PushNotificationService.instance.disableTelemetry();

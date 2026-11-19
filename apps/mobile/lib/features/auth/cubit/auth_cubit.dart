@@ -688,7 +688,7 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<bool> removeAccount(String accountId) async {
     if (state.switchingAccountId != null) return false;
-    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    emit(state.withDeviceRemoval(isLoading: true));
     final previousUserId = state.user?.id;
     final removingActiveAccount = previousUserId == accountId;
     if (removingActiveAccount) {
@@ -713,13 +713,17 @@ class AuthCubit extends Cubit<AuthState> {
 
     await _reloadStoredAccounts();
     if (isClosed) return false;
-    emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+    emit(
+      state.withDeviceRemoval(
+        revocationUnconfirmed: result.revocationUnconfirmed,
+      ),
+    );
     return true;
   }
 
   Future<bool> signOutCurrentAccount() async {
     if (state.switchingAccountId != null) return false;
-    emit(state.copyWith(isLoading: true, error: null, errorCode: null));
+    emit(state.withDeviceRemoval(isLoading: true));
     final previousUserId = state.user?.id;
     await clearSignedOutAccountCaches(previousUserId);
     await _onBeforeSignOut?.call();
@@ -747,7 +751,11 @@ class AuthCubit extends Cubit<AuthState> {
 
     await _reloadStoredAccounts();
     if (isClosed) return false;
-    emit(state.copyWith(isLoading: false, error: null, errorCode: null));
+    emit(
+      state.withDeviceRemoval(
+        revocationUnconfirmed: result.revocationUnconfirmed,
+      ),
+    );
     return true;
   }
 
