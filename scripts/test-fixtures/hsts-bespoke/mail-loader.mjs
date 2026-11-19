@@ -36,6 +36,7 @@ export async function loadMail(result) {
       return path === '/outside' ? null : path.replace(/^\/mail(?=\/)/u, '');
     },
     mailMounts: {},
+    isOwnMailHost: () => true,
     prepareMailFunctionRequest: async (request) => request,
     nativeFunctionProxy: () => {},
     mailOneOriginConfig: () => ({}),
