@@ -1,0 +1,48 @@
+name: Supabase Staging Migration List
+
+on:
+  workflow_dispatch:
+
+# Read-only listing. It never applies migrations and never records a marker.
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-staging-migration-list
+  cancel-in-progress: false
+
+jobs:
+  list-versions:
+    name: List staging migration versions
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' }}
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    # Branch-restricted environment: only main can read the staging binding.
+    environment: supabase-staging-migrations
+    steps:
+      - name: Check out main migration catalog
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Supabase CLI
+        uses: ./.github/actions/setup-supabase-cli-with-retry
+
+      - name: List applied staging migration versions
+        env:
+          STAGING_PROJECT_ID: ${{ secrets.STAGING_PROJECT_ID }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+        run: |
+          set -euo pipefail
+          # Fail closed unless this is the staging project the migrate job allows.
+          if [ "$STAGING_PROJECT_ID" != "fxefojytwimjiqxseqag" ]; then
+            echo "::error::STAGING_PROJECT_ID does not match the staging project ref."
+            exit 1
+          fi
+          cd apps/database
+          supabase link --project-ref "$STAGING_PROJECT_ID"
+          listing="$(supabase migration list --linked)"
+          printf '%s\n' "$listing"
+          printf '%s\n' "$listing" | "$GITHUB_WORKSPACE/scripts/ci/summarize-production-migration-list.sh" supabase/migrations

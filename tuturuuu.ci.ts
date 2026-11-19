@@ -86,6 +86,7 @@ export const ci = {
   'sdk-package-qualification.yaml': true,
   'supabase-production.yaml': true,
   'supabase-staging.yaml': true,
+  'supabase-staging-list.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
   // Satellite previews are trusted workflow_dispatch-only jobs and bypass
