@@ -143,7 +143,9 @@ test(
   },
   async (t) => {
     const call = await startWorker(t, SYNTHETIC_SECRETS);
-    const assetProbe = '/__native-asset-probe.svg';
+    // An unknown descendant of the public verifier reaches the Start 404
+    // document without being mistaken for an authenticated workspace slug.
+    const assetProbe = '/verify-token/__native-asset-probe/missing';
     await t.test('every rendered resource loads from its page origin', (t) =>
       assertRenderedAssets(t, require, call, [
         { host: ROOT_HOST, path: assetProbe, status: 404 },
