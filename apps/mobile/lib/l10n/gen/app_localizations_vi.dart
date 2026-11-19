@@ -9990,6 +9990,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardsUpdated => 'Đã cập nhật bảng.';
 
   @override
+  String get taskDetailCreateMore => 'Tạo thêm';
+
+  @override
+  String get taskDetailDiscardAction => 'Bỏ thay đổi';
+
+  @override
+  String get taskDetailDiscardDescription => 'Các thay đổi của bạn cho tác vụ này chưa được lưu.';
+
+  @override
+  String get taskDetailDiscardTitle => 'Bỏ các thay đổi?';
+
+  @override
+  String get taskDetailEditTitle => 'Sửa tiêu đề';
+
+  @override
+  String get taskDetailKeepEditing => 'Tiếp tục chỉnh sửa';
+
+  @override
+  String get taskDetailNoEstimate => 'Chưa ước lượng';
+
+  @override
+  String get taskDetailNoProjects => 'Không có dự án';
+
+  @override
+  String get taskDetailNoRelationships => 'Chưa có tác vụ liên kết';
+
+  @override
   String get taskEstimatesAccessDeniedDescription => 'Bạn cần quyền quản lý dự án trong không gian làm việc này để thay đổi cài đặt ước lượng của bảng công việc.';
 
   @override

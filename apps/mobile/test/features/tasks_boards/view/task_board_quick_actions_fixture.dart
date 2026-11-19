@@ -19,6 +19,9 @@ typedef QuickActionUpdate = ({
   bool clearEndDate,
   List<String>? labelIds,
   List<String>? assigneeIds,
+  String? name,
+  int? estimationPoints,
+  bool clearEstimationPoints,
 });
 
 /// Keeps task state between reads so refreshes return what was saved, and
@@ -120,6 +123,9 @@ class QuickActionsRepository extends RowActionsRepository {
       clearEndDate: clearEndDate,
       labelIds: labelIds,
       assigneeIds: assigneeIds,
+      name: name,
+      estimationPoints: estimationPoints,
+      clearEstimationPoints: clearEstimationPoints,
     ));
     final current = tasks[taskId]!;
     return tasks[taskId] = TaskBoardTask(
@@ -131,19 +137,25 @@ class QuickActionsRepository extends RowActionsRepository {
       endDate: clearEndDate ? null : endDate ?? current.endDate,
       labelIds: labelIds ?? current.labelIds,
       assigneeIds: assigneeIds ?? current.assigneeIds,
+      estimationPoints: clearEstimationPoints
+          ? null
+          : estimationPoints ?? current.estimationPoints,
     );
   }
 }
 
 Finder quickActionTile(String key) => find.byKey(ValueKey(key));
 
-/// Pumps the board, lets its first loads finish and taps [taskName].
+/// Pumps the board, lets its first loads finish and taps [taskName]. The
+/// sheet opens at its middle detent; [expand] drags it to full height so
+/// every property row is on screen.
 Future<void> openQuickActionsSheet(
   WidgetTester tester, {
   required RowActionsWorkspaceCubit workspaceCubit,
   required QuickActionsRepository repository,
   String taskName = 'Alpha task',
   TimezoneSettingsCubit? timezone,
+  bool expand = true,
 }) async {
   await pumpRowActionsBoard(
     tester,
@@ -153,6 +165,24 @@ Future<void> openQuickActionsSheet(
   );
   await tester.tap(find.text(taskName).first);
   await tester.pumpAndSettle();
+  if (expand) await expandTaskSheet(tester);
+}
+
+/// Drags the task sheet from its middle detent to full height.
+Future<void> expandTaskSheet(WidgetTester tester) async {
+  await tester.drag(
+    quickActionTile('task-quick-list'),
+    const Offset(0, -600),
+    warnIfMissed: false,
+  );
+  await tester.pumpAndSettle();
+}
+
+/// Opens the priority row's picker and chooses [value] (`none` clears it).
+Future<void> pickQuickPriority(WidgetTester tester, String value) async {
+  await tester.tap(quickActionTile('task-quick-priority'));
+  await tester.pumpAndSettle();
+  await tester.tap(quickActionTile('task-quick-priority-$value'));
 }
 
 /// Settles the edit's UI. Chained saves explicitly wait for the original

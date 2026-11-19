@@ -347,7 +347,7 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);
       await tester.tap(
-        find.text('Open full details').last,
+        find.byKey(const ValueKey('task-quick-open-details')),
         warnIfMissed: false,
       );
       await pumpTaskBoardTransition(tester);
@@ -435,17 +435,12 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);
       await tester.tap(
-        find.text('Open full details').last,
+        find.byKey(const ValueKey('task-quick-open-details')),
         warnIfMissed: false,
       );
       await pumpTaskBoardTransition(tester);
 
-      final relationshipsTab = find
-          .ancestor(
-            of: find.byIcon(Icons.account_tree_outlined).last,
-            matching: find.byType(InkWell),
-          )
-          .last;
+      final relationshipsTab = find.text('Relationships').last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);
@@ -473,7 +468,7 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);
       await tester.tap(
-        find.text('Open full details').last,
+        find.byKey(const ValueKey('task-quick-open-details')),
         warnIfMissed: false,
       );
       await pumpTaskBoardTransition(tester);
@@ -523,12 +518,12 @@ void main() {
       await tester.tap(find.text('Task A1').first, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);
       await tester.tap(
-        find.text('Open full details').last,
+        find.byKey(const ValueKey('task-quick-open-details')),
         warnIfMissed: false,
       );
       await pumpTaskBoardTransition(tester);
 
-      final relationshipsTab = find.byIcon(Icons.account_tree_outlined).last;
+      final relationshipsTab = find.text('Relationships').last;
       await tester.ensureVisible(relationshipsTab);
       await tester.tap(relationshipsTab, warnIfMissed: false);
       await pumpTaskBoardTransition(tester);

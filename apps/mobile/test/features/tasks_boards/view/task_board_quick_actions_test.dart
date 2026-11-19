@@ -31,10 +31,56 @@ void main() {
       repository: repository,
     );
 
-    testWidgets('shows the web priority icons in the web order', (
+    testWidgets('groups every property as a row with its value', (
       tester,
     ) async {
       await openSheet(tester);
+
+      final rows = [
+        'task-quick-list',
+        'task-quick-priority',
+        'task-quick-assignees',
+        'task-quick-start-date',
+        'task-quick-due-date',
+        'task-quick-labels',
+        'task-quick-estimate',
+      ];
+      final tops = <double>[];
+      for (final key in rows) {
+        final row = quickActionTile(key);
+        expect(row, findsOneWidget, reason: key);
+        expect(tester.getSize(row).height, greaterThanOrEqualTo(48));
+        tops.add(tester.getTopLeft(row).dy);
+      }
+      expect(tops, orderedEquals([...tops]..sort()));
+      // Values, not counts: the list and status, the priority and labels.
+      expect(
+        find.descendant(
+          of: quickActionTile('task-quick-list'),
+          matching: find.text('Todo · Active'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: quickActionTile('task-quick-priority'),
+          matching: find.text('High'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Finance', findRichText: true), findsWidgets);
+      expect(find.textContaining(RegExp(r'^\+\d+$')), findsNothing);
+      // The header carries the status and priority chips.
+      expect(quickActionTile('task-detail-status-chip'), findsOneWidget);
+      expect(quickActionTile('task-detail-priority-chip'), findsOneWidget);
+    });
+
+    testWidgets('the priority row opens the web priorities in web order', (
+      tester,
+    ) async {
+      await openSheet(tester);
+      await tester.tap(quickActionTile('task-quick-priority'));
+      await tester.pumpAndSettle();
 
       const expected = {
         'none': LucideIcons.x,
@@ -43,34 +89,53 @@ void main() {
         'normal': LucideIcons.rabbit,
         'low': LucideIcons.turtle,
       };
-      final lefts = <double>[];
+      final tops = <double>[];
       for (final MapEntry(key: priority, value: icon) in expected.entries) {
         final tile = quickActionTile('task-quick-priority-$priority');
         expect(
           find.descendant(of: tile, matching: find.byIcon(icon)),
           findsOneWidget,
         );
-        expect(tester.getSize(tile).height, greaterThanOrEqualTo(48));
-        lefts.add(tester.getTopLeft(tile).dx);
+        tops.add(tester.getTopLeft(tile).dy);
       }
-      expect(lefts, orderedEquals([...lefts]..sort()));
-      expect(
-        tester.getSemantics(quickActionTile('task-quick-priority-high')),
-        isSemantics(isSelected: true, isButton: true),
-      );
-      // Status choices only offer statuses that have a list on the board.
-      expect(quickActionTile('task-quick-status-active'), findsOneWidget);
-      expect(quickActionTile('task-quick-status-done'), findsOneWidget);
-      expect(quickActionTile('task-quick-status-closed'), findsNothing);
-      // Web wording: None, Urgent, High, Medium, Low.
+      expect(tops, orderedEquals([...tops]..sort()));
       for (final label in ['None', 'Urgent', 'High', 'Medium', 'Low']) {
         expect(find.text(label), findsWidgets);
       }
       expect(find.text('Critical'), findsNothing);
       expect(find.text('Normal'), findsNothing);
-      // Values replace the old count chips: names, not "+N".
-      expect(find.textContaining('Finance', findRichText: true), findsWidgets);
-      expect(find.textContaining(RegExp(r'^\+\d+$')), findsNothing);
+    });
+
+    testWidgets('each property row opens its editor', (tester) async {
+      await openSheet(tester);
+
+      Future<void> opensAndCloses(String row, Finder editor) async {
+        await tester.ensureVisible(quickActionTile(row));
+        await tester.tap(quickActionTile(row));
+        await tester.pumpAndSettle();
+        expect(editor, findsWidgets, reason: row);
+        await tester.tap(find.byKey(const ValueKey('app-sheet-close')).last);
+        await tester.pumpAndSettle();
+      }
+
+      await opensAndCloses(
+        'task-quick-list',
+        quickActionTile('task-quick-list-list-2'),
+      );
+      await opensAndCloses(
+        'task-quick-priority',
+        quickActionTile('task-quick-priority-low'),
+      );
+      await opensAndCloses('task-quick-assignees', find.text('Lan'));
+      await opensAndCloses('task-quick-labels', find.text('Work'));
+      await opensAndCloses(
+        'task-quick-estimate',
+        quickActionTile('task-quick-estimate-none'),
+      );
+      await tester.tap(quickActionTile('task-quick-start-date'));
+      await tester.pumpAndSettle();
+      expect(find.byType(CalendarDatePicker), findsOneWidget);
+      expect(repository.sent, isEmpty);
     });
 
     testWidgets('an edit tapped while another saves is dropped', (
@@ -78,15 +143,15 @@ void main() {
     ) async {
       await openSheet(tester);
 
-      await tester.tap(quickActionTile('task-quick-priority-critical'));
+      await pickQuickPriority(tester, 'critical');
       await tester.pump();
 
       // While the edit saves, every control is visibly disabled.
       expect(
         tester
-            .widget<AppButton>(quickActionTile('task-quick-open-details'))
-            .enabled,
-        isFalse,
+            .widget<AppIconButton>(quickActionTile('task-quick-open-details'))
+            .onPressed,
+        isNull,
       );
       expect(
         tester
@@ -94,12 +159,12 @@ void main() {
             .onPressed,
         isNull,
       );
-      expect(
-        tester
-            .widget<AppGroupedRow>(quickActionTile('task-quick-labels'))
-            .onTap,
-        isNull,
-      );
+      for (final row in ['task-quick-labels', 'task-quick-priority']) {
+        expect(
+          tester.widget<AppGroupedRow>(quickActionTile(row)).onTap,
+          isNull,
+        );
+      }
       expect(
         find.ancestor(
           of: quickActionTile('task-quick-labels'),
@@ -109,42 +174,121 @@ void main() {
       );
 
       await tester.tap(
-        quickActionTile('task-quick-priority-low'),
+        quickActionTile('task-quick-priority'),
         warnIfMissed: false,
       );
       await settleQuickActionMutation(tester);
 
       expect(tester.takeException(), isNull);
+      expect(quickActionTile('task-quick-priority-low'), findsNothing);
       expect(repository.sent.map((update) => update.priority), ['critical']);
       await drainToasts(tester);
     });
 
-    testWidgets('a status choice moves the task and closes the sheet', (
+    testWidgets('a list choice moves the task and the sheet stays open', (
       tester,
     ) async {
       await openSheet(tester);
 
-      await tester.tap(quickActionTile('task-quick-status-done'));
+      await tester.tap(quickActionTile('task-quick-list'));
+      await tester.pumpAndSettle();
+      await tester.tap(quickActionTile('task-quick-list-list-2'));
       await tester.pumpAndSettle();
 
       expect(repository.moves, ['task-1->list-2']);
-      expect(quickActionTile('task-quick-status-done'), findsNothing);
+      expect(
+        find.descendant(
+          of: quickActionTile('task-quick-list'),
+          matching: find.text('Done · Done'),
+        ),
+        findsOneWidget,
+      );
       await drainToasts(tester);
     });
 
     testWidgets('None clears the priority', (tester) async {
       await openSheet(tester);
 
-      await tester.tap(quickActionTile('task-quick-priority-none'));
+      await pickQuickPriority(tester, 'none');
       await settleQuickActionMutation(tester);
 
       final update = repository.sent.single;
       expect(update.clearPriority, isTrue);
       expect(update.priority, isNull);
       expect(
-        tester.getSemantics(quickActionTile('task-quick-priority-none')),
-        isSemantics(isSelected: true),
+        find.descendant(
+          of: quickActionTile('task-quick-priority'),
+          matching: find.text('None'),
+        ),
+        findsOneWidget,
       );
+    });
+
+    testWidgets('an estimate choice saves it and None clears it', (
+      tester,
+    ) async {
+      await openSheet(tester);
+
+      await tester.ensureVisible(quickActionTile('task-quick-estimate'));
+      await tester.tap(quickActionTile('task-quick-estimate'));
+      await tester.pumpAndSettle();
+      await tester.tap(quickActionTile('task-quick-estimate-3'));
+      await settleQuickActionMutation(tester);
+
+      expect(repository.sent.single.estimationPoints, 3);
+      expect(
+        find.descendant(
+          of: quickActionTile('task-quick-estimate'),
+          matching: find.text('3'),
+        ),
+        findsOneWidget,
+      );
+      await drainToasts(tester);
+    });
+
+    testWidgets('the title edits in place and saves on Done', (tester) async {
+      await openSheet(tester);
+
+      await tester.tap(quickActionTile('task-detail-title'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        quickActionTile('task-detail-title-field'),
+        'Renamed task',
+      );
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+
+      expect(repository.sent.single.name, 'Renamed task');
+      expect(find.text('Renamed task'), findsWidgets);
+      await drainToasts(tester);
+    });
+
+    testWidgets('delete sits apart at the end and asks first', (tester) async {
+      await openSheet(tester);
+
+      final delete = quickActionTile('task-detail-delete');
+      await tester.ensureVisible(delete);
+      await tester.pumpAndSettle();
+      // Separated from the last property group by a double section gap.
+      final lastSection = tester.getBottomLeft(
+        find
+            .byType(AppGroupedCard)
+            .at(find.byType(AppGroupedCard).evaluate().length - 2),
+      );
+      expect(
+        tester.getTopLeft(delete).dy - lastSection.dy,
+        greaterThanOrEqualTo(AppLayout.sectionGap * 2),
+      );
+
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
+      expect(find.text('Delete task?'), findsWidgets);
+      expect(repository.deletes, isEmpty);
+
+      await tester.tap(find.text('Cancel').last);
+      await tester.pumpAndSettle();
+      expect(repository.deletes, isEmpty);
+      expect(delete, findsOneWidget);
     });
 
     testWidgets('the due date clears without a picker', (tester) async {
@@ -224,7 +368,7 @@ void main() {
         await tester.tap(find.text('Alpha task').first);
         await tester.pumpAndSettle();
 
-        expect(quickActionTile('task-quick-priority-critical'), findsOneWidget);
+        expect(quickActionTile('task-quick-priority'), findsOneWidget);
         await DesignRender.capture(tester, 'task-quick-actions-phone-$name');
       });
     }

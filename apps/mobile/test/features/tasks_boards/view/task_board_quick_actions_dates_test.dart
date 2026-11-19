@@ -59,7 +59,6 @@ void main() {
     testWidgets('shows the start and due dates', (tester) async {
       await openSheet(tester);
 
-      expect(find.text('Dates'), findsOneWidget);
       expect(
         _inRow('start', find.textContaining('Oct 20, 2026')),
         findsOneWidget,

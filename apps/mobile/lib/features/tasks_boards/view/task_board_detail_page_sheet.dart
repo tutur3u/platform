@@ -13,7 +13,6 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
     this.embedded = false,
     this.embeddedSection = _TaskBoardTaskDetailSection.information,
     this.embeddedMinHeight,
-    this.onTaskChanged,
     this.onNavigateRelatedTask,
     super.key,
   });
@@ -29,7 +28,6 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
   final bool embedded;
   final _TaskBoardTaskDetailSection embeddedSection;
   final double? embeddedMinHeight;
-  final ValueChanged<TaskBoardTask>? onTaskChanged;
   final ValueChanged<RelatedTaskInfo>? onNavigateRelatedTask;
 
   @override
@@ -38,7 +36,6 @@ class _TaskBoardTaskEditorSheet extends StatefulWidget {
 }
 
 class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
-  static const int _detailsTabIndex = 0;
   static const List<String> _priorityOptions = [
     'critical',
     'high',
@@ -67,7 +64,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   late Set<String> _selectedProjectIds;
   DateTime? _startDate;
   DateTime? _endDate;
-  int _activeTab = _detailsTabIndex;
+  bool _createMore = false;
   bool _isLoadingRelationships = false;
   int _relationshipsLoadRequestToken = 0;
   String? _relationshipsLoadingTaskId;
@@ -77,8 +74,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       TaskRelationshipsResponse.empty;
   List<TaskLinkOption> _relationshipTaskOptions = const [];
   bool _isSaving = false;
-  bool _isMoving = false;
-  bool _isDeleting = false;
   Timer? _descriptionAutosaveTimer;
   Timer? _infoAutosaveTimer;
   bool _isAutosavingDescription = false;
@@ -91,7 +86,7 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
   }
 
   bool get _isBusy {
-    return _isSaving || _isMoving || _isDeleting || _isMutatingRelationships;
+    return _isSaving || _isMutatingRelationships;
   }
 
   bool get _hasDescriptionChanges {
@@ -174,11 +169,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     return _relationshipsState;
   }
 
-  int get _relationshipIndicatorCount {
-    if (_isCreate) return 0;
-    return _relationships.totalCount;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -256,112 +246,77 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       return _buildEmbeddedEditor(context);
     }
 
-    final theme = shad.Theme.of(context);
-    final sheetTitle = _isCreate
-        ? context.l10n.taskBoardDetailCreateTask
-        : context.l10n.taskBoardDetailEditTask;
-    final saveLabel = _isCreate
-        ? context.l10n.taskBoardDetailCreateTask
-        : context.l10n.timerSave;
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
-    return SafeArea(
-      top: false,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.8,
-        ),
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 20 + bottomInset),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    final l10n = context.l10n;
+    // A dirty form asks before Back, the close button, a barrier tap or
+    // Cancel discard it; saving closes it without asking.
+    return PopScope(
+      canPop: !_hasTaskChanges,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) unawaited(_confirmDiscard());
+      },
+      child: AppSheetScaffold(
+        title: _isCreate
+            ? l10n.taskBoardDetailCreateTask
+            : l10n.taskBoardDetailEditTask,
+        actions: [
+          if (_isCreate)
+            MergeSemantics(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      sheetTitle,
-                      style: theme.typography.large.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  if (!_isCreate && widget.lists.length > 1)
-                    Tooltip(
-                      message: context.l10n.taskBoardDetailMoveTask,
-                      child: shad.IconButton.ghost(
-                        icon: const Icon(Icons.swap_horiz, size: 16),
-                        onPressed: _isBusy ? null : _moveTask,
-                      ),
-                    ),
-                  if (!_isCreate)
-                    Tooltip(
-                      message: context.l10n.taskBoardDetailDeleteTask,
-                      child: shad.IconButton.ghost(
-                        icon: const Icon(Icons.delete_outline, size: 16),
-                        onPressed: _isBusy ? null : _deleteTask,
-                      ),
-                    ),
-                  shad.IconButton.ghost(
-                    icon: const Icon(Icons.close),
-                    onPressed: _isBusy ? null : () => unawaited(_closeEditor()),
+                  Text(l10n.taskDetailCreateMore),
+                  const SizedBox(width: AppSpacing.sm),
+                  AppSwitch(
+                    key: const ValueKey('task-editor-create-more'),
+                    value: _createMore,
+                    onChanged: _isBusy
+                        ? null
+                        : (value) => setState(() => _createMore = value),
                   ),
                 ],
               ),
-              const shad.Gap(12),
-              if (!_isCreate) ...[
-                shad.Tabs(
-                  index: _activeTab,
-                  onChanged: (value) {
-                    if (_isBusy) return;
-                    setState(() => _activeTab = value);
-                  },
-                  children: [
-                    shad.TabItem(
-                      child: Text(context.l10n.taskBoardDetailEditorDetailsTab),
-                    ),
-                    shad.TabItem(
-                      child: _TaskEditorTabLabel(
-                        label:
-                            context.l10n.taskBoardDetailEditorRelationshipsTab,
-                        count: _relationshipIndicatorCount,
-                      ),
-                    ),
-                  ],
-                ),
-                const shad.Gap(10),
-              ],
-              if (_isCreate || _activeTab == _detailsTabIndex)
-                _buildDetailsTab(context)
-              else
-                _buildRelationshipsTab(context),
-              const shad.Gap(18),
-              Row(
-                children: [
-                  Expanded(
-                    child: shad.OutlineButton(
-                      onPressed: _isBusy
-                          ? null
-                          : () => unawaited(_closeEditor()),
-                      child: _CenteredButtonText(context.l10n.commonCancel),
-                    ),
-                  ),
-                  const shad.Gap(10),
-                  Expanded(
-                    child: shad.PrimaryButton(
-                      onPressed: _canSave ? _saveTask : null,
-                      child: _isSaving
-                          ? const _TaskButtonLoadingIndicator(size: 16)
-                          : _CenteredButtonText(saveLabel),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
+          AppButton.outline(
+            key: const ValueKey('task-editor-cancel'),
+            onPressed: _isBusy ? null : () => unawaited(_closeEditor()),
+            child: Text(l10n.commonCancel),
           ),
-        ),
+          AppButton(
+            key: const ValueKey('task-editor-save'),
+            enabled: _canSave,
+            loading: _isSaving,
+            onPressed: _saveTask,
+            child: Text(
+              _isCreate ? l10n.taskBoardDetailCreateTask : l10n.timerSave,
+            ),
+          ),
+        ],
+        child: _buildDetailsTab(context),
       ),
     );
+  }
+
+  Future<void> _confirmDiscard() async {
+    final l10n = context.l10n;
+    final discard = await showAppConfirmDialog(
+      context: context,
+      title: l10n.taskDetailDiscardTitle,
+      message: l10n.taskDetailDiscardDescription,
+      confirmLabel: l10n.taskDetailDiscardAction,
+      cancelLabel: l10n.taskDetailKeepEditing,
+      destructive: true,
+    );
+    if (discard && mounted) Navigator.of(context).pop();
+  }
+
+  /// After a create with Create more on, clears the title and description
+  /// for the next task and keeps the list, dates and other choices.
+  void _resetForNextTask() {
+    setState(() {
+      _nameController.clear();
+      _descriptionController.clear();
+    });
+    _nameFocusNode.requestFocus();
   }
 
   Widget _buildDetailsTab(BuildContext context) {
@@ -393,14 +348,16 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              shad.TextField(
+              AppTextField(
+                key: const ValueKey('task-editor-title'),
                 selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _nameController,
                 focusNode: _nameFocusNode,
-                hintText: context.l10n.taskBoardDetailTaskTitleHint,
+                placeholder: context.l10n.taskBoardDetailTaskTitleHint,
                 autofocus: _isCreate,
                 textInputAction: TextInputAction.done,
+                textCapitalization: TextCapitalization.sentences,
                 onSubmitted: (_) {
                   FocusScope.of(context).unfocus();
                   unawaited(_saveTask());
@@ -663,14 +620,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
     _descriptionAutosaveTimer?.cancel();
     _infoAutosaveTimer?.cancel();
     await _saveTaskEditorTask(this);
-  }
-
-  Future<void> _moveTask() async {
-    await _moveTaskEditorTask(this);
-  }
-
-  Future<void> _deleteTask() async {
-    await _deleteTaskEditorTask(this);
   }
 
   Future<void> _pickList() async {
@@ -980,13 +929,6 @@ class _TaskBoardTaskEditorSheetState extends State<_TaskBoardTaskEditorSheet> {
       );
       if (!mounted) return;
       _markDescriptionSaved();
-      final refreshedTask = _findTaskEditorTaskInState(
-        _taskCubit.state,
-        task.id,
-      );
-      if (refreshedTask != null) {
-        widget.onTaskChanged?.call(refreshedTask);
-      }
       setState(() {});
     } on Exception catch (error) {
       debugPrint('Task description autosave failed: $error');

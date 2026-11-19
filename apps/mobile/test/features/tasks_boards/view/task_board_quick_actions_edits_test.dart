@@ -24,9 +24,9 @@ void main() {
       repository: repository,
     );
 
-    await tester.tap(quickActionTile('task-quick-priority-critical'));
+    await pickQuickPriority(tester, 'critical');
     await settleQuickActionMutation(tester, waitForCompletion: true);
-    await tester.tap(quickActionTile('task-quick-priority-low'));
+    await pickQuickPriority(tester, 'low');
     await settleQuickActionMutation(tester, waitForCompletion: true);
 
     expect(repository.sent.map((update) => update.priority), [
@@ -38,8 +38,11 @@ void main() {
     expect(repository.sent.last.labelIds, ['label-1']);
     expect(repository.sent.last.endDate, DateTime(2026, 10, 24, 23, 59, 59));
     expect(
-      tester.getSemantics(quickActionTile('task-quick-priority-low')),
-      isSemantics(isSelected: true),
+      find.descendant(
+        of: quickActionTile('task-quick-priority'),
+        matching: find.text('Low'),
+      ),
+      findsOneWidget,
     );
 
     await tester.tap(quickActionTile('task-quick-labels'));

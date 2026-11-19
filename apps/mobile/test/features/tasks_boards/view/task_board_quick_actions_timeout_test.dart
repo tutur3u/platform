@@ -22,7 +22,7 @@ void main() {
     );
     final barrier = Completer<void>();
     repository.updateBarrier = barrier.future;
-    await tester.tap(quickActionTile('task-quick-priority-critical'));
+    await pickQuickPriority(tester, 'critical');
     final elapsed = Stopwatch()..start();
     try {
       TestFailure? failure;

@@ -241,7 +241,7 @@ void main() {
       await tester.tap(_key('task-timeline-row-task-1'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Open full details'), findsWidgets);
+      expect(find.byTooltip('Open full details'), findsWidgets);
     });
 
     testWidgets('builds only the rows near the viewport', (tester) async {

@@ -301,12 +301,25 @@ localization changes.
   board's zone. A sheet opens above the page: re-provide a page-scoped
   `TimezoneSettingsCubit` to it, as the quick sheet does, or it reads device
   days (`task_board_quick_actions_dates_test.dart` covers both).
-- The tap quick sheet follows the cubit for its task and passes the live task
-  to every edit, so consecutive edits never save a stale snapshot. Edits made
-  where the saved value is visible pass `announce: false` (no success toast;
-  a toast there covers the next picker's footer). Drop taps while the cubit
+- The task detail sheet and the task detail screen render one
+  `_TaskDetailContent` (header, grouped property rows, description,
+  relationships, Delete apart at the end) over one `_TaskDetailActions` set
+  from `_taskDetailActions`; add a property or action there, not per surface.
+  The sheet follows the cubit for its task and passes the live task to every
+  edit, so consecutive edits never save a stale snapshot. Edits made where
+  the saved value is visible pass `announce: false` (no success toast; a toast
+  there covers the next picker's footer). Drop taps while the cubit
   `isMutating`; its single-mutation guard throws a `StateError`, not an
   `Exception`.
+- The detail sheet opens at `AppSheetSize.medium`. `ensureVisible` does not
+  move a detented sheet, so tests drag it to full height first
+  (`expandTaskSheet`) or use `scrollUntilVisible` on its scrollable.
+- A dirty form guards close with `PopScope`, which covers Back, the close
+  button, Cancel (`maybePop`) and the barrier, but not drag-to-dismiss, which
+  pops directly: open such forms with `enableDrag: false`, and close after a
+  save with `Navigator.pop` so the guard does not ask. Under reduced motion,
+  skip `AnimatedSize` rather than giving it `Duration.zero`, which trips a
+  layout assertion.
 - Pass the page context, not the root navigator's context, to
   `showAppToast`; the root navigator's element sits above its overlay. Keep the
   root-navigator context only for legacy `shad.showToast` callers.

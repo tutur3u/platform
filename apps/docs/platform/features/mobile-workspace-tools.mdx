@@ -2029,7 +2029,7 @@ gestures. The same behavior applies on Android and iOS.
   **Select task** enters bulk selection. Earlier, a long press entered bulk
   selection directly. In bulk selection, swipes are off and a long press
   toggles the row, as before.
-- Tapping a row opens the [quick actions sheet](#task-quick-actions-sheet).
+- Tapping a row opens the [task detail sheet](#task-detail-sheet-and-screen).
   Every swipe action is also
   exposed as a screen-reader action.
 
@@ -2042,58 +2042,95 @@ and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
 right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
 
-### Task quick actions sheet
+### Task detail sheet and screen
 
-Tapping a task on a board (List, Kanban or Timeline) opens the quick actions
-sheet. It replaces the earlier button grid; the long-press menu is unchanged.
+Tapping a task on a board (List, Kanban or Timeline) opens the task detail
+sheet. It opens at its middle detent and drags up to full height; on tablets
+it opens as a dialog. The long-press menu is unchanged. The sheet and the
+task detail screen are built from the same blocks, in this order:
 
-- **Status**: one large tile per status that has a list on the board (Not
-  started, Active, Review, Done, Closed; Documents lists are not a target).
-  The current status is selected. Another status moves the task to that
-  status's list, asking which list when there are several, and closes the
-  sheet.
-- **Priority**: None, Urgent, High, Medium and Low, the web's task priority
-  menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
-  four levels use the web's icons and colours: unicorn head (red), horse head
-  (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide Lab.
-  None clears the priority. Every mobile task surface (cards, filters, bulk
-  edit, row menu, recycle bin, My tasks and the timer task picker) uses the
-  same labels and icons.
-- **Dates**: Start date and Due date rows show the day, or None, and open the
-  task editor's date picker; each set date has a clear button. Days are read
-  and saved in the user's timezone setting: a start date at the first instant
-  of the picked day, a due date at its last second, so the task lands on that
-  day in the Timeline. As in the editor, a start after the due day moves the
-  due date onto it, and a due date before the start moves the start onto it.
-  Picking the current day saves nothing. These rows replace Timeline
-  drag-to-reschedule. A task is overdue once its due day, in the user's
-  timezone setting, is before today; a task without a due date is never
-  overdue.
-- **Fields**: Assignees (team workspaces with members), Labels (boards with
-  labels) and Move task. Each row shows its current value and opens its
-  picker.
-- **Open full details** closes the sheet and opens the task.
-- Priority and field edits keep the sheet open and update it in place, so
-  several can be made in a row. They save without a success toast because the
-  sheet shows the saved value; failures still roll back and show the error.
-  While one edit saves, every control dims and ignores taps, because the
-  board runs one mutation at a time. A mutation started anyway is rejected
-  before any optimistic change, so nothing needs rolling back.
-- No count chips: assignee and label names replace overflow counts.
+- **Header**: the task reference (for example `TASK-12`), an expand button
+  that opens the task detail screen, a More menu (Start focus, then Delete
+  task) and Close. Under it, the title edits in place: a tap turns it into a
+  field, and Done, a tap outside or closing the sheet saves it. Status and
+  priority chips open the same editors as their rows.
+- **Properties**: grouped rows with an icon, a label, the current value and a
+  chevron. Each row opens its editor:
+  - **List** shows the list and its status. Its picker lists every list with
+    its status, so one choice sets both. The sheet stays open on the new
+    value.
+  - **Priority**: None, Urgent, High, Medium and Low, the web's task priority
+    menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
+    four levels use the web's icons and colours: unicorn head (red), horse
+    head (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide
+    Lab. None clears the priority. Every mobile task surface (cards, filters,
+    bulk edit, row menu, recycle bin, My tasks and the timer task picker) uses
+    the same labels and icons.
+  - **Assignees** (team workspaces with members) shows names and avatars.
+  - **Start date** and **Due date** show the day, or None, and open the date
+    picker; each set date has a clear button. Days are read and saved in the
+    user's timezone setting: a start date at the first instant of the picked
+    day, a due date at its last second, so the task lands on that day in the
+    Timeline. A start after the due day moves the due date onto it, and a due
+    date before the start moves the start onto it. Picking the current day
+    saves nothing. These rows replace Timeline drag-to-reschedule. A task is
+    overdue once its due day, in the user's timezone setting, is before
+    today; a task without a due date is never overdue.
+  - **Labels** (boards with labels) shows tinted label chips.
+  - **Projects** (boards with projects) and **Estimation** (the board's
+    estimation scale, or No estimate).
+- **Description**: the rendered rich text. Edit (or the empty row) swaps in
+  the rich editor, which autosaves as the user types.
+- **Relationships**: parent task, subtasks, blocked by, blocking and related
+  tasks as grouped rows. A linked task opens on tap and has a remove button;
+  each group ends with an Add row. With no links, an illustration plays a few
+  passes; with reduced motion it stays still. On the sheet this section opens
+  on demand, so relationships load only when asked.
+- **Delete task** sits apart at the end, in the destructive tone, and asks
+  for confirmation.
+
+Property edits keep the sheet open and update it in place, so several can be
+made in a row. They save without a success toast because the sheet shows the
+saved value; failures still roll back and show the error. While one edit
+saves, every control dims and ignores taps, because the board runs one
+mutation at a time. A mutation started anyway is rejected before any
+optimistic change, so nothing needs rolling back. No count chips: names
+replace overflow counts.
+
+The **task detail screen** (the expand button, or a `taskId` link) shows the
+same blocks in one scrolling page. The shell's top navbar shows the title,
+which edits in place, and the floating dock's Back closes it. From a 720dp
+body width it splits into a main column (title, chips, description,
+relationships) and a properties column with Delete task at its end.
+
+The **create task form** opens above the shell, full height, with Cancel,
+Create and a **Create more** switch pinned at the bottom above the keyboard.
+Create more clears the title and description after each create and keeps the
+list and other choices. A form with a title asks before Back, Close or Cancel
+discard it; saving closes it without asking. The form does not close by
+dragging.
 
 Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
 colours, English and Vietnamese labels including None),
-`task_board_quick_actions_test.dart` (icons, labels and order, selected
-semantics, statuses offered, None clears, dropped concurrent edit with every
-control disabled, status move, due-date clear, 320dp at 2x text,
+`task_board_quick_actions_test.dart` (grouped rows in order with their
+values, each row opening its editor, the priority picker's icons and order,
+None clears, a list choice moving the task with the sheet open, estimation,
+in-place title edit, Delete set apart and confirmed, a dropped concurrent edit
+with every control disabled, due-date clear, 320dp at 2x text,
 light/dark/blob renders), `task_board_quick_actions_dates_test.dart` (both
 dates or None, a picked start or due day, the range pull, an unchanged day,
 start-date clear, rollback with an error toast, the timezone setting),
-`task_repository_test.dart` (a zoned date saves as that zone's day),
-`task_board_detail_cubit_mutation_guard_test.dart`
-(a rejected concurrent update or move changes nothing)
-and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
-the live task). Widget tests do not establish touch feel on devices.
+`task_board_task_detail_test.dart` (the dirty create form's confirmation,
+the tablet two-column screen, the relationships illustration with and
+without reduced motion, phone sheet and tablet screen renders),
+`task_board_task_create_more_test.dart` (Create more),
+`task_board_relationship_navigation_test.dart` and
+`task_board_relationship_editor_test.dart` (linked-task navigation and
+adding a relationship), `task_repository_test.dart` (a zoned date saves as
+that zone's day), `task_board_detail_cubit_mutation_guard_test.dart` (a
+rejected concurrent update or move changes nothing) and
+`task_board_quick_actions_edits_test.dart` (consecutive edits save from the
+live task). Widget tests do not establish touch feel on devices.
 
 ### Root tabs and dock search
 

@@ -10120,6 +10120,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardsUpdated => 'Board updated.';
 
   @override
+  String get taskDetailCreateMore => 'Create more';
+
+  @override
+  String get taskDetailDiscardAction => 'Discard';
+
+  @override
+  String get taskDetailDiscardDescription => 'Your changes to this task have not been saved.';
+
+  @override
+  String get taskDetailDiscardTitle => 'Discard changes?';
+
+  @override
+  String get taskDetailEditTitle => 'Edit title';
+
+  @override
+  String get taskDetailKeepEditing => 'Keep editing';
+
+  @override
+  String get taskDetailNoEstimate => 'No estimate';
+
+  @override
+  String get taskDetailNoProjects => 'No projects';
+
+  @override
+  String get taskDetailNoRelationships => 'No linked tasks yet';
+
+  @override
   String get taskEstimatesAccessDeniedDescription => 'You need project management permission in this workspace to change task board estimation settings.';
 
   @override

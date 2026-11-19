@@ -565,7 +565,7 @@ void main() {
         await tester.tap(find.text('Long task').first, warnIfMissed: false);
         await tester.pumpAndSettle();
         await tester.tap(
-          find.text('Open full details').last,
+          find.byTooltip('Open full details'),
           warnIfMissed: false,
         );
         await tester.pumpAndSettle();

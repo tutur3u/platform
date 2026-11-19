@@ -421,12 +421,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                               forceRefresh: true,
                               pageSizeHint: pageSizeHint,
                             ),
-                        onTaskTap: (task) => _handleTaskTap(
-                          context,
-                          task,
-                          sortedLists,
-                          showDetails: true,
-                        ),
+                        onTaskTap: (task) =>
+                            _handleTaskTap(context, task, sortedLists),
                         onTaskMenu: (task) =>
                             _openTaskContextMenu(context, task, sortedLists),
                         onTaskDrop: (task, listId, beforeTaskId) => unawaited(
@@ -522,12 +518,15 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     task: activeTask,
                     board: detail,
                     lists: sortedLists,
-                    labels: detail.labels,
-                    members: detail.members,
-                    projects: detail.projects,
                     isPersonalWorkspace: _isPersonalWorkspaceForBoard(
                       context,
                       detail,
+                    ),
+                    actions: _taskDetailActions(
+                      context,
+                      sortedLists,
+                      closeOverlay: () async => _closeTaskDetails(context),
+                      canOpenDetails: false,
                     ),
                     onClose: () => _closeTaskDetails(context),
                   ),
@@ -961,20 +960,14 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   Future<void> _handleTaskTap(
     BuildContext context,
     TaskBoardTask task,
-    List<TaskBoardList> lists, {
-    bool showDetails = false,
-  }) async {
+    List<TaskBoardList> lists,
+  ) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     if (cubit.state.isBulkSelectMode) {
       cubit.toggleBulkTaskSelection(task.id);
       return;
     }
-    await _openTaskQuickActionsSheet(
-      context,
-      task,
-      lists,
-      showDetails: showDetails,
-    );
+    await _openTaskQuickActionsSheet(context, task, lists);
   }
 
   Future<void> _openBulkActionsSheet(BuildContext context) async {
@@ -1073,7 +1066,16 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       ),
     );
 
-    await showAdaptiveDrawer(context: context, builder: (_) => content);
+    // The form opens above the shell on the root navigator. Drag-to-dismiss
+    // is off so a dirty form only closes through its guarded Back, close
+    // and Cancel.
+    await showAppSheet<void>(
+      context: context,
+      size: AppSheetSize.full,
+      useRootNavigator: true,
+      enableDrag: false,
+      builder: (_) => content,
+    );
   }
 
   void _toggleBoardSearch() {

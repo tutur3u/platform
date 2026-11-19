@@ -19123,6 +19123,60 @@ abstract class AppLocalizations {
   /// **'Board updated.'**
   String get taskBoardsUpdated;
 
+  /// No description provided for @taskDetailCreateMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Create more'**
+  String get taskDetailCreateMore;
+
+  /// No description provided for @taskDetailDiscardAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard'**
+  String get taskDetailDiscardAction;
+
+  /// No description provided for @taskDetailDiscardDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your changes to this task have not been saved.'**
+  String get taskDetailDiscardDescription;
+
+  /// No description provided for @taskDetailDiscardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes?'**
+  String get taskDetailDiscardTitle;
+
+  /// No description provided for @taskDetailEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit title'**
+  String get taskDetailEditTitle;
+
+  /// No description provided for @taskDetailKeepEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep editing'**
+  String get taskDetailKeepEditing;
+
+  /// No description provided for @taskDetailNoEstimate.
+  ///
+  /// In en, this message translates to:
+  /// **'No estimate'**
+  String get taskDetailNoEstimate;
+
+  /// No description provided for @taskDetailNoProjects.
+  ///
+  /// In en, this message translates to:
+  /// **'No projects'**
+  String get taskDetailNoProjects;
+
+  /// No description provided for @taskDetailNoRelationships.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked tasks yet'**
+  String get taskDetailNoRelationships;
+
   /// No description provided for @taskEstimatesAccessDeniedDescription.
   ///
   /// In en, this message translates to:

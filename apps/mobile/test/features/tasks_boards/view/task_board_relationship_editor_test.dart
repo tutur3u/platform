@@ -252,7 +252,7 @@ void main() {
       await tester.tap(find.text('Alpha task').first);
       await tester.pumpAndSettle();
       await tester.tap(
-        find.text('Open full details').last,
+        find.byTooltip('Open full details'),
         warnIfMissed: false,
       );
       await tester.pumpAndSettle();

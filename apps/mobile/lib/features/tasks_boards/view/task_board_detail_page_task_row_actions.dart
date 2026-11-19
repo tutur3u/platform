@@ -183,10 +183,13 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     );
   }
 
+  /// [keyPrefix] keys each choice; [announce] false saves quietly.
   Future<void> _pickTaskPriority(
     BuildContext context,
-    TaskBoardTask task,
-  ) async {
+    TaskBoardTask task, {
+    bool announce = true,
+    String keyPrefix = 'task-row-priority',
+  }) async {
     // The choice sheet needs a non-null value; '' stands for None.
     const none = '';
     final selected = await showAppChoiceSheet<String>(
@@ -195,14 +198,14 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
       selected: TaskPriorityLevel.tryParse(task.priority)?.value ?? none,
       choices: [
         AppSheetChoice(
-          key: const ValueKey('task-row-priority-none'),
+          key: ValueKey('$keyPrefix-none'),
           value: none,
           label: TaskPriorityLevel.noneLabel(context.l10n),
           icon: TaskPriorityLevel.noneIcon,
         ),
         for (final level in TaskPriorityLevel.values)
           AppSheetChoice(
-            key: ValueKey('task-row-priority-${level.value}'),
+            key: ValueKey('$keyPrefix-${level.value}'),
             value: level.value,
             label: level.label(context.l10n),
             icon: level.icon,
@@ -214,6 +217,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
       context,
       task,
       selected == none ? null : selected,
+      announce: announce,
     );
   }
 
@@ -252,7 +256,11 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     bool clearStartDate = false,
     DateTime? endDate,
     bool clearEndDate = false,
+    String? name,
+    int? estimationPoints,
+    bool clearEstimationPoints = false,
     List<String>? labelIds,
+    List<String>? projectIds,
     List<String>? assigneeIds,
   }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
@@ -267,18 +275,23 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     try {
       await cubit.updateTask(
         taskId: task.id,
-        name: task.name?.trim().isNotEmpty == true
-            ? task.name!.trim()
-            : context.l10n.taskBoardDetailUntitledTask,
+        name:
+            name ??
+            (task.name?.trim().isNotEmpty == true
+                ? task.name!.trim()
+                : context.l10n.taskBoardDetailUntitledTask),
         priority: clearPriority ? null : priority ?? task.priority,
         clearPriority: clearPriority,
         startDate: start == null ? null : taskInZone(start, zone),
         endDate: end == null ? null : taskInZone(end, zone),
         clearStartDate: clearStartDate,
         clearEndDate: clearEndDate,
-        estimationPoints: task.estimationPoints,
+        estimationPoints: clearEstimationPoints
+            ? null
+            : estimationPoints ?? task.estimationPoints,
+        clearEstimationPoints: clearEstimationPoints,
         labelIds: labelIds ?? task.labelIds,
-        projectIds: task.projectIds,
+        projectIds: projectIds ?? task.projectIds,
         assigneeIds: assigneeIds ?? task.assigneeIds,
       );
       if (!toastContext.mounted) return;
@@ -304,7 +317,8 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     }
   }
 
-  Future<void> _confirmDeleteTask(
+  /// Confirms and deletes [task]; true once it is deleted.
+  Future<bool> _confirmDeleteTask(
     BuildContext context,
     TaskBoardTask task,
   ) async {
@@ -326,7 +340,8 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         ) ??
         false;
 
-    if (!deleted || !context.mounted) return;
+    if (!deleted || !context.mounted) return deleted;
     showAppToast(context, message: l10n.taskBoardDetailTaskDeleted);
+    return true;
   }
 }

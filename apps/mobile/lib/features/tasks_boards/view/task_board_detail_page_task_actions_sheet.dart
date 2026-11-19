@@ -1,42 +1,5 @@
 part of 'task_board_detail_page.dart';
 
-/// Statuses the quick sheet offers, in board order. Documents lists hold
-/// notes rather than work, so they are never a status target.
-const List<String> _taskQuickActionStatusOrder = [
-  'not_started',
-  'active',
-  'review',
-  'done',
-  'closed',
-];
-
-/// What the quick sheet runs. Each callback receives the task as it is now,
-/// so consecutive edits never save a stale snapshot. Null callbacks hide or
-/// disable the matching control.
-class _TaskQuickActionCallbacks {
-  const _TaskQuickActionCallbacks({
-    required this.onStatus,
-    required this.onPriority,
-    required this.onPickDate,
-    required this.onClearDate,
-    required this.onOpenDetails,
-    this.onAssignees,
-    this.onLabels,
-    this.onMove,
-  });
-
-  final void Function(TaskBoardTask task, String status) onStatus;
-
-  /// A null priority clears it (the web's None).
-  final void Function(TaskBoardTask task, String? priority) onPriority;
-  final void Function(TaskBoardTask task, _TaskQuickDate field) onPickDate;
-  final void Function(TaskBoardTask task, _TaskQuickDate field) onClearDate;
-  final void Function(TaskBoardTask task) onOpenDetails;
-  final void Function(TaskBoardTask task)? onAssignees;
-  final void Function(TaskBoardTask task)? onLabels;
-  final void Function(TaskBoardTask task)? onMove;
-}
-
 /// The latest snapshot of [taskId] in the board state, or null once the
 /// task is gone (deleted or moved out of every loaded list).
 TaskBoardTask? _taskQuickActionsLiveTask(
@@ -54,28 +17,24 @@ TaskBoardTask? _taskQuickActionsLiveTask(
   return null;
 }
 
-/// Tap-to-edit sheet for one task: status, priority, start and due dates,
-/// assignees, labels and list, then the full details.
+/// The task sheet a tap opens: the shared detail content in the shared
+/// sheet, which opens at its middle detent and drags up to full height.
 ///
-/// The sheet follows the board cubit, so a priority or field edit updates
-/// it in place and several edits can be made in a row.
-class _TaskQuickActionsSheet extends StatelessWidget {
-  const _TaskQuickActionsSheet({
+/// The sheet follows the board cubit, so an edit updates it in place and
+/// several edits can be made in a row.
+class _TaskDetailSheet extends StatelessWidget {
+  const _TaskDetailSheet({
     required this.task,
     required this.lists,
-    required this.callbacks,
-    required this.showDetails,
+    required this.actions,
     required this.isPersonalWorkspace,
-    required this.onNavigateRelatedTask,
   });
 
   /// The task as it was tapped; used until the cubit has a newer snapshot.
   final TaskBoardTask task;
   final List<TaskBoardList> lists;
-  final _TaskQuickActionCallbacks callbacks;
-  final bool showDetails;
+  final _TaskDetailActions actions;
   final bool isPersonalWorkspace;
-  final ValueChanged<RelatedTaskInfo> onNavigateRelatedTask;
 
   @override
   Widget build(BuildContext context) {
@@ -88,95 +47,29 @@ class _TaskQuickActionsSheet extends StatelessWidget {
     final busy = context.select<TaskBoardDetailCubit, bool>(
       (cubit) => cubit.state.isMutating,
     );
-    final l10n = context.l10n;
-    final title = live.name?.trim().isNotEmpty == true
-        ? live.name!.trim()
-        : l10n.taskBoardDetailUntitledTask;
     final list = lists.where((list) => list.id == live.listId).firstOrNull;
-    final listName = list?.name?.trim().isNotEmpty == true
-        ? list!.name!.trim()
-        : l10n.taskBoardDetailUntitledList;
-    final status = TaskBoardList.normalizeSupportedStatus(list?.status);
-    final boardStatuses = {
-      for (final candidate in lists)
-        ?TaskBoardList.normalizeSupportedStatus(candidate.status),
-    };
-    final statuses = [
-      for (final candidate in _taskQuickActionStatusOrder)
-        if (boardStatuses.contains(candidate)) candidate,
-    ];
-    final priority = TaskPriorityLevel.tryParse(live.priority)?.value;
-
     return AppSheetScaffold(
-      title: title,
-      description: board == null
-          ? listName
-          : '${_taskReference(live, board)} · $listName',
+      title: board == null
+          ? _taskDetailListName(context, list)
+          : _taskReference(live, board),
       headerActions: [
-        if (showDetails)
+        if (actions.onOpenDetails case final openDetails?)
           AppIconButton(
             key: const ValueKey('task-quick-open-details'),
-            tooltip: l10n.taskBoardDetailOpenFullDetails,
+            tooltip: context.l10n.taskBoardDetailOpenFullDetails,
             icon: const Icon(LucideIcons.maximize2, size: 18),
-            onPressed: busy ? null : () => callbacks.onOpenDetails(live),
+            onPressed: busy ? null : () => openDetails(live),
           ),
+        _TaskDetailMoreButton(task: live, enabled: !busy, actions: actions),
       ],
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (statuses.isNotEmpty) ...[
-            _TaskQuickSectionCaption(l10n.taskQuickActionsStatus),
-            _TaskQuickStatusGrid(
-              statuses: statuses,
-              selected: status,
-              enabled: !busy,
-              onSelected: (value) => callbacks.onStatus(live, value),
-            ),
-            const SizedBox(height: AppLayout.sectionGap),
-          ],
-          _TaskQuickSectionCaption(l10n.taskBoardDetailPriority),
-          _TaskQuickPriorityGrid(
-            selected: priority,
-            enabled: !busy,
-            onSelected: (value) => callbacks.onPriority(live, value),
-          ),
-          const SizedBox(height: AppLayout.sectionGap),
-          _TaskQuickSectionCaption(l10n.taskBoardDetailTaskDates),
-          _TaskQuickDatesCard(
-            task: live,
-            list: list,
-            enabled: !busy,
-            callbacks: callbacks,
-          ),
-          const SizedBox(height: AppLayout.sectionGap),
-          _TaskQuickFieldsCard(
-            task: live,
-            board: board,
-            listName: listName,
-            enabled: !busy,
-            callbacks: callbacks,
-          ),
-          if (showDetails && board != null) ...[
-            const SizedBox(height: AppLayout.sectionGap),
-            _TaskQuickDetailSections(
-              task: live,
-              board: board,
-              lists: lists,
-              isPersonalWorkspace: isPersonalWorkspace,
-              onNavigateRelatedTask: onNavigateRelatedTask,
-            ),
-          ],
-          if (!showDetails) ...[
-            const SizedBox(height: AppLayout.sectionGap),
-            AppButton.outline(
-              key: const ValueKey('task-quick-open-details'),
-              enabled: !busy,
-              onPressed: () => callbacks.onOpenDetails(live),
-              leading: const Icon(LucideIcons.maximize2),
-              child: Text(l10n.taskBoardDetailOpenFullDetails),
-            ),
-          ],
-        ],
+      child: _TaskDetailContent(
+        task: live,
+        board: board,
+        lists: lists,
+        actions: actions,
+        isPersonalWorkspace: isPersonalWorkspace,
+        enabled: !busy,
+        inSheet: true,
       ),
     );
   }

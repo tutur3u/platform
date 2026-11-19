@@ -107,28 +107,32 @@ void main() {
       );
       await tester.tap(find.text('Review launch checklist'));
       await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('task-quick-priority-critical')),
-        findsOneWidget,
-      );
-
+      // Properties are grouped rows; the priority row opens its editor.
+      expect(find.byKey(const ValueKey('task-quick-priority')), findsOneWidget);
+      final sheetScroll = find.byType(Scrollable).last;
       final description = find.byKey(
         const ValueKey('kanban-detail-edit-description'),
       );
-      await tester.ensureVisible(description);
+      await tester.scrollUntilVisible(
+        description,
+        200,
+        scrollable: sheetScroll,
+      );
       await tester.pumpAndSettle();
       await tester.tap(description);
       await tester.pumpAndSettle();
       expect(find.byTooltip('Done'), findsWidgets);
-      await tester.ensureVisible(description);
-      await tester.pumpAndSettle();
       await tester.tap(description);
       await tester.pumpAndSettle();
 
       final relationships = find.byKey(
         const ValueKey('kanban-detail-relationships'),
       );
-      await tester.ensureVisible(relationships);
+      await tester.scrollUntilVisible(
+        relationships,
+        200,
+        scrollable: sheetScroll,
+      );
       await tester.pumpAndSettle();
       await tester.tap(relationships);
       await tester.pumpAndSettle();
