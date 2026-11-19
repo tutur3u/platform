@@ -47,7 +47,22 @@ CI=true CI_SOURCE_SHA=$(git rev-parse HEAD) bun run --cwd apps/mind test:runtime
 with synthetic secrets and no network egress: build identity, the root host (staging) or the
 legacy-host `307`s with their open-redirect probes (production), apex rejection or the mount,
 unknown paths, and the signed-out redirect through the app-owned
-`cloudflare/auth-redirect.runtime.mjs` fixture (8 checks).
+`cloudflare/auth-redirect.runtime.mjs` fixture (8 checks), plus the upload-size guard below.
+
+## Upload size
+
+`cloudflare/upload-limits.runtime.mjs` runs with `test:runtime`. It asserts that
+`dist/server` holds no `.map` file and measures the emitted bytes with
+`measureUpload` and `assertUploadLimits` from
+`scripts/ci/wave1-native-upload-limits.mjs`: Worker script bytes, source map
+bytes, asset count, largest asset and variables against the documented limits.
+`build:cloudflare` deletes server maps in `prepare-server-artifact.mjs`, and
+the cutover config sets `upload_source_maps` to `false`. Before that step the
+server output carries about 40.6 MiB of maps across 439 files, under the 60 MiB
+encoded limit that Cloudflare enforces with error 10021; the client build emits
+none. The production output measures about 22.9 MiB of Worker upload (4.8 MiB
+gzip) with 495 assets and a largest module of 1.8 MiB. Rerun the guard after any
+dependency change that grows the server bundle.
 
 The app proxy admits anonymous `GET`/`HEAD /api/build-info` without an app-session
 refresh, so deployment verification gets `200` instead of `401`.
