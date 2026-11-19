@@ -33,7 +33,14 @@ const production = process.env.VITE_TOOLS_NATIVE_PROFILE === 'production';
 const WORKER = production ? 'tuturuuu-tools' : 'tuturuuu-tools-vite-staging';
 const PUBLIC_FILES = ['robots.txt', 'sitemap.xml'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = { '/': 200 };
+const EXPECTED = {
+  '/': 200,
+  '/qr?format=svg': 200,
+  '/random': 200,
+  '/vi/random?format=hex': { redirect: '/random?format=hex' },
+  '/robots.txt': 200,
+  '/api/build-info': 200,
+};
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
 const POLICY_PROBES = [
   { kind: 'page', path: '/' },

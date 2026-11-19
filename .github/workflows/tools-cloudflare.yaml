@@ -189,6 +189,7 @@ jobs:
       SOURCE_SHA: ${{ github.sha }}
       TOOLS_SOURCE_SHA: ${{ github.sha }}
       VITE_TOOLS_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://tools.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
@@ -218,9 +219,15 @@ jobs:
           PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Verify registry, unit tests and owning source
+        run: |
+          bun run --cwd apps/tools routes:check
+          bun run --cwd apps/tools test
+          node --test apps/tools/cloudflare/deployment-profile.test.mjs apps/tools/cloudflare/startup.test.mjs
+          node scripts/oxc-check.js apps/tools/src apps/tools/cloudflare apps/tools/vite.config.mts apps/tools/void.config.ts apps/tools/start-bridge.routes.json
+      - name: Check Tools types
+        run: bun run --cwd apps/tools type-check
       - name: Build production Start Worker
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: cd apps/tools && bun run build
@@ -237,6 +244,10 @@ jobs:
           path: ${{ runner.temp }}/tools-emitted-config.json
           if-no-files-found: error
           retention-days: 7
+      - name: Seal production output before runtime acceptance
+        run: |
+          python3 scripts/ci/tools-native-artifact.py config apps/tools
+          python3 scripts/ci/tools-native-artifact.py seal apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json"
       - name: Exercise the built Worker with synthetic runtime bindings
         working-directory: apps/tools
         env:
@@ -245,9 +256,19 @@ jobs:
         run: bun run test:runtime
       - name: Package Worker, assets and emitted Wrangler config
         run: |
-          python3 scripts/ci/tools-native-artifact.py config apps/tools
-          python3 scripts/ci/tools-native-artifact.py seal apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json"
+          python3 scripts/ci/tools-native-artifact.py verify apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json"
           python3 scripts/ci/tools-native-artifact.py pack apps/tools --receipt "$RUNNER_TEMP/tools-native-artifact.json" --archive "$RUNNER_TEMP/tools-cutover.tar.gz"
+      - name: Restore and qualify the archive in a fresh checkout
+        env:
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/tools-restore" "$SOURCE_SHA"
+          cd "$RUNNER_TEMP/tools-restore"
+          bun install --frozen-lockfile --ignore-scripts
+          python3 scripts/ci/tools-native-artifact.py restore apps/tools --archive "$RUNNER_TEMP/tools-cutover.tar.gz" --receipt "$RUNNER_TEMP/tools-restored-artifact.json"
+          python3 scripts/ci/tools-native-artifact.py config apps/tools
+          CI=true bun run --cwd apps/tools test:runtime
+          python3 scripts/ci/tools-native-artifact.py verify apps/tools --receipt "$RUNNER_TEMP/tools-restored-artifact.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tools-cutover-${{ github.sha }}

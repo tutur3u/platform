@@ -16,6 +16,11 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 200
+    "/": 200,
+    "/qr?format=svg": 200,
+    "/random": 200,
+    "/vi/random?format=hex": { "redirect": "/random?format=hex" },
+    "/robots.txt": 200,
+    "/api/build-info": 200
   }
 }

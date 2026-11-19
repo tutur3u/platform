@@ -6,10 +6,9 @@ audience: developers
 ---
 
 Tools (`apps/tools`) runs on TanStack Start, Vite+ and Void through the
-[start bridge](/build/devops/start-bridge). Source needs no change to publish:
-the emitted Worker builds and serves its mount, root and unknown paths in
-workerd. Routes are never attached from config; the release operator attaches
-them at cutover.
+[start bridge](/build/devops/start-bridge). The emitted Worker serves the
+subdomain and apex mount from the same artifact. The release operator attaches
+routes at cutover.
 
 ## Worker identity
 
@@ -35,9 +34,15 @@ VITE_TOOLS_NATIVE_PROFILE=production bun run --cwd apps/tools build
 CI=true CI_SOURCE_SHA=<sha> bun run --cwd apps/tools test:runtime
 ```
 
-`tools-cloudflare.yaml` runs the same steps and seals the output with
-`scripts/ci/tools-native-artifact.py` in its `cutover-artifact` job. Run the
-build on a CI or remote runner, not a developer machine.
+Dispatch `tools-cloudflare.yaml` on `main` to qualify and seal the production
+Worker. The `cutover-artifact` job restores the archive in a fresh checkout,
+repeats workerd acceptance, and verifies that the restored files retain their
+sealed hashes before uploading `tools-cutover-<source SHA>`.
+
+The [runtime route expectations](/build/devops/start-bridge-codemod) exercise
+the root, QR and Random deep links, a localized redirect that carries its query
+string, `robots.txt`, and build info on both host variants. Hosted staging and
+private upload remain separate release gates.
 
 Tools has no `next/font` imports, so no font resolver parity work applies.
 
