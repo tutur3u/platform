@@ -15,6 +15,7 @@
       "worker": "tuturuuu-web-public-docs",
       "kind": "pages",
       "enabled": true,
+      "activated": true,
       "held": null,
       "localized": true,
       "assetPrefix": "/_f/public-docs",

@@ -31,12 +31,18 @@ const families = JSON.parse(
     'utf8'
   )
 );
-// Fixture: public-docs as an activated family; the committed table
-// activates none.
+// Fixture: public-docs as an activated family (the committed table also
+// activates it); `inactiveFamilies` clears every activation.
 const activatedFamilies = {
   ...families,
   families: families.families.map((family) =>
     family.id === 'public-docs' ? { ...family, activated: true } : family
+  ),
+};
+const inactiveFamilies = {
+  ...families,
+  families: families.families.map(
+    ({ activated: _activated, ...family }) => family
   ),
 };
 const env = {
@@ -79,13 +85,18 @@ test('keeps live vars and services, sets origins and flagged family bindings', (
   ]);
 });
 
-test('the committed family table activates no family', () => {
+test('the committed family table activates only public-docs', () => {
   assert.deepEqual(
-    families.families.filter((family) => family.activated === true),
-    []
+    families.families
+      .filter((family) => family.activated === true)
+      .map((family) => family.id),
+    ['public-docs']
   );
+});
+
+test('a flagged family that is not activated is refused', () => {
   assert.throws(
-    () => deployConfig(base, liveOrigins, families, env),
+    () => deployConfig(base, liveOrigins, inactiveFamilies, env),
     /not activated/u
   );
 });
@@ -233,9 +244,9 @@ test('write returns a name-only readback and fails before creating forbidden out
   assert.equal(refused.stderr, 'VERCEL_PROTECTION_BYPASS is set\n');
   assert.equal(existsSync(out), false);
 
-  const notActivated = run(env);
-  assert.equal(notActivated.status, 1);
-  assert.equal(notActivated.stdout, '');
+  const notEnabled = run({ ...env, GATEWAY_WEB_FAMILIES: 'api-identity' });
+  assert.equal(notEnabled.status, 1);
+  assert.equal(notEnabled.stdout, '');
   assert.equal(existsSync(out), false);
 
   const accepted = run({ ...env, GATEWAY_WEB_FAMILIES: '' });

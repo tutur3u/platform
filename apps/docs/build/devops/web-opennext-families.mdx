@@ -90,7 +90,8 @@ any flagged family that the committed table does not mark activated.
 
 ## public-docs
 
-Owns `/changelog/**`, `/docs`, `/ui/**` and `/visualizations/**`, with or
+Activated (`"activated": true`): the first family served on `tuturuuu.com`
+from Cloudflare. Owns `/changelog/**`, `/docs`, `/ui/**` and `/visualizations/**`, with or
 without a locale prefix (`/docs` and `/ui/**` answer the same redirects as
 Vercel). Client assets load from `/_f/public-docs/_next/**`, which the gateway
 strips before the family sees it. The family requires no secrets: the changelog
