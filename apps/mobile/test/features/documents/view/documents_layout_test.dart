@@ -27,6 +27,8 @@ const _document = WorkspaceDocument(
   name: 'Roadmap',
   content: 'Quarterly plan',
   isPublic: false,
+  updatedAt: '2026-11-19T02:00:00.000Z',
+  ownerIsViewer: true,
 );
 
 Future<void> _pump(

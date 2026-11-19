@@ -54,6 +54,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   bool get _hasMore => _documents.length < _total;
 
+  String _ownerLabel(WorkspaceDocument document, AppLocalizations l10n) {
+    if (document.ownerIsViewer) return l10n.documentsOwnerYou;
+    final name = document.ownerName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    return l10n.documentsOwnerUnknown;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -198,19 +205,19 @@ class _DocumentsPageState extends State<DocumentsPage> {
             final titleA = documentDisplayTitle(
               name: a.name,
               untitled: '',
-              editedAt: documentEditedAt(a.createdAt),
+              editedAt: documentEditedAt(a.editedAtRaw),
               locale: locale,
             );
             final titleB = documentDisplayTitle(
               name: b.name,
               untitled: '',
-              editedAt: documentEditedAt(b.createdAt),
+              editedAt: documentEditedAt(b.editedAtRaw),
               locale: locale,
             );
             return titleA.toLowerCase().compareTo(titleB.toLowerCase());
           }
-          final aTime = documentEditedAt(a.createdAt);
-          final bTime = documentEditedAt(b.createdAt);
+          final aTime = documentEditedAt(a.editedAtRaw);
+          final bTime = documentEditedAt(b.editedAtRaw);
           if (aTime == null && bTime == null) return 0;
           if (aTime == null) return 1;
           if (bTime == null) return -1;
@@ -223,12 +230,6 @@ class _DocumentsPageState extends State<DocumentsPage> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final hasWorkspace = _wsId != null && _wsId!.isNotEmpty;
-    final workspace = context.watch<WorkspaceCubit>().state.currentWorkspace;
-    final owner = (workspace?.name?.trim().isNotEmpty ?? false)
-        ? workspace!.name!.trim()
-        : (workspace?.personal ?? false)
-        ? l10n.documentsOwnerYou
-        : l10n.documentsOwnerWorkspace;
     final locale = Localizations.localeOf(context).toLanguageTag();
     final visible = _visible(locale);
 
@@ -360,7 +361,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
                             entityId: document.id,
                             child: _DocumentRow(
                               document: document,
-                              owner: owner,
+                              owner: _ownerLabel(document, l10n),
                               locale: locale,
                               onTap: () => context.push(
                                 Routes.documentDetailPath(document.id),
@@ -406,7 +407,7 @@ class _DocumentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final editedAt = documentEditedAt(document.createdAt);
+    final editedAt = documentEditedAt(document.editedAtRaw);
     final title = documentDisplayTitle(
       name: document.name,
       untitled: l10n.documentsUntitled,

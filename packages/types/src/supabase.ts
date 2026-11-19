@@ -43925,8 +43925,10 @@ export type Database = {
           is_public: boolean | null;
           legacy_content: string | null;
           name: string | null;
+          owner_id: string | null;
           parent_id: string | null;
           position: number | null;
+          updated_at: string;
           ws_id: string | null;
         };
         ComputedFields: never;
@@ -43937,8 +43939,10 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          owner_id?: string | null;
           parent_id?: string | null;
           position?: number | null;
+          updated_at?: string;
           ws_id?: string | null;
         };
         Update: {
@@ -43948,8 +43952,10 @@ export type Database = {
           is_public?: boolean | null;
           legacy_content?: string | null;
           name?: string | null;
+          owner_id?: string | null;
           parent_id?: string | null;
           position?: number | null;
+          updated_at?: string;
           ws_id?: string | null;
         };
         Relationships: [

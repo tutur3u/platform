@@ -15,6 +15,11 @@ import {
   documentCreateSchema,
   hasHierarchyFields,
 } from '@/lib/documents/payload';
+import {
+  attachDocumentOwner,
+  documentColumns,
+  type DocumentOwner,
+} from '@/lib/documents/present';
 
 interface Params {
   params: Promise<{
@@ -79,12 +84,7 @@ export async function GET(req: Request, { params }: Params) {
 
   let query = sbAdmin
     .from('workspace_documents')
-    .select(
-      hierarchyEnabled
-        ? 'id, name, content, is_public, created_at, parent_id, position'
-        : 'id, name, content, is_public, created_at',
-      { count: 'exact' }
-    )
+    .select(documentColumns(hierarchyEnabled), { count: 'exact' })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -103,14 +103,47 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
+  const rows = data ?? [];
+  const ownerIds: string[] = [];
+  const seenOwners = new Set<string>();
+  for (const row of rows) {
+    const ownerId = (row as { owner_id?: unknown }).owner_id;
+    if (typeof ownerId !== 'string' || seenOwners.has(ownerId)) continue;
+    seenOwners.add(ownerId);
+    ownerIds.push(ownerId);
+  }
+  const owners = await loadDocumentOwners(sbAdmin, ownerIds);
+  if (owners == null) {
+    return NextResponse.json(
+      { message: 'Error listing documents' },
+      { status: 500 }
+    );
+  }
+
   return NextResponse.json({
-    data: data ?? [],
+    data: rows.map((row) => attachDocumentOwner(row, owners, user.id)),
     pagination: {
       limit,
       offset,
       filteredTotal: count ?? 0,
     },
   });
+}
+
+async function loadDocumentOwners(
+  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  ownerIds: string[]
+): Promise<DocumentOwner[] | null> {
+  if (ownerIds.length === 0) return [];
+  const { data, error } = await sbAdmin
+    .from('user_private_details')
+    .select('user_id, full_name, email')
+    .in('user_id', ownerIds);
+  if (error) {
+    console.error('Error loading document owners:', error.message);
+    return null;
+  }
+  return data ?? [];
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -172,6 +205,7 @@ export async function POST(req: Request, { params }: Params) {
     .insert({
       ...data,
       ws_id: wsId,
+      owner_id: user.id,
     })
     .select('id')
     .single();

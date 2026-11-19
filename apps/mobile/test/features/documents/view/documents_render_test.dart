@@ -23,21 +23,24 @@ const _documents = [
     name: 'Roadmap',
     content: 'Quarterly plan',
     isPublic: false,
-    createdAt: '2026-11-19T02:00:00.000Z',
+    createdAt: '2026-11-01T02:00:00.000Z',
+    updatedAt: '2026-11-19T02:00:00.000Z',
+    ownerName: 'Ada Lovelace',
   ),
   WorkspaceDocument(
     id: 'doc-2',
     name: '',
     content: '',
     isPublic: true,
-    createdAt: '2026-11-18T02:00:00.000Z',
+    updatedAt: '2026-11-18T02:00:00.000Z',
+    ownerIsViewer: true,
   ),
   WorkspaceDocument(
     id: 'doc-3',
     name: 'Weekly plan',
     content: 'Notes',
     isPublic: false,
-    createdAt: '2026-11-02T02:00:00.000Z',
+    updatedAt: '2026-11-02T02:00:00.000Z',
   ),
 ];
 

@@ -76,25 +76,30 @@ beforeEach(() => {
   mocks.query.maybeSingle.mockResolvedValue({ data: { id: 'document' } });
 });
 describe('workspace document API boundary', () => {
-  it.each(['ws_id', 'id', 'created_at', 'legacy_content', 'actor_id'])(
-    'rejects protected %s in create and update',
-    async (field) => {
-      expect(
-        (
-          await POST(
-            request({ name: 'Page', [field]: 'injected' }, 'POST'),
-            params
-          )
-        ).status
-      ).toBe(400);
-      expect(
-        (await PATCH(request({ name: 'Page', [field]: 'injected' }), params))
-          .status
-      ).toBe(400);
-      expect(mocks.query.insert).not.toHaveBeenCalled();
-      expect(mocks.query.update).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    'ws_id',
+    'id',
+    'created_at',
+    'updated_at',
+    'owner_id',
+    'legacy_content',
+    'actor_id',
+  ])('rejects protected %s in create and update', async (field) => {
+    expect(
+      (
+        await POST(
+          request({ name: 'Page', [field]: 'injected' }, 'POST'),
+          params
+        )
+      ).status
+    ).toBe(400);
+    expect(
+      (await PATCH(request({ name: 'Page', [field]: 'injected' }), params))
+        .status
+    ).toBe(400);
+    expect(mocks.query.insert).not.toHaveBeenCalled();
+    expect(mocks.query.update).not.toHaveBeenCalled();
+  });
   it.each([
     null,
     [],
@@ -150,6 +155,7 @@ describe('workspace document API boundary', () => {
     expect(mocks.query.insert).toHaveBeenCalledWith({
       ...body,
       ws_id: 'workspace',
+      owner_id: 'actor',
     });
     expect(
       (await PATCH(request({ parent_id: null, position: null }), params)).status
@@ -167,8 +173,8 @@ describe('workspace document API boundary', () => {
       await GET(req, params);
       await detail(req, params);
       const columns = enabled
-        ? 'id, name, content, is_public, created_at, parent_id, position'
-        : 'id, name, content, is_public, created_at';
+        ? 'id, name, content, is_public, created_at, updated_at, owner_id, parent_id, position'
+        : 'id, name, content, is_public, created_at, updated_at, owner_id';
       expect(mocks.query.select).toHaveBeenCalledWith(columns, {
         count: 'exact',
       });

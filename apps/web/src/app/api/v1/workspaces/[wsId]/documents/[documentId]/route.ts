@@ -15,6 +15,11 @@ import {
   documentPatchSchema,
   hasHierarchyFields,
 } from '@/lib/documents/payload';
+import {
+  attachDocumentOwner,
+  documentColumns,
+  type DocumentOwner,
+} from '@/lib/documents/present';
 
 interface Params {
   params: Promise<{
@@ -26,7 +31,7 @@ interface Params {
 async function authorizeDocumentsRequest(
   request: Request,
   wsIdParam: string
-): Promise<{ error: Response } | { wsId: string }> {
+): Promise<{ error: Response } | { wsId: string; userId: string }> {
   const supabase = await createClient(request);
   const wsId = await normalizeWorkspaceId(wsIdParam, supabase);
 
@@ -66,7 +71,7 @@ async function authorizeDocumentsRequest(
     };
   }
 
-  return { wsId };
+  return { wsId, userId: user.id };
 }
 
 export async function PATCH(req: Request, { params }: Params) {
@@ -130,11 +135,7 @@ export async function GET(request: Request, { params }: Params) {
   );
   const { data, error } = await sbAdmin
     .from('workspace_documents')
-    .select(
-      hierarchyEnabled
-        ? 'id, name, content, is_public, created_at, parent_id, position'
-        : 'id, name, content, is_public, created_at'
-    )
+    .select(documentColumns(hierarchyEnabled))
     .eq('id', documentId)
     .eq('ws_id', auth.wsId)
     .maybeSingle();
@@ -148,7 +149,26 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ data });
+  const owners: DocumentOwner[] = [];
+  if (data.owner_id) {
+    const owner = await sbAdmin
+      .from('user_private_details')
+      .select('user_id, full_name, email')
+      .eq('user_id', data.owner_id)
+      .maybeSingle();
+    if (owner.error) {
+      console.error('Error loading document owner:', owner.error.message);
+      return NextResponse.json(
+        { error: 'Error loading document' },
+        { status: 500 }
+      );
+    }
+    if (owner.data) owners.push(owner.data);
+  }
+
+  return NextResponse.json({
+    data: attachDocumentOwner(data, owners, auth.userId),
+  });
 }
 
 export async function DELETE(request: Request, { params }: Params) {
