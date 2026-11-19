@@ -7,6 +7,7 @@
     "compatibilityFlags": ["nodejs_compat"],
     "workersDev": false,
     "previewUrls": false,
+    "sourceMaps": true,
     "observability": {
       "enabled": true,
       "headSamplingRate": 0.05,
@@ -19,9 +20,12 @@
     "crons": [],
     "routes": [],
     "vars": {},
-    "secrets": [],
+    "secrets": ["API_WORKER_OPERATIONS", "MOBILE_VERSION_POLICY"],
     "durableObjects": {},
-    "limits": { "cpuMs": 50 }
+    "durableObjectClasses": {},
+    "unmapped": {
+      "limits": [{ "cpuMs": 50 }]
+    }
   },
   "migrationTemplate": "apps/cron-control",
   "note": "Identity pinned from apps/api/cloudflare.config.ts; cf-worker-parity validates emitted Build Output."

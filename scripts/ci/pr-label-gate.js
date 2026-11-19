@@ -32,6 +32,7 @@ const PUSH_TO_PR = {
 
 const HEAVY_PR_WORKFLOWS = [
   'ai-cloudflare.yaml',
+  'api-cloudflare.yaml',
   'api-worker.yaml',
   'app-builds-affected.yaml',
   'apps-cloudflare.yaml',
@@ -58,6 +59,7 @@ const HEAVY_PR_WORKFLOWS = [
   'fee-lock-database-contract.yaml',
   'finance-cloudflare.yaml',
   'forms-cloudflare.yaml',
+  'gateway-cloudflare.yaml',
   'git-cloudflare.yaml',
   'hive-cloudflare.yaml',
   'infrastructure-cloudflare.yaml',
@@ -95,6 +97,7 @@ const HEAVY_PR_WORKFLOWS = [
   'security-egress-contract.yaml',
   'shortener-cloudflare.yaml',
   'sso-persistence-contract.yaml',
+  'status-api-cloudflare.yaml',
   'storefront-cloudflare.yaml',
   'supabase-baseline.yaml',
   'task-board-database-contract.yaml',

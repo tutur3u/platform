@@ -544,16 +544,6 @@
         "reason": "AI native candidate (#6810) on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
       }
     },
-    "apps/api/scripts/worker-runtime.test.mjs": {
-      "lines": 2,
-      "uses": 2,
-      "gap": "pending-migration",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6821",
-        "reason": "API Worker (#6761, #6783) builds with @cloudflare/vite-plugin from wrangler.jsonc and runs its runtime test through the wrangler test harness; it has no publisher yet and moves to cloudflare.config.ts in its per-service parity PR."
-      },
-      "digest": "5c39eca31e598f25c287dedb8ed8bd3e68230927bf28a5a6f9e6a3b7f6a88635"
-    },
     "apps/apps/cloudflare/gateway-built-worker.test.mjs": {
       "lines": 3,
       "uses": 3,

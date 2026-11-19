@@ -1,4 +1,4 @@
-import { defineConfig } from 'cf/config';
+import { bindings, defineConfig } from 'cf/config';
 
 export default defineConfig({
   accountId: 'e8912e2867beecc673d171907bf09649',
@@ -15,6 +15,9 @@ export default defineConfig({
       logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: false },
     },
     limits: { cpuMs: 50 },
-    env: {},
+    env: {
+      API_WORKER_OPERATIONS: bindings.secret(),
+      MOBILE_VERSION_POLICY: bindings.secret(),
+    },
   },
 });

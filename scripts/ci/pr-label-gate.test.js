@@ -28,11 +28,14 @@ const workflows = readAllWorkflows(undefined, { raw: true });
 const PAUSED_JOB = /^(\$\{\{ )?false( \}\})?$/u;
 // Trigger digests on origin/main when the gate landed. Update a digest only
 // with a reviewed push, schedule or manual trigger change.
+// 4122fb86 dropped cf-wrangler-publication path filters from coordination and
+// devbox-control workflows; app sources and cf parity paths are unchanged.
 const PROTECTED_TRIGGERS = {
   'rewise-cloudflare.yaml': '45c4db71ea52982a',
   'git-cloudflare.yaml': '518ca2530d7a63ef',
   'external-cloudflare.yaml': '0a3cc2c97958f5cd',
   'ai-cloudflare.yaml': '2b1f1ae8795d0216',
+  'api-cloudflare.yaml': '2610097053ef1dfd',
   'api-worker.yaml': '058d68d5d261d527',
   'app-builds-affected.yaml': 'fcb6485f818aa571',
   'apps-cloudflare.yaml': '257f752668dce766',
@@ -45,11 +48,11 @@ const PROTECTED_TRIGGERS = {
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
   'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',
-  'coordination-cloudflare.yaml': '5d9dda0ceaa00a84',
+  'coordination-cloudflare.yaml': 'a1db663f5d528748',
   'creator-identity-contract.yaml': '0a3cc2c97958f5cd',
   'cron-control-cloudflare.yaml': 'f9a9bce5ac1972dd',
   'desktop-beta.yaml': '3d1e23b37a961485',
-  'devbox-control-cloudflare.yaml': 'af0d91d571550c3f',
+  'devbox-control-cloudflare.yaml': 'bdd013d87e7c6568',
   'discord-python-ci.yml': 'df10679b45d420bb',
   'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
@@ -59,6 +62,7 @@ const PROTECTED_TRIGGERS = {
   // Finance also watches its owning input-cache action; other trigger fields stay fixed.
   'finance-cloudflare.yaml': 'fabf7d45e110e58d',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
+  'gateway-cloudflare.yaml': '04f02377a3fb0a51',
   'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '56aef454e313add1',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
@@ -91,6 +95,7 @@ const PROTECTED_TRIGGERS = {
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '91506e88fa4e6dd8',
   'sso-persistence-contract.yaml': '939d2042696cddd9',
+  'status-api-cloudflare.yaml': '4bdf044f41e1c76f',
   'storefront-cloudflare.yaml': '1e3b010d7a0ce910',
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
   'task-board-database-contract.yaml': '0a3cc2c97958f5cd',

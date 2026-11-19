@@ -264,6 +264,7 @@ test('workflow edits run workflow policy tests with changed script tests', () =>
       'scripts/ci/protected-workflow-concurrency.test.js',
       'scripts/ci/bun-workflow-pins.test.js',
       'scripts/ci/check-workflow-config.test.js',
+      'scripts/ci/pr-label-gate.test.js',
     ])
   );
   const step = plan.steps.find((entry) => entry.id === 'script-tests');
@@ -272,6 +273,7 @@ test('workflow edits run workflow policy tests with changed script tests', () =>
     'scripts/ci/protected-workflow-concurrency.test.js',
     'scripts/ci/bun-workflow-pins.test.js',
     'scripts/ci/check-workflow-config.test.js',
+    'scripts/ci/pr-label-gate.test.js',
   ]);
   const formatter = plan.steps.find((entry) => entry.id === 'oxfmt');
   assert.ok(formatter.args.includes('scripts/oxc.js'));

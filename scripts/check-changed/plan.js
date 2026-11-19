@@ -35,6 +35,7 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/protected-workflow-concurrency.test.js',
   'scripts/ci/bun-workflow-pins.test.js',
   'scripts/ci/check-workflow-config.test.js',
+  'scripts/ci/pr-label-gate.test.js',
 ];
 // The production migration gate pins the exact Git blobs of these producer
 // files. Changing one without extending its allowlist silently rejects the
