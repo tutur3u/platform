@@ -1920,6 +1920,16 @@
       },
       "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
     },
+    "apps/teach/cloudflare/cutover.runtime.mjs": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/0fe19e2372a2608a9170db37d8e74d304823067d",
+        "reason": "The native apex qualification harness writes a temporary runtime config and resolves the installed SDK for isolated Workerd acceptance. It invokes no publishing command."
+      },
+      "digest": "efa63ee8a15a58db35d263e004c5527abbd61e8264e5aad27a11ba782f9073d8"
+    },
     "apps/teach/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
       "uses": 1,
