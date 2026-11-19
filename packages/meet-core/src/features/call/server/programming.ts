@@ -24,9 +24,12 @@ import { PlaygroundCreate } from '@tuturuuu/utils/playground-schema';
 import { playgroundTemplates } from '@tuturuuu/utils/playground-templates';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
-import { callRoomService } from './room-service';
+import {
+  callRoomService,
+  type SignedInMeetCallAccess,
+} from './room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 async function elevated(access: Access) {
   return accountPrivateRpc<boolean>('meeting_programming_elevated', {
     p_meeting_id: access.meeting.id,

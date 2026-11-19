@@ -5,6 +5,7 @@ import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getMeetRealtimeTokenSecret } from './call-session';
+import { assertMeetGuestAdmissionAllowed } from './guest-admission';
 import { verifyMeetGuestSession } from './guest-session';
 
 type GuestMeeting = {
@@ -144,7 +145,7 @@ export async function getMeetGuestCallAccess(
   if (!session) return null;
   const state = await resolveMeetGuestJoin(meetingId, sources);
   if (state.kind !== 'available') return null;
-  return {
+  const access: MeetGuestCallAccess = {
     guest: true,
     user: { id: session.guestId },
     meeting: state.meeting,
@@ -157,4 +158,6 @@ export async function getMeetGuestCallAccess(
     canReadWorkspace: false,
     workspaceSlug: null,
   };
+  await assertMeetGuestAdmissionAllowed(access);
+  return access;
 }

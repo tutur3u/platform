@@ -47,6 +47,8 @@ export interface MeetRoomSnapshot extends TranscriptionRoomState {
   presence: Record<string, MeetRealtimePresence>;
   presenceSeq?: number;
   deniedAutoAdmission?: string[];
+  /** Stable guest account id -> removal ban expires at (epoch ms). */
+  removedGuests?: Record<string, number>;
   recordings?: RoomRecording[];
   chat?: Extract<MeetRealtimeServerMessage, { type: 'chat.message' }>[];
   recording: {

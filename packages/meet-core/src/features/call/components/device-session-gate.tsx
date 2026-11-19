@@ -100,7 +100,9 @@ export function CallShell(
             {t('startup_sign_in_action')}
           </Link>
         </Button>
-      ) : errorKey && errorKey !== 'startup_missing' ? (
+      ) : errorKey &&
+        errorKey !== 'startup_missing' &&
+        errorKey !== 'startup_guest_removed' ? (
         <Button
           className="w-full"
           disabled={session.isFetching}

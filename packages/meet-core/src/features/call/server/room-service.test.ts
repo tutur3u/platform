@@ -11,6 +11,12 @@ vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({ from: mocks.from }),
 }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined }),
+}));
+vi.mock('../lib/guest-access', () => ({
+  getMeetGuestCallAccess: vi.fn(),
+}));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class extends Error {},
 }));

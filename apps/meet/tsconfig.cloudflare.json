@@ -95,6 +95,7 @@
     "../../packages/realtime/src/meet/room-quiz-arena-scoring.ts",
     "../../packages/realtime/src/meet/room-quiz-arena-view.ts",
     "../../packages/realtime/src/meet/room-quiz-arena.ts",
+    "../../packages/realtime/src/meet/room-removed-guests.ts",
     "../../packages/realtime/src/meet/room-recording.ts",
     "../../packages/realtime/src/meet/room-service.ts",
     "../../packages/realtime/src/meet/room-settings-gate.ts",

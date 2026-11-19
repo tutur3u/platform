@@ -1,7 +1,7 @@
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import {
   callRoomService,
-  roomRoute,
+  guestPollRoomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { connection } from 'next/server';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ async function readPollAction(request: Request) {
 export async function GET(request: Request, { params }: Params) {
   await connection();
   const { meetingId } = await params;
-  return roomRoute(request, meetingId, async (access) => {
+  return guestPollRoomRoute(request, meetingId, async (access) => {
     const query = new URL(request.url).searchParams;
     if (query.size === 0)
       return callRoomService(access, { action: 'poll.list' });
@@ -71,7 +71,7 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { meetingId } = await params;
-  return roomRoute(request, meetingId, async (access) =>
+  return guestPollRoomRoute(request, meetingId, async (access) =>
     runPollAction(access, await readPollAction(request))
   );
 }

@@ -313,14 +313,21 @@ next token.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
-- Guests get the call only. Notes, recordings, polls, documents and other
-  account-backed features stay unavailable to them.
+- Guests can vote in live polls while they are admitted to the call. The server
+  binds votes to the signed guest id in the HttpOnly cookie; guests cannot
+  create or manage polls.
+- Documents, Quiz Arena, notes, recordings and other account-backed features
+  show **Sign in to use this** for guests instead of failing loudly.
+- When a host removes an anonymous guest, that guest id cannot rejoin the same
+  meeting for ten minutes. Token refresh, guest join and reconnect all enforce
+  the ban with a clear English and Vietnamese message.
 - The Meet Worker needs `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and
   `TURNSTILE_SECRET_KEY`, with the Meet hostname allowed for that site key. Without
   both, guest join stays closed. Development uses Cloudflare's test key.
 
 Regression coverage: `guest-session.test.ts`, `guest-access.test.ts`,
-`guest-rate-limit.test.ts`, the guest `route.test.ts`, `room-guest.test.ts`, and
+`guest-rate-limit.test.ts`, `guest-admission.ts`, the guest `route.test.ts`,
+`room-guest.test.ts`, `room-removed-guests.test.ts`, `room-polls` guest voting,
 the guest cases in the Meet `page-model.server.test.ts` and room `page.test.ts`.
 
 ### Who can read transcripts and notes

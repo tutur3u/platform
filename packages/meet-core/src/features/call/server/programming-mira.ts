@@ -20,9 +20,12 @@ import {
   readMeetingProgrammingTest,
   selectedProgrammingMira,
 } from './programming';
-import { callRoomService } from './room-service';
+import {
+  callRoomService,
+  type SignedInMeetCallAccess,
+} from './room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 const excerptSchema = programmingRangeSchema.and(
   z.object({
     original: z.string().max(8000),

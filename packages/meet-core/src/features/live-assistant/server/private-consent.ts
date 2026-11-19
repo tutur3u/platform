@@ -2,9 +2,12 @@ import 'server-only';
 import { MIRA_PRIVATE_NOTICE_VERSION } from '@tuturuuu/realtime/meet';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../../call/lib/call-access';
-import { callRoomService } from '../../call/server/room-service';
+import {
+  callRoomService,
+  type SignedInMeetCallAccess,
+} from '../../call/server/room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 const snapshot = z.object({
   version: z.literal(MIRA_PRIVATE_NOTICE_VERSION),
   admitted: z.literal(true),

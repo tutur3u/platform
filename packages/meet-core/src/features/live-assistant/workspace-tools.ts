@@ -7,9 +7,9 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../call/lib/call-access';
-import type { callRoomService } from '../call/server/room-service';
+import type { SignedInMeetCallAccess } from '../call/server/room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 export async function liveWorkspaceTools(
   access: Access,
   workspaceId: string,

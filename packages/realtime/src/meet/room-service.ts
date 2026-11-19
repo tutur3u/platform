@@ -44,6 +44,7 @@ import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
+import { isGuestRemovalBlocked } from './room-removed-guests';
 
 const attachment = z.object({
   id: z.uuid(),
@@ -124,6 +125,10 @@ const roomCommand = z.union([
     }),
   ]),
 ]);
+const guestRemovalStatus = z.object({
+  action: z.literal('guest.removal.status'),
+  guestId: z.uuid().optional(),
+});
 const command = z.union([
   pollRoomCommandSchema.transform((message) => ({
     service: 'polls' as const,
@@ -151,6 +156,16 @@ export function roomService(
     status,
   });
   if (!token.scopes.includes('meet:server')) return fail('Forbidden');
+  const removal = guestRemovalStatus.safeParse(input);
+  if (removal.success) {
+    const guestId = removal.data.guestId ?? (token.accountId ?? token.userId);
+    const accountId = token.accountId ?? token.userId;
+    if (guestId !== accountId && token.role !== 'host') return fail('Forbidden');
+    return {
+      state: snapshot,
+      body: isGuestRemovalBlocked(snapshot, guestId, Date.now()),
+    };
+  }
   const privateMira = applyPrivateMira(snapshot, token, input);
   if (privateMira) return privateMira;
   const restored = applyRoomRestore(snapshot, token, input);

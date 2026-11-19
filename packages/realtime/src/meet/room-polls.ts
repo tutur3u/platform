@@ -340,6 +340,12 @@ export function applyRoomPolls(
     status,
   });
   if (
+    token.guest &&
+    command.action !== 'poll.list' &&
+    command.action !== 'poll.vote'
+  )
+    return fail('Sign in required', 403);
+  if (
     !canManage &&
     ((!present && !snapshot.approved?.[accountId]) ||
       (command.action !== 'poll.list' && command.action !== 'poll.vote'))

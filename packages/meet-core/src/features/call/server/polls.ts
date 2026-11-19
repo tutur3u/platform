@@ -13,15 +13,22 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
 import { readMiraDemoAuthority } from '../../live-assistant/server/demo-authority';
 import { requirePrivateMiraChoice } from '../../live-assistant/server/private-consent';
-import {
-  type getMeetCallAccess,
-  MeetCallAccessError,
-} from '../lib/call-access';
+import { MeetCallAccessError } from '../lib/call-access';
+import type {
+  MeetCallRouteAccess,
+  SignedInMeetCallAccess,
+} from './room-service';
 import { billMeetChat } from './chat-billing';
 import { getMeetChatModel } from './chat-model';
 import { callRoomService, personalWorkspace } from './room-service';
 
-type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
+type Access = MeetCallRouteAccess;
+
+function signedInAccess(access: Access): SignedInMeetCallAccess {
+  if ('guest' in access && access.guest)
+    throw new MeetCallAccessError(403, 'Sign in to use this');
+  return access;
+}
 const locale = z.enum(['en', 'vi']).default('en');
 export const pollActionSchema = z.union([
   pollMutationSchema,
@@ -44,7 +51,7 @@ const summarySchema = z.strictObject({
 });
 
 async function generatePollJson<T>(
-  access: Access,
+  access: SignedInMeetCallAccess,
   prompt: string,
   schema: z.ZodType<T>
 ): Promise<T | null> {
@@ -57,7 +64,7 @@ async function generatePollJson<T>(
       })
       .safeParse(cloudflare.env);
     if (!env.success) return null;
-    const consent = await requirePrivateMiraChoice(access);
+    const consent = await requirePrivateMiraChoice(signedInAccess(access));
     const userId = access.user.id;
     const authority = await readMiraDemoAuthority({
       accountId: userId,
@@ -69,7 +76,7 @@ async function generatePollJson<T>(
     });
     if (!authority.allowed) return null;
     const checkConsent = async () => {
-      const current = await requirePrivateMiraChoice(access);
+      const current = await requirePrivateMiraChoice(signedInAccess(access));
       if (current.revision !== consent.revision)
         throw new MeetCallAccessError(403, 'Private Mira choice changed');
     };
@@ -148,10 +155,12 @@ export async function runPollAction(
   access: Access,
   action: z.output<typeof pollActionSchema>
 ) {
+  if ('guest' in access && access.guest && action.action !== 'vote')
+    throw new MeetCallAccessError(403, 'Sign in to use this');
   if (action.action === 'mira_draft') {
     await callRoomService(access, { action: 'poll.authorize' });
     const definition = await generatePollJson(
-      access,
+      signedInAccess(access),
       [
         `Draft one poll in ${action.locale === 'vi' ? 'Vietnamese' : 'English'}.`,
         'Return only a JSON object with question (1–240 characters) and type.',
@@ -182,7 +191,7 @@ export async function runPollAction(
     const summary =
       results.responseCount > 0
         ? await generatePollJson(
-            access,
+            signedInAccess(access),
             [
               `Summarize these poll results in ${action.locale === 'vi' ? 'Vietnamese' : 'English'}.`,
               'Return only JSON with a summary string of at most 1,000 characters.',

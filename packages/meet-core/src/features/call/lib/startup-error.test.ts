@@ -2,6 +2,12 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 import { expect, it } from 'vitest';
 import { retryStartup, startupErrorKey } from './startup-error';
 
+it('maps guest removal denials to a dedicated startup message', () => {
+  expect(
+    startupErrorKey(new InternalApiError('', 403, 'MEET_GUEST_REMOVED'))
+  ).toBe('startup_guest_removed');
+});
+
 it('separates sign-in, blocked requests and missing meetings from outages', () => {
   expect(startupErrorKey(new InternalApiError('', 401))).toBe(
     'startup_sign_in'

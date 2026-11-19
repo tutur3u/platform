@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { meetRealtimeTokenPayloadSchema } from './primitives';
 import { createMeetPresence } from './room';
+import { admitOrHold } from './room-admission';
 import { parseMeetRoomSettingsPatch } from './room-options';
+import { recordRemovedGuest } from './room-removed-guests';
+import { createMeetRoomSnapshot } from './room';
 
 const base = {
   exp: 2_000_000_000,
@@ -45,6 +48,28 @@ describe('anonymous meet guests', () => {
       meetRealtimeTokenPayloadSchema.safeParse({ ...base, guest: false })
         .success
     ).toBe(false);
+  });
+
+  it('rejects a removed guest id until the ban expires', () => {
+    const guestId = '33333333-3333-4333-8333-333333333333';
+    const token = meetRealtimeTokenPayloadSchema.parse({
+      ...base,
+      guest: true,
+      admission: 'lobby',
+      userId: guestId,
+      accountId: guestId,
+    });
+    const now = '2026-11-19T12:00:00.000Z';
+    const state = recordRemovedGuest(
+      createMeetRoomSnapshot(),
+      guestId,
+      Date.parse(now),
+      true
+    );
+    expect(admitOrHold(state, token, now).reply[0]).toMatchObject({
+      type: 'error',
+      error: 'guest_removed',
+    });
   });
 
   it('accepts the host guest-join setting and keeps it off by default', () => {

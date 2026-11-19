@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { meetRealtimeTokenPayloadSchema } from './primitives';
+import { createMeetRoomSnapshot } from './room';
 import {
+  applyRoomPolls,
   exportPollCsv,
   exportPollJson,
   pollDefinitionSchema,
@@ -126,5 +129,87 @@ describe('room poll privacy and exports', () => {
     expect(
       pollDefinitionSchema.safeParse({ question: 'Question', ...input }).success
     ).toBe(false);
+  });
+});
+
+describe('anonymous guest poll voting', () => {
+  const guestId = '33333333-3333-4333-8333-333333333333';
+  const token = meetRealtimeTokenPayloadSchema.parse({
+    guest: true,
+    admission: 'lobby',
+    exp: 2_000_000_000,
+    limits: {
+      maxRoomDurationSeconds: 7200,
+      video: {
+        defaultCameraEnabled: false,
+        maxFrameRate: 24,
+        maxHeight: 720,
+        maxWidth: 1280,
+      },
+    },
+    meetingId: '7f2a528e-3bff-40ee-bfda-5b944ad03ed8',
+    role: 'speaker',
+    roomId: 'room',
+    userId: guestId,
+    accountId: guestId,
+    wsId: '22222222-2222-4222-8222-222222222222',
+  });
+  const poll: RoomPoll = {
+    id: '55555555-5555-4555-8555-555555555555',
+    status: 'active',
+    question: 'Pick one',
+    anonymous: false,
+    resultsVisible: true,
+    type: 'single_choice',
+    options: [
+      { id: '66666666-6666-4666-8666-666666666666', label: 'A' },
+      { id: '77777777-7777-4777-8777-777777777777', label: 'B' },
+    ],
+    responses: [],
+  };
+  const snapshot = {
+    ...createMeetRoomSnapshot(),
+    polls: [poll],
+    approved: {
+      [guestId]: { userId: guestId, displayName: 'Guest' },
+    },
+    presence: {
+      [guestId]: {
+        guest: true as const,
+        accountId: guestId,
+        userId: guestId,
+        displayName: 'Guest',
+        joinedAt: '2026-11-19T00:00:00.000Z',
+        lastSeenAt: '2026-11-19T00:00:00.000Z',
+        media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+        role: 'speaker' as const,
+      },
+    },
+  };
+
+  it('lets a guest list and vote but not create polls', () => {
+    expect(
+      applyRoomPolls(snapshot, token, {
+        action: 'poll.list',
+      }).body
+    ).toEqual(expect.objectContaining({ polls: expect.any(Array) }));
+    expect(
+      applyRoomPolls(snapshot, token, {
+        action: 'poll.create',
+        definition: { type: 'open_text', question: 'Why?' },
+        anonymous: true,
+      })
+    ).toMatchObject({ status: 403 });
+    const voted = applyRoomPolls(snapshot, token, {
+      action: 'poll.vote',
+      pollId: poll.id,
+      response: {
+        type: 'single_choice',
+        optionId: poll.options[0]!.id,
+      },
+    });
+    expect(voted.state.polls?.[0]?.responses).toEqual([
+      expect.objectContaining({ userId: guestId }),
+    ]);
   });
 });

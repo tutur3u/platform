@@ -10,9 +10,12 @@ import { MeetCallAccessError } from '../lib/call-access';
 import { hideMiraInDocument, showMiraInDocument } from './document-mira';
 import { readMeetingDocuments } from './documents';
 import { requestPersonalMeetChat } from './personal-chat-request';
-import { callRoomService } from './room-service';
+import {
+  callRoomService,
+  type SignedInMeetCallAccess,
+} from './room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 export const meetingDocumentAssistSchema = z
   .object({
     action: z.literal('assist'),

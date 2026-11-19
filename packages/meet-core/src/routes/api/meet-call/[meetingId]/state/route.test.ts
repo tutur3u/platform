@@ -8,6 +8,12 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined }),
+}));
+vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
+  getMeetGuestCallAccess: vi.fn(),
+}));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: class extends Error {
     status = 503;

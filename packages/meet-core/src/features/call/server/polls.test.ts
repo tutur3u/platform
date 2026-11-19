@@ -31,7 +31,16 @@ vi.mock('../../live-assistant/server/demo-authority', () => ({
 vi.mock('../../live-assistant/server/private-consent', () => ({
   requirePrivateMiraChoice: mocks.consent,
 }));
-vi.mock('../lib/call-access', () => ({ MeetCallAccessError: Error }));
+vi.mock('../lib/call-access', () => ({
+  MeetCallAccessError: class extends Error {
+    constructor(
+      public status: number,
+      message: string
+    ) {
+      super(message);
+    }
+  },
+}));
 vi.mock('./chat-billing', () => ({
   billMeetChat: (_input: unknown, generate: () => Promise<unknown>) =>
     generate(),
@@ -111,6 +120,27 @@ it('drafts through the caller’s credits and validates the model’s JSON befor
     definition,
     anonymous: true,
   });
+});
+
+it('rejects guest poll mutations except voting', async () => {
+  const guest = { ...access, guest: true } as Parameters<
+    typeof runPollAction
+  >[0];
+  mocks.room.mockResolvedValue({ ok: true });
+  await expect(
+    runPollAction(
+      guest,
+      pollActionSchema.parse({
+        action: 'vote',
+        pollId: id,
+        response: { type: 'open_text', text: 'hello' },
+      })
+    )
+  ).resolves.toEqual({ ok: true });
+  await expect(runPollAction(guest, draftAction)).rejects.toMatchObject({
+    message: 'Sign in to use this',
+  });
+  expect(mocks.room).toHaveBeenCalledTimes(1);
 });
 
 it('requires the durable manager check before calling credit or generation services', async () => {

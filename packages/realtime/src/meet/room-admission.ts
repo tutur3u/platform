@@ -29,6 +29,7 @@ import {
 } from './room-controls';
 import { lobbyDisplayName } from './room-display-name';
 import { denied, outcome } from './room-outcome';
+import { isGuestRemovalBlocked } from './room-removed-guests';
 import { recordingMessage } from './room-recording';
 import { transcriptionAnnouncements } from './transcription';
 
@@ -46,6 +47,18 @@ export function admitOrHold(
       reply: [{ type: 'room.ended' }],
       disconnect: [token.userId],
     });
+  if (token.guest) {
+    const removed = isGuestRemovalBlocked(
+      state,
+      token.accountId ?? token.userId,
+      Date.parse(now)
+    );
+    if (removed.blocked)
+      return outcome(state, {
+        reply: [{ type: 'error', error: 'guest_removed' }],
+        disconnect: [token.userId],
+      });
+  }
   if (
     token.role !== 'host' &&
     state.settings?.admissionClosed &&

@@ -27,6 +27,7 @@ import { retireIdlePublication } from './room-idle';
 import { denied, outcome } from './room-outcome';
 import { applyRecording } from './room-recording';
 import { applySfuCommand } from './room-sfu';
+import { recordRemovedGuest } from './room-removed-guests';
 import { applyUsageReport, createRoomUsage } from './room-usage';
 import { blockAutoAdmission, decideRoomAdmission } from './room-admission';
 
@@ -265,16 +266,26 @@ export function applyMeetRoomCommand(
         state.presence[message.userId]?.accountId ??
         state.waiting[message.userId]?.accountId;
       if (accountId) delete approved[accountId];
+      const removedPerson =
+        state.presence[message.userId] ?? state.waiting[message.userId];
       const released = releaseParticipant(
         blockAutoAdmission({ ...state, approved }, accountId ?? message.userId),
         message.userId,
         roomId
       );
+      const removedAt = Date.parse(now);
+      const nextState = recordRemovedGuest(
+        released.state,
+        accountId ?? message.userId,
+        removedAt,
+        !!removedPerson?.guest
+      );
       return {
         ...released,
+        state: nextState,
         toManagers: [
           ...released.toManagers,
-          approvedParticipantsMessage(released.state),
+          approvedParticipantsMessage(nextState),
         ],
         broadcast: [
           ...released.broadcast,

@@ -14,6 +14,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/meet-hosting', () => ({
   canVerifiedAccountHostMeeting: vi.fn(),
 }));
+vi.mock('./guest-admission', () => ({
+  assertMeetGuestAdmissionAllowed: vi.fn(),
+}));
 
 import {
   getMeetGuestCallAccess,

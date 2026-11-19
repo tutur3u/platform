@@ -25,7 +25,12 @@ export type GuestJoinState =
   | { kind: 'submitting'; token: string }
   | {
       kind: 'failed';
-      reason: 'turnstile' | 'rate_limited' | 'unavailable' | 'network';
+      reason:
+        | 'turnstile'
+        | 'rate_limited'
+        | 'removed'
+        | 'unavailable'
+        | 'network';
     };
 
 export function guestJoinFailure(
@@ -34,6 +39,7 @@ export function guestJoinFailure(
   if (!(error instanceof InternalApiError)) return 'network';
   if (error.code === 'MEET_GUEST_RATE_LIMITED') return 'rate_limited';
   if (error.code === 'MEET_GUEST_TURNSTILE_FAILED') return 'turnstile';
+  if (error.code === 'MEET_GUEST_REMOVED') return 'removed';
   if (error.status === 403 || error.status === 404) return 'unavailable';
   return 'network';
 }

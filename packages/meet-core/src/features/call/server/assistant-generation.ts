@@ -19,9 +19,13 @@ import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { billMeetChat } from './chat-billing';
 import { getMeetChatModel } from './chat-model';
-import { callRoomService, personalWorkspace } from './room-service';
+import {
+  callRoomService,
+  personalWorkspace,
+  type SignedInMeetCallAccess,
+} from './room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 export type PrivateAssistantReview = {
   text: string;
   continuation: string;

@@ -11,8 +11,6 @@ import {
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
-import { MeetingAiPanel } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-panel';
-import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
 import { useMeetingAi } from '@tuturuuu/meet-core/features/meeting-ai/use-meeting-ai';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { Button } from '@tuturuuu/ui/button';
@@ -48,20 +46,21 @@ import { type CallLayout, CallStage } from './call-stage';
 import { CallTopBarConnection, CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
 import { type CallPanel, ControlBar, ControlButton } from './control-bar';
-import { DocumentPanel } from './document-panel';
+import {
+  AccountGatedNotesDrawer,
+  AccountGatedPersonalDrawer,
+  accountGatedCollaboration,
+} from './call-account-gates';
 import { FloatingSelfCamera } from './floating-self-camera';
 import { JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
-import { PersonalToolsPanel } from './personal-tools-panel';
 import {
   PlaybackVolumeControl,
   PlaybackVolumeProvider,
 } from './playback-volume';
-import { ProgrammingPanel } from './programming-panel';
 import { ReactionOverlay } from './reaction-overlay';
-import { ResizableCallPanel } from './resizable-call-panel';
 import { RoomCountdown } from './room-countdown';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
@@ -75,6 +74,7 @@ function CallShellContent({
   defaultDisplayName,
   defaultAvatarUrl,
   canReadWorkspace = true,
+  requiresAccount = false,
   leaveHref,
   meetingId,
   meetingName,
@@ -87,6 +87,8 @@ function CallShellContent({
   defaultDisplayName: string;
   defaultAvatarUrl?: string;
   canReadWorkspace?: boolean;
+  /** Anonymous guests without a Tuturuuu session. */
+  requiresAccount?: boolean;
   leaveHref: string;
   meetingId: string;
   meetingName: string;
@@ -284,6 +286,7 @@ function CallShellContent({
 
   const lifecycle = selectCallLifecycle(state, joined);
   const activities = useCallActivities({
+    requiresAccount,
     meetingId,
     accountId,
     enabled: MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
@@ -474,20 +477,20 @@ function CallShellContent({
           )}
           <CollaborationStageLayout
             layout={layout}
-            content={
-              showProgramming ? (
-                <ProgrammingPanel
-                  meetingId={meetingId}
-                  wsId={wsId}
-                  accountId={accountId}
-                  preparing={programming.isPending}
-                  canManage={canManage}
-                  selection={state.settings.programming ?? null}
-                />
-              ) : showDocument ? (
-                <DocumentPanel meetingId={meetingId} accountId={accountId} />
-              ) : null
-            }
+            content={accountGatedCollaboration(
+              requiresAccount,
+              showProgramming,
+              showDocument,
+              {
+                meetingId,
+                wsId,
+                accountId,
+                preparing: programming.isPending,
+                canManage,
+                selection: state.settings.programming ?? null,
+              },
+              { meetingId, accountId }
+            )}
             stage={
               !stageHasFeeds && selfFloating ? null : (
                 <CallStage
@@ -514,28 +517,24 @@ function CallShellContent({
           <ReactionOverlay state={state} />
         </main>
         {activities.panel}
-        {drawer === 'personal' && MEETING_APP === 'meet' && (
-          <PersonalToolsPanel
-            accountId={accountId}
-            onClose={() => setDrawer(null)}
-          />
-        )}
-        {drawer === 'notes' && canReadNotes && (
-          <ResizableCallPanel label={aiT('title')}>
-            <div className="min-h-0 overflow-y-auto p-3">
-              <MeetingAiPanel ai={ai} inCall />
-              {canManage && (
-                <div className="mt-3">
-                  <NotesSharingControl
-                    wsId={wsId}
-                    meetingId={meetingId}
-                    initialEnabled={state.settings.shareNotesAfterMeeting}
-                  />
-                </div>
-              )}
-            </div>
-          </ResizableCallPanel>
-        )}
+        <AccountGatedPersonalDrawer
+          open={drawer === 'personal'}
+          requiresAccount={requiresAccount}
+          accountId={accountId}
+          label={privateT('title')}
+          onClose={() => setDrawer(null)}
+        />
+        <AccountGatedNotesDrawer
+          open={drawer === 'notes'}
+          requiresAccount={requiresAccount}
+          label={aiT('title')}
+          canReadNotes={canReadNotes}
+          canManage={canManage}
+          shareNotesAfterMeeting={state.settings.shareNotesAfterMeeting}
+          wsId={wsId}
+          meetingId={meetingId}
+          ai={ai}
+        />
         {panel && (
           <SidePanel
             wsId={wsId}

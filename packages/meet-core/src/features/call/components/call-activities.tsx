@@ -1,9 +1,12 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useCallPolls } from '../lib/polls-client';
 import { useCallQuizArena } from '../lib/quiz-arena-client';
+import { AccountRequiredState } from './account-required-state';
 import { PollsControl, PollsPanel } from './polls-panel';
 import { QuizArenaControl, QuizArenaPanel } from './quiz-arena-panel';
+import { ResizableCallPanel } from './resizable-call-panel';
 
 export type ActivityDrawer = 'polls' | 'quiz-arena';
 
@@ -14,13 +17,17 @@ export function useCallActivities<D extends string | null>({
   enabled,
   drawer,
   onDrawer,
+  requiresAccount = false,
 }: {
   meetingId: string;
   accountId: string;
   enabled: boolean;
   drawer: D;
   onDrawer: (next: ActivityDrawer | null) => void;
+  /** Anonymous guests may vote in polls only; Quiz Arena needs an account. */
+  requiresAccount?: boolean;
 }) {
+  const t = useTranslations('meet.call.quizArena');
   const polls = useCallPolls(meetingId, accountId, enabled, drawer === 'polls');
   const arena = useCallQuizArena(
     meetingId,
@@ -55,12 +62,18 @@ export function useCallActivities<D extends string | null>({
           onClose={close}
         />
       ) : drawer === 'quiz-arena' ? (
-        <QuizArenaPanel
-          accountId={accountId}
-          meetingId={meetingId}
-          query={arena}
-          onClose={close}
-        />
+        requiresAccount ? (
+          <ResizableCallPanel label={t('title')}>
+            <AccountRequiredState />
+          </ResizableCallPanel>
+        ) : (
+          <QuizArenaPanel
+            accountId={accountId}
+            meetingId={meetingId}
+            query={arena}
+            onClose={close}
+          />
+        )
       ) : null,
   };
 }

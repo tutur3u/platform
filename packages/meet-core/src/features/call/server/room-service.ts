@@ -2,20 +2,58 @@ import 'server-only';
 import { WorkspaceStorageError } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { AccountServiceError } from '@tuturuuu/utils/account-benefits-server';
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { getMeetCallAccess, MeetCallAccessError } from '../lib/call-access';
 import { getMeetCallSession } from '../lib/call-session';
+import {
+  getMeetGuestCallAccess,
+  type MeetGuestCallAccess,
+} from '../lib/guest-access';
+import { MEET_GUEST_COOKIE } from '../lib/guest-session';
+
+export type SignedInMeetCallAccess = Awaited<
+  ReturnType<typeof getMeetCallAccess>
+>;
+export type MeetCallRouteAccess =
+  | (SignedInMeetCallAccess & { guest?: false })
+  | MeetGuestCallAccess;
+
+export async function resolveMeetCallRouteAccess(
+  meetingId: string,
+  guestCookie?: string | null,
+  allowGuest = false
+): Promise<MeetCallRouteAccess> {
+  try {
+    const access = await getMeetCallAccess(meetingId, 'Participant');
+    return { ...access, guest: false as const };
+  } catch (error) {
+    if (
+      allowGuest &&
+      error instanceof MeetCallAccessError &&
+      error.status === 401
+    ) {
+      const guest = await getMeetGuestCallAccess(meetingId, guestCookie);
+      if (guest) return guest;
+    }
+    throw error;
+  }
+}
 
 export async function callRoomService<T>(
-  access: Awaited<ReturnType<typeof getMeetCallAccess>>,
+  access: MeetCallRouteAccess,
   command: unknown
 ): Promise<T> {
+  const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
+    guest: anonymousGuest,
     meetingId: access.meeting.id,
     wsId: access.meeting.ws_id,
     userId: access.user.id,
     isHost: access.isHost,
     displayName: access.displayName,
+    admission: access.admission,
+    avatarUrl: 'avatarUrl' in access ? access.avatarUrl : undefined,
     service: true,
     workspaceMember: access.canReadWorkspace,
   });
@@ -52,12 +90,11 @@ export async function personalWorkspace(userId: string) {
     throw new MeetCallAccessError(503, 'Personal workspace is unavailable');
   return data.id;
 }
-export async function roomRoute(
+async function meetCallRoomRoute(
   request: Request,
   meetingId: string,
-  run: (
-    access: Awaited<ReturnType<typeof getMeetCallAccess>>
-  ) => Promise<unknown>
+  allowGuest: boolean,
+  run: (access: MeetCallRouteAccess) => Promise<unknown>
 ) {
   try {
     if (
@@ -65,7 +102,12 @@ export async function roomRoute(
       request.headers.get('origin') !== new URL(request.url).origin
     )
       throw new MeetCallAccessError(403, 'Invalid origin');
-    const access = await getMeetCallAccess(meetingId, 'Participant');
+    const cookieStore = await cookies();
+    const access = await resolveMeetCallRouteAccess(
+      meetingId,
+      cookieStore.get(MEET_GUEST_COOKIE)?.value,
+      allowGuest
+    );
     const result = await run(access);
     if (result instanceof Response) {
       result.headers.set('Cache-Control', 'private, no-store');
@@ -98,4 +140,25 @@ export async function roomRoute(
       { status, headers: { 'Cache-Control': 'private, no-store' } }
     );
   }
+}
+
+export async function roomRoute(
+  request: Request,
+  meetingId: string,
+  run: (access: SignedInMeetCallAccess) => Promise<unknown>
+) {
+  return meetCallRoomRoute(request, meetingId, false, async (access) => {
+    if ('guest' in access && access.guest)
+      throw new MeetCallAccessError(401, 'Sign in to join');
+    return run(access);
+  });
+}
+
+/** Poll list and vote accept verified anonymous guest cookies. */
+export async function guestPollRoomRoute(
+  request: Request,
+  meetingId: string,
+  run: (access: MeetCallRouteAccess) => Promise<unknown>
+) {
+  return meetCallRoomRoute(request, meetingId, true, run);
 }

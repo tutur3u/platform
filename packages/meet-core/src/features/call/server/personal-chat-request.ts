@@ -2,9 +2,12 @@ import 'server-only';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { MeetCallAccessError } from '../lib/call-access';
 import { answerPersonalMeetChat } from './personal-assistant';
-import { callRoomService } from './room-service';
+import {
+  callRoomService,
+  type SignedInMeetCallAccess,
+} from './room-service';
 
-type Access = Parameters<typeof callRoomService>[0];
+type Access = SignedInMeetCallAccess;
 type Input = Parameters<typeof answerPersonalMeetChat>[1] & {
   requestId: string;
   startedAt: number;

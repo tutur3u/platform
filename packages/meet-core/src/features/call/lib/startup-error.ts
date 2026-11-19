@@ -2,6 +2,7 @@ import { InternalApiError } from '@tuturuuu/internal-api';
 
 export function startupErrorKey(error: unknown) {
   if (error instanceof InternalApiError) {
+    if (error.code === 'MEET_GUEST_REMOVED') return 'startup_guest_removed';
     if (error.status === 401) return 'startup_sign_in';
     if (error.status === 403) return 'startup_blocked';
     if (error.status === 404) return 'startup_missing';
