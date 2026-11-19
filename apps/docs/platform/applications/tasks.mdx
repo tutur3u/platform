@@ -34,6 +34,33 @@ When validating this integration, check both locales, personal and team workspac
 links, board/task detail return paths, and mobile navigation with the sidebar
 closed. Mutations continue through the existing protected product APIs.
 
+## My Tasks and Kanban on mobile
+
+My Tasks groups assigned work into **Overdue**, **Today**, **Upcoming** and
+**No date**. The due day follows the selected timezone, falling back to the
+device timezone. The sections update at midnight and on resume. Upcoming
+shows the dated tasks in the My Tasks service's seven-day window. Completed
+work is available in its own collapsible section.
+
+Filter by board, priority or label. Tap the checkbox or swipe toward the end
+of a row to complete a task, then tap **Undo** to restore it. When the board
+has no Done column, completion applies to your My Tasks view. Swipe toward
+the start to snooze until the end of the day after its due date or today,
+whichever is later. The dock's **Create task** action adds a task to a board
+and list you choose and assigns it to you.
+
+Open a board explicitly from Tasks or the board picker. Opening Tasks or
+My Tasks does not select a default board. Use the top bar to switch between
+List and Kanban. Phone Kanban shows one column with part of the next. Empty
+columns collapse to their headers and still accept drops. Long-press a card
+to move it between columns or reorder it. A card's action menu also provides
+a move command. Tap the card to edit its task details. The board continues
+to enforce its existing access permissions and status rules.
+
+Coverage lives in the mobile tasks widget tests and Linux goldens under
+`apps/mobile/test/features/tasks`, including the existing explicit-navigation
+tests.
+
 ## Recipient identity
 
 Task and board shares match either an explicit recipient user id or the

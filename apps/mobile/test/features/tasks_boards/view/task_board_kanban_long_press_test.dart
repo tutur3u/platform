@@ -83,16 +83,22 @@ void main() {
   }
 
   Future<void> openMenu(WidgetTester tester, String title) async {
-    await tester.longPress(find.text(title).first);
+    await tester.tap(
+      find.byKey(
+        ValueKey(
+          title == 'Alpha task'
+              ? 'kanban-task-menu-task-1'
+              : 'kanban-task-menu-task-2',
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
   }
 
   TaskBoardTask taskIn(TaskBoardDetailCubit cubit, String taskId) =>
       cubit.state.board!.tasks.firstWhere((task) => task.id == taskId);
 
-  testWidgets('a long press on a card opens the shared task menu', (
-    tester,
-  ) async {
+  testWidgets('the card action opens the shared task menu', (tester) async {
     await pumpKanban(tester);
 
     await openMenu(tester, 'Alpha task');

@@ -30,6 +30,20 @@ class TaskBoardTaskAssignee extends Equatable {
     );
   }
 
+  static List<TaskBoardTaskAssignee> parseList(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final row in value.whereType<Map<String, dynamic>>())
+        if (row['user'] is Map ? (row['user'] as Map)['id'] : row['id']
+            case final String id when id.trim().isNotEmpty)
+          TaskBoardTaskAssignee.fromJson(
+            row['user'] is Map<String, dynamic>
+                ? row['user'] as Map<String, dynamic>
+                : row,
+          ),
+    ];
+  }
+
   final String id;
   final String? displayName;
   final String? email;
@@ -66,6 +80,16 @@ class TaskBoardTaskLabel extends Equatable {
       name: (labelJson['name'] as String?)?.trim(),
       color: (labelJson['color'] as String?)?.trim(),
     );
+  }
+
+  static List<TaskBoardTaskLabel> parseList(Object? value) {
+    if (value is! List) return const [];
+    return [
+      for (final row in value.whereType<Map<String, dynamic>>())
+        if (row['label'] is Map ? (row['label'] as Map)['id'] : row['id']
+            case final String id when id.trim().isNotEmpty)
+          TaskBoardTaskLabel.fromJson(row),
+    ];
   }
 
   final String id;
@@ -113,6 +137,8 @@ class TaskBoardTask extends Equatable {
     required this.id,
     required this.listId,
     this.displayNumber,
+    this.sortKey,
+    this.isPersonalExternal = false,
     this.name,
     this.description,
     this.priority,
@@ -162,8 +188,8 @@ class TaskBoardTask extends Equatable {
     final assigneeIds = _parseIdList(json['assignee_ids']);
     final labelIds = _parseIdList(json['label_ids']);
     final projectIds = _parseIdList(json['project_ids']);
-    final assignees = _parseAssignees(json['assignees']);
-    final labels = _parseLabels(json['labels']);
+    final assignees = TaskBoardTaskAssignee.parseList(json['assignees']);
+    final labels = TaskBoardTaskLabel.parseList(json['labels']);
     final projects = _parseProjects(json['projects']);
     final normalizedAssigneeIds = assigneeIds.isNotEmpty
         ? assigneeIds
@@ -183,6 +209,8 @@ class TaskBoardTask extends Equatable {
       id: rawId.trim(),
       listId: rawListId.trim(),
       displayNumber: (json['display_number'] as num?)?.toInt(),
+      sortKey: (json['sort_key'] as num?)?.toInt(),
+      isPersonalExternal: json['is_personal_external'] == true,
       name: (json['name'] as String?)?.trim(),
       description: (json['description'] as String?)?.trim(),
       priority: (json['priority'] as String?)?.trim(),
@@ -234,6 +262,7 @@ class TaskBoardTask extends Equatable {
   TaskBoardTask copyWith({
     String? listId,
     int? displayNumber,
+    int? sortKey,
     String? name,
     Object? description = _taskBoardTaskUnset,
     String? priority,
@@ -258,6 +287,8 @@ class TaskBoardTask extends Equatable {
       id: id,
       listId: listId ?? this.listId,
       displayNumber: displayNumber ?? this.displayNumber,
+      sortKey: sortKey ?? this.sortKey,
+      isPersonalExternal: isPersonalExternal,
       name: name ?? this.name,
       description: identical(description, _taskBoardTaskUnset)
           ? this.description
@@ -328,22 +359,6 @@ class TaskBoardTask extends Equatable {
     return List.unmodifiable(uniqueIds);
   }
 
-  static List<TaskBoardTaskAssignee> _parseAssignees(Object? value) {
-    if (value is! List<dynamic>) return const [];
-    return value
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardTaskAssignee.fromJson)
-        .toList(growable: false);
-  }
-
-  static List<TaskBoardTaskLabel> _parseLabels(Object? value) {
-    if (value is! List<dynamic>) return const [];
-    return value
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardTaskLabel.fromJson)
-        .toList(growable: false);
-  }
-
   static List<TaskBoardTaskProject> _parseProjects(Object? value) {
     if (value is! List<dynamic>) return const [];
     return value
@@ -355,6 +370,8 @@ class TaskBoardTask extends Equatable {
   final String id;
   final String listId;
   final int? displayNumber;
+  final int? sortKey;
+  final bool isPersonalExternal;
   final String? name;
   final String? description;
   final String? priority;
@@ -394,6 +411,8 @@ class TaskBoardTask extends Equatable {
     'id': id,
     'list_id': listId,
     'display_number': displayNumber,
+    'sort_key': sortKey,
+    if (isPersonalExternal) 'is_personal_external': true,
     'name': name,
     'description': description,
     'priority': priority,
@@ -444,6 +463,8 @@ class TaskBoardTask extends Equatable {
     id,
     listId,
     displayNumber,
+    sortKey,
+    isPersonalExternal,
     name,
     description,
     priority,

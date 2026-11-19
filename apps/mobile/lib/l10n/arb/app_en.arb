@@ -4859,6 +4859,18 @@
       }
     }
   },
+  "tasksBoardFilter": "Board",
+  "tasksChooseBoard": "Choose board",
+  "tasksMarkedComplete": "Task completed",
+  "tasksMyTasks": "My Tasks",
+  "tasksNoBoardsToChoose": "No active boards",
+  "tasksNoDateSection": "No date",
+  "tasksNoFilterMatches": "No tasks match these filters",
+  "tasksNoListsToChoose": "No lists for new tasks",
+  "tasksSnooze": "Snooze",
+  "tasksSubtasks": "Subtasks",
+  "tasksTodaySection": "Today",
+  "tasksUndo": "Undo",
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",

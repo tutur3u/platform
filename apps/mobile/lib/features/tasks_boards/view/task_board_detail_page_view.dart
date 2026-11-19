@@ -3,11 +3,13 @@ part of 'task_board_detail_page.dart';
 class _TaskBoardDetailPageView extends StatefulWidget {
   const _TaskBoardDetailPageView({
     required this.boardId,
+    required this.clock,
     this.initialTaskId,
     this.initialView,
   });
 
   final String boardId;
+  final DateTime Function() clock;
   final String? initialTaskId;
   final TaskBoardDetailView? initialView;
 
@@ -88,6 +90,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     );
     _kanbanHorizontalPageController = PageController(
       initialPage: _savedKanbanPages[widget.boardId] ?? 0,
+      viewportFraction: _kanbanPhoneColumnFraction,
     );
     _currentKanbanPageIndex = _savedKanbanPages[widget.boardId] ?? 0;
     _timelineVerticalScrollController = ScrollController(
@@ -167,6 +170,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             previous.searchQuery != current.searchQuery ||
             previous.filters != current.filters ||
             previous.loadingListIds != current.loadingListIds ||
+            previous.listLoadErrorById != current.listLoadErrorById ||
+            previous.listHasMoreById != current.listHasMoreById ||
+            previous.isMutating != current.isMutating ||
             previous.isBulkSelectMode != current.isBulkSelectMode ||
             previous.selectedTaskIds != current.selectedTaskIds ||
             previous.taskDescriptionSearchIndex !=
@@ -176,85 +182,14 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
           final boardRoute = Routes.taskBoardDetailPath(widget.boardId);
           final isPersonalBoard =
               detail != null && _isPersonalWorkspaceForBoard(context, detail);
-          final selectedCount = state.selectedTaskIds.length;
-          final shellActionRegistration = ShellChromeActions(
-            ownerId: 'task-board-detail-${widget.boardId}',
-            locations: {boardRoute},
-            actions: [
-              ShellActionSpec(
-                id: 'task-board-detail-bulk-select',
-                icon: state.isBulkSelectMode
-                    ? Icons.checklist
-                    : Icons.checklist_rtl,
-                tooltip: state.isBulkSelectMode
-                    ? context.l10n.taskBoardDetailExitBulkSelect
-                    : context.l10n.taskBoardDetailEnterBulkSelect,
-                highlighted: state.isBulkSelectMode,
-                enabled: detail != null,
-                onPressed: () {
-                  final cubit = context.read<TaskBoardDetailCubit>();
-                  if (state.isBulkSelectMode) {
-                    cubit.exitBulkSelectMode();
-                  } else {
-                    cubit.enterBulkSelectMode();
-                  }
-                },
-              ),
-              ShellActionSpec.search(
-                id: 'task-board-detail-search',
-                active: _searchVisible,
-                hasQuery: state.searchQuery.trim().isNotEmpty,
-                tooltip: context.l10n.taskBoardDetailSearchTitle,
-                enabled: detail != null,
-                controller: _searchController,
-                searchHint: context.l10n.taskBoardDetailSearchPlaceholder,
-                onSearchChanged: context
-                    .read<TaskBoardDetailCubit>()
-                    .setSearchQuery,
-                onCloseSearch: _closeSearch,
-                onPressed: () {
-                  if (_searchVisible) {
-                    _closeSearch();
-                  } else {
-                    setState(() => _searchVisible = true);
-                  }
-                },
-              ),
-              ShellActionSpec(
-                id: 'task-board-detail-filter',
-                icon: state.filters.hasAdvancedFilters
-                    ? Icons.filter_alt
-                    : Icons.filter_alt_outlined,
-                tooltip: state.filters.hasAdvancedFilters
-                    ? context.l10n.taskBoardDetailFiltersActive
-                    : context.l10n.taskBoardDetailFilters,
-                highlighted: state.filters.hasAdvancedFilters,
-                enabled: detail != null,
-                onPressed: () => unawaited(
-                  _openAdvancedFilterSheet(
-                    context,
-                    context.read<TaskBoardDetailCubit>().state,
-                  ),
-                ),
-              ),
-              ShellActionSpec(
-                id: 'task-board-detail-actions',
-                icon: Icons.more_vert,
-                tooltip: context.l10n.taskBoardDetailBoardActions,
-                enabled: detail != null,
-                onPressed: () => unawaited(_showBoardActionsSheet(context)),
-              ),
-              if (state.isBulkSelectMode)
-                ShellActionSpec(
-                  id: 'task-board-detail-bulk-actions',
-                  icon: Icons.tune,
-                  tooltip: context.l10n.taskBoardDetailBulkActions,
-                  highlighted: selectedCount > 0,
-                  enabled: detail != null,
-                  onPressed: () => unawaited(_openBulkActionsSheet(context)),
-                ),
-            ],
+          final shellActionRegistration = _boardChromeActions(
+            context,
+            state,
+            route: boardRoute,
+            isPersonal: isPersonalBoard,
           );
+          final hasShellActions =
+              context.read<ShellChromeActionsCubit?>() != null;
           final shellMiniNavRegistration = ShellMiniNav(
             ownerId: 'task-board-mini-nav-${widget.boardId}',
             locations: {boardRoute},
@@ -406,9 +341,9 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
 
                   return NovaRefreshIndicator(
                     notificationPredicate: (notification) =>
-                        state.currentView == TaskBoardDetailView.kanban &&
-                            !_usesPagedKanban(constraints.maxWidth)
-                        ? notification.metrics.axis == Axis.vertical
+                        state.currentView == TaskBoardDetailView.kanban
+                        ? notification.metrics.axis == Axis.vertical &&
+                              notification.depth <= 1
                         : notification.depth == 0,
                     onRefresh: () => _refreshBoardContent(
                       context,
@@ -461,12 +396,13 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         },
                       ),
                       TaskBoardDetailView.kanban => _TaskBoardKanbanView(
+                        key: ValueKey(detail.id),
                         boardId: widget.boardId,
                         lists: sortedLists,
                         tasksByList: filteredByList,
                         state: state,
-                        board: detail,
                         viewportHeight: constraints.maxHeight,
+                        now: widget.clock(),
                         kanbanVerticalScrollController:
                             _kanbanVerticalScrollController,
                         kanbanHorizontalPageController:
@@ -485,15 +421,17 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                               forceRefresh: true,
                               pageSizeHint: pageSizeHint,
                             ),
-                        onTaskTap: (task) =>
-                            _handleTaskTap(context, task, sortedLists),
+                        onTaskTap: (task) => _handleTaskTap(
+                          context,
+                          task,
+                          sortedLists,
+                          showDetails: true,
+                        ),
                         onTaskMenu: (task) =>
                             _openTaskContextMenu(context, task, sortedLists),
-                        isBulkSelectMode: state.isBulkSelectMode,
-                        selectedTaskIds: state.selectedTaskIds,
-                        onToggleTaskSelection: (task) => context
-                            .read<TaskBoardDetailCubit>()
-                            .toggleBulkTaskSelection(task.id),
+                        onTaskDrop: (task, listId, beforeTaskId) => unawaited(
+                          _dropKanbanTask(context, task, listId, beforeTaskId),
+                        ),
                         onCreateTask: (listId) => _openTaskCreateSheet(
                           context,
                           lists: sortedLists,
@@ -526,7 +464,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   );
                 },
               ),
-              if (state.isBulkSelectMode)
+              if (!hasShellActions && state.isBulkSelectMode)
                 SpeedDialFab(
                   label: context.l10n.taskBoardDetailBulkActions,
                   icon: Icons.checklist,
@@ -560,7 +498,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     ),
                   ],
                 )
-              else if (sortedLists.isNotEmpty)
+              else if (!hasShellActions && sortedLists.isNotEmpty)
                 _TaskQuickCreateFab(
                   label: context.l10n.taskBoardDetailCreateTask,
                   onPressed: () => unawaited(
@@ -1023,14 +961,20 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   Future<void> _handleTaskTap(
     BuildContext context,
     TaskBoardTask task,
-    List<TaskBoardList> lists,
-  ) async {
+    List<TaskBoardList> lists, {
+    bool showDetails = false,
+  }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     if (cubit.state.isBulkSelectMode) {
       cubit.toggleBulkTaskSelection(task.id);
       return;
     }
-    await _openTaskQuickActionsSheet(context, task, lists);
+    await _openTaskQuickActionsSheet(
+      context,
+      task,
+      lists,
+      showDetails: showDetails,
+    );
   }
 
   Future<void> _openBulkActionsSheet(BuildContext context) async {
@@ -1130,6 +1074,14 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     );
 
     await showAdaptiveDrawer(context: context, builder: (_) => content);
+  }
+
+  void _toggleBoardSearch() {
+    if (_searchVisible) {
+      _closeSearch();
+    } else {
+      setState(() => _searchVisible = true);
+    }
   }
 
   void _closeSearch() {

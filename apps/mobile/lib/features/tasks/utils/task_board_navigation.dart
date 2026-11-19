@@ -45,6 +45,7 @@ Future<bool> openUserTaskBoardDetailWithWorkspace(
   BuildContext context,
   UserTask task, {
   WorkspaceCubit? workspaceCubit,
+  bool Function()? canNavigate,
 }) async {
   final location = userTaskBoardDetailLocation(task);
   if (location == null) {
@@ -68,13 +69,19 @@ Future<bool> openUserTaskBoardDetailWithWorkspace(
             .where((workspace) => workspace.id == targetWorkspaceId)
             .firstOrNull;
       }
-      if (targetWorkspace != null) {
-        await workspaceCubit.selectWorkspace(targetWorkspace);
+      if (!context.mounted ||
+          canNavigate?.call() == false ||
+          targetWorkspace == null) {
+        return false;
+      }
+      await workspaceCubit.selectWorkspace(targetWorkspace);
+      if (workspaceCubit.state.currentWorkspace?.id != targetWorkspaceId) {
+        return false;
       }
     }
   }
 
-  if (!context.mounted) {
+  if (!context.mounted || canNavigate?.call() == false) {
     return false;
   }
   context.go(location);

@@ -10600,6 +10600,42 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get tasksBoardFilter => 'Bảng';
+
+  @override
+  String get tasksChooseBoard => 'Chọn bảng';
+
+  @override
+  String get tasksMarkedComplete => 'Đã hoàn thành công việc';
+
+  @override
+  String get tasksMyTasks => 'Việc của tôi';
+
+  @override
+  String get tasksNoBoardsToChoose => 'Không có bảng đang hoạt động';
+
+  @override
+  String get tasksNoDateSection => 'Chưa có hạn';
+
+  @override
+  String get tasksNoFilterMatches => 'Không có công việc phù hợp với bộ lọc';
+
+  @override
+  String get tasksNoListsToChoose => 'Không có danh sách để thêm công việc';
+
+  @override
+  String get tasksSnooze => 'Dời hạn';
+
+  @override
+  String get tasksSubtasks => 'Công việc con';
+
+  @override
+  String get tasksTodaySection => 'Hôm nay';
+
+  @override
+  String get tasksUndo => 'Hoàn tác';
+
+  @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
 
   @override

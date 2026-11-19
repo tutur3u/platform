@@ -1,302 +1,281 @@
 part of 'task_board_detail_page.dart';
 
-class _KanbanColumn extends StatelessWidget {
+class _KanbanColumn extends StatefulWidget {
   const _KanbanColumn({
-    required this.board,
+    required this.workspaceId,
     required this.list,
     required this.tasks,
-    required this.isTasksLoaded,
-    required this.height,
-    required this.isLoadingTasks,
+    required this.now,
+    required this.bottomClearance,
+    required this.isLoading,
     required this.hasLoadError,
     required this.hasMoreTasks,
-    required this.onTaskTap,
-    required this.onTaskMenu,
-    required this.isBulkSelectMode,
+    required this.filtered,
+    required this.bulkSelect,
     required this.selectedTaskIds,
-    required this.onToggleTaskSelection,
+    required this.canDrag,
+    required this.onLoadMore,
+    required this.onTap,
+    required this.onMenu,
     required this.onCreateTask,
-    this.contentBottomPadding = 8,
-    this.onLoadMoreTasks,
-    this.onEditList,
+    required this.onEditList,
+    super.key,
   });
 
-  final TaskBoardDetail board;
+  final String workspaceId;
   final TaskBoardList list;
   final List<TaskBoardTask> tasks;
-  final bool isTasksLoaded;
-  final double height;
-  final double contentBottomPadding;
-  final bool isLoadingTasks;
+  final DateTime now;
+  final double bottomClearance;
+  final bool isLoading;
   final bool hasLoadError;
   final bool hasMoreTasks;
-  final VoidCallback? onLoadMoreTasks;
-  final void Function(TaskBoardTask task) onTaskTap;
-  final void Function(TaskBoardTask task) onTaskMenu;
-  final bool isBulkSelectMode;
+  final bool filtered;
+  final bool bulkSelect;
   final Set<String> selectedTaskIds;
-  final void Function(TaskBoardTask task) onToggleTaskSelection;
+  final bool canDrag;
+  final VoidCallback onLoadMore;
+  final ValueChanged<TaskBoardTask> onTap;
+  final ValueChanged<TaskBoardTask> onMenu;
   final VoidCallback onCreateTask;
-  final VoidCallback? onEditList;
+  final VoidCallback onEditList;
+
+  @override
+  State<_KanbanColumn> createState() => _KanbanColumnState();
+}
+
+class _KanbanColumnState extends State<_KanbanColumn> {
+  final _scroll = ScrollController();
+  final GlobalKey _viewport = GlobalKey();
+  final _rowKeys = <String, GlobalKey>{};
+  final _edge = _KanbanEdgeScroll();
+  Offset? _pointer;
+  String? _draggedTaskId;
+  String? _beforeTaskId;
+  bool _expandEmpty = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_updateInsertion);
+  }
+
+  @override
+  void didUpdateWidget(covariant _KanbanColumn oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.tasks != widget.tasks) {
+      final ids = widget.tasks.map((task) => task.id).toSet();
+      _rowKeys.removeWhere((id, _) => !ids.contains(id));
+    }
+  }
+
+  @override
+  void dispose() {
+    _edge.stop();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  bool get _acceptsDrop =>
+      !widget.hasLoadError && (!widget.isLoading || widget.tasks.isNotEmpty);
+
+  void _hover(DragTargetDetails<TaskBoardTask> details) {
+    if (_draggedTaskId == null) {
+      setState(() => _draggedTaskId = details.data.id);
+    }
+    _pointer = details.offset;
+    final box = _viewport.currentContext?.findRenderObject();
+    if (box is RenderBox && box.attached && box.hasSize) {
+      final y = box.globalToLocal(details.offset).dy;
+      _edge.update(_scroll, y, box.size.height);
+    }
+    _updateInsertion();
+  }
+
+  String? _insertionPoint(String taskId, Offset pointer) {
+    final viewport = _viewport.currentContext?.findRenderObject();
+    if (viewport is! RenderBox || !viewport.hasSize || !viewport.attached) {
+      return widget.tasks.where((item) => item.id != taskId).firstOrNull?.id;
+    }
+    final top = viewport.localToGlobal(Offset.zero).dy;
+    final bottom = top + viewport.size.height;
+    final pointerY = pointer.dy.clamp(top, bottom);
+    String? nextId;
+    // Keep the first visible midpoint after the pointer. The lazy list has
+    // no layout for cards beyond its cache extent.
+    for (final item in widget.tasks.reversed) {
+      if (item.id == taskId) continue;
+      final box = _rowKeys[item.id]?.currentContext?.findRenderObject();
+      if (box is! RenderBox || !box.hasSize || !box.attached) {
+        nextId = item.id;
+        continue;
+      }
+      final middle = box.localToGlobal(Offset(0, box.size.height / 2)).dy;
+      if (middle < pointerY) break;
+      nextId = item.id;
+    }
+    return nextId;
+  }
+
+  void _updateInsertion() {
+    final pointer = _pointer;
+    final taskId = _draggedTaskId;
+    if (pointer == null || taskId == null) return;
+    final before = _insertionPoint(taskId, pointer);
+    if (before == _beforeTaskId) return;
+    setState(() => _beforeTaskId = before);
+    unawaited(AppHaptics.selection());
+  }
+
+  void _clearHover() {
+    _edge.stop();
+    _pointer = null;
+    if (_draggedTaskId == null) return;
+    setState(() {
+      _draggedTaskId = null;
+      _beforeTaskId = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final title = list.name?.trim().isNotEmpty == true
-        ? list.name!.trim()
-        : context.l10n.taskBoardDetailUntitledList;
-    final style = _taskBoardListVisualStyle(context, list);
-    final theme = shad.Theme.of(context);
-
-    return SizedBox(
-      width: double.infinity,
-      height: height,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: shad.Card(
-          padding: EdgeInsets.zero,
-          child: ColoredBox(
-            color: style.accent.withValues(alpha: 0.05),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: style.surfaceBorder),
-                          ),
-                        ),
-                        padding: const EdgeInsets.fromLTRB(10, 8, 6, 8),
-                        child: Row(
-                          children: [
-                            Icon(
-                              style.statusIcon,
-                              size: 14,
-                              color: style.statusBadge.textColor,
-                            ),
-                            const shad.Gap(6),
-                            Expanded(
-                              child: Text(
-                                title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.typography.small.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const shad.Gap(4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 7,
-                                vertical: 3,
-                              ),
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.background.withValues(
-                                  alpha: 0.72,
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: style.accent.withValues(alpha: 0.2),
-                                ),
-                              ),
-                              child: Text(
-                                context.l10n.taskBoardsTasksCount(tasks.length),
-                                style: theme.typography.small.copyWith(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            shad.IconButton.ghost(
-                              icon: Icon(Icons.add, color: style.accent),
-                              onPressed: onCreateTask,
-                            ),
-                            if (onEditList != null)
-                              PopupMenuButton<_BoardListMenuAction>(
-                                tooltip:
-                                    context.l10n.taskBoardDetailListActions,
-                                onSelected: (action) {
-                                  if (action == _BoardListMenuAction.edit) {
-                                    onEditList?.call();
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  PopupMenuItem<_BoardListMenuAction>(
-                                    value: _BoardListMenuAction.edit,
-                                    child: Text(
-                                      context.l10n.taskBoardDetailEditList,
-                                    ),
-                                  ),
-                                ],
-                                child: const Padding(
-                                  padding: EdgeInsets.only(left: 6),
-                                  child: Icon(Icons.more_horiz, size: 18),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: tasks.isEmpty && isLoadingTasks
-                            ? _PaginatedPlaceholder(
-                                minHeight: 170,
-                                horizontalPadding: const EdgeInsets.all(10),
-                                style: style,
-                                state: _PaginatedPlaceholderState.loading,
-                                onCreateTask: onCreateTask,
-                              )
-                            : tasks.isEmpty && hasLoadError
-                            ? _PaginatedPlaceholder(
-                                minHeight: 170,
-                                horizontalPadding: const EdgeInsets.all(10),
-                                style: style,
-                                state: _PaginatedPlaceholderState.error,
-                                onCreateTask: onCreateTask,
-                                onRetry: onLoadMoreTasks,
-                              )
-                            : tasks.isEmpty && !isTasksLoaded
-                            ? _PaginatedPlaceholder(
-                                minHeight: 170,
-                                horizontalPadding: const EdgeInsets.all(10),
-                                style: style,
-                                state: _PaginatedPlaceholderState.notLoaded,
-                                onCreateTask: onCreateTask,
-                              )
-                            : tasks.isEmpty
-                            ? _PaginatedPlaceholder(
-                                minHeight: 170,
-                                horizontalPadding: const EdgeInsets.all(10),
-                                style: style,
-                                state: _PaginatedPlaceholderState.empty,
-                                onCreateTask: onCreateTask,
-                              )
-                            : NotificationListener<ScrollNotification>(
-                                onNotification: (notification) {
-                                  final metrics = notification.metrics;
-                                  if (notification.depth == 0 &&
-                                      hasMoreTasks &&
-                                      !isLoadingTasks &&
-                                      metrics.pixels >=
-                                          metrics.maxScrollExtent - 320) {
-                                    onLoadMoreTasks?.call();
-                                  }
-                                  return false;
-                                },
-                                child: ListView.separated(
-                                  key: PageStorageKey<String>(
-                                    'kanban-tasks-${board.id}-${list.id}',
-                                  ),
-                                  primary: false,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  padding: EdgeInsets.fromLTRB(
-                                    8,
-                                    8,
-                                    8,
-                                    contentBottomPadding,
-                                  ),
-                                  itemCount:
-                                      tasks.length +
-                                      ((isLoadingTasks || hasMoreTasks)
-                                          ? 1
-                                          : 0),
-                                  separatorBuilder: (_, _) => const shad.Gap(6),
-                                  itemBuilder: (context, index) {
-                                    if (index >= tasks.length) {
-                                      if (isLoadingTasks) {
-                                        return const Center(
-                                          child: SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: NovaLoadingIndicator(
-                                              size: 20,
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return Center(
-                                        child: shad.OutlineButton(
-                                          onPressed: onLoadMoreTasks,
-                                          child: Text(
-                                            context.l10n.timerHistoryLoadMore,
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    final task = tasks[index];
-                                    return _BoardTaskTile(
-                                      board: board,
-                                      list: list,
-                                      listStyle: style,
-                                      task: task,
-                                      onTap: () => onTaskTap(task),
-                                      isBulkSelectMode: isBulkSelectMode,
-                                      isSelected: selectedTaskIds.contains(
-                                        task.id,
-                                      ),
-                                      onToggleSelected: () =>
-                                          onToggleTaskSelection(task),
-                                      onOpenMenu: () => onTaskMenu(task),
-                                    );
-                                  },
-                                ),
-                              ),
-                      ),
-                      // Container(
-                      //   decoration: BoxDecoration(
-                      //     border: Border(
-                      //       top: BorderSide(color: style.surfaceBorder),
-                      //     ),
-                      //   ),
-                      //   padding: const EdgeInsets.all(8),
-                      //   child: InkWell(
-                      //     borderRadius: BorderRadius.circular(8),
-                      //     onTap: onCreateTask,
-                      //     child: Container(
-                      //       width: double.infinity,
-                      //       padding: const EdgeInsets.symmetric(
-                      //         vertical: 7,
-                      //         horizontal: 10,
-                      //       ),
-                      //       decoration: BoxDecoration(
-                      //         borderRadius: BorderRadius.circular(8),
-                      //         border: Border.all(color: style.surfaceBorder),
-                      //       ),
-                      //       child: Row(
-                      //         mainAxisSize: MainAxisSize.min,
-                      //         children: [
-                      //           Icon(
-                      //             Icons.add,
-                      //             size: 14,
-                      //             color: theme.colorScheme.mutedForeground,
-                      //           ),
-                      //           const shad.Gap(4),
-                      //           Text(
-                      //             context.l10n.taskBoardDetailCreateTask,
-                      //             style: theme.typography.small.copyWith(
-                      //               fontSize: 12,
-                      //               color: theme.colorScheme.mutedForeground,
-                      //             ),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+    final tokens = AppTokens.of(context);
+    final style = _taskBoardListVisualStyle(context, widget.list);
+    final empty =
+        widget.tasks.isEmpty && !widget.isLoading && !widget.hasLoadError;
+    final count = widget.filtered || !widget.hasMoreTasks
+        ? widget.tasks.length
+        : math.max(widget.list.taskCount ?? 0, widget.tasks.length);
+    final hovering = _draggedTaskId != null;
+    final collapsed = empty && !_expandEmpty && !hovering;
+    return Align(
+      alignment: AlignmentDirectional.topStart,
+      child: DecoratedBox(
+        key: ValueKey('kanban-column-${widget.list.id}'),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            style.accent.withValues(alpha: .05),
+            tokens.colorScheme.muted,
           ),
+          borderRadius: BorderRadius.circular(tokens.shapes.panel),
+          border: Border.all(
+            color: hovering ? tokens.colorScheme.primary : style.surfaceBorder,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: collapsed ? MainAxisSize.min : MainAxisSize.max,
+          children: [
+            _KanbanColumnHeader(
+              list: widget.list,
+              count: count,
+              collapsed: empty ? collapsed : null,
+              onToggle: empty
+                  ? () => setState(() => _expandEmpty = !_expandEmpty)
+                  : null,
+              onCreate: widget.onCreateTask,
+              onEdit: widget.onEditList,
+            ),
+            if (!collapsed)
+              Expanded(child: _buildCards(context, hovering: hovering)),
+          ],
         ),
       ),
     );
   }
-}
 
-enum _PaginatedPlaceholderState { loading, notLoaded, empty, error }
+  Widget _buildCards(BuildContext context, {required bool hovering}) {
+    final l10n = context.l10n;
+    final tasks = widget.tasks;
+    final footer =
+        widget.isLoading ||
+        widget.hasLoadError ||
+        widget.hasMoreTasks ||
+        tasks.isEmpty ||
+        hovering;
+    return NotificationListener<ScrollNotification>(
+      onNotification: (event) {
+        if (event is ScrollUpdateNotification &&
+            event.depth == 0 &&
+            widget.hasMoreTasks &&
+            !widget.isLoading &&
+            !widget.hasLoadError &&
+            event.metrics.extentAfter < 220) {
+          widget.onLoadMore();
+        }
+        return false;
+      },
+      child: ListView.builder(
+        key: _viewport,
+        controller: _scroll,
+        primary: false,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.xs,
+          AppSpacing.sm,
+          widget.bottomClearance,
+        ),
+        itemCount: tasks.length + (footer ? 1 : 0),
+        findChildIndexCallback: (key) {
+          final id = _rowKeys.entries
+              .where((entry) => entry.value == key)
+              .firstOrNull
+              ?.key;
+          final index = tasks.indexWhere((task) => task.id == id);
+          return index < 0 ? null : index;
+        },
+        itemBuilder: (context, index) {
+          if (index == tasks.length) {
+            if (hovering && _beforeTaskId == null) {
+              return const _KanbanInsertionLine();
+            }
+            if (widget.isLoading) {
+              return AppSkeletonRows(count: tasks.isEmpty ? 3 : 1);
+            }
+            if (widget.hasLoadError ||
+                widget.hasMoreTasks && tasks.isNotEmpty) {
+              return AppButton.outline(
+                onPressed: widget.onLoadMore,
+                child: Text(
+                  widget.hasLoadError
+                      ? l10n.commonRetry
+                      : l10n.timerHistoryLoadMore,
+                ),
+              );
+            }
+            if (tasks.isEmpty) {
+              return AppStateMessage.inline(
+                icon: LucideIcons.inbox,
+                title: l10n.taskBoardDetailNoTasksInList,
+              );
+            }
+            return const SizedBox.shrink();
+          }
+          final task = tasks[index];
+          return Column(
+            key: _rowKeys.putIfAbsent(task.id, GlobalKey.new),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (hovering && _beforeTaskId == task.id)
+                const _KanbanInsertionLine(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _KanbanDraggableCard(
+                  task: task,
+                  now: widget.now,
+                  list: widget.list,
+                  workspaceId: widget.workspaceId,
+                  selected: widget.selectedTaskIds.contains(task.id),
+                  bulkSelect: widget.bulkSelect,
+                  canDrag: widget.canDrag && !widget.bulkSelect,
+                  onTap: () => widget.onTap(task),
+                  onMenu: () => widget.onMenu(task),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}

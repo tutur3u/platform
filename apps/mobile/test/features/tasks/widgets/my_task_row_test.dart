@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/user_task.dart';
-import 'package:mobile/features/tasks/widgets/task_section_accordion.dart';
+import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
+import 'package:mobile/features/tasks/widgets/my_task_row.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 void main() {
-  group('TaskSectionAccordion', () {
+  group('MyTaskRow', () {
     testWidgets('opens the owning board detail with taskId query', (
       tester,
     ) async {
@@ -36,15 +35,17 @@ void main() {
         routes: [
           GoRoute(
             path: Routes.tasks,
-            builder: (context, state) => shad.DrawerOverlay(
-              child: TaskSectionAccordion(
-                title: 'Assigned',
-                subtitle: '1 task',
-                icon: const Icon(Icons.assignment_outlined),
-                accentColor: Colors.blue,
-                tasks: const [task],
-                isCollapsed: false,
-                onToggle: () {},
+            builder: (context, state) => Material(
+              child: Center(
+                child: MyTaskRow(
+                  task: task,
+                  workspaceId: 'ws-1',
+                  now: DateTime(2026),
+                  completed: false,
+                  onOpen: () => openUserTaskBoardDetail(context, task),
+                  onComplete: () async {},
+                  onSnooze: () async {},
+                ),
               ),
             ),
           ),
@@ -60,17 +61,9 @@ void main() {
       addTearDown(router.dispose);
 
       await tester.pumpWidget(
-        shad.ShadcnApp.router(
-          theme: const shad.ThemeData(colorScheme: shad.ColorSchemes.lightZinc),
-          darkTheme: const shad.ThemeData.dark(
-            colorScheme: shad.ColorSchemes.darkZinc,
-          ),
-          localizationsDelegates: const [
-            ...AppLocalizations.localizationsDelegates,
-            shad.ShadcnLocalizations.delegate,
-          ],
+        MaterialApp.router(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          builder: ShadcnMaterialBridge.appBuilder,
           routerConfig: router,
         ),
       );

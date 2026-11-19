@@ -64,12 +64,18 @@ class _TaskQuickActionsSheet extends StatelessWidget {
     required this.task,
     required this.lists,
     required this.callbacks,
+    required this.showDetails,
+    required this.isPersonalWorkspace,
+    required this.onNavigateRelatedTask,
   });
 
   /// The task as it was tapped; used until the cubit has a newer snapshot.
   final TaskBoardTask task;
   final List<TaskBoardList> lists;
   final _TaskQuickActionCallbacks callbacks;
+  final bool showDetails;
+  final bool isPersonalWorkspace;
+  final ValueChanged<RelatedTaskInfo> onNavigateRelatedTask;
 
   @override
   Widget build(BuildContext context) {
@@ -106,6 +112,15 @@ class _TaskQuickActionsSheet extends StatelessWidget {
       description: board == null
           ? listName
           : '${_taskReference(live, board)} · $listName',
+      headerActions: [
+        if (showDetails)
+          AppIconButton(
+            key: const ValueKey('task-quick-open-details'),
+            tooltip: l10n.taskBoardDetailOpenFullDetails,
+            icon: const Icon(LucideIcons.maximize2, size: 18),
+            onPressed: busy ? null : () => callbacks.onOpenDetails(live),
+          ),
+      ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -141,14 +156,26 @@ class _TaskQuickActionsSheet extends StatelessWidget {
             enabled: !busy,
             callbacks: callbacks,
           ),
-          const SizedBox(height: AppLayout.sectionGap),
-          AppButton.outline(
-            key: const ValueKey('task-quick-open-details'),
-            enabled: !busy,
-            onPressed: () => callbacks.onOpenDetails(live),
-            leading: const Icon(LucideIcons.maximize2),
-            child: Text(l10n.taskBoardDetailOpenFullDetails),
-          ),
+          if (showDetails && board != null) ...[
+            const SizedBox(height: AppLayout.sectionGap),
+            _TaskQuickDetailSections(
+              task: live,
+              board: board,
+              lists: lists,
+              isPersonalWorkspace: isPersonalWorkspace,
+              onNavigateRelatedTask: onNavigateRelatedTask,
+            ),
+          ],
+          if (!showDetails) ...[
+            const SizedBox(height: AppLayout.sectionGap),
+            AppButton.outline(
+              key: const ValueKey('task-quick-open-details'),
+              enabled: !busy,
+              onPressed: () => callbacks.onOpenDetails(live),
+              leading: const Icon(LucideIcons.maximize2),
+              child: Text(l10n.taskBoardDetailOpenFullDetails),
+            ),
+          ],
         ],
       ),
     );

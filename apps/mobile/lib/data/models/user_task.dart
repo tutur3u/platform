@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/models/task_board_task.dart';
 
 /// Workspace info nested inside a board.
 class TaskWorkspaceInfo extends Equatable {
@@ -107,6 +108,9 @@ class UserTask extends Equatable {
     this.listId,
     this.createdAt,
     this.list,
+    this.completed,
+    this.assignees = const [],
+    this.labels = const [],
   });
 
   /// Constructs a [UserTask] from the legacy RPC row.
@@ -119,6 +123,7 @@ class UserTask extends Equatable {
     endDate: _parseDateTime(json['task_end_date']),
     listId: json['task_list_id'] as String?,
     createdAt: _parseDateTime(json['task_created_at']),
+    completed: _parseDateTime(json['task_completed_at']) != null ? true : null,
   );
 
   /// Constructs a [UserTask] from the web API payload.
@@ -131,6 +136,11 @@ class UserTask extends Equatable {
     endDate: _parseDateTime(json['end_date']),
     listId: json['list_id'] as String?,
     createdAt: _parseDateTime(json['created_at']),
+    completed:
+        json['completed'] as bool? ??
+        (_parseDateTime(json['completed_at']) != null ? true : null),
+    assignees: TaskBoardTaskAssignee.parseList(json['assignees']),
+    labels: TaskBoardTaskLabel.parseList(json['labels']),
     list: json['list'] is Map<String, dynamic>
         ? TaskListInfo.fromJson(json['list'] as Map<String, dynamic>)
         : null,
@@ -156,7 +166,27 @@ class UserTask extends Equatable {
   final TaskListInfo? list;
 
   /// Whether the task is in a "done" list.
-  bool get isDone => list?.status == 'done';
+  bool get isDone =>
+      list?.status == 'done' || list?.status == 'review' || completed == true;
+
+  final bool? completed;
+  final List<TaskBoardTaskAssignee> assignees;
+  final List<TaskBoardTaskLabel> labels;
+
+  UserTask withDueDate(DateTime date) => UserTask(
+    id: id,
+    name: name,
+    description: description,
+    priority: priority,
+    startDate: startDate,
+    endDate: date,
+    listId: listId,
+    createdAt: createdAt,
+    list: list,
+    completed: completed,
+    assignees: assignees,
+    labels: labels,
+  );
 
   /// Returns a copy with the [list] field set.
   UserTask withList(TaskListInfo? listInfo) => UserTask(
@@ -166,9 +196,12 @@ class UserTask extends Equatable {
     priority: priority,
     startDate: startDate,
     endDate: endDate,
-    listId: listId,
+    listId: listInfo?.id ?? listId,
     createdAt: createdAt,
     list: listInfo,
+    completed: completed,
+    assignees: assignees,
+    labels: labels,
   );
 
   Map<String, dynamic> toJson() => {
@@ -181,6 +214,9 @@ class UserTask extends Equatable {
     'list_id': listId,
     'created_at': createdAt?.toIso8601String(),
     'list': list?.toJson(),
+    'completed': completed,
+    'assignees': assignees.map((item) => item.toJson()).toList(),
+    'labels': labels.map((item) => item.toJson()).toList(),
   };
 
   @override
@@ -194,5 +230,8 @@ class UserTask extends Equatable {
     listId,
     createdAt,
     list,
+    completed,
+    assignees,
+    labels,
   ];
 }

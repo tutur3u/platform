@@ -257,8 +257,8 @@ localization changes.
 ## Task Board
 
 - Preserve external/personal task semantics when changing board views.
-- Deep links should use the board route contract:
-  `/{wsId}/tasks/boards/{boardId}?task={taskId}`.
+- Mobile task links use `/tasks/boards/{boardId}?taskId={taskId}`.
+  Entering Tasks or My Tasks leaves board selection to the user.
 - Mobile board management mutations should use the current
   `/api/v1/workspaces/{wsId}/task-boards/{boardId}` app-session routes for
   archive, restore, soft delete, and permanent delete. Avoid older board APIs
@@ -334,6 +334,25 @@ localization changes.
   `_loadRequestToken`; a rejected move must not orphan in-flight list reads. Test fixtures should
   serve tasks only through `getBoardTasksForList` and honour `limit` and
   `offset`; board-detail tasks hide paging bugs.
+
+### My Tasks and Kanban
+
+- Render the My Tasks snapshot for the current account and workspace, then
+  await one revalidation. Project the persisted buckets using the current
+  due day. Recalculate at midnight and on resume without fetching another
+  page just to update the headings.
+- My Tasks and board detail register a filled create action in the shell
+  dock. The task form accepts an explicit board and list selection. Carry
+  the originating account across asynchronous reads and writes.
+- Let one drag target own the Kanban canvas. Resolve the destination from
+  the live column geometry at drop time and use the persisted sort keys
+  of its neighbours. Workspace cards use a single task update for list
+  and rank in the common case. Personal external cards use the account
+  placement route so their source task keeps its board.
+- The task rebuild suites exercise the real shell and use repository
+  fixtures. Await encrypted cache publication with bounded real I/O in
+  the widget harness. Generate the eight phone snapshots with the Linux
+  toolchain pinned for mobile CI.
 
 ### Estimation recovery
 

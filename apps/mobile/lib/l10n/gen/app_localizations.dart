@@ -20305,6 +20305,78 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 task without dates} other{{count} tasks without dates}}'**
   String taskTimelineUndatedCount(int count);
 
+  /// No description provided for @tasksBoardFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get tasksBoardFilter;
+
+  /// No description provided for @tasksChooseBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose board'**
+  String get tasksChooseBoard;
+
+  /// No description provided for @tasksMarkedComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Task completed'**
+  String get tasksMarkedComplete;
+
+  /// No description provided for @tasksMyTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Tasks'**
+  String get tasksMyTasks;
+
+  /// No description provided for @tasksNoBoardsToChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'No active boards'**
+  String get tasksNoBoardsToChoose;
+
+  /// No description provided for @tasksNoDateSection.
+  ///
+  /// In en, this message translates to:
+  /// **'No date'**
+  String get tasksNoDateSection;
+
+  /// No description provided for @tasksNoFilterMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks match these filters'**
+  String get tasksNoFilterMatches;
+
+  /// No description provided for @tasksNoListsToChoose.
+  ///
+  /// In en, this message translates to:
+  /// **'No lists for new tasks'**
+  String get tasksNoListsToChoose;
+
+  /// No description provided for @tasksSnooze.
+  ///
+  /// In en, this message translates to:
+  /// **'Snooze'**
+  String get tasksSnooze;
+
+  /// No description provided for @tasksSubtasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtasks'**
+  String get tasksSubtasks;
+
+  /// No description provided for @tasksTodaySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get tasksTodaySection;
+
+  /// No description provided for @tasksUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get tasksUndo;
+
   /// No description provided for @tasksAllCaughtUp.
   ///
   /// In en, this message translates to:

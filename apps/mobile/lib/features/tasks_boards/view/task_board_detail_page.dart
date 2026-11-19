@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/icons/platform_icon.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
@@ -20,6 +20,7 @@ import 'package:mobile/core/theme/dynamic_colors.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/form_dirty_utils.dart';
 import 'package:mobile/core/utils/tiptap_description_parser.dart';
+import 'package:mobile/core/utils/tiptap_document_codec.dart';
 import 'package:mobile/core/widgets/dismiss_keyboard_on_pointer_down.dart';
 import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
@@ -44,10 +45,14 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/tasks/utils/task_board_navigation.dart';
+import 'package:mobile/features/tasks/widgets/task_board_picker_sheet.dart';
+import 'package:mobile/features/tasks/widgets/task_card_metadata.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
+import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 import 'package:mobile/features/tasks_boards/fleet/fleet_task_detail_card.dart';
 import 'package:mobile/features/tasks_boards/fleet/fleet_task_meta.dart';
 import 'package:mobile/features/tasks_boards/fleet/fleet_task_tile_block.dart';
+import 'package:mobile/features/tasks_boards/utils/kanban_task_order.dart';
 import 'package:mobile/features/tasks_boards/utils/task_board_timeline_paging.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_payload.dart';
 import 'package:mobile/features/tasks_boards/utils/task_description_tiptap_converter.dart';
@@ -84,12 +89,17 @@ part 'task_board_detail_page_board_layout_list_card.dart';
 part 'task_board_detail_page_board_layout_move_status_dialog.dart';
 part 'task_board_detail_page_board_layout_status_section.dart';
 part 'task_board_detail_page_board_layout_widgets.dart';
+part 'task_board_detail_page_chrome.dart';
 part 'task_board_detail_page_cards.dart';
 part 'task_board_detail_page_detail_fields.dart';
 part 'task_board_detail_page_detail_sheet.dart';
 part 'task_board_detail_page_detail_sheet_description.dart';
 part 'task_board_detail_page_detail_sheet_shared_widgets.dart';
+part 'task_board_detail_page_editor_relationships.dart';
 part 'task_board_detail_page_kanban.dart';
+part 'task_board_detail_page_kanban_card.dart';
+part 'task_board_detail_page_kanban_chrome.dart';
+part 'task_board_detail_page_kanban_scroll.dart';
 part 'task_board_detail_page_kanban_column.dart';
 part 'task_board_detail_page_list_form.dart';
 part 'task_board_detail_page_list_view.dart';
@@ -108,6 +118,7 @@ part 'task_board_detail_page_sheet_widgets.dart';
 part 'task_board_detail_page_states.dart';
 part 'task_board_detail_page_task_actions_choices.dart';
 part 'task_board_detail_page_task_actions_fields.dart';
+part 'task_board_detail_page_task_detail_sections.dart';
 part 'task_board_detail_page_task_actions_sheet.dart';
 part 'task_board_detail_page_task_actions_values.dart';
 part 'task_board_detail_page_task_focus.dart';
@@ -125,16 +136,20 @@ class TaskBoardDetailPage extends StatelessWidget {
     required this.boardId,
     super.key,
     this.taskRepository,
+    this.taskBroadcastClient,
     this.timeTrackerRepository,
     this.initialTaskId,
     this.initialView,
+    this.clock = DateTime.now,
   });
 
   final String boardId;
   final TaskRepository? taskRepository;
+  final TaskBroadcastClient? taskBroadcastClient;
   final ITimeTrackerRepository? timeTrackerRepository;
   final String? initialTaskId;
   final TaskBoardDetailView? initialView;
+  final DateTime Function() clock;
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +167,7 @@ class TaskBoardDetailPage extends StatelessWidget {
         create: (context) {
           final cubit = TaskBoardDetailCubit(
             taskRepository: context.read<TaskRepository>(),
+            taskBroadcastClient: taskBroadcastClient,
           );
           final initialView = this.initialView;
           if (initialView != null) {
@@ -171,6 +187,7 @@ class TaskBoardDetailPage extends StatelessWidget {
           boardId: boardId,
           initialTaskId: initialTaskId,
           initialView: initialView,
+          clock: clock,
         ),
       ),
     );

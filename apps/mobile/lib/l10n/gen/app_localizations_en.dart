@@ -10731,6 +10731,42 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tasksBoardFilter => 'Board';
+
+  @override
+  String get tasksChooseBoard => 'Choose board';
+
+  @override
+  String get tasksMarkedComplete => 'Task completed';
+
+  @override
+  String get tasksMyTasks => 'My Tasks';
+
+  @override
+  String get tasksNoBoardsToChoose => 'No active boards';
+
+  @override
+  String get tasksNoDateSection => 'No date';
+
+  @override
+  String get tasksNoFilterMatches => 'No tasks match these filters';
+
+  @override
+  String get tasksNoListsToChoose => 'No lists for new tasks';
+
+  @override
+  String get tasksSnooze => 'Snooze';
+
+  @override
+  String get tasksSubtasks => 'Subtasks';
+
+  @override
+  String get tasksTodaySection => 'Today';
+
+  @override
+  String get tasksUndo => 'Undo';
+
+  @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';
 
   @override

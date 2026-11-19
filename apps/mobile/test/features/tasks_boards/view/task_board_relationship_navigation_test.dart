@@ -394,10 +394,10 @@ void main() {
 
         await tester.tap(find.text('Task A2').first, warnIfMissed: false);
         await pumpTaskBoardTransition(tester);
-        await tester.tap(
-          find.text('Open full details').last,
-          warnIfMissed: false,
+        final fullDetails = find.byKey(
+          const ValueKey('task-quick-open-details'),
         );
+        await tester.tap(fullDetails);
         await pumpTaskBoardTransition(tester);
 
         expect(

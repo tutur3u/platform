@@ -175,6 +175,7 @@ Map<String, dynamic> _normalizeTaskPayload(Map<String, dynamic> data) {
     if (data['listId'] != null) 'list_id': data['listId'],
     if (data['completed'] != null) 'completed': data['completed'],
     if (data['deleted'] != null) 'deleted': data['deleted'],
+    if (data['sort_key'] != null) 'sort_key': data['sort_key'],
   };
 }
 

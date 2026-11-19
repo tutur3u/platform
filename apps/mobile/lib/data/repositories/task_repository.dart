@@ -45,6 +45,7 @@ part 'task_repository_planning.dart';
 part 'task_repository_project_updates.dart';
 part 'task_repository_estimation.dart';
 part 'task_repository_uploads.dart';
+part 'task_repository_writes.dart';
 
 /// Repository for task operations.
 class TaskRepository {
@@ -62,36 +63,33 @@ class TaskRepository {
     String path,
   ) => _readTaskResource(wsId, namespace, path);
 
-  Future<void> _writeTaskVoid(
-    String wsId,
-    String method,
-    String path, {
-    Map<String, dynamic>? payload,
-    String? entityId,
+  Future<void> placePersonalBoardTask({
+    required String taskId,
+    required String boardId,
+    required String listId,
+    int? sortKey,
+    String? previousTaskId,
+    String? nextTaskId,
+    String? terminalStatus,
   }) async {
-    await queueOrSendVoid(
-      feature: 'tasks',
-      method: method,
-      path: path,
-      workspaceId: wsId,
-      payload: payload,
-      entityId: entityId,
-      send: () async {
-        switch (method) {
-          case 'POST':
-            await _apiClient.postJson(path, payload);
-          case 'PUT':
-            await _apiClient.putJson(path, payload ?? {});
-          case 'PATCH':
-            await _apiClient.patchJson(path, payload ?? {});
-          case 'DELETE':
-            await _apiClient.deleteJson(path, body: payload);
-        }
+    await _apiClient.putJson(
+      '/api/v1/users/me/tasks/${Uri.encodeComponent(taskId)}/personal-placement',
+      {
+        'personal_board_id': boardId,
+        'personal_list_id': listId,
+        'personal_sort_key': sortKey,
+        if (previousTaskId != null) 'previous_task_id': previousTaskId,
+        if (nextTaskId != null) 'next_task_id': nextTaskId,
+        if (terminalStatus != null) 'terminal_status': terminalStatus,
       },
     );
-    await CacheStore.instance.invalidateTags({
-      'module:tasks',
-    }, workspaceId: wsId);
+  }
+
+  Future<void> setMyTaskCompletion(String taskId, DateTime? completedAt) async {
+    await _apiClient.putJson(
+      '/api/v1/users/me/tasks/${Uri.encodeComponent(taskId)}/overrides',
+      {'completed_at': completedAt?.toUtc().toIso8601String()},
+    );
   }
 
   Future<UserTasksPage> getMyTasks({

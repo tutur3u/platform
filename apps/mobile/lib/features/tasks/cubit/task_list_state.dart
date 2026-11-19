@@ -2,7 +2,19 @@ part of 'task_list_cubit.dart';
 
 enum TaskListStatus { initial, loading, loaded, error }
 
-enum TaskListSection { overdue, today, upcoming, completed }
+enum TaskListSection { overdue, today, upcoming, noDate, completed }
+
+TaskListSection myTaskDueSection(
+  DateTime? due, {
+  required DateTime now,
+  String? zone,
+}) {
+  if (due == null) return TaskListSection.noDate;
+  final comparison = taskDay(due, zone).compareTo(taskDay(now, zone));
+  if (comparison < 0) return TaskListSection.overdue;
+  if (comparison == 0) return TaskListSection.today;
+  return TaskListSection.upcoming;
+}
 
 class TaskListState extends Equatable {
   const TaskListState({
@@ -20,9 +32,10 @@ class TaskListState extends Equatable {
     this.hasMoreCompleted = false,
     this.completedPage = 0,
     this.isLoadingMoreCompleted = false,
-    this.isOverdueCollapsed = true,
-    this.isTodayCollapsed = true,
-    this.isUpcomingCollapsed = true,
+    this.isOverdueCollapsed = false,
+    this.isTodayCollapsed = false,
+    this.isUpcomingCollapsed = false,
+    this.isNoDateCollapsed = false,
     this.isCompletedCollapsed = true,
     this.error,
   });
@@ -44,6 +57,7 @@ class TaskListState extends Equatable {
   final bool isOverdueCollapsed;
   final bool isTodayCollapsed;
   final bool isUpcomingCollapsed;
+  final bool isNoDateCollapsed;
   final bool isCompletedCollapsed;
   final String? error;
 
@@ -65,6 +79,7 @@ class TaskListState extends Equatable {
     bool? isOverdueCollapsed,
     bool? isTodayCollapsed,
     bool? isUpcomingCollapsed,
+    bool? isNoDateCollapsed,
     bool? isCompletedCollapsed,
     String? error,
     bool clearError = false,
@@ -89,6 +104,7 @@ class TaskListState extends Equatable {
     isOverdueCollapsed: isOverdueCollapsed ?? this.isOverdueCollapsed,
     isTodayCollapsed: isTodayCollapsed ?? this.isTodayCollapsed,
     isUpcomingCollapsed: isUpcomingCollapsed ?? this.isUpcomingCollapsed,
+    isNoDateCollapsed: isNoDateCollapsed ?? this.isNoDateCollapsed,
     isCompletedCollapsed: isCompletedCollapsed ?? this.isCompletedCollapsed,
     error: clearError ? null : (error ?? this.error),
   );
@@ -112,6 +128,7 @@ class TaskListState extends Equatable {
     isOverdueCollapsed,
     isTodayCollapsed,
     isUpcomingCollapsed,
+    isNoDateCollapsed,
     isCompletedCollapsed,
     error,
   ];

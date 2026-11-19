@@ -6,8 +6,9 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
   Future<void> _openTaskQuickActionsSheet(
     BuildContext context,
     TaskBoardTask task,
-    List<TaskBoardList> lists,
-  ) async {
+    List<TaskBoardList> lists, {
+    bool showDetails = false,
+  }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     // The sheet opens above the page; a page-scoped timezone setting is
     // passed down so it reads dates in the same zone as the board.
@@ -17,8 +18,7 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
     final canMove = lists.any((list) => list.id != task.listId);
     BuildContext? sheetContext;
 
-    // Status, move and full details leave the sheet; field edits keep it
-    // open so several can be made in a row.
+    // Navigation closes the active overlay before revealing the destination.
     void closeThen(Future<void> Function() action) {
       final current = sheetContext;
       if (current != null && current.mounted) {
@@ -41,7 +41,13 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
     final callbacks = _TaskQuickActionCallbacks(
       onStatus: (task, status) {
         if (cubit.state.isMutating) return;
-        closeThen(() => _markTaskAsStatus(context, task, lists, status));
+        Future<void> update() =>
+            _markTaskAsStatus(context, task, lists, status);
+        if (showDetails) {
+          whenIdle(update);
+        } else {
+          closeThen(update);
+        }
       },
       onPriority: (task, priority) => whenIdle(
         () => _changeTaskPriority(context, task, priority, announce: false),
@@ -71,6 +77,7 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
 
     await showAppSheet<void>(
       context: context,
+      size: showDetails ? AppSheetSize.large : AppSheetSize.fit,
       builder: (innerContext) {
         sheetContext = innerContext;
         return MultiBlocProvider(
@@ -82,6 +89,21 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
             task: task,
             lists: lists,
             callbacks: callbacks,
+            showDetails: showDetails,
+            isPersonalWorkspace:
+                board != null && _isPersonalWorkspaceForBoard(context, board),
+            onNavigateRelatedTask: (related) => closeThen(() async {
+              final targetBoard = related.boardId?.trim();
+              if (!context.mounted) return;
+              context.go(
+                Routes.taskBoardTaskDetailPath(
+                  targetBoard == null || targetBoard.isEmpty
+                      ? widget.boardId
+                      : targetBoard,
+                  related.id,
+                ),
+              );
+            }),
           ),
         );
       },

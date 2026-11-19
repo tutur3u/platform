@@ -28,6 +28,67 @@ void main() {
       repository = TaskRepository(apiClient: apiClient, httpClient: httpClient);
     });
 
+    test('ordered move sends destination and sort key in one update', () async {
+      when(() => apiClient.putJson(any(), any())).thenAnswer((_) async => {});
+      await repository.updateTask('task-1', {
+        'list_id': 'list-2',
+        'sort_key': 1700000,
+      }, wsId: 'ws-1');
+      verify(
+        () => apiClient.putJson('/api/v1/workspaces/ws-1/tasks/task-1', {
+          'list_id': 'list-2',
+          'sort_key': 1700000,
+        }),
+      ).called(1);
+    });
+
+    test(
+      'external card placement writes through the current user route',
+      () async {
+        when(() => apiClient.putJson(any(), any())).thenAnswer((_) async => {});
+        await repository.placePersonalBoardTask(
+          taskId: 'task-1',
+          boardId: 'personal-board',
+          listId: 'personal-list',
+          sortKey: 1700000,
+          previousTaskId: 'task-2',
+          nextTaskId: 'task-3',
+        );
+        verify(
+          () => apiClient
+              .putJson('/api/v1/users/me/tasks/task-1/personal-placement', {
+                'personal_board_id': 'personal-board',
+                'personal_list_id': 'personal-list',
+                'personal_sort_key': 1700000,
+                'previous_task_id': 'task-2',
+                'next_task_id': 'task-3',
+              }),
+        ).called(1);
+        verifyNoMoreInteractions(apiClient);
+      },
+    );
+
+    test(
+      'personal completion and Undo write the current user override',
+      () async {
+        when(() => apiClient.putJson(any(), any())).thenAnswer((_) async => {});
+        await repository.setMyTaskCompletion(
+          'task-1',
+          DateTime.utc(2026, 11, 19),
+        );
+        await repository.setMyTaskCompletion('task-1', null);
+        verifyInOrder([
+          () => apiClient.putJson('/api/v1/users/me/tasks/task-1/overrides', {
+            'completed_at': '2026-11-19T00:00:00.000Z',
+          }),
+          () => apiClient.putJson('/api/v1/users/me/tasks/task-1/overrides', {
+            'completed_at': null,
+          }),
+        ]);
+        verifyNoMoreInteractions(apiClient);
+      },
+    );
+
     test('updateTaskDescription uses dedicated description endpoint', () async {
       Map<String, dynamic>? requestBody;
 

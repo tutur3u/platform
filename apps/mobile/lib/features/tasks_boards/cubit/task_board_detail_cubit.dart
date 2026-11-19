@@ -16,15 +16,20 @@ import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/models/task_relationships.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
+import 'package:mobile/features/tasks_boards/utils/kanban_task_order.dart';
 
 part 'task_board_detail_state.dart';
+part 'task_board_detail_task_placement.dart';
 part 'task_board_detail_cache_merge.dart';
 part 'task_board_detail_list_reads.dart';
 part 'task_board_detail_mutation_guard.dart';
 part 'task_board_detail_page_merge.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
-    with _TaskBoardMutationRunner, _TaskBoardListReadGuard {
+    with
+        _TaskBoardMutationRunner,
+        _TaskBoardListReadGuard,
+        _TaskBoardTaskPlacement {
   TaskBoardDetailCubit({
     required TaskRepository taskRepository,
     TaskBroadcastClient? taskBroadcastClient,
@@ -41,8 +46,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
   static const _listTasksCacheTag = 'tasks:board-list-tasks';
   static const Object _taskUpdateDescriptionUnset = Object();
 
+  @override
   final TaskRepository _taskRepository;
   final TaskBroadcastClient _taskBroadcastClient;
+  @override
   int _loadRequestToken = 0;
   List<TaskBoardTask>? _cachedDeletedTasks;
   DateTime? _cachedDeletedTasksAt;
@@ -1142,81 +1149,26 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     );
   }
 
-  Future<void> moveTask({
-    required String taskId,
-    required String listId,
-  }) async {
-    final wsId = state.workspaceId;
-    final board = state.board;
-    if (wsId == null) {
-      throw StateError('Workspace not selected');
-    }
-    if (board == null) {
-      throw StateError('Board detail is not initialized');
-    }
-
-    final sourceListId = _findTaskListId(taskId);
-    if (sourceListId == listId) {
-      return;
-    }
-    final pageSizeHints = <String, int?>{
-      if (sourceListId != null)
-        sourceListId: state.listPageSizeById[sourceListId],
-      listId: state.listPageSizeById[listId],
-    };
-    final affectedListIds = <String>{
-      if (sourceListId != null) sourceListId,
-      listId,
-    };
-
-    // Ignore list reads started before the optimistic move. A stale cached
-    // revalidation can otherwise put the task back in its previous list.
-    // Reject a concurrent move first, or dropped reads leave lists loading.
-    _ensureNoMutationInProgress();
-    _loadRequestToken++;
-    _optimisticallyMoveTaskToList(taskId: taskId, listId: listId);
-
-    try {
-      await _runMutation(
-        () => _taskRepository.moveBoardTask(
-          wsId: wsId,
-          taskId: taskId,
-          listId: listId,
-        ),
-        reloadBoard: false,
-      );
-    } on Exception {
-      if (!isClosed && state.workspaceId == wsId && state.boardId == board.id) {
-        await _refreshBoardAndTaskLists(
-          wsId: wsId,
-          boardId: board.id,
-          affectedListIds: affectedListIds,
-          pageSizeHints: pageSizeHints,
-        );
-      }
-      rethrow;
-    }
-
-    if (isClosed || state.workspaceId != wsId || state.boardId != board.id) {
-      return;
-    }
-
-    await _refreshBoardAndTaskLists(
-      wsId: wsId,
-      boardId: board.id,
-      affectedListIds: affectedListIds,
-      pageSizeHints: pageSizeHints,
-    );
-  }
-
+  @override
   void _optimisticallyMoveTaskToList({
     required String taskId,
     required String listId,
+    Map<String, int> sortKeys = const {},
   }) {
     final board = state.board;
     if (board == null) {
       return;
     }
+
+    TaskBoardTask moved(TaskBoardTask task) =>
+        (task.listId == listId
+                ? task
+                : _copyTaskForOptimisticListMove(task, listId, board))
+            .copyWith(sortKey: sortKeys[task.id]);
+    TaskBoardTask positioned(TaskBoardTask task) =>
+        sortKeys.containsKey(task.id)
+        ? task.copyWith(sortKey: sortKeys[task.id])
+        : task;
 
     TaskBoardTask? movedTask;
     final nextBoardTasks = <TaskBoardTask>[];
@@ -1224,11 +1176,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
 
     for (final task in board.tasks) {
       if (task.id == taskId) {
-        movedTask = _copyTaskForOptimisticListMove(task, listId, board);
+        movedTask = moved(task);
         nextBoardTasks.add(movedTask);
         foundInBoard = true;
       } else {
-        nextBoardTasks.add(task);
+        nextBoardTasks.add(positioned(task));
       }
     }
 
@@ -1237,10 +1189,10 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       final nextListTasks = <TaskBoardTask>[];
       for (final task in entry.value) {
         if (task.id == taskId) {
-          movedTask ??= _copyTaskForOptimisticListMove(task, listId, board);
+          movedTask ??= moved(task);
           continue;
         }
-        nextListTasks.add(task);
+        nextListTasks.add(positioned(task));
       }
       nextTasksByList[entry.key] = List.unmodifiable(nextListTasks);
     }
@@ -1248,7 +1200,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     if (movedTask == null) {
       for (final task in board.tasks) {
         if (task.id == taskId) {
-          movedTask = _copyTaskForOptimisticListMove(task, listId, board);
+          movedTask = moved(task);
           break;
         }
       }
@@ -1307,6 +1259,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       id: task.id,
       listId: listId,
       displayNumber: task.displayNumber,
+      sortKey: task.sortKey,
+      isPersonalExternal: task.isPersonalExternal,
       name: task.name,
       description: task.description,
       priority: task.priority,
@@ -2513,6 +2467,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     );
   }
 
+  @override
   Future<void> _refreshBoardAndTaskLists({
     required String wsId,
     required String boardId,
@@ -2544,6 +2499,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
   TaskBoardTask? _findTaskSnapshot(String taskId) =>
       state.board?.tasks.where((task) => task.id == taskId).firstOrNull;
 
+  @override
   String? _findTaskListId(String taskId) {
     final board = state.board;
     if (board == null) return null;

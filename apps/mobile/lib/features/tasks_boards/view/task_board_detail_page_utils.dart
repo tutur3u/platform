@@ -381,30 +381,6 @@ IconData _taskRelationshipIcon(_TaskRelationshipKind kind) {
   };
 }
 
-String _taskRelationshipLabel(
-  BuildContext context,
-  _TaskRelationshipKind kind,
-) {
-  return switch (kind) {
-    _TaskRelationshipKind.parent => context.l10n.taskBoardDetailParentTask,
-    _TaskRelationshipKind.child => context.l10n.taskBoardDetailChildTasks,
-    _TaskRelationshipKind.blockedBy => context.l10n.taskBoardDetailBlockedBy,
-    _TaskRelationshipKind.blocking => context.l10n.taskBoardDetailBlocking,
-    _TaskRelationshipKind.related => context.l10n.taskBoardDetailRelatedTasks,
-  };
-}
-
-Color _taskRelationshipColor(BuildContext context, _TaskRelationshipKind kind) {
-  final palette = context.dynamicColors;
-  return switch (kind) {
-    _TaskRelationshipKind.parent => palette.purple,
-    _TaskRelationshipKind.child => palette.gray,
-    _TaskRelationshipKind.blockedBy => palette.red,
-    _TaskRelationshipKind.blocking => palette.orange,
-    _TaskRelationshipKind.related => palette.blue,
-  };
-}
-
 List<_TaskRelationshipIndicator> _taskRelationshipIndicators(
   TaskBoardTask task,
 ) {
@@ -524,31 +500,6 @@ String _taskSmartDate(BuildContext context, DateTime date, {DateTime? now}) {
   return context.l10n.taskBoardDetailDaysAgo(diff.abs());
 }
 
-String? _taskDueLabel(BuildContext context, TaskBoardTask task) {
-  if (_taskIsCompletedInBoard(task)) return null;
-  if (task.endDate == null) return null;
-  final date = _taskSmartDate(context, task.endDate!);
-  return context.l10n.taskBoardDetailDueAt(date);
-}
-
-String? _taskDueLabelForList(
-  BuildContext context,
-  TaskBoardTask task,
-  TaskBoardList? list,
-) {
-  if (_taskIsCompletedInBoard(task, list)) return null;
-  return _taskDueLabel(context, task);
-}
-
-String? _taskStartLabel(BuildContext context, TaskBoardTask task) {
-  if (task.startDate == null) return null;
-  final now = DateTime.now();
-  // Only show "Starts X" if the start date is in the future
-  if (!task.startDate!.isAfter(now)) return null;
-  final date = _taskSmartDate(context, task.startDate!);
-  return context.l10n.taskBoardDetailStartsAt(date);
-}
-
 bool _taskIsOverdue(TaskBoardTask task) {
   if (_taskIsCompletedInBoard(task)) return false;
   if (task.endDate == null) return false;
@@ -575,18 +526,6 @@ bool _taskListDone(TaskBoardList? list) => list?.completesWork ?? false;
 
 bool _taskListSuppressesDeadlines(TaskBoardList? list) =>
     list?.suppressesDeadlines ?? false;
-
-bool _hasChips(
-  String? estimationLabel,
-  TaskBoardTask task, {
-  required bool hasDescription,
-}) {
-  return task.priority != null ||
-      estimationLabel != null ||
-      task.projects.isNotEmpty ||
-      task.labels.isNotEmpty ||
-      hasDescription;
-}
 
 List<int> _taskEstimationOptions(TaskBoardDetail board) {
   final estimationType = board.estimationType?.trim();

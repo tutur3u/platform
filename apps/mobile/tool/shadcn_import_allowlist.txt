@@ -126,9 +126,6 @@ lib/features/task_portfolio/widgets/task_portfolio_cards.dart
 lib/features/task_portfolio/widgets/task_portfolio_dialogs.dart
 lib/features/task_portfolio/widgets/task_portfolio_feedback.dart
 lib/features/task_portfolio/widgets/task_project_updates_section.dart
-lib/features/tasks/view/task_list_page.dart
-lib/features/tasks/widgets/my_tasks_header.dart
-lib/features/tasks/widgets/task_section_accordion.dart
 lib/features/tasks/widgets/task_surface.dart
 lib/features/tasks_boards/view/task_board_detail_page.dart
 lib/features/tasks_boards/view/task_board_form_dialog.dart
@@ -255,7 +252,6 @@ test/features/shell/view/shell_back_navigation_test.dart
 test/features/shell/view/shell_navigation_rail_test.dart
 test/features/shell/view/shell_rail_harness.dart
 test/features/shell/view/tablet_navigation_test.dart
-test/features/tasks/widgets/task_section_accordion_test.dart
 test/features/tasks_boards/view/task_board_relationship_navigation_test.dart
 test/features/time_tracker/widgets/threshold_settings_dialog_test.dart
 test/helpers/helpers.dart
