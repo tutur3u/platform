@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -32,6 +33,7 @@ class TaskTimelineEmpty extends StatelessWidget {
     return AppStateMessage(
       key: const ValueKey('task-timeline-empty'),
       icon: LucideIcons.calendarDays,
+      illustration: const AppIllustration(AppIllustrationKind.calendarFree),
       title: switch (span) {
         TaskTimelineSpan.week => l10n.taskTimelineEmptyWeek,
         TaskTimelineSpan.twoWeeks => l10n.taskTimelineEmptyTwoWeeks,

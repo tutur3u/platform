@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/user_task.dart';
 import 'package:mobile/data/models/workspace.dart';
@@ -348,6 +349,15 @@ class _MyTasksViewState extends State<_MyTasksView> {
                               _filters[field] = choice;
                             }
                           }),
+                        ),
+                      ),
+                    ),
+                  if (!hasActive && _filters.isEmpty)
+                    const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 24),
+                        child: Center(
+                          child: AppIllustration(AppIllustrationKind.noTasks),
                         ),
                       ),
                     ),
