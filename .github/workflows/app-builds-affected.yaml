@@ -73,6 +73,7 @@ jobs:
       matrix:
         app: ${{ fromJSON(needs.affected.outputs.apps) }}
     env:
+      MAIL_DEPLOYMENT_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: https://programming-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
       NEXT_PUBLIC_APP_URL: https://programming-ci.invalid

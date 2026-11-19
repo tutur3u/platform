@@ -80,6 +80,7 @@ jobs:
 
       - name: Build Project Artifacts
         env:
+          MAIL_DEPLOYMENT_PROFILE: production
           NODE_OPTIONS: --max-old-space-size=8192
           TURBO_CONCURRENCY: "2"
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

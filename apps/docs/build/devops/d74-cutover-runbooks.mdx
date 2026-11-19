@@ -46,12 +46,25 @@ Misses it exists to catch:
 
 Build these only as a production artifact. A plain `bun run build:cloudflare` produces the staging profile: the apps Worker then lacks `APPS_CANONICAL_HOST_ENABLED=1` and answers 503 "Staging gateway only", and calendar lacks `CALENDAR_DEPLOYMENT_PROFILE=production`. The production profile in `scripts/ci/wave1-native-profile.mjs` sets both.
 
-1. `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2` with `CALENDAR_DEPLOYMENT_PROFILE=production` exported.
+1. `bun turbo:local run build --filter=@tuturuuu/<app> --concurrency=2` with `CALENDAR_DEPLOYMENT_PROFILE=production` (calendar) or `MAIL_DEPLOYMENT_PROFILE=production` (mail) exported.
 2. `node scripts/ci/wave1-native-artifact.mjs prepare <app> production <sha>`.
 3. `CI=true node scripts/ci/wave1-native-runtime.mjs <app> production <sha>`.
 4. `node scripts/ci/wave1-native-artifact.mjs verify <app> production <sha>`.
 
 Run it through `wave1-native-production.yaml` (input `app`, from the `production` ref) rather than by hand. The `build:cloudflare` steps in `apps-cloudflare.yaml` and `meet-cloudflare.yaml` build CI fixtures with placeholder Supabase values and are never a cutover artifact. Meet is not a wave-1 profile; its Worker is already live and is redeployed from `meet-cloudflare.yaml`.
+
+### Mail deployment profile and staging Access
+
+Every Mail build fixes one deployment profile at build time through `MAIL_DEPLOYMENT_PROFILE`: `production` or `staging` for a build, plus `development` for the dev server only. There is no default. A build or dev command without a valid value fails, so each workflow that builds Mail sets it explicitly (`turbo.json` hashes it, and `scripts/ci/mail-host-scan.test.mjs` fails when a Mail build path omits it).
+
+| Profile | Root host | Notes |
+| --- | --- | --- |
+| production | `mail.tuturuuu.com` | Serves the production host and mount hosts only; carries no Access names. |
+| staging | the Access-protected staging host | Fronted by Cloudflare Access; the Worker also verifies the Access JWT itself. |
+
+The staging Worker takes four extra secrets beyond the production set: `CF_ACCESS_TEAM_DOMAIN` and `CF_ACCESS_AUD` verify the JWT (missing, foreign-key, wrong-AUD and expired tokens answer 403 before any route runs), and `CF_ACCESS_CLIENT_ID` and `CF_ACCESS_CLIENT_SECRET` form the service token attached only to server-side calls to the staging Web origin. Client Access credentials are stripped before any forward. Its R2 bucket is separate from the production bucket.
+
+Each sealed artifact carries only its own environment's root host. `scripts/ci/mail-host-scan.mjs <dist> <profile>` runs on the original and the restored artifact and on the production qualification and CI builds: it rejects a production artifact that names the staging host, a staging artifact that names the production Supabase project, any folded `rootHosts` list other than the profile's own, and a staging request-forwarding source (`handler.ts`, `staging-access.ts`) that names a production host. The emitted-Worker acceptance in `wave1-native-runtime.mjs` serves fixture Access keys for staging, checks that missing, foreign-key, wrong-AUD, expired and malformed tokens are denied, and requires each artifact to answer 404 on the other environment's host.
 
 ## 1. shortener
 

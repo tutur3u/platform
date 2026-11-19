@@ -53,16 +53,18 @@ async function runRuntimeAcceptance() {
   const { unstable_startWorker } = require('wrangler');
   const egress = [];
   const accessCertReads = [];
-  // Calendar staging verifies Access JWTs itself; serve fixture team keys only.
+  // Calendar and Mail staging verify Access JWTs themselves; serve fixture team keys only.
   const access =
-    app === 'calendar' && environment === 'staging' ? accessFixture() : null;
-  // N8/N9: each Calendar artifact must 404 the other environment's host.
+    (app === 'calendar' || app === 'mail') && environment === 'staging'
+      ? accessFixture()
+      : null;
+  // N8/N9: each Calendar and Mail artifact must 404 the other environment's host.
   // The production Finance artifact admits only its own root host.
   const foreignHost =
-    app === 'calendar'
+    app === 'calendar' || app === 'mail'
       ? environment === 'production'
-        ? 'calendar.tutur3u.com'
-        : 'calendar.tuturuuu.com'
+        ? `${app}.tutur3u.com`
+        : `${app}.tuturuuu.com`
       : app === 'finance'
         ? 'finance.tutur3u.com'
         : null;

@@ -83,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
+      MAIL_DEPLOYMENT_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: https://mail-calendar-tasks-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_programming_ci_placeholder
       NEXT_PUBLIC_APP_URL: https://mail-calendar-tasks-ci.invalid
@@ -117,6 +118,8 @@ jobs:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/mail
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
+      - name: Mail production artifact host scan
+        run: node scripts/ci/mail-host-scan.mjs apps/mail/dist production
 
       - name: Capture generated Mail route tree evidence
         if: always()

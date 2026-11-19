@@ -79,6 +79,7 @@ jobs:
       INPUT_ENVIRONMENT: wave1-${{ inputs.app }}-production
       PROFILE: production
       CALENDAR_DEPLOYMENT_PROFILE: production
+      MAIL_DEPLOYMENT_PROFILE: production
       SOURCE_SHA: ${{ github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -164,6 +165,7 @@ jobs:
           JS
           fi
           if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
+          if [ "$APP" = mail ]; then node scripts/ci/mail-host-scan.mjs "apps/$APP/dist" production; fi
       - name: Pre-seal doctor on the production Host header
         timeout-minutes: 3
         run: |

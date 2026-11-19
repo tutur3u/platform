@@ -44,7 +44,7 @@ const textExtensions = new Set([
 ]);
 const rootHostsPattern = /["']?rootHosts["']?\s*:\s*\[([^\]]*)\]/gu;
 
-function files(root) {
+export function files(root) {
   const found = [];
   const visit = (path) => {
     const stat = lstatSync(path);
