@@ -7895,5 +7895,18 @@
   "financeCheckpointNeedsReview": "Needs review",
   "financeCheckpointMarkReviewed": "Mark reviewed",
   "financeCheckpointReopen": "Reopen",
-  "financeCheckpointReviewChanged": "Checkpoint changed. Review the latest balance."
+  "financeCheckpointReviewChanged": "Checkpoint changed. Review the latest balance.",
+  "financeInvoiceReports": "Invoice reports",
+  "@financeInvoiceReportCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeInvoiceReportCount": "{count, plural, one{1 invoice} other{{count} invoices}}",
+  "financeInvoiceByWallet": "By wallet",
+  "financeInvoiceByCreator": "By creator",
+  "financeReportRatesMissing": "Exchange rates are unavailable for this report.",
+  "financeReportConverted": "Estimated using the latest exchange rates."
 }

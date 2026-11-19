@@ -16607,4 +16607,30 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeCheckpointReviewChanged => 'Checkpoint changed. Review the latest balance.';
+
+  @override
+  String get financeInvoiceReports => 'Invoice reports';
+
+  @override
+  String financeInvoiceReportCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count invoices',
+      one: '1 invoice',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeInvoiceByWallet => 'By wallet';
+
+  @override
+  String get financeInvoiceByCreator => 'By creator';
+
+  @override
+  String get financeReportRatesMissing => 'Exchange rates are unavailable for this report.';
+
+  @override
+  String get financeReportConverted => 'Estimated using the latest exchange rates.';
 }

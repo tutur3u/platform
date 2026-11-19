@@ -16406,4 +16406,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeCheckpointReviewChanged => 'Mốc kiểm tra đã thay đổi. Hãy kiểm tra số dư mới nhất.';
+
+  @override
+  String get financeInvoiceReports => 'Báo cáo hóa đơn';
+
+  @override
+  String financeInvoiceReportCount(int count) {
+    return '$count hóa đơn';
+  }
+
+  @override
+  String get financeInvoiceByWallet => 'Theo ví';
+
+  @override
+  String get financeInvoiceByCreator => 'Theo người tạo';
+
+  @override
+  String get financeReportRatesMissing => 'Chưa có tỷ giá cho báo cáo này.';
+
+  @override
+  String get financeReportConverted => 'Ước tính theo tỷ giá mới nhất.';
 }

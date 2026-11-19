@@ -57,6 +57,13 @@ void main() {
     );
     await tester.tap(find.text('Open invoice list'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('Invoice reports'));
+    await tester.pumpAndSettle();
+    expect(find.text('By wallet'), findsOneWidget);
+    expect(find.text('By creator'), findsOneWidget);
+    expect(find.text('3 invoices'), findsNWidgets(3));
+    tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Quinn'));
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).last, 'Receipt provided');
@@ -75,6 +82,24 @@ void main() {
 
 class _InvoiceRepository extends FinanceSceneRepository {
   (String, String?)? saved;
+
+  @override
+  Future<FinanceInvoiceReport> getInvoiceReport(
+    String workspace, {
+    required String from,
+    required String through,
+    required String granularity,
+  }) async {
+    final period = DateTime.parse(from);
+    return (
+      wallets: <FinanceInvoiceReportRow>[
+        (id: 'primary', name: 'Cash', period: period, count: 3, amount: 120),
+      ],
+      creators: <FinanceInvoiceReportRow>[
+        (id: 'creator', name: 'Quinn', period: period, count: 3, amount: 120),
+      ],
+    );
+  }
 
   @override
   Future<FinancePageResult<FinanceInvoice>> getInvoices(

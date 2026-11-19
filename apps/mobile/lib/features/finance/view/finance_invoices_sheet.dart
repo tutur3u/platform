@@ -10,6 +10,7 @@ import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/view/finance_invoice_editor.dart';
+import 'package:mobile/features/finance/view/finance_invoice_report_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
@@ -140,7 +141,25 @@ class _FinanceInvoicesSheetState extends State<_FinanceInvoicesSheet> {
     return FinanceDirectorySheet<FinanceInvoice>(
       title: l10n.financeInvoices,
       empty: l10n.financeInvoiceEmpty,
-      sections: sections,
+      sections: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: AppSpacing.sm,
+        children: [
+          sections,
+          AppButton.secondary(
+            leading: const Icon(LucideIcons.chartNoAxesColumn),
+            onPressed: () => session.open<void>(
+              context,
+              (_) => FinanceInvoiceReportSheet(
+                session: session,
+                repository: widget.repository,
+                wallets: widget.wallets,
+              ),
+            ),
+            child: Text(l10n.financeInvoiceReports),
+          ),
+        ],
+      ),
       fetch: (query, page) =>
           widget.repository.getInvoices(ws, query: query, page: page),
       create:

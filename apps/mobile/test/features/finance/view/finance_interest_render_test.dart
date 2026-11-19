@@ -119,9 +119,10 @@ class _WalletToolsRepository extends FinanceSceneRepository {
   @override
   Future<List<Transaction>> getReportTransactions({
     required String workspace,
-    required String wallet,
+    required String? wallet,
     required FinanceTransactionQuery query,
     required bool Function() active,
+    List<String> walletIds = const [],
   }) async => [
     Transaction(id: 'in', amount: 3000000, takenAt: query.start),
     Transaction(

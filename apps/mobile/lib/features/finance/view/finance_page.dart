@@ -187,6 +187,7 @@ class _FinanceView extends StatelessWidget {
                   context,
                   wallets: state.wallets,
                   currency: state.workspaceCurrency,
+                  exchangeRates: state.exchangeRates,
                 ),
               )
             : null,

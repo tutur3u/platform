@@ -30768,6 +30768,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checkpoint changed. Review the latest balance.'**
   String get financeCheckpointReviewChanged;
+
+  /// No description provided for @financeInvoiceReports.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice reports'**
+  String get financeInvoiceReports;
+
+  /// No description provided for @financeInvoiceReportCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 invoice} other{{count} invoices}}'**
+  String financeInvoiceReportCount(int count);
+
+  /// No description provided for @financeInvoiceByWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'By wallet'**
+  String get financeInvoiceByWallet;
+
+  /// No description provided for @financeInvoiceByCreator.
+  ///
+  /// In en, this message translates to:
+  /// **'By creator'**
+  String get financeInvoiceByCreator;
+
+  /// No description provided for @financeReportRatesMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rates are unavailable for this report.'**
+  String get financeReportRatesMissing;
+
+  /// No description provided for @financeReportConverted.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated using the latest exchange rates.'**
+  String get financeReportConverted;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

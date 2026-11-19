@@ -7197,5 +7197,11 @@
   "financeCheckpointNeedsReview": "Cần kiểm tra",
   "financeCheckpointMarkReviewed": "Đánh dấu đã kiểm tra",
   "financeCheckpointReopen": "Mở lại",
-  "financeCheckpointReviewChanged": "Mốc kiểm tra đã thay đổi. Hãy kiểm tra số dư mới nhất."
+  "financeCheckpointReviewChanged": "Mốc kiểm tra đã thay đổi. Hãy kiểm tra số dư mới nhất.",
+  "financeInvoiceReports": "Báo cáo hóa đơn",
+  "financeInvoiceReportCount": "{count} hóa đơn",
+  "financeInvoiceByWallet": "Theo ví",
+  "financeInvoiceByCreator": "Theo người tạo",
+  "financeReportRatesMissing": "Chưa có tỷ giá cho báo cáo này.",
+  "financeReportConverted": "Ước tính theo tỷ giá mới nhất."
 }

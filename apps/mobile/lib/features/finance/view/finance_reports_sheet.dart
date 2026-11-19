@@ -5,6 +5,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
+import 'package:mobile/data/models/finance/exchange_rate.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/finance/utils/finance_period.dart';
@@ -20,6 +21,7 @@ Future<void> openFinanceReports(
   BuildContext context, {
   required List<Wallet> wallets,
   required String currency,
+  List<ExchangeRate> exchangeRates = const [],
 }) async {
   if (wallets.isEmpty) return;
   final repository = context.read<FinanceRepository>();
@@ -28,6 +30,7 @@ Future<void> openFinanceReports(
     (_) => _FinanceReportsSheet(
       wallets: wallets,
       currency: currency,
+      exchangeRates: exchangeRates,
       repository: repository,
       session: session,
     ),
@@ -38,12 +41,14 @@ class _FinanceReportsSheet extends StatefulWidget {
   const _FinanceReportsSheet({
     required this.wallets,
     required this.currency,
+    required this.exchangeRates,
     required this.repository,
     required this.session,
   });
 
   final List<Wallet> wallets;
   final String currency;
+  final List<ExchangeRate> exchangeRates;
   final FinanceRepository repository;
   final FinanceSheetSession session;
 
@@ -52,7 +57,15 @@ class _FinanceReportsSheet extends StatefulWidget {
 }
 
 class _FinanceReportsSheetState extends State<_FinanceReportsSheet> {
-  late Wallet _wallet = widget.wallets.first;
+  late String _selection = widget.wallets.first.id;
+
+  Wallet? get _wallet =>
+      widget.wallets.where((wallet) => wallet.id == _selection).firstOrNull;
+
+  Map<String, String?> get _reportCurrencies => {
+    for (final wallet in widget.wallets)
+      if (wallet.reportOptIn != false) wallet.id: wallet.currency,
+  };
   final _now = DateTime.now();
   late FinancePeriod _period = FinancePeriod.containing(
     FinancePeriodKind.month,
@@ -64,14 +77,25 @@ class _FinanceReportsSheetState extends State<_FinanceReportsSheet> {
   Future<FinanceWalletReport> _load() async {
     final period = _period;
     final generation = ++_generation;
+    final wallet = _wallet;
+    final currencies = _reportCurrencies;
     final rows = await widget.repository.getReportTransactions(
       workspace: widget.session.workspaceId,
-      wallet: _wallet.id,
+      wallet: wallet?.id,
+      walletIds: wallet == null ? currencies.keys.toList() : const [],
       query: period.query,
       active: () =>
           mounted && widget.session.active && generation == _generation,
     );
-    return FinanceWalletReport(period, rows);
+    return wallet == null
+        ? FinanceWalletReport.workspace(
+            period,
+            rows,
+            currencies: currencies,
+            targetCurrency: widget.currency,
+            rates: widget.exchangeRates,
+          )
+        : FinanceWalletReport(period, rows);
   }
 
   void _reload() => setState(() => _report = _load());
@@ -79,23 +103,28 @@ class _FinanceReportsSheetState extends State<_FinanceReportsSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final currency = _wallet.currency ?? widget.currency;
+    final currency = _wallet?.currency ?? widget.currency;
     return AppSheetScaffold(
       title: l10n.financeReports,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: AppSpacing.md,
         children: [
-          AppSelect<Wallet>(
+          AppSelect<String>(
             title: l10n.financeWallet,
             options: [
+              if (_reportCurrencies.length > 1)
+                AppSelectOption(value: '', label: l10n.financeAllWallets),
               for (final wallet in widget.wallets)
-                AppSelectOption(value: wallet, label: wallet.name ?? wallet.id),
+                AppSelectOption(
+                  value: wallet.id,
+                  label: wallet.name ?? wallet.id,
+                ),
             ],
-            value: _wallet,
+            value: _selection,
             onChanged: (wallet) {
               if (!mounted) return;
-              _wallet = wallet;
+              _selection = wallet;
               _reload();
             },
           ),
@@ -117,7 +146,9 @@ class _FinanceReportsSheetState extends State<_FinanceReportsSheet> {
               if (report == null) {
                 return AppStateMessage.inline(
                   icon: LucideIcons.circleAlert,
-                  title: l10n.financeReportUnavailable,
+                  title: snapshot.error is FinanceReportRateMissing
+                      ? l10n.financeReportRatesMissing
+                      : l10n.financeReportUnavailable,
                   actionLabel: l10n.commonRetry,
                   onAction: _reload,
                 );
@@ -176,6 +207,11 @@ class _ReportBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: AppSpacing.md,
       children: [
+        if (report.converted)
+          Text(
+            l10n.financeReportConverted,
+            style: context.tokens.typography.caption,
+          ),
         FinanceFlowSummary(
           income: report.income,
           expense: -report.expense,

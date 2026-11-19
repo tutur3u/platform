@@ -124,6 +124,11 @@ charts and all financial figures. For a large report, choose a shorter period.
 
 `finance_report_test.dart` covers period and category totals.
 
+Cross-wallet reports include reporting-enabled wallets and use the latest
+available exchange rates to estimate totals in the workspace currency. A
+missing exchange rate stops the report. Invoice reports show counts by
+creator and each wallet's amount in its own currency.
+
 ## Wallet interest
 
 Open Interest tracking in a wallet to view accruals, projections, historical
@@ -181,7 +186,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Transfers | Linked wallet entries with source and destination amounts | Create and edit transfers, including cross-currency amounts. Linked entries collapse in activity |
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
 | Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, and collect outstanding subscriptions. Fee locks, manual subscription setup, wallet reassignment, and recovery remain open |
-| Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet cash flow, cumulative movement, and category totals. Cross-wallet and invoice reports remain open |
+| Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet and cross-wallet cash flow, cumulative movement, category totals, and invoice totals by wallet and creator |
 | Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. Review status is shared with web |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
