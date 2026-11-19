@@ -357,6 +357,80 @@
           ]
         }
       }
+    },
+    "tools": {
+      "productionOnly": true,
+      "productionWorker": "tuturuuu-tools",
+      "canonicalHost": "tools.tuturuuu.com",
+      "secrets": [
+        "TUTURUUU_APP_COORDINATION_SECRET",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      ],
+      "releaseRecipe": {
+        "schemaVersion": 1,
+        "app": "tools",
+        "platform": "cf-wave1",
+        "canonicalHosts": ["https://tools.tuturuuu.com"],
+        "mountHosts": ["https://tuturuuu.com"],
+        "requiredSecretNames": [
+          "TUTURUUU_APP_COORDINATION_SECRET",
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+        ],
+        "allowedVars": {
+          "TUTURUUU_NOINDEX": "0"
+        },
+        "publicInputPins": [],
+        "publicationPolicyKey": "productionPublicationPolicy",
+        "rollbackTargetRule": "recorded-preimage",
+        "buildRecipe": {
+          "appConfig": "apps/tools/void.config.ts",
+          "script": "build",
+          "command": "vp build --configLoader runner"
+        },
+        "smokeSpec": {
+          "maxRequests": 3,
+          "timeoutMs": 10000,
+          "cases": [
+            {
+              "path": "/",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/api/build-info",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            },
+            {
+              "path": "/qr",
+              "status": 200,
+              "redirectOrigin": null,
+              "noStore": true
+            }
+          ]
+        },
+        "cf": {
+          "productionWorker": "tuturuuu-tools",
+          "compatibilityDate": "2026-10-12",
+          "compatibilityFlags": [
+            "nodejs_compat",
+            "global_fetch_strictly_public"
+          ],
+          "sourceIdentity": "tuturuuu-tools",
+          "productionOnly": true,
+          "doctorExpectations": {
+            "expectRedirect": false
+          },
+          "sourceVars": {
+            "TUTURUUU_NOINDEX": "0"
+          },
+          "stagingPublicationVars": {}
+        }
+      }
     }
   },
   "stagingAdmission": {
