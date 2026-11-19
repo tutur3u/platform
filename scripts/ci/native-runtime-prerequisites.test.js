@@ -255,6 +255,7 @@ test('native build identity records the environment its caller declares', () => 
     'shortener-cloudflare.yaml:native-production',
   ]);
   assert.deepEqual(matrixCallers.sort(), [
+    'external-cloudflare.yaml:build',
     'forms-cloudflare.yaml:native',
     'inventory-cloudflare.yaml:native',
     'mind-cloudflare.yaml:native',

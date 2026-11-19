@@ -34,7 +34,7 @@ export async function loadWorker(app, result) {
     bridgeErrorResponse: () =>
       new Response('Internal Server Error', { status: 500 }),
     createBridgeHandler: () => emit,
-    createBridgeStartHandler: () => ({}),
+    createBridgeStartHandler: () => ({ fetch: emit }),
     proxy: () => {},
     config: { matcher: [] },
     centralFirst: [],
@@ -71,6 +71,10 @@ export async function loadWorker(app, result) {
       let target;
       if (specifier === '@tuturuuu/start-bridge/response-policy')
         target = 'packages/start-bridge/src/core/response-policy.ts';
+      else if (specifier === '@tuturuuu/start-bridge/base-path')
+        target = 'packages/start-bridge/src/core/base-path.ts';
+      else if (specifier === '@tuturuuu/start-bridge/mounts')
+        target = 'packages/start-bridge/src/core/mounts.ts';
       else if (specifier === '@tuturuuu/start-bridge/startup')
         target = 'packages/start-bridge/src/server/startup.ts';
       else if (

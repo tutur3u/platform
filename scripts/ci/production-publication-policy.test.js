@@ -77,6 +77,7 @@ function fixture(t, policy) {
     'scripts/ci/wave1-native-attempt.mjs',
     'scripts/ci/wave1-native-profile.mjs',
     'scripts/ci/release-recipe-config.mjs',
+    'scripts/ci/wave1-source-admissions.mjs',
     'scripts/ci/wave1-native-profiles.json',
     'scripts/ci/wave1-native-artifact.mjs',
     'scripts/ci/wave1-native-source-maps.mjs',

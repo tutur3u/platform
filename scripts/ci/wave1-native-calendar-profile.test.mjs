@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
 import { prepare, verify } from './wave1-native-artifact.mjs';
 import { assertStagingIsolation, profileFor } from './wave1-native-profile.mjs';
@@ -66,13 +67,29 @@ test('production Worker configs never set a shared cookie-domain override', (t) 
   const { apps } = JSON.parse(
     readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
   );
-  for (const app of Object.keys(apps)) {
+  for (const [app, { releaseRecipe: recipe }] of Object.entries(apps)) {
     const root = fixture(t, app);
+    const source = join(root, 'dist/server/wrangler.json');
+    const config = JSON.parse(readFileSync(source, 'utf8'));
+    writeFileSync(
+      source,
+      JSON.stringify({
+        ...config,
+        name: recipe.cf.sourceIdentity,
+        compatibility_date: recipe.cf.compatibilityDate,
+        compatibility_flags: recipe.cf.compatibilityFlags,
+        vars: recipe.cf.sourceVars,
+        services: recipe.cf.admittedSourceServices,
+      })
+    );
     prepare(root, app, 'production', undefined, sha);
     const restored = verify(root, app, 'production', sha);
-    const config = JSON.parse(readFileSync(restored.config, 'utf8'));
+    const published = JSON.parse(readFileSync(restored.config, 'utf8'));
     assert.equal(
-      Object.hasOwn(config.vars, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'),
+      Object.hasOwn(
+        published.vars,
+        'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
+      ),
       false,
       app
     );

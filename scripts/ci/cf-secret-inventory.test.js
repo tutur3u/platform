@@ -7,9 +7,8 @@ const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const steps = readWorkflow('coordination-cloudflare.yaml').jobs.deploy.steps;
-const publication = steps.findIndex(
-  (step) =>
-    step.name === 'Publish the exact artifact with retained migration tags'
+const publication = steps.findIndex((step) =>
+  step.run?.includes('cf deploy --prebuilt')
 );
 const phases = [
   ['before', 'Require pre-provisioned server credentials'],
@@ -22,6 +21,7 @@ for (const [phase, name] of phases) {
       step.run?.includes(`cf-worker-settings.mjs ${phase} `)
     );
     const verify = steps.findIndex((step) => step.name === name);
+    assert.ok(publication >= 0);
     assert.ok(capture >= 0 && verify > capture);
     assert.equal(steps[capture]['continue-on-error'], undefined);
     assert.equal(steps[verify]['continue-on-error'], undefined);
