@@ -30,8 +30,12 @@ import { getBoardSprintsQueryKey } from './board-sprints/use-board-sprints';
 import { BoardViews, type ViewType } from './board-views';
 import { ProgressiveLoaderProvider } from './progressive-loader-context';
 import { dispatchRecentSidebarVisit } from './recent-sidebar-events';
-import { readTaskBoardCache } from './task-board-cache';
 import {
+  purgeOtherUserTaskBoardCaches,
+  readTaskBoardCache,
+} from './task-board-cache';
+import {
+  bindTaskBoardCacheSessionEnd,
   flushTaskBoardCacheWrite,
   scheduleTaskBoardCacheWrite,
 } from './task-board-cache-scheduler';
@@ -79,6 +83,9 @@ export function BoardClient({
   > | null>(null);
 
   useEffect(() => {
+    // A shared browser keeps only the signed-in user's board snapshots.
+    bindTaskBoardCacheSessionEnd();
+    if (currentUserId) purgeOtherUserTaskBoardCaches(currentUserId);
     const snapshot = readTaskBoardCache(cacheScopeId, boardId);
     if (!snapshot) return;
 
@@ -92,7 +99,7 @@ export function BoardClient({
       (current: typeof snapshot.tasks | undefined) =>
         current?.length ? current : snapshot.tasks
     );
-  }, [boardId, cacheScopeId, queryClient, workspace.id]);
+  }, [boardId, cacheScopeId, currentUserId, queryClient, workspace.id]);
 
   const {
     data: board,

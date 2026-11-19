@@ -103,3 +103,41 @@ export function writeTaskBoardCache(
     // Storage can be unavailable or full. The in-memory query cache still works.
   }
 }
+
+function listTaskBoardCacheKeys(): string[] {
+  if (typeof window === 'undefined') return [];
+  const keys: string[] = [];
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith(`${TASK_BOARD_CACHE_PREFIX}:`)) keys.push(key);
+    }
+  } catch {
+    return [];
+  }
+  return keys;
+}
+
+function removeKeys(keys: string[]) {
+  for (const key of keys) {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // Storage can be unavailable; nothing more to clear.
+    }
+  }
+}
+
+/** Removes every stored board snapshot (sign-out, account switch). */
+export function clearTaskBoardCaches() {
+  removeKeys(listTaskBoardCacheKeys());
+}
+
+/**
+ * Removes snapshots that belong to another signed-in user. Scopes are
+ * `<userId>:<workspaceId>`; snapshots of `userId` itself are kept.
+ */
+export function purgeOtherUserTaskBoardCaches(userId: string) {
+  const own = `${TASK_BOARD_CACHE_PREFIX}:${userId}:`;
+  removeKeys(listTaskBoardCacheKeys().filter((key) => !key.startsWith(own)));
+}

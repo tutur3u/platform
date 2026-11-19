@@ -19,6 +19,7 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
+import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 
 interface SatelliteAccountSwitcherMenuProps {
   centralUrl: string;
@@ -96,6 +97,7 @@ export function SatelliteAccountSwitcherMenu({
         return;
       }
       await invalidateAccounts();
+      announceSessionEnding();
       onAccountChanged();
     },
     onError: (error) => {

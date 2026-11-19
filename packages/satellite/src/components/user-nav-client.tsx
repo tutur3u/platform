@@ -37,6 +37,7 @@ import { SystemLanguageWrapper } from './system-language-wrapper';
 import { ThemeDropdownItems } from './theme-dropdown-items';
 import { resolveUserNavSecondaryLabel } from './user-nav-metadata';
 import { useWorkspaceSelector } from './workspace-selector-context';
+import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 
 interface UserNavClientProps {
   user: WorkspaceUser | null;
@@ -152,6 +153,7 @@ export default function UserNavClient({
   });
 
   const handleLogout = () => {
+    announceSessionEnding();
     router.push(
       createLogoutConfirmationUrl({
         centralUrl,

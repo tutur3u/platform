@@ -1,4 +1,6 @@
+import { onSessionEnding } from '@tuturuuu/utils/session-events';
 import {
+  clearTaskBoardCaches,
   type TaskBoardCacheSnapshot,
   writeTaskBoardCache,
 } from './task-board-cache';
@@ -13,6 +15,7 @@ const pending = new Map<
 >();
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 let pageHideBound = false;
+let sessionEndingBound = false;
 
 function keyOf(workspaceId: string, boardId: string) {
   return `${workspaceId}:${boardId}`;
@@ -58,9 +61,33 @@ export function scheduleTaskBoardCacheWrite(
     pageHideBound = true;
     window.addEventListener('pagehide', flushTaskBoardCacheWrites);
   }
+  bindTaskBoardCacheSessionEnd();
 }
 
 /** Flushes one board's pending snapshot, if any. */
 export function flushTaskBoardCacheWrite(workspaceId: string, boardId: string) {
   flushKey(keyOf(workspaceId, boardId));
+}
+
+/** Drops every pending snapshot without writing it. */
+export function discardTaskBoardCacheWrites() {
+  for (const timer of timers.values()) clearTimeout(timer);
+  timers.clear();
+  pending.clear();
+}
+
+/**
+ * Sign-out and account switch: drop pending snapshots first, so a later
+ * pagehide flush cannot write them, then remove every stored snapshot.
+ */
+export function clearTaskBoardCacheForSessionEnd() {
+  discardTaskBoardCacheWrites();
+  clearTaskBoardCaches();
+}
+
+/** Clears board caches when the app announces the session is ending. */
+export function bindTaskBoardCacheSessionEnd() {
+  if (sessionEndingBound || typeof window === 'undefined') return;
+  sessionEndingBound = true;
+  onSessionEnding(clearTaskBoardCacheForSessionEnd);
 }

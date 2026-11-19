@@ -5,7 +5,12 @@
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { readTaskBoardCache } from './task-board-cache';
+import { announceSessionEnding } from '@tuturuuu/utils/session-events';
+import {
+  purgeOtherUserTaskBoardCaches,
+  readTaskBoardCache,
+  writeTaskBoardCache,
+} from './task-board-cache';
 import {
   flushTaskBoardCacheWrite,
   flushTaskBoardCacheWrites,
@@ -69,5 +74,46 @@ describe('scheduleTaskBoardCacheWrite', () => {
     });
     window.dispatchEvent(new Event('pagehide'));
     expect(readTaskBoardCache('ws-1', 'board-1')?.tasks).toHaveLength(2);
+  });
+
+  it('drops pending snapshots and stored caches when the session ends', () => {
+    scheduleTaskBoardCacheWrite('user-a:ws-1', 'board-1', {
+      board,
+      pagination: {},
+      tasks: tasks(['a']),
+    });
+    flushTaskBoardCacheWrite('user-a:ws-1', 'board-1');
+    scheduleTaskBoardCacheWrite('user-a:ws-1', 'board-1', {
+      board,
+      pagination: {},
+      tasks: tasks(['a', 'b']),
+    });
+
+    announceSessionEnding();
+    window.dispatchEvent(new Event('pagehide'));
+    vi.advanceTimersByTime(TASK_BOARD_CACHE_WRITE_DELAY_MS);
+
+    expect(readTaskBoardCache('user-a:ws-1', 'board-1')).toBeNull();
+  });
+});
+
+describe('purgeOtherUserTaskBoardCaches', () => {
+  it("keeps only the signed-in user's board snapshots", () => {
+    writeTaskBoardCache('user-a:ws-1', 'board-1', {
+      board,
+      pagination: {},
+      tasks: tasks(['a']),
+    });
+    writeTaskBoardCache('user-b:ws-1', 'board-1', {
+      board,
+      pagination: {},
+      tasks: tasks(['b']),
+    });
+
+    purgeOtherUserTaskBoardCaches('user-b');
+
+    expect(readTaskBoardCache('user-a:ws-1', 'board-1')).toBeNull();
+    expect(readTaskBoardCache('user-b:ws-1', 'board-1')?.tasks).toHaveLength(1);
+    localStorage.clear();
   });
 });

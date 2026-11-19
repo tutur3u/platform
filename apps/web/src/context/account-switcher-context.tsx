@@ -28,6 +28,7 @@ import {
 } from 'react';
 import { runSwitchIntent } from '@/lib/auth/multi-account/switch-intent';
 import { isPersistableMultiAccountRoutePath } from '@/lib/auth/multi-account/routes';
+import { announceSessionEnding } from '@tuturuuu/utils/session-events';
 
 const ACCOUNTS_QUERY_KEY = ['auth', 'web-accounts'] as const;
 const LEGACY_MULTI_SESSION_STORAGE_KEY = 'tuturuuu_multi_session_store';
@@ -264,6 +265,7 @@ export function AccountSwitcherProvider({
           async (response, isCurrent) => {
             await invalidateAccounts();
             if (!isCurrent()) return;
+            announceSessionEnding();
             const result = toAccountOperationResult(response);
             if (!result.success) return;
             const target = getRedirectTarget(result);
@@ -318,11 +320,13 @@ export function AccountSwitcherProvider({
   );
 
   const logout = useCallback(async () => {
+    announceSessionEnding();
     const response = await logoutMutation.mutateAsync();
     await navigateAfterMutation(toAccountOperationResult(response));
   }, [logoutMutation, navigateAfterMutation]);
 
   const logoutAll = useCallback(async () => {
+    announceSessionEnding();
     try {
       window.localStorage.removeItem(LEGACY_MULTI_SESSION_STORAGE_KEY);
     } catch {
