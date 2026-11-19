@@ -20,13 +20,10 @@
 import { smokeAssets } from '../../../scripts/ci/asset-smoke.mjs';
 import { DEFERRED_PRELOAD_REL } from '@tuturuuu/roadmap-core/defer-hydration.ts';
 
-/** Every public page and language. Kept in step with the pre-seal doctor. */
-export const CANONICAL_PAGES = [
-  '/roadmap',
-  '/roadmap/vi',
-  '/roadmap/workshops/edufest-2026',
-  '/roadmap/vi/workshops/edufest-2026',
-];
+import {
+  DOCUMENT_REQUEST_PATHS,
+  PUBLIC_DOCUMENT_PATHS,
+} from './document-paths.mjs';
 
 function attribute(attrs, name) {
   const match = new RegExp(
@@ -141,7 +138,7 @@ export async function canonicalSmoke({
   const failures = [];
   const checked = [];
   const hints = new Map();
-  for (const path of CANONICAL_PAGES) {
+  for (const path of DOCUMENT_REQUEST_PATHS) {
     const url = `${origin}${path}`;
     const response = await fetchImpl(url, { redirect: 'manual' });
     const html = response.status === 200 ? await response.text() : '';
@@ -150,6 +147,8 @@ export async function canonicalSmoke({
       failures.push(`${path} status ${response.status}, expected 200`);
       continue;
     }
+    if (!/^text\/html\b/i.test(response.headers.get('content-type') ?? ''))
+      failures.push(`${path} did not serve HTML`);
     if (speculationRuleScripts(html) > 0)
       failures.push(
         `${path} has <script type="speculationrules">: the zone answers Sec-Purpose: prefetch with 503`
@@ -165,7 +164,7 @@ export async function canonicalSmoke({
     }
   }
   const assets = await smokeAssets({
-    pages: CANONICAL_PAGES.map((path) => ({
+    pages: PUBLIC_DOCUMENT_PATHS.map((path) => ({
       url: `${origin}${path}`,
       status: 200,
     })),

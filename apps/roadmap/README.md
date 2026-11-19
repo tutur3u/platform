@@ -411,7 +411,9 @@ A moved main requires fresh exact-source qualification rather than a silent rebu
 The Void plugin precedes the Start and React plugins. Vite asset base, Start
 basepath and the router basepath all match `/roadmap`. Before production traffic,
 verify the emitted Worker and client artifacts, the exact source SHA and account,
-and both the bare `/roadmap` and `/roadmap/*` routes against existing zone routes.
+and the `tuturuuu.com/roadmap*` route against the existing zone route set.
+The terminal wildcard covers queries on the bare mount. The Worker sends
+sibling paths such as `/roadmapping` to the zone origin.
 The app-owned `src/worker.ts`, selected through Void's supported `cloudflare.main`,
 answers two hosts. `https://roadmap.tuturuuu.com` returns 301 to
 `https://tuturuuu.com/roadmap` plus the same path and query, with no trailing
@@ -456,7 +458,7 @@ A configured Worker name does not establish target identity or authentication.
 
 Hosted acceptance must build the exact source, inspect the emitted configuration
 and physical client tree, create a fresh Linux descriptor seal, and exercise root
-and bare-mount query redirects, outside-prefix rejection, SSR, assets and server
+and bare-mount query responses, slash redirects, outside-prefix rejection, SSR, assets and server
 functions against that artifact. Synthetic source tests do not attest a build,
 seal, runtime or deployment. A PR synthetic merge SHA is distinct from its PR head
 and from the reviewed main commit used for release.

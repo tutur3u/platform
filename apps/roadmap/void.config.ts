@@ -15,10 +15,9 @@ export default defineConfig({
     // 2026-10-12 and 2026-11-17.
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
-    routes: [
-      { pattern: 'tuturuuu.com/roadmap', zone_name: 'tuturuuu.com' },
-      { pattern: 'tuturuuu.com/roadmap/*', zone_name: 'tuturuuu.com' },
-    ],
+    // Workers Routes match the full URL. A terminal wildcard also covers
+    // queries on the bare mount, such as /roadmap?utm_source=newsletter.
+    routes: [{ pattern: 'tuturuuu.com/roadmap*', zone_name: 'tuturuuu.com' }],
     workers_dev: true,
     vars: { ROADMAP_REFRESH_ENABLED: 'true' },
     triggers: { crons: ['17 * * * *'] },

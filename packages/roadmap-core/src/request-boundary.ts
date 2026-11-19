@@ -94,6 +94,16 @@ function transportPath(path: string): boolean {
   );
 }
 
+// The Cloudflare wildcard matches sibling prefixes as well as the mount.
+// On a zone route, fetching the incoming request passes it to the zone origin.
+export function isRoadmapRouteOverflow(request: Request): boolean {
+  const url = new URL(request.url);
+  return (
+    url.origin === ROADMAP_CANONICAL_ORIGIN &&
+    /^\/roadmap[^/]/u.test(url.pathname)
+  );
+}
+
 export function roadmapBoundary(
   request: Request,
   basepath = selectedBasepath(request)
@@ -102,8 +112,7 @@ export function roadmapBoundary(
   if (/[%\\]/.test(url.pathname) || url.pathname.includes('//')) {
     return new Response('Bad Request', { status: 400 });
   }
-  // The public satellite host only redirects. The web proxy fetches workers.dev,
-  // whose host is not roadmap.tuturuuu.com, so this redirect cannot loop.
+  // Only the satellite host redirects to the apex.
   if (isRoadmapSatelliteHost(request)) {
     return new Response(null, {
       status: 301,

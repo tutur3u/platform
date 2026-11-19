@@ -1,4 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { collectTechStack } from './collect-tech-stack.ts';
 import { activityForBuild } from './insights/activity.ts';
 import { snapshotForBuild } from './live/hosting.ts';
 
@@ -31,6 +33,9 @@ export function roadmapBuildDefines(
     );
   }
   return {
+    __ROADMAP_TECH_STACK__: JSON.stringify(
+      collectTechStack(fileURLToPath(new URL('../../..', import.meta.url)))
+    ),
     __ROADMAP_BUILD_SHA__: JSON.stringify(source ?? 'development'),
     // The sitemap's lastmod: when this exact build was made.
     __ROADMAP_BUILD_TIME__: JSON.stringify(

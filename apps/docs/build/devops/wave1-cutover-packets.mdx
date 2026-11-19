@@ -155,12 +155,15 @@ previous Worker version, not Vercel.
 
 ## Roadmap
 
-`tuturuuu.com/roadmap` is served by the `tuturuuu-roadmap` Worker through Web's proxy
-(`apps/web/src/lib/roadmap-public-proxy.ts`), which fetches the non-redirecting worker origin
-and never forwards cookies or authorization. The Worker also owns the routes
-`tuturuuu.com/roadmap` and `tuturuuu.com/roadmap/*` in `apps/roadmap/void.config.ts`.
+The `tuturuuu-roadmap` Worker serves `tuturuuu.com/roadmap*`. Cloudflare routes
+match the full URL, so the terminal wildcard covers query strings on the bare
+mount. The Worker passes sibling paths such as `/roadmapping` to the zone origin.
+Web's fallback proxy fetches the apex route and guards against recursion.
 
-- Rollback: remove the `isRoadmapPublicPath` branch in `proxy.ts` (Web then serves its own page)
-  or point `ROADMAP_UPSTREAM_ORIGIN` elsewhere; no Worker deletion is needed.
-- Smoke: `curl -sS -L --max-redirs 3 -o /dev/null -w '%{http_code}\n' https://tuturuuu.com/roadmap`
-  expects `200`; `https://tuturuuu.com/vi/roadmap` expects one redirect to `/roadmap`.
+- Publication: verify the emitted route in the sealed artifact. The provider
+  owner attaches or verifies `tuturuuu.com/roadmap*` during deployment. A Worker
+  version promotion alone does not update zone routes.
+- Rollback: restore the captured Worker version and zone route set together.
+- Smoke: run `node apps/roadmap/scripts/canonical-smoke.mjs` after publication.
+  The canonical English and Vietnamese pages must return HTML with HTTP 200 for
+  both ordinary queries and UTM parameters.

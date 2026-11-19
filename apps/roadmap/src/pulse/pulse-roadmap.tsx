@@ -3,11 +3,13 @@ import type { Lang } from '@tuturuuu/roadmap-core/components/shared.tsx';
 import en from '@tuturuuu/roadmap-core/messages/en.json';
 import vi from '@tuturuuu/roadmap-core/messages/vi.json';
 import { RoadmapPage } from '@tuturuuu/roadmap-core/pages/roadmap.tsx';
+import { BUILD_TECH_STACK } from '@tuturuuu/roadmap-core/tech-stack.ts';
 import type { loadActivity } from '../activity-loader';
 import { ProductHeatmap, ReleaseTrain } from './pulse-activity';
 import { buildPulseFallback } from './pulse-data';
 import { PulseHero } from './pulse-hero';
 import { PulseProducts } from './pulse-products';
+import { PulseTechStack } from './pulse-tech-stack';
 
 const fallback = buildPulseFallback();
 
@@ -50,6 +52,7 @@ export function PulseRoadmap({
             snapshot={snapshot}
           />
           <StoreReleases lang={lang} t={t.storeReleases} />
+          <PulseTechStack apps={BUILD_TECH_STACK} lang={lang} />
         </div>
       )}
     />

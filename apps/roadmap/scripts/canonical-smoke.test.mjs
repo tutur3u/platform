@@ -1,14 +1,17 @@
 /** D79: the canonical post-deploy smoke catches zone-only failures. */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import { PUBLIC_DOCUMENTS } from '@tuturuuu/roadmap-core/cache-policy.ts';
 import {
   browserHeaders,
-  CANONICAL_PAGES,
   canonicalSmoke,
   resourceHints,
 } from './canonical-smoke.mjs';
-import { PUBLIC_DOCUMENT_PATHS } from './pre-seal-doctor.mjs';
+import {
+  PUBLIC_DOCUMENT_PATHS,
+  QUERY_DOCUMENT_PATHS,
+} from './document-paths.mjs';
 
 const ORIGIN = 'https://tuturuuu.com';
 const HISTORY = '/roadmap/assets/history-Abcd1234.json';
@@ -41,7 +44,7 @@ ${speculationRules ? '<script type="speculationrules">{"prefetch":[{"source":"do
     const headers = new Headers(init.headers ?? {});
     if (headers.get('sec-purpose') === 'prefetch')
       return new Response('', { status: 503 });
-    if (CANONICAL_PAGES.includes(url.pathname))
+    if (PUBLIC_DOCUMENT_PATHS.includes(url.pathname))
       return new Response(page, {
         status: 200,
         headers: { 'content-type': 'text/html; charset=utf-8' },
@@ -122,10 +125,9 @@ test('resource hints are replayed with the headers a browser sends', () => {
 
 test('the smoke, the doctor and the cache policy cover the same public pages', () => {
   assert.deepEqual(
-    [...CANONICAL_PAGES].sort(),
-    [...PUBLIC_DOCUMENT_PATHS].sort()
+    [...PUBLIC_DOCUMENT_PATHS].sort(),
+    [...PUBLIC_DOCUMENTS].sort()
   );
-  assert.deepEqual([...CANONICAL_PAGES].sort(), [...PUBLIC_DOCUMENTS].sort());
 });
 
 test('the smoke requests the history asset the page scripts load, and requires non-empty JSON', async () => {
@@ -167,7 +169,7 @@ test('D79: speculation rules markup on a canonical page fails the smoke', async 
     fetchImpl: zone({ speculationRules: true }),
   });
   assert.equal(ok, false);
-  for (const page of CANONICAL_PAGES)
+  for (const page of PUBLIC_DOCUMENT_PATHS)
     assert.ok(
       failures.some((failure) =>
         failure.startsWith(`${page} has <script type="speculationrules">`)
@@ -192,7 +194,7 @@ function deferredZone(historyIn) {
 </body></html>`;
   return async (input) => {
     const url = new URL(typeof input === 'string' ? input : input.url);
-    if (CANONICAL_PAGES.includes(url.pathname))
+    if (PUBLIC_DOCUMENT_PATHS.includes(url.pathname))
       return new Response(page, {
         status: 200,
         headers: { 'content-type': 'text/html; charset=utf-8' },
@@ -238,4 +240,43 @@ test('a history alternate link alone does not prove a script loads history', asy
     ),
     broken.failures.join('\n')
   );
+});
+
+test('the canonical smoke rejects a routing loop on any query variant in either locale', async () => {
+  const fetchPage = zone();
+  const variants = ['/roadmap', '/roadmap/vi'].flatMap((path) => [
+    `${path}?x=1`,
+    `${path}?utm_source=roadmap-smoke&utm_medium=test`,
+  ]);
+  for (const variant of variants) {
+    const result = await canonicalSmoke({
+      origin: ORIGIN,
+      fetchImpl: (input, init) =>
+        input === `${ORIGIN}${variant}`
+          ? Promise.resolve(new Response(null, { status: 508 }))
+          : fetchPage(input, init),
+    });
+    assert.ok(result.failures.includes(`${variant} status 508, expected 200`));
+  }
+});
+
+test('the emitted route source covers every bare-mount query variant', () => {
+  const source = readFileSync(
+    new URL('../void.config.ts', import.meta.url),
+    'utf8'
+  );
+  const patterns = Array.from(
+    source.matchAll(/pattern: ['"]([^'"]+)['"]/g),
+    ([, pattern]) => pattern
+  );
+  for (const variant of QUERY_DOCUMENT_PATHS) {
+    const target = `tuturuuu.com${variant}`;
+    assert.ok(
+      patterns.some(
+        (pattern) =>
+          pattern.endsWith('*') && target.startsWith(pattern.slice(0, -1))
+      ),
+      variant
+    );
+  }
 });

@@ -15,6 +15,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Miniflare, supportedCompatibilityDate } from 'miniflare';
 import { showPlans } from '@tuturuuu/roadmap-core/content/tracks.ts';
 import { inlineScriptTexts } from '@tuturuuu/roadmap-core/html-scripts.ts';
+import {
+  DOCUMENT_REQUEST_PATHS,
+  PUBLIC_DOCUMENT_PATHS,
+} from './document-paths.mjs';
 import * as markup from './doctor-markup.mjs';
 import {
   reportAssetSmokeRejection,
@@ -45,14 +49,6 @@ export const MOUNTED_LOGO =
 
 /** Canonical: no trailing slash, like every Tuturuuu URL. */
 export const CANONICAL_URL = 'https://tuturuuu.com/roadmap';
-
-/** Every public page and language; each must render and load cleanly. */
-export const PUBLIC_DOCUMENT_PATHS = [
-  '/roadmap',
-  '/roadmap/vi',
-  '/roadmap/workshops/edufest-2026',
-  '/roadmap/vi/workshops/edufest-2026',
-];
 
 export const speculativeLinks = markup.speculativeLinks;
 const SPEED_BRAIN =
@@ -222,7 +218,7 @@ export function assessDoctor(observation) {
     );
   }
   const documents = observation.documents ?? [];
-  for (const path of PUBLIC_DOCUMENT_PATHS) {
+  for (const path of DOCUMENT_REQUEST_PATHS) {
     const document = documents.find((item) => item.path === path);
     if (!document) {
       failures.push(`${path} was not probed`);
@@ -361,7 +357,7 @@ export function emittedHistoryAsset(root = appRoot()) {
 export async function observeWorker(port, expectedCommit, root = appRoot()) {
   const canonical = await probe(port, '/roadmap', 'tuturuuu.com');
   const documents = [];
-  for (const path of PUBLIC_DOCUMENT_PATHS) {
+  for (const path of DOCUMENT_REQUEST_PATHS) {
     const result = await probe(port, path, 'tuturuuu.com');
     documents.push({
       path,

@@ -17,6 +17,7 @@ import {
 import { roadmapNotFoundResponse } from '@tuturuuu/roadmap-core/not-found-response.tsx';
 import { SITEMAP_PATH, sitemapResponse } from '@tuturuuu/roadmap-core/seo.ts';
 import {
+  isRoadmapRouteOverflow,
   normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
@@ -60,6 +61,9 @@ export default {
   ...handler,
   async fetch(...args: Parameters<typeof handler.fetch>) {
     const [incoming, ...options] = args;
+    if (isRoadmapRouteOverflow(incoming)) {
+      return fetch(incoming, { redirect: 'manual' });
+    }
     const request = normalizeLocalHost(incoming);
     const basepath = selectedBasepath(request);
     const boundary = roadmapBoundary(request, basepath);

@@ -1,4 +1,35 @@
 {
+  "techStack": {
+    "current": "Current",
+    "inventory": "View apps",
+    "nextBundler": "Next.js bundler",
+    "progress": "{done} of {total} apps on TanStack Start + Cloudflare",
+    "source": "Based on checked-in app and routing configuration.",
+    "stack": {
+      "cf": "cf CLI",
+      "nativeWorker": "Native Cloudflare Worker",
+      "next": "Next.js",
+      "openNext": "OpenNext Worker",
+      "other": "Other",
+      "start": "TanStack Start",
+      "vercel": "Vercel",
+      "vite": "Vite",
+      "vitePlus": "Vite+",
+      "vitePlusVoid": "Vite+ + Void",
+      "wrangler": "Wrangler"
+    },
+    "status": {
+      "candidate": "Candidate",
+      "cutOver": "Cut over",
+      "held": "Held",
+      "outside": "Outside this migration",
+      "paused": "Paused"
+    },
+    "target": "Target",
+    "title": "Tech stack",
+    "unavailable": "App stack data is unavailable.",
+    "unspecified": "Unspecified"
+  },
   "storeReleases": {
     "heading": "Store releases",
     "pending": "Pending",

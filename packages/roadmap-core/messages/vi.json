@@ -1,4 +1,35 @@
 {
+  "techStack": {
+    "current": "Hiện tại",
+    "inventory": "Xem ứng dụng",
+    "nextBundler": "Công cụ đóng gói Next.js",
+    "progress": "{done}/{total} ứng dụng dùng TanStack Start + Cloudflare",
+    "source": "Dựa trên cấu hình ứng dụng và định tuyến trong kho mã nguồn.",
+    "stack": {
+      "cf": "cf CLI",
+      "nativeWorker": "Worker Cloudflare gốc",
+      "next": "Next.js",
+      "openNext": "Worker OpenNext",
+      "other": "Khác",
+      "start": "TanStack Start",
+      "vercel": "Vercel",
+      "vite": "Vite",
+      "vitePlus": "Vite+",
+      "vitePlusVoid": "Vite+ + Void",
+      "wrangler": "Wrangler"
+    },
+    "status": {
+      "candidate": "Ứng viên",
+      "cutOver": "Đã chuyển đổi",
+      "held": "Đang tạm giữ",
+      "outside": "Ngoài phạm vi chuyển đổi",
+      "paused": "Tạm dừng"
+    },
+    "target": "Mục tiêu",
+    "title": "Công nghệ ứng dụng",
+    "unavailable": "Chưa có dữ liệu về công nghệ của ứng dụng.",
+    "unspecified": "Chưa xác định"
+  },
   "storeReleases": {
     "heading": "Phát hành trên cửa hàng",
     "pending": "Chưa công bố",

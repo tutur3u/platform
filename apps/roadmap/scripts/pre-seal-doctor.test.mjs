@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { DOCUMENT_REQUEST_PATHS } from './document-paths.mjs';
 import {
   assessDoctor,
   inlineScriptHashes,
@@ -8,7 +9,6 @@ import {
   PLAN_LABEL,
   brokenVariant,
   doctorCompatibilityDate,
-  PUBLIC_DOCUMENT_PATHS,
   reportBrokenVariant,
   speculativeLinks,
   STAGE_LABELS,
@@ -90,7 +90,7 @@ function passingRaw() {
       url: '/roadmap/assets/index-CGgt8iCG.js',
       cacheControl: 'public, max-age=31536000, immutable',
     },
-    documents: PUBLIC_DOCUMENT_PATHS.map((path) => ({
+    documents: DOCUMENT_REQUEST_PATHS.map((path) => ({
       path,
       status: 200,
       size: 330_000,
@@ -384,7 +384,7 @@ test('D79: a public document over half the CSP size limit fails the doctor', () 
   const observation = passing();
   assert.deepEqual(assessDoctor(observation).failures, []);
   const report = documentBudgetReport(observation.documents);
-  assert.equal(report.length, PUBLIC_DOCUMENT_PATHS.length);
+  assert.equal(report.length, DOCUMENT_REQUEST_PATHS.length);
   assert.match(report[0] ?? '', /% under the 2048 KiB CSP limit/);
   // Broken variant: an oversized EduFest page (its CSP would get no hashes).
   observation.documents[2].size = DOCUMENT_BUDGET + 1;

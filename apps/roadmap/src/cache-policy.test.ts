@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { buildInfoResponse } from '@tuturuuu/roadmap-core/build-info.ts';
 import {
+  isRoadmapRouteOverflow,
   normalizeLocalHost,
   prepareRoadmapRequest,
   roadmapBoundary,
@@ -477,4 +478,28 @@ test('D79: the source scan walks nested folders and skips tests and generated ro
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('the zone wildcard preserves query strings in both locales and passes sibling paths through', () => {
+  for (const path of ['/roadmap', '/roadmap/vi']) {
+    for (const query of ['?x=1', '?utm_source=roadmap-smoke&utm_medium=test']) {
+      const request = new Request(`https://tuturuuu.com${path}${query}`);
+      assert.equal(isRoadmapRouteOverflow(request), false);
+      assert.equal(roadmapBoundary(request), undefined);
+      assert.equal(
+        new URL(prepareRoadmapRequest(request, '/roadmap').url).search,
+        query
+      );
+    }
+  }
+  assert.equal(
+    isRoadmapRouteOverflow(new Request('https://tuturuuu.com/roadmapping?x=1')),
+    true
+  );
+  assert.equal(
+    isRoadmapRouteOverflow(
+      new Request('https://roadmap.tuturuuu.com/roadmapping')
+    ),
+    false
+  );
 });

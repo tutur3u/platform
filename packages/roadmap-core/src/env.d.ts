@@ -5,3 +5,5 @@ declare const __ROADMAP_HOSTING__: unknown;
 /** This build's activity observation (.generated/activity.json), or null. */
 declare const __ROADMAP_ACTIVITY__: unknown;
 /** The newest patch notes (.generated/changelog.json), or null. */
+
+declare const __ROADMAP_TECH_STACK__: readonly import('./tech-stack.ts').AppTechStack[];
