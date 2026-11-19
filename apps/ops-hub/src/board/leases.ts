@@ -129,7 +129,9 @@ export class Leases {
         const current = this.get(item.taskId);
         if (current && current.expires_at > now) continue;
         try {
-          await this.tasks.access(actor, generation, channel, item.taskId);
+          await this.tasks.access(actor, generation, channel, item.taskId, {
+            candidate: true,
+          });
         } catch (error) {
           if (error instanceof BoardError && error.status === 404) continue;
           throw error;

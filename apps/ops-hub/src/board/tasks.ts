@@ -50,7 +50,7 @@ export class Tasks {
     generation: number,
     path: string,
     shape: z.ZodType<T>,
-    checkEligibility = false
+    options?: { checkEligibility?: boolean; candidate?: boolean }
   ) {
     const [, workspace, board] = this.name.split(':');
     if (
@@ -73,7 +73,7 @@ export class Tasks {
     }
     this.store.tx(() => {
       const now = Date.now();
-      if (checkEligibility) {
+      if (options?.checkEligibility) {
         if (!this.store.delegated(actor, now)) reject(403, 'forbidden');
       } else this.store.admit(actor, now);
     });
@@ -88,6 +88,8 @@ export class Tasks {
           'X-Board-Actor': actor.actor,
         },
       });
+      if (response.status === 404 && options?.candidate)
+        reject(404, 'not_found');
       if (response.status === 429) reject(429, 'budget_exhausted');
       if (!response.ok) throw new Error();
       return shape.parse(
@@ -116,13 +118,15 @@ export class Tasks {
     actor: Actor,
     generation: number,
     projectId: string,
-    taskId: string
+    taskId: string,
+    options?: { candidate: true }
   ) {
     const result = await this.read(
       actor,
       generation,
       `tasks/${taskId}?projectId=${projectId}`,
-      access
+      access,
+      options
     );
     if (!result.allowed) reject(404, 'not_found');
     return result;
@@ -170,7 +174,7 @@ export class Tasks {
       generation,
       `principals/eligibility?${query}`,
       project,
-      true
+      { checkEligibility: true }
     );
     return { ...actor, agentActive: state.allowed };
   }

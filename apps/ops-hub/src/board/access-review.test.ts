@@ -26,11 +26,17 @@ const allow = () => Response.json({ allowed: true, done: false, labelIds: [] });
 const read = () =>
   new Reads(store, tasks, followups, 'fixture-state-key-0000000000000000000');
 
-function giveManagerAccess() {
+const otherUser = {
+  ...manager,
+  userId: id(29),
+  actor: `user:${id(29)}` as const,
+};
+
+function giveOtherUserAccess() {
   store.run(
     'INSERT INTO grants VALUES(?,?,?,?,?,NULL)',
     project,
-    manager.actor,
+    otherUser.actor,
     'operator',
     manager.actor,
     now
@@ -39,7 +45,7 @@ function giveManagerAccess() {
 
 it('caches positive Tasks access per user and task for at most 60 seconds', async () => {
   enableAndDelegate();
-  giveManagerAccess();
+  giveOtherUserAccess();
   const reads = read();
   transport.mockImplementation(async () => allow());
   await expect(reads.fetch(agent, path, url)).resolves.toEqual({
@@ -51,7 +57,7 @@ it('caches positive Tasks access per user and task for at most 60 seconds', asyn
   expect(
     new Headers(transport.mock.calls[0]?.[1]?.headers).get('X-Board-User')
   ).toBe(agent.userId);
-  await reads.fetch(manager, path, url);
+  await reads.fetch(otherUser, path, url);
   await reads.fetch(
     agent,
     ['channels', project, 'threads', id(30), 'messages'],
@@ -113,9 +119,7 @@ it('skips a candidate whose Tasks access lookup denies visibility', async () => 
         })),
       })
     )
-    .mockResolvedValueOnce(
-      Response.json({ allowed: false, done: false, labelIds: [] })
-    )
+    .mockResolvedValueOnce(new Response(null, { status: 404 }))
     .mockResolvedValueOnce(allow());
   await expect(
     leases.prepareClaim(agent, project, 1, id(36))

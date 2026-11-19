@@ -32,6 +32,16 @@ const boundary = now + 3_600_000;
 const allowed = () =>
   Response.json({ allowed: true, done: true, labelIds: [] });
 
+function deferred<T>() {
+  let resolve: (value: T) => void = () => {
+    throw new Error('Missing fixture resolver');
+  };
+  const promise = new Promise<T>((complete) => {
+    resolve = complete;
+  });
+  return { promise, resolve };
+}
+
 function seed(
   state: 'pending' | 'queued' | 'delivering',
   deadline = now + 120_000,
@@ -119,7 +129,7 @@ describe('Board dispatch fences', () => {
   it('does not start delivery after stop during the agent eligibility lookup', async () => {
     enableAndDelegate();
     seed('queued');
-    const read = Promise.withResolvers<Response>();
+    const read = deferred<Response>();
     transport.mockReturnValueOnce(read.promise);
     const result = followups.consume(envelope);
     operations(1, 0, 0);
@@ -141,8 +151,8 @@ describe('Board dispatch fences', () => {
     enableAndDelegate();
     seed('queued');
     watch();
-    const read = Promise.withResolvers<Response>();
-    const started = Promise.withResolvers<void>();
+    const read = deferred<Response>();
+    const started = deferred<void>();
     transport
       .mockResolvedValueOnce(Response.json({ allowed: true }))
       .mockImplementationOnce(() => {

@@ -174,7 +174,7 @@ export class Store {
     before: unknown,
     after: unknown,
     request: string | null = null,
-    eventGeneration?: number
+    eventGeneration?: number | null
   ) {
     if (
       (this.one<{ seq: number }>('SELECT MAX(seq) AS seq FROM audit')?.seq ??

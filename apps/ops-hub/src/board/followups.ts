@@ -122,7 +122,8 @@ export class Followups {
     state: 'failed' | 'succeeded' | 'cancelled',
     code: string,
     actor = system,
-    requestId: string | null = null
+    requestId: string | null = null,
+    publishEvent = true
   ) {
     this.store.run(
       'UPDATE followups SET state=?,terminal_code=?,next_at=NULL,attempt_deadline=NULL,updated_at=? WHERE id=?',
@@ -139,7 +140,7 @@ export class Followups {
       { state: row.state, attempts: row.attempts },
       { state, code, attempts: row.attempts },
       requestId,
-      row.generation
+      publishEvent ? row.generation : null
     );
   }
 

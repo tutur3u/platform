@@ -88,6 +88,28 @@ export async function consume(followups: Followups, envelope: Job) {
       }
       return false;
     }
+    if (current.state === 'delivering') {
+      try {
+        if (!store.delegated(owner, Date.now())) reject(403, 'forbidden');
+        store.requireRole(
+          current.channel_id,
+          owner.actor,
+          'operator',
+          Date.now()
+        );
+      } catch (error) {
+        if (!(error instanceof BoardError)) throw error;
+        followups.finish(
+          current,
+          done ? 'succeeded' : 'cancelled',
+          done ? 'verified' : 'authorization_lost',
+          system,
+          null,
+          false
+        );
+        return false;
+      }
+    }
     if (done) followups.finish(current, 'succeeded', 'verified');
     else if (code === 'adapter_unavailable')
       followups.finish(current, 'failed', code);
