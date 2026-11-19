@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
@@ -206,10 +207,14 @@ void main() {
           final b = local.select(null);
           await tester.runAsync(() => Future.wait([a, b]));
         } else {
-          fixture.workspace.change('99999999-9999-4999-8999-999999999999');
-          await tester.pump();
+          const otherWorkspace = '99999999-9999-4999-8999-999999999999';
+          final shell = fixture.pageContext.read<AssistantShellCubit>();
+          fixture.workspace.change(otherWorkspace);
+          await tester.pumpAndSettle();
+          expect(shell.state.workspace?.id, otherWorkspace);
           fixture.workspace.change(repairWorkspace);
-          await tester.pump();
+          await tester.pumpAndSettle();
+          expect(shell.state.workspace?.id, repairWorkspace);
         }
         fixture.port.release();
         await fixture.settle(tester);

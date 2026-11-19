@@ -264,6 +264,15 @@ class ReplyRepository extends AssistantRepository {
   }
 }
 
+/// Page fixtures settle route changes while Mira's reduced-motion loop
+/// continues to repaint on its slower cadence.
+Widget assistantPageWithReducedMotion(AssistantPage page) => Builder(
+  builder: (context) => MediaQuery(
+    data: MediaQuery.of(context).copyWith(disableAnimations: true),
+    child: page,
+  ),
+);
+
 class BackgroundReplyHarness {
   BackgroundReplyHarness({ReplyRepository? repository})
     : repository = repository ?? ReplyRepository();
@@ -303,12 +312,14 @@ class BackgroundReplyHarness {
             location: '/assistant',
             bottomInset: 68,
             navigation: const SizedBox(height: 52),
-            child: AssistantPage(
-              repository: repository,
-              preferences: AssistantPreferences(
-                currentUserId: () => auth.state.user?.id,
+            child: assistantPageWithReducedMotion(
+              AssistantPage(
+                repository: repository,
+                preferences: AssistantPreferences(
+                  currentUserId: () => auth.state.user?.id,
+                ),
+                currentActor: () => auth.state.user?.id,
               ),
-              currentActor: () => auth.state.user?.id,
             ),
           ),
         ),

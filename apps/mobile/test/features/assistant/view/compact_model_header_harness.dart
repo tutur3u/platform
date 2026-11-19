@@ -147,9 +147,10 @@ class CompactModelHeaderHarness {
         builder: (context, child) => ShadcnMaterialBridge.appBuilder(
           context,
           MediaQuery(
-            data: MediaQuery.of(
-              context,
-            ).copyWith(textScaler: TextScaler.linear(textScale)),
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(textScale),
+              disableAnimations: true,
+            ),
             child: child!,
           ),
         ),

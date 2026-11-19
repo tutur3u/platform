@@ -1,91 +1,107 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/assistant/widgets/mira_character/mira_character_painter.dart';
 
-/// Mira as a small animated character built from the mark's petals.
-///
-/// It breathes, sways its petals and blinks for a short while after it
-/// appears, spins its petals while [thinking], and bounces when tapped. One
-/// controller drives the painter behind a repaint boundary, so animating never
-/// rebuilds the page. Under reduced motion it holds a still pose.
+/// Mira breathes, sways and blinks while visible. Animation drives the
+/// isolated painter directly, so neither the hero nor the page rebuilds.
 class MiraCharacter extends StatefulWidget {
-  const MiraCharacter({this.size = 128, this.thinking = false, super.key});
+  const MiraCharacter({
+    this.size = 128,
+    this.thinking = false,
+    this.listening = false,
+    super.key,
+  });
 
   final double size;
   final bool thinking;
-
-  /// How long the idle animation plays before Mira rests.
-  static const idleBudget = Duration(seconds: 8);
+  final bool listening;
 
   @override
   State<MiraCharacter> createState() => _MiraCharacterState();
 }
 
 class _MiraCharacterState extends State<MiraCharacter>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static const _reducedStep = Duration(milliseconds: 160);
   final _motion = MiraMotion();
   late final AnimationController _clock = AnimationController(
     vsync: this,
     duration: const Duration(seconds: 1),
+    animationBehavior: AnimationBehavior.preserve,
   )..addListener(_tick);
+  Timer? _reducedLoop;
   Duration _last = Duration.zero;
-  double _awake = 0;
   bool _reduced = false;
+  bool _visible = false;
+  bool _foreground = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final binding = WidgetsBinding.instance;
+    final lifecycle = binding.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
+    binding.addObserver(this);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _visible = TickerMode.valuesOf(context).enabled;
     _reduced = MediaQuery.disableAnimationsOf(context);
-    if (_reduced) {
-      _rest();
-    } else {
-      _wake();
-    }
+    _updateLoop();
   }
 
   @override
-  void didUpdateWidget(MiraCharacter oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.thinking != widget.thinking && !_reduced) _wake();
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _updateLoop();
   }
 
-  void _wake() {
-    _awake = 0;
-    if (_clock.isAnimating) return;
-    _last = Duration.zero;
-    _clock.repeat();
-  }
+  void _updateLoop() {
+    if (!_visible || !_foreground || _reduced) {
+      _clock.stop();
+    } else if (!_clock.isAnimating) {
+      _last = Duration.zero;
+      unawaited(_clock.repeat());
+    }
 
-  void _rest() {
-    _clock.stop();
-    _motion.rest();
+    if (_visible && _foreground && _reduced) {
+      // Subpixel breathing needs fewer paints than the full petal animation.
+      _reducedLoop ??= Timer.periodic(_reducedStep, (_) => _step(_reducedStep));
+    } else {
+      _reducedLoop?.cancel();
+      _reducedLoop = null;
+    }
   }
 
   void _tick() {
     final elapsed = _clock.lastElapsedDuration ?? Duration.zero;
-    final dt = math.max(0, (elapsed - _last).inMicroseconds) / 1e6;
+    final delta = elapsed - _last;
     _last = elapsed;
-    _awake += dt;
-    final budget = MiraCharacter.idleBudget.inMicroseconds / 1e6;
-    final winding = !widget.thinking && _awake >= budget;
+    _step(delta);
+  }
+
+  void _step(Duration delta) {
     _motion.advance(
-      math.min(dt, 0.05),
+      (delta.inMicroseconds / Duration.microsecondsPerSecond).clamp(0.0, 0.16),
       thinking: widget.thinking,
-      winding: winding,
+      listening: widget.listening,
+      reduced: _reduced,
     );
-    if (winding && _motion.settled) _rest();
   }
 
   void _poke() {
-    if (_reduced) return;
-    _motion.poke();
-    _wake();
+    if (!_reduced) _motion.poke();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _reducedLoop?.cancel();
     _clock.dispose();
     _motion.dispose();
     super.dispose();
@@ -105,7 +121,8 @@ class _MiraCharacterState extends State<MiraCharacter>
               painter: MiraCharacterPainter(
                 motion: _motion,
                 face: colors.card,
-                ink: colors.foreground,
+                shade: colors.muted,
+                ink: colors.cardForeground,
                 outline: colors.border,
               ),
             ),
@@ -120,42 +137,38 @@ class _MiraCharacterState extends State<MiraCharacter>
 class MiraMotion extends ChangeNotifier {
   double time = 0;
   double spin = 0;
+  double petalPhase = 0;
   double _spinSpeed = 0;
-  bool thinking = false;
-
-  /// Tap excitement from 1 down to 0.
+  double attention = 0;
   double burst = 0;
-
-  /// 0 holds the still pose; 1 plays the full idle motion.
   double liveliness = 0;
+  bool thinking = false;
+  bool listening = false;
 
-  bool get settled => liveliness < 0.01 && burst == 0 && _spinSpeed < 0.01;
-
-  /// Moves the pose on by [dt] seconds. [winding] eases every motion out so
-  /// the character can come to rest.
-  void advance(double dt, {required bool thinking, required bool winding}) {
+  void advance(
+    double dt, {
+    required bool thinking,
+    required bool listening,
+    required bool reduced,
+  }) {
     time += dt;
-    this.thinking = thinking;
-    final targetSpeed = thinking ? 5.5 : (winding ? 0.0 : 0.3);
-    _spinSpeed += (targetSpeed - _spinSpeed) * math.min(1, dt * 2.5);
-    burst = math.max(0, burst - dt * 1.4);
-    spin = (spin + (_spinSpeed + burst * 10) * dt) % (2 * math.pi);
-    final targetLife = winding ? 0.0 : 1.0;
-    liveliness += (targetLife - liveliness) * math.min(1, dt * 2);
+    liveliness = reduced ? 0.16 : 1;
+    this.thinking = thinking && !reduced;
+    this.listening = listening && !reduced;
+    final targetAttention = this.thinking || this.listening ? 1.0 : 0.0;
+    attention += (targetAttention - attention) * math.min(1, dt * 3);
+    petalPhase = (petalPhase + dt * (1.8 + attention)) % (2 * math.pi);
+    final targetSpeed = this.thinking ? 0.8 : 0.0;
+    _spinSpeed = reduced
+        ? 0
+        : _spinSpeed + (targetSpeed - _spinSpeed) * math.min(1, dt * 3);
+    burst = reduced ? 0 : math.max(0, burst - dt * 1.4);
+    spin = (spin + (_spinSpeed + burst * 3) * dt) % (2 * math.pi);
     notifyListeners();
   }
 
   void poke() {
     burst = 1;
-    notifyListeners();
-  }
-
-  /// Holds the still pose; the petal ring keeps its current angle.
-  void rest() {
-    thinking = false;
-    _spinSpeed = 0;
-    burst = 0;
-    liveliness = 0;
     notifyListeners();
   }
 }

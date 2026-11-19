@@ -1075,6 +1075,18 @@ abstract class AppLocalizations {
   /// **'Coming Soon'**
   String get assistantComingSoon;
 
+  /// No description provided for @assistantComposerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get assistantComposerMessage;
+
+  /// No description provided for @assistantComposerTools.
+  ///
+  /// In en, this message translates to:
+  /// **'Composer tools'**
+  String get assistantComposerTools;
+
   /// No description provided for @assistantContextUpdatedLabel.
   ///
   /// In en, this message translates to:

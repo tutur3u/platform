@@ -25,6 +25,7 @@ extension _AssistantPageComposer on _AssistantPageState {
       onToggleNavigation: _toggleComposerNavigation,
       onSend: () => _handleSend(wsId),
       voiceCapture: localLane ? null : _voiceCapture,
+      onMicrophoneTap: localLane ? null : () => _recordVoiceMessage(wsId),
       onSendVoice: () => _finishVoiceRecording(sendNow: true),
       hasAttachments: chatState.composerAttachments.isNotEmpty,
       blocked:

@@ -19,6 +19,7 @@ class AssistantComposerPrimaryAction extends StatelessWidget
     this.inPage = false,
     this.voiceCapture,
     this.onSendVoice,
+    this.onMicrophoneTap,
     this.hasAttachments = false,
     this.blocked = false,
     this.localGenerating = false,
@@ -33,6 +34,7 @@ class AssistantComposerPrimaryAction extends StatelessWidget
   final Future<void> Function() onSend;
   final AssistantVoiceCaptureCubit? voiceCapture;
   final Future<void> Function()? onSendVoice;
+  final Future<void> Function()? onMicrophoneTap;
   final bool hasAttachments;
   final bool blocked;
   final bool localGenerating;
@@ -63,12 +65,18 @@ class AssistantComposerPrimaryAction extends StatelessWidget
           final recording = voice?.recording ?? false;
           final paused = voice?.paused ?? false;
           final sends = hasPrompt || paused;
+          final microphone = inPage && !sends && !recording && !localGenerating;
+          if (microphone && onMicrophoneTap == null) {
+            return const SizedBox.shrink();
+          }
           final icon = localGenerating
               ? LucideIcons.square
               : recording
               ? LucideIcons.pause
               : sends
               ? LucideIcons.arrowUp
+              : microphone
+              ? LucideIcons.mic
               : LucideIcons.menu;
           final label = localGenerating
               ? l10n.assistantLocalStop
@@ -78,13 +86,15 @@ class AssistantComposerPrimaryAction extends StatelessWidget
               ? l10n.voiceSendNow
               : hasPrompt
               ? l10n.assistantSendAction
+              : microphone
+              ? l10n.voiceRecord
               : l10n.assistantExpandNavigation;
           final enabled = localGenerating
               ? onStopLocal != null
               : voiceVisible
               ? !(voice?.busy ?? false) &&
                     (recording || (paused && onSendVoice != null))
-              : !hasPrompt || !blocked;
+              : (!hasPrompt && !microphone) || !blocked;
           void invoke() {
             if (localGenerating) {
               unawaited(onStopLocal?.call());
@@ -96,13 +106,25 @@ class AssistantComposerPrimaryAction extends StatelessWidget
               unawaited(onSend());
             } else {
               focusNode.unfocus();
-              onToggleNavigation();
+              if (microphone) {
+                unawaited(onMicrophoneTap?.call());
+              } else {
+                onToggleNavigation();
+              }
             }
           }
 
           if (inPage) {
             return AppIconButton(
-              key: const ValueKey('assistant-send'),
+              key: ValueKey(
+                microphone
+                    ? 'assistant-composer-microphone-slot'
+                    : 'assistant-send',
+              ),
+              shape: AppButtonShape.circle,
+              variant: microphone
+                  ? AppButtonVariant.secondary
+                  : AppButtonVariant.primary,
               tooltip: label,
               onPressed: enabled ? invoke : null,
               icon: Icon(icon),

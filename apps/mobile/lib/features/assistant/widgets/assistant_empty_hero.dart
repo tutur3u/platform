@@ -10,6 +10,7 @@ class AssistantEmptyHero extends StatelessWidget {
   const AssistantEmptyHero({
     required this.assistantName,
     this.thinking = false,
+    this.listening = false,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class AssistantEmptyHero extends StatelessWidget {
 
   /// Mira is loading the conversation.
   final bool thinking;
+  final bool listening;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +30,7 @@ class AssistantEmptyHero extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            MiraCharacter(size: 136, thinking: thinking),
+            MiraCharacter(size: 136, thinking: thinking, listening: listening),
             const SizedBox(height: AppSpacing.md),
             Text(
               context.l10n.assistantEmptyGreeting(assistantName),

@@ -25,8 +25,6 @@ class AssistantComposerPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = AppTokens.of(context);
-    final colors = tokens.colorScheme;
     final l10n = context.l10n;
     return Positioned(
       left: 0,
@@ -39,52 +37,44 @@ class AssistantComposerPanel extends StatelessWidget {
             width: constraints.maxWidth,
             kind: AppPageKind.root,
             consumeBottomClearance: false,
-          );
-          return Padding(
-            padding: insets.copyWith(top: 0, bottom: 0),
-            child: AssistantComposerSizeReporter(
-              onHeightChanged: onHeightChanged,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (showSuggestions) ...[
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (final prompt in [
-                            l10n.assistantStarterFocus,
-                            l10n.assistantStarterPlan,
-                            l10n.assistantStarterBacklog,
-                            l10n.assistantStarterDraft,
-                          ])
-                            Padding(
-                              padding: const EdgeInsetsDirectional.only(end: 8),
-                              child: AppChip(
-                                label: Text(prompt, maxLines: 1),
-                                onPressed: () => onPromptSelected(prompt),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                  ],
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.card,
-                      border: Border.all(color: colors.input),
-                      borderRadius: BorderRadius.circular(tokens.shapes.panel),
-                      boxShadow: tokens.depth.card,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
-                      child: child,
+          ).copyWith(top: 0);
+          return AssistantComposerSizeReporter(
+            onHeightChanged: onHeightChanged,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (showSuggestions) ...[
+                  SingleChildScrollView(
+                    key: const ValueKey('assistant-starter-prompts'),
+                    scrollDirection: Axis.horizontal,
+                    padding: insets,
+                    child: Row(
+                      spacing: AppSpacing.sm,
+                      children: [
+                        for (final prompt in [
+                          l10n.assistantStarterFocus,
+                          l10n.assistantStarterPlan,
+                          l10n.assistantStarterBacklog,
+                          l10n.assistantStarterDraft,
+                        ])
+                          AppChip(
+                            label: Text(prompt, maxLines: 1),
+                            onPressed: () => onPromptSelected(prompt),
+                          ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.xs),
                 ],
-              ),
+                Padding(
+                  padding: insets,
+                  child: AppCard(
+                    padding: const EdgeInsets.all(AppSpacing.xs),
+                    child: child,
+                  ),
+                ),
+              ],
             ),
           );
         },

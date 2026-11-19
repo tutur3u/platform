@@ -100,11 +100,49 @@ class AssistantComposerDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final theme = Theme.of(context);
+    final inputStyle = theme.useMaterial3
+        ? theme.textTheme.bodyLarge!
+        : theme.textTheme.titleMedium!;
     final promptStyle = inPage
-        ? AppTokens.of(context).typography.body
+        ? inputStyle
+              .merge(tokens.typography.body)
+              .copyWith(color: tokens.colorScheme.foreground)
         : const TextStyle(fontSize: 16, height: 1.25);
     final rowHeight = assistantComposerHeight(context);
-    final content = AppComposerRow(
+    final lineHeight = inPage
+        ? _promptLineHeight(context, promptStyle)
+        : AppComposerRow.lineHeightOf(context, promptStyle);
+    final prompt = AppTextField(
+      key: const ValueKey('assistant-composer-editor'),
+      style: promptStyle,
+      contentPadding:
+          AppComposerRow.fieldPadding(
+            minHeight: rowHeight,
+            lineHeight: lineHeight,
+          ).copyWith(
+            left: inPage ? AppSpacing.xs : 0,
+            right: inPage ? AppSpacing.xs : 0,
+          ),
+      textAlignVertical: inPage ? TextAlignVertical.center : null,
+      controller: controller,
+      focusNode: focusNode,
+      minLines: 1,
+      maxLines: 5,
+      keyboardType: TextInputType.multiline,
+      textInputAction: TextInputAction.newline,
+      textCapitalization: inPage
+          ? TextCapitalization.sentences
+          : TextCapitalization.none,
+      onTapOutside: (_) => focusNode.unfocus(),
+      placeholder: inPage
+          ? context.l10n.assistantAskName(shellState.soul.name)
+          : context.l10n.assistantAskPlaceholder,
+      hintMaxLines: 1,
+      borderless: true,
+    );
+    final row = AppComposerRow(
       minHeight: rowHeight,
       leading: [
         if (inPage && !localOnly)
@@ -134,43 +172,24 @@ class AssistantComposerDock extends StatelessWidget {
           onDismissKeyboard: focusNode.unfocus,
         ),
       ],
-      field: ListenableBuilder(
-        listenable: focusNode,
-        builder: (context, _) => AppTextField(
-          key: const ValueKey('assistant-composer-editor'),
-          style: promptStyle,
-          contentPadding: AppComposerRow.fieldPadding(
-            minHeight: rowHeight,
-            lineHeight: AppComposerRow.lineHeightOf(context, promptStyle),
-          ),
-          controller: controller,
-          focusNode: focusNode,
-          minLines: 1,
-          maxLines: 5,
-          keyboardType: TextInputType.multiline,
-          textInputAction: TextInputAction.newline,
-          onTapOutside: (_) => focusNode.unfocus(),
-          placeholder: inPage
-              ? context.l10n.assistantAskName(shellState.soul.name)
-              : context.l10n.assistantAskPlaceholder,
-          hintMaxLines: 1,
-          borderless: true,
-        ),
-      ),
+      field: inPage
+          ? Semantics(
+              label: context.l10n.assistantComposerMessage,
+              child: prompt,
+            )
+          : prompt,
       trailing: [
-        ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            final hasPrompt =
-                value.text.trim().isNotEmpty ||
-                chatState.composerAttachments.isNotEmpty;
-            if (inPage && (hasPrompt || localGenerating)) {
-              return pagePrimaryAction ?? const SizedBox.shrink();
-            }
-            if (inPage && localOnly) return const SizedBox.shrink();
-            return Visibility(
+        if (inPage)
+          ?pagePrimaryAction
+        else
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: controller,
+            builder: (context, value, _) => Visibility(
               key: const ValueKey('assistant-composer-microphone-slot'),
-              visible: !hasPrompt && !localGenerating,
+              visible:
+                  value.text.trim().isEmpty &&
+                  chatState.composerAttachments.isEmpty &&
+                  !localGenerating,
               maintainSize: true,
               maintainAnimation: true,
               maintainState: true,
@@ -189,11 +208,11 @@ class AssistantComposerDock extends StatelessWidget {
                       },
                 icon: const Icon(LucideIcons.mic),
               ),
-            );
-          },
-        ),
+            ),
+          ),
       ],
     );
+    final content = inPage ? TextFieldTapRegion(child: row) : row;
     final capture = localOnly ? null : voiceCapture;
     final composer = capture == null
         ? content
@@ -202,7 +221,7 @@ class AssistantComposerDock extends StatelessWidget {
             builder: (context, state) => AnimatedSwitcher(
               duration: MediaQuery.disableAnimationsOf(context)
                   ? Duration.zero
-                  : const Duration(milliseconds: 180),
+                  : AppMotion.normal,
               layoutBuilder: (current, previous) => Stack(
                 alignment: Alignment.center,
                 children: [
@@ -248,6 +267,7 @@ class AssistantComposerDock extends StatelessWidget {
               attachments: chatState.composerAttachments,
               onRemove: onRemoveAttachment,
               onRetry: onRetryAttachment,
+              horizontal: inPage,
             ),
           composer,
         ],
@@ -280,6 +300,17 @@ class AssistantComposerDock extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  double _promptLineHeight(BuildContext context, TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    );
+    final height = painter.preferredLineHeight;
+    painter.dispose();
+    return height;
   }
 
   Widget navigationToggle(BuildContext context) =>

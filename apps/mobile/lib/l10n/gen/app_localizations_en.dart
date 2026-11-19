@@ -525,6 +525,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantComingSoon => 'Coming Soon';
 
   @override
+  String get assistantComposerMessage => 'Message';
+
+  @override
+  String get assistantComposerTools => 'Composer tools';
+
+  @override
   String get assistantContextUpdatedLabel => 'Workspace context updated';
 
   @override

@@ -221,12 +221,14 @@ class _ResetHarness {
                     matchedLocation: state.uri.path,
                   ),
                   navigation: const SizedBox(height: 52),
-                  child: AssistantPage(
-                    shellLocation: state.uri.path,
-                    repository: repository,
-                    liveRepository: liveRepository,
-                    preferences: preferences,
-                    currentActor: () => auth.state.user?.id,
+                  child: assistantPageWithReducedMotion(
+                    AssistantPage(
+                      shellLocation: state.uri.path,
+                      repository: repository,
+                      liveRepository: liveRepository,
+                      preferences: preferences,
+                      currentActor: () => auth.state.user?.id,
+                    ),
                   ),
                 ),
               ),

@@ -1487,6 +1487,8 @@
   "assistantCloseComposer": "Close prompt",
   "assistantCollapseNavigation": "Hide navigation",
   "assistantComingSoon": "Coming Soon",
+  "assistantComposerMessage": "Message",
+  "assistantComposerTools": "Composer tools",
   "assistantContextUpdatedLabel": "Workspace context updated",
   "assistantConversationTitle": "Conversation",
   "assistantCopiedMessageAction": "Copied",

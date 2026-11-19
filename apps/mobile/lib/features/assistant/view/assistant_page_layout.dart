@@ -474,10 +474,20 @@ extension _AssistantPageLayout on _AssistantPageState {
     sliver: !showTranscript && !showLiveStrip
         ? SliverFillRemaining(
             hasScrollBody: false,
-            child: AssistantEmptyHero(
-              assistantName: shellState.soul.name,
-              thinking: chatState.status == AssistantChatStatus.restoring,
-            ),
+            child:
+                BlocSelector<
+                  AssistantVoiceCaptureCubit,
+                  AssistantVoiceCaptureState,
+                  bool
+                >(
+                  bloc: _voiceCapture,
+                  selector: (state) => state.recording,
+                  builder: (_, listening) => AssistantEmptyHero(
+                    assistantName: shellState.soul.name,
+                    thinking: chatState.status == AssistantChatStatus.restoring,
+                    listening: listening,
+                  ),
+                ),
           )
         : SliverList.list(
             children: [

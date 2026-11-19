@@ -181,13 +181,15 @@ class _KeyboardHarness {
             location: '/assistant',
             bottomInset: 68,
             navigation: const SizedBox(height: 52),
-            child: AssistantPage(
-              repository: repository,
-              liveRepository: tokens,
-              preferences: AssistantPreferences(
-                currentUserId: () => auth.state.user?.id,
+            child: assistantPageWithReducedMotion(
+              AssistantPage(
+                repository: repository,
+                liveRepository: tokens,
+                preferences: AssistantPreferences(
+                  currentUserId: () => auth.state.user?.id,
+                ),
+                currentActor: () => auth.state.user?.id,
               ),
-              currentActor: () => auth.state.user?.id,
             ),
           ),
         ),

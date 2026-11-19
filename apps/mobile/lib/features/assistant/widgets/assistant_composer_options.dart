@@ -87,9 +87,12 @@ class AssistantComposerOptions extends StatelessWidget {
     final modelLabel =
         '${l10n.assistantModelLabel}: '
         '${localModelLabel ?? shellState.selectedModel.label}';
+    final title = hasDirectAttachment
+        ? l10n.assistantComposerTools
+        : l10n.assistantSettingsTitle;
     return AppIconButton(
       key: const ValueKey('assistant-composer-options'),
-      tooltip: context.l10n.assistantSettingsTitle,
+      tooltip: title,
       icon: Icon(
         hasDirectAttachment ? LucideIcons.slidersHorizontal : LucideIcons.plus,
       ),
@@ -116,7 +119,7 @@ class AssistantComposerOptions extends StatelessWidget {
                     : null,
               );
               Widget body(AssistantChatState currentChat) => AppSheetScaffold(
-                title: sheetContext.l10n.assistantSettingsTitle,
+                title: title,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [

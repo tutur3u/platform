@@ -525,6 +525,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantComingSoon => 'Sắp ra mắt';
 
   @override
+  String get assistantComposerMessage => 'Tin nhắn';
+
+  @override
+  String get assistantComposerTools => 'Công cụ soạn tin';
+
+  @override
   String get assistantContextUpdatedLabel => 'Đã cập nhật ngữ cảnh không gian làm việc';
 
   @override

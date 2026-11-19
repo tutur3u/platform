@@ -204,14 +204,16 @@ Future<BackgroundReplyHarness> _mount(
           location: '/assistant',
           bottomInset: 68,
           navigation: const SizedBox(height: 52),
-          child: AssistantPage(
-            repository: h.repository,
-            liveRepository: liveRepository ?? _LiveRepository(),
-            liveSocket: wire.socket,
-            preferences: AssistantPreferences(
-              currentUserId: () => h.auth.state.user?.id,
+          child: assistantPageWithReducedMotion(
+            AssistantPage(
+              repository: h.repository,
+              liveRepository: liveRepository ?? _LiveRepository(),
+              liveSocket: wire.socket,
+              preferences: AssistantPreferences(
+                currentUserId: () => h.auth.state.user?.id,
+              ),
+              currentActor: () => h.auth.state.user?.id,
             ),
-            currentActor: () => h.auth.state.user?.id,
           ),
         ),
       ),
