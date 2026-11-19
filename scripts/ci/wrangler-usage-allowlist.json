@@ -2095,20 +2095,22 @@
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
-        "reason": "OpenNext reads this Wrangler config for the api-identity family Worker; it pins the Tuturuuu account id and carries no routes, so only the gateway binding serves it."
+        "decision": "https://github.com/tutur3u/platform/commit/6332cb1392460bd50d7924723126f6e6b464555f",
+        "reason": "The route-free Web family configuration pins the account and disables the Supabase key fallback for app coordination tokens."
       },
-      "digest": "5787503b051bcd0b3f645155c68f57816bf3bb66c84d4d6cffe256ef371c2e44"
+      "digest": "14f94116b035959c43d4c850bdb9702c239730ce9a1fbe48bcb2ae52f8be0005",
+      "kind": "config"
     },
     "apps/web/cloudflare/opennext/wrangler.public-docs.jsonc": {
       "lines": 2,
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/eab9319abc723828b6021cef9d618b44f1573989",
-        "reason": "OpenNext reads this Wrangler config for the public-docs family Worker; it pins the Tuturuuu account id and carries no routes, so only the gateway binding serves it."
+        "decision": "https://github.com/tutur3u/platform/commit/6332cb1392460bd50d7924723126f6e6b464555f",
+        "reason": "The route-free Web family configuration pins the account and disables the Supabase key fallback for app coordination tokens."
       },
-      "digest": "009c1253ba4181bb4baf14219ee1f408dba1461b4b2f45685552159211d80382"
+      "digest": "74e630c6e3dfa4183f1096f3e78a0428834cb91a1b4b5048edf9153afbbfc4c9",
+      "kind": "config"
     },
     "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
       "lines": 3,
