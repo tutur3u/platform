@@ -101,6 +101,10 @@ jobs:
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 
+      - name: Check Web route budget
+        if: steps.package_release_gate.outputs.packages_ready == 'true'
+        run: node scripts/ci/check-web-vercel-route-budget.js
+
       - name: Stage production artifacts without assigning domains
         id: stage_deployment
         if: steps.package_release_gate.outputs.packages_ready == 'true'

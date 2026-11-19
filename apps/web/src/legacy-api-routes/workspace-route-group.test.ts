@@ -33,6 +33,18 @@ describe('grouped workspace wrappers', () => {
     expect(options?.headers.get('Allow')).toBe('OPTIONS, POST');
   });
 
+  it('returns 404 when the path prefix or segment count differs', async () => {
+    const wrongPrefix = new NextRequest(
+      'https://tuturuuu.com/alternate/api/v1/workspaces/workspace/api-keys/key'
+    );
+    expect((await handlers.DELETE(wrongPrefix, context('key')))?.status).toBe(
+      404
+    );
+    expect(
+      (await handlers.DELETE(request('key/extra'), context('key')))?.status
+    ).toBe(404);
+  });
+
   it('passes decoded parameters and keeps encoded literals on the dynamic route', async () => {
     const response = await handlers.DELETE(
       request('%72oles'),

@@ -210,7 +210,7 @@ The helper pins the SHA-256 verified from the registry manifest index for
 
 ## Web Vercel route budget
 
-The Web preview workflow counts routing rules in
+The Web preview and production workflows count routing rules in
 `.vercel/output/config.json` after the Vercel build. The maximum is 1,948,
 leaving 100 rules below Vercel’s deployment limit. The count appears in the
 **Check Web route budget** step. Treat the **Route (app)** listing as a source

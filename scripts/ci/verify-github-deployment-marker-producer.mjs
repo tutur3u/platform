@@ -62,6 +62,7 @@ const PRODUCTION_PLATFORM = {
     [
       '.github/workflows/vercel-production-platform.yaml',
       [
+        '7d5cbcc55e8915a6343390c60dfc6ac372743534',
         'a014ca72ba9b8a1d02297fc189be7e358190604b',
         'b1e5dead4ac84db1b5f9e498026c21e6b2eae730',
         '4f7ada884d805edda91cd25c1abeef196b0e4508',

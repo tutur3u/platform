@@ -53,10 +53,13 @@ export function createWorkspaceRouteHandlers(routes: readonly Route[]) {
       const { wsId, segments = [] } = await context.params;
       // Match literals against the URL and pass only decoded parameters to
       // handlers, as the original concrete Next routes did.
-      const pathSegments = request.nextUrl.pathname
-        .replace(/\/$/, '')
-        .split('/')
-        .slice(6);
+      const baseMatch = /^\/api\/v1\/workspaces\/[^/]+\/[^/]+(?:\/(.*))?$/.exec(
+        request.nextUrl.pathname.replace(/\/$/, '')
+      );
+      const pathSegments = baseMatch?.[1]?.split('/') ?? [];
+      if (!baseMatch || pathSegments.length !== segments.length) {
+        return new Response(null, { status: 404 });
+      }
       for (const { pattern, handlers } of ordered) {
         if (
           pattern.length !== segments.length ||
