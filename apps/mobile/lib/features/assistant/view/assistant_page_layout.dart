@@ -297,29 +297,16 @@ extension _AssistantPageLayout on _AssistantPageState {
                                               physics: _AssistantPageState
                                                   ._assistantScrollPhysics,
                                               slivers: [
-                                                _transcriptPage(
+                                                _threadPage(
                                                   headerHeight: headerHeight,
-                                                  sliver: SliverList.list(
-                                                    children: [
-                                                      if (showLiveStrip) ...[
-                                                        _buildLiveStageCard(
-                                                          currentWorkspace.id,
-                                                          chatState,
-                                                          liveState,
-                                                          liveCameraController,
-                                                        ),
-                                                        const SizedBox(
-                                                          height: 12,
-                                                        ),
-                                                      ],
-                                                      if (showTranscript)
-                                                        _buildTranscriptSection(
-                                                          chatState,
-                                                          liveState,
-                                                          shellState,
-                                                        ),
-                                                    ],
-                                                  ),
+                                                  wsId: currentWorkspace.id,
+                                                  chatState: chatState,
+                                                  liveState: liveState,
+                                                  shellState: shellState,
+                                                  camera: liveCameraController,
+                                                  showLiveStrip: showLiveStrip,
+                                                  showTranscript:
+                                                      showTranscript,
                                                 ),
                                               ],
                                             ),
@@ -469,6 +456,39 @@ extension _AssistantPageLayout on _AssistantPageState {
       ).copyWith(bottom: _composerReservedSpace(context)),
       sliver: sliver,
     ),
+  );
+
+  /// The thread: the live stage and transcript, or the new-chat screen
+  /// filling the space between the header and composer.
+  Widget _threadPage({
+    required double headerHeight,
+    required String wsId,
+    required AssistantChatState chatState,
+    required AssistantLiveState liveState,
+    required AssistantShellState shellState,
+    required CameraController? camera,
+    required bool showLiveStrip,
+    required bool showTranscript,
+  }) => _transcriptPage(
+    headerHeight: headerHeight,
+    sliver: !showTranscript && !showLiveStrip
+        ? SliverFillRemaining(
+            hasScrollBody: false,
+            child: AssistantEmptyHero(
+              assistantName: shellState.soul.name,
+              thinking: chatState.status == AssistantChatStatus.restoring,
+            ),
+          )
+        : SliverList.list(
+            children: [
+              if (showLiveStrip) ...[
+                _buildLiveStageCard(wsId, chatState, liveState, camera),
+                const SizedBox(height: 12),
+              ],
+              if (showTranscript)
+                _buildTranscriptSection(chatState, liveState, shellState),
+            ],
+          ),
   );
 
   Widget _buildTranscriptSection(

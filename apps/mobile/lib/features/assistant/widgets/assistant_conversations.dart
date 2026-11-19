@@ -176,13 +176,18 @@ class _AssistantConversationsState extends State<AssistantConversations> {
                 if (widget.status == AssistantHistoryStatus.ready &&
                     groups.values.every((group) => group.isEmpty))
                   SliverToBoxAdapter(
-                    child: AppStateMessage.inline(
+                    child: AppStateMessage(
                       icon: _query.isEmpty
                           ? LucideIcons.messagesSquare
                           : LucideIcons.searchX,
                       title: _query.isEmpty
                           ? l10n.assistantHistoryEmpty
                           : l10n.chatNoSearchResults,
+                      illustration: AppIllustration(
+                        _query.isEmpty
+                            ? AppIllustrationKind.conversations
+                            : AppIllustrationKind.searchNoResults,
+                      ),
                     ),
                   ),
                 SliverToBoxAdapter(child: SizedBox(height: insets.bottom)),
@@ -226,7 +231,7 @@ class _AssistantConversationsState extends State<AssistantConversations> {
         child: const AppSkeletonRows(count: 3),
       ),
       AssistantHistoryStatus.failed ||
-      AssistantHistoryStatus.offline => AppStateMessage.inline(
+      AssistantHistoryStatus.offline => AppStateMessage(
         icon: widget.status == AssistantHistoryStatus.offline
             ? LucideIcons.wifiOff
             : LucideIcons.circleAlert,
@@ -235,6 +240,12 @@ class _AssistantConversationsState extends State<AssistantConversations> {
             : l10n.assistantConversationsLoadFailed,
         actionLabel: l10n.commonRetry,
         onAction: widget.onRefresh,
+        illustration: AppIllustration(
+          AppIllustrationKind.offline,
+          tone: widget.status == AssistantHistoryStatus.offline
+              ? AppTone.neutral
+              : AppTone.destructive,
+        ),
       ),
     };
   }

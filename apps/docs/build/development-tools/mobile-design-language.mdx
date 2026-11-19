@@ -278,6 +278,14 @@ page level; never stack a caption under a section header.
   static tile shapes for grids. No spinners in the middle of a page.
 - Empty: `AppStateMessage` with an icon, a title that says what is missing, a
   message that says what will appear here and one action that fixes it.
+- Illustrated empty or offline page: pass `illustration: AppIllustration(kind)`
+  to the page-layout `AppStateMessage`; it replaces the icon tile (the inline
+  row keeps its tile). `AppIllustrationKind` covers notifications clear, no
+  tasks, no transactions, no budgets, wallet, search without results,
+  offline, free calendar and conversations. Scenes are token-coloured through
+  `tone`, loop `cycles` gentle passes then rest, and stay still under reduced
+  motion, so `pumpAndSettle` settles. Pick the kind that matches the real
+  state: search artwork only while a query or filter is active.
 - Error with no data: `AppStateMessage(tone: AppTone.destructive)` with a
   retry action.
 - Error with cached data: keep the data and show `AppStateMessage.inline`

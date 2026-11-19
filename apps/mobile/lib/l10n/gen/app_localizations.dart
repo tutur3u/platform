@@ -1165,6 +1165,12 @@ abstract class AppLocalizations {
   /// **'Editable'**
   String get assistantEditableLabel;
 
+  /// No description provided for @assistantEmptyGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hi, I\'m {name}'**
+  String assistantEmptyGreeting(String name);
+
   /// No description provided for @assistantEnterFullscreenAction.
   ///
   /// In en, this message translates to:

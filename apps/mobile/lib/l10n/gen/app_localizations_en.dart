@@ -572,6 +572,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantEditableLabel => 'Editable';
 
   @override
+  String assistantEmptyGreeting(String name) {
+    return 'Hi, I\'m $name';
+  }
+
+  @override
   String get assistantEnterFullscreenAction => 'Enter fullscreen';
 
   @override

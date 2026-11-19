@@ -1433,6 +1433,7 @@
   "assistantDownloadResume": "Tiếp tục tải",
   "assistantDownloadStorageFailure": "Không thể lưu mô hình. Giải phóng bộ nhớ thiết bị rồi thử lại. Mô hình hiện có được giữ nguyên.",
   "assistantEditableLabel": "Có thể chỉnh sửa",
+  "assistantEmptyGreeting": "Xin chào, mình là {name}",
   "assistantEnterFullscreenAction": "Vào toàn màn hình",
   "assistantExitFullscreenAction": "Thoát toàn màn hình",
   "assistantExpandNavigation": "Hiện điều hướng",

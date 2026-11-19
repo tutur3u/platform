@@ -59,6 +59,7 @@ import 'package:mobile/features/assistant/widgets/assistant_composer_primary_act
 import 'package:mobile/features/assistant/widgets/assistant_conversations.dart';
 import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner.dart';
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
+import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';

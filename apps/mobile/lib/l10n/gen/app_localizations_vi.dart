@@ -572,6 +572,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantEditableLabel => 'Có thể chỉnh sửa';
 
   @override
+  String assistantEmptyGreeting(String name) {
+    return 'Xin chào, mình là $name';
+  }
+
+  @override
   String get assistantEnterFullscreenAction => 'Vào toàn màn hình';
 
   @override

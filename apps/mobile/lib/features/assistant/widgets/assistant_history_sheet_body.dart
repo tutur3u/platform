@@ -102,17 +102,19 @@ class _AssistantHistorySheetBodyState extends State<AssistantHistorySheetBody> {
           slivers: [
             if (matching.isEmpty)
               SliverToBoxAdapter(
-                child: AppGroupedCard(
-                  children: [
-                    AppStateMessage.inline(
-                      icon: searching
-                          ? LucideIcons.searchX
-                          : LucideIcons.messagesSquare,
-                      title: searching
-                          ? l10n.chatNoSearchResults
-                          : l10n.assistantHistoryEmpty,
-                    ),
-                  ],
+                child: AppStateMessage(
+                  icon: searching
+                      ? LucideIcons.searchX
+                      : LucideIcons.messagesSquare,
+                  title: searching
+                      ? l10n.chatNoSearchResults
+                      : l10n.assistantHistoryEmpty,
+                  illustration: AppIllustration(
+                    searching
+                        ? AppIllustrationKind.searchNoResults
+                        : AppIllustrationKind.conversations,
+                    size: 104,
+                  ),
                 ),
               )
             else

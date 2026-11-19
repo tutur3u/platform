@@ -1494,6 +1494,14 @@
   "assistantDownloadResume": "Resume download",
   "assistantDownloadStorageFailure": "The model could not be saved. Free device storage and retry. Existing models were kept.",
   "assistantEditableLabel": "Editable",
+  "assistantEmptyGreeting": "Hi, I'm {name}",
+  "@assistantEmptyGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "assistantEnterFullscreenAction": "Enter fullscreen",
   "assistantExitFullscreenAction": "Exit fullscreen",
   "assistantExpandNavigation": "Show navigation",
