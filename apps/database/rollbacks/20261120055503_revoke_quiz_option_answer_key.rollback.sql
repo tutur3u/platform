@@ -1,0 +1,3 @@
+-- The answer key stays unreadable to anon and authenticated.
+-- Restoring those grants would publish is_correct and points again.
+-- service_role grants were not changed.
