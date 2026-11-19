@@ -16,6 +16,7 @@ const ALLOWED_ENVIRONMENTS = {
     'meet-production',
   ],
   SUPABASE_ACCESS_TOKEN: [
+    'supabase-family-key',
     'supabase-production-migrations',
     'supabase-staging-migrations',
   ],

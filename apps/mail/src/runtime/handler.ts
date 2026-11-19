@@ -25,7 +25,7 @@ import { endpoints } from './api-registry.bridge.gen';
 import { isMailStagingArtifact } from './deployment-profile';
 import { MAIL_FUNCTION_BASE } from './mail-api-policy';
 import { registerMailServerApiPaths } from './mail-api-server';
-import { mailAppPath, mailMounts } from './mail-mount';
+import { isOwnMailHost, mailAppPath, mailMounts } from './mail-mount';
 import { prepareMailFunctionRequest } from './native-function-body';
 import { nativeFunctionProxy } from './native-function-proxy';
 import { mailOneOriginConfig } from './one-origin';
@@ -124,7 +124,9 @@ export async function handleMailRequest(
         country: readCountry(request),
       }
     );
-  if (path === '/api/build-info') {
+  // The public identity answers only on this artifact's own hosts; any other
+  // host falls through to the guarded handler, which refuses it.
+  if (path === '/api/build-info' && isOwnMailHost(request)) {
     const url = new URL(request.url);
     url.pathname = path;
     const identity = workerBuildInfo(retarget(request, url), 'mail');

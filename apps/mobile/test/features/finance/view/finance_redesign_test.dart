@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/data/models/finance/budget.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
@@ -41,6 +42,7 @@ void _expectWholeLine(WidgetTester tester, String text) {
 
 void main() {
   setUpAll(() async {
+    await initializeDateFormatting();
     SharedPreferences.setMockInitialValues({});
     await Supabase.initialize(
       url: 'https://example.supabase.co',

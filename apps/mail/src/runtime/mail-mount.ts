@@ -37,3 +37,12 @@ export function mailAppPath(request: Request) {
       )
     : null;
 }
+
+/** True when the request targets one of this artifact's own root or mount hosts. */
+export function isOwnMailHost(request: Request) {
+  const { host } = new URL(request.url);
+  return (
+    (mailMounts.rootHosts as readonly string[]).includes(host) ||
+    (mailMounts.mountHosts as readonly string[]).includes(host)
+  );
+}

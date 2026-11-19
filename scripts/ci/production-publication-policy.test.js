@@ -79,6 +79,7 @@ function fixture(t, policy) {
     'scripts/ci/release-recipe-config.mjs',
     'scripts/ci/wave1-native-profiles.json',
     'scripts/ci/wave1-native-artifact.mjs',
+    'scripts/ci/wave1-native-source-maps.mjs',
     'scripts/ci/mail-node-imports.mjs',
     'scripts/ci/mail-node-scopes.mjs',
     'scripts/ci/calendar-native-inventory.mjs',

@@ -5,11 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_webview_window
   file_selector_linux
-  flutter_edge_ai
   flutter_secure_storage_linux
   flutter_timezone
   flutter_webrtc
   gtk
+  flutter_edge_ai
   record_linux
   url_launcher_linux
 )

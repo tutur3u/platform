@@ -60,6 +60,7 @@ COPY packages/devbox/package.json ./packages/devbox/package.json
 COPY packages/editor/package.json ./packages/editor/package.json
 COPY packages/education-core/package.json ./packages/education-core/package.json
 COPY packages/finance-core/package.json ./packages/finance-core/package.json
+COPY packages/fleet-board-schemas/package.json ./packages/fleet-board-schemas/package.json
 COPY packages/payment-core/package.json ./packages/payment-core/package.json
 COPY packages/programming-ui/package.json ./packages/programming-ui/package.json
 COPY packages/email-service/package.json ./packages/email-service/package.json
