@@ -77,7 +77,9 @@ to the exact string `true`. Production sets it to `false`. An absent value is
 off. While attendance is off, the room does not record join or leave
 intervals, the Attendance panel stays hidden, and
 `GET /api/meet-call/{meetingId}/attendance` returns 404 without reading
-storage. Erasure still runs while the switch is off.
+storage. Deleting a meeting, a workspace, or an account does not read or
+erase attendance while the switch is off. An interval that is already open
+is still closed when the switch is off and when the room ends.
 
 The class timer is on when `MEET_CLASS_TIMER_ENABLED` is the exact string
 `true`. Production Meet and Meet Realtime set that value. A browser socket
@@ -95,7 +97,9 @@ time. The server clock is the source of truth, and each client corrects its
 display from the server timestamp on the timer message. When the timer reaches
 zero, the room shows a quiet "Time's up" / "Hết giờ" cue. The cue does not
 play sound. The meeting deadline clock is separate and still counts the room’s
-resource limit. Timer commands are limited to 20 per person per room per minute.
+resource limit. A timer command is refused after the room has ended or its
+resource deadline has passed. The room enforces 20 timer commands and 30
+attendance reads per person per minute. The API check is only a fast path.
 
 Attendance is recorded on the room from the same admit, reconnect, and leave
 events that already update presence. Lobby waiting does not count. Account
@@ -115,7 +119,7 @@ per minute.
 
 Each interval stores the workspace id that collected it. Moving a meeting to
 another workspace does not rewrite that id, and the database rejects a change
-to it. The panel lists rows only when that stored workspace id matches the
+to it, and it also rejects a change to `meeting_id`. The panel lists rows only when that stored workspace id matches the
 meeting's current workspace, so intervals collected before the move stay with
 the original workspace and are not readable from the new one. New joins after
 the move are collected under the new workspace.
@@ -126,21 +130,31 @@ ceiling as raw interaction events. `private.purge_expired_meet_attendance`
 deletes expired rows, and a daily job runs it when pg_cron is installed.
 Opening the panel also deletes expired rows for that meeting and workspace and
 pages the rest in stable `joined_at`, `source_key` order past the 1,000-row
-API limit. Unchanged rows are not written again.
+API limit. Equivalent timestamps, including `Z` and `+00:00`, count as
+unchanged and are not written again. The room copy expires on its own alarm
+90 days after `joined_at`, even when nobody reads it.
 
 The room keeps a copy of the open and closed intervals. Ending the room, or
-reaching the room's resource deadline, closes every open interval. The browser
-room-state response never includes that copy. The Meet API reads it with the
-server credential after the host or co-host check, then stores it. The
-realtime worker does not receive database credentials.
+reaching the room's resource deadline, closes every open interval even while
+the attendance switch is off. Closing an interval does not delete it: the host
+can still download it until the 90-day expiry. A fallback export does not
+count an open row past the room end. The browser room-state response never
+includes that copy. The Meet API reads it with the server credential after the
+host or co-host check, then stores it. The realtime worker does not receive
+database credentials.
 
-Deleting a meeting or a workspace removes the Postgres rows. Meeting deletion
-cascades from `workspace_meetings`, and workspace deletion cascades from
-`workspaces`. Those delete paths also tell the room to drop its copy. Account
-deletion calls `eraseMeetAttendanceSubject` for that user id, which removes
-the person's rows from Postgres and from each room that stored them. The same
-function accepts a guest id. Erasure does not require the attendance switch to
-be on.
+Deleting a meeting or a workspace removes the Postgres rows only after the
+database confirms the delete, and only while the attendance switch is on. The
+app reads the room names first, because the cascade removes the rows that name
+former rooms. It then bumps an erasure generation, drops the room copy
+(including a copy still stored under a former workspace), and deletes the
+rows. A direct meeting delete does this after the meeting row is gone, so a
+recreated meeting id cannot read the old room copy. A sync that started before
+erasure cannot write the rows back. Account deletion calls
+`eraseMeetAttendanceSubject` for that user id before the account is removed.
+That call also matches a signed-in guest stored under the same id, and rooms
+that were indexed but not yet stored in Postgres. While the switch is off,
+these deletion paths do nothing and cannot fail the delete.
 
 Row level security allows only the meeting creator to select rows, and client
 roles have no grants. Co-hosts are workspace admins. The Meet API checks that
@@ -148,9 +162,10 @@ the caller is the host or a co-host, then reads and writes through the service
 role. Production migrations ship through CI.
 
 Regression coverage lives in `class-features.test.ts`, `class-service.test.ts`,
-`class-timer.test.ts`, `attendance-ledger.test.ts`, `attendance-scope.test.ts`,
-`call-clock.test.tsx`, the attendance route tests, and
-`meet-class-attendance-acl.test.mjs`.
+`class-timer.test.ts`, `attendance-ledger.test.ts`,
+`attendance-directory.test.ts`, `attendance-scope.test.ts`,
+`attendance-erasure.test.ts`, `call-clock.test.tsx`, the attendance route
+tests, and `meet-class-attendance-acl.test.mjs`.
 
 ## Pieces
 

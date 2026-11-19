@@ -8,6 +8,7 @@ import { collaborationRequest } from './collaboration-worker';
 
 export { CollaborationRoomDurableObject } from './collaboration-room-do';
 
+import { ATTENDANCE_DIRECTORY_ROOM } from '../../../packages/realtime/src/meet/attendance-directory';
 import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
 import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/token';
 import type { MeetRoomEnv } from './room-do';
@@ -49,7 +50,11 @@ export default {
       return Response.json({ ok: true });
     }
 
-    if (url.pathname === '/class-service' && request.method === 'POST') {
+    if (
+      (url.pathname === '/class-service' ||
+        url.pathname === '/attendance-index') &&
+      request.method === 'POST'
+    ) {
       const credential = verifyMeetServiceCredential(
         request.headers
           .get('Authorization')
@@ -57,9 +62,11 @@ export default {
         env.MEET_REALTIME_TOKEN_SECRET
       );
       if (!credential) return new Response('Unauthorized', { status: 401 });
-      const room = env.MEET_ROOM.get(
-        env.MEET_ROOM.idFromName(credential.roomId)
-      );
+      const roomName =
+        url.pathname === '/attendance-index'
+          ? ATTENDANCE_DIRECTORY_ROOM
+          : credential.roomId;
+      const room = env.MEET_ROOM.get(env.MEET_ROOM.idFromName(roomName));
       return room.fetch(request);
     }
 

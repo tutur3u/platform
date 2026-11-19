@@ -198,15 +198,13 @@ export function roomCapacityError(
 export function expireRoomBudget(
   state: MeetRoomSnapshot,
   now = Date.now(),
-  features: MeetClassFeatures = meetClassFeatures()
+  _features: MeetClassFeatures = meetClassFeatures()
 ) {
   const accounted = accountRoomTime(state, now);
   if (accounted.ended || !accounted.budget || now < accounted.budget.expiresAt)
     return null;
   const leftAt = new Date(now).toISOString();
-  const attendance = features.attendance
-    ? closeOpenAttendanceIntervals(accounted.attendance, leftAt)
-    : undefined;
+  const attendance = closeOpenAttendanceIntervals(accounted.attendance, leftAt);
   const budget = {
     ...accounted.budget,
     nextCleanupAt: 0,
@@ -223,6 +221,7 @@ export function expireRoomBudget(
     {
       ...failActiveRecording(accounted, leftAt),
       ...(attendance === undefined ? {} : { attendance }),
+      endedAt: accounted.endedAt ?? leftAt,
       budget,
       ended: true,
       presence: {},

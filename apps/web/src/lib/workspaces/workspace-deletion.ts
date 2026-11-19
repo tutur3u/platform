@@ -1,3 +1,4 @@
+import type { AttendanceErasurePlan } from '@tuturuuu/meet-core/features/call/server/attendance-erasure';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -22,6 +23,22 @@ const RESPONSES = {
 } as const;
 
 type DeletionCode = keyof typeof RESPONSES;
+
+async function attendanceCollectionEnabled() {
+  try {
+    const { meetClassAttendanceEnabled } =
+      await import('@tuturuuu/realtime/meet');
+    return meetClassAttendanceEnabled();
+  } catch {
+    return false;
+  }
+}
+
+function erasureFailure(error: unknown) {
+  console.error('Meet attendance erasure failed', {
+    name: error instanceof Error ? error.name : 'unknown',
+  });
+}
 
 export function workspaceDeletionResponse(code: DeletionCode) {
   const { status, message } = RESPONSES[code];
@@ -88,14 +105,20 @@ export async function deleteWorkspaceForActor(
     return audit('confirmation_mismatch');
   }
 
+  let commitAttendanceErasure:
+    | ((plan: AttendanceErasurePlan | null) => Promise<void>)
+    | null = null;
+  let attendancePlan: AttendanceErasurePlan | null = null;
   try {
-    const { eraseMeetAttendanceForWorkspace } =
+    const erasure =
       await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-    await eraseMeetAttendanceForWorkspace(workspaceId);
+    // Read former room names before the delete cascades those rows away.
+    attendancePlan =
+      await erasure.prepareWorkspaceAttendanceErasure(workspaceId);
+    commitAttendanceErasure = erasure.commitAttendanceErasure;
   } catch (error) {
-    console.error('Meet attendance erasure failed', {
-      name: error instanceof Error ? error.name : 'unknown',
-    });
+    if (await attendanceCollectionEnabled()) throw error;
+    erasureFailure(error);
   }
 
   const admin = await createAdminClient({ noCookie: true });
@@ -113,6 +136,15 @@ export async function deleteWorkspaceForActor(
   const result: unknown = data;
   switch (result) {
     case 'deleted':
+      try {
+        if (commitAttendanceErasure)
+          await commitAttendanceErasure(attendancePlan);
+      } catch (error) {
+        erasureFailure(error);
+        if (!(await attendanceCollectionEnabled())) return audit('deleted');
+        return audit('failed');
+      }
+      return audit('deleted');
     case 'forbidden':
     case 'not_found':
     case 'confirmation_mismatch':

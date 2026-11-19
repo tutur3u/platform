@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import type { AttendanceInterval } from '@tuturuuu/realtime/meet';
 import {
+  attendanceWriteSignature,
+  commitFencedUpsert,
   planAttendanceUpsert,
   readAttendancePages,
   type AttendanceStoredRow,
@@ -70,4 +72,54 @@ it('pages past the 1000-row read limit in stable ranges', async () => {
   ]);
   expect(rows).toHaveLength(1001);
   expect(rows.at(-1)).toBe(1000);
+});
+
+it('treats +00:00 and Z as the same timestamp', () => {
+  const prior = stored('ws-a', { joinedAt: '2026-07-31T12:00:00.000+00:00' });
+  const plan = planAttendanceUpsert(
+    [prior],
+    [{ ...interval, joinedAt: '2026-07-31T12:00:00.000Z' }],
+    'ws-a'
+  );
+  expect(plan.update).toEqual([]);
+  expect(attendanceWriteSignature(prior)).toBe(
+    attendanceWriteSignature({
+      ...prior,
+      joinedAt: '2026-07-31T12:00:00.000Z',
+    })
+  );
+});
+
+it('removes a write when erasure fences the sync', async () => {
+  let generation = 0;
+  let wrote = false;
+  let compensated = false;
+  await expect(
+    commitFencedUpsert({
+      epoch: 0,
+      readGeneration: async () => generation,
+      write: async () => {
+        wrote = true;
+        generation = 1;
+      },
+      compensate: async () => {
+        compensated = true;
+      },
+    })
+  ).rejects.toThrow('Meet attendance sync was fenced');
+  expect(wrote).toBe(true);
+  expect(compensated).toBe(true);
+
+  wrote = false;
+  await expect(
+    commitFencedUpsert({
+      epoch: 0,
+      readGeneration: async () => 2,
+      write: async () => {
+        wrote = true;
+      },
+      compensate: async () => {},
+    })
+  ).rejects.toThrow('Meet attendance sync was fenced');
+  expect(wrote).toBe(false);
 });

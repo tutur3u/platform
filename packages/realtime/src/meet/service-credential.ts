@@ -5,7 +5,8 @@ export const MEET_SERVICE_TTL_SECONDS = 60;
 export type MeetServicePurpose =
   | 'attendance-ledger'
   | 'class-timer'
-  | 'attendance-erase';
+  | 'attendance-erase'
+  | 'attendance-index';
 
 export type MeetServiceClaims = {
   aud: 'meet-service';
@@ -48,7 +49,8 @@ export function verifyMeetServiceCredential(
   if (
     parsed.purpose !== 'attendance-ledger' &&
     parsed.purpose !== 'class-timer' &&
-    parsed.purpose !== 'attendance-erase'
+    parsed.purpose !== 'attendance-erase' &&
+    parsed.purpose !== 'attendance-index'
   )
     return null;
   if (typeof parsed.roomId !== 'string' || !parsed.roomId) return null;

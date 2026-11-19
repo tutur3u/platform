@@ -4,11 +4,12 @@ set local statement_timeout = '30s';
 
 do $$
 begin
-  if exists (select 1 from pg_extension where extname = 'pg_cron')
-    and exists (
+  if exists (select 1 from pg_extension where extname = 'pg_cron') then
+    if exists (
       select 1 from cron.job where jobname = 'meet-attendance-retention'
     ) then
-    perform cron.unschedule('meet-attendance-retention');
+      perform cron.unschedule('meet-attendance-retention');
+    end if;
   end if;
 end;
 $$;

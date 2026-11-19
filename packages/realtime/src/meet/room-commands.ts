@@ -1,6 +1,7 @@
 import {
   attendanceIdentity,
   attendancePatch,
+  closeAttendanceWhenCollectionStops,
   openAttendanceInterval,
   renameOpenAttendance,
 } from './attendance-ledger';
@@ -79,6 +80,13 @@ function dispatchMeetRoomCommand(
   }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
+  const sealed = closeAttendanceWhenCollectionStops(
+    state.attendance,
+    classFeatures.attendance,
+    now
+  );
+  if (sealed !== state.attendance)
+    state = { ...state, attendance: sealed ?? [] };
   state = accountRoomTime(state, Date.parse(now));
   const expired = expireRoomBudget(state, Date.parse(now), classFeatures);
   if (expired) return expired;

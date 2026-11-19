@@ -52,6 +52,10 @@ test('client roles cannot use class attendance after the migration chain', async
     db,
     'supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql'
   );
+  await apply(
+    db,
+    'supabase/migrations/20261120025200_meet_attendance_meeting_fence.sql'
+  );
 
   const privileges = await db.query(`
     select grantee, privilege_type
@@ -130,6 +134,43 @@ test('client roles cannot use class attendance after the migration chain', async
   );
   assert.equal(kept.rows[0].ws_id, wsA);
 
+  const meetingB = '55555555-5555-4555-8555-555555555555';
+  await db.exec(`
+    insert into public.workspace_meetings (id, ws_id, creator_id)
+      values ('${meetingB}', '${wsA}', '${user}');
+  `);
+  await assert.rejects(
+    db.exec(`
+      update private.meet_attendance_sessions
+      set meeting_id = '${meetingB}'
+      where meeting_id = '${meeting}';
+    `),
+    /23514|immutable/
+  );
+  const meetingKept = await db.query(
+    `select meeting_id::text as meeting_id from private.meet_attendance_sessions where source_key = 'device:2026-07-31T12:00:00Z'`
+  );
+  assert.equal(meetingKept.rows[0].meeting_id, meeting);
+
+  const fencePrivileges = await db.query(`
+    select grantee, privilege_type
+    from information_schema.role_table_grants
+    where table_schema = 'private'
+      and table_name = 'meet_attendance_fences'
+      and grantee in ('anon', 'authenticated', 'public')
+  `);
+  assert.deepEqual(fencePrivileges.rows, []);
+  const orphanMeeting = '66666666-6666-4666-8666-666666666666';
+  await db.exec(`
+    insert into private.meet_attendance_fences (meeting_id, ws_id, generation)
+      values ('${orphanMeeting}', '${wsA}', 1);
+  `);
+  const fence = await db.query(
+    `select generation from private.meet_attendance_fences where meeting_id = $1`,
+    [orphanMeeting]
+  );
+  assert.equal(Number(fence.rows[0].generation), 1);
+
   await db.exec(`
     insert into private.meet_attendance_sessions (
       meeting_id, ws_id, source_key, participant_kind, user_id, display_name, joined_at
@@ -149,4 +190,65 @@ test('client roles cannot use class attendance after the migration chain', async
     remaining.rows.map((row) => row.source_key),
     ['device:2026-07-31T12:00:00Z']
   );
+});
+
+test('attendance retention rollback runs when pg_cron is not installed', async () => {
+  const db = new PGlite();
+  await db.exec(fixture);
+  await apply(
+    db,
+    'supabase/migrations/20261119170000_meet_class_attendance.sql'
+  );
+  await apply(
+    db,
+    'supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql'
+  );
+  await apply(
+    db,
+    'rollbacks/20261120015000_meet_attendance_workspace_retention.rollback.sql'
+  );
+  const trigger = await db.query(
+    `select tgname from pg_trigger where tgname = 'meet_attendance_sessions_reject_workspace_move'`
+  );
+  assert.equal(trigger.rows.length, 0);
+});
+
+test('meeting fence rollback drops the meeting lock and the fence table', async () => {
+  const db = new PGlite();
+  await db.exec(fixture);
+  await apply(
+    db,
+    'supabase/migrations/20261119170000_meet_class_attendance.sql'
+  );
+  await apply(
+    db,
+    'supabase/migrations/20261120025200_meet_attendance_meeting_fence.sql'
+  );
+  await apply(
+    db,
+    'rollbacks/20261120025200_meet_attendance_meeting_fence.rollback.sql'
+  );
+  const ws = '11111111-1111-4111-8111-111111111111';
+  const meeting = '33333333-3333-4333-8333-333333333333';
+  const moved = '55555555-5555-4555-8555-555555555555';
+  const user = '44444444-4444-4444-8444-444444444444';
+  await db.exec(`
+    insert into public.workspaces (id) values ('${ws}');
+    insert into public.workspace_meetings (id, ws_id, creator_id)
+      values ('${meeting}', '${ws}', '${user}'), ('${moved}', '${ws}', '${user}');
+    insert into private.meet_attendance_sessions (
+      meeting_id, ws_id, source_key, participant_kind, user_id, display_name, joined_at
+    ) values (
+      '${meeting}', '${ws}', 'device', 'member', '${user}', 'Ada', '2026-07-31T12:00:00Z'
+    );
+    update private.meet_attendance_sessions set meeting_id = '${moved}';
+  `);
+  const row = await db.query(
+    `select meeting_id::text as meeting_id from private.meet_attendance_sessions`
+  );
+  assert.equal(row.rows[0].meeting_id, moved);
+  const fence = await db.query(
+    `select to_regclass('private.meet_attendance_fences') as name`
+  );
+  assert.equal(fence.rows[0].name, null);
 });

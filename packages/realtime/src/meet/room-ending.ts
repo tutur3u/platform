@@ -8,14 +8,13 @@ import { publicationCleanupKey } from './room-tracks';
 export function endMeetRoom(
   state: MeetRoomSnapshot,
   now: string,
-  features: MeetClassFeatures = meetClassFeatures()
+  _features: MeetClassFeatures = meetClassFeatures()
 ) {
-  const attendance = features.attendance
-    ? closeOpenAttendanceIntervals(state.attendance, now)
-    : undefined;
+  const attendance = closeOpenAttendanceIntervals(state.attendance, now);
   return {
     ...failActiveRecording(state, now),
     ...(attendance === undefined ? {} : { attendance }),
+    endedAt: state.endedAt ?? now,
     budget: state.budget
       ? {
           ...state.budget,

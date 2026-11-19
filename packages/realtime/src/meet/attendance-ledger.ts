@@ -129,7 +129,8 @@ export function attendancePatch<
 
 export function aggregateAttendance(
   intervals: AttendanceInterval[],
-  now: string
+  now: string,
+  roomEndedAt?: string
 ): AttendanceRow[] {
   const groups = new Map<string, AttendanceInterval[]>();
   for (const row of intervals) {
@@ -141,6 +142,12 @@ export function aggregateAttendance(
     groups.set(key, list);
   }
   const nowMs = Date.parse(now);
+  const endedMs =
+    roomEndedAt === undefined ? undefined : Date.parse(roomEndedAt);
+  const openCap =
+    endedMs !== undefined && Number.isFinite(endedMs)
+      ? Math.min(nowMs, endedMs)
+      : nowMs;
   return [...groups.entries()]
     .map(([key, list]) => {
       const kind: AttendanceKind = key.startsWith('guest:')
@@ -152,7 +159,7 @@ export function aggregateAttendance(
       const spans = sorted
         .map((row) => ({
           start: Date.parse(row.joinedAt),
-          end: Date.parse(row.leftAt ?? now),
+          end: row.leftAt ? Date.parse(row.leftAt) : openCap,
         }))
         .filter(
           (span) =>
@@ -193,6 +200,42 @@ export function closeOpenAttendanceIntervals(
 ) {
   if (!intervals?.some((row) => !row.leftAt)) return intervals;
   return intervals.map((row) => (row.leftAt ? row : { ...row, leftAt: now }));
+}
+
+/** Closes every open interval once collection is off. Room end closes them too. */
+export function closeAttendanceWhenCollectionStops(
+  intervals: AttendanceInterval[] | undefined,
+  collecting: boolean,
+  now: string
+) {
+  if (collecting) return intervals;
+  return closeOpenAttendanceIntervals(intervals, now);
+}
+
+export function nextAttendanceAlarm(
+  intervals: AttendanceInterval[] | undefined,
+  nowMs: number
+) {
+  if (!intervals?.length || !Number.isFinite(nowMs)) return undefined;
+  let earliest = Number.POSITIVE_INFINITY;
+  for (const row of intervals) {
+    const joined = Date.parse(row.joinedAt);
+    if (!Number.isFinite(joined)) continue;
+    earliest = Math.min(earliest, joined + ATTENDANCE_RETENTION_MS);
+  }
+  if (!Number.isFinite(earliest) || earliest <= nowMs) return undefined;
+  return earliest;
+}
+
+export function maintainAttendanceCopy(
+  intervals: AttendanceInterval[] | undefined,
+  collecting: boolean,
+  now: string
+) {
+  return expireAttendanceIntervals(
+    closeAttendanceWhenCollectionStops(intervals, collecting, now),
+    now
+  );
 }
 
 export function expireAttendanceIntervals(

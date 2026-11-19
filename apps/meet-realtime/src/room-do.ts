@@ -8,17 +8,15 @@ import {
   CloudflareSfuClient,
   createMeetRoomSocketDelivery,
   type MeetRoomSocketAttachment,
+  ATTENDANCE_DIRECTORY_ROOM,
   meetClassFeatures,
   meetRoomStateView,
-  closeBudgetPublications,
   createMeetRoomSnapshot,
-  deferBudgetCleanup,
   expireRoomBudget,
   MeetCommandExecutor,
   type MeetRealtimeTokenPayload,
   type MeetRoomOutcome,
   meetRealtimeClientMessageSchema,
-  mergePublicationCleanup,
   pruneMeetPresence,
   releaseParticipant,
   remoteMeetTracks,
@@ -39,7 +37,16 @@ import {
 } from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
+import {
+  handleAttendanceDirectoryRequest,
+  publishRoomAttendanceIndex,
+} from './attendance-directory-request';
 import { handleMeetClassServiceRequest } from './room-class-service';
+import {
+  cleanupRoomPublications,
+  retainRoomAttendance,
+  scheduleRoomFollowUps,
+} from './room-maintenance';
 import { handleMeetRoomDevice } from './room-device-request';
 import { privateRoomStorage } from './private-room-storage';
 import { type RoomServiceState, roomService } from './room-service';
@@ -63,6 +70,7 @@ export class MeetRoomDurableObject implements DurableObject {
   private readonly env: MeetRoomEnv;
   private readonly state: DurableObjectState;
   private snapshot: RoomServiceState = createMeetRoomSnapshot();
+  private roomName: string | undefined;
   private loading: Promise<void> | null = null;
   private readonly presence = new MeetPresencePublisher();
   private commands = new MeetCommandExecutor();
@@ -127,6 +135,16 @@ export class MeetRoomDurableObject implements DurableObject {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     // Output gating keeps acknowledgements behind the durable write.
     const snapshot = this.snapshot;
+    publishRoomAttendanceIndex({
+      roomId: this.roomName,
+      intervals: snapshot.attendance,
+      secret: this.env.MEET_REALTIME_TOKEN_SECRET,
+      waitUntil: (task) => this.state.waitUntil?.(task),
+      fetchRoom: (request) =>
+        this.env.MEET_ROOM.get(
+          this.env.MEET_ROOM.idFromName(ATTENDANCE_DIRECTORY_ROOM)
+        ).fetch(request),
+    });
     return this.presence.persist(
       snapshot,
       () =>
@@ -194,8 +212,14 @@ export class MeetRoomDurableObject implements DurableObject {
   }
 
   async fetch(request: Request): Promise<Response> {
-    await this.load();
     const url = new URL(request.url);
+    if (url.pathname === '/attendance-index')
+      return handleAttendanceDirectoryRequest({
+        storage: this.state.storage,
+        request,
+        secret: this.env.MEET_REALTIME_TOKEN_SECRET,
+      });
+    await this.load();
     this.snapshot.usage ??= createRoomUsage();
     this.snapshot.usage.httpRequests++;
     this.snapshot.usage.httpCounterWrites =
@@ -219,6 +243,9 @@ export class MeetRoomDurableObject implements DurableObject {
           await this.persist();
           if (broadcast.length) this.broadcast(broadcast);
         },
+        rememberRoom: (roomId) => {
+          this.roomName = roomId;
+        },
       });
 
     const rawToken = request.headers.get('x-meet-token');
@@ -230,6 +257,7 @@ export class MeetRoomDurableObject implements DurableObject {
     } catch {
       return new Response('Unauthorized', { status: 401 });
     }
+    this.roomName = token.roomId;
 
     if (url.pathname === '/room-service') {
       const body = await request.json().catch(() => null);
@@ -395,6 +423,7 @@ export class MeetRoomDurableObject implements DurableObject {
     await this.load();
 
     const token = this.delivery.tokenOf(socket);
+    if (token) this.roomName = token.roomId;
     if (!token) {
       this.delivery.sendTo(socket, { error: 'unauthenticated', type: 'error' });
       return;
@@ -544,59 +573,31 @@ export class MeetRoomDurableObject implements DurableObject {
 
   async alarm() {
     await this.load();
+    const now = Date.now();
+    const features = meetClassFeatures(this.env);
+    const retained = retainRoomAttendance(this.snapshot, features, now);
+    if (retained !== this.snapshot) {
+      this.snapshot = retained;
+      await this.persist();
+    }
     const emptyVersion = this.snapshot.lifecycle?.version;
-    const expiredBudget = expireRoomBudget(
-      this.snapshot,
-      Date.now(),
-      meetClassFeatures(this.env)
-    );
+    const expiredBudget = expireRoomBudget(this.snapshot, now, features);
     if (expiredBudget) {
       this.snapshot = expiredBudget.state;
       await this.persist();
       this.broadcast(expiredBudget.broadcast);
       this.delivery.disconnect(expiredBudget.disconnect);
     }
-    if (
-      this.snapshot.budget?.pendingPublications?.length &&
-      Date.now() >= (this.snapshot.budget.nextCleanupAt ?? 0)
-    ) {
-      const cleanupStarted = this.snapshot;
-      try {
-        const closed = await closeBudgetPublications(
-          cleanupStarted,
-          (input) => this.sfuClient().closeTracks(input),
-          async (progress) => {
-            this.snapshot = mergePublicationCleanup(
-              this.snapshot,
-              cleanupStarted,
-              progress
-            );
-            await this.persist();
-          },
-          (sessionId) => this.sfuClient().getSession(sessionId)
-        );
-        this.snapshot = mergePublicationCleanup(
-          this.snapshot,
-          cleanupStarted,
-          closed
-        );
+    this.snapshot = await cleanupRoomPublications({
+      snapshot: this.snapshot,
+      now,
+      closeTracks: (input) => this.sfuClient().closeTracks(input),
+      getSession: (sessionId) => this.sfuClient().getSession(sessionId),
+      persist: async (snapshot) => {
+        this.snapshot = snapshot;
         await this.persist();
-      } catch {
-        this.snapshot = {
-          ...this.snapshot,
-          budget: deferBudgetCleanup(this.snapshot, Date.now(), cleanupStarted)
-            .budget,
-        };
-        await this.persist();
-        console.error(
-          'Meeting media cleanup deferred; provider confirmation is still pending'
-        );
-      }
-    }
-    if (this.snapshot.budget?.pendingPublications?.length)
-      await this.scheduleSweep(
-        this.snapshot.budget.nextCleanupAt ?? Date.now()
-      );
+      },
+    });
     const expiredLive = expireRoomLive(this.snapshot);
     if (expiredLive) {
       this.snapshot = expiredLive.state;
@@ -677,23 +678,12 @@ export class MeetRoomDurableObject implements DurableObject {
       this.broadcast(empty.broadcast);
       this.delivery.disconnect(empty.disconnect);
     }
-    await this.scheduleEmptyRoom();
-    // Disconnected presence keeps a grace alarm; open sockets hibernate.
-    if (
-      Object.keys(this.snapshot.presence).some(
-        (id) => !connectedUserIds.has(id)
-      )
-    )
-      await this.scheduleSweep();
-    if (this.snapshot.liveAssistant)
-      await this.scheduleSweep(
-        this.snapshot.ended ? Date.now() : this.snapshot.liveAssistant.expiresAt
-      );
-    if (this.snapshot.budget?.pendingPublications?.length)
-      await this.scheduleSweep(
-        this.snapshot.budget.nextCleanupAt ?? Date.now()
-      );
-    if (this.snapshot.budget && !this.snapshot.ended)
-      await this.scheduleSweep(this.snapshot.budget.expiresAt);
+    await scheduleRoomFollowUps({
+      snapshot: this.snapshot,
+      connectedUserIds,
+      now: Date.now(),
+      scheduleSweep: (deadline) => this.scheduleSweep(deadline),
+      scheduleEmptyRoom: () => this.scheduleEmptyRoom(),
+    });
   }
 }

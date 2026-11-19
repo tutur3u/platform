@@ -3,10 +3,8 @@ import {
   type MeetClassFeatures,
   type MeetRoomSnapshot,
 } from '../../../packages/realtime/src/meet';
+import type { MeetRealtimeServerMessage } from '../../../packages/realtime/src/meet/messages';
 import { verifyMeetServiceCredential } from '../../../packages/realtime/src/meet/service-credential';
-import type { classTimerServerMessage } from '../../../packages/realtime/src/meet/class-timer';
-
-type TimerMessage = ReturnType<typeof classTimerServerMessage>;
 
 export async function handleMeetClassServiceRequest(input: {
   request: Request;
@@ -16,8 +14,9 @@ export async function handleMeetClassServiceRequest(input: {
   now: string;
   commit: (
     snapshot: MeetRoomSnapshot,
-    broadcast: TimerMessage[]
+    broadcast: MeetRealtimeServerMessage[]
   ) => Promise<void>;
+  rememberRoom?: (roomId: string) => void;
 }): Promise<Response> {
   const credential =
     input.request.headers
@@ -25,6 +24,7 @@ export async function handleMeetClassServiceRequest(input: {
       ?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? '';
   const claims = verifyMeetServiceCredential(credential, input.secret);
   if (!claims) return new Response('Unauthorized', { status: 401 });
+  input.rememberRoom?.(claims.roomId);
   const result = applyMeetClassService(
     input.snapshot,
     claims,

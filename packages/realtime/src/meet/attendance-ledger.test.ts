@@ -3,7 +3,10 @@ import {
   admitOrHold,
   aggregateAttendance,
   applyMeetRoomCommand,
+  ATTENDANCE_RETENTION_MS,
   attendanceCsv,
+  maintainAttendanceCopy,
+  nextAttendanceAlarm,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
   meetRoomStateView,
@@ -209,5 +212,55 @@ describe('attendance ledger', () => {
     expect(meetRoomStateView(state, host)).not.toHaveProperty('attendance');
     expect(meetRoomStateView(state, speaker)).not.toHaveProperty('attendance');
     expect(meetRoomStateView(state, speaker).settings).toBeUndefined();
+  });
+
+  it('caps an open interval at the room end in the fallback export', () => {
+    const rows = aggregateAttendance(
+      [
+        {
+          sourceKey: `${HOST_ID}:${NOW}`,
+          deviceUserId: HOST_ID,
+          kind: 'member',
+          userId: HOST_ID,
+          displayName: 'Ada',
+          joinedAt: NOW,
+        },
+      ],
+      '2026-07-31T13:00:00.000Z',
+      '2026-07-31T12:10:00.000Z'
+    );
+    expect(rows[0]?.totalMinutes).toBe(10);
+  });
+});
+
+describe('attendance copy expiry', () => {
+  const open = {
+    sourceKey: `${HOST_ID}:${NOW}`,
+    deviceUserId: HOST_ID,
+    kind: 'member' as const,
+    userId: HOST_ID,
+    displayName: 'Ada',
+    joinedAt: NOW,
+  };
+
+  it('expires a copy from joined_at without waiting for a read', () => {
+    const nowMs = Date.parse(NOW) + ATTENDANCE_RETENTION_MS + 1_000;
+    const now = new Date(nowMs).toISOString();
+    const freshJoined = new Date(nowMs - 60_000).toISOString();
+    const kept = maintainAttendanceCopy(
+      [open, { ...open, sourceKey: 'fresh', joinedAt: freshJoined }],
+      true,
+      now
+    );
+    expect(kept?.map((row) => row.sourceKey)).toEqual(['fresh']);
+    expect(nextAttendanceAlarm(kept, nowMs)).toBe(
+      Date.parse(freshJoined) + ATTENDANCE_RETENTION_MS
+    );
+    expect(nextAttendanceAlarm([open], nowMs)).toBeUndefined();
+  });
+
+  it('closes open intervals when collection is off', () => {
+    const closed = maintainAttendanceCopy([open], false, NOW);
+    expect(closed?.[0]?.leftAt).toBe(NOW);
   });
 });

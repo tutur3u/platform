@@ -16,6 +16,7 @@ import {
   getMeetRealtimeUrl,
 } from '../lib/call-session';
 import {
+  commitFencedUpsert,
   planAttendanceUpsert,
   readAttendancePages,
   type AttendanceStoredRow,
@@ -36,7 +37,8 @@ export type AttendanceStore = {
   upsert(
     meetingId: string,
     wsId: string,
-    rows: AttendanceInterval[]
+    rows: AttendanceInterval[],
+    epoch?: number
   ): Promise<void>;
   list(
     meetingId: string,
@@ -86,14 +88,23 @@ interface AttendanceQuery<T> extends QueryResult<T> {
   range(from: number, to: number): QueryResult<T>;
 }
 
-function attendanceTable(db: {
+interface PrivateAttendanceDb {
   schema(name: 'private'): {
     from(
       name: 'meet_attendance_sessions'
     ): AttendanceQuery<SessionRow[] | null>;
+    from(
+      name: 'meet_attendance_fences'
+    ): AttendanceQuery<Array<{ generation?: number }> | null>;
   };
-}) {
+}
+
+function attendanceTable(db: PrivateAttendanceDb) {
   return db.schema('private').from('meet_attendance_sessions');
+}
+
+function fenceTable(db: PrivateAttendanceDb) {
+  return db.schema('private').from('meet_attendance_fences');
 }
 
 function rowPayload(meetingId: string, wsId: string, row: AttendanceInterval) {
@@ -112,68 +123,87 @@ function rowPayload(meetingId: string, wsId: string, row: AttendanceInterval) {
 
 export async function createAttendanceStore(): Promise<AttendanceStore> {
   const db = await createAdminClient({ noCookie: true });
-  const table = () =>
-    attendanceTable(
-      db as unknown as {
-        schema(name: 'private'): {
-          from(
-            name: 'meet_attendance_sessions'
-          ): AttendanceQuery<SessionRow[] | null>;
-        };
-      }
-    );
+  const typed = db as unknown as PrivateAttendanceDb;
+  const table = () => attendanceTable(typed);
+  const fence = () => fenceTable(typed);
   return {
-    async upsert(meetingId, wsId, rows) {
+    async upsert(meetingId, wsId, rows, epoch = 0) {
       if (!rows.length) return;
-      const existing: AttendanceStoredRow[] = [];
-      for (let index = 0; index < rows.length; index += 100) {
-        const keys = rows.slice(index, index + 100).map((row) => row.sourceKey);
-        existing.push(
-          ...(await readAttendancePages(async (from, to) => {
-            const { data, error } = await table()
-              .select(
-                'source_key, ws_id, participant_kind, user_id, guest_id, display_name, joined_at, left_at'
-              )
+      await commitFencedUpsert({
+        epoch,
+        readGeneration: async () => {
+          const current = await fence()
+            .select('generation')
+            .eq('meeting_id', meetingId)
+            .eq('ws_id', wsId);
+          if (current.error) throw current.error;
+          const generation = current.data?.[0]?.generation;
+          return typeof generation === 'number' ? generation : 0;
+        },
+        compensate: async () => {
+          for (const row of rows) {
+            const removed = await table()
+              .delete()
               .eq('meeting_id', meetingId)
-              .in('source_key', keys)
-              .order('source_key')
-              .range(from, to);
+              .eq('ws_id', wsId)
+              .eq('source_key', row.sourceKey);
+            if (removed.error) throw removed.error;
+          }
+        },
+        write: async () => {
+          const existing: AttendanceStoredRow[] = [];
+          for (let index = 0; index < rows.length; index += 100) {
+            const keys = rows
+              .slice(index, index + 100)
+              .map((row) => row.sourceKey);
+            existing.push(
+              ...(await readAttendancePages(async (from, to) => {
+                const { data, error } = await table()
+                  .select(
+                    'source_key, ws_id, participant_kind, user_id, guest_id, display_name, joined_at, left_at'
+                  )
+                  .eq('meeting_id', meetingId)
+                  .in('source_key', keys)
+                  .order('source_key')
+                  .range(from, to);
+                if (error) throw error;
+                return (data ?? []).map((row): AttendanceStoredRow => ({
+                  sourceKey: row.source_key,
+                  wsId: row.ws_id ?? '',
+                  kind: row.participant_kind,
+                  userId: row.user_id,
+                  guestId: row.guest_id,
+                  displayName: row.display_name,
+                  joinedAt: row.joined_at,
+                  leftAt: row.left_at,
+                }));
+              }))
+            );
+          }
+          const plan = planAttendanceUpsert(existing, rows, wsId);
+          if (plan.insert.length) {
+            const { error } = await table().insert(
+              plan.insert.map((row) => rowPayload(meetingId, wsId, row))
+            );
             if (error) throw error;
-            return (data ?? []).map((row): AttendanceStoredRow => ({
-              sourceKey: row.source_key,
-              wsId: row.ws_id ?? '',
-              kind: row.participant_kind,
-              userId: row.user_id,
-              guestId: row.guest_id,
-              displayName: row.display_name,
-              joinedAt: row.joined_at,
-              leftAt: row.left_at,
-            }));
-          }))
-        );
-      }
-      const plan = planAttendanceUpsert(existing, rows, wsId);
-      if (plan.insert.length) {
-        const { error } = await table().insert(
-          plan.insert.map((row) => rowPayload(meetingId, wsId, row))
-        );
-        if (error) throw error;
-      }
-      for (const row of plan.update) {
-        const { error } = await table()
-          .update({
-            participant_kind: row.kind,
-            user_id: row.kind === 'member' ? (row.userId ?? null) : null,
-            guest_id: row.kind === 'guest' ? (row.guestId ?? null) : null,
-            display_name: row.displayName,
-            joined_at: row.joinedAt,
-            left_at: row.leftAt ?? null,
-          })
-          .eq('meeting_id', meetingId)
-          .eq('ws_id', wsId)
-          .eq('source_key', row.sourceKey);
-        if (error) throw error;
-      }
+          }
+          for (const row of plan.update) {
+            const { error } = await table()
+              .update({
+                participant_kind: row.kind,
+                user_id: row.kind === 'member' ? (row.userId ?? null) : null,
+                guest_id: row.kind === 'guest' ? (row.guestId ?? null) : null,
+                display_name: row.displayName,
+                joined_at: row.joinedAt,
+                left_at: row.leftAt ?? null,
+              })
+              .eq('meeting_id', meetingId)
+              .eq('ws_id', wsId)
+              .eq('source_key', row.sourceKey);
+            if (error) throw error;
+          }
+        },
+      });
     },
     async list(meetingId, wsId, now) {
       const cutoff = new Date(
@@ -219,6 +249,7 @@ async function readRoomLedger(input: {
       aud: 'meet-service',
       purpose: 'attendance-ledger',
       roomId,
+      actorUserId: input.userId,
       exp: Math.floor(Date.now() / 1000) + MEET_SERVICE_TTL_SECONDS,
     },
     getMeetRealtimeTokenSecret()
@@ -233,11 +264,20 @@ async function readRoomLedger(input: {
     headers: { Authorization: `Bearer ${credential}` },
     signal: AbortSignal.timeout(5000),
   });
+  if (response.status === 429)
+    throw new MeetCallAccessError(429, 'Too many requests');
   if (!response.ok) return null;
-  const body = (await response.json()) as { attendance?: unknown };
-  return Array.isArray(body.attendance)
-    ? (body.attendance as AttendanceInterval[])
-    : null;
+  const body = (await response.json()) as {
+    attendance?: unknown;
+    epoch?: unknown;
+    endedAt?: unknown;
+  };
+  if (!Array.isArray(body.attendance)) return null;
+  return {
+    intervals: body.attendance as AttendanceInterval[],
+    epoch: typeof body.epoch === 'number' ? body.epoch : 0,
+    endedAt: typeof body.endedAt === 'string' ? body.endedAt : undefined,
+  };
 }
 
 export async function syncMeetAttendance(
@@ -252,7 +292,15 @@ export async function syncMeetAttendance(
     now: string;
   },
   deps?: {
-    readLedger: () => Promise<AttendanceInterval[] | null>;
+    readLedger: () => Promise<
+      | AttendanceInterval[]
+      | {
+          intervals: AttendanceInterval[];
+          epoch?: number;
+          endedAt?: string;
+        }
+      | null
+    >;
     store: AttendanceStore;
   }
 ) {
@@ -260,26 +308,45 @@ export async function syncMeetAttendance(
     throw new MeetCallAccessError(404, 'Attendance is unavailable');
   const readLedger = deps?.readLedger ?? (() => readRoomLedger(input));
   const store = deps?.store ?? (await createAttendanceStore());
-  const ledger = await readLedger().catch(() => null);
-  if (ledger?.length) {
+  const read = await readLedger().catch((error: unknown) => {
+    if (error instanceof MeetCallAccessError && error.status === 429)
+      throw error;
+    return null;
+  });
+  const ledger = Array.isArray(read)
+    ? { intervals: read, epoch: 0, endedAt: undefined }
+    : read;
+  if (ledger?.intervals.length) {
     try {
-      await store.upsert(input.meetingId, input.wsId, ledger);
+      await store.upsert(
+        input.meetingId,
+        input.wsId,
+        ledger.intervals,
+        ledger.epoch ?? 0
+      );
     } catch (error) {
       if (isMissingTable(error))
         throw new MeetCallAccessError(503, 'Attendance is unavailable');
+      if (
+        error instanceof Error &&
+        error.message === 'Meet attendance sync was fenced'
+      )
+        throw error;
       throw error;
     }
   }
   try {
     const stored = await store.list(input.meetingId, input.wsId, input.now);
     return aggregateAttendance(
-      stored.length ? stored : (ledger ?? []),
-      input.now
+      stored.length ? stored : (ledger?.intervals ?? []),
+      input.now,
+      ledger?.endedAt
     );
   } catch (error) {
     if (isMissingTable(error))
       throw new MeetCallAccessError(503, 'Attendance is unavailable');
-    if (ledger) return aggregateAttendance(ledger, input.now);
+    if (ledger)
+      return aggregateAttendance(ledger.intervals, input.now, ledger.endedAt);
     throw error;
   }
 }

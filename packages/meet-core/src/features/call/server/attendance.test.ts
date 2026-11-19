@@ -78,6 +78,33 @@ it('does not read or write attendance while the server switch is off', async () 
   expect(saved.upserts).toEqual([]);
 });
 
+it('caps a fallback export at the room end and refuses a fenced sync', async () => {
+  const saved = store([interval]);
+  saved.list = async () => {
+    throw new Error('db down');
+  };
+  const rows = await syncMeetAttendance(input, {
+    readLedger: async () => ({
+      intervals: [interval],
+      epoch: 0,
+      endedAt: '2026-07-31T12:10:00.000Z',
+    }),
+    store: saved,
+  });
+  expect(rows[0]?.totalMinutes).toBe(10);
+
+  const fenced = store();
+  fenced.upsert = async () => {
+    throw new Error('Meet attendance sync was fenced');
+  };
+  await expect(
+    syncMeetAttendance(input, {
+      readLedger: async () => ({ intervals: [interval], epoch: 0 }),
+      store: fenced,
+    })
+  ).rejects.toThrow('Meet attendance sync was fenced');
+});
+
 it('upserts the live ledger and returns stored minutes', async () => {
   const saved = store();
   const rows = await syncMeetAttendance(input, {

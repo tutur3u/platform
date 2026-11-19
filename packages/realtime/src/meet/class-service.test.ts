@@ -9,6 +9,7 @@ import { endMeetRoom } from './room-ending';
 import { expireRoomBudget } from './room-budget';
 import {
   allowMeetActorAction,
+  MEET_ATTENDANCE_READ_LIMIT,
   MEET_TIMER_COMMAND_LIMIT,
 } from './actor-rate-limit';
 
@@ -66,7 +67,9 @@ it('does not return the ledger unless attendance is on, and still erases when it
     NOW
   );
   expect(hidden.status).toBe(404);
-  expect(hidden.persist).toBe(false);
+  expect(hidden.body).toBeNull();
+  expect(hidden.persist).toBe(true);
+  expect(hidden.snapshot.attendance?.[0]?.leftAt).toBe(NOW);
   const erased = applyMeetClassService(
     snapshot,
     {
@@ -134,7 +137,13 @@ it('closes open attendance when the room ends or the budget expires', () => {
   const ended = endMeetRoom(open, NOW, { attendance: true, timer: false });
   expect(ended.attendance?.[0]?.leftAt).toBe(NOW);
   const held = endMeetRoom(open, NOW, { attendance: false, timer: false });
-  expect(held.attendance?.[0]?.leftAt).toBeUndefined();
+  expect(held.attendance?.[0]?.leftAt).toBe(NOW);
+  const expiredWhileOff = expireRoomBudget(open, Date.parse(NOW), {
+    attendance: false,
+    timer: true,
+  });
+  expect(expiredWhileOff?.state.attendance?.[0]?.leftAt).toBe(NOW);
+  expect(expiredWhileOff?.state.ended).toBe(true);
   const expired = expireRoomBudget(open, Date.parse(NOW), {
     attendance: true,
     timer: false,
@@ -149,4 +158,115 @@ it('rate-limits timer commands per actor per room', () => {
   expect(allowMeetActorAction('timer', USER, ROOM, now)).toBe(false);
   expect(allowMeetActorAction('timer', 'other', ROOM, now)).toBe(true);
   expect(allowMeetActorAction('timer', USER, 'other-room', now)).toBe(true);
+});
+
+function hostStart(actorUserId = USER) {
+  return {
+    aud: 'meet-service' as const,
+    purpose: 'class-timer' as const,
+    roomId: ROOM,
+    exp: 1_800_000_000,
+    action: 'start' as const,
+    durationMs: 60_000,
+    actorUserId,
+    actorRole: 'host' as const,
+  };
+}
+
+it('does not start the timer after the room has ended or the deadline has passed', () => {
+  const ended = { ...createMeetRoomSnapshot(), ended: true };
+  const refused = applyMeetClassService(
+    ended,
+    hostStart(),
+    { attendance: false, timer: true },
+    NOW
+  );
+  expect(refused.status).toBe(403);
+  expect(refused.body).toEqual({ error: 'room.ended' });
+  expect(refused.snapshot.classTimer).toBeUndefined();
+
+  const budget = {
+    ...createMeetRoomSnapshot(),
+    attendance: [interval()],
+    budget: {
+      expiresAt: Date.parse(NOW),
+      accountedAt: Date.parse(NOW) - 1000,
+      participantMilliseconds: 0,
+      maxPublishers: 8,
+      maxViewers: 8,
+    },
+  };
+  const expired = applyMeetClassService(
+    budget,
+    hostStart(),
+    { attendance: false, timer: true },
+    NOW
+  );
+  expect(expired.status).toBe(403);
+  expect(expired.body).toEqual({ error: 'room.ended' });
+  expect(expired.persist).toBe(true);
+  expect(expired.broadcast).toEqual([{ type: 'room.ended' }]);
+  expect(expired.snapshot.classTimer).toBeUndefined();
+  expect(expired.snapshot.ended).toBe(true);
+  expect(expired.snapshot.attendance?.[0]?.leftAt).toBe(NOW);
+});
+
+it('keeps the room rate limit on the snapshot, not a shared isolate map', () => {
+  let snapshot = createMeetRoomSnapshot();
+  for (let count = 0; count < MEET_TIMER_COMMAND_LIMIT; count += 1) {
+    const allowed = applyMeetClassService(
+      snapshot,
+      hostStart(),
+      { attendance: false, timer: true },
+      NOW
+    );
+    expect(allowed.status).toBe(200);
+    snapshot = allowed.snapshot;
+  }
+  const blocked = applyMeetClassService(
+    snapshot,
+    hostStart(),
+    { attendance: false, timer: true },
+    NOW
+  );
+  expect(blocked.status).toBe(429);
+  expect(blocked.snapshot.classTimer).toEqual(snapshot.classTimer);
+  const otherRoomCopy = applyMeetClassService(
+    createMeetRoomSnapshot(),
+    hostStart(),
+    { attendance: false, timer: true },
+    NOW
+  );
+  expect(otherRoomCopy.status).toBe(200);
+
+  let reads = createMeetRoomSnapshot();
+  const ledger = {
+    aud: 'meet-service' as const,
+    purpose: 'attendance-ledger' as const,
+    roomId: ROOM,
+    exp: 1_800_000_000,
+    actorUserId: USER,
+  };
+  for (let count = 0; count < MEET_ATTENDANCE_READ_LIMIT; count += 1) {
+    const allowed = applyMeetClassService(
+      reads,
+      ledger,
+      { attendance: true, timer: true },
+      NOW
+    );
+    expect(allowed.status).toBe(200);
+    reads = allowed.snapshot;
+  }
+  expect(
+    applyMeetClassService(reads, ledger, { attendance: true, timer: true }, NOW)
+      .status
+  ).toBe(429);
+  expect(
+    applyMeetClassService(
+      createMeetRoomSnapshot(),
+      ledger,
+      { attendance: true, timer: true },
+      NOW
+    ).status
+  ).toBe(200);
 });

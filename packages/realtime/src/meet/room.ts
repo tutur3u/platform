@@ -68,6 +68,9 @@ export interface MeetRoomSnapshot extends TranscriptionRoomState {
   waiting: Record<string, MeetRealtimeWaitingParticipant>;
   classTimer?: ClassTimer | null;
   attendance?: AttendanceInterval[];
+  attendanceEpoch?: number;
+  endedAt?: string;
+  serviceLimits?: Record<string, { resetAt: number; count: number }>;
 }
 
 export type MeetSfuIntent = {

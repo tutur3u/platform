@@ -28,6 +28,37 @@ function pruneActorRateLimits(now: number) {
   if (buckets.size > 5000) buckets.clear();
 }
 
+export type ActorLimitBuckets = Record<
+  string,
+  { resetAt: number; count: number }
+>;
+
+/** Room-scoped buckets. Every isolate that reaches the room shares this state. */
+export function takeSnapshotActorLimit(
+  buckets: ActorLimitBuckets | undefined,
+  kind: 'attendance' | 'timer',
+  actorId: string,
+  now = Date.now()
+) {
+  const limit =
+    kind === 'attendance'
+      ? MEET_ATTENDANCE_READ_LIMIT
+      : MEET_TIMER_COMMAND_LIMIT;
+  const next: ActorLimitBuckets = {};
+  for (const [name, bucket] of Object.entries(buckets ?? {})) {
+    if (now < bucket.resetAt) next[name] = bucket;
+  }
+  const key = `${kind}:${actorId}`;
+  const current = next[key];
+  if (!current) {
+    next[key] = { resetAt: now + MEET_ACTOR_LIMIT_WINDOW_MS, count: 1 };
+    return { ok: true, buckets: next };
+  }
+  if (current.count >= limit) return { ok: false, buckets: next };
+  next[key] = { resetAt: current.resetAt, count: current.count + 1 };
+  return { ok: true, buckets: next };
+}
+
 export function allowMeetActorAction(
   kind: 'attendance' | 'timer',
   actorId: string,

@@ -1,18 +1,22 @@
+import { takeSnapshotActorLimit } from './actor-rate-limit';
 import {
+  closeAttendanceWhenCollectionStops,
   eraseAttendanceCopy,
   expireAttendanceIntervals,
 } from './attendance-ledger';
 import type { MeetClassFeatures } from './class-features';
 import { applyClassTimerCommand, classTimerServerMessage } from './class-timer';
-import type { MeetServiceClaims } from './service-credential';
+import type { MeetRealtimeServerMessage } from './messages';
+import { accountRoomTime, expireRoomBudget } from './room-budget';
 import type { MeetRoomSnapshot } from './room';
+import type { MeetServiceClaims } from './service-credential';
 
 export type MeetClassServiceResult = {
   snapshot: MeetRoomSnapshot;
   status: number;
   body: unknown;
   persist: boolean;
-  broadcast: ReturnType<typeof classTimerServerMessage>[];
+  broadcast: MeetRealtimeServerMessage[];
 };
 
 function unchanged(
@@ -23,37 +27,126 @@ function unchanged(
   return { snapshot, status, body, persist: false, broadcast: [] };
 }
 
+function sealedSnapshot(
+  snapshot: MeetRoomSnapshot,
+  features: MeetClassFeatures,
+  now: string
+) {
+  const attendance = closeAttendanceWhenCollectionStops(
+    snapshot.attendance,
+    features.attendance,
+    now
+  );
+  if (attendance === snapshot.attendance) return snapshot;
+  return { ...snapshot, attendance: attendance ?? [] };
+}
+
+function limited(
+  snapshot: MeetRoomSnapshot,
+  kind: 'attendance' | 'timer',
+  actorId: string,
+  nowMs: number
+): MeetClassServiceResult | { snapshot: MeetRoomSnapshot } {
+  const decision = takeSnapshotActorLimit(
+    snapshot.serviceLimits,
+    kind,
+    actorId,
+    nowMs
+  );
+  const next = { ...snapshot, serviceLimits: decision.buckets };
+  if (decision.ok) return { snapshot: next };
+  return {
+    snapshot: next,
+    status: 429,
+    body: { error: 'rate_limited' },
+    persist: true,
+    broadcast: [],
+  };
+}
+
+function ledgerBody(snapshot: MeetRoomSnapshot) {
+  return {
+    attendance: snapshot.attendance ?? [],
+    epoch: snapshot.attendanceEpoch ?? 0,
+    ...(snapshot.endedAt ? { endedAt: snapshot.endedAt } : {}),
+  };
+}
+
 export function applyMeetClassService(
   snapshot: MeetRoomSnapshot,
   claims: MeetServiceClaims,
   features: MeetClassFeatures,
   now: string
 ): MeetClassServiceResult {
+  const current = sealedSnapshot(snapshot, features, now);
+  const sealed = current !== snapshot;
   if (claims.purpose === 'attendance-ledger') {
-    if (!features.attendance) return unchanged(snapshot, 404, null);
-    const expired = expireAttendanceIntervals(snapshot.attendance, now);
-    if (expired === snapshot.attendance)
+    if (!features.attendance)
       return {
-        snapshot,
-        status: 200,
-        body: { attendance: snapshot.attendance ?? [] },
-        persist: false,
+        snapshot: current,
+        status: 404,
+        body: null,
+        persist: sealed,
         broadcast: [],
       };
-    const next = { ...snapshot, attendance: expired ?? [] };
+    const gate = limited(
+      current,
+      'attendance',
+      claims.actorUserId || claims.roomId,
+      Date.parse(now)
+    );
+    if ('status' in gate) return gate;
+    const expired = expireAttendanceIntervals(gate.snapshot.attendance, now);
+    const next =
+      expired === gate.snapshot.attendance
+        ? gate.snapshot
+        : { ...gate.snapshot, attendance: expired ?? [] };
     return {
       snapshot: next,
       status: 200,
-      body: { attendance: next.attendance },
-      persist: true,
+      body: ledgerBody(next),
+      persist: next !== snapshot,
       broadcast: [],
     };
   }
   if (claims.purpose === 'class-timer') {
     if (!features.timer)
-      return unchanged(snapshot, 404, { error: 'unavailable' });
+      return {
+        snapshot: current,
+        status: 404,
+        body: { error: 'unavailable' },
+        persist: sealed,
+        broadcast: [],
+      };
+    const nowMs = Date.parse(now);
+    const accounted = accountRoomTime(current, nowMs);
+    const expired = expireRoomBudget(accounted, nowMs, features);
+    if (expired) {
+      return {
+        snapshot: expired.state,
+        status: 403,
+        body: { error: 'room.ended' },
+        persist: true,
+        broadcast: expired.broadcast,
+      };
+    }
+    if (accounted.ended)
+      return {
+        snapshot: accounted,
+        status: 403,
+        body: { error: 'room.ended' },
+        persist: accounted !== snapshot,
+        broadcast: [],
+      };
+    const gate = limited(
+      accounted,
+      'timer',
+      claims.actorUserId || claims.roomId,
+      nowMs
+    );
+    if ('status' in gate) return gate;
     const applied = applyClassTimerCommand(
-      snapshot.classTimer,
+      gate.snapshot.classTimer,
       { action: claims.action ?? 'stop', durationMs: claims.durationMs },
       {
         userId: claims.actorUserId ?? '',
@@ -62,10 +155,25 @@ export function applyMeetClassService(
       },
       now
     );
-    if (!applied.ok) return unchanged(snapshot, 403, { error: applied.error });
-    if ((snapshot.classTimer ?? null) === (applied.timer ?? null))
-      return unchanged(snapshot, 200, { ok: true });
-    const next = { ...snapshot, classTimer: applied.timer };
+    if (!applied.ok)
+      return {
+        snapshot: gate.snapshot,
+        status: 403,
+        body: { error: applied.error },
+        persist: gate.snapshot !== snapshot,
+        broadcast: [],
+      };
+    const timerUnchanged =
+      (gate.snapshot.classTimer ?? null) === (applied.timer ?? null);
+    if (timerUnchanged)
+      return {
+        snapshot: gate.snapshot,
+        status: 200,
+        body: { ok: true },
+        persist: gate.snapshot !== snapshot,
+        broadcast: [],
+      };
+    const next = { ...gate.snapshot, classTimer: applied.timer };
     return {
       snapshot: next,
       status: 200,
@@ -74,15 +182,19 @@ export function applyMeetClassService(
       broadcast: [classTimerServerMessage(applied.timer, now)],
     };
   }
-  const attendance = eraseAttendanceCopy(snapshot.attendance, {
+  if (claims.purpose !== 'attendance-erase')
+    return unchanged(current, 404, { error: 'unavailable' });
+  const attendance = eraseAttendanceCopy(current.attendance, {
     all: claims.erase === 'meeting',
     userId: claims.userId,
     guestId: claims.guestId,
   });
-  if (attendance === snapshot.attendance)
-    return unchanged(snapshot, 200, { ok: true });
   return {
-    snapshot: { ...snapshot, attendance: attendance ?? [] },
+    snapshot: {
+      ...current,
+      attendance: attendance ?? [],
+      attendanceEpoch: (current.attendanceEpoch ?? 0) + 1,
+    },
     status: 200,
     body: { ok: true },
     persist: true,

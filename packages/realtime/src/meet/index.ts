@@ -39,16 +39,32 @@ export {
   attendanceCsv,
   attendanceIdentity,
   closeAttendanceInterval,
+  closeAttendanceWhenCollectionStops,
   closeOpenAttendanceIntervals,
   eraseAttendanceCopy,
   expireAttendanceIntervals,
+  maintainAttendanceCopy,
+  nextAttendanceAlarm,
   openAttendanceInterval,
 } from './attendance-ledger';
+export {
+  ATTENDANCE_DIRECTORY_PAGE,
+  ATTENDANCE_DIRECTORY_ROOM,
+  type AttendanceDirectory,
+  applyAttendanceDirectory,
+  attendanceSubjects,
+  emptyAttendanceDirectory,
+  forgetAttendanceRooms,
+  pageAttendanceDirectory,
+  parseAttendanceRoomId,
+  rememberAttendanceRoom,
+} from './attendance-directory';
 export {
   MEET_ACTOR_LIMIT_WINDOW_MS,
   MEET_ATTENDANCE_READ_LIMIT,
   MEET_TIMER_COMMAND_LIMIT,
   allowMeetActorAction,
+  takeSnapshotActorLimit,
 } from './actor-rate-limit';
 export { applyMeetClassService } from './class-service';
 export { spreadsheetCsvCell } from './csv-cell';

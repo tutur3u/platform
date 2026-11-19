@@ -250,6 +250,15 @@ export const POST = withSessionAuth(
           await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
         await eraseMeetAttendanceSubject({ userId: user.id });
       } catch (error) {
+        let enabled = false;
+        try {
+          const { meetClassAttendanceEnabled } =
+            await import('@tuturuuu/realtime/meet');
+          enabled = meetClassAttendanceEnabled();
+        } catch {
+          enabled = false;
+        }
+        if (enabled) throw error;
         console.error('Meet attendance subject erasure failed', {
           name: error instanceof Error ? error.name : 'unknown',
         });

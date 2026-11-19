@@ -75,6 +75,8 @@ export async function POST(
     });
     if (response.status === 404)
       throw new MeetCallAccessError(404, 'Timer is unavailable');
+    if (response.status === 429)
+      throw new MeetCallAccessError(429, 'Too many requests');
     if (!response.ok)
       throw new MeetCallAccessError(403, 'Timer command was rejected');
     return { ok: true };

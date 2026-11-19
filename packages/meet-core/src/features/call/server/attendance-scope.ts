@@ -12,6 +12,12 @@ export type AttendanceStoredRow = {
   leftAt: string | null;
 };
 
+function canonicalTimestamp(value: string | null) {
+  if (!value) return '';
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : value;
+}
+
 export function attendanceWriteSignature(row: {
   kind: 'member' | 'guest';
   userId: string | null;
@@ -25,9 +31,24 @@ export function attendanceWriteSignature(row: {
     row.userId ?? '',
     row.guestId ?? '',
     row.displayName,
-    row.joinedAt,
-    row.leftAt ?? '',
+    canonicalTimestamp(row.joinedAt),
+    canonicalTimestamp(row.leftAt),
   ].join('\u0000');
+}
+
+export async function commitFencedUpsert(input: {
+  epoch: number;
+  readGeneration: () => Promise<number>;
+  write: () => Promise<void>;
+  compensate: () => Promise<void>;
+}) {
+  if ((await input.readGeneration()) > input.epoch)
+    throw new Error('Meet attendance sync was fenced');
+  await input.write();
+  if ((await input.readGeneration()) > input.epoch) {
+    await input.compensate();
+    throw new Error('Meet attendance sync was fenced');
+  }
 }
 
 /** Inserts use the caller's workspace. An existing row keeps the workspace that collected it. */

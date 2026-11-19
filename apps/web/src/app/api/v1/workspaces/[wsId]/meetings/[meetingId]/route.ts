@@ -227,16 +227,39 @@ export async function DELETE(
         { status: 403 }
       );
     }
+    let commitAttendanceErasure:
+      | ((
+          plan:
+            | import('@tuturuuu/meet-core/features/call/server/attendance-erasure').AttendanceErasurePlan
+            | null
+        ) => Promise<void>)
+      | null = null;
+    let attendancePlan:
+      | import('@tuturuuu/meet-core/features/call/server/attendance-erasure').AttendanceErasurePlan
+      | null = null;
     try {
-      const { eraseMeetAttendanceForMeeting } =
+      const erasure =
         await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-      await eraseMeetAttendanceForMeeting(wsId, meetingId);
-    } catch (error) {
+      // Read former room names before the delete cascades those rows away.
+      attendancePlan = await erasure.prepareMeetingAttendanceErasure(
+        wsId,
+        meetingId
+      );
+      commitAttendanceErasure = erasure.commitAttendanceErasure;
+    } catch (erasureError) {
+      let enabled = false;
+      try {
+        const { meetClassAttendanceEnabled } =
+          await import('@tuturuuu/realtime/meet');
+        enabled = meetClassAttendanceEnabled();
+      } catch {
+        enabled = false;
+      }
+      if (enabled) throw erasureError;
       console.error('Meet attendance erasure failed', {
-        name: error instanceof Error ? error.name : 'unknown',
+        name: erasureError instanceof Error ? erasureError.name : 'unknown',
       });
     }
-    // Delete the meeting
     const { data: deleted, error } = await supabase
       .from('workspace_meetings')
       .delete()
@@ -252,6 +275,27 @@ export async function DELETE(
     }
     if (error) {
       console.error('Error deleting meeting:', error);
+      return NextResponse.json(
+        { error: 'Failed to delete meeting' },
+        { status: 500 }
+      );
+    }
+    try {
+      if (commitAttendanceErasure)
+        await commitAttendanceErasure(attendancePlan);
+    } catch (erasureError) {
+      let enabled = true;
+      try {
+        const { meetClassAttendanceEnabled } =
+          await import('@tuturuuu/realtime/meet');
+        enabled = meetClassAttendanceEnabled();
+      } catch {
+        enabled = false;
+      }
+      console.error('Meet attendance erasure failed', {
+        name: erasureError instanceof Error ? erasureError.name : 'unknown',
+      });
+      if (!enabled) return NextResponse.json({ success: true });
       return NextResponse.json(
         { error: 'Failed to delete meeting' },
         { status: 500 }
