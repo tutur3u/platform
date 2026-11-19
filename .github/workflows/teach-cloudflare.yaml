@@ -255,6 +255,7 @@ jobs:
       - name: Qualify the production Worker and seal the archive
         env:
           TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+          CUTOVER_ARTIFACT_PROFILE: production
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/teach-native-artifact.py --profile production config apps/teach
@@ -265,6 +266,7 @@ jobs:
       - name: Restore and qualify the sealed production archive
         env:
           TEACH_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+          CUTOVER_ARTIFACT_PROFILE: production
         run: |
           git worktree add --detach "$RUNNER_TEMP/teach-restore" "$SOURCE_SHA"
           cd "$RUNNER_TEMP/teach-restore"

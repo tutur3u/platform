@@ -12,6 +12,7 @@ const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
 const canonical = 'teach.tuturuuu.com';
 const apex = 'tuturuuu.com';
+const production = process.env.CUTOVER_ARTIFACT_PROFILE === 'production';
 const required = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
@@ -25,9 +26,12 @@ test(
   },
   async (t) => {
     const { configPath, config } = readNativeRuntimeConfig(app);
-    if (process.env.TEACH_SOURCE_SHA) {
-      assert.equal(config.name, 'tuturuuu-teach');
-      assert.equal(config.workers_dev, false);
+    assert.equal(
+      config.name,
+      production ? 'tuturuuu-teach' : 'tuturuuu-teach-vite-staging'
+    );
+    assert.equal(config.workers_dev, !production);
+    if (production) {
       assert.equal(config.preview_urls, false);
     }
     assert.deepEqual(config.routes ?? [], []);
@@ -144,7 +148,7 @@ test(
     for (const path of ['/', '/teacher', '/api/build-info']) {
       assert.equal((await call(path, apex)).status, 404, path);
     }
-    if (process.env.TEACH_SOURCE_SHA) {
+    if (production) {
       for (const host of ['unknown.invalid', 'teach.tuturuuu.com.invalid']) {
         const response = await call('/', host);
         assert.equal(response.status, 404, host);

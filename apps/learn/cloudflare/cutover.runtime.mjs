@@ -12,6 +12,7 @@ const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
 const canonical = 'learn.tuturuuu.com';
 const apex = 'tuturuuu.com';
+const production = process.env.CUTOVER_ARTIFACT_PROFILE === 'production';
 const required = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
@@ -25,9 +26,12 @@ test(
   },
   async (t) => {
     const { configPath, config } = readNativeRuntimeConfig(app);
-    if (process.env.LEARN_SOURCE_SHA) {
-      assert.equal(config.name, 'tuturuuu-learn');
-      assert.equal(config.workers_dev, false);
+    assert.equal(
+      config.name,
+      production ? 'tuturuuu-learn' : 'tuturuuu-learn-vite-staging'
+    );
+    assert.equal(config.workers_dev, !production);
+    if (production) {
       assert.equal(config.preview_urls, false);
     }
     assert.deepEqual(config.routes ?? [], []);
