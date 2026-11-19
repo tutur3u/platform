@@ -1,4 +1,3 @@
-import { isPublicBuildInfoRequest } from '@tuturuuu/utils/build-info-route';
 import { match } from '@formatjs/intl-localematcher';
 import {
   getCanonicalLocaleCookieOptions,
@@ -212,8 +211,6 @@ function shouldForwardTopicAnnouncementRequest(
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
-    if (isPublicBuildInfoRequest(request)) return NextResponse.next();
-
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );

@@ -1,4 +1,3 @@
-import { isPublicBuildInfoRequest } from '@tuturuuu/utils/build-info-route';
 import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
@@ -93,8 +92,6 @@ function withMailApiCors(request: NextRequest, response: NextResponse) {
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const mounted = Boolean(req.nextUrl.basePath);
   if (req.nextUrl.pathname.startsWith('/api')) {
-    if (isPublicBuildInfoRequest(req)) return NextResponse.next();
-
     if (req.method === 'OPTIONS') {
       return withMailApiCors(req, new NextResponse(null, { status: 204 }));
     }
