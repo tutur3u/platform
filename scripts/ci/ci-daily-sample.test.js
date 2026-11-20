@@ -1,10 +1,12 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
+  estimateSavings,
   fmt,
   parseArgs,
   percentile,
   renderEntry,
+  renderSavings,
   summarizeJobs,
   summarizeRuns,
 } = require('./ci-daily-sample.js');
@@ -93,6 +95,26 @@ test('a failed attempt followed by a pass is a flake candidate', () => {
 
 test('options are validated', () => {
   assert.equal(parseArgs(['--hours', '6']).hours, 6);
+  assert.equal(parseArgs(['--savings', '--commits', '3']).commits, 3);
   assert.throws(() => parseArgs(['--hours', '0']));
   assert.throws(() => parseArgs(['--bogus']));
+});
+
+test('savings count certain skips and ignore uncertain plans', () => {
+  const certain = {
+    uncertain: false,
+    test: { run: false },
+    typecheck: { run: false },
+    lint: { run: true },
+    docs: { run: true },
+    build: { apps: ['web'] },
+    cloudflare: { skip: [{ id: 'meet' }, { id: 'calendar' }] },
+  };
+  const report = estimateSavings([certain, { uncertain: true }]);
+  assert.equal(report.commits, 2);
+  assert.equal(report.uncertain, 1);
+  // 2 deploys, the test suite, type-check, and 5 unbuilt programming apps.
+  assert.equal(report.jobs, 2 + 1 + 1 + 5);
+  assert.equal(report.minutes, 2 * 4 + 6 + 8 + 5 * 4);
+  assert.match(renderSavings(report), /not queue wall/);
 });

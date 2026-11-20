@@ -1,16 +1,22 @@
-import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { calculate } from './affected-apps.mjs';
+import { affectedResult, planFromEnv } from './ci-plan.mjs';
 
 // Decide whether a per-app workflow's heavy jobs should run.
 //
-// Only pull_request runs are ever skipped. Every other event (push, deploy,
-// workflow_dispatch, ...) and every uncertain case resolves to run=true, so a
-// bug here can only cost CI minutes, never hide a build.
-export function decide({ eventName, apps, result, appExists = () => true }) {
-  if (eventName !== 'pull_request')
+// Pull requests and pushes to main can skip when the diff plan is certain and
+// the app is absent. Every other event, a missing base, and every uncertain
+// plan resolve to run=true, so a bug here can only cost CI minutes.
+export function decide({
+  eventName,
+  ref,
+  apps,
+  result,
+  appExists = () => true,
+}) {
+  const mainPush = eventName === 'push' && ref === 'refs/heads/main';
+  if (eventName !== 'pull_request' && !mainPush)
     return { run: true, reason: 'not a pull request' };
   const wanted = String(apps ?? '')
     .split(',')
@@ -44,38 +50,20 @@ export function decide({ eventName, apps, result, appExists = () => true }) {
     : { run: false, reason: `${wanted.join(',')} not affected` };
 }
 
-function fetchBase(baseRef, cwd) {
-  execFileSync(
-    'git',
-    [
-      'fetch',
-      '--no-tags',
-      '--quiet',
-      'origin',
-      `${baseRef}:refs/remotes/origin/${baseRef}`,
-    ],
-    {
-      cwd,
-      stdio: 'ignore',
-      timeout: 120_000,
-    }
-  );
-}
-
 export function gate(
   env = process.env,
   { cwd = process.cwd(), extraEdges } = {}
 ) {
   try {
     const eventName = env.EVENT_NAME ?? '';
-    if (eventName !== 'pull_request')
-      return decide({ eventName, apps: env.APP });
-    const baseRef = env.BASE_REF;
-    if (!baseRef) return { run: true, reason: 'base ref missing' };
-    fetchBase(baseRef, cwd);
-    const result = calculate({ base: `origin/${baseRef}`, cwd, extraEdges });
+    const ref = env.REF ?? '';
+    const mainPush = eventName === 'push' && ref === 'refs/heads/main';
+    if (eventName !== 'pull_request' && !mainPush)
+      return decide({ eventName, ref, apps: env.APP });
+    const result = affectedResult(planFromEnv(env, { cwd, extraEdges }));
     return decide({
       eventName,
+      ref,
       apps: env.APP,
       result,
       appExists: (app) =>

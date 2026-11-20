@@ -12,7 +12,7 @@ const workflow = readWorkflow('type-check.yaml');
 const job = workflow.jobs['type-check'];
 const prJob = workflow.jobs['type-check-pr'];
 const decision =
-  "steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
+  "needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
 const preflightIds = ['changed_files', 'check_config', 'release_relevance'];
 const heavyNames = [
   'Setup Bun',
@@ -45,7 +45,11 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   // Two variants share the Type Check context; exactly one runs per event. The
   // pull request variant may route to the PR pool (see
   // scripts/ci/workflow-pr-self-hosted.test.js) and so names no secret.
-  assert.deepEqual(Object.keys(workflow.jobs), ['type-check', 'type-check-pr']);
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    'plan',
+    'type-check',
+    'type-check-pr',
+  ]);
   assert.equal(job.name, 'Type Check');
   assert.equal(prJob.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
@@ -70,7 +74,10 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(job.concurrency, undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
-  assert.equal(job.needs, undefined);
+  assert.deepEqual(job.needs, ['plan']);
+  assert.equal(workflow.jobs.plan.uses, './.github/workflows/ci-plan.yaml');
+  assert.equal(workflow.jobs.plan.with.selector, 'typecheck');
+  assert.deepEqual(workflow.jobs.plan.permissions, { contents: 'read' });
   assert.match(job.if, /github\.event_name != 'pull_request'/);
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
@@ -134,7 +141,7 @@ test('same preflight scripts precede every heavy step without error overrides', 
   assert.equal(summary.name, 'Report skipped type check');
   assert.equal(
     summary.if,
-    "steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'"
+    "needs.plan.outputs.run == 'false' || steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'"
   );
   assert.match(summary.run, /no compilation was performed/);
   assert.match(summary.run, /GITHUB_STEP_SUMMARY/);

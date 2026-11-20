@@ -23,9 +23,17 @@ permissions:
   contents: read
 
 jobs:
+  plan:
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-plan.yaml
+    with:
+      selector: typecheck
   # Push, dispatch and generated-branch variant: keeps the Turbo credentials and
   # always runs on a hosted runner, never the PR pool.
   type-check:
+    needs: [plan]
     if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name != 'pull_request' && github.event_name != 'merge_group'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
@@ -98,24 +106,24 @@ jobs:
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 
       - name: Setup Bun
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
 
       - name: Test inline Type Check preflight
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         run: node --test --test-reporter=tap scripts/ci/type-check-inline-workflow.test.js
 
       - name: Restore Turbo fallback cache
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
           family: type-check
           cross-lock-restore: 'true'
 
       - name: Install dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         env:
           BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
@@ -123,7 +131,7 @@ jobs:
       # --frozen-lockfile accepts orphan entries that a plain install prunes,
       # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
       - name: Verify bun.lock is canonical
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         shell: bash
         run: |
           # A missing lockfile would be regenerated as an untracked file that
@@ -143,7 +151,7 @@ jobs:
           fi
 
       - name: Build workspace dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
@@ -151,23 +159,24 @@ jobs:
           team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Run type check
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           # The TanStack Start migration is paused; keep maintained workspace
           # type checks active without scheduling its package.
-          command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
+          command: bun turbo:local run type-check --concurrency=4 ${{ needs.plan.outputs.filters }}
           token: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.event_name != 'merge_group' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
 
       - name: Report skipped type check
-        if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
+        if: needs.plan.outputs.run == 'false' || steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
         run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"
 
   # Pull request variant: eligible for the PR runner pool, so it must never name a
   # secret (a guarded reference is still shipped to the runner). It shares the
   # `Type Check` context with the variant below; exactly one of them runs.
   type-check-pr:
+    needs: [plan]
     if: ${{ ((github.event_name != 'pull_request' || github.event.pull_request.draft == false) && ((github.event_name == 'pull_request' || github.event_name == 'merge_group'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     name: Type Check
     permissions:
@@ -240,25 +249,25 @@ jobs:
           echo "run_checks=$result" >> "$GITHUB_OUTPUT"
 
       - name: Setup Bun
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
           cache-enabled: ${{ runner.environment != 'self-hosted' }}
 
       - name: Test inline Type Check preflight
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         run: node --test --test-reporter=tap scripts/ci/type-check-inline-workflow.test.js
 
       - name: Restore Turbo fallback cache
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/setup-turbo-fallback-cache
         with:
           family: type-check
           cross-lock-restore: 'true'
 
       - name: Install dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         env:
           BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
@@ -266,7 +275,7 @@ jobs:
       # --frozen-lockfile accepts orphan entries that a plain install prunes,
       # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
       - name: Verify bun.lock is canonical
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         shell: bash
         run: |
           # A missing lockfile would be regenerated as an untracked file that
@@ -286,19 +295,19 @@ jobs:
           fi
 
       - name: Build workspace dependencies
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
 
       - name: Run type check
-        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        if: needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
         uses: ./.github/actions/run-with-turbo-remote-cache
         with:
           # The TanStack Start migration is paused; keep maintained workspace
           # type checks active without scheduling its package.
-          command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
+          command: bun turbo:local run type-check --concurrency=4 ${{ needs.plan.outputs.filters }}
 
       - name: Report skipped type check
-        if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
+        if: needs.plan.outputs.run == 'false' || steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
         run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"

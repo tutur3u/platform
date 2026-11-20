@@ -55,11 +55,10 @@ jobs:
               echo "::error::The merge group base commit is missing or invalid; refusing to select affected apps."
               exit 1
             fi
-            json=$(node scripts/ci/affected-apps.mjs --base "$QUEUE_BASE_SHA")
+            json=$(EVENT_NAME=merge_group QUEUE_BASE_SHA="$QUEUE_BASE_SHA" HEAD_SHA="$GITHUB_SHA" node scripts/ci/ci-plan.mjs --affected-result)
             changed=$(git diff --quiet "$QUEUE_BASE_SHA" HEAD -- 'apps/**' 'packages/**' && echo false || echo true)
           else
-            git fetch --no-tags origin "$BASE_REF"
-            json=$(node scripts/ci/affected-apps.mjs --base "origin/$BASE_REF")
+            json=$(EVENT_NAME=pull_request BASE_REF="$BASE_REF" HEAD_SHA="$GITHUB_SHA" node scripts/ci/ci-plan.mjs --affected-result)
             changed=$(git diff --quiet "origin/$BASE_REF...HEAD" -- 'apps/**' 'packages/**' && echo false || echo true)
           fi
           SELECTION="$json" CODE_CHANGED="$changed" node scripts/ci/select-programming-apps.mjs

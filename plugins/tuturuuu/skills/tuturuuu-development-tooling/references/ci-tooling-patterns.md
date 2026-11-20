@@ -205,6 +205,23 @@ Do not regenerate migration manifests as a condition of live Next.js work.
 Resumption must restore commands, tests, CI, dependency policy and docs together.
 See `apps/docs/build/devops/active-runtime.mdx`.
 
+## CI diff planner
+
+`scripts/ci/ci-plan.mjs` is the shared diff plan for PR and main CI and for the
+Cloudflare affected-gate. `scripts/ci/ci-plan-catalog.json` is the file-to-app
+ownership generated from those workflows; a contract test fails when a specific
+path is missing. Uncertain diffs, including `bun.lock`, `turbo.json`,
+`scripts/` and `.github/`, run every selector. Pull requests and `main` pushes
+may skip a Cloudflare app when the plan is certain. Production and every other
+event stay run-true. Do not put concurrency on `.github/workflows/ci-plan.yaml`:
+a callee that cancels in progress would cancel its caller. Deploy jobs keep
+`cancel-in-progress: false`. Vercel selection stays in `vercel-production.yaml`.
+Superseded production-build skipping is a separate change. Merge-group and
+Cloudflare jobs keep an empty Turbo token; remote cache is already guarded on
+Type Check and unit tests. Measure expected skips with
+`node scripts/ci/ci-daily-sample.js --savings`. Counts of how each workflow
+decides to run live in `scripts/ci/fixtures/workflow-run-decisions.json`.
+
 ## File Size Ceiling
 
 - Keep every new authored source file at or below the hard **700-LOC ceiling** in

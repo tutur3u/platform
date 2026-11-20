@@ -1,7 +1,7 @@
 ---
 title: "CI/CD Pipeline Optimization"
 description: "Centralized affected-path gating and smart caching to minimize unnecessary CI/CD runs."
-updatedAt: '2026-10-08'
+updatedAt: '2026-11-20'
 audience: developers
 ---
 
@@ -74,6 +74,25 @@ Before centralized gating, workflows ran on every push regardless of:
 With a large monorepo of apps and shared packages, this meant a single commit to
 one app could trigger dozens of unrelated build and deploy workflows, slowing
 feedback and congesting the Actions queue.
+
+## Diff planner
+
+`scripts/ci/ci-plan.mjs` reads one diff and writes a version 1 plan. The plan
+names the workspaces to test, type-check, lint, build and deploy, and the
+Cloudflare apps to skip, each with a reason. Lockfile, root config, `scripts/`
+and `.github/` changes are uncertain: every selector runs. A missing base SHA
+is uncertain too.
+
+Pull requests and pushes to `main` skip a Cloudflare app only when that plan
+is certain and the app is outside the closure. Production, manual, scheduled
+and release events keep running. Vercel production stays on the Production
+Deployment Planner in `vercel-production.yaml`. Type Check, Test, Oxc and docs
+read the plan from `.github/workflows/ci-plan.yaml`. Mobile keeps its path
+filters. Empty Turbo tokens on merge-queue and Cloudflare jobs stay empty on
+purpose.
+
+`node scripts/ci/ci-daily-sample.js --savings` estimates skipped jobs from
+recent diffs. The minutes use execution time, not the queue wall.
 
 ## How Gating Works Today
 

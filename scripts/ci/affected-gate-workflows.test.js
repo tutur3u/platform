@@ -130,20 +130,29 @@ for (const [file, workflow] of gated) {
     assert.equal(gate.needs, undefined);
     // Step failures must never fail the job; run defaults to true.
     assert.match(gate.outputs.run, /steps\.app\.outputs\.run \|\| 'true'/u);
+    assert.match(
+      gate.outputs.run,
+      /github\.ref == 'refs\/heads\/main' && steps\.app\.outputs\.run == 'false'/u
+    );
     const [checkout, step] = gate.steps;
     assert.equal(gate.steps.length, 2);
     assert.equal(checkout['continue-on-error'], true);
     assert.equal(checkout.with['persist-credentials'], false);
     assert.equal(step.uses, './.github/actions/affected-gate');
     assert.equal(step['continue-on-error'], true);
-    // Non-PR events (production deploys) must never check out or run the gate.
+    // Production, dispatch, and other non-main events never check out.
+    // Main pushes check out so a certain diff can skip an unaffected app.
     assert.match(checkout.uses, /^actions\/checkout@/u);
-    assert.equal(checkout.if, "github.event_name == 'pull_request'");
-    assert.equal(step.if, "github.event_name == 'pull_request'");
+    const selectable =
+      "github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')";
+    assert.equal(checkout.if, selectable);
+    assert.equal(step.if, selectable);
     for (const file of [
       'affected-apps.mjs',
       'affected-apps.extra-edges.json',
       'affected-gate.mjs',
+      'ci-plan.mjs',
+      'ci-plan-catalog.json',
     ]) {
       assert.ok(
         checkout.with['sparse-checkout'].includes(`/scripts/ci/${file}`),
@@ -158,10 +167,13 @@ for (const [file, workflow] of gated) {
     }
   });
 
-  test(`${file}: the gate output is true without a gate step on every non-PR event`, () => {
+  test(`${file}: the gate output fails open except a certain main push`, () => {
     const output = workflow.jobs['affected-gate'].outputs.run;
-    const run = (eventName, steps) =>
-      evaluateExpression(output, { github: { event_name: eventName }, steps });
+    const run = (eventName, steps, ref) =>
+      evaluateExpression(output, {
+        github: { event_name: eventName, ref },
+        steps,
+      });
     for (const eventName of [
       'push',
       'workflow_dispatch',
@@ -170,7 +182,7 @@ for (const [file, workflow] of gated) {
       'merge_group',
       'release',
     ]) {
-      // Skipped steps leave no outputs; a failing or unexpectedly set step must not matter either.
+      // Skipped steps leave no outputs. A missing ref still runs.
       assert.equal(run(eventName, {}), 'true', eventName);
       assert.equal(
         run(eventName, { app: { outputs: { run: 'false' } } }),
@@ -178,6 +190,19 @@ for (const [file, workflow] of gated) {
         eventName
       );
     }
+    assert.equal(
+      run(
+        'push',
+        { app: { outputs: { run: 'false' } } },
+        'refs/heads/production'
+      ),
+      'true'
+    );
+    assert.equal(run('push', {}, 'refs/heads/main'), 'true');
+    assert.equal(
+      run('push', { app: { outputs: { run: 'false' } } }, 'refs/heads/main'),
+      'false'
+    );
     assert.equal(run('pull_request', {}), 'true');
     assert.equal(
       run('pull_request', { app: { outputs: { run: 'true' } } }),

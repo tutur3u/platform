@@ -243,6 +243,67 @@ test('gate end to end: an extra edge makes the dependent app run', () => {
     r.close();
   }
 });
+test('main push skips an unaffected app only when the base SHA is readable', () => {
+  const r = repo();
+  try {
+    r.change('apps/beta/index.js');
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: r.cwd,
+      encoding: 'utf8',
+    }).trim();
+    const before = execFileSync('git', ['rev-parse', 'HEAD~1'], {
+      cwd: r.cwd,
+      encoding: 'utf8',
+    }).trim();
+    const env = {
+      EVENT_NAME: 'push',
+      REF: 'refs/heads/main',
+      BEFORE_SHA: before,
+      HEAD_SHA: head,
+    };
+    assert.equal(
+      gate({ ...env, APP: 'alpha' }, { cwd: r.cwd, extraEdges: {} }).run,
+      false
+    );
+    assert.equal(
+      gate({ ...env, APP: 'beta' }, { cwd: r.cwd, extraEdges: {} }).run,
+      true
+    );
+    assert.equal(
+      gate(
+        { ...env, APP: 'alpha', REF: 'refs/heads/production' },
+        { cwd: r.cwd, extraEdges: {} }
+      ).run,
+      true
+    );
+    assert.equal(
+      gate(
+        { ...env, APP: 'alpha', BEFORE_SHA: '' },
+        { cwd: r.cwd, extraEdges: {} }
+      ).run,
+      true
+    );
+    assert.equal(
+      decide({
+        eventName: 'push',
+        apps: 'cms',
+        result: affected([]),
+      }).run,
+      true
+    );
+    assert.equal(
+      decide({
+        eventName: 'push',
+        ref: 'refs/heads/main',
+        apps: 'cms',
+        result: affected([]),
+      }).run,
+      false
+    );
+  } finally {
+    r.close();
+  }
+});
 test('gate end to end: fail-safe paths, unknown apps, missing/bad base and push all run', () => {
   const r = repo();
   try {
@@ -290,7 +351,11 @@ test('CLI writes run and reason to GITHUB_OUTPUT and exits 0', () => {
       path.join(realpathSync(os.tmpdir()), 'affected-gate-scripts-')
     );
     try {
-      for (const file of ['affected-gate.mjs', 'affected-apps.mjs'])
+      for (const file of [
+        'affected-gate.mjs',
+        'affected-apps.mjs',
+        'ci-plan.mjs',
+      ])
         copyFileSync(
           path.resolve(import.meta.dirname, file),
           path.join(scripts, file)

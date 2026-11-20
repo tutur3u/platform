@@ -10,9 +10,11 @@
 //
 //   node scripts/ci/ci-daily-sample.js [--hours 24] [--jobs-sample 120]
 //                                      [--append <file>] [--note "<lesson>"]
+//                                      [--savings] [--commits 40]
 
 const { execFileSync } = require('node:child_process');
-const { appendFileSync } = require('node:fs');
+const { appendFileSync, readFileSync } = require('node:fs');
+const path = require('node:path');
 
 const REPO = 'tutur3u/platform';
 
@@ -163,8 +165,155 @@ function gh(path, attempts = 3) {
   }
 }
 
+// Labeled execution estimates. Cloudflare Source jobs run about 2–7 minutes;
+// the ~40 minute workflow wall is queue time and is not counted here.
+const SAVINGS_MINUTES = {
+  cloudflareJob: 4,
+  typecheck: 8,
+  testSuite: 6,
+  lint: 2,
+  docs: 4,
+  buildApp: 4,
+};
+
+function estimateSavings(plans, rates = SAVINGS_MINUTES, options = {}) {
+  const includeBuilds = options.includeBuilds !== false;
+  let jobs = 0;
+  let minutes = 0;
+  let uncertain = 0;
+  for (const plan of plans) {
+    if (!plan || plan.uncertain) {
+      uncertain += 1;
+      continue;
+    }
+    const skippedDeploys = plan.cloudflare?.skip?.length ?? 0;
+    jobs += skippedDeploys;
+    minutes += skippedDeploys * rates.cloudflareJob;
+    if (plan.test?.run === false) {
+      jobs += 1;
+      minutes += rates.testSuite;
+    }
+    if (plan.typecheck?.run === false) {
+      jobs += 1;
+      minutes += rates.typecheck;
+    }
+    if (plan.lint?.run === false) {
+      jobs += 1;
+      minutes += rates.lint;
+    }
+    if (plan.docs?.run === false) {
+      jobs += 1;
+      minutes += rates.docs;
+    }
+    const built = plan.build?.apps?.length ?? 0;
+    if (includeBuilds && built < 6) {
+      const skippedBuilds = 6 - built;
+      jobs += skippedBuilds;
+      minutes += skippedBuilds * rates.buildApp;
+    }
+  }
+  return {
+    commits: plans.length,
+    uncertain,
+    jobs,
+    minutes: Math.round(minutes),
+  };
+}
+
+function renderSavings(report) {
+  const label = report.label ? `${report.label}: ` : '';
+  return [
+    `${label}Planner savings estimate over ${report.commits} commits (${report.uncertain} uncertain, so those run everything).`,
+    `Skipped jobs: ${report.jobs}. Estimated execution minutes: ${report.minutes}.`,
+    'Rates are labeled execution estimates, not queue wall: Cloudflare job 4 min, type-check 8, full test suite 6, lint 2, docs 4, each programming app build 4.',
+    '',
+  ].join('\n');
+}
+
+function graphWithNames(loadGraph, cwd) {
+  const loaded = loadGraph(cwd);
+  const names = {};
+  for (const dir of loaded.dirs) {
+    try {
+      const pkg = JSON.parse(
+        readFileSync(path.join(cwd, dir, 'package.json'), 'utf8')
+      );
+      if (pkg.name) names[dir] = pkg.name;
+    } catch {
+      /* package-less workspaces have no turbo name */
+    }
+  }
+  return { ...loaded, names };
+}
+
+async function plansForCommits(limit) {
+  const cwd = path.resolve(__dirname, '../..');
+  const { buildPlan, loadOwnership, matchWorkflowPath, SHARED_PATH_FILTERS } =
+    await import('./ci-plan.mjs');
+  const { loadExtraEdges, loadGraph } = await import('./affected-apps.mjs');
+  const graph = graphWithNames(loadGraph, cwd);
+  const extraEdges = loadExtraEdges();
+  const ownership = loadOwnership(cwd);
+  const shas = execFileSync(
+    'git',
+    ['-C', cwd, 'log', '-n', String(limit), '--format=%H'],
+    { encoding: 'utf8' }
+  )
+    .trim()
+    .split('\n')
+    .filter(Boolean);
+  const shared = [...SHARED_PATH_FILTERS];
+  const startedBy = (files) => {
+    const global = files.some((file) =>
+      shared.some((pattern) => matchWorkflowPath(file, pattern))
+    );
+    if (global) return new Set(Object.keys(ownership));
+    const started = new Set();
+    for (const [app, patterns] of Object.entries(ownership)) {
+      if (
+        files.some((file) =>
+          patterns.some((pattern) => matchWorkflowPath(file, pattern))
+        )
+      )
+        started.add(app);
+    }
+    return started;
+  };
+  return shas.map((sha) => {
+    try {
+      const files = execFileSync(
+        'git',
+        [
+          '-C',
+          cwd,
+          'diff',
+          '--name-only',
+          '--no-renames',
+          '-z',
+          `${sha}^`,
+          sha,
+        ],
+        { encoding: 'utf8' }
+      )
+        .split('\0')
+        .filter(Boolean);
+      const plan = buildPlan({ files, graph, extraEdges, ownership });
+      if (!plan.uncertain) {
+        const started = startedBy(files);
+        plan.cloudflare = {
+          ...plan.cloudflare,
+          skip: plan.cloudflare.skip.filter((item) => started.has(item.id)),
+        };
+      }
+      return plan;
+    } catch {
+      return { uncertain: true, reason: 'diff unavailable' };
+    }
+  });
+}
+
 function parseArgs(argv) {
-  const options = { hours: 24, jobsSample: 120 };
+  const options = { hours: 24, jobsSample: 120, commits: 40 };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index];
     const next = () => argv[++index];
@@ -172,15 +321,31 @@ function parseArgs(argv) {
     else if (arg === '--jobs-sample') options.jobsSample = Number(next());
     else if (arg === '--append') options.append = next();
     else if (arg === '--note') options.note = next();
+    else if (arg === '--savings') options.savings = true;
+    else if (arg === '--commits') options.commits = Number(next());
     else throw new Error(`Unknown option ${arg}`);
   }
-  if (!(options.hours > 0 && options.jobsSample > 0))
-    throw new Error('--hours and --jobs-sample must be positive');
+  if (!(options.hours > 0 && options.jobsSample > 0 && options.commits > 0))
+    throw new Error('--hours, --jobs-sample and --commits must be positive');
   return options;
 }
 
-function main() {
+async function main() {
   const options = parseArgs(process.argv.slice(2));
+  if (options.savings) {
+    const plans = await plansForCommits(options.commits);
+    const attributable = estimateSavings(plans, SAVINGS_MINUTES, {
+      includeBuilds: false,
+    });
+    process.stdout.write(
+      `${renderSavings({
+        ...attributable,
+        label:
+          'Versus today (path filters already drop untouched apps; programming builds stay on the existing affected selector)',
+      })}\n`
+    );
+    return;
+  }
   const to = new Date();
   const from = new Date(to.getTime() - options.hours * 3600_000);
   const iso = (date) => date.toISOString().slice(0, 16);
@@ -223,10 +388,12 @@ function main() {
 if (require.main === module) main();
 
 module.exports = {
+  estimateSavings,
   fmt,
   parseArgs,
   percentile,
   renderEntry,
+  renderSavings,
   summarizeJobs,
   summarizeRuns,
 };

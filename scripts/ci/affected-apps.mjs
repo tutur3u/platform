@@ -53,7 +53,7 @@ export function verdict({ mode, apps, codeChanged, results }) {
   return { pass: true, reason: 'all listed apps succeeded' };
 }
 
-function failSafePath(file) {
+export function failSafePath(file) {
   return (
     file === 'bun.lock' ||
     file === 'package.json' ||

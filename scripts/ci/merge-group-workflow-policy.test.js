@@ -25,7 +25,7 @@ const TARGETS = [
 // exact path so no other workflow can gain the trigger unnoticed.
 const PREEXISTING = ['required-account-mfa-contract.yaml'];
 // Reusable workflows a target may call on merge_group, by exact path.
-const REUSABLE = ['ci-check.yml', 'codecov.yaml', 'codeql.yml'];
+const REUSABLE = ['ci-check.yml', 'ci-plan.yaml', 'codecov.yaml', 'codeql.yml'];
 // The only write scope a merge group may hold: CodeQL uploading its results.
 const CODEQL_WRITERS = ['codeql.yml:analyze', 'security-checks.yaml:codeql'];
 

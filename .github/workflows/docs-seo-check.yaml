@@ -10,6 +10,13 @@ concurrency:
   group: docs-seo-check-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
+  plan:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci-plan.yaml
+    with:
+      selector: docs
   check-ci:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
@@ -19,7 +26,7 @@ jobs:
     with:
       workflow_name: docs-seo-check.yaml
   validate:
-    needs: check-ci
+    needs: [check-ci, plan]
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
     timeout-minutes: 20
@@ -34,25 +41,35 @@ jobs:
         uses: ./.github/actions/pr-runner-hygiene
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        if: needs.plan.outputs.run != 'false'
         with:
           node-version: 24
           package-manager-cache: false
       - uses: ./.github/actions/setup-bun-with-retry
+        if: needs.plan.outputs.run != 'false'
         with:
           bun-version: 1.4.4
           cache-enabled: ${{ runner.environment != 'self-hosted' }}
       - name: Install locked dependencies
+        if: needs.plan.outputs.run != 'false'
         env:
           BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
       - name: Check repository inventories and public SEO assets
+        if: needs.plan.outputs.run != 'false'
         run: |
           node scripts/generate-docs-inventory.js --check
           node scripts/generate-app-seo.js --check
           node scripts/docs-audit.js
       - name: Validate docs, SEO, and inactive-runtime contracts
+        if: needs.plan.outputs.run != 'false'
         run: node --test --test-concurrency=2 scripts/docs-audit.test.js scripts/generate-app-seo.test.js scripts/paused-runtimes.test.js scripts/ci/paused-migration-workflows.test.js
       - name: Verify public and private route headers
+        if: needs.plan.outputs.run != 'false'
         run: bun x vitest run --config packages/utils/vitest.config.ts packages/utils/src/seo.test.ts packages/utils/src/next-config.test.ts packages/utils/src/common/metadata.test.ts --maxWorkers 2
       - name: Strict Mintlify validation
+        if: needs.plan.outputs.run != 'false'
         run: node scripts/local-docs.js validate
+      - name: Report skipped docs validation
+        if: needs.plan.outputs.run == 'false'
+        run: echo "Docs validation skipped by the CI plan." >> "$GITHUB_STEP_SUMMARY"

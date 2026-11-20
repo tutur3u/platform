@@ -1,8 +1,8 @@
 name: Affected app gate
 description: >-
-  Decide whether an app's heavy pull request jobs should run. Always run=true
-  for any event other than pull_request, for any app the affected-apps
-  calculation lists (or when it selects all apps), and on any error.
+  Decide whether an app's heavy jobs should run. Pull requests and pushes to
+  main skip when the diff plan is certain and the app is absent. Every other
+  event, an uncertain plan, and any error resolve to run=true.
 inputs:
   app:
     description: >-
@@ -24,6 +24,9 @@ runs:
       env:
         EVENT_NAME: ${{ github.event_name }}
         BASE_REF: ${{ github.base_ref }}
+        REF: ${{ github.ref }}
+        BEFORE_SHA: ${{ github.event.before }}
+        HEAD_SHA: ${{ github.sha }}
         APP: ${{ inputs.app }}
       run: |
         # Fail open: if the script cannot even start, run everything.

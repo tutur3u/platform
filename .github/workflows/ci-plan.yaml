@@ -1,0 +1,64 @@
+name: CI plan
+on:
+  workflow_call:
+    inputs:
+      selector:
+        description: Plan selector to publish (typecheck, test, lint, docs, build)
+        required: true
+        type: string
+    outputs:
+      run:
+        description: Whether the selector should run
+        value: ${{ jobs.plan.outputs.run }}
+      reason:
+        description: Why the selector runs or skips
+        value: ${{ jobs.plan.outputs.reason }}
+      filters:
+        description: Turbo filter string. Defaults to the paused-package exclusion.
+        value: ${{ jobs.plan.outputs.filters }}
+      uncertain:
+        description: True when the diff could not be planned and every selector runs
+        value: ${{ jobs.plan.outputs.uncertain }}
+      apps:
+        description: JSON array of selected app names for build
+        value: ${{ jobs.plan.outputs.apps }}
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      run: ${{ steps.select.outputs.run || 'true' }}
+      reason: ${{ steps.select.outputs.reason || 'plan output missing' }}
+      filters: ${{ steps.select.outputs.filters || '--filter=''!@tuturuuu/tanstack-web''' }}
+      uncertain: ${{ steps.select.outputs.uncertain || 'true' }}
+      apps: ${{ steps.select.outputs.apps || '[]' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: select
+        continue-on-error: true
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+          REF: ${{ github.ref }}
+          HEAD_SHA: ${{ github.sha }}
+          QUEUE_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          SELECTOR: ${{ inputs.selector }}
+        run: |
+          if ! node scripts/ci/ci-plan.mjs; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            echo "reason=plan script failed" >> "$GITHUB_OUTPUT"
+            echo "filters=--filter='!@tuturuuu/tanstack-web'" >> "$GITHUB_OUTPUT"
+            echo "uncertain=true" >> "$GITHUB_OUTPUT"
+            echo "narrow=false" >> "$GITHUB_OUTPUT"
+            echo "apps=[]" >> "$GITHUB_OUTPUT"
+            echo "mode=all" >> "$GITHUB_OUTPUT"
+          fi
