@@ -171,9 +171,9 @@ export default function DynamicQuizForm({
     if (mcOptions.length <= 2) return;
     const newOptions = mcOptions.filter((_, i) => i !== index);
     setMcOptions(newOptions);
-    if (mcAnswer >= newOptions.length) {
-      setMcAnswer(newOptions.length - 1);
-    }
+    setMcAnswer((current) =>
+      current > index ? current - 1 : Math.min(current, newOptions.length - 1)
+    );
   };
   const updateMcOption = (index: number, val: string) => {
     const newOptions = [...mcOptions];
@@ -285,8 +285,7 @@ export default function DynamicQuizForm({
 
         {type === 'multiple_choice' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label>{t('ws-quizzes.answer')}</Label>
+            <div className="flex justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -299,23 +298,23 @@ export default function DynamicQuizForm({
               </Button>
             </div>
 
-            <div className="space-y-3">
+            <RadioGroup
+              value={String(mcAnswer)}
+              onValueChange={(value) => setMcAnswer(Number(value))}
+              aria-label={t('ws-quizzes.correct_answer')}
+              className="space-y-3"
+            >
               {mcOptions.map((option, idx) => (
                 <div key={idx} className="flex items-center gap-3">
-                  <RadioGroup
-                    value={mcAnswer.toString()}
-                    onValueChange={(val) => setMcAnswer(parseInt(val, 10))}
-                    className="flex items-center"
-                  >
-                    <RadioGroupItem
-                      value={idx.toString()}
-                      id={`mc-radio-${idx}`}
-                    />
-                  </RadioGroup>
+                  <RadioGroupItem
+                    value={String(idx)}
+                    aria-label={`${t('ws-quizzes.correct_answer')}: ${t('common.option')} ${idx + 1}`}
+                  />
 
                   <Input
                     value={option}
                     onChange={(e) => updateMcOption(idx, e.target.value)}
+                    aria-label={`${t('common.option')} ${idx + 1}`}
                     placeholder={`${t('common.option')} ${idx + 1}`}
                     className="flex-1 rounded-md border-foreground/20 shadow-sm"
                     required
@@ -325,6 +324,7 @@ export default function DynamicQuizForm({
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label={`${t('common.delete')}: ${t('common.option')} ${idx + 1}`}
                     onClick={() => removeMcOption(idx)}
                     disabled={mcOptions.length <= 2}
                     className="text-destructive hover:bg-destructive/10"
@@ -333,7 +333,7 @@ export default function DynamicQuizForm({
                   </Button>
                 </div>
               ))}
-            </div>
+            </RadioGroup>
           </div>
         )}
 

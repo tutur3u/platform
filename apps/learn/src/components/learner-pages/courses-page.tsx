@@ -146,7 +146,6 @@ function LibraryModules({
 }) {
   const t = useTranslations();
   const studentId = useStudentId();
-  const libraryHref = useStudentHref(`/${wsId}/courses?view=library`);
   const courseHref = useStudentHref(`/${wsId}/courses/${course.id}`);
   const detail = useQuery({
     queryFn: () => getTulearnCourse(wsId, course.id, studentId),
@@ -158,11 +157,8 @@ function LibraryModules({
   const modules = detail.data?.modules.filter((item) => !item.locked) ?? [];
   return (
     <Card>
-      <CardHeader className="flex flex-wrap items-start justify-between gap-3">
+      <CardHeader>
         <CardTitle>{course.name}</CardTitle>
-        <Button asChild size="sm" variant="outline">
-          <Link href={libraryHref}>{t('learnerWorkspace.library')}</Link>
-        </Button>
       </CardHeader>
       <CardContent>
         {modules.length ? (
