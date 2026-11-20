@@ -111,6 +111,17 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+it('joins as a viewer without capturing a microphone or camera', () => {
+  const { getUserMedia } = installMediaDevices();
+  const props = lobbyProps({ defaultDisplayName: 'Viewer', viewer: true });
+  render(localized(<Lobby {...props} />));
+  fireEvent.click(screen.getByRole('button', { name: en.meet.call.join_now }));
+  expect(getUserMedia).not.toHaveBeenCalled();
+  expect(props.onJoin).toHaveBeenCalledWith(
+    expect.objectContaining({ audioEnabled: false, videoEnabled: false })
+  );
+});
+
 it('keeps spaces while a guest types a multi-word name keystroke by keystroke', () => {
   const props = lobbyProps();
   render(localized(<Lobby {...props} />));

@@ -15,10 +15,15 @@ import type {
   MeetRealtimeServerMessage,
 } from './messages';
 import {
+  canEnableMeetClassViewers,
   canMeetRealtimeManageParticipants,
   clampMeetMedia,
+  meetNonClassMedia,
 } from './permissions';
-import type { MeetRealtimeTokenPayload } from './primitives';
+import type {
+  MeetRealtimePresence,
+  MeetRealtimeTokenPayload,
+} from './primitives';
 import {
   createMeetPresence,
   getMeetDisplayName,
@@ -40,6 +45,10 @@ import {
   roomSettingsMessage,
 } from './room-controls';
 import { lobbyDisplayName } from './room-display-name';
+import {
+  hasMeetMediaContextConflict,
+  resolveMeetRoomMediaRole,
+} from './room-media-role';
 import { denied, outcome } from './room-outcome';
 import { isGuestRemovalBlocked } from './room-removed-guests';
 import { recordingMessage } from './room-recording';
@@ -55,6 +64,9 @@ export function admitOrHold(
   if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
   const expired = expireRoomBudget(state, Date.parse(now), features);
   if (expired) return expired;
+  if (hasMeetMediaContextConflict(state, token))
+    return denied(state, 'room_mode_conflict');
+  token = resolveMeetRoomMediaRole(state, token);
   if (state.ended)
     return outcome(state, {
       reply: [{ type: 'room.ended' }],
@@ -118,6 +130,8 @@ export function admitOrHold(
           accountId: token.accountId,
           avatarUrl: token.avatarUrl,
           displayName: lobbyDisplayName(getMeetDisplayName(token)),
+          role: token.role === 'viewer' ? 'viewer' : 'speaker',
+          nonClassMedia: meetNonClassMedia(token),
           requestedAt: now,
           userId: token.userId,
         },
@@ -208,6 +222,9 @@ function buildReady(
     admission,
     canManageParticipants: canMeetRealtimeManageParticipants(token),
     classRole: meetClassRole(token),
+    ...(canEnableMeetClassViewers(token)
+      ? { classViewersAvailable: true }
+      : {}),
     classAttendanceEnabled: features.attendance,
     classTimerEnabled: features.timer,
     ...(admission === 'admitted' && features.timer
@@ -274,12 +291,27 @@ function decideParticipant(
   }
 
   if (state.budget) state = startRoomBudget(state, token, Date.parse(now));
-  const capacityError = roomCapacityError(state, token, targetId, 'speaker');
+  const role = pending.role;
+  if (!role) return denied(state, 'awaiting_admission', requestId);
+  const capacityError = roomCapacityError(state, token, targetId, role);
   if (capacityError) return denied(state, capacityError);
   state = startRoomBudget(state, token, Date.parse(now));
   const admittedKind =
     pending.participantKind ?? (pending.guest ? 'guest' : 'member');
   const admittedId = pending.accountId ?? targetId;
+  const person: MeetRealtimePresence = {
+    ...(pending.canManageParticipants ? { canManageParticipants: true } : {}),
+    ...(pending.guest ? { guest: true as const } : {}),
+    accountId: pending.accountId,
+    avatarUrl: pending.avatarUrl,
+    displayName: pending.displayName,
+    joinedAt: now,
+    lastSeenAt: now,
+    media: { audioEnabled: false, screenEnabled: false, videoEnabled: false },
+    nonClassMedia: pending.nonClassMedia,
+    role,
+    userId: targetId,
+  };
   const attendance = features.attendance
     ? openAttendanceInterval(state.attendance, {
         deviceUserId: targetId,
@@ -296,24 +328,7 @@ function decideParticipant(
     ...(attendance ? attendancePatch(state, attendance) : {}),
     presence: {
       ...state.presence,
-      [targetId]: {
-        ...(pending.canManageParticipants
-          ? { canManageParticipants: true }
-          : {}),
-        ...(pending.guest ? { guest: true as const } : {}),
-        accountId: pending.accountId,
-        avatarUrl: pending.avatarUrl,
-        displayName: pending.displayName,
-        joinedAt: now,
-        lastSeenAt: now,
-        media: {
-          audioEnabled: false,
-          screenEnabled: false,
-          videoEnabled: false,
-        },
-        role: 'speaker',
-        userId: targetId,
-      },
+      [targetId]: person,
     },
     waiting,
     usage: state.usage
@@ -331,14 +346,7 @@ function decideParticipant(
               : 0),
         }
       : undefined,
-    approved: {
-      ...state.approved,
-      [pending.accountId ?? targetId]: {
-        userId: pending.accountId ?? targetId,
-        displayName: pending.displayName,
-        avatarUrl: pending.avatarUrl,
-      },
-    },
+    approved: rememberAdmission(state, person),
   };
 
   return outcome(next, {
@@ -351,6 +359,7 @@ function decideParticipant(
             ? new Date(next.budget.expiresAt).toISOString()
             : undefined,
           decidedBy: userId,
+          ...(role === 'viewer' ? { role } : {}),
           type: 'admission.result',
         },
         userId: targetId,
@@ -434,7 +443,7 @@ export function decideRoomAdmission(
       undefined,
       features
     );
-    if (next.reply.length) break;
+    if (next.reply.length) continue;
     result.state = next.state;
     result.direct.push(...next.direct);
     result.disconnect.push(...next.disconnect);

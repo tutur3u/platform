@@ -38,6 +38,7 @@ export function ParticipantsPanel({
   onSettingsChange,
   onCamerasLockedChange,
   onMediaOverride,
+  onPromote,
   settings,
   isHost = canManage,
   bulkRemaining,
@@ -64,6 +65,7 @@ export function ParticipantsPanel({
     override: NonNullable<MeetRoomSettings['mediaOverrides']>[string] | null
   ) => void;
   settings?: MeetRoomSettings;
+  onPromote?: (userId: string) => void;
   isHost?: boolean;
   bulkRemaining?: number;
   onDecideAdmission: (userId: string, admit: boolean) => void;
@@ -210,6 +212,11 @@ export function ParticipantsPanel({
                 </Avatar>
                 <span className="min-w-0 flex-1 truncate text-sm">
                   {participant.displayName}
+                  {participant.role === 'viewer' && (
+                    <Badge variant="outline" className="ml-1.5">
+                      {t('viewer_role')}
+                    </Badge>
+                  )}
                   {participant.guest ? (
                     <Badge variant="outline" className="ml-1.5">
                       {t('guest_join.badge')}
@@ -241,6 +248,7 @@ export function ParticipantsPanel({
                     onMute={onMute}
                     onRemove={onRemove}
                     onMediaOverride={onMediaOverride}
+                    onPromote={isHost ? onPromote : undefined}
                   />
                 )}
               </div>

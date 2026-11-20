@@ -60,6 +60,8 @@ export function ConnectedLobby({
     <Lobby
       avatarUrl={defaultAvatarUrl}
       connectionStatus={room.connectionStatus}
+      viewer={room.state.role === 'viewer'}
+      capturePending={room.state.role === null}
       defaultDisplayName={defaultDisplayName}
       error={room.state.error}
       initialAudioDeviceId={selected.audio}

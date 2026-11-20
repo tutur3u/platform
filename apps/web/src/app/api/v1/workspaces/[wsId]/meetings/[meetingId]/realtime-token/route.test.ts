@@ -142,6 +142,19 @@ describe('Meet realtime token route', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
   });
 
+  it('uses conservative limits without signing an app claim when classification is unavailable', async () => {
+    mocks.parley.mockRejectedValueOnce(new Error('classification unavailable'));
+    const response = await requestToken({ mode: 'call' });
+    expect(response.status).toBe(200);
+    const payload = verifyMeetRealtimeToken(
+      (await response.json()).token,
+      TOKEN_SECRET
+    );
+    expect(payload).toBeTruthy();
+    expect(payload?.meetingApp).toBeUndefined();
+    expect(payload?.limits).toMatchObject({ maxPublishers: 8, maxViewers: 96 });
+  });
+
   it('keeps Parley tokens outside the enabled classroom cap', async () => {
     process.env.MEET_CLASSROOM_LIMITS_ENABLED = 'true';
     mocks.parley.mockResolvedValueOnce(true);

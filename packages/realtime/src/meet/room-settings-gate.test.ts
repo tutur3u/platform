@@ -26,6 +26,21 @@ const listed = {
 const status = (result: unknown) =>
   result instanceof Response ? result.status : 'settings';
 
+it('requires a paid call capacity to change class viewer mode through room-state', () => {
+  const paid = meetRealtimeTokenPayloadSchema.parse({
+    ...base,
+    role: 'host',
+    limits: { maxPublishers: 50 },
+  });
+  const patch = { viewersByDefault: true };
+  expect(status(resolveRoomSettingsPatch(patch, undefined, host, listed))).toBe(
+    403
+  );
+  expect(
+    resolveRoomSettingsPatch(patch, undefined, paid, listed)
+  ).toMatchObject(patch);
+});
+
 describe('room-state settings write (authoritative note-sharing gate)', () => {
   it('denies enabling note sharing for disabled workspaces', () => {
     for (const env of [

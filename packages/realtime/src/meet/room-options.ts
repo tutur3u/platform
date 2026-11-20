@@ -27,6 +27,7 @@ const mediaSettings = {
 const advancedTools = z.enum(['hosts', 'showcase', 'everyone']).optional();
 export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
+  viewersByDefault: z.boolean().optional(),
   ...mediaSettings,
   advancedTools,
   skipLobby: z.boolean().optional(),
@@ -43,6 +44,7 @@ export const meetRoomSettingsPatchSchema = z.object({
 export const meetRoomSettingsSchema = z.object({
   programming: meetingProgrammingSchema.nullable().optional(),
   maxParticipants: z.number().int().min(1).max(100).optional(),
+  viewersByDefault: z.boolean().optional(),
   ...mediaSettings,
   advancedTools,
   skipLobby: z.boolean().optional(),
@@ -61,6 +63,7 @@ export type MeetApprovedParticipant = {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  classMediaRole?: 'viewer' | 'speaker' | 'promoted';
 };
 
 export function parseMeetRoomSettingsPatch(

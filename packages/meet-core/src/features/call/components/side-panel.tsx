@@ -141,6 +141,12 @@ export function SidePanel({
           onCamerasLockedChange={onCamerasLockedChange}
           onSettingsChange={actions?.updateSettings}
           onMediaOverride={actions?.setMediaOverride}
+          onPromote={
+            (room?.state.classViewersAvailable ??
+            controls?.classViewersAvailable)
+              ? actions?.promoteParticipant
+              : undefined
+          }
           bulkRemaining={
             (room?.state.bulkAdmission ?? controls?.bulkAdmission)?.remaining
           }

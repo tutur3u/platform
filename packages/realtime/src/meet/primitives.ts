@@ -116,6 +116,7 @@ export const meetRealtimeTokenPayloadSchema = z.object({
   participantKind: z.enum(['member', 'guest']).optional(),
   exp: z.number().int().positive(),
   limits: meetRoomLimitsSchema,
+  meetingApp: z.enum(['meet', 'parley']).optional(),
   meetingId: z.string().uuid(),
   mode: meetRealtimeRoomModeSchema.default('call'),
   role: meetRealtimeRoleSchema,
@@ -150,6 +151,7 @@ export const meetRealtimePresenceSchema = z.object({
   joinedAt: z.string(),
   lastSeenAt: z.string(),
   media: meetMediaStateSchema,
+  nonClassMedia: z.boolean().optional(),
   role: meetRealtimeRoleSchema,
   userId: z.string().uuid(),
 });
@@ -167,6 +169,8 @@ export const meetRealtimeWaitingParticipantSchema = z.object({
     .optional(),
   displayName: z.string().trim().min(1).max(120),
   participantKind: z.enum(['member', 'guest']).optional(),
+  nonClassMedia: z.boolean().optional(),
+  role: z.enum(['viewer', 'speaker']).optional(),
   requestedAt: z.string(),
   userId: z.string().uuid(),
 });

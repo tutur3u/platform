@@ -42,6 +42,7 @@ export function signMeetJoinToken(input: {
   maxPublishers?: number;
   maxViewers?: number;
   displayName?: string;
+  meetingApp?: 'meet' | 'parley';
   meetingId: string;
   mode: MeetRealtimeRoomMode;
   role: MeetRealtimeRole;
@@ -72,6 +73,7 @@ export function signMeetJoinToken(input: {
       },
     },
     meetingId: input.meetingId,
+    ...(input.meetingApp ? { meetingApp: input.meetingApp } : {}),
     accountId: input.accountId,
     mode: input.mode,
     role: input.role,

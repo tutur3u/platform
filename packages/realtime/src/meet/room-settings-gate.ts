@@ -4,6 +4,7 @@ import {
 } from './ai-workspace-gate';
 import { meetClassFeatures } from './class-features';
 import type { MeetRealtimeClientMessage } from './messages';
+import { canEnableMeetClassViewers } from './permissions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { MeetRoomCommand } from './room';
 import { enablesNoteSharing } from './room-controls';
@@ -26,6 +27,11 @@ export function resolveRoomSettingsPatch(
   if (token.role !== 'host') return new Response('Forbidden', { status: 403 });
   const patch = parseMeetRoomSettingsPatch(body, current);
   if (!patch.success) return new Response('Invalid settings', { status: 400 });
+  if (
+    patch.data.viewersByDefault !== current?.viewersByDefault &&
+    !canEnableMeetClassViewers(token)
+  )
+    return new Response('Class viewer mode exceeds plan', { status: 403 });
   if (
     (patch.data.maxParticipants !== undefined ||
       patch.data.admissionClosed !== undefined) &&

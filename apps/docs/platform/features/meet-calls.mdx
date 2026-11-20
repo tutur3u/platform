@@ -9,9 +9,9 @@ Tuturuuu Meet calls are Google-Meet-style conferences carried by the
 **Cloudflare Realtime SFU**. This is a different product from Cloudflare Stream
 Live, which powers one-to-many broadcast. Meet opens Personal from the app launcher; use the workspace picker or direct workspace links for team meetings.
 
-Every participant holds exactly **two peer connections** to the SFU — one
-publishing, one subscribing — regardless of room size. Connection count stays
-fixed; bandwidth and decoding work still grow with subscribed media tracks.
+Meet opens separate SFU peer connections for publishing and receiving as needed.
+A participant can use one of each, regardless of room size. Bandwidth and
+decoding work grow with subscribed media tracks.
 
 ## Preview resource budgets
 
@@ -61,11 +61,11 @@ room policies:
 | Plus/Pro fixture with 50 speaker slots, all speakers, Admit All | 41 | 41 | 0 | 0 |
 
 The ordinary call token issuer gives non-hosts the speaker role. Camera and
-microphone settings do not affect slot accounting. Lobby approval checks speaker
-capacity and creates speaker presence even for a viewer token. A class viewer
-path needs both role issuance and role-preserving single and bulk lobby
-approval. Cover capacity, auto-admit, rejoin and publish permissions together
-when qualifying that path. The local `classroom-capacity.test.ts`,
+microphone settings do not affect slot accounting. In the preflight revision,
+lobby approval checked speaker capacity and created speaker presence even for
+a viewer token. The [class viewer flow](#viewer-admission-for-large-classes)
+covers role selection, single and bulk approval, auto-admit, rejoin and
+publish permissions. The local `classroom-capacity.test.ts`,
 `room-budget.test.ts` and `room-controls.test.ts` suites cover admission limits,
 overflow, room closure and moderator controls. Poll, class timer, Quiz Arena,
 command executor, token issuance, guest rate limit and reconnect suites also
@@ -534,6 +534,33 @@ satellites keep their existing provider. `theme-provider.test.tsx` reproduces th
 helper failure against the installed upstream script and executes the replacement
 with saved/system/forced themes. Require exact-commit CI and deployed first-paint
 verification; this console repair alone does not prove an authenticated join works.
+
+## Viewer admission for large classes
+
+Meet hosts with a signed allowance of at least 50 publisher slots can enable
+**Admit new participants as viewers** in the classroom settings. It starts off.
+The setting applies when a new participant reaches the room. Automatic, single
+and bulk admission preserve the resulting role. Existing participants and
+pending requests keep their current roles when the setting changes.
+Bulk admission keeps capacity-blocked participants in the lobby and admits
+later participants whose roles still have room.
+
+Viewers can receive media, raise their hand, chat and participate in available
+activities. They occupy viewer capacity and cannot publish microphone, camera
+or screen tracks. The host can choose **Make speaker** in the participant menu
+when a publisher slot is free. Promotion permits media controls without
+starting capture and room locks still apply. On rejoin, the room uses the
+account's first admitted media role. A promoted account rejoins as a
+speaker when capacity allows. Other active devices retain their assigned role.
+Changing the default affects future arrivals. Forgetting or removing an
+account clears its remembered role.
+Webinar, stream and Parley admissions use their own roles. Leave the current
+connection before switching a device between a Meet call and another mode.
+
+Regression coverage lives in `room-media-role.test.ts` and
+`classroom-settings.test.tsx`. It exercises signed viewer admission, the
+40-participant lobby, auto-admission, host-only promotion, capacity, rejoin and
+publish restrictions.
 
 ## Call controls and admission
 

@@ -13,6 +13,7 @@ import type { RoomServiceState } from './room-service';
 const token = meetRealtimeTokenPayloadSchema.parse({
   exp: Math.floor(Date.now() / 1000) + 600,
   limits: {},
+  meetingApp: 'meet',
   meetingId: '5e5217de-9bb3-4e20-8d99-526ad3e7e34f',
   mode: 'call',
   role: 'host',
@@ -51,6 +52,140 @@ function fixture() {
   } as unknown as WebSocket;
   return { room, socket, values, storage, state };
 }
+
+test('a restored conflicting attachment cannot request the presence snapshot', async () => {
+  const { room } = fixture();
+  const messages: Array<{ type: string }> = [];
+  const oldSocket = {
+    deserializeAttachment: () => ({
+      token: { ...token, meetingApp: 'parley' },
+    }),
+    send: (wire: string) => messages.push(JSON.parse(wire)),
+  } as unknown as WebSocket;
+  await room.webSocketMessage(
+    oldSocket,
+    JSON.stringify({ type: 'presence.resync' })
+  );
+  assert.deepEqual(messages, [{ error: 'unauthenticated', type: 'error' }]);
+});
+
+test('a conflicting first attachment does not suppress another socket’s presence update', async () => {
+  const { room, state } = fixture();
+  const pending: Promise<unknown>[] = [];
+  state.waitUntil = (task) => {
+    pending.push(task);
+  };
+  const messages: Array<{ type: string }> = [];
+  const conflicting = {
+    readyState: WebSocket.OPEN,
+    deserializeAttachment: () => ({
+      token: { ...token, meetingApp: 'parley' },
+    }),
+    send: () => {},
+  } as unknown as WebSocket;
+  const admitted = {
+    readyState: WebSocket.OPEN,
+    deserializeAttachment: () => ({ token }),
+    send: (wire: string) => messages.push(JSON.parse(wire)),
+  } as unknown as WebSocket;
+  state.getWebSockets = () => [conflicting, admitted];
+  await room.webSocketMessage(
+    admitted,
+    JSON.stringify({
+      type: 'presence.update',
+      media: { audioEnabled: true, videoEnabled: false, screenEnabled: false },
+    })
+  );
+  await Promise.all(pending);
+  assert(messages.some((message) => message.type === 'presence'));
+});
+
+test('restores an alarm and replays track closure from the persisted cleanup queue', async () => {
+  const { room, values, state, storage } = fixture();
+  const saved = values.get('snapshot') as RoomServiceState;
+  assert(saved.budget);
+  saved.budget.pendingPublications = [
+    {
+      sessionId: 'legacy-session',
+      mid: '0',
+      userId: token.userId,
+      trackName: 'legacy-camera',
+    },
+    {
+      sessionId: 'live-session',
+      mid: '0',
+      userId: token.userId,
+      trackName: 'current-camera',
+    },
+  ];
+  saved.tracks.current = {
+    sessionId: 'live-session',
+    mid: '1',
+    userId: token.userId,
+    trackName: 'current-camera',
+  };
+  const deadlines: number[] = [];
+  storage.setAlarm = async (deadline) => {
+    deadlines.push(deadline);
+  };
+  const messages: Array<{
+    type: string;
+    tracks?: Array<{ trackName?: string }>;
+  }> = [];
+  const active = {
+    readyState: WebSocket.OPEN,
+    deserializeAttachment: () => ({ token }),
+    send: (wire: string) => messages.push(JSON.parse(wire)),
+  } as unknown as WebSocket;
+  state.getWebSockets = () => [active];
+  await room.webSocketMessage(
+    active,
+    JSON.stringify({ type: 'presence.resync' })
+  );
+  assert.equal(deadlines.length, 1);
+  assert.deepEqual(
+    messages
+      .filter((message) => message.type === 'track.closed')
+      .flatMap((message) => message.tracks ?? [])
+      .map((track) => track.trackName),
+    ['legacy-camera']
+  );
+});
+
+for (const bulk of [false, true]) {
+  test(`restores a signed viewer before ${bulk ? 'bulk' : 'single'} lobby approval`, async () => {
+    const { room, values, state } = fixture();
+    const initial = values.get('snapshot') as RoomServiceState;
+    const viewer = meetRealtimeTokenPayloadSchema.parse({
+      ...token,
+      admission: 'lobby',
+      role: 'viewer',
+      scopes: getMeetRealtimeScopesForRole('viewer'),
+      userId: '4b320da6-6c8a-43fe-b1bf-09fbe77303f9',
+    });
+    const held = admitOrHold(initial, viewer, new Date().toISOString()).state;
+    const waiting = held.waiting[viewer.userId];
+    assert(waiting);
+    held.waiting[viewer.userId] = { ...waiting, role: undefined };
+    values.set('snapshot', held);
+    const connect = (identity: typeof token) =>
+      ({
+        readyState: WebSocket.OPEN,
+        deserializeAttachment: () => ({ token: identity }),
+        send: () => {},
+      }) as unknown as WebSocket;
+    const hostSocket = connect(token);
+    state.getWebSockets = () => [hostSocket, connect(viewer)];
+    const control = bulk
+      ? { type: 'admission.decideAll', admit: true }
+      : { type: 'admission.decide', admit: true, userId: viewer.userId };
+    await room.webSocketMessage(hostSocket, JSON.stringify(control));
+    const restored = values.get('snapshot') as RoomServiceState;
+    assert.equal(restored.presence[viewer.userId]?.role, 'viewer');
+    assert.equal(restored.approved?.[viewer.userId]?.classMediaRole, 'viewer');
+  });
+}
+
 test('a failed expiry write never broadcasts an uncommitted participant release', async () => {
   const { room, values, storage } = fixture();
   const snapshot = values.get('snapshot') as ReturnType<

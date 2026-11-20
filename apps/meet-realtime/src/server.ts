@@ -16,6 +16,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import { hasMeetMediaContextConflict } from '../../../packages/realtime/src/meet/room-media-role';
 
 import {
   broadcast,
@@ -199,6 +200,9 @@ export function createMeetRealtimeServer(
         return new Response('Unauthorized', { status: 401 });
       }
 
+      const existing = rooms.get(token.roomId);
+      if (existing && hasMeetMediaContextConflict(existing.snapshot, token))
+        return new Response(null, { status: 409 });
       const upgraded = server.upgrade(request, { data: { token } });
 
       return upgraded

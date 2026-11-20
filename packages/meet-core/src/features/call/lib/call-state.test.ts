@@ -7,6 +7,7 @@ import {
   INITIAL_CALL_STATE,
   isCallLifecycleBusy,
   isHandRaised,
+  localMediaLocks,
   reduceCallState,
   selectCallLifecycle,
   selectFocusedUserId,
@@ -96,6 +97,33 @@ const READY: MeetRealtimeServerMessage = {
 };
 
 describe('call state admission', () => {
+  it('updates viewer controls when the host promotes the local participant', () => {
+    const viewer = reduceAll([
+      { ...READY, role: 'viewer', admission: 'waiting' },
+    ]);
+    const admitted = reduceCallState(viewer, {
+      type: 'admission.result',
+      admitted: true,
+      decidedBy: OTHER,
+      role: 'viewer',
+    });
+    expect(localMediaLocks(admitted)).toEqual({
+      audio: true,
+      video: true,
+      screen: true,
+    });
+    const promoted = reduceCallState(admitted, {
+      type: 'presence',
+      roomId: READY.roomId,
+      presence: [presence(SELF, 'Viewer')],
+    });
+    expect(localMediaLocks(promoted)).toEqual({
+      audio: false,
+      video: false,
+      screen: false,
+    });
+  });
+
   it('records identity and role from ready', () => {
     const state = reduceAll([READY]);
 

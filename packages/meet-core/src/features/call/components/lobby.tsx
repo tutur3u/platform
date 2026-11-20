@@ -130,6 +130,8 @@ export function Lobby({
   onLeave,
   onRetry,
   waiting,
+  viewer = false,
+  capturePending = false,
 }: {
   defaultDisplayName: string;
   avatarUrl?: string;
@@ -152,6 +154,8 @@ export function Lobby({
   onJoin: (options: LobbyJoinOptions) => void;
   onLeave: () => void;
   waiting: boolean;
+  viewer?: boolean;
+  capturePending?: boolean;
 }) {
   const t = useTranslations('meet.call');
   // Raw text as typed; only prepareParticipantName() output leaves the lobby.
@@ -167,8 +171,11 @@ export function Lobby({
       : null;
 
   const { devices, refreshDevices } = useLobbyMediaDevices();
-  const [audioEnabled, setAudioEnabled] = useState(true);
-  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [audioRequested, setAudioEnabled] = useState(true);
+  const [videoRequested, setVideoEnabled] = useState(false);
+  const captureDisabled = viewer || capturePending;
+  const audioEnabled = !captureDisabled && audioRequested;
+  const videoEnabled = !captureDisabled && videoRequested;
   const [audioDeviceId, setAudioDeviceId] = useState(initialAudioDeviceId);
   const [videoDeviceId, setVideoDeviceId] = useState(initialVideoDeviceId);
   const [localOutputId, setLocalOutputId] = useState('');
@@ -406,14 +413,18 @@ export function Lobby({
               )}
               <div className="flex items-center gap-2">
                 <Button
-                  aria-label={audioEnabled ? t('mute') : t('unmute')}
+                  aria-label={
+                    viewer
+                      ? t('viewer_mic_unavailable')
+                      : t(audioEnabled ? 'mute' : 'unmute')
+                  }
                   aria-pressed={!audioEnabled}
                   className={cn(
                     'size-11 rounded-full',
                     !audioEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaHandedOff}
+                  disabled={mediaHandedOff || captureDisabled}
                   onClick={() => setAudioEnabled((value) => !value)}
                   size="icon"
                   type="button"
@@ -426,14 +437,18 @@ export function Lobby({
                   )}
                 </Button>
                 <Button
-                  aria-label={videoEnabled ? t('camera_off') : t('camera_on')}
+                  aria-label={
+                    viewer
+                      ? t('viewer_camera_unavailable')
+                      : t(videoEnabled ? 'camera_off' : 'camera_on')
+                  }
                   aria-pressed={!videoEnabled}
                   className={cn(
                     'size-11 rounded-full',
                     !videoEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaHandedOff}
+                  disabled={mediaHandedOff || captureDisabled}
                   onClick={() => {
                     if (videoEnabled) setStream(null);
                     setVideoEnabled((value) => !value);

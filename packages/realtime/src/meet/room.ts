@@ -4,9 +4,13 @@ import {
 } from './attendance-ledger';
 import type { ClassTimer } from './class-timer';
 import { type MeetClassFeatures, meetClassFeatures } from './class-features';
-import { canMeetRealtimeManageParticipants } from './permissions';
+import {
+  canMeetRealtimeManageParticipants,
+  meetNonClassMedia,
+} from './permissions';
 import type { RoomBudget } from './room-budget';
 import type { RoomFormsState } from './room-forms';
+import { hasMeetMediaContextConflict } from './room-media-role';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { outcome } from './room-outcome';
 import {
@@ -147,6 +151,7 @@ export function createMeetPresence(
       videoEnabled: token.limits.video.defaultCameraEnabled,
       ...media,
     },
+    nonClassMedia: meetNonClassMedia(token),
     role: token.role,
     userId: token.userId,
   };
@@ -307,7 +312,10 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
 }) {
   const attachmentOf = (socket: Socket) =>
     socket.deserializeAttachment() as MeetRoomSocketAttachment | null;
-  const tokenOf = (socket: Socket) => attachmentOf(socket)?.token ?? null;
+  const tokenOf = (socket: Socket) => {
+    const token = attachmentOf(socket)?.token;
+    return token && !hasMeetMediaContextConflict(read(), token) ? token : null;
+  };
   function sendTo(
     socket: Socket,
     message: MeetRealtimeServerMessage,
@@ -440,7 +448,8 @@ export function createMeetRoomSocketDelivery<Socket extends MeetRoomSocket>({
       if (
         attachment &&
         attachment.presenceSeq !== state.presenceSeq &&
-        state.presence[attachment.token.userId]
+        state.presence[attachment.token.userId] &&
+        tokenOf(socket)
       )
         sendTo(socket, fullPresence(attachment.token.roomId));
     }

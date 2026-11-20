@@ -6,13 +6,18 @@ import en from '../../../../../../apps/meet/messages/en.json';
 import { INITIAL_CALL_STATE } from '../lib/call-state';
 import { ClassroomSettings } from './classroom-settings';
 afterEach(cleanup);
-function view(options: { role: 'host' | 'speaker'; cap?: number }) {
+function view(options: {
+  role: 'host' | 'speaker';
+  cap?: number;
+  classViewersAvailable?: boolean;
+}) {
   const updateSettings = vi.fn();
   const room = {
     state: {
       ...INITIAL_CALL_STATE,
       role: options.role,
       maxParticipants: options.cap,
+      classViewersAvailable: options.classViewersAvailable,
     },
     updateSettings,
   };
@@ -52,4 +57,12 @@ it('exposes explicit stop-admission and sends the host setting', () => {
     screen.getByRole('switch', { name: en.meet.call.stop_admission })
   );
   expect(r.updateSettings).toHaveBeenCalledWith({ admissionClosed: true });
+});
+it('lets a qualified host opt into viewer admission without a total-cap control', () => {
+  const r = view({ role: 'host', classViewersAvailable: true });
+  fireEvent.click(
+    screen.getByRole('switch', { name: en.meet.call.class_viewers })
+  );
+  expect(r.updateSettings).toHaveBeenCalledWith({ viewersByDefault: true });
+  expect(screen.queryByLabelText(en.meet.call.room_maximum)).toBeNull();
 });

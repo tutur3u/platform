@@ -247,6 +247,7 @@ it('lets guests edit their display name, blocks blank names, and orders Connecte
     state: {
       ...INITIAL_CALL_STATE,
       admission: 'admitted',
+      role: 'speaker',
       title: 'Renamed by Host',
     },
     getSelectedDevices: () => ({
@@ -316,6 +317,59 @@ it('lets guests edit their display name, blocks blank names, and orders Connecte
     'adopt',
     'mic',
   ]);
+});
+
+it('defers capture until the connected lobby knows the participant role', () => {
+  const getUserMedia = vi.fn();
+  const media = Object.getOwnPropertyDescriptor(navigator, 'mediaDevices');
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    value: { getUserMedia, enumerateDevices: vi.fn(async () => []) },
+  });
+  try {
+    const room = {
+      connectionStatus: 'connecting',
+      state: INITIAL_CALL_STATE,
+      getSelectedDevices: () => ({
+        audio: '',
+        video: '',
+        microphoneRevision: 0,
+      }),
+    } as unknown as MeetRoomController;
+    const lobby = (controlledRoom: MeetRoomController) =>
+      localized(
+        <ConnectedLobby
+          canReadWorkspace
+          defaultDisplayName="Class participant"
+          meetingName="Class"
+          onJoined={vi.fn()}
+          onLeave={vi.fn()}
+          onOutputDeviceChange={vi.fn()}
+          onRetry={vi.fn()}
+          outputDeviceId=""
+          participants={[]}
+          prepareJoin={(enabled) => enabled}
+          room={controlledRoom}
+          runMediaAction={(action) => action()}
+        />
+      );
+    const screenView = render(lobby(room));
+    expect(getUserMedia).not.toHaveBeenCalled();
+    screenView.rerender(
+      lobby({
+        ...room,
+        connectionStatus: 'open',
+        state: { ...INITIAL_CALL_STATE, admission: 'waiting', role: 'viewer' },
+      })
+    );
+    expect(getUserMedia).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: en.meet.call.viewer_mic_unavailable })
+    ).toHaveProperty('disabled', true);
+  } finally {
+    if (media) Object.defineProperty(navigator, 'mediaDevices', media);
+    else Reflect.deleteProperty(navigator, 'mediaDevices');
+  }
 });
 
 it('sends the guest name on blur only when it changed and skips the duplicate on join', async () => {

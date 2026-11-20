@@ -215,6 +215,9 @@ function CallShellContent({
   const [lastReadChatId, setLastReadChatId] = useState<string | null>(null);
   const newestChatId = state.chat.at(-1)?.id ?? null;
   const self = selectSelf(state);
+  const selfHandRaised = state.selfUserId
+    ? isHandRaised(state, state.selfUserId)
+    : false;
   const others = useMemo(() => selectOthers(state), [state]);
   const participants = self ? [self, ...others] : others;
   const stageHasFeeds =
@@ -584,9 +587,7 @@ function CallShellContent({
         cameraOn={room.media.videoEnabled}
         micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
         screenOn={room.media.screenEnabled}
-        handRaised={
-          state.selfUserId ? isHandRaised(state, state.selfUserId) : false
-        }
+        handRaised={selfHandRaised}
         busyDevices={busyDevices}
         participantCount={participants.length + (state.liveAssistant ? 1 : 0)}
         recordingBusy={recording.isBusy}
@@ -597,6 +598,7 @@ function CallShellContent({
             : countUnreadChatMessages(state.chat, lastReadChatId)
         }
         waitingCount={state.waiting.length}
+        viewer={state.role === 'viewer'}
         onLeave={() => (canManage ? setLeaveDialog(true) : leaveNow())}
         onToggleMic={() =>
           sharedAudio.microphonePaused
@@ -607,11 +609,7 @@ function CallShellContent({
         onToggleScreen={() =>
           void runMediaAction(room.toggleScreenShare, 'screen')
         }
-        onToggleHand={() =>
-          room.raiseHand(
-            !(state.selfUserId && isHandRaised(state, state.selfUserId))
-          )
-        }
+        onToggleHand={() => room.raiseHand(!selfHandRaised)}
         onTogglePanel={setDrawer}
         onToggleRecording={
           canManage || state.settings.allowParticipantRecording

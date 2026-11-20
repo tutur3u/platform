@@ -36,12 +36,14 @@ export function ParticipantActions({
   onMute,
   onRemove,
   onMediaOverride,
+  onPromote,
 }: {
   person: MeetRealtimePresence;
   settings?: MeetRoomSettings;
   onMute: (id: string) => void;
   onRemove: (id: string) => void;
   onMediaOverride?: (id: string, override: Override) => void;
+  onPromote?: (id: string) => void;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -49,7 +51,9 @@ export function ParticipantActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const canOverride =
-    onMediaOverride && person.role !== 'host' && !person.canManageParticipants;
+    onMediaOverride &&
+    person.role === 'speaker' &&
+    !person.canManageParticipants;
   const override = settings?.mediaOverrides?.[person.userId];
   const inherited = person.accountId
     ? settings?.mediaOverrides?.[person.accountId]
@@ -78,6 +82,11 @@ export function ParticipantActions({
             if (confirmOpen) event.preventDefault();
           }}
         >
+          {person.role === 'viewer' && onPromote && (
+            <DropdownMenuItem onSelect={() => onPromote(person.userId)}>
+              {t('promote_to_speaker')}
+            </DropdownMenuItem>
+          )}
           {person.media.audioEnabled && (
             <DropdownMenuItem
               onSelect={() => {

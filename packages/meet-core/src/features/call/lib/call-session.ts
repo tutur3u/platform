@@ -1,6 +1,7 @@
 import { resolveMeetRealtimeUrl } from '@tuturuuu/realtime/meet';
 import 'server-only';
 
+import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   getMeetRealtimeScopesForRole,
   type MeetRealtimeAdmission,
@@ -100,6 +101,7 @@ export async function getMeetCallSession({
       },
     },
     meetingId,
+    meetingApp: MEETING_APP,
     mode: 'call',
     role,
     roomId: `${wsId}:${meetingId}`,

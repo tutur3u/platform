@@ -135,6 +135,7 @@ export function ControlBar({
   screenOn,
   unreadChat,
   waitingCount,
+  viewer = false,
 }: {
   activePanel: CallPanel;
   mediaLocks?: { audio: boolean; video: boolean; screen: boolean };
@@ -158,6 +159,7 @@ export function ControlBar({
   screenOn: boolean;
   unreadChat: number;
   waitingCount: number;
+  viewer?: boolean;
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
@@ -176,7 +178,9 @@ export function ControlBar({
       locked={locked?.screen}
       label={
         locked?.screen
-          ? labels('screen_locked_hint')
+          ? viewer
+            ? t('viewer_screen_unavailable')
+            : labels('screen_locked_hint')
           : screenOn
             ? t('stop_sharing')
             : t('share_screen')
@@ -198,7 +202,9 @@ export function ControlBar({
         locked={locked?.audio}
         label={
           locked?.audio
-            ? labels('mic_locked_hint')
+            ? viewer
+              ? t('viewer_mic_unavailable')
+              : labels('mic_locked_hint')
             : micOn
               ? t('mute')
               : t('unmute')
@@ -212,7 +218,9 @@ export function ControlBar({
         locked={locked?.video}
         label={
           locked?.video
-            ? labels('camera_locked_hint')
+            ? viewer
+              ? t('viewer_camera_unavailable')
+              : labels('camera_locked_hint')
             : cameraOn
               ? t('camera_off')
               : t('camera_on')

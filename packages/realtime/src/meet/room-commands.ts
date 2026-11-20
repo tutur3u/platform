@@ -32,6 +32,11 @@ import {
 import { applyChatMessage } from './room-chat';
 import { applyRoomControl, approvedParticipantsMessage } from './room-controls';
 import { lobbyDisplayName } from './room-display-name';
+import {
+  hasMeetMediaContextConflict,
+  promoteMeetViewer,
+  resolveMeetRoomMediaRole,
+} from './room-media-role';
 import { retireIdlePublication } from './room-idle';
 import { denied, outcome } from './room-outcome';
 import { applyRecording } from './room-recording';
@@ -72,13 +77,14 @@ function dispatchMeetRoomCommand(
   {
     message,
     now,
-    token,
+    token: signedToken,
     notesEligible,
     canCloseSubscriptions,
     requireAdmission,
     classFeatures = meetClassFeatures(),
   }: MeetRoomCommand
 ): MeetRoomOutcome {
+  const token = resolveMeetRoomMediaRole(state, signedToken);
   const { roomId, userId } = token;
   const sealed = closeAttendanceWhenCollectionStops(
     state.attendance,
@@ -95,6 +101,8 @@ function dispatchMeetRoomCommand(
       reply: [{ type: 'room.ended' }],
       disconnect: [userId],
     });
+  if (hasMeetMediaContextConflict(state, token))
+    return denied(state, 'room_mode_conflict');
 
   if (requireAdmission && !state.presence[userId] && !state.waiting[userId])
     return denied(state, 'awaiting_admission');
@@ -113,6 +121,8 @@ function dispatchMeetRoomCommand(
   );
   if (control) return control;
   switch (message.type) {
+    case 'participant.promote':
+      return promoteMeetViewer(state, token, message.userId, message.requestId);
     case 'assistant.preferences': {
       if (
         message.audio.microphoneEnabled &&

@@ -43,6 +43,21 @@ export function canMeetRealtimePublish(
   return token.mode !== 'stream' || token.role === 'host';
 }
 
+export function usesMeetClassMediaRoles(token: MeetRealtimeTokenPayload) {
+  return token.mode === 'call' && token.meetingApp !== 'parley';
+}
+
+export function meetNonClassMedia(token: MeetRealtimeTokenPayload) {
+  if (!usesMeetClassMediaRoles(token)) return true;
+  if (token.meetingApp === 'meet' || token.limits.maxPublishers >= 50)
+    return false;
+  return undefined;
+}
+
+export function canEnableMeetClassViewers(token: MeetRealtimeTokenPayload) {
+  return usesMeetClassMediaRoles(token) && token.limits.maxPublishers >= 50;
+}
+
 export function canMeetRealtimeUpdateStage(
   token: Pick<MeetRealtimeTokenPayload, 'role' | 'scopes'>
 ) {
@@ -104,6 +119,7 @@ export function isMeetMediaLocked(
   participant: MediaParticipant,
   kind: MeetRealtimeTrackKind
 ) {
+  if (participant.role === 'viewer') return true;
   const { lock, override } = MEET_MEDIA_CONTROLS[kind];
   return (
     !!settings?.[lock] &&

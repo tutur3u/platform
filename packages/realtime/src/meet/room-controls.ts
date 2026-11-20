@@ -3,6 +3,7 @@ import type {
   MeetRealtimeServerMessage,
 } from './messages';
 import {
+  canEnableMeetClassViewers,
   canMeetRealtimeManageParticipants,
   clampMeetMedia,
   isMeetMediaLocked,
@@ -19,7 +20,7 @@ import {
   type MeetRoomSnapshot,
 } from './room';
 import { startRoomBudget } from './room-budget';
-import type { MeetRoomSettings } from './room-options';
+import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { publicationCleanupKey } from './room-tracks';
 import { meetClassFeatures } from './class-features';
 import { endMeetRoom } from './room-ending';
@@ -176,6 +177,11 @@ export function applyRoomControl(
     );
   }
   if (message.type === 'room.settings.update') {
+    if (
+      message.settings.viewersByDefault !== undefined &&
+      (!state.presence[token.userId] || !canEnableMeetClassViewers(token))
+    )
+      return denied(state, 'permission_denied', message.requestId);
     const maximum = Math.min(
       state.budget?.maxParticipants ?? 100,
       token.limits.maxParticipants ?? state.budget?.maxParticipants ?? 0
@@ -239,16 +245,23 @@ export function applyRoomControl(
 /** Remember admission when it occurs, so ending a room cannot undo a later revocation. */
 export function rememberAdmission(
   state: MeetRoomSnapshot,
-  person: MeetRealtimePresence
+  person: MeetRealtimePresence,
+  promotion?: 'promoted'
 ) {
   if (person.role === 'host') return state.approved;
   const accountId = person.accountId ?? person.userId;
+  const priorRole = state.approved?.[accountId]?.classMediaRole;
+  const classMediaRole: MeetApprovedParticipant['classMediaRole'] =
+    promotion ??
+    priorRole ??
+    (person.nonClassMedia === false ? person.role : undefined);
   return {
     ...state.approved,
     [accountId]: {
       userId: accountId,
       displayName: person.displayName,
       avatarUrl: person.avatarUrl,
+      ...(classMediaRole ? { classMediaRole } : {}),
     },
   };
 }

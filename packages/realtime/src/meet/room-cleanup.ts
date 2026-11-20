@@ -1,5 +1,6 @@
 import type { MeetRoomCommand, MeetRoomSnapshot } from './room';
 import { startRoomBudget } from './room-budget';
+import type { MeetRealtimeRoomTrack } from './messages';
 import { publicationCleanupKey } from './room-tracks';
 
 /** A provider success rejected by the current room still requires durable cleanup. */
@@ -31,6 +32,14 @@ export function queueUncommittedPublication(
   if (!publications.length) return state;
   state = startRoomBudget(state, command.token, Date.parse(command.now));
   if (!state.budget) throw new Error('publication_cleanup_budget_missing');
+  return queueRoomPublicationCleanup(state, publications);
+}
+
+export function queueRoomPublicationCleanup<T extends MeetRoomSnapshot>(
+  state: T,
+  publications: MeetRealtimeRoomTrack[]
+): T {
+  if (!state.budget || !publications.length) return state;
   return {
     ...state,
     budget: {

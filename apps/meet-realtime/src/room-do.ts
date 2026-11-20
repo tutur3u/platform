@@ -36,7 +36,7 @@ import {
   roomCommand,
 } from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
-import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
+import { hasMeetMediaContextConflict } from '../../../packages/realtime/src/meet/room-media-role';
 import {
   handleAttendanceDirectoryRequest,
   publishStoredAttendance,
@@ -51,6 +51,7 @@ import {
 } from './room-maintenance';
 import { handleMeetRoomDevice } from './room-device-request';
 import { privateRoomStorage } from './private-room-storage';
+import { restoreRoomSnapshot } from './restore-room-snapshot';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
@@ -97,15 +98,11 @@ export class MeetRoomDurableObject implements DurableObject {
     this.loading ??= this.state.blockConcurrencyWhile(async () => {
       const stored =
         await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
-      if (stored) {
-        this.snapshotStored = true;
-        this.snapshot = normalizeTranscriptionConsent({
-          ...createMeetRoomSnapshot(),
-          ...stored,
-        });
-      }
-      this.presence.restore(this.snapshot);
-      this.delivery.resyncRestoredSockets();
+      const restored =
+        stored &&
+        restoreRoomSnapshot(stored, this.sockets(), this.delivery.tokenOf);
+      if (restored) this.snapshot = restored.snapshot;
+      this.snapshotStored ||= !!restored;
       const counter = await this.state.storage.get<
         number | { requests: number; writes: number }
       >('usage-http-requests');
@@ -120,18 +117,18 @@ export class MeetRoomDurableObject implements DurableObject {
           typeof counter === 'number' ? counter : counter.writes
         );
       }
-      let migrated =
-        stored?.transcriptionConsents !== this.snapshot.transcriptionConsents;
-      for (const request of Object.values(this.snapshot.aiRequests ?? {}))
-        if (request.status === 'pending' && request.startedAt === undefined) {
-          request.startedAt = Date.now();
-          migrated = true;
-        }
-      if (migrated) {
+      if (restored?.migrated) {
         this.snapshot.usage ??= createRoomUsage();
         this.snapshot.usage.storageWrites++;
         await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
       }
+      const budget = this.snapshot.budget;
+      if (budget?.pendingPublications?.length)
+        await this.scheduleSweep(budget.nextCleanupAt || Date.now());
+      this.presence.restore(this.snapshot);
+      this.delivery.resyncRestoredSockets();
+      if (restored?.closedPublications.length)
+        this.broadcast(restored.closedPublications);
     });
     return this.loading;
   }
@@ -158,8 +155,9 @@ export class MeetRoomDurableObject implements DurableObject {
             .slice(-500),
         }),
       (create) => {
-        const sockets = this.sockets();
-        const roomId = sockets[0] && this.delivery.tokenOf(sockets[0])?.roomId;
+        const roomId = this.sockets()
+          .map(this.delivery.tokenOf)
+          .find(Boolean)?.roomId;
         if (roomId) this.broadcast([create(roomId)]);
       },
       (task) => this.state.waitUntil?.(task)
@@ -368,6 +366,8 @@ export class MeetRoomDurableObject implements DurableObject {
       this.broadcast(expired.broadcast);
       this.delivery.sendToManagers(expired.toManagers);
     }
+    if (hasMeetMediaContextConflict(this.snapshot, token))
+      return new Response(null, { status: 409 });
     const pair = new WebSocketPair();
     const [client, server] = [pair[0], pair[1]];
 

@@ -155,15 +155,16 @@ export async function POST(request: Request, { params }: Params) {
       ? await meetDeviceIdentity(auth.user.id, body.deviceId)
       : auth.user.id;
     const strictCapacity = process.env.MEET_CLASSROOM_LIMITS_ENABLED === 'true';
-    const parley = await isParleySession(meetingId).catch((error) => {
+    const classification = await isParleySession(meetingId).catch(() => {
       if (strictCapacity)
         throw new MeetClassroomPolicyError(
           503,
           'Meeting capacity entitlement unavailable'
         );
       console.warn('Meet room capacity classification unavailable');
-      return true;
+      return undefined;
     });
+    const parley = classification !== false;
     const capacity = await getMeetRoomCapacityLimits({
       meetingId,
       wsId,
@@ -188,6 +189,8 @@ export async function POST(request: Request, { params }: Params) {
       ...capacity,
       maxRoomDurationSeconds,
       displayName: getDisplayName(auth.user),
+      meetingApp:
+        classification === undefined ? undefined : parley ? 'parley' : 'meet',
       meetingId,
       mode,
       role,

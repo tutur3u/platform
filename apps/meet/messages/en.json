@@ -4283,6 +4283,8 @@
       "class_timer_resume": "Resume",
       "class_timer_start": "Start",
       "class_timer_stop": "Stop",
+      "class_viewers": "Admit new participants as viewers",
+      "class_viewers_hint": "Viewers can watch, listen, and chat. Make a viewer a speaker from the People panel to let them use their microphone, camera, or screen sharing.",
       "close_panel": "Close panel",
       "cloudflare_cost_hint": "Room-level estimates before shared allowances and discounts. These are not invoice totals.",
       "cloudflare_missing_costs": "RTP reports exclude transport overhead and may miss disconnected devices. Worker CPU, Durable Object duration and storage, R2 operations and storage, and shared plan charges are not yet attributed to this room.",
@@ -4790,6 +4792,7 @@
         "title": "My day",
         "unavailable": "Your personal tools are unavailable right now."
       },
+      "promote_to_speaker": "Make speaker",
       "publisher_limit_reached": "This room has reached its publisher limit. A host can make space by moving a speaker to viewer.",
       "quizArena": {
         "accepted_answers": "Accepted: {answers}",
@@ -5095,6 +5098,10 @@
       "video_input": "Camera",
       "view": "View",
       "view_meeting_notes": "View notes & transcript",
+      "viewer_camera_unavailable": "Camera is unavailable for viewers",
+      "viewer_mic_unavailable": "Microphone is unavailable for viewers",
+      "viewer_role": "Viewer",
+      "viewer_screen_unavailable": "Screen sharing is unavailable for viewers",
       "waiting_explanation": "Your request has been sent. Wait here for the host to admit you. Your camera and microphone are not shared while you wait.",
       "waiting_for_host": "Waiting for host approval",
       "waiting_media": "Waiting for media — recovery runs automatically",

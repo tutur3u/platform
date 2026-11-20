@@ -129,6 +129,11 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     userId: participantId,
   }),
   z.object({
+    requestId,
+    type: z.literal('participant.promote'),
+    userId: participantId,
+  }),
+  z.object({
     recordingSessionId: z.string().trim().min(1).max(180).optional(),
     requestId,
     state: meetRealtimeRecordingStateSchema,
@@ -252,6 +257,7 @@ export type MeetRealtimeServerMessage =
       mode: MeetRealtimeRoomMode;
       role: MeetRealtimeRole;
       classRole?: 'host' | 'cohost' | 'participant';
+      classViewersAvailable?: boolean;
       classAttendanceEnabled?: boolean;
       classTimerEnabled?: boolean;
       classTimer?: ClassTimer | null;
@@ -318,6 +324,7 @@ export type MeetRealtimeServerMessage =
       decidedBy: string;
       type: 'admission.result';
       roomExpiresAt?: string;
+      role?: MeetRealtimeRole;
     }
   | {
       by: string;

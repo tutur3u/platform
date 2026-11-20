@@ -134,6 +134,8 @@ export function createRoomActions(
       signaling.current?.send({ type: 'participant.mute', userId, kinds }),
     removeParticipant: (userId: string) =>
       signaling.current?.send({ type: 'participant.remove', userId }),
+    promoteParticipant: (userId: string) =>
+      signaling.current?.send({ type: 'participant.promote', userId }),
     forgetParticipant: (userId: string) =>
       signaling.current?.send({ type: 'admission.forget', userId }),
     shareNotes: (shareNotes: boolean) =>
@@ -166,6 +168,7 @@ type RoomControls = {
   settings: MeetRoomSettings;
   canManage: boolean;
   isHost: boolean;
+  classViewersAvailable?: boolean;
   locked: { audio: boolean; video: boolean; screen: boolean };
   bulkAdmission?: { admitted: number; denied: number; remaining: number };
 };
@@ -209,6 +212,7 @@ export function useRoomControlBridge(
       settings: state.settings,
       canManage: state.canManageParticipants ?? state.role === 'host',
       isHost: state.role === 'host',
+      classViewersAvailable: state.classViewersAvailable,
       locked: { audio: locks.audio, video: locks.video, screen: locks.screen },
       bulkAdmission: state.bulkAdmission,
     });
@@ -220,6 +224,7 @@ export function useRoomControlBridge(
     state.settings,
     state.role,
     state.canManageParticipants,
+    state.classViewersAvailable,
     state.bulkAdmission,
     locks.audio,
     locks.video,

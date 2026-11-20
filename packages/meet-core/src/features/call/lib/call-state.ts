@@ -53,6 +53,7 @@ export interface CallState {
   title?: string;
   roomExpiresAt?: string;
   maxParticipants?: number;
+  classViewersAvailable?: boolean;
   ended: boolean;
   canManageParticipants?: boolean;
   recentSpeakerIds?: string[];
@@ -162,6 +163,7 @@ export function reduceCallState(
         admissionReason: undefined,
         roomExpiresAt: message.roomExpiresAt,
         maxParticipants: message.limits?.maxParticipants,
+        classViewersAvailable: message.classViewersAvailable,
         error: null,
         remoteTracks: message.tracks
           ? Object.fromEntries(
@@ -191,17 +193,20 @@ export function reduceCallState(
         stage: message.stage,
       };
 
-    case 'presence':
+    case 'presence': {
       if (state.ended || (state.roomId && state.roomId !== message.roomId))
         return state;
+      const participants = Object.fromEntries(
+        message.presence.map((entry) => [entry.userId, entry])
+      );
       return {
         ...state,
+        role: participants[state.selfUserId ?? '']?.role ?? state.role,
         presenceSeq: message.seq ?? null,
         presenceNeedsResync: false,
-        participants: Object.fromEntries(
-          message.presence.map((entry) => [entry.userId, entry])
-        ),
+        participants,
       };
+    }
 
     case 'presence.delta': {
       if (
@@ -218,6 +223,7 @@ export function reduceCallState(
       );
       return {
         ...state,
+        role: result.presence[state.selfUserId ?? '']?.role ?? state.role,
         participants: result.presence,
         presenceSeq: result.seq,
         presenceNeedsResync: result.gap,
@@ -274,6 +280,7 @@ export function reduceCallState(
         admission: message.admitted ? 'admitted' : 'denied',
         admissionReason: message.admitted ? undefined : 'denied',
         roomExpiresAt: message.roomExpiresAt ?? state.roomExpiresAt,
+        role: message.role ?? state.role,
         error: message.admitted ? null : state.error,
       };
 
@@ -451,7 +458,7 @@ function localMediaActor(state: CallState) {
   return {
     userId: state.selfUserId ?? '',
     accountId: state.participants[state.selfUserId ?? '']?.accountId,
-    role: state.role ?? 'viewer',
+    role: state.role ?? 'speaker',
     canManageParticipants: state.canManageParticipants,
   } as const;
 }

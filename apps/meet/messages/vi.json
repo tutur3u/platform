@@ -4283,6 +4283,8 @@
       "class_timer_resume": "Tiếp tục",
       "class_timer_start": "Bắt đầu",
       "class_timer_stop": "Dừng",
+      "class_viewers": "Cho người tham gia mới vào với vai trò người xem",
+      "class_viewers_hint": "Người xem có thể xem, nghe và trò chuyện. Đổi vai trò trong bảng Người tham gia để họ có thể bật micrô, camera hoặc chia sẻ màn hình.",
       "close_panel": "Đóng bảng",
       "cloudflare_cost_hint": "Ước tính theo phòng, chưa trừ hạn mức chung và ưu đãi. Đây không phải tổng hóa đơn.",
       "cloudflare_missing_costs": "Báo cáo RTP chưa gồm dữ liệu giao thức và có thể thiếu thiết bị mất kết nối. CPU Worker, thời lượng và lưu trữ Durable Object, thao tác và lưu trữ R2 cùng phí gói dùng chung chưa được phân bổ cho phòng này.",
@@ -4790,6 +4792,7 @@
         "title": "Ngày của tôi",
         "unavailable": "Các công cụ cá nhân hiện chưa khả dụng."
       },
+      "promote_to_speaker": "Chuyển thành người phát biểu",
       "publisher_limit_reached": "Phòng đã đạt giới hạn người phát. Chủ phòng có thể chuyển người nói sang vai trò người xem để tạo chỗ.",
       "quizArena": {
         "accepted_answers": "Đáp án chấp nhận: {answers}",
@@ -5095,6 +5098,10 @@
       "video_input": "Máy ảnh",
       "view": "Xem",
       "view_meeting_notes": "Xem ghi chú và bản chép lời",
+      "viewer_camera_unavailable": "Người xem không thể bật camera",
+      "viewer_mic_unavailable": "Người xem không thể bật micrô",
+      "viewer_role": "Người xem",
+      "viewer_screen_unavailable": "Người xem không thể chia sẻ màn hình",
       "waiting_explanation": "Yêu cầu của bạn đã được gửi. Vui lòng chờ chủ phòng cho phép tham gia. Camera và micrô của bạn chưa được chia sẻ trong lúc chờ.",
       "waiting_for_host": "Đang chờ chủ phòng phê duyệt",
       "waiting_media": "Đang chờ phương tiện — tự động khôi phục kết nối",
