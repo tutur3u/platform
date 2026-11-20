@@ -36,6 +36,7 @@ const REQUIRED = [
   'finance',
   'storefront',
   'track',
+  'lms',
 ];
 
 function read(path) {
@@ -123,6 +124,14 @@ test('the sweep covers the required Worker apps', () => {
 for (const app of apps) {
   const hosts = appRootHosts(app);
   if (!hosts) continue;
+  if (app === 'lms') {
+    // LMS is an apex mount. Its subdomain redirects at the gateway, as
+    // documented in apps/docs/build/devops/lms-start-void.mdx.
+    test('lms keeps subdomain routing at the gateway', () => {
+      assert.deepEqual(hosts, []);
+    });
+    continue;
+  }
   const production = PRODUCTION_HOST[app] ?? `${app}.tuturuuu.com`;
   if (KNOWN_GAPS[app]) {
     test(`${app} known gap is still open: ${KNOWN_GAPS[app]}`, () => {
