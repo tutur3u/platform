@@ -1,11 +1,17 @@
 begin;
-select plan(45);
+select plan(47);
 select set_config('request.jwt.claims', '{}', true);
 
 select ok(not has_table_privilege('authenticated', 'private.qa_test_users', 'select'), 'clients cannot read the QA ledger');
 select ok(not has_table_privilege('service_role', 'private.qa_test_users', 'select'), 'service role reaches the ledger only through RPCs');
 select ok(not has_function_privilege('authenticated', 'private.qa_test_begin_delete(uuid,text,uuid)', 'execute'), 'clients cannot delete QA accounts');
 select ok(has_function_privilege('service_role', 'private.qa_test_reserve_users(uuid,text,text,integer,integer,boolean,text,boolean)', 'execute'), 'provisioner can reserve');
+select ok(not has_function_privilege('anon', 'private.staff_identity_verified(uuid)', 'execute')
+  and not has_function_privilege('authenticated', 'private.staff_identity_verified(uuid)', 'execute')
+  and not has_function_privilege('service_role', 'private.staff_identity_verified(uuid)', 'execute'),
+  'the staff identity verifier stays definer-only');
+select is((select proconfig from pg_proc where oid = 'private.staff_identity_verified(uuid)'::regprocedure),
+  array['search_path=pg_catalog, pg_temp'], 'the staff identity verifier pins its search_path');
 
 insert into auth.users (id, email, role, email_confirmed_at, raw_app_meta_data, raw_user_meta_data)
 values ('7a000000-0000-4000-8000-000000000001', 'operator@tuturuuu.com', 'authenticated', now(), '{}', '{}'),

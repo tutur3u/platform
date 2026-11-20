@@ -112,6 +112,11 @@ const expectedVerifiedIdentities = [
     'private.claim_meet_attendance_erasure_rooms(int4,int4)',
     'definer-alter-needs-definition',
   ],
+  [
+    'apps/database/supabase/migrations/20261120194100_qa_test_users.sql',
+    'private.staff_identity_verified(uuid)',
+    'public-execute',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>
@@ -137,7 +142,8 @@ test('verified findings remain separate from the historical debt inventory', () 
           : entry.file.includes('030700')
             ? ['authenticated', 'service_role']
             : entry.file.includes('030500') ||
-                entry.file.includes('20261104213040')
+                entry.file.includes('20261104213040') ||
+                entry.file.includes('20261120194100')
               ? []
               : ['service_role']
     );
