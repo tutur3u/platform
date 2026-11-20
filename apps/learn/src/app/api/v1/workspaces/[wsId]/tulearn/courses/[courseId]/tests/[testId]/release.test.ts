@@ -44,14 +44,19 @@ vi.mock('@tuturuuu/education-core/tulearn/test-session', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     from: (table: string) => {
-      const rows =
+      let rows: Record<string, unknown>[] =
         table === 'course_test_quizzes'
           ? state.quizzes.map((quiz) => ({ quiz_id: quiz.id }))
           : table === 'workspace_quizzes'
             ? state.quizzes
             : [];
       const query: Record<string, unknown> = {
-        eq: () => query,
+        eq: (column: string, value: string) => {
+          if (table === 'workspace_quizzes' && column === 'ws_id') {
+            rows = rows.filter((row) => row.ws_id === value);
+          }
+          return query;
+        },
         in: () => query,
         order: () => query,
         select: () => query,
@@ -98,6 +103,7 @@ beforeEach(() => {
   state.quizzes = [
     {
       id: 'matching',
+      ws_id: 'workspace',
       question: 'Match',
       type: 'matching',
       score: 1,
@@ -112,6 +118,7 @@ beforeEach(() => {
     },
     {
       id: 'ordering',
+      ws_id: 'workspace',
       question: 'Order',
       type: 'ordering',
       score: 1,
@@ -122,6 +129,13 @@ beforeEach(() => {
 });
 
 it('sends an active test only the learner prompt', async () => {
+  state.quizzes.push({
+    id: 'foreign',
+    ws_id: 'another-workspace',
+    type: 'multiple_choice',
+  });
+  state.attempt = { ...state.attempt, score: 7 };
+
   const { GET } = await import('./attempt/route');
   const response = await GET(
     new NextRequest('http://localhost/api/tests'),
@@ -130,6 +144,8 @@ it('sends an active test only the learner prompt', async () => {
   const body = await response.json();
 
   expect(response.status).toBe(200);
+  expect(body.attempt.score).toBeNull();
+  expect(body.quizzes).toHaveLength(2);
   const matching = body.quizzes.find(
     (quiz: { id: string }) => quiz.id === 'matching'
   );

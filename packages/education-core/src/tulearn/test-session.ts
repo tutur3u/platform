@@ -102,13 +102,15 @@ export async function submitTestAttemptInternal(
   sbAdmin: SupabaseAdmin,
   attemptId: string,
   testId: string,
-  userPlatformUserId: string
+  userPlatformUserId: string,
+  wsId: string
 ) {
   // 1. Fetch test details to check duration & make sure it is not already submitted
   const { data: attempt, error: attemptErr } = await sbAdmin
     .from('course_test_attempts')
     .select('*')
     .eq('id', attemptId)
+    .eq('test_id', testId)
     .eq('user_id', userPlatformUserId)
     .maybeSingle();
 
@@ -151,6 +153,7 @@ export async function submitTestAttemptInternal(
     .select(
       'id, question, type, content, answer, score, quiz_options(id, value, is_correct)'
     )
+    .eq('ws_id', wsId)
     .in('id', quizIds);
 
   if (quizzesErr) throw quizzesErr;
@@ -166,7 +169,10 @@ export async function submitTestAttemptInternal(
   const answersMap = new Map(
     (savedAnswers ?? []).map((ans) => [ans.quiz_id, ans])
   );
-  const correctAnswerMap = await loadCorrectAnswerMap({ quizIds, sbAdmin });
+  const correctAnswerMap = await loadCorrectAnswerMap({
+    quizIds: (quizzes ?? []).map((quiz) => quiz.id),
+    sbAdmin,
+  });
 
   let totalScore = 0;
   const gradedAnswers = [];

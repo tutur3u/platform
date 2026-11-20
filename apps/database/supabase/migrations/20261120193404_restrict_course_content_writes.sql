@@ -94,11 +94,13 @@ create policy course_module_quiz_sets_select_members
   to authenticated
   using (
     exists (
-      select 1 from public.workspace_quiz_sets as quiz_set
-      where quiz_set.id = course_module_quiz_sets.set_id
-    )
-    and exists (
-      select 1 from public.workspace_course_modules as module
+      select 1
+      from public.workspace_course_modules as module
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quiz_sets as quiz_set
+        on quiz_set.id = course_module_quiz_sets.set_id
+        and quiz_set.ws_id = course.ws_id
       where module.id = course_module_quiz_sets.module_id
     )
   );
@@ -110,33 +112,27 @@ create policy course_module_quiz_sets_write_group_managers
   using (
     exists (
       select 1
-      from public.workspace_quiz_sets as quiz_set
-      where quiz_set.id = course_module_quiz_sets.set_id
-        and public.has_workspace_permission(quiz_set.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.workspace_course_modules as module
-      join public.workspace_user_groups as grp
-        on grp.id = module.group_id
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quiz_sets as quiz_set
+        on quiz_set.id = course_module_quiz_sets.set_id
+        and quiz_set.ws_id = course.ws_id
       where module.id = course_module_quiz_sets.module_id
-        and public.has_workspace_permission(grp.ws_id, (select auth.uid()), 'update_user_groups')
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   )
   with check (
     exists (
       select 1
-      from public.workspace_quiz_sets as quiz_set
-      where quiz_set.id = course_module_quiz_sets.set_id
-        and public.has_workspace_permission(quiz_set.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.workspace_course_modules as module
-      join public.workspace_user_groups as grp
-        on grp.id = module.group_id
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quiz_sets as quiz_set
+        on quiz_set.id = course_module_quiz_sets.set_id
+        and quiz_set.ws_id = course.ws_id
       where module.id = course_module_quiz_sets.module_id
-        and public.has_workspace_permission(grp.ws_id, (select auth.uid()), 'update_user_groups')
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   );
 
@@ -154,11 +150,13 @@ create policy course_module_quizzes_select_members
   to authenticated
   using (
     exists (
-      select 1 from public.workspace_quizzes as quiz
-      where quiz.id = course_module_quizzes.quiz_id
-    )
-    and exists (
-      select 1 from public.workspace_course_modules as module
+      select 1
+      from public.workspace_course_modules as module
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_module_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where module.id = course_module_quizzes.module_id
     )
   );
@@ -170,33 +168,27 @@ create policy course_module_quizzes_write_group_managers
   using (
     exists (
       select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = course_module_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.workspace_course_modules as module
-      join public.workspace_user_groups as grp
-        on grp.id = module.group_id
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_module_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where module.id = course_module_quizzes.module_id
-        and public.has_workspace_permission(grp.ws_id, (select auth.uid()), 'update_user_groups')
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   )
   with check (
     exists (
       select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = course_module_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.workspace_course_modules as module
-      join public.workspace_user_groups as grp
-        on grp.id = module.group_id
+      join public.workspace_user_groups as course
+        on course.id = module.group_id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_module_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where module.id = course_module_quizzes.module_id
-        and public.has_workspace_permission(grp.ws_id, (select auth.uid()), 'update_user_groups')
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   );
 
@@ -214,12 +206,12 @@ create policy quiz_set_quizzes_select_members
   to authenticated
   using (
     exists (
-      select 1 from public.workspace_quiz_sets as quiz_set
+      select 1
+      from public.workspace_quiz_sets as quiz_set
+      join public.workspace_quizzes as quiz
+        on quiz.id = quiz_set_quizzes.quiz_id
+        and quiz.ws_id = quiz_set.ws_id
       where quiz_set.id = quiz_set_quizzes.set_id
-    )
-    and exists (
-      select 1 from public.workspace_quizzes as quiz
-      where quiz.id = quiz_set_quizzes.quiz_id
     )
   );
 
@@ -231,28 +223,22 @@ create policy quiz_set_quizzes_write_group_managers
     exists (
       select 1
       from public.workspace_quiz_sets as quiz_set
+      join public.workspace_quizzes as quiz
+        on quiz.id = quiz_set_quizzes.quiz_id
+        and quiz.ws_id = quiz_set.ws_id
       where quiz_set.id = quiz_set_quizzes.set_id
         and public.has_workspace_permission(quiz_set.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = quiz_set_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
     )
   )
   with check (
     exists (
       select 1
       from public.workspace_quiz_sets as quiz_set
+      join public.workspace_quizzes as quiz
+        on quiz.id = quiz_set_quizzes.quiz_id
+        and quiz.ws_id = quiz_set.ws_id
       where quiz_set.id = quiz_set_quizzes.set_id
         and public.has_workspace_permission(quiz_set.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = quiz_set_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
     )
   );
 
@@ -270,11 +256,18 @@ create policy course_test_quizzes_select_members
   to authenticated
   using (
     exists (
-      select 1 from public.workspace_quizzes as quiz
-      where quiz.id = course_test_quizzes.quiz_id
-    )
-    and exists (
-      select 1 from public.course_test_modules as test_module
+      select 1
+      from public.course_test_modules as test_module
+      join public.course_tests as test
+        on test.id = test_module.test_id
+      join public.workspace_user_groups as course
+        on course.id = test.course_id
+      join public.workspace_course_modules as module
+        on module.id = test_module.module_id
+        and module.group_id = course.id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_test_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where test_module.test_id = course_test_quizzes.test_id
         and test_module.module_id = course_test_quizzes.module_id
     )
@@ -287,29 +280,39 @@ create policy course_test_quizzes_write_group_managers
   using (
     exists (
       select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = course_test_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.course_test_modules as test_module
+      join public.course_tests as test
+        on test.id = test_module.test_id
+      join public.workspace_user_groups as course
+        on course.id = test.course_id
+      join public.workspace_course_modules as module
+        on module.id = test_module.module_id
+        and module.group_id = course.id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_test_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where test_module.test_id = course_test_quizzes.test_id
         and test_module.module_id = course_test_quizzes.module_id
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   )
   with check (
     exists (
       select 1
-      from public.workspace_quizzes as quiz
-      where quiz.id = course_test_quizzes.quiz_id
-        and public.has_workspace_permission(quiz.ws_id, (select auth.uid()), 'update_user_groups')
-    )
-    and exists (
-      select 1
       from public.course_test_modules as test_module
+      join public.course_tests as test
+        on test.id = test_module.test_id
+      join public.workspace_user_groups as course
+        on course.id = test.course_id
+      join public.workspace_course_modules as module
+        on module.id = test_module.module_id
+        and module.group_id = course.id
+      join public.workspace_quizzes as quiz
+        on quiz.id = course_test_quizzes.quiz_id
+        and quiz.ws_id = course.ws_id
       where test_module.test_id = course_test_quizzes.test_id
         and test_module.module_id = course_test_quizzes.module_id
+        and public.has_workspace_permission(course.ws_id, (select auth.uid()), 'update_user_groups')
     )
   );
 

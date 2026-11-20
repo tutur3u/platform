@@ -114,7 +114,8 @@ export const GET = withSessionAuth<Params>(
           sbAdmin,
           attempt.id,
           testId,
-          subject.studentPlatformUserId
+          subject.studentPlatformUserId,
+          subject.wsId
         );
       }
 
@@ -138,6 +139,7 @@ export const GET = withSessionAuth<Params>(
         const { data: rawQuizzes, error: quizzesErr } = await sbAdmin
           .from('workspace_quizzes')
           .select(select)
+          .eq('ws_id', subject.wsId)
           .in('id', quizIds)
           .order('created_at', { ascending: false });
 
@@ -197,7 +199,7 @@ export const GET = withSessionAuth<Params>(
       if (answersErr) throw answersErr;
 
       return NextResponse.json({
-        attempt,
+        attempt: { ...attempt, score: null },
         quizzes,
         answers: (answers ?? []) as ActiveAnswer[],
       });

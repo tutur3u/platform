@@ -470,13 +470,15 @@ export async function getLearnerModuleDetail({
       sbAdmin
         .from('course_module_quizzes')
         .select(
-          'workspace_quizzes(id, question, type, content, score, quiz_options(id, value, explanation))'
+          'workspace_quizzes!inner(id, question, type, content, score, quiz_options(id, value, explanation))'
         )
-        .eq('module_id', moduleId),
+        .eq('module_id', moduleId)
+        .eq('workspace_quizzes.ws_id', wsId),
       sbAdmin
         .from('course_module_quiz_sets')
-        .select('workspace_quiz_sets(id, name)')
-        .eq('module_id', moduleId),
+        .select('workspace_quiz_sets!inner(id, name)')
+        .eq('module_id', moduleId)
+        .eq('workspace_quiz_sets.ws_id', wsId),
     ]);
 
   if (moduleResult.error) throw moduleResult.error;

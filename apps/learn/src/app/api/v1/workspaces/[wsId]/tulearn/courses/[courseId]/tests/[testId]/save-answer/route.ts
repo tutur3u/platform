@@ -119,7 +119,8 @@ export const POST = withSessionAuth<Params>(
           sbAdmin,
           attempt.id,
           testId,
-          subject.studentPlatformUserId
+          subject.studentPlatformUserId,
+          subject.wsId
         );
         return NextResponse.json(
           { message: 'Time limit reached, test has been submitted' },
@@ -130,9 +131,10 @@ export const POST = withSessionAuth<Params>(
       // Verify quiz belongs to this test
       const { data: testQuiz, error: tqErr } = await sbAdmin
         .from('course_test_quizzes')
-        .select('quiz_id')
+        .select('quiz_id, workspace_quizzes!inner(ws_id)')
         .eq('test_id', testId)
         .eq('quiz_id', quizId)
+        .eq('workspace_quizzes.ws_id', subject.wsId)
         .maybeSingle();
 
       if (tqErr || !testQuiz) {

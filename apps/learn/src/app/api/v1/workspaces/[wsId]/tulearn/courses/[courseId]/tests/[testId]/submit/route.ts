@@ -103,7 +103,8 @@ export const POST = withSessionAuth<Params>(
         sbAdmin,
         attemptId,
         testId,
-        subject.studentPlatformUserId
+        subject.studentPlatformUserId,
+        subject.wsId
       );
 
       // The score stays hidden until the teacher releases it.

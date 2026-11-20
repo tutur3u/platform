@@ -290,6 +290,7 @@ export const POST = withSessionAuth<Params>(
         .select('workspace_quizzes!inner(id, question, type, content, answer)')
         .eq('module_id', moduleId)
         .eq('quiz_id', quizId)
+        .eq('workspace_quizzes.ws_id', subject.wsId)
         .maybeSingle();
 
       const quiz = firstJoined(moduleQuiz?.workspace_quizzes);

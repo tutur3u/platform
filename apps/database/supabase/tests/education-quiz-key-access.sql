@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(26);
+select plan(29);
 
 insert into auth.users (
   id, aud, role, email, email_confirmed_at, created_at, updated_at
@@ -142,6 +142,21 @@ values (
   'c1930000-0000-4000-8000-000000000041'
 );
 
+insert into public.workspaces (id, name, personal, creator_id)
+values (
+  'c1930000-0000-4000-8000-000000000060',
+  'Other quiz workspace',
+  false,
+  'c1930000-0000-4000-8000-000000000002'
+);
+insert into public.workspace_quizzes (id, ws_id, question, score)
+values (
+  'c1930000-0000-4000-8000-000000000061',
+  'c1930000-0000-4000-8000-000000000060',
+  'Question owned in another workspace',
+  1
+);
+
 -- Keys move out of content.
 select ok(
   (select content::text from public.workspace_quizzes where id = 'c1930000-0000-4000-8000-000000000041') not like '%"right"%',
@@ -254,6 +269,26 @@ select throws_ok(
   null,
   'a learner cannot link a quiz into a module'
 );
+select ok(
+  public.has_workspace_permission(
+    'c1930000-0000-4000-8000-000000000060', auth.uid(), 'update_user_groups'
+  )
+  and not public.has_workspace_permission(
+    'c1930000-0000-4000-8000-000000000010', auth.uid(), 'update_user_groups'
+  ),
+  'the learner manages only the workspace that owns the foreign quiz'
+);
+select throws_ok(
+  $$insert into public.course_test_quizzes (test_id, module_id, quiz_id)
+    values (
+      'c1930000-0000-4000-8000-000000000050',
+      'c1930000-0000-4000-8000-000000000031',
+      'c1930000-0000-4000-8000-000000000061'
+    )$$,
+  '42501',
+  'new row violates row-level security policy for table "course_test_quizzes"',
+  'managing a quiz does not allow adding it to a test in another workspace'
+);
 
 -- A view_user_groups member reads but cannot write.
 select set_config(
@@ -300,6 +335,15 @@ select lives_ok(
   $$insert into public.workspace_quizzes (id, ws_id, question, score)
     values ('c1930000-0000-4000-8000-000000000045', 'c1930000-0000-4000-8000-000000000010', 'Editor quiz', 1)$$,
   'an update_user_groups member creates a quiz'
+);
+select lives_ok(
+  $$insert into public.course_test_quizzes (test_id, module_id, quiz_id)
+    values (
+      'c1930000-0000-4000-8000-000000000050',
+      'c1930000-0000-4000-8000-000000000031',
+      'c1930000-0000-4000-8000-000000000045'
+    )$$,
+  'an update_user_groups member adds a quiz to a test in the same workspace'
 );
 
 select set_config(
