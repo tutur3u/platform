@@ -39,7 +39,13 @@ function database(events: Event[]) {
       },
       async in(_key: string, ids: string[]) {
         return {
-          data: events.filter((event) => event.id && ids.includes(event.id)),
+          data: events
+            .filter((event) => event.id && ids.includes(event.id))
+            .map(({ id, entry_id, payload }) => ({
+              id,
+              entry_id,
+              ...(payload as object),
+            })),
         };
       },
       order() {

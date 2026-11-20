@@ -87,11 +87,13 @@ function database() {
   const from = vi.fn((table: string) => {
     const rows = tableRows.get(table) ?? [];
     const conditions: ((row: Row) => boolean)[] = [];
+    let projection: string | undefined;
     let patch: Row | undefined;
     const matches = () =>
       rows.filter((row) => conditions.every((test) => test(row)));
     return {
-      select() {
+      select(columns: string) {
+        projection = columns;
         return this;
       },
       order() {
@@ -126,7 +128,14 @@ function database() {
         return { data: matches().slice(0, size), error: null };
       },
       then(resolve: (result: { data: Row[]; error: null }) => void) {
-        resolve({ data: matches(), error: null });
+        const data = projection?.includes(':payload->')
+          ? matches().map(({ id, entry_id, payload }) => ({
+              id,
+              entry_id,
+              ...(payload as Row),
+            }))
+          : matches();
+        resolve({ data, error: null });
       },
       upsert: writeEvent,
     };

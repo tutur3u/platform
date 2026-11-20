@@ -167,10 +167,10 @@ export async function loadPublishedAssetManifests(
     );
   }
 
-  const publicEvents = () =>
+  const publicEvents = <Columns extends string>(columns: Columns) =>
     admin
       .from('workspace_external_project_publish_events')
-      .select('id,entry_id,payload')
+      .select(columns)
       .eq('ws_id', workspaceId)
       .eq('canonical_external_project_id', canonicalProjectId)
       .eq('event_kind', 'publish')
@@ -178,15 +178,14 @@ export async function loadPublishedAssetManifests(
 
   const ids = [...revisions.keys()];
   for (let start = 0; start < ids.length; start += 50) {
-    const { data, error } = await publicEvents().in(
-      'id',
-      ids.slice(start, start + 50)
-    );
+    const { data, error } = await publicEvents(
+      'id,entry_id,assetPublicationAt:payload->>assetPublicationAt,publishedAssetManifest:payload->publishedAssetManifest'
+    ).in('id', ids.slice(start, start + 50));
     if (error) throw new Error('Could not verify published media');
     for (const event of data ?? []) {
       const entry = revisions.get(event.id);
       if (!entry || entry.id !== event.entry_id) continue;
-      const manifest = eventManifest(event.payload, entry);
+      const manifest = eventManifest(event, entry);
       if (manifest) manifests.set(entry.id, manifest);
     }
   }
@@ -198,7 +197,7 @@ export async function loadPublishedAssetManifests(
   for (let start = 0; start < legacy.length; start += 8) {
     await Promise.all(
       legacy.slice(start, start + 8).map(async (entry) => {
-        const { data, error } = await publicEvents()
+        const { data, error } = await publicEvents('entry_id,payload')
           .eq('entry_id', entry.id)
           .order('created_at', { ascending: false })
           .limit(16);

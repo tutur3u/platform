@@ -2243,23 +2243,25 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
   if (publishes || payload.action === 'unpublish') {
     const entries: ExternalProjectEntry[] = [];
     for (const batch of chunkValues(entryIds, 5)) {
-      entries.push(
-        ...(await Promise.all(
-          batch.map((entryId) =>
-            publishWorkspaceExternalProjectEntry(
-              {
-                actorId,
-                binding,
-                entryId,
-                workspaceId,
-                eventKind: publishes ? 'publish' : 'unpublish',
-                visibilityScope: publishes ? 'public' : 'preview',
-              },
-              admin
-            )
+      const results = await Promise.allSettled(
+        batch.map((entryId) =>
+          publishWorkspaceExternalProjectEntry(
+            {
+              actorId,
+              binding,
+              entryId,
+              workspaceId,
+              eventKind: publishes ? 'publish' : 'unpublish',
+              visibilityScope: publishes ? 'public' : 'preview',
+            },
+            admin
           )
-        ))
+        )
       );
+      for (const result of results) {
+        if (result.status === 'rejected') throw result.reason;
+        entries.push(result.value);
+      }
     }
     return entries;
   }
