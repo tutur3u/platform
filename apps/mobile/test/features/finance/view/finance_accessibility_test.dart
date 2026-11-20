@@ -35,6 +35,7 @@ void main() {
     FinanceScene.categories: '420[,.]000',
     FinanceScene.debts: '750[,.]000',
     FinanceScene.analytics: '64[,.]780[,.]000',
+    FinanceScene.promotions: '50[,.]000',
   };
   for (final MapEntry(key: scene, value: pattern) in displayedAmounts.entries) {
     testWidgets('${scene.name} masks amounts and announces their state', (

@@ -73,6 +73,7 @@ void main() {
         Routes.financeCheckpoints,
         Routes.financeAnalytics,
         Routes.financeDebts,
+        Routes.financePromotions,
       ]);
     });
 

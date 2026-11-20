@@ -26,7 +26,7 @@ destination shown), the shell shows it as a filled top-bar button instead.
 ## Destinations
 
 The dock holds Overview, Transactions, Budgets and Wallets; More opens
-Categories, Checkpoints, Analytics and Debts & loans, and reserves the next entry for
+Categories, Checkpoints, Analytics, Debts & loans and Promotions, and reserves the next entry for
 the bill-splitting module's Split bills. Finance has no separate Manage page: creating a
 wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
 Overview also opens All-wallet check directly.
@@ -122,6 +122,19 @@ trend and expense or income totals per category with each one's share.
 Category days follow the device time zone. Hidden amounts hide the charts
 and shares. Workspace `/api/workspaces/{id}/finance/*` requests go to the
 Finance origin. Coverage: `finance_analytics_page_test.dart`.
+
+## Promotions
+
+Promotions (`/finance/promotions`) lists invoice discount codes for people
+with `create_invoices` or `view_inventory`: name, code, percentage or fixed
+discount, and usage against any limit (Used up once reached). Inventory owns
+codes, so `create_inventory`, `update_inventory` and `delete_inventory` gate
+create, edit and delete; the form checks that a percentage stays within
+100% and that a usage limit is a whole number. The invoice editor offers
+promotions that still have uses and sends the chosen `promotion_id`; the
+server computes the discount. Workspace `/api/v1/workspaces/{id}/promotions`
+requests go to the Finance origin, which forwards writes to Inventory.
+Coverage: `finance_promotions_page_test.dart`.
 
 ## Debts and loans
 
@@ -278,7 +291,8 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export, Money Lover import, and CSV or Excel exports for created and pending invoices |
 | Debts and loans | List, summary, create, edit, status and delete | Same, with the net position hero and overdue-first ordering |
-| Promotions and inventory reconciliation | Dedicated web workflows | Open |
+| Promotions | Create, edit, delete and apply to invoices | Same, with usage meters |
+| Inventory reconciliation | Dedicated web workflow | Open |
 
 Mobile requests use the Finance repository and its bearer-authenticated endpoint
 mappings. Verify routes and response contracts before adding a new client call.

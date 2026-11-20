@@ -6,12 +6,15 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/finance/finance_invoice.dart';
+import 'package:mobile/data/models/finance/finance_promotion.dart';
 import 'package:mobile/data/models/finance/wallet.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
+import 'package:mobile/data/repositories/finance_promotions_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/view/finance_invoice_subscription_sheet.dart';
+import 'package:mobile/features/finance/view/finance_promotions_page.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
@@ -25,8 +28,9 @@ class FinanceInvoiceEditor extends StatefulWidget {
     required this.currency,
     this.pending,
     this.manualSubscription = false,
+    FinancePromotionsRepository? promotionsRepository,
     super.key,
-  });
+  }) : _promotionsRepository = promotionsRepository;
 
   final FinanceSheetSession session;
   final FinanceRepository repository;
@@ -34,6 +38,11 @@ class FinanceInvoiceEditor extends StatefulWidget {
   final String currency;
   final FinancePendingInvoice? pending;
   final bool manualSubscription;
+  final FinancePromotionsRepository? _promotionsRepository;
+
+  /// Promotions offered for the invoice; injected in tests.
+  FinancePromotionsRepository get promotionsRepository =>
+      _promotionsRepository ?? FinancePromotionsRepository();
 
   @override
   State<FinanceInvoiceEditor> createState() => _FinanceInvoiceEditorState();
@@ -46,7 +55,18 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
   late final String _wsId = widget.session.workspaceId;
   late final Future<List<TransactionCategory>> _categories = widget.repository
       .getCategories(_wsId);
+  late final Future<List<FinancePromotion>> _promotions = widget
+      .promotionsRepository
+      .list(_wsId)
+      .then(
+        (promotions) => [
+          for (final promotion in promotions)
+            if (!promotion.usedUp) promotion,
+        ],
+      )
+      .catchError((Object _) => <FinancePromotion>[]);
   String? _walletId;
+  String? _promotionId;
   CrmUser? _customer;
   String? _categoryId;
   late String? _month = widget.pending?.months.firstOrNull;
@@ -158,6 +178,7 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
         content: _title.text.trim(),
         notes: _notes.text.trim(),
         lines: List.of(_lines),
+        promotionId: _promotionId,
         subscription: pending == null
             ? null
             : (groups: pending.groups, month: _month!, months: _months),
@@ -306,6 +327,40 @@ class _FinanceInvoiceEditorState extends State<FinanceInvoiceEditor> {
                       if (mounted) setState(() => _categoryId = value);
                     },
             ),
+          ),
+          FutureBuilder<List<FinancePromotion>>(
+            future: _promotions,
+            builder: (context, snapshot) {
+              final promotions = snapshot.data ?? const <FinancePromotion>[];
+              if (promotions.isEmpty) return const SizedBox.shrink();
+              return AppSelect<String>(
+                key: const ValueKey('invoice-promotion'),
+                title: l10n.financePromotion,
+                options: [
+                  AppSelectOption(value: '', label: l10n.financePromotionNone),
+                  for (final promotion in promotions)
+                    AppSelectOption(
+                      value: promotion.id,
+                      label: promotion.name,
+                      description: [
+                        promotion.code,
+                        promotionValueLabel(context, promotion, currency),
+                      ].join(' · '),
+                      icon: LucideIcons.ticketPercent,
+                    ),
+                ],
+                value: _promotionId ?? '',
+                onChanged: _busy
+                    ? null
+                    : (value) {
+                        if (mounted) {
+                          setState(
+                            () => _promotionId = value.isEmpty ? null : value,
+                          );
+                        }
+                      },
+              );
+            },
           ),
           for (final line in _lines)
             AppRichRow(

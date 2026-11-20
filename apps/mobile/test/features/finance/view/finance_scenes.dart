@@ -32,6 +32,7 @@ import 'package:mobile/features/finance/view/debts_page.dart';
 import 'package:mobile/features/finance/view/finance_analytics_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
+import 'package:mobile/features/finance/view/finance_promotions_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_detail_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_list_body.dart';
@@ -51,6 +52,7 @@ import 'package:mocktail/mocktail.dart';
 
 import 'finance_analytics_fixtures.dart';
 import 'finance_debt_fixtures.dart';
+import 'finance_promotion_fixtures.dart';
 
 /// Waits for views that finish publishing their cache on real disk I/O.
 Future<void> pumpFinanceUntilVisible(WidgetTester tester, Finder target) async {
@@ -348,7 +350,8 @@ enum FinanceScene {
   checkpoints('Checkpoints', Routes.financeCheckpoints),
   categories('Categories', Routes.categories),
   debts('Debts & loans', Routes.financeDebts),
-  analytics('Analytics', Routes.financeAnalytics);
+  analytics('Analytics', Routes.financeAnalytics),
+  promotions('Promotions', Routes.financePromotions);
 
   const FinanceScene(this.title, this.route);
 
@@ -365,6 +368,7 @@ const Set<FinanceScene> financeSceneCreates = {
   FinanceScene.walletDetail,
   FinanceScene.checkpoints,
   FinanceScene.debts,
+  FinanceScene.promotions,
 };
 
 class FinanceScreenScene extends StatefulWidget {
@@ -490,6 +494,10 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
       financeRepository: _repository,
       now: financeSceneDate,
       timezone: 'Asia/Ho_Chi_Minh',
+    ),
+    FinanceScene.promotions => FinancePromotionsPage(
+      repository: FinanceScenePromotionsRepository(),
+      financeRepository: _repository,
     ),
   };
 

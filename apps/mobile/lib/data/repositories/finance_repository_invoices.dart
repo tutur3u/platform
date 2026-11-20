@@ -171,6 +171,7 @@ mixin FinanceRepositoryInvoices {
     required String notes,
     required List<FinanceInvoiceLine> lines,
     FinanceSubscriptionTerms? subscription,
+    String? promotionId,
   }) async {
     final user = _cacheUserId();
     final path = _invoicePath(workspace);
@@ -181,6 +182,7 @@ mixin FinanceRepositoryInvoices {
       'content': content,
       'notes': notes,
       'products': [for (final row in lines) row.toJson()],
+      'promotion_id': ?promotionId,
       if (subscription case final terms?) ...{
         'group_ids': terms.groups,
         'selected_month': terms.month,

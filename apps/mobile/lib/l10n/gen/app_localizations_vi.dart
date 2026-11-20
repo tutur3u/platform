@@ -17164,4 +17164,97 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeRecurringNoneUpcoming => 'Không có khoản nào đến hạn trong 30 ngày tới';
+
+  @override
+  String get financePromotions => 'Khuyến mãi';
+
+  @override
+  String get financePromotion => 'Khuyến mãi';
+
+  @override
+  String get financePromotionNew => 'Khuyến mãi mới';
+
+  @override
+  String get financePromotionEdit => 'Sửa khuyến mãi';
+
+  @override
+  String get financePromotionsEmpty => 'Chưa có khuyến mãi';
+
+  @override
+  String get financePromotionsEmptyBody => 'Tạo mã giảm giá để áp dụng cho hóa đơn.';
+
+  @override
+  String get financePromotionName => 'Tên';
+
+  @override
+  String get financePromotionNamePlaceholder => 'Ưu đãi mùa xuân';
+
+  @override
+  String get financePromotionNameRequired => 'Nhập tên';
+
+  @override
+  String get financePromotionCode => 'Mã';
+
+  @override
+  String get financePromotionCodePlaceholder => 'XUAN10';
+
+  @override
+  String get financePromotionCodeRequired => 'Nhập mã';
+
+  @override
+  String get financePromotionDescriptionPlaceholder => 'Đối tượng và thời gian áp dụng';
+
+  @override
+  String get financePromotionPercent => 'Phần trăm';
+
+  @override
+  String get financePromotionAmount => 'Số tiền cố định';
+
+  @override
+  String get financePromotionValue => 'Mức giảm';
+
+  @override
+  String get financePromotionValueInvalid => 'Nhập mức giảm từ 0 đến 100%';
+
+  @override
+  String get financePromotionAmountInvalid => 'Nhập số tiền từ 0 trở lên';
+
+  @override
+  String get financePromotionMaxUses => 'Giới hạn lượt dùng';
+
+  @override
+  String get financePromotionMaxUsesPlaceholder => 'Không giới hạn';
+
+  @override
+  String get financePromotionMaxUsesInvalid => 'Nhập số nguyên lớn hơn 0';
+
+  @override
+  String financePromotionUses(int used, int max) {
+    return 'Đã dùng $used/$max';
+  }
+
+  @override
+  String financePromotionUsesUnlimited(int used) {
+    return 'Đã dùng $used';
+  }
+
+  @override
+  String get financePromotionUsedUp => 'Đã hết lượt';
+
+  @override
+  String get financePromotionSaved => 'Đã lưu khuyến mãi';
+
+  @override
+  String get financePromotionDeleted => 'Đã xóa khuyến mãi';
+
+  @override
+  String financePromotionDeleteTitle(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get financePromotionDeleteBody => 'Không thể hoàn tác.';
+
+  @override
+  String get financePromotionNone => 'Không áp dụng khuyến mãi';
 }

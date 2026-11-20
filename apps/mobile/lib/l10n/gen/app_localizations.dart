@@ -32148,6 +32148,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing due in the next 30 days'**
   String get financeRecurringNoneUpcoming;
+
+  /// No description provided for @financePromotions.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotions'**
+  String get financePromotions;
+
+  /// No description provided for @financePromotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotion'**
+  String get financePromotion;
+
+  /// No description provided for @financePromotionNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New promotion'**
+  String get financePromotionNew;
+
+  /// No description provided for @financePromotionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit promotion'**
+  String get financePromotionEdit;
+
+  /// No description provided for @financePromotionsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No promotions'**
+  String get financePromotionsEmpty;
+
+  /// No description provided for @financePromotionsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Create discount codes to apply to invoices.'**
+  String get financePromotionsEmptyBody;
+
+  /// No description provided for @financePromotionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get financePromotionName;
+
+  /// No description provided for @financePromotionNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Spring sale'**
+  String get financePromotionNamePlaceholder;
+
+  /// No description provided for @financePromotionNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get financePromotionNameRequired;
+
+  /// No description provided for @financePromotionCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get financePromotionCode;
+
+  /// No description provided for @financePromotionCodePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'SPRING10'**
+  String get financePromotionCodePlaceholder;
+
+  /// No description provided for @financePromotionCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a code'**
+  String get financePromotionCodeRequired;
+
+  /// No description provided for @financePromotionDescriptionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Who it is for and when it applies'**
+  String get financePromotionDescriptionPlaceholder;
+
+  /// No description provided for @financePromotionPercent.
+  ///
+  /// In en, this message translates to:
+  /// **'Percent'**
+  String get financePromotionPercent;
+
+  /// No description provided for @financePromotionAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed amount'**
+  String get financePromotionAmount;
+
+  /// No description provided for @financePromotionValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount'**
+  String get financePromotionValue;
+
+  /// No description provided for @financePromotionValueInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a discount from 0 to 100%'**
+  String get financePromotionValueInvalid;
+
+  /// No description provided for @financePromotionAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount of 0 or more'**
+  String get financePromotionAmountInvalid;
+
+  /// No description provided for @financePromotionMaxUses.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage limit'**
+  String get financePromotionMaxUses;
+
+  /// No description provided for @financePromotionMaxUsesPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get financePromotionMaxUsesPlaceholder;
+
+  /// No description provided for @financePromotionMaxUsesInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a whole number above zero'**
+  String get financePromotionMaxUsesInvalid;
+
+  /// No description provided for @financePromotionUses.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} used'**
+  String financePromotionUses(int used, int max);
+
+  /// No description provided for @financePromotionUsesUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} used'**
+  String financePromotionUsesUnlimited(int used);
+
+  /// No description provided for @financePromotionUsedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Used up'**
+  String get financePromotionUsedUp;
+
+  /// No description provided for @financePromotionSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotion saved'**
+  String get financePromotionSaved;
+
+  /// No description provided for @financePromotionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Promotion deleted'**
+  String get financePromotionDeleted;
+
+  /// No description provided for @financePromotionDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String financePromotionDeleteTitle(String name);
+
+  /// No description provided for @financePromotionDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get financePromotionDeleteBody;
+
+  /// No description provided for @financePromotionNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No promotion'**
+  String get financePromotionNone;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -123,7 +123,7 @@ class ApiOrigins {
     }
 
     if (_matchesWorkspace(path, r'(?:wallets|transactions|finance)(?:/|$)') ||
-        _matchesWorkspaceV1(path, r'finance(?:/|$)')) {
+        _matchesWorkspaceV1(path, r'(?:finance|promotions)(?:/|$)')) {
       return ApiOrigin.finance;
     }
     if (_matchesWorkspaceV1(

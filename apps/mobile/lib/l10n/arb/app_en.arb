@@ -2297,11 +2297,35 @@
   "crmBirthday": "Birthday",
   "crmBulkMerge": "Merge reviewed pairs",
   "crmBulkMergeConfirm": "Merge {count} duplicate pairs into the selected surviving contacts?",
-  "@crmBulkMergeConfirm": {"placeholders": {"count": {"type": "int"}}},
+  "@crmBulkMergeConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "crmBulkMergeProgress": "{completed} of {total} merges confirmed.",
-  "@crmBulkMergeProgress": {"placeholders": {"completed": {"type": "int"}, "total": {"type": "int"}}},
+  "@crmBulkMergeProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "crmBulkMergeStopped": "Stopped after {completed} of {total} confirmed merges. Close this sheet and check duplicates again before retrying.",
-  "@crmBulkMergeStopped": {"placeholders": {"completed": {"type": "int"}, "total": {"type": "int"}}},
+  "@crmBulkMergeStopped": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "crmCreateUser": "Create user",
   "crmDeleteUserConfirm": "Delete this user?",
   "crmDeleteUserSuccess": "User deleted.",
@@ -2336,7 +2360,13 @@
   "crmGroupTeacher": "Teacher",
   "crmRemoveGroupMember": "Remove",
   "crmRemoveGroupMemberConfirm": "Remove {contact} from this group?",
-  "@crmRemoveGroupMemberConfirm": {"placeholders":{"contact":{"type":"String"}}},
+  "@crmRemoveGroupMemberConfirm": {
+    "placeholders": {
+      "contact": {
+        "type": "String"
+      }
+    }
+  },
   "crmGuestUser": "Guest user",
   "crmImportEmpty": "No valid users were found in that file.",
   "crmImportPreview": "Ready to import {count} users",
@@ -8322,5 +8352,58 @@
   "financeRecurringAllRules": "All rules",
   "financeRecurringExpectedIn": "Expected in",
   "financeRecurringExpectedOut": "Expected out",
-  "financeRecurringNoneUpcoming": "Nothing due in the next 30 days"
+  "financeRecurringNoneUpcoming": "Nothing due in the next 30 days",
+  "financePromotions": "Promotions",
+  "financePromotion": "Promotion",
+  "financePromotionNew": "New promotion",
+  "financePromotionEdit": "Edit promotion",
+  "financePromotionsEmpty": "No promotions",
+  "financePromotionsEmptyBody": "Create discount codes to apply to invoices.",
+  "financePromotionName": "Name",
+  "financePromotionNamePlaceholder": "Spring sale",
+  "financePromotionNameRequired": "Enter a name",
+  "financePromotionCode": "Code",
+  "financePromotionCodePlaceholder": "SPRING10",
+  "financePromotionCodeRequired": "Enter a code",
+  "financePromotionDescriptionPlaceholder": "Who it is for and when it applies",
+  "financePromotionPercent": "Percent",
+  "financePromotionAmount": "Fixed amount",
+  "financePromotionValue": "Discount",
+  "financePromotionValueInvalid": "Enter a discount from 0 to 100%",
+  "financePromotionAmountInvalid": "Enter an amount of 0 or more",
+  "financePromotionMaxUses": "Usage limit",
+  "financePromotionMaxUsesPlaceholder": "Unlimited",
+  "financePromotionMaxUsesInvalid": "Enter a whole number above zero",
+  "financePromotionUses": "{used} of {max} used",
+  "@financePromotionUses": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "financePromotionUsesUnlimited": "{used} used",
+  "@financePromotionUsesUnlimited": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "financePromotionUsedUp": "Used up",
+  "financePromotionSaved": "Promotion saved",
+  "financePromotionDeleted": "Promotion deleted",
+  "financePromotionDeleteTitle": "Delete {name}?",
+  "@financePromotionDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "financePromotionDeleteBody": "This cannot be undone.",
+  "financePromotionNone": "No promotion"
 }

@@ -5,6 +5,7 @@ import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/debts_page.dart';
 import 'package:mobile/features/finance/view/finance_analytics_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
+import 'package:mobile/features/finance/view/finance_promotions_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -57,6 +58,13 @@ List<RouteBase> financeRoutes() => [
     builder: (context, state) => const FinanceDockRegistration(
       location: Routes.financeDebts,
       child: DebtsPage(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.financePromotions,
+    builder: (context, state) => const FinanceDockRegistration(
+      location: Routes.financePromotions,
+      child: FinancePromotionsPage(),
     ),
   ),
   // Wallet creation lives on Wallets; old Manage links land there.

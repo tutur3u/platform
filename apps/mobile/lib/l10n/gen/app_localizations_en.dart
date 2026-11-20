@@ -17373,4 +17373,97 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeRecurringNoneUpcoming => 'Nothing due in the next 30 days';
+
+  @override
+  String get financePromotions => 'Promotions';
+
+  @override
+  String get financePromotion => 'Promotion';
+
+  @override
+  String get financePromotionNew => 'New promotion';
+
+  @override
+  String get financePromotionEdit => 'Edit promotion';
+
+  @override
+  String get financePromotionsEmpty => 'No promotions';
+
+  @override
+  String get financePromotionsEmptyBody => 'Create discount codes to apply to invoices.';
+
+  @override
+  String get financePromotionName => 'Name';
+
+  @override
+  String get financePromotionNamePlaceholder => 'Spring sale';
+
+  @override
+  String get financePromotionNameRequired => 'Enter a name';
+
+  @override
+  String get financePromotionCode => 'Code';
+
+  @override
+  String get financePromotionCodePlaceholder => 'SPRING10';
+
+  @override
+  String get financePromotionCodeRequired => 'Enter a code';
+
+  @override
+  String get financePromotionDescriptionPlaceholder => 'Who it is for and when it applies';
+
+  @override
+  String get financePromotionPercent => 'Percent';
+
+  @override
+  String get financePromotionAmount => 'Fixed amount';
+
+  @override
+  String get financePromotionValue => 'Discount';
+
+  @override
+  String get financePromotionValueInvalid => 'Enter a discount from 0 to 100%';
+
+  @override
+  String get financePromotionAmountInvalid => 'Enter an amount of 0 or more';
+
+  @override
+  String get financePromotionMaxUses => 'Usage limit';
+
+  @override
+  String get financePromotionMaxUsesPlaceholder => 'Unlimited';
+
+  @override
+  String get financePromotionMaxUsesInvalid => 'Enter a whole number above zero';
+
+  @override
+  String financePromotionUses(int used, int max) {
+    return '$used of $max used';
+  }
+
+  @override
+  String financePromotionUsesUnlimited(int used) {
+    return '$used used';
+  }
+
+  @override
+  String get financePromotionUsedUp => 'Used up';
+
+  @override
+  String get financePromotionSaved => 'Promotion saved';
+
+  @override
+  String get financePromotionDeleted => 'Promotion deleted';
+
+  @override
+  String financePromotionDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get financePromotionDeleteBody => 'This cannot be undone.';
+
+  @override
+  String get financePromotionNone => 'No promotion';
 }
