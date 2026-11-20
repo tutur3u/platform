@@ -470,14 +470,14 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 21,
-      "uses": 23,
-      "digest": "dd2c691b820bb9a41594ecdcf2bb5936c452c9fda43154a1d918d68dd5c71bee",
+      "lines": 14,
+      "uses": 16,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/08e84193d69a67f1086722569303cacf47eaf617",
-        "reason": "The held API identity seal measures the emitted OpenNext upload with a credential-free dry run and archives its exact config for restore acceptance."
-      }
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "Gateway traffic moves through cf workers deployments create (the annotated 100% request with the default code update strategy, settled readback and the observability settings sync) for both uploads. The rollback target comes from the validated settings snapshot. The remaining references are the family Worker OpenNext publication, the family secret-name check and the Wrangler gateway upload kept until GATEWAY_CF_VERSION_UPLOAD_LIVE."
+      },
+      "digest": "62859f6b47d5284b8eec035ba9ee491d12d7f0feae2120dd94f6d8bad91d8924"
     },
     ".github/workflows/web-start-candidate.yaml": {
       "lines": 1,
@@ -3668,14 +3668,14 @@
       "digest": "a4a353fa3c894f530726d9581cda208933d0ef09a4753282f43934c4437cade3"
     },
     "scripts/ci/web-opennext-gateway-workflow.test.js": {
-      "lines": 5,
-      "uses": 6,
+      "lines": 6,
+      "uses": 7,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
-        "reason": "Regression test asserts owner-gated cf upload and Wrangler fallback steps in the production gateway workflow."
+        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
+        "reason": "The workflow contract asserts the retained Wrangler gateway upload and that no Wrangler traffic, deployment or rollback command remains in the gateway job."
       },
-      "digest": "34b2e8859a22c122b1dbead53d1e097f0bf8851d623bc97470eafa1647837ee1"
+      "digest": "d4c1baf3ca0ecd4e32e97fb171a3ddd51f6d8e1defbd1d68550741cd9774394c"
     },
     "scripts/ci/web-opennext-size.mjs": {
       "lines": 7,

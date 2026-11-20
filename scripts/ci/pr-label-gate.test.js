@@ -132,6 +132,10 @@ const EXTRA_PROTECTED_INPUTS = {
   'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
   'contacts-cloudflare.yaml': ['scripts/ci/contacts-native-artifact.test.py'],
   'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
+  'gateway-cloudflare.yaml': [
+    'scripts/ci/gateway-cf-traffic.mjs',
+    'scripts/ci/void-cf-publisher.mjs',
+  ],
   'mail-calendar-tasks-builds.yaml': [
     'scripts/ci/tasks-cf-upload*',
     'scripts/ci/tasks-native-publish*',

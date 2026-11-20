@@ -15,6 +15,8 @@ on:
       - 'scripts/ci/web-opennext-*.mjs'
       - 'scripts/ci/gateway-deploy-config.mjs'
       - 'scripts/ci/gateway-cf-publication.mjs'
+      - 'scripts/ci/gateway-cf-traffic.mjs'
+      - 'scripts/ci/void-cf-publisher.mjs'
       - 'scripts/ci/fixtures/gateway-settings-fixture.json'
       - 'tuturuuu.ci.ts'
   workflow_dispatch:
@@ -363,60 +365,53 @@ jobs:
         env:
           GATEWAY_CF_VERSION_UPLOAD_LIVE: 'true'
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           WEB_ORIGIN: ${{ env.WEB_ORIGIN }}
           MARKETING_ORIGIN: ${{ env.MARKETING_ORIGIN }}
           GATEWAY_WEB_FAMILIES: ${{ env.GATEWAY_WEB_FAMILIES }}
         run: |
           node scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
-          bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           version=$(node scripts/ci/gateway-cf-publication.mjs publish-version-only \
             "$RUNNER_TEMP/gateway-settings.json" | jq -r .versionId)
           test -n "$version" && test "$version" != null || { echo "::error::cf version-only upload returned no version id"; exit 1; }
           echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
           echo "Uploaded gateway version $version via cf workers versions create --prebuilt (0% traffic until deploy step)."
-      - name: Upload and deploy the gateway version (Wrangler publisher fallback)
+      - name: Upload the gateway version (Wrangler publisher fallback)
         if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'
         working-directory: apps/gateway
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
           node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
-          bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           bun x --no-install wrangler versions upload -c wrangler.deploy.json \
             --message "gateway $GITHUB_SHA families=${GATEWAY_WEB_FAMILIES:-none}" | tee "$RUNNER_TEMP/gateway-upload.txt"
           version=$(grep -oE 'Worker Version ID: [0-9a-f-]{36}' "$RUNNER_TEMP/gateway-upload.txt" | awk '{print $4}')
           test -n "$version" || { echo "::error::no version id in the upload output"; exit 1; }
-          # A just-uploaded version can be briefly invisible to the deploy
-          # API (code 100146), so retry with backoff before failing.
-          for attempt in 1 2 3 4 5 6; do
-            node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
-            if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
-              --message "gateway $GITHUB_SHA"; then
-              break
-            fi
-            test "$attempt" -lt 6 || { echo "::error::gateway version $version did not deploy"; exit 1; }
-            sleep $((attempt * 10))
-          done
-          echo "Deployed gateway version $version. The previous deployment is above; roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
-      - name: Deploy gateway traffic (Wrangler; version from cf upload)
-        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
-        working-directory: apps/gateway
+          echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
+      - name: Deploy gateway traffic with cf
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
           version="$GATEWAY_VERSION_ID"
-          test -n "$version" || { echo "::error::missing GATEWAY_VERSION_ID from cf upload step"; exit 1; }
+          test -n "$version" || { echo "::error::missing GATEWAY_VERSION_ID from the upload step"; exit 1; }
+          previous=$(jq -er .result.versionId "$RUNNER_TEMP/gateway-settings.json")
+          echo "Rollback target $previous. Roll back with:"
+          echo "cf workers deployments create --worker tuturuuu-gateway --strategy percentage --versions '[{\"version_id\":\"$previous\",\"percentage\":100}]'"
+          echo "If Cloudflare rejects the rollback because secrets changed since $previous, review the change and rerun with --bypass-deployment-checks."
+          # A just-uploaded version can be briefly undeployable (100146; exit
+          # 75, nothing written). Any other outcome is final: serve reconciles
+          # failed requests by readback and never repeats a successful one.
           for attempt in 1 2 3 4 5 6; do
-            node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
-            if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
-              --message "gateway $GITHUB_SHA"; then
-              break
+            node scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
+            status=0
+            node scripts/ci/gateway-cf-publication.mjs serve "$version" "gateway $GITHUB_SHA" || status=$?
+            test "$status" -eq 0 && break
+            if test "$status" -ne 75 || test "$attempt" -eq 6; then
+              echo "::error::gateway version $version did not deploy"
+              exit 1
             fi
-            test "$attempt" -lt 6 || { echo "::error::gateway version $version did not deploy"; exit 1; }
             sleep $((attempt * 10))
           done
-          echo "Deployed gateway version $version at 100% after cf prebuilt upload. Roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
+          echo "Deployed gateway version $version at 100%."
       - name: Verify the gateway answers
         run: |
           status=$(curl --silent --retry 5 --retry-delay 5 --max-time 30 --output /dev/null \
