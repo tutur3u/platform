@@ -385,9 +385,12 @@ history or no scanned ancestor selects the full scan. Python and Actions scans
 stay whole-language (about two minutes each); JavaScript/TypeScript extracts,
 through a CodeQL `paths` filter, the touched `apps/*` or `packages/*`
 workspaces (deletions included), top-level directories or root files, plus the
-direct dependents of every touched package so a changed helper is analyzed with
-its callers. More than 30 roots, more than 400 commits, or an unsafe path
-selects the full scan. The new-alert gate's baseline is the newest completed
+direct dependents of every touched package while the total stays within 30
+roots, so a changed helper is analyzed with its callers. A widely shared
+package (utils, types, ui) has more dependents than that; its cross-workspace
+effects wait for the nightly full scan instead of forcing every push scan to
+full. More than 30 directly touched roots, more than 400 commits, or an unsafe
+root selects the full scan. The new-alert gate's baseline is the newest completed
 `main` analysis, including the nightly scan listed under `security-checks.yaml`. Main pushes share one
 concurrency group without cancelling: the active scan finishes and a newer push
 replaces only the pending run, which the next range still covers. A scoped scan

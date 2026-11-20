@@ -251,7 +251,7 @@ test('deletions scan their surviving workspace and touched packages add direct d
   assert.deepEqual(scope.paths, ['apps/meet', 'packages/ui', 'packages/utils']);
 });
 
-test('dependents count toward the scoped root ceiling', () => {
+test('dependents beyond the scoped ceiling are deferred to the nightly scan', () => {
   const manifests = new Map([['packages/core', { name: '@t/core' }]]);
   for (let index = 0; index < maxScopedRoots; index += 1)
     manifests.set(`apps/a${index}`, {
@@ -264,6 +264,13 @@ test('dependents count toward the scoped root ceiling', () => {
   );
   assert.equal(directDependents(new Set(['apps/a0']), manifests).size, 0);
   const scope = selectScope(['packages/core/index.ts'], { manifests });
-  assert.equal(scope.full, true);
-  assert.deepEqual(scope.languages, everyLanguage);
+  assert.equal(scope.full, false);
+  assert.deepEqual(scope.paths, ['packages/core']);
+  assert.match(scope.reason, /30 dependents deferred to the nightly scan/u);
+  // Too many directly touched workspaces still selects the full scan.
+  const touched = Array.from(
+    { length: maxScopedRoots + 1 },
+    (_, index) => `apps/a${index}/x.ts`
+  );
+  assert.equal(selectScope(touched, { manifests }).full, true);
 });

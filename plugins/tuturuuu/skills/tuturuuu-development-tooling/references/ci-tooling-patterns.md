@@ -792,7 +792,8 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   runs share one security-sensitive path list and the nightly
   `security-checks.yaml` run is the complete, uploaded baseline. Main push
   scans are diff-scoped (`codeql-push-scope.js`: JavaScript/TypeScript extracts
-  touched workspaces plus direct dependents of touched packages; failed scan
+  touched workspaces plus direct dependents of touched packages within a
+  30-root ceiling, deferring wider dependents to the nightly scan; failed scan
   history selects the full scan), fail on new high/critical results and never
   upload a path-scoped analysis. The gate baseline accepts the nightly scan,
   which lists under `security-checks.yaml`, not `codeql.yml`. Release admission never waits on CodeQL; app release

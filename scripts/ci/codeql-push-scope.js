@@ -3,8 +3,9 @@
 // main commit whose push scan succeeded (an ancestor of the pushed tip), so a
 // pending run replaced by a newer push is still covered by the next scan. The
 // JavaScript/TypeScript scan extracts the workspaces that range touched,
-// including deletions, plus the direct dependents of every touched package, so
-// a changed helper is analyzed with its callers. Python and Actions scans stay
+// including deletions, plus the direct dependents of every touched package
+// while the total stays within the scoped ceiling, so a changed helper is
+// analyzed with its callers. Python and Actions scans stay
 // whole-language because they finish in about two minutes. Any missing
 // evidence (unreadable scan history, no scanned ancestor, an oversized range or
 // an unsafe path) selects the full scan. The nightly full scan in
@@ -101,11 +102,16 @@ function selectScope(
       );
     roots.add(root);
   }
-  for (const dependent of directDependents(roots, manifests))
-    roots.add(dependent);
   if (roots.size > maxScopedRoots) {
-    return fullScope(`${roots.size} workspaces in scope`);
+    return fullScope(`${roots.size} workspaces changed`);
   }
+  // Dependents join only while the scan stays scoped. A widely shared package
+  // (utils, types, ui) has more dependents than the ceiling; its cross-workspace
+  // effects then wait for the nightly full scan instead of forcing every push
+  // scan to full.
+  const dependents = directDependents(roots, manifests);
+  const deferred = roots.size + dependents.size > maxScopedRoots;
+  if (!deferred) for (const dependent of dependents) roots.add(dependent);
   const present = [...roots].filter((root) => exists(root)).sort();
   const languages =
     present.length > 0
@@ -117,7 +123,7 @@ function selectScope(
     paths: present,
     reason:
       present.length > 0
-        ? `${present.length} workspace(s) in scope`
+        ? `${present.length} workspace(s) in scope${deferred ? `; ${dependents.size} dependents deferred to the nightly scan` : ''}`
         : 'only removed JavaScript or TypeScript workspaces',
   };
 }
