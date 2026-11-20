@@ -280,6 +280,7 @@ jobs:
       NOVA_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_NOVA_NATIVE_PROFILE: production
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      NOVA_ABUSE_GUARD_FAMILIES: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.NOVA_ABUSE_GUARD_FAMILIES || '' }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://tuturuuu.com/nova
@@ -304,6 +305,10 @@ jobs:
           test "$NEXT_PUBLIC_SUPABASE_URL" = "https://nzamlzqfdwaaxdefwraj.supabase.co"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
           test "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" != "sb_publishable_nova_ci_placeholder"
+          test -n "$NOVA_ABUSE_GUARD_FAMILIES" || { echo 'Set NOVA_ABUSE_GUARD_FAMILIES from the deployed Nova Worker before sealing'; exit 1; }
+      - name: Set the fixture guard families
+        if: env.TRUSTED != 'true'
+        run: echo 'NOVA_ABUSE_GUARD_FAMILIES=proxy' >> "$GITHUB_ENV"
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Generate build metadata
         env:
@@ -329,6 +334,7 @@ jobs:
         run: |
           node --input-type=module <<'JS'
           import { readFileSync, writeFileSync } from 'node:fs';
+          import { ABUSE_GUARD_FAMILIES } from './packages/utils/src/abuse-guard/protocol.ts';
           const path = 'apps/nova/dist/server/wrangler.json';
           const c = JSON.parse(readFileSync(path, 'utf8'));
           c.name = 'tuturuuu-nova';
@@ -341,7 +347,12 @@ jobs:
             throw new Error('production artifact must bake https://tuturuuu.com/nova');
           }
           if (!appUrl) throw new Error('NEXT_PUBLIC_APP_URL is empty');
+          const families = process.env.NOVA_ABUSE_GUARD_FAMILIES;
+          if (!families || families.split(',').some((family) => !ABUSE_GUARD_FAMILIES.includes(family.trim()))) {
+            throw new Error('NOVA_ABUSE_GUARD_FAMILIES must list recognized guard families');
+          }
           c.vars = {
+            ABUSE_GUARD_FAMILIES: families,
             TUTURUUU_NOINDEX: '0',
             NODE_ENV: 'production',
             TUTURUUU_REQUIRE_SECRETS: '1',

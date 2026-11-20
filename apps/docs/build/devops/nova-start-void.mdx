@@ -20,14 +20,17 @@ deployment ID before any cutover.
   `SUPABASE_SECRET_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and
   `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Abuse guard uses service binding
   `ABUSE_GUARD` (`tuturuuu-abuse-guard`), secret `ABUSE_GUARD_KEY_PEPPER`,
-  `ABUSE_GUARD_FAMILIES=proxy`, and optional `ABUSE_GUARD_TIMEOUT_MS`.
+  `ABUSE_GUARD_FAMILIES`, and optional `ABUSE_GUARD_TIMEOUT_MS`.
   Upstash credentials are no longer required. The abuse guard is optional, as on Vercel: with none of `ABUSE_GUARD_KEY_PEPPER`, `ABUSE_GUARD_FAMILIES` and the Upstash names set, the Worker skips the guard and logs the names once per isolate. Setting any of them requires a complete configuration, and the Worker refuses to serve otherwise. This packet records names only.
 - `TUTURUUU_NOINDEX` is `1` in staging and `0` in production.
 - Build from the app directory with `bun run build:cloudflare`. If workspace
   outputs are missing, run `bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2` first.
 
-The `nova-cutover-artifact` job compiles the production profile before setting
-the release variables in the emitted config. The archive uploads only after
+Before sealing, record the serving Worker's `ABUSE_GUARD_FAMILIES` in the
+repository variable `NOVA_ABUSE_GUARD_FAMILIES`. The `nova-cutover-artifact`
+job preserves that value in the emitted config and rejects a missing or
+unknown family. The Workerd acceptance uses the sealed family list, a synthetic
+service binding and pepper, and no Upstash bindings. The archive uploads only after
 the sealed output and a fresh restore both pass workerd acceptance on the
 subdomain and apex profiles. Hosted staging and private upload remain separate
 release gates.

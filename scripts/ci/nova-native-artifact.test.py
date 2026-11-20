@@ -87,7 +87,7 @@ class NovaServiceSealTest(unittest.TestCase):
 class NovaProductionCutoverTest(NovaServiceSealTest):
     """The cutover profile seals what the workflow rewrite emits, nothing else."""
 
-    production = wrapper.load(cutover=True)
+    production = wrapper.load(cutover=True, families="proxy")
     WORKER = "tuturuuu-nova"
 
     def cutover(self, **kwargs):
@@ -101,6 +101,7 @@ class NovaProductionCutoverTest(NovaServiceSealTest):
         self.assertFalse(self.production.NORMALIZED_DEFAULTS["upload_source_maps"])
         self.assertEqual(self.production.RECEIPT, "nova-production-artifact.json")
         self.assertEqual(self.production.IDENTITY["vars"], {
+            "ABUSE_GUARD_FAMILIES": "proxy",
             "TUTURUUU_NOINDEX": "0",
             "NODE_ENV": "production",
             "TUTURUUU_REQUIRE_SECRETS": "1",
@@ -111,6 +112,18 @@ class NovaProductionCutoverTest(NovaServiceSealTest):
 
     def test_rewritten_production_output_passes(self):
         self.production.validate_output(self.cutover())
+
+    def test_cutover_requires_the_exact_guard_families(self):
+        with self.assertRaisesRegex(ValueError, "NOVA_ABUSE_GUARD_FAMILIES"):
+            wrapper.load(cutover=True)
+        vars_ = self.production.IDENTITY["vars"]
+        for value in (None, "password", ""):
+            with self.subTest(value=value):
+                config_vars = {**vars_, "ABUSE_GUARD_FAMILIES": value}
+                if value is None:
+                    del config_vars["ABUSE_GUARD_FAMILIES"]
+                with self.assertRaisesRegex(ValueError, "contract drift"):
+                    self.production.validate_output(self.cutover(patch={"vars": config_vars}))
 
     def test_rewrite_that_deletes_emitted_fields_is_rejected(self):
         for key in ("configPath", "userConfigPath", "topLevelName", "definedEnvironments"):

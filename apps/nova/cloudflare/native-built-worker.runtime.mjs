@@ -178,6 +178,15 @@ test(
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
     assert.equal(config.preview_urls, false);
     assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
+    const cutover = config.vars?.TUTURUUU_REQUIRE_SECRETS === '1';
+    if (cutover) {
+      assert.ok(process.env.NOVA_ABUSE_GUARD_FAMILIES?.trim());
+      assert.equal(
+        config.vars.ABUSE_GUARD_FAMILIES,
+        process.env.NOVA_ABUSE_GUARD_FAMILIES,
+        'The production seal must retain the selected abuse guard families'
+      );
+    }
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -197,14 +206,18 @@ test(
           type: 'plain_text',
           value: process.env.NEXT_PUBLIC_APP_URL ?? 'https://nova.ai.vn',
         },
-        UPSTASH_REDIS_REST_URL: {
-          type: 'plain_text',
-          value: 'synthetic-runtime-only',
+        ABUSE_GUARD: {
+          type: 'fetcher',
+          fetcher: async () =>
+            Response.json({ error: 'guard fixture' }, { status: 503 }),
         },
-        UPSTASH_REDIS_REST_TOKEN: {
+        ABUSE_GUARD_KEY_PEPPER: {
           type: 'plain_text',
-          value: 'synthetic-runtime-only',
+          value: 'synthetic-runtime-only-pepper',
         },
+        ...(!cutover && {
+          ABUSE_GUARD_FAMILIES: { type: 'plain_text', value: 'proxy' },
+        }),
         TUTURUUU_APP_COORDINATION_SECRET: {
           type: 'plain_text',
           value: 'synthetic-runtime-only-coordination',

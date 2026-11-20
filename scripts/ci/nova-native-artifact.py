@@ -71,7 +71,9 @@ CUTOVER_VARS = {
 }
 
 
-def load(cutover=False):
+def load(cutover=False, families=None):
+    if cutover and not (isinstance(families, str) and families.strip()):
+        raise ValueError("NOVA_ABUSE_GUARD_FAMILIES is required for the production seal")
     worker = "tuturuuu-nova" if cutover else WORKER
     path = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("nova_native_artifact_base", path)
@@ -80,7 +82,7 @@ def load(cutover=False):
     module.IDENTITY = {
         **module.IDENTITY,
         "name": worker,
-        "vars": dict(CUTOVER_VARS) if cutover else {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
+        "vars": {**CUTOVER_VARS, "ABUSE_GUARD_FAMILIES": families} if cutover else {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,
@@ -122,7 +124,7 @@ def main():
         os.environ["APPS_SOURCE_SHA"] = os.environ["NOVA_SOURCE_SHA"]
     else:
         os.environ.pop("APPS_SOURCE_SHA", None)
-    load(cutover).main()
+    load(cutover, os.environ.get("NOVA_ABUSE_GUARD_FAMILIES")).main()
 
 
 if __name__ == "__main__":
