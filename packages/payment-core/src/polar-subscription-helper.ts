@@ -188,80 +188,36 @@ async function upsertCreditPackPurchase(
   );
   const expiresAtIso = periodExpiry.toISOString();
 
-  // Store the actual Polar status for audit trail
-  const status = subscription.status;
-
-  const shouldRetainCredits = [
-    'active',
-    'trialing',
-    'past_due',
-    'incomplete',
-  ].includes(status);
-  const currentPeriodStartIso = subscription.currentPeriodStart.toISOString();
-
-  const { data: existingPurchase, error: existingError } = await supabase
-    .from('workspace_credit_pack_purchases')
-    .select('id, tokens_remaining, granted_at, expires_at')
-    .eq('polar_subscription_id', subscription.id)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(
-      `Credit pack purchase lookup error: ${existingError.message}`
-    );
-  }
-
-  let tokensRemaining = 0;
-  let grantedAt = currentPeriodStartIso;
-  let expiresAt = expiresAtIso;
-  // When the subscription is in a non-retainable status (cancelled, revoked,
-  // unpaid) we zero out tokens but preserve the historical grant/expiry dates
-  // so the audit trail remains intact.
-  const keepHistoricalDates = !shouldRetainCredits;
-
-  if (!existingPurchase) {
-    tokensRemaining = tokens;
-  } else if (shouldRetainCredits) {
-    const existingGrantedAt = new Date(existingPurchase.granted_at).getTime();
-    const currentGrantedAt = new Date(currentPeriodStartIso).getTime();
-    if (existingGrantedAt >= currentGrantedAt) {
-      tokensRemaining = existingPurchase.tokens_remaining;
-      grantedAt = existingPurchase.granted_at;
-      expiresAt = existingPurchase.expires_at;
-    } else {
-      tokensRemaining = tokens;
+  // The projection runs as one locked, relative update in the database. It
+  // never writes back a tokens_remaining snapshot, so a credit hold taken
+  // while this event is in flight is not restored. A renewal starts a new
+  // grant; a non-retained status zeroes it and keeps the historical dates.
+  const { data, error } = await (
+    supabase.schema('private') as unknown as {
+      rpc: (
+        fn: 'sync_credit_pack_purchase',
+        args: Record<string, unknown>
+      ) => Promise<{
+        data:
+          | Database['public']['Tables']['workspace_credit_pack_purchases']['Row'][]
+          | null;
+        error: { message: string } | null;
+      }>;
     }
-  } else if (keepHistoricalDates) {
-    const existingGrantedAt = new Date(existingPurchase.granted_at).getTime();
-    const currentGrantedAt = new Date(currentPeriodStartIso).getTime();
-    if (existingGrantedAt >= currentGrantedAt) {
-      grantedAt = existingPurchase.granted_at;
-      expiresAt = existingPurchase.expires_at;
-    }
-  }
+  ).rpc('sync_credit_pack_purchase', {
+    p_ws_id: wsId,
+    p_credit_pack_id: subscription.product.id,
+    p_polar_subscription_id: subscription.id,
+    p_tokens: tokens,
+    p_status: subscription.status,
+    p_period_start: subscription.currentPeriodStart.toISOString(),
+    p_expires_at: expiresAtIso,
+  });
 
-  const purchaseData = {
-    ws_id: wsId,
-    credit_pack_id: subscription.product.id,
-    polar_subscription_id: subscription.id,
-    tokens_granted: tokens,
-    tokens_remaining: tokensRemaining,
-    granted_at: grantedAt,
-    expires_at: expiresAt,
-    status: status as Database['public']['Enums']['subscription_status'],
-    updated_at: new Date().toISOString(),
-  };
-
-  const { error: upsertError } = await supabase
-    .from('workspace_credit_pack_purchases')
-    .upsert(purchaseData, {
-      onConflict: 'polar_subscription_id',
-      ignoreDuplicates: false,
-    });
-
-  if (upsertError) {
+  const purchaseData = data?.[0];
+  if (error || !purchaseData) {
     throw new Error(
-      `Credit pack purchase upsert error: ${upsertError.message}`
+      `Credit pack purchase sync error: ${error?.message ?? 'no row returned'}`
     );
   }
 

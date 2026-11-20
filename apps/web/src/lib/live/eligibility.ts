@@ -54,19 +54,18 @@ export interface LiveCreditSnapshot {
 export const LIVE_MAX_RESERVATION = 2000;
 
 /**
- * Mirrors `begin_ai_live_session`: it reserves
- * `least(2000, floor(included + packs))`, refuses below 500, and the fixed
- * reservation then takes that whole amount from the included balance. A
- * pre-check that passes here cannot be refused for credits at mint.
+ * Mirrors `begin_ai_live_session` / `reserve_live_ai_credits`: they reserve
+ * `least(2000, floor(included + packs))`, drawing the included balance first
+ * and then active packs, and refuse below 500. A pre-check that passes here
+ * cannot be refused for credits at mint.
  */
 export function liveReservationAdmits({
   includedRemaining,
   packCredits,
 }: LiveCreditSnapshot) {
-  const remaining = includedRemaining + packCredits;
-  if (remaining <= 0) return false;
-  const reserved = Math.min(LIVE_MAX_RESERVATION, Math.floor(remaining));
-  return reserved >= LIVE_MIN_CREDITS && includedRemaining >= reserved;
+  const available = Math.max(includedRemaining, 0) + Math.max(packCredits, 0);
+  const reserved = Math.min(LIVE_MAX_RESERVATION, Math.floor(available));
+  return reserved >= LIVE_MIN_CREDITS;
 }
 
 export interface LiveEligibilityDeps {
@@ -191,8 +190,9 @@ export function isLivePaidTier(tier: string | null | undefined) {
 
 /**
  * The single server decision for whether an actor may start Live billed to
- * [billingWsId]. Paid plans, or paid credit packs on the billed workspace,
- * may start Live; the free tier may only while the free kill switch is off.
+ * [billingWsId]. Paid plans may start Live, with credit packs extending
+ * their budget; the free tier may only while the free kill switch is off,
+ * and never draws packs.
  * Credits are checked last so a free workspace is told about plans first.
  */
 export async function resolveLiveEligibility(
@@ -222,7 +222,14 @@ export async function resolveLiveEligibility(
       params: { plans: LIVE_PAID_TIERS },
     };
   }
-  const paid = isLivePaidTier(tier) || credits.packCredits > 0;
+  // Live is a paid-plan feature: credit packs never make a FREE workspace
+  // eligible, and they extend the budget only on a paid plan, exactly as
+  // reserve_live_ai_credits counts them.
+  const paid = isLivePaidTier(tier);
+  const budget: LiveCreditSnapshot = {
+    includedRemaining: credits.includedRemaining,
+    packCredits: paid ? credits.packCredits : 0,
+  };
   const base = {
     isFree: !paid,
     tier,
@@ -247,11 +254,11 @@ export async function resolveLiveEligibility(
     return paid ? blocked('paused') : blocked('plan_required');
   }
 
-  if (!liveReservationAdmits(credits)) {
+  if (!liveReservationAdmits(budget)) {
     return blocked('credits_exhausted', {
       balance: Math.max(
         0,
-        Math.floor(credits.includedRemaining + credits.packCredits)
+        Math.floor(budget.includedRemaining + budget.packCredits)
       ),
       minimumCredits: LIVE_MIN_CREDITS,
     });

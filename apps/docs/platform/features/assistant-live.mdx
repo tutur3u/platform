@@ -387,15 +387,58 @@ Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
   instead of assuming FREE or admitting; so does an active subscription with
   no product. Credits mirror `begin_ai_live_session` exactly: the balance row
   comes from the same `get_or_create_credit_balance(billed workspace, actor)`
-  call, packs count only when active, unexpired and positive, and Live is
-  admitted only when the included balance covers `least(2000, included +
-  packs)` and that amount is at least 500. A passed pre-check therefore cannot
-  be refused for credits at mint. The mobile access-workspace tier is read the
-  same strict way.
+  call, packs count only on a paid plan and only when active, unexpired and
+  positive, and Live is admitted when `least(2000, floor(included + packs))`
+  is at least 500. A passed pre-check therefore cannot be refused for credits
+  at mint. The mobile access-workspace tier is read the same strict way.
+- Paid plans only: a credit pack never makes a FREE workspace eligible. A
+  FREE workspace with packs is refused with `plan_required` ("Live is
+  included with paid plans"); packs only extend a paid plan's budget, in the
+  pre-check and in `private.reserve_live_ai_credits` alike.
 - The web pre-check cache is keyed by the server-verified session actor and
   sign-in revision. A different actor or a new sign-in by the same actor (a
   new `last_sign_in_at`) drops it and discards in-flight results; a token
   refresh keeps it.
+- Purchased credit packs help Live on paid plans: `private.reserve_live_ai_credits`
+  holds the reservation from the included balance first, then from active
+  packs (earliest expiry first), recording each pack draw and the pack grant
+  (`granted_at`) it came from in `private.ai_credit_reservation_pack_draws`. Start, settlement and the
+  expiry sweep lock in one order: the balance row, then packs in a single
+  batch sorted by id, then the reservation, then the Live session. Settlement
+  locates its balance with unlocked reads and rechecks every row under lock.
+  The sweep skips reservations another transaction holds. Concurrent work on
+  one workspace therefore serializes without deadlock, and a pack never goes
+  negative (`tokens_remaining >= 0`). Settlement and reservation expiry
+  return unused credits in reverse order: packs, last drawn first, then the
+  included balance of the period row the hold came from. A pack refund goes
+  back only to the same grant while it is retained; after a renewal or a
+  cancellation the refund is forfeited, so an old hold never credits a new
+  grant. Closing an already closed session returns `RESERVATION_NOT_ACTIVE`
+  and refunds nothing. The sweep never waits on a Studio run or API key
+  another transaction holds; it leaves those for a later sweep. Other
+  reservations draw no packs and are unchanged.
+- Polar credit-pack webhooks project through `private.sync_credit_pack_purchase`,
+  one locked, relative update ordered by the subscription period: an event
+  from a period before the stored grant is ignored, the same grant keeps its
+  current balance (clamped to the grant), a renewal starts a new grant, and a
+  non-retained status zeroes it. A zeroed grant stays closed for the rest of
+  its period: a delayed or replayed retained event from the same period never
+  reopens it, so no hold refund can land on it. It never writes back a `tokens_remaining`
+  snapshot, so a hold taken while an event is in flight is not restored, and
+  a delayed revocation from a previous period never touches a renewed grant.
+- Only that projection sets a pack's status. Depleting or expiring a pack is
+  not a revocation: embedding reservations and metered deductions leave the
+  status alone. Embedding holds record the grant each pack draw came from and
+  refund through the same `private.refund_credit_pack_hold` rule as Live
+  (same retained grant, else forfeit, never reactivate); holds taken before
+  grant tracking refund only when the current grant predates the hold. Every
+  pack writer locks the balance row, then packs in one id-sorted batch, then
+  the hold; embedding release and commit locate the hold without locking it
+  and take the balance first, so they never hold a reservation while waiting
+  on a balance the sweep holds. The
+  refund helpers are internal and not executable by `service_role`.
+  Coverage: `mira-live-credit-pack-reservation.sql` and
+  `mira-live-credit-pack-concurrency.sql`.
 - The staff-only `/api/v1/mira/token` route is retired: after its auth,
   membership and staff gates it answers 410 `LIVE_ROUTE_RETIRED` and never
   mints.

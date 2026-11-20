@@ -72,12 +72,45 @@ describe('resolveLiveEligibility', () => {
     });
   });
 
-  it('treats paid credit packs on a free workspace as paid', async () => {
+  it('never lets credit packs make a FREE workspace eligible', async () => {
     const result = await resolveLiveEligibility(
       { userId, billingWsId: personalWs },
       deps({
         getTier: async () => 'FREE',
-        getCredits: async () => ({ packCredits: 800, includedRemaining: 2500 }),
+        getCredits: async () => ({ packCredits: 5000, includedRemaining: 0 }),
+      })
+    );
+    // The blocked sheet says Live needs a paid plan.
+    expect(result).toMatchObject({
+      eligible: false,
+      reason: 'plan_required',
+      isFree: true,
+    });
+  });
+
+  it('ignores packs for free Live when the free kill switch is off', async () => {
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      deps({
+        getTier: async () => 'FREE',
+        getCredits: async () => ({ packCredits: 5000, includedRemaining: 100 }),
+        readConfig: () =>
+          readLiveMintConfig({ LIVE_MINT_KILL_SWITCH: 'false' }),
+      })
+    );
+    expect(result).toMatchObject({
+      eligible: false,
+      reason: 'credits_exhausted',
+      params: { balance: 100 },
+    });
+  });
+
+  it('lets packs extend a paid plan', async () => {
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      deps({
+        getTier: async () => 'PRO',
+        getCredits: async () => ({ packCredits: 800, includedRemaining: 0 }),
       })
     );
     expect(result).toMatchObject({ eligible: true, isFree: false });
@@ -160,10 +193,12 @@ describe('resolveLiveEligibility', () => {
     [600, 0, true],
     [499, 0, false],
     [2500, 300, true],
-    // The fixed reservation takes min(2000, included + packs) from the
-    // included balance alone, so packs can push the amount past it.
-    [600, 1000, false],
-    [300, 300, false],
+    // Packs top up the included balance; the reservation draws both.
+    [600, 1000, true],
+    [0, 900, true],
+    [300, 300, true],
+    [200, 200, false],
+    [-150, 600, true],
     [0, 0, false],
   ] as const)(
     'mirrors the reservation: included %d + packs %d admits %s',
@@ -174,16 +209,27 @@ describe('resolveLiveEligibility', () => {
     }
   );
 
-  it('never passes a pre-check the reservation would refuse', async () => {
+  it('lets a purchased pack carry a short included balance', async () => {
     const result = await resolveLiveEligibility(
       { userId, billingWsId: personalWs },
       deps({
         getCredits: async () => ({ packCredits: 1000, includedRemaining: 600 }),
       })
     );
+    expect(result).toMatchObject({ eligible: true, reason: null });
+  });
+
+  it('refuses when included plus packs stay below the minimum', async () => {
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      deps({
+        getCredits: async () => ({ packCredits: 200, includedRemaining: 200 }),
+      })
+    );
     expect(result).toMatchObject({
       eligible: false,
       reason: 'credits_exhausted',
+      params: { balance: 400, minimumCredits: 500 },
     });
   });
 });

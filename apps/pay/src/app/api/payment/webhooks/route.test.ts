@@ -81,6 +81,20 @@ const mockCreditPackMaybeSingle = vi.fn<MockCreditPackLookup>(() =>
   Promise.resolve({ data: null, error: null })
 );
 const mockCreditPackUpsert = vi.fn<MockSubscriptionUpsert>();
+const mockCreditPackSync = vi.fn(
+  async (_fn: string, args: Record<string, unknown>) => ({
+    data: [
+      {
+        ws_id: args.p_ws_id,
+        credit_pack_id: args.p_credit_pack_id,
+        polar_subscription_id: args.p_polar_subscription_id,
+        tokens_granted: args.p_tokens,
+        tokens_remaining: args.p_tokens,
+      },
+    ],
+    error: null,
+  })
+);
 
 const mockSupabase = {
   from: vi.fn().mockImplementation((table) => {
@@ -106,6 +120,7 @@ const mockSupabase = {
     if (schemaName !== 'private') return {};
 
     return {
+      rpc: mockCreditPackSync,
       from: vi.fn().mockImplementation((table) => {
         if (table === 'workspace_subscription_products') {
           return {
@@ -436,17 +451,20 @@ describe('syncSubscriptionToDatabase', () => {
       expect(result.purchaseData.tokens_granted).toBe(5000);
     }
 
-    expect(mockCreditPackUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ws_id: '00000000-0000-0000-0000-000000000000',
-        credit_pack_id: 'pack_123',
-        polar_subscription_id: 'sub_pack_123',
-        tokens_granted: 5000,
-      }),
+    // One locked, relative projection; no snapshot read-then-upsert.
+    expect(mockCreditPackSync).toHaveBeenCalledWith(
+      'sync_credit_pack_purchase',
       {
-        onConflict: 'polar_subscription_id',
-        ignoreDuplicates: false,
+        p_ws_id: '00000000-0000-0000-0000-000000000000',
+        p_credit_pack_id: 'pack_123',
+        p_polar_subscription_id: 'sub_pack_123',
+        p_tokens: 5000,
+        p_status: 'active',
+        p_period_start: '2026-03-01T00:00:00.000Z',
+        p_expires_at: expect.any(String),
       }
     );
+    expect(mockCreditPackUpsert).not.toHaveBeenCalled();
+    expect(mockCreditPackMaybeSingle).not.toHaveBeenCalled();
   });
 });
