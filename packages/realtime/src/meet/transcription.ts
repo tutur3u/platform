@@ -158,9 +158,9 @@ export function transcriptionClientSnapshot(
     },
   };
 }
-export function normalizeTranscriptionConsent(
-  state: MeetRoomSnapshot
-): MeetRoomSnapshot {
+export function normalizeTranscriptionConsent<T extends MeetRoomSnapshot>(
+  state: T
+): T {
   return {
     ...state,
     transcriptionConsents:

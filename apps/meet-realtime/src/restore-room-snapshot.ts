@@ -12,7 +12,11 @@ export function restoreRoomSnapshot(
   stored: RoomServiceState,
   sockets: WebSocket[],
   tokenOf: (socket: WebSocket) => MeetRealtimeTokenPayload | null
-) {
+): {
+  snapshot: RoomServiceState;
+  migrated: boolean;
+  closedPublications: MeetRealtimeServerMessage[];
+} {
   const normalized = normalizeTranscriptionConsent({
     ...createMeetRoomSnapshot(),
     ...stored,
