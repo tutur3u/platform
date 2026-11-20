@@ -120,10 +120,17 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | --- | --- |
 | Worker | `tuturuuu-apps` |
 | Canonical host | `apps.tuturuuu.com`; the production profile sets `APPS_CANONICAL_HOST_ENABLED=1`, without which the Worker answers 503 on that host |
+| Admitted apex mount | `https://tuturuuu.com/apps` |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INTERNAL_WEB_API_ORIGIN=https://tuturuuu.com`; `/api/*` proxies to Web |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=apps` from `production` (environment `wave1-apps-production`) |
 | Vercel rollback | `dpl_7jwSj1yvqqtjxagQqsVr8kZ97ByS` (`apps-mlvxr7mpd-tuturuuu.vercel.app`, READY, aliased to `apps.tuturuuu.com`) |
+
+The sealed production profile is checked on the canonical host and at
+`/apps` on the apex. Original and archive-restored checks verify the rendered
+launcher links, repeated and encoded query parameters through redirects,
+mounted CSS and JavaScript bytes, and 404s outside the mount. Routing is
+configured separately by the release operator.
 
 ## Finance
 

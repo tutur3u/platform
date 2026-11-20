@@ -6,11 +6,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  appsProductionMountHost,
+  exerciseAppsProductionMount,
+} from './apps-native-production-mount.mjs';
+import {
   exerciseStorefrontHost,
   storefrontAssetFile,
   storefrontRuntimeHosts,
 } from './storefront-native-runtime.mjs';
 import { verify } from './wave1-native-artifact.mjs';
+import { releaseRecipes } from './wave1-native-profile.mjs';
 import { runInfrastructureProductionRuntime } from './infrastructure-production-runtime.mjs';
 
 export function calendarProductionRuntimeTarget(profile) {
@@ -87,6 +92,11 @@ async function runRuntimeAcceptance() {
         ? calendarProductionRuntimeTarget(receipt.profile)
         : null;
     if (calendarPathTarget) hosts.unshift(calendarPathTarget.host);
+    const appsMountHost =
+      app === 'apps' && environment === 'production'
+        ? appsProductionMountHost(releaseRecipes.apps)
+        : null;
+    if (appsMountHost) hosts.push(appsMountHost);
     if (app === 'apps' && environment === 'staging')
       hosts.push('apps.tuturuuu.com');
     if (foreignHost) hosts.push(foreignHost);
@@ -158,6 +168,19 @@ async function runRuntimeAcceptance() {
             assert.equal(refused.status, 404, `${host}${path} must 404`);
             assert.deepEqual(refused.headers.getSetCookie(), []);
           }
+          continue;
+        }
+        if (host === appsMountHost) {
+          await exerciseAppsProductionMount(fetchWorker, (file) => {
+            assert.ok(
+              Object.hasOwn(receipt.files, file),
+              'App asset is not sealed'
+            );
+            return readFile(join(scratch, 'dist', file));
+          });
+          console.log(
+            'Accepted Apps production mount https://tuturuuu.com/apps'
+          );
           continue;
         }
         if (app === 'storefront' && environment === 'production') {

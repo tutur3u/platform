@@ -223,7 +223,7 @@
         "app": "apps",
         "platform": "cf-wave1",
         "canonicalHosts": ["https://apps.tuturuuu.com"],
-        "mountHosts": [],
+        "mountHosts": ["https://tuturuuu.com"],
         "requiredSecretNames": [
           "NEXT_PUBLIC_SUPABASE_URL",
           "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
