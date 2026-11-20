@@ -592,15 +592,15 @@ export class MeetLiveDurableObject {
       await this.finalizeBilling();
       return;
     }
+    // Revoked or never eligible: end the session before any recovery or
+    // reconnect. Stopping stays ungated so billing settles and cleanup runs.
+    if (!this.allowed()) {
+      await this.stop('workspace_not_enabled');
+      return;
+    }
     if (!this.socket) {
       if (sessions.liveRecoveryExpired(this.saved)) await this.stop();
       else await sessions.armLiveRecovery(this.saved, this.state.storage);
-      return;
-    }
-    // Revoked or never eligible: end the session instead of reconnecting the
-    // provider. Stopping stays ungated so billing settles and cleanup runs.
-    if (!this.allowed()) {
-      await this.stop('workspace_not_enabled');
       return;
     }
     await settlePublicBillings(
@@ -666,7 +666,7 @@ export class MeetLiveDurableObject {
     const actionsSettled = this.actions.cancel();
     const messagesSettled = this.incoming.cancel();
     this.audioBatcher?.clear();
-    await drainLiveProvider(this.provider);
+    await drainLiveProvider(this.provider, detail !== 'workspace_not_enabled');
     markInterruptedUsage(this.saved);
     ++this.generation;
     this.provider = undefined;

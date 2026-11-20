@@ -142,12 +142,23 @@ export async function connectLiveProvider(input: {
 }
 
 /** Keep final usage callbacks alive briefly after ending input, then close transport. */
-export async function drainLiveProvider(provider: Session | undefined) {
+/**
+ * Ends the provider connection. With `endInput`, it first signals the end of
+ * the audio stream and waits briefly for the final turn and usage. Without it
+ * (a revoked workspace), it sends nothing further upstream and closes; usage
+ * already received still settles, and anything pending is marked incomplete.
+ */
+export async function drainLiveProvider(
+  provider: Session | undefined,
+  endInput = true
+) {
   if (!provider) return;
-  try {
-    provider.sendRealtimeInput({ audioStreamEnd: true });
-  } catch {}
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  if (endInput) {
+    try {
+      provider.sendRealtimeInput({ audioStreamEnd: true });
+    } catch {}
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
   try {
     provider.close();
   } catch {}

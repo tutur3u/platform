@@ -9,11 +9,12 @@ const mocks = vi.hoisted(() => ({
   room: vi.fn(),
   connect: vi.fn(),
   finalize: vi.fn(),
+  drain: vi.fn(),
 }));
 vi.mock('./room', () => ({ liveRoomCommand: mocks.room }));
 vi.mock('./provider', () => ({
   connectLiveProvider: mocks.connect,
-  drainLiveProvider: vi.fn(),
+  drainLiveProvider: mocks.drain,
 }));
 vi.mock('./billing', () => ({ beginLiveBilling: vi.fn(async () => ({})) }));
 vi.mock('./usage-report', () => ({ reportLiveUsage: vi.fn() }));
@@ -131,6 +132,7 @@ beforeEach(() => {
     sendRealtimeInput: vi.fn(),
   });
   mocks.finalize.mockReset().mockResolvedValue(undefined);
+  mocks.drain.mockReset().mockResolvedValue(undefined);
   vi.stubGlobal('WebSocket', TestSocket);
   vi.stubGlobal(
     'WebSocketPair',
@@ -254,24 +256,32 @@ describe('durable disconnected recovery', () => {
     expect(h.saved().ended).toBe(true);
   });
 
-  it('stops an active session on its next turn and tick once the workspace is denylisted', async () => {
+  it('stops an active session on its next turn without sending that input upstream', async () => {
     const h = harness();
     const object = await h.construct();
     mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
     expect((await reconnect(object, h.saved())).status).toBe(101);
     await h.drain();
-    expect(mocks.connect).toHaveBeenCalledTimes(1);
+    const provider = await mocks.connect.mock.results[0]!.value;
     const workspaceId = h.saved().identity.workspaceId!;
     const gate = env as unknown as Record<string, string | undefined>;
     gate.MEET_AI_DISABLED_WORKSPACE_IDS = workspaceId;
     try {
       sockets[0]!.dispatchEvent(
         Object.assign(new Event('message'), {
-          data: JSON.stringify({ type: 'text', text: 'Synthetic turn' }),
+          data: JSON.stringify({
+            type: 'audio',
+            data: 'AAAA',
+            source: 'microphone',
+            accountId: h.saved().claims.ownerId,
+          }),
         })
       );
       await vi.waitFor(() => expect(h.saved().ended).toBe(true));
       await h.drain();
+      // No audio and no end-of-stream signal after revocation; close only.
+      expect(provider.sendRealtimeInput).not.toHaveBeenCalled();
+      expect(mocks.drain).toHaveBeenCalledWith(provider, false);
       expect(mocks.finalize).toHaveBeenCalled();
       expect(sockets[0]!.send).toHaveBeenCalledWith(
         expect.stringContaining('workspace_not_enabled')
@@ -279,6 +289,43 @@ describe('durable disconnected recovery', () => {
     } finally {
       delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
     }
+  });
+
+  it('ends a disconnected revoked session instead of arming recovery', async () => {
+    const h = harness();
+    const object = await h.construct();
+    const deadline = h.saved().disconnectedRecoveryDeadline;
+    const gate = env as unknown as Record<string, string | undefined>;
+    gate.MEET_AI_DISABLED_WORKSPACE_IDS = h.saved().identity.workspaceId!;
+    try {
+      h.storage.setAlarm.mockClear();
+      now += 1000;
+      await object.alarm();
+      await h.drain();
+      expect(h.saved().ended).toBe(true);
+      expect(mocks.connect).not.toHaveBeenCalled();
+      expect(mocks.finalize).toHaveBeenCalled();
+      expect(h.storage.setAlarm).not.toHaveBeenCalledWith(deadline);
+      expect(mocks.room).not.toHaveBeenCalled();
+    } finally {
+      delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
+    }
+  });
+
+  it('still signals the end of input on an ordinary stop', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    const provider = await mocks.connect.mock.results[0]!.value;
+    sockets[0]!.dispatchEvent(
+      Object.assign(new Event('message'), {
+        data: JSON.stringify({ type: 'stop' }),
+      })
+    );
+    await vi.waitFor(() => expect(h.saved().ended).toBe(true));
+    expect(mocks.drain).toHaveBeenCalledWith(provider, true);
   });
 
   it('ends on the next tick when the reviewed opt-in is withdrawn mid-session', async () => {
