@@ -73,7 +73,7 @@ const reviewCategories = [
     category: 'runner-sandbox',
     owner: 'runtime',
     patterns: [
-      /^apps\/(?:abuse-guard|ops-hub|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
+      /^apps\/(?:abuse-guard|mastermind-store|ops-hub|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
       /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,
@@ -84,7 +84,7 @@ const reviewCategories = [
     category: 'tokens-secrets',
     owner: 'platform-auth',
     patterns: [
-      /^packages\/utils\/src\/abuse-guard\//u,
+      /^packages\/utils\/src\/(?:abuse-guard|mastermind-store)\//u,
       /(?:^|\/)[^/]*(?:token|secret|credential|crypto|encrypt|decrypt|signing|signature|hmac|jwt|api-?keys?)[^/]*$/iu,
       /(?:^|\/)\.env(?:\.[\w.-]+)?$/u,
       /(?:^|\/)email-unsubscribe\.(?:c|m)?[jt]s$/u,
