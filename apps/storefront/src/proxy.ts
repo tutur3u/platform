@@ -18,6 +18,7 @@ import {
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -116,8 +117,11 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
 
-  const url = new URL(request.url);
-  url.pathname = stripLocale(request.nextUrl.pathname);
+  const url = new URL(request.nextUrl.href);
+  url.pathname = withAppBase(
+    stripLocale(request.nextUrl.pathname),
+    request.nextUrl.basePath
+  );
 
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, request, pathLocale);
@@ -269,7 +273,10 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
 
     if (!hasSatelliteSession) {
-      const url = new URL('/login', request.url);
+      const url = new URL(
+        withAppBase('/login', request.nextUrl.basePath),
+        request.nextUrl.origin
+      );
       url.searchParams.set('next', getNextValue(request));
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));

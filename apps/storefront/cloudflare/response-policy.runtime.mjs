@@ -9,10 +9,14 @@ test(
   },
   async (t) => {
     const upstream = [];
+    const writes = [];
     const worker = await startFixtureWorker(t, {
       bindings: { INVENTORY_APP_URL: 'https://inventory.invalid' },
-      outboundService(request) {
+      async outboundService(request) {
         upstream.push(request.url);
+        if (request.method === 'POST') {
+          writes.push({ url: request.url, body: await request.text() });
+        }
         return Response.json(
           { fixture: true },
           {
@@ -81,6 +85,34 @@ test(
       upstream.includes(`https://inventory.invalid${publicPath}`),
       'Probe must reach the upstream public cache fixture'
     );
+    if (process.env.VITE_STOREFRONT_NATIVE_PROFILE === 'production') {
+      const origin = 'https://tuturuuu.com';
+      const base = `${origin}/storefront`;
+      const query = '?x=1&x=2&q=a%2Fb';
+      const inventory = await worker.fetch(`${base}${publicPath}${query}`);
+      assert.equal(inventory.status, 200);
+      await inventory.body?.cancel();
+      assert.ok(
+        upstream.includes(`https://inventory.invalid${publicPath}${query}`)
+      );
+      const webPath = '/api/storefront-probe.json';
+      const web = await worker.fetch(`${base}${webPath}${query}`);
+      assert.equal(web.status, 200);
+      await web.body?.cancel();
+      assert.ok(upstream.includes(`https://central.invalid${webPath}${query}`));
+      const analytics = `${publicPath}/analytics/events`;
+      const body = JSON.stringify({ type: 'fixture' });
+      const post = await worker.fetch(`${base}${analytics}${query}`, {
+        method: 'POST',
+        headers: { origin, 'content-type': 'application/json' },
+        body,
+      });
+      assert.equal(post.status, 200);
+      await post.body?.cancel();
+      assert.deepEqual(writes, [
+        { url: `https://inventory.invalid${analytics}${query}`, body },
+      ]);
+    }
     const sandbox = "sandbox allow-scripts; default-src 'none'";
     const webgl =
       '/api/v1/workspaces/fixture/external-projects/assets/fixture/webgl/game.js';

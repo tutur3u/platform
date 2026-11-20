@@ -193,9 +193,11 @@ jobs:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      STOREFRONT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_STOREFRONT_NATIVE_PROFILE: production
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://storefront-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_storefront_ci_placeholder' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || '' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_storefront_fixture_only' }}
       NEXT_PUBLIC_APP_URL: https://store.tuturuuu.com
       NEXT_PUBLIC_STOREFRONT_APP_URL: https://store.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
@@ -214,6 +216,12 @@ jobs:
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - name: Require trusted production public inputs
+        if: env.TRUSTED == 'true'
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          test "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" != "sb_publishable_storefront_fixture_only"
       - name: Generate build metadata
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
@@ -243,35 +251,29 @@ jobs:
           path: ${{ runner.temp }}/storefront-emitted-config.json
           retention-days: 7
           if-no-files-found: error
-      - name: Write the production wrangler config
+      - name: Qualify and seal the emitted Storefront production Worker
+        env:
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
         run: |
-          node --input-type=module <<'JS'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          const path = 'apps/storefront/dist/server/wrangler.json';
-          const c = JSON.parse(readFileSync(path, 'utf8'));
-          for (const k of ['configPath', 'userConfigPath', 'topLevelName', 'definedEnvironments']) delete c[k];
-          c.name = 'tuturuuu-storefront';
-          c.workers_dev = false;
-          c.preview_urls = false;
-          c.upload_source_maps = false;
-          c.vars = {
-            TUTURUUU_NOINDEX: '0',
-            NODE_ENV: 'production',
-            // Startup assertion: refuse to serve without required secrets.
-            TUTURUUU_REQUIRE_SECRETS: '1',
-            NEXT_PUBLIC_APP_URL: 'https://store.tuturuuu.com',
-            NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-            INVENTORY_APP_URL: 'https://inventory.tuturuuu.com',
-          };
-          writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
-          JS
-          if [ "$(node -p "require('./apps/storefront/dist/server/wrangler.json').preview_urls")" != false ]; then exit 1; fi
-          test -f apps/storefront/dist/server/index.mjs
-          test -d apps/storefront/dist/client
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          python3 scripts/ci/storefront-native-artifact.py config apps/storefront
+          python3 scripts/ci/storefront-native-artifact.py seal apps/storefront --receipt "$RUNNER_TEMP/storefront-production.json"
+          bun run --cwd apps/storefront test:runtime
+          python3 scripts/ci/storefront-native-artifact.py verify apps/storefront --receipt "$RUNNER_TEMP/storefront-production.json"
+          python3 scripts/ci/storefront-native-artifact.py pack apps/storefront --receipt "$RUNNER_TEMP/storefront-production.json" --archive "$RUNNER_TEMP/storefront-production-artifact.tar.gz"
+      - name: Restore and qualify the sealed Storefront archive
+        env:
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/storefront-restore" "$SOURCE_SHA"
+          cd "$RUNNER_TEMP/storefront-restore"
+          bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+          python3 scripts/ci/storefront-native-artifact.py restore apps/storefront --archive "$RUNNER_TEMP/storefront-production-artifact.tar.gz" --receipt "$RUNNER_TEMP/storefront-restored.json"
+          bun run --cwd apps/storefront test:runtime
+          python3 scripts/ci/storefront-native-artifact.py verify apps/storefront --receipt "$RUNNER_TEMP/storefront-restored.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: storefront-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}
-          path: apps/storefront/dist
+          path: ${{ runner.temp }}/storefront-production-artifact.tar.gz
           retention-days: 14
           if-no-files-found: error
-          include-hidden-files: true

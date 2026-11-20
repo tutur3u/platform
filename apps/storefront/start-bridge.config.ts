@@ -1,3 +1,4 @@
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import {
   type BridgeAppConfig,
   defineBridgeAppConfig,
@@ -13,6 +14,10 @@ type ApiOrigin = NonNullable<
   BridgeAppConfig<StorefrontApiEnvironment>['apiOrigin']
 >;
 
+const profile =
+  import.meta.env?.VITE_STOREFRONT_NATIVE_PROFILE ??
+  process.env.VITE_STOREFRONT_NATIVE_PROFILE;
+
 export const selectStorefrontApiOrigin: ApiOrigin = (
   _request,
   { env, path }
@@ -27,10 +32,10 @@ export default defineBridgeAppConfig<StorefrontApiEnvironment>({
   apiOrigin: selectStorefrontApiOrigin,
   mounts: {
     rootHosts: ['store.tuturuuu.com', 'storefront.tutur3u.com'],
-    mountHosts: [],
+    mountHosts: profile === 'production' ? ['tuturuuu.com'] : [],
     unknownHost: 'reject',
   },
-  wrapResponse(response, { request }) {
+  wrapResponse(response, { request, mounts }) {
     const url = new URL(request.url);
     const redirects = new Set([
       'storefront.tuturuuu.com',
@@ -47,7 +52,9 @@ export default defineBridgeAppConfig<StorefrontApiEnvironment>({
         })
       : new Response(response.body, response);
     result.headers.set('X-Robots-Tag', 'noindex, nofollow');
-    const path = new URL(request.url).pathname;
+    const mount =
+      mounts && resolveAppBase(url, { ...mounts, app: 'storefront' });
+    const path = url.pathname.slice(mount?.basePath.length ?? 0);
     const sandboxedWebgl =
       /^\/api\/v1\/workspaces\/[^/]+\/external-projects\/assets\/[^/]+\/webgl(?:\/|$)/u.test(
         path

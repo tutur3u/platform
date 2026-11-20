@@ -67,6 +67,7 @@ export async function startFixtureWorker(
   return {
     config,
     origin,
+    fetch: (url, init) => worker.fetch(url, { ...init, redirect: 'manual' }),
     request(
       path,
       { method = 'GET', headers = {}, host = 'store.tuturuuu.com' } = {}

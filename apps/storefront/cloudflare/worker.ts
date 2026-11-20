@@ -25,20 +25,21 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('../src/start-bridge/api-entry');
 
+const mounts = {
+  app: 'storefront',
+  rootHosts: ['storefront.tuturuuu.com'],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/storefront',
+  ...appConfig.mounts,
+};
+
 // Route handlers are server code (`server-only` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const handler = (
   import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
 ).then(({ endpoints }) =>
   createBridgeHandler<StorefrontEnvironment, WorkerContext>({
-    // One artifact: the subdomain root and the tuturuuu.com/storefront mount.
-    mounts: {
-      app: 'storefront',
-      rootHosts: ['storefront.tuturuuu.com'],
-      mountHosts: ['tuturuuu.com'],
-      basePath: '/storefront',
-      ...appConfig.mounts,
-    },
+    mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
     start: createBridgeStartHandler(),
@@ -68,7 +69,7 @@ export default {
       if (refused) return refused;
       const response = await (await handler)(request, env, ctx);
       return appConfig.wrapResponse
-        ? appConfig.wrapResponse(response, { request, env })
+        ? appConfig.wrapResponse(response, { request, env, mounts })
         : response;
     }
   ),

@@ -17,16 +17,20 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
 import {
   mountedPath,
   runtimeExpectationProblems,
   runtimeOutcomeFailure,
 } from '../../../scripts/start-bridge-codemod/runtime-outcome.mjs';
 import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/worker-config.mjs';
+import { resolveStorefrontNativeProfile } from './native-profile.ts';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-storefront-vite-staging';
+const PROFILE = resolveStorefrontNativeProfile(
+  process.env.VITE_STOREFRONT_NATIVE_PROFILE
+);
 const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = { '/': { redirect: '/demo' } };
@@ -98,7 +102,9 @@ test(
     const staged = await stageArtifact();
     t.after(() => rm(staged.scratch, { recursive: true, force: true }));
     const { config } = staged;
-    assert.equal(config.name, WORKER);
+    assert.equal(config.name, PROFILE.workerName);
+    assert.deepEqual(config.routes ?? [], []);
+    assert.equal(config.preview_urls, false);
     assert.equal(config.no_bundle, true);
     assert.equal(config.assets.run_worker_first, true);
     assert.deepEqual(
@@ -111,7 +117,7 @@ test(
       WORKER_CONFIG.compatibilityFlags
     );
     assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
-    assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
+    assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),
@@ -160,7 +166,14 @@ test(
           );
         },
         outboundService: (request) => {
-          egress.push(new URL(request.url).origin);
+          const url = new URL(request.url);
+          egress.push(url.origin);
+          if (url.pathname === '/api/v1/inventory/storefronts/demo') {
+            return Response.json(
+              { error: 'Use the disposable demo store' },
+              { status: 404 }
+            );
+          }
           return new Response('{"error":"denied by the smoke test"}', {
             status: 401,
             headers: { 'content-type': 'application/json' },
@@ -200,6 +213,7 @@ test(
               resolve({
                 status: response.statusCode ?? 0,
                 location: response.headers.location ?? null,
+                headers: response.headers,
                 body: Buffer.concat(chunks).toString('utf8'),
               });
             });
@@ -210,6 +224,17 @@ test(
       });
     const ROOT_HOST = MOUNTS.rootHosts[0];
     const get = (path) => call(path, ROOT_HOST);
+
+    await t.test(
+      'the storefront demo emits working assets on both host variants',
+      (t) =>
+        assertRenderedAssets(t, require, call, [
+          { host: ROOT_HOST, path: '/demo' },
+          ...(MOUNTED
+            ? [{ host: APEX, base: BASE, path: `${BASE}/demo` }]
+            : []),
+        ])
+    );
 
     await t.test('build identity is the exact compiled source', async () => {
       // A public deploy-verification endpoint, read anonymously as production
@@ -259,6 +284,38 @@ test(
     );
 
     if (MOUNTED) {
+      await t.test(
+        'the mounted checkout retains its login return and raw query',
+        async () => {
+          const bare = await call(`${BASE}?x=1&x=2&q=a%2Fb`, APEX);
+          assert.equal(bare.status, 307);
+          assert.equal(
+            new URL(bare.location, `http://${APEX}`).pathname,
+            `${BASE}/demo`
+          );
+          const query = '?x=1&x=2&q=a%2Fb';
+          const checkout = await call(`${BASE}/demo/checkout${query}`, APEX);
+          assert.equal(checkout.status, 307);
+          const login = new URL(checkout.location, `http://${APEX}`);
+          assert.equal(login.hostname, APEX);
+          assert.equal(login.pathname, `${BASE}/login`);
+          assert.equal(
+            login.searchParams.get('next'),
+            `/demo/checkout${query}`
+          );
+          const forward = await call(`${login.pathname}${login.search}`, APEX);
+          assert.equal(forward.status, 307);
+          const webLogin = new URL(forward.location, `http://${APEX}`);
+          assert.equal(webLogin.pathname, '/login');
+          const callback = new URL(webLogin.searchParams.get('returnUrl'));
+          assert.equal(callback.host, APEX);
+          assert.equal(callback.pathname, `${BASE}/verify-token`);
+          assert.equal(
+            (await call(`${BASE}/api/build-info`, APEX)).status,
+            200
+          );
+        }
+      );
       await t.test(
         'the apex mount serves every declared page alike',
         async () => {

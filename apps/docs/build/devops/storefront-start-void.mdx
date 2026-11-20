@@ -32,12 +32,11 @@ not as proof that the production profile failed to load.
 | Profile | Worker | Notes |
 | --- | --- | --- |
 | Source default (`void.config.ts`) | the staging Worker name | `TUTURUUU_NOINDEX=1`, no routes, `workers_dev` and `preview_urls` off |
-| Cutover artifact | `tuturuuu-storefront` | `storefront-cloudflare.yaml` rewrites the emitted Wrangler config: `TUTURUUU_NOINDEX=0`, `TUTURUUU_REQUIRE_SECRETS=1`, `preview_urls=false`, source maps off |
-| Wave-1 production profile (`VITE_STOREFRONT_NATIVE_PROFILE=production`) | `tuturuuu-storefront-wave1` | emits the production vars of `cloudflare/native-profiles.json` itself, so the sealed Worker is the built Worker |
+| Production and cutover artifact (`VITE_STOREFRONT_NATIVE_PROFILE=production`) | `tuturuuu-storefront-wave1` | emits the production vars of `cloudflare/native-profiles.json`, with `preview_urls=false` and source map uploads off |
 
 The Worker declares no routes. The hostname is attached at cutover by the
-release operator. With `TUTURUUU_REQUIRE_SECRETS=1` the Worker answers `503
-Service misconfigured` (no-store) until `INVENTORY_APP_URL`,
+release operator. The Worker answers `503 Service misconfigured` (no-store)
+until `INVENTORY_APP_URL`,
 `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` are present
 (`cloudflare/startup.ts`). Names only are recorded here.
 
@@ -46,6 +45,7 @@ Service misconfigured` (no-store) until `INVENTORY_APP_URL`,
 | Request | Behavior |
 | --- | --- |
 | `store.tuturuuu.com`, `storefront.tutur3u.com` | Canonical hosts. |
+| `tuturuuu.com/storefront` | The production Worker serves the mount and its descendants. The gateway operator adds the binding after admission. |
 | `storefront.tuturuuu.com`, `stores.tuturuuu.com`, `storefronts.tuturuuu.com` | `307` to `https://store.tuturuuu.com` with path and query preserved. |
 | `/` | Redirects to `/demo`. |
 | `/api/build-info` | Local build identity. |
@@ -61,8 +61,11 @@ response wrapper.
 `storefront-cloudflare.yaml` builds the Worker, rejects route-tree drift,
 records the emitted configuration receipt, runs the emitted-Worker runtime
 suites (`cloudflare/*.runtime.mjs`) and uploads `storefront-cutover-production-<source SHA>`
-(14 days). It never deploys. Do not run `build:cloudflare` on a shared
-development machine.
+(14 days). The production suite runs before sealing and after a clean archive
+restore. It checks the storefront demo and its emitted assets, the checkout
+login return, and bounded Inventory and Web forwarding fixtures on the apex.
+The archive carries no routes. Verify Inventory's scheduler handoff and the
+approved checkout and payment flows before Storefront routing.
 
 ## Wave-1 production profile
 
@@ -90,6 +93,7 @@ The sealed Worker answers by host:
 | --- | --- |
 | `store.tuturuuu.com` | Build identity `200`, `/` to `/demo`, a signed-out `/orders` to `/login?next=%2Forders` on the same host, `/login` to central Web login, static assets and `robots.txt` `200`, an unknown asset `404`, an unregistered `/api/*` path `401` |
 | `storefront.tuturuuu.com`, `stores.tuturuuu.com`, `storefronts.tuturuuu.com` | `307` to the same path and query on `store.tuturuuu.com`, including `/api/build-info` |
+| `tuturuuu.com` | `/storefront` redirects to `/storefront/demo`, while checkout login and assets stay in the mount. Unowned paths return `404`. |
 | any other host | `404 Not Found` before any app code runs |
 
 A path that is not an asset or an API route is a storefront slug and asks
@@ -124,22 +128,26 @@ local mechanics; production requires the approved public inputs.
 
 | Item | Value |
 | --- | --- |
-| Worker | `tuturuuu-storefront` |
-| Route | `store.tuturuuu.com/*`, plus the redirect aliases above; operator-attached |
+| Candidate Worker | `tuturuuu-storefront-wave1` |
+| Apex mount | `tuturuuu.com/storefront` and descendants via the gateway |
+| Canonical host and aliases | Capture the current provider mapping for `store.tuturuuu.com` and each alias before any change. |
 | Static assets binding | `ASSETS` (`dist/client`, `run_worker_first`) |
-| Build command | `bun run --cwd apps/storefront build:cloudflare` (the workflow then applies the production overrides) |
+| Build | Exact-commit `storefront-cloudflare.yaml` production archive |
 | Secrets (names) | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` |
 | Vars | `INVENTORY_APP_URL=https://inventory.tuturuuu.com`, `NEXT_PUBLIC_APP_URL=https://store.tuturuuu.com`, `NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com` |
-| Prior Vercel deployment | record the immutable deployment ID and URL of the `storefront` Vercel project before the switch |
-| Data | no database writes and no migrations |
+| Rollback | Capture the serving gateway deployment, current apex fallback and the immutable canonical deployment before activation. |
+| Data | Storefront forwards checkout writes to Inventory. The release applies no migrations. |
 
 ### Switch
 
-1. Record the source SHA, the artifact name and the Vercel deployment ID.
-2. Provision the secrets on `tuturuuu-storefront`, deploy the artifact, and
-   run the smoke below against the Worker's own address.
-3. Attach `store.tuturuuu.com` (a proxied route in front of the still-valid
-   Vercel origin where possible), then the alias hosts.
+1. Verify the source SHA, archive checksums and both URL variants. Record the
+   current gateway deployment and canonical deployment identifiers.
+2. Upload the candidate as a private Worker version with traffic and routes
+   untouched. Run the smoke with that version pinned, including a signed-in
+   checkout and an approved Inventory payment fixture.
+3. The release operator adds the apex mount once Inventory's scheduler and
+   checkout evidence is accepted. Move canonical or alias mappings only under
+   a separately authorized cutover.
 
 ### Smoke
 
@@ -183,8 +191,9 @@ verification. Provider writes require release-authority approval.
 
 - **Triggers:** 5xx above 1% for 5 minutes, a wrong redirect, a checkout
   handoff failure, or a private store served anonymously.
-- **Action:** remove the Worker route (or repoint the mapping) so the hosts
-  resolve to the recorded Vercel deployment. Never rebuild on the rollback path.
+- **Action:** restore the captured gateway deployment to roll back the apex
+  mount. If a separate host cutover also ran, restore its captured mapping.
+  Keep the underlying deployments available for both operations.
 - **Data:** a route rollback changes no catalog, order or payment data.
 - **Stability:** keep the Vercel project and domains for 14 consecutive stable
   days before decommissioning, which is a separate approval.

@@ -21,6 +21,7 @@ export default defineConfig({
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,
     preview_urls: false,
+    ...(profile.name === 'production' && { upload_source_maps: false }),
     vars: profile.vars,
     assets: {
       binding: 'ASSETS',
