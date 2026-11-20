@@ -73,6 +73,11 @@ Wrangler without publication. It seals the output with
 `shortener-native-artifact.py`, which reuses the reviewed Apps seal and restore
 implementation with Shortener's identity and public files.
 
+Both emitted profiles disable workers.dev and preview URLs and carry no
+routes or custom domains. Artifact sealing and the original and restored
+workerd suite enforce those settings. For later hosted staging acceptance,
+use isolated test data and a separately approved private ingress.
+
 Like Apps, Shortener's Wrangler use is admitted in
 `scripts/ci/wrangler-usage-allowlist.json` under the `void-wave1-publication`
 gap: Void rebuilds on deploy, so CI qualifies the exact emitted Worker with the

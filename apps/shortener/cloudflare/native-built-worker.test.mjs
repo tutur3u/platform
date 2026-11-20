@@ -84,10 +84,10 @@ test(
     assert.equal(config.assets.not_found_handling, 'none');
     assert.ok(config.compatibility_flags.includes('nodejs_compat'));
     assert.deepEqual(config.vars, PROFILE_VARS);
-    if (PROFILE === 'production') {
-      assert.equal(config.workers_dev, false);
-      assert.equal(config.preview_urls, false);
-    }
+    assert.equal(config.workers_dev, false);
+    assert.equal(config.preview_urls, false);
+    assert.equal(config.route, undefined);
+    assert.equal(config.routes, undefined);
     for (const name of PUBLIC_FILES)
       assert.equal(
         await sha256(join(app, 'dist/client', name)),

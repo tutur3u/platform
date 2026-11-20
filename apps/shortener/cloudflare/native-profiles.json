@@ -1,7 +1,7 @@
 {
   "staging": {
     "workerName": "tuturuuu-shortener-vite-staging",
-    "workersDev": true,
+    "workersDev": false,
     "vars": { "TUTURUUU_NOINDEX": "1" }
   },
   "production": {

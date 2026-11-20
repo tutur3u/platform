@@ -64,12 +64,29 @@ class ShortenerArtifactTest(unittest.TestCase):
         self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-shortener")
         self.assertIs(production.IDENTITY["workers_dev"], False)
         self.assertIs(production.IDENTITY["preview_urls"], False)
-        self.assertNotIn("preview_urls", artifact.IDENTITY)
+        self.assertIs(artifact.IDENTITY["workers_dev"], False)
+        self.assertIs(artifact.IDENTITY["preview_urls"], False)
         self.assertEqual(production.IDENTITY["vars"]["SHORTENER_CANONICAL_HOST_ENABLED"], "1")
         self.assertNotIn("TUTURUUU_NOINDEX", production.IDENTITY["vars"])
         self.assertNotIn("SHORTENER_CANONICAL_HOST_ENABLED", artifact.IDENTITY["vars"])
         with self.assertRaisesRegex(ValueError, "unknown VITE_SHORTENER_NATIVE_PROFILE"):
             wrapper.load("preview")
+
+    def test_staging_seal_rejects_public_ingress(self):
+        app, config = self.fixture()
+        emitted = app / "dist/native/wrangler.json"
+        for changes, error in (
+            ({"workers_dev": True}, "contract drift: workers_dev"),
+            ({"preview_urls": True}, "contract drift: preview_urls"),
+            (
+                {"routes": [{"pattern": "shortener-stage.example.invalid", "custom_domain": True}]},
+                "unreviewed emitted config field",
+            ),
+        ):
+            with self.subTest(changes=changes):
+                emitted.write_text(json.dumps({**config, **changes}))
+                with self.assertRaisesRegex(ValueError, error):
+                    artifact.artifact(app, SHA)
 
     def test_rejects_uninlined_node_env_and_dev_secret_in_server_code(self):
         app, _ = self.fixture()

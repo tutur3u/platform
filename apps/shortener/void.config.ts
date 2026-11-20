@@ -17,8 +17,8 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
-    workers_dev: profile.workersDev,
-    ...(profile.workersDev ? {} : { preview_urls: false }),
+    workers_dev: false,
+    preview_urls: false,
     vars: profile.vars,
     assets: {
       binding: 'ASSETS',

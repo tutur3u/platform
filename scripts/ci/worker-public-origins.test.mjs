@@ -48,7 +48,6 @@ const PENDING = new Map([
   ['apps/ops-hub/cloudflare.config.ts', 'workers_dev enabled'],
   ['apps/pay/void.config.ts', 'preview_urls unset'],
   ['apps/roadmap/void.config.ts', 'Web proxies to its workers.dev origin'],
-  ['apps/shortener/void.config.ts', 'staging profile uses workers.dev'],
   ['apps/teach/void.config.ts', 'workers_dev enabled'],
   ['apps/turbo-cache/cloudflare.config.ts', 'preview_urls unset'],
 ]);
