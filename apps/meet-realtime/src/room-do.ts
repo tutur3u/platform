@@ -60,8 +60,7 @@ export interface MeetRoomEnv extends TurnEnv, MeetRoomFormsEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
-  /** Server-only Meet AI controls; absent = deny. */
-  MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+  MEET_AI_ENABLED_WORKSPACE_IDS?: string; // Server-only. Absent = deny.
   MEET_AI_ALL_WORKSPACES?: string; // only the reviewed value counts
   MEET_AI_DISABLED?: string;
   MEET_AI_DISABLED_WORKSPACE_IDS?: string;
