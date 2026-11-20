@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(23);
+select plan(25);
 
 select is(
   (select count(*) from pg_catalog.pg_class c
@@ -104,6 +104,31 @@ select isnt(private.schedule_finance_bill_split_reminder(
   '97049000-0000-4000-8000-000000000010','97049000-0000-4000-8000-000000000001',
   '97049000-0000-4000-8000-000000000020','97049000-0000-4000-8000-000000000022'
 ), null::uuid, 'The split owner can schedule a bounded reminder for a debtor');
+
+select private.create_finance_bill_split(
+  '97049000-0000-4000-8000-000000000010', '97049000-0000-4000-8000-000000000001',
+  '97049000-0000-4000-8000-000000000040', 'Synthetic dinner', 'VND', 0,
+  '[{"id":"97049000-0000-4000-8000-000000000021","member_id":"97049000-0000-4000-8000-000000000001","display_name":"Recipient"},
+    {"id":"97049000-0000-4000-8000-000000000022","member_id":"97049000-0000-4000-8000-000000000002","display_name":"Sender"}]',
+  '{"direct":[]}',
+  '{"settlement":{"transfers":[{"from":"97049000-0000-4000-8000-000000000022","to":"97049000-0000-4000-8000-000000000021","amountMinor":7}]}}',
+  true
+);
+select private.schedule_finance_bill_split_reminder(
+  '97049000-0000-4000-8000-000000000010','97049000-0000-4000-8000-000000000001',
+  '97049000-0000-4000-8000-000000000040','97049000-0000-4000-8000-000000000022'
+);
+update private.finance_bill_split_reminders
+set due_at = now()
+where split_id = '97049000-0000-4000-8000-000000000040';
+
+select is(private.dispatch_finance_bill_split_reminders(20), '{"canceled":0,"delivered":1}'::jsonb,
+  'A valid, unsettled reminder is delivered once');
+select is((select action_url from public.notifications
+  where entity_id = '97049000-0000-4000-8000-000000000040'
+    and user_id = '97049000-0000-4000-8000-000000000002'),
+  '/97049000-0000-4000-8000-000000000010/finance/bill-splits/97049000-0000-4000-8000-000000000040/settlement',
+  'The intended recipient gets the signed-in settlement link');
 
 select is(private.report_finance_bill_split_with_proof(
   '97049000-0000-4000-8000-000000000010','97049000-0000-4000-8000-000000000002',

@@ -3995,6 +3995,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeBillSplitConfirmed => 'Đã xác nhận';
 
   @override
+  String get financeBillSplitAttachProof => 'Đính kèm bằng chứng (tối đa 256 KB)';
+
+  @override
+  String get financeBillSplitProofAttached => 'Đã đính kèm bằng chứng';
+
+  @override
+  String get financeBillSplitProofUnavailable => 'Hãy chọn ảnh PNG, JPEG hoặc WebP tối đa 256 KB.';
+
+  @override
+  String get financeBillSplitViewProof => 'Xem bằng chứng thanh toán';
+
+  @override
   String get financeBillSplits => 'Chia hóa đơn';
 
   @override

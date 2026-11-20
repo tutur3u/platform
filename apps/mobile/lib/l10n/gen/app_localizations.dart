@@ -7651,6 +7651,30 @@ abstract class AppLocalizations {
   /// **'Confirmed'**
   String get financeBillSplitConfirmed;
 
+  /// No description provided for @financeBillSplitAttachProof.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach proof (up to 256 KB)'**
+  String get financeBillSplitAttachProof;
+
+  /// No description provided for @financeBillSplitProofAttached.
+  ///
+  /// In en, this message translates to:
+  /// **'Proof attached'**
+  String get financeBillSplitProofAttached;
+
+  /// No description provided for @financeBillSplitProofUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a PNG, JPEG, or WebP image up to 256 KB.'**
+  String get financeBillSplitProofUnavailable;
+
+  /// No description provided for @financeBillSplitViewProof.
+  ///
+  /// In en, this message translates to:
+  /// **'View payment proof'**
+  String get financeBillSplitViewProof;
+
   /// No description provided for @financeBillSplits.
   ///
   /// In en, this message translates to:

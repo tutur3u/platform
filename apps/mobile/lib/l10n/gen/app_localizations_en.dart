@@ -4010,6 +4010,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeBillSplitConfirmed => 'Confirmed';
 
   @override
+  String get financeBillSplitAttachProof => 'Attach proof (up to 256 KB)';
+
+  @override
+  String get financeBillSplitProofAttached => 'Proof attached';
+
+  @override
+  String get financeBillSplitProofUnavailable => 'Choose a PNG, JPEG, or WebP image up to 256 KB.';
+
+  @override
+  String get financeBillSplitViewProof => 'View payment proof';
+
+  @override
   String get financeBillSplits => 'Bill splits';
 
   @override

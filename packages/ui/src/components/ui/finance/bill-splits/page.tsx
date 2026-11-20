@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/internal-api/finance-bill-splits';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useState } from 'react';
 import { Button } from '../../button';
 import { Skeleton } from '../../skeleton';
 import { BillSplitActivityPanel } from './activity';
@@ -28,6 +29,7 @@ export function BillSplitsPage({
   canReadBank,
   realtimeEnabled,
   remindersEnabled,
+  platformOrigin,
   splitId,
   participantId,
   settlement,
@@ -41,11 +43,13 @@ export function BillSplitsPage({
   canReadBank: boolean;
   realtimeEnabled: boolean;
   remindersEnabled: boolean;
+  platformOrigin: string;
   splitId?: string;
   participantId?: string;
   settlement?: boolean;
 }) {
   const t = useTranslations('bill-splits');
+  const [copied, setCopied] = useState<string>();
   const realtime = useBillSplitRealtime(wsId, splitId, realtimeEnabled);
   const base = `/${locale}/${wsId}/bill-splits`;
   const listing = useQuery({
@@ -71,6 +75,15 @@ export function BillSplitsPage({
         />
       );
     const split = detail.data;
+    const suffix = participantId
+      ? `/participants/${participantId}`
+      : settlement
+        ? '/settlement'
+        : '';
+    const signedInLink = new URL(
+      `/${locale}/${wsId}/finance/bill-splits/${splitId}${suffix}`,
+      platformOrigin
+    ).href;
     const participant = split.participants.find(
       ({ id }) => id === participantId
     );
@@ -102,6 +115,18 @@ export function BillSplitsPage({
             realtime={realtime}
           />
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            void navigator.clipboard
+              .writeText(signedInLink)
+              .then(() => setCopied(signedInLink))
+              .catch(() => {});
+          }}
+        >
+          {t(copied === signedInLink ? 'copied' : 'copy-signed-in-link')}
+        </Button>
         {!participantId && (
           <nav aria-label={t('participants')} className="flex flex-wrap gap-2">
             {split.participants.map((participant) => (

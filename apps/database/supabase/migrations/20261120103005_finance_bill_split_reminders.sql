@@ -131,10 +131,11 @@ begin
       and public.should_send_notification(job.recipient_id, 'system_announcement', 'in_app', 'workspace', job.ws_id) then
 
       insert into public.notifications (
-        id, ws_id, user_id, type, title, data, entity_type, entity_id, created_by, scope
+        id, ws_id, user_id, type, title, data, entity_type, entity_id, created_by, scope, action_url
       ) select job.id, job.ws_id, job.recipient_id, 'system_announcement', split.title,
         jsonb_build_object('openTarget', 'finance', 'wsId', job.ws_id, 'splitId', job.split_id),
-        'bill_split', job.split_id, job.actor_id, 'workspace'
+        'bill_split', job.split_id, job.actor_id, 'workspace',
+        '/' || job.ws_id::text || '/finance/bill-splits/' || job.split_id::text || '/settlement'
       from private.finance_bill_splits as split
       where split.ws_id = job.ws_id and split.id = job.split_id
       on conflict (id) do nothing;

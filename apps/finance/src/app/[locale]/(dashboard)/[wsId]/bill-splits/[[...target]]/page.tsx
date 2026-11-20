@@ -3,6 +3,7 @@ import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
 import { z } from 'zod';
+import { TTR_URL } from '@/constants/common';
 import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 const targetId = z.uuid().transform((id) => id.toLowerCase());
@@ -46,6 +47,7 @@ export default async function WorkspaceBillSplitsPage({
       currency={context.currency}
       canCreate={canCreate}
       canShare={canShare}
+      platformOrigin={TTR_URL}
       remindersEnabled={
         process.env.ENABLE_FINANCE_BILL_SPLIT_REMINDERS === 'true'
       }

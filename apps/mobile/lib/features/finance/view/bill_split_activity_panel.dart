@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
@@ -62,37 +64,133 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
     }
   }
 
-  Future<String?> _value(
+  Future<({String text, Map<String, String>? proof})?> _value(
     BuildContext context, {
     required String title,
     required bool comment,
   }) async {
     final controller = TextEditingController();
+    Map<String, String>? proof;
+    var reading = false;
+    var rejected = false;
     try {
-      return await showAppSheet<String>(
+      return await showAppSheet<({String text, Map<String, String>? proof})>(
         context: context,
-        builder: (context) => AppSheetScaffold(
-          title: title,
-          actions: [
-            AppButton.primary(
-              onPressed: () =>
-                  Navigator.of(context).pop(controller.text.trim()),
-              child: Text(context.l10n.commonSave),
+        builder: (_) => StatefulBuilder(
+          builder: (context, update) => AppSheetScaffold(
+            title: title,
+            actions: [
+              AppButton.primary(
+                onPressed: reading
+                    ? null
+                    : () {
+                        final value = (
+                          text: controller.text.trim(),
+                          proof: proof,
+                        );
+                        Navigator.of(context).pop(value);
+                      },
+                child: Text(context.l10n.commonSave),
+              ),
+            ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppLayout.itemGap,
+              children: [
+                AppTextField(
+                  label: title,
+                  controller: controller,
+                  maxLength: comment ? 2000 : 24,
+                  maxLines: comment ? 3 : 1,
+                  keyboardType: comment
+                      ? TextInputType.multiline
+                      : const TextInputType.numberWithOptions(decimal: true),
+                ),
+                if (!comment)
+                  AppButton.secondary(
+                    onPressed: reading
+                        ? null
+                        : () async {
+                            update(() {
+                              reading = true;
+                              rejected = false;
+                            });
+                            try {
+                              final picked = await FilePicker.pickFiles();
+                              final file = picked.firstOrNull;
+                              if (file != null) {
+                                final next = await _readProof(file);
+                                if (context.mounted) {
+                                  update(() {
+                                    proof = next;
+                                  });
+                                }
+                              }
+                            } on Object {
+                              if (context.mounted) {
+                                update(() {
+                                  rejected = true;
+                                });
+                              }
+                            } finally {
+                              if (context.mounted) {
+                                update(() {
+                                  reading = false;
+                                });
+                              }
+                            }
+                          },
+                    child: Text(
+                      proof == null
+                          ? context.l10n.financeBillSplitAttachProof
+                          : context.l10n.financeBillSplitProofAttached,
+                    ),
+                  ),
+                if (rejected)
+                  AppStateMessage.inline(
+                    icon: LucideIcons.circleAlert,
+                    title: context.l10n.financeBillSplitProofUnavailable,
+                  ),
+              ],
             ),
-          ],
-          child: AppTextField(
-            label: title,
-            controller: controller,
-            maxLength: comment ? 2000 : 24,
-            maxLines: comment ? 3 : 1,
-            keyboardType: comment
-                ? TextInputType.multiline
-                : const TextInputType.numberWithOptions(decimal: true),
           ),
         ),
       );
     } finally {
       WidgetsBinding.instance.addPostFrameCallback((_) => controller.dispose());
+    }
+  }
+
+  Future<void> _viewProof(String report) async {
+    final encoded = Uri.encodeComponent(report);
+    final labels = context.l10n;
+    try {
+      final bytes = await widget.api.getBytes(
+        '${widget.path}/$encoded/proof',
+        maxBytes: 262144,
+      );
+      if (!mounted) return;
+      await showAppSheet<void>(
+        context: context,
+        builder: (_) => AppSheetScaffold(
+          title: labels.financeBillSplitViewProof,
+          child: Image.memory(
+            bytes,
+            cacheWidth: 1024,
+            errorBuilder: (context, _, _) =>
+                Text(labels.financeBillSplitProofUnavailable),
+          ),
+        ),
+      );
+    } on Object {
+      if (!mounted) return;
+      await showAppSheet<void>(
+        context: context,
+        builder: (_) => AppSheetScaffold(
+          title: labels.financeBillSplitViewProof,
+          child: Text(labels.financeBillSplitProofUnavailable),
+        ),
+      );
     }
   }
 
@@ -139,8 +237,13 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
                         title: l10n.financeBillSplitComment,
                         comment: true,
                       );
-                      if (mounted && comment != null && comment.isNotEmpty) {
-                        await _send({'kind': 'comment', 'comment': comment});
+                      if (mounted &&
+                          comment != null &&
+                          comment.text.isNotEmpty) {
+                        await _send({
+                          'kind': 'comment',
+                          'comment': comment.text,
+                        });
                       }
                     },
               child: Text(l10n.financeBillSplitComment),
@@ -166,7 +269,7 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
                                   );
                                   if (!mounted || amount == null) return;
                                   final minor = billSplitMinorAmount(
-                                    amount,
+                                    amount.text,
                                     digits,
                                   );
                                   if (minor == null ||
@@ -179,6 +282,8 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
                                     'from': transfer['from'] as String,
                                     'to': transfer['to'] as String,
                                     'amountMinor': minor,
+                                    if (amount.proof case final proof?)
+                                      'proof': proof,
                                   });
                                 },
                           child: Text(l10n.financeBillSplitPaid),
@@ -208,6 +313,9 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
                           name(event['from']),
                           name(event['to']),
                         ),
+                        onTap: event['hasProof'] == true
+                            ? () => _viewProof(event['id'] as String)
+                            : null,
                         subtitle: confirmed.contains(event['id'])
                             ? l10n.financeBillSplitConfirmed
                             : l10n.financeBillSplitPending,
@@ -240,3 +348,21 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
 
 Iterable<Map<String, dynamic>> _rows(Object? value) =>
     value is List<Object?> ? value.whereType<Map<String, dynamic>>() : const [];
+
+Future<Map<String, String>> _readProof(PlatformFile file) async {
+  final type = switch (file.name.split('.').last.toLowerCase()) {
+    'png' => 'image/png',
+    'jpg' || 'jpeg' => 'image/jpeg',
+    'webp' => 'image/webp',
+    _ => throw const FormatException('Unsupported proof format'),
+  };
+  final length = await file.length();
+  if (length == 0 || length > 262144) {
+    throw const FormatException('Invalid proof size');
+  }
+  final bytes = await file.readAsBytes();
+  if (bytes.isEmpty || bytes.length > 262144) {
+    throw const FormatException('Invalid proof size');
+  }
+  return {'contentType': type, 'base64': base64Encode(bytes)};
+}
