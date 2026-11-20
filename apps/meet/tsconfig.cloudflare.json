@@ -99,6 +99,7 @@
     "../../packages/realtime/src/meet/room-live-transcript.ts",
     "../../packages/realtime/src/meet/room-live-usage.ts",
     "../../packages/realtime/src/meet/room-live.ts",
+    "../../packages/realtime/src/meet/room-mira-consent.ts",
     "../../packages/realtime/src/meet/room-mira-private.ts",
     "../../packages/realtime/src/meet/room-options.ts",
     "../../packages/realtime/src/meet/room-outcome.ts",
