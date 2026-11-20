@@ -246,3 +246,8 @@ b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_develo
 # fixture in the release-recipe token-refusal test. Not a credential; the source now
 # assembles it at runtime. Security Desk ruling 18 Nov. Exact fingerprint only.
 e34bb0320437291226babacb4ec5170a5a9e3c4a:scripts/ci/release-vercel-queue.test.mjs:jwt:416
+
+# Synthetic HMAC signing keys used by the Mastermind fleet publisher and route tests.
+# Each exception is scoped to the historical commit, test path, rule and line.
+11517227eb76d7cdce50f8749c4f580e762955ad:scripts/mastermind-fleet/publish.test.mjs:generic-api-key:10
+11517227eb76d7cdce50f8749c4f580e762955ad:apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts:generic-api-key:12

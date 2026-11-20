@@ -570,3 +570,15 @@ test('the #6990 discord-client-id fingerprint is suppressed while new findings f
     ['discord-client-id@apps/web/src/new-leak.ts']
   );
 });
+
+test('Mastermind fleet signing fixtures have exact ignore fingerprints', () => {
+  const revision = '11517227eb76d7cdce50f8749c4f580e762955ad';
+  const lines = fs
+    .readFileSync(path.resolve(__dirname, '../../.gitleaksignore'), 'utf8')
+    .split('\n');
+  const fingerprints = lines.filter((line) => line.startsWith(`${revision}:`));
+  assert.deepEqual(fingerprints, [
+    `${revision}:scripts/mastermind-fleet/publish.test.mjs:generic-api-key:10`,
+    `${revision}:apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts:generic-api-key:12`,
+  ]);
+});
