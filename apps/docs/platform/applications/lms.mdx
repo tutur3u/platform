@@ -88,6 +88,18 @@ records the verified actor and retains the existing membership date on role
 changes. A creator with draft permission can save their class for a manager
 to publish or assign staff.
 
+### Contacts operations that change enrollment
+
+A Contacts merge that transfers a teacher assignment requires
+`manage_courses` in addition to Contacts merge permissions. The atomic merge
+and the phased membership transfer enforce the same grant. Ordinary contacts
+and student enrollment history follow the existing merge flow.
+
+Guest membership synchronization retains ordinary guest groups for contact
+operators. Published courses, groups with learning content, and teacher
+assignments require the course grant. Guest changes use the verified Contacts
+actor for the membership audit.
+
 ## Education center integrations
 
 Current education-center operations use Contacts groups for rosters, class

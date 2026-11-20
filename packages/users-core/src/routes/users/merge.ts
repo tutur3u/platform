@@ -278,6 +278,31 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    if (withoutPermission('manage_courses')) {
+      const { data: teachingAssignments, error: assignmentError } =
+        await supabaseAuth
+          .from('workspace_user_groups_users')
+          .select('user_id')
+          .eq('user_id', sourceId)
+          .eq('role', 'TEACHER')
+          .limit(1);
+      if (assignmentError) {
+        return NextResponse.json(
+          { message: 'Unable to verify course assignments' },
+          { status: 500 }
+        );
+      }
+      if (teachingAssignments?.length) {
+        return NextResponse.json(
+          {
+            message:
+              'Course management permission is required to merge this contact',
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     // Admin client for data migration — only created AFTER workspace
     // membership is validated above. Bypasses RLS and auth.uid()-based
     // triggers (e.g. handle_post_approval on user_group_posts which

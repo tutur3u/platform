@@ -316,6 +316,13 @@ const storageAclReviewedLater = [
     reason:
       'Creates the NOLOGIN memory roles and schemas. It never names workspace_storage, grants authenticated or service_role, or runs dynamic SQL; its execute literals are PostgREST paths and privilege-check arguments.',
   },
+  {
+    file: 'apps/database/supabase/migrations/20261124065200_protect_teacher_contact_merges.sql',
+    sourceDigest:
+      'c67ba55471ee8fb5e17222c354a00c497e12e47398744cc02293e77a94118739',
+    reason:
+      "Adds the manage_courses teacher-transfer fence to the Contacts merge routines. It never names workspace_storage, changes role membership or runs dynamic SQL; the only escape literal is the E'\\n\\n[Merged from user ...]' note separator in an UPDATE of public.workspace_users, and its ACL statements touch only the three merge routines it defines.",
+  },
 ];
 
 function withoutReviewedLater(sources, reviewed = storageAclReviewedLater) {

@@ -108,6 +108,7 @@ describe('workspace user mutation handlers', () => {
       }
     );
     expect(mocks.syncWorkspaceUserGuestMembership).toHaveBeenCalledWith({
+      actorId: actor.id,
       isGuest: false,
       sbAdmin: expect.anything(),
       userId: 'user-1',

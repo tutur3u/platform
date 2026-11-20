@@ -284,6 +284,7 @@ export async function handleUpdateWorkspaceUserRequest(
 
   if (is_guest !== undefined) {
     const guestWarning = await syncWorkspaceUserGuestMembership({
+      actorId: actor.id,
       isGuest: is_guest,
       sbAdmin,
       userId,

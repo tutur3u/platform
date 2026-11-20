@@ -100,14 +100,13 @@ export async function handleCreateWorkspaceUserRequest(
   let warning: string | undefined;
   if (is_guest && createdUser?.id) {
     warning = await syncWorkspaceUserGuestMembership({
+      actorId: actor.id,
       isGuest: true,
       sbAdmin,
       userId: createdUser.id,
       warningMessages: {
         linkFailed: 'User created, but failed to link to guest group.',
         noGuestGroups:
-          'User created, but no guest group found in this workspace.',
-        resolveFailed:
           'User created, but no guest group found in this workspace.',
       },
       wsId,

@@ -1,205 +1,71 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { syncWorkspaceUserGuestMembership } from './guest-membership';
 
-const mocks = vi.hoisted(() => ({
-  serverLoggerError: vi.fn(),
-}));
-
-const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    error: (...args: Parameters<typeof mocks.serverLoggerError>) =>
-      mocks.serverLoggerError(...args),
-  },
-}));
-
-import {
-  DEFAULT_GUEST_MEMBERSHIP_WARNINGS,
-  syncWorkspaceUserGuestMembership,
-} from './guest-membership';
-
-function createGuestGroupsQuery(
-  result: Promise<{ data: Array<{ id: string | null }> | null; error: unknown }>
-) {
-  let eqCallCount = 0;
-  const query = {
-    eq: vi.fn(() => {
-      eqCallCount += 1;
-      return eqCallCount >= 2 ? result : query;
-    }),
-    select: vi.fn(() => query),
+function fixture(result: { data: boolean | null; error?: { code: string } }) {
+  const rpc = vi.fn().mockResolvedValue(result);
+  const schema = vi.fn().mockReturnValue({ rpc });
+  const sbAdmin = { schema } as unknown as TypedSupabaseClient;
+  const input = {
+    actorId: 'verified-user',
+    isGuest: true,
+    sbAdmin,
+    wsId: 'workspace',
+    userId: 'contact',
   };
-
-  return query;
+  return { input, rpc, schema };
 }
 
-describe('syncWorkspaceUserGuestMembership', () => {
-  const upsertMock = vi.fn();
-  const deleteMock = vi.fn();
-  const deleteEqMock = vi.fn();
-  const deleteInMock = vi.fn();
+afterEach(() => vi.restoreAllMocks());
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    upsertMock.mockResolvedValue({ error: null });
-    deleteInMock.mockResolvedValue({ error: null });
-    deleteEqMock.mockReturnValue({ in: deleteInMock });
-    deleteMock.mockReturnValue({ eq: deleteEqMock });
-  });
-
-  function createAdminClient({
-    guestGroups = [{ id: 'guest-group-1' }, { id: 'guest-group-2' }],
-    guestGroupsError = null,
-  }: {
-    guestGroups?: Array<{ id: string | null }>;
-    guestGroupsError?: unknown;
-  } = {}) {
-    const guestGroupsQuery = createGuestGroupsQuery(
-      Promise.resolve({
-        data: guestGroups,
-        error: guestGroupsError,
-      })
-    );
-    const fromMock = vi.fn((table: string) => {
-      if (table === 'workspace_user_groups') {
-        return guestGroupsQuery;
-      }
-
-      if (table === 'workspace_user_groups_users') {
-        return {
-          delete: deleteMock,
-          upsert: upsertMock,
-        };
-      }
-
-      throw new Error(`Unexpected table ${table}`);
-    });
-
-    return {
-      client: { from: fromMock } as unknown as TypedSupabaseClient,
-      fromMock,
-      guestGroupsQuery,
-    };
-  }
-
-  it('adds marked guest users to every guest group without overwriting existing roles', async () => {
-    const { client, guestGroupsQuery } = createAdminClient();
-
-    const warning = await syncWorkspaceUserGuestMembership({
-      isGuest: true,
-      sbAdmin: client,
-      userId: 'user-1',
-      wsId: 'ws-1',
-    });
-
-    expect(warning).toBeUndefined();
-    expect(guestGroupsQuery.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
-    expect(guestGroupsQuery.eq).toHaveBeenCalledWith('is_guest', true);
-    expect(upsertMock).toHaveBeenCalledWith(
-      [
-        { group_id: 'guest-group-1', user_id: 'user-1' },
-        { group_id: 'guest-group-2', user_id: 'user-1' },
-      ],
-      {
-        ignoreDuplicates: true,
-        onConflict: 'group_id,user_id',
-      }
-    );
-  });
-
-  it('removes unmarked users from every guest group', async () => {
-    const { client } = createAdminClient();
-
-    const warning = await syncWorkspaceUserGuestMembership({
-      isGuest: false,
-      sbAdmin: client,
-      userId: 'user-1',
-      wsId: 'ws-1',
-    });
-
-    expect(warning).toBeUndefined();
-    expect(deleteMock).toHaveBeenCalledTimes(1);
-    expect(deleteEqMock).toHaveBeenCalledWith('user_id', 'user-1');
-    expect(deleteInMock).toHaveBeenCalledWith('group_id', [
-      'guest-group-1',
-      'guest-group-2',
-    ]);
-  });
-
-  it('returns a resolve warning when guest groups cannot be loaded', async () => {
-    const { client } = createAdminClient({
-      guestGroups: [],
-      guestGroupsError: { message: 'multiple rows' },
-    });
-
-    const warning = await syncWorkspaceUserGuestMembership({
-      isGuest: true,
-      sbAdmin: client,
-      userId: 'user-1',
-      wsId: 'ws-1',
-    });
-
-    expect(warning).toBe(DEFAULT_GUEST_MEMBERSHIP_WARNINGS.resolveFailed);
-    expect(upsertMock).not.toHaveBeenCalled();
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Error resolving guest workspace user groups:',
-      expect.objectContaining({
-        userId: 'user-1',
-        wsId: 'ws-1',
-      })
-    );
-  });
-
-  it('returns a link warning when guest membership cannot be added', async () => {
-    upsertMock.mockResolvedValueOnce({ error: { message: 'insert failed' } });
-    const { client } = createAdminClient();
-
-    const warning = await syncWorkspaceUserGuestMembership({
-      isGuest: true,
-      sbAdmin: client,
-      userId: 'user-1',
-      wsId: 'ws-1',
-    });
-
-    expect(warning).toBe(DEFAULT_GUEST_MEMBERSHIP_WARNINGS.linkFailed);
-  });
-
-  it('returns an unlink warning when guest membership cannot be removed', async () => {
-    deleteInMock.mockResolvedValueOnce({ error: { message: 'delete failed' } });
-    const { client } = createAdminClient();
-
-    const warning = await syncWorkspaceUserGuestMembership({
-      isGuest: false,
-      sbAdmin: client,
-      userId: 'user-1',
-      wsId: 'ws-1',
-    });
-
-    expect(warning).toBe(DEFAULT_GUEST_MEMBERSHIP_WARNINGS.unlinkFailed);
-  });
-
-  it('warns only when marking a user as guest and no guest groups exist', async () => {
-    const markedClient = createAdminClient({ guestGroups: [] }).client;
-    const unmarkedClient = createAdminClient({ guestGroups: [] }).client;
-
+it.each([true, false])(
+  'attributes a successful guest update with isGuest=%s',
+  async (isGuest) => {
+    const { input, rpc, schema } = fixture({ data: true });
     await expect(
-      syncWorkspaceUserGuestMembership({
-        isGuest: true,
-        sbAdmin: markedClient,
-        userId: 'user-1',
-        wsId: 'ws-1',
-      })
-    ).resolves.toBe(DEFAULT_GUEST_MEMBERSHIP_WARNINGS.noGuestGroups);
-
-    await expect(
-      syncWorkspaceUserGuestMembership({
-        isGuest: false,
-        sbAdmin: unmarkedClient,
-        userId: 'user-1',
-        wsId: 'ws-1',
-      })
+      syncWorkspaceUserGuestMembership({ ...input, isGuest })
     ).resolves.toBeUndefined();
-  });
+    expect(schema).toHaveBeenCalledWith('private');
+    expect(rpc).toHaveBeenCalledWith('admin_sync_guest_group_memberships', {
+      p_actor_auth_uid: 'verified-user',
+      p_ws_id: 'workspace',
+      p_user_id: 'contact',
+      p_is_guest: isGuest,
+    });
+  }
+);
+
+it('preserves the no-eligible-group warning when marking a contact as a guest', async () => {
+  const { input } = fixture({ data: false });
+  await expect(
+    syncWorkspaceUserGuestMembership({
+      ...input,
+      warningMessages: { noGuestGroups: 'No matching group' },
+    })
+  ).resolves.toBe('No matching group');
+  await expect(
+    syncWorkspaceUserGuestMembership({
+      ...input,
+      isGuest: false,
+    })
+  ).resolves.toBeUndefined();
 });
+
+it.each([true, false])(
+  'avoids a legacy write fallback if guest sync fails with isGuest=%s',
+  async (isGuest) => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { input, rpc } = fixture({ data: null, error: { code: 'PGRST202' } });
+    await expect(
+      syncWorkspaceUserGuestMembership({
+        ...input,
+        isGuest,
+        warningMessages: {
+          linkFailed: 'Link unavailable',
+          unlinkFailed: 'Unlink unavailable',
+        },
+      })
+    ).resolves.toBe(isGuest ? 'Link unavailable' : 'Unlink unavailable');
+    expect(rpc).toHaveBeenCalledTimes(1);
+  }
+);

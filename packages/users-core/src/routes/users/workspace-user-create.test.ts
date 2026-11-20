@@ -98,14 +98,13 @@ describe('workspace user create handler', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.syncWorkspaceUserGuestMembership).toHaveBeenCalledWith({
+      actorId: actor.id,
       isGuest: true,
       sbAdmin: expect.anything(),
       userId: 'created-user-1',
       warningMessages: {
         linkFailed: 'User created, but failed to link to guest group.',
         noGuestGroups:
-          'User created, but no guest group found in this workspace.',
-        resolveFailed:
           'User created, but no guest group found in this workspace.',
       },
       wsId: 'workspace-1',

@@ -6,8 +6,8 @@ const createClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const adminRpcMock = vi.fn();
-const guestGroupUpsertMock = vi.fn();
-const guestGroupsResultMock = vi.fn();
+const privateRpcMock = vi.fn();
+const schemaMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -30,19 +30,6 @@ vi.mock('@/lib/workspace-api-key', () => ({
 
 import { POST } from './route';
 
-function createGuestGroupsQuery() {
-  let eqCallCount = 0;
-  const query = {
-    eq: vi.fn(() => {
-      eqCallCount += 1;
-      return eqCallCount >= 2 ? guestGroupsResultMock() : query;
-    }),
-    select: vi.fn(() => query),
-  };
-
-  return query;
-}
-
 describe('workspace users create route audit actor forwarding', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -57,25 +44,13 @@ describe('workspace users create route audit actor forwarding', () => {
       },
       error: null,
     });
-    guestGroupsResultMock.mockResolvedValue({
-      data: [{ id: 'guest-group-1' }],
-      error: null,
-    });
-    guestGroupUpsertMock.mockResolvedValue({ error: null });
+    privateRpcMock.mockResolvedValue({ data: true, error: null });
+    schemaMock.mockReturnValue({ rpc: privateRpcMock });
 
     createAdminClientMock.mockResolvedValue({
       rpc: adminRpcMock,
+      schema: schemaMock,
       from: (table: string) => {
-        if (table === 'workspace_user_groups') {
-          return createGuestGroupsQuery();
-        }
-
-        if (table === 'workspace_user_groups_users') {
-          return {
-            upsert: guestGroupUpsertMock,
-          };
-        }
-
         throw new Error(`Unexpected table ${table}`);
       },
     });
@@ -133,11 +108,7 @@ describe('workspace users create route audit actor forwarding', () => {
     expect(response.status).toBe(200);
   });
 
-  it('links created guest users to all workspace guest groups', async () => {
-    guestGroupsResultMock.mockResolvedValue({
-      data: [{ id: 'guest-group-1' }, { id: 'guest-group-2' }],
-      error: null,
-    });
+  it('links created guest users through the audited guest group writer', async () => {
     const request = new NextRequest(
       'http://localhost/api/v1/workspaces/ws-1/users',
       {
@@ -164,14 +135,14 @@ describe('workspace users create route audit actor forwarding', () => {
         },
       })
     );
-    expect(guestGroupUpsertMock).toHaveBeenCalledWith(
-      [
-        { group_id: 'guest-group-1', user_id: 'created-user-1' },
-        { group_id: 'guest-group-2', user_id: 'created-user-1' },
-      ],
+    expect(schemaMock).toHaveBeenCalledWith('private');
+    expect(privateRpcMock).toHaveBeenCalledWith(
+      'admin_sync_guest_group_memberships',
       {
-        ignoreDuplicates: true,
-        onConflict: 'group_id,user_id',
+        p_actor_auth_uid: 'actor-auth-1',
+        p_is_guest: true,
+        p_user_id: 'created-user-1',
+        p_ws_id: 'ws-1',
       }
     );
     await expect(response.json()).resolves.toEqual({

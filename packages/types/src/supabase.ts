@@ -29229,6 +29229,15 @@ export type Database = {
         };
         Returns: undefined;
       };
+      admin_sync_guest_group_memberships: {
+        Args: {
+          p_actor_auth_uid: string;
+          p_is_guest: boolean;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       admin_update_user_group_metric_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;
@@ -29868,6 +29877,10 @@ export type Database = {
         Returns: boolean;
       };
       can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
+      can_merge_teacher_contact: {
+        Args: { p_actor_id: string; p_source_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       can_review_report_entry: {
         Args: {
           p_actor_auth_uid: string;
