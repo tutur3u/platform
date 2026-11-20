@@ -10,6 +10,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/design_render_harness.dart';
+
 import '../../../helpers/pump_app.dart';
 
 class Permissions extends Mock implements WorkspacePermissionsRepository {
@@ -373,6 +375,56 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.drainShadToastTimers();
   });
+
+  for (final theme in ['light', 'dark']) {
+    testWidgets('additional profile fields require private info in $theme', (
+      tester,
+    ) async {
+      const fields = CrmUsersResult(
+        users: [
+          CrmUser(
+            id: 'contact',
+            workspaceId: 'ws',
+            fullName: 'Customer',
+            gender: 'FEMALE',
+            ethnicity: 'Example community',
+            nationalId: 'SYNTHETIC-17',
+          ),
+        ],
+        count: 1,
+        permissions: CrmUserPermissions(
+          hasPrivateInfo: true,
+          hasPublicInfo: true,
+          canCheckUserAttendance: false,
+        ),
+      );
+      repository.read = (_, _, _) async => fields;
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      await tester.runAsync(DesignRender.loadFonts);
+      final (settings, brightness) = DesignRender.themes[theme]!;
+      Widget render() => DesignRenderApp(
+        settings: settings,
+        brightness: brightness,
+        child: page(actor: permissions.allowed.length.toString()),
+      );
+      await tester.pumpWidget(render());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Customer'));
+      await tester.pumpAndSettle();
+      expect(find.text('SYNTHETIC-17'), findsNothing);
+
+      permissions.allowed.add('view_users_private_info');
+      await tester.pumpWidget(render());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Customer'));
+      await tester.pumpAndSettle();
+      expect(find.text('Female'), findsOneWidget);
+      expect(find.text('Example community'), findsOneWidget);
+      expect(find.text('SYNTHETIC-17'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'contacts-private-fields-$theme');
+    });
+  }
 
   testWidgets('public detail lists linked platform accounts', (tester) async {
     repository.read = (_, _, _) async => const CrmUsersResult(

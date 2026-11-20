@@ -38,6 +38,12 @@ class _CrmUserDetail extends StatelessWidget {
           (l10n.crmAddress, user.address!.trim(), true),
         if (_present(user.birthday) != null)
           (l10n.crmBirthday, user.birthday!.trim(), true),
+        if (_present(user.gender) case final gender?)
+          (l10n.crmGender, _crmGenderLabel(context, gender), true),
+        if (_present(user.ethnicity) case final ethnicity?)
+          (l10n.crmEthnicity, ethnicity, true),
+        if (_present(user.nationalId) case final nationalId?)
+          (l10n.crmNationalId, nationalId, true),
         if (_present(user.note) != null)
           (l10n.crmNote, user.note!.trim(), true),
       ],

@@ -2739,6 +2739,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmGroupMembership => 'Group membership';
 
   @override
+  String get crmEthnicity => 'Ethnicity';
+
+  @override
+  String get crmEthnicityPlaceholder => 'Enter ethnicity';
+
+  @override
+  String get crmGender => 'Gender';
+
+  @override
+  String get crmGenderFemale => 'Female';
+
+  @override
+  String get crmGenderMale => 'Male';
+
+  @override
+  String get crmGenderOther => 'Other';
+
+  @override
+  String get crmGenderUnset => 'Not specified';
+
+  @override
   String get crmGuestUser => 'Guest user';
 
   @override
@@ -2771,6 +2792,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get crmMergeUsers => 'Merge users';
+
+  @override
+  String get crmNationalId => 'National ID';
+
+  @override
+  String get crmNationalIdPlaceholder => 'Enter national ID';
 
   @override
   String get crmNote => 'Note';

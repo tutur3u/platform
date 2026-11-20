@@ -8,6 +8,11 @@ extension _CrmPageActions on _CrmPageState {
         wsId: _wsId!,
         repository: _repository,
         initialUser: user,
+        canEditPrivateProfile: user == null
+            ? _workspacePermissions.containsPermission(
+                'view_users_private_info',
+              )
+            : (_userPermissions?.hasPrivateInfo ?? false),
         canEdit: user == null ? _canCreateUsers : _canUpdateUsers,
         onSubmit: (payload) async {
           if (!mounted) throw StateError('CRM session changed');

@@ -5317,6 +5317,48 @@ abstract class AppLocalizations {
   /// **'Group membership'**
   String get crmGroupMembership;
 
+  /// No description provided for @crmEthnicity.
+  ///
+  /// In en, this message translates to:
+  /// **'Ethnicity'**
+  String get crmEthnicity;
+
+  /// No description provided for @crmEthnicityPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter ethnicity'**
+  String get crmEthnicityPlaceholder;
+
+  /// No description provided for @crmGender.
+  ///
+  /// In en, this message translates to:
+  /// **'Gender'**
+  String get crmGender;
+
+  /// No description provided for @crmGenderFemale.
+  ///
+  /// In en, this message translates to:
+  /// **'Female'**
+  String get crmGenderFemale;
+
+  /// No description provided for @crmGenderMale.
+  ///
+  /// In en, this message translates to:
+  /// **'Male'**
+  String get crmGenderMale;
+
+  /// No description provided for @crmGenderOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get crmGenderOther;
+
+  /// No description provided for @crmGenderUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'Not specified'**
+  String get crmGenderUnset;
+
   /// No description provided for @crmGuestUser.
   ///
   /// In en, this message translates to:
@@ -5376,6 +5418,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Merge users'**
   String get crmMergeUsers;
+
+  /// No description provided for @crmNationalId.
+  ///
+  /// In en, this message translates to:
+  /// **'National ID'**
+  String get crmNationalId;
+
+  /// No description provided for @crmNationalIdPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter national ID'**
+  String get crmNationalIdPlaceholder;
 
   /// No description provided for @crmNote.
   ///

@@ -2725,6 +2725,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmGroupMembership => 'Tham gia nhóm';
 
   @override
+  String get crmEthnicity => 'Dân tộc';
+
+  @override
+  String get crmEthnicityPlaceholder => 'Nhập dân tộc';
+
+  @override
+  String get crmGender => 'Giới tính';
+
+  @override
+  String get crmGenderFemale => 'Nữ';
+
+  @override
+  String get crmGenderMale => 'Nam';
+
+  @override
+  String get crmGenderOther => 'Khác';
+
+  @override
+  String get crmGenderUnset => 'Chưa xác định';
+
+  @override
   String get crmGuestUser => 'Người dùng khách';
 
   @override
@@ -2757,6 +2778,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get crmMergeUsers => 'Gộp người dùng';
+
+  @override
+  String get crmNationalId => 'Số định danh';
+
+  @override
+  String get crmNationalIdPlaceholder => 'Nhập số định danh';
 
   @override
   String get crmNote => 'Ghi chú';

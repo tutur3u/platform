@@ -6,6 +6,7 @@ class _UserFormSheet extends StatefulWidget {
     required this.repository,
     required this.onSubmit,
     required this.canEdit,
+    required this.canEditPrivateProfile,
     this.initialUser,
   });
 
@@ -13,6 +14,7 @@ class _UserFormSheet extends StatefulWidget {
   final CrmRepository repository;
   final CrmUser? initialUser;
   final bool canEdit;
+  final bool canEditPrivateProfile;
   final Future<void> Function(Map<String, dynamic>) onSubmit;
 
   @override
@@ -26,6 +28,9 @@ class _UserFormSheetState extends State<_UserFormSheet> {
   late final TextEditingController _phoneController;
   late final TextEditingController _addressController;
   late final TextEditingController _noteController;
+  late final TextEditingController _ethnicityController;
+  late final TextEditingController _nationalIdController;
+  late String _gender;
   bool _isGuest = false;
   bool _archived = false;
   DateTime? _birthday;
@@ -54,6 +59,13 @@ class _UserFormSheetState extends State<_UserFormSheet> {
     _noteController = TextEditingController(
       text: widget.initialUser?.note ?? '',
     );
+    _ethnicityController = TextEditingController(
+      text: widget.initialUser?.ethnicity,
+    );
+    _nationalIdController = TextEditingController(
+      text: widget.initialUser?.nationalId,
+    );
+    _gender = widget.initialUser?.gender?.toUpperCase() ?? '';
     _isGuest = widget.initialUser?.isGuest ?? false;
     _archived = widget.initialUser?.archived ?? false;
     _birthday = widget.initialUser?.birthday == null
@@ -72,6 +84,8 @@ class _UserFormSheetState extends State<_UserFormSheet> {
     _phoneController.dispose();
     _addressController.dispose();
     _noteController.dispose();
+    _ethnicityController.dispose();
+    _nationalIdController.dispose();
     super.dispose();
   }
 
@@ -110,6 +124,16 @@ class _UserFormSheetState extends State<_UserFormSheet> {
         'note': _noteController.text.trim().isEmpty
             ? null
             : _noteController.text.trim(),
+        if (widget.canEditPrivateProfile) ...{
+          if (_ethnicityController.text.trim() !=
+              (widget.initialUser?.ethnicity ?? ''))
+            'ethnicity': _present(_ethnicityController.text),
+          if (_nationalIdController.text.trim() !=
+              (widget.initialUser?.nationalId ?? ''))
+            'national_id': _present(_nationalIdController.text),
+          if (_gender != (widget.initialUser?.gender?.toUpperCase() ?? ''))
+            'gender': _present(_gender),
+        },
         'birthday': _birthday?.toIso8601String(),
         'is_guest': _isGuest,
         'archived': _archived,
@@ -227,6 +251,44 @@ class _UserFormSheetState extends State<_UserFormSheet> {
             placeholder: l10n.inputPlaceholderAddress,
           ),
           const SizedBox(height: AppSpacing.md),
+          if (widget.canEditPrivateProfile) ...[
+            Text(l10n.crmGender),
+            const SizedBox(height: AppSpacing.xs),
+            AppSelect<String>(
+              title: l10n.crmGender,
+              placeholder: l10n.crmGenderUnset,
+              value: _gender,
+              options: [
+                for (final value in {
+                  '',
+                  'MALE',
+                  'FEMALE',
+                  'OTHER',
+                  if (_gender.isNotEmpty) _gender,
+                })
+                  AppSelectOption(
+                    value: value,
+                    label: _crmGenderLabel(context, value),
+                  ),
+              ],
+              onChanged: widget.canEdit
+                  ? (value) => setState(() => _gender = value)
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _ethnicityController,
+              label: l10n.crmEthnicity,
+              placeholder: l10n.crmEthnicityPlaceholder,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              controller: _nationalIdController,
+              label: l10n.crmNationalId,
+              placeholder: l10n.crmNationalIdPlaceholder,
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
           AppTextField(
             controller: _noteController,
             label: l10n.crmNote,

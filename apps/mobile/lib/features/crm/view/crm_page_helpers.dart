@@ -50,6 +50,15 @@ String _crmGroupMembershipLabel(BuildContext context, String value) {
   }
 }
 
+String _crmGenderLabel(BuildContext context, String value) =>
+    switch (value.toUpperCase()) {
+      '' => context.l10n.crmGenderUnset,
+      'MALE' => context.l10n.crmGenderMale,
+      'FEMALE' => context.l10n.crmGenderFemale,
+      'OTHER' => context.l10n.crmGenderOther,
+      _ => value,
+    };
+
 String _crmAuditEventLabel(BuildContext context, String value) {
   switch (value) {
     case 'created':
