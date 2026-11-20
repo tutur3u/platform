@@ -19,6 +19,7 @@ import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { AppUserNav } from '@/components/app-user-nav';
 import { redirect } from '@/i18n/navigation';
+import { resolveTeachAreaSwitchHref } from '@/lib/lms-area-switch';
 import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
@@ -88,8 +89,15 @@ export default async function TeachWorkspaceLayout({
     sidebarBehavior
   );
 
-  const menuProfile =
-    runtimeAppBase() === '/lms/teach' ? bootstrap.profile : undefined;
+  const inLms = runtimeAppBase() === '/lms/teach';
+  const menuProfile = inLms ? bootstrap.profile : undefined;
+  const areaSwitchHref = inLms
+    ? await resolveTeachAreaSwitchHref({
+        currentWsId: wsId,
+        locale,
+        workspaceIds: bootstrap.workspaces.map((item) => item.id),
+      })
+    : null;
 
   return (
     <WorkspaceVisibilityProvider actorId={bootstrap.profile.id}>
@@ -108,6 +116,7 @@ export default async function TeachWorkspaceLayout({
               <NotificationPopover userId={bootstrap.profile.id} />
             </>
           }
+          areaSwitchHref={areaSwitchHref}
           links={await getNavigationLinks(wsId)}
           notificationPopover={
             <NotificationPopover userId={bootstrap.profile.id} />

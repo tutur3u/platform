@@ -19,8 +19,14 @@ their intended recipients through the existing verification and consent flow.
 
 The public entry links to both areas. The area dashboard resolves an eligible
 workspace from the signed-in account.
-Users with both roles can switch areas without reauthenticating. The Teach
-dashboard surfaces work awaiting grading and links directly to courses,
+Users with both roles can switch areas without reauthenticating. Inside
+the LMS mount, Teach and Learn each show a header control for the other
+area when the server access check allows it. Teach uses the existing
+learner or guardian subject check. Learn uses the existing staff access
+check. The control is absent for an account that fails that check. The
+link keeps the current `en` or `vi` locale and opens the other area's
+home at `/lms/learn/{locale}/dashboard` or `/lms/teach/{locale}/dashboard`.
+The Teach dashboard surfaces work awaiting grading and links directly to courses,
 quiz authoring, and the timetable. The Learn home prioritizes
 resuming study and finding assigned work. The current education and learning
 data models remain authoritative for both areas.

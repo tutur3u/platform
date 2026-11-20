@@ -9,11 +9,13 @@ import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { usePathname, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
+import { LmsAreaSwitchLink } from '@/components/lms-area-switch';
 import { withLearnerStudent } from '@/components/learner-pages/learner-navigation';
 import { LearnerStudentSelect } from '@/components/learner-shell-parts';
 import { WEB_APP_URL } from '@/constants/common';
 
 interface StructureProps {
+  areaSwitchHref?: string | null;
   bootstrap: TulearnBootstrapResponse;
   children: ReactNode;
   defaultCollapsed: boolean;
@@ -25,6 +27,7 @@ interface StructureProps {
 }
 
 export function Structure({
+  areaSwitchHref = null,
   bootstrap,
   children,
   defaultCollapsed,
@@ -73,6 +76,9 @@ export function Structure({
         </div>
       }
       appId="learn"
+      brandActions={
+        areaSwitchHref ? <LmsAreaSwitchLink href={areaSwitchHref} /> : null
+      }
       brandHref={
         runtimeAppBase() === '/lms/learn'
           ? 'https://tuturuuu.com/lms'
@@ -88,7 +94,12 @@ export function Structure({
       links={studentLinks}
       notificationPopover={notificationPopover}
       showUpgrade={false}
-      userPopover={userPopover}
+      userPopover={
+        <>
+          {areaSwitchHref ? <LmsAreaSwitchLink href={areaSwitchHref} /> : null}
+          {userPopover}
+        </>
+      }
       workspace={activeWorkspace ?? null}
       workspaceSelect={() => (
         <WorkspaceSelect

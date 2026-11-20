@@ -1334,6 +1334,7 @@
       "todo": "Việc cần làm"
     },
     "navigationLabel": "Điều hướng không gian giảng dạy",
+    "switchToLearn": "Học tập",
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachStudentPerformance": {

@@ -1334,6 +1334,7 @@
       "todo": "To do"
     },
     "navigationLabel": "Teacher workspace navigation",
+    "switchToLearn": "Learn",
     "workspaceFallback": "Education workspace"
   },
   "teachStudentPerformance": {

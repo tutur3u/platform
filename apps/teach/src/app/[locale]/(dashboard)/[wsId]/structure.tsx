@@ -16,11 +16,13 @@ import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import { appPath, runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';
+import { LmsAreaSwitchLink } from '@/components/lms-area-switch';
 import { TeachThemeControl } from '@/components/teach-theme-control';
 import { TeachWorkspaceSelect } from '@/components/teach-workspace-select';
 import { WEB_APP_URL } from '@/constants/common';
 
 interface StructureProps {
+  areaSwitchHref?: string | null;
   bootstrap: TeachBootstrapResponse;
   children: ReactNode;
   defaultCollapsed: boolean;
@@ -33,6 +35,7 @@ interface StructureProps {
 }
 
 export function Structure({
+  areaSwitchHref = null,
   bootstrap,
   children,
   defaultCollapsed,
@@ -77,6 +80,9 @@ export function Structure({
           </div>
         }
         appId="teach"
+        brandActions={
+          areaSwitchHref ? <LmsAreaSwitchLink href={areaSwitchHref} /> : null
+        }
         brandHref={
           runtimeAppBase() === '/lms/teach'
             ? 'https://tuturuuu.com/lms'
@@ -87,7 +93,14 @@ export function Structure({
         links={links}
         notificationPopover={notificationPopover}
         showUpgrade={false}
-        userPopover={userPopover}
+        userPopover={
+          <>
+            {areaSwitchHref ? (
+              <LmsAreaSwitchLink href={areaSwitchHref} />
+            ) : null}
+            {userPopover}
+          </>
+        }
         workspace={workspace}
         workspaceSelect={() => (
           <TeachWorkspaceSelect

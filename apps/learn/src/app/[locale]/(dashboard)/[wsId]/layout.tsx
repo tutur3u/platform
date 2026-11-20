@@ -19,6 +19,7 @@ import { connection } from 'next/server';
 import { AppUserNav } from '@/components/app-user-nav';
 import { NoWorkspaceState } from '@/components/learner-shell';
 import { redirect } from '@/i18n/navigation';
+import { resolveLearnAreaSwitchHref } from '@/lib/lms-area-switch';
 import {
   getLearnRenderBootstrap,
   isLearnBootstrapAuthFailure,
@@ -104,8 +105,15 @@ export default async function DashboardLayout({
     sidebarBehavior
   );
 
-  const menuProfile =
-    runtimeAppBase() === '/lms/learn' ? bootstrap.profile : undefined;
+  const inLms = runtimeAppBase() === '/lms/learn';
+  const menuProfile = inLms ? bootstrap.profile : undefined;
+  const areaSwitchHref = inLms
+    ? await resolveLearnAreaSwitchHref({
+        currentWsId: wsId,
+        locale,
+        workspaceIds: bootstrap.workspaces.map((item) => item.id),
+      })
+    : null;
 
   return (
     <WorkspaceVisibilityProvider actorId={bootstrap.profile.id}>
@@ -124,6 +132,7 @@ export default async function DashboardLayout({
               <NotificationPopover userId={bootstrap.profile.id} />
             </>
           }
+          areaSwitchHref={areaSwitchHref}
           links={await getNavigationLinks(wsId)}
           notificationPopover={
             <NotificationPopover userId={bootstrap.profile.id} />
