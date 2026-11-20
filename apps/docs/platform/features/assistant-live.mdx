@@ -389,15 +389,21 @@ Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
 - The staff-only `/api/v1/mira/token` route is retired: after its auth,
   membership and staff gates it answers 410 `LIVE_ROUTE_RETIRED` and never
   mints.
-- Wire shape: `{ eligible, reason, tier, billing: { name, personal }, params:
-  { plans, balance?, minimumCredits?, resetAt? } }`. Reasons are
+- Wire shape:
+
+  ```text
+  { eligible, reason, tier, billing: { name, personal }, params:
+    { plans, balance?, minimumCredits?, resetAt? } }
+  ```
+
+  Reasons are
   `plan_required` (403), `credits_exhausted` (402), `limit_reached` (429, from
   the mint cap, with `resetAt` from Retry-After), `role_not_allowed` (403) and
   `paused` (503, the paid stop). Clients map reasons to copy; server text is
   never shown. There is no region or device reason.
 - Clients: the Live entry is locked with a short reason before Start, and a
   blocked sheet explains the reason with one primary action and "Not now",
-  plus "Billed to: <workspace>". Limit, role and pause refusals never upsell.
+  plus `Billed to: <workspace>`. Limit, role and pause refusals never upsell.
   Mobile omits Upgrade and Top up until a store-compliant purchase channel
   exists (App Store guideline 3.1.1), and shows Got it instead. A failed
   pre-check leaves Start open and the token route decides.
