@@ -1,10 +1,16 @@
 // @vitest-environment node
 import { afterEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ redis: vi.fn() }));
+const mocks = vi.hoisted(() => ({ redis: vi.fn(), select: vi.fn() }));
 vi.mock('./store', () => ({
   configuredNativeIntegrityRedis: mocks.redis,
   createNativeIntegrityStore: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/abuse-guard/select', () => ({
+  selectAbuseGuard: mocks.select,
+}));
+vi.mock('../web-identity-abuse-guard', () => ({
+  configureWebIdentityAbuseGuard: vi.fn(),
 }));
 
 import {
@@ -31,6 +37,26 @@ it('accepts only explicitly enabled rollout modes', () => {
   expect(nativeIntegrityMode()).toBe('monitor');
   vi.stubEnv('NATIVE_INTEGRITY_MODE', 'enforce');
   expect(nativeIntegrityMode()).toBe('enforce');
+});
+it('keeps the API identity verifier on its bound store when Redis is unavailable', () => {
+  const nativeIntegrity = vi.fn();
+  const withFairness = vi.fn(() => ({ nativeIntegrity }));
+  mocks.select.mockReturnValue({
+    kind: 'durable-object',
+    client: { withFairness },
+  });
+  vi.stubEnv('TUTURUUU_SERVICE_NAME', 'web-api-identity');
+  vi.stubEnv('NATIVE_INTEGRITY_MODE', 'enforce');
+  expect(nativeIntegrityRuntime('fixture-actor')).not.toBeNull();
+  expect(mocks.select).toHaveBeenCalledWith('integrity');
+  expect(withFairness).toHaveBeenCalledWith({
+    source: 'web-native-integrity',
+    principal: 'fixture-actor',
+  });
+  expect(mocks.redis).not.toHaveBeenCalled();
+  mocks.select.mockReturnValue({ kind: 'off' });
+  expect(() => nativeIntegrityRuntime('fixture-actor')).toThrow(/unavailable/u);
+  expect(mocks.redis).not.toHaveBeenCalled();
 });
 it('locks bridge origins to canonical HTTPS configuration and explicit parent origins', () => {
   vi.stubEnv('NATIVE_INTEGRITY_WEB_ORIGIN', 'https://tuturuuu.com');

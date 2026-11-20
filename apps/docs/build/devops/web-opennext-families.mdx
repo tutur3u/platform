@@ -120,6 +120,33 @@ client-IP trust; the Worker sets `TRUSTED_PROXY=cloudflare` and
 `TUTURUUU_DEPLOY_ENV=production`. The complete name list is in
 `apps/web/cloudflare/opennext/api-identity.env.json`.
 
+The API identity Worker binds `ABUSE_GUARD` to
+`tuturuuu-abuse-guard/AbuseGuardEntrypoint` and requires
+`ABUSE_GUARD_KEY_PEPPER`. It assigns `proxy`, `ratelimit` and `integrity` to
+the service. That covers proxy IP blocks, trust and appeal lookups, route
+limits and handler limits. The proxy applies its existing per-instance
+limits during a guard outage. The guard's per-family budgets and durable
+operator stop fence bound the service, including when requests retry.
+
+Dispatch `web-opennext.yaml` on `main` with `api-identity-seal-sha` set to the
+exact commit for a size check, original Worker smoke and restored Worker
+smoke. The family stays held for routing. Before enabling it, verify hosted
+guard health and state continuity for active IP blocks and trust writers.
+
+Calendar settings, native-integrity challenge issuance and enrollment use the
+same store. The integrity budget is zero by default. An operator allocates an
+explicit share within the existing service cap before a hosted rehearsal.
+The service checks its durable stop fence before entering a subject. One
+SQLite subject commits issuance, single-use consumption, key ownership,
+counter updates, revocation and global provider reservations atomically.
+The provider budget also caps each actor and emits at most one daily warning.
+The SQLite parity suite exercises expiry, ownership, counter conflicts and
+provider stops in `apps/abuse-guard/src/native-integrity.test.ts`.
+
+Move the three route groups together. Reconcile existing enrollments and
+provider budget and stop state before the switch, and let outstanding legacy
+challenges expire. A split issuer/verifier rollout can reject valid proofs.
+
 ## Rollback
 
 Remove the family id from the `GATEWAY_WEB_FAMILIES` repository variable and

@@ -14,6 +14,7 @@ import {
   type UpstashRestRedisClient,
 } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
+import { configureWebIdentityAbuseGuard } from './web-identity-abuse-guard';
 
 /**
  * Creates a standardized error response.
@@ -124,6 +125,7 @@ let redisInitialized = false;
  * Safe to call multiple times — only initializes once.
  */
 export async function getRedisClient() {
+  configureWebIdentityAbuseGuard();
   if (redisInitialized) return redisClient;
 
   try {

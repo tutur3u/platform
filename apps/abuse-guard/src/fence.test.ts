@@ -17,6 +17,7 @@ describe('resolveFamilyBudgets', () => {
       meet: 100_000,
       live: 50_000,
       ratelimit: 100_000,
+      integrity: 0,
     });
     expect(resolve(' 1000 ', '')).toEqual({
       offline: 350,
@@ -26,6 +27,7 @@ describe('resolveFamilyBudgets', () => {
       meet: 100,
       live: 50,
       ratelimit: 100,
+      integrity: 0,
     });
   });
 
@@ -38,7 +40,13 @@ describe('resolveFamilyBudgets', () => {
       meet: 10_000,
       live: 5_000,
       ratelimit: 10_000,
+      integrity: 0,
     });
+  });
+
+  it('adds the optional integrity family only within an explicit budget allocation', () => {
+    expect(resolve('1000', 'proxy=190, integrity=10')?.integrity).toBe(10);
+    expect(resolve('1000', 'integrity=10')).toBeNull();
   });
 
   it.each([

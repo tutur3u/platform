@@ -18,6 +18,10 @@ const reservationSchema = z.tuple([
   z.number().int().nonnegative(),
   z.union([z.literal(0), z.literal(1)]),
 ]);
+export type NativeIntegrityProviderReserve = (
+  keys: string[],
+  limits: [number, number, number, number]
+) => Promise<unknown>;
 function budgetValue(
   name: string,
   fallback: string,
@@ -30,12 +34,16 @@ function budgetValue(
   return limit >= minimum && limit <= maximum ? limit : 0;
 }
 export function budgetedNativeIntegrityFetch(
-  redis: NativeIntegrityRedisAdapter,
+  backend: NativeIntegrityRedisAdapter | NativeIntegrityProviderReserve,
   actorId: string,
   fetchImpl: typeof fetch = fetch,
   now = Date.now
 ): typeof fetch {
   const actorKey = createHash('sha256').update(actorId).digest('hex');
+  const reserve: NativeIntegrityProviderReserve =
+    typeof backend === 'function'
+      ? backend
+      : (keys, limits) => backend.eval(reserveScript, keys, limits);
   return async (input, init) => {
     const url = new URL(
       typeof input === 'string'
@@ -80,8 +88,7 @@ export function budgetedNativeIntegrityFetch(
     const day = new Date(time).toISOString().slice(0, 10);
     const end = Date.parse(`${day}T00:00:00.000Z`) + 86_400_000;
     const [reserved, used, , warning] = reservationSchema.parse(
-      await redis.eval(
-        reserveScript,
+      await reserve(
         [
           'native-integrity:v1:provider-stop',
           `native-integrity:v1:provider-budget:${day}`,

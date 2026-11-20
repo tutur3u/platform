@@ -38,6 +38,8 @@
         "/api/build-info",
         "/api/health",
         "/api/auth/me",
+        "/api/v1/native-integrity/challenge",
+        "/api/v1/native-integrity/enroll",
         "/api/v1/workspaces",
         "/api/v1/workspaces/limits",
         "/api/v1/workspaces/personal",

@@ -29,6 +29,11 @@ on:
         required: false
         default: true
         type: boolean
+      api-identity-seal-sha:
+        description: 'Exact main SHA for a build-only API identity seal'
+        required: false
+        default: ''
+        type: string
 permissions:
   contents: read
 # One run per commit; production deploys queue instead of cancelling.
@@ -48,7 +53,9 @@ jobs:
       workflow_name: web-opennext.yaml
   plan:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production'
+    if: >-
+      needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' &&
+      inputs['api-identity-seal-sha'] == ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -72,6 +79,96 @@ jobs:
           fi
           echo "families=$enabled" >> "$GITHUB_OUTPUT"
           echo "Families: $enabled"
+  api-identity-seal:
+    needs: check-ci
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      inputs['api-identity-seal-sha'] != '' && needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      CI: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WEB_OPENNEXT_FAMILY: api-identity
+      WEB_OPENNEXT_SHA: ${{ github.sha }}
+      WEB_OPENNEXT_AUDIT_ONLY: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Admit only the exact main commit
+        env:
+          REQUESTED_SHA: ${{ inputs['api-identity-seal-sha'] }}
+        run: |
+          test "$GITHUB_REF" = refs/heads/main
+          test "$REQUESTED_SHA" = "$GITHUB_SHA"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bun install --frozen-lockfile
+      - run: bun turbo:local run build --filter='@tuturuuu/web^...' --concurrency=2
+      - name: Verify guard behavior without Redis
+        working-directory: packages/utils
+        run: >
+          bun run test src/abuse-protection/__tests__/edge-do-store.test.ts
+          src/__tests__/api-proxy-guard-store.test.ts
+      - name: Verify the atomic native-integrity store
+        working-directory: apps/abuse-guard
+        run: bun run test src/native-integrity.test.ts src/fence.test.ts src/worker.test.ts
+      - name: Generate exact build metadata
+        env:
+          PLATFORM_BUILD_ENVIRONMENT: production
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Prune and build the held family
+        run: |
+          printf 'disposable checkout for an OpenNext family build\n' > apps/web/.opennext-disposable-checkout
+          bun run --cwd apps/web opennext:prune api-identity --apply
+          export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(openssl rand -base64 32)"
+          bun run --cwd apps/web build:opennext
+      - name: Measure the credential-free dry-run bundle
+        working-directory: apps/web
+        run: |
+          set -o pipefail
+          bun x --no-install wrangler deploy --dry-run --outdir "$RUNNER_TEMP/upload" \
+            -c cloudflare/opennext/wrangler.api-identity.jsonc | tee "$RUNNER_TEMP/dry-run.log"
+          node ../../scripts/ci/web-opennext-size.mjs "$RUNNER_TEMP/upload" \
+            --log "$RUNNER_TEMP/dry-run.log" --receipt "$RUNNER_TEMP/size-api-identity.json"
+      - name: Exercise and restore the sealed OpenNext Worker
+        run: |
+          node scripts/ci/web-opennext-smoke.mjs api-identity "$GITHUB_SHA"
+          mkdir "$RUNNER_TEMP/identity-seal" "$RUNNER_TEMP/identity-restore"
+          tar -C apps/web -czf "$RUNNER_TEMP/identity-seal/web-api-identity.tar.gz" \
+            .open-next cloudflare/opennext/wrangler.api-identity.jsonc
+          (
+            cd "$RUNNER_TEMP/identity-seal"
+            sha256sum web-api-identity.tar.gz > SHA256SUMS
+            sha256sum -c SHA256SUMS
+          )
+          tar -C "$RUNNER_TEMP/identity-restore" -xzf \
+            "$RUNNER_TEMP/identity-seal/web-api-identity.tar.gz"
+          node scripts/ci/web-opennext-smoke.mjs api-identity "$GITHUB_SHA" "$RUNNER_TEMP/identity-restore"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: web-api-identity-seal-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/identity-seal/
+            ${{ runner.temp }}/size-api-identity.json
+            apps/web/cloudflare/opennext/prune-receipt.json
+          if-no-files-found: error
+          retention-days: 14
   family:
     needs: plan
     if: github.ref == 'refs/heads/production' && needs.plan.outputs.families != '[]'

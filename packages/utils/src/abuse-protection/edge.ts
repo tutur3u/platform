@@ -1,11 +1,10 @@
 /**
  * Edge-compatible abuse protection utilities.
  *
- * Unlike the main index.ts (which uses node:crypto), this module only
- * relies on the @upstash/redis REST client and is safe to run in
- * Vercel Edge Runtime or Next.js proxy/middleware.
+ * Next.js proxy and edge callers share the selected proxy family store.
  */
 
+import { isAbuseGuardFamilyAssigned } from '../abuse-guard/select';
 import {
   getUpstashRestRedisClient,
   type UpstashRestRedisClient,
@@ -65,6 +64,8 @@ function parsePositiveIntEnv(name: string, fallback: number): number {
 }
 
 async function getEdgeRedisClient() {
+  if (isAbuseGuardFamilyAssigned('proxy'))
+    return getUpstashRestRedisClient({ family: 'proxy' });
   if (edgeRedisInitialized) return edgeRedisClient;
 
   try {
@@ -183,7 +184,7 @@ export async function writeEdgeAbuseProtectionControls(
 }
 
 /**
- * Check if an IP is blocked using Redis cache only (no DB fallback).
+ * Check if an IP is blocked using the proxy family's edge cache.
  * Designed for Edge Runtime where speed > completeness.
  * The serverless layer provides full DB-backed check as backup.
  */
@@ -234,7 +235,9 @@ export async function blockIPEdge(
     const blockedAt = new Date();
     const expiresAt = new Date(blockedAt.getTime() + blockDuration * 1000);
     const blockInfo = {
-      id: `edge:${ipAddress}:${blockedAt.getTime()}`,
+      id: isAbuseGuardFamilyAssigned('proxy')
+        ? `edge:${crypto.randomUUID()}`
+        : `edge:${ipAddress}:${blockedAt.getTime()}`,
       blockLevel: newLevel,
       reason,
       blockedAt,

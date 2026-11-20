@@ -5,9 +5,7 @@
  * proxy guard so that read rate limits can be scaled up for trusted accounts
  * and trusted locations (CIDRs) without a per-request database round-trip.
  *
- * Like `edge.ts`, this module only relies on the @upstash/redis REST client and
- * is safe to run in Vercel Edge Runtime / Next.js proxy middleware as well as in
- * the Node serverless layer (used by the write-through path in reputation.ts).
+ * The proxy family selects the same edge store for lookups and write-through.
  *
  * Trust can never be forged from the edge: cache entries are only written by the
  * service-role write-through path keyed on hashes of real, observed subjects. A
@@ -15,6 +13,7 @@
  * (neutral) multiplier — fail-open by design.
  */
 
+import { isAbuseGuardFamilyAssigned } from '../abuse-guard/select';
 import {
   getUpstashRestRedisClient,
   type UpstashRestRedisClient,
@@ -75,6 +74,8 @@ export function getAppealReliefTtlSeconds(): number {
 }
 
 async function getTrustRedisClient() {
+  if (isAbuseGuardFamilyAssigned('proxy'))
+    return getUpstashRestRedisClient({ family: 'proxy' });
   if (trustRedisInitialized) return trustRedisClient;
 
   try {

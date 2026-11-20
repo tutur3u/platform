@@ -47,6 +47,8 @@ export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
   // own fail policy: most fail open with the SR-951 alert, so an exhausted
   // share stops counting rather than blocking requests.
   ratelimit: 0.1,
+  // Require an explicit share for the opt-in native-integrity service.
+  integrity: 0,
 };
 
 /** Thrown when the budget configuration is invalid; RPCs return 503. */
@@ -116,7 +118,7 @@ export function resolveFamilyBudgets(
       const budget =
         explicit.get(family) ??
         Math.floor(total * FAMILY_BUDGET_SHARES[family]);
-      if (budget < 1) return null;
+      if (budget < 1 && family !== 'integrity') return null;
       budgets[family] = budget;
       sum += budget;
     }

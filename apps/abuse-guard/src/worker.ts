@@ -82,7 +82,11 @@ function failure(
 
 function subjectStub(env: Env, rpc: ParsedGuardRpc, partition: string) {
   const hint = env.ABUSE_GUARD_LOCATION_HINT?.trim() || 'apac';
-  const id = env.GUARD_SUBJECT.idFromName(`${rpc.family}:${partition}`);
+  const id = env.GUARD_SUBJECT.idFromName(
+    rpc.family === 'integrity'
+      ? 'native-integrity:v1'
+      : `${rpc.family}:${partition}`
+  );
   return LOCATION_HINTS.has(hint)
     ? env.GUARD_SUBJECT.get(id, {
         locationHint: hint as DurableObjectLocationHint,
@@ -95,7 +99,22 @@ export async function executeRpc(
   env: Env,
   rpc: ParsedGuardRpc
 ): Promise<RpcOutcome> {
-  const ops = rpc.steps.reduce((total, step) => total + step.cmds.length, 0);
+  const integrityWeights = { register: 16, revoke: 40, capability: 10 };
+  const ops = rpc.steps.reduce(
+    (total, step) =>
+      total +
+      step.cmds.reduce((weight, cmd) => {
+        if (cmd.op !== 'integrity.atomic') return weight + 1;
+        if (cmd.command.action === 'register')
+          return weight + integrityWeights.register;
+        if (cmd.command.action === 'revoke')
+          return weight + integrityWeights.revoke;
+        if (cmd.command.action === 'capability')
+          return weight + integrityWeights.capability;
+        return weight + 8;
+      }, 0),
+    0
+  );
   const requiresFairness = rpc.family === 'replay' || rpc.family === 'password';
   if (
     requiresFairness &&

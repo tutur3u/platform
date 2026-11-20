@@ -1,4 +1,5 @@
 import { verifyTurnstileToken } from '@tuturuuu/cloudflare/turnstile/server';
+import { selectAbuseGuard } from '@tuturuuu/utils/abuse-guard/select';
 import {
   createPlayIntegrityVerifier,
   type NativeIntegrityMode,
@@ -11,6 +12,8 @@ import {
 } from './fallback-policy';
 import { googleIntegrityAccessToken } from './google-access-token';
 import { budgetedNativeIntegrityFetch } from './provider-budget';
+import { createNativeIntegrityGuardStore } from './guard-store';
+import { configureWebIdentityAbuseGuard } from '../web-identity-abuse-guard';
 import {
   configuredNativeIntegrityRedis,
   createNativeIntegrityStore,
@@ -64,16 +67,39 @@ export function nativeIntegrityTurnstileParents() {
   ];
 }
 
+function nativeIntegrityBackend(actorId: string) {
+  const backend = process.env.NATIVE_INTEGRITY_STORE;
+  if (backend && backend !== 'redis' && backend !== 'abuse-guard')
+    throw new Error('Native integrity store configuration unavailable');
+  if (
+    backend === 'abuse-guard' ||
+    process.env.TUTURUUU_SERVICE_NAME === 'web-api-identity'
+  ) {
+    configureWebIdentityAbuseGuard();
+    const selected = selectAbuseGuard('integrity');
+    if (selected.kind !== 'durable-object')
+      throw new Error('Native integrity guard store unavailable');
+    return createNativeIntegrityGuardStore(
+      selected.client.withFairness({
+        source: 'web-native-integrity',
+        principal: actorId,
+      })
+    );
+  }
+  const redis = configuredNativeIntegrityRedis();
+  return { store: createNativeIntegrityStore(redis), reserve: redis };
+}
+
 export function nativeIntegrityRuntime(actorId: string) {
   const mode = nativeIntegrityMode();
   if (mode === 'off') return null;
   if (!actorId || actorId.length > 128)
     throw new Error('Native integrity actor unavailable');
-  const redis = configuredNativeIntegrityRedis();
-  const providerFetch = budgetedNativeIntegrityFetch(redis, actorId);
+  const backend = nativeIntegrityBackend(actorId);
+  const providerFetch = budgetedNativeIntegrityFetch(backend.reserve, actorId);
   const service = new NativeIntegrityService({
     mode,
-    store: createNativeIntegrityStore(redis),
+    store: backend.store,
     allowTurnstile: nativeIntegrityTurnstileEnabled(),
     turnstileActorEligibility: nativeIntegrityActorEligibility,
     verifiers: {

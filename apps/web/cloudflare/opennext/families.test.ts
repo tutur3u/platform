@@ -46,6 +46,8 @@ const API_IDENTITY_ROUTES = [
   'api/auth/me/route.ts',
   'api/build-info/route.ts',
   'api/health/route.ts',
+  'api/v1/native-integrity/challenge/route.ts',
+  'api/v1/native-integrity/enroll/route.ts',
   'api/v1/notifications/[id]/metadata/route.ts',
   'api/v1/notifications/[id]/route.ts',
   'api/v1/notifications/account-preferences/route.ts',
@@ -167,6 +169,23 @@ describe('OpenNext family manifest', () => {
         .map((family) => family.id);
       expect(owners.length, `${rel}: ${owners.join(', ')}`).toBeLessThan(2);
     }
+  });
+
+  it('builds the held identity family only through explicit audit admission', () => {
+    const env = {
+      WEB_OPENNEXT_AUDIT_ONLY: '1',
+      WEB_OPENNEXT_FAMILY: 'api-identity',
+      WEB_OPENNEXT_SHA: 'c'.repeat(40),
+    };
+    expect(planPrune('api-identity', DEFAULT_APP_DIR, env).keep).toEqual(
+      API_IDENTITY_ROUTES
+    );
+    expect(openNextFamilyNextConfig(env).deploymentId).toBe(
+      'web-api-identity-cccccccccccc'
+    );
+    expect(() => planPrune('api-workspace', DEFAULT_APP_DIR, env)).toThrow(
+      /held/u
+    );
   });
 
   it('names a committed route-free wrangler config per enabled family', () => {

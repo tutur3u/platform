@@ -17,6 +17,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { canBuildOpenNextFamily } from './build-admission';
 
 export const DISPOSABLE_MARKER = '.opennext-disposable-checkout';
 export const DISPOSABLE_MARKER_CONTENT =
@@ -146,12 +147,13 @@ export function appRouteEntries(appDir = DEFAULT_APP_DIR) {
 /** Kept and removed app entries (paths relative to src/app) for one family. */
 export function planPrune(
   familyId: string,
-  appDir = DEFAULT_APP_DIR
+  appDir = DEFAULT_APP_DIR,
+  env: Record<string, string | undefined> = process.env
 ): PrunePlan {
   const { config, sha256: familiesSha256 } = loadFamilies(appDir);
   const family = config.families.find((candidate) => candidate.id === familyId);
   if (!family) throw new Error(`Unknown OpenNext family: ${familyId}`);
-  if (!family.enabled) {
+  if (!canBuildOpenNextFamily(family, env)) {
     throw new Error(`Family ${familyId} is declared but held: ${family.held}`);
   }
   const keep: string[] = [];

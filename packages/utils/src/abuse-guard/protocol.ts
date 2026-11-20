@@ -7,6 +7,12 @@
  * token value reaches Cloudflare object names or storage keys.
  */
 import { z } from 'zod';
+import {
+  integrityCommandSchema,
+  integrityKeyCounts,
+  integrityResultSchema,
+} from './native-integrity-protocol';
+export { integrityProviderReservationSchema } from './native-integrity-protocol';
 
 export const ABUSE_GUARD_PROTOCOL_VERSION = 1;
 
@@ -19,6 +25,7 @@ export const ABUSE_GUARD_FAMILIES = [
   'meet',
   'live',
   'ratelimit',
+  'integrity',
 ] as const;
 export type AbuseGuardFamily = (typeof ABUSE_GUARD_FAMILIES)[number];
 
@@ -130,6 +137,18 @@ export const guardCommandSchema = z.discriminatedUnion('op', [
   }),
   /** Refunds one unit of `target` at most once, when `receipt` still owns it. */
   z.object({ op: z.literal('res.refund'), receipt: digest, target: digest }),
+  z
+    .object({
+      op: z.literal('integrity.atomic'),
+      keys: z.array(digest).min(1).max(4),
+      command: integrityCommandSchema,
+    })
+    .refine(
+      ({ command, keys }) =>
+        keys.length === integrityKeyCounts[command.action] &&
+        new Set(keys).size === keys.length,
+      'invalid integrity operation keys'
+    ),
   /**
    * Live voice mint admission (port of RESERVE_LIVE_MINT_SCRIPT): rolling 24 h
    * actor window, lease concurrency, and the global ICT-day FREE budget in
@@ -188,6 +207,17 @@ export const guardRpcSchema = z
       rpc.steps.reduce((total, step) => total + step.cmds.length, 0) <=
       ABUSE_GUARD_LIMITS.maxCommands,
     'too many commands'
+  )
+  .refine(
+    (rpc) =>
+      rpc.family === 'integrity'
+        ? rpc.steps.length === 1 &&
+          rpc.steps[0]?.cmds.length === 1 &&
+          rpc.steps[0]?.cmds[0]?.op === 'integrity.atomic'
+        : rpc.steps.every((step) =>
+            step.cmds.every((command) => command.op !== 'integrity.atomic')
+          ),
+    'invalid integrity operation scope'
   );
 
 export type GuardWindow = z.infer<typeof guardWindowSchema>;
@@ -220,6 +250,7 @@ export const guardResultSchema = z.union([
   z.object({ op: z.literal('kv.expire'), set: z.boolean() }),
   /** Remaining milliseconds, or -2 when the key is absent. */
   z.object({ op: z.literal('kv.ttl'), ttlMs: z.number().int() }),
+  z.object({ op: z.literal('integrity.atomic'), value: integrityResultSchema }),
   z.object({
     op: z.literal('res.reserve'),
     ok: z.boolean(),

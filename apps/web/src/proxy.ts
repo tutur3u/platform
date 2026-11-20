@@ -62,7 +62,7 @@ import {
 } from './lib/roadmap-public-proxy';
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
-import { withStagingOriginProof } from './lib/staging-origin-proof';
+import { withWebProxyGuards } from './lib/web-identity-abuse-guard';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { isUnknownRouteShape } from './lib/route-shape';
@@ -1437,14 +1437,7 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   return null;
 };
 
-export const proxy = withStagingOriginProof(
-  webProxy,
-  () =>
-    new NextResponse('Forbidden', {
-      status: 403,
-      headers: { 'Cache-Control': 'no-store' },
-    })
-);
+export const proxy = withWebProxyGuards(webProxy);
 export const config = {
   matcher: [
     /*

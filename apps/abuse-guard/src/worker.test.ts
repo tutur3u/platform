@@ -115,10 +115,13 @@ function httpClient(
   });
 }
 
-async function bindingClient(mf: Miniflare): Promise<AbuseGuardClient> {
+async function bindingClient(
+  mf: Miniflare,
+  family: 'password' | 'integrity' = 'password'
+): Promise<AbuseGuardClient> {
   const caller = await mf.getWorker('caller');
   return createAbuseGuardClient({
-    family: 'password',
+    family,
     fairness: { source: 'fixture-source', principal: 'fixture-principal' },
     pepper: PEPPER,
     transport: createBindingGuardTransport(
@@ -135,6 +138,37 @@ async function bindingClient(mf: Miniflare): Promise<AbuseGuardClient> {
     ),
   });
 }
+
+it('serializes native-integrity consumption in Workerd and obeys the durable stop', async () => {
+  const mf = createRuntime({ familyBudgets: 'proxy=18000,integrity=2000' });
+  try {
+    const guard = await bindingClient(mf, 'integrity');
+    const issue = {
+      action: 'issue',
+      ttlMs: 30_000,
+      limit: 2,
+      windowSeconds: 60,
+      value: 'one-time fixture',
+    } as const;
+    expect(
+      await guard.nativeIntegrity(['minute', 'hour', 'nonce'], issue)
+    ).toBe(true);
+    const outcomes = await Promise.all([
+      guard.nativeIntegrity(['nonce'], { action: 'consume' }),
+      guard.nativeIntegrity(['nonce'], { action: 'consume' }),
+    ]);
+    expect(outcomes).toEqual(expect.arrayContaining([issue.value, null]));
+    expect(
+      await guard.nativeIntegrity(['minute', 'hour', 'pending'], issue)
+    ).toBe(true);
+    expect((await control(mf, 'stop', 'POST')).status).toBe(200);
+    await expect(
+      guard.nativeIntegrity(['pending'], { action: 'consume' })
+    ).rejects.toMatchObject({ code: 'guard_stopped' });
+  } finally {
+    await mf.dispose();
+  }
+});
 
 async function control(mf: Miniflare, path: string, method = 'GET') {
   const response = await mf.dispatchFetch(`${ORIGIN}/control/${path}`, {

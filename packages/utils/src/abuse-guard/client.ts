@@ -22,6 +22,10 @@ import {
   guardRpcResponseSchema,
   guardRpcSchema,
 } from './protocol';
+import type {
+  IntegrityCommand,
+  IntegrityResult,
+} from './native-integrity-protocol';
 
 export type AbuseGuardFailureCode =
   | GuardErrorCode
@@ -264,6 +268,10 @@ export interface AbuseGuardClient {
   ): Promise<boolean>;
   /** Remaining milliseconds, or -2 when absent. */
   ttl(key: string): Promise<number>;
+  nativeIntegrity(
+    keys: string[],
+    command: IntegrityCommand
+  ): Promise<IntegrityResult>;
   /** Atomic multi-budget reservation inside one partition. */
   reserve(
     input: GuardCallOptions & {
@@ -537,6 +545,15 @@ export function createAbuseGuardClient(options: {
       return (
         await single(await shardOf(key), { op: 'kv.ttl', k: await keyOf(key) })
       ).ttlMs;
+    },
+
+    async nativeIntegrity(keys, command) {
+      const result = await single('native-integrity:v1', {
+        op: 'integrity.atomic',
+        keys: await Promise.all(keys.map(keyOf)),
+        command,
+      });
+      return result.value;
     },
 
     async reserve(input) {

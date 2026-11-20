@@ -3,7 +3,7 @@ import type { NativeIntegrityStore } from '@tuturuuu/internal-api/native-integri
 import { Redis } from '@upstash/redis';
 import { z } from 'zod';
 
-const challengeSchema = z.object({
+export const challengeSchema = z.object({
   id: z.string().min(1).max(128),
   actorId: z.string().min(1).max(128),
   method: z.enum(['GET', 'PATCH']),
@@ -14,7 +14,7 @@ const challengeSchema = z.object({
   requestHash: z.string().max(128),
   expiresAt: z.number().int(),
 });
-const keySchema = z.object({
+export const keySchema = z.object({
   actorId: z.string().min(1).max(128),
   publicKey: z.string().max(8192),
   counter: z.number().int().nonnegative(),

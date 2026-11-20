@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
@@ -145,18 +146,39 @@ function stripJsonComments(text) {
     .replace(/,(\s*[}\]])/gu, '$1');
 }
 
-export async function runSmoke(family, sha, { log = console.log } = {}) {
+export async function runSmoke(
+  family,
+  sha,
+  { appDir = APP_DIR, log = console.log } = {}
+) {
   if (!/^[a-f0-9]{40}$/u.test(sha)) throw new Error('Expected a 40-hex commit');
   if (!FAMILY_PROBES[family]) throw new Error(`No probes for family ${family}`);
   process.env.WRANGLER_SEND_METRICS ??= 'false';
   process.env.WRANGLER_WRITE_LOGS ??= 'false';
   const configPath = join(
-    APP_DIR,
+    appDir,
     `cloudflare/opennext/wrangler.${family}.jsonc`
   );
   const config = JSON.parse(
     stripJsonComments(readFileSync(configPath, 'utf8'))
   );
+  if (family === 'api-identity') {
+    assert.deepEqual(
+      config.services.filter(({ binding }) => binding === 'ABUSE_GUARD'),
+      [
+        {
+          binding: 'ABUSE_GUARD',
+          service: 'tuturuuu-abuse-guard',
+          entrypoint: 'AbuseGuardEntrypoint',
+        },
+      ]
+    );
+    assert.equal(config.vars.ABUSE_GUARD_FAMILIES, 'proxy,ratelimit,integrity');
+    assert.equal(config.vars.NATIVE_INTEGRITY_STORE, 'abuse-guard');
+    assert.ok(config.secrets.required.includes('ABUSE_GUARD_KEY_PEPPER'));
+    assert.ok(!config.secrets.required.includes('UPSTASH_REDIS_REST_TOKEN'));
+    assert.ok(!Object.hasOwn(config.vars, 'UPSTASH_REDIS_REST_URL'));
+  }
   // Public configuration the deploy passes as plain-text vars.
   const bindings = {
     NEXT_PUBLIC_SUPABASE_URL: {
@@ -248,7 +270,7 @@ export async function runSmoke(family, sha, { log = console.log } = {}) {
     for (const probe of probes) log(describe(probe.path, probe.response));
     if (egress.length)
       log(`refused outbound: ${[...new Set(egress)].join(', ')}`);
-    const emitted = emittedDeploymentIds();
+    const emitted = emittedDeploymentIds(join(appDir, '.open-next'));
     for (const { file, deploymentId: value } of emitted)
       log(`${file}: deploymentId ${value}`);
     const problems = judge({ family, sha, buildInfo, probes, emitted });
@@ -269,9 +291,9 @@ if (
   process.argv[1] &&
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
-  const [family, sha] = process.argv.slice(2);
+  const [family, sha, appDir] = process.argv.slice(2);
   try {
-    await runSmoke(family, sha);
+    await runSmoke(family, sha, { appDir });
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
