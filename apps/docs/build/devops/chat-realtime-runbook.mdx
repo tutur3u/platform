@@ -1,39 +1,87 @@
 ---
 title: Chat Realtime Runbook
-description: Operating notes for the internal Chat realtime sidecar and web API proxy.
+description: Verify, publish, stop and roll back the Cloudflare Chat realtime Worker.
 updatedAt: "2026-11-20"
 audience: developers
 ---
 
-Chat realtime lives in `apps/chat-realtime`. It is an internal Bun SSE service
-used by `apps/web` for workspace chat fanout. Browser clients never connect to
-the sidecar directly; they subscribe to
-`/api/v1/workspaces/:wsId/chat/realtime`, and `apps/web` verifies membership,
-mints a short-lived internal token, connects to the sidecar, and forwards SSE
-events back through the normal web origin.
+Chat persists messages in Postgres. The `tuturuuu-chat-realtime` Worker delivers
+committed events to hibernating WebSockets. The Web API authorizes each
+subscription before it issues a short-lived ticket. It signs publish tickets
+against the exact request body. See the
+[Chat realtime contract](/platform/features/chat-realtime).
 
 ## Configuration
 
-- `CHAT_REALTIME_TOKEN_SECRET`: preferred shared HMAC secret used by `apps/web`
-  and `apps/chat-realtime`. If unset, both fall back to the platform Supabase
-  service secret. Production should set this explicitly when rotating realtime
-  credentials independently.
-- `CHAT_REALTIME_INTERNAL_URL` sets the upstream HTTP origin for web and
-  infrastructure. `CHAT_REALTIME_URL` is the fallback variable. Development
-  defaults to `http://localhost:7817` and production requires an explicit origin.
+| Setting | Owner | Value |
+| --- | --- | --- |
+| `CHAT_REALTIME_URL` | `apps/web` | Approved HTTPS Worker origin. Leave unset during Worker acceptance. |
+| `CHAT_REALTIME_TOKEN_SECRET` | `apps/web` and the Worker | Same dedicated HMAC secret with at least 32 characters. Rotate through the release owner and keep it out of command output and artifacts. |
+| `CHAT_REALTIME_STOPPED` | Worker | Secret set to `true` to reject connections and publishes. Set to `false` to open ingress. |
+| `INBOX` | Worker | `ChatInboxRoom`, one SQLite Durable Object per workspace. |
+| `CONVERSATION` | Worker | `ChatConversationRoom`, one SQLite Durable Object per workspace and conversation. |
 
-When production has no origin, publishing is disabled and logs one warning per
-process. The authenticated SSE endpoint returns 204 without attempting an
-upstream connection. It returns 503 when the configured upstream cannot open a
-stream. Browser and mobile clients refetch chat data while SSE is unavailable.
+The legacy SSE proxy and Bun sidecar serve the internal compatibility path.
+Enable the Cloudflare origin after the Web API and client rollout has passed
+staging. The Cloudflare path uses dedicated subscribe and publish tickets.
 
-Chat realtime currently ships as an internal Bun service. The retained Docker
-Compose definitions document the retired sidecar deployment. Current production
-environments can leave the origin unset to use polling.
+## Local verification
 
-Every published event must include an explicit `audience`. Channel events use a
-workspace audience, while direct, group, and AI conversation events use a
-user-list audience derived from the authorized conversation members. The sidecar
-keeps workspace rooms for connection management, but it filters each event by
-that audience before sending any full conversation or message payload to a
-client.
+From the repository root, run these commands through resource admission.
+
+```sh
+ttr resources run -- bun run --cwd packages/realtime test -- src/chat
+ttr resources run -- bun run --cwd apps/chat-realtime test
+ttr resources run -- bun run --cwd apps/chat-realtime test:runtime
+```
+
+The runtime tests launch workerd through the Cloudflare Vite plugin on an
+available loopback port, with disposable secrets and isolated SQLite
+persistence. The harness stops its child processes and removes its temporary
+state. The fixture exercises the Worker and Durable Objects with synthetic
+callers. The live-socket stop fixture switches the room binding in process.
+Hosted secret rotation, Web API authorization, Supabase and push delivery
+require staging checks.
+
+## Artifact and acceptance
+
+1. Use the **Chat Realtime Cloudflare Artifact** workflow at the reviewed source
+   SHA. Pin that SHA, the workflow run and attempt, and the artifact ID.
+2. Download the tar and its SHA-256 file from the same run. Run
+   `sha256sum -c chat-realtime-output.tar.sha256` before extracting. Compare the
+   digest with the run summary and inspect the emitted Worker configuration
+   under `output/v0/workers/default`.
+3. Check the target account, Worker name, SQLite classes, config and existing
+   deployment versions. Keep the prior deployment ID for rollback. Only the
+   release owner can authorize publication and routing. Use the pinned cf
+   toolchain and the approved prebuilt path to publish the verified artifact.
+4. Probe `GET /health`, the authenticated `/v1/connect` upgrade and
+   `POST /v1/publish` on the approved staging origin. Use disposable test
+   identities to confirm the intended audience receives the event and a second
+   workspace cannot receive it. Confirm reconnect behavior and the Worker stop
+   switch. Enable the Web origin only after the staged client and fallback
+   behavior pass, including confirmation on mobile.
+
+The Worker runs on ingress and socket events. It schedules no alarms, retry
+queues or crons. Socket counts, frame sizes, frame rates and replay rows are
+bounded as documented in the [Chat realtime contract](/platform/features/chat-realtime#cost-bounds-and-stop-fence).
+An accepted publish addresses at most two rooms. Each room retains up to 200
+event IDs and ignores a duplicate while that event is retained. Connect
+throttles, revocations and replay survive Worker restarts. Presence broadcasts
+stop after the room budget for the current window. Expiry and revocation
+cleanup run during activity, with zero scheduled wakes. Hosted request volume
+and account cost require monitoring during acceptance.
+
+## Stop and rollback
+
+- Set the Worker secret `CHAT_REALTIME_STOPPED=true` for an emergency stop.
+  `GET /health` must report `stopped: true` and new authenticated upgrades
+  and publishes must return `503`. Send a frame on an existing connection
+  to verify that the room closes it.
+- Unset `CHAT_REALTIME_URL` at `apps/web` to stop Worker ticket minting and
+  publishing. Confirm the ticket endpoint returns `enabled: false` and clients
+  resume polling. Check that messages sent while stopped appear after refetch.
+- Roll back to the recorded Worker version if the problem is in the emitted
+  artifact. Keep the Web origin unset until staging validation passes again.
+  Postgres remains authoritative through every step, so rollback requires no
+  message migration.

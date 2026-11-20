@@ -17,7 +17,7 @@ export function subscribeTicket({
   room = 'inbox',
   conversationId,
   iat = now(),
-  exp = now() + 600,
+  exp = now() + (room === 'inbox' ? 300 : 600),
   wsId = WS,
 }) {
   return signChatRealtimeTicket(

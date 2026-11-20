@@ -11,9 +11,10 @@ import { z } from 'zod';
 export const CHAT_REALTIME_TICKET_AUDIENCE = 'chat-realtime';
 export const CHAT_REALTIME_SUBSCRIBE_MAX_TTL_SECONDS = 15 * 60;
 export const CHAT_REALTIME_PUBLISH_MAX_TTL_SECONDS = 60;
+export const CHAT_REALTIME_INBOX_MAX_TTL_SECONDS = 5 * 60;
 export const CHAT_REALTIME_TICKET_MAX_LENGTH = 4096;
 export const CHAT_REALTIME_SECRET_MIN_LENGTH = 32;
-const CLOCK_SKEW_SECONDS = 30;
+export const CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS = 30;
 const SIGNATURE_DOMAIN = 'tuturuuu.chat-realtime.ticket.v1.';
 
 const uuid = z.string().uuid();
@@ -118,15 +119,16 @@ export async function chatRealtimeBodyDigest(body: string | Uint8Array) {
 }
 
 function maxTtl(ticket: ChatRealtimeTicket) {
-  return ticket.kind === 'publish'
-    ? CHAT_REALTIME_PUBLISH_MAX_TTL_SECONDS
+  if (ticket.kind === 'publish') return CHAT_REALTIME_PUBLISH_MAX_TTL_SECONDS;
+  return ticket.room === 'inbox'
+    ? CHAT_REALTIME_INBOX_MAX_TTL_SECONDS
     : CHAT_REALTIME_SUBSCRIBE_MAX_TTL_SECONDS;
 }
 
 function withinLifetime(ticket: ChatRealtimeTicket, nowSeconds: number) {
   return (
     ticket.exp > nowSeconds &&
-    ticket.iat <= nowSeconds + CLOCK_SKEW_SECONDS &&
+    ticket.iat <= nowSeconds + CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS &&
     ticket.exp > ticket.iat &&
     ticket.exp - ticket.iat <= maxTtl(ticket)
   );

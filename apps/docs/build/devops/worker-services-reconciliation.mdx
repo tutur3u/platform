@@ -48,7 +48,7 @@ Per D74 security and operational policies:
 | `ops-hub` | `tuturuuu-ops-hub` | `workersDev: true`, `previewUrls: false` | `OPS_HUB_GATEWAY_SECRET`, `OPS_HUB_PUBLISHER_PUBLIC_KEY`, `OPS_HUB_ALLOWED_USER_IDS`, `HUB` (DO) | **DO:** `OpsHub` (SQLite)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `.github/workflows/ops-hub-cloudflare.yaml` | **Owned:** `@vhpx` covers `/apps/ops-hub/`. |
 | `turbo-cache` | `tuturuuu-turbo-cache` | Custom domain `turbo-cache.tuturuuu.com`, `workersDev: false` | `ARTIFACTS` (R2), `BUDGET` (DO), `REQUEST_LIMITER` (RateLimiter: 600 req/10s), `TURBO_CACHE_MODE`, `TURBO_CACHE_REQUIRE_SIGNATURE`, `TURBO_CACHE_TTL_DAYS`, `TURBO_CACHE_MAX_ARTIFACT_BYTES`, `TURBO_CACHE_DAILY_CLASS_A`, `TURBO_CACHE_DAILY_CLASS_B`, `TURBO_CACHE_DAILY_WRITE_BYTES`, `TURBO_CACHE_MONTHLY_CLASS_A_FENCE`, `TURBO_CACHE_TOKENS`, `TURBO_CACHE_ADMIN_TOKEN_SHA256` | **DO:** `TurboCacheBudget` (SQLite)<br/>**Queue:** None<br/>**Cron:** None<br/>**R2:** `tuturuuu-turbo-cache`<br/>**RateLimit:** `REQUEST_LIMITER` (namespace 4207) | `vp build` | `.github/workflows/turbo-cache-cloudflare.yaml` | ⚠️ **FLAG: NO CODE OWNER.** `apps/turbo-cache/` lacks an entry in `.github/CODEOWNERS`. R2 bucket and token bindings require explicit ownership. |
 | `discord` | *N/A (Modal)* | Modal webhook endpoints (`app.modal.run`) | *N/A (Modal env / secrets: `DISCORD_TOKEN`, `DISCORD_PUBLIC_KEY`, `MODAL_TOKEN_ID`, `MODAL_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** Modal Cron (`@app.function(schedule=modal.Cron(...))`) | Python uv / `Dockerfile.markitdown` | `.github/workflows/discord-modal-deploy.yml` | ⚠️ **FLAG: NOT A WORKER.** Hosted on Modal. Partial code ownership (`/apps/discord/auth.py` by `@vhpx`). |
-| `chat-realtime` | *N/A (Docker)* | Internal sidecar: `http://chat-realtime:7817` | *N/A (Docker container env: `PORT=7817`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CHAT_REALTIME_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`docker-compose.web.prod.yml`, `.github/workflows/e2e-tests.yaml`) | ⚠️ **FLAG: NOT A WORKER.** Bun SSE Docker container. Partial code ownership (`/apps/chat-realtime/src/token.ts` by `@vhpx`). |
+| `chat-realtime` | `tuturuuu-chat-realtime` | Delivery origin pending release approval | `apps/chat-realtime/cloudflare.config.ts` | SQLite DOs for workspace inbox and conversation rooms | cf + Void build output | `.github/workflows/chat-realtime-cloudflare.yaml` | Worker artifact workflow; legacy SSE compatibility path retained until cutover. |
 | `hive-realtime` | *N/A (Docker)* | Reverse proxy: `hive.tuturuuu.com/realtime` -> port 7815 | *N/A (Docker / Bun process env: `PORT=7815`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `HIVE_REALTIME_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `bun src/index.ts` / `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/e2e-tests.yaml`) | ⚠️ **FLAG: NOT A WORKER.** Bun WebSocket Docker service. Partial code ownership (`/apps/hive-realtime/src/token.ts` by `@vhpx`). |
 | `supermemory` | *N/A (Docker)* | Internal service: `http://supermemory:8787` | *N/A (Docker container env: `DATABASE_URL`, `SUPERMEMORY_API_KEY`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** PostgreSQL pgvector memory support service in Docker. |
 | `storage-unzip-proxy` | *N/A (Docker)* | Internal service: `http://storage-unzip-proxy:8788/extract` | *N/A (Docker container env: `PORT=8788`, `DRIVE_UNZIP_PROXY_SHARED_TOKEN`, limits)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** Self-hosted ZIP extraction support service in Docker. |
@@ -198,14 +198,13 @@ Per D74 security and operational policies:
 - **Owner**: Partial code ownership (`/apps/discord/auth.py` by `@vhpx`).
 
 ### 10. `chat-realtime`
-- **Architecture**: Server-Sent Events (SSE) realtime service for Tuturuuu Chat running in Bun.
-- **Config file**: None (Dockerized Bun service; `Dockerfile`, `src/server.ts`).
-- **Worker Name**: Not a Cloudflare Worker. Deployed as a Docker Compose sidecar on port 7817 (`http://chat-realtime:7817`).
-- **Routes**: Internal service sidecar within Docker network.
-- **Bindings**: Not applicable (uses container environment variables: Supabase keys and `CHAT_REALTIME_TOKEN_SECRET`).
-- **Build & Test**: `docker build`.
-- **Workflow**: `docker-compose.web.prod.yml`, `.github/workflows/e2e-tests.yaml`.
-- **Owner**: Partial code ownership (`/apps/chat-realtime/src/token.ts` by `@vhpx`).
+
+`tuturuuu-chat-realtime` publishes committed Chat events to hibernating WebSocket
+rooms. The cf + Void configuration binds `INBOX` to `ChatInboxRoom` and
+`CONVERSATION` to `ChatConversationRoom`. The build-only workflow emits a sealed
+Worker artifact. Hosted routing and publication require release approval.
+The Bun SSE sidecar remains available to the internal compatibility path.
+See the [Chat realtime runbook](/build/devops/chat-realtime-runbook).
 
 ### 11. `hive-realtime`
 - **Architecture**: WebSocket realtime server for Tuturuuu Hive running in Bun.
@@ -246,4 +245,4 @@ Per D74 security and operational policies:
 2. **Add `apps/turbo-cache/` to `.github/CODEOWNERS`**:
    The service controls R2 artifact storage access, cache tokens (`TURBO_CACHE_TOKENS`), and admin token hashes.
 3. **Clarify Non-Worker Status**:
-   `discord`, `chat-realtime`, `hive-realtime`, `supermemory`, and `storage-unzip-proxy` are currently container/Modal services, not Cloudflare Workers. Any future migration of these services to Cloudflare Workers would require full architectural conversion to Worker runtimes (e.g., WebSocket Hibernation API for realtime services).
+   `discord`, `hive-realtime`, `supermemory`, and `storage-unzip-proxy` are currently container/Modal services, not Cloudflare Workers. Any future migration of these services to Cloudflare Workers would require full architectural conversion to Worker runtimes (e.g., WebSocket Hibernation API for realtime services).

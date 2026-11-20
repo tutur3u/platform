@@ -96,6 +96,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Lettin | Next/OpenNext web Worker with D1/R2 | Vite-native routes; preserve publication, ownership, D1 session and R2 contracts |
 | Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
 | Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
+| Chat realtime | cf + Void Worker with hibernating inbox and conversation Durable Objects | Bound fanout to two rooms per publish, deduplicate within the replay window, and verify the Worker stop secret and Web URL fence. See the [Chat realtime runbook](/build/devops/chat-realtime-runbook). |
 | Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
 | Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; the operations runbook is internal |
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |

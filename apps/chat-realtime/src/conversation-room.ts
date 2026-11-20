@@ -1,13 +1,11 @@
 import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
 import type { ChatRealtimeSubscribeTicket } from '@tuturuuu/realtime/chat/ticket';
-import { FrameLog } from './frame-log';
 import {
   CLOSE,
   type ClientFrame,
   canReceive,
   json,
   LIMITS,
-  parseSince,
   type SocketAttachment,
 } from './protocol';
 import { ChatRoom } from './room';
@@ -19,13 +17,6 @@ import { ChatRoom } from './room';
 export class ChatConversationRoom extends ChatRoom {
   protected readonly maxSockets = LIMITS.conversationSockets;
   protected readonly roomKind = 'conversation' as const;
-  private log: FrameLog;
-
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
-    this.log = new FrameLog(ctx.storage.sql);
-  }
-
   protected onReady(
     ws: WebSocket,
     ticket: ChatRealtimeSubscribeTicket,
@@ -43,21 +34,12 @@ export class ChatConversationRoom extends ChatRoom {
       t: 'ready',
       userId: ticket.userId,
     });
-    this.broadcast(
+    this.broadcastPresence(
       { state: 'foreground', t: 'presence', userId: ticket.userId },
       (attachment, other) => other !== ws && attachment.userId !== ticket.userId
     );
 
-    const since = parseSince(url.searchParams.get('since'));
-    if (since === null) return;
-    const replay = this.log.since(since);
-    if (replay.kind === 'resync') this.send(ws, { t: 'resync' });
-    if (replay.kind !== 'replay') return;
-    for (const frame of replay.frames) {
-      if (canReceive(frame.event, ticket.userId)) {
-        this.send(ws, { event: frame.event, seq: frame.seq, t: 'event' });
-      }
-    }
+    this.replay(ws, ticket.userId, url);
   }
 
   protected onClientFrame(
@@ -68,7 +50,7 @@ export class ChatConversationRoom extends ChatRoom {
     const others = (other: SocketAttachment) =>
       other.userId !== attachment.userId;
     if (frame.t === 'typing') {
-      this.broadcast(
+      this.broadcastPresence(
         { on: frame.on, t: 'typing', userId: attachment.userId },
         others
       );
@@ -76,8 +58,8 @@ export class ChatConversationRoom extends ChatRoom {
     }
     if (attachment.state === frame.state) return;
     attachment.state = frame.state;
-    ws.serializeAttachment(attachment);
-    this.broadcast(
+    this.saveAttachment(ws, attachment);
+    this.broadcastPresence(
       { state: frame.state, t: 'presence', userId: attachment.userId },
       others
     );
@@ -85,20 +67,27 @@ export class ChatConversationRoom extends ChatRoom {
 
   protected onLeave(userId: string, stillConnected: boolean) {
     if (stillConnected) return;
-    this.broadcast({ state: 'offline', t: 'presence', userId });
+    this.broadcastPresence({ state: 'offline', t: 'presence', userId });
   }
 
-  protected publish(body: unknown) {
-    const event = body as ChatRealtimeEvent;
-    const seq = this.log.append(event);
-    this.broadcast({ event, seq, t: 'event' }, (attachment) =>
-      canReceive(event, attachment.userId)
-    );
-    if (event.type === 'member.removed') {
-      this.closeUser(event.userId, CLOSE.removed, 'removed');
-    }
-    if (event.type === 'conversation.deleted') {
-      this.closeAll(CLOSE.removed, 'deleted');
+  protected publish(event: ChatRealtimeEvent) {
+    const { duplicate, seq } = this.log.append(event, () => {
+      if (event.type === 'member.removed') {
+        this.admission.revoke(event.userId, Date.now());
+      }
+    });
+    if (!duplicate) {
+      const removedUser = event.type === 'member.removed' ? event.userId : null;
+      if (removedUser) this.closeUser(removedUser, CLOSE.removed, 'removed');
+      this.broadcast(
+        { event, seq, t: 'event' },
+        (attachment) =>
+          attachment.userId !== removedUser &&
+          canReceive(event, attachment.userId)
+      );
+      if (event.type === 'conversation.deleted') {
+        this.closeAll(CLOSE.removed, 'deleted');
+      }
     }
     const foregroundUserIds = [...this.liveUsers()]
       .filter(([, state]) => state === 'foreground')

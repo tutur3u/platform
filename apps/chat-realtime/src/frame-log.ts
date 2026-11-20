@@ -14,15 +14,20 @@ export type ReplayResult =
  * no older than `LIMITS.logMaxAgeMs`, so storage stays bounded.
  */
 export class FrameLog {
-  constructor(private sql: SqlStorage) {
-    sql.exec(`
+  constructor(private readonly storage: DurableObjectStorage) {
+    this.sql.exec(`
       CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS frames (
         seq INTEGER PRIMARY KEY,
         at INTEGER NOT NULL,
+        event_id TEXT NOT NULL UNIQUE,
         body TEXT NOT NULL
       );
     `);
+  }
+
+  private get sql() {
+    return this.storage.sql;
   }
 
   current() {
@@ -32,24 +37,39 @@ export class FrameLog {
     return row?.v ?? 0;
   }
 
-  append(event: ChatRealtimeEvent, now = Date.now()) {
-    const seq = this.current() + 1;
-    this.sql.exec(
-      "INSERT INTO meta (k, v) VALUES ('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v",
-      seq
-    );
-    this.sql.exec(
-      'INSERT INTO frames (seq, at, body) VALUES (?, ?, ?)',
-      seq,
-      now,
-      JSON.stringify(event)
-    );
-    this.sql.exec(
-      'DELETE FROM frames WHERE seq <= ? OR at < ?',
-      seq - LIMITS.logFrames,
-      now - LIMITS.logMaxAgeMs
-    );
-    return seq;
+  append(event: ChatRealtimeEvent, onAppend?: () => void, now = Date.now()) {
+    return this.storage.transactionSync(() => {
+      this.sql.exec(
+        'DELETE FROM frames WHERE at < ?',
+        now - LIMITS.logMaxAgeMs
+      );
+      const duplicate = this.sql
+        .exec<{ seq: number }>(
+          'SELECT seq FROM frames WHERE event_id = ?',
+          event.id
+        )
+        .toArray()[0];
+      if (duplicate) return { duplicate: true, seq: duplicate.seq };
+
+      onAppend?.();
+      const seq = this.current() + 1;
+      this.sql.exec(
+        "INSERT INTO meta (k, v) VALUES ('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v",
+        seq
+      );
+      this.sql.exec(
+        'INSERT INTO frames (seq, at, event_id, body) VALUES (?, ?, ?, ?)',
+        seq,
+        now,
+        event.id,
+        JSON.stringify(event)
+      );
+      this.sql.exec(
+        'DELETE FROM frames WHERE seq <= ?',
+        seq - LIMITS.logFrames
+      );
+      return { duplicate: false, seq };
+    });
   }
 
   /** Frames after `since`, or `resync` when the log no longer covers the gap. */

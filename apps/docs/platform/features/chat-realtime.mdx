@@ -51,19 +51,26 @@ apps/web ─publish─▶ chat-realtime Worker ─▶ ConversationRoom DO ─▶
 workspace, require `view_chat`, and for a conversation ticket confirm
 participation through the private RPC. It returns the Worker URL and an HMAC
 ticket signed with `CHAT_REALTIME_TOKEN_SECRET`. The ticket binds audience
-`chat-realtime`, `wsId`, `userId`, scope `subscribe`, optional
-`conversationId`, and an expiry of at most 15 minutes.
+`chat-realtime`, `wsId`, `userId`, scope `subscribe`, and the room. Inbox
+tickets last up to five minutes. Conversation tickets also bind
+`conversationId` and last up to 15 minutes. The client offers the ticket in
+`Sec-WebSocket-Protocol` and keeps it out of the URL.
 
 The Worker requires a dedicated `CHAT_REALTIME_TOKEN_SECRET`; the Supabase
-service key fallback is local-only and is never given to Cloudflare. A socket
-stops receiving frames once its ticket expires: the room closes it with code
-`4001` on the next frame, and the client fetches a fresh ticket, which
-re-checks membership. When a member is removed, `apps/web` publishes
-`member.removed` and the rooms close that user's sockets right away.
+service key fallback is local-only and is never given to Cloudflare. Rooms enforce expiry on the next socket or room event and close expired
+sockets with code `4001`. An idle socket can stay open after expiry until
+activity resumes. A new ticket requires a fresh authorization check.
+When a conversation member is removed, `apps/web` publishes `member.removed`
+and the room closes that user’s sockets. A short-lived SQLite record also
+blocks reconnections with tickets issued before the removal, including the
+allowed clock skew.
 
 Publishing is server-to-server only. `apps/web` signs a 60-second ticket with
 scope `publish` that is bound to the SHA-256 of the request body, after the RPC
-commits. A subscribe ticket can never publish.
+commits. Publishing requires a publish ticket. The rooms deduplicate event IDs within
+their replay window. Conversation events require an explicit user audience.
+Inbox frames carry a message ID and its event metadata for message and reaction
+updates.
 
 ### Ordering, reconnect and backfill
 
@@ -98,13 +105,15 @@ triggers, queues or outbound fetches, so nothing can reschedule itself.
 | Client frame size | 2 KB; larger frames close the socket with `1009` |
 | Client frames per socket | 20 per 10 s (typing, presence, read); excess closes with `1008` |
 | Sockets per user per room | 5; the oldest is closed |
+| Accepted connection attempts per user per room | 10 per minute |
+| Presence and typing broadcasts per room | 20 per 10 s |
 | Sockets per room | 500 per conversation, 5,000 per workspace inbox |
 | Publish body | 64 KB, one event per request |
 | Stored frames per room | 200, at most 15 minutes old |
 
-Two independent fences stop all realtime work. `CHAT_REALTIME_STOPPED=true` on
-the Worker rejects upgrades and publishes with `503`, and every room closes its
-sockets on the next frame. Removing `CHAT_REALTIME_URL` from `apps/web` stops
+Two independent fences stop realtime delivery. Setting the Worker secret
+`CHAT_REALTIME_STOPPED=true` rejects upgrades and publishes with `503`. A room
+closes existing sockets on their next inbound frame. Removing `CHAT_REALTIME_URL` from `apps/web` stops
 both minting and publishing. Either fence alone returns clients to polling with
 no data loss. Regression tests cover both.
 

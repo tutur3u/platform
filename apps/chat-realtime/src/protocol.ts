@@ -7,6 +7,9 @@ export const LIMITS = {
   framesPerWindow: 20,
   windowMs: 10_000,
   socketsPerUserPerRoom: 5,
+  connectsPerWindow: 10,
+  connectWindowMs: 60_000,
+  presenceBroadcastsPerWindow: 20,
   conversationSockets: 500,
   inboxSockets: 5000,
   inboxOnlineSnapshot: 500,
@@ -86,13 +89,17 @@ export function parseSince(value: string | null) {
 }
 
 /** Counts one inbound frame against the socket window; false when exceeded. */
-export function consumeRate(attachment: SocketAttachment, now: number) {
+export function consumeRate(
+  attachment: Pick<SocketAttachment, 'count' | 'windowStart'>,
+  now: number,
+  limit: number = LIMITS.framesPerWindow
+) {
   if (now - attachment.windowStart >= LIMITS.windowMs) {
     attachment.windowStart = now;
     attachment.count = 0;
   }
   attachment.count += 1;
-  return attachment.count <= LIMITS.framesPerWindow;
+  return attachment.count <= limit;
 }
 
 export function frameByteLength(data: string | ArrayBuffer) {
@@ -126,7 +133,10 @@ export function parseClientFrame(
   return null;
 }
 
-export function isExpired(attachment: SocketAttachment, now: number) {
+export function isExpired(
+  attachment: Pick<SocketAttachment, 'exp'>,
+  now: number
+) {
   return attachment.exp * 1000 <= now;
 }
 
@@ -141,6 +151,28 @@ export function isInboxEvent(event: ChatRealtimeEvent) {
     event.type !== 'typing.updated' &&
     event.type !== 'presence.updated'
   );
+}
+
+export function toInboxEvent(event: ChatRealtimeEvent): ChatRealtimeEvent {
+  if (
+    event.type !== 'message.created' &&
+    event.type !== 'message.updated' &&
+    event.type !== 'message.deleted' &&
+    event.type !== 'reaction.updated'
+  ) {
+    return event;
+  }
+  const message = event.message;
+  return {
+    ...event,
+    message:
+      message &&
+      typeof message === 'object' &&
+      'id' in message &&
+      typeof message.id === 'string'
+        ? { id: message.id }
+        : {},
+  };
 }
 
 export function json(body: unknown, status = 200) {

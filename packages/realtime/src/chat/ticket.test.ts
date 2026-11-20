@@ -16,7 +16,7 @@ const conversationId = '00000000-0000-4000-8000-000000000003';
 const inbox = (overrides: Partial<ChatRealtimeTicket> = {}) =>
   ({
     aud: 'chat-realtime',
-    exp: nowSeconds + 600,
+    exp: nowSeconds + 300,
     iat: nowSeconds,
     kind: 'subscribe',
     room: 'inbox',
@@ -75,15 +75,15 @@ describe('chat realtime tickets', () => {
   it('enforces expiry, issue time and per-kind lifetime', async () => {
     const token = await signChatRealtimeTicket(inbox(), SECRET);
     expect(
-      await verifyChatRealtimeTicket(token, SECRET, NOW + 601_000)
+      await verifyChatRealtimeTicket(token, SECRET, NOW + 300_000)
     ).toBeNull();
     const future = await signChatRealtimeTicket(
-      inbox({ exp: nowSeconds + 700, iat: nowSeconds + 120 }),
+      inbox({ exp: nowSeconds + 420, iat: nowSeconds + 120 }),
       SECRET
     );
     expect(await verifyChatRealtimeTicket(future, SECRET, NOW)).toBeNull();
     await expect(
-      signChatRealtimeTicket(inbox({ exp: nowSeconds + 16 * 60 }), SECRET)
+      signChatRealtimeTicket(inbox({ exp: nowSeconds + 301 }), SECRET)
     ).rejects.toThrow(/lifetime/u);
   });
 
@@ -95,7 +95,7 @@ describe('chat realtime tickets', () => {
       signChatRealtimeTicket(inbox({ room: 'conversation' }), SECRET)
     ).rejects.toThrow();
     const token = await signChatRealtimeTicket(
-      inbox({ conversationId, room: 'conversation' }),
+      inbox({ conversationId, room: 'conversation', exp: nowSeconds + 900 }),
       SECRET
     );
     expect(await verifyChatRealtimeTicket(token, SECRET, NOW)).toMatchObject({
@@ -114,7 +114,7 @@ describe('chat realtime tickets', () => {
   });
 
   it('does not accept legacy sidecar tokens', async () => {
-    const { signChatRealtimeToken } = await import('./token');
+    const { signChatRealtimeToken } = await import('./token.js');
     const legacy = signChatRealtimeToken(
       { exp: nowSeconds + 60, scopes: ['subscribe'], userId, wsId },
       SECRET

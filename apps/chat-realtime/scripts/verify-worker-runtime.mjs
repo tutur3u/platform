@@ -56,6 +56,29 @@ test('rejects missing, wrong-kind and non-upgrade connects', async () => {
   );
 });
 
+test('rejects altered workspace and room claims', async () => {
+  const ticket = await conversationTicket(ALICE);
+  const [payload, signature] = ticket.split('.');
+  const claims = JSON.parse(Buffer.from(payload, 'base64url').toString());
+  const otherWorkspace = '00000000-0000-4000-8000-0000000000a2';
+  const { conversationId, ...inbox } = claims;
+  assert.equal(conversationId, CONVERSATION);
+  for (const altered of [
+    { ...claims, wsId: otherWorkspace },
+    { ...inbox, room: 'inbox' },
+  ]) {
+    const encoded = Buffer.from(JSON.stringify(altered)).toString('base64url');
+    await assert.rejects(openSocket(server.origin, `${encoded}.${signature}`));
+  }
+
+  const isolated = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE, { wsId: otherWorkspace })
+  );
+  assert.equal(isolated.frames.find((f) => f.t === 'ready').seq, 0);
+  isolated.close();
+});
+
 test('fans out persisted events by audience with ordered sequence numbers', async () => {
   const aliceInbox = await openSocket(
     server.origin,
@@ -87,9 +110,11 @@ test('fans out persisted events by audience with ordered sequence numbers', asyn
     assert.equal(frame.seq, 1);
     assert.equal(frame.event.type, 'message.created');
   }
-  await bobInbox.next(
+  const summary = await bobInbox.next(
     (f) => f.t === 'event' && f.event.type === 'message.created'
   );
+  assert.deepEqual(Object.keys(summary.event.message), ['id']);
+  assert.equal(summary.seq, 1);
 
   // An event for Alice only never reaches Bob's sockets.
   const privateEvent = messageEvent('read.updated', {
@@ -179,6 +204,16 @@ test('authenticates and bounds publishes', async () => {
     400
   );
   assert.equal((await publish(server, { ...event, type: 'nope' })).status, 400);
+  assert.equal(
+    (await publish(server, { ...event, conversationId: 'another-room' }))
+      .status,
+    400
+  );
+  assert.equal(
+    (await publish(server, { ...event, audience: { scope: 'workspace' } }))
+      .status,
+    400
+  );
   const huge = { ...event, message: { content: 'x'.repeat(70 * 1024) } };
   assert.equal((await publish(server, huge)).status, 413);
 });
@@ -196,14 +231,13 @@ test('closes rate-limited, oversized, removed and expired sockets', async () => 
   big.socket.send(JSON.stringify({ pad: 'x'.repeat(4096), t: 'typing' }));
   assert.equal((await big.closed).code, 1009);
 
-  const removed = await openSocket(
-    server.origin,
-    await conversationTicket(BOB)
-  );
+  const removedTicket = await conversationTicket(BOB);
+  const removed = await openSocket(server.origin, removedTicket);
   const removal = messageEvent('member.removed', { userId: BOB });
   delete removal.message;
   assert.equal((await publish(server, removal)).status, 200);
   assert.equal((await removed.closed).code, 4003);
+  await assert.rejects(openSocket(server.origin, removedTicket));
 
   const nowSeconds = Math.floor(Date.now() / 1000);
   const expiring = await openSocket(
@@ -228,6 +262,64 @@ test('caps sockets per user per room', async () => {
   }
   assert.equal((await sockets[0].closed).code, 1008);
   for (const socket of sockets.slice(1)) socket.close();
+});
+
+test('deduplicates an event across both room logs and a restart', async () => {
+  const event = messageEvent('message.created');
+  const first = await (await publish(server, event)).json();
+  assert.ok(first.seq > 0);
+  await server.restart();
+  const duplicate = await (await publish(server, event)).json();
+  assert.equal(duplicate.ok, true);
+  assert.equal(duplicate.seq, first.seq);
+
+  for (const [name, id] of [
+    ['ChatConversationRoom', `${WS}:${CONVERSATION}`],
+    ['ChatInboxRoom', WS],
+  ]) {
+    const [{ count }] = await server.durableObjectSql(
+      name,
+      id,
+      'SELECT COUNT(*) AS count FROM frames WHERE event_id = ?',
+      [event.id]
+    );
+    assert.equal(count, 1);
+  }
+});
+
+test('bounds user connect churn and room presence fanout', async () => {
+  const conversationId = '00000000-0000-4000-8000-0000000000c2';
+  const dorothy = '00000000-0000-4000-8000-000000000003';
+  const bobTicket = await conversationTicket(BOB, { conversationId });
+  const alice = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE, { conversationId })
+  );
+  const bob = await openSocket(server.origin, bobTicket);
+  const third = await openSocket(
+    server.origin,
+    await conversationTicket(dorothy, { conversationId })
+  );
+  for (let index = 0; index < 15; index += 1) {
+    bob.send({ on: true, t: 'typing' });
+    third.send({ on: true, t: 'typing' });
+  }
+  await alice.next(
+    () => alice.frames.filter((f) => f.t === 'typing').length === 17
+  );
+  await sleep(60);
+  assert.equal(alice.frames.filter((f) => f.t === 'typing').length, 17);
+
+  const churnRoom = '00000000-0000-4000-8000-0000000000c3';
+  const churnTicket = await conversationTicket(BOB, {
+    conversationId: churnRoom,
+  });
+  for (let index = 0; index < 10; index += 1) {
+    const socket = await openSocket(server.origin, churnTicket);
+    socket.close();
+  }
+  await assert.rejects(openSocket(server.origin, churnTicket));
+  for (const socket of [alice, bob, third]) socket.close();
 });
 
 test('keeps the frame log bounded and the sequence durable across restart', async () => {
@@ -259,8 +351,32 @@ test('keeps the frame log bounded and the sequence durable across restart', asyn
   resumed.close();
 });
 
-test('the stop fence rejects connects and publishes and closes open sockets', async () => {
-  const open = await openSocket(server.origin, await conversationTicket(ALICE));
+test('a live workerd room closes its existing socket when stopped', async () => {
+  await server.close();
+  const fixtureRoot = fileURLToPath(
+    new URL('./fixtures/live-stop/', import.meta.url)
+  );
+  server = await startCfViteWorker({
+    mode: 'source',
+    root: fixtureRoot,
+    secrets: {
+      CHAT_REALTIME_STOPPED: 'false',
+      CHAT_REALTIME_TOKEN_SECRET: SECRET,
+    },
+  });
+  const client = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE)
+  );
+  const endpoint =
+    '/fixture/arm-stop?room=' + encodeURIComponent(`${WS}:${CONVERSATION}`);
+  assert.equal((await server.fetch(endpoint)).status, 204);
+  client.send({ on: true, t: 'typing' });
+  await client.next((frame) => frame.t === 'stopped');
+  assert.equal((await client.closed).code, 4503);
+});
+
+test('the Worker stop fence rejects new connects and publishes', async () => {
   await server.close();
   server = await startCfViteWorker({
     mode: 'source',
@@ -270,8 +386,6 @@ test('the stop fence rejects connects and publishes and closes open sockets', as
       CHAT_REALTIME_TOKEN_SECRET: SECRET,
     },
   });
-  // The old runtime is gone, so its socket closes; the stopped one refuses work.
-  await open.closed;
   assert.deepEqual(await (await server.fetch('/health')).json(), {
     ok: true,
     stopped: true,

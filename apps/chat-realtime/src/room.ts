@@ -1,6 +1,8 @@
+import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
 import { DurableObject } from 'cloudflare:workers';
 import type { ChatRealtimeSubscribeTicket } from '@tuturuuu/realtime/chat/ticket';
 import {
+  canReceive,
   CLOSE,
   type ClientFrame,
   consumeRate,
@@ -9,15 +11,14 @@ import {
   json,
   LIMITS,
   parseClientFrame,
+  parseSince,
   ROOM_TICKET_HEADER,
   type ServerFrame,
   type SocketAttachment,
   SUBPROTOCOL,
 } from './protocol';
-
-export function attachmentOf(ws: WebSocket) {
-  return ws.deserializeAttachment() as SocketAttachment | null;
-}
+import { FrameLog } from './frame-log';
+import { RoomAdmission } from './room-admission';
 
 function safeClose(ws: WebSocket, code: number, reason: string) {
   try {
@@ -34,12 +35,15 @@ function safeClose(ws: WebSocket, code: number, reason: string) {
 export abstract class ChatRoom extends DurableObject<Env> {
   protected abstract readonly maxSockets: number;
   protected abstract readonly roomKind: 'inbox' | 'conversation';
+  protected readonly log: FrameLog;
+  protected readonly admission: RoomAdmission;
+  private readonly attachments = new WeakMap<WebSocket, SocketAttachment>();
+  private presenceWindow = { count: 0, windowStart: 0 };
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.ctx.setWebSocketAutoResponse(
-      new WebSocketRequestResponsePair('{"t":"ping"}', '{"t":"pong"}')
-    );
+    this.log = new FrameLog(ctx.storage);
+    this.admission = new RoomAdmission(ctx.storage);
   }
 
   async fetch(request: Request) {
@@ -49,7 +53,7 @@ export abstract class ChatRoom extends DurableObject<Env> {
     }
     const url = new URL(request.url);
     if (url.pathname === '/publish' && request.method === 'POST') {
-      return this.publish(await request.json());
+      return this.publish(await request.json<ChatRealtimeEvent>());
     }
     if (url.pathname === '/connect') {
       const ticket = JSON.parse(
@@ -62,7 +66,9 @@ export abstract class ChatRoom extends DurableObject<Env> {
     return json({ error: 'Not found' }, 404);
   }
 
-  protected abstract publish(body: unknown): Promise<Response> | Response;
+  protected abstract publish(
+    event: ChatRealtimeEvent
+  ): Promise<Response> | Response;
   protected abstract onReady(
     ws: WebSocket,
     ticket: ChatRealtimeSubscribeTicket,
@@ -77,11 +83,21 @@ export abstract class ChatRoom extends DurableObject<Env> {
 
   private acceptTicket(ticket: ChatRealtimeSubscribeTicket, url: URL) {
     const now = Date.now();
+    if (isExpired(ticket, now) || !this.admission.mayConnect(ticket, now)) {
+      return json({ error: 'Unauthorized' }, 401);
+    }
+    if (
+      !this.admission.consumeConnect(ticket.userId, now, this.maxSockets * 2)
+    ) {
+      return json({ error: 'Too many connections' }, 429);
+    }
     this.evictExpired(now);
     if (this.ctx.getWebSockets().length >= this.maxSockets) {
       return json({ error: 'Room full' }, 503);
     }
-    const own = this.ctx.getWebSockets(ticket.userId);
+    const own = this.ctx
+      .getWebSockets(ticket.userId)
+      .filter((ws) => ws.readyState === WebSocket.OPEN);
     for (
       let excess = own.length - LIMITS.socketsPerUserPerRoom + 1;
       excess > 0;
@@ -94,7 +110,7 @@ export abstract class ChatRoom extends DurableObject<Env> {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
     this.ctx.acceptWebSocket(server, [ticket.userId]);
-    server.serializeAttachment({
+    this.saveAttachment(server, {
       count: 0,
       exp: ticket.exp,
       state: 'foreground',
@@ -114,14 +130,14 @@ export abstract class ChatRoom extends DurableObject<Env> {
       this.closeAll(CLOSE.stopped, 'stopped');
       return;
     }
-    const attachment = attachmentOf(ws);
+    const attachment = this.getAttachment(ws);
     const now = Date.now();
     if (!attachment) return safeClose(ws, CLOSE.policy, 'unknown socket');
     if (isExpired(attachment, now)) return this.expire(ws);
     const frame = parseClientFrame(data);
     if (frame === 'too-big') return safeClose(ws, CLOSE.tooBig, 'too big');
     const allowed = consumeRate(attachment, now);
-    ws.serializeAttachment(attachment);
+    this.saveAttachment(ws, attachment);
     if (!allowed) return safeClose(ws, CLOSE.policy, 'rate limited');
     if (frame) this.onClientFrame(ws, attachment, frame);
   }
@@ -136,12 +152,53 @@ export abstract class ChatRoom extends DurableObject<Env> {
   }
 
   private leave(ws: WebSocket) {
-    const attachment = attachmentOf(ws);
+    const attachment = this.getAttachment(ws);
     if (!attachment) return;
     const stillConnected = this.ctx
       .getWebSockets(attachment.userId)
       .some((other) => other !== ws && other.readyState === WebSocket.OPEN);
     this.onLeave(attachment.userId, stillConnected);
+  }
+
+  private getAttachment(ws: WebSocket) {
+    const cached = this.attachments.get(ws);
+    if (cached) return cached;
+    const attachment = ws.deserializeAttachment() as SocketAttachment | null;
+    if (attachment) this.attachments.set(ws, attachment);
+    return attachment;
+  }
+
+  protected saveAttachment(ws: WebSocket, attachment: SocketAttachment) {
+    this.attachments.set(ws, attachment);
+    ws.serializeAttachment(attachment);
+  }
+
+  protected broadcastPresence(
+    frame: Extract<ServerFrame, { t: 'online' | 'presence' | 'typing' }>,
+    admit?: (attachment: SocketAttachment, ws: WebSocket) => boolean
+  ) {
+    if (
+      consumeRate(
+        this.presenceWindow,
+        Date.now(),
+        LIMITS.presenceBroadcastsPerWindow
+      )
+    ) {
+      this.broadcast(frame, admit);
+    }
+  }
+
+  protected replay(ws: WebSocket, userId: string, url: URL) {
+    const since = parseSince(url.searchParams.get('since'));
+    if (since === null) return;
+    const replay = this.log.since(since);
+    if (replay.kind === 'resync') this.send(ws, { t: 'resync' });
+    if (replay.kind !== 'replay') return;
+    for (const frame of replay.frames) {
+      if (canReceive(frame.event, userId)) {
+        this.send(ws, { event: frame.event, seq: frame.seq, t: 'event' });
+      }
+    }
   }
 
   protected send(ws: WebSocket, frame: ServerFrame) {
@@ -159,7 +216,8 @@ export abstract class ChatRoom extends DurableObject<Env> {
 
   private evictExpired(now: number) {
     for (const ws of this.ctx.getWebSockets()) {
-      const attachment = attachmentOf(ws);
+      if (ws.readyState !== WebSocket.OPEN) continue;
+      const attachment = this.getAttachment(ws);
       if (!attachment || isExpired(attachment, now)) this.expire(ws);
     }
   }
@@ -172,7 +230,8 @@ export abstract class ChatRoom extends DurableObject<Env> {
     const now = Date.now();
     const payload = JSON.stringify(frame);
     for (const ws of this.ctx.getWebSockets()) {
-      const attachment = attachmentOf(ws);
+      if (ws.readyState !== WebSocket.OPEN) continue;
+      const attachment = this.getAttachment(ws);
       if (!attachment || isExpired(attachment, now)) {
         this.expire(ws);
         continue;
@@ -186,12 +245,13 @@ export abstract class ChatRoom extends DurableObject<Env> {
     }
   }
 
-  /** Distinct live users in this room, most recent socket state per user. */
+  /** Distinct live users; any foreground socket makes its user foreground. */
   protected liveUsers() {
     const now = Date.now();
     const users = new Map<string, SocketAttachment['state']>();
     for (const ws of this.ctx.getWebSockets()) {
-      const attachment = attachmentOf(ws);
+      if (ws.readyState !== WebSocket.OPEN) continue;
+      const attachment = this.getAttachment(ws);
       if (!attachment || isExpired(attachment, now)) continue;
       if (users.get(attachment.userId) !== 'foreground') {
         users.set(attachment.userId, attachment.state);

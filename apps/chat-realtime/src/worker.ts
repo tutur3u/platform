@@ -3,6 +3,7 @@ import {
   chatRealtimeBodyDigest,
   verifyChatRealtimeTicket,
 } from '@tuturuuu/realtime/chat/ticket';
+import { z } from 'zod';
 import {
   isInboxEvent,
   isStopped,
@@ -10,11 +11,19 @@ import {
   LIMITS,
   parseTicketProtocol,
   ROOM_TICKET_HEADER,
+  toInboxEvent,
   readBounded,
 } from './protocol';
 
 export { ChatConversationRoom } from './conversation-room';
 export { ChatInboxRoom } from './inbox-room';
+
+const conversationIdSchema = z.uuid();
+const workerEventSchema = chatRealtimeEventSchema.refine(
+  ({ conversationId }) =>
+    conversationId == null ||
+    conversationIdSchema.safeParse(conversationId).success
+);
 
 function room(namespace: DurableObjectNamespace, name: string) {
   return namespace.get(namespace.idFromName(name));
@@ -88,14 +97,17 @@ async function publish(request: Request, env: Env) {
   } catch {
     return json({ error: 'Invalid payload' }, 400);
   }
-  const parsed = chatRealtimeEventSchema.safeParse(raw);
+  const parsed = workerEventSchema.safeParse(raw);
   if (!parsed.success || parsed.data.wsId !== ticket.wsId) {
     return json({ error: 'Invalid event' }, 400);
   }
   const event = parsed.data;
-  const payload = JSON.stringify(event);
+  if (event.conversationId && event.audience.scope === 'workspace') {
+    return json({ error: 'Conversation events require a user audience' }, 400);
+  }
+
   const init = {
-    body: payload,
+    body: JSON.stringify(event),
     headers: { 'content-type': 'application/json' },
     method: 'POST',
   };
@@ -116,7 +128,7 @@ async function publish(request: Request, env: Env) {
   if (isInboxEvent(event)) {
     const response = await room(env.INBOX, event.wsId).fetch(
       'https://room/publish',
-      init
+      { ...init, body: JSON.stringify(toInboxEvent(event)) }
     );
     if (!response.ok) return json({ error: 'Room unavailable' }, 503);
   }
