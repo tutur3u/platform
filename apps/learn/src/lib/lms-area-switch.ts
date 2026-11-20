@@ -5,8 +5,6 @@ import {
   resolveLmsAreaSwitchHref,
 } from '@tuturuuu/education-core/tulearn/lms-area-switch';
 import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 
 export async function resolveLearnAreaSwitchHref({
   currentWsId,
@@ -19,12 +17,15 @@ export async function resolveLearnAreaSwitchHref({
 }): Promise<string | null> {
   const actor = await resolveSatellitePageActor('learn');
   if (!actor) return null;
-  const supabase = (await createClient()) as TypedSupabaseClient;
 
   return resolveLmsAreaSwitchHref({
     current: 'learn',
     hasOtherAreaAccess: (wsId) =>
-      hasLmsStaffAreaAccess({ supabase, user: actor.user, wsId }),
+      hasLmsStaffAreaAccess({
+        supabase: actor.admin,
+        user: actor.user,
+        wsId,
+      }),
     locale,
     workspaceIds: lmsAreaWorkspaceOrder(currentWsId, workspaceIds),
   });
