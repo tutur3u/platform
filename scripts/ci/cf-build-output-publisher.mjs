@@ -31,7 +31,7 @@ function matchesModuleBasename(name, globs) {
       .replaceAll('**/', '')
       .replaceAll('**', '')
       .replaceAll('*', '.*');
-    return new RegExp(`^${pattern}$`).test(name) || /\.m?js$/u.test(name);
+    return new RegExp(`^${pattern}$`).test(name);
   });
 }
 
@@ -54,11 +54,73 @@ export function buildOutputObservability(observability) {
   return output;
 }
 
+function discoverCfBuildOutputEsmModulesFromVite(bundleRoot, mainModule) {
+  const manifestPath = join(bundleRoot, '.vite/manifest.json');
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+  assert.ok(
+    manifest && !Array.isArray(manifest) && typeof manifest === 'object',
+    'Invalid Vite manifest'
+  );
+  const mainBase = mainModule.split('/').pop();
+  const entries = Object.values(manifest).filter(
+    (record) =>
+      record?.file &&
+      (record.isEntry === true ||
+        record.file === mainModule ||
+        record.file.endsWith(`/${mainBase}`) ||
+        record.file === mainBase)
+  );
+  assert.ok(entries.length > 0, 'Vite manifest missing Worker entry');
+  const modules = {};
+  const queue = entries.map((record) => record.file);
+  const seen = new Set();
+  while (queue.length) {
+    const file = queue.shift();
+    if (!file || seen.has(file)) continue;
+    seen.add(file);
+    const rel = posixPath(file);
+    assert.ok(
+      !/\.map$/u.test(rel),
+      'Vite module graph must not reference source maps'
+    );
+    const path = join(bundleRoot, rel);
+    assert.ok(
+      lstatSync(path).isFile(),
+      `Vite module missing from bundle: ${rel}`
+    );
+    modules[rel] = { type: 'esm' };
+    const record = Object.values(manifest).find((item) => item.file === file);
+    for (const key of [
+      ...(record?.imports ?? []),
+      ...(record?.dynamicImports ?? []),
+    ]) {
+      const next = manifest[key]?.file;
+      if (next) queue.push(next);
+    }
+  }
+  assert.ok(
+    Object.hasOwn(modules, mainModule),
+    'main module missing from Vite graph'
+  );
+  return modules;
+}
+
 export function discoverCfBuildOutputEsmModules(
   bundleRoot,
   config,
   mainModule
 ) {
+  const fromVite = discoverCfBuildOutputEsmModulesFromVite(
+    bundleRoot,
+    mainModule
+  );
+  if (fromVite) return fromVite;
   const globs = moduleGlobs(config);
   const modules = {};
   function visit(directory) {
@@ -67,6 +129,7 @@ export function discoverCfBuildOutputEsmModules(
       const stat = lstatSync(path);
       assert.ok(!stat.isSymbolicLink(), 'bundle symlink forbidden');
       if (stat.isDirectory()) {
+        if (name.startsWith('.')) continue;
         visit(path);
         continue;
       }
@@ -74,7 +137,7 @@ export function discoverCfBuildOutputEsmModules(
       if (name.endsWith('.map')) continue;
       const rel = posixPath(relative(bundleRoot, path));
       if (!/\.(?:m?js)$/u.test(rel)) continue;
-      if (!matchesModuleBasename(name, globs)) continue;
+      if (rel !== mainModule && !matchesModuleBasename(name, globs)) continue;
       modules[rel] = { type: 'esm' };
     }
   }
@@ -352,15 +415,29 @@ export function runCfPrebuilt({
   if (dryRun) assert.equal(cfToken, undefined);
   const stdio = dryRun ? ['ignore', 'pipe', 'pipe'] : 'pipe';
   const encoding = dryRun ? undefined : 'utf8';
-  const result = exec('bun', args, {
-    cwd,
-    env: cfChildEnv(env, { cfToken, accountId }),
-    stdio,
-    encoding,
-    timeout: dryRun ? 120000 : 180000,
-    maxBuffer: 4 * 1024 * 1024,
-  });
-  return typeof result === 'string' ? result : '';
+  try {
+    const result = exec('bun', args, {
+      cwd,
+      env: cfChildEnv(env, { cfToken, accountId }),
+      stdio,
+      encoding,
+      timeout: dryRun ? 120000 : 180000,
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    return typeof result === 'string' ? result : '';
+  } catch (error) {
+    if (dryRun && error && typeof error === 'object') {
+      const stdout = Buffer.isBuffer(error.stdout)
+        ? error.stdout.toString('utf8')
+        : String(error.stdout ?? '');
+      const stderr = Buffer.isBuffer(error.stderr)
+        ? error.stderr.toString('utf8')
+        : String(error.stderr ?? '');
+      if (!stderr.trim() && stdout.trim()) error.stderr = stdout;
+      else if (stdout.trim()) error.stderr = `${stderr}\n${stdout}`;
+    }
+    throw error;
+  }
 }
 
 export function teardownStagedOutput(appRoot) {

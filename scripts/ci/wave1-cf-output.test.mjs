@@ -37,9 +37,21 @@ function execCfFromRepo(command, args, options) {
 test('multi-chunk Wave-1 emit passes cf Build Output inspection', async (t) => {
   const appRoot = fixture(t, 'mail');
   mkdirSync(join(appRoot, 'dist/server/chunks'), { recursive: true });
+  mkdirSync(join(appRoot, 'dist/server/.vite'), { recursive: true });
   writeFileSync(
     join(appRoot, 'dist/server/chunks', 'mail-shared.js'),
     'export const mailShared = true;\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/.vite/manifest.json'),
+    JSON.stringify({
+      entry: {
+        file: 'index.js',
+        isEntry: true,
+        imports: ['shared'],
+      },
+      shared: { file: 'chunks/mail-shared.js', imports: [] },
+    })
   );
   writeFileSync(
     join(appRoot, 'dist/server/wrangler.json'),
@@ -89,9 +101,21 @@ test('multi-chunk Wave-1 emit passes cf Build Output inspection', async (t) => {
 test('multi-chunk sealed output passes cf deploy prebuilt dry-run', async (t) => {
   const appRoot = fixture(t, 'mail');
   mkdirSync(join(appRoot, 'dist/server/chunks'), { recursive: true });
+  mkdirSync(join(appRoot, 'dist/server/.vite'), { recursive: true });
   writeFileSync(
     join(appRoot, 'dist/server/chunks', 'mail-shared.js'),
     'export const mailShared = true;\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/.vite/manifest.json'),
+    JSON.stringify({
+      entry: {
+        file: 'index.js',
+        isEntry: true,
+        imports: ['shared'],
+      },
+      shared: { file: 'chunks/mail-shared.js', imports: [] },
+    })
   );
   writeFileSync(
     join(appRoot, 'dist/server/wrangler.json'),

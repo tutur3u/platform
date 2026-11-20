@@ -95,7 +95,7 @@ The existing native profiles qualify only their declared configuration fields.
 | CI build | Vite plugin emits `dist/*/wrangler.json` | Vite plugin emits `.cloudflare/output/v0` | Parity |
 | Credential-free artifact check | `wrangler deploy --dry-run` | `cf deploy --prebuilt --mode production --dry-run --no-provision` | Parity |
 | Deploy the exact artifact | `wrangler deploy -c <emitted> --message` | `cf deploy --prebuilt --mode production --no-provision --message` | Parity; `--provision` defaults to true, so always pass `--no-provision` |
-| Secrets with a deploy | `wrangler secret bulk` then `wrangler deploy` | `cf deploy --secrets-file` uploads secrets with the same version | Parity (atomic) |
+| Secrets with a deploy | `wrangler deploy` keeps live secret bindings when the config does not rotate them | `cf deploy --prebuilt` without `--secrets-file` keeps live bindings; pass `--secrets-file` only when CI is rotating values in the same version | Parity when secrets are unchanged |
 | Bulk secret change | `wrangler secret bulk` | `cf workers secrets bulk --worker <name> --secrets @file` | API available; its map contains secret objects, not the plain string map accepted by deploy `--secrets-file` |
 | Single secret put | `wrangler secret put` | `cf workers secrets update <name>` | API available; interactive/stdin and deployment parity unverified; never place secret values in command arguments |
 | Secret names | `wrangler secret list` | `cf workers secrets list` (API command) | Parity, verify output shape before scripting |

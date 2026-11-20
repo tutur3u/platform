@@ -66,10 +66,22 @@ for (const { app, runtimeEnv } of WORKERS) {
       deployment[download].with.path,
       `apps/${app}/.cloudflare/output`
     );
-    assert.match(
-      publishing[0].run,
-      /--message "\$GITHUB_SHA" --secrets-file "\$secrets_file"/
-    );
+    if (app === 'coordination') {
+      assert.match(
+        publishing[0].run,
+        /cf deploy --prebuilt --mode production --no-provision --message "\$GITHUB_SHA"/
+      );
+      assert.equal(
+        publishing[0].run.includes('--secrets-file'),
+        false,
+        'coordination publish must preserve live Worker secrets without GitHub values'
+      );
+    } else {
+      assert.match(
+        publishing[0].run,
+        /--message "\$GITHUB_SHA" --secrets-file "\$secrets_file"/
+      );
+    }
     if (app === 'coordination') {
       const secretCheck = deployment.findIndex(
         (step) =>
