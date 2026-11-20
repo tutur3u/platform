@@ -27,6 +27,14 @@ readback before dispatch; a missing environment must never be auto-created by a
 release run. Never copy secret values into logs, command arguments, review packets
 or run artifacts.
 
+When the repository variable `MEET_DEDICATED_PRODUCTION_ENV_READY` is `true`, both
+deploy paths use the dedicated `meet-cloudflare-production` environment instead,
+because Parley also deploys through `meet-production`. It needs the same branch
+policy and reviewer, plus `MEET_DEDICATED_CLOUDFLARE_API_TOKEN`,
+`MEET_REALTIME_TOKEN_SECRET` and `PRODUCTION_SUPABASE_SECRET_KEY`; the dedicated
+path has no shared or account-level Cloudflare token fallback. Approve that
+environment's pending deployment in the steps below while the variable is set.
+
 Record the exact candidate, live-to-candidate source-range review, current release
 holds and provider authorization. The candidate must include the accepted startup
 and authentication regression fixes. A source review or green build does not

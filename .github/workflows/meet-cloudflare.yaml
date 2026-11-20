@@ -541,7 +541,8 @@ jobs:
       deployments: write
       actions: read
     runs-on: ubuntu-latest
-    environment: meet-production
+    # Enable only after the dedicated environment protections and secrets are verified.
+    environment: ${{ vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && 'meet-cloudflare-production' || 'meet-production' }}
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
     concurrency:
@@ -639,7 +640,9 @@ jobs:
         working-directory: apps/meet
         env:
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         run: |
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
@@ -649,7 +652,9 @@ jobs:
       - name: Capture existing frontend and realtime rollback versions
         if: steps.admission.outputs.superseded != 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         run: bash scripts/ci/meet-release-operations.sh capture
       - name: Retain rollback version evidence
         if: steps.admission.outputs.superseded != 'true'
@@ -662,7 +667,9 @@ jobs:
       - name: Deploy signaling before the frontend
         if: steps.admission.outputs.superseded != 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         id: signaling
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
@@ -671,7 +678,9 @@ jobs:
       - name: Deploy the verified frontend
         if: steps.admission.outputs.superseded != 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         id: frontend
         working-directory: apps/meet
         timeout-minutes: 10
@@ -700,7 +709,9 @@ jobs:
           bun apps/meet-realtime/src/room-controls-check.ts
       - name: Restore the previous Meet pair after a failed release
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
+            (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
         if: (failure() || cancelled()) && steps.signaling.outcome != 'skipped'
         timeout-minutes: 10
         run: bash scripts/ci/meet-release-operations.sh restore

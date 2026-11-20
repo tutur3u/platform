@@ -711,8 +711,11 @@ realtime before the frontend on `production`. It uses
 `MEET_CLOUDFLARE_API_TOKEN`, or the existing account deployment credential
 `COLAB_CLOUDFLARE_API_TOKEN` while bootstrapping. The deployment token needs
 Workers Scripts:Edit and Workers R2 Storage:Edit on the Tuturuuu account, plus
-Workers Routes:Edit limited to `tuturuuu.com`. Store the dedicated token in the
-`meet-production` GitHub environment, restricted to the `production` branch.
+Workers Routes:Edit limited to `tuturuuu.com`. Meet uses the shared, manually
+reviewed `meet-production` environment until `meet-cloudflare-production` is
+provisioned. Store the new environment's deployment credential as
+`MEET_DEDICATED_CLOUDFLARE_API_TOKEN` there only. The dedicated environment
+requires this credential and has no account-level token fallback.
 A Worker-only token can upload signaling but fails when OpenNext populates the
 R2 cache, so verify the complete frontend deployment and authenticated smoke check. Automatic Vercel Meet production
 deployment is disabled in the CI switchboard. Preserve the Vercel deployment until the canonical
@@ -834,8 +837,18 @@ handlers remove disconnected participants. The direct Worker integration check
 includes a 40-second idle interval to verify presence and host controls survive
 browser timer throttling.
 
-The `meet-production` GitHub environment must allow only the `production` branch
-and contain `MEET_REALTIME_TOKEN_SECRET` matching the Workers and platform API.
+Set the repository variable `MEET_DEDICATED_PRODUCTION_ENV_READY` to `true`
+only after verifying that `meet-cloudflare-production` exists, permits exactly
+the `production` and `main` branches, disables admin bypass, requires approval
+by `vhpx`, and holds `MEET_DEDICATED_CLOUDFLARE_API_TOKEN`,
+`MEET_REALTIME_TOKEN_SECRET` and `PRODUCTION_SUPABASE_SECRET_KEY`. GitHub
+auto-creates an unprotected environment for a missing name, so never set the
+variable before that readback. Keep a human reviewer for fallback. Grant the release bot
+review access only on this dedicated environment because Parley also uses
+`meet-production`. The release bot should approve only after the exact-source
+production policy, original artifact validation, and restored artifact checks
+pass. Unset the variable to restore Meet's shared environment.
+`MEET_REALTIME_TOKEN_SECRET` must match the Workers and platform API.
 Deployment checks required Worker secret names before rollout, then runs the
 signed-token realtime/SFU integration check against the canonical endpoint.
 

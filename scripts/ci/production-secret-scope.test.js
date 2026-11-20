@@ -13,6 +13,7 @@ const ALLOWED_ENVIRONMENTS = {
     'cron-control-production',
     'devbox-control-production',
     'lettin-production',
+    'meet-cloudflare-production',
     'meet-production',
   ],
   SUPABASE_ACCESS_TOKEN: [
@@ -30,6 +31,17 @@ const ALLOWED_ENVIRONMENTS = {
 const environmentName = (job) =>
   typeof job.environment === 'object' ? job.environment?.name : job.environment;
 
+// A job may select its environment with an expression such as
+// `${{ cond && 'a' || 'b' }}`; every literal it can resolve to must be allowed.
+const environmentNames = (job) => {
+  const name = environmentName(job);
+  if (typeof name !== 'string') return [name];
+  if (!name.includes('${{')) return [name];
+  return [...name.matchAll(/(?:&&|\|\|)\s*'([^']+)'/gu)].map(
+    (match) => match[1]
+  );
+};
+
 for (const [secret, allowed] of Object.entries(ALLOWED_ENVIRONMENTS)) {
   const reference = new RegExp(`secrets\\.${secret}\\b`, 'u');
 
@@ -44,8 +56,9 @@ for (const [secret, allowed] of Object.entries(ALLOWED_ENVIRONMENTS)) {
       for (const [jobName, job] of Object.entries(workflow.jobs ?? {})) {
         if (!reference.test(JSON.stringify(job))) continue;
         consumers.push(`${file}:${jobName}`);
+        const names = environmentNames(job);
         assert.ok(
-          allowed.includes(environmentName(job)),
+          names.length > 0 && names.every((name) => allowed.includes(name)),
           `${file}:${jobName} reads ${secret} outside ${allowed.join(', ')}`
         );
       }
