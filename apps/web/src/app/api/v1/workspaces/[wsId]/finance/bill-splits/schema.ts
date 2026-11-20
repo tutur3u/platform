@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { paymentProof } from '@/lib/finance/bill-splits/payment-proof';
 
 export const billSplitId = z.uuid().transform((id) => id.toLowerCase());
 
@@ -123,6 +124,7 @@ export const billSplitActivity = z.discriminatedUnion('kind', [
     from: billSplitId,
     to: billSplitId,
     amountMinor: positive,
+    proof: paymentProof.optional(),
   }),
   z.strictObject({
     kind: z.literal('payment_confirm'),

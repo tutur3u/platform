@@ -57,6 +57,19 @@ type BankArguments = {
   p_encrypted_details?: string;
 };
 
+type ReportProofArguments = Required<
+  Pick<
+    ActivityArguments,
+    | 'p_ws_id'
+    | 'p_actor_id'
+    | 'p_split_id'
+    | 'p_event_id'
+    | 'p_from_id'
+    | 'p_to_id'
+    | 'p_amount_minor'
+  >
+> & { p_content_type: string; p_proof_base64: string };
+
 type Result<T> = PromiseLike<{
   data: T | null;
   error: { code: string } | null;
@@ -65,6 +78,28 @@ type Result<T> = PromiseLike<{
 type PrivateBillSplitRpc = {
   rpc(name: 'create_finance_bill_split', args: CreateArguments): Result<string>;
   rpc(name: 'read_finance_bill_splits', args: ReadArguments): Result<Json>;
+  rpc(
+    name: 'schedule_finance_bill_split_reminder',
+    args: {
+      p_ws_id: string;
+      p_actor_id: string;
+      p_split_id: string;
+      p_participant_id: string;
+    }
+  ): Result<string>;
+  rpc(
+    name: 'report_finance_bill_split_with_proof',
+    args: ReportProofArguments
+  ): Result<string>;
+  rpc(
+    name: 'read_finance_bill_split_proof',
+    args: {
+      p_ws_id: string;
+      p_actor_id: string;
+      p_split_id: string;
+      p_report_id: string;
+    }
+  ): Result<Json>;
   rpc(
     name: 'list_finance_bill_split_links',
     args: Omit<ReadArguments, 'p_id'> & { p_split_id: string }

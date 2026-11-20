@@ -81,11 +81,29 @@ export function submitBillSplit(
 }
 
 type ActivityItem = { id: string; createdAt: string };
+export type BillSplitProof = {
+  contentType: 'image/png' | 'image/jpeg' | 'image/webp';
+  base64: string;
+};
+
 type ActivityInput =
   | { kind: 'comment'; comment: string }
-  | { kind: 'payment_report'; from: string; to: string; amountMinor: number }
+  | {
+      kind: 'payment_report';
+      from: string;
+      to: string;
+      amountMinor: number;
+      proof?: BillSplitProof;
+    }
   | { kind: 'payment_confirm'; reportId: string };
-export type BillSplitActivity = ActivityInput & ActivityItem;
+
+export type BillSplitActivity =
+  | (ActivityItem &
+      Extract<ActivityInput, { kind: 'comment' } | { kind: 'payment_confirm' }>)
+  | (ActivityItem &
+      Omit<Extract<ActivityInput, { kind: 'payment_report' }>, 'proof'> & {
+        hasProof?: boolean;
+      });
 
 function activityPath(workspaceId: string, id: string) {
   return `${billSplitsPath(workspaceId)}/${encodePathSegment(id)}/activity`;
@@ -239,6 +257,35 @@ export function billSplitContactBank(
       cache: 'no-store',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(input),
+    }
+  );
+}
+
+export async function downloadBillSplitProof(
+  workspaceId: string,
+  splitId: string,
+  reportId: string
+) {
+  const response = await getInternalApiClient().fetch(
+    `${activityPath(workspaceId, splitId)}/${encodePathSegment(reportId)}/proof`,
+    { cache: 'no-store' }
+  );
+  if (!response.ok) throw new Error('Payment proof unavailable');
+  return response.blob();
+}
+
+export function scheduleBillSplitReminder(
+  workspaceId: string,
+  splitId: string,
+  participantId: string
+) {
+  return getInternalApiClient().json<{ id: string }>(
+    `${billSplitsPath(workspaceId)}/${encodePathSegment(splitId)}/reminders`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participantId }),
     }
   );
 }

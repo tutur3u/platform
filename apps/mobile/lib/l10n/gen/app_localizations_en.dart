@@ -3966,6 +3966,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeCheckpointsNoCheckpointShort => 'No checkpoint';
 
   @override
+  String get financeBillSplitNew => 'New split';
+
+  @override
+  String get financeBillSplitName => 'Bill name';
+
+  @override
+  String financeBillSplitAmount(String currency) {
+    return 'Total ($currency)';
+  }
+
+  @override
+  String get financeBillSplitPeopleEmpty => 'Search for a workspace contact or member.';
+
+  @override
+  String get financeBillSplitAddPerson => 'Add a person';
+
+  @override
+  String get financeBillSplitUnnamed => 'Unnamed person';
+
+  @override
+  String get financeBillSplitPayer => 'Payer';
+
+  @override
+  String get financeBillSplitPreview => 'Preview split';
+
+  @override
   String get financeBillSplits => 'Bill splits';
 
   @override

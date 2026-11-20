@@ -10,6 +10,8 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/finance_module.dart';
+import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/view/bill_split_create_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
@@ -142,31 +144,51 @@ class _BillSplitContentState extends State<_BillSplitContent> {
   }
 
   List<Widget> _list(BuildContext context, List<Object?> splits) {
-    if (splits.isEmpty) {
-      return [
+    return [
+      if (canManageFinance(context, 'create_transactions'))
+        AppButton.primary(
+          onPressed: _create,
+          child: Text(context.l10n.financeBillSplitNew),
+        ),
+      if (splits.isEmpty)
         AppStateMessage(
           icon: LucideIcons.receipt,
           title: context.l10n.financeBillSplitsEmpty,
-        ),
-      ];
-    }
-    return [
-      AppGroupedCard(
-        children: [
-          for (final split in splits.whereType<Map<String, dynamic>>())
-            AppRichRow(
-              leading: const AppIconTile(icon: LucideIcons.receipt),
-              title: split['title'] as String,
-              onTap: () => context.push(
-                Uri(
-                  path: Routes.financeBillSplits,
-                  queryParameters: {'split': split['id'] as String},
-                ).toString(),
+        )
+      else
+        AppGroupedCard(
+          children: [
+            for (final split in splits.whereType<Map<String, dynamic>>())
+              AppRichRow(
+                leading: const AppIconTile(icon: LucideIcons.receipt),
+                title: split['title'] as String,
+                onTap: () => context.push(
+                  Uri(
+                    path: Routes.financeBillSplits,
+                    queryParameters: {'split': split['id'] as String},
+                  ).toString(),
+                ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
     ];
+  }
+
+  Future<void> _create() async {
+    final split = await showAppSheet<String>(
+      context: context,
+      size: AppSheetSize.large,
+      builder: (_) =>
+          BillSplitCreateSheet(workspaceId: widget.workspace, api: _api),
+    );
+    if (!mounted || split == null) return;
+    setState(() => _response = _load());
+    await context.push(
+      Uri(
+        path: Routes.financeBillSplits,
+        queryParameters: {'split': split},
+      ).toString(),
+    );
   }
 
   List<Widget> _detail(BuildContext context, Map<String, dynamic> split) {

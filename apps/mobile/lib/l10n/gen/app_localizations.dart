@@ -7567,6 +7567,54 @@ abstract class AppLocalizations {
   /// **'No checkpoint'**
   String get financeCheckpointsNoCheckpointShort;
 
+  /// No description provided for @financeBillSplitNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New split'**
+  String get financeBillSplitNew;
+
+  /// No description provided for @financeBillSplitName.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill name'**
+  String get financeBillSplitName;
+
+  /// No description provided for @financeBillSplitAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Total ({currency})'**
+  String financeBillSplitAmount(String currency);
+
+  /// No description provided for @financeBillSplitPeopleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a workspace contact or member.'**
+  String get financeBillSplitPeopleEmpty;
+
+  /// No description provided for @financeBillSplitAddPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a person'**
+  String get financeBillSplitAddPerson;
+
+  /// No description provided for @financeBillSplitUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Unnamed person'**
+  String get financeBillSplitUnnamed;
+
+  /// No description provided for @financeBillSplitPayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Payer'**
+  String get financeBillSplitPayer;
+
+  /// No description provided for @financeBillSplitPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview split'**
+  String get financeBillSplitPreview;
+
   /// No description provided for @financeBillSplits.
   ///
   /// In en, this message translates to:

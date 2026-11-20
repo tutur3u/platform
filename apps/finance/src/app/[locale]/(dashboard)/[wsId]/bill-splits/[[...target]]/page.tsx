@@ -46,6 +46,12 @@ export default async function WorkspaceBillSplitsPage({
       currency={context.currency}
       canCreate={canCreate}
       canShare={canShare}
+      remindersEnabled={
+        process.env.ENABLE_FINANCE_BILL_SPLIT_REMINDERS === 'true'
+      }
+      realtimeEnabled={
+        process.env.ENABLE_FINANCE_BILL_SPLIT_REALTIME === 'true'
+      }
       bankEnabled={
         process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS === 'true'
       }

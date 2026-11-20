@@ -14,7 +14,9 @@ import { BillSplitActivityPanel } from './activity';
 import { BillSplitContactBank } from './contact-bank';
 import { BillSplitCreate } from './create';
 import { BillSplitLedgerView } from './ledger';
+import { BillSplitReminder } from './reminder';
 import { BillSplitStatusLinks } from './status-links';
+import { useBillSplitRealtime } from './use-realtime';
 
 export function BillSplitsPage({
   wsId,
@@ -24,6 +26,8 @@ export function BillSplitsPage({
   canShare,
   bankEnabled,
   canReadBank,
+  realtimeEnabled,
+  remindersEnabled,
   splitId,
   participantId,
   settlement,
@@ -35,11 +39,14 @@ export function BillSplitsPage({
   canShare: boolean;
   bankEnabled: boolean;
   canReadBank: boolean;
+  realtimeEnabled: boolean;
+  remindersEnabled: boolean;
   splitId?: string;
   participantId?: string;
   settlement?: boolean;
 }) {
   const t = useTranslations('bill-splits');
+  const realtime = useBillSplitRealtime(wsId, splitId, realtimeEnabled);
   const base = `/${locale}/${wsId}/bill-splits`;
   const listing = useQuery({
     queryKey: ['bill-splits', wsId],
@@ -50,7 +57,7 @@ export function BillSplitsPage({
     queryKey: ['bill-splits', wsId, splitId],
     queryFn: () => getBillSplit(wsId, splitId ?? ''),
     enabled: Boolean(splitId),
-    refetchInterval: 15_000,
+    refetchInterval: realtime ? false : 15_000,
   });
 
   if (splitId) {
@@ -88,7 +95,13 @@ export function BillSplitsPage({
           )}
         </header>
         <BillSplitLedgerView {...split} participantId={participantId} />
-        {!participantId && <BillSplitActivityPanel wsId={wsId} split={split} />}
+        {!participantId && (
+          <BillSplitActivityPanel
+            wsId={wsId}
+            split={split}
+            realtime={realtime}
+          />
+        )}
         {!participantId && (
           <nav aria-label={t('participants')} className="flex flex-wrap gap-2">
             {split.participants.map((participant) => (
@@ -112,6 +125,12 @@ export function BillSplitsPage({
                 canRead={canReadBank}
               />
             )}
+            {remindersEnabled &&
+              canCreate &&
+              split.finalized &&
+              split.canManage && (
+                <BillSplitReminder wsId={wsId} split={split} />
+              )}
             {canShare && split.finalized && split.canManage && (
               <BillSplitStatusLinks
                 wsId={wsId}

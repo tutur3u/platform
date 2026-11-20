@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type BillSplitActivity,
   type BillSplitDetail,
+  type BillSplitProof,
+  downloadBillSplitProof,
   listBillSplitActivity,
   writeBillSplitActivity,
 } from '@tuturuuu/internal-api/finance-bill-splits';
@@ -15,6 +17,7 @@ import { Label } from '../../label';
 import { Skeleton } from '../../skeleton';
 import { Textarea } from '../../textarea';
 import { parseSplitAmount } from './amount';
+import { encodeSplitProof } from './proof';
 
 type Write = Parameters<typeof writeBillSplitActivity>[2];
 type PaymentReport = Extract<BillSplitActivity, { kind: 'payment_report' }>;
@@ -22,9 +25,11 @@ type PaymentReport = Extract<BillSplitActivity, { kind: 'payment_report' }>;
 export function BillSplitActivityPanel({
   wsId,
   split,
+  realtime,
 }: {
   wsId: string;
   split: BillSplitDetail;
+  realtime: boolean;
 }) {
   const t = useTranslations('bill-splits');
   const queryClient = useQueryClient();
@@ -32,11 +37,16 @@ export function BillSplitActivityPanel({
   const activity = useQuery({
     queryKey: activityKey,
     queryFn: () => listBillSplitActivity(wsId, split.id),
-    refetchInterval: 15_000,
+    refetchInterval: realtime ? false : 15_000,
   });
   const [comment, setComment] = useState('');
   const [amount, setAmount] = useState('');
   const [route, setRoute] = useState('');
+  const [proof, setProof] = useState<BillSplitProof>();
+  const [proofLoading, setProofLoading] = useState(false);
+  const [proofError, setProofError] = useState(false);
+  const [fileVersion, setFileVersion] = useState(0);
+
   const [operation, setOperation] = useState<Write>();
 
   const mutation = useMutation({
@@ -44,7 +54,11 @@ export function BillSplitActivityPanel({
     onSuccess: (_data, event) => {
       setOperation(undefined);
       if (event.kind === 'comment') setComment('');
-      if (event.kind === 'payment_report') setAmount('');
+      if (event.kind === 'payment_report') {
+        setAmount('');
+        setProof(undefined);
+        setFileVersion((version) => version + 1);
+      }
       void queryClient.invalidateQueries({
         queryKey: ['bill-splits', wsId, split.id],
       });
@@ -81,7 +95,8 @@ export function BillSplitActivityPanel({
       (event): event is PaymentReport =>
         event.kind === 'payment_report' && !confirmed.has(event.id)
     ) ?? [];
-  const controlsDisabled = mutation.isPending || Boolean(operation);
+  const controlsDisabled =
+    mutation.isPending || proofLoading || Boolean(operation);
 
   return (
     <section className="space-y-3">
@@ -122,6 +137,7 @@ export function BillSplitActivityPanel({
                 from: payment.from,
                 to: payment.to,
                 amountMinor: minor,
+                ...(proof ? { proof } : {}),
               });
             }
           }}
@@ -159,6 +175,31 @@ export function BillSplitActivityPanel({
               onChange={(event) => setAmount(event.target.value)}
             />
           </div>
+          <div className="grid gap-1.5 sm:col-span-2">
+            <Label htmlFor="bill-split-payment-proof">{t('add-proof')}</Label>
+            <Input
+              type="file"
+              id="bill-split-payment-proof"
+              key={fileVersion}
+              accept="image/png,image/jpeg,image/webp"
+              disabled={controlsDisabled}
+              onChange={async (event) => {
+                const file = event.target.files?.[0];
+                setProof(undefined);
+                setProofError(false);
+                if (!file) return;
+                setProofLoading(true);
+                try {
+                  setProof(await encodeSplitProof(file));
+                } catch {
+                  setProofError(true);
+                  setFileVersion((version) => version + 1);
+                } finally {
+                  setProofLoading(false);
+                }
+              }}
+            />
+          </div>
           <Button
             type="submit"
             disabled={
@@ -170,6 +211,11 @@ export function BillSplitActivityPanel({
             {t('paid')}
           </Button>
         </form>
+      )}
+      {proofError && (
+        <p role="alert" className="text-destructive text-sm">
+          {t('proof-error')}
+        </p>
       )}
       {pending.length > 0 && (
         <ul className="divide-y rounded-lg border">
@@ -227,6 +273,32 @@ export function BillSplitActivityPanel({
                       ? 'payment-reported'
                       : 'payment-confirmed'
                   )}
+              {event.kind === 'payment_report' && event.hasProof && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    try {
+                      const blob = await downloadBillSplitProof(
+                        wsId,
+                        split.id,
+                        event.id
+                      );
+                      const url = URL.createObjectURL(blob);
+                      const anchor = document.createElement('a');
+                      anchor.href = url;
+                      anchor.download = `payment-proof.${blob.type.split('/')[1] ?? 'image'}`;
+                      anchor.click();
+                      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    } catch {
+                      setProofError(true);
+                    }
+                  }}
+                >
+                  {t('download-proof')}
+                </Button>
+              )}
             </li>
           ))}
         </ul>

@@ -139,3 +139,53 @@ partial payments. Database and API coverage must establish cross-workspace
 denials, confirmation and retry behavior, bank and proof access, and anonymous
 projection and entitlement boundaries. Native acceptance covers universal links,
 authentication handoff and the Finance dock.
+
+## Runtime controls
+
+The signed-in routes default off under `ENABLE_FINANCE_BILL_SPLITS`. The
+standalone Finance host and Web API each read the flag on the server. Flutter
+uses the matching build-time define to show its Finance navigation entry and
+continues to require the authorized Web API. The standalone host has quick and
+detailed editors. Flutter has a quick equal-split editor and signed-in views
+for settlement and participant links.
+
+The bank routes require `ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS` and use a
+server-only `FINANCE_CONTACT_BANK_ENCRYPTION_KEY` for the AES-256-GCM envelope.
+Consent must come from the workspace member linked to the contact. Withdraw
+consent to remove the account, and require fresh consent for a replacement.
+Access records contain actor, contact, workspace, action, and time. Preserve
+key custody across restores so consenting holders can continue using their
+account. VietQR uses the account-transfer payload, and the recipient enters
+the amount in their bank app. Validate rendered codes against a NAPAS
+participant app before enabling them. [NAPAS account transfers](https://napas.com.vn/dich-vu-chuyen-tien-nhanh-napas-247)
+
+Anonymous status requires `ENABLE_FINANCE_BILL_SPLIT_STATUS_LINKS` and the
+canonical HTTPS `FINANCE_BILL_SPLIT_STATUS_ORIGIN`. The UI creates links for
+24 hours. Status redemption charges a source command and, only for an existing
+active link, a verified link command. It makes one bounded Turnstile request
+when the source crosses the challenge threshold. Status link scope, entitlement,
+and receiving consent are checked on redemption. Owner-entered public labels
+are optional. The independently gated profile avatar ticket route can adopt
+the same admission adapter with `ENABLE_PROFILE_LINK_PUBLIC_ADMISSION`.
+
+Payment proof is optional PNG, JPEG, or WebP up to 256 KiB. The sender and
+recipient can download it through the private API after a current authorization
+check. The attachment and report commit together. Proof and comments stay
+outside the anonymous status projection.
+
+Web realtime uses `ENABLE_FINANCE_BILL_SPLIT_REALTIME` at both the service and
+workspace level. Each successful activity request can emit one bounded
+invalidation to the existing Cloudflare channel service. The broadcast has
+an event identifier, and clients refetch the private record. The viewer ticket
+expires in 60 seconds and refresh checks membership and the workspace stop
+flag. Web uses a bounded foreground polling interval if the channel is
+unavailable.
+
+The payment reminder schedules one in-app notification 24 hours later for a
+linked debtor. The feature requires `ENABLE_FINANCE_BILL_SPLIT_REMINDERS` to
+schedule and the independently default-off `finance-bill-split-reminders`
+Cron Control job to deliver. Each fenced Worker run makes one call and handles
+at most 20 due entries. Re-check recipient preferences, workspace admission,
+and the payment fence in the delivery transaction. A confirmed payment cancels
+reminders based on the original plan. The notification and terminal state commit
+together, and the scheduler drops jobs that have expired.

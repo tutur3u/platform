@@ -2784,6 +2784,21 @@
   "financeCheckpointsNoCheckpoint": "No checkpoint",
   "financeCheckpointsNoCheckpointDetail": "Record a checkpoint to start audited balance tracking.",
   "financeCheckpointsNoCheckpointShort": "No checkpoint",
+  "financeBillSplitNew": "New split",
+  "financeBillSplitName": "Bill name",
+  "financeBillSplitAmount": "Total ({currency})",
+  "financeBillSplitPeopleEmpty": "Search for a workspace contact or member.",
+  "financeBillSplitAddPerson": "Add a person",
+  "financeBillSplitUnnamed": "Unnamed person",
+  "financeBillSplitPayer": "Payer",
+  "financeBillSplitPreview": "Preview split",
+  "@financeBillSplitAmount": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
   "financeBillSplits": "Bill splits",
   "financeBillSplitsEmpty": "No bill splits yet",
   "financeBillSplitsUnavailable": "Bill splits are unavailable",

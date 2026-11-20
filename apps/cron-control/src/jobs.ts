@@ -22,6 +22,7 @@ export type WorkerProcessorId =
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'devbox-unauthorized-run-sweep'
+  | 'finance-bill-split-reminders'
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
@@ -35,6 +36,7 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
+  'finance-bill-split-reminders': 'dispatch_finance_bill_split_reminders',
   'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
@@ -87,6 +89,18 @@ function job(
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
 export const CRON_JOBS: readonly CronJob[] = Object.freeze([
+  job(
+    'finance-bill-split-reminders',
+    '*/5 * * * *',
+    'web',
+    '/rest/v1/rpc/dispatch_finance_bill_split_reminders',
+    'claim-fenced',
+    {
+      method: 'POST',
+      workerProcessor: 'finance-bill-split-reminders',
+      timeoutMs: 30_000,
+    }
+  ),
   job(
     'database-cron-history-retention',
     '*/10 * * * *',
