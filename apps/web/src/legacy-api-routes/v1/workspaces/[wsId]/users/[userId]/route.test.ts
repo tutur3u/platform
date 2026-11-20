@@ -9,11 +9,8 @@ const workspaceUsersSelectSingleMock = vi.fn();
 const adminRpcMock = vi.fn();
 const statusChangesInsertMock = vi.fn();
 const cancelPendingPostEmailsForWorkspaceUserMock = vi.fn();
-const guestGroupsResultMock = vi.fn();
-const guestGroupUpsertMock = vi.fn();
-const guestMembershipDeleteMock = vi.fn();
-const guestMembershipDeleteEqMock = vi.fn();
-const guestMembershipDeleteInMock = vi.fn();
+const privateRpcMock = vi.fn();
+const schemaMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -58,19 +55,6 @@ import {
   PUT,
 } from '@/app/api/v1/workspaces/[wsId]/users/[userId]/route';
 
-function createGuestGroupsQuery() {
-  let eqCallCount = 0;
-  const query = {
-    eq: vi.fn(() => {
-      eqCallCount += 1;
-      return eqCallCount >= 2 ? guestGroupsResultMock() : query;
-    }),
-    select: vi.fn(() => query),
-  };
-
-  return query;
-}
-
 describe('workspace user write routes preserve audit actor context', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -91,18 +75,8 @@ describe('workspace user write routes preserve audit actor context', () => {
     });
     statusChangesInsertMock.mockResolvedValue({ error: null });
     cancelPendingPostEmailsForWorkspaceUserMock.mockResolvedValue(2);
-    guestGroupsResultMock.mockResolvedValue({
-      data: [{ id: 'guest-group-1' }, { id: 'guest-group-2' }],
-      error: null,
-    });
-    guestGroupUpsertMock.mockResolvedValue({ error: null });
-    guestMembershipDeleteInMock.mockResolvedValue({ error: null });
-    guestMembershipDeleteEqMock.mockReturnValue({
-      in: guestMembershipDeleteInMock,
-    });
-    guestMembershipDeleteMock.mockReturnValue({
-      eq: guestMembershipDeleteEqMock,
-    });
+    privateRpcMock.mockResolvedValue({ data: true, error: null });
+    schemaMock.mockReturnValue({ rpc: privateRpcMock });
 
     createAdminClientMock.mockResolvedValue({
       from: (table: string) => {
@@ -124,20 +98,10 @@ describe('workspace user write routes preserve audit actor context', () => {
           };
         }
 
-        if (table === 'workspace_user_groups') {
-          return createGuestGroupsQuery();
-        }
-
-        if (table === 'workspace_user_groups_users') {
-          return {
-            delete: guestMembershipDeleteMock,
-            upsert: guestGroupUpsertMock,
-          };
-        }
-
         throw new Error(`Unexpected table ${table}`);
       },
       rpc: adminRpcMock,
+      schema: schemaMock,
     });
 
     createClientMock.mockResolvedValue({
@@ -177,7 +141,7 @@ describe('workspace user write routes preserve audit actor context', () => {
 
     expect(getPermissionsMock).toHaveBeenCalledWith({
       wsId: 'ws-1',
-      request,
+      user: { id: 'actor-auth-1' },
     });
     expect(createClientMock).toHaveBeenCalledWith(request);
     expect(adminRpcMock).toHaveBeenCalledWith(
@@ -211,7 +175,7 @@ describe('workspace user write routes preserve audit actor context', () => {
     );
   });
 
-  it('removes users from all guest groups when the guest toggle is turned off', async () => {
+  it('uses verified actor scope for the removal of eligible guest memberships', async () => {
     workspaceUsersSelectSingleMock.mockResolvedValueOnce({
       data: {
         archived: false,
@@ -250,15 +214,16 @@ describe('workspace user write routes preserve audit actor context', () => {
         },
       })
     );
-    expect(guestMembershipDeleteMock).toHaveBeenCalledTimes(1);
-    expect(guestMembershipDeleteEqMock).toHaveBeenCalledWith(
-      'user_id',
-      'user-1'
+    expect(schemaMock).toHaveBeenCalledWith('private');
+    expect(privateRpcMock).toHaveBeenCalledExactlyOnceWith(
+      'admin_sync_guest_group_memberships',
+      {
+        p_actor_auth_uid: 'actor-auth-1',
+        p_is_guest: false,
+        p_user_id: 'user-1',
+        p_ws_id: 'ws-1',
+      }
     );
-    expect(guestMembershipDeleteInMock).toHaveBeenCalledWith('group_id', [
-      'guest-group-1',
-      'guest-group-2',
-    ]);
     await expect(response.json()).resolves.toEqual({
       message: 'success',
     });
