@@ -374,13 +374,18 @@ Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
 - Fail closed: the tier is read strictly (an `active` subscription's product
   tier, else FREE) and credits from read-only balance and credit-pack rows. A
   failed tier or credit read refuses with `paused` ("temporarily unavailable")
-  instead of assuming FREE or admitting. Credits use the balance row the
-  reservation uses: the actor's own row on a FREE subscription tier (even with
-  a paid pack), else the workspace row, plus unexpired pack credits. Before
-  the period's balance row exists, `begin_ai_live_session` decides credits at
-  mint. The mobile access-workspace tier is read the same strict way.
+  instead of assuming FREE or admitting; so does an active subscription with
+  no product. Credits mirror `begin_ai_live_session` exactly: the balance row
+  comes from the same `get_or_create_credit_balance(billed workspace, actor)`
+  call, packs count only when active, unexpired and positive, and Live is
+  admitted only when the included balance covers `least(2000, included +
+  packs)` and that amount is at least 500. A passed pre-check therefore cannot
+  be refused for credits at mint. The mobile access-workspace tier is read the
+  same strict way.
 - The web pre-check cache is keyed by the server-verified session actor and
-  sign-in revision; an auth change drops it and discards in-flight results.
+  sign-in revision. A different actor or a new sign-in by the same actor (a
+  new `last_sign_in_at`) drops it and discards in-flight results; a token
+  refresh keeps it.
 - The staff-only `/api/v1/mira/token` route is retired: after its auth,
   membership and staff gates it answers 410 `LIVE_ROUTE_RETIRED` and never
   mints.

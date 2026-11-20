@@ -42,47 +42,38 @@ export interface LiveEligibility {
   params: LiveEligibilityParams;
 }
 
-/** Read-only credit view of the billed workspace. */
+/** The credits the Live reservation sees for the billed workspace. */
 export interface LiveCreditSnapshot {
-  /** Unexpired paid credit-pack balance. */
+  /** Active, unexpired, positive pack credits (`_get_active_payg_credits`). */
   packCredits: number;
-  /** Current-period included balance; null before the period row exists. */
-  includedRemaining: number | null;
+  /** Included balance of the row `get_or_create_credit_balance` returns. */
+  includedRemaining: number;
 }
+
+/** `begin_ai_live_session` reserves at most this many credits. */
+export const LIVE_MAX_RESERVATION = 2000;
 
 /**
- * The balance row `get_or_create_credit_balance` (and so the Live
- * reservation) uses: the actor's own row on a FREE subscription tier, else
- * the workspace row. Paid packs do not change the scope.
+ * Mirrors `begin_ai_live_session`: it reserves
+ * `least(2000, floor(included + packs))`, refuses below 500, and the fixed
+ * reservation then takes that whole amount from the included balance. A
+ * pre-check that passes here cannot be refused for credits at mint.
  */
-export type LiveCreditScope =
-  | { kind: 'user'; userId: string }
-  | { kind: 'workspace' };
-
-export function liveCreditScope(
-  subscriptionTier: string,
-  userId: string
-): LiveCreditScope {
-  return subscriptionTier === 'FREE'
-    ? { kind: 'user', userId }
-    : { kind: 'workspace' };
-}
-
-/** `date_trunc('month', now())` in UTC, the balance period key. */
-export function liveCreditPeriodStart(now = new Date()) {
-  return new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-  ).toISOString();
+export function liveReservationAdmits({
+  includedRemaining,
+  packCredits,
+}: LiveCreditSnapshot) {
+  const remaining = includedRemaining + packCredits;
+  if (remaining <= 0) return false;
+  const reserved = Math.min(LIVE_MAX_RESERVATION, Math.floor(remaining));
+  return reserved >= LIVE_MIN_CREDITS && includedRemaining >= reserved;
 }
 
 export interface LiveEligibilityDeps {
   /** Authoritative tier; throws when it cannot be determined. */
   getTier: (wsId: string) => Promise<string>;
   /** Throws when the credit view cannot be read. */
-  getCredits: (
-    wsId: string,
-    scope: LiveCreditScope
-  ) => Promise<LiveCreditSnapshot>;
+  getCredits: (wsId: string, userId: string) => Promise<LiveCreditSnapshot>;
   getWorkspace: (
     wsId: string
   ) => Promise<{ name: string | null; personal: boolean } | null>;
@@ -118,8 +109,12 @@ export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
       .order('created_at', { ascending: false })
       .limit(1);
     if (error) throw new LiveEligibilityLookupError('subscriptions');
-    const productId = subscriptions?.[0]?.product_id;
-    if (!productId) return 'FREE';
+    const subscription = subscriptions?.[0];
+    if (!subscription) return 'FREE';
+    // An active subscription without a product has no knowable tier.
+    const productId = subscription.product_id;
+    if (!productId)
+      throw new LiveEligibilityLookupError('subscription product');
     const { data: product, error: productError } = await client
       .schema('private' as never)
       .from('workspace_subscription_products' as never)
@@ -132,40 +127,48 @@ export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
     }
     return tier;
   },
-  async getCredits(wsId, scope) {
+  /**
+   * Reads the exact balance row the reservation uses by calling the same
+   * `get_or_create_credit_balance(ws, actor)`; it writes only when the
+   * period's row does not exist yet, as the reservation would first.
+   */
+  async getCredits(wsId, userId) {
     const client = await admin();
-    const now = new Date();
-    const balanceQuery = client
-      .from('workspace_ai_credit_balances')
-      .select('total_allocated, total_used, bonus_credits')
-      .eq('period_start', liveCreditPeriodStart(now));
-    const scopedBalance =
-      scope.kind === 'user'
-        ? balanceQuery.eq('user_id', scope.userId).is('ws_id', null)
-        : balanceQuery.eq('ws_id', wsId).is('user_id', null);
     const [packs, balance] = await Promise.all([
       client
         .from('workspace_credit_pack_purchases')
         .select('tokens_remaining')
         .eq('ws_id', wsId)
-        .in('status', ['active', 'canceled'])
-        .gt('expires_at', now.toISOString()),
-      scopedBalance.maybeSingle(),
+        .eq('status', 'active')
+        .gt('expires_at', new Date().toISOString())
+        .gt('tokens_remaining', 0),
+      client.rpc('get_or_create_credit_balance', {
+        p_ws_id: wsId,
+        p_user_id: userId,
+      }),
     ]);
     if (packs.error) throw new LiveEligibilityLookupError('credit packs');
-    if (balance.error) throw new LiveEligibilityLookupError('credit balance');
-    const packCredits = (packs.data ?? []).reduce(
-      (sum, row) => sum + Number(row.tokens_remaining ?? 0),
-      0
-    );
-    const row = balance.data;
+    const row = (
+      balance.data as
+        | {
+            total_allocated: number | null;
+            total_used: number | null;
+            bonus_credits: number | null;
+          }[]
+        | null
+    )?.[0];
+    if (balance.error || !row) {
+      throw new LiveEligibilityLookupError('credit balance');
+    }
     return {
-      packCredits,
-      includedRemaining: row
-        ? Number(row.total_allocated ?? 0) +
-          Number(row.bonus_credits ?? 0) -
-          Number(row.total_used ?? 0)
-        : null,
+      packCredits: (packs.data ?? []).reduce(
+        (sum, pack) => sum + Number(pack.tokens_remaining ?? 0),
+        0
+      ),
+      includedRemaining:
+        Number(row.total_allocated ?? 0) +
+        Number(row.bonus_credits ?? 0) -
+        Number(row.total_used ?? 0),
     };
   },
   async getWorkspace(wsId) {
@@ -203,10 +206,9 @@ export async function resolveLiveEligibility(
   try {
     const workspaceLookup = deps.getWorkspace(billingWsId).catch(() => null);
     tier = await deps.getTier(billingWsId);
-    // The balance scope follows the subscription tier, as the reservation's.
     [workspace, credits] = await Promise.all([
       workspaceLookup,
-      deps.getCredits(billingWsId, liveCreditScope(tier, userId)),
+      deps.getCredits(billingWsId, userId),
     ]);
   } catch {
     // An indeterminate tier or balance never admits a mint.
@@ -245,15 +247,14 @@ export async function resolveLiveEligibility(
     return paid ? blocked('paused') : blocked('plan_required');
   }
 
-  // Before the period's balance row exists the reservation itself decides.
-  if (credits.includedRemaining !== null) {
-    const balance = credits.includedRemaining + credits.packCredits;
-    if (balance < LIVE_MIN_CREDITS) {
-      return blocked('credits_exhausted', {
-        balance: Math.max(0, Math.floor(balance)),
-        minimumCredits: LIVE_MIN_CREDITS,
-      });
-    }
+  if (!liveReservationAdmits(credits)) {
+    return blocked('credits_exhausted', {
+      balance: Math.max(
+        0,
+        Math.floor(credits.includedRemaining + credits.packCredits)
+      ),
+      minimumCredits: LIVE_MIN_CREDITS,
+    });
   }
 
   return { ...base, eligible: true, reason: null };

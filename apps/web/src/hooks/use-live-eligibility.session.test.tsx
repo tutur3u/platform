@@ -12,7 +12,10 @@ import {
 
 const auth = vi.hoisted(() => ({
   listeners: new Set<
-    (event: string, session: { user: { id: string } } | null) => void
+    (
+      event: string,
+      session: { user: { id: string; last_sign_in_at?: string } } | null
+    ) => void
   >(),
 }));
 const api = vi.hoisted(() => ({ getLiveEligibility: vi.fn() }));
@@ -23,7 +26,9 @@ vi.mock('@tuturuuu/supabase/next/client', () => ({
       onAuthStateChange: (
         callback: (
           event: string,
-          session: { user: { id: string } } | null
+          session: {
+            user: { id: string; last_sign_in_at?: string };
+          } | null
         ) => void
       ) => {
         auth.listeners.add(callback);
@@ -74,12 +79,19 @@ function setup(actorId: string) {
   return { client, ...renderHook(() => useLiveEligibility(args), { wrapper }) };
 }
 
-function switchSession(userId: string) {
+function switchSession(userId: string, revision?: string, event = 'SIGNED_IN') {
   act(() => {
     for (const listener of auth.listeners) {
-      listener('SIGNED_IN', { user: { id: userId } });
+      listener(event, { user: { id: userId, last_sign_in_at: revision } });
     }
   });
+}
+
+function cachedEligibility(client: QueryClient) {
+  return client
+    .getQueriesData({ queryKey: [LIVE_ELIGIBILITY_QUERY_KEY] })
+    .map(([, data]) => data)
+    .filter(Boolean);
 }
 
 it('keys the cache by the verified actor and session revision', () => {
@@ -130,4 +142,44 @@ it('removes cached eligibility when the authenticated actor changes', async () =
       .map(([, data]) => data)
       .filter(Boolean)
   ).toEqual([]);
+});
+
+it('a new sign-in by the same actor discards in-flight results', async () => {
+  let release!: (value: typeof blocked) => void;
+  api.getLiveEligibility.mockReturnValue(
+    new Promise((resolve) => {
+      release = resolve;
+    })
+  );
+  const { client, result } = setup('actor-a');
+  await waitFor(() => expect(api.getLiveEligibility).toHaveBeenCalledOnce());
+
+  // Same actor signs in again in another tab: a new session revision.
+  switchSession('actor-a', 'rev-2');
+  await act(async () => {
+    release(blocked);
+  });
+
+  expect(result.current.status).not.toBe('blocked');
+  expect(cachedEligibility(client)).toEqual([]);
+});
+
+it('a new sign-in by the same actor clears cached eligibility', async () => {
+  api.getLiveEligibility.mockResolvedValue(blocked);
+  const { client, result } = setup('actor-a');
+  await waitFor(() => expect(result.current.status).toBe('blocked'));
+
+  switchSession('actor-a', 'rev-2');
+
+  expect(cachedEligibility(client)).toEqual([]);
+});
+
+it('a token refresh in the same session keeps cached eligibility', async () => {
+  api.getLiveEligibility.mockResolvedValue(blocked);
+  const { client, result } = setup('actor-a');
+  await waitFor(() => expect(result.current.status).toBe('blocked'));
+
+  switchSession('actor-a', 'rev-1', 'TOKEN_REFRESHED');
+
+  expect(cachedEligibility(client)).not.toEqual([]);
 });

@@ -67,7 +67,7 @@ export function MiraSoulScopeProvider({
     const {
       data: { subscription },
     } = createClient().auth.onAuthStateChange((_event, session) => {
-      if ((session?.user.id ?? null) !== actorId) {
+      if (isSessionChange(session, actorId, sessionRevision)) {
         lease.revoke();
         void client.cancelQueries({
           queryKey: miraSoulKeys.detail(actorId),
@@ -93,11 +93,26 @@ export function MiraSoulScopeProvider({
       });
       dropActorScopedQueries(client);
     };
-  }, [actorId, client, lease]);
+  }, [actorId, client, lease, sessionRevision]);
   return (
     <MiraSoulScope.Provider value={lease}>{children}</MiraSoulScope.Provider>
   );
 }
+/**
+ * A different actor, or a new sign-in by the same actor (a new
+ * `last_sign_in_at` revision), ends the scope. Token refreshes keep the
+ * revision and so keep the scope.
+ */
+export function isSessionChange(
+  session: { user: { id: string; last_sign_in_at?: string | null } } | null,
+  actorId: string | null,
+  sessionRevision?: string
+) {
+  if ((session?.user.id ?? null) !== actorId) return true;
+  const revision = session?.user.last_sign_in_at;
+  return Boolean(sessionRevision && revision && revision !== sessionRevision);
+}
+
 function dropActorScopedQueries(client: ReturnType<typeof useQueryClient>) {
   for (const root of ACTOR_SCOPED_QUERY_ROOTS) {
     void client.cancelQueries({ queryKey: [root] });
