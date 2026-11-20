@@ -1,5 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import type { AttendanceInterval } from '@tuturuuu/realtime/meet';
+import {
+  MEET_ATTENDANCE_RETENTION_PROOF,
+  type AttendanceInterval,
+} from '@tuturuuu/realtime/meet';
 import { MeetCallAccessError } from '../lib/call-access';
 import { syncMeetAttendance, type AttendanceStore } from './attendance';
 
@@ -65,6 +68,10 @@ const input = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+  vi.stubEnv(
+    'MEET_ATTENDANCE_RETENTION_VERIFIED',
+    MEET_ATTENDANCE_RETENTION_PROOF
+  );
 });
 
 it('does not read or write attendance while the server switch is off', async () => {

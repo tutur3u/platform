@@ -4,6 +4,7 @@ import {
   aggregateAttendance,
   applyMeetRoomCommand,
   ATTENDANCE_RETENTION_MS,
+  MEET_ATTENDANCE_RETENTION_PROOF,
   attendanceCsv,
   maintainAttendanceCopy,
   nextAttendanceAlarm,
@@ -44,6 +45,10 @@ function token(
 describe('attendance ledger', () => {
   beforeEach(() => {
     vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+    vi.stubEnv(
+      'MEET_ATTENDANCE_RETENTION_VERIFIED',
+      MEET_ATTENDANCE_RETENTION_PROOF
+    );
     vi.stubEnv('MEET_CLASS_TIMER_ENABLED', 'true');
   });
   afterEach(() => {

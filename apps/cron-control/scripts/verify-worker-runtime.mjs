@@ -26,6 +26,8 @@ const TRIGGERS = [
   '* * * * *',
   // ai-studio-retention: daily 02:43 GMT+7.
   '43 19 * * *',
+  // meet-attendance-retention: daily 01:17 GMT+7.
+  '17 18 * * *',
 ];
 const operatorToken = randomUUID() + randomUUID();
 let worker;

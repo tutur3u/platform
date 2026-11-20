@@ -58,6 +58,7 @@ export {
   type AttendanceDirectory,
   type AttendanceIndexState,
   type AttendancePendingErase,
+  admitAttendanceEraseBacklog,
   applyAttendanceDirectory,
   attendanceIndexSignature,
   attendanceSubjects,
@@ -81,8 +82,14 @@ export { applyMeetClassService } from './class-service';
 export { spreadsheetCsvCell } from './csv-cell';
 export type { MeetClassFeatureEnv, MeetClassFeatures } from './class-features';
 export {
+  MEET_ATTENDANCE_RETENTION_CRON,
+  MEET_ATTENDANCE_RETENTION_ENV,
+  MEET_ATTENDANCE_RETENTION_JOB_ID,
+  MEET_ATTENDANCE_RETENTION_PROOF,
+  MEET_ATTENDANCE_RETENTION_RPC,
   MEET_CLASS_ATTENDANCE_ENV,
   MEET_CLASS_TIMER_ENV,
+  meetAttendanceRetentionVerified,
   meetClassAttendanceEnabled,
   meetClassFeatures,
   meetClassTimerEnabled,

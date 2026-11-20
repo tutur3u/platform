@@ -5,6 +5,7 @@ import {
   applyMeetRoomCommand,
   createMeetRoomSnapshot,
   getMeetRealtimeScopesForRole,
+  MEET_ATTENDANCE_RETENTION_PROOF,
   meetClassFeatures,
   meetRoomStateView,
   type MeetRealtimeTokenPayload,
@@ -54,6 +55,13 @@ describe('class feature switches', () => {
     expect(
       meetClassFeatures({
         MEET_CLASS_ATTENDANCE_ENABLED: 'true',
+        MEET_CLASS_TIMER_ENABLED: 'true',
+      })
+    ).toEqual({ attendance: false, timer: true });
+    expect(
+      meetClassFeatures({
+        MEET_CLASS_ATTENDANCE_ENABLED: 'true',
+        MEET_ATTENDANCE_RETENTION_VERIFIED: MEET_ATTENDANCE_RETENTION_PROOF,
         MEET_CLASS_TIMER_ENABLED: 'true',
       })
     ).toEqual({ attendance: true, timer: true });
@@ -113,6 +121,10 @@ describe('class feature switches', () => {
 
   it('records attendance and accepts a timer when the server enables both', () => {
     vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+    vi.stubEnv(
+      'MEET_ATTENDANCE_RETENTION_VERIFIED',
+      MEET_ATTENDANCE_RETENTION_PROOF
+    );
     vi.stubEnv('MEET_CLASS_TIMER_ENABLED', 'true');
     const host = token();
     const admitted = admitOrHold(createMeetRoomSnapshot(), host, NOW);

@@ -31,6 +31,9 @@ export default defineConfig({
       '*/5 * * * *',
       // ai-studio-retention: 02:43 GMT+7.
       '43 19 * * *',
+      // meet-attendance-retention: 01:17 GMT+7. The job stays disabled until
+      // CRON_CONTROL_ENABLED_JOBS names it.
+      '17 18 * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
       WEB_ORIGIN: bindings.text('https://tuturuuu.com'),

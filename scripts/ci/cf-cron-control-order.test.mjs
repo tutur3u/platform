@@ -18,7 +18,7 @@ const LIVE_ORDER = [
   '*/5 * * * *',
 ];
 // AI-PURGE-SCHEDULE-1 adds one daily trigger (02:43 GMT+7) to the live set.
-const TARGET_ORDER = [...LIVE_ORDER, '43 19 * * *'];
+const TARGET_ORDER = [...LIVE_ORDER, '43 19 * * *', '17 18 * * *'];
 const app = new URL('../../apps/cron-control/', import.meta.url);
 const cfPackage = pathToFileURL(
   realpathSync(new URL('node_modules/cf/package.json', app))

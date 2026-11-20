@@ -70,6 +70,10 @@ it('throws the row error while the switch is off', async () => {
 
 it('prepares erasure only while the switch is on', async () => {
   vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+  vi.stubEnv(
+    'MEET_ATTENDANCE_RETENTION_VERIFIED',
+    'meet-attendance-retention:17 18 * * *:purge_expired_meet_attendance'
+  );
   const remove = vi.fn(async () => ({ error: null }));
   await hooks().deleteWorkspace('ws', remove);
   expect(state.withWorkspace).toHaveBeenCalledOnce();

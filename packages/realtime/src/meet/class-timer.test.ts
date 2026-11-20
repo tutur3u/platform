@@ -8,6 +8,7 @@ import {
   formatClassTimer,
   getMeetRealtimeScopesForRole,
   MEET_CLASS_COHOST_SCOPE,
+  MEET_ATTENDANCE_RETENTION_PROOF,
   meetClassFeatures,
   type MeetRealtimeTokenPayload,
   meetRealtimeClientMessageSchema,
@@ -42,6 +43,10 @@ function token(
 
 beforeEach(() => {
   vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+  vi.stubEnv(
+    'MEET_ATTENDANCE_RETENTION_VERIFIED',
+    MEET_ATTENDANCE_RETENTION_PROOF
+  );
   vi.stubEnv('MEET_CLASS_TIMER_ENABLED', 'true');
 });
 afterEach(() => {

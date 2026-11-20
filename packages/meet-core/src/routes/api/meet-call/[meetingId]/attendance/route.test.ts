@@ -72,6 +72,10 @@ function request(format?: string) {
 
 beforeEach(() => {
   vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
+  vi.stubEnv(
+    'MEET_ATTENDANCE_RETENTION_VERIFIED',
+    'meet-attendance-retention:17 18 * * *:purge_expired_meet_attendance'
+  );
   fixture.access.isHost = false;
   fixture.access.canReadWorkspace = true;
   fixture.admin.mockReset();
