@@ -12,6 +12,7 @@ import {
   cloudflareOwnership,
   loadOwnership,
   resolveBase,
+  selectorOutput,
 } from './ci-plan.mjs';
 
 const repoRoot = path.resolve(import.meta.dirname, '../..');
@@ -23,6 +24,7 @@ function graph(dependents, names = {}) {
 
 const dependents = new Map([
   ['packages/ui', new Set(['apps/calendar', 'apps/web'])],
+  ['packages/utils', new Set(['apps/web'])],
   ['apps/calendar', new Set()],
   ['apps/web', new Set()],
   ['apps/meet', new Set()],
@@ -34,6 +36,7 @@ const dependents = new Map([
 
 const names = {
   'packages/ui': '@tuturuuu/ui',
+  'packages/utils': '@tuturuuu/utils',
   'apps/calendar': '@tuturuuu/calendar',
   'apps/web': '@tuturuuu/web',
   'apps/meet': '@tuturuuu/meet',
@@ -64,9 +67,10 @@ test('a calendar source change deploys calendar and skips meet', () => {
   assert.equal(result.typecheck.run, true);
   assert.equal(result.typecheck.narrow, true);
   assert.match(result.typecheck.filters, /--filter=\.\.\.@tuturuuu\/calendar/);
-  assert.match(result.typecheck.filters, /--filter='!@tuturuuu\/tanstack-web'/);
+  assert.match(result.typecheck.filters, /--filter=!@tuturuuu\/tanstack-web$/);
+  assert.equal(result.typecheck.filters.includes("'"), false);
   assert.equal(result.mobile.run, false);
-  assert.equal(result.docs.run, false);
+  assert.equal(result.docs.run, true);
   assert.equal(result.vercel.owner, 'vercel-production.yaml');
 });
 
@@ -115,6 +119,66 @@ test('markdown and config inside a workspace still run tests', () => {
   assert.equal(docsJson.typecheck.run, false);
   assert.equal(plan(['unknown']).uncertain, true);
   assert.equal(plan([]).test.run, true);
+  assert.equal(plan([]).lint.run, false);
+});
+
+test('lint runs every formatted source and skips oxfmt-ignored prose', () => {
+  for (const file of [
+    'apps/web/src/app/globals.css',
+    'packages/ui/src/globals.css',
+    'apps/web/src/foo.mts',
+    'apps/web/src/foo.cts',
+    'apps/web/src/foo.jsonc',
+  ]) {
+    const result = plan([file]);
+    assert.equal(result.uncertain, false, file);
+    assert.equal(result.lint.run, true, file);
+  }
+  assert.equal(plan(['apps/web/config.yml']).lint.run, false);
+  assert.equal(plan(['apps/web/page.html']).lint.run, false);
+  assert.equal(plan(['README.md']).lint.run, false);
+});
+
+test('docs run for an app or packages/utils in the closure', () => {
+  for (const file of [
+    'packages/utils/src/seo.ts',
+    'packages/utils/src/next-config.ts',
+    'apps/web/next.config.ts',
+    'apps/web/src/app/layout.tsx',
+  ]) {
+    const result = plan([file]);
+    assert.equal(result.uncertain, false, file);
+    assert.equal(result.docs.run, true, file);
+  }
+});
+
+test('an unsafe package name keeps the full type-check filter', () => {
+  const result = buildPlan({
+    files: ['apps/web/src/page.tsx'],
+    graph: graph(dependents, { ...names, 'apps/web': '$(touch)' }),
+    ownership,
+  });
+  assert.equal(result.uncertain, false);
+  assert.equal(result.typecheck.narrow, false);
+  assert.equal(result.typecheck.filters, '--filter=!@tuturuuu/tanstack-web');
+});
+
+test('main pushes publish the full type-check filter', () => {
+  const result = plan(['apps/calendar/src/store.ts']);
+  const selected = selectorOutput(result, 'typecheck', {
+    EVENT_NAME: 'push',
+    REF: 'refs/heads/main',
+  });
+  assert.equal(selected.run, true);
+  assert.equal(selected.narrow, false);
+  assert.equal(selected.filters, '--filter=!@tuturuuu/tanstack-web');
+  assert.equal(selected.reason, 'main pushes type-check the full tree');
+  const pull = selectorOutput(result, 'typecheck', {
+    EVENT_NAME: 'pull_request',
+    REF: 'refs/pull/1/merge',
+  });
+  assert.equal(pull.narrow, true);
+  assert.match(pull.filters, /--filter=\.\.\.@tuturuuu\/calendar/);
 });
 
 test('meet ownership adds meet without removing the web workspace', () => {

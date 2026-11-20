@@ -13,6 +13,7 @@
   "calendar-vercel-exact-sha.yaml": ["always"],
   "chat-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "chat-realtime-cloudflare.yaml": ["path-filters"],
+  "chat-realtime-staging-qualification.yaml": ["always"],
   "check-and-bump-versions.yaml": ["always"],
   "check-migration-timestamps.yml": ["always"],
   "check-migrations.yml": ["always"],
@@ -33,6 +34,10 @@
   "coordination-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "creator-identity-contract.yaml": ["path-filters"],
   "cron-control-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "deploy-coordinator-cloudflare.yaml": [
+    "path-filters",
+    "planner-affected-gate"
+  ],
   "desktop-beta.yaml": ["path-filters"],
   "desktop-store-draft.yaml": ["always"],
   "devbox-control-cloudflare.yaml": ["path-filters", "planner-affected-gate"],

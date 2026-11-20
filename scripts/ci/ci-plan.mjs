@@ -10,8 +10,13 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { failSafePath, loadExtraEdges, loadGraph } from './affected-apps.mjs';
 
-const FULL_TYPECHECK_FILTER = "--filter='!@tuturuuu/tanstack-web'";
+const FULL_TYPECHECK_FILTER = '--filter=!@tuturuuu/tanstack-web';
 const PAUSED_TYPECHECK = '@tuturuuu/tanstack-web';
+// Package names are expanded unquoted in the type-check shell. Anything
+// outside this set falls back to the full filter.
+const SAFE_PACKAGE_NAME = /^[@a-z0-9._/-]+$/u;
+// Oxfmt ignores these. Every other changed file runs Oxlint and Oxfmt.
+const LINT_IGNORED = /\.(md|mdx|yml|yaml|html|toml|inc)$/iu;
 
 export const BUILD_APPS = [
   'web',
@@ -136,9 +141,14 @@ function openPlan(reason, ownership) {
 function typecheckFilters(names) {
   // Turbo unions positive --filter flags, then subtracts a ! exclusion.
   // `...name` is that package plus its dependents. The paused package stays
-  // out. Above 40 names, or when a name is missing, keep the exclusion only.
+  // out. Above 40 names, a missing name, or an unsafe name keeps the
+  // exclusion only.
   const selected = names.filter((name) => name && name !== PAUSED_TYPECHECK);
-  if (selected.length === 0 || selected.length > 40)
+  if (
+    selected.length === 0 ||
+    selected.length > 40 ||
+    selected.some((name) => !SAFE_PACKAGE_NAME.test(name))
+  )
     return { narrow: false, filters: FULL_TYPECHECK_FILTER };
   const includes = selected
     .sort()
@@ -146,7 +156,7 @@ function typecheckFilters(names) {
     .join(' ');
   return {
     narrow: true,
-    filters: `${includes} --filter='!${PAUSED_TYPECHECK}'`,
+    filters: `${includes} --filter=!${PAUSED_TYPECHECK}`,
   };
 }
 
@@ -241,7 +251,11 @@ export function buildPlan({ files, graph, extraEdges = {}, ownership = {} }) {
         /(^|\/)page\.tsx$/u.test(file) ||
         /(^|\/)sitemap\.[a-z]+$/u.test(file) ||
         /(^|\/)robots\.[a-z]+$/u.test(file)
-    ) || affected.has('apps/docs');
+    ) ||
+    affected.has('apps/docs') ||
+    workspaces.some(
+      (dir) => dir.startsWith('apps/') || dir === 'packages/utils'
+    );
   const mobile = [...affected].some((dir) => MOBILE_DIRS.includes(dir));
   return {
     version: 1,
@@ -267,11 +281,7 @@ export function buildPlan({ files, graph, extraEdges = {}, ownership = {} }) {
       workspaces: typecheckWorkspaces,
     },
     lint: {
-      run: files.some(
-        (file) =>
-          !isShardDocumentation(file) &&
-          /\.(js|jsx|ts|tsx|mjs|cjs|json)$/iu.test(file)
-      ),
+      run: files.some((file) => !LINT_IGNORED.test(file)),
       reason,
     },
     build: {
@@ -448,24 +458,43 @@ export function planFromEnv(env = process.env, options = {}) {
   }
 }
 
-export function selectorOutput(plan, selector) {
+export function selectorOutput(plan, selector, env = process.env) {
   const entry = plan?.[selector];
-  if (!entry || plan.uncertain)
+  const selected =
+    !entry || plan.uncertain
+      ? {
+          run: true,
+          reason: plan?.reason ?? 'uncertain plan',
+          filters: FULL_TYPECHECK_FILTER,
+          narrow: false,
+          apps:
+            selector === 'build'
+              ? [...BUILD_APPS]
+              : (plan?.cloudflare?.run ?? []),
+        }
+      : {
+          run: entry.run !== false,
+          reason: entry.reason ?? plan.reason,
+          filters: entry.filters ?? FULL_TYPECHECK_FILTER,
+          narrow: entry.narrow === true,
+          apps: entry.apps ?? entry.run ?? [],
+        };
+  // A green narrowed main run is release evidence for the whole tree.
+  // Main pushes stay on the full filter.
+  if (
+    selector === 'typecheck' &&
+    env.EVENT_NAME === 'push' &&
+    env.REF === 'refs/heads/main'
+  ) {
     return {
+      ...selected,
       run: true,
-      reason: plan?.reason ?? 'uncertain plan',
-      filters: FULL_TYPECHECK_FILTER,
       narrow: false,
-      apps:
-        selector === 'build' ? [...BUILD_APPS] : (plan?.cloudflare?.run ?? []),
+      filters: FULL_TYPECHECK_FILTER,
+      reason: 'main pushes type-check the full tree',
     };
-  return {
-    run: entry.run !== false,
-    reason: entry.reason ?? plan.reason,
-    filters: entry.filters ?? FULL_TYPECHECK_FILTER,
-    narrow: entry.narrow === true,
-    apps: entry.apps ?? entry.run ?? [],
-  };
+  }
+  return selected;
 }
 
 function writeOutput(plan, selector) {

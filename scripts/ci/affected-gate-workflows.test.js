@@ -130,7 +130,7 @@ for (const [file, workflow] of gated) {
     assert.equal(gate.needs, undefined);
     // Step failures must never fail the job; run defaults to true.
     assert.match(gate.outputs.run, /steps\.app\.outputs\.run \|\| 'true'/u);
-    assert.match(
+    assert.doesNotMatch(
       gate.outputs.run,
       /github\.ref == 'refs\/heads\/main' && steps\.app\.outputs\.run == 'false'/u
     );
@@ -140,11 +140,9 @@ for (const [file, workflow] of gated) {
     assert.equal(checkout.with['persist-credentials'], false);
     assert.equal(step.uses, './.github/actions/affected-gate');
     assert.equal(step['continue-on-error'], true);
-    // Production, dispatch, and other non-main events never check out.
-    // Main pushes check out so a certain diff can skip an unaffected app.
+    // Only pull requests check out. Main and every other event stay run-true.
     assert.match(checkout.uses, /^actions\/checkout@/u);
-    const selectable =
-      "github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')";
+    const selectable = "github.event_name == 'pull_request'";
     assert.equal(checkout.if, selectable);
     assert.equal(step.if, selectable);
     for (const file of [
@@ -167,7 +165,7 @@ for (const [file, workflow] of gated) {
     }
   });
 
-  test(`${file}: the gate output fails open except a certain main push`, () => {
+  test(`${file}: the gate output fails open except a certain pull request miss`, () => {
     const output = workflow.jobs['affected-gate'].outputs.run;
     const run = (eventName, steps, ref) =>
       evaluateExpression(output, {
@@ -201,7 +199,7 @@ for (const [file, workflow] of gated) {
     assert.equal(run('push', {}, 'refs/heads/main'), 'true');
     assert.equal(
       run('push', { app: { outputs: { run: 'false' } } }, 'refs/heads/main'),
-      'false'
+      'true'
     );
     assert.equal(run('pull_request', {}), 'true');
     assert.equal(

@@ -243,7 +243,7 @@ test('gate end to end: an extra edge makes the dependent app run', () => {
     r.close();
   }
 });
-test('main push skips an unaffected app only when the base SHA is readable', () => {
+test('main push deploys the full set even when the app is outside the diff', () => {
   const r = repo();
   try {
     r.change('apps/beta/index.js');
@@ -261,10 +261,12 @@ test('main push skips an unaffected app only when the base SHA is readable', () 
       BEFORE_SHA: before,
       HEAD_SHA: head,
     };
-    assert.equal(
-      gate({ ...env, APP: 'alpha' }, { cwd: r.cwd, extraEdges: {} }).run,
-      false
+    const alpha = gate(
+      { ...env, APP: 'alpha' },
+      { cwd: r.cwd, extraEdges: {} }
     );
+    assert.equal(alpha.run, true);
+    assert.equal(alpha.reason, 'main pushes deploy the full set');
     assert.equal(
       gate({ ...env, APP: 'beta' }, { cwd: r.cwd, extraEdges: {} }).run,
       true
@@ -298,7 +300,7 @@ test('main push skips an unaffected app only when the base SHA is readable', () 
         apps: 'cms',
         result: affected([]),
       }).run,
-      false
+      true
     );
   } finally {
     r.close();

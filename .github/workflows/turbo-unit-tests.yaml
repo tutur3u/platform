@@ -32,11 +32,11 @@ jobs:
   changes:
     name: Classify Test changes
     needs: plan
-    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    if: ${{ (!cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
-      code: ${{ (needs.plan.outputs.run == 'false' && 'false') || steps.classify.outputs.code }}
+      code: ${{ needs.plan.result != 'success' && 'true' || (needs.plan.outputs.run == 'false' && 'false') || steps.classify.outputs.code }}
     steps:
       - name: Checkout change classifier and complete history
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

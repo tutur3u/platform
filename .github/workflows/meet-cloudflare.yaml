@@ -113,11 +113,11 @@ jobs:
       contents: read
     timeout-minutes: 5
     outputs:
-      run: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.app.outputs.run == 'false') && 'false' || (github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true') }}
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
       reason: ${{ steps.app.outputs.reason }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: github.event_name == 'pull_request'
         continue-on-error: true
         with:
           fetch-depth: 0
@@ -134,7 +134,7 @@ jobs:
             /packages/*/package.json
           sparse-checkout-cone-mode: false
       - id: app
-        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+        if: github.event_name == 'pull_request'
         continue-on-error: true
         uses: ./.github/actions/affected-gate
         with:

@@ -83,9 +83,10 @@ Cloudflare apps to skip, each with a reason. Lockfile, root config, `scripts/`
 and `.github/` changes are uncertain: every selector runs. A missing base SHA
 is uncertain too.
 
-Pull requests and pushes to `main` skip a Cloudflare app only when that plan
-is certain and the app is outside the closure. Production, manual, scheduled
-and release events keep running. Vercel production stays on the Production
+Pull requests skip a Cloudflare app only when that plan is certain and the app
+is outside the closure. Pushes to `main` type-check the full tree and deploy
+every Cloudflare app. A failed plan runs the checks. Production, manual,
+scheduled and release events keep running. Vercel production stays on the Production
 Deployment Planner in `vercel-production.yaml`. Type Check, Test, Oxc and docs
 read the plan from `.github/workflows/ci-plan.yaml`. Mobile keeps its path
 filters. Empty Turbo tokens on merge-queue and Cloudflare jobs stay empty on

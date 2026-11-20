@@ -12,7 +12,7 @@ const workflow = readWorkflow('type-check.yaml');
 const job = workflow.jobs['type-check'];
 const prJob = workflow.jobs['type-check-pr'];
 const decision =
-  "needs.plan.outputs.run != 'false' && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
+  "(needs.plan.result != 'success' || needs.plan.outputs.run != 'false' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
 const preflightIds = ['changed_files', 'check_config', 'release_relevance'];
 const heavyNames = [
   'Setup Bun',
@@ -78,6 +78,9 @@ test('singleton keeps the Type Check context, event surface and runner with a re
   assert.equal(workflow.jobs.plan.uses, './.github/workflows/ci-plan.yaml');
   assert.equal(workflow.jobs.plan.with.selector, 'typecheck');
   assert.deepEqual(workflow.jobs.plan.permissions, { contents: 'read' });
+  assert.match(job.if, /!cancelled\(\)/);
+  assert.match(prJob.if, /!cancelled\(\)/);
+  assert.doesNotMatch(String(workflow.jobs.plan.if), /!cancelled\(\)/);
   assert.match(job.if, /github\.event_name != 'pull_request'/);
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
@@ -141,7 +144,17 @@ test('same preflight scripts precede every heavy step without error overrides', 
   assert.equal(summary.name, 'Report skipped type check');
   assert.equal(
     summary.if,
-    "needs.plan.outputs.run == 'false' || steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'"
+    "(needs.plan.result == 'success' && needs.plan.outputs.run == 'false' && (github.event_name != 'push' || github.ref != 'refs/heads/main')) || steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'"
+  );
+  const typecheck = job.steps.find((entry) => entry.name === 'Run type check');
+  assert.equal(
+    typecheck.with.command,
+    'bun turbo:local run type-check --concurrency=4 $TYPECHECK_FILTERS'
+  );
+  assert.doesNotMatch(typecheck.with.command, /\$\{\{/);
+  assert.match(
+    typecheck.env.TYPECHECK_FILTERS,
+    /'--filter=!@tuturuuu\/tanstack-web'/
   );
   assert.match(summary.run, /no compilation was performed/);
   assert.match(summary.run, /GITHUB_STEP_SUMMARY/);

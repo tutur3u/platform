@@ -217,6 +217,17 @@
     "scripts/ci/cf-worker-settings.mjs",
     "scripts/ci/fixtures/cf-worker-parity/cron-control.json"
   ],
+  "deploy-coordinator": [
+    ".github/actions/deploy-coordinator/**",
+    ".github/actions/setup-bun-with-retry/**",
+    ".github/workflows/deploy-coordinator-cloudflare.yaml",
+    "apps/deploy-coordinator/",
+    "apps/deploy-coordinator/**",
+    "scripts/ci/cf-vite-worker.mjs",
+    "scripts/ci/deploy-coordinator-client.mjs",
+    "scripts/ci/deploy-coordinator-client.test.mjs",
+    "scripts/ci/run-with-backoff.sh"
+  ],
   "devbox-control": [
     ".github/workflows/devbox-control-cloudflare.yaml",
     "apps/devbox-control/",

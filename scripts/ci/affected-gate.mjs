@@ -5,9 +5,10 @@ import { affectedResult, planFromEnv } from './ci-plan.mjs';
 
 // Decide whether a per-app workflow's heavy jobs should run.
 //
-// Pull requests and pushes to main can skip when the diff plan is certain and
-// the app is absent. Every other event, a missing base, and every uncertain
-// plan resolve to run=true, so a bug here can only cost CI minutes.
+// Pull requests can skip when the diff plan is certain and the app is absent.
+// Main pushes deploy the full set: an incremental skip would hide a failed
+// deploy from the previous commit. Every other event, a missing base, and
+// every uncertain plan resolve to run=true.
 export function decide({
   eventName,
   ref,
@@ -15,9 +16,14 @@ export function decide({
   result,
   appExists = () => true,
 }) {
-  const mainPush = eventName === 'push' && ref === 'refs/heads/main';
-  if (eventName !== 'pull_request' && !mainPush)
-    return { run: true, reason: 'not a pull request' };
+  if (eventName !== 'pull_request')
+    return {
+      run: true,
+      reason:
+        eventName === 'push' && ref === 'refs/heads/main'
+          ? 'main pushes deploy the full set'
+          : 'not a pull request',
+    };
   const wanted = String(apps ?? '')
     .split(',')
     .map((app) => app.trim())
@@ -57,8 +63,7 @@ export function gate(
   try {
     const eventName = env.EVENT_NAME ?? '';
     const ref = env.REF ?? '';
-    const mainPush = eventName === 'push' && ref === 'refs/heads/main';
-    if (eventName !== 'pull_request' && !mainPush)
+    if (eventName !== 'pull_request')
       return decide({ eventName, ref, apps: env.APP });
     const result = affectedResult(planFromEnv(env, { cwd, extraEdges }));
     return decide({

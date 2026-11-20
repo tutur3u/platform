@@ -211,9 +211,10 @@ See `apps/docs/build/devops/active-runtime.mdx`.
 Cloudflare affected-gate. `scripts/ci/ci-plan-catalog.json` is the file-to-app
 ownership generated from those workflows; a contract test fails when a specific
 path is missing. Uncertain diffs, including `bun.lock`, `turbo.json`,
-`scripts/` and `.github/`, run every selector. Pull requests and `main` pushes
-may skip a Cloudflare app when the plan is certain. Production and every other
-event stay run-true. Do not put concurrency on `.github/workflows/ci-plan.yaml`:
+`scripts/` and `.github/`, run every selector. Pull requests may skip a
+Cloudflare app when the plan is certain. Pushes to `main` type-check the full
+tree and deploy every Cloudflare app. A failed plan runs the checks.
+Production and every other event stay run-true. Do not put concurrency on `.github/workflows/ci-plan.yaml`:
 a callee that cancels in progress would cancel its caller. Deploy jobs keep
 `cancel-in-progress: false`. Vercel selection stays in `vercel-production.yaml`.
 Superseded production-build skipping is a separate change. Merge-group and
