@@ -205,7 +205,7 @@ class _NotificationsFeedListState extends State<NotificationsFeedList> {
               AppIllustrationKind.notificationsClear,
             ),
             title: switch (widget.tab) {
-              NotificationsTab.all ||
+              NotificationsTab.all => l10n.notificationsAllEmptyTitle,
               NotificationsTab.inbox => l10n.notificationsAllCaughtUp,
               NotificationsTab.archive => l10n.notificationsReadEmptyTitle,
             },

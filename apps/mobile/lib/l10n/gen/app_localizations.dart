@@ -14509,6 +14509,12 @@ abstract class AppLocalizations {
   /// **'Undo'**
   String get notificationsUndo;
 
+  /// No description provided for @notificationsAllEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notifications yet'**
+  String get notificationsAllEmptyTitle;
+
   /// No description provided for @notificationsAllCaughtUp.
   ///
   /// In en, this message translates to:
@@ -14556,6 +14562,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t refresh notifications'**
   String get notificationsRefreshFailed;
+
+  /// No description provided for @notificationsRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing notifications'**
+  String get notificationsRefreshing;
 
   /// No description provided for @notificationsTargetUnavailable.
   ///

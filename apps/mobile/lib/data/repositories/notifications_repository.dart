@@ -37,6 +37,7 @@ class NotificationsRepository {
         namespace: 'notifications.feed',
         workspaceId: wsId ?? 'personal',
         path: NotificationEndpoints.notifications(params),
+        allowAwaitedTransportFallback: false,
       ),
     );
     final source = (json['notifications'] as List<dynamic>? ?? const [])

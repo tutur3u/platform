@@ -7645,6 +7645,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notificationsUndo => 'Undo';
 
   @override
+  String get notificationsAllEmptyTitle => 'No notifications yet';
+
+  @override
   String get notificationsAllCaughtUp => 'You\'re all caught up';
 
   @override
@@ -7667,6 +7670,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsRefreshFailed => 'Couldn\'t refresh notifications';
+
+  @override
+  String get notificationsRefreshing => 'Refreshing notifications';
 
   @override
   String get notificationsTargetUnavailable => 'This item is no longer available.';

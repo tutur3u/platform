@@ -74,108 +74,126 @@ void _notificationsRenderCases() {
 
   for (final size in renderSizes.entries) {
     for (final look in renderAppearances.entries) {
-      testWidgets('Notifications render on ${size.key} in ${look.key}', (
-        tester,
-      ) async {
-        final items = fixtureItems();
-        final repository = _Repository();
-        when(
-          () => repository.fetchNotifications(
-            wsId: any(named: 'wsId'),
-            unreadOnly: any(named: 'unreadOnly'),
-            readOnly: any(named: 'readOnly'),
-            limit: any(named: 'limit'),
-            offset: any(named: 'offset'),
-          ),
-        ).thenAnswer(
-          (_) async => model.NotificationsPage(
-            notifications: items,
-            count: items.length,
-            limit: 20,
-            offset: 0,
-          ),
-        );
-        when(
-          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
-        ).thenAnswer((_) async => 2);
+      for (final locale in [
+        const Locale('en'),
+        if (size.key == 'phone' &&
+            (look.key == 'classic-light' || look.key == 'classic-dark'))
+          const Locale('vi'),
+      ]) {
+        testWidgets('Notifications render on ${size.key} in ${look.key} '
+            '(${locale.languageCode})', (tester) async {
+          final items = fixtureItems();
+          final repository = _Repository();
+          when(
+            () => repository.fetchNotifications(
+              wsId: any(named: 'wsId'),
+              unreadOnly: any(named: 'unreadOnly'),
+              readOnly: any(named: 'readOnly'),
+              limit: any(named: 'limit'),
+              offset: any(named: 'offset'),
+            ),
+          ).thenAnswer(
+            (_) async => model.NotificationsPage(
+              notifications: items,
+              count: items.length,
+              limit: 20,
+              offset: 0,
+            ),
+          );
+          when(
+            () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+          ).thenAnswer((_) async => 2);
 
-        await pumpShellRender(
-          tester,
-          location: Routes.notifications,
-          size: size.value,
-          appearance: look.value.$1,
-          themeMode: look.value.$2,
-          notificationsPageBuilder: (_) =>
-              NotificationsPage(repository: repository),
-        );
-        await tester.runAsync(
-          () => Future<void>.delayed(const Duration(milliseconds: 50)),
-        );
-        await settleShell(tester);
-
-        for (final caption in ['Today', 'Yesterday', 'Earlier']) {
-          expect(find.text(caption), findsOneWidget, reason: caption);
-        }
-        // The open invite offers both decisions inline.
-        expect(find.text('Accept'), findsOneWidget);
-        expect(find.text('Decline'), findsOneWidget);
-        expect(
-          find.byKey(const ValueKey('notification-unread-dot')),
-          findsNWidgets(2),
-        );
-        final firstRow = find.byKey(const ValueKey('notification-row-n1'));
-        expect(tester.getSize(firstRow).height, greaterThanOrEqualTo(44));
-        final left = tester.getTopLeft(firstRow).dx;
-        if (size.key == 'phone') {
-          expect(left, AppLayout.gutter(DeviceClass.compact));
-        } else {
-          // Wider windows centre the feed at the detail page width.
-          expect(tester.getSize(firstRow).width, lessThanOrEqualTo(720));
-        }
-        // Search belongs to screens that search their own content.
-        expect(find.byIcon(AppIcons.search), findsNothing);
-        final chrome = tester
-            .element(find.byType(NotificationsPage))
-            .read<ShellChromeActionsCubit>();
-        List<String> ids() => chrome.state
-            .resolveForLocation(Routes.notifications)
-            .map((action) => action.id)
-            .toList();
-        // Unread notifications exist, so Mark all as read is offered.
-        expect(ids(), contains('notifications-mark-all-read'));
-        expect(ids(), contains('notifications-settings'));
-        await _capture(tester, 'notifications-${size.key}-${look.key}');
-        // Unread is the default filter and asks for unread rows only.
-        verify(
-          () => repository.fetchNotifications(
-            wsId: any(named: 'wsId'),
-            unreadOnly: true,
-            readOnly: any(named: 'readOnly'),
-            limit: any(named: 'limit'),
-            offset: any(named: 'offset'),
-          ),
-        ).called(greaterThanOrEqualTo(1));
-        if (size.key == 'phone') {
-          // All stays one tap away.
-          await tester.tap(
-            find.byKey(const ValueKey('notifications-filter-all')),
+          await pumpShellRender(
+            tester,
+            location: Routes.notifications,
+            size: size.value,
+            appearance: look.value.$1,
+            themeMode: look.value.$2,
+            locale: locale,
+            notificationsPageBuilder: (_) =>
+                NotificationsPage(repository: repository),
           );
           await tester.runAsync(
             () => Future<void>.delayed(const Duration(milliseconds: 50)),
           );
           await settleShell(tester);
+
+          final l10n = AppLocalizations.of(
+            tester.element(find.byType(NotificationsPage)),
+          );
+          expect(l10n.localeName, locale.languageCode);
+          for (final caption in [
+            l10n.notificationsGroupToday,
+            l10n.notificationsGroupYesterday,
+            l10n.notificationsGroupEarlier,
+          ]) {
+            expect(find.text(caption), findsOneWidget, reason: caption);
+          }
+          // The open invite offers both decisions inline.
+          expect(find.text(l10n.notificationsAcceptInvite), findsOneWidget);
+          expect(find.text(l10n.notificationsDeclineInvite), findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('notification-unread-dot')),
+            findsNWidgets(2),
+          );
+          final firstRow = find.byKey(const ValueKey('notification-row-n1'));
+          expect(tester.getSize(firstRow).height, greaterThanOrEqualTo(44));
+          final left = tester.getTopLeft(firstRow).dx;
+          if (size.key == 'phone') {
+            expect(left, AppLayout.gutter(DeviceClass.compact));
+          } else {
+            // Wider windows centre the feed at the detail page width.
+            expect(tester.getSize(firstRow).width, lessThanOrEqualTo(720));
+          }
+          // Search belongs to screens that search their own content.
+          expect(find.byIcon(AppIcons.search), findsNothing);
+          final chrome = tester
+              .element(find.byType(NotificationsPage))
+              .read<ShellChromeActionsCubit>();
+          List<String> ids() => chrome.state
+              .resolveForLocation(Routes.notifications)
+              .map((action) => action.id)
+              .toList();
+          // Unread notifications exist, so Mark all as read is offered.
+          expect(ids(), contains('notifications-mark-all-read'));
+          expect(ids(), contains('notifications-settings'));
+          await _capture(
+            tester,
+            'notifications-${size.key}-${look.key}-${locale.languageCode}',
+          );
+          // Unread is the default filter and asks for unread rows only.
           verify(
             () => repository.fetchNotifications(
               wsId: any(named: 'wsId'),
-              unreadOnly: any(named: 'unreadOnly', that: isFalse),
-              readOnly: any(named: 'readOnly', that: isFalse),
+              unreadOnly: true,
+              readOnly: any(named: 'readOnly'),
               limit: any(named: 'limit'),
               offset: any(named: 'offset'),
             ),
           ).called(greaterThanOrEqualTo(1));
-        }
-        expect(tester.takeException(), isNull);
-      });
+          if (size.key == 'phone') {
+            // All stays one tap away.
+            await tester.tap(
+              find.byKey(const ValueKey('notifications-filter-all')),
+            );
+            await tester.runAsync(
+              () => Future<void>.delayed(const Duration(milliseconds: 50)),
+            );
+            await settleShell(tester);
+            verify(
+              () => repository.fetchNotifications(
+                wsId: any(named: 'wsId'),
+                unreadOnly: any(named: 'unreadOnly', that: isFalse),
+                readOnly: any(named: 'readOnly', that: isFalse),
+                limit: any(named: 'limit'),
+                offset: any(named: 'offset'),
+              ),
+            ).called(greaterThanOrEqualTo(1));
+          }
+          expect(tester.takeException(), isNull);
+        });
+      }
     }
   }
 

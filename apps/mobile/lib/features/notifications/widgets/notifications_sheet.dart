@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/app_notification.dart';
@@ -66,30 +67,28 @@ class NotificationsView extends StatefulWidget {
 
 class _NotificationsViewState extends State<NotificationsView>
     with OfflineSyncRefresh<NotificationsView> {
+  final _offlineSyncOwner = Object();
   late NotificationsTab _selectedTab = widget.initialTab;
   StreamSubscription<PushNotificationEvent>? _pushEventsSubscription;
 
   @override
   void initState() {
     super.initState();
-    _pushEventsSubscription = PushNotificationService.instance.events.listen((
-      _,
-    ) {
-      if (!mounted) {
-        return;
-      }
-      final notificationsCubit = context.read<NotificationsCubit>();
-      unawaited(notificationsCubit.refreshUnreadCount());
-      unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
-    });
+    _pushEventsSubscription = PushNotificationService.instance.events.listen(
+      (_) => _scheduleRefresh(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) {
         return;
       }
-      final notificationsCubit = context.read<NotificationsCubit>();
-      unawaited(notificationsCubit.refreshUnreadCount());
-      unawaited(notificationsCubit.loadTab(_selectedTab, refresh: true));
-      unawaited(OfflineMutationQueue.instance.syncOnViewOpen('notifications'));
+      _scheduleRefresh();
+      ForegroundRefresh.request(_offlineSyncOwner, () {
+        if (mounted) {
+          unawaited(
+            OfflineMutationQueue.instance.syncOnViewOpen('notifications'),
+          );
+        }
+      });
     });
   }
 
@@ -101,7 +100,7 @@ class _NotificationsViewState extends State<NotificationsView>
       return;
     }
     _selectedTab = widget.initialTab;
-    unawaited(context.read<NotificationsCubit>().loadTab(_selectedTab));
+    _scheduleRefresh();
   }
 
   @override
@@ -110,9 +109,30 @@ class _NotificationsViewState extends State<NotificationsView>
     super.dispose();
   }
 
+  void _scheduleRefresh() {
+    ForegroundRefresh.request(this, () {
+      if (!mounted) return;
+      unawaited(_refresh());
+    });
+  }
+
+  Future<void> _refresh() async {
+    final cubit = context.read<NotificationsCubit>();
+    await Future.wait([
+      cubit.refreshUnreadCount(),
+      cubit.loadTab(_selectedTab, refresh: true),
+    ]);
+  }
+
   @override
   Future<void> refreshAfterOfflineSync() async {
-    await context.read<NotificationsCubit>().reconcileAfterSync(_selectedTab);
+    ForegroundRefresh.request(_offlineSyncOwner, () {
+      if (mounted) {
+        unawaited(
+          context.read<NotificationsCubit>().reconcileAfterSync(_selectedTab),
+        );
+      }
+    });
   }
 
   @override
@@ -124,9 +144,7 @@ class _NotificationsViewState extends State<NotificationsView>
     return BlocConsumer<NotificationsCubit, NotificationsState>(
       listenWhen: (previous, current) =>
           previous.scopeWorkspaceId != current.scopeWorkspaceId,
-      listener: (context, state) => unawaited(
-        context.read<NotificationsCubit>().loadTab(_selectedTab, refresh: true),
-      ),
+      listener: (context, state) => _scheduleRefresh(),
       buildWhen: (previous, current) =>
           previous.scopeWorkspaceId != current.scopeWorkspaceId ||
           !identical(
@@ -144,10 +162,7 @@ class _NotificationsViewState extends State<NotificationsView>
           tab: _selectedTab,
           feed: feed,
           pageMode: widget.pageMode,
-          onRefresh: () => context.read<NotificationsCubit>().loadTab(
-            _selectedTab,
-            refresh: true,
-          ),
+          onRefresh: _refresh,
           onLoadMore: () =>
               context.read<NotificationsCubit>().loadMore(_selectedTab),
           itemBuilder: (notification) => NotificationRow(
@@ -244,9 +259,7 @@ class _NotificationsViewState extends State<NotificationsView>
                               final tab = selection.firstOrNull;
                               if (tab == null) return;
                               setState(() => _selectedTab = tab);
-                              unawaited(
-                                context.read<NotificationsCubit>().loadTab(tab),
-                              );
+                              _scheduleRefresh();
                             },
                           ),
                         ),

@@ -129,7 +129,9 @@ void main() {
     verify(() => cubit.reconcileAfterSync(NotificationsTab.all)).called(1);
   });
 
-  testWidgets('filters switch feeds and load the chosen one', (tester) async {
+  testWidgets('filters switch feeds and revalidate previously loaded tabs', (
+    tester,
+  ) async {
     await mount(
       tester,
       NotificationsState(
@@ -144,9 +146,25 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('notifications-filter-inbox')));
     await tester.pumpAndSettle();
 
-    verify(() => cubit.loadTab(NotificationsTab.inbox)).called(1);
+    verify(
+      () => cubit.loadTab(NotificationsTab.inbox, refresh: true),
+    ).called(1);
     expect(find.textContaining('Synthetic a'), findsOneWidget);
     expect(find.textContaining('Synthetic b'), findsNothing);
+  });
+
+  testWidgets('reselecting the current tab revalidates its snapshot', (
+    tester,
+  ) async {
+    await mount(tester, NotificationsState(all: _loaded([_item('cached')])));
+    clearInteractions(cubit);
+
+    await tester.tap(find.byKey(const ValueKey('notifications-filter-all')));
+    await tester.pumpAndSettle();
+
+    verify(() => cubit.loadTab(NotificationsTab.all, refresh: true)).called(1);
+    verify(cubit.refreshUnreadCount).called(1);
+    expect(find.textContaining('Synthetic cached'), findsOneWidget);
   });
 
   testWidgets('Unread is the default filter and leads the bar', (tester) async {
@@ -163,7 +181,7 @@ void main() {
 
     await tester.tap(all);
     await tester.pumpAndSettle();
-    verify(() => cubit.loadTab(NotificationsTab.all)).called(1);
+    verify(() => cubit.loadTab(NotificationsTab.all, refresh: true)).called(1);
   });
 
   testWidgets('cards are spaced apart instead of divided', (tester) async {
@@ -268,7 +286,7 @@ void main() {
     (
       'empty',
       NotificationsState(all: _loaded(const [])),
-      "You're all caught up",
+      'No notifications yet',
     ),
     (
       'offline',

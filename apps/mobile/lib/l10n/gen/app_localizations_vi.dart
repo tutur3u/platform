@@ -7569,6 +7569,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get notificationsUndo => 'Hoàn tác';
 
   @override
+  String get notificationsAllEmptyTitle => 'Chưa có thông báo';
+
+  @override
   String get notificationsAllCaughtUp => 'Bạn đã xem hết thông báo';
 
   @override
@@ -7591,6 +7594,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsRefreshFailed => 'Không thể làm mới thông báo';
+
+  @override
+  String get notificationsRefreshing => 'Đang làm mới thông báo';
 
   @override
   String get notificationsTargetUnavailable => 'Mục này không còn khả dụng.';

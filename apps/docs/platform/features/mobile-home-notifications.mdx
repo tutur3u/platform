@@ -62,6 +62,12 @@ coverage.
 
 - **Title.** The page is titled **Alerts** (**Thông báo** in Vietnamese),
   the same word as its dock tab, so the tab and the page it opens match.
+- **Refresh.** Opening Notifications, selecting any filter, or selecting the active
+  filter again revalidates its first page and unread badge after App Lock admits
+  the request. Pull down to wait for the same refresh. A saved result, including
+  an empty one, stays visible with a compact progress indicator. A failed
+  revalidation keeps the saved result and offers Retry.
+  Coverage: `notifications_inbox_test.dart` and `notifications_cubit_test.dart`.
 - **Grouping.** The inbox and archive are grouped by device-local calendar
   day: **Today**, **Yesterday**, **Last 7 days** and **Earlier**. Groups keep
   the server's newest-first order; an out-of-order item starts a new group

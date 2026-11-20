@@ -15,6 +15,7 @@ class NotificationFeedState extends Equatable {
     this.totalCount = 0,
     this.pageSize = 20,
     this.isLoadingMore = false,
+    this.hasSnapshot = false,
     this.isOffline = false,
     this.error,
   });
@@ -24,13 +25,19 @@ class NotificationFeedState extends Equatable {
   final int totalCount;
   final int pageSize;
   final bool isLoadingMore;
+  final bool hasSnapshot;
 
   /// The last fetch failed because the device could not reach the API.
   final bool isOffline;
   final String? error;
 
   bool get hasLoadedOnce =>
-      status == NotificationFeedStatus.loaded || items.isNotEmpty;
+      hasSnapshot ||
+      status == NotificationFeedStatus.loaded ||
+      items.isNotEmpty;
+
+  bool get isRefreshing =>
+      status == NotificationFeedStatus.loading && hasLoadedOnce;
 
   bool get hasMore => items.length < totalCount;
 
@@ -50,6 +57,7 @@ class NotificationFeedState extends Equatable {
       totalCount: totalCount ?? this.totalCount,
       pageSize: pageSize ?? this.pageSize,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasSnapshot: hasLoadedOnce,
       isOffline: !clearError && (isOffline ?? this.isOffline),
       error: clearError
           ? null
@@ -66,6 +74,7 @@ class NotificationFeedState extends Equatable {
     totalCount,
     pageSize,
     isLoadingMore,
+    hasSnapshot,
     isOffline,
     error,
   ];

@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
@@ -72,6 +73,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   static NotificationsState? seedStateForWorkspace(String? wsId) {
+    if (currentCacheUserId() == null) return null;
     final cached = CacheStore.instance.peek<NotificationsState>(
       key: _cacheKey(wsId: wsId),
       decode: _notificationsStateFromCacheJson,
@@ -124,16 +126,8 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       return;
     }
     emit(
-      state.copyWith(
-        scopeWorkspaceId: nextScopeWorkspaceId,
-        unreadCount: 0,
-        pendingIds: const [],
-        isArchivingAll: false,
-        isUnreadCountLoading: false,
-        all: const NotificationFeedState(),
-        inbox: const NotificationFeedState(),
-        archive: const NotificationFeedState(),
-      ),
+      seedStateForWorkspace(nextScopeWorkspaceId) ??
+          NotificationsState(scopeWorkspaceId: nextScopeWorkspaceId),
     );
 
     await refreshUnreadCount();
@@ -149,35 +143,54 @@ class NotificationsCubit extends Cubit<NotificationsState> {
 
     final completion = Completer<bool>();
     _unreadRefresh = completion.future;
-    unawaited(_fetchUnreadCount(completion));
+    unawaited(_runUnreadRefresh(completion));
     return completion.future;
   }
 
-  Future<void> _fetchUnreadCount(Completer<bool> completion) async {
+  Future<void> _runUnreadRefresh(Completer<bool> completion) async {
+    try {
+      completion.complete(await _whenScopeAdmitted(_fetchUnreadCount) ?? false);
+    } on Object catch (error, stackTrace) {
+      completion.completeError(error, stackTrace);
+    } finally {
+      if (identical(_unreadRefresh, completion.future)) _unreadRefresh = null;
+    }
+  }
+
+  Future<T?> _whenScopeAdmitted<T>(Future<T> Function() work) {
+    final epoch = _scopeEpoch;
+    final actor = _currentUserId();
+    return ForegroundRefresh.run<T?>(() async {
+      if (!_isCurrentScope(epoch, actor)) return null;
+      return await work();
+    });
+  }
+
+  Future<bool> _fetchUnreadCount() async {
     final epoch = _scopeEpoch;
     final userId = _currentUserId();
     final workspaceId = state.scopeWorkspaceId;
-    var succeeded = false;
     emit(state.copyWith(isUnreadCountLoading: true));
     try {
       final unreadCount = await _notificationsRepository.fetchUnreadCount(
         wsId: workspaceId,
       );
-      if (!_isCurrentScope(epoch, userId)) return;
+      if (!_isCurrentScope(epoch, userId)) return false;
       final changed = state.unreadCount != unreadCount;
       emit(
         state.copyWith(unreadCount: unreadCount, isUnreadCountLoading: false),
       );
-      // A badge refresh must not serialize the entire feed when unchanged.
-      if (changed) await _persistCurrentState();
-      succeeded = _isCurrentScope(epoch, userId);
+      if (changed) {
+        await _persistCurrentState();
+      } else {
+        NotificationsUnreadCount.instance.publish(unreadCount);
+      }
+      return _isCurrentScope(epoch, userId);
     } on Exception {
       if (_isCurrentScope(epoch, userId)) {
         emit(state.copyWith(isUnreadCountLoading: false));
       }
-    } finally {
-      if (identical(_unreadRefresh, completion.future)) _unreadRefresh = null;
-      completion.complete(succeeded);
+      return false;
     }
   }
 
@@ -195,12 +208,15 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     if (!refresh && state.feedFor(tab).hasLoadedOnce) return Future.value(true);
     final existing = _tabRefreshes[tab];
     if (existing != null) return existing;
+    _tabGenerations[tab] = (_tabGenerations[tab] ?? 0) + 1;
     late final Future<bool> running;
-    running = _fetchTabResult(tab).whenComplete(() {
-      if (identical(_tabRefreshes[tab], running)) {
-        _tabRefreshes.removeWhere((key, _) => key == tab);
-      }
-    });
+    running = _whenScopeAdmitted(() => _fetchTabResult(tab))
+        .then((result) => result ?? false)
+        .whenComplete(() {
+          if (identical(_tabRefreshes[tab], running)) {
+            _tabRefreshes.removeWhere((key, _) => key == tab);
+          }
+        });
     _tabRefreshes[tab] = running;
     return running;
   }
@@ -219,7 +235,11 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       state.copyWith(
         feed: state
             .feedFor(tab)
-            .copyWith(status: NotificationFeedStatus.loading, clearError: true),
+            .copyWith(
+              status: NotificationFeedStatus.loading,
+              isLoadingMore: false,
+              clearError: true,
+            ),
         targetTab: tab,
       ),
     );
@@ -268,6 +288,12 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   Future<void> loadMore(NotificationsTab tab) async {
+    if (isClosed) return;
+    _syncActorScope();
+    await _whenScopeAdmitted(() => _fetchMore(tab));
+  }
+
+  Future<void> _fetchMore(NotificationsTab tab) async {
     if (isClosed) {
       return;
     }
@@ -629,6 +655,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   Future<void> _persistCurrentState() async {
+    if (currentCacheUserId() == null) return;
     await CacheStore.instance.write(
       key: _cacheKey(wsId: state.scopeWorkspaceId),
       policy: _cachePolicy,

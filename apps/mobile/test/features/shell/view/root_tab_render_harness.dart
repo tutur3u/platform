@@ -139,7 +139,7 @@ Future<GoRouter> pumpShellRender(
         locale: locale,
         localizationsDelegates: const [
           ...AppLocalizations.localizationsDelegates,
-          shad.ShadcnLocalizations.delegate,
+          AppShadcnLocalizationsDelegate(),
         ],
         supportedLocales: AppLocalizations.supportedLocales,
         routerConfig: router,

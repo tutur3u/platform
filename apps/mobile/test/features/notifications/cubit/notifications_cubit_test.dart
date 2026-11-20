@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/data/models/app_notification.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
@@ -99,6 +100,48 @@ void main() {
         expect(cubit.state.unreadCount, 1);
         expect(cubit.state.inbox.items, isEmpty);
         expect(cubit.state.archive.items, isEmpty);
+      },
+    );
+
+    test(
+      'queued feed and badge refresh wait for unlock and deduplicate',
+      () async {
+        final queued = <void Function()>[];
+        final unbind = ForegroundRefresh.bind((_, work) => queued.add(work));
+        addTearDown(unbind);
+        when(
+          () => repository.fetchUnreadCount(wsId: any(named: 'wsId')),
+        ).thenAnswer((_) async => 1);
+        when(
+          () => repository.fetchNotifications(
+            wsId: any(named: 'wsId'),
+            unreadOnly: any(named: 'unreadOnly'),
+            readOnly: any(named: 'readOnly'),
+            limit: any(named: 'limit'),
+            offset: any(named: 'offset'),
+          ),
+        ).thenAnswer(
+          (_) async => const NotificationsPage(
+            notifications: [],
+            count: 0,
+            limit: 20,
+            offset: 0,
+          ),
+        );
+
+        final badgeA = cubit.setWorkspace(teamWorkspace);
+        final badgeB = cubit.refreshUnreadCount();
+        final feedA = cubit.loadTab(NotificationsTab.inbox, refresh: true);
+        final feedB = cubit.loadTab(NotificationsTab.inbox, refresh: true);
+
+        verifyZeroInteractions(repository);
+        expect(queued, hasLength(2));
+        for (final work in queued) {
+          work();
+        }
+        await Future.wait([badgeA, badgeB, feedA, feedB]);
+        expect(cubit.state.unreadCount, 1);
+        expect(cubit.state.inbox.hasLoadedOnce, isTrue);
       },
     );
 

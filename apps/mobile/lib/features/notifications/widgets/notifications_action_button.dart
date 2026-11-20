@@ -104,7 +104,9 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
     _pushEventsSubscription = PushNotificationService.instance.events.listen((
       _,
     ) {
-      unawaited(_notificationsCubit.refreshUnreadCount());
+      ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_notificationsCubit.refreshUnreadCount());
+      });
     });
   }
 

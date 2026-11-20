@@ -48,7 +48,9 @@ NotificationFeedState _feedFromCacheJson(Object? json) {
 }
 
 Map<String, dynamic> _feedToCacheJson(NotificationFeedState state) => {
-  'status': state.status.name,
+  'status': state.hasLoadedOnce
+      ? NotificationFeedStatus.loaded.name
+      : NotificationFeedStatus.initial.name,
   'items': state.items.map((item) => item.toJson()).toList(growable: false),
   'totalCount': state.totalCount,
   'pageSize': state.pageSize,
