@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
   guestAccess: vi.fn(),
   guestJoin: vi.fn(),
 }));
+// The room page imports server-only modules; Vitest runs without the
+// react-server condition that makes that import a no-op.
+vi.mock('server-only', () => ({}));
 vi.mock('next/headers', () => ({
   cookies: async () => ({ get: () => ({ value: 'guest-cookie' }) }),
 }));
