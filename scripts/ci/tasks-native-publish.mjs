@@ -10,6 +10,7 @@ import {
   matchesTasksPublicationSmoke,
   runSmoke,
 } from '../native-cutover/smoke-checks.mjs';
+import { waitForTasksPreview } from './tasks-preview-readback.mjs';
 
 const origin = 'https://tasks.tuturuuu.com';
 const worker = 'tuturuuu-tasks';
@@ -25,7 +26,7 @@ assert.ok(token && directory, 'Tasks publication directory and token required');
 const deploymentsPath = `/workers/scripts/${worker}/deployments`;
 const receiptPath = join(directory, 'receipt.json');
 
-async function provider(path, data) {
+async function provider(path, data, signal) {
   const url = `https://api.cloudflare.com/client/v4/accounts/${account}${path}`;
   const response = await fetch(url, {
     method: data ? 'POST' : 'GET',
@@ -35,7 +36,10 @@ async function provider(path, data) {
     },
     body: data && JSON.stringify(data),
     redirect: 'error',
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.any([
+      AbortSignal.timeout(15_000),
+      ...(signal ? [signal] : []),
+    ]),
   });
   const body = await response.json();
   assert.ok(
@@ -45,8 +49,8 @@ async function provider(path, data) {
   return body.result;
 }
 
-async function activeDeployment() {
-  const { deployments } = await provider(deploymentsPath);
+async function activeDeployment(signal) {
+  const { deployments } = await provider(deploymentsPath, undefined, signal);
   const active = deployments?.[0];
   assert.match(active?.id ?? '', uuid, 'No active Tasks deployment');
   return active;
@@ -128,9 +132,12 @@ function servesOnly(deployment, version) {
 }
 
 async function setTraffic(receipt, phase, versions, expectedId) {
-  const active = await activeDeployment();
-  assert.equal(active.id, expectedId, 'Active Tasks deployment changed');
   if (phase === 'activate') {
+    await waitForTasksPreview(
+      activeDeployment,
+      receipt.previousDeployment,
+      expectedId
+    );
     const ref = execFileSync(
       'git',
       ['ls-remote', '--exit-code', 'origin', 'refs/heads/production'],
@@ -141,6 +148,9 @@ async function setTraffic(receipt, phase, versions, expectedId) {
       `${sourceSha}\trefs/heads/production`,
       'Production ref advanced before Tasks activation'
     );
+  } else {
+    const active = await activeDeployment();
+    assert.equal(active.id, expectedId, 'Active Tasks deployment changed');
   }
   return provider(deploymentsPath, {
     strategy: 'percentage',

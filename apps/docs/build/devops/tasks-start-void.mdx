@@ -43,8 +43,11 @@ Tasks server modules, static assets and existing bindings.
 The publisher captures the active deployment and its 100% rollback version,
 uploads the sealed output without bundling, and registers the candidate at
 0% traffic. A version override runs the smoke on the canonical hostname with
-the candidate's assets and verifies the exact SHA. The publisher checks the
-production ref again immediately before shifting traffic to the candidate.
+the candidate's assets and verifies the exact SHA. Before shifting traffic, the
+publisher waits up to 45 seconds for two consecutive Cloudflare reads of its
+preview deployment ID, then rechecks the production ref. A stale read of the
+prior deployment can clear within that window. A different deployment ID or
+expiry of the window stops activation.
 The publisher then verifies public build identity and runs the smoke once per
 minute for ten minutes. It rolls back when a route check fails or when probes
 exceed the greater of 2 seconds and three times baseline latency in consecutive
