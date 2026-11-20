@@ -127,6 +127,241 @@ function scanWranglerUsage({
   return usage;
 }
 
+// Publish calls: Wrangler (and adapter) invocations that write to Cloudflare.
+// Unlike the token allowlist, no admission can raise these counts; new
+// publication uses cf (see cf-cli-wrangler-parity.mdx).
+// Commands that print an invocation instead of running it.
+const PRINTERS = new Set(['echo', 'printf']);
+const TOKEN_SPLIT = /[\s'"`,[\](){}]+/u;
+const VALUE_FLAGS = new Set([
+  '-c',
+  '--config',
+  '-e',
+  '--env',
+  '--name',
+  '--cwd',
+  '--script-name',
+  '--message',
+  '--tag',
+]);
+const PUBLISH_COMMANDS = [
+  ['deploy'],
+  ['publish'],
+  ['rollback'],
+  ['versions', 'upload'],
+  ['versions', 'deploy'],
+  ['versions', 'secret', 'put'],
+  ['versions', 'secret', 'bulk'],
+  ['versions', 'secret', 'delete'],
+  ['secret', 'put'],
+  ['secret', 'bulk'],
+  ['secret', 'delete'],
+  ['triggers', 'deploy'],
+  ['d1', 'migrations', 'apply'],
+  ['d1', 'execute'],
+  ['r2', 'object', 'put'],
+  ['r2', 'object', 'delete'],
+  ['kv', 'key', 'put'],
+  ['kv', 'key', 'delete'],
+  ['kv', 'bulk', 'put'],
+  ['kv', 'bulk', 'delete'],
+  ['pages', 'deploy'],
+  ['pages', 'publish'],
+];
+const ADAPTER_PUBLISH = new Set(['deploy', 'upload']);
+
+function isWranglerToken(token) {
+  return /(?:^|\/)wrangler(?:@[^/]*)?(?:\.js)?$/iu.test(token);
+}
+
+function isAdapterToken(token) {
+  return /(?:^|\/)opennextjs-cloudflare(?:@[^/]*)?$/u.test(token);
+}
+
+/**
+ * Join continued lines (shell `\` and open argv brackets) and split each
+ * logical line into invocations at shell separators.
+ */
+function invocations(content) {
+  const logical = [];
+  let current = '';
+  let depth = 0;
+  for (const line of content.split(/\r?\n/u)) {
+    const continued = /\\\s*$/u.test(line);
+    current += ` ${continued ? line.replace(/\\\s*$/u, '') : line}`;
+    depth += (line.match(/[[(]/gu) ?? []).length;
+    depth -= (line.match(/[\])]/gu) ?? []).length;
+    depth = Math.max(depth, 0);
+    if (continued || depth > 0) continue;
+    logical.push(current);
+    current = '';
+  }
+  if (current) logical.push(current);
+  return logical
+    .flatMap(splitCommands)
+    .map((part) => part.split(TOKEN_SPLIT).filter(Boolean));
+}
+
+/** Split at `&&`, `||`, `;`, `|` and `&` outside single, double or back quotes. */
+function splitCommands(line) {
+  const parts = [];
+  let current = '';
+  let quote = null;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (quote) {
+      if (char === quote && line[index - 1] !== '\\') quote = null;
+      current += char;
+      continue;
+    }
+    if (char === "'" || char === '"' || char === '`') {
+      quote = char;
+      current += char;
+      continue;
+    }
+    if (char === ';' || char === '|' || char === '&') {
+      parts.push(current);
+      current = '';
+      if (line[index + 1] === char) index += 1;
+      continue;
+    }
+    current += char;
+  }
+  parts.push(current);
+  return parts;
+}
+
+function commandWords(tokens) {
+  const words = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    if (isWranglerToken(token) || isAdapterToken(token)) break;
+    if (token.startsWith('-')) {
+      if (VALUE_FLAGS.has(token)) index += 1;
+      continue;
+    }
+    words.push(token);
+  }
+  return words;
+}
+
+/** Count non-dry-run Wrangler and OpenNext publish invocations. */
+function countPublishCalls(content) {
+  let calls = 0;
+  for (const tokens of invocations(content)) {
+    for (let index = 0; index < tokens.length; index += 1) {
+      const wrangler = isWranglerToken(tokens[index]);
+      if (!wrangler && !isAdapterToken(tokens[index])) continue;
+      const end = tokens.findIndex(
+        (token, at) =>
+          at > index && (isWranglerToken(token) || isAdapterToken(token))
+      );
+      if (tokens.slice(0, index).some((token) => PRINTERS.has(token))) continue;
+      const rest = tokens.slice(index + 1, end === -1 ? undefined : end);
+      const words = commandWords(rest);
+      // Flag values (for example a `--message` text) are never flags.
+      const flags = new Set(
+        rest.filter(
+          (token, at) =>
+            token.startsWith('-') && !VALUE_FLAGS.has(rest[at - 1] ?? '')
+        )
+      );
+      if (flags.has('--dry-run') || flags.has('--local')) continue;
+      const publishes = wrangler
+        ? PUBLISH_COMMANDS.some((command) =>
+            command.every((word, at) => words[at] === word)
+          )
+        : ADAPTER_PUBLISH.has(words[0]);
+      if (publishes) calls += 1;
+    }
+  }
+  return calls;
+}
+
+/**
+ * Tests and fixtures quote commands as data; the token allowlist still covers
+ * them. Executable sources, workflows, manifests and scripts are scanned.
+ */
+function isPublishExempt(file) {
+  return (
+    /\.test\.[cm]?[jt]sx?$|\.test\.py$|\.runtime\.mjs$/u.test(file) ||
+    file.split('/').includes('fixtures')
+  );
+}
+
+/** Return `{ [file]: count }` for scanned files with publish calls. */
+function scanPublishCalls({
+  repoRoot = REPO_ROOT,
+  files = listTrackedFiles(repoRoot),
+  readFile = (file) => fs.readFileSync(path.join(repoRoot, file), 'utf8'),
+} = {}) {
+  const calls = {};
+  for (const file of [...files].sort()) {
+    if (!isScanned(file) || isPublishExempt(file)) continue;
+    let content;
+    try {
+      content = readFile(file);
+    } catch (error) {
+      if (error?.code === 'ENOENT' || error?.code === 'EISDIR') continue;
+      throw error;
+    }
+    const count = countPublishCalls(content);
+    if (count > 0) calls[file] = count;
+  }
+  return calls;
+}
+
+/**
+ * Publish calls in a base revision's tracked files, for a base allowlist that
+ * predates `publishCalls`.
+ */
+function scanPublishCallsAt(ref, repoRoot = REPO_ROOT) {
+  const git = (args) =>
+    execFileSync('git', args, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  let files = [];
+  try {
+    files = git([
+      'grep',
+      '-l',
+      '-i',
+      '-E',
+      'wrangler|opennextjs-cloudflare',
+      ref,
+      '--',
+      '.',
+    ])
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => line.slice(ref.length + 1));
+  } catch (error) {
+    // git grep exits 1 when nothing matches.
+    if (error?.status !== 1) throw error;
+  }
+  return scanPublishCalls({
+    repoRoot,
+    files,
+    readFile: (file) => git(['show', `${ref}:${file}`]),
+  });
+}
+
+/** Publish calls may only fall; admission never authorizes growth. */
+function validatePublishTransition(previous, current) {
+  if (!previous?.publishCalls) return [];
+  const problems = [];
+  for (const [file, count] of Object.entries(current.publishCalls ?? {})) {
+    const before = previous.publishCalls[file] ?? 0;
+    if (count > before)
+      problems.push(
+        `${file}: Wrangler publish calls grew ${before} -> ${count}; publish with cf instead`
+      );
+  }
+  return problems;
+}
+
 function readAllowlist(repoRoot = REPO_ROOT) {
   return JSON.parse(
     fs.readFileSync(path.join(repoRoot, ALLOWLIST_PATH), 'utf8')
@@ -193,6 +428,9 @@ function validateAllowlistTransition(previous, current) {
 
 function main() {
   const usage = scanWranglerUsage();
+  console.log('## publish calls (non-dry-run)');
+  for (const [file, count] of Object.entries(scanPublishCalls()))
+    console.log(`${String(count).padStart(4)}  ${file}`);
   const byKind = {};
   for (const [file, { kind, lines, uses }] of Object.entries(usage)) {
     byKind[kind] ??= [];
@@ -210,12 +448,16 @@ module.exports = {
   ALLOWLIST_PATH,
   REPO_ROOT,
   classify,
+  countPublishCalls,
   countWranglerLines,
   countWranglerUsage,
   isScanned,
   readAllowlist,
+  scanPublishCalls,
+  scanPublishCallsAt,
   scanWranglerUsage,
   validateAllowlistTransition,
+  validatePublishTransition,
   usageDigest,
 };
 

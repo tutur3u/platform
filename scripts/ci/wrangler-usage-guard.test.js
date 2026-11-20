@@ -6,21 +6,50 @@
 // stale count must be lowered in the same change.
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const fs = require('node:fs');
 const test = require('node:test');
 const {
   ALLOWLIST_PATH,
   REPO_ROOT,
   classify,
+  countPublishCalls,
   countWranglerLines,
   countWranglerUsage,
   isScanned,
   readAllowlist,
+  scanPublishCalls,
+  scanPublishCallsAt,
   scanWranglerUsage,
   validateAllowlistTransition,
+  validatePublishTransition,
   usageDigest,
 } = require('./wrangler-usage.js');
 
 const allowlist = readAllowlist();
+
+/**
+ * The revision this change is compared with: the pushed range's `before`, or
+ * the pull request base, when the checkout has it; otherwise `HEAD^1` (the
+ * pull request merge ref's base, or the previous pushed commit).
+ */
+function guardBase(git) {
+  let event = {};
+  try {
+    event = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+  } catch {
+    // Local runs and events without a payload use HEAD^1.
+  }
+  for (const candidate of [event.before, event.pull_request?.base?.sha]) {
+    if (!/^[0-9a-f]{40}$/u.test(candidate ?? '') || /^0+$/u.test(candidate))
+      continue;
+    try {
+      return git(['rev-parse', '--verify', `${candidate}^{commit}`]);
+    } catch {
+      // Shallow checkouts may not contain it.
+    }
+  }
+  return git(['rev-parse', '--verify', 'HEAD^1']);
+}
 
 function baseAllowlist() {
   const git = (args) =>
@@ -29,12 +58,11 @@ function baseAllowlist() {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     }).trim();
-  // CI checks out fetch-depth 2: on a pull_request merge ref HEAD^1 is the PR
-  // base, and on a push it is the previous commit of the pushed branch. A
-  // missing parent in CI must fail rather than silently skip the comparison.
+  // CI checks out at least fetch-depth 2. A missing base in CI must fail
+  // rather than silently skip the comparison.
   let ref;
   if (process.env.GITHUB_ACTIONS) {
-    ref = git(['rev-parse', '--verify', 'HEAD^1']);
+    ref = guardBase(git);
   } else {
     try {
       ref = git(['merge-base', 'HEAD', 'origin/main']);
@@ -385,5 +413,118 @@ test('same-count comment replacement and changed arguments require admission', (
   assert.notEqual(
     usageDigest(command),
     usageDigest('wrangler deploy --name other')
+  );
+});
+
+test('publish calls count real writes, not dry runs, reads or local state', () => {
+  for (const source of [
+    'run: bun x --no-install wrangler deploy -c x.json',
+    'bunx wrangler@4.152.0 versions upload --message "$SHA"',
+    'wrangler --config worker.jsonc --env staging deploy',
+    'npx wrangler secret put TOKEN',
+    'wrangler versions deploy "$v@100%" --name gw -y',
+    'wrangler rollback "$v" --name gw',
+    'wrangler d1 migrations apply DB --remote',
+    'wrangler triggers deploy',
+    '"deploy": "bun run build && wrangler deploy"',
+    '"deploy:cloudflare": "opennextjs-cloudflare deploy"',
+    'node node_modules/wrangler/bin/wrangler.js deploy',
+    "execFileSync('bun', [\n  'x',\n  'wrangler',\n  'versions',\n  'upload',\n]);",
+    'bun x wrangler deploy \\\n  -c a.json --message "$SHA"',
+    'wrangler deploy & echo --dry-run',
+    'wrangler deploy --message "--dry-run"',
+    'npx wrangler pages deploy dist',
+    'FOO=1 bunx --bun wrangler deploy',
+  ])
+    assert.equal(countPublishCalls(source), 1, source);
+  for (const source of [
+    'wrangler deploy --dry-run --outdir out',
+    'wrangler types --env-interface Env',
+    'wrangler versions list --name gw --json',
+    'wrangler deployments list --name gw',
+    'wrangler secret list --name gw --format json',
+    'wrangler d1 migrations apply DB --local',
+    '"build:cloudflare": "opennextjs-cloudflare build"',
+    '// cf replaces wrangler for this worker',
+    "'wrangler.deploy.json'",
+    'echo "run: bun wrangler secret put TOKEN"',
+    'echo "Dry-run only; do not run wrangler deploy"',
+    'run: echo "use cf && never wrangler deploy | tee log"',
+    "printf '%s\\n' 'wrangler deploy'",
+  ])
+    assert.equal(countPublishCalls(source), 0, source);
+  // Flags of one manifest script never excuse another script's call.
+  assert.equal(
+    countPublishCalls(
+      '{\n  "deploy": "wrangler deploy",\n  "check": "wrangler deploy --dry-run"\n}'
+    ),
+    1
+  );
+  assert.equal(
+    countPublishCalls('wrangler deploy && wrangler versions deploy x@100%'),
+    2
+  );
+});
+
+test('publish calls ratchet down and admission cannot raise them', () => {
+  const problems = [];
+  const found = scanPublishCalls();
+  for (const [file, count] of Object.entries(found)) {
+    const allowed = allowlist.publishCalls?.[file] ?? 0;
+    if (count > allowed)
+      problems.push(
+        `${file}: ${count} Wrangler publish calls exceed ${allowed}. Publish with cf (see apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx).`
+      );
+    else if (count < allowed)
+      problems.push(
+        `${file}: publish calls fell ${allowed} -> ${count}; lower publishCalls`
+      );
+  }
+  for (const file of Object.keys(allowlist.publishCalls ?? {}))
+    if (!found[file])
+      problems.push(`${file}: no publish calls remain; delete its entry`);
+  assert.deepEqual(problems, []);
+  // Tests and fixtures quote commands as data and stay on the token ratchet.
+  assert.deepEqual(
+    scanPublishCalls({
+      files: ['a.test.mjs', 'fixtures/x.json', 'run.sh'],
+      readFile: () => 'wrangler deploy',
+    }),
+    { 'run.sh': 1 }
+  );
+
+  const base = { publishCalls: { 'run.sh': 1 } };
+  assert.deepEqual(
+    validatePublishTransition(base, { publishCalls: { 'run.sh': 1 } }),
+    []
+  );
+  assert.deepEqual(validatePublishTransition(base, { publishCalls: {} }), []);
+  assert.match(
+    validatePublishTransition(base, { publishCalls: { 'run.sh': 2 } }).join(),
+    /grew 1 -> 2; publish with cf/
+  );
+  assert.match(
+    validatePublishTransition(base, {
+      publishCalls: { 'run.sh': 1, 'new.sh': 1 },
+    }).join(),
+    /new\.sh: Wrangler publish calls grew 0 -> 1/
+  );
+  assert.deepEqual(validatePublishTransition({}, { publishCalls: {} }), []);
+});
+
+test('publish calls only shrink relative to the base revision', (t) => {
+  const base = baseAllowlist();
+  if (!base) {
+    t.skip('no base allowlist available in this checkout');
+    return;
+  }
+  // Before publishCalls existed, the base tree itself is the baseline.
+  const previous = base.allowlist.publishCalls
+    ? base.allowlist
+    : { publishCalls: scanPublishCallsAt(base.ref) };
+  assert.deepEqual(
+    validatePublishTransition(previous, allowlist),
+    [],
+    base.ref
   );
 });

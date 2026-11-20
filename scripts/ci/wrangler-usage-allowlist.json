@@ -1,5 +1,5 @@
 {
-  "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry, count growth or changed gap needs a fresh structured admitted object with a repository PR decision URL and reason. Uses conservatively count every Wrangler token, including comments. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx.",
+  "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry, count growth or changed gap needs a fresh structured admitted object with a repository PR decision URL and reason. Uses conservatively count every Wrangler token, including comments. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx. publishCalls counts non-dry-run Wrangler and OpenNext publish invocations per file; it may only fall and no admission can raise it.",
   "gaps": {
     "cf-config-internals": {
       "reason": "Installed cf exposes convertToWranglerConfig and wranglerConfig for normalized configuration and deployment drift checks; no equivalent cf-named API exists in the pinned version. The regression test invokes cf internals, not the Wrangler CLI.",
@@ -3837,5 +3837,17 @@
       },
       "digest": "a748a547eebc824ed34217f85495ab4a686ea3c2701c612f424f66b093513ebc"
     }
+  },
+  "publishCalls": {
+    ".github/workflows/colab-cloudflare.yaml": 1,
+    ".github/workflows/meet-cloudflare.yaml": 1,
+    ".github/workflows/rust-backend.yml": 1,
+    ".github/workflows/web-opennext.yaml": 2,
+    "apps/colab/package.json": 1,
+    "apps/lettin/package.json": 2,
+    "apps/meet/package.json": 1,
+    "apps/parley/package.json": 1,
+    "apps/tanstack-web/package.json": 1,
+    "scripts/ci/meet-release-operations.sh": 1
   }
 }
