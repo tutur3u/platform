@@ -28,6 +28,21 @@ access denial, disabled configuration, and loading/failure states; it should not
 pretend that all of these mean a missing record. See
 [Contacts module availability](/platform/applications/contacts-modules).
 
+## Mobile CSV and archiving
+
+Review imported contacts page by page before confirming a CSV import. The
+preview identifies skipped invalid and duplicate email rows. The completion
+message uses the server's inserted count, and offline imports show their queue
+status.
+
+Export lets you choose the contact status and CSV columns. Private columns are
+available only with the corresponding contact permission. The export checks
+every page and stops if it cannot confirm a complete result.
+
+Selecting an archive end date enables archiving. Turning off archiving clears
+the end date. The mobile CSV tests cover quoted fields, skipped rows, pagination,
+and private column visibility.
+
 ## Mobile duplicate batches
 
 Use **Merge reviewed pairs** after checking the surviving contact in each pair.

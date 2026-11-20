@@ -2729,6 +2729,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmCreateUser => 'Create user';
 
   @override
+  String get crmCsvExportFields => 'CSV columns';
+
+  @override
+  String get crmCsvExportStatus => 'Contact status';
+
+  @override
+  String get crmCsvIncomplete => 'A complete export could not be confirmed. Refresh Contacts or narrow the selection and try again.';
+
+  @override
+  String get crmCsvPromotionCount => 'Linked promotion count';
+
+  @override
+  String get crmCsvPromotionNames => 'Linked promotion names';
+
+  @override
+  String get crmCsvInvalid => 'The CSV could not be read. Check the file encoding and quoted fields.';
+
+  @override
+  String crmCsvPage(int page, int total) {
+    return 'Page $page of $total';
+  }
+
+  @override
+  String crmCsvSkipped(int count) {
+    return '$count invalid or duplicate rows skipped.';
+  }
+
+  @override
   String get crmDeleteUserConfirm => 'Delete this user?';
 
   @override

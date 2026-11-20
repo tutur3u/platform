@@ -2715,6 +2715,34 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmCreateUser => 'Tạo người dùng';
 
   @override
+  String get crmCsvExportFields => 'Cột CSV';
+
+  @override
+  String get crmCsvExportStatus => 'Trạng thái liên hệ';
+
+  @override
+  String get crmCsvIncomplete => 'Chưa xác nhận được bản xuất đầy đủ. Hãy tải lại Danh bạ hoặc thu hẹp lựa chọn rồi thử lại.';
+
+  @override
+  String get crmCsvPromotionCount => 'Số ưu đãi đã liên kết';
+
+  @override
+  String get crmCsvPromotionNames => 'Tên các ưu đãi đã liên kết';
+
+  @override
+  String get crmCsvInvalid => 'Không thể đọc tệp CSV. Hãy kiểm tra mã hóa và các trường trong dấu ngoặc kép.';
+
+  @override
+  String crmCsvPage(int page, int total) {
+    return 'Trang $page/$total';
+  }
+
+  @override
+  String crmCsvSkipped(int count) {
+    return 'Đã bỏ qua $count hàng không hợp lệ hoặc trùng lặp.';
+  }
+
+  @override
   String get crmDeleteUserConfirm => 'Xóa người dùng này?';
 
   @override

@@ -304,7 +304,10 @@ class _UserFormSheetState extends State<_UserFormSheet> {
           ),
           AppToggleRow(
             value: _archived,
-            onChanged: (value) => setState(() => _archived = value),
+            onChanged: (value) => setState(() {
+              _archived = value;
+              if (!value) _archivedUntil = null;
+            }),
             title: Text(l10n.crmArchived),
           ),
           AppGroupedRow(
@@ -338,7 +341,12 @@ class _UserFormSheetState extends State<_UserFormSheet> {
                 firstDate: DateTime.now(),
                 lastDate: DateTime.now().add(const Duration(days: 3650)),
               );
-              if (picked != null) setState(() => _archivedUntil = picked);
+              if (picked != null) {
+                setState(() {
+                  _archivedUntil = picked;
+                  _archived = true;
+                });
+              }
             },
           ),
           const SizedBox(height: AppSpacing.lg),

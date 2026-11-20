@@ -19,13 +19,13 @@ mobile directory against that surface.
 | People list | Database table with avatar, primary name and a distinct alternate name | Grouped sections. One collapsed name, avatar or initials, one secondary line. A phone number is its own non-wrapping line and is omitted when an email or alternate name is already shown |
 | Search | Query on the database route | Shell search, the primary dock action. People search is sent to the API. Groups and tags filter the loaded page |
 | Filters | Status, link, attention, group membership, included and excluded groups | Same filters in the filter sheet |
-| Groups | Group pages, members, calendar, attendance | Create, edit and delete. Schedule lists the next two weeks of sessions. A session opens attendance for its members |
+| Groups | Group pages, members, calendar, attendance | Create, edit and delete groups, and add or remove members. Schedule lists the next two weeks of sessions. A session opens attendance for its members |
 | Tags | Group-tag list and editor | Create, edit and delete. Colour is one of the four brand marks. Group membership uses the tag group routes. Opening a tag filters people |
 | Detail | Profile fields, note, linked platform users, promotions | Permission-redacted fields, note, and linked platform accounts when public info is allowed. Private values stay selectable |
-| Create and edit | User form, including archive | Sheet form: name, email, phone, address, note, guest, archive, birthday, avatar |
+| Create and edit | User form, including archive | Sheet form: name, email, phone, address, note, guest, archive, birthday, avatar, gender, ethnicity and national ID |
 | Delete | Row action | Action sheet, gated by `delete_users` |
-| Duplicates and merge | Detect and merge into a chosen target | Same flow in a sheet |
-| Import and export | CSV dialogs | Tools sheet. Export writes a CSV share sheet |
+| Duplicates and merge | Detect and merge into a chosen target | Review and merge one pair or a batch of independent pairs |
+| Import and export | CSV dialogs | Paginated import preview and CSV export with column and status selection |
 | Audit log | Workspace user audit API | Audit destination with actor, subject, time and field changes |
 | Notes | Feedback on a person and group | Feedback sheet, gated by group permissions |
 | Permissions | Public info, private info, group view, audit management, create/update/delete | Same permission keys. Missing private permission removes private fields from the row and the detail |
@@ -48,8 +48,8 @@ invent a second role model.
 
 | Priority | Remaining capability |
 | --- | --- |
-| 1 | Multi-select and bulk directory operations, additional private profile fields, guardian editing, profile-link management, and profile-detail requests |
-| 2 | Linked promotion management and referrals, contact balance and invoices, archive details and history, full CSV preview and field selection, and contact follow-up |
-| 3 | Full group membership management, requests, schedule and calendar editing, content/posts, attendance history, and indicator editing |
+| 1 | Multi-select and broader bulk directory operations, guardian editing, profile-link management, and profile-detail requests |
+| 2 | Linked promotion management and referrals, contact balance and invoices, archive details and history, and contact follow-up |
+| 3 | Group membership role editing, requests, schedule and calendar editing, content/posts, attendance history, and indicator editing |
 | 4 | Report creation, editing, and detail, approval decisions, actionable guest leads, tutoring operations, organization structure, workforce contracts, and topic announcement contacts, templates, import and delivery |
 | 5 | Audit insights, export, and historical backfill controls |

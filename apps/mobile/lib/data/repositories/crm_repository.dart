@@ -611,22 +611,22 @@ class CrmRepository with _CrmGroupMembershipRepository, _CrmBillingRepository {
     return result;
   }
 
-  Future<bool> bulkImportUsers(
+  Future<int?> bulkImportUsers(
     String wsId,
     List<Map<String, dynamic>> payload,
   ) async {
     final path = CrmEndpoints.bulkImport(wsId);
-    final queued = await queueOrSendValue<bool>(
+    final imported = await queueOrSendValue<int?>(
       feature: 'crm',
       expectedUserId: expectedUserId,
       method: 'CRM_BULK_IMPORT',
       path: path,
       workspaceId: wsId,
       payload: {'rows': payload},
-      pendingValue: (_) => true,
+      pendingValue: (_) => null,
       send: () async {
-        await _api.postJson(path, payload);
-        return false;
+        final result = await _api.postJson(path, payload);
+        return crmAsInt(result['count']);
       },
     );
     await CacheStore.instance.invalidateTags(
@@ -634,7 +634,7 @@ class CrmRepository with _CrmGroupMembershipRepository, _CrmBillingRepository {
       workspaceId: wsId,
       userId: expectedUserId,
     );
-    return queued;
+    return imported;
   }
 
   Future<String> uploadAvatar(

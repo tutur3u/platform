@@ -5293,6 +5293,54 @@ abstract class AppLocalizations {
   /// **'Create user'**
   String get crmCreateUser;
 
+  /// No description provided for @crmCsvExportFields.
+  ///
+  /// In en, this message translates to:
+  /// **'CSV columns'**
+  String get crmCsvExportFields;
+
+  /// No description provided for @crmCsvExportStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact status'**
+  String get crmCsvExportStatus;
+
+  /// No description provided for @crmCsvIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'A complete export could not be confirmed. Refresh Contacts or narrow the selection and try again.'**
+  String get crmCsvIncomplete;
+
+  /// No description provided for @crmCsvPromotionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked promotion count'**
+  String get crmCsvPromotionCount;
+
+  /// No description provided for @crmCsvPromotionNames.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked promotion names'**
+  String get crmCsvPromotionNames;
+
+  /// No description provided for @crmCsvInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The CSV could not be read. Check the file encoding and quoted fields.'**
+  String get crmCsvInvalid;
+
+  /// No description provided for @crmCsvPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {total}'**
+  String crmCsvPage(int page, int total);
+
+  /// No description provided for @crmCsvSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} invalid or duplicate rows skipped.'**
+  String crmCsvSkipped(int count);
+
   /// No description provided for @crmDeleteUserConfirm.
   ///
   /// In en, this message translates to:
