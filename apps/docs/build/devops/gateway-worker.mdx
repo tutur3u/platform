@@ -251,6 +251,11 @@ binding. Capture the route inventory and verify that no more-specific zone
 route bypasses the gateway. Capture the active gateway version ID and prove
 that it still serves the current paths before deploying the new version.
 
+The gateway workflow reads bindings from the version at 100% traffic. Worker
+settings can reflect a newer upload that is still at 0%. The workflow checks
+the captured deployment again before upload and before sending traffic to the
+new version. A changed deployment stops the run so it can use a fresh capture.
+
 If activation changes only the gateway version, one rollback restores the
 previous dispatch and bindings across its existing route:
 

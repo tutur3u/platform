@@ -215,15 +215,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run --cwd apps/gateway test
       - run: node --test scripts/ci/gateway-deploy-config.test.mjs
-      - name: Capture the live gateway settings
+      - name: Capture the gateway version serving traffic
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::WEB_OPENNEXT_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
-          curl --fail-with-body --silent --show-error --retry 3 \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/tuturuuu-gateway/settings" \
-            > "$RUNNER_TEMP/gateway-settings.json"
+          node scripts/ci/gateway-deploy-config.mjs capture "$RUNNER_TEMP/gateway-settings.json"
           # Names and types only in the log; values stay in the file.
           jq -r '.result.bindings[] | "\(.type) \(.name)"' "$RUNNER_TEMP/gateway-settings.json"
       # A flagged family must have its Worker and every secret name its config
@@ -270,7 +266,7 @@ jobs:
           MARKETING_ORIGIN: ${{ env.MARKETING_ORIGIN }}
           GATEWAY_WEB_FAMILIES: ${{ env.GATEWAY_WEB_FAMILIES }}
         run: |
-          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::WEB_OPENNEXT_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
+          node scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
           bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           version=$(node scripts/ci/gateway-cf-publication.mjs publish-version-only \
             "$RUNNER_TEMP/gateway-settings.json" | jq -r .versionId)
@@ -283,6 +279,7 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
         run: |
+          node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
           bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
           bun x --no-install wrangler versions upload -c wrangler.deploy.json \
             --message "gateway $GITHUB_SHA families=${GATEWAY_WEB_FAMILIES:-none}" | tee "$RUNNER_TEMP/gateway-upload.txt"
@@ -291,6 +288,7 @@ jobs:
           # A just-uploaded version can be briefly invisible to the deploy
           # API (code 100146), so retry with backoff before failing.
           for attempt in 1 2 3 4 5 6; do
+            node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
             if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
               --message "gateway $GITHUB_SHA"; then
               break
@@ -308,6 +306,7 @@ jobs:
           version="$GATEWAY_VERSION_ID"
           test -n "$version" || { echo "::error::missing GATEWAY_VERSION_ID from cf upload step"; exit 1; }
           for attempt in 1 2 3 4 5 6; do
+            node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
             if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
               --message "gateway $GITHUB_SHA"; then
               break

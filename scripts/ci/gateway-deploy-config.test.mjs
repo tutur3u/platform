@@ -12,6 +12,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
+  assertServingGateway,
+  captureGatewaySettings,
   deployConfig,
   familyBinding,
   parseFlagged,
@@ -65,6 +67,50 @@ const live = [
   { type: 'secret_text', name: 'GATEWAY_ACCEPTANCE_BYPASS_SECRET' },
   { type: 'service', name: 'MOUNT_LEARN', service: 'tuturuuu-learn' },
 ];
+
+test('captures only the settings of the gateway version at 100% traffic', async () => {
+  const deploymentId = '11111111-1111-4111-8111-111111111111';
+  const serving = '22222222-2222-4222-8222-222222222222';
+  const candidate = '33333333-3333-4333-8333-333333333333';
+  const deployments = {
+    deployments: [
+      {
+        id: deploymentId,
+        versions: [
+          { version_id: candidate, percentage: 0 },
+          { version_id: serving, percentage: 100 },
+        ],
+      },
+    ],
+  };
+  const requests = [];
+  const request = async (resource) => {
+    requests.push(resource);
+    if (resource === '/deployments') return deployments;
+    assert.equal(resource, `/versions/${serving}`);
+    return { id: serving, resources: { bindings: live } };
+  };
+  const snapshot = await captureGatewaySettings(request);
+  assert.deepEqual(snapshot.result, {
+    deploymentId,
+    versionId: serving,
+    bindings: live,
+  });
+  assert.deepEqual(requests, [
+    '/deployments',
+    `/versions/${serving}`,
+    '/deployments',
+  ]);
+
+  deployments.deployments[0].id = '44444444-4444-4444-8444-444444444444';
+  await assert.rejects(
+    assertServingGateway(snapshot.result, request),
+    /advanced/
+  );
+  deployments.deployments[0].versions[0].percentage = 10;
+  deployments.deployments[0].versions[1].percentage = 90;
+  await assert.rejects(captureGatewaySettings(request), /exactly one.*100%/);
+});
 
 test('keeps live vars and services, sets origins and flagged family bindings', () => {
   const config = deployConfig(base, live, activatedFamilies, env);

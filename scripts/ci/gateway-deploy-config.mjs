@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Deploy config for the tuturuuu.com gateway (apps/gateway) built from the
-// committed wrangler.jsonc and the live Worker settings, so a CI deploy keeps
+// committed wrangler.jsonc and the serving Worker's version, so a CI deploy keeps
 // what operators set on the live Worker:
 // - plain-text vars: live values win over committed defaults, except mount
 //   paths are merged and the family flag is set by the deploy. Both origin
@@ -19,6 +19,7 @@ const MOUNT_PATHS = 'GATEWAY_MOUNTED_PATHS';
 const MOUNT_PATH_PATTERN = /^\/([a-z][a-z0-9-]*)(?:\/\*)?$/u;
 const FORBIDDEN_NAMES = ['GATEWAY_ACCEPTANCE_HOST', 'VERCEL_PROTECTION_BYPASS'];
 const KEPT_TYPES = new Set(['plain_text', 'secret_text', 'service']);
+const VERSION_ID = /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/u;
 
 export function stripJsonComments(text) {
   return text
@@ -195,7 +196,83 @@ export function requiredSecrets(config) {
   return config.secrets?.required ?? [];
 }
 
-function main([command, ...args]) {
+async function gatewayRequest(resource) {
+  const { CLOUDFLARE_ACCOUNT_ID: account, CLOUDFLARE_API_TOKEN: token } =
+    process.env;
+  if (!/^[a-f0-9]{32}$/u.test(account ?? '') || !token) {
+    throw new Error('Cloudflare gateway account or API token is missing');
+  }
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${account}/workers/scripts/tuturuuu-gateway${resource}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Cache-Control': 'no-cache',
+      },
+      signal: AbortSignal.timeout(20_000),
+    }
+  );
+  if (!response.ok) {
+    throw new Error(
+      `Gateway read ${resource} failed with HTTP ${response.status}`
+    );
+  }
+  const envelope = await response.json();
+  if (!envelope.success) throw new Error(`Gateway read ${resource} failed`);
+  return envelope.result;
+}
+
+async function servingGateway(request) {
+  const deployment = (await request('/deployments'))?.deployments?.[0];
+  const versions = deployment?.versions ?? [];
+  const serving = versions.filter(({ percentage }) => percentage === 100);
+  if (
+    !VERSION_ID.test(deployment?.id ?? '') ||
+    serving.length !== 1 ||
+    !VERSION_ID.test(serving[0].version_id) ||
+    versions.some(({ percentage }) => percentage !== 100 && percentage !== 0)
+  ) {
+    throw new Error('Expected exactly one gateway version serving 100%');
+  }
+  return { deploymentId: deployment.id, versionId: serving[0].version_id };
+}
+
+export async function assertServingGateway(snapshot, request = gatewayRequest) {
+  const serving = await servingGateway(request);
+  if (
+    serving.deploymentId !== snapshot?.deploymentId ||
+    serving.versionId !== snapshot?.versionId
+  ) {
+    throw new Error('Gateway deployment advanced since the captured preimage');
+  }
+}
+
+export async function captureGatewaySettings(request = gatewayRequest) {
+  const serving = await servingGateway(request);
+  const version = await request(`/versions/${serving.versionId}`);
+  const bindings = version?.resources?.bindings;
+  if (version?.id !== serving.versionId || !Array.isArray(bindings)) {
+    throw new Error(
+      'Serving gateway version response has no matching bindings'
+    );
+  }
+  await assertServingGateway(serving, request);
+  return { success: true, result: { ...serving, bindings } };
+}
+
+async function main([command, ...args]) {
+  if (command === 'capture') {
+    const snapshot = await captureGatewaySettings();
+    writeFileSync(args[0], `${JSON.stringify(snapshot, null, 2)}\n`, {
+      mode: 0o600,
+    });
+    return 0;
+  }
+  if (command === 'assert-current') {
+    const snapshot = JSON.parse(readFileSync(args[0], 'utf8'));
+    await assertServingGateway(snapshot.result);
+    return 0;
+  }
   if (command === 'required-secrets') {
     console.log(JSON.stringify(requiredSecrets(readJsonc(args[0]))));
     return 0;
@@ -228,7 +305,7 @@ function main([command, ...args]) {
     return 0;
   }
   throw new Error(
-    'usage: gateway-deploy-config.mjs write <settings.json> <out.json> | required-secrets <wrangler.jsonc>'
+    'usage: gateway-deploy-config.mjs capture <settings.json> | assert-current <settings.json> | write <settings.json> <out.json> | required-secrets <wrangler.jsonc>'
   );
 }
 
@@ -237,7 +314,7 @@ if (
   resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   try {
-    process.exitCode = main(process.argv.slice(2));
+    process.exitCode = await main(process.argv.slice(2));
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
