@@ -21,7 +21,7 @@ test('Meet publishes the sealed frontend through the cf Void publisher', () => {
   );
   assert.match(
     publish.run,
-    /void-cf-publisher\.mjs assign --worker tuturuuu-meet --version "\$version" --expect-current "\$serving"/
+    /void-cf-publisher\.mjs assign --worker tuturuuu-meet --version "\$version" --expect-current "\$serving" \\\n\s+--build-info-url https:\/\/meet\.tuturuuu\.com\/api\/build-info --expect-build "\$SOURCE_SHA"/
   );
   assert.doesNotMatch(publish.run, /deploy --no-bundle|--strict|exports/);
 });

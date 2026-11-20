@@ -80,11 +80,69 @@ export function readBack(read, { sleep = pause, attempts = 8 } = {}) {
   }
 }
 
-export function capture(worker, deps = {}) {
-  const deployments = JSON.parse(
-    cf(['workers', 'deployments', 'list', '--worker', worker], deps)
+/**
+ * Deployment reads lag writes by several seconds, so a single read can be
+ * stale. Trust the serving version only after `confirmations` identical
+ * reads spaced `spacing` ms apart (and, with `target`, once it is the target).
+ */
+export function settledServing(worker, deps = {}, { target } = {}) {
+  const {
+    sleep = pause,
+    confirmations = 3,
+    spacing = 5000,
+    attempts = 15,
+  } = deps;
+  let last;
+  let streak = 0;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const current = servingVersion(
+      JSON.parse(
+        cf(['workers', 'deployments', 'list', '--worker', worker], deps)
+      )
+    );
+    streak = current === last ? streak + 1 : 1;
+    last = current;
+    if (streak >= confirmations && (!target || current === target))
+      return current;
+    if (attempt < attempts) sleep(spacing);
+  }
+  throw new Error(
+    target
+      ? `serving version did not settle on ${target} (last ${last})`
+      : 'serving version did not settle'
   );
-  const versionId = servingVersion(deployments);
+}
+
+function defaultFetchBuild(url) {
+  const body = execFileSync(
+    'curl',
+    ['--fail', '--silent', '--show-error', '--max-time', '10', url],
+    { encoding: 'utf8', timeout: 30000 }
+  );
+  return JSON.parse(body).commitHash;
+}
+
+/** Poll a public build-info endpoint until it reports `expected`. */
+export function awaitServedBuild(url, expected, deps = {}) {
+  const { fetchBuild = defaultFetchBuild, sleep = pause } = deps;
+  let streak = 0;
+  let seen;
+  // At most 12 tries of up to 10 s plus 5 s pauses (about three minutes).
+  for (let attempt = 1; attempt <= 12; attempt += 1) {
+    try {
+      seen = fetchBuild(url);
+    } catch (error) {
+      seen = `error: ${error instanceof Error ? error.message : error}`;
+    }
+    streak = seen === expected ? streak + 1 : 0;
+    if (streak >= 3) return seen;
+    sleep(5000);
+  }
+  throw new Error(`${url} did not serve ${expected} (last ${seen})`);
+}
+
+export function capture(worker, deps = {}) {
+  const versionId = settledServing(worker, deps);
   const version = JSON.parse(
     cf(['workers', 'versions', 'get', versionId, '--worker-id', worker], deps)
   );
@@ -254,13 +312,20 @@ export function publish(
   return { worker, versionId, previousVersionId: live.versionId, strict };
 }
 
-export function assign({ worker, version, expectCurrent }, deps = {}) {
+export function assign(
+  { worker, version, expectCurrent, buildInfoUrl, expectBuild },
+  deps = {}
+) {
   assert.ok(VERSION_ID.test(version), 'invalid version id');
-  const before = servingVersion(
-    JSON.parse(cf(['workers', 'deployments', 'list', '--worker', worker], deps))
-  );
+  assert.ok(!buildInfoUrl === !expectBuild, 'build-info URL needs a build');
+  const before = settledServing(worker, deps);
   if (expectCurrent)
     assert.equal(before, expectCurrent, 'serving version moved since capture');
+  // Recorded for the receipt; re-publishing the same build serves the same
+  // identity before and after, so only the post-move identity is enforced.
+  const servedBefore = buildInfoUrl
+    ? (deps.fetchBuild ?? defaultFetchBuild)(buildInfoUrl)
+    : undefined;
   cf(
     [
       'workers',
@@ -275,19 +340,16 @@ export function assign({ worker, version, expectCurrent }, deps = {}) {
     ],
     deps
   );
-  const { sleep = pause, attempts = 8 } = deps;
-  let after;
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    after = servingVersion(
-      JSON.parse(
-        cf(['workers', 'deployments', 'list', '--worker', worker], deps)
-      )
-    );
-    if (after === version || attempt === attempts) break;
-    sleep(attempt * 5000);
-  }
-  assert.equal(after, version, 'deployment did not take effect');
-  return { worker, previousVersionId: before, versionId: after };
+  const after = settledServing(worker, deps, { target: version });
+  const servedAfter = buildInfoUrl
+    ? awaitServedBuild(buildInfoUrl, expectBuild, deps)
+    : undefined;
+  return {
+    worker,
+    previousVersionId: before,
+    versionId: after,
+    ...(buildInfoUrl ? { servedBefore, servedAfter } : {}),
+  };
 }
 
 function parseFlags(argv) {

@@ -9,6 +9,8 @@ import {
   publish,
   readBack,
   servingVersion,
+  settledServing,
+  awaitServedBuild,
   verifyVersion,
 } from './void-cf-publisher.mjs';
 
@@ -235,7 +237,7 @@ function fakeCf(state) {
       return `Worker Version ID: ${V2}\n`;
     throw new Error(`unexpected cf ${cli}`);
   };
-  return { calls, exec, env: {} };
+  return { calls, exec, env: {}, sleep: () => {} };
 }
 
 test('assign refuses to move traffic when the serving version changed', () => {
@@ -362,5 +364,116 @@ test('resolves the pinned cf CLI that supplies the Build Output schemas', () => 
   assert.throws(
     () => cfCommand({}, () => '/nonexistent/cf/package.json'),
     /cf CLI missing/
+  );
+});
+
+test('accepts several secrets inherited from the serving version', () => {
+  const names = ['SECRET_A', 'SECRET_B', 'SECRET_C', 'SECRET_D'];
+  const before = live();
+  const after = uploaded();
+  for (const name of names) {
+    before.bindings.push({ name, type: 'secret_text' });
+    after.bindings.push({ name, type: 'secret_text' });
+  }
+  assert.deepEqual(
+    verifyVersion({ workerConfig, receipt, uploaded: after, live: before }),
+    []
+  );
+  assert.deepEqual(
+    verifyVersion({
+      workerConfig,
+      receipt,
+      uploaded: after,
+      live: before,
+      strict: true,
+    }),
+    []
+  );
+});
+
+function listing(id) {
+  return JSON.stringify({
+    deployments: [{ versions: [{ version_id: id, percentage: 100 }] }],
+  });
+}
+
+function sequenceCf(reads) {
+  const calls = [];
+  const exec = (bin, args) => {
+    const cli = args.join(' ');
+    calls.push(cli);
+    if (cli.startsWith('workers deployments list'))
+      return listing(reads.length > 1 ? reads.shift() : reads[0]);
+    if (cli.startsWith('workers deployments create')) return '{}';
+    throw new Error(`unexpected cf ${cli}`);
+  };
+  return { calls, exec, env: {}, sleep: () => {} };
+}
+
+test('a stale deployment read cannot satisfy expect-current', () => {
+  // The first read is a stale snapshot; the settled answer is V2.
+  const deps = sequenceCf([V1, V2, V2, V2]);
+  assert.throws(
+    () => assign({ worker: 'app', version: V2, expectCurrent: V1 }, deps),
+    /serving version moved since capture/
+  );
+  assert.ok(
+    !deps.calls.some((call) => call.startsWith('workers deployments create'))
+  );
+});
+
+test('assign waits until reads settle on the new version', () => {
+  const deps = sequenceCf([V1, V1, V1, V1, V2, V2, V2]);
+  assert.deepEqual(
+    assign({ worker: 'app', version: V2, expectCurrent: V1 }, deps),
+    {
+      worker: 'app',
+      previousVersionId: V1,
+      versionId: V2,
+    }
+  );
+  assert.throws(
+    () =>
+      settledServing(
+        'app',
+        { ...sequenceCf([V1]), attempts: 4 },
+        { target: V2 }
+      ),
+    /did not settle on/
+  );
+});
+
+test('assign proves the public build identity before and after', () => {
+  const served = ['old-sha', 'old-sha', 'new-sha', 'new-sha', 'new-sha'];
+  const deps = {
+    ...sequenceCf([V1, V1, V1, V2, V2, V2]),
+    fetchBuild: () => (served.length > 1 ? served.shift() : served[0]),
+  };
+  assert.deepEqual(
+    assign(
+      {
+        worker: 'app',
+        version: V2,
+        expectCurrent: V1,
+        buildInfoUrl: 'https://app/build',
+        expectBuild: 'new-sha',
+      },
+      deps
+    ),
+    {
+      worker: 'app',
+      previousVersionId: V1,
+      versionId: V2,
+      servedBefore: 'old-sha',
+      servedAfter: 'new-sha',
+    }
+  );
+  assert.throws(
+    () =>
+      awaitServedBuild('https://app/build', 'new-sha', {
+        fetchBuild: () => 'old-sha',
+        sleep: () => {},
+      }),
+    /did not serve new-sha/
   );
 });

@@ -699,7 +699,7 @@ jobs:
           TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS: ${{ vars.TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS || '302' }}
         id: frontend
         working-directory: apps/meet
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           GITHUB_SHA="$SOURCE_SHA" node ../../scripts/ci/verify-meet-start-output.js verify . meet-artifact.json
           case "$TTR_ONE_ORIGIN_MEET" in off|shadow|on) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET must be off, shadow or on'; exit 1 ;; esac
@@ -715,7 +715,8 @@ jobs:
           node ../../scripts/ci/void-cf-publisher.mjs publish --build "$out" --worker tuturuuu-meet --message "$SOURCE_SHA" > "$RUNNER_TEMP/meet-cf-publish.json"
           version=$(jq -er .versionId "$RUNNER_TEMP/meet-cf-publish.json")
           serving=$(jq -er .previousVersionId "$RUNNER_TEMP/meet-cf-publish.json")
-          node ../../scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-meet --version "$version" --expect-current "$serving"
+          node ../../scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-meet --version "$version" --expect-current "$serving" \
+            --build-info-url https://meet.tuturuuu.com/api/build-info --expect-build "$SOURCE_SHA"
       - name: Verify canonical routes
         if: steps.admission.outputs.superseded != 'true'
         timeout-minutes: 8

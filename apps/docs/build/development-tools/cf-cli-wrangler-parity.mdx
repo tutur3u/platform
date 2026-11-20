@@ -403,7 +403,14 @@ uploaded binding that differs from the emitted shape, any extra binding, a
 missing or changed Durable Object namespace, a changed migration tag,
 compatibility date or flags, placement or main module, and split traffic. Its
 `publish` result names the serving version it verified against; pass that as
-`assign --expect-current`. cf also
+`assign --expect-current`.
+
+Deployment reads lag writes by several seconds, so the publisher trusts a
+serving version only after three identical reads five seconds apart, before
+capture, before moving traffic and until the new version is serving. With
+`--build-info-url <url> --expect-build <sha>`, `assign` also records the
+publicly served build before the move and waits for three consecutive
+responses reporting the expected build after it. cf also
 refuses an upload whose required secrets are missing on the target Worker.
 
 ### Durable Object lifecycle
