@@ -284,6 +284,33 @@ export async function POST(req: Request, { params }: Params) {
     // resets approval status on any UPDATE when the caller lacks
     // approve_posts permission).
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private') as unknown as {
+      rpc: (
+        name: 'clear_phased_contact_merge_provenance',
+        args: {
+          p_ws_id: string;
+          p_source_id: string;
+          p_target_id: string;
+          p_actor_id: string;
+        }
+      ) => Promise<{ error: { code?: string } | null }>;
+    };
+    const { error: provenanceError } = await privateDb.rpc(
+      'clear_phased_contact_merge_provenance',
+      {
+        p_ws_id: wsId,
+        p_source_id: sourceId,
+        p_target_id: targetId,
+        p_actor_id: user.id,
+      }
+    );
+    // The API can roll out before the migration reaches the workspace database.
+    if (provenanceError && provenanceError.code !== 'PGRST202') {
+      return NextResponse.json(
+        { message: 'Could not prepare the target profile for merging' },
+        { status: provenanceError.code === '42501' ? 403 : 500 }
+      );
+    }
 
     // Track progress
     const phaseResults: PhaseResult[] = [];

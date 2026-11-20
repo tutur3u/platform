@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(26);
+select plan(40);
 
 insert into public.users (id, display_name) values
   ('07400000-0000-4000-8000-000000000001', 'Synthetic owner'),
@@ -210,6 +210,27 @@ select ok(private.preview_contact_account_link(
   (select id from link_test_invitation),
   '07400000-0000-4000-8000-000000000004'
 ) is not null, 'The recipient can preview the provisioned-profile invitation');
+select ok(private.preview_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000011',
+  (select id from link_test_invitation),
+  '07400000-0000-4000-8000-000000000003'
+) is null, 'A different account cannot preview the starter-profile invitation');
+select is(private.confirm_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000011',
+  (select id from link_test_invitation),
+  '07400000-0000-4000-8000-000000000003'
+), 'confirmation_required', 'A different account cannot confirm the replacement');
+
+insert into public.workspace_user_groups (id, ws_id, name, archived)
+values ('07400000-0000-4000-8000-000000000080',
+  '07400000-0000-4000-8000-000000000010', 'Merge collision fixture', false);
+insert into public.workspace_user_groups_users (group_id, user_id, role)
+values ('07400000-0000-4000-8000-000000000080',
+  '07400000-0000-4000-8000-000000000011', 'STUDENT'),
+  ('07400000-0000-4000-8000-000000000080',
+  (select id from provisioned_test_profile), 'STUDENT');
 select is(private.confirm_contact_account_link(
   '07400000-0000-4000-8000-000000000010',
   '07400000-0000-4000-8000-000000000011',
@@ -225,5 +246,114 @@ select ok(
     where id = (select id from provisioned_test_profile)),
   'The original contact inherits the link and the fresh source is removed'
 );
+select ok(exists (
+  select 1
+  from private.contact_account_link_audit audit
+  where audit.invitation_id = (select id from link_test_invitation)
+    and audit.outcome = 'linked'
+    and audit.merge_result @> '{
+      "success": true,
+      "collision_details": [{
+        "table": "workspace_user_groups_users",
+        "deleted_count": 1,
+        "deleted_pk_values": ["07400000-0000-4000-8000-000000000080"]
+      }]
+    }'::jsonb
+), 'The consented merge audit includes the deleted collision records');
+select ok(not has_function_privilege(
+  'authenticated', 'private.merge_workspace_users_for_actor(uuid,uuid,uuid,uuid)', 'execute'
+), 'Authenticated callers cannot invoke the actor-parameterized merge');
+select ok(not has_function_privilege(
+  'service_role', 'private.merge_workspace_users_for_actor(uuid,uuid,uuid,uuid)', 'execute'
+), 'Service role cannot invoke the actor-parameterized merge directly');
+
+insert into public.workspace_users (id, ws_id, display_name)
+values
+  ('07400000-0000-4000-8000-000000000012',
+   '07400000-0000-4000-8000-000000000010', 'Second contact'),
+  ('07400000-0000-4000-8000-000000000014',
+   '07400000-0000-4000-8000-000000000010', 'Merge source');
+select ok(private.invite_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  '07400000-0000-4000-8000-000000000004',
+  '07400000-0000-4000-8000-000000000001'
+) is null, 'A linked profile without provisioning provenance cannot receive another replacement invite');
+
+insert into public.workspace_roles (id, ws_id, name)
+values ('07400000-0000-4000-8000-000000000070',
+  '07400000-0000-4000-8000-000000000010', 'Synthetic merge operator');
+insert into public.workspace_role_members (role_id, user_id)
+values ('07400000-0000-4000-8000-000000000070',
+  '07400000-0000-4000-8000-000000000003');
+insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
+values
+  ('07400000-0000-4000-8000-000000000010', '07400000-0000-4000-8000-000000000070', 'update_users', true),
+  ('07400000-0000-4000-8000-000000000010', '07400000-0000-4000-8000-000000000070', 'delete_users', true),
+  ('07400000-0000-4000-8000-000000000010', '07400000-0000-4000-8000-000000000070', 'view_users_public_info', true),
+  ('07400000-0000-4000-8000-000000000010', '07400000-0000-4000-8000-000000000070', 'view_users_private_info', true);
+
+insert into public.users (id, display_name)
+values ('07400000-0000-4000-8000-000000000005', 'Second starter account');
+insert into public.workspace_members (ws_id, user_id, type)
+values ('07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000005', 'MEMBER');
+update provisioned_test_profile set id = (
+  select virtual_user_id from public.workspace_user_linked_users
+  where ws_id = '07400000-0000-4000-8000-000000000010'
+    and platform_user_id = '07400000-0000-4000-8000-000000000005'
+);
+
+update link_test_invitation set id = private.invite_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  '07400000-0000-4000-8000-000000000005',
+  '07400000-0000-4000-8000-000000000003'
+);
+select ok((select id from link_test_invitation) is not null,
+  'An operator with delete_users can issue a replacement invitation');
+delete from public.workspace_role_permissions
+where role_id = '07400000-0000-4000-8000-000000000070'
+  and permission = 'delete_users';
+select is(private.confirm_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  (select id from link_test_invitation),
+  '07400000-0000-4000-8000-000000000005'
+), 'ineligible', 'Losing delete_users makes confirmation ineligible');
+select is((select virtual_user_id from public.workspace_user_linked_users
+  where ws_id = '07400000-0000-4000-8000-000000000010'
+    and platform_user_id = '07400000-0000-4000-8000-000000000005'),
+  (select id from provisioned_test_profile),
+  'A failed confirmation preserves the starter profile mapping');
+
+update link_test_invitation set id = private.invite_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  '07400000-0000-4000-8000-000000000005',
+  '07400000-0000-4000-8000-000000000001'
+);
+select ok((select id from link_test_invitation) is not null, 'A fresh invitation is available before merging');
+select ok((private.merge_workspace_users_for_actor(
+  '07400000-0000-4000-8000-000000000014',
+  (select id from provisioned_test_profile),
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000001'
+)->>'success')::boolean, 'The starter profile becomes the retained merge target');
+select ok(not exists (select 1 from private.contact_account_provisioned_profiles
+  where profile_id = (select id from provisioned_test_profile)),
+  'A profile retained by a merge loses its starter provenance');
+select ok(private.preview_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  (select id from link_test_invitation),
+  '07400000-0000-4000-8000-000000000005'
+) is null, 'The preview is unavailable after the starter profile is merged');
+select is(private.confirm_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000012',
+  (select id from link_test_invitation),
+  '07400000-0000-4000-8000-000000000005'
+), 'ineligible', 'Confirmation cannot merge a profile that has become a merge target');
 select * from finish();
 rollback;

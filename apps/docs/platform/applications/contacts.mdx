@@ -108,6 +108,8 @@ identify that profile for replacement. The account holder reviews the merge
 before confirming. The sender must also have permission to delete users, since
 the merge transfers the starter profile’s records and removes that profile.
 Earlier mappings without provisioning provenance cannot be replaced this way.
+A profile retained in a merge loses starter status. The private consent audit
+records the merge result, including duplicate records removed on collisions.
 An authorized duplicate contact merge may transfer the source’s existing
 account link to the retained contact when the retained contact is unlinked.
 The confirmation page and API omit contact email and platform account IDs.
