@@ -44,6 +44,9 @@ function attemptErrorMessage(status: number) {
   return 'Failed to save attempt';
 }
 
+// Practice module quizzes only. The saved attempt includes is_correct per
+// answer so the learner can review practice. Graded course tests stay on the
+// Tulearn test attempt APIs, which withhold that key until the score is published.
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }

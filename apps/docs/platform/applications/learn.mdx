@@ -124,6 +124,12 @@ XP awards and heart loss must go through the database RPCs `award_tulearn_xp` an
 
 Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks continue to reuse existing education and user-group tables.
 
+## Practice quizzes and graded tests
+
+`POST /api/v1/workspaces/[wsId]/education/quiz-attempts` is for practice module quizzes only. It accepts quizzes linked to a module in the enrolled course, directly or through a quiz set, and returns `is_correct` on each answer so the learner can review that practice. Do not reuse this route for a graded course test. That response would reveal the answer key before the score is published. Graded tests stay on the Tulearn course-test attempt APIs, which withhold `is_correct` until the score is published.
+
+Learner progress counts a module only when that module has a quiz in the same workspace, through a direct link or a quiz set. A content-only module is outside the total, so it does not stop the course from reaching 100% once every quiz-linked module is complete.
+
 ## Programming route and operations
 
 Learn owns the learner-facing Programming workspace at `/[wsId]/programming`; `/[wsId]/coding` redirects there. It starts with

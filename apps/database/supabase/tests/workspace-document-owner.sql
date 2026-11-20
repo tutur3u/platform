@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(12);
+select plan(14);
 
 insert into auth.users (
   id,
@@ -194,6 +194,78 @@ select throws_ok(
   '42501',
   'owner_id cannot be changed',
   'service_role cannot reassign the creator later'
+);
+
+reset role;
+
+-- The document list reads full_name through the viewer's session. A shared
+-- membership makes the name visible; removing it hides the former member.
+set local session_replication_role = replica;
+insert into public.user_private_details (user_id, email, full_name)
+values (
+  'b1900000-0000-4000-8000-000000000002',
+  'document-owner-other@example.com',
+  'Document Other'
+)
+on conflict (user_id) do update
+set full_name = excluded.full_name;
+set local session_replication_role = origin;
+
+insert into public.workspace_members (ws_id, user_id, type)
+values (
+  'b1900000-0000-4000-8000-000000000010',
+  'b1900000-0000-4000-8000-000000000002',
+  'MEMBER'
+)
+on conflict (ws_id, user_id) do nothing;
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"b1900000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'b1900000-0000-4000-8000-000000000001',
+  true
+);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+
+select is(
+  (
+    select full_name
+    from public.user_private_details
+    where user_id = 'b1900000-0000-4000-8000-000000000002'
+  ),
+  'Document Other',
+  'a member can read the name of someone who shares the workspace'
+);
+
+reset role;
+delete from public.workspace_members
+where user_id = 'b1900000-0000-4000-8000-000000000002';
+
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"b1900000-0000-4000-8000-000000000001","role":"authenticated"}',
+  true
+);
+select set_config(
+  'request.jwt.claim.sub',
+  'b1900000-0000-4000-8000-000000000001',
+  true
+);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+set local role authenticated;
+
+select ok(
+  (
+    select full_name
+    from public.user_private_details
+    where user_id = 'b1900000-0000-4000-8000-000000000002'
+  ) is null,
+  'a former member name is hidden once the shared membership is gone'
 );
 
 reset role;

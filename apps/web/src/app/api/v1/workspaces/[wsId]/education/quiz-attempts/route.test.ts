@@ -6,29 +6,70 @@ function requireResponse(response: Response | undefined) {
   return response;
 }
 
+type QueryFilter =
+  | { op: 'eq'; column: string; value: unknown }
+  | { op: 'in'; column: string; values: unknown[] }
+  | { op: 'not'; column: string; operator: string; value: unknown };
+
 function query(data: unknown, count = 0) {
-  const builder: Record<string, unknown> = {};
-  let rows = data;
+  const filters: QueryFilter[] = [];
+  let range: { from: number; to: number } | null = null;
+  const builder: Record<string, unknown> = { filters };
   const chain = () => builder;
-  for (const name of ['select', 'eq', 'order', 'limit', 'delete']) {
+  for (const name of ['select', 'order', 'limit', 'delete']) {
     builder[name] = chain;
   }
-  builder.in = (_column: string, values: unknown[]) => {
-    if (Array.isArray(rows)) {
-      rows = rows.filter((row) => values.includes((row as { id?: string }).id));
-    }
+  builder.eq = (column: string, value: unknown) => {
+    filters.push({ op: 'eq', column, value });
     return builder;
   };
-  builder.single = async () => ({
-    data: Array.isArray(rows) ? rows[0] : rows,
-    error: null,
-  });
+  builder.in = (column: string, values: unknown[]) => {
+    filters.push({ op: 'in', column, values });
+    return builder;
+  };
+  builder.not = (column: string, operator: string, value: unknown) => {
+    filters.push({ op: 'not', column, operator, value });
+    return builder;
+  };
+  builder.range = (from: number, to: number) => {
+    range = { from, to };
+    return builder;
+  };
+  const matched = () => {
+    if (!Array.isArray(data)) return data;
+    const filtered = data.filter((row) => {
+      const record = row as Record<string, unknown>;
+      return filters.every((filter) => {
+        if (filter.op === 'eq') return record[filter.column] === filter.value;
+        if (filter.op === 'in') {
+          return filter.values.includes(record[filter.column]);
+        }
+        return record[filter.column] !== filter.value;
+      });
+    });
+    if (!range) return filtered;
+    return filtered.slice(range.from, range.to + 1);
+  };
+  builder.single = async () => {
+    const rows = matched();
+    return {
+      data: Array.isArray(rows) ? rows[0] : rows,
+      error: null,
+    };
+  };
   builder.maybeSingle = builder.single;
   builder.then = (
-    resolve: (value: { data: unknown; error: null; count: number }) => unknown,
-    reject?: (reason: unknown) => unknown
+    onFulfilled: (value: {
+      data: unknown;
+      error: null;
+      count: number;
+    }) => unknown,
+    onRejected?: (reason: unknown) => unknown
   ) =>
-    Promise.resolve({ data: rows, error: null, count }).then(resolve, reject);
+    Promise.resolve({ data: matched(), error: null, count }).then(
+      onFulfilled,
+      onRejected
+    );
   return builder;
 }
 
@@ -70,24 +111,92 @@ const savedAttempt = {
   ],
 };
 
-function tables() {
+type CourseFixture = {
+  id: string;
+  ws_id: string;
+  archived: boolean;
+  is_guest: boolean | null;
+  is_course_published: boolean;
+  workspace_course_modules: { id: string }[];
+};
+
+function courseFixture(
+  id: string,
+  modules: string[],
+  extra: Partial<CourseFixture> = {}
+): CourseFixture {
   return {
-    workspace_user_groups: query([
-      { id: 'course', workspace_course_modules: [{ id: 'module' }] },
-      {
-        id: 'other-course',
-        workspace_course_modules: [{ id: 'other-module' }],
-      },
-    ]),
-    education_learner_module_progress: query([]),
-    education_learner_quiz_attempts: query([], 0),
-    user_private_details: query({
+    id,
+    ws_id: 'workspace',
+    archived: false,
+    is_guest: false,
+    is_course_published: true,
+    workspace_course_modules: modules.map((moduleId) => ({ id: moduleId })),
+    ...extra,
+  };
+}
+
+type FixtureRows = {
+  workspace_user_groups: CourseFixture[];
+  education_learner_module_progress: {
+    course_id: string;
+    module_id: string;
+    ws_id: string;
+    user_id: string;
+  }[];
+  education_learner_quiz_attempts: unknown[];
+  user_private_details: { full_name: string; email: string };
+  workspace_user_linked_users: { virtual_user_id: string } | null;
+  workspace_user_groups_users: { group_id: string; user_id: string }[];
+  course_module_quizzes: { module_id: string; quiz_id: string }[];
+  course_module_quiz_sets: { module_id: string; set_id: string }[];
+  quiz_set_quizzes: { set_id: string; quiz_id: string }[];
+  workspace_quizzes: { id: string; ws_id: string }[];
+};
+
+function defaultRows(): FixtureRows {
+  return {
+    workspace_user_groups: [
+      courseFixture('course', ['module', 'reading']),
+      courseFixture('other-course', ['other-module']),
+    ],
+    education_learner_module_progress: [],
+    education_learner_quiz_attempts: [],
+    user_private_details: {
       full_name: 'Ada Lovelace',
       email: 'ada@example.com',
-    }),
-    workspace_user_linked_users: query({ virtual_user_id: 'student' }),
-    workspace_user_groups_users: query([{ group_id: 'course' }]),
+    },
+    workspace_user_linked_users: { virtual_user_id: 'student' },
+    workspace_user_groups_users: [{ group_id: 'course', user_id: 'student' }],
+    course_module_quizzes: [{ module_id: 'module', quiz_id: 'quiz-1' }],
+    course_module_quiz_sets: [],
+    quiz_set_quizzes: [],
+    workspace_quizzes: [{ id: 'quiz-1', ws_id: 'workspace' }],
   };
+}
+
+let rows = defaultRows();
+const seen: Record<string, Array<{ filters: QueryFilter[] }>> = {};
+
+function tables() {
+  const built: Record<string, ReturnType<typeof query>> = {
+    workspace_user_groups: query(rows.workspace_user_groups),
+    education_learner_module_progress: query(
+      rows.education_learner_module_progress
+    ),
+    education_learner_quiz_attempts: query(
+      rows.education_learner_quiz_attempts,
+      0
+    ),
+    user_private_details: query(rows.user_private_details),
+    workspace_user_linked_users: query(rows.workspace_user_linked_users),
+    workspace_user_groups_users: query(rows.workspace_user_groups_users),
+    course_module_quizzes: query(rows.course_module_quizzes),
+    course_module_quiz_sets: query(rows.course_module_quiz_sets),
+    quiz_set_quizzes: query(rows.quiz_set_quizzes),
+    workspace_quizzes: query(rows.workspace_quizzes),
+  };
+  return built;
 }
 
 function attemptBody(extra: Record<string, unknown> = {}) {
@@ -107,6 +216,8 @@ function attemptBody(extra: Record<string, unknown> = {}) {
 
 describe('learner quiz attempts', () => {
   beforeEach(() => {
+    rows = defaultRows();
+    for (const key of Object.keys(seen)) delete seen[key];
     mocks.rpc.mockReset();
     mocks.rpc.mockResolvedValue({
       data: {
@@ -116,9 +227,13 @@ describe('learner quiz attempts', () => {
       },
       error: null,
     });
-    const from = vi.fn(
-      (name: keyof ReturnType<typeof tables>) => tables()[name]
-    );
+    const from = vi.fn((name: string) => {
+      const builder = tables()[name];
+      if (!builder) throw new Error(`unexpected table ${name}`);
+      const recorded = builder as { filters: QueryFilter[] };
+      (seen[name] ??= []).push(recorded);
+      return builder;
+    });
     mocks.requireLearnerWorkspace.mockResolvedValue({
       wsId: 'workspace',
       userId: 'learner',
@@ -228,7 +343,7 @@ describe('learner quiz attempts', () => {
     expect(requireResponse(denied).status).toBe(403);
   });
 
-  it('lists only the enrolled course', async () => {
+  it('lists only the enrolled course and skips its content-only module', async () => {
     const response = await GET(
       new NextRequest(
         'https://tuturuuu.com/api/v1/workspaces/workspace/education/learner-progress'
@@ -246,6 +361,129 @@ describe('learner quiz attempts', () => {
         completion_ratio: 0,
       },
     ]);
+    const filters = seen.workspace_user_groups?.[0]?.filters ?? [];
+    expect(filters).toEqual(
+      expect.arrayContaining([
+        { op: 'eq', column: 'archived', value: false },
+        { op: 'eq', column: 'is_course_published', value: true },
+        { op: 'not', column: 'is_guest', operator: 'is', value: true },
+      ])
+    );
+    expect(
+      filters.some(
+        (filter) => filter.op === 'eq' && filter.column === 'is_guest'
+      )
+    ).toBe(false);
+  });
+
+  it('counts direct and quiz-set modules in this workspace only', async () => {
+    rows.workspace_user_groups = [
+      courseFixture('course', [
+        'quiz-module',
+        'set-module',
+        'reading',
+        'foreign-module',
+      ]),
+    ];
+    rows.course_module_quizzes = [
+      { module_id: 'quiz-module', quiz_id: 'quiz-1' },
+      { module_id: 'foreign-module', quiz_id: 'quiz-foreign' },
+    ];
+    rows.course_module_quiz_sets = [
+      { module_id: 'set-module', set_id: 'set-1' },
+    ];
+    rows.quiz_set_quizzes = [{ set_id: 'set-1', quiz_id: 'quiz-2' }];
+    rows.workspace_quizzes = [
+      { id: 'quiz-1', ws_id: 'workspace' },
+      { id: 'quiz-2', ws_id: 'workspace' },
+      { id: 'quiz-foreign', ws_id: 'other-workspace' },
+    ];
+    rows.education_learner_module_progress = [
+      {
+        course_id: 'course',
+        module_id: 'reading',
+        ws_id: 'workspace',
+        user_id: 'learner',
+      },
+      {
+        course_id: 'course',
+        module_id: 'quiz-module',
+        ws_id: 'workspace',
+        user_id: 'learner',
+      },
+    ];
+
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/workspaces/workspace/education/learner-progress'
+      ),
+      params
+    );
+    const body = await requireResponse(response).json();
+    expect(body.courses).toEqual([
+      {
+        course_id: 'course',
+        completed_modules: 1,
+        total_modules: 2,
+        completion_ratio: 0.5,
+      },
+    ]);
+  });
+
+  it('does not complete a course that has no quiz-linked modules', async () => {
+    rows.workspace_user_groups = [courseFixture('course', ['reading'])];
+    rows.course_module_quizzes = [];
+    rows.course_module_quiz_sets = [];
+    rows.quiz_set_quizzes = [];
+    rows.workspace_quizzes = [];
+    rows.education_learner_module_progress = [
+      {
+        course_id: 'course',
+        module_id: 'reading',
+        ws_id: 'workspace',
+        user_id: 'learner',
+      },
+    ];
+
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/workspaces/workspace/education/learner-progress'
+      ),
+      params
+    );
+    const body = await requireResponse(response).json();
+    expect(body.courses).toEqual([
+      {
+        course_id: 'course',
+        completed_modules: 0,
+        total_modules: 0,
+        completion_ratio: 0,
+      },
+    ]);
+  });
+
+  it('keeps a course whose guest flag is null and hides a guest course', async () => {
+    rows.workspace_user_groups = [
+      courseFixture('open', []),
+      courseFixture('unset', [], { is_guest: null }),
+      courseFixture('guest', [], { is_guest: true }),
+    ];
+    rows.workspace_user_groups_users = [
+      { group_id: 'open', user_id: 'student' },
+      { group_id: 'unset', user_id: 'student' },
+      { group_id: 'guest', user_id: 'student' },
+    ];
+
+    const response = await GET(
+      new NextRequest(
+        'https://tuturuuu.com/api/v1/workspaces/workspace/education/learner-progress'
+      ),
+      params
+    );
+    const body = await requireResponse(response).json();
+    expect(
+      body.courses.map((course: { course_id: string }) => course.course_id)
+    ).toEqual(['open', 'unset']);
   });
 
   it('lists no courses when the platform user has no student link', async () => {

@@ -7,7 +7,7 @@ drop function if exists private.education_learner_course_quiz_links(uuid, uuid);
 
 drop index if exists private.education_learner_quiz_attempts_idempotency_idx;
 
-alter table private.education_learner_quiz_attempts
+alter table if exists private.education_learner_quiz_attempts
   drop constraint if exists education_learner_quiz_attempts_idempotency_key_check;
-alter table private.education_learner_quiz_attempts
+alter table if exists private.education_learner_quiz_attempts
   drop column if exists idempotency_key;

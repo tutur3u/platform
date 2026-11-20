@@ -32,7 +32,7 @@ String? _ownerName(Map<String, dynamic> json) {
   if (direct != null) return direct;
   final owner = json['owner'];
   if (owner is! Map) return null;
-  return _optionalString(owner['full_name']) ?? _optionalString(owner['email']);
+  return _optionalString(owner['full_name']);
 }
 
 class WorkspaceDocument extends Equatable {
