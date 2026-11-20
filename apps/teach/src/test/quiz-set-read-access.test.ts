@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const state = vi.hoisted(() => ({ own: false, from: vi.fn() }));
+const state = vi.hoisted(() => ({
+  own: false,
+  permissions: ['ai_lab', 'view_user_groups'],
+  from: vi.fn(),
+}));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
     (
@@ -14,10 +18,18 @@ vi.mock('@/lib/api-auth', () => ({
     (request: NextRequest, route: { params: unknown }) =>
       handler(request, { user: { id: 'actor' }, supabase: {} }, route.params),
 }));
-vi.mock('@tuturuuu/education-core/education/access', () => ({
-  requireEducationWorkspaceAccess: async () => ({
-    normalizedWsId: 'workspace-a',
-    sbAdmin: { from: state.from },
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({ from: state.from }),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: async (wsId: string) => wsId,
+  verifyWorkspaceMembershipType: async () => ({
+    ok: true,
+    membershipType: 'MEMBER',
+  }),
+  getPermissions: async () => ({
+    withoutPermission: (permission: string) =>
+      !state.permissions.includes(permission),
   }),
 }));
 
@@ -27,6 +39,7 @@ import { GET as quizzes } from '../app/api/v1/workspaces/[wsId]/quiz-sets/[setId
 
 beforeEach(() => {
   state.own = false;
+  state.permissions = ['ai_lab', 'view_user_groups'];
   state.from.mockReset().mockImplementation((_table: string) => {
     const filters: Record<string, string> = {};
     let ids: string[] = [];
@@ -45,11 +58,13 @@ beforeEach(() => {
       ilike: () => query,
       maybeSingle: async () => ({
         data:
-          state.own &&
-          (filters.ws_id === 'workspace-a' ||
-            filters['workspace_user_groups.ws_id'] === 'workspace-a')
-            ? { id: 'resource' }
-            : null,
+          _table === 'workspace_secrets'
+            ? { value: 'true' }
+            : state.own &&
+                (filters.ws_id === 'workspace-a' ||
+                  filters['workspace_user_groups.ws_id'] === 'workspace-a')
+              ? { id: 'resource' }
+              : null,
         error: null,
       }),
       then: (resolve: (value: unknown) => void) =>
@@ -95,3 +110,40 @@ for (const [name, handler, params] of [
     });
   });
 }
+
+it('rejects an ai_lab-only member before reading quiz-set answers', async () => {
+  state.own = true;
+  state.permissions = ['ai_lab'];
+  const response = await quizzes(new NextRequest('http://localhost/resource'), {
+    params: { wsId: 'workspace-a', setId: id },
+  });
+  expect(response.status).toBe(403);
+  expect(state.from.mock.calls.map(([table]) => table)).toEqual([
+    'workspace_secrets',
+  ]);
+});
+
+it.each(['view_user_groups', 'update_user_groups'])(
+  'returns quiz-set answers with %s alone',
+  async (permission) => {
+    state.own = true;
+    state.permissions = [permission];
+    const response = await quizzes(
+      new NextRequest('http://localhost/resource'),
+      {
+        params: { wsId: 'workspace-a', setId: id },
+      }
+    );
+    expect(response.status).toBe(200);
+    expect(state.from).toHaveBeenCalledWith('quiz_set_quizzes');
+  }
+);
+
+it('preserves quiz-set metadata access for an ai_lab-only member', async () => {
+  state.own = true;
+  state.permissions = ['ai_lab'];
+  const response = await linked(new NextRequest('http://localhost/resource'), {
+    params: { wsId: 'workspace-a', setId: id },
+  });
+  expect(response.status).toBe(200);
+});

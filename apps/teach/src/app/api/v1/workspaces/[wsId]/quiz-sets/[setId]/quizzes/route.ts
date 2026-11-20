@@ -12,12 +12,6 @@ const RouteParamsSchema = z.object({
   wsId: z.string().min(1),
 });
 
-/**
- * Lists the quizzes (with their options) that belong to a quiz set. Mirrors the
- * legacy server-component `getData` (admin read of `quiz_set_quizzes` spreading
- * `workspace_quizzes(*, quiz_options(*))`), gated through
- * `requireEducationWorkspaceAccess` and scoped to quiz sets in this workspace.
- */
 export const GET = withSessionAuth(
   async (
     request,
@@ -36,6 +30,7 @@ export const GET = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: ['view_user_groups', 'update_user_groups'],
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;

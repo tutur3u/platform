@@ -80,7 +80,10 @@ export async function getQuizSetQuizzes(
   setId: string,
   { q, page = '1', pageSize = '10' }: QuizSetListParams = {}
 ) {
-  await requireEducationPageAccess(wsId);
+  await requireEducationPageAccess(wsId, [
+    'view_user_groups',
+    'update_user_groups',
+  ]);
   const supabase = await getAdminClient();
   await requireQuizSetInWorkspace(supabase, wsId, setId);
 

@@ -17,7 +17,7 @@ import type { CourseModulePageScope } from '@/lib/course-module-page-access';
 
 const mocks = vi.hoisted(() => ({
   joined: true,
-  allowed: true,
+  permissions: ['ai_lab', 'view_user_groups', 'update_user_groups'],
   from: vi.fn(),
   listResources: vi.fn(async () => ({ data: [], error: null })),
   notFound: vi.fn(() => {
@@ -27,7 +27,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   getSatelliteWorkspacePermissions: async () => ({
-    withoutPermission: () => !mocks.allowed,
+    withoutPermission: (permission: string) =>
+      !mocks.permissions.includes(permission),
   }),
 }));
 
@@ -133,8 +134,15 @@ const tables: Record<string, Row[]> = {
       module_id: scope.moduleId,
       id: 'quiz-1',
       question: 'Question?',
+      'workspace_quizzes.ws_id': scope.wsId,
       answer: null,
       quiz_options: [{ id: 'option-1', is_correct: true }],
+    },
+    {
+      module_id: scope.moduleId,
+      id: 'mislinked-quiz',
+      question: 'Private quiz linked from another workspace',
+      'workspace_quizzes.ws_id': 'foreign-workspace',
     },
     {
       module_id: 'foreign-module',
@@ -234,6 +242,7 @@ class Query {
         this.table === 'workspace_course_modules' ||
         this.selected.includes('workspace_course_modules!inner');
       const groupInner = this.selected.includes('workspace_user_groups!inner');
+      const quizInner = this.selected.includes('workspace_quizzes!inner');
       if (moduleInner && (!module || (groupInner && !group))) return false;
       return [...this.filters].every(([key, expected]) => {
         // Embedded filters only remove parents through an unbroken inner-join path.
@@ -242,6 +251,7 @@ class Query {
           (!moduleInner || !groupInner)
         )
           return true;
+        if (key === 'workspace_quizzes.ws_id' && !quizInner) return true;
         if (key === 'workspace_course_modules.group_id' && !moduleInner)
           return true;
         const actual = key.endsWith('workspace_user_groups.ws_id')
@@ -274,7 +284,7 @@ class Query {
 
 beforeEach(() => {
   mocks.joined = true;
-  mocks.allowed = true;
+  mocks.permissions = ['ai_lab', 'view_user_groups', 'update_user_groups'];
   vi.clearAllMocks();
   mocks.from.mockImplementation((table: string) => new Query(table));
 });
@@ -411,7 +421,8 @@ for (const [name, count] of [
 ] as const) {
   describe(`${name} layout count`, () => {
     it('counts the own module', async () => {
-      expect(await count(scope)).toBe(1);
+      // The layout count reads links, while the answer query scopes the quizzes.
+      expect(await count(scope)).toBe(name === 'quizzes' ? 2 : 1);
     });
     it('excludes a module in another workspace even with its correct course ID', async () => {
       expect(
@@ -492,10 +503,42 @@ for (const [name, load] of [
     `%s cannot read ${name}`,
     async (caller) => {
       mocks.joined = caller !== 'nonmember';
-      mocks.allowed = caller !== 'denied member';
+      if (caller === 'denied member') mocks.permissions = [];
       await expect(load(scope)).rejects.toThrow('NEXT_NOT_FOUND');
       expect(mocks.from).not.toHaveBeenCalled();
       expect(mocks.listResources).not.toHaveBeenCalled();
     }
   );
 }
+
+it('rejects an ai_lab-only member before reading module quiz answers', async () => {
+  mocks.permissions = ['ai_lab'];
+  await expect(getQuizzes(scope)).rejects.toThrow('NEXT_NOT_FOUND');
+  expect(mocks.from).not.toHaveBeenCalled();
+});
+
+it('rejects an ai_lab-only member before loading the module quiz preview', async () => {
+  mocks.permissions = ['ai_lab'];
+  await expect(
+    ModulePreviewPage({ params: Promise.resolve({ ...scope, locale: 'en' }) })
+  ).rejects.toThrow('NEXT_NOT_FOUND');
+  expect(mocks.from).not.toHaveBeenCalled();
+  expect(mocks.listResources).not.toHaveBeenCalled();
+});
+
+it.each(['view_user_groups', 'update_user_groups'])(
+  'returns module quiz answers with %s alone',
+  async (permission) => {
+    mocks.permissions = [permission];
+    expect(await getQuizzes(scope)).toEqual([
+      { ...tables.course_module_quizzes?.[0], answer: { correct: true } },
+    ]);
+  }
+);
+
+it('preserves module flashcards for an ai_lab-only member', async () => {
+  mocks.permissions = ['ai_lab'];
+  expect(await getFlashcards(scope)).toEqual([
+    tables.course_module_flashcards?.[0],
+  ]);
+});

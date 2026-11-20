@@ -355,8 +355,12 @@ web education routes; there is no learner-facing exception.
   Grading uses the private key, falling back only to legacy authored content,
   never to a stored prompt.
 - `workspace_quizzes` is readable directly only with `view_user_groups` or
-  `update_user_groups` and writable only with `update_user_groups`. Learners
-  get prompts from the Learn server.
+  `update_user_groups` and writable only with `update_user_groups`. Teach
+  applies the same read permission to the quiz-set quizzes API and detail
+  data, module quiz data, and module preview before selecting quiz options or
+  loading private answers. The module editor and preview also require
+  `update_user_groups` at page entry. Quiz-set metadata keeps its `ai_lab`
+  gate. Learners get prompts from the Learn server.
 - Courses (`workspace_user_groups`) and rosters
   (`workspace_user_groups_users`) stay readable by workspace members. Creating
   a course needs `create_user_groups`, editing needs `update_user_groups`,
@@ -386,11 +390,11 @@ web education routes; there is no learner-facing exception.
   learners as members must turn that default off, or those learners keep
   course-manager access.
 
-Regression coverage: the pgTAP files `education-quiz-key-access.sql`,
+Database regressions are covered by `education-quiz-key-access.sql`,
 `education-course-roster-access.sql`, `education-learner-grade-access.sql`,
-`education-learner-practice-links.sql` and
-`education-learner-attempt-submit.sql` and
-`education-learner-marks-and-completion.sql`; `courses.test.ts` and
-`quiz-answer-key.test.ts` in
-education-core; Learn's test `release.test.ts`; Teach's quiz `route.test.ts`;
-and the web `quiz-attempts` route test.
+`education-learner-practice-links.sql`, `education-learner-attempt-submit.sql`
+and `education-learner-marks-and-completion.sql`. Application coverage includes
+education-core's `courses.test.ts` and `quiz-answer-key.test.ts`, Learn's
+`release.test.ts`, Teach's quiz `route.test.ts`, `quiz-set-read-access.test.ts`,
+`quiz-set-page-access.test.tsx` and `course-module-pages.test.ts`, and the
+web `quiz-attempts` route test.

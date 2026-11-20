@@ -47,16 +47,15 @@ export default async function UserGroupDetailsPage({ params }: Props) {
     routeWsId,
     'update_user_groups'
   );
-  const { module: data } = await requireCourseModulePageAccess({
-    wsId: resolvedWsId,
-    courseId,
-    moduleId,
-  });
+  const { module: data } = await requireCourseModulePageAccess(
+    { wsId: resolvedWsId, courseId, moduleId },
+    ['view_user_groups', 'update_user_groups']
+  );
 
   const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
   const flashcards = await getFlashcards(moduleId);
-  const quizzes = await getQuizzes(moduleId);
+  const quizzes = await getQuizzes(resolvedWsId, moduleId);
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -231,13 +230,14 @@ const getFlashcards = async (moduleId: string) => {
   return data || [];
 };
 
-const getQuizzes = async (moduleId: string) => {
+const getQuizzes = async (wsId: string, moduleId: string) => {
   const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_quizzes')
-    .select('...workspace_quizzes(*, quiz_options(*))')
-    .eq('module_id', moduleId);
+    .select('...workspace_quizzes!inner(*, quiz_options(*))')
+    .eq('module_id', moduleId)
+    .eq('workspace_quizzes.ws_id', wsId);
 
   if (error) {
     console.error('error', error);

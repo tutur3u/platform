@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({
   own: false,
-  permission: true,
+  permissions: ['ai_lab', 'view_user_groups'],
   from: vi.fn(),
 }));
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -12,18 +12,18 @@ vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   getSatelliteWorkspacePermissions: async () => ({
     membershipType: 'MEMBER',
     wsId: 'workspace-a',
-    containsPermission: () => state.permission,
-    withoutPermission: () => !state.permission,
+    withoutPermission: (permission: string) =>
+      !state.permissions.includes(permission),
   }),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({ from: state.from }),
 }));
 vi.mock('@/lib/resolve-route-workspace', () => ({
-  resolveRouteWorkspace: async () => ({ resolvedWsId: 'workspace-a' }),
-}));
-vi.mock('@/lib/education-page-access', () => ({
-  requireEducationPageAccess: async () => undefined,
+  resolveRouteWorkspace: async () => ({
+    resolvedWsId: 'workspace-a',
+    workspace: { joined: true },
+  }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: async () => ({
@@ -77,7 +77,7 @@ import Quizzes from '../app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[set
 
 beforeEach(() => {
   state.own = false;
-  state.permission = true;
+  state.permissions = ['ai_lab', 'view_user_groups'];
   state.from.mockReset().mockImplementation((table: string) => {
     const filters: Record<string, string> = {};
     const query = {
@@ -121,7 +121,7 @@ for (const [name, page] of [
   });
   it(`checks education permission in the ${name} segment`, async () => {
     state.own = true;
-    state.permission = false;
+    state.permissions = [];
     await expect(page(props())).rejects.toThrow('not-found');
     expect(state.from).not.toHaveBeenCalled();
   });
@@ -130,3 +130,16 @@ for (const [name, page] of [
     await expect(page(props())).resolves.toBeTruthy();
   });
 }
+
+it('rejects an ai_lab-only member on the quiz-set answers page', async () => {
+  state.own = true;
+  state.permissions = ['ai_lab'];
+  await expect(Quizzes(props())).rejects.toThrow('not-found');
+  expect(state.from).not.toHaveBeenCalledWith('quiz_set_quizzes');
+});
+
+it('preserves the linked modules page for an ai_lab-only member', async () => {
+  state.own = true;
+  state.permissions = ['ai_lab'];
+  await expect(Modules(props())).resolves.toBeTruthy();
+});
