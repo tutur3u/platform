@@ -88,6 +88,25 @@ afterEach(() => {
 });
 
 describe('opt-in mounted provider-only sessions', () => {
+  it('accepts the registry alias /admin for infra and refuses /infra', async () => {
+    const options = { ...strictOptions, targetApp: 'infra', now };
+    mocks.appClaims.mockResolvedValue({
+      sub: 'provider-user',
+      target_app: 'infra',
+      exp,
+    });
+    for (const basePath of ['/infra', '/admin']) {
+      const req = new NextRequest(`https://tuturuuu.com${basePath}/root`, {
+        nextConfig: { basePath },
+        headers: { cookie: sharedCookie },
+      });
+      const result = await refreshAppSessionForRequest(req, options);
+      expect(result.ok).toBe(basePath === '/admin');
+    }
+    expect(mocks.updateSession).toHaveBeenCalledOnce();
+    expect(mocks.signedRefresh).not.toHaveBeenCalled();
+  });
+
   it('does not use a valid legacy token when the shared cookie is absent', async () => {
     const legacy = createAppSessionToken(
       { targetApp: 'mind', userId: 'legacy-user' },

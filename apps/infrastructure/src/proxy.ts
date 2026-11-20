@@ -15,11 +15,13 @@ import {
   refreshAppSessionForRequest,
   withRequestBasePath,
 } from '@tuturuuu/auth/proxy';
+import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
 import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
   isTrustedProxyBypassRequest,
 } from '@tuturuuu/utils/api-proxy-guard';
+import { getAppBasePath, SHARED_APP_ORIGIN } from '@tuturuuu/utils/app-mounts';
 import { GUARD_REASON_HEADER } from '@tuturuuu/utils/guard-rejection';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -33,6 +35,7 @@ import {
 } from './lib/mobile-calendar/preference-guard';
 
 const intlMiddleware = createIntlMiddleware(routing);
+const ADMIN_BASE_PATH = getAppBasePath('infra');
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 const LOCALE_COOKIE_OPTIONS = {
   maxAge: 365 * 24 * 60 * 60,
@@ -109,6 +112,23 @@ function isPublicAuthPath(pathname: string) {
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  const mounted = request.nextUrl.origin === SHARED_APP_ORIGIN;
+  if (mounted && request.nextUrl.basePath !== ADMIN_BASE_PATH) {
+    return new NextResponse('Not Found', {
+      status: 404,
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
+  const sessionOptions = {
+    sessionMode: mounted ? 'supabase-only' : 'supabase-first',
+    targetApp: 'infra',
+  } as const;
+  const finish = (response: NextResponse) =>
+    mounted ? response : clearSupabaseAuthCookies(request, response);
+  const sessionFailure = mounted
+    ? mountedSessionFailureResponse
+    : appSessionFailureResponse;
+
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -125,13 +145,10 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const appSessionRefresh =
       isLocalAuthApi || isBuildInfoRead || hasBearerApiSession || hasTrustedCron
         ? null
-        : await refreshAppSessionForRequest(request, {
-            sessionMode: 'supabase-first',
-            targetApp: 'infra',
-          });
+        : await refreshAppSessionForRequest(request, sessionOptions);
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return appSessionFailureResponse(
+      return sessionFailure(
         request,
         appSessionRefresh.error,
         appSessionRefresh.response
@@ -163,7 +180,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
 
-      return isBuildInfoRead
+      return isBuildInfoRead || mounted
         ? guardResponse
         : preserveMfaRecoveryCookies(request, guardResponse);
     }
@@ -172,11 +189,21 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
 
     return appSessionRefresh?.ok
       ? appSessionRefresh.response
-      : clearSupabaseAuthCookies(request, NextResponse.next());
+      : finish(NextResponse.next());
   }
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
     locales: supportedLocales,
+    ...(mounted
+      ? {
+          mountedSession: {
+            mode: 'supabase-only',
+            nextUrlScope: 'app-relative',
+            targetApp: 'infra',
+            webAppUrl: SHARED_APP_ORIGIN,
+          },
+        }
+      : {}),
   });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
@@ -184,16 +211,15 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
-    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+    return finish(canonicalLocaleRedirect);
   }
 
   const isPublicPath = isPublicAuthPath(request.nextUrl.pathname);
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
-      requireWebAppSession: true,
-      sessionMode: 'supabase-first',
-      targetApp: 'infra',
+      ...sessionOptions,
+      requireWebAppSession: !mounted,
     });
     if (
       !appSessionRefresh.ok &&
@@ -201,7 +227,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
         appSessionRefresh.error === 'MFA required' ||
         appSessionRefresh.error === 'Account assurance unavailable')
     ) {
-      return appSessionFailureResponse(
+      return sessionFailure(
         request,
         appSessionRefresh.error,
         appSessionRefresh.response
@@ -214,7 +240,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     };
     const appSession = appSessionRefresh.ok ? appSessionRefresh.claims : null;
     const hasWebAppSession =
-      hasWebAppSessionTokenFromRequest(requestWithRefresh);
+      !mounted && hasWebAppSessionTokenFromRequest(requestWithRefresh);
     const hasSupabaseSession =
       hasSupportedSupabaseAuthCookie(requestWithRefresh);
     const hasSatelliteSession = Boolean(
@@ -225,17 +251,17 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       const url = new URL(withRequestBasePath(request, '/login'), request.url);
       url.searchParams.set('next', getNextValue(request));
 
-      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+      return finish(NextResponse.redirect(url));
     }
 
     const response = intlMiddleware(request);
     if (appSessionRefresh.ok) {
       propagateAuthCookies(appSessionRefresh.response, response);
     }
-    return clearSupabaseAuthCookies(request, response);
+    return finish(response);
   }
 
-  return clearSupabaseAuthCookies(request, intlMiddleware(request));
+  return finish(intlMiddleware(request));
 }
 
 export const proxy = withCanonicalLocaleCookie(

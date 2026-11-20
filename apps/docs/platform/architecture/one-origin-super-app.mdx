@@ -57,10 +57,17 @@ Worker without passing through the gateway.
 
 The Infrastructure Worker can serve its existing origin and the public
 `/admin` mount from the same artifact. The app retains the `infra` session
-audience and the existing root-workspace checks. The active mount flag uses
-`infra`, and the gateway binds `MOUNT_ADMIN` for both `/admin` and
-`/admin/*`. The login handoff uses `/admin/verify-token` on the apex and
-preserves the requested path and query.
+audience and the existing root-workspace checks. On the apex, Admin receives
+a shared provider session with refresh tokens removed and can set its locale
+cookie scoped to `/admin`. The legacy origin retains its existing session
+mode. The apex login handoff uses `/admin/verify-token` and preserves the
+requested path and query.
+
+Before binding `MOUNT_ADMIN` to `/admin` and `/admin/*`, verify that Web's
+`NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` includes `infra`. Root Admin shares
+a browser origin with Web and the other mounted apps. Record the release
+authority's disposition of that same-origin privilege boundary before
+enabling the gateway binding.
 
 Before enabling the public mount, verify that no existing workspace uses
 `admin` as its handle. Run the signed-out, authorized staff, insufficient

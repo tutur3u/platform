@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   definePageAdapterTests,
@@ -43,4 +43,43 @@ describe('build-info refresh isolation', () => {
       expect(pageAdapterMocks.refresh).not.toHaveBeenCalled();
     }
   );
+});
+
+describe('Admin apex session isolation', () => {
+  beforeEach(() => {
+    pageAdapterMocks.refresh.mockReset().mockResolvedValue({
+      ok: false,
+      error: 'Shared session unavailable',
+    });
+    pageAdapterMocks.continuation
+      .mockReset()
+      .mockImplementation(() => NextResponse.next());
+  });
+
+  it('uses the provider-only resolver for pages and does not expire central cookies', async () => {
+    const request = new NextRequest('https://tuturuuu.com/admin/root', {
+      nextConfig: { basePath: '/admin' },
+      headers: { cookie: 'sb-project-auth-token=synthetic-session' },
+    });
+    const response = await proxy(request);
+    expect(pageAdapterMocks.refresh).toHaveBeenCalledWith(request, {
+      requireWebAppSession: false,
+      sessionMode: 'supabase-only',
+      targetApp: 'infra',
+    });
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/admin/login?next=%2Froot'
+    );
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+
+  it('keeps the legacy app on its existing session resolver', async () => {
+    const request = new NextRequest('https://infrastructure.tuturuuu.com/root');
+    await proxy(request);
+    expect(pageAdapterMocks.refresh).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
+      sessionMode: 'supabase-first',
+      targetApp: 'infra',
+    });
+  });
 });

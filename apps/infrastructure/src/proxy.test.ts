@@ -37,6 +37,9 @@ vi.mock('@tuturuuu/auth/proxy', async () => ({
   ...(await vi.importActual<
     typeof import('../../../packages/auth/src/proxy/mfa-failure')
   >('../../../packages/auth/src/proxy/mfa-failure')),
+  ...(await vi.importActual<
+    typeof import('../../../packages/auth/src/proxy/redirect-path')
+  >('../../../packages/auth/src/proxy/redirect-path')),
   consumeVerifyTokenRequest: (
     ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
   ) => mocks.consumeVerifyTokenRequest(...args),
@@ -89,6 +92,42 @@ describe('Infra proxy', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('routes the apex verification through the read-only provider session', async () => {
+    const request = new NextRequest(
+      'https://tuturuuu.com/admin/verify-token?nextUrl=%2Froot',
+      {
+        nextConfig: { basePath: '/admin' },
+      }
+    );
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(NextResponse.next());
+    await proxy(request);
+    expect(mocks.consumeVerifyTokenRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({
+        mountedSession: {
+          mode: 'supabase-only',
+          nextUrlScope: 'app-relative',
+          targetApp: 'infra',
+          webAppUrl: 'https://tuturuuu.com',
+        },
+      })
+    );
+  });
+
+  it('rejects a signed-out apex API without clearing the central session', async () => {
+    const request = new NextRequest('https://tuturuuu.com/admin/api/private', {
+      nextConfig: { basePath: '/admin' },
+    });
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      ok: false,
+      error: 'Shared session unavailable',
+    });
+    const response = await proxy(request);
+    expect(response.status).toBe(401);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
   });
 
   describe('protected build-info reads', () => {
