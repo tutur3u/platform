@@ -102,7 +102,14 @@ To publish:
 6. Set `MASTERMIND_STORE_URL` and `MASTERMIND_STORE_TOKEN` on Web production
    and deploy Web; the fleet publisher's next run should log `published`.
 
+The Worker serves `mastermind-store.tuturuuu.com`. Web production reads it
+through `MASTERMIND_STORE_URL` and `MASTERMIND_STORE_TOKEN`; copies of the
+Worker tokens are kept in the operator Mac's Keychain under
+`tuturuuu/mastermind-store/<NAME>`.
+
 Rollback: remove `MASTERMIND_STORE_URL` from Web (the routes answer 503
-again) or set the fence. Deleting the Worker loses the snapshot and pending
+again) or set the fence. To withdraw the Worker, delete the custom domain
+(`DELETE /accounts/<account>/workers/domains/<id>`) and roll the Worker back
+to its previous version, or delete it. Deleting the Worker loses the snapshot and pending
 answers; the publisher re-sends the snapshot within two minutes, and answers
 not yet picked up must be given again.
