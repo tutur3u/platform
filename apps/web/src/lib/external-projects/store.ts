@@ -64,11 +64,15 @@ import {
 } from './storage-path';
 import { listWorkspaceExternalProjectRelationData } from './store-relations';
 
+import {
+  isPublishedAsset,
+  loadPublishedAssetManifests,
+  privateExternalProjectCollection,
+  publishedAssetManifest,
+} from './published-assets';
+
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
-const PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS = new Set([
-  'contact-submissions',
-]);
 
 type FieldDefinitionSchemaScope = {
   collectionId: string | null;
@@ -2441,20 +2445,15 @@ export async function publishWorkspaceExternalProjectEntry(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const nextStatus = eventKind === 'unpublish' ? 'draft' : 'published';
-  const publishedAt =
-    nextStatus === 'published' ? new Date().toISOString() : null;
-
-  const { data: entry, error: entryError } = await admin
-    .from('workspace_external_project_entries')
-    .update({
-      published_at: publishedAt,
-      status: nextStatus,
-      updated_by: actorId,
-    })
-    .eq('id', entryId)
-    .eq('ws_id', workspaceId)
-    .select('*')
-    .single();
+  const publishedAt = nextStatus === 'published' ? new Date().toISOString() : null;
+  const entries = admin.from('workspace_external_project_entries');
+  const { data: entry, error: entryError } = await (eventKind === 'preview'
+    ? entries.select('*').eq('id', entryId).eq('ws_id', workspaceId).single()
+    : entries.update({
+        published_at: publishedAt,
+        status: nextStatus,
+        updated_by: actorId,
+      }).eq('id', entryId).eq('ws_id', workspaceId).select('*').single());
 
   if (entryError) {
     throw new Error(entryError.message);
@@ -2469,6 +2468,14 @@ export async function publishWorkspaceExternalProjectEntry(
     admin
   );
 
+  const snapshot = eventKind === 'publish'
+    ? publishedAssetManifest(
+        entry,
+        await listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, [entryId], admin),
+        await listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, [entryId], admin)
+      )
+    : null;
+
   const { error: eventError } = await admin
     .from('workspace_external_project_publish_events')
     .insert([
@@ -2476,7 +2483,10 @@ export async function publishWorkspaceExternalProjectEntry(
         canonical_external_project_id: binding.canonical_id as string,
         entry_id: entry.id,
         event_kind: eventKind,
-        payload: payload as NonNullable<Json>,
+        payload: {
+          ...payload,
+          ...(snapshot ? { assetPublicationAt: entry.published_at, publishedAssetManifest: snapshot } : {}),
+        } as NonNullable<Json>,
         profile_data: payload.profileData as NonNullable<Json>,
         triggered_by: actorId,
         visibility_scope: visibilityScope,
@@ -2927,12 +2937,9 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     listWorkspaceExternalProjectRelationData(workspaceId, admin),
   ]);
 
-  const deliveryCollections = collections.filter((collection) => {
-    if (hasPrivateDeliveryFlag(collection.config)) return false;
-    return !PRIVATE_EXTERNAL_PROJECT_DELIVERY_COLLECTION_SLUGS.has(
-      collection.slug
-    );
-  });
+  const deliveryCollections = collections.filter(
+    (collection) => !privateExternalProjectCollection(collection)
+  );
   const deliveryCollectionIds = new Set(
     deliveryCollections.map((collection) => collection.id)
   );
@@ -2941,6 +2948,12 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
       deliveryCollectionIds.has(entry.collection_id) &&
       !hasPrivateDeliveryFlag(entry.metadata)
   );
+  const assetOwners = new Set(assets.map((asset) => asset.entry_id));
+  const manifests = includeDrafts ? new Map() : await loadPublishedAssetManifests(
+    admin, workspaceId, binding.canonical_id,
+    deliveryEntries.filter((entry) => assetOwners.has(entry.id))
+  );
+  const visibleAssets = includeDrafts ? assets : assets.filter((asset) => isPublishedAsset(manifests, asset));
   const deliveryEntryIds = new Set(deliveryEntries.map((entry) => entry.id));
   const publicRelations = relationData.relations.filter(
     (relation) =>
@@ -2954,7 +2967,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
       .filter((entry) => entry.collection_id === collection.id)
       .map((entry) => ({
         ...entry,
-        assets: assets
+        assets: visibleAssets
           .filter((asset) => asset.entry_id === entry.id)
           .map((asset) => ({
             alt_text: asset.alt_text,
@@ -2974,6 +2987,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
             ),
             storage_path: asset.storage_path,
             updated_at: asset.updated_at,
+            published: !includeDrafts,
             assetRevision: getExternalProjectAssetRevision(asset.updated_at),
           })),
         blocks: blocks.filter((block) => block.entry_id === entry.id),
@@ -3009,7 +3023,7 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
     deliveryCollections,
     deliveryEntries,
     blocks,
-    assets,
+    visibleAssets,
     publicRelations,
     relationData.definitions,
     template

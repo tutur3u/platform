@@ -66,17 +66,44 @@ const webglSandboxCsp =
   'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
 
 function createAdminWithAsset(status: 'draft' | 'published') {
+  const updatedAt = '2026-11-20T09:00:00Z';
+  const publishedAt = '2026-11-20T10:00:00Z';
   return {
-    from: vi.fn(() => ({
+    from: vi.fn((table: string) => ({
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockResolvedValue(
+        table === 'workspace_external_project_publish_events'
+          ? {
+              data: [
+                {
+                  entry_id: 'entry-1',
+                  payload: {
+                    assetPublicationAt: publishedAt,
+                    publishedAssetManifest: { 'asset-1': updatedAt },
+                  },
+                },
+              ],
+            }
+          : { data: [] }
+      ),
       eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({
         data: {
           asset_type: 'webgl-package',
           id: 'asset-1',
+          entry_id: 'entry-1',
+          updated_at: updatedAt,
           metadata: artifactMetadata,
           workspace_external_project_entries: {
             status,
+            published_at: publishedAt,
+            metadata: {},
+            workspace_external_project_collections: {
+              slug: 'games',
+              config: {},
+            },
           },
           ws_id: '123e4567-e89b-12d3-a456-426614174000',
         },

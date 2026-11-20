@@ -109,6 +109,7 @@ function createAccessRequest(token = 'ttr_app_test') {
 
 import {
   requireWorkspaceExternalProjectAccess,
+  requireWorkspaceExternalProjectManageDecision,
   requireWorkspaceExternalProjectMemberBootstrapAccess,
   requireWorkspaceExternalProjectSetupAccess,
 } from './access';
@@ -272,6 +273,59 @@ describe('external project access auth dispatch', () => {
     expect(
       appCoordinationMocks.verifyAppCoordinationToken
     ).not.toHaveBeenCalled();
+  });
+
+  it('revokes a live manage decision when the workspace grant becomes publish-only', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_external');
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_external'
+    );
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: {
+        ...externalAppTokenClaims,
+        scopes: ['external-projects:manage'],
+      },
+      ok: true,
+    });
+    let manage = true;
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID
+            ? ['manage_external_projects']
+            : [
+                manage
+                  ? 'manage_external_projects'
+                  : 'publish_external_projects',
+              ],
+          wsId
+        )
+    );
+    const allowed = await requireWorkspaceExternalProjectManageDecision(
+      request,
+      workspaceId
+    );
+    expect(allowed).toMatchObject({
+      ok: true,
+      decision: {
+        actorId: externalAppTokenClaims.sub,
+        workspaceId,
+        scopes: ['external-projects:manage'],
+      },
+    });
+    manage = false;
+    const denied = await requireWorkspaceExternalProjectManageDecision(
+      request,
+      workspaceId
+    );
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) expect(denied.response.status).toBe(403);
   });
 
   it('falls back to scoped external app-token auth for non-session bearer tokens', async () => {

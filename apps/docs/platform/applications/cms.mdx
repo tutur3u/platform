@@ -226,3 +226,9 @@ in `apps/web/src/lib/external-projects/read-route-table.test.ts`. Its negative
 cases execute administrative GET handlers as an editor and require 403; the
 content variant verifies that audit records are absent. This policy applies to
 the shared Web API consumed by CMS, including its native migration path.
+
+### Public asset publication
+
+An uploaded asset is private until publication records its storage revision. Public delivery and direct asset reads, including WebGL package files, require a published parent and a matching asset revision. Publish records media referenced by the entry's media slots or by a linked block. An asset changed after publication needs a new publish. Existing published entries can use a matching historical publish snapshot. An entry without publication evidence needs a new publish to expose its media.
+
+The workspace manage-decision endpoint accepts an external app bearer with the exact manage scope. It checks the linked app, current workspace membership, and current workspace-level manage permission on each request. Publish-only grants are denied. Responses are private, and timeouts deny access.

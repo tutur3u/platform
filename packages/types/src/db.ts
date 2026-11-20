@@ -824,6 +824,7 @@ export type ExternalProjectDeliveryAsset = Pick<
   metadata: Json;
   assetUrl: string | null;
   assetRevision: string;
+  published?: boolean;
 };
 
 export type ExternalProjectDeliveryRelation = Pick<

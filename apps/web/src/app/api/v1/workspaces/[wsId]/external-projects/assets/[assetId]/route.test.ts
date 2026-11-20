@@ -74,6 +74,7 @@ describe('external project asset route', () => {
       canonical_project: { id: 'canonical-1' },
       enabled: true,
     });
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({ ok: true });
     mocks.resolveWorkspaceStorageProvider.mockResolvedValue({
       misconfigured: false,
       provider: 'supabase',

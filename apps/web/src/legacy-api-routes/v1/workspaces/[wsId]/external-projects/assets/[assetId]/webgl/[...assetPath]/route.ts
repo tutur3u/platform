@@ -1,3 +1,4 @@
+import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
 import { posix } from 'node:path';
 import {
   downloadWorkspaceStorageObjectForProvider,
@@ -405,7 +406,7 @@ export async function GET(
     const { data: asset, error } = await admin
       .from('workspace_external_project_assets')
       .select(
-        'id, ws_id, asset_type, metadata, workspace_external_project_entries!inner(status)'
+        'id, ws_id, entry_id, updated_at, asset_type, metadata, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
       )
       .eq('id', assetId)
       .eq('ws_id', resolvedWsId)
@@ -416,8 +417,11 @@ export async function GET(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
 
-    const entryStatus = asset.workspace_external_project_entries?.status;
-    if (entryStatus !== 'published') {
+    const isPublic = await canReadPublishedAsset(
+      admin, resolvedWsId, binding.canonical_project.id, asset,
+      asset.workspace_external_project_entries
+    );
+    if (!isPublic) {
       const access = await requireWorkspaceExternalProjectAccess({
         mode: 'read',
         request,
