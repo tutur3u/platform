@@ -1,10 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import {
-  readFileSync,
   writeFileSync,
   mkdirSync,
   appendFileSync,
-  lstatSync,
+  openSync,
+  fstatSync,
+  readSync,
+  closeSync,
+  constants,
 } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -451,16 +454,36 @@ export async function applyReconciliation({
   return result;
 }
 
-function readBounded(file) {
-  const stat = lstatSync(file);
-  guard(
-    stat.isFile() &&
-      !stat.isSymbolicLink() &&
-      stat.size > 0 &&
-      stat.size <= 262144,
-    'FILE_BOUND'
-  );
-  return JSON.parse(readFileSync(file, 'utf8'));
+const READ_LIMIT = 262144;
+// The symlink, type and size checks and the parse share one no-follow
+// descriptor, and the read itself stops past the limit, so a file swapped or
+// grown after the check is never parsed. O_NONBLOCK lets a FIFO open and fail
+// the type check instead of blocking for a writer.
+export function readBounded(file) {
+  let fd;
+  try {
+    fd = openSync(
+      file,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+    );
+  } catch (error) {
+    guard(error?.code !== 'ELOOP', 'FILE_BOUND');
+    throw error;
+  }
+  try {
+    guard(fstatSync(fd).isFile(), 'FILE_BOUND');
+    const buffer = Buffer.alloc(READ_LIMIT + 1);
+    let size = 0;
+    while (size < buffer.length) {
+      const read = readSync(fd, buffer, size, buffer.length - size, null);
+      if (read === 0) break;
+      size += read;
+    }
+    guard(size > 0 && size <= READ_LIMIT, 'FILE_BOUND');
+    return JSON.parse(buffer.toString('utf8', 0, size));
+  } finally {
+    closeSync(fd);
+  }
 }
 function writeJson(file, data) {
   mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });

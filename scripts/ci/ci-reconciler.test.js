@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { test } from 'node:test';
 import sourcePolicy from './ci-reconciler-policy.json' with { type: 'json' };
 import {
@@ -9,6 +13,7 @@ import {
   summarizeApplied,
   planReconciliation,
   applyReconciliation,
+  readBounded,
 } from './ci-reconciler.js';
 
 const repository = 'tutur3u/platform';
@@ -546,4 +551,28 @@ test('workflow metadata must match the declared gate before its runs are trusted
   });
   await assert.rejects(plan(fixture.api), /WORKFLOW_IDENTITY/);
   assert.deepEqual(posts(fixture), []);
+});
+
+test('readBounded parses only a bounded regular file it opened itself', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-reconciler-read-'));
+  try {
+    const file = path.join(dir, 'receipt.json');
+    fs.writeFileSync(file, JSON.stringify({ schema: 1 }));
+    assert.deepEqual(readBounded(file), { schema: 1 });
+
+    const link = path.join(dir, 'link.json');
+    fs.symlinkSync(file, link);
+    assert.throws(() => readBounded(link), { code: 'FILE_BOUND' });
+    assert.throws(() => readBounded(dir), { code: 'FILE_BOUND' });
+    const fifo = path.join(dir, 'fifo.json');
+    execFileSync('mkfifo', [fifo]);
+    assert.throws(() => readBounded(fifo), { code: 'FILE_BOUND' });
+
+    fs.writeFileSync(file, '');
+    assert.throws(() => readBounded(file), { code: 'FILE_BOUND' });
+    fs.writeFileSync(file, `"${'x'.repeat(262144)}"`);
+    assert.throws(() => readBounded(file), { code: 'FILE_BOUND' });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
