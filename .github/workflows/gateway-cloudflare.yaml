@@ -79,6 +79,8 @@ jobs:
       - name: Rehearse M4 gateway cf version-only publication merge
         env:
           GATEWAY_PUBLICATION_REHEARSAL: '1'
+          WEB_ORIGIN: https://web.example.vercel.app
+          MARKETING_ORIGIN: https://marketing.example.workers.dev
         run: |
           node scripts/ci/gateway-cf-publication.mjs rehearse \
             scripts/ci/fixtures/gateway-settings-fixture.json

@@ -71,20 +71,16 @@ export function rehearseGatewayCfPublication({
   );
   const merged = writeMergedDeployConfig(settingsPath, mergedPath, env);
   assertBuildOutputPresent(appRoot);
-  try {
-    runCfPrebuilt({
-      env,
-      appRoot,
-      exec,
-      traffic: 'activate',
-      dryRun: true,
-      sha,
-      digest: 'rehearsal',
-      workerName: merged.name,
-    });
-  } finally {
-    teardownStagedOutput(appRoot);
-  }
+  runCfPrebuilt({
+    env,
+    appRoot,
+    exec,
+    traffic: 'activate',
+    dryRun: true,
+    sha,
+    digest: 'rehearsal',
+    workerName: merged.name,
+  });
   return {
     mergedConfigPath: mergedPath,
     workerName: merged.name,
