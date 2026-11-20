@@ -1,10 +1,25 @@
 'use client';
+import {
+  MEET_CANONICAL_ORIGIN,
+  MEET_LEGACY_ORIGIN,
+  meetPublicUrl,
+} from '@tuturuuu/utils/meet-url';
 import type { MeetAiSession } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { FollowupReview } from './followup-review';
 import type { MeetingFollowup } from './followup-types';
+
+function meetFollowupSource(wsId: string, meetingId: string) {
+  const path = `/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`;
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return !origin ||
+    origin === MEET_LEGACY_ORIGIN ||
+    origin === MEET_CANONICAL_ORIGIN
+    ? meetPublicUrl(path)
+    : `${origin}${path}`;
+}
 
 export function MeetingFollowups({
   session,
@@ -109,7 +124,7 @@ export function MeetingFollowups({
           suggestion={selected}
           wsId={wsId}
           meetingId={meetingId}
-          sourceUrl={`${typeof window === 'undefined' ? '' : window.location.origin}/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`}
+          sourceUrl={meetFollowupSource(wsId, meetingId)}
           onClose={() => setSelected(null)}
         />
       )}

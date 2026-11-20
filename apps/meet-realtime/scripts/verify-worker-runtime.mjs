@@ -56,6 +56,11 @@ test('serves complete health and rejects invalid credentials before room dispatc
   const response = await server.fetch('/health');
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { ok: true });
+  const nonUpgrade = await server.fetch('/realtime', {
+    headers: { Origin: 'https://tuturuuu.com' },
+  });
+  assert.equal(nonUpgrade.status, 426);
+  await nonUpgrade.text();
   for (const path of [
     '/room-state',
     '/channels/document',
@@ -88,7 +93,10 @@ test('dispatches a signed isolated room read to the real SQLite Durable Object',
     .update(encoded)
     .digest('base64url');
   const response = await server.fetch('/room-state', {
-    headers: { Authorization: `Bearer ${encoded}.${signature}` },
+    headers: {
+      Authorization: `Bearer ${encoded}.${signature}`,
+      Origin: 'https://tuturuuu.com',
+    },
   });
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), 'private, no-store');

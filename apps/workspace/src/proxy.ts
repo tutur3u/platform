@@ -407,7 +407,7 @@ function handleWorkspaceSatelliteRedirectRoute(
   const suffixSegments = pathSegments.slice(workspaceIndex + 2);
   const redirectUrl = new URL(appOrigin);
   redirectUrl.pathname = [
-    '',
+    redirectUrl.pathname.replace(/\/$/u, ''),
     ...(workspacePrefix ? [workspacePrefix] : []),
     workspaceSlug,
     ...(preserveRouteSegment ? [routeSegment] : []),

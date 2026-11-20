@@ -1,3 +1,5 @@
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
+
 import { audioRms, registerPlaybackMeter } from './playback-meter';
 /** PCM playback is local. This stream is never attached to the meeting publisher. */
 export class LiveAudioPlayer {
@@ -136,7 +138,9 @@ export async function captureLiveAudio(
   try {
     if (context.sampleRate !== 16000)
       throw new Error('Unsupported input sample rate');
-    await context.audioWorklet.addModule('/meet-live-processor.js');
+    await context.audioWorklet.addModule(
+      meetBrowserPath('/meet-live-processor.js')
+    );
     const processor = new AudioWorkletNode(context, 'meet-live-pcm');
     const mute = context.createGain();
     mute.gain.value = 0;

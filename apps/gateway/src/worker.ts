@@ -77,7 +77,7 @@ export interface Env {
   GATEWAY_ACCEPTANCE_HOST?: string;
   /** Worker secret: Vercel protection bypass for the staging WEB_ORIGIN. */
   VERCEL_PROTECTION_BYPASS?: string;
-  [name: string]: string | undefined;
+  [name: string]: string | ServiceBinding | undefined;
 }
 
 /** A Worker service binding. */
@@ -105,10 +105,11 @@ export function mountedAppBinding(
     pathname === mount ? listed.includes(mount) : listed.includes(`${mount}/*`);
   if (!admitted) return null;
   const name = `MOUNT_${mount.slice(1).replace(/-/gu, '_').toUpperCase()}`;
-  const binding = (env as unknown as Record<string, unknown>)[name];
+  const binding = env[name];
   return binding &&
-    typeof (binding as Partial<ServiceBinding>).fetch === 'function'
-    ? (binding as ServiceBinding)
+    typeof binding === 'object' &&
+    typeof binding.fetch === 'function'
+    ? binding
     : null;
 }
 
@@ -160,7 +161,7 @@ function plain(status: number, body: string) {
 function resolveOrigin(env: Env, manifest: Manifest, originName: string) {
   const envName = manifest.origins[originName]?.env;
   const raw = envName ? env[envName] : undefined;
-  if (!raw) return null;
+  if (typeof raw !== 'string' || !raw) return null;
   try {
     const url = new URL(raw);
     return url.protocol === 'https:' || url.protocol === 'http:' ? url : null;
@@ -504,10 +505,11 @@ export function createHandler(deps: HandlerDeps) {
     const mounted = mountedAppBinding(request, env);
     if (mounted) {
       try {
-        return withGatewayHeader(
-          await mounted.fetch(mountedRequest(request)),
-          'MOUNT'
-        );
+        const response = await mounted.fetch(mountedRequest(request));
+        // Keep the upstream WebSocket attached to its upgrade response.
+        return response.status === 101
+          ? response
+          : withGatewayHeader(response, 'MOUNT');
       } catch {
         return plain(502, 'gateway mounted app unreachable');
       }

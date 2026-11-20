@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/components/app_toggle_row.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -25,7 +26,10 @@ Future<void> _shareMeetInvite(
         // Invitees may belong to another workspace. The native Meet portal
         // currently needs a selected workspace, while the web room resolves
         // access from the room code for every signed-in invitee.
-        text: 'https://meet.tuturuuu.com/r/$code?openInBrowser=1',
+        text: Env.meetPublicUrl(
+          ['r', code],
+          query: {'openInBrowser': '1'},
+        ).toString(),
         subject: call.title ?? context.l10n.meetTitle,
         sharePositionOrigin: box == null
             ? null

@@ -185,7 +185,11 @@ extension NotesPageLinks on NotesPageState {
     if (uri == null || !['https', 'http'].contains(uri.scheme)) return;
     final shouldOpen = await _chooseLinkAction(href);
     if (!shouldOpen || !mounted) return;
-    final parts = uri.pathSegments;
+    final mountedMeet =
+        uri.host == 'tuturuuu.com' && uri.pathSegments.firstOrNull == 'meet';
+    final parts = mountedMeet
+        ? uri.pathSegments.skip(1).toList(growable: false)
+        : uri.pathSegments;
     final wsId = _wsId;
     if (wsId != null && parts.length >= 2 && parts[1] == wsId) {
       if (uri.host == 'tasks.tuturuuu.com' &&
@@ -201,7 +205,7 @@ extension NotesPageLinks on NotesPageState {
           return;
         }
       }
-      if (uri.host == 'meet.tuturuuu.com' &&
+      if ((uri.host == 'meet.tuturuuu.com' || mountedMeet) &&
           parts.length == 4 &&
           parts[2] == 'meetings') {
         await context.push<void>('/meet?room=${parts[3]}');

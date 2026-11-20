@@ -1,3 +1,4 @@
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import {
   getMeetAssistantMentions,
   MEET_ASSISTANT_USER_ID as MEET_ASSISTANT_ID,
@@ -12,8 +13,7 @@ export function getMeetMentionMarker(): string {
   mentionMarker ??= `meet-mention:${crypto.randomUUID()}`;
   return mentionMarker;
 }
-export const MEET_ASSISTANT_PROFILE =
-  'https://meet.tuturuuu.com/#tuturuuu-assistant';
+export const MEET_ASSISTANT_PROFILE = meetPublicUrl('/#tuturuuu-assistant');
 
 export function isMeetAssistant(message: {
   userId: string;

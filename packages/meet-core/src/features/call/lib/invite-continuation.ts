@@ -35,7 +35,7 @@ export function rememberMeetInvite(req: NextRequest, response: NextResponse) {
       httpOnly: true,
       secure: req.nextUrl.protocol === 'https:',
       sameSite: 'lax',
-      path: '/',
+      path: req.nextUrl.basePath || '/',
       maxAge: 30 * 60,
     });
   return response;
@@ -51,11 +51,12 @@ export function pendingMeetInvite(req: NextRequest) {
   );
 }
 
-export function clearMeetInvite(response: NextResponse) {
+export function clearMeetInvite(response: NextResponse, basePath = '') {
   response.cookies.set(MEET_INVITE_COOKIE, '', {
     httpOnly: true,
     sameSite: 'lax',
-    path: '/',
+    secure: Boolean(basePath),
+    path: basePath || '/',
     maxAge: 0,
   });
   return response;

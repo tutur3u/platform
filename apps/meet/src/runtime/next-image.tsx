@@ -1,5 +1,7 @@
 'use client';
 
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { publicAssets } from './public-assets';
 import type { ImageProps } from 'next/image';
 import { forwardRef, type ImgHTMLAttributes } from 'react';
 
@@ -28,12 +30,17 @@ export default forwardRef<HTMLImageElement, Props>(function MeetImage(
 ) {
   const image =
     typeof src === 'string' ? null : 'default' in src ? src.default : src;
+  const source = typeof src === 'string' ? src : image?.src;
+  const asset =
+    source && (source.startsWith('/assets/') || publicAssets.has(source))
+      ? withAppBase(source)
+      : source;
   return (
     <img
       {...props}
       alt={alt}
       ref={ref}
-      src={typeof src === 'string' ? src : image?.src}
+      src={asset}
       width={props.width ?? image?.width}
       height={props.height ?? image?.height}
       loading={priority ? 'eager' : (loading ?? 'lazy')}

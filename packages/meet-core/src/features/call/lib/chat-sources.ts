@@ -1,3 +1,4 @@
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
@@ -63,8 +64,7 @@ type Node = {
   title?: string;
   children?: Node[];
 };
-export const UNRESOLVED_CITATION =
-  'https://meet.tuturuuu.com/#unresolved-citation';
+export const UNRESOLVED_CITATION = meetPublicUrl('/#unresolved-citation');
 /** Provider-looking legacy IDs have no saved mapping. Do not invent an attribution. */
 export function remarkUnresolvedCitations() {
   return (tree: Node) => {

@@ -1,3 +1,5 @@
+import { isAppMounted } from './app-mounts';
+import { meetPublicUrl } from './meet-url';
 import { z } from 'zod';
 import { getInternalAppDomainByUrl } from './internal-domains';
 
@@ -56,7 +58,9 @@ function registeredOrigin(name: 'mail' | 'meet', configured?: string) {
 export function meetMailOrigins() {
   return {
     mail: registeredOrigin('mail', process.env.NEXT_PUBLIC_MAIL_APP_URL),
-    meet: registeredOrigin('meet', process.env.NEXT_PUBLIC_MEET_APP_URL),
+    meet: isAppMounted('meet')
+      ? meetPublicUrl()
+      : registeredOrigin('meet', process.env.NEXT_PUBLIC_MEET_APP_URL),
   };
 }
 export function parseMeetMailHandoff(
@@ -89,15 +93,19 @@ export function parseMeetMailHandoff(
     )
       return null;
     const url = new URL(value.joinUrl);
+    const configuredMeet = new URL(scope.meetOrigin);
+    const configuredPath = configuredMeet.pathname.replace(/\/$/u, '');
+    const roomPath = url.pathname.slice(configuredPath.length);
     if (
       url.href !== value.joinUrl ||
-      url.origin !== new URL(scope.meetOrigin).origin ||
+      url.origin !== configuredMeet.origin ||
+      (configuredPath && !url.pathname.startsWith(`${configuredPath}/`)) ||
       url.username ||
       url.password ||
       url.search ||
       url.hash ||
       !/^\/r\/[0-9a-hjkmnp-tv-z]{9}-[0-9a-hjkmnp-tv-z]{9}-[0-9a-hjkmnp-tv-z]{8}$/u.test(
-        url.pathname
+        roomPath
       )
     )
       return null;

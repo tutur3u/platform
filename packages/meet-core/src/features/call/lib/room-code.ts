@@ -1,3 +1,9 @@
+import {
+  MEET_BASE_PATH,
+  MEET_CANONICAL_ORIGIN,
+  MEET_LEGACY_ORIGIN,
+  meetPublicUrl,
+} from '@tuturuuu/utils/meet-url';
 /**
  * Shareable meeting codes.
  *
@@ -116,5 +122,9 @@ export function decodeRoomCode(code: string): string | null {
 }
 
 export function buildJoinUrl(origin: string, meetingId: string) {
-  return `${trimTrailingSlashes(origin)}/r/${encodeRoomCode(meetingId)}`;
+  const path = `/r/${encodeRoomCode(meetingId)}`;
+  const base = trimTrailingSlashes(origin);
+  if (base === MEET_LEGACY_ORIGIN) return meetPublicUrl(path);
+  if (base === MEET_CANONICAL_ORIGIN) return `${base}${MEET_BASE_PATH}${path}`;
+  return `${base}${path}`;
 }

@@ -85,6 +85,20 @@ void main() {
         isNull,
       );
     });
+    test('resolves canonical Meet rooms and preserves browser requests', () {
+      final link = resolveMobileDeepLink(
+        Uri.parse(
+          'https://tuturuuu.com/meet/vi/r/abc123-def456?openInBrowser=1',
+        ),
+      );
+      expect(link?.location, '/meet?room=abc123-def456');
+      expect(link?.openExternally, isTrue);
+      expect(
+        resolveMobileDeepLink(Uri.parse('https://tuturuuu.com/meet/r/%2Fbad')),
+        isNull,
+      );
+    });
+
     test('maps canonical web task links to mobile task detail route', () {
       final link = resolveMobileDeepLink(
         Uri.parse(

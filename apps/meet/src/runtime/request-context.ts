@@ -1,3 +1,4 @@
+import { installAppBaseResolver } from '@tuturuuu/start-bridge/app-url';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   RequestCookies,
@@ -8,6 +9,8 @@ import type { MeetExecutionContext, MeetRuntimeBindings } from './worker-port';
 
 export interface MeetRequestContext {
   request: Request;
+  basePath?: string;
+  nonce?: string;
   observeLoginNavigation?: ObserveLoginNavigation;
   responseHeaders: Headers;
   waitUntil: (work: Promise<unknown>) => void;
@@ -15,6 +18,8 @@ export interface MeetRequestContext {
 }
 
 const requests = new AsyncLocalStorage<MeetRequestContext>();
+installAppBaseResolver(() => requests.getStore()?.basePath);
+globalThis.__meetCspNonce = () => requests.getStore()?.nonce;
 
 export function withMeetRequest<T>(
   context: MeetRequestContext,

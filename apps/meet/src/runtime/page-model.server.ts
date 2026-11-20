@@ -14,6 +14,7 @@ import {
   meetGuestTurnstileSiteKey,
   resolveMeetGuestJoin,
 } from '@tuturuuu/meet-core/features/call/lib/guest-access';
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { MEET_GUEST_COOKIE } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
 import {
@@ -101,7 +102,9 @@ async function roomModel(code: string, locale: string, url: URL) {
     ...sources,
     isParleySession: () => sources.isParleySession(false),
   });
-  const canonical = `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`;
+  const canonical = meetPublicUrl(
+    `${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`
+  );
   const roomMeta = (info: MeetingPublicInfo | null): MeetPageMeta => ({
     title: info?.title || publicCopy('meta_title'),
     description: info
@@ -336,6 +339,9 @@ export async function loadPageModel(path: string) {
   const url = new URL(path, current.request.url);
   if (url.origin !== new URL(current.request.url).origin)
     throw new Error('Invalid Meet page origin');
+  const base = current.basePath;
+  if (base && (url.pathname === base || url.pathname.startsWith(`${base}/`)))
+    url.pathname = url.pathname.slice(base.length) || '/';
   return withMeetRequest(
     {
       ...current,
@@ -379,7 +385,9 @@ async function loadResolvedPageModel(url: URL) {
           ? 'Họp với âm thanh rõ ràng, chép lời trực tiếp và ghi chú kết nối với Tuturuuu Tasks và Calendar.'
           : 'Meet with clear audio, live transcription, and meeting notes connected to Tuturuuu Tasks and Calendar.',
       indexable: false,
-      canonical: `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : ''}`,
+      canonical: meetPublicUrl(
+        `${locale === 'vi' ? '/vi' : ''}${segments.length ? `/${segments.join('/')}` : ''}`
+      ),
     } satisfies MeetPageMeta,
   };
   if (segments[0] === 'login' && segments.length === 1) {

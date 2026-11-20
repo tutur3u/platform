@@ -13,8 +13,8 @@ const ports = vi.hoisted(() => ({
     throw Error('Unexpected external API destination');
   }),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
 vi.mock('../proxy', () => ({ proxy: ports.proxy }));
 vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));

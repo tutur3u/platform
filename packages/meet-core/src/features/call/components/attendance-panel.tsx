@@ -1,5 +1,6 @@
 'use client';
 
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import { useQuery } from '@tanstack/react-query';
 import { ClipboardList } from '@tuturuuu/icons';
 import { getMeetAttendance } from '@tuturuuu/internal-api/meet-call';
@@ -43,7 +44,9 @@ export function AttendancePanel({ meetingId }: { meetingId: string }) {
           <h2 className="font-medium">{t('attendance')}</h2>
           <Button asChild size="sm" variant="outline">
             <a
-              href={`/api/meet-call/${meetingId}/attendance?format=csv`}
+              href={meetBrowserPath(
+                `/api/meet-call/${meetingId}/attendance?format=csv`
+              )}
               download
             >
               {t('attendance_download')}

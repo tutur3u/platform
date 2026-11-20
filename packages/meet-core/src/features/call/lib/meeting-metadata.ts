@@ -1,3 +1,4 @@
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import type { Metadata } from 'next';
 import type { MeetingPublicInfo } from './meeting-public-info';
 import { decodeRoomCode, encodeRoomCode } from './room-code';
@@ -15,7 +16,9 @@ export function meetingMetadata(
 ): Metadata {
   const language = locale === 'vi' ? 'vi' : 'en';
   const id = decodeRoomCode(code);
-  const url = `https://meet.tuturuuu.com${language === 'vi' ? '/vi' : ''}/r/${id ? encodeRoomCode(id) : encodeURIComponent(code)}`;
+  const url = meetPublicUrl(
+    `${language === 'vi' ? '/vi' : ''}/r/${id ? encodeRoomCode(id) : encodeURIComponent(code)}`
+  );
   const title = info?.title || copy.title;
   // Link crawlers have no recipient timezone. Localize time on the landing page.
   const description = info

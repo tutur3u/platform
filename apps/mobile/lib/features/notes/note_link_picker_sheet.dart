@@ -6,6 +6,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
+import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
@@ -334,8 +335,12 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
                   id: meeting['id'] as String? ?? '',
                   kind: NoteLinkKind.meeting,
                   title: meeting['name'] as String? ?? '',
-                  url:
-                      'https://meet.tuturuuu.com/$language/$wsId/meetings/${meeting['id']}',
+                  url: Env.meetPublicUrl([
+                    language,
+                    wsId,
+                    'meetings',
+                    '${meeting['id']}',
+                  ]).toString(),
                 ),
               )
               .where(

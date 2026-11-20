@@ -1,12 +1,12 @@
 ---
 title: "Meet"
 description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
-updatedAt: '2026-11-13'
+updatedAt: '2026-11-20'
 audience: users
 ---
 
-Meet (`meet.tuturuuu.com`, `apps/meet`) combines meeting planning and live
-collaboration. Public product explanations live on the main site; operational
+Meet (`apps/meet`) combines meeting planning and live collaboration.
+The canonical destination is `tuturuuu.com/meet` after cutover. Public product explanations live on the main site; operational
 rooms, plans, and workspace meeting records are excluded from search indexing.
 
 ## Web product and public-plan pages
@@ -20,9 +20,8 @@ root or `/meet` paths and its existing indexing policy.
 The old Web `/meet` landing, `/meet/plans/<id>` and localized equivalents return
 307 redirects only. Exact Calendar and AI landing aliases, including Vietnamese
 equivalents, also use 307 redirects to their existing product pages. `/meet` and
-`/calendar` are reserved for future apex mounts: remove their redirect rules at
-mount cutover, and never use 301 while those paths are reserved. Permanent client
-and crawler caches would prevent reaching the future apps. Nested app routes and
+`/calendar` are reserved for apex mounts. The temporary Web aliases take effect
+when the gateway forwards a request to Web. Nested app routes and
 APIs are excluded. Existing `/meet-together` routes are outside this relocation.
 
 Web and satellite workspace settings reserve the `meet`, `calendar`, and `ai`
@@ -634,3 +633,14 @@ Coverage includes the real producer picker, both Mail clients/composers, replay
 and scope/lifecycle tests in `meet-mail-share`, `meet-mail-handoff`, and the
 portable protocol tests. Cross-app signed-in runtime acceptance remains a
 separate release gate.
+
+## Canonical path cutover
+
+The operational app moves to `https://tuturuuu.com/meet`. The product landing
+stays at `/products/meet`. The gateway gives the exact `/meet` path and its
+subtree to the Meet Worker ahead of the Web marketing aliases. The Web aliases
+remain the fallback when the mount is withdrawn. English and Vietnamese
+operational URLs are under `/meet` and `/meet/vi`, respectively.
+
+Follow the [cutover procedure](/build/devops/meet-standalone-release#canonical-path-cutover)
+for route admission, 302 and 301 promotion, and rollback.

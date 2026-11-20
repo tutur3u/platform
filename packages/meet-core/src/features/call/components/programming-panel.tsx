@@ -1,4 +1,5 @@
 'use client';
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   checkpointMeetProgramming,
@@ -225,7 +226,9 @@ export function ProgrammingPanel({
             previewUrl={
               previewUrl ??
               ((port) =>
-                `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`)
+                meetBrowserPath(
+                  `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`
+                ))
             }
             execution={{
               run: (payload) => api.run(meetingId, payload),

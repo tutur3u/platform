@@ -39,6 +39,15 @@ import {
 } from './mounted-session-guard';
 
 export type { AssetsBinding } from '../core/assets';
+export { admitMountedMutation } from './csrf-admission';
+export { prefixHtmlAssets } from './html-assets';
+export {
+  isMountedForbiddenCookieName,
+  isMountedLogoutPath,
+  refuseCrossOriginMountedLogout,
+  refuseMountedSessionMinting,
+  stripMountedSessionWrites,
+} from './mounted-session-guard';
 
 export interface BridgeHandlerOptions<Env, Ctx> {
   /** Where this artifact is served; the base is resolved per request. */

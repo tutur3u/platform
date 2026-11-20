@@ -86,3 +86,9 @@ describe('room codes', () => {
     expect(decodeRoomCode(encodeRoomCode(other))).toBe(other);
   });
 });
+
+it('builds a mounted room invitation on the apex', () => {
+  expect(buildJoinUrl('https://tuturuuu.com', MEETING)).toBe(
+    `https://tuturuuu.com/meet/r/${encodeRoomCode(MEETING)}`
+  );
+});

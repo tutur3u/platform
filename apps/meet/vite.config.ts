@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import { startBridgePreset } from '@tuturuuu/start-bridge/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
@@ -11,7 +12,14 @@ const meetRequire = createRequire(import.meta.url);
 
 const local = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 
+const bridge = startBridgePreset({
+  appRoot: import.meta.url,
+  app: 'meet',
+  basePath: '',
+});
+
 export default defineConfig(({ command }) => ({
+  experimental: bridge.experimental,
   plugins: [
     voidPlugin(),
     tanstackStart({

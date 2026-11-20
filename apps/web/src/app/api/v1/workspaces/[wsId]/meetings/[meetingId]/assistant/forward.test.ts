@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   createAppSessionToken: sign,
 }));
 vi.mock('@/lib/meet-app-url', () => ({
-  getMeetAppOrigin: () => 'https://meet.example.test',
+  getMeetServiceOrigin: () => 'https://meet.example.test',
 }));
 
 beforeEach(() => {

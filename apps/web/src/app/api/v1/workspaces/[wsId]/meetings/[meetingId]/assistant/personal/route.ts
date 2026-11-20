@@ -7,7 +7,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { getMeetAppOrigin } from '@/lib/meet-app-url';
+import { getMeetServiceOrigin } from '@/lib/meet-app-url';
 
 type Params = {
   params: Promise<{ meetingId: string; wsId: string }>;
@@ -84,7 +84,7 @@ export async function POST(request: Request, { params }: Params) {
         { status: 413, headers: noStore }
       );
     }
-    const origin = getMeetAppOrigin();
+    const origin = getMeetServiceOrigin();
     const endpoint = new URL(
       `/api/meet-call/${encodeURIComponent(meetingId)}/assistant/personal`,
       origin

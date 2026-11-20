@@ -28,10 +28,14 @@ MobileDeepLink? resolveMobileDeepLink(Uri uri) {
   if (normalizedUri == null) return null;
 
   final host = normalizedUri.host.toLowerCase();
-  final segments = _withoutLocale(_cleanPathSegments(normalizedUri));
+  final path = _cleanPathSegments(normalizedUri);
+  final mountedMeet = host == 'tuturuuu.com' && path.firstOrNull == 'meet';
+  final segments = _withoutLocale(
+    mountedMeet ? path.skip(1).toList(growable: false) : path,
+  );
   final openExternally = _shouldOpenExternally(normalizedUri);
 
-  if (host == 'meet.tuturuuu.com') {
+  if (host == 'meet.tuturuuu.com' || mountedMeet) {
     if (segments.length == 2 &&
         segments.first == 'r' &&
         RegExp(r'^[a-z0-9-]{6,80}$').hasMatch(segments[1])) {

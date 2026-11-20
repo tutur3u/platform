@@ -125,6 +125,9 @@
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/cms.*" />
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/crm.*" />
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/meet.*" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPrefix="/meet/r/" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPrefix="/meet/en/r/" />
+                <data android:scheme="https" android:host="tuturuuu.com" android:pathPrefix="/meet/vi/r/" />
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/timer.*" />
                 <data android:scheme="https" android:host="tuturuuu.com" android:pathPattern="/.*/settings.*" />
             </intent-filter>

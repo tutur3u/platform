@@ -1,13 +1,16 @@
+import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ports = vi.hoisted(() => ({
   start: vi.fn<(request: Request) => Promise<Response>>(),
   proxy: vi.fn(),
-  endpoint: vi.fn(async () => undefined),
+  endpoint: vi.fn<(request: NextRequest) => Promise<Response | undefined>>(
+    async () => undefined
+  ),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
 vi.mock('../proxy', () => ({ proxy: ports.proxy }));
 vi.mock('./api-registry', () => ({ dispatchMeetEndpoint: ports.endpoint }));
@@ -183,4 +186,82 @@ describe('document caching for signed-in responses', () => {
     const bare = await serve(() => new Response('x', { headers: html }));
     expect(bare.headers.get('cache-control')).toBeNull();
   });
+});
+
+it('strips the Meet base only for the asset binding', async () => {
+  const fetch = vi.fn(async (request: Request) => new Response(request.url));
+  const response = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/assets/app.js?cache=1'),
+    { ASSETS: { fetch } },
+    ctx
+  );
+  expect(await response.text()).toBe(
+    'https://tuturuuu.com/assets/app.js?cache=1'
+  );
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it('selects the mounted endpoint with an app-relative path and public origin', async () => {
+  ports.proxy.mockImplementation(async () => NextResponse.next());
+  ports.endpoint.mockImplementationOnce(async (request) => {
+    expect(request.nextUrl.pathname).toBe('/api/build-info');
+    expect(request.nextUrl.basePath).toBe('/meet');
+    expect(request.url).toBe(
+      'https://tuturuuu.com/meet/api/build-info?probe=1'
+    );
+    return Response.json({ app: 'meet' });
+  });
+  const response = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/api/build-info?probe=1'),
+    {},
+    ctx
+  );
+  expect(await response.json()).toEqual({ app: 'meet' });
+});
+
+it('refuses per-app session minting on the apex', async () => {
+  const response = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/api/auth/verify-app-token', {
+      method: 'POST',
+    }),
+    {},
+    ctx
+  );
+  expect(response.status).toBe(409);
+  expect(response.headers.has('set-cookie')).toBe(false);
+});
+
+it('passes the public document URL and the compiled server function URL to Start', async () => {
+  ports.proxy.mockImplementation(async () => NextResponse.next());
+  ports.start.mockImplementation(
+    async (request) =>
+      new Response(`${request.url}|${await request.text()}`, { headers: html })
+  );
+  const page = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/vi/personal/meetings'),
+    {},
+    ctx
+  );
+  expect(await page.text()).toBe(
+    'https://tuturuuu.com/meet/vi/personal/meetings|'
+  );
+  expect(page.headers.get('content-security-policy')).toContain(
+    "'strict-dynamic'"
+  );
+
+  const result = await handleMeetRequest(
+    new Request('https://tuturuuu.com/meet/_meet/functions/example?x=1', {
+      method: 'POST',
+      headers: {
+        Origin: 'https://tuturuuu.com',
+        'content-type': 'application/json',
+      },
+      body: '{"value":1}',
+    }),
+    {},
+    ctx
+  );
+  expect(await result.text()).toBe(
+    'https://tuturuuu.com/_meet/functions/example?x=1|{"value":1}'
+  );
 });

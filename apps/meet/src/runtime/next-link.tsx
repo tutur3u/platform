@@ -1,5 +1,6 @@
 'use client';
 
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { useRouter } from '@tanstack/react-router';
 import { formatUrl } from 'next/dist/shared/lib/router/utils/format-url';
 import type { LinkProps } from 'next/link';
@@ -31,7 +32,7 @@ export default forwardRef<HTMLAnchorElement, Props>(function MeetLink(
     <a
       {...props}
       ref={ref}
-      href={path}
+      href={withAppBase(path)}
       onClick={(event) => {
         onClick?.(event);
         if (
@@ -49,7 +50,7 @@ export default forwardRef<HTMLAnchorElement, Props>(function MeetLink(
           return;
         event.preventDefault();
         void router.navigate({
-          href: path,
+          href: withAppBase(path),
           replace,
           resetScroll: scroll !== false,
         });

@@ -1,3 +1,4 @@
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import 'server-only';
 import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools';
 import { getMeetCallAccess } from '@tuturuuu/meet-core/features/call/lib/call-access';
@@ -121,7 +122,9 @@ async function createFollowupAttempt(
   if (!allowed[name])
     throw new MeetAiError(403, 'Destination permission denied');
   const sourceUrl = manual
-    ? `https://meet.tuturuuu.com/${encodeURIComponent(access.wsId)}/meetings/${encodeURIComponent(access.meetingId)}`
+    ? meetPublicUrl(
+        `/${encodeURIComponent(access.wsId)}/meetings/${encodeURIComponent(access.meetingId)}`
+      )
     : undefined;
   const args = {
     ...payload,

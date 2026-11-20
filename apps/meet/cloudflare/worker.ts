@@ -11,6 +11,7 @@ import {
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
+import { meetRequestBase } from '../src/runtime/app-base';
 import { verifyLiveSession } from '../src/features/live-assistant/token';
 import { configureMeetAbuseGuard } from '../src/runtime/abuse-guard';
 import { handleMeetRequest } from '../src/runtime/handler';
@@ -46,7 +47,8 @@ async function serveMeet(
   ctx: ExecutionContext
 ) {
   const url = new URL(request.url);
-  if (url.pathname === '/_rum' || url.pathname === '/meet/_rum')
+  const path = meetRequestBase(url).strip(url.pathname);
+  if (path === '/_rum')
     return handleAppSwitchBeacon(
       request,
       (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
@@ -60,16 +62,16 @@ async function serveMeet(
         country: readCountry(request),
       }
     );
-  if (url.pathname === '/.well-known/meeting-runtime')
+  if (path === '/.well-known/meeting-runtime')
     return Response.json(
       { version: 1 },
       { headers: { 'Cache-Control': 'no-store' } }
     );
-  if (url.pathname === '/live-connect') {
+  if (path === '/live-connect') {
     if (
       request.method !== 'GET' ||
-      request.headers.get('Origin') !== env.NEXT_PUBLIC_APP_URL ||
-      request.headers.get('Upgrade') !== 'websocket'
+      request.headers.get('Origin') !== url.origin ||
+      request.headers.get('Upgrade')?.toLowerCase() !== 'websocket'
     )
       return new Response('Forbidden', { status: 403 });
     const protocols =

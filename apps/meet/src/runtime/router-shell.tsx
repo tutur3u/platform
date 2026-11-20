@@ -3,13 +3,13 @@ import {
   HeadContent,
   Outlet,
   Scripts,
-  useLocation,
   useMatches,
 } from '@tanstack/react-router';
 import { AppErrorBoundary } from '@tuturuuu/ui/custom/app-error-boundary';
 import { StatusPage } from '@tuturuuu/ui/custom/status-page';
 import type { ReactElement } from 'react';
 import { AppProviders } from './app-providers';
+import { usePathname } from './next-navigation';
 import { readLoadingLabels } from './loading-labels';
 import {
   isRoomPath,
@@ -31,7 +31,7 @@ function selectDocumentLocale(
 }
 
 export function Document(): ReactElement {
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const pathname = usePathname();
   const matchedLocale = useMatches({ select: selectDocumentLocale });
   const locale = matchedLocale ?? (pathname.startsWith('/vi') ? 'vi' : 'en');
   return (
@@ -48,7 +48,7 @@ export function Document(): ReactElement {
 }
 
 export function Pending(): ReactElement {
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const pathname = usePathname();
   if (isRoomPath(pathname))
     return <RoomRouteFeedback pathname={pathname} state="loading" />;
   const labels = readLoadingLabels(pathname);
@@ -81,7 +81,7 @@ export function Pending(): ReactElement {
 
 export function ErrorPage({ error, reset }: ErrorComponentProps) {
   reportMeetSsr(error, 'render-boundary', 'threw');
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const pathname = usePathname();
   if (isRoomPath(pathname))
     return <RoomRouteError pathname={pathname} reset={reset} />;
   return (
@@ -106,7 +106,7 @@ export function ErrorPage({ error, reset }: ErrorComponentProps) {
 }
 
 export function NotFoundPage() {
-  const pathname = useLocation({ select: (location) => location.pathname });
+  const pathname = usePathname();
   return isRoomPath(pathname) ? (
     <RoomRouteFeedback pathname={pathname} state="missing" />
   ) : (

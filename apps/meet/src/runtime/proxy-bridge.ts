@@ -1,4 +1,8 @@
-import { NextRequest } from 'next/dist/server/web/spec-extension/request';
+import {
+  forwardedRequestInit,
+  toNextRequest,
+} from '@tuturuuu/start-bridge/proxy-bridge';
+import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
 import type { NextResponse } from 'next/dist/server/web/spec-extension/response';
 import { type MeetRequestContext, withMeetRequest } from './request-context';
 
@@ -24,20 +28,26 @@ export async function dispatchThroughMeetProxy({
   waitUntil,
   cloudflare,
   observeLoginNavigation,
+  basePath = '',
+  nonce,
 }: {
   request: Request;
+  basePath?: string;
+  nonce?: string;
   proxy: Proxy;
   dispatch: Dispatch;
   waitUntil: (work: Promise<unknown>) => void;
   cloudflare?: MeetRequestContext['cloudflare'];
   observeLoginNavigation?: MeetRequestContext['observeLoginNavigation'];
 }) {
-  const initial = new NextRequest(request);
+  const initial = toNextRequest(request, undefined, basePath);
   const responseHeaders = new Headers();
   return withMeetRequest(
     {
       request: initial,
       responseHeaders,
+      basePath,
+      nonce,
       waitUntil,
       cloudflare,
       observeLoginNavigation,
@@ -77,14 +87,17 @@ export async function dispatchThroughMeetProxy({
         : new URL(initial.url);
       if (destination.origin !== initial.nextUrl.origin)
         throw new Error('Unexpected external Meet middleware rewrite');
-      const next = new NextRequest(
+      const next = toNextRequest(
         destination,
-        new Request(initial, { headers: forwarded })
+        forwardedRequestInit(initial, forwarded),
+        basePath
       );
       const result = await withMeetRequest(
         {
           request: next,
           responseHeaders,
+          basePath,
+          nonce,
           waitUntil,
           cloudflare,
           observeLoginNavigation,

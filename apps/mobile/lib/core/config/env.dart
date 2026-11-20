@@ -21,6 +21,22 @@ class Env {
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
   );
 
+  static const meetPublicBaseUrl = String.fromEnvironment(
+    'MEET_PUBLIC_BASE_URL',
+    defaultValue: 'https://tuturuuu.com/meet',
+  );
+
+  static Uri meetPublicUrl(List<String> path, {Map<String, String>? query}) {
+    final base = Uri.parse(meetPublicBaseUrl);
+    return base.replace(
+      pathSegments: [
+        ...base.pathSegments.where((part) => part.isNotEmpty),
+        ...path,
+      ],
+      queryParameters: query,
+    );
+  }
+
   static const meetEditorBaseUrl = String.fromEnvironment(
     'MEET_EDITOR_BASE_URL',
     defaultValue: 'https://meet.tuturuuu.com',

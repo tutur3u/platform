@@ -15,10 +15,17 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
+  withRequestBasePath,
 } from '@tuturuuu/auth/proxy';
+import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
+import {
+  forwardedRequestInit,
+  toNextRequest,
+} from '@tuturuuu/start-bridge/proxy-bridge';
+import { MEET_CANONICAL_ORIGIN } from '@tuturuuu/utils/meet-url';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import {
   BASE_URL,
@@ -76,6 +83,15 @@ function isPublicLegacyPlanPath(pathname: string) {
   );
 }
 
+function isPublicMeetPath(pathname: string) {
+  return (
+    isPublicLegacyPlanPath(pathname) ||
+    !!normalizeMeetInvite(pathname) ||
+    (pathname.endsWith('/preview') &&
+      !!normalizeMeetInvite(pathname.slice(0, -8)))
+  );
+}
+
 function isRootPathOrLocaleRoot(pathname: string) {
   const segments = getPathSegments(pathname);
   return (
@@ -115,7 +131,11 @@ function withDirectVerifyTarget(req: NextRequest) {
     'nextUrl',
     `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`
   );
-  return new NextRequest(url, req);
+  return toNextRequest(
+    url,
+    forwardedRequestInit(req, req.headers),
+    req.nextUrl.basePath
+  );
 }
 
 // Create the centralized auth middleware
@@ -128,11 +148,7 @@ const authProxy = createCentralizedAuthProxy({
   publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,
-  isPublicPath: (pathname) =>
-    isPublicLegacyPlanPath(pathname) ||
-    !!normalizeMeetInvite(pathname) ||
-    (pathname.endsWith('/preview') &&
-      !!normalizeMeetInvite(pathname.slice(0, -8))),
+  isPublicPath: isPublicMeetPath,
   mfa: { enabled: false },
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
@@ -180,6 +196,9 @@ function sessionRedirect(url: URL): NextResponse {
 }
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = Boolean(req.nextUrl.basePath);
+  const clearRootCookies = (response: NextResponse) =>
+    mounted ? response : clearSupabaseAuthCookies(req, response);
   // Launcher workspace context is implicit. Explicit Meet workspace links and
   // room/plan invitations retain their destinations.
   const entry = getPathSegmentsWithoutLocale(req.nextUrl.pathname);
@@ -208,7 +227,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const legacyPath = getLegacyPathRedirect(req.nextUrl.pathname);
   if (legacyPath) {
     return NextResponse.redirect(
-      new URL(`${legacyPath}${req.nextUrl.search}`, req.nextUrl),
+      new URL(
+        withRequestBasePath(req, `${legacyPath}${req.nextUrl.search}`),
+        req.nextUrl
+      ),
       308
     );
   }
@@ -226,19 +248,20 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const isPublicBuildInfo =
       req.method === 'GET' && req.nextUrl.pathname === '/api/build-info';
     const appSessionRefresh =
-      isLocalAuthApi || isPublicBuildInfo
+      isLocalAuthApi ||
+      isPublicBuildInfo ||
+      (mounted && !hasSupportedSupabaseAuthCookie(req))
         ? null
         : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
+            sessionMode: mounted ? 'supabase-only' : 'supabase-first',
             targetApp: 'meet',
           });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return appSessionFailureResponse(
-        req,
-        appSessionRefresh.error,
-        appSessionRefresh.response
-      );
+      const failure = mounted
+        ? mountedSessionFailureResponse
+        : appSessionFailureResponse;
+      return failure(req, appSessionRefresh.error, appSessionRefresh.response);
     }
 
     const guardResponse = await guardApiProxyRequest(req, {
@@ -251,14 +274,12 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       return preserveMfaRecoveryCookies(req, guardResponse);
     }
 
-    return (
-      appSessionRefresh?.response ??
-      clearSupabaseAuthCookies(req, NextResponse.next())
-    );
+    return appSessionRefresh?.response ?? clearRootCookies(NextResponse.next());
   }
 
   if (
     (req.method === 'GET' || req.method === 'HEAD') &&
+    !mounted &&
     PUBLIC_PATHS.includes(req.nextUrl.pathname) &&
     !req.nextUrl.searchParams.has('token')
   ) {
@@ -267,14 +288,75 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 
   const verifyTokenResponse = await consumeVerifyTokenRequest(
     withDirectVerifyTarget(req),
-    { locales: supportedLocales }
+    {
+      locales: supportedLocales,
+      ...(mounted && {
+        mountedSession: {
+          mode: 'supabase-only',
+          nextUrlScope: 'app-relative',
+          targetApp: 'meet',
+          webAppUrl: MEET_CANONICAL_ORIGIN,
+        },
+      }),
+    }
   );
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const mountedSession =
+    mounted && hasSupportedSupabaseAuthCookie(req)
+      ? await refreshAppSessionForRequest(req, {
+          sessionMode: 'supabase-only',
+          targetApp: 'meet',
+        })
+      : null;
+  if (
+    mountedSession &&
+    !mountedSession.ok &&
+    mountedSession.error !== 'Shared session unavailable'
+  ) {
+    return mountedSessionFailureResponse(
+      req,
+      mountedSession.error,
+      mountedSession.response
+    );
+  }
+  const pathname = req.nextUrl.pathname;
+  const mountedLogin =
+    mounted && getPathSegmentsWithoutLocale(pathname).join('/') === 'login';
+  const mountedPublic =
+    isRootPathOrLocaleRoot(pathname) ||
+    AUTH_PUBLIC_PATHS.includes(pathname) ||
+    isPublicMeetPath(pathname);
+  if (mounted && (mountedLogin || (!mountedPublic && !mountedSession?.ok))) {
+    const next = mountedLogin
+      ? (req.nextUrl.searchParams.get('next') ??
+        req.nextUrl.searchParams.get('nextUrl'))
+      : `${pathname}${req.nextUrl.search}`;
+    const path = normalizeAuthRedirectPath(next, MEET_CANONICAL_ORIGIN, '/');
+    if (mountedSession?.ok && req.nextUrl.searchParams.get('refresh') !== '1') {
+      const response = sessionRedirect(
+        new URL(withRequestBasePath(req, path), MEET_CANONICAL_ORIGIN)
+      );
+      propagateAuthCookies(mountedSession.response, response);
+      return response;
+    }
+    const verify = new URL(
+      withRequestBasePath(req, '/verify-token'),
+      MEET_CANONICAL_ORIGIN
+    );
+    verify.searchParams.set('nextUrl', path);
+    const login = new URL('/login', MEET_CANONICAL_ORIGIN);
+    login.searchParams.set('returnUrl', verify.toString());
+    return rememberMeetInvite(req, sessionRedirect(login));
+  }
+  const authRes = mounted
+    ? mountedSession?.ok
+      ? mountedSession.response
+      : NextResponse.next()
+    : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it
@@ -289,8 +371,9 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   });
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
   const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
-  const hasSatelliteSession =
-    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
+  const hasSatelliteSession = mounted
+    ? mountedSession?.ok
+    : hasSupabaseSession || Boolean(appSession && hasWebAppSession);
   const pathSegments = getPathSegments(req.nextUrl.pathname);
   const loginSegmentIndex = isLocaleSegment(pathSegments[0]) ? 1 : 0;
   const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
@@ -302,9 +385,8 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.origin,
       '/'
     );
-    const loginRedirect = clearSupabaseAuthCookies(
-      req,
-      sessionRedirect(new URL(nextPath, req.nextUrl))
+    const loginRedirect = clearRootCookies(
+      sessionRedirect(new URL(withRequestBasePath(req, nextPath), req.nextUrl))
     );
     propagateAuthCookies(authRes, loginRedirect);
     return loginRedirect;
@@ -317,7 +399,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     isRootPathOrLocaleRoot(req.nextUrl.pathname)
   ) {
     const response = clearMeetInvite(
-      sessionRedirect(new URL(pendingInvite, req.nextUrl))
+      sessionRedirect(
+        new URL(withRequestBasePath(req, pendingInvite), req.nextUrl)
+      ),
+      req.nextUrl.basePath
     );
     propagateAuthCookies(authRes, response);
     return response;
@@ -327,7 +412,10 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     const locale = getPathSegments(req.nextUrl.pathname)[0];
     const wsRedirect = sessionRedirect(
       new URL(
-        `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`,
+        withRequestBasePath(
+          req,
+          `${isLocaleSegment(locale) ? `/${locale}` : ''}/personal/meetings`
+        ),
         req.nextUrl
       )
     );
@@ -339,7 +427,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const localeRes = handleLocale({ req });
   propagateAuthCookies(authRes, localeRes);
   if (hasSatelliteSession && normalizeMeetInvite(req.nextUrl.pathname))
-    clearMeetInvite(localeRes);
+    clearMeetInvite(localeRes, req.nextUrl.basePath);
   if (!hasSatelliteSession) rememberMeetInvite(req, localeRes);
   return localeRes;
 }

@@ -66,3 +66,82 @@ it.each([
     );
   }
 );
+
+const ctx = {} as ExecutionContext;
+const meetEnv = (mode: string, status = '302') =>
+  ({
+    TTR_ONE_ORIGIN_MEET: mode,
+    TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS: status,
+    NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
+  }) as unknown as CloudflareEnv;
+
+it.each([302, 301])(
+  'uses rollout status %i and preserves encoded paths and queries',
+  async (status) => {
+    const request = new Request(
+      'https://meet.tuturuuu.com/vi/plans/a%2Fb/?tag=1&tag=2&space=a+b',
+      {
+        headers: { 'Sec-Fetch-Mode': 'navigate' },
+      }
+    );
+    const response = await worker.fetch(
+      request,
+      meetEnv('on', String(status)),
+      ctx
+    );
+    expect(response.status).toBe(status);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/meet/vi/plans/a%2Fb/?tag=1&tag=2&space=a+b'
+    );
+    if (status === 302)
+      expect(response.headers.get('cache-control')).toBe('no-store');
+  }
+);
+
+it.each([
+  '/api/auth/verify-app-token',
+  '/.well-known/meeting-runtime',
+  '/vi/verify-token',
+  '/vi/native-collaboration',
+  '/assets/current.js',
+  '/meet-live-processor.js',
+])('keeps legacy machine traffic on %s', async (path) => {
+  const response = await worker.fetch(
+    new Request(`https://meet.tuturuuu.com${path}`, {
+      headers: { Accept: 'text/html' },
+    }),
+    meetEnv('on'),
+    ctx
+  );
+  expect(response.status).toBe(200);
+  expect(response.headers.has('location')).toBe(false);
+});
+
+it('allows a noindex apex shadow and refuses it when disabled', async () => {
+  const request = new Request('https://tuturuuu.com/meet/vi/r/test');
+  expect((await worker.fetch(request, meetEnv('off'), ctx)).status).toBe(404);
+  const response = await worker.fetch(request, meetEnv('shadow'), ctx);
+  expect(response.status).toBe(200);
+  expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
+});
+
+it.each([
+  ['https://tuturuuu.com/meet/live-connect', 'https://tuturuuu.com', 400],
+  ['https://meet.tuturuuu.com/live-connect', 'https://meet.tuturuuu.com', 400],
+  ['https://tuturuuu.com/meet/live-connect', 'https://meet.tuturuuu.com', 403],
+  [
+    'https://tuturuuu.com/meet/live-connect',
+    'https://tuturuuu.com.evil.test',
+    403,
+  ],
+])(
+  'admits only the serving origin to the live socket at %s from %s',
+  async (url, origin, status) => {
+    const request = new Request(url, {
+      headers: { Upgrade: 'websocket', Origin: origin },
+    });
+    const response = await worker.fetch(request, meetEnv('on'), ctx);
+    expect(response.status).toBe(status);
+    expect(response.headers.has('location')).toBe(false);
+  }
+);

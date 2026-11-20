@@ -1,5 +1,7 @@
 import { MeetPlanLiveRoot } from '@tuturuuu/ui/legacy/meet/planId/meet-plan-live-root';
+import { isAppMounted } from '@tuturuuu/utils/app-mounts';
 import { BASE_URL } from '../constants/common';
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import type { MeetPageModel } from './page-model.server';
 import { PublicLayout } from './public-layout';
 
@@ -14,7 +16,7 @@ export default function PlanLiveView({
       <div className="flex min-h-screen w-full flex-col items-center">
         <MeetPlanLiveRoot
           platformUser={model.profile}
-          baseUrl={BASE_URL}
+          baseUrl={isAppMounted('meet') ? meetPublicUrl() : BASE_URL}
           initialSnapshot={model.snapshot}
         />
       </div>

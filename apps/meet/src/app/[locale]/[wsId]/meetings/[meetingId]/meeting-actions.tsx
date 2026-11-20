@@ -1,5 +1,6 @@
 'use client';
 
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Share2, Square } from '@tuturuuu/icons';
 import {
@@ -87,7 +88,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   };
 
   const handleShareMeeting = () => {
-    const shareUrl = `${window.location.origin}/${wsId}/meetings/${meetingId}`;
+    const shareUrl = meetPublicUrl(`/${wsId}/meetings/${meetingId}`);
     setShareLink(shareUrl);
     setShareDialogOpen(true);
   };

@@ -25,8 +25,8 @@ const ports = vi.hoisted(() => ({
     return undefined;
   }),
 }));
-vi.mock('@tanstack/react-start/server-entry', () => ({
-  default: { fetch: ports.start },
+vi.mock('@tuturuuu/start-bridge/start/server-entry', () => ({
+  createBridgeStartHandler: () => ({ fetch: ports.start }),
 }));
 vi.mock('./proxy-bridge', () => ({ dispatchThroughMeetProxy: ports.proxy }));
 vi.mock('../proxy', () => ({ proxy: ports.unusedProxy }));

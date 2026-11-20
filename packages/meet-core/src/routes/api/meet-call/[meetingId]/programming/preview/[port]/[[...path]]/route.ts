@@ -1,6 +1,7 @@
 import { previewMeetingPlayground } from '@tuturuuu/meet-core/features/call/server/programming';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { playgroundCapabilityResponse } from '@tuturuuu/storage-core/playground-preview';
+import { meetPathForRequest } from '@tuturuuu/utils/meet-url';
 import { connection } from 'next/server';
 export async function GET(
   request: Request,
@@ -10,12 +11,16 @@ export async function GET(
 ) {
   await connection();
   const { meetingId, port, path = [] } = await params;
+  const prefix = meetPathForRequest(
+    `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`,
+    request.url
+  );
   const capability = await playgroundCapabilityResponse({
     request,
     roomId: meetingId,
     port: Number(port),
     path,
-    prefix: `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`,
+    prefix,
   });
   if (capability) return capability;
   return roomRoute(request, meetingId, (access) =>
@@ -23,7 +28,7 @@ export async function GET(
       access,
       Number(port),
       `/${path.map(encodeURIComponent).join('/')}${new URL(request.url).search}`,
-      `/api/meet-call/${encodeURIComponent(meetingId)}/programming/preview/${port}/`
+      prefix
     )
   );
 }

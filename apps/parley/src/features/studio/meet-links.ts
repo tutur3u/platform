@@ -1,8 +1,12 @@
+import { isAppMounted } from '@tuturuuu/utils/app-mounts';
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 
 /** Always targets Meet, even when the shared runtime's BASE_URL targets Parley. */
 export function meetReviewUrl(wsId: string, meetingId: string) {
+  const path = `/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`;
+  if (isAppMounted('meet')) return meetPublicUrl(path);
   const origin = resolveInternalAppUrl({
     appName: 'meet',
     candidates: [
@@ -14,5 +18,5 @@ export function meetReviewUrl(wsId: string, meetingId: string) {
         ? 'https://meet.tuturuuu.com'
         : getLocalInternalAppUrl('meet', 'http://localhost:7807'),
   });
-  return `${origin}/${encodeURIComponent(wsId)}/meetings/${encodeURIComponent(meetingId)}`;
+  return `${origin}${path}`;
 }

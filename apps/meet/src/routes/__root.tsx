@@ -1,9 +1,11 @@
 import { createRootRoute } from '@tanstack/react-router';
+import { appBaseHeadScript } from '@tuturuuu/start-bridge/start/base-path';
 import { Document, ErrorPage, NotFoundPage } from '../runtime/router-shell';
 
 export const Route = createRootRoute({
   errorComponent: ErrorPage,
   head: () => ({
+    scripts: [appBaseHeadScript(undefined, globalThis.__meetCspNonce?.())],
     meta: [
       { charSet: 'utf-8' },
       {

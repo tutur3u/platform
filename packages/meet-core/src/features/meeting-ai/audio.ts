@@ -1,3 +1,5 @@
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
+
 export function hasMeetSpeech(samples: Float32Array, threshold = 0.000001) {
   if (!Number.isFinite(threshold) || threshold < 0)
     throw new RangeError('Invalid Meet voice energy threshold');
@@ -79,7 +81,9 @@ export class MeetAudioCapture {
     this.context = context;
     if (context.sampleRate !== 16000)
       throw new Error('Unsupported audio sample rate');
-    await context.audioWorklet.addModule('/meet-audio-processor.js');
+    await context.audioWorklet.addModule(
+      meetBrowserPath('/meet-audio-processor.js')
+    );
     this.silent = context.createGain();
     this.silent.gain.value = 0;
     this.silent.connect(context.destination);

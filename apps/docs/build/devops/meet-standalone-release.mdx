@@ -105,3 +105,150 @@ login, logout and realtime connection. Do not use another person's signed-in
 session for destructive account actions. Missing test custody is blocked/not run,
 not a product failure. Capture signed-in navigation and request timings using the
 [Meet loading contract](/platform/applications/meet#signed-in-list-loading).
+
+## Canonical path cutover
+
+Mount the qualified Meet Worker on `tuturuuu.com/meet` before redirecting legacy
+document traffic.
+
+### Prepare the cutover
+
+1. Qualify the exact integrated commit with Meet's restored Worker artifact
+   checks, the gateway Build Output checks, affected Web and mobile checks,
+   and independent review of the mounted session, CSRF, CSP and Trusted Types.
+   Use the [same-origin security gate](/platform/architecture/one-origin-security)
+   before admitting public apex traffic. Verify the production guest Turnstile
+   widget lists both `tuturuuu.com` and `meet.tuturuuu.com`. Retain both hostnames
+   through rollback. Apply the same narrowly scoped Meet audio-upload WAF
+   exception on the apex only if its predicate is verified for the mounted
+   route. Match the exact host, POST, multipart content type and
+   `/meet/api/meet-ai/*/*/chunks`.
+2. Capture the current 100% version IDs and their binding inventories. Observe
+   the serving version again immediately before each traffic change.
+
+   ```sh
+   cf workers deployments list --worker tuturuuu-meet
+   cf workers deployments list --worker tuturuuu-meet-realtime
+   cf workers deployments list --worker tuturuuu-gateway
+   cf workers versions get "$OLD_MEET" --worker-id tuturuuu-meet
+   cf workers versions get "$OLD_REALTIME" --worker-id tuturuuu-meet-realtime
+   cf workers versions get "$OLD_GATEWAY" --worker-id tuturuuu-gateway
+   ```
+
+3. Use credential-free, exact-source cf Build Output for each Worker version.
+   The Meet workflow seals Void output. Meet's cf publisher must qualify that
+   output with the existing Asset, service, R2, Images and SQLite Durable Object
+   bindings, original migration tag, and module inventory before using it
+   here. See [cf publication parity](/build/development-tools/cf-cli-wrangler-parity).
+   The gateway starts from the qualified gateway output with the captured
+   serving bindings merged. Preserve the other mount entries, services and
+   origin settings. Stage these variants in separate artifact directories.
+
+   | Variant | Binding change |
+   | --- | --- |
+   | Meet shadow | `TTR_ONE_ORIGIN_MEET=shadow` |
+   | Gateway mount | Add `MOUNT_MEET → tuturuuu-meet` and append `/meet,/meet/*` to `GATEWAY_MOUNTED_PATHS` |
+   | Meet temporary | `TTR_ONE_ORIGIN_MEET=on`, `TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=302` |
+   | Meet permanent | Same as temporary with `TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=301` |
+
+   Preserve the existing apex gateway route and Meet custom domain. The
+   redirects run in Meet's existing Worker. A realtime deployment is required
+   only if the separately qualified release changes that Worker.
+
+   Run these from each approved artifact directory. Record the version ID
+   returned by the upload and read back its bindings before assigning traffic.
+
+   ```sh
+   cf workers versions create --prebuilt --mode production --dry-run --worker "$WORKER"
+   cf workers versions create --prebuilt --mode production --worker "$WORKER" --message "$SOURCE_SHA"
+   cf workers versions get "$VERSION" --worker-id "$WORKER"
+   cf workers deployments create --worker "$WORKER" --strategy percentage \
+     --versions "[{\"version_id\":\"$VERSION\",\"percentage\":100}]"
+   cf workers deployments list --worker "$WORKER"
+   ```
+
+### Promote and verify
+
+1. Deploy the Meet shadow version and verify old-host build identity before
+   assigning traffic to the gateway version with the mount. Append `meet` to
+   `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` in the serving Web auth and shared
+   link producers, including Mail and Meet's client build. Preserve other app
+   entries. Keep mobile publishing after the apex smoke because its new share
+   links default to the apex. The native collaboration WebView keeps the old
+   host during the cutover.
+2. Probe both frontend build-info URLs. Require HTTP 200, `app: meet`, the
+   exact `commitHash`, production identity fields, `Cache-Control: no-store`,
+   and `X-Gateway-Cache: MOUNT` on the apex response. Capture the response
+   headers and serving version IDs together. Check the bare path, the
+   Vietnamese landing, route links, fingerprinted assets and fonts, and a
+   server function requested by browser navigation. Compare cache headers on
+   static assets and on a signed-in response.
+
+   ```sh
+   curl --fail --silent --show-error --dump-header - \
+     'https://tuturuuu.com/meet/api/build-info'
+   curl --fail --silent --show-error --dump-header - \
+     'https://meet.tuturuuu.com/api/build-info'
+   curl --fail --silent --show-error 'https://meet-realtime.tuturuuu.com/health'
+   ```
+
+3. With approved disposable identities, open a protected meeting link from a
+   signed-out browser and complete Web login. Expect the exact mounted room or
+   list URL, shared session, and no per-app session cookies at the apex. Check
+   that a user from a different workspace cannot open a protected record.
+   In a disposable room, join two clients with microphone and camera. Verify
+   the join-token request, signaling upgrade, two-way SFU media, chat and
+   reconnection. Exercise the authorized live-assistant socket if enabled.
+   From another fresh browser, complete guest Turnstile and verify the guest
+   receives and can use the room credential. Exercise guest leave and global
+   sign-out separately. Preserve the `__Host-meet-guest` cookie's host-only
+   rules, including its required root path. Meet's pending-invite cookie is
+   scoped to `/meet` on the apex.
+4. Promote the temporary version. Check the old root and encoded nested paths
+   with duplicate query parameters, and check that the apex does not loop.
+
+   ```sh
+   curl --silent --show-error --dump-header - --output /dev/null \
+     -H 'Accept: text/html' \
+     'https://meet.tuturuuu.com/vi/plans/a%2Fb/?tag=1&tag=2'
+   ```
+
+   Expect a 302 with `Cache-Control: no-store` and location
+   `https://tuturuuu.com/meet/vi/plans/a%2Fb/?tag=1&tag=2`. Recheck signed-in
+   and guest join plus legacy machine traffic. Promote the permanent version
+   only after acceptance and the rollback window agree with the captured
+   release packet. Repeat the probe and require 301.
+
+### Legacy traffic and rollback
+
+The old host continues to serve WebSocket upgrades, non-document requests,
+assets and worklets, `/api/*` (including automation and auth callbacks),
+`/.well-known/*` (including the Parley runtime probe), `/_meet/*`,
+`/_rum`, `/_next/*`, and localized or unlocalized `/verify-token` and
+`/native-collaboration`. Existing sockets keep their connections.
+`meet-realtime.tuturuuu.com` continues to serve signed-token room signaling,
+channels, and collaboration for both frontend origins. Existing mobile links
+can still resolve their original room, and Web's `/personal/meet?room=…`
+mobile entry remains available.
+
+Rollback starts by assigning 100% traffic to the captured Meet version or
+the qualified shadow version to stop new redirects. Restore the captured
+gateway version to withdraw `/meet` and `/meet/*`. Remove only `meet` from the
+Web auth and link-producer mount lists and restore their prior serving builds
+as needed. Restore realtime only if its version changed during this release.
+
+```sh
+cf workers deployments create --worker tuturuuu-meet --strategy percentage \
+  --versions "[{\"version_id\":\"$OLD_MEET\",\"percentage\":100}]"
+cf workers deployments create --worker tuturuuu-gateway --strategy percentage \
+  --versions "[{\"version_id\":\"$OLD_GATEWAY\",\"percentage\":100}]"
+cf workers deployments list --worker tuturuuu-meet
+cf workers deployments list --worker tuturuuu-gateway
+```
+
+After a 301, browsers can retain the apex destination. If the failure allows
+it, keep the qualified shadow version and gateway mount available to those
+clients while restoring legacy navigation. If apex ingress must be stopped,
+restore the previous gateway version immediately after disabling redirects.
+Verify old-host identity, signed-in join and the realtime/SFU smoke after
+rollback.

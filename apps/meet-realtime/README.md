@@ -11,7 +11,9 @@ internal machine, Docker server or Cloudflare Tunnel is required. The Bun
 transport remains only for local protocol development and synthetic tests.
 
 Canonical WebSocket endpoint: `wss://meet-realtime.tuturuuu.com/realtime`.
-The frontend runs on the separate `tuturuuu-meet` Worker at `meet.tuturuuu.com`.
+The frontend runs on the separate `tuturuuu-meet` Worker. The
+[Meet cutover runbook](../docs/platform/applications/meet.mdx#canonical-path-cutover)
+mounts it at `tuturuuu.com/meet` while the legacy hostname serves machine traffic.
 
 ## Configuration
 

@@ -1,3 +1,4 @@
+import { meetPathForRequest } from '@tuturuuu/utils/meet-url';
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { readBoundedFormData } from '@tuturuuu/meet-core/features/call/server/read-upload';
 import {
@@ -101,7 +102,10 @@ export async function GET(request: Request, { params }: Params) {
       storageWsId: undefined,
       // Authorize again and mint a fresh signed URL when opened, including after
       // a long call. No polling or changing a playing video's source is needed.
-      url: `/api/meet-call/${encodeURIComponent(meetingId)}/files?id=${encodeURIComponent(id!)}&download=1`,
+      url: meetPathForRequest(
+        `/api/meet-call/${encodeURIComponent(meetingId)}/files?id=${encodeURIComponent(id!)}&download=1`,
+        request.url
+      ),
     };
   });
 }

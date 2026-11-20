@@ -1,3 +1,4 @@
+import { meetPublicUrl } from '@tuturuuu/utils/meet-url';
 import { ArrowUpRight, Code2 } from '@tuturuuu/icons/lucide';
 import Image from 'next/image';
 import type messages from '../../../messages/en.json';
@@ -108,7 +109,7 @@ export function Portfolio({
                 <h3>{t.meetTitle}</h3>
                 <p>{t.meetBody}</p>
                 <div className={styles.caseLinks}>
-                  <a href="https://meet.tuturuuu.com">
+                  <a href={meetPublicUrl()}>
                     {t.openProduct}
                     <ArrowUpRight size={16} />
                   </a>

@@ -1,4 +1,5 @@
 'use client';
+import { meetBrowserPath } from '@tuturuuu/utils/meet-url';
 import {
   controlMeetLive,
   type MeetLiveVoice,
@@ -155,7 +156,10 @@ export function useLiveAssistant(
   const connect = async (token: string) => {
     const current = active.current;
     if (!current || current.stopped) return;
-    const url = new URL('/live-connect', window.location.origin);
+    const url = new URL(
+      meetBrowserPath('/live-connect'),
+      window.location.origin
+    );
     url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
     const socket = new WebSocket(url, ['meet-live', `auth.${token}`]);
     current.socket = socket;

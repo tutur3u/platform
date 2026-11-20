@@ -9,6 +9,7 @@ export function MeetThemeProvider({
   children,
   ...props
 }: ComponentProps<typeof ThemeProvider>) {
+  const nonce = props.nonce ?? globalThis.__meetCspNonce?.();
   return (
     <ThemeProvider
       {...props}
@@ -18,12 +19,12 @@ export function MeetThemeProvider({
         {...props.scriptProps}
         type="text/javascript"
         data-cfasync="false"
-        nonce={props.nonce}
+        nonce={nonce}
         suppressHydrationWarning
         // eslint-disable-next-line react/no-danger -- meetThemeBootstrap JSON-encodes and HTML-escapes its configuration.
         dangerouslySetInnerHTML={{ __html: meetThemeBootstrap(props) }}
       />
-      <SorbetPrePaintScript nonce={props.nonce} />
+      <SorbetPrePaintScript nonce={nonce} />
       {children}
     </ThemeProvider>
   );

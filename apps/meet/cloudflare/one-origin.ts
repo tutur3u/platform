@@ -1,23 +1,45 @@
 import {
+  MEET_BASE_PATH,
+  MEET_CANONICAL_ORIGIN,
+  MEET_LEGACY_ORIGIN,
+} from '@tuturuuu/utils/meet-url';
+import {
   type OneOriginConfig,
   readOneOriginEnv,
 } from '@tuturuuu/utils/one-origin-routing';
 
-/**
- * Meet's shared-origin mount (`tuturuuu.com/meet`). `basePathReady` stays
- * false until the Start bridge build routes under `/meet`; until then the
- * shared origin is refused and the subdomain is served unchanged.
- */
+// The same artifact serves the custom domain and the apex mount.
+import { publicAssets } from '../src/runtime/public-assets';
+
 export function meetOneOriginConfig(env: object): OneOriginConfig {
   const vars = env as Record<string, unknown>;
   const text = (name: string, fallback: string) =>
     typeof vars[name] === 'string' ? (vars[name] as string) : fallback;
+  const state = readOneOriginEnv(vars, 'meet');
   return {
-    basePath: '/meet',
-    sharedOrigin: text('NEXT_PUBLIC_WEB_APP_URL', 'https://tuturuuu.com'),
-    subdomainOrigin: text('NEXT_PUBLIC_APP_URL', 'https://meet.tuturuuu.com'),
-    basePathReady: false,
-    machinePathPrefixes: ['/live-connect', '/_meet', '/_rum'],
-    ...readOneOriginEnv(vars, 'meet'),
+    basePath: MEET_BASE_PATH,
+    sharedOrigin: MEET_CANONICAL_ORIGIN,
+    subdomainOrigin: text('NEXT_PUBLIC_APP_URL', MEET_LEGACY_ORIGIN),
+    basePathReady: true,
+    machinePathPrefixes: [
+      '/live-connect',
+      '/realtime',
+      '/_meet',
+      '/_rum',
+      '/_next',
+      '/native-collaboration',
+      '/en/native-collaboration',
+      '/vi/native-collaboration',
+      '/verify-token',
+      '/en/verify-token',
+      '/vi/verify-token',
+    ],
+    machinePaths: publicAssets,
+    preserveTrailingSlash: true,
+    ...state,
+    redirectStatus:
+      vars.TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS === '302'
+        ? 302
+        : state.redirectStatus,
   };
 }

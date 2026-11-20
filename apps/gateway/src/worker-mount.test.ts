@@ -411,3 +411,65 @@ describe('LMS cutover', () => {
     expect(result.status).toBe(200);
   });
 });
+
+describe('Meet mount', () => {
+  it.each([
+    '/meet',
+    '/meet/vi/r/a%2Fb',
+    '/meet/assets/app-abc.js',
+    '/meet/api/build-info',
+    '/meet/_meet/functions/test',
+  ])('dispatches %s to Meet with its original URL', async (path) => {
+    const { handle } = handler();
+    const fetch = vi.fn(async (_request: Request) => new Response('meet'));
+    const env = {
+      ...ENV,
+      GATEWAY_MOUNTED_PATHS: '/meet,/meet/*',
+      MOUNT_MEET: { fetch },
+    };
+    const url = `https://tuturuuu.com${path}?tag=1&tag=2`;
+    const response = await handle(new Request(url), env);
+    expect(response.headers.get('x-gateway-cache')).toBe('MOUNT');
+    expect(fetch.mock.calls[0]?.[0].url).toBe(url);
+  });
+
+  it('preserves the upstream upgrade and its origin', async () => {
+    const { handle } = handler();
+    // The Node Response constructor cannot create a Workers socket response.
+    const upgrade = Object.assign(new Response(), { webSocket: {} });
+    Object.defineProperty(upgrade, 'status', { value: 101 });
+    const fetch = vi.fn(async (_request: Request) => upgrade);
+    const env = {
+      ...ENV,
+      GATEWAY_MOUNTED_PATHS: '/meet,/meet/*',
+      MOUNT_MEET: { fetch },
+    };
+    const request = new Request('https://tuturuuu.com/meet/live-connect', {
+      headers: { Upgrade: 'websocket', Origin: 'https://tuturuuu.com' },
+    });
+    expect(await handle(request, env)).toBe(upgrade);
+    expect(fetch).toHaveBeenCalledWith(request);
+  });
+
+  it('leaves lookalike and disabled paths with Web', async () => {
+    const { handle } = handler();
+    const fetch = vi.fn(async () => new Response('meet'));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('web'))
+    );
+    const env = { ...ENV, MOUNT_MEET: { fetch } };
+    expect(
+      await (await handle(new Request('https://tuturuuu.com/meet'), env)).text()
+    ).toBe('web');
+    expect(
+      await (
+        await handle(new Request('https://tuturuuu.com/meet-together'), {
+          ...env,
+          GATEWAY_MOUNTED_PATHS: '/meet,/meet/*',
+        })
+      ).text()
+    ).toBe('web');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});

@@ -17,7 +17,7 @@
  * redirect. Anything else is `off`. */
 export type OneOriginMode = 'off' | 'shadow' | 'on';
 
-export type OneOriginRedirectStatus = 301 | 307;
+export type OneOriginRedirectStatus = 301 | 302 | 307;
 
 export interface OneOriginConfig {
   /** Mount path on the shared origin, e.g. `/meet`. */
@@ -41,6 +41,8 @@ export interface OneOriginConfig {
    * included.
    */
   machinePathPrefixes?: readonly string[];
+  machinePaths?: ReadonlySet<string>;
+  preserveTrailingSlash?: boolean;
 }
 
 export type OneOriginDecision =
@@ -119,26 +121,28 @@ export function decideOneOriginRequest(
 
   // The subdomain serves the app at its root, so its path is the app path.
   const appPath = url.pathname;
-  const machine = [
-    ...ALWAYS_MACHINE_PREFIXES,
-    ...(config.machinePathPrefixes ?? []),
-  ].some((prefix) => hasPrefix(appPath, prefix));
+  const machine =
+    [...ALWAYS_MACHINE_PREFIXES, ...(config.machinePathPrefixes ?? [])].some(
+      (prefix) => hasPrefix(appPath, prefix)
+    ) || config.machinePaths?.has(appPath);
 
   if (config.mode === 'on' && config.basePathReady && !machine) {
     if (isNavigation(request)) {
-      // Canonical URLs never end in a slash: the subdomain root maps to the
-      // bare `/<app>` and `/x/` to `/<app>/x`, in one hop. The gateway hands a
-      // bare `/<app>?query` to the app (its zone route cannot match it).
-      const trimmed = appPath.replace(/\/+$/u, '');
-      const location = `${new URL(config.sharedOrigin).origin}${basePath}${trimmed}${url.search}`;
+      // The subdomain root maps to the bare mount in one hop. Apps may retain
+      // the spelling of nested paths for existing links.
+      const suffix =
+        config.preserveTrailingSlash && appPath !== '/'
+          ? appPath
+          : appPath.replace(/\/+$/u, '');
+      const location = `${new URL(config.sharedOrigin).origin}${basePath}${suffix}${url.search}`;
       return {
         action: 'redirect',
         response: new Response(null, {
           status: config.redirectStatus,
           headers: {
             Location: location,
-            // A 307 must stay revocable while the route can still roll back.
-            ...(config.redirectStatus === 307
+            // Temporary redirects must stay revocable.
+            ...(config.redirectStatus !== 301
               ? { 'Cache-Control': 'no-store' }
               : {}),
           },

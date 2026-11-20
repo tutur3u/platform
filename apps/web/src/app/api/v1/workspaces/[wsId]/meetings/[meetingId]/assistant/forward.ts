@@ -7,7 +7,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
-import { getMeetAppOrigin } from '@/lib/meet-app-url';
+import { getMeetServiceOrigin } from '@/lib/meet-app-url';
 
 const noStore = { 'Cache-Control': 'private, no-store' };
 
@@ -95,7 +95,7 @@ export async function forwardMeetAssistant(
         { status: 413, headers: noStore }
       );
     }
-    const origin = getMeetAppOrigin();
+    const origin = getMeetServiceOrigin();
     const endpoint = new URL(
       `/api/meet-call/${encodeURIComponent(meetingId)}/${action}`,
       origin
