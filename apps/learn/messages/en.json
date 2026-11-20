@@ -434,6 +434,15 @@
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
   },
+  "classTuition": {
+    "excluded": "Excluded from billing",
+    "month": "Billing month {month}",
+    "no_billable_activity": "No billable activity",
+    "paid": "Paid",
+    "pending": "Pending",
+    "retry": "Retry tuition status",
+    "title": "Tuition status"
+  },
   "common": {
     "affected-product-required": "Affected Product *",
     "all_workspaces_hidden": "All your workspaces are Hidden. Restore one to choose a workspace.",

@@ -1,9 +1,16 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import { learnerProgressRoutesEnabled } from '@tuturuuu/education-core/education/lms-rollout';
 import { ArrowUpRight, Search, UserMinus, UserPlus } from '@tuturuuu/icons';
 import {
   addWorkspaceCourseMembers,
+  getClassTuition,
   listWorkspaceCourseMembers,
   listWorkspaceUsers,
   removeWorkspaceCourseMember,
@@ -12,7 +19,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
+import { useNow, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { courseContactsLinks } from './course-contacts-links';
 
@@ -25,6 +32,34 @@ export function CourseMembersPanel({
 }) {
   const t = useTranslations('teachMembers');
   const common = useTranslations('common');
+  const tuitionText = useTranslations('classTuition');
+  const tuitionEnabled = learnerProgressRoutesEnabled();
+  const [showTuition, setShowTuition] = useState(false);
+  const now = useNow();
+  const month = new Intl.DateTimeFormat('sv-SE', {
+    month: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+  }).format(now);
+  const tuition = useInfiniteQuery({
+    enabled: tuitionEnabled && showTuition,
+    queryKey: ['class-tuition', wsId, courseId, 'staff', month],
+    queryFn: ({ pageParam }) =>
+      getClassTuition(wsId, courseId, {
+        month,
+        view: 'staff',
+        after: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.next_cursor ?? undefined,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const tuitionStatuses = new Map(
+    tuition.data?.pages.flatMap(({ data }) =>
+      data.map(({ contact_id, status }) => [contact_id, status] as const)
+    )
+  );
   const queryClient = useQueryClient();
   const [q, setQ] = useState('');
   const contactsLinks = courseContactsLinks(wsId, courseId);
@@ -68,6 +103,36 @@ export function CourseMembersPanel({
             </Button>
           )}
         </div>
+        {tuitionEnabled && membersQuery.isSuccess && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <Button
+              aria-expanded={showTuition}
+              onClick={() => setShowTuition(!showTuition)}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {tuitionText('title')}
+            </Button>
+            {showTuition && (
+              <span className="text-muted-foreground text-sm">
+                {tuitionText('month', { month })}
+              </span>
+            )}
+            {showTuition && tuition.isPending && (
+              <Skeleton className="h-5 w-24" />
+            )}
+            {showTuition && tuition.isError && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void tuition.refetch()}
+              >
+                {tuitionText('retry')}
+              </Button>
+            )}
+          </div>
+        )}
         <div className="mt-3 grid gap-2">
           {membersQuery.isPending && (
             <div aria-label={common('loading')} role="status">
@@ -91,47 +156,67 @@ export function CourseMembersPanel({
           {membersQuery.isSuccess && memberIds.size === 0 && (
             <p className="text-muted-foreground text-sm">{t('empty')}</p>
           )}
-          {(membersQuery.data?.data ?? []).map((member) => (
-            <div
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
-              key={member.id}
-            >
-              <span className="min-w-0">
-                {contactsLinks ? (
-                  <a
-                    className="block truncate rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
-                    href={contactsLinks.profile(member.id)}
-                  >
-                    {resolveUserFullName(member)}
-                  </a>
-                ) : (
-                  <span className="block truncate font-medium">
-                    {resolveUserFullName(member)}
+          {(membersQuery.data?.data ?? []).map((member) => {
+            const status = tuition.isSuccess
+              ? tuitionStatuses.get(member.id)
+              : undefined;
+            return (
+              <div
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
+                key={member.id}
+              >
+                <span className="min-w-0">
+                  {contactsLinks ? (
+                    <a
+                      className="block truncate rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+                      href={contactsLinks.profile(member.id)}
+                    >
+                      {resolveUserFullName(member)}
+                    </a>
+                  ) : (
+                    <span className="block truncate font-medium">
+                      {resolveUserFullName(member)}
+                    </span>
+                  )}
+                  <span className="block truncate text-muted-foreground text-xs">
+                    {member.email}
                   </span>
-                )}
-                <span className="block truncate text-muted-foreground text-xs">
-                  {member.email}
                 </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-2">
-                {(member.role === 'TEACHER' || member.role === 'STUDENT') && (
-                  <Badge variant="secondary">
-                    {member.role === 'TEACHER' ? t('teacher') : t('student')}
-                  </Badge>
-                )}
-                <Button
-                  disabled={removeMember.isPending}
-                  onClick={() => removeMember.mutate(member.id)}
-                  size="icon"
-                  type="button"
-                  variant="outline"
-                >
-                  <UserMinus aria-hidden />
-                  <span className="sr-only">{t('remove')}</span>
-                </Button>
-              </span>
-            </div>
-          ))}
+                <span className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  {showTuition && status && (
+                    <Badge variant="outline">{tuitionText(status)}</Badge>
+                  )}
+                  {(member.role === 'TEACHER' || member.role === 'STUDENT') && (
+                    <Badge variant="secondary">
+                      {member.role === 'TEACHER' ? t('teacher') : t('student')}
+                    </Badge>
+                  )}
+                  <Button
+                    disabled={removeMember.isPending}
+                    onClick={() => removeMember.mutate(member.id)}
+                    size="icon"
+                    type="button"
+                    variant="outline"
+                  >
+                    <UserMinus aria-hidden />
+                    <span className="sr-only">{t('remove')}</span>
+                  </Button>
+                </span>
+              </div>
+            );
+          })}
+          {showTuition && tuition.hasNextPage && (
+            <Button
+              className="justify-self-start"
+              disabled={tuition.isFetchingNextPage}
+              onClick={() => void tuition.fetchNextPage()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              {tuitionText('more')}
+            </Button>
+          )}
         </div>
       </div>
       <div>

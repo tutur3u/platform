@@ -266,6 +266,16 @@
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
   },
+  "classTuition": {
+    "excluded": "Không tính học phí",
+    "month": "Tháng thu học phí {month}",
+    "more": "Xem thêm tình trạng học phí",
+    "no_billable_activity": "Không phát sinh học phí",
+    "paid": "Đã thanh toán",
+    "pending": "Chờ thanh toán",
+    "retry": "Tải lại tình trạng học phí",
+    "title": "Tình trạng học phí"
+  },
   "common": {
     "accept": "Chấp nhận",
     "actions": "hành động",

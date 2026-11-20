@@ -475,6 +475,34 @@ historical audit records to fill that gap.
 
 ## Subscription coverage and tuition reporting
 
+### Class tuition status
+
+`GET /api/v1/workspaces/{wsId}/finance/classes/{classId}/tuition` reports one
+billing month for an existing Contacts class. The LMS rollout gate returns
+404 before authentication while held.
+
+| Parameter | Behavior |
+| --- | --- |
+| `month` | Required `YYYY-MM` billing month. |
+| `view=staff` | Platform or Teach app session. Requires Finance `view_invoices` and LMS staff access to the exact class. `after` resumes in contact-ID order, with `limit` from 1 to 50. |
+| `view=learning` | Default. Platform or Learn app session. Returns only the verified learner's own status in a published class where they are actively enrolled. An approved guardian can select that learner with `student_id`. |
+
+The private response contains `class_id`, `month`, `role`, `data`, and
+`next_cursor`. A row contains only `contact_id` and `status`. Finance uses
+its pending-tuition function, the workspace's attendance or scheduled billing
+setting, and configured class and contact exclusions. Completed Finance invoices
+need the matching student and class link. Explicit paid months and the legacy
+cutoff follow the coverage rules below.
+
+`pending` means Finance returned billable activity for the requested month.
+`paid` means completed invoice evidence covers the month. `excluded` represents
+a billing exclusion. `no_billable_activity` means the lookup found neither
+billing activity nor completed coverage. Incomplete source data returns
+`FINANCE_UNAVAILABLE`. Unavailable or unassigned classes return
+`FINANCE_CLASS_NOT_FOUND`, and invalid queries return `FINANCE_INVALID_QUERY`.
+The endpoint never creates an invoice or moves a payment.
+
+
 ### Subscription session counting
 
 Across workspaces, the Finance subscription invoice form uses the workspace's

@@ -434,6 +434,15 @@
     "workspace_destination": "Workspace {workspace}",
     "workspaces": "Workspace"
   },
+  "classTuition": {
+    "excluded": "Không tính học phí",
+    "month": "Tháng thu học phí {month}",
+    "no_billable_activity": "Không phát sinh học phí",
+    "paid": "Đã thanh toán",
+    "pending": "Chờ thanh toán",
+    "retry": "Tải lại tình trạng học phí",
+    "title": "Tình trạng học phí"
+  },
   "common": {
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "all_workspaces_hidden": "Tất cả không gian làm việc của bạn đã ẩn. Khôi phục một không gian để chọn.",

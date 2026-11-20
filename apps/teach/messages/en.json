@@ -266,6 +266,16 @@
     "workspace_destination": "{workspace} workspace",
     "workspaces": "Workspaces"
   },
+  "classTuition": {
+    "excluded": "Excluded from billing",
+    "month": "Billing month {month}",
+    "more": "Load more tuition statuses",
+    "no_billable_activity": "No billable activity",
+    "paid": "Paid",
+    "pending": "Pending",
+    "retry": "Retry tuition status",
+    "title": "Tuition status"
+  },
   "common": {
     "accept": "Accept",
     "actions": "Actions",

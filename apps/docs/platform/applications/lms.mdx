@@ -272,6 +272,15 @@ reconcile removals, moves outside the window, and access changes. Session
 descriptions, files, and meeting links have their own resource permissions.
 Responses use the class outline's access errors and private cache policy.
 
+### Monthly class tuition status
+
+Teach opens the active month's tuition status from the class roster. Learners
+and approved guardians open it from the course overview. The Finance endpoint
+serves both views with the same coverage and billing rules. Data loads on
+request without polling and uses the existing learner rollout gate.
+See [Class tuition status](/platform/applications/finance#class-tuition-status)
+for roles, parameters, and response fields.
+
 ### Class tuition invoices
 
 `GET /api/v1/workspaces/{wsId}/education/classes/{classId}/tuition-invoices`

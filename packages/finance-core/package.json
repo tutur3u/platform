@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./bill-splitting": "./src/bill-splitting/index.ts",
     "./route-auth": "./src/route-auth.ts",
+    "./tuition-coverage": "./src/tuition-coverage.ts",
     "./storage-access": "./src/storage-access.ts",
     "./storage-limits": "./src/storage-limits.ts",
     "./fee-lock": "./src/fee-lock/index.ts",

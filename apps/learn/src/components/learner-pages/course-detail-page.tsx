@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LearnerClassTuition } from './class-tuition';
 import { CourseLearningPath } from './course-learning-path';
 import { ModuleDetailView } from './module-detail-view';
 import {
@@ -191,6 +192,12 @@ export function CourseDetailPage({
       <CourseLearningPath
         course={course.data}
         onOpenModule={setSelectedModuleId}
+      />
+
+      <LearnerClassTuition
+        classId={courseId}
+        studentId={studentId}
+        wsId={wsId}
       />
 
       {/* Tests Section */}
