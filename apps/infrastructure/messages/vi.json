@@ -9055,6 +9055,129 @@
       "member-distribution-description": "Không gian làm việc được nhóm theo số lượng thành viên",
       "total": "Tổng Không Gian",
       "workspaces": "không gian làm việc"
+    },
+    "views": {
+      "label": "Chế độ xem tổng quan",
+      "executive": {
+        "title": "Điều hành",
+        "description": "Chỉ số ra quyết định từ các nguồn dữ liệu nền tảng đã xác minh."
+      },
+      "operations": {
+        "title": "Vận hành",
+        "description": "Đi sâu vào hệ thống trực tiếp và phân tích chi tiết."
+      }
+    },
+    "executive": {
+      "unavailable": "Nguồn dữ liệu không khả dụng",
+      "kpi": {
+        "mau": "Người dùng hoạt động hằng tháng",
+        "stickiness": "Độ gắn bó (DAU/MAU)",
+        "new-users-month": "Người dùng mới tháng này",
+        "active-workspaces": "Không gian làm việc đang hoạt động"
+      },
+      "mau-detail": "{dau} theo ngày · {wau} theo tuần",
+      "stickiness-detail": "Tỷ lệ người dùng tháng có hoạt động hôm nay",
+      "growth-detail": "{rate} so với tháng trước · tổng {total} người dùng",
+      "growth-no-baseline": "Chưa có dữ liệu tháng trước để tính tăng trưởng",
+      "workspaces-detail": "{activation} trong {total} không gian làm việc đang hoạt động",
+      "open-ai-credits": "Tín dụng AI",
+      "open-mobile": "Phiên bản di động",
+      "spend": {
+        "title": "Chi tiêu tín dụng AI",
+        "description": "Mức tiêu thụ tín dụng AI toàn nền tảng so với hạn mức đã cấp.",
+        "consumed-of": "tín dụng đã dùng trên {allocated} đã cấp",
+        "utilization": "Tỷ lệ hạn mức đã dùng",
+        "bonus": "Tín dụng thưởng",
+        "workspace-wallets": "Ví không gian làm việc",
+        "user-wallets": "Ví người dùng",
+        "unit-note": "Đo bằng tín dụng AI, không phải tiền thanh toán. Hóa đơn đám mây và nhà cung cấp chưa được kết nối."
+      },
+      "reach": {
+        "title": "Phạm vi theo thiết bị",
+        "description": "Nguồn gốc các phiên đăng nhập, bao gồm thiết bị di động.",
+        "mobile-share": "phiên đến từ thiết bị di động",
+        "sessions": "{count} phiên · {percentage}",
+        "unknown-device": "Không xác định",
+        "empty": "Chưa có phiên nào được ghi nhận.",
+        "classification-note": "Phân loại theo user agent của phiên, nên di động bao gồm cả web di động. Dữ liệu sự cố và hiệu năng của ứng dụng gốc chưa được kết nối."
+      }
+    },
+    "coverage": {
+      "title": "Phạm vi dữ liệu",
+      "description": "Những gì chế độ xem này đang đọc và dữ liệu ra quyết định nào chưa có nguồn đã xác minh.",
+      "status": {
+        "live": "Trực tiếp",
+        "failed": "Truy vấn thất bại",
+        "not-connected": "Chưa kết nối"
+      },
+      "sources": {
+        "engagement": {
+          "title": "Người dùng hoạt động",
+          "origin": "Số liệu hoạt động xác thực (DAU, WAU, MAU)"
+        },
+        "growth": {
+          "title": "Tăng trưởng người dùng",
+          "origin": "Lượt đăng ký tài khoản theo kỳ"
+        },
+        "workspaces": {
+          "title": "Không gian làm việc",
+          "origin": "Tổng số và hoạt động của không gian làm việc"
+        },
+        "devices": {
+          "title": "Phạm vi thiết bị",
+          "origin": "Phiên xác thực nhóm theo user agent"
+        },
+        "aiCredits": {
+          "title": "Chi tiêu tín dụng AI",
+          "origin": "Sổ cái tín dụng AI của nền tảng"
+        }
+      },
+      "gaps": {
+        "cloud-spend": {
+          "title": "Chi phí đám mây và nhà cung cấp",
+          "detail": "Hóa đơn lưu trữ, cơ sở dữ liệu và nhà cung cấp bằng tiền chưa được thu thập."
+        },
+        "mobile-telemetry": {
+          "title": "Dữ liệu đo lường ứng dụng di động",
+          "detail": "Tỷ lệ sự cố, hiệu năng và mức áp dụng phiên bản chưa được thu thập."
+        },
+        "app-ecosystem": {
+          "title": "Mức sử dụng theo từng ứng dụng",
+          "detail": "Mức sử dụng chưa được phân tách theo từng ứng dụng Tuturuuu."
+        },
+        "role-scoped-views": {
+          "title": "Chế độ xem theo vai trò",
+          "detail": "Mọi người có quyền hạ tầng đều thấy cùng dữ liệu; vai trò chi tiết hơn chưa được định nghĩa."
+        }
+      }
+    },
+    "operations": {
+      "drilldown-title": "Đi sâu vận hành",
+      "drilldown-description": "Chuyển đến hệ thống trực tiếp của từng mảng.",
+      "analytics-title": "Phân tích nền tảng",
+      "analytics-description": "Phân tích chi tiết về người dùng, xác thực, không gian làm việc và hoạt động.",
+      "groups": {
+        "reliability": {
+          "title": "Độ tin cậy",
+          "description": "Sức khỏe hệ thống, triển khai, tác vụ và realtime."
+        },
+        "fleet": {
+          "title": "Đội máy",
+          "description": "Máy và các lượt chạy tự động."
+        },
+        "mobile": {
+          "title": "Di động",
+          "description": "Phiên bản ứng dụng, phát hành và gửi thông báo đẩy."
+        },
+        "security": {
+          "title": "Bảo mật",
+          "description": "Tín hiệu lạm dụng và kiểm soát lưu lượng."
+        },
+        "spend": {
+          "title": "Chi tiêu và thư",
+          "description": "Tín dụng AI và gửi email."
+        }
+      }
     }
   },
   "infrastructure-navigation": {

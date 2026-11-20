@@ -9055,6 +9055,129 @@
       "member-distribution-description": "Workspaces grouped by number of members",
       "total": "Total Workspaces",
       "workspaces": "workspaces"
+    },
+    "views": {
+      "label": "Overview view",
+      "executive": {
+        "title": "Executive",
+        "description": "Decision metrics from verified platform sources."
+      },
+      "operations": {
+        "title": "Operations",
+        "description": "Drill into live systems and detailed analytics."
+      }
+    },
+    "executive": {
+      "unavailable": "Source unavailable",
+      "kpi": {
+        "mau": "Monthly active users",
+        "stickiness": "Stickiness (DAU/MAU)",
+        "new-users-month": "New users this month",
+        "active-workspaces": "Active workspaces"
+      },
+      "mau-detail": "{dau} daily · {wau} weekly",
+      "stickiness-detail": "Share of monthly users active today",
+      "growth-detail": "{rate} vs last month · {total} users total",
+      "growth-no-baseline": "No prior-month baseline for a growth rate",
+      "workspaces-detail": "{activation} of {total} workspaces active",
+      "open-ai-credits": "AI credits",
+      "open-mobile": "Mobile versions",
+      "spend": {
+        "title": "AI credit spend",
+        "description": "Platform-wide AI credit consumption against allocations.",
+        "consumed-of": "credits consumed of {allocated} allocated",
+        "utilization": "Allocation used",
+        "bonus": "Bonus credits",
+        "workspace-wallets": "Workspace wallets",
+        "user-wallets": "User wallets",
+        "unit-note": "Measured in AI credits, not billed currency. Cloud and vendor invoices are not connected yet."
+      },
+      "reach": {
+        "title": "Reach by device",
+        "description": "Where authenticated sessions come from, including mobile.",
+        "mobile-share": "of sessions from mobile devices",
+        "sessions": "{count} sessions · {percentage}",
+        "unknown-device": "Unknown",
+        "empty": "No sessions recorded yet.",
+        "classification-note": "Classified from session user agents, so mobile includes mobile web. Native app crash and performance telemetry is not connected."
+      }
+    },
+    "coverage": {
+      "title": "Data coverage",
+      "description": "What this view reads today and which decision data still has no verified source.",
+      "status": {
+        "live": "Live",
+        "failed": "Query failed",
+        "not-connected": "Not connected"
+      },
+      "sources": {
+        "engagement": {
+          "title": "Active users",
+          "origin": "Auth activity counts (DAU, WAU, MAU)"
+        },
+        "growth": {
+          "title": "User growth",
+          "origin": "Account registrations by period"
+        },
+        "workspaces": {
+          "title": "Workspaces",
+          "origin": "Workspace totals and activity"
+        },
+        "devices": {
+          "title": "Device reach",
+          "origin": "Auth sessions grouped by user agent"
+        },
+        "aiCredits": {
+          "title": "AI credit spend",
+          "origin": "Platform AI credit ledger"
+        }
+      },
+      "gaps": {
+        "cloud-spend": {
+          "title": "Cloud and vendor spend",
+          "detail": "Hosting, database and provider invoices in currency are not ingested."
+        },
+        "mobile-telemetry": {
+          "title": "Mobile app telemetry",
+          "detail": "Crash rate, performance and installed-version adoption are not ingested."
+        },
+        "app-ecosystem": {
+          "title": "Per-app ecosystem usage",
+          "detail": "Usage is not yet broken down by Tuturuuu app."
+        },
+        "role-scoped-views": {
+          "title": "Role-scoped views",
+          "detail": "Everyone with infrastructure access sees the same data; finer roles are not defined yet."
+        }
+      }
+    },
+    "operations": {
+      "drilldown-title": "Operational drill-down",
+      "drilldown-description": "Jump to the live system behind each area.",
+      "analytics-title": "Platform analytics",
+      "analytics-description": "Detailed user, authentication, workspace and activity analytics.",
+      "groups": {
+        "reliability": {
+          "title": "Reliability",
+          "description": "Health, deployments, jobs and realtime."
+        },
+        "fleet": {
+          "title": "Fleet",
+          "description": "Machines and automation runs."
+        },
+        "mobile": {
+          "title": "Mobile",
+          "description": "App versions, releases and push delivery."
+        },
+        "security": {
+          "title": "Security",
+          "description": "Abuse signals and traffic controls."
+        },
+        "spend": {
+          "title": "Spend and messaging",
+          "description": "AI credits and email delivery."
+        }
+      }
     }
   },
   "infrastructure-navigation": {
