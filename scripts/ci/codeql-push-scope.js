@@ -30,19 +30,17 @@ const dependencyFields = [
 
 // The scan unit for a changed JavaScript/TypeScript file: its apps/* or
 // packages/* workspace, its top-level directory elsewhere, or the file itself
-// at the repository root. Returns null for a path that is unsafe to pass to
-// CodeQL's paths filter.
+// at the repository root. Only the segments that form the unit reach CodeQL's
+// paths filter, so deeper segments such as Next.js `[id]` or `(group)` route
+// directories are fine. Returns null when the unit itself is unsafe.
 function scanRoot(filePath) {
   const segments = String(filePath).split('/');
-  if (segments.some((segment) => !safeSegment.test(segment))) return null;
-  if (segments.length === 1) return segments[0];
-  if (
+  const workspace =
     (segments[0] === 'apps' || segments[0] === 'packages') &&
-    segments.length > 2
-  ) {
-    return `${segments[0]}/${segments[1]}`;
-  }
-  return segments[0];
+    segments.length > 2;
+  const unit = segments.slice(0, workspace ? 2 : 1);
+  if (unit.some((segment) => !safeSegment.test(segment))) return null;
+  return unit.join('/');
 }
 
 // Workspaces that declare a direct dependency on a touched package.
@@ -79,9 +77,8 @@ function selectScope(
   files,
   { exists = () => true, manifests = new Map() } = {}
 ) {
-  const changed = (files ?? [])
-    .map((file) => String(file).trim())
-    .filter(Boolean);
+  // Paths are exact (git diff -z); trimming could turn " apps/x" into apps/x.
+  const changed = (files ?? []).map(String).filter(Boolean);
   if (changed.length === 0) return fullScope('the range resolved no files');
   const { codeqlLanguages } = classifyScope(changed);
   if (!codeqlLanguages.includes(javascriptLanguage)) {

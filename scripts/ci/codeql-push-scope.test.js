@@ -22,6 +22,18 @@ test('scan roots are workspaces, top-level directories or root files', () => {
   assert.equal(scanRoot('oxlint.config.ts'), 'oxlint.config.ts');
   assert.equal(scanRoot('apps/@scope/x.ts'), 'apps/@scope');
   assert.equal(scanRoot('.github/scripts/x.js'), '.github');
+  // Next.js route segments below the workspace never reach the filter.
+  assert.equal(
+    scanRoot('apps/web/src/app/api/v1/admin/qa/test-users/[userId]/route.ts'),
+    'apps/web'
+  );
+  assert.equal(
+    scanRoot('apps/web/src/app/(dashboard)/[wsId]/page.tsx'),
+    'apps/web'
+  );
+  assert.equal(scanRoot('scripts/[x]/a.js'), 'scripts');
+  assert.equal(scanRoot(' apps/web/x.ts'), null);
+  assert.equal(selectScope([' apps/web/x.ts']).full, true);
   for (const unsafe of [
     'apps/../x.ts',
     'apps/*/x.ts',
