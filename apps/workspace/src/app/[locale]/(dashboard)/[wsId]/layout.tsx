@@ -269,8 +269,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         notFound();
       }
 
-      const { allowGuestSelfJoin } = inviteEligibility;
-
       const [
         { resolveWorkspaceBrandingUrlsForNext },
         { default: InvitationCard },
@@ -290,7 +288,6 @@ export default async function Layout({ children, params }: LayoutProps) {
             logo_url: branding.logo_url,
             avatar_url: branding.avatar_url,
           }}
-          allowGuestSelfJoin={allowGuestSelfJoin}
         />
       );
     }

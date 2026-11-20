@@ -2,13 +2,21 @@
 
 import { respondToWorkspaceContactAccountLink } from '@tuturuuu/internal-api/users';
 import { Button } from '@tuturuuu/ui/button';
-import { useState, useTransition } from 'react';
+import { useState, useSyncExternalStore, useTransition } from 'react';
+
+const subscribeToBrowserZone = () => () => {};
+const readBrowserZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+const readServerZone = () => 'UTC';
 
 export function ContactLinkConfirmation({
   invitation,
+  expiresAt,
+  locale,
   copy,
 }: {
   invitation: { wsId: string; contactId: string; invitationId: string };
+  expiresAt: string;
+  locale: string;
   copy: {
     confirm: string;
     confirming: string;
@@ -21,6 +29,20 @@ export function ContactLinkConfirmation({
     unavailable: string;
   };
 }) {
+  const timeZone = useSyncExternalStore(
+    subscribeToBrowserZone,
+    readBrowserZone,
+    readServerZone
+  );
+  const expiry = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    timeZone,
+    timeZoneName: 'short',
+  }).format(new Date(expiresAt));
   const [pending, startTransition] = useTransition();
   const [outcome, setOutcome] = useState<
     'ready' | 'linked' | 'declined' | 'unavailable'
@@ -52,7 +74,10 @@ export function ContactLinkConfirmation({
     <div className="space-y-4">
       <p>{copy.description}</p>
       {copy.replacement && <p>{copy.replacement}</p>}
-      <p className="text-sm text-muted-foreground">{copy.expires}</p>
+      <p className="flex flex-wrap gap-x-1 text-sm text-muted-foreground">
+        <span>{copy.expires}</span>
+        <time dateTime={expiresAt}>{expiry}</time>
+      </p>
       <div className="flex flex-wrap gap-2">
         <Button disabled={pending} onClick={() => respond('confirm')}>
           {pending ? copy.confirming : copy.confirm}

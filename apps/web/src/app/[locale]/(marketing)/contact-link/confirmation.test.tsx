@@ -15,11 +15,13 @@ const invitation = {
   invitationId: 'invitation',
 };
 
+const expiry = { expiresAt: '2026-11-20T10:00:00Z', locale: 'en' };
+
 const copy = {
   confirm: 'Confirm account link',
   confirming: 'Confirming…',
   description: 'Confirm the contact in Sample workspace.',
-  expires: 'Expires at 10:00 UTC.',
+  expires: 'Expires',
   decline: 'Decline',
   declined: 'Invitation declined.',
   linked: 'Your account is linked.',
@@ -34,7 +36,13 @@ afterEach(() => {
 describe('contact link confirmation screen', () => {
   it('waits for explicit confirmation and submits the exact invitation', async () => {
     api.confirm.mockResolvedValue({ outcome: 'linked' });
-    render(<ContactLinkConfirmation invitation={invitation} copy={copy} />);
+    render(
+      <ContactLinkConfirmation
+        invitation={invitation}
+        copy={copy}
+        {...expiry}
+      />
+    );
     expect(api.confirm).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: copy.confirm }));
     expect(await screen.findByRole('status')).toHaveTextContent(copy.linked);
@@ -45,9 +53,39 @@ describe('contact link confirmation screen', () => {
     });
   });
 
+  it('shows the invitation expiry in the browser time zone', () => {
+    const resolved = Intl.DateTimeFormat.prototype.resolvedOptions;
+    const zone = vi
+      .spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions')
+      .mockImplementation(function (this: Intl.DateTimeFormat) {
+        return { ...resolved.call(this), timeZone: 'Pacific/Honolulu' };
+      });
+    try {
+      render(
+        <ContactLinkConfirmation
+          invitation={invitation}
+          copy={copy}
+          {...expiry}
+        />
+      );
+      expect(screen.getByText(/12:00 AM HST/)).toHaveAttribute(
+        'datetime',
+        expiry.expiresAt
+      );
+    } finally {
+      zone.mockRestore();
+    }
+  });
+
   it('declines without submitting a confirmation', async () => {
     api.confirm.mockResolvedValue({ outcome: 'declined' });
-    render(<ContactLinkConfirmation invitation={invitation} copy={copy} />);
+    render(
+      <ContactLinkConfirmation
+        invitation={invitation}
+        copy={copy}
+        {...expiry}
+      />
+    );
     fireEvent.click(screen.getByRole('button', { name: copy.decline }));
     expect(await screen.findByRole('status')).toHaveTextContent(copy.declined);
     expect(api.confirm).toHaveBeenCalledWith('workspace', {
@@ -59,7 +97,13 @@ describe('contact link confirmation screen', () => {
 
   it('shows only the recovery message after a rejected confirmation', async () => {
     api.confirm.mockRejectedValue(new Error('private rejection detail'));
-    render(<ContactLinkConfirmation invitation={invitation} copy={copy} />);
+    render(
+      <ContactLinkConfirmation
+        invitation={invitation}
+        copy={copy}
+        {...expiry}
+      />
+    );
     fireEvent.click(screen.getByRole('button', { name: copy.confirm }));
     expect(await screen.findByRole('status')).toHaveTextContent(
       copy.unavailable

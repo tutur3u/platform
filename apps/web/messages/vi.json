@@ -6099,7 +6099,7 @@
     "decline": "Từ chối",
     "declined": "Bạn đã từ chối lời mời này.",
     "description": "{inviter} mời bạn liên kết tài khoản đang đăng nhập với {contact} trong {workspace}. Thao tác này gắn liên hệ trong không gian làm việc với tài khoản Tuturuuu của bạn.",
-    "expires": "Hết hạn lúc {date} UTC.",
+    "expires": "Hết hạn",
     "inviterFallback": "một quản lý không gian làm việc",
     "linked": "Tài khoản của bạn đã được liên kết với liên hệ này.",
     "replacement": "Hồ sơ ban đầu của bạn và các bản ghi của hồ sơ đó sẽ được hợp nhất vào liên hệ này.",

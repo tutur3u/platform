@@ -1339,13 +1339,13 @@ export async function resolveGuestSelfJoinCandidate(
 }
 
 /**
- * Whether the workspace invite/accept flow may be shown (matches what
- * `POST /api/workspaces/:wsId/accept-invite` can accept without `NO_PENDING_INVITE_FOUND`).
+ * Show workspace acceptance only for a pending invitation.
+ * An email-matched contact alone cannot authorize joining a workspace.
  */
 export function canShowWorkspaceInviteForNonMember(
   eligibility: WorkspaceNonMemberInviteEligibility
 ): boolean {
-  return eligibility.hasPendingInvite || eligibility.allowGuestSelfJoin;
+  return eligibility.hasPendingInvite;
 }
 
 /**

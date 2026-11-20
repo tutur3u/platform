@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(14);
 
 -- Fixture: a workspace creator, a second member whose workspace profile link
 -- is missing (the state the repair RPC exists to fix), and an outsider.
@@ -26,6 +26,14 @@ values (
   false,
   '00000000-0000-4000-8000-00000000c501'
 );
+
+insert into public.user_private_details (user_id, email)
+values ('00000000-0000-4000-8000-00000000c502', 'matching@example.invalid')
+on conflict (user_id) do update set email = excluded.email;
+insert into public.workspace_users (id, ws_id, display_name, email)
+values ('00000000-0000-4000-8000-00000000c512',
+  '00000000-0000-4000-8000-00000000c511',
+  'Existing contact', 'MATCHING@example.invalid');
 
 insert into public.workspace_members (ws_id, user_id, type)
 values (
@@ -166,6 +174,12 @@ select is(
   1::bigint,
   'repaired member has exactly one workspace profile link'
 );
+
+select isnt((select virtual_user_id from public.workspace_user_linked_users
+  where ws_id = '00000000-0000-4000-8000-00000000c511'
+    and platform_user_id = '00000000-0000-4000-8000-00000000c502'),
+  '00000000-0000-4000-8000-00000000c512'::uuid,
+  'Consolidation created a fresh profile and left the email-matched contact unlinked');
 
 select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;

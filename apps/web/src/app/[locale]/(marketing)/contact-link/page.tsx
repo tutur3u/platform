@@ -91,6 +91,8 @@ async function ContactLinkContent({
           {invitation.success && details ? (
             <ContactLinkConfirmation
               invitation={invitation.data}
+              expiresAt={details.expiresAt}
+              locale={locale}
               copy={{
                 confirm: t('confirm'),
                 confirming: t('confirming'),
@@ -102,13 +104,7 @@ async function ContactLinkContent({
                 replacement: details.replacesProvisionedProfile
                   ? t('replacement')
                   : undefined,
-                expires: t('expires', {
-                  date: new Intl.DateTimeFormat(locale, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                    timeZone: 'UTC',
-                  }).format(new Date(details.expiresAt)),
-                }),
+                expires: t('expires'),
                 decline: t('decline'),
                 declined: t('declined'),
                 linked: t('linked'),

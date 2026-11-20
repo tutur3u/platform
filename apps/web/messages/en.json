@@ -6099,7 +6099,7 @@
     "decline": "Decline",
     "declined": "You declined this invitation.",
     "description": "{inviter} invited you to link your signed-in account to {contact} in {workspace}. Linking associates this workspace contact with your Tuturuuu account.",
-    "expires": "Expires {date} UTC.",
+    "expires": "Expires",
     "inviterFallback": "a workspace operator",
     "linked": "Your account is now linked to this contact.",
     "replacement": "Your starter workspace profile and its records will be merged into this contact.",
