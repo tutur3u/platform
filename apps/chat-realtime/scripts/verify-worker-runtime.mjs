@@ -218,6 +218,81 @@ test('authenticates and bounds publishes', async () => {
   assert.equal((await publish(server, huge)).status, 413);
 });
 
+test('fails closed for missing room IDs, broad private events and stale timestamps', async () => {
+  const message = messageEvent('message.created');
+  const removal = messageEvent('member.removed', { userId: BOB });
+  delete removal.message;
+
+  for (const event of [
+    { ...message, conversationId: undefined },
+    { ...message, audience: { scope: 'workspace' }, conversationId: undefined },
+    { ...removal, conversationId: undefined },
+    { ...message, sentAt: new Date(Date.now() - 16 * 60_000).toISOString() },
+    { ...message, conversationId: CONVERSATION.toUpperCase() },
+  ]) {
+    assert.equal((await publish(server, event)).status, 400);
+  }
+
+  await assert.rejects(
+    openSocket(
+      server.origin,
+      await conversationTicket(ALICE, {
+        conversationId: CONVERSATION.toUpperCase(),
+      })
+    )
+  );
+});
+
+test('keeps list events to allowlisted IDs and receipts in the conversation', async () => {
+  const inbox = await openSocket(
+    server.origin,
+    await subscribeTicket({ userId: ALICE })
+  );
+  const actorRoom = await openSocket(
+    server.origin,
+    await conversationTicket(ALICE)
+  );
+  const privateRead = messageEvent('read.updated', {
+    lastReadAt: new Date().toISOString(),
+    userId: ALICE,
+  });
+  delete privateRead.message;
+  assert.equal((await publish(server, privateRead)).status, 200);
+  await actorRoom.next((frame) => frame.event?.id === privateRead.id);
+
+  const listEvent = messageEvent('conversation.created', {
+    audience: { scope: 'workspace' },
+    conversation: {
+      id: CONVERSATION,
+      type: 'channel',
+      title: 'Fixture',
+      members: [ALICE],
+    },
+  });
+  delete listEvent.message;
+  delete listEvent.conversationId;
+  assert.equal(
+    (
+      await publish(server, {
+        ...listEvent,
+        conversation: { ...listEvent.conversation, type: 'group' },
+      })
+    ).status,
+    400
+  );
+  assert.equal((await publish(server, listEvent)).status, 200);
+  const frame = await inbox.next(
+    (candidate) => candidate.event?.id === listEvent.id
+  );
+  assert.deepEqual(frame.event.conversation, { id: CONVERSATION });
+  assert.equal(
+    inbox.frames.some((candidate) => candidate.event?.id === privateRead.id),
+    false
+  );
+  inbox.close();
+  actorRoom.close();
+});
+
 test('closes rate-limited, oversized, removed and expired sockets', async () => {
   const spammer = await openSocket(
     server.origin,

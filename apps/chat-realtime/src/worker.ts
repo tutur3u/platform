@@ -1,10 +1,11 @@
 import { chatRealtimeEventSchema } from '@tuturuuu/realtime/chat';
 import {
+  CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS,
   chatRealtimeBodyDigest,
   verifyChatRealtimeTicket,
 } from '@tuturuuu/realtime/chat/ticket';
-import { z } from 'zod';
 import {
+  isCanonicalRoomId,
   isInboxEvent,
   isStopped,
   json,
@@ -12,18 +13,12 @@ import {
   parseTicketProtocol,
   ROOM_TICKET_HEADER,
   toInboxEvent,
+  validPublishScope,
   readBounded,
 } from './protocol';
 
 export { ChatConversationRoom } from './conversation-room';
 export { ChatInboxRoom } from './inbox-room';
-
-const conversationIdSchema = z.uuid();
-const workerEventSchema = chatRealtimeEventSchema.refine(
-  ({ conversationId }) =>
-    conversationId == null ||
-    conversationIdSchema.safeParse(conversationId).success
-);
 
 function room(namespace: DurableObjectNamespace, name: string) {
   return namespace.get(namespace.idFromName(name));
@@ -42,7 +37,13 @@ async function connect(request: Request, env: Env, url: URL) {
     parseTicketProtocol(request.headers.get('sec-websocket-protocol')),
     env
   );
-  if (!ticket || ticket.kind !== 'subscribe') {
+  if (
+    !ticket ||
+    ticket.kind !== 'subscribe' ||
+    !isCanonicalRoomId(ticket.wsId) ||
+    !isCanonicalRoomId(ticket.userId) ||
+    (ticket.conversationId && !isCanonicalRoomId(ticket.conversationId))
+  ) {
     return json({ error: 'Unauthorized' }, 401);
   }
 
@@ -97,13 +98,26 @@ async function publish(request: Request, env: Env) {
   } catch {
     return json({ error: 'Invalid payload' }, 400);
   }
-  const parsed = workerEventSchema.safeParse(raw);
-  if (!parsed.success || parsed.data.wsId !== ticket.wsId) {
+  const parsed = chatRealtimeEventSchema.safeParse(raw);
+  if (
+    !parsed.success ||
+    parsed.data.wsId !== ticket.wsId ||
+    !isCanonicalRoomId(parsed.data.wsId)
+  ) {
     return json({ error: 'Invalid event' }, 400);
   }
   const event = parsed.data;
-  if (event.conversationId && event.audience.scope === 'workspace') {
-    return json({ error: 'Conversation events require a user audience' }, 400);
+  if (!validPublishScope(event)) {
+    return json({ error: 'Invalid event room or audience' }, 400);
+  }
+  const sentAt = Date.parse(event.sentAt);
+  const now = Date.now();
+  if (
+    !Number.isFinite(sentAt) ||
+    sentAt < now - LIMITS.logMaxAgeMs ||
+    sentAt > now + CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS * 1_000
+  ) {
+    return json({ error: 'Invalid event timestamp' }, 400);
   }
 
   const init = {

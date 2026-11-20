@@ -1,5 +1,6 @@
 import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
 import { canReceiveChatRealtimeEvent } from '@tuturuuu/realtime/chat';
+import { z } from 'zod';
 
 /** Hard bounds on every billable path. See the chat realtime docs page. */
 export const LIMITS = {
@@ -148,31 +149,89 @@ export function canReceive(event: ChatRealtimeEvent, userId: string) {
 export function isInboxEvent(event: ChatRealtimeEvent) {
   return (
     event.type !== 'member.removed' &&
+    event.type !== 'read.updated' &&
     event.type !== 'typing.updated' &&
     event.type !== 'presence.updated'
   );
 }
 
-export function toInboxEvent(event: ChatRealtimeEvent): ChatRealtimeEvent {
+const canonicalUuid = z.uuid().refine((id) => id === id.toLowerCase());
+const inboxConversation = z.object({
+  id: canonicalUuid,
+  type: z.literal('channel'),
+});
+const deletedInboxConversation = z.object({
+  conversationId: canonicalUuid,
+  type: z.literal('channel'),
+});
+
+function inboxRecordId(record: unknown, key: string) {
+  if (!record || typeof record !== 'object') return undefined;
+  const parsed = z.object({ [key]: canonicalUuid }).safeParse(record);
+  return parsed.success ? parsed.data[key] : undefined;
+}
+
+export function isCanonicalRoomId(id: unknown) {
+  return canonicalUuid.safeParse(id).success;
+}
+
+export function validPublishScope(event: ChatRealtimeEvent) {
+  const isListChange =
+    event.type === 'conversation.created' ||
+    event.type === 'conversation.updated' ||
+    event.type === 'conversation.deleted';
+
+  if (event.conversationId && !isCanonicalRoomId(event.conversationId))
+    return false;
+  if (!isListChange && !event.conversationId) return false;
+  if (event.actorUserId && !isCanonicalRoomId(event.actorUserId)) return false;
+  if ('userId' in event && !isCanonicalRoomId(event.userId)) return false;
   if (
-    event.type !== 'message.created' &&
-    event.type !== 'message.updated' &&
-    event.type !== 'message.deleted' &&
-    event.type !== 'reaction.updated'
-  ) {
-    return event;
+    'messageId' in event &&
+    event.messageId &&
+    !isCanonicalRoomId(event.messageId)
+  )
+    return false;
+
+  if (event.audience.scope === 'users') {
+    return event.audience.userIds.every(isCanonicalRoomId);
   }
-  const message = event.message;
-  return {
-    ...event,
-    message:
-      message &&
-      typeof message === 'object' &&
-      'id' in message &&
-      typeof message.id === 'string'
-        ? { id: message.id }
-        : {},
-  };
+  if (event.conversationId) return false;
+
+  switch (event.type) {
+    case 'conversation.created':
+    case 'conversation.updated':
+      return inboxConversation.safeParse(event.conversation).success;
+    case 'conversation.deleted':
+      return deletedInboxConversation.safeParse(event.result).success;
+    default:
+      return false;
+  }
+}
+
+export function toInboxEvent(event: ChatRealtimeEvent): ChatRealtimeEvent {
+  switch (event.type) {
+    case 'conversation.created':
+    case 'conversation.updated': {
+      const id =
+        inboxRecordId(event.conversation, 'id') ?? event.conversationId;
+      return { ...event, conversation: id ? { id } : {} };
+    }
+    case 'conversation.deleted': {
+      const conversationId =
+        inboxRecordId(event.result, 'conversationId') ?? event.conversationId;
+      return { ...event, result: conversationId ? { conversationId } : {} };
+    }
+    case 'message.created':
+    case 'message.updated':
+    case 'message.deleted':
+    case 'reaction.updated': {
+      const id = inboxRecordId(event.message, 'id');
+      return { ...event, message: id ? { id } : {} };
+    }
+    default:
+      return event;
+  }
 }
 
 export function json(body: unknown, status = 200) {

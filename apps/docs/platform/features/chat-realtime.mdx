@@ -68,9 +68,11 @@ allowed clock skew.
 Publishing is server-to-server only. `apps/web` signs a 60-second ticket with
 scope `publish` that is bound to the SHA-256 of the request body, after the RPC
 commits. Publishing requires a publish ticket. The rooms deduplicate event IDs within
-their replay window. Conversation events require an explicit user audience.
-Inbox frames carry a message ID and its event metadata for message and reaction
-updates.
+their replay window. Conversation events require a canonical lowercase room ID and an explicit user
+audience. Workspace-wide updates can signal channel list changes. Inbox frames
+carry only IDs and event metadata for conversation, message and reaction
+updates. Read receipts stay in their conversation room. Events sent outside
+the replay window are rejected.
 
 ### Ordering, reconnect and backfill
 
