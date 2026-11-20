@@ -18,6 +18,14 @@ const advanced: ComparisonFeature[] = [
     pending: true,
   },
   {
+    id: 'lms_0',
+    app: 'lms',
+    category: 'learning',
+    detail: 'standard',
+    values: ['pending', 'pending', 'pending', 'pending'],
+    pending: true,
+  },
+  {
     id: 'cronControl',
     app: 'cron-control',
     category: 'internal',
@@ -34,6 +42,13 @@ const advanced: ComparisonFeature[] = [
   {
     id: 'mastermind',
     app: 'mastermind',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
+    id: 'mastermindStore',
+    app: 'mastermind-store',
     category: 'internal',
     detail: 'standard',
     values: ['internal', 'internal', 'internal', 'internal'],
