@@ -145,8 +145,11 @@ export async function connectLiveProvider(input: {
 /**
  * Ends the provider connection. With `endInput`, it first signals the end of
  * the audio stream and waits briefly for the final turn and usage. Without it
- * (a revoked workspace), it sends nothing further upstream and closes; usage
- * already received still settles, and anything pending is marked incomplete.
+ * it sends nothing further upstream and closes; usage already received still
+ * settles, and anything pending is marked incomplete. Every Live stop passes
+ * the session's current workspace gate as `endInput`, so a revoked session
+ * never receives the signal, whichever path (client, socket, internal
+ * control, alarm or failure) ends it.
  */
 export async function drainLiveProvider(
   provider: Session | undefined,

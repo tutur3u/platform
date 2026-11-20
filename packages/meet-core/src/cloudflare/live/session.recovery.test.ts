@@ -372,7 +372,7 @@ describe('durable disconnected recovery', () => {
     expect(provider).toBeDefined();
     const gate = env as unknown as Record<string, string | undefined>;
     gate.MEET_AI_DISABLED_WORKSPACE_IDS = h.saved().identity.workspaceId!;
-    return { h, provider, gate };
+    return { h, provider, gate, object };
   }
   function expectRevokedSettlement(
     h: ReturnType<typeof harness>,
@@ -435,5 +435,40 @@ describe('durable disconnected recovery', () => {
     });
     expect(h.saved().ended).not.toBe(true);
     expect(h.saved().disconnectedRecoveryDeadline).toBe(now + 30_000);
+  });
+
+  const control = (object: MeetLiveDurableObject, saved: SavedSession) =>
+    object.fetch(
+      new Request('https://live.internal/control', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'stop',
+          ownerId: saved.claims.ownerId,
+          meetingId: saved.claims.meetingId,
+        }),
+      })
+    );
+
+  it('ends a revoked session from the internal control stop without further input', async () => {
+    const { h, provider, gate, object } = await revokedAttached();
+    try {
+      const response = await control(object, h.saved());
+      expect(response.status).toBe(200);
+      await h.drain();
+      expectRevokedSettlement(h, provider);
+    } finally {
+      delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
+    }
+  });
+
+  it('still signals the end of input on an eligible internal control stop', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    const provider = await mocks.connect.mock.results[0]!.value;
+    expect((await control(object, h.saved())).status).toBe(200);
+    expect(mocks.drain).toHaveBeenCalledWith(provider, true);
   });
 });

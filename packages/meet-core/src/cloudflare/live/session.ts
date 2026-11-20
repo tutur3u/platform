@@ -666,7 +666,7 @@ export class MeetLiveDurableObject {
     const actionsSettled = this.actions.cancel();
     const messagesSettled = this.incoming.cancel();
     this.audioBatcher?.clear();
-    await drainLiveProvider(this.provider, detail !== 'workspace_not_enabled');
+    await drainLiveProvider(this.provider, this.allowed());
     markInterruptedUsage(this.saved);
     ++this.generation;
     this.provider = undefined;
