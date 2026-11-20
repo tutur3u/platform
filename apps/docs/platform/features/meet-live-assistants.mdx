@@ -32,8 +32,10 @@ An active Private Live session rechecks the kill switch and the full workspace
 gate (protected ids, denylist, reviewed opt-in or allowlist) on every client
 turn (including a client stop), on an abnormal socket close and on its
 20-second tick, before any end-of-input signal, recovery or reconnect.
-A closed gate ends the session with `workspace_not_enabled` and closes the
-provider without sending further input (no end-of-stream signal); usage already
+A closed gate ends the session with `workspace_not_enabled`. Every stop path,
+including the internal `/control` stop, alarms and failure stops, passes the
+current gate to the provider drain, so a revoked session's provider is closed
+without further input (no end-of-stream signal); usage already
 received settles, pending usage is marked incomplete, and cleanup runs. The Live Durable Object rechecks the account, audience and payer before
 code tools run, reading the paid tier and attestation over its server-only REST
 client. A saved session whose billing workspace no longer matches the payer
@@ -128,7 +130,13 @@ admits it (`mira.room.dispatch`) only while the fence and every source revision
 are current, serialized with consent changes, and the release
 (`mira.room.release`) reports whether consent stayed unchanged until the
 answer arrived. The provider key and destination stay in the Meet Worker; the
-room records only admission.
+room records only admission. Admission returns the lease lifetime, and the
+Meet Worker measures its deadline from before the admission call so it never
+outlasts the room's: nothing is sent once the caller's signal is aborted or
+the lease has expired, transport aborts at the deadline, and usage observation
+stops there too. An expired request is refused (`MIRA_ROOM_LEASE_EXPIRED`) along
+with every later request, and a send interrupted after it started counts as
+unpriced.
 
 A Pause is deferred while already-admitted requests carry the participant's
 words. From the click, the participant no longer counts as Continue, so no new
@@ -144,9 +152,10 @@ admitted request covering the participant takes effect immediately.
 
 Settlement carries what was received: usage measured from every provider
 answer (including a discarded one) bills both the AI Studio run and the room
-cost. When a received answer lacks usage, or a request failed without an
-answer, the room cost is unpriced and AI Studio keeps the reserved hold; with
-no request sent, nothing is billed. A source who pauses and
+cost. When a received answer lacks usage, a completed generation reports no
+measurable usage, or a request failed without an answer, the run settles once:
+the room cost is unpriced and AI Studio captures the reserved hold. With no
+request sent, nothing is billed. A source who pauses and
 leaves, or returns with a new Continue (a new revision), makes the request and
 its saved review stale; the requester can still discard it, and incurred cost
 settles without posting a reply. Requests reserved without recorded sources are
