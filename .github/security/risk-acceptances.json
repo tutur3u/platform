@@ -1,4 +1,43 @@
 {
   "format": "tuturuuu-risk-acceptances/v1",
-  "acceptances": []
+  "acceptances": [
+    {
+      "kind": "definer-records",
+      "id": "RA-20261120-MEET-DEFINER-01",
+      "owner": "meet-erasure (Iris)",
+      "guards": [
+        "scripts/ci/security-definer-guard.js recomputes both findings over the exact migration bytes; any change re-opens them",
+        "20261120102500_meet_attendance_erasure_acl.sql must stay in the tree; the SQL grant guard requires it for the matching fixed-forward entries",
+        "No other definer ledger record is covered"
+      ],
+      "scope": {
+        "ledger": "scripts/ci/security-definer-verified-findings.json",
+        "records": [
+          {
+            "file": "apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql",
+            "line": 144,
+            "rule": "definer-alter-needs-definition",
+            "signature": "private.claim_meet_attendance_erasure_rooms(int4,int4)",
+            "digest": "b7b0fc7999d88cca0cb8d2ff83ab3d4faaeaa5862ab497d741a76e22310e9f7f"
+          },
+          {
+            "file": "apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql",
+            "line": 146,
+            "rule": "definer-alter-needs-definition",
+            "signature": "private.ack_meet_attendance_erasure_room(text,text,text,bigint,text [ ])",
+            "digest": "340f63d7c60458ae3cb8e86e0e5e25c270962abc44607181d7ba132993fdfc5c"
+          }
+        ],
+        "excludes": "Every other ledger entry."
+      },
+      "reason": "The two verified records were added without a security/definer-record-admission attestation, because the admission rule accepts records only for a migration added by the same change and 20261120095800 was already on main. Both findings are remediated by 20261120102500_meet_attendance_erasure_acl.sql, which recreates both functions as complete SECURITY DEFINER definitions with search_path pg_catalog, pg_temp, REVOKE ALL from PUBLIC, anon and authenticated, and EXECUTE granted only to service_role.",
+      "remediatedBy": "apps/database/supabase/migrations/20261120102500_meet_attendance_erasure_acl.sql",
+      "proposedAt": "2026-11-20T05:10:41Z",
+      "expiresAt": "2026-11-27T16:59:00Z",
+      "expiresEarlierWhen": "The definer admission policy supports fix-forward attestations and the records are attested under it.",
+      "status": "accepted",
+      "approvedBy": "Iris (release authority, USER-delegated)",
+      "approvedAt": "2026-11-20T05:10:41Z"
+    }
+  ]
 }

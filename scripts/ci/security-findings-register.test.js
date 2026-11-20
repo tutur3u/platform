@@ -263,15 +263,59 @@ test('every shipped risk acceptance is well formed and windowed', () => {
   const parsed = JSON.parse(require('node:fs').readFileSync(file, 'utf8'));
   assert.equal(parsed.format, 'tuturuuu-risk-acceptances/v1');
   assert.ok(Array.isArray(parsed.acceptances));
+  const ledger = require('./security-definer-verified-findings.json');
   for (const item of parsed.acceptances) {
-    assert.match(item.advisory, /^GHSA-[\w-]+$/u);
+    if (item.kind === 'definer-records') {
+      // A release-authority acceptance of exact definer ledger records. It
+      // carries no advisory, so it can never accept a dependency finding.
+      assert.match(item.id, /^RA-\d{8}-[A-Z0-9-]+$/u);
+      assert.equal(item.advisory, undefined, item.id);
+      assert.ok(item.scope?.records?.length > 0, item.id);
+      for (const record of item.scope.records)
+        assert.ok(
+          ledger.some((entry) =>
+            ['file', 'line', 'rule', 'signature', 'digest'].every(
+              (key) => entry[key] === record[key]
+            )
+          ),
+          `${item.id} covers a record missing from the definer ledger`
+        );
+    } else {
+      assert.match(item.advisory, /^GHSA-[\w-]+$/u);
+    }
     assert.ok(item.scope && item.owner && Array.isArray(item.guards));
-    assert.equal(acceptanceWindowValid(item), true, item.advisory);
+    assert.equal(acceptanceWindowValid(item), true, item.advisory ?? item.id);
     // An approval is recorded only together with its approver.
     assert.equal(
       item.status === 'accepted',
       typeof item.approvedBy === 'string' && item.approvedBy.length > 0,
-      item.advisory
+      item.advisory ?? item.id
     );
   }
+});
+
+test('a definer-record acceptance never changes a dependency finding', () => {
+  const entries = fromBunAudit({
+    pkg: [
+      {
+        id: 1,
+        severity: 'high',
+        title: 'RA-20261120-MEET-DEFINER-01 synthetic',
+        url: 'https://github.com/advisories/GHSA-0000-0000-0000',
+        vulnerable_versions: '<=1.0.0',
+      },
+    ],
+  });
+  const applied = applyAcceptances(entries, [
+    {
+      kind: 'definer-records',
+      id: 'RA-20261120-MEET-DEFINER-01',
+      proposedAt: '2026-11-20T00:00:00Z',
+      expiresAt: '2026-11-27T16:59:00Z',
+      status: 'accepted',
+      approvedBy: 'release authority',
+      approvedAt: '2026-11-20T00:00:00Z',
+    },
+  ]);
+  assert.deepEqual(applied, entries);
 });

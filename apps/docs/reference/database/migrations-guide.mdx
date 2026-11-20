@@ -1010,6 +1010,14 @@ Additions alone use `definer-records sha256:…`; any rebind switches to
 records the guard scans with. Coverage: `security-definer-admission.test.js`,
 `security-definer-attestation.test.js` and `security-definer-rebind.test.js`.
 
+A verified record that reaches the trusted ledger without that attestation
+needs a release-authority risk acceptance in `.github/security/risk-acceptances.json`
+with `kind: "definer-records"`. It names an `RA-` ID, the exact records
+(file, line, rule, signature, digest), an owner, guards and an expiry of at most
+90 days. It carries no `advisory`, so it never changes a dependency finding.
+`security-findings-register.test.js` checks that every covered record exists in
+the definer ledger.
+
 ### Changing a migration that security records pin
 
 Several records pin a migration's bytes. If a change must alter such a file,
