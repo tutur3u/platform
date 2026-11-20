@@ -211,7 +211,9 @@ ceiling as raw interaction events. Cron Control owns retention and erasure on
 Cloudflare; Postgres runs no schedule for attendance:
 
 - `meet-attendance-retention` runs daily at 01:17 GMT+7 and calls
-  `private.purge_expired_meet_attendance` for at most 200 rows per slot.
+  `private.purge_expired_meet_attendance` for up to eight pages of 200 rows.
+  It checks the durable stop fence before every page, stops on a short page
+  or near the deadline, and advances one page of erasure intents.
 - `meet-attendance-erasure` runs every 10 minutes. Each slot reconciles one
   page of erasure intents, claims at most four pages of 128 rooms, erases each
   room copy through the Meet realtime `AttendanceErasure` entrypoint, and

@@ -3,11 +3,13 @@
 // apps/database/scripts/meet-attendance-cloudflare-retention.test.mjs.
 import { afterEach, expect, it, vi } from 'vite-plus/test';
 import { dispatchScheduledJobs } from './dispatch';
+import { findJob, processorDeadlineMs } from './jobs';
 import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 import {
   MEET_ATTENDANCE_INTENT_LIMIT,
   MEET_ATTENDANCE_INTENT_RPC,
   MEET_ATTENDANCE_PURGE_LIMIT,
+  MEET_ATTENDANCE_PURGE_MAX_PAGES,
   MEET_ATTENDANCE_PURGE_RPC,
 } from './processors/meet-attendance-retention';
 
@@ -29,6 +31,7 @@ function harness(
   const { store } = memoryLedgerStore();
   let core = new LedgerCore(store);
   let call = 0;
+  let elapsed = 0;
   const fetchMock = vi.fn<typeof fetch>(async () => {
     const reply = replies[Math.min(call, replies.length - 1)];
     call += 1;
@@ -38,7 +41,7 @@ function harness(
     dispatchScheduledJobs(CRON, T0 + slot * 86_400_000, configured, {
       fetch: fetchMock,
       ledger: () => localLedger(core),
-      now: () => T0 + slot * 86_400_000,
+      now: () => T0 + slot * 86_400_000 + elapsed,
       sleep: async () => {
         throw new Error('Retention must not retry within a slot');
       },
@@ -46,6 +49,9 @@ function harness(
   return {
     fetchMock,
     run,
+    advance: (ms: number) => {
+      elapsed += ms;
+    },
     restart: () => {
       core = new LedgerCore(store);
     },
@@ -134,4 +140,74 @@ it('rejects an unbounded purge count without calling the intent page', async () 
   const h = harness([() => Response.json(MEET_ATTENDANCE_PURGE_LIMIT + 1)]);
   expect(await h.run()).toMatchObject([{ outcome: 'unknown', attempts: 1 }]);
   expect(h.fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it('drains multiple purge pages before advancing erasure intents', async () => {
+  const h = harness([
+    () => Response.json(MEET_ATTENDANCE_PURGE_LIMIT),
+    () => Response.json(37),
+    () => Response.json({ state: 'open', advanced: 0, finished: 0 }),
+  ]);
+  expect(await h.run()).toMatchObject([
+    { outcome: 'ok', detail: { purged: MEET_ATTENDANCE_PURGE_LIMIT + 37 } },
+  ]);
+  expect(
+    h.fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname)
+  ).toEqual([
+    `/rest/v1/rpc/${MEET_ATTENDANCE_PURGE_RPC}`,
+    `/rest/v1/rpc/${MEET_ATTENDANCE_PURGE_RPC}`,
+    `/rest/v1/rpc/${MEET_ATTENDANCE_INTENT_RPC}`,
+  ]);
+});
+
+it('bounds purge calls when every page is full', async () => {
+  const h = harness([
+    ...Array.from(
+      { length: MEET_ATTENDANCE_PURGE_MAX_PAGES },
+      () => () => Response.json(MEET_ATTENDANCE_PURGE_LIMIT)
+    ),
+    () => Response.json({ state: 'open', advanced: 0, finished: 0 }),
+  ]);
+  expect(await h.run()).toMatchObject([
+    {
+      outcome: 'degraded',
+      detail: {
+        capped: 1,
+        purged: MEET_ATTENDANCE_PURGE_LIMIT * MEET_ATTENDANCE_PURGE_MAX_PAGES,
+      },
+    },
+  ]);
+  expect(h.fetchMock).toHaveBeenCalledTimes(
+    MEET_ATTENDANCE_PURGE_MAX_PAGES + 1
+  );
+});
+
+it('honors a durable stop between full purge pages', async () => {
+  const h = harness([
+    () => {
+      h.core().stop(ID, 'operator');
+      return Response.json(MEET_ATTENDANCE_PURGE_LIMIT);
+    },
+  ]);
+  expect(await h.run()).toMatchObject([
+    { outcome: 'stopped', detail: { purged: MEET_ATTENDANCE_PURGE_LIMIT } },
+  ]);
+  expect(h.fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it('reserves time for erasure intents when the deadline is close', async () => {
+  const h = harness([
+    () => {
+      h.advance(processorDeadlineMs(findJob(ID)!) - 9_000);
+      return Response.json(MEET_ATTENDANCE_PURGE_LIMIT);
+    },
+    () => Response.json({ state: 'open', advanced: 1, finished: 1 }),
+  ]);
+  expect(await h.run()).toMatchObject([
+    {
+      outcome: 'degraded',
+      detail: { capped: 1, purged: MEET_ATTENDANCE_PURGE_LIMIT, advanced: 1 },
+    },
+  ]);
+  expect(h.fetchMock).toHaveBeenCalledTimes(2);
 });

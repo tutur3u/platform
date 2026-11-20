@@ -354,6 +354,14 @@ schedule another alarm. A repeated generation does not reset attempt counts.
 A changed directory publish writes the room snapshot once more to clear its
 retry deadline.
 
+The daily attendance retention slot runs up to eight 200-row purge RPCs and one
+erasure-intent RPC. An empty or short purge page ends the loop. The slot checks
+the durable job fence before each call, and the SQL functions independently
+honor the database stop fence. A deadline reserve leaves time for the intent
+scan. Deletes are idempotent and the processor schedules no follow-up. The
+`meet-attendance-retention.test.ts` dispatch cases count calls through a full
+batch, deadline pressure and a stop between pages.
+
 Cron Control's default-off checkout Worker uses a 5,000-item combined active and
 quarantine bound, pre-expiry capacity checks, three durable attempts per item,
 per-workspace invalidation receipts and a 240-second whole-run deadline. Stop is
