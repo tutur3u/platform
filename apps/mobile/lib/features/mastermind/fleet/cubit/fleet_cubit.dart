@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
@@ -95,7 +96,7 @@ class FleetCubit extends Cubit<FleetViewState> {
   void attach() {
     _attached++;
     _schedule();
-    if (_attached == 1) unawaited(refresh());
+    if (_attached == 1 && _foreground) unawaited(refresh());
   }
 
   void detach() {
@@ -104,17 +105,21 @@ class FleetCubit extends Cubit<FleetViewState> {
   }
 
   void setForeground({required bool foreground}) {
-    final resumed = foreground && !_foreground;
+    if (_foreground == foreground) return;
     _foreground = foreground;
     _schedule();
-    if (resumed && _attached > 0) unawaited(refresh());
+    if (foreground && _attached > 0) unawaited(refresh());
   }
 
   void _schedule() {
     _timer?.cancel();
     _timer = null;
     if (_attached > 0 && _foreground && !isClosed) {
-      _timer = _periodic(interval, (_) => unawaited(refresh()));
+      _timer = _periodic(interval, (_) {
+        ForegroundRefresh.request(this, () {
+          if (_attached > 0 && _foreground && !isClosed) unawaited(refresh());
+        });
+      });
     }
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
@@ -10,6 +12,7 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
 import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/mastermind_fleet_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
+import '../../../helpers/pump_app.dart';
 
 // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 void main() {
@@ -47,6 +50,61 @@ void main() {
   }
 
   DateTime now() => fleetTestNow;
+
+  testWidgets(
+    'Fleet waits for foreground privacy before refreshing or polling',
+    (tester) async {
+      final allowed = ValueNotifier(false);
+      final queued = <Object, VoidCallback>{};
+      final unbind = ForegroundRefresh.bind(
+        (owner, work) => queued[owner] = work,
+      );
+      addTearDown(allowed.dispose);
+      addTearDown(unbind);
+      await tester.setAppLifecycle(AppLifecycleState.resumed);
+      await pump(
+        tester,
+        ValueListenableBuilder(
+          valueListenable: allowed,
+          builder: (_, open, child) =>
+              AccountOverlayScope(epoch: allowed, allowed: open, child: child!),
+          child: FleetTodayPage(now: now),
+        ),
+      );
+      expect(source.fetches, 0);
+      allowed.value = true;
+      await tester.pump();
+      expect(source.fetches, 0);
+      expect(queued, hasLength(1));
+      queued.values.single();
+      queued.clear();
+      await tester.pump();
+      expect(source.fetches, 1);
+
+      await tester.setAppLifecycle(AppLifecycleState.paused);
+      allowed.value = false;
+      await tester.setAppLifecycle(AppLifecycleState.resumed);
+      await tester.pump();
+      queued.clear();
+      await tester.pump(const Duration(seconds: 30));
+      expect(queued, isEmpty);
+      expect(source.fetches, 1);
+
+      allowed.value = true;
+      await tester.pump();
+      queued.values.single();
+      queued.clear();
+      await tester.pump();
+      expect(source.fetches, 2);
+
+      allowed.value = false;
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 30));
+      expect(queued, isEmpty);
+      expect(source.fetches, 2);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
 
   testWidgets('Today shows health, counts, needs-you and machines', (
     tester,

@@ -227,7 +227,7 @@ class _MailWorkspaceState extends State<MailWorkspace> {
           event.request.openTarget == 'mail' &&
           event.request.userId == context.read<AuthCubit>().state.user?.id &&
           event.request.mailboxId == _mailboxId) {
-        _refreshVisibleMailbox();
+        _requestForegroundRefresh();
       }
     });
     _lifecycle = AppLifecycleListener(onResume: _requestForegroundRefresh);

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
@@ -56,23 +58,44 @@ class _AttachedFleetState extends State<_AttachedFleet>
     with WidgetsBindingObserver {
   late final FleetCubit _fleet = context.read<MastermindRuntime>().fleet;
 
+  bool _privacyReady = false;
+  bool _foreground = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _foreground = lifecycle == null || lifecycle == AppLifecycleState.resumed;
     _fleet
-      ..setForeground(
-        foreground: lifecycle == null || lifecycle == AppLifecycleState.resumed,
-      )
+      ..setForeground(foreground: false)
       ..attach();
   }
 
-  // Only `resumed` polls; `inactive` (Control Centre, biometric prompt) pauses
-  // the timer, and returning to `resumed` refreshes at once.
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) =>
-      _fleet.setForeground(foreground: state == AppLifecycleState.resumed);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _privacyReady = AccountOverlayScope.maybeOf(context)?.allowed ?? true;
+    _updatePolling();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _foreground = state == AppLifecycleState.resumed;
+    _updatePolling();
+  }
+
+  void _updatePolling() {
+    if (!_foreground || !_privacyReady) {
+      _fleet.setForeground(foreground: false);
+      return;
+    }
+    ForegroundRefresh.request(this, () {
+      if (mounted && _foreground && _privacyReady) {
+        _fleet.setForeground(foreground: true);
+      }
+    });
+  }
 
   @override
   void dispose() {
