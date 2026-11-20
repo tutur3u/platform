@@ -1,8 +1,4 @@
-import {
-  getTulearnBootstrap,
-  InternalApiError,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import type { TulearnBootstrapResponse } from '@tuturuuu/internal-api';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import {
@@ -22,6 +18,10 @@ import { connection } from 'next/server';
 import { AppUserNav } from '@/components/app-user-nav';
 import { NoWorkspaceState } from '@/components/learner-shell';
 import { redirect } from '@/i18n/navigation';
+import {
+  getLearnRenderBootstrap,
+  isLearnBootstrapAuthFailure,
+} from '@/lib/render-bootstrap';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
@@ -42,16 +42,11 @@ export default async function DashboardLayout({
     headers(),
     cookies(),
   ]);
-  let bootstrap: Awaited<ReturnType<typeof getTulearnBootstrap>>;
+  let bootstrap: TulearnBootstrapResponse;
   try {
-    bootstrap = await getTulearnBootstrap(
-      withForwardedInternalApiAuth(requestHeaders)
-    );
+    bootstrap = await getLearnRenderBootstrap();
   } catch (error) {
-    if (
-      error instanceof InternalApiError &&
-      (error.status === 401 || error.status === 403)
-    ) {
+    if (isLearnBootstrapAuthFailure(error)) {
       return redirect({ href: `/login?next=/${wsId}&refresh=1`, locale });
     }
 

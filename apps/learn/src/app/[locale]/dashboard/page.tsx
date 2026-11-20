@@ -1,9 +1,3 @@
-import {
-  getConfiguredLearnApiBaseUrl,
-  getTulearnBootstrap,
-  InternalApiError,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
 import {
   getPendingWorkspaceInvitations,
@@ -12,6 +6,10 @@ import {
 import { headers } from 'next/headers';
 import { NoWorkspaceState } from '@/components/learner-shell';
 import { redirect } from '@/i18n/navigation';
+import {
+  getLearnRenderBootstrap,
+  isLearnBootstrapAuthFailure,
+} from '@/lib/render-bootstrap';
 
 export const unstable_instant = false;
 
@@ -28,18 +26,11 @@ export default async function DashboardEntryPage({
     redirect({ href: '/login?next=/dashboard', locale });
   }
 
-  let bootstrap: Awaited<ReturnType<typeof getTulearnBootstrap>>;
+  let bootstrap: Awaited<ReturnType<typeof getLearnRenderBootstrap>>;
   try {
-    bootstrap = await getTulearnBootstrap(
-      withForwardedInternalApiAuth(requestHeaders, {
-        baseUrl: getConfiguredLearnApiBaseUrl(),
-      })
-    );
+    bootstrap = await getLearnRenderBootstrap(true);
   } catch (error) {
-    if (
-      error instanceof InternalApiError &&
-      (error.status === 401 || error.status === 403)
-    ) {
+    if (isLearnBootstrapAuthFailure(error)) {
       redirect({ href: '/login?next=/dashboard&refresh=1', locale });
     }
 

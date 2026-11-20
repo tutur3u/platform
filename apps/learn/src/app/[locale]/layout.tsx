@@ -1,5 +1,4 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
-import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -14,6 +13,7 @@ import { locale as getRootLocale } from 'next/root-params';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
+import { LearnVersionBadge } from '@/components/learn-version-badge';
 import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { supportedLocales } from '@/i18n/routing';
@@ -82,7 +82,7 @@ export default async function RootLayout({ children }: Props) {
                 <NuqsAdapter>
                   {children}
                   <Suspense fallback={null}>
-                    <SatelliteVersionBadge appName="Learn" />
+                    <LearnVersionBadge />
                   </Suspense>
                 </NuqsAdapter>
               </NextIntlClientProvider>

@@ -94,6 +94,9 @@ changes belong to the release owner.
 Compare cold starts and warmed requests separately for the same route mix.
 The Worker serves fingerprinted Vite assets with immutable caching. HTML,
 auth redirects and signed-in API responses keep their private cache policy.
-The two Learn dashboard menus share one profile load per render. Include public
-landing, signed-in workspace and static asset requests in the hosted watch.
+The two dashboard menus and staff version badge share one profile load per
+Start request. Dashboard bootstrap reads use the request’s verified identity
+and coalesce repeat reads within the request, per API origin. Session assurance
+finishes before the protected render starts. Include public landing, signed-in
+workspace and static asset requests in the hosted watch.
 Compare early and late windows with upstream status and rate-limit counts.
