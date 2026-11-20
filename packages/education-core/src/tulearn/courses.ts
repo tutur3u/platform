@@ -1,8 +1,8 @@
-import type { Json, Tables } from '@tuturuuu/types/supabase';
+import type { Tables } from '@tuturuuu/types/supabase';
 
+import { projectLearnerQuizPrompt } from '../education/quiz-answer-key';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
-import { getMatchingPairs } from './quiz-content';
 import type { Db } from './types';
 
 type ModuleIdOnly = { module_id: string | null };
@@ -97,40 +97,17 @@ type LearnerQuiz = Pick<
   }>;
 };
 
-function stableChoiceRank(quizId: string, value: string, index: number) {
-  const input = `${quizId}:${value}:${index}`;
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash * 31 + input.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
-function matchingPromptContent(quizId: string, content: Json | null): Json {
-  const pairs = getMatchingPairs(content);
-  const choices = pairs
-    .map((pair, index) => ({
-      rank: stableChoiceRank(quizId, pair.right, index),
-      value: pair.right,
-    }))
-    .sort((a, b) => a.rank - b.rank)
-    .map((choice) => choice.value);
-
-  return {
-    choices,
-    pairs: pairs.map((pair) => ({ left: pair.left })),
-  };
-}
-
-function sanitizeLearnerQuiz(quiz: LearnerQuiz): LearnerQuiz {
+// Option explanations often name the right answer, so they follow the same
+// release as practice scores.
+function sanitizeLearnerQuiz(
+  quiz: LearnerQuiz,
+  { revealExplanations }: { revealExplanations: boolean }
+): LearnerQuiz {
   return {
     ...quiz,
-    content:
-      quiz.type === 'matching'
-        ? matchingPromptContent(quiz.id, quiz.content)
-        : quiz.content,
+    content: projectLearnerQuizPrompt(quiz),
     quiz_options: quiz.quiz_options?.map((option) => ({
-      explanation: option.explanation,
+      explanation: revealExplanations ? option.explanation : null,
       id: option.id,
       value: option.value,
     })),
@@ -516,13 +493,15 @@ export async function getLearnerModuleDetail({
     .map((row) => firstOf(row.workspace_quizzes))
     .filter((value): value is NonNullable<typeof value> => Boolean(value));
 
+  const isQuizScorePublished =
+    (moduleResult.data as { is_quiz_score_published?: boolean | null })
+      .is_quiz_score_published === true;
+
   return {
     ...summary,
     content: moduleResult.data.content,
     extra_content: moduleResult.data.extra_content,
-    is_quiz_score_published:
-      (moduleResult.data as { is_quiz_score_published?: boolean | null })
-        .is_quiz_score_published === true,
+    is_quiz_score_published: isQuizScorePublished,
     quiz_deadline:
       (moduleResult.data as { quiz_deadline?: string | null }).quiz_deadline ||
       null,
@@ -530,7 +509,9 @@ export async function getLearnerModuleDetail({
     flashcards: flashcardRows
       .map((row) => firstOf(row.workspace_flashcards))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),
-    quizzes: rawQuizzes.map(sanitizeLearnerQuiz),
+    quizzes: rawQuizzes.map((quiz) =>
+      sanitizeLearnerQuiz(quiz, { revealExplanations: isQuizScorePublished })
+    ),
     quizSets: quizSetRows
       .map((row) => firstOf(row.workspace_quiz_sets))
       .filter((value): value is NonNullable<typeof value> => Boolean(value)),

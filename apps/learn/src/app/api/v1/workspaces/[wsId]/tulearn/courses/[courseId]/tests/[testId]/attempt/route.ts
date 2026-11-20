@@ -1,3 +1,4 @@
+import { projectLearnerQuizPrompt } from '@tuturuuu/education-core/education/quiz-answer-key';
 import {
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
@@ -141,7 +142,11 @@ export const GET = withSessionAuth<Params>(
           .order('created_at', { ascending: false });
 
         if (quizzesErr) throw quizzesErr;
-        return (rawQuizzes ?? []) as unknown as TQuiz[];
+        // Content goes out only as the learner prompt, never as stored.
+        return ((rawQuizzes ?? []) as unknown as TQuiz[]).map((quiz) => ({
+          ...quiz,
+          content: projectLearnerQuizPrompt(quiz),
+        }));
       };
 
       // If submitted, return the final result

@@ -1,9 +1,11 @@
 import { JsonPayloadSchema } from '@tuturuuu/education-core/education/json-payload-schema';
 import { attachPrivateWorkspaceQuizAnswers } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { splitQuizAuthoring } from '@tuturuuu/education-core/education/quiz-answer-key';
 import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -341,11 +343,24 @@ export const POST = withSessionAuth(
       const rpcClient = access.sbAdmin as unknown as UntypedRpcClient;
 
       for (const quiz of quizzes) {
+        // Matching and ordering keys go to the private answer only. A new
+        // quiz gets its id from the RPC, so its prompt shuffle uses a
+        // one-off seed.
+        const authored = splitQuizAuthoring({
+          answer: quiz.answer,
+          content: quiz.content,
+          quizId: quiz.id ?? randomUUID(),
+          type: quiz.type,
+        });
         const { error } = await rpcClient.rpc<string>(
           'upsert_course_test_question',
           {
             p_module_id: moduleId,
-            p_quiz: quiz,
+            p_quiz: {
+              ...quiz,
+              answer: authored.answer,
+              content: authored.content,
+            },
             p_test_id: testId,
             p_ws_id: access.normalizedWsId,
           }

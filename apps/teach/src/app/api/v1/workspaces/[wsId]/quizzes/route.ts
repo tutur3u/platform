@@ -3,9 +3,11 @@ import {
   attachPrivateWorkspaceQuizAnswers,
   setPrivateWorkspaceQuizAnswer,
 } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { splitQuizAuthoring } from '@tuturuuu/education-core/education/quiz-answer-key';
 import { revalidateCourseModuleQuizPaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { Json } from '@tuturuuu/types';
+import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -242,10 +244,19 @@ export const POST = withSessionAuth(
       }
       for (const quiz of quizzes) {
         let quizId: string;
+        const newQuizId = quiz.id ?? randomUUID();
+        // Matching and ordering keys go to the private answer only.
+        const authored = splitQuizAuthoring({
+          answer: quiz.answer,
+          content: quiz.content,
+          quizId: newQuizId,
+          type: quiz.type,
+        });
 
         const updateData: QuizMutationData = { question: quiz.question };
         if (quiz.type !== undefined) updateData.type = quiz.type;
-        if (quiz.content !== undefined) updateData.content = quiz.content;
+        if (authored.content !== undefined)
+          updateData.content = authored.content;
 
         if (quiz.id != null) {
           const { data: updated, error: updateErr } = await access.sbAdmin
@@ -264,12 +275,14 @@ export const POST = withSessionAuth(
           }
           quizId = updated.id;
         } else {
-          const insertData: QuizMutationData & { ws_id: string } = {
+          const insertData: QuizMutationData & { id: string; ws_id: string } = {
+            id: newQuizId,
             question: quiz.question,
             ws_id: access.normalizedWsId,
           };
           if (quiz.type !== undefined) insertData.type = quiz.type;
-          if (quiz.content !== undefined) insertData.content = quiz.content;
+          if (authored.content !== undefined)
+            insertData.content = authored.content;
 
           const { data: inserted, error: insertErr } = await access.sbAdmin
             .from('workspace_quizzes')
@@ -281,7 +294,7 @@ export const POST = withSessionAuth(
         }
 
         await setPrivateWorkspaceQuizAnswer({
-          answer: quiz.answer,
+          answer: authored.answer,
           db: access.sbAdmin,
           quizId,
         });

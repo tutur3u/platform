@@ -1,5 +1,6 @@
 import { JsonPayloadSchema } from '@tuturuuu/education-core/education/json-payload-schema';
 import { setPrivateWorkspaceQuizAnswer } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { splitQuizAuthoring } from '@tuturuuu/education-core/education/quiz-answer-key';
 import { revalidateQuizLinkedModulePaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { Json } from '@tuturuuu/types';
@@ -81,11 +82,18 @@ export const PUT = withSessionAuth(
       );
     }
 
+    // Matching and ordering keys go to the private answer only.
+    const authored = splitQuizAuthoring({
+      answer: parsedBody.data.answer,
+      content: parsedBody.data.content,
+      quizId: parsedParams.data.quizId,
+      type: parsedBody.data.type,
+    });
+
     const updateData: QuizMutationData = { question: parsedBody.data.question };
     if (parsedBody.data.type !== undefined)
       updateData.type = parsedBody.data.type;
-    if (parsedBody.data.content !== undefined)
-      updateData.content = parsedBody.data.content;
+    if (authored.content !== undefined) updateData.content = authored.content;
 
     const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
@@ -112,7 +120,7 @@ export const PUT = withSessionAuth(
     }
 
     await setPrivateWorkspaceQuizAnswer({
-      answer: parsedBody.data.answer,
+      answer: authored.answer,
       db: access.sbAdmin,
       quizId: parsedParams.data.quizId,
     });

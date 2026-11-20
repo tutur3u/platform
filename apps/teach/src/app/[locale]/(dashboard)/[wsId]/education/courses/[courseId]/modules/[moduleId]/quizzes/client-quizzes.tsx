@@ -13,6 +13,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@tuturuuu/ui/alert-dialog';
+import {
+  authoredMatchingPairs,
+  authoredOrderingItems,
+} from '@tuturuuu/education-core/education/quiz-answer-key';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
@@ -227,7 +231,7 @@ export default function ClientQuizzes({
                 {/* Matching Rendering */}
                 {quiz?.type === 'matching' && (
                   <div className="mt-4 grid gap-2 text-sm">
-                    {quiz.content?.pairs?.map(
+                    {authoredMatchingPairs(quiz).map(
                       (pair: { left: string; right: string }, pidx: number) => (
                         <div
                           key={pidx}
@@ -251,19 +255,21 @@ export default function ClientQuizzes({
                 {/* Ordering Rendering */}
                 {quiz?.type === 'ordering' && (
                   <div className="mt-4 grid gap-2 text-sm">
-                    {quiz.content?.items?.map((item: string, iidx: number) => (
-                      <div
-                        key={iidx}
-                        className="flex items-center gap-2 rounded-md border border-dynamic-green/30 bg-dynamic-green/5 p-2"
-                      >
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-green font-bold text-white text-xs">
-                          {iidx + 1}
-                        </span>
-                        <span className="font-semibold text-foreground">
-                          {item}
-                        </span>
-                      </div>
-                    ))}
+                    {authoredOrderingItems(quiz).map(
+                      (item: string, iidx: number) => (
+                        <div
+                          key={iidx}
+                          className="flex items-center gap-2 rounded-md border border-dynamic-green/30 bg-dynamic-green/5 p-2"
+                        >
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-dynamic-green font-bold text-white text-xs">
+                            {iidx + 1}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            {item}
+                          </span>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
               </div>

@@ -85,7 +85,7 @@ function getMatchingPairs(value: unknown): MatchingPair[] {
         right: displayText(record?.right),
       };
     })
-    .filter((pair) => Boolean(pair.left && pair.right));
+    .filter((pair) => Boolean(pair.left));
 }
 
 function getSelectedIndexAnswer(value: unknown) {

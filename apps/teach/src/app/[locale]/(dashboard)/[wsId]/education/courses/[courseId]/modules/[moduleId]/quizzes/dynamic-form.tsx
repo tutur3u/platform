@@ -6,6 +6,10 @@ import {
   createWorkspaceQuiz,
   updateWorkspaceQuiz,
 } from '@tuturuuu/internal-api';
+import {
+  authoredMatchingPairs,
+  authoredOrderingItems,
+} from '@tuturuuu/education-core/education/quiz-answer-key';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
@@ -67,12 +71,17 @@ export default function DynamicQuizForm({
   // Matching State
   const [matchingPairs, setMatchingPairs] = useState<
     Array<{ left: string; right: string }>
-  >(data?.content?.pairs || [{ left: '', right: '' }]);
+  >(() => {
+    // The key lives in the private answer; content holds only the prompt.
+    const pairs = authoredMatchingPairs(data ?? {});
+    return pairs.length > 0 ? pairs : [{ left: '', right: '' }];
+  });
 
   // Ordering State
-  const [orderingItems, setOrderingItems] = useState<string[]>(
-    data?.content?.items || ['', '']
-  );
+  const [orderingItems, setOrderingItems] = useState<string[]>(() => {
+    const items = authoredOrderingItems(data ?? {});
+    return items.length > 0 ? items : ['', ''];
+  });
 
   // Mutation for Save
   const saveMutation = useMutation({
@@ -104,11 +113,12 @@ export default function DynamicQuizForm({
         const filteredPairs = matchingPairs.filter(
           (p) => p.left.trim() !== '' && p.right.trim() !== ''
         );
-        payloadContent = { pairs: filteredPairs };
+        // The server builds the learner prompt from the private answer.
+        payloadContent = {};
         payloadAnswer = { pairs: filteredPairs };
       } else if (type === 'ordering') {
         const filteredItems = orderingItems.filter((i) => i.trim() !== '');
-        payloadContent = { items: filteredItems };
+        payloadContent = {};
         payloadAnswer = { order: filteredItems };
       }
 

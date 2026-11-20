@@ -69,7 +69,7 @@ export const POST = withSessionAuth<Params>(
       // Fetch test details
       const { data: test, error: testErr } = await sbAdmin
         .from('course_tests')
-        .select('id, name, is_published, course_id')
+        .select('id, name, is_published, is_score_published, course_id')
         .eq('id', testId)
         .eq('course_id', courseId)
         .eq('is_published', true)
@@ -106,7 +106,14 @@ export const POST = withSessionAuth<Params>(
         subject.studentPlatformUserId
       );
 
-      return NextResponse.json({ success: true, attempt: gradedAttempt });
+      // The score stays hidden until the teacher releases it.
+      return NextResponse.json({
+        success: true,
+        attempt: {
+          ...gradedAttempt,
+          score: test.is_score_published ? gradedAttempt.score : null,
+        },
+      });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;

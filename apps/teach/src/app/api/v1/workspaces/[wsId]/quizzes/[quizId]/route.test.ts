@@ -162,6 +162,50 @@ describe('workspace quiz route', () => {
     );
   });
 
+  it('keeps matching and ordering keys out of public content', async () => {
+    const { PUT } = await import('./route');
+    const pairs = [
+      { left: 'Cat', right: 'Meo' },
+      { left: 'Dog', right: 'Gau' },
+    ];
+
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/quizzes/00000000-0000-0000-0000-000000000002',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            // An older editor still sends the key inside content.
+            content: { pairs },
+            question: 'Match the sounds',
+            type: 'matching',
+          }),
+        }
+      ),
+      {
+        params: Promise.resolve({
+          quizId: '00000000-0000-0000-0000-000000000002',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    const [stored] = mocks.workspaceQuizzesTable.update.mock
+      .calls[0] as unknown as [{ content: unknown }];
+    expect(JSON.stringify(stored.content)).not.toContain('right');
+    expect(stored.content).toMatchObject({
+      pairs: [{ left: 'Cat' }, { left: 'Dog' }],
+    });
+    expect(mocks.privateQuizAnswersTable.upsert).toHaveBeenCalledWith(
+      {
+        answer: { pairs },
+        quiz_id: '00000000-0000-0000-0000-000000000002',
+      },
+      { onConflict: 'quiz_id' }
+    );
+  });
+
   it('does not write private answers when the quiz is outside the workspace', async () => {
     mocks.updateQuizBuilder.maybeSingle.mockResolvedValueOnce({
       data: null,

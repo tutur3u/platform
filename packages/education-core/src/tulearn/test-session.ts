@@ -2,6 +2,10 @@ import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
+  resolveMatchingKey,
+  resolveOrderingKey,
+} from '../education/quiz-answer-key';
+import {
   asRecord,
   displayText,
   getMatchingPairs,
@@ -213,33 +217,29 @@ export async function submitTestAttemptInternal(
             : booleanProperty(correctAnswer, 'correct');
         isCorrect = clientCorrect === correctKey;
       } else if (quiz.type === 'ordering') {
-        const correctAnswer =
-          correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
-        const correctOrder = getStringItems(correctAnswer, 'order');
+        // Stored prompts are shuffled; only the key or legacy authored
+        // content can grade.
+        const correctOrder = resolveOrderingKey({
+          answer: correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null,
+          content: quiz.content,
+        });
         const submittedOrder = Array.isArray(answer)
           ? answer.map(displayText)
           : getStringItems(answer, 'order');
-        const fallbackOrder =
-          correctOrder.length > 0
-            ? correctOrder
-            : getStringItems(quiz.content, 'items');
 
         isCorrect =
-          fallbackOrder.length > 0 &&
-          stringArraysMatch(submittedOrder, fallbackOrder);
+          correctOrder.length > 0 &&
+          stringArraysMatch(submittedOrder, correctOrder);
       } else if (quiz.type === 'matching') {
-        const correctAnswer =
-          correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null;
-        const correctPairs = getMatchingPairs(correctAnswer);
+        const correctPairs = resolveMatchingKey({
+          answer: correctAnswerMap.get(quiz.id) ?? quiz.answer ?? null,
+          content: quiz.content,
+        });
         const submittedPairs = getMatchingPairs(answer);
-        const fallbackPairs =
-          correctPairs.length > 0
-            ? correctPairs
-            : getMatchingPairs(quiz.content);
 
         isCorrect =
-          fallbackPairs.length > 0 &&
-          matchingPairsMatch(submittedPairs, fallbackPairs);
+          correctPairs.length > 0 &&
+          matchingPairsMatch(submittedPairs, correctPairs);
       } else if (quiz.type === 'paragraph') {
         // Paragraph questions are typically manual grading, default is false/0 until manual review
         isCorrect = false;

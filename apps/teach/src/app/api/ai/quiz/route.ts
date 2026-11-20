@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/ai/credits/check-credits';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { setPrivateWorkspaceQuizAnswer } from '@tuturuuu/education-core/education/private-quiz-answers';
+import { splitQuizAuthoring } from '@tuturuuu/education-core/education/quiz-answer-key';
 import { revalidateCourseModuleQuizPaths } from '@tuturuuu/education-core/education/revalidate-quiz-paths';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -243,23 +244,31 @@ ${lessonInfo}`;
             content = { options: quiz.options ?? [] };
             answer = { correctIndex: quiz.correct_option_index ?? 0 };
           } else if (quiz.type === 'matching') {
-            content = { pairs: quiz.matching_pairs ?? [] };
             answer = { pairs: quiz.matching_pairs ?? [] };
           } else if (quiz.type === 'ordering') {
-            content = { items: quiz.ordering_items ?? [] };
             answer = { order: quiz.ordering_items ?? [] };
           } else if (quiz.type === 'paragraph') {
             content = {};
             answer = {};
           }
 
-          return {
+          // Matching and ordering keys go to the private answer only;
+          // content keeps the shuffled learner prompt.
+          const id = randomUUID();
+          const authored = splitQuizAuthoring({
             answer,
+            content,
+            quizId: id,
+            type: quiz.type,
+          });
+
+          return {
+            answer: authored.answer ?? answer,
             quiz: {
-              id: randomUUID(),
+              id,
               question: quiz.question,
               type: quiz.type,
-              content,
+              content: authored.content ?? content,
               score: quiz.score,
               ws_id: normalizedWsId,
             },
