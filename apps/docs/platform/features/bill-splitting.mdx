@@ -76,7 +76,10 @@ splits. A linked debtor can report a payment and attach proof. Only the receivin
 party confirms it. Private proof downloads authorize against the payment and the
 current actor on every request. Comments and activity are visible only to split
 members. Realtime signals carry a revision or event cursor; each client refetches
-through its authorized API. Reminders run on Cloudflare with bounded retries,
+through its authorized API. Activity includes the latest 100 events and older
+unconfirmed payment reports so recipients can still confirm them. The
+`finance-bill-split-access.sql` regression exercises a report with more than 100
+newer events. Reminders run on Cloudflare with bounded retries,
 recipient preferences, deduplication, and a durable cancellation fence when a
 payment is confirmed, access is withdrawn, or reminders are disabled.
 

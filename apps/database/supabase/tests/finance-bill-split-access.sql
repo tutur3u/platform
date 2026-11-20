@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(47);
+select plan(50);
 
 select is(
   (select count(*) from pg_catalog.pg_class c
@@ -175,6 +175,41 @@ select is(private.dispatch_finance_bill_split_reminders(20),
 
 create function pg_temp.fixture(n text) returns uuid language sql immutable
 as $$ select ('97049000-0000-4000-8000-0000000000' || n)::uuid $$;
+
+select private.write_finance_bill_split_activity(
+  pg_temp.fixture('10'), pg_temp.fixture('02'), pg_temp.fixture('20'),
+  pg_temp.fixture('38'), 'payment_report',
+  p_from_id => pg_temp.fixture('22'), p_to_id => pg_temp.fixture('21'),
+  p_amount_minor => 1
+);
+
+insert into private.finance_bill_split_activity
+  (ws_id, split_id, id, actor_id, kind, comment_text, created_at)
+select pg_temp.fixture('10'), pg_temp.fixture('20'), gen_random_uuid(),
+  pg_temp.fixture('01'), 'comment', 'Fixture comment ' || entry,
+  now() + interval '1 second' * entry
+from generate_series(1, 101) as entry;
+
+select is(
+  jsonb_array_length(private.read_finance_bill_split_activity(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('20')
+  )),
+  101,
+  'The feed retains its recent history and the older pending report'
+);
+select ok(
+  private.read_finance_bill_split_activity(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('20')
+  ) @> jsonb_build_array(jsonb_build_object('id', pg_temp.fixture('38')))
+  and not private.read_finance_bill_split_activity(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('20')
+  ) @> jsonb_build_array(jsonb_build_object('id', pg_temp.fixture('30'))),
+  'Only the unconfirmed report remains visible beyond the history window'
+);
+select is(private.write_finance_bill_split_activity(
+  pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('20'),
+  pg_temp.fixture('39'), 'payment_confirm', p_report_id => pg_temp.fixture('38')
+), pg_temp.fixture('39'), 'The recipient can confirm the report beyond the history window');
 
 select private.create_finance_bill_split(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('35'), 'Large valid settlement', 'VND', 0,
