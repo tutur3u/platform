@@ -167,9 +167,12 @@ describe('opt-in mounted provider-only sessions', () => {
     }
   });
 
-  it.each(['aal1', 'aal2'])(
-    'fails closed for enrolled MFA users until the verified helper is qualified: %s',
-    async (aal) => {
+  it.each([
+    ['aal1', false],
+    ['aal2', true],
+  ] as const)(
+    'applies the verified AAL requirement to TOTP enrollment: %s',
+    async (aal, allowed) => {
       mocks.updateSession.mockResolvedValue({
         res: NextResponse.next(),
         claims: { sub: 'provider-user', exp, aal },
@@ -179,8 +182,10 @@ describe('opt-in mounted provider-only sessions', () => {
         ...strictOptions,
         now,
       });
-      expect(result).toMatchObject({ ok: false, error: 'MFA required' });
-      expect(mocks.appClaims).not.toHaveBeenCalled();
+      expect(result.ok).toBe(allowed);
+      if (!allowed)
+        expect(result).toMatchObject({ ok: false, error: 'MFA required' });
+      expect(mocks.appClaims).toHaveBeenCalledTimes(allowed ? 1 : 0);
       expect(mocks.signedRefresh).not.toHaveBeenCalled();
     }
   );
@@ -196,6 +201,10 @@ describe('opt-in mounted provider-only sessions', () => {
     expect(unavailable).toMatchObject({
       ok: false,
       error: 'Account assurance unavailable',
+    });
+    mocks.updateSession.mockResolvedValueOnce({
+      res: NextResponse.next(),
+      claims: { sub: 'provider-user', exp, aal: 'aal2' },
     });
     mocks.assurance.mockResolvedValueOnce(
       new NextResponse(null, { status: 403 })
@@ -318,7 +327,7 @@ describe('mounted verify-token requires a shared session before redirecting', ()
     }
   );
 
-  it('sends MFA-enrolled sessions to Web MFA without redeeming a token', async () => {
+  it('sends TOTP-enrolled aal1 sessions to Web MFA without redeeming a token', async () => {
     mocks.factors.mockReturnValue(true);
     const response = await consumeVerifyTokenRequest(
       request('/verify-token?token=never-exchange'),

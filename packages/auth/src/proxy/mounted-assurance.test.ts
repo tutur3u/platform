@@ -138,17 +138,20 @@ describe('mounted TOTP assurance fails closed', () => {
     expect(mocks.listFactors).not.toHaveBeenCalled();
   });
 
-  it('admits an aal2 session whose verified user has no verified TOTP factor', async () => {
-    claims('aal2');
-    mocks.cachedUser = {
-      id: 'provider-user',
-      factors: [{ factor_type: 'totp', status: 'unverified' }],
-    };
-    const result = await refreshAppSessionForRequest(request(), strict);
-    expect(result.ok).toBe(true);
-    expect(mocks.listFactors).not.toHaveBeenCalled();
-    expect(mocks.signedRefresh).not.toHaveBeenCalled();
-  });
+  it.each(['verified', 'unverified'])(
+    'admits an aal2 session with a %s TOTP factor',
+    async (status) => {
+      claims('aal2');
+      mocks.cachedUser = {
+        id: 'provider-user',
+        factors: [{ factor_type: 'totp', status }],
+      };
+      const result = await refreshAppSessionForRequest(request(), strict);
+      expect(result.ok).toBe(true);
+      expect(mocks.listFactors).not.toHaveBeenCalled();
+      expect(mocks.signedRefresh).not.toHaveBeenCalled();
+    }
+  );
 
   it('carries no cookie deletion on the unavailable refusal', async () => {
     const res = NextResponse.next();

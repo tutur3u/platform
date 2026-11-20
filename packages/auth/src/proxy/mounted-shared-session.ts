@@ -25,7 +25,7 @@ import { peekVerifiedTotpFactor } from './verified-request-user';
  * Opt-in `supabase-only` session mode for an app mounted on the apex
  * (`https://tuturuuu.com/<app>`). It accepts only the shared provider session:
  * app-session cookies and Authorization are discarded, the signed-refresh
- * fallback is never used, and enrolled MFA users fail closed. A refusal never
+ * fallback is never used, and verified TOTP enrollment requires AAL2. A refusal never
  * carries a provider refresh's cookie deletions, because Web owns those cookies.
  */
 export type MountedSharedSessionOptions = {
@@ -88,13 +88,11 @@ export async function resolveMountedSharedSession(
         : 'MFA required',
       res
     );
-  // Enrollment comes only from the user the assurance check above revalidated
-  // on this request; without it the mount cannot rule out TOTP and fails
-  // closed. Enrolled MFA users stay closed until the timestamp-aware
-  // verified-claims assurance contract is available to mounted sessions.
+  // Bind enrollment to the user revalidated on this request. The provider's
+  // verified AAL is required alongside Web's account assurance policy.
   const totp = peekVerifiedTotpFactor(req, record.sub);
   if (totp === null) return refused('Account assurance unavailable', res);
-  if (totp) return refused('MFA required', res);
+  if (totp && record.aal !== 'aal2') return refused('MFA required', res);
 
   const appClaims = await createAppSessionClaimsFromSupabaseClaims(claims, {
     now: options.now,

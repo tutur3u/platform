@@ -51,7 +51,7 @@ export function syntheticSessionHeaders(secret) {
 
 const centralCookieCanary = 'fixture-central-provider-refresh';
 
-export function syntheticMountedSessionHeaders(secret) {
+export function syntheticMountedSessionHeaders(secret, aal = 'aal1') {
   const now = Math.floor(Date.now() / 1000);
   const encode = (value) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
@@ -60,7 +60,8 @@ export function syntheticMountedSessionHeaders(secret) {
     email: user.email,
     role: 'authenticated',
     aud: 'authenticated',
-    aal: 'aal1',
+    aal,
+    ...(aal === 'aal2' ? { amr: [{ method: 'totp', timestamp: now }] } : {}),
     iat: now,
     exp: now + 3600,
     session_id: fixtureUserId,
@@ -84,7 +85,8 @@ export function signedSsrFixtureResponse(
   request,
   calls,
   financeOrigin,
-  base = ''
+  base = '',
+  { verifiedTotp = false } = {}
 ) {
   const url = new URL(request.url);
   const providerCookie = request.headers
@@ -162,7 +164,10 @@ export function signedSsrFixtureResponse(
     url.pathname === '/auth/v1/user'
   ) {
     calls.push(url.pathname);
-    return Response.json({ ...user, user });
+    const verifiedUser = verifiedTotp
+      ? { ...user, factors: [{ factor_type: 'totp', status: 'verified' }] }
+      : user;
+    return Response.json({ ...verifiedUser, user: verifiedUser });
   }
   if (base && url.pathname === '/auth/v1/.well-known/jwks.json') {
     return Response.json({ keys: [] });

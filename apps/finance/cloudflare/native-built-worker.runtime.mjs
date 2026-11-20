@@ -66,7 +66,9 @@ test(
           JSON.stringify([...request.headers]),
           /fixture-central-provider-refresh|tuturuuu_web_app_session/u
         );
-        return signedSsrFixtureResponse(request, signedCalls, origin, base);
+        return signedSsrFixtureResponse(request, signedCalls, origin, base, {
+          verifiedTotp: true,
+        });
       },
     });
     const path = `/en/${fixtureWorkspaceId}?ref=a&ref=b`;
@@ -82,7 +84,19 @@ test(
     assert.equal(callback.searchParams.get('nextUrl'), path);
     await anonymous.text();
 
-    const headers = syntheticMountedSessionHeaders(runtime.secret);
+    const pendingMfa = await runtime.fetch(`${origin}${base}${path}`, {
+      headers: syntheticMountedSessionHeaders(runtime.secret),
+    });
+    assert.equal(pendingMfa.status, 307);
+    const mfaLogin = new URL(pendingMfa.headers.get('location'));
+    assert.equal(mfaLogin.origin, origin);
+    assert.equal(mfaLogin.pathname, '/login');
+    assert.equal(mfaLogin.searchParams.get('mfa'), 'required');
+    assert.equal(mfaLogin.searchParams.get('returnUrl'), callback.href);
+    assert.deepEqual(pendingMfa.headers.getSetCookie(), []);
+    await pendingMfa.text();
+
+    const headers = syntheticMountedSessionHeaders(runtime.secret, 'aal2');
     const verified = await runtime.fetch(callback.href, { headers });
     assert.equal(verified.status, 307);
     assert.equal(verified.headers.get('location'), `${origin}${base}${path}`);
