@@ -72,4 +72,6 @@ jobs:
           bun-version: 1.4.4
       - run: bun install --frozen-lockfile
       - name: Qualify staging
-        run: node apps/chat-realtime/scripts/qualify-chat-realtime.mjs --phase="${{ inputs.phase }}"
+        env:
+          QUALIFY_PHASE: ${{ inputs.phase }}
+        run: node apps/chat-realtime/scripts/qualify-chat-realtime.mjs --phase="$QUALIFY_PHASE"

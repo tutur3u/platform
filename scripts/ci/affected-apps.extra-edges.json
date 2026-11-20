@@ -6,6 +6,9 @@
   "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/": [
     "packages/users-core"
   ],
+  "apps/cron-control/src/processors/chat-realtime-revocations.ts": [
+    "apps/chat-realtime"
+  ],
   "apps/database/": ["apps/infrastructure", "packages/feature-flags"],
   "apps/database/scripts/": ["apps/web"],
   "apps/database/supabase/": ["packages/utils"],
@@ -50,6 +53,7 @@
   "apps/web/e2e/helpers/": ["apps/inventory", "apps/lettin"],
   "apps/web/messages/": ["apps/contacts", "apps/tanstack-web", "packages/ui"],
   "apps/web/src/": ["packages/users-core"],
+  "apps/web/src/lib/chat/realtime-worker.ts": ["apps/chat-realtime"],
   "apps/web/src/lib/seo/": ["apps/gateway", "packages/utils"],
   "packages/hive-ui/src/components/hive/": ["packages/ui"],
   "packages/internal-api/src/": [
