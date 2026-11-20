@@ -1,3 +1,4 @@
+-- tuturuuu: no-grant (trigger)
 create function private.stamp_external_project_asset_revision()
 returns trigger
 language plpgsql
