@@ -263,7 +263,7 @@ create or replace function public.ensure_workspace_user_link(
 returns uuid
 language plpgsql
 security definer
-set search_path = ''
+set search_path = pg_catalog, pg_temp
 as $$
 declare
   caller_id uuid := auth.uid();
@@ -352,6 +352,12 @@ end;
 $$;
 
 
+revoke all on function public.ensure_workspace_user_link(uuid, uuid)
+  from public, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.ensure_workspace_user_link(uuid,uuid) review=contacts-consent-acl
+grant execute on function public.ensure_workspace_user_link(uuid, uuid)
+  to authenticated, service_role;
+
 create or replace function public.consolidate_workspace_user_links(
   target_ws_id uuid default null
 )
@@ -393,6 +399,11 @@ begin
 end;
 $$;
 
+
+revoke all on function public.consolidate_workspace_user_links(uuid)
+  from public, anon, authenticated;
+grant execute on function public.consolidate_workspace_user_links(uuid)
+  to service_role;
 
 drop trigger if exists consolidate_user_group_manager_link
   on public.workspace_user_groups_users;
