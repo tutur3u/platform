@@ -17,6 +17,7 @@ import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
 part 'crm_repository_account_links.dart';
+part 'crm_repository_approvals.dart';
 part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
 
@@ -24,7 +25,8 @@ class CrmRepository
     with
         _CrmGroupMembershipRepository,
         _CrmBillingRepository,
-        _CrmAccountLinkRepository {
+        _CrmAccountLinkRepository,
+        _CrmApprovalRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,
@@ -261,22 +263,6 @@ class CrmRepository
       },
     );
     return ContactReportPage.fromJson(await _api.getJson(uri.toString()));
-  }
-
-  Future<List<ContactSectionRecord>> loadApprovals(String wsId) async {
-    final records = <ContactSectionRecord>[];
-    for (final kind in const ['reports', 'posts']) {
-      try {
-        records.addAll(
-          contactApprovalRecords(
-            await _api.getJson(CrmEndpoints.approvals(wsId, kind: kind)),
-          ),
-        );
-      } on ApiException catch (error) {
-        if (error.statusCode != 403) rethrow;
-      }
-    }
-    return records;
   }
 
   Future<List<ContactSectionRecord>> loadAnnouncements(String wsId) async {

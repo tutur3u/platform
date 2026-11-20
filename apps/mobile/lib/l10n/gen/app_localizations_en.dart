@@ -2441,6 +2441,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsAnnouncements => 'Announcements';
 
   @override
+  String get contactsApprovalApprove => 'Approve';
+
+  @override
+  String get contactsApprovalConfirm => 'Approve this item?';
+
+  @override
+  String get contactsApprovalFeedbackRequired => 'Add feedback before approving this report.';
+
+  @override
+  String get contactsApprovalNotes => 'Notes';
+
+  @override
+  String get contactsApprovalReason => 'Reason for rejection';
+
+  @override
+  String get contactsApprovalReject => 'Reject';
+
+  @override
   String get contactsApprovals => 'Approvals';
 
   @override

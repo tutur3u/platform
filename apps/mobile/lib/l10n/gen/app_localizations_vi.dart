@@ -2427,6 +2427,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsAnnouncements => 'Thông báo';
 
   @override
+  String get contactsApprovalApprove => 'Phê duyệt';
+
+  @override
+  String get contactsApprovalConfirm => 'Phê duyệt mục này?';
+
+  @override
+  String get contactsApprovalFeedbackRequired => 'Thêm nhận xét trước khi phê duyệt báo cáo này.';
+
+  @override
+  String get contactsApprovalNotes => 'Ghi chú';
+
+  @override
+  String get contactsApprovalReason => 'Lý do từ chối';
+
+  @override
+  String get contactsApprovalReject => 'Từ chối';
+
+  @override
   String get contactsApprovals => 'Phê duyệt';
 
   @override

@@ -8,6 +8,7 @@ class ContactSectionRecord {
     this.subtitle,
     this.trailing,
     this.report,
+    this.approval,
   });
 
   final String id;
@@ -15,6 +16,7 @@ class ContactSectionRecord {
   final String? subtitle;
   final String? trailing;
   final ContactReportDetails? report;
+  final ContactApprovalDetails? approval;
 }
 
 class ContactReportDetails {
@@ -72,21 +74,53 @@ List<ContactSectionRecord> contactReportRecords(Map<String, dynamic> json) {
   });
 }
 
-List<ContactSectionRecord> contactApprovalRecords(Map<String, dynamic> json) {
+enum ContactApprovalKind { reports, posts }
+
+enum ContactApprovalDecision { approve, reject }
+
+class ContactApprovalDetails {
+  const ContactApprovalDetails({
+    required this.kind,
+    this.group,
+    this.content,
+    this.comment,
+  });
+
+  final ContactApprovalKind kind;
+  final String? group;
+  final String? content;
+  final String? comment;
+}
+
+List<ContactSectionRecord> contactApprovalRecords(
+  Map<String, dynamic> json, {
+  required ContactApprovalKind kind,
+}) {
   final rows = json['items'] ?? json['data'];
+  final isReport = kind == ContactApprovalKind.reports;
   return _records(rows, (row) {
-    final title = crmAsString(row['title']) ?? crmAsString(row['content']);
     final person =
+        crmAsString(row['user_name']) ??
         crmAsString(row['user_display_name']) ??
         crmAsString(row['user_full_name']) ??
         crmAsString(row['user_email']);
+    final title = crmAsString(row['title']);
+    final content = crmAsString(row['content']);
     return ContactSectionRecord(
       id: crmAsString(row['id']) ?? '',
-      title: title ?? person ?? '',
-      subtitle: person,
+      title: title ?? person ?? content ?? '',
+      subtitle: title == null ? null : person,
       trailing:
-          crmAsString(row['report_approval_status']) ??
+          crmAsString(
+            row[isReport ? 'report_approval_status' : 'post_approval_status'],
+          ) ??
           crmAsString(row['approval_status']),
+      approval: ContactApprovalDetails(
+        kind: kind,
+        group: crmAsString(row['group_name']),
+        content: content,
+        comment: crmAsString(row[isReport ? 'feedback' : 'notes']),
+      ),
     );
   });
 }

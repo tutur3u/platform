@@ -38,8 +38,26 @@ void main() {
           'report_approval_status': 'pending',
         },
       ],
-    });
+    }, kind: ContactApprovalKind.reports);
     expect(records.single.trailing, 'pending');
+  });
+
+  test('post approval preserves the recipient-specific item identifier', () {
+    final records = contactApprovalRecords({
+      'items': [
+        {
+          'id': 'post:recipient',
+          'title': 'Class recap',
+          'user_name': 'Ada',
+          'post_approval_status': 'PENDING',
+          'notes': 'Recipient notes',
+        },
+      ],
+    }, kind: ContactApprovalKind.posts);
+    expect(records.single.id, 'post:recipient');
+    expect(records.single.subtitle, 'Ada');
+    expect(records.single.trailing, 'PENDING');
+    expect(records.single.approval?.comment, 'Recipient notes');
   });
 
   test('guest leads ignore people who are not guests', () {

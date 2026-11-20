@@ -4741,6 +4741,42 @@ abstract class AppLocalizations {
   /// **'Announcements'**
   String get contactsAnnouncements;
 
+  /// No description provided for @contactsApprovalApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get contactsApprovalApprove;
+
+  /// No description provided for @contactsApprovalConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve this item?'**
+  String get contactsApprovalConfirm;
+
+  /// No description provided for @contactsApprovalFeedbackRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Add feedback before approving this report.'**
+  String get contactsApprovalFeedbackRequired;
+
+  /// No description provided for @contactsApprovalNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get contactsApprovalNotes;
+
+  /// No description provided for @contactsApprovalReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for rejection'**
+  String get contactsApprovalReason;
+
+  /// No description provided for @contactsApprovalReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get contactsApprovalReject;
+
   /// No description provided for @contactsApprovals.
   ///
   /// In en, this message translates to:

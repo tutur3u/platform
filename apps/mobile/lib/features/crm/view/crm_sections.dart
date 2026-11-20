@@ -150,6 +150,38 @@ extension _CrmSections on _CrmPageState {
       );
       return;
     }
+    final approval = record.approval;
+    final wsId = _wsId;
+    if (section == _ContactSection.approvals &&
+        approval != null &&
+        wsId != null) {
+      final permission = switch (approval.kind) {
+        ContactApprovalKind.reports => 'approve_reports',
+        ContactApprovalKind.posts => 'approve_posts',
+      };
+      await _showOwnedSheet<void>(
+        context: context,
+        builder: (context) => ContactApprovalPreview(
+          record: record,
+          approval: approval,
+          onReview: _workspacePermissions.containsPermission(permission)
+              ? (decision, reason) async {
+                  await _repository.updateApproval(
+                    wsId,
+                    itemId: record.id,
+                    kind: approval.kind,
+                    decision: decision,
+                    reason: reason,
+                  );
+                  if (mounted && _wsId == wsId && _section == section) {
+                    await _reloadSection();
+                  }
+                }
+              : null,
+        ),
+      );
+      return;
+    }
     if (section == _ContactSection.attendance) {
       final group = _groups.where((item) => item.id == record.id).firstOrNull;
       if (group == null) return;
