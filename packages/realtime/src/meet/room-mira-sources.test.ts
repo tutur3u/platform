@@ -113,6 +113,7 @@ describe('room Mira source binding', () => {
     expect(service(reserved, alice, dispatch()).body).toEqual({
       ok: true,
       leaseId: LEASE,
+      expiresInMs: 120_000,
     });
   });
 

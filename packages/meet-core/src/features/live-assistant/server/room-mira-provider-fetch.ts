@@ -48,10 +48,37 @@ async function observeStep(response: Response): Promise<MeetGenerationStep> {
  * refuses every later request. The provider key and destination stay in
  * this Worker; the room only records admission.
  *
+ * The lease lifetime the room returns bounds each request: nothing is sent
+ * once the caller's signal is aborted or the lease has expired, transport
+ * aborts at the deadline, and usage observation stops there too, after which
+ * the request is refused as expired and later requests are refused.
+ *
  * `observed()` measures usage from every response received, including a
- * discarded one; a request that failed without an answer counts as unpriced.
+ * discarded one; a request interrupted after it was sent counts as unpriced.
  * Incurred cost is therefore settled, never dropped as zero.
  */
+const leaseExpired = () =>
+  new MeetCallAccessError(
+    503,
+    'Room Mira request expired',
+    'MIRA_ROOM_LEASE_EXPIRED'
+  );
+
+/** Resolves to undefined when `ms` elapses first. */
+async function within<T>(work: Promise<T>, ms: number) {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      work,
+      new Promise<undefined>((resolve) => {
+        timer = setTimeout(() => resolve(undefined), Math.max(0, ms));
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export function roomMiraProviderFetch(
   access: SignedInMeetCallAccess,
   messageId: string,
@@ -69,27 +96,56 @@ export function roomMiraProviderFetch(
         messageId,
         leaseId,
       }).catch(() => ({ current: false }));
+    const expire = async () => {
+      await release();
+      refused = leaseExpired();
+      throw refused;
+    };
+    // Measured before admission, so this deadline never outlasts the room's.
+    const requestedAt = Date.now();
+    let lifetime: unknown;
     try {
-      await callRoomService(access, {
-        action: 'mira.room.dispatch',
-        messageId,
-        leaseId,
-      });
+      lifetime = (
+        await callRoomService<{ expiresInMs?: unknown }>(access, {
+          action: 'mira.room.dispatch',
+          messageId,
+          leaseId,
+        })
+      ).expiresInMs;
     } catch {
       refused = consentRequired();
       throw refused;
     }
+    if (typeof lifetime !== 'number' || !(lifetime > 0)) return expire();
+    const deadline = requestedAt + lifetime;
+    const remaining = () => deadline - Date.now();
+    if (init?.signal?.aborted) {
+      await release();
+      throw init.signal.reason ?? new Error('Provider request aborted');
+    }
+    if (remaining() <= 0) return expire();
+    const timeout = AbortSignal.timeout(remaining());
+    const signal = init?.signal
+      ? AbortSignal.any([init.signal, timeout])
+      : timeout;
     let response: Response;
     try {
-      response = await upstream(input, init);
+      response = await upstream(input, { ...init, signal });
     } catch (error) {
       // No answer, but the provider may have billed it: unpriced, not zero.
       steps.push({});
+      if (timeout.aborted) return expire();
       await release();
       throw error;
     }
-    // Error answers carry no billed usage; successful ones are measured.
-    if (response.ok) steps.push(await observeStep(response));
+    if (response.ok) {
+      // Error answers carry no billed usage; successful ones are measured
+      // within the lease, otherwise counted as unpriced.
+      const step = await within(observeStep(response), remaining());
+      steps.push(step ?? {});
+      if (!step) return expire();
+    }
+    if (remaining() <= 0) return expire();
     if ((await release()).current !== true) {
       refused = consentRequired();
       throw refused;

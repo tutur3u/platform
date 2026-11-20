@@ -127,6 +127,7 @@ describe('deferred room Mira withdrawal', () => {
     expect(dispatch(alice, 'ask-a', 1).body).toEqual({
       ok: true,
       leaseId: lease(1),
+      expiresInMs: 120_000,
     });
     choose(bob, 'mute');
     expect(room.miraRoom?.choices[bob]?.choice).toBe('continue');

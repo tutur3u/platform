@@ -374,7 +374,15 @@ function miraRoomDispatch(
     },
   };
   return admitting
-    ? { state: next, body: { ok: true, leaseId: input.leaseId } }
+    ? {
+        state: next,
+        // The caller bounds transport and observation to this lifetime.
+        body: {
+          ok: true,
+          leaseId: input.leaseId,
+          expiresInMs: DISPATCH_TTL_MS,
+        },
+      }
     : {
         // Ending the last lease makes any pending Pause effective.
         state: settleMiraRoomWithdrawals(next, now),

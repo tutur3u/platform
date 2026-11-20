@@ -120,7 +120,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.authority.mockResolvedValue(room('account'));
   mocks.fence.mockResolvedValue(undefined);
-  mocks.verify.mockResolvedValue({ ok: true });
+  mocks.verify.mockResolvedValue({ ok: true, expiresInMs: 120_000 });
   mocks.release.mockResolvedValue({ current: true });
   // Each provider answer reports 100 input and 20 output tokens.
   mocks.upstream.mockImplementation(
@@ -297,8 +297,8 @@ it('verifies source consent before every provider request, including later steps
 
 it('stops the next provider request when consent is withdrawn mid-generation', async () => {
   mocks.verify
-    .mockResolvedValueOnce({ ok: true })
-    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce({ ok: true, expiresInMs: 120_000 })
+    .mockResolvedValueOnce({ ok: true, expiresInMs: 120_000 })
     .mockRejectedValue(Object.assign(new Error('stale'), { status: 409 }));
   await expect(post({ messageId: 'message' })).rejects.toMatchObject({
     status: 409,
@@ -380,9 +380,9 @@ it('settles an answer without measurable usage once as unpriced in both receipts
   });
   // AI Studio: one settlement that captures exactly the reserved hold.
   expect(mocks.settle).toHaveBeenCalledTimes(1);
-  const reserved = (mocks.begin.mock.calls[0] as unknown as [
-    { reservedCredits: number },
-  ])[0].reservedCredits;
+  const reserved = (
+    mocks.begin.mock.calls[0] as unknown as [{ reservedCredits: number }]
+  )[0].reservedCredits;
   expect(mocks.settle).toHaveBeenCalledWith(
     expect.objectContaining({
       status: 'failed',

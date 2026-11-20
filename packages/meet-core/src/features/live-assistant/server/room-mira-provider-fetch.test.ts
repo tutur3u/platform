@@ -55,6 +55,9 @@ const token = (id: string) =>
 
 /** The room as one serialized authority, as in the room Durable Object. */
 let room: RoomServiceState;
+/** Overrides for the lease lifetime and admission latency the room reports. */
+let lifetime: number | undefined;
+let admissionDelayMs = 0;
 function apply(id: string, command: unknown) {
   const result = roomService(room, token(id), command);
   room = result.state;
@@ -77,7 +80,14 @@ const url = 'https://generativelanguage.googleapis.com/v1beta/models/x';
 
 beforeEach(() => {
   vi.resetAllMocks();
-  f.call.mockImplementation(async (_access, command) => apply(alice, command));
+  lifetime = undefined;
+  admissionDelayMs = 0;
+  f.call.mockImplementation(async (_access, command) => {
+    const body = apply(alice, command) as Record<string, unknown>;
+    if (command.action !== 'mira.room.dispatch') return body;
+    await new Promise((resolve) => setTimeout(resolve, admissionDelayMs));
+    return lifetime === undefined ? body : { ...body, expiresInMs: lifetime };
+  });
   room = createMeetRoomSnapshot();
   for (const id of [alice, bob]) {
     room = admitOrHold(room, token(id), '2026-11-20T00:00:00Z').state;
@@ -194,4 +204,76 @@ it('counts a request that failed without an answer as unpriced, never zero', asy
     costUsd: null,
     usage: { available: false },
   });
+});
+
+const leases = () => room.aiRequests?.[mention]?.miraDispatches;
+const expired = { status: 503, code: 'MIRA_ROOM_LEASE_EXPIRED' };
+
+it('sends nothing when the lease expires before transport', async () => {
+  const upstream = vi.fn(async () => answer());
+  // The room reports no remaining lifetime.
+  lifetime = 0;
+  let provider = roomMiraProviderFetch(access, mention, model, upstream);
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  // The lease ran out while the admission call was returning.
+  lifetime = 10;
+  admissionDelayMs = 30;
+  provider = roomMiraProviderFetch(access, mention, model, upstream);
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  expect(upstream).not.toHaveBeenCalled();
+  expect(provider.observed()).toBeNull();
+  expect(leases()).toEqual({});
+});
+
+it('sends nothing when the caller signal is already aborted', async () => {
+  const upstream = vi.fn(async () => answer());
+  const provider = roomMiraProviderFetch(access, mention, model, upstream);
+  const controller = new AbortController();
+  controller.abort(new Error('synthetic caller abort'));
+  await expect(
+    provider.fetch(url, { signal: controller.signal })
+  ).rejects.toThrow('synthetic caller abort');
+  expect(upstream).not.toHaveBeenCalled();
+  expect(leases()).toEqual({});
+});
+
+it('aborts transport at the lease deadline and counts it as unpriced', async () => {
+  lifetime = 40;
+  const upstream = vi.fn(
+    (_input: unknown, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) =>
+        init?.signal?.addEventListener('abort', () =>
+          reject(init.signal?.reason)
+        )
+      )
+  );
+  const provider = roomMiraProviderFetch(access, mention, model, upstream);
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  expect(provider.observed()).toMatchObject({
+    costUsd: null,
+    usage: { available: false },
+  });
+  expect(leases()).toEqual({});
+  // Later steps and search are refused without another send.
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  expect(upstream).toHaveBeenCalledTimes(1);
+});
+
+it('stops waiting on usage observation at the deadline and settles a pending Pause', async () => {
+  lifetime = 40;
+  const upstream = vi.fn(async () => {
+    pause();
+    // A successful answer whose body never finishes arriving.
+    return new Response(new ReadableStream({ start() {} }), { status: 200 });
+  });
+  const provider = roomMiraProviderFetch(access, mention, model, upstream);
+  await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+  expect(provider.observed()).toMatchObject({
+    costUsd: null,
+    usage: { available: false },
+  });
+  expect(leases()).toEqual({});
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.pending?.[bob]).toBeUndefined();
 });
