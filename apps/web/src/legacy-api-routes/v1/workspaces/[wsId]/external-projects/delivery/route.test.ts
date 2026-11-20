@@ -20,14 +20,10 @@ vi.mock('@/lib/external-projects/access', () => ({
 
 vi.mock('@/lib/external-projects/cache', () => ({
   EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL: 'private, no-store',
-  EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL: 'public, max-age=60',
-  externalProjectAssetCacheTag: (id: string) => `asset-${id}`,
-  workspaceExternalProjectCacheTag: (id: string) => `workspace-${id}`,
 }));
 
 vi.mock('@/lib/external-projects/http-cache', () => ({
   ifNoneMatchMatches: vi.fn(() => false),
-  MAX_VERCEL_CACHE_TAGS: 32,
 }));
 
 vi.mock('@/lib/external-projects/store', () => ({
@@ -80,6 +76,9 @@ describe('external project delivery route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toContain('no-store');
+    expect(response.headers.get('vercel-cdn-cache-control')).toBe('no-store');
+    expect(response.headers.get('x-tuturuuu-asset-publication')).toBe('v1');
     expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
       workspaceId,
       { kind: 'admin-db' }

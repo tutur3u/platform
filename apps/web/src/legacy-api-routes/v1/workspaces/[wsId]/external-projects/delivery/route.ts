@@ -7,20 +7,13 @@ import {
   requireWorkspaceExternalProjectAccess,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
-import {
-  EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
-  EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
-  externalProjectAssetCacheTag,
-  workspaceExternalProjectCacheTag,
-} from '@/lib/external-projects/cache';
-import {
-  ifNoneMatchMatches,
-  MAX_VERCEL_CACHE_TAGS,
-} from '@/lib/external-projects/http-cache';
+import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import { ifNoneMatchMatches } from '@/lib/external-projects/http-cache';
 import { buildWorkspaceExternalProjectDeliveryPayload } from '@/lib/external-projects/store';
 
 const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
+  'Vercel-CDN-Cache-Control': 'no-store',
 };
 
 export async function GET(
@@ -83,20 +76,10 @@ export async function GET(
     );
 
     const etag = `W/"${payload.revision}"`;
-    const assetCacheTags = payload.collections.flatMap((collection) =>
-      collection.entries.flatMap((entry) =>
-        entry.assets.map((asset) => externalProjectAssetCacheTag(asset.id))
-      )
-    );
-    const cacheTags = [
-      workspaceExternalProjectCacheTag(resolvedWsId),
-      ...[...new Set(assetCacheTags)].slice(0, MAX_VERCEL_CACHE_TAGS - 1),
-    ];
     const publicHeaders = {
-      'Cache-Control': EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL,
+      ...privateHeaders,
       ETag: etag,
-      'Vercel-CDN-Cache-Control': 'max-age=86400, stale-while-revalidate=43200',
-      'Vercel-Cache-Tag': cacheTags.join(','),
+      'X-Tuturuuu-Asset-Publication': 'v1',
     };
 
     if (ifNoneMatchMatches(request.headers.get('if-none-match'), etag)) {

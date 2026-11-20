@@ -1,4 +1,3 @@
-import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
 import { StorageDownloadError } from '@tuturuuu/storage-core/storage-download-token';
 import {
   WORKSPACE_STORAGE_PROVIDER_OPTIONS,
@@ -21,9 +20,11 @@ import {
   requireWorkspaceExternalProjectAccess,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
+import { getExternalProjectAssetRevision } from '@/lib/external-projects/asset-delivery-url';
 import { resolveAllowedAssetRedirectUrl } from '@/lib/external-projects/asset-redirect-policy';
 import { guardExternalProjectAssetSourceUrl } from '@/lib/external-projects/asset-source-guard';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
 import {
   EXTERNAL_PROJECTS_STORAGE_PREFIX,
   isExternalProjectStoragePath,
@@ -107,58 +108,113 @@ const assetTransformQuerySchema = z
     });
   });
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ assetId: string; wsId: string }> }
+const privateHeaders = {
+  'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
+  'Vercel-CDN-Cache-Control': 'no-store',
+};
+const PUBLIC_ASSET_SIGNED_URL_SECONDS = 60;
+
+async function readAsset(
+  admin: TypedSupabaseClient,
+  workspaceId: string,
+  assetId: string,
+  revision: string | null
 ) {
+  const binding = await resolveWorkspaceExternalProjectBinding(
+    workspaceId,
+    admin
+  );
+  if (!binding.enabled || !binding.canonical_project) return null;
+  const { data: asset, error } = await admin
+    .from('workspace_external_project_assets')
+    .select(
+      'id, ws_id, entry_id, metadata, source_url, storage_path, updated_at, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
+    )
+    .eq('id', assetId)
+    .eq('ws_id', workspaceId)
+    .single();
+  if (error || !asset) return null;
+
+  const currentRevision = asset.updated_at
+    ? getExternalProjectAssetRevision(asset.updated_at)
+    : null;
+  const isPublic =
+    (revision === null || revision === currentRevision) &&
+    (await canReadPublishedAsset(
+      admin,
+      workspaceId,
+      binding.canonical_project.id,
+      asset,
+      asset.workspace_external_project_entries
+    ));
+  return { asset, isPublic };
+}
+
+type AssetParams = { params: Promise<{ assetId: string; wsId: string }> };
+
+export async function HEAD(request: Request, { params }: AssetParams) {
+  const query = new URL(request.url).searchParams;
+  if (!query.has('entry')) {
+    const response = await GET(request, { params });
+    void response.body?.cancel().catch(() => {});
+    return new NextResponse(null, {
+      status: response.status,
+      headers: response.headers,
+    });
+  }
+  await connection();
+  const { assetId, wsId } = await params;
+  const entryId = query.get('entry');
+  const revision = query.get('v');
+  if (!entryId || !revision)
+    return new NextResponse(null, { status: 404, headers: privateHeaders });
+  try {
+    const admin = await createAdminClient();
+    const result = await readAsset(
+      admin,
+      resolveWorkspaceId(wsId),
+      assetId,
+      revision
+    );
+    if (!result?.isPublic || result.asset.entry_id !== entryId) {
+      return new NextResponse(null, { status: 404, headers: privateHeaders });
+    }
+    return new NextResponse(null, {
+      status: 204,
+      headers: {
+        ...privateHeaders,
+        'X-Tuturuuu-Published-Asset-Revision': revision,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to verify external project asset publication', error);
+    return new NextResponse(null, { status: 503, headers: privateHeaders });
+  }
+}
+
+export async function GET(request: Request, { params }: AssetParams) {
   await connection();
   const { assetId, wsId } = await params;
   const admin = (await createAdminClient()) as TypedSupabaseClient;
   const resolvedWsId = resolveWorkspaceId(wsId);
-
   const privateJson = (body: unknown, status: number) =>
-    NextResponse.json(body, {
-      headers: { 'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL },
-      status,
-    });
+    NextResponse.json(body, { headers: privateHeaders, status });
   const redirect = (url: string) =>
-    NextResponse.redirect(url, {
-      headers: { 'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL },
-      status: 307,
-    });
+    NextResponse.redirect(url, { headers: privateHeaders, status: 307 });
 
   try {
+    const query = new URL(request.url).searchParams;
     const transform = assetTransformQuerySchema.parse(
-      Object.fromEntries(new URL(request.url).searchParams.entries())
+      Object.fromEntries(query.entries())
     );
-    const binding = await resolveWorkspaceExternalProjectBinding(
+    const result = await readAsset(
+      admin,
       resolvedWsId,
-      admin
+      assetId,
+      query.get('v')
     );
-    if (!binding.enabled || !binding.canonical_project) {
-      return privateJson(
-        { error: 'External project delivery unavailable for this workspace' },
-        404
-      );
-    }
-
-    const { data: asset, error } = await admin
-      .from('workspace_external_project_assets')
-      .select(
-        'id, ws_id, entry_id, metadata, source_url, storage_path, updated_at, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
-      )
-      .eq('id', assetId)
-      .eq('ws_id', resolvedWsId)
-      .single();
-
-    if (error || !asset) {
-      return privateJson({ error: 'Asset not found' }, 404);
-    }
-
-    const isPublic = await canReadPublishedAsset(
-      admin, resolvedWsId, binding.canonical_project.id, asset,
-      asset.workspace_external_project_entries
-    );
+    if (!result) return privateJson({ error: 'Asset not found' }, 404);
+    const { asset, isPublic } = result;
     if (!isPublic) {
       const access = await requireWorkspaceExternalProjectAccess({
         mode: 'read',
@@ -211,7 +267,9 @@ export async function GET(
           resolvedWsId,
           asset.storage_path,
           {
-            expiresIn: 7 * 24 * 60 * 60,
+            expiresIn: isPublic
+              ? PUBLIC_ASSET_SIGNED_URL_SECONDS
+              : 7 * 24 * 60 * 60,
             provider,
             requireExists: true,
             transform:

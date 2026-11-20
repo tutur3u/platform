@@ -68,6 +68,28 @@ workspace-scoped under `/{wsId}`; the root workspace uses the `internal` slug
   `/{wsId}/projects` and every other workspace to `/{wsId}/members`; CMS has no
   standalone settings screen.
 
+## Media publication and withdrawal
+
+Uploads are available to workspace editors while staged. Public delivery
+includes only media linked to the published entry revision through an entry
+media field, an eligible content block, or a finalized entry-level WebGL
+package. Single and bulk publication capture the same revision proof.
+Re-publish an older entry if its media cannot be matched to a recorded
+publication. Private collections and entries never deliver media anonymously.
+
+The public delivery API returns an ETag with a no-store policy. External
+sites that cache resized media may use an anonymous HEAD request to
+`/api/v1/workspaces/{wsId}/external-projects/assets/{assetId}?entry={entryId}&v={assetRevision}`
+to check current publication. Use the bytes only when the API returns 204
+with the matching `X-Tuturuuu-Published-Asset-Revision` and no-store.
+Anonymous signed storage redirects expire after one minute. A previously
+issued storage URL can remain usable until its original expiry.
+
+Retry a failed unpublish through the same publish endpoint. It keeps an
+already-withdrawn entry in draft and retries the publication event and
+workspace cache invalidation. These behaviors are covered by
+`apps/web/src/lib/external-projects/publication.test.ts` and the asset route tests.
+
 ## Root Linking Console
 
 - Treat `/{wsId}/projects` (the root workspace's `/internal/projects`) as a workspace-first control room.

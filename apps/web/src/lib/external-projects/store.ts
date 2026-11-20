@@ -58,6 +58,7 @@ import {
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
 import { externalProjectAdapterFixtures } from './fixtures';
+import { recordEntryPublication } from './publication';
 import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,
@@ -2236,62 +2237,63 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
     return [];
   }
 
-  if (payload.action === 'publish' || payload.action === 'unpublish') {
-    return Promise.all(
-      entryIds.map((entryId) =>
-        publishWorkspaceExternalProjectEntry(
-          {
-            actorId,
-            binding,
-            entryId,
-            eventKind: payload.action === 'publish' ? 'publish' : 'unpublish',
-            visibilityScope:
-              payload.action === 'publish' ? 'public' : 'preview',
-            workspaceId,
-          },
-          admin
-        )
-      )
-    );
+  const publishes =
+    payload.action === 'publish' ||
+    (payload.action === 'set-status' && payload.status === 'published');
+  if (publishes || payload.action === 'unpublish') {
+    const entries: ExternalProjectEntry[] = [];
+    for (const batch of chunkValues(entryIds, 5)) {
+      entries.push(
+        ...(await Promise.all(
+          batch.map((entryId) =>
+            publishWorkspaceExternalProjectEntry(
+              {
+                actorId,
+                binding,
+                entryId,
+                workspaceId,
+                eventKind: publishes ? 'publish' : 'unpublish',
+                visibilityScope: publishes ? 'public' : 'preview',
+              },
+              admin
+            )
+          )
+        ))
+      );
+    }
+    return entries;
   }
 
   let nextStatus: ExternalProjectEntryStatus;
-  let scheduledFor: string | null | undefined;
-  let publishedAt: string | null | undefined;
+  let scheduledFor: string | null;
 
   switch (payload.action) {
     case 'archive':
       nextStatus = 'archived';
       scheduledFor = null;
-      publishedAt = null;
       break;
     case 'restore-draft':
       nextStatus = 'draft';
       scheduledFor = null;
-      publishedAt = null;
       break;
     case 'schedule':
       nextStatus = 'scheduled';
       scheduledFor = payload.scheduledFor ?? null;
-      publishedAt = null;
       break;
     case 'set-status':
       nextStatus = payload.status ?? 'draft';
       scheduledFor =
         nextStatus === 'scheduled' ? (payload.scheduledFor ?? null) : null;
-      publishedAt =
-        nextStatus === 'published' ? new Date().toISOString() : null;
       break;
     default:
       nextStatus = 'draft';
       scheduledFor = null;
-      publishedAt = null;
   }
 
   const { data, error } = await admin
     .from('workspace_external_project_entries')
     .update({
-      published_at: publishedAt,
+      published_at: null,
       scheduled_for: scheduledFor,
       status: nextStatus,
       updated_by: actorId,
@@ -2444,62 +2446,35 @@ export async function publishWorkspaceExternalProjectEntry(
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const nextStatus = eventKind === 'unpublish' ? 'draft' : 'published';
-  const publishedAt = nextStatus === 'published' ? new Date().toISOString() : null;
-  const entries = admin.from('workspace_external_project_entries');
-  const { data: entry, error: entryError } = await (eventKind === 'preview'
-    ? entries.select('*').eq('id', entryId).eq('ws_id', workspaceId).single()
-    : entries.update({
-        published_at: publishedAt,
-        status: nextStatus,
-        updated_by: actorId,
-      }).eq('id', entryId).eq('ws_id', workspaceId).select('*').single());
-
-  if (entryError) {
-    throw new Error(entryError.message);
-  }
-
-  const payload = await buildWorkspaceExternalProjectDeliveryPayload(
-    {
-      binding,
-      includeDrafts: eventKind === 'preview',
-      workspaceId,
+  if (!binding.canonical_id) throw new Error('Workspace binding is incomplete');
+  return recordEntryPublication(admin, {
+    actorId,
+    canonicalProjectId: binding.canonical_id,
+    entryId,
+    eventKind,
+    visibilityScope,
+    workspaceId,
+    readPayload: () =>
+      buildWorkspaceExternalProjectDeliveryPayload(
+        { binding, includeDrafts: eventKind === 'preview', workspaceId },
+        admin
+      ),
+    async readManifest(entry) {
+      const [assets, blocks] = await Promise.all([
+        listWorkspaceExternalProjectAssetsByEntryIds(
+          workspaceId,
+          [entryId],
+          admin
+        ),
+        listWorkspaceExternalProjectBlocksByEntryIds(
+          workspaceId,
+          [entryId],
+          admin
+        ),
+      ]);
+      return publishedAssetManifest(entry, assets, blocks);
     },
-    admin
-  );
-
-  const snapshot = eventKind === 'publish'
-    ? publishedAssetManifest(
-        entry,
-        await listWorkspaceExternalProjectAssetsByEntryIds(workspaceId, [entryId], admin),
-        await listWorkspaceExternalProjectBlocksByEntryIds(workspaceId, [entryId], admin)
-      )
-    : null;
-
-  const { error: eventError } = await admin
-    .from('workspace_external_project_publish_events')
-    .insert([
-      {
-        canonical_external_project_id: binding.canonical_id as string,
-        entry_id: entry.id,
-        event_kind: eventKind,
-        payload: {
-          ...payload,
-          ...(snapshot ? { assetPublicationAt: entry.published_at, publishedAssetManifest: snapshot } : {}),
-        } as NonNullable<Json>,
-        profile_data: payload.profileData as NonNullable<Json>,
-        triggered_by: actorId,
-        visibility_scope: visibilityScope,
-        ws_id: workspaceId,
-      },
-    ]);
-
-  if (eventError) {
-    throw new Error(eventError.message);
-  }
-
-  await invalidateWorkspaceExternalProjectCache(workspaceId);
-  return entry;
+  });
 }
 
 async function findOrCreateCollection(
@@ -2949,11 +2924,17 @@ export async function buildWorkspaceExternalProjectDeliveryPayload(
       !hasPrivateDeliveryFlag(entry.metadata)
   );
   const assetOwners = new Set(assets.map((asset) => asset.entry_id));
-  const manifests = includeDrafts ? new Map() : await loadPublishedAssetManifests(
-    admin, workspaceId, binding.canonical_id,
-    deliveryEntries.filter((entry) => assetOwners.has(entry.id))
-  );
-  const visibleAssets = includeDrafts ? assets : assets.filter((asset) => isPublishedAsset(manifests, asset));
+  const manifests = includeDrafts
+    ? new Map()
+    : await loadPublishedAssetManifests(
+        admin,
+        workspaceId,
+        binding.canonical_id,
+        deliveryEntries.filter((entry) => assetOwners.has(entry.id))
+      );
+  const visibleAssets = includeDrafts
+    ? assets
+    : assets.filter((asset) => isPublishedAsset(manifests, asset));
   const deliveryEntryIds = new Set(deliveryEntries.map((entry) => entry.id));
   const publicRelations = relationData.relations.filter(
     (relation) =>
