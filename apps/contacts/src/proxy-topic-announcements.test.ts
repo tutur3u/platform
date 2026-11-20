@@ -31,9 +31,6 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: mocks.guard,
   hasAuthenticatedBearerToken: () => false,
 }));
-vi.mock('@tuturuuu/utils/shared-cookie', () => ({
-  getTuturuuuSharedCookieOptions: vi.fn(),
-}));
 vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
 
 import { WEB_APP_URL } from './constants/common';

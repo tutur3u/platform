@@ -40,11 +40,33 @@ with the production public Supabase URL and publishable key. It checks the
 route registries, app tests, native types and formatting, validates the emitted
 configuration, and executes the same dual-host workerd suite on the build and
 a fresh restore. Take `contacts-native-<40-character SHA>` only from a run whose
-restore job passed. Verify the archive digest and the config and file hashes
-against its sealed receipt before handing it to the routing owner.
+restore job passed. Compare the SHA-256 of the downloaded GitHub artifact ZIP
+with the artifact digest recorded by the producing run. Use the sealed receipt
+inside `native.tar.gz` to verify the source SHA, config path and file hashes
+with the Contacts restore helper before handing off the artifact.
 
-The emitted config owns the worker-first `ASSETS` binding. Both public preview
-host types are disabled. At runtime, configure `NEXT_PUBLIC_SUPABASE_URL` and
+The emitted config owns the worker-first `ASSETS` binding. Qualification
+requires explicit `workers_dev: false` and `preview_urls: false`. The config
+allowlist rejects routes and custom domains. CI exercises this contract in the
+Contacts artifact regression suite and validates it on the emitted and restored
+configurations.
+
+Hosted signed-in acceptance is pending an isolated staging profile or an
+equivalent private routing setup for both mappings. The native preview selector
+changes the permitted Supabase input while the build pins production Web and
+issuer origins. The Worker admits the two production hosts. Before any staging
+upload, the release owner must verify isolation for the Supabase project, Web
+API and auth issuer and approve a private access path for both mappings.
+
+Confirm in the selected Cloudflare account that workers.dev and preview URLs
+are disabled and the Worker has zero routes and custom domains. These checks
+cover provider settings outside the sealed config. CI runs the original and
+restored artifacts in local workerd with fixture egress. The pinned Wrangler
+validation adapter stays in place until the
+[cf parity gate](/build/development-tools/cf-cli-wrangler-parity) proves
+equivalent handling of Void's emitted artifact.
+
+At runtime, configure `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the same project as the build and
 supply `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` through the
 Worker secret store. Verify they match the intended tier and coordinate the
@@ -77,13 +99,46 @@ source, route, request status and outcome in the private release receipt signed
 by the fleet operator. Feature writes with external effects require a separate
 disposable acceptance run.
 
-## Rollback
+## Cutover checklist
 
-Before routing changes, record the live Vercel deployment ID and source SHA,
-the exact subdomain route and DNS/TLS settings, and the current Gateway mount
-mapping. Confirm the retained Vercel target still answers. Prepare one
-operator action to restore that captured routing and verify that it restores
-both ingress paths to their pre-cutover owners. Keep the prior deployment through
-one release cycle. During the 30–60 minute watch, roll back immediately on a
-failed smoke check, authentication loop, or regression in errors or latency.
+Complete this checklist in the private release record. Canonical traffic changes
+require the release owner's approval and the native migration cutover PR.
+
+1. **Identify the release.** Record the accepted main SHA, qualification run,
+   original and restore results, sealed archive digest, and the Cloudflare
+   account, zone and immutable Worker version. Match the sealed public-input
+   digest to the authorized tier. Record the bindings and secret names, staging
+   acceptance receipt, operator, and rollback owner.
+2. **Capture both ingress mappings.** Export the live Contacts Vercel domain
+   mapping and immutable deployment ID, URL and source SHA. Capture DNS,
+   proxy/TLS settings and TTLs for the subdomain, and the current Gateway
+   config revision and route precedence for the apex mount. Record the live
+   response on each ingress before preparing replacement routing.
+
+   | Ingress | Cutover mapping | Recorded rollback target |
+   | --- | --- | --- |
+   | `https://contacts.tuturuuu.com/*` | Send the request to the accepted Contacts version at the original host and path. | Restore the captured subdomain routing to the retained Vercel origin. |
+   | `https://tuturuuu.com/contacts` and `/contacts/*` | Route through Gateway to the same Contacts version with the original host and mount prefix. | Restore the captured Gateway revision and its existing mount behavior. |
+
+   Confirm the apex mapping uses segment boundaries and preserves the raw
+   query. Keep Web-owned API and page destinations on Web.
+3. **Rehearse rollback before admission.** Prove the immutable Vercel
+   deployment still answers. In the private environment, apply equivalent
+   test mappings for both ingress paths, run the signed-in smoke checks,
+   then execute the prepared one-step rollback. Verify that it restores the
+   subdomain fallback and the prior apex mount behavior, including login
+   callbacks, a tutoring deep link and a Web-owned API read. Record the
+   before/after route revisions, source identity, results and elapsed time,
+   along with the exact command or API call the rollback owner will execute.
+4. **Switch the admitted routing.** After hosted acceptance and approval,
+   apply only the two recorded mappings. Repeat the signed-in checks on
+   both paths and verify the exact source SHA and the expected runtime
+   header. Watch authentication, errors and latency for 30–60 minutes.
+5. **Restore on regression.** Use the rehearsed action on a failed
+   acceptance check, authentication loop, or material error/latency
+   regression. Verify both ingress paths against the captured baseline.
+   Keep the prior Vercel deployment and Gateway revision through one
+   release cycle. Rollback restores routing without rebuilding or
+   modifying application data.
+
 See the [native migration runbook](/build/devops/native-start-migration#rollback).

@@ -20,3 +20,11 @@ staging cookie/issuer adapters, upstream project attestation, distinct staging-o
 origin-proof key, exact emitted Worker source and customer tutoring/editor flows as
 explicit release prerequisites. Do not add providers, DNS, routes or credentials
 as part of candidate scaffolding.
+
+For the full native Worker, follow the [Contacts qualification and cutover
+checklist](../../../../../apps/docs/build/devops/contacts-start-void.mdx).
+The Contacts artifact tests require private ingress defaults and check clean
+restore against the exact seal. Hosted topology and signed-in staging
+acceptance are required release evidence. Capture the immutable Vercel fallback
+and the Gateway revision, and rehearse restoration of both ingress mappings
+before cutover.

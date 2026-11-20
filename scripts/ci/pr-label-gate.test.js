@@ -129,6 +129,7 @@ const PROTECTED_TRIGGERS = {
 const EXTRA_PROTECTED_INPUTS = {
   'ai-cloudflare.yaml': ['scripts/ci/ai-cutover-smoke.mjs'],
   'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
+  'contacts-cloudflare.yaml': ['scripts/ci/contacts-native-artifact.test.py'],
   'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
 };
 

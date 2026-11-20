@@ -33,6 +33,7 @@ on:
         'packages/users-ui/**',
         'packages/utils/**',
         'scripts/ci/contacts-native-artifact.py',
+        'scripts/ci/contacts-native-artifact.test.py',
         '.github/workflows/contacts-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -89,6 +90,7 @@ on:
         'packages/users-ui/**',
         'packages/utils/**',
         'scripts/ci/contacts-native-artifact.py',
+        'scripts/ci/contacts-native-artifact.test.py',
         '.github/workflows/contacts-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -174,6 +176,7 @@ jobs:
       app: contacts
       package: '@tuturuuu/contacts'
       artifact-script: scripts/ci/contacts-native-artifact.py
+      helper-tests: python3 scripts/ci/contacts-native-artifact.test.py
       env-interface: ContactsGeneratedEnv
       worker-environment-type: ContactsEnvironment
       public-env: |

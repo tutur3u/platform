@@ -15,7 +15,7 @@ describe('dormant Contacts profile', () => {
     expect(source).toContain('run_worker_first: true');
     expect(source).toContain("not_found_handling: 'none'");
     expect(source).not.toMatch(
-      /\b(?:routes|queues|durable_objects|triggers|d1_databases|r2_buckets)\s*:/u
+      /\b(?:route|routes|custom_domains|queues|durable_objects|triggers|d1_databases|r2_buckets)\s*:/u
     );
     expect(stagingProfile.host).toBe('contacts.tutur3u.com');
   });
