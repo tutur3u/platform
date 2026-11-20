@@ -119,7 +119,7 @@ export function appsFixtureBindings(mode, values, role) {
     );
     assert.equal(values.SUPABASE_SECRET_KEY, 'disposable-unused-fixture');
   }
-  return Object.fromEntries(
+  const bindings = Object.fromEntries(
     Object.entries(values).map(([name, value]) => [
       name,
       {
@@ -136,6 +136,10 @@ export function appsFixtureBindings(mode, values, role) {
       },
     ])
   );
+  if (mode === 'http' && role === 'app') {
+    bindings.APPS_CANONICAL_HOST_ENABLED = { type: 'plain_text', value: '1' };
+  }
+  return bindings;
 }
 
 async function waitForPublic(promise, signal) {

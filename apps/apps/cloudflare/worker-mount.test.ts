@@ -28,12 +28,12 @@ afterEach(() => vi.unstubAllEnvs());
 describe('Apps apex mount', () => {
   it('renders a bare mount with its query and request base', async () => {
     start.mockImplementation(async (request) => {
-      expect(request.url).toBe('https://tuturuuu.com/apps?format=hex');
+      expect(request.url).toBe('https://tuturuuu.com/?tag=1&tag=2&q=a%2Fb');
       expect(runtimeAppBase()).toBe('/apps');
       return new Response('Apps');
     });
     const response = await appsRequest(
-      new Request('https://tuturuuu.com/apps?format=hex'),
+      new Request('https://tuturuuu.com/apps?tag=1&tag=2&q=a%2Fb'),
       env
     );
     expect(response.status).toBe(200);

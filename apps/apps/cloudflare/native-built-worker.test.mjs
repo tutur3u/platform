@@ -305,6 +305,42 @@ test(
             assert.match(response.headers.get('cache-control'), /no-store/);
           }
         }
+        for (const path of ['/apps', '/apps/']) {
+          const response = await workers.app.fetch(
+            `https://tuturuuu.com${path}?tag=1&tag=2&q=a%2Fb`,
+            { redirect: 'manual', signal: runtime.signal }
+          );
+          assert.equal(response.status, 200, path);
+          assert.match(response.headers.get('cache-control'), /no-store/u);
+          const html = await runtime.text(response);
+          assert.ok(html.includes('href="/apps/drive"'), path);
+          const resources = [
+            ...new Set(
+              [
+                ...html.matchAll(
+                  /(?:href|src)="((?:\/apps)?\/assets\/[^"]+)"/gu
+                ),
+              ].map((match) => match[1])
+            ),
+          ];
+          assert.ok(
+            resources.some((asset) => asset.endsWith('.css')),
+            path
+          );
+          assert.ok(
+            resources.some((asset) => asset.endsWith('.js')),
+            path
+          );
+          for (const asset of resources) {
+            assert.ok(asset.startsWith('/apps/assets/'), asset);
+            const emitted = await workers.app.fetch(
+              `https://tuturuuu.com${asset}`,
+              { redirect: 'manual', signal: runtime.signal }
+            );
+            assert.equal(emitted.status, 200, asset);
+            await emitted.body?.cancel();
+          }
+        }
         completed('localeSSR');
         for (const app of fixtures) {
           for (const query of nativeRedirectCases) {

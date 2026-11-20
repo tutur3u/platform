@@ -125,6 +125,11 @@ no artifact-dependent suite may silently run or skip in a job that never builds
 or restores the artifact. The Python artifact suite is source-only and explicitly
 selected by the owning workflow.
 
+The compiled Start handler receives the app-relative document URL and retains
+the public mount in the request context. The emitted Worker gate enables the
+canonical-host flag only in its disposable HTTP fixture, renders bare and slash
+mount roots with repeated queries, and fetches the mounted bundles and styles.
+
 ## Seal and restore
 
 `scripts/ci/apps-native-artifact.py` hashes the complete dist tree and deploy

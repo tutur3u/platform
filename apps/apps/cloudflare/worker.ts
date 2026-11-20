@@ -97,9 +97,7 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
                   status: 307,
                   headers: { Location: destination.href },
                 })
-              : await handler.fetch(
-                  url.pathname.startsWith('/_serverFn/') ? routed : request
-                );
+              : await handler.fetch(routed);
         }
         response = new Response(response.body, response);
         response.headers.set('Cache-Control', 'private, no-store');
