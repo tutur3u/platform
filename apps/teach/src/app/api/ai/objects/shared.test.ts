@@ -218,6 +218,34 @@ describe('Teach object-generation handler', () => {
     }));
   });
 
+  it('authorizes flashcard generation only with course write permission', async () => {
+    const { POST } = await import('./flashcards/route');
+    const denied = NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+    mocks.requireTeachWorkspaceAccess.mockImplementationOnce(
+      ({ permission }: { permission: unknown }) =>
+        permission === 'update_user_groups'
+          ? denied
+          : { normalizedWsId: 'normalized-ws', sbAdmin }
+    );
+
+    expect((await POST(createRequest())).status).toBe(403);
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+    expect(mocks.streamText).not.toHaveBeenCalled();
+
+    const authorized = await POST(createRequest());
+    expect(authorized.status).toBe(200);
+    await expect(authorized.text()).resolves.toBe('streamed-object');
+    expect(mocks.requireTeachWorkspaceAccess).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        permission: 'update_user_groups',
+        wsId: 'submitted-ws',
+      })
+    );
+  });
+
   it('reserves before generation and settles 32 output tokens as 25 visible and 7 reasoning', async () => {
     const POST = await createHandler();
     const response = await POST(createRequest());

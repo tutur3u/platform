@@ -7,6 +7,7 @@ export const POST = createTeachObjectGenerationHandler({
     `Generate 10 flashcards with the following context (in the same language as the provided context): ${context}`,
   customIdPrefix: 'flashcards',
   outputSchema: flashcardSchema,
+  permission: 'update_user_groups',
   requestSchema: contextObjectRequestSchema,
   source: 'flashcard_generation',
   surface: 'flashcard_generation',

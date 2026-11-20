@@ -9,6 +9,7 @@ import { toLegacyTokenPricing } from '@tuturuuu/ai/credits/token-usage';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { PermissionId } from '@tuturuuu/types/db';
 import { guardApiProxyBody } from '@tuturuuu/utils/api-proxy-body';
 import { invalidateAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
 import {
@@ -52,6 +53,7 @@ type ObjectGenerationConfig<TInput extends { wsId: string }> = {
   redactErrors?: boolean;
   abortOnDisconnect?: boolean;
   requestByteLimit?: number;
+  permission?: PermissionId;
   customIdPrefix: string;
   outputSchema: z.ZodType;
   requestSchema: z.ZodType<TInput>;
@@ -249,7 +251,10 @@ export function createTeachObjectGenerationHandler<
 
       const access = await requireTeachWorkspaceAccess({
         context,
-        permission: ['update_user_groups', 'view_user_groups'],
+        permission: config.permission ?? [
+          'update_user_groups',
+          'view_user_groups',
+        ],
         wsId: parsedBody.data.wsId,
       });
       if (access instanceof NextResponse) return access;

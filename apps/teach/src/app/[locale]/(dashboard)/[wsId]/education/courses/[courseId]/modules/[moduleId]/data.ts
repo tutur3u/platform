@@ -21,10 +21,11 @@ export async function getFlashcards({
   const { count, error } = await supabase
     .from('course_module_flashcards')
     .select(
-      '*, workspace_course_modules!inner(group_id, workspace_user_groups!inner(ws_id))',
+      '*, workspace_flashcards!inner(id), workspace_course_modules!inner(group_id, workspace_user_groups!inner(ws_id))',
       { count: 'exact', head: true }
     )
     .eq('module_id', moduleId)
+    .eq('workspace_flashcards.ws_id', wsId)
     .eq('workspace_course_modules.group_id', courseId)
     .eq('workspace_course_modules.workspace_user_groups.ws_id', wsId);
   if (error) throw error;

@@ -1,3 +1,4 @@
+import type { Tables } from '@tuturuuu/types/supabase';
 import { getAssignedCourseIds } from './courses';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
@@ -16,6 +17,18 @@ interface UserGroupPostRow {
   group_id: string;
   workspace_user_groups: NamedGroup | NamedGroup[] | null;
 }
+
+type AssignmentCheckRow = Pick<
+  Tables<{ schema: 'private' }, 'user_group_post_checks'>,
+  'post_id' | 'is_completed' | 'approval_status'
+>;
+
+type AssignedTestRow = Pick<
+  Tables<'course_tests'>,
+  'id' | 'name' | 'created_at' | 'course_id' | 'description'
+> & {
+  workspace_user_groups: NamedGroup | NamedGroup[] | null;
+};
 
 interface MonthlyReportRow {
   id: string;
@@ -108,10 +121,10 @@ export async function getLearnerAssignments({
   if (testsResult.error) throw testsResult.error;
   if (linkedUserResult.error) throw linkedUserResult.error;
 
-  const checksByPost = new Map(
-    (checksResult.data ?? []).map((check) => [check.post_id, check])
-  );
-  const testIds = (testsResult.data ?? []).map((test) => test.id);
+  const checks: AssignmentCheckRow[] = checksResult.data ?? [];
+  const tests: AssignedTestRow[] = testsResult.data ?? [];
+  const checksByPost = new Map(checks.map((check) => [check.post_id, check]));
+  const testIds = tests.map((test) => test.id);
   const studentPlatformUserId = linkedUserResult.data?.platform_user_id ?? null;
   const submittedAttemptsResult =
     studentPlatformUserId && testIds.length > 0
@@ -125,8 +138,10 @@ export async function getLearnerAssignments({
 
   if (submittedAttemptsResult.error) throw submittedAttemptsResult.error;
 
+  const submittedAttempts: Pick<Tables<'course_test_attempts'>, 'test_id'>[] =
+    submittedAttemptsResult.data ?? [];
   const submittedTestIds = new Set(
-    (submittedAttemptsResult.data ?? []).map((attempt) => attempt.test_id)
+    submittedAttempts.map((attempt) => attempt.test_id)
   );
 
   const mappedPosts = (
@@ -149,7 +164,7 @@ export async function getLearnerAssignments({
     };
   });
 
-  const mappedTests = (testsResult.data ?? []).map((test) => {
+  const mappedTests = tests.map((test) => {
     const course = firstOf(test.workspace_user_groups);
     return {
       id: test.id,
@@ -215,6 +230,7 @@ export async function getLearnerReports({
     .eq('user_id', studentWorkspaceUserId)
     .in('group_id', courseIds)
     .eq('user_ws_id', wsId)
+    .eq('group_ws_id', wsId)
     // Released reports only: approved and delivered by email (stage `sent`).
     .eq('report_stage', LEARNER_VISIBLE_REPORT_STAGE)
     .eq('report_approval_status', 'APPROVED')

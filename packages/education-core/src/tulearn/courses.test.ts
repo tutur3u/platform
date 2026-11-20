@@ -62,6 +62,15 @@ function fixture(released: boolean, correct: boolean) {
               );
               break;
             case 'course_module_flashcards':
+              data = [
+                { module_id: 'current', ws_id: 'workspace' },
+                { module_id: 'current', ws_id: 'other-workspace' },
+              ].filter((card) =>
+                filters['workspace_flashcards.ws_id']
+                  ? card.ws_id === filters['workspace_flashcards.ws_id']
+                  : true
+              );
+              break;
             case 'course_module_quiz_sets':
             case 'course_tests':
               data = [];
@@ -125,4 +134,13 @@ describe('Learn lesson progression', () => {
       }
     }
   );
+});
+
+it('counts only flashcards owned by the module workspace', async () => {
+  const { params } = fixture(false, false);
+  const detail = await getLearnerCourseDetail(params);
+
+  expect(detail?.modules.map((module) => module.counts.flashcards)).toEqual([
+    1, 0,
+  ]);
 });

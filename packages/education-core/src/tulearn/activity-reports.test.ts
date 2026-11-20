@@ -100,6 +100,7 @@ function report({
     created_at: `2026-10-${String(day).padStart(2, '0')}T00:00:00.000Z`,
     feedback: `Synthetic ${stage} feedback`,
     group_id: COURSE_ID,
+    group_ws_id: WS_ID,
     group_name: 'Synthetic Course',
     id: `report-${stage}-${approval}-${reportSeq}`,
     report_approval_status: approval,
@@ -198,6 +199,31 @@ describe.each<TulearnRole>(['parent', 'student'])(
           score: 7,
           title: 'sent report',
         },
+      ]);
+    });
+
+    it('shows the grade only after the report is approved and sent', async () => {
+      const draft = report({ stage: 'draft', day: 1 });
+      const rows = [
+        draft,
+        { ...report({ stage: 'sent', day: 2 }), user_id: 'classmate' },
+        {
+          ...report({ stage: 'sent', day: 3 }),
+          group_ws_id: 'other-workspace',
+        },
+        { ...report({ stage: 'sent', day: 4 }), group_id: 'other-course' },
+      ];
+
+      expect(await load(rows, viewerRole).reports).toEqual([]);
+      draft.report_approval_status = 'APPROVED';
+      draft.report_stage = 'approved';
+      expect(await load(rows, viewerRole).reports).toEqual([]);
+      draft.report_stage = 'queued';
+      expect(await load(rows, viewerRole).reports).toEqual([]);
+
+      draft.report_stage = 'sent';
+      expect(await load(rows, viewerRole).reports).toEqual([
+        expect.objectContaining({ id: draft.id, score: 7 }),
       ]);
     });
 

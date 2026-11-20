@@ -106,7 +106,13 @@ export const POST = withSessionAuth<Params>(
       const valid =
         type === 'module'
           ? await validateModulePractice(sbAdmin, itemId, courseIds)
-          : await validateLinkedPracticeItem(sbAdmin, type, itemId, courseIds);
+          : await validateLinkedPracticeItem(
+              sbAdmin,
+              type,
+              itemId,
+              courseIds,
+              subject.wsId
+            );
 
       if (!valid) {
         return NextResponse.json(
@@ -189,16 +195,18 @@ async function validateLinkedPracticeItem(
   sbAdmin: TypedSupabaseClient,
   type: 'flashcard' | 'quiz' | 'quiz_set',
   itemId: string,
-  courseIds: string[]
+  courseIds: string[],
+  wsId: string
 ) {
   const query =
     type === 'flashcard'
       ? sbAdmin
           .from('course_module_flashcards')
           .select(
-            'module_id, workspace_course_modules!inner(group_id, is_published)'
+            'module_id, workspace_course_modules!inner(group_id, is_published), workspace_flashcards!inner(id)'
           )
           .eq('flashcard_id', itemId)
+          .eq('workspace_flashcards.ws_id', wsId)
       : type === 'quiz'
         ? sbAdmin
             .from('course_module_quizzes')

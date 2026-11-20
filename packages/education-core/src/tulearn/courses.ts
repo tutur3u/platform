@@ -296,7 +296,8 @@ export async function getLearnerCourseDetail({
       moduleIdList.length
         ? sbAdmin
             .from('course_module_flashcards')
-            .select('module_id')
+            .select('module_id, workspace_flashcards!inner(id)')
+            .eq('workspace_flashcards.ws_id', wsId)
             .in('module_id', moduleIdList)
         : emptyModuleIdResult(),
       moduleIdList.length
@@ -416,8 +417,9 @@ export async function getLearnerModuleDetail({
         .maybeSingle(),
       sbAdmin
         .from('course_module_flashcards')
-        .select('workspace_flashcards(id, front, back)')
-        .eq('module_id', moduleId),
+        .select('workspace_flashcards!inner(id, front, back)')
+        .eq('module_id', moduleId)
+        .eq('workspace_flashcards.ws_id', wsId),
       sbAdmin
         .from('course_module_quizzes')
         .select(

@@ -192,3 +192,20 @@ it('withholds the score from a submit until the teacher releases it', async () =
   const released = await (await POST(request(), params)).json();
   expect(released.attempt.score).toBe(7);
 });
+
+it('withholds a submitted attempt grade from reads until explicit score release', async () => {
+  state.attempt = {
+    ...state.attempt,
+    submitted_at: new Date().toISOString(),
+    score: 7,
+  };
+
+  const { GET } = await import('./attempt/route');
+  const read = async () =>
+    (await GET(new NextRequest('http://localhost/api/tests'), params)).json();
+
+  expect((await read()).attempt.score).toBeNull();
+
+  state.test = { ...state.test, is_score_published: true };
+  expect((await read()).attempt.score).toBe(7);
+});

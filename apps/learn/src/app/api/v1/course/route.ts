@@ -322,7 +322,8 @@ async function handleCourseDetail({
             .in('module_id', moduleIds),
           sbAdmin
             .from('course_module_flashcards')
-            .select('module_id')
+            .select('module_id, workspace_flashcards!inner(id)')
+            .eq('workspace_flashcards.ws_id', group.ws_id)
             .in('module_id', moduleIds),
           sbAdmin
             .from('course_module_quiz_sets')

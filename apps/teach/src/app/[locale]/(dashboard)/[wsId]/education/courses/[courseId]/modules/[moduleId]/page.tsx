@@ -54,7 +54,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
 
   const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
-  const flashcards = await getFlashcards(moduleId);
+  const flashcards = await getFlashcards(resolvedWsId, moduleId);
   const quizzes = await getQuizzes(resolvedWsId, moduleId);
 
   const cards = flashcards.map((fc) => ({
@@ -215,13 +215,14 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   );
 }
 
-const getFlashcards = async (moduleId: string) => {
+const getFlashcards = async (wsId: string, moduleId: string) => {
   const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('course_module_flashcards')
-    .select('...workspace_flashcards(*)')
-    .eq('module_id', moduleId);
+    .select('...workspace_flashcards!inner(*)')
+    .eq('module_id', moduleId)
+    .eq('workspace_flashcards.ws_id', wsId);
 
   if (error) {
     console.error('error', error);

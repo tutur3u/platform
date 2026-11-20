@@ -385,7 +385,16 @@ web education routes; there is no learner-facing exception.
   correct. Lessons without quizzes count as complete. The course list,
   course detail and personal To do apply the same rule.
 - Teach and Web save marks through server routes that check
-  `update_user_groups_scores` and validate the grade targets.
+  `update_user_groups_scores` and validate the grade targets. A learner can
+  read only marks for their verified workspace user. Authorized staff with
+  `view_user_groups_scores` can read workspace marks, and Learn gives a linked
+  parent access to the selected learner's marks.
+- Flashcard creation, editing, deletion, module linking and AI authoring in Teach
+  require `update_user_groups`. A module shows only flashcards from its own
+  workspace. Existing links across workspaces are excluded from module reads.
+- Learn shows periodic reports and their scores after staff approve the report
+  and send it to the learner's profile email. Approved reports awaiting
+  delivery stay hidden. Revoking approval hides a delivered report.
 - New workspaces default every `MEMBER` to `admin`. A school that enrols
   learners as members must turn that default off, or those learners keep
   course-manager access.
@@ -394,7 +403,7 @@ Database regressions are covered by `education-quiz-key-access.sql`,
 `education-course-roster-access.sql`, `education-learner-grade-access.sql`,
 `education-learner-practice-links.sql`, `education-learner-attempt-submit.sql`
 and `education-learner-marks-and-completion.sql`. Application coverage includes
-education-core's `courses.test.ts` and `quiz-answer-key.test.ts`, Learn's
+education-core's `activity-reports.test.ts`, `courses.test.ts` and `quiz-answer-key.test.ts`, Learn's
 `release.test.ts`, Teach's quiz `route.test.ts`, `quiz-set-read-access.test.ts`,
 `quiz-set-page-access.test.tsx` and `course-module-pages.test.ts`, and the
 web `quiz-attempts` route test.

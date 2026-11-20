@@ -102,6 +102,7 @@ export const POST = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;

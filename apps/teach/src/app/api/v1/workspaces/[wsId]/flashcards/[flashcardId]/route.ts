@@ -31,6 +31,7 @@ export const PUT = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -99,6 +100,7 @@ export const DELETE = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;

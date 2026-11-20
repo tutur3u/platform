@@ -156,7 +156,19 @@ const tables: Record<string, Row[]> = {
     },
   ],
   course_module_flashcards: [
-    { module_id: scope.moduleId, id: 'card-1', front: 'Front', back: 'Back' },
+    {
+      module_id: scope.moduleId,
+      id: 'card-1',
+      front: 'Front',
+      back: 'Back',
+      'workspace_flashcards.ws_id': scope.wsId,
+    },
+    {
+      module_id: scope.moduleId,
+      id: 'mislinked-card',
+      front: 'Private flashcard linked from another workspace',
+      'workspace_flashcards.ws_id': 'foreign-workspace',
+    },
     {
       module_id: 'foreign-module',
       id: 'foreign-card',
@@ -243,6 +255,9 @@ class Query {
         this.selected.includes('workspace_course_modules!inner');
       const groupInner = this.selected.includes('workspace_user_groups!inner');
       const quizInner = this.selected.includes('workspace_quizzes!inner');
+      const flashcardInner = this.selected.includes(
+        'workspace_flashcards!inner'
+      );
       if (moduleInner && (!module || (groupInner && !group))) return false;
       return [...this.filters].every(([key, expected]) => {
         // Embedded filters only remove parents through an unbroken inner-join path.
@@ -252,6 +267,8 @@ class Query {
         )
           return true;
         if (key === 'workspace_quizzes.ws_id' && !quizInner) return true;
+        if (key === 'workspace_flashcards.ws_id' && !flashcardInner)
+          return true;
         if (key === 'workspace_course_modules.group_id' && !moduleInner)
           return true;
         const actual = key.endsWith('workspace_user_groups.ws_id')
@@ -371,6 +388,9 @@ describe('own workspace module data', () => {
       `${scope.wsId}/courses/${scope.courseId}/modules/${scope.moduleId}/resources/`,
       { sortBy: { column: 'created_at', order: 'desc' } }
     );
+    const cards =
+      preview.props.children[5].props.content.props.children.props.cards;
+    expect(cards).toEqual([expect.objectContaining({ id: 'card-1' })]);
     const quizzes =
       preview.props.children[3].props.content.props.children.props.quizzes;
     expect(quizzes).toEqual([tables.course_module_quizzes?.[0]]);
