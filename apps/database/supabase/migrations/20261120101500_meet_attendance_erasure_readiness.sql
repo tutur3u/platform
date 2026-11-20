@@ -25,6 +25,7 @@ create policy meet_attendance_erasure_readiness_service_read
   using (true);
 
 -- The erasure functions the job needs, with the privileges they must have.
+-- tuturuuu: no-grant (internal)
 create function private.meet_attendance_erasure_grants_ok()
 returns boolean
 language sql

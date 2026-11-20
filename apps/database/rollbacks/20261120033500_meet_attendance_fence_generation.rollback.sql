@@ -29,6 +29,7 @@ grant execute on function private.purge_expired_meet_attendance(timestamptz)
 -- rows that nothing erases. Finish or explicitly resolve them first.
 lock table private.meet_attendance_pending_erasures in access exclusive mode;
 
+-- tuturuuu: reviewed(dynamic-sql-review): Static existence check that raises; no EXECUTE, grants or caller-controlled SQL.
 do $$
 begin
   if exists (select 1 from private.meet_attendance_pending_erasures) then

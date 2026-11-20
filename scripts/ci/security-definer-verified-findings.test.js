@@ -102,6 +102,16 @@ const expectedVerifiedIdentities = [
     '<dynamic-execute-acl>',
     'dynamic-execute-acl',
   ],
+  [
+    'apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql',
+    'private.ack_meet_attendance_erasure_room(text,text,text,bigint,text [ ])',
+    'definer-alter-needs-definition',
+  ],
+  [
+    'apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql',
+    'private.claim_meet_attendance_erasure_rooms(int4,int4)',
+    'definer-alter-needs-definition',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>

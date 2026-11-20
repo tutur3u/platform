@@ -4,6 +4,7 @@ const HARDENING_MIGRATION_FILENAME =
   '20261030030000_pin_time_tracking_definer_search_path.sql';
 const requiredMigration = `apps/database/supabase/migrations/${HARDENING_MIGRATION_FILENAME}`;
 module.exports = [
+  ...require('./sql-grant-guard-verified-findings-meet'),
   {
     path: 'apps/database/supabase/migrations/20261030112010_workspace_delete_fk_cascade_guard.sql',
     line: 2,

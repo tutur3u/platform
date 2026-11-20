@@ -1,0 +1,3 @@
+-- Intentionally empty. The definitions are identical in behavior to the
+-- ones they replace; rolling back would only restore definitions the SQL
+-- guards cannot review.

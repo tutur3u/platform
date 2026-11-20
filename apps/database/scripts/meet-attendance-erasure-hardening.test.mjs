@@ -17,6 +17,8 @@ const hardening =
   'supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql';
 const readiness =
   'supabase/migrations/20261120101500_meet_attendance_erasure_readiness.sql';
+const acl =
+  'supabase/migrations/20261120102500_meet_attendance_erasure_acl.sql';
 
 const ws = '11111111-1111-4111-8111-111111111111';
 const meeting = '33333333-3333-4333-8333-333333333333';
@@ -79,7 +81,7 @@ async function apply(db, path) {
   await db.exec(await readFile(new URL(path, root), 'utf8'));
 }
 
-async function freshDb(paths = [...before, hardening, readiness]) {
+async function freshDb(paths = [...before, hardening, readiness, acl]) {
   const db = new PGlite();
   await db.exec(fixture);
   for (const path of paths) await apply(db, path);

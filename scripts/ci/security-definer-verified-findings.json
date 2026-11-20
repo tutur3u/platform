@@ -152,5 +152,27 @@
     "classification": "verified false positive",
     "effectiveRoles": [],
     "reason": "Migration-only DO block reads pg_get_functiondef for exactly two fixed regprocedure signatures, applies fixed relation-preservation replacements, and aborts on contract drift. No caller-controlled SQL, role, signature or ACL text. CREATE OR REPLACE preserves the existing routine owner and privileges; the fixed patch does not change function settings or ACLs."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql",
+    "line": 144,
+    "sourceDigest": "2de90ee42cdb92f503d73b28a4b024e46a6ac9cf193f3a434010e7ef566fb68a",
+    "rule": "definer-alter-needs-definition",
+    "signature": "private.claim_meet_attendance_erasure_rooms(int4,int4)",
+    "digest": "b7b0fc7999d88cca0cb8d2ff83ab3d4faaeaa5862ab497d741a76e22310e9f7f",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "ALTER only sets SECURITY DEFINER on the claim function created in 20261120092500 with search_path pg_catalog, pg_temp and fully qualified references. The same file then revokes EXECUTE from PUBLIC, anon and authenticated and grants it only to service_role. 20261120102500_meet_attendance_erasure_acl.sql recreates it with the complete owner-run definition and ACL block."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql",
+    "line": 146,
+    "sourceDigest": "2de90ee42cdb92f503d73b28a4b024e46a6ac9cf193f3a434010e7ef566fb68a",
+    "rule": "definer-alter-needs-definition",
+    "signature": "private.ack_meet_attendance_erasure_room(text,text,text,bigint,text [ ])",
+    "digest": "340f63d7c60458ae3cb8e86e0e5e25c270962abc44607181d7ba132993fdfc5c",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "ALTER only sets SECURITY DEFINER on the acknowledgement function created in 20261120092500 with search_path pg_catalog, pg_temp and fully qualified references. The same file then revokes EXECUTE from PUBLIC, anon and authenticated and grants it only to service_role. 20261120102500_meet_attendance_erasure_acl.sql recreates it with the complete owner-run definition and ACL block."
   }
 ]

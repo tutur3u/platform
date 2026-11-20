@@ -154,7 +154,9 @@ it('bounds the directory and still lists overflow rooms', () => {
   // A spilled id is not kept in the stored value; the handler stores it as
   // its own key. A value that still holds spilled ids lists them.
   expect(blocked.directory.spill).toBeUndefined();
-  expect(blocked.effects).toEqual({ spillPut: ['ws-b:too-many'] });
+  expect('effects' in blocked ? blocked.effects : undefined).toEqual({
+    spillPut: ['ws-b:too-many'],
+  });
   const legacy = { ...blocked.directory, spill: ['ws-b:too-many'] };
   const listed: string[] = [];
   let cursor = 0;
