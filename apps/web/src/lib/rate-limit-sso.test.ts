@@ -3,16 +3,12 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   available: false,
-  incr: vi.fn(),
-  expire: vi.fn(),
-  ttl: vi.fn(),
+  incrRateWindow: vi.fn(),
 }));
 vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   hasUpstashRestEnv: () => mocks.available,
   getUpstashRestRedisClient: async () => ({
-    incr: mocks.incr,
-    expire: mocks.expire,
-    ttl: mocks.ttl,
+    incrRateWindow: mocks.incrRateWindow,
   }),
 }));
 beforeEach(() => {
@@ -30,7 +26,7 @@ it('keeps existing default behavior but denies SSO when Redis is absent', async 
 });
 it('denies SSO when the configured Redis operation fails', async () => {
   mocks.available = true;
-  mocks.incr.mockRejectedValue(Error('private diagnostic'));
+  mocks.incrRateWindow.mockRejectedValue(Error('private diagnostic'));
   const { checkRateLimitRedis } = await import('./rate-limit');
   expect(
     (
@@ -44,8 +40,7 @@ it('denies SSO when the configured Redis operation fails', async () => {
 });
 it('enforces the existing shared limiter count for SSO', async () => {
   mocks.available = true;
-  mocks.incr.mockResolvedValue(21);
-  mocks.ttl.mockResolvedValue(60);
+  mocks.incrRateWindow.mockResolvedValue({ n: 21, ttlMs: 60_000 });
   const { checkRateLimitRedis } = await import('./rate-limit');
   expect(
     (

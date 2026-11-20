@@ -67,6 +67,10 @@ export function createGuardRedisView(
     async del(...keys: string[]) {
       return client.del(keys);
     },
+    async incrRateWindow(key: string, windowMs: number) {
+      // Dedicated namespace avoids inheriting the legacy INCR default TTL.
+      return client.incr(`rate-window:${key}`, 1, windowMs);
+    },
     async incr(key: string) {
       return (await client.incr(key, 1, GUARD_VIEW_DEFAULT_TTL_MS)).n;
     },

@@ -73,6 +73,25 @@ describe('createGuardRedisView', () => {
     ]);
   });
 
+  it('creates a fixed rate window atomically in the guard store', async () => {
+    const { client } = fakeClient();
+    const redis = createGuardRedisView(client);
+    await expect(
+      redis.incrRateWindow('ratelimit:fixture', 750)
+    ).resolves.toEqual({
+      n: 1,
+      ttlMs: 1000,
+    });
+    expect(client.incr).toHaveBeenCalledOnce();
+    expect(client.incr).toHaveBeenCalledWith(
+      'rate-window:ratelimit:fixture',
+      1,
+      750
+    );
+    expect(client.expire).not.toHaveBeenCalled();
+    expect(client.ttl).not.toHaveBeenCalled();
+  });
+
   it('gives TTL-less writes the default retention', async () => {
     const { client } = fakeClient();
     const redis = createGuardRedisView(client);

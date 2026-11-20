@@ -25,6 +25,42 @@ describe('upstash-rest', () => {
     expect(mocks.fromEnv).not.toHaveBeenCalled();
   });
 
+  it('increments and repairs expiry for the existing Redis key in one call', async () => {
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    const evalScript = vi.fn().mockResolvedValue([12, 750]);
+    const incr = vi.fn();
+    const expire = vi.fn();
+    mocks.fromEnv.mockReturnValue({
+      eval: evalScript,
+      expire,
+      incr,
+      scan: vi.fn(),
+    });
+
+    const { getUpstashRestRedisClient } = await import('../upstash-rest.js');
+    const client = await getUpstashRestRedisClient();
+
+    await expect(
+      client?.incrRateWindow('ratelimit:fixture', 750)
+    ).resolves.toEqual({
+      n: 12,
+      ttlMs: 750,
+    });
+    expect(evalScript).toHaveBeenCalledOnce();
+    const [script] = evalScript.mock.calls[0]!;
+    expect(script).toMatch(/INCR.*KEYS\[1\]/);
+    expect(script).toMatch(/PTTL.*KEYS\[1\]/);
+    expect(script).toMatch(/if ttl < 0 then\s+redis.call\('PEXPIRE'/);
+    expect(evalScript).toHaveBeenCalledWith(
+      script,
+      ['ratelimit:fixture'],
+      [750]
+    );
+    expect(incr).not.toHaveBeenCalled();
+    expect(expire).not.toHaveBeenCalled();
+  });
+
   it('builds the Redis client from Upstash REST env vars', async () => {
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
     vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');

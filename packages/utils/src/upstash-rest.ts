@@ -16,7 +16,12 @@ export type UpstashRestRedisClient = Pick<
   | 'scan'
   | 'set'
   | 'ttl'
->;
+> & {
+  incrRateWindow(
+    key: string,
+    windowMs: number
+  ): Promise<{ n: number; ttlMs: number }>;
+};
 export type UpstashRatelimitRedisClient = Pick<
   Redis,
   'eval' | 'evalsha' | 'get' | 'set'
@@ -224,6 +229,14 @@ export async function getUpstashRestRedisClient(options?: {
   return client;
 }
 
+const INCR_RATE_WINDOW = `local count = redis.call('INCR', KEYS[1])
+local ttl = redis.call('PTTL', KEYS[1])
+if ttl < 0 then
+  redis.call('PEXPIRE', KEYS[1], ARGV[1])
+  ttl = tonumber(ARGV[1])
+end
+return { count, ttl }`;
+
 async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {
   if (!hasUpstashRestEnv()) {
     return null;
@@ -239,6 +252,25 @@ async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {
     expire: (key, seconds) => client.expire(key, seconds),
     get: <T = unknown>(key: string) => client.get<T>(key),
     incr: (key) => client.incr(key),
+    async incrRateWindow(key, windowMs) {
+      const result = await client.eval(INCR_RATE_WINDOW, [key], [windowMs]);
+      if (!Array.isArray(result) || result.length !== 2) {
+        throw new Error('Invalid atomic rate-window response');
+      }
+      const [n, ttlMs]: unknown[] = result;
+
+      if (
+        typeof n !== 'number' ||
+        !Number.isSafeInteger(n) ||
+        n < 1 ||
+        typeof ttlMs !== 'number' ||
+        !Number.isSafeInteger(ttlMs) ||
+        ttlMs < 0
+      ) {
+        throw new Error('Invalid atomic rate-window response');
+      }
+      return { n, ttlMs };
+    },
     mget: (...args) => client.mget(...args),
     scan: client.scan.bind(client),
     set: (key, value, options) => client.set(key, value, options),

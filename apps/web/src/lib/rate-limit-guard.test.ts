@@ -3,9 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   client: null as null | {
-    expire: ReturnType<typeof vi.fn>;
-    incr: ReturnType<typeof vi.fn>;
-    ttl: ReturnType<typeof vi.fn>;
+    incrRateWindow: ReturnType<typeof vi.fn>;
   },
   getClient: vi.fn(),
   hasEnv: vi.fn(() => true),
@@ -22,9 +20,7 @@ beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
   mocks.client = {
-    expire: vi.fn(async () => 1),
-    incr: vi.fn(async () => 1),
-    ttl: vi.fn(async () => 60),
+    incrRateWindow: vi.fn(async () => ({ n: 1, ttlMs: 60_000 })),
   };
   mocks.getClient.mockImplementation(async () => mocks.client);
 });
@@ -35,7 +31,9 @@ it('counts in the abuse-guard store when the ratelimit family is assigned', asyn
   vi.stubEnv('ABUSE_GUARD_FAMILIES', 'ratelimit');
   const { checkRateLimitRedis } = await import('./rate-limit');
 
-  mocks.client!.incr.mockResolvedValueOnce(1).mockResolvedValueOnce(3);
+  mocks
+    .client!.incrRateWindow.mockResolvedValueOnce({ n: 1, ttlMs: 60_000 })
+    .mockResolvedValueOnce({ n: 3, ttlMs: 38_000 });
   expect((await checkRateLimitRedis('otp:ip', config)).allowed).toBe(true);
   expect((await checkRateLimitRedis('otp:ip', config)).allowed).toBe(false);
 
@@ -43,7 +41,10 @@ it('counts in the abuse-guard store when the ratelimit family is assigned', asyn
   expect(mocks.getClient).toHaveBeenCalledWith({ family: 'ratelimit' });
   // An assigned family never consults or falls back to the Upstash env.
   expect(mocks.hasEnv).not.toHaveBeenCalled();
-  expect(mocks.client!.incr).toHaveBeenCalledWith('ratelimit:otp:ip');
+  expect(mocks.client!.incrRateWindow).toHaveBeenCalledWith(
+    'ratelimit:otp:ip',
+    60_000
+  );
 });
 
 it('keeps each caller fail policy when the assigned store is unusable', async () => {

@@ -178,18 +178,15 @@ export async function checkRateLimitRedis(
   }
 
   const key = `ratelimit:${keyId}`;
-  const windowSeconds = Math.ceil(config.windowMs / 1000);
-  const now = Math.floor(Date.now() / 1000);
+  const windowMs = Math.ceil(config.windowMs);
+  if (!Number.isSafeInteger(windowMs) || windowMs < 1) {
+    return unavailable();
+  }
+  const now = Date.now();
 
   try {
-    const count = await redis.incr(key);
-
-    if (count === 1) {
-      await redis.expire(key, windowSeconds);
-    }
-
-    const ttl = await redis.ttl(key);
-    const resetTime = now + (ttl > 0 ? ttl : windowSeconds);
+    const { n: count, ttlMs } = await redis.incrRateWindow(key, windowMs);
+    const resetTime = Math.ceil((now + ttlMs) / 1000);
 
     return {
       allowed: count <= config.maxRequests,
