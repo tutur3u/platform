@@ -428,7 +428,10 @@ token is issued. Scope and defaults:
   midnight. Exhaustion pauses FREE Live until 00:00 ICT. Budget alerts go out
   once per threshold per day at 80% and 100%.
 - Every tier keeps a per-actor cap of 10 mints per rolling 24 h and one
-  concurrent lease. Paid tiers skip the FREE budget only.
+  concurrent lease. Paid tiers skip the FREE budget only. If Web fails before
+  returning a token, it releases the matching concurrency slot without
+  refunding the actor's daily mint or FREE budget. Issued tokens hold their
+  slot until expiry plus grace, including after a client disconnect.
 - `LIVE_MINT_KILL_SWITCH` is on unless explicitly `false`. It refuses free-tier
   mints before any store call; paid mints are unaffected. Rollback is setting it
   back to `true`.
@@ -445,8 +448,10 @@ token is issued. Scope and defaults:
   `LIVE_MINT_STORE_INVALID` for every tier. A guard outage is therefore a paid
   Live outage too. An assigned family never falls back to Upstash. Upstash is
   only the legacy path while `live` is unassigned.
-- Cost fence: each mint makes at most one Worker request and two Durable Object
-  calls, with no retries. The `live` family gets 5% of the guard's daily
+- Cost fence: each mint makes one Worker request. A failed mint with an
+  acknowledged reservation makes at most one additional release request.
+  Each request uses at most two Durable Object calls and the same operation
+  budget and stop fence. The `live` family gets 5% of the guard's daily
   operation budget (warning logged at 80%), and the operator stop fence halts
   it durably.
 

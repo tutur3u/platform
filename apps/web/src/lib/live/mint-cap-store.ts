@@ -25,6 +25,7 @@ export interface LiveMintStoreInput {
 /** Resolves to the decision tuple; the guard validates it before use. */
 export interface LiveMintStore {
   reserve(input: LiveMintStoreInput): Promise<unknown>;
+  release(input: Pick<LiveMintStoreInput, 'actorId' | 'mintId'>): Promise<void>;
 }
 
 export interface LiveMintRedis {
@@ -115,6 +116,14 @@ export function createRedisLiveMintStore(
         ]
       );
     },
+    async release({ actorId, mintId }) {
+      const actor = createHash('sha256').update(actorId).digest('hex');
+      await redis.eval(
+        "return redis.call('ZREM', KEYS[1], ARGV[1])",
+        [`${keyPrefix}:leases:${actor}`],
+        [mintId]
+      );
+    },
   };
 }
 
@@ -123,7 +132,7 @@ export function createRedisLiveMintStore(
  * id is the operation id, so an ambiguous duplicate can never charge twice.
  */
 export function createGuardLiveMintStore(
-  client: Pick<AbuseGuardClient, 'liveReserve'>
+  client: Pick<AbuseGuardClient, 'liveReserve' | 'liveRelease'>
 ): LiveMintStore {
   return {
     async reserve(input) {
@@ -159,6 +168,13 @@ export function createGuardLiveMintStore(
             result.alert,
             result.day,
           ];
+    },
+    async release({ actorId, mintId }) {
+      await client.liveRelease({
+        partition: LIVE_MINT_GUARD_PARTITION,
+        actor: actorId,
+        lease: mintId,
+      });
     },
   };
 }

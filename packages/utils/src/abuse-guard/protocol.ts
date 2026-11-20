@@ -157,6 +157,7 @@ export const guardCommandSchema = z.discriminatedUnion('op', [
   z.object({
     op: z.literal('live.reserve'),
     actor: digest,
+    lease: digest.optional(),
     budget: digest,
     actorLimit: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxActorMints),
     concurrentLimit: z
@@ -173,6 +174,7 @@ export const guardCommandSchema = z.discriminatedUnion('op', [
     limit: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxBudgetMicroUsd),
     rate: z.number().int().min(1).max(LIVE_RESERVE_LIMITS.maxRateMicroUsd),
   }),
+  z.object({ op: z.literal('live.release'), actor: digest, lease: digest }),
 ]);
 
 export const guardStepSchema = z.object({
@@ -279,6 +281,7 @@ export const guardResultSchema = z.union([
     alert: z.number().int().min(0).max(3),
     day: z.number().int().positive(),
   }),
+  z.object({ op: z.literal('live.release'), released: z.boolean() }),
 ]);
 
 export const guardStepResultSchema = z.union([

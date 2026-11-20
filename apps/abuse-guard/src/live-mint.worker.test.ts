@@ -162,6 +162,42 @@ describe('live family in workerd', () => {
     expect(next).toMatchObject({ ok: true, spent: 220_800 });
   });
 
+  it('releases only the owning lease and keeps mint and budget accounting', async () => {
+    const runtime = await start();
+    const guard = client(runtime);
+    const actor = 'actor-release';
+    const mint = crypto.randomUUID();
+    const release = { actor, partition: input(actor).partition, lease: mint };
+    expect(
+      await guard.liveReserve(
+        input(actor, { operationId: mint, actorLimit: 2 })
+      )
+    ).toMatchObject({ ok: true, spent: 110_400 });
+    expect(await guard.liveRelease({ ...release, actor: 'other' })).toBe(false);
+    expect(await guard.liveReserve(input(actor))).toMatchObject({
+      ok: false,
+      reason: 'concurrency',
+    });
+    expect(await guard.liveRelease(release)).toBe(true);
+    expect(
+      await guard.liveReserve(input(actor, { actorLimit: 2 }))
+    ).toMatchObject({
+      ok: true,
+      spent: 220_800,
+    });
+    expect(await guard.liveRelease(release)).toBe(false);
+    expect(
+      await guard.liveReserve(input(actor, { actorLimit: 2 }))
+    ).toMatchObject({
+      ok: false,
+      reason: 'actor',
+    });
+    expect(await guard.liveReserve(input(actor))).toMatchObject({
+      ok: false,
+      reason: 'concurrency',
+    });
+  });
+
   it('rejects unsigned and forged requests before any Durable Object work', async () => {
     const runtime = await start();
     const unsigned = await runtime.dispatchFetch(`${ORIGIN}/v1/rpc`, {

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   createConstrainedLiveToken: vi.fn(),
   readLiveMintConfig: vi.fn(),
   reserveLiveMint: vi.fn(),
+  releaseMint: vi.fn(),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => mocks);
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => mocks);
@@ -108,6 +109,7 @@ describe('web Live mint cap integration', () => {
     mocks.getWorkspaceTier.mockResolvedValue('FREE');
     mocks.readLiveMintConfig.mockReturnValue(config);
     mocks.reserveLiveMint.mockResolvedValue({
+      release: mocks.releaseMint,
       mintId: 'fixture',
       freeSessionSeconds: 180,
       expiresAt,
@@ -125,6 +127,7 @@ describe('web Live mint cap integration', () => {
   it('uses the authoritative pool and exact admitted expiry with FREE resumption disabled', async () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
+    expect(mocks.releaseMint).not.toHaveBeenCalled();
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
     expect(await response.json()).toMatchObject({ expiresAt });
     expect(mocks.getWorkspaceTier).toHaveBeenCalledWith(billingWs, {
@@ -187,11 +190,12 @@ describe('web Live mint cap integration', () => {
     });
   });
 
-  it('does not replay an interrupted provider mint or refund its cap', async () => {
+  it('releases the slot after a provider failure without retrying admission', async () => {
     mocks.createConstrainedLiveToken.mockRejectedValue(
       new Error('interrupted')
     );
     expect((await POST(request())).status).toBe(500);
+    expect(mocks.releaseMint).toHaveBeenCalledOnce();
     expect(mocks.reserveLiveMint).toHaveBeenCalledTimes(1);
     expect(mocks.createConstrainedLiveToken).toHaveBeenCalledTimes(1);
     expect(mocks.abortLiveBillingSession).toHaveBeenCalledWith({

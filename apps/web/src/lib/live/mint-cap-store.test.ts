@@ -42,9 +42,10 @@ beforeEach(() => {
 describe('Live mint store selection', () => {
   it('uses the Durable Object store when the live family is assigned', async () => {
     const liveReserve = vi.fn().mockResolvedValue(granted);
+    const liveRelease = vi.fn().mockResolvedValue(true);
     selectAbuseGuard.mockReturnValue({
       kind: 'durable-object',
-      client: { liveReserve },
+      client: { liveReserve, liveRelease },
     });
     const guard = createLiveMintGuard({ alert: vi.fn() });
     const admission = await guard({ actorId, isFree: true, config });
@@ -65,6 +66,12 @@ describe('Live mint store selection', () => {
     });
     expect(admission.expiresAt).toBe(new Date(now + 180_000).toISOString());
     expect(admission.reservedMicroUsd).toBe(110_400);
+    await admission.release();
+    expect(liveRelease).toHaveBeenCalledWith({
+      partition: LIVE_MINT_GUARD_PARTITION,
+      actor: actorId,
+      lease: admission.mintId,
+    });
   });
 
   it('never falls back to Upstash when an assigned family is off', async () => {
@@ -101,6 +108,7 @@ describe('Durable Object store failures fail closed for every tier', () => {
     const guard = createLiveMintGuard({
       getStore: async () =>
         createGuardLiveMintStore({
+          liveRelease: async () => false,
           liveReserve: async () => {
             throw new AbuseGuardUnavailableError(code);
           },
@@ -123,6 +131,7 @@ describe('Durable Object store failures fail closed for every tier', () => {
     const guard = createLiveMintGuard({
       getStore: async () =>
         createGuardLiveMintStore({
+          liveRelease: async () => false,
           liveReserve: async () => ({ ...granted, limit: 0 }),
         }),
     });
@@ -137,6 +146,7 @@ describe('Durable Object store failures fail closed for every tier', () => {
       alert,
       getStore: async () =>
         createGuardLiveMintStore({
+          liveRelease: async () => false,
           liveReserve: async () => ({
             op: 'live.reserve',
             ok: false,

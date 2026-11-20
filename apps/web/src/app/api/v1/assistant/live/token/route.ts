@@ -94,6 +94,7 @@ async function loadStoredSessionHandle({
 
 export async function POST(request: Request) {
   const timing = createServerTiming();
+  let releaseUnusedMint: (() => Promise<void>) | undefined;
   let liveSessionId: string | null = null;
   let authenticatedUserId: string | null = null;
   let tokenMintStarted = false;
@@ -230,6 +231,7 @@ export async function POST(request: Request) {
     }
     const config = readLiveMintConfig();
     const mint = await reserveLiveMint({ actorId: user.id, isFree, config });
+    releaseUnusedMint = mint.release;
     const shouldForceFresh = isFree || forceFresh === true;
 
     const [systemInstruction, prepared] = await Promise.all([
@@ -342,7 +344,7 @@ export async function POST(request: Request) {
       })
     );
 
-    return Response.json(
+    const response = Response.json(
       {
         token,
         toolProtocol,
@@ -362,6 +364,8 @@ export async function POST(request: Request) {
         },
       }
     );
+    releaseUnusedMint = undefined;
+    return response;
   } catch (error) {
     if (liveSessionId && authenticatedUserId) {
       await abortLiveBillingSession({
@@ -409,5 +413,7 @@ export async function POST(request: Request) {
       { error: 'Failed to generate assistant live token' },
       { status: tokenMintStarted ? 502 : 500 }
     );
+  } finally {
+    await releaseUnusedMint?.();
   }
 }

@@ -9,7 +9,7 @@ import {
   type GuardWindow,
   type ParsedGuardCommand,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { reserveLiveMint } from './live-mint';
+import { releaseLiveMint, reserveLiveMint } from './live-mint';
 import { applyNativeIntegrity } from './native-integrity';
 
 export type SqlValue = string | number | null | ArrayBuffer;
@@ -287,6 +287,16 @@ export function createGuardEngine(sql: SqlRunner) {
           write,
           invalid: (message) => new GuardCommandError(message),
         });
+      case 'live.release':
+        return {
+          op: 'live.release',
+          released: releaseLiveMint(cmd, now, {
+            read,
+            write,
+            remove,
+            invalid: (message) => new GuardCommandError(message),
+          }),
+        };
     }
   }
 

@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   readLiveMintConfig: vi.fn(),
   reserveLiveMint: vi.fn(),
+  releaseMint: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => mocks);
@@ -137,6 +138,7 @@ describe('mobile Live token shared-allowance admission', () => {
       actorMaxConcurrent: 1,
     });
     mocks.reserveLiveMint.mockResolvedValue({
+      release: mocks.releaseMint,
       mintId: 'mint-1',
       freeSessionSeconds: 180,
       expiresAt: new Date(Date.now() + 180_000).toISOString(),
@@ -219,6 +221,7 @@ describe('mobile Live token shared-allowance admission', () => {
       mocks.getWorkspaceTier.mockResolvedValue('PRO');
       const response = await POST(request());
       expect(response.status).toBe(200);
+      expect(mocks.releaseMint).not.toHaveBeenCalled();
       expect(mocks.getWorkspaceTier).toHaveBeenCalledWith(billingWs, {
         useAdmin: true,
       });
@@ -280,6 +283,15 @@ describe('mobile Live token shared-allowance admission', () => {
       expiresAt: expect.any(String),
     });
     expect(mocks.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases the slot when chat preparation returns before minting', async () => {
+    mocks.ensureAssistantLiveChat.mockRejectedValueOnce(
+      new Error('chat failed')
+    );
+    expect((await POST(request())).status).toBe(500);
+    expect(mocks.releaseMint).toHaveBeenCalledOnce();
+    expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
   });
 
   it.each(['INSUFFICIENT_CREDITS', 'CREDITS_EXHAUSTED'])(
@@ -502,11 +514,12 @@ describe('mobile Live token shared-allowance admission', () => {
     expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
   });
 
-  it('does not retry or refund the mint admission after provider interruption', async () => {
+  it('releases the slot after a provider failure without retrying admission', async () => {
     mocks.createConstrainedLiveToken.mockRejectedValue(
       new Error('interrupted')
     );
     expect((await POST(request())).status).toBe(502);
+    expect(mocks.releaseMint).toHaveBeenCalledOnce();
     expect(mocks.reserveLiveMint).toHaveBeenCalledTimes(1);
     expect(mocks.rpc).toHaveBeenLastCalledWith(
       'settle_ai_live_session',

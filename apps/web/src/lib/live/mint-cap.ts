@@ -106,6 +106,7 @@ const resultSchema = z.union([
 ]);
 export interface LiveMintReservation {
   mintId: string;
+  release: () => Promise<void>;
   freeSessionSeconds: number;
   expiresAt: string;
   reservedMicroUsd: number;
@@ -144,9 +145,11 @@ export function createLiveMintGuard({
       throw new LiveMintCapError(503, 'LIVE_MINT_DISABLED');
     const mintId = randomUUID();
     let response: unknown;
+    let store: LiveMintStore;
     try {
-      const store = await getStore();
-      if (!store) throw new Error('Admission store missing');
+      const selected = await getStore();
+      if (!selected) throw new Error('Admission store missing');
+      store = selected;
       response = await store.reserve({
         actorId,
         mintId,
@@ -197,6 +200,13 @@ export function createLiveMintGuard({
       );
     return {
       mintId,
+      async release() {
+        try {
+          await store.release({ actorId, mintId });
+        } catch {
+          console.error('live_mint_lease_release_failed');
+        }
+      },
       freeSessionSeconds: config.freeSessionSeconds,
       expiresAt: new Date(value[2]).toISOString(),
       reservedMicroUsd: value[3],

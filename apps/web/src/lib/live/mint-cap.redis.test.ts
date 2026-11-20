@@ -202,6 +202,30 @@ describe('real Redis atomic Live admission', () => {
       guard({ actorId: actor(1), isFree: false, config })
     ).rejects.toMatchObject({ code: 'LIVE_MINT_ACTOR_LIMIT' });
   });
+  it('releases the failed mint slot exactly once without clearing its daily count', async () => {
+    const { guard } = makeGuard();
+    const input = {
+      actorId: actor(1),
+      isFree: false,
+      config: { ...defaults, actorDailyMints: 3 },
+    };
+    const first = await guard(input);
+    await expect(guard(input)).rejects.toMatchObject({
+      code: 'LIVE_MINT_CONCURRENCY_LIMIT',
+    });
+    await first.release();
+    const replacement = await guard(input);
+    await first.release();
+    await expect(guard(input)).rejects.toMatchObject({
+      code: 'LIVE_MINT_CONCURRENCY_LIMIT',
+    });
+    await replacement.release();
+    const third = await guard(input);
+    await third.release();
+    await expect(guard(input)).rejects.toMatchObject({
+      code: 'LIVE_MINT_ACTOR_LIMIT',
+    });
+  });
   it('serializes concurrent mint attempts behind the per-actor lease', async () => {
     const { guard } = makeGuard();
     const result = await Promise.allSettled(

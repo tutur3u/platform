@@ -289,6 +289,11 @@ export interface AbuseGuardClient {
   ): Promise<number>;
   /** Atomic Live voice mint admission; `actor`/`budget` are hashed first. */
   liveReserve(input: GuardLiveReserveInput): Promise<GuardLiveReservation>;
+  liveRelease(input: {
+    partition: string;
+    actor: string;
+    lease: string;
+  }): Promise<boolean>;
 }
 
 export type GuardLiveReserveInput = GuardCallOptions & {
@@ -600,10 +605,20 @@ export function createAbuseGuardClient(options: {
           op: 'live.reserve',
           actor: await keyOf(actor),
           budget: await keyOf(budget),
+          ...(operationId ? { lease: await keyOf(operationId) } : {}),
           ...limits,
         },
         operationId
       );
+    },
+
+    async liveRelease({ partition, actor, lease }) {
+      const result = await single(partition, {
+        op: 'live.release',
+        actor: await keyOf(actor),
+        lease: await keyOf(lease),
+      });
+      return result.released;
     },
   };
 }

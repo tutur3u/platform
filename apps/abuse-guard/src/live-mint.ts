@@ -6,13 +6,14 @@
  *
  * The clock is the Durable Object's `Date.now()` (Redis TIME before). FREE
  * leases end at ICT midnight rather than charging a cross-day session to
- * either budget. The reservation is the full lease cost; there is no refund.
+ * either budget. A server-side failed mint can release its concurrency slot.
+ * The rolling actor window and full lease reservation are still charged.
  *
  * Storage stays bounded: each actor has at most one window row and one lease
  * row, holding only entries still inside the 24 h window or an open lease, and
  * expiring with their last entry. Budget rows live until the end of the next
  * ICT day, so at most two days exist. Expired rows are purged per request and
- * by the partition alarm.
+ * by the partition alarm. Each tracked open lease has one expiring receipt.
  */
 import type {
   GuardResult,
@@ -27,6 +28,7 @@ export const LIVE_LEASE_GRACE_MS = 30_000;
 
 type LiveReserveCommand = Extract<ParsedGuardCommand, { op: 'live.reserve' }>;
 type LiveReserveResult = Extract<GuardResult, { op: 'live.reserve' }>;
+type LiveReleaseCommand = Extract<ParsedGuardCommand, { op: 'live.release' }>;
 type Row = { v: string; exp: number };
 
 export interface LiveRowStore {
@@ -51,6 +53,10 @@ export function liveRowKeys(
     leases: `live:l:${cmd.actor}`,
     budget: `live:b:${cmd.budget}:${day}`,
   };
+}
+
+function leaseReceipt(actor: string, lease: string) {
+  return `live:r:${actor}:${lease}`;
 }
 
 function times(row: Row | null, store: LiveRowStore): number[] {
@@ -158,7 +164,9 @@ export function reserveLiveMint(
     store.write(keys.budget, JSON.stringify(budget), budgetExp);
   }
   mints.push(now);
-  leases.push(expiresAt + LIVE_LEASE_GRACE_MS);
+  const end = expiresAt + LIVE_LEASE_GRACE_MS;
+  leases.push(end);
+  if (cmd.lease) store.write(leaseReceipt(cmd.actor, cmd.lease), '1', end);
   leases.sort((a, b) => a - b);
   store.write(keys.actor, JSON.stringify(mints), now + LIVE_DAY_MS + 1000);
   store.write(
@@ -177,4 +185,28 @@ export function reserveLiveMint(
     alert,
     day,
   };
+}
+
+export function releaseLiveMint(
+  cmd: LiveReleaseCommand,
+  now: number,
+  store: LiveRowStore & { remove(k: string): void }
+): boolean {
+  const receiptKey = leaseReceipt(cmd.actor, cmd.lease);
+  const receipt = store.read(receiptKey, now);
+  if (!receipt) return false;
+
+  const leasesKey = `live:l:${cmd.actor}`;
+  const row = store.read(leasesKey, now);
+  const leases = times(row, store).filter((end) => end > now);
+  const index = leases.indexOf(receipt.exp);
+  if (index >= 0) {
+    // Equal expiration times are interchangeable in this actor's lease count.
+    leases.splice(index, 1);
+    const last = leases.at(-1);
+    if (last === undefined) store.remove(leasesKey);
+    else store.write(leasesKey, JSON.stringify(leases), last + 1000);
+  }
+  store.remove(receiptKey);
+  return index >= 0;
 }

@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
+  let releaseUnusedMint: (() => Promise<void>) | undefined;
   let liveSessionId: string | null = null;
   let userId: string | null = null;
   let eligibility: LiveEligibility | null = null;
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
     }
     const config = readLiveMintConfig();
     const mint = await reserveLiveMint({ actorId: user.id, isFree, config });
+    releaseUnusedMint = mint.release;
     const systemInstruction = await buildLiveMiraPrompt({
       supabase,
       user,
@@ -153,7 +155,7 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    return Response.json(
+    const response = Response.json(
       {
         expiresAt,
         liveSessionId,
@@ -164,6 +166,8 @@ export async function POST(request: NextRequest) {
       },
       { headers: { 'Cache-Control': 'private, no-store' } }
     );
+    releaseUnusedMint = undefined;
+    return response;
   } catch (error) {
     if (liveSessionId && userId) {
       await abortLiveBillingSession({ liveSessionId, userId }).catch(
@@ -221,5 +225,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  } finally {
+    await releaseUnusedMint?.();
   }
 }
