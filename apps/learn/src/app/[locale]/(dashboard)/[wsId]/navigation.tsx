@@ -6,6 +6,7 @@ import {
   Code2,
   HeartPulse,
   Home,
+  Library,
   LineChart,
   MessageCircle,
   Settings,
@@ -14,7 +15,10 @@ import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
-  const t = await getTranslations('navigation');
+  const [t, learner] = await Promise.all([
+    getTranslations('navigation'),
+    getTranslations('learnerWorkspace'),
+  ]);
   const base = `/${wsId}`;
 
   return [
@@ -64,12 +68,17 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       icon: <BookOpen className="size-4" />,
     },
     {
+      title: learner('library'),
+      href: `${base}/courses?view=library`,
+      icon: <Library className="size-4" />,
+    },
+    {
       title: t('assignments'),
       href: `${base}/assignments`,
       icon: <ClipboardCheck className="size-4" />,
     },
     {
-      title: t('reports'),
+      title: learner('progress'),
       href: `${base}/reports`,
       icon: <LineChart className="size-4" />,
     },

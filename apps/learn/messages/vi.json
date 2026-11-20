@@ -903,6 +903,15 @@
     "word": "Từ",
     "yourRecording": "Bản ghi âm của bạn"
   },
+  "learnerWorkspace": {
+    "flashcardCount": "{count} thẻ ghi nhớ",
+    "library": "Thư viện",
+    "noMaterials": "Khóa học này chưa có tài liệu bài học khả dụng.",
+    "openMaterials": "Mở tài liệu",
+    "practiceError": "Không thể lưu câu trả lời. Hãy thử lại.",
+    "progress": "Tiến độ",
+    "shortcuts": "Lối tắt học tập"
+  },
   "marks": {
     "description": "Điểm được trình bày thành các thẻ thân thiện để học viên và phụ huynh nhanh chóng thấy tiến bộ.",
     "empty": "Điểm sẽ xuất hiện sau khi giáo viên nhập.",

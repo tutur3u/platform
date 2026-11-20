@@ -10,6 +10,7 @@ import {
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { ModuleDetailView } from './module-detail-view';
@@ -32,7 +33,10 @@ export function CourseDetailPage({
 }) {
   const t = useTranslations();
   const studentId = useStudentId();
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const requestedModuleId = useSearchParams().get('moduleId');
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(
+    requestedModuleId
+  );
   const coursesHref = useStudentHref(`/${wsId}/courses`);
 
   const course = useQuery({

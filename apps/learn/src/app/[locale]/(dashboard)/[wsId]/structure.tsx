@@ -9,6 +9,7 @@ import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { usePathname, useSearchParams } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
+import { withLearnerStudent } from '@/components/learner-pages/learner-navigation';
 import { LearnerStudentSelect } from '@/components/learner-shell-parts';
 import { WEB_APP_URL } from '@/constants/common';
 
@@ -50,7 +51,7 @@ export function Structure({
             link.href
               ? {
                   ...link,
-                  href: `${link.href}?studentId=${encodeURIComponent(studentId)}`,
+                  href: withLearnerStudent(link.href, studentId),
                   aliases: [link.href, ...(link.aliases ?? [])],
                 }
               : link

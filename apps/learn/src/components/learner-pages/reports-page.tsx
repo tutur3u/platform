@@ -1,7 +1,11 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { LineChart } from '@tuturuuu/icons';
+import { ArrowRight } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import Link from 'next/link';
+import { LearnerRequestError } from './learner-request-state';
 import {
   listTulearnReports,
   type TulearnReportSummary,
@@ -12,9 +16,8 @@ import {
   EmptyState,
   LoadingState,
   Section,
-  SurfaceCard,
-  SurfaceIcon,
   usePageMotion,
+  useStudentHref,
   useStudentId,
 } from './shared';
 
@@ -22,19 +25,24 @@ export function ReportsPage({ wsId }: { wsId: string }) {
   const t = useTranslations();
   const studentId = useStudentId();
   const scopeRef = usePageMotion();
+  const gradesHref = useStudentHref(`/${wsId}/marks`);
   const reports = useQuery({
     queryFn: () => listTulearnReports(wsId, studentId),
     queryKey: ['tulearn', wsId, studentId, 'reports'],
   });
 
   if (reports.isLoading) return <LoadingState />;
+  if (reports.isError && !reports.data)
+    return <LearnerRequestError retry={() => void reports.refetch()} />;
 
   return (
-    <Section
-      description={t('reports.description')}
-      refValue={scopeRef}
-      title={t('reports.title')}
-    >
+    <Section refValue={scopeRef} title={t('learnerWorkspace.progress')}>
+      <Button asChild variant="outline">
+        <Link href={gradesHref}>
+          {t('marks.title')}
+          <ArrowRight aria-hidden />
+        </Link>
+      </Button>
       <div className="grid gap-4 md:grid-cols-2">
         {reports.data?.reports.map((report) => (
           <ReportCard key={report.id} report={report} />
@@ -49,24 +57,27 @@ export function ReportsPage({ wsId }: { wsId: string }) {
 
 function ReportCard({ report }: { report: TulearnReportSummary }) {
   return (
-    <SurfaceCard className="bg-card p-6">
-      <SurfaceIcon className="mb-5" icon={LineChart} />
-      <h3 className="font-bold text-2xl tracking-normal">{report.title}</h3>
-      <p className="mt-3 line-clamp-5 text-muted-foreground leading-7">
-        {report.feedback || report.content}
-      </p>
-      <div className="mt-5 flex flex-wrap items-center gap-2">
-        {report.course ? (
-          <Badge className="rounded-lg border border-border bg-background text-foreground hover:bg-background">
-            {report.course.name}
-          </Badge>
-        ) : null}
-        {report.score != null ? (
-          <Badge className="rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
-            {report.score}
-          </Badge>
-        ) : null}
-      </div>
-    </SurfaceCard>
+    <Card>
+      <CardHeader>
+        <CardTitle>{report.title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="mt-3 line-clamp-5 text-muted-foreground leading-7">
+          {report.feedback || report.content}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          {report.course ? (
+            <Badge className="rounded-lg border border-border bg-background text-foreground hover:bg-background">
+              {report.course.name}
+            </Badge>
+          ) : null}
+          {report.score != null ? (
+            <Badge className="rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
+              {report.score}
+            </Badge>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

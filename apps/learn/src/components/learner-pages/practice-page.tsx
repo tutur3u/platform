@@ -8,7 +8,8 @@ import {
 } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import { cn } from '@tuturuuu/utils/format';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { LearnerRequestError } from './learner-request-state';
 import { useTranslations } from 'next-intl';
 import {
   EmptyState,
@@ -49,6 +50,8 @@ export function PracticePage({ wsId }: { wsId: string }) {
   });
 
   if (practice.isLoading) return <LoadingState />;
+  if (practice.isError && !practice.data)
+    return <LearnerRequestError retry={() => void practice.refetch()} />;
   if (!practice.data?.item) return <EmptyState label={t('practice.empty')} />;
 
   const result = submit.data;
@@ -60,55 +63,57 @@ export function PracticePage({ wsId }: { wsId: string }) {
       title={t('practice.title')}
     >
       <div className="mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <SurfaceCard className="bg-background p-6 md:p-8">
-          <Badge className="mb-5 rounded-lg border border-border bg-primary text-primary-foreground hover:bg-primary">
-            {practice.data.item.courseName}
-          </Badge>
-          <h2 className="font-bold text-3xl leading-tight tracking-normal md:text-4xl">
-            {practice.data.item.title}
-          </h2>
-          <p className="mt-6 text-lg text-muted-foreground leading-8">
-            {practice.data.item.prompt ?? t('practice.title')}
-          </p>
-          {result ? (
-            <div
-              className={cn(
-                'mt-8 rounded-lg border border-border p-5',
-                result.correct ? 'bg-muted/60' : 'bg-background'
-              )}
-            >
-              <p className="font-bold text-2xl tracking-normal">
-                {result.correct
-                  ? t('practice.correct')
-                  : t('practice.incorrect')}
+        <Card>
+          <CardHeader>
+            <Badge variant="secondary">{practice.data.item.courseName}</Badge>
+            <CardTitle className="text-xl">
+              {practice.data.item.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {practice.data.item.prompt && (
+              <p className="text-muted-foreground leading-relaxed">
+                {practice.data.item.prompt}
               </p>
-              <p className="mt-2 text-muted-foreground">
-                {t('practice.resultSummary', {
-                  hearts: result.hearts,
-                  xp: result.xpAwarded,
-                })}
+            )}
+            {result ? (
+              <div role="status" className="rounded-lg border p-4">
+                <p className="font-bold text-2xl tracking-normal">
+                  {result.correct
+                    ? t('practice.correct')
+                    : t('practice.incorrect')}
+                </p>
+                <p className="mt-2 text-muted-foreground">
+                  {t('practice.resultSummary', {
+                    hearts: result.hearts,
+                    xp: result.xpAwarded,
+                  })}
+                </p>
+              </div>
+            ) : null}
+            {submit.isError && (
+              <p role="alert" className="text-destructive text-sm">
+                {t('learnerWorkspace.practiceError')}
               </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                disabled={submit.isPending}
+                onClick={() => submit.mutate(true)}
+              >
+                <Check className="h-4 w-4" />
+                {t('practice.submitCorrect')}
+              </Button>
+              <Button
+                disabled={submit.isPending}
+                onClick={() => submit.mutate(false)}
+                variant="secondary"
+              >
+                {t('practice.submitIncorrect')}
+              </Button>
             </div>
-          ) : null}
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            <Button
-              className="h-12 rounded-lg border border-border bg-primary font-semibold text-primary-foreground hover:bg-primary"
-              disabled={submit.isPending}
-              onClick={() => submit.mutate(true)}
-            >
-              <Check className="h-4 w-4" />
-              {t('practice.submitCorrect')}
-            </Button>
-            <Button
-              className="h-12 rounded-lg border border-border font-semibold"
-              disabled={submit.isPending}
-              onClick={() => submit.mutate(false)}
-              variant="secondary"
-            >
-              {t('practice.submitIncorrect')}
-            </Button>
-          </div>
-        </SurfaceCard>
+          </CardContent>
+        </Card>
         <aside className="space-y-3" data-learn-reveal>
           <PracticeHint
             icon={Heart}

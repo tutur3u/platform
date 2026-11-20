@@ -903,6 +903,15 @@
     "word": "Word",
     "yourRecording": "Your recording"
   },
+  "learnerWorkspace": {
+    "flashcardCount": "{count, plural, one {# flashcard} other {# flashcards}}",
+    "library": "Library",
+    "noMaterials": "There are no available lesson materials in this course.",
+    "openMaterials": "Open materials",
+    "practiceError": "Could not save your answer. Try again.",
+    "progress": "Progress",
+    "shortcuts": "Learning shortcuts"
+  },
   "marks": {
     "description": "Marks are grouped as friendly score cards so students and parents can spot growth quickly.",
     "empty": "Marks will appear after your teacher records them.",

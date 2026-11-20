@@ -13,6 +13,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { withLearnerStudent } from './learner-navigation';
 import { type ReactNode, type RefObject, useRef } from 'react';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
@@ -43,7 +44,7 @@ export function useStudentId() {
 
 export function useStudentHref(path: string) {
   const studentId = useStudentId();
-  return studentId ? `${path}?studentId=${studentId}` : path;
+  return withLearnerStudent(path, studentId);
 }
 
 export function usePageMotion() {
