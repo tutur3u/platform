@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   EASY_CENTER_WORKSPACE_ID,
+  isMeetAiAllWorkspacesOptIn,
   isMeetAiEnabledForWorkspace,
+  MEET_AI_ALL_WORKSPACES_REVIEWED,
   isMeetAiHardDenied,
   meetAiEnabledWorkspaceIds,
   resetMeetAiGateWarnings,
@@ -239,5 +241,98 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
       isMeetAiEnabledForWorkspace(WS, allow(`*,${WS}`));
     expect(warn).toHaveBeenCalledTimes(1);
     expect(String(warn.mock.calls[0]?.[0])).not.toContain(WS);
+  });
+});
+
+describe('Meet AI reviewed allow-all opt-in', () => {
+  const PROTECTED = '00000000-0000-4000-8000-0000000000ee';
+  const base = {
+    MEET_AI_DISABLED: 'false',
+    MEET_AI_PROTECTED_WORKSPACE_IDS: PROTECTED,
+  };
+  let warn: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    resetMeetAiGateWarnings();
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => warn.mockRestore());
+
+  it('opens every unlisted workspace only for the exact reviewed value', () => {
+    const env = {
+      ...base,
+      MEET_AI_ALL_WORKSPACES: MEET_AI_ALL_WORKSPACES_REVIEWED,
+    };
+    expect(isMeetAiAllWorkspacesOptIn(env)).toBe(true);
+    expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(true);
+    expect(isMeetAiEnabledForWorkspace(OTHER, env)).toBe(true);
+    // The allowlist is not needed and cannot narrow the reviewed opt-in.
+    expect(
+      isMeetAiEnabledForWorkspace(OTHER, {
+        ...env,
+        MEET_AI_ENABLED_WORKSPACE_IDS: WS,
+      })
+    ).toBe(true);
+  });
+
+  it.each([
+    '*',
+    'true',
+    '1',
+    'all',
+    'reviewed-allow-all',
+    ` ${'reviewed-allow-all-2026-11-20'}`,
+    'REVIEWED-ALLOW-ALL-2026-11-20',
+  ])('ignores and logs the non-reviewed value %j', (value) => {
+    const env = { ...base, MEET_AI_ALL_WORKSPACES: value };
+    expect(isMeetAiAllWorkspacesOptIn(env)).toBe(false);
+    expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(false);
+    expect(
+      isMeetAiEnabledForWorkspace(WS, {
+        ...env,
+        MEET_AI_ENABLED_WORKSPACE_IDS: WS,
+      })
+    ).toBe(true);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('MEET_AI_ALL_WORKSPACES')
+    );
+  });
+
+  it('never bypasses the kill switch, hard denies or the denylist', () => {
+    const env = {
+      ...base,
+      MEET_AI_ALL_WORKSPACES: MEET_AI_ALL_WORKSPACES_REVIEWED,
+    };
+    expect(
+      isMeetAiEnabledForWorkspace(WS, { ...env, MEET_AI_DISABLED: 'true' })
+    ).toBe(false);
+    expect(
+      isMeetAiEnabledForWorkspace(WS, {
+        ...env,
+        MEET_AI_DISABLED: undefined,
+      })
+    ).toBe(false);
+    expect(isMeetAiEnabledForWorkspace(PROTECTED, env)).toBe(false);
+    expect(isMeetAiEnabledForWorkspace(EASY_CENTER_WORKSPACE_ID, env)).toBe(
+      false
+    );
+    expect(
+      isMeetAiEnabledForWorkspace(WS, {
+        ...env,
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '',
+      })
+    ).toBe(false);
+    expect(
+      isMeetAiEnabledForWorkspace(WS, {
+        ...env,
+        MEET_AI_DISABLED_WORKSPACE_IDS: WS,
+      })
+    ).toBe(false);
+    expect(
+      isMeetAiEnabledForWorkspace(OTHER, {
+        ...env,
+        MEET_AI_DISABLED_WORKSPACE_IDS: 'garbage',
+      })
+    ).toBe(false);
+    expect(isMeetAiEnabledForWorkspace('not-a-uuid', env)).toBe(false);
   });
 });

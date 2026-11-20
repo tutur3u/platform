@@ -5,6 +5,11 @@ const f = vi.hoisted(() => ({
   workspace: vi.fn(),
   membership: vi.fn(),
   host: vi.fn(),
+  gate: vi.fn(),
+}));
+vi.mock('../../meeting-ai/server/workspace-gate', () => ({
+  meetAiGateEnv: async () => ({ synthetic: 'env' }),
+  isMeetAiEnabledForWorkspace: f.gate,
 }));
 vi.mock('@tuturuuu/utils/meet-hosting', () => ({
   canVerifiedAccountHostMeeting: f.host,
@@ -54,6 +59,7 @@ beforeEach(() => {
   f.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
   f.workspace.mockResolvedValue({ data: workspace, error: null });
   f.host.mockResolvedValue(false);
+  f.gate.mockReturnValue(true);
 });
 
 it('uses current server Auth and actual creator_id for the staff Personal exception', async () => {
@@ -139,4 +145,13 @@ it('uses the Meet hosting rule for non-staff accounts and fails closed when it t
     (await readMiraDemoAuthority({ ...request, disabledBinding: 'true' }))
       .allowed
   ).toBe(false);
+});
+
+it('requires the meeting workspace to pass the Meet AI workspace gate', async () => {
+  f.gate.mockReturnValue(false);
+  expect(await readMiraDemoAuthority(request)).toEqual({
+    allowed: false,
+    reason: 'disabled',
+  });
+  expect(f.gate).toHaveBeenCalledWith(workspace.id, { synthetic: 'env' });
 });

@@ -3,6 +3,10 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  isMeetAiEnabledForWorkspace,
+  meetAiGateEnv,
+} from '../../meeting-ai/server/workspace-gate';
 import { miraDemoAdmission, readMiraAdultAttestation } from '../demo-admission';
 
 export { readMiraAdultAttestation } from '../demo-admission';
@@ -41,8 +45,11 @@ export async function readMiraDemoAuthority(input: {
       workspace.data.deleted === true
     )
       return { allowed: false as const, reason: 'identity' as const };
+    // The meeting workspace must pass the Meet AI workspace gate (hard
+    // denies, denylist, then the reviewed allow-all opt-in or allowlist).
     const enabled =
-      input.disabledBinding === 'false' || input.disabledBinding === '0';
+      (input.disabledBinding === 'false' || input.disabledBinding === '0') &&
+      isMeetAiEnabledForWorkspace(input.workspaceId, await meetAiGateEnv());
     const actor = identity.data.user!;
     // Same rule as Meet hosting, read from current Auth and the account's own
     // Personal subscription. Staff never need the subscription lookup.
