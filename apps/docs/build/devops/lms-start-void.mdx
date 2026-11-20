@@ -67,6 +67,45 @@ before enabling permanent redirects.
    build-info, server function and asset requests still reach their legacy
    serving paths. Verify the canonical route does not loop.
 
+### Publication with cf
+
+Operators publish the LMS, Teach and Learn Workers with the
+[Void publisher](/build/development-tools/cf-cli-wrangler-parity#void-framework-app-publisher).
+A Worker that does not exist yet has no serving version to verify against, so
+create it once with `cf deploy --prebuilt --mode production --no-provision` from the converted
+Build Output and read the version and deployment back; later versions use
+`publish` and `assign`. The LMS Worker answers only on the `tuturuuu.com`
+origin, so a workers.dev gateway proves dispatch but not LMS acceptance.
+Change the canonical gateway's mounts as a bindings-only version: reuse the
+serving version's module and settings, add the binding and paths, compare the
+uploaded version with the serving one, then `assign --expect-current`.
+
+### Cutover receipt (2026-11-21)
+
+| Worker | Version | Source | Rollback version |
+| --- | --- | --- | --- |
+| `tuturuuu-gateway` | `cd570284-34d6-4cd8-81cf-d7b426e573dd` | serving module of `4f859fb7` plus `MOUNT_LMS` and `/lms,/lms/*` | `4f859fb7-0b24-491a-9762-0915f0663a8e` |
+| `tuturuuu-lms` | `27d1c8d8-3ea0-4867-a4a8-2b7f5c0836e3` | `0d554b5ada0c3a062afb55f0e1d96af0bb308cd2` | `07138cec-71c5-41ca-b7ef-52fbf6258409` (`756a1e6cd3`) |
+| `tuturuuu-teach` | `75b0ad0d-00d0-4d4e-8fd0-7170afda5895` | `b4191bdc9f8685c9e5562c17e2594389137a4bc1` | `dfff7afe-a7a0-49b8-ace6-079f6ee7d1e2` (`38a8ec301f`) |
+| `tuturuuu-learn` | `92b2df20-252f-47bf-ab8e-9a016bfcba11` | `b4191bdc9f8685c9e5562c17e2594389137a4bc1` | `b7ae5fd7-879e-4531-b9f5-7bbc3059499c` (`f83e4ddf`) |
+
+- LMS archive (run 44805674363): `lms-native-artifact.tar.gz`
+  `9cce99f12ae05706f0eb828259344c2d94df617dea441414d638cd2495c04104`, receipt
+  `95c57d483294e5f3caf476ceabbe34495977d2b1a9cc87a64796f8cb64195c93`.
+- Teach production archive (run 44745968063):
+  `3ec25db871849564ccc9c7862d350f1f0cf3e8c1b23a4e57f38a7be368e14692`.
+- Learn production archive (run 44745968625):
+  `2af144ced02e3bd2dad77450fcfe0c6a6299d43ba00bd30839880e9981e43e1e`; the
+  upload declares `TUTURUUU_REQUIRE_SECRETS=1` as its only binding change.
+- Gateway module `worker.js`
+  `ddc81f0ca63efcfe8180c7b0fa9ef7f8a2520649949a4a57aea80b39472f6d14`; the
+  uploaded version differs from `4f859fb7` only in `GATEWAY_MOUNTED_PATHS` and
+  `MOUNT_LMS`.
+- Unchanged: the `tuturuuu.com/*` route, `learn.` and `teach.` DNS (Vercel),
+  no `lms.` record, no `GATEWAY_LMS_REDIRECTS`, LMS `TUTURUUU_NOINDEX=1`.
+- Pending: signed-in acceptance (step 4), indexing, redirects (step 5) and the
+  watch.
+
 ## Rollback
 
 Restore the captured serving gateway configuration in one operation and
