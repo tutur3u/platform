@@ -107,6 +107,10 @@ The confirmation page and API omit contact email and platform account IDs.
 Direct signed-in writes to the link table are denied. Manual group linking can
 move a teaching assignment to an already linked profile. Creating a mapping
 through manual linking or member profile editing requires an invitation.
+Matching email addresses cannot attach an existing contact to an account.
+Membership provisioning and owner consolidation create a fresh member profile
+when needed. Group assignments leave contact mappings alone. Email-based
+guest self-join requires confirmation before it can attach a contact.
 
 The contact-link route and confirmation tests cover explicit consent and
 permission failures. The Supabase contact-account-link-confirmation test

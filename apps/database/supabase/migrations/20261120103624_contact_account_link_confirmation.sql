@@ -253,3 +253,151 @@ grant execute on function private.invite_contact_account_link(uuid, uuid, uuid, 
   private.preview_contact_account_link(uuid, uuid, uuid, uuid),
   private.finish_contact_account_link_invitation(uuid, uuid, uuid, uuid, text)
   to service_role;
+
+-- Membership provisioning creates a fresh profile for the account.
+-- Assigning an existing contact requires recipient consent.
+create or replace function public.ensure_workspace_user_link(
+  target_user_id uuid,
+  target_ws_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller_id uuid := auth.uid();
+  existing_virtual_user_id uuid;
+  new_workspace_user_id uuid;
+  user_display_name text;
+  user_email text;
+  user_exists boolean := false;
+begin
+  -- Serialize trigger, backfill, and request-time repair calls for one member.
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtextextended(
+      pg_catalog.concat_ws(':', target_ws_id::text, target_user_id::text),
+      81428
+    )
+  );
+
+  -- Authenticated callers may repair only their own link. A membership trigger
+  -- is already guarded by the workspace_members insert policy, while service
+  -- role maintenance has no auth.uid().
+  if caller_id is not null
+    and caller_id <> target_user_id
+    and pg_catalog.pg_trigger_depth() = 0
+  then
+    raise exception 'Cannot repair another user workspace link'
+      using errcode = '42501';
+  end if;
+
+  select link.virtual_user_id
+  into existing_virtual_user_id
+  from public.workspace_user_linked_users link
+  where link.platform_user_id = target_user_id
+    and link.ws_id = target_ws_id;
+
+  if existing_virtual_user_id is not null then
+    return existing_virtual_user_id;
+  end if;
+
+  if not exists (
+    select 1
+    from public.workspace_members member
+    where member.user_id = target_user_id
+      and member.ws_id = target_ws_id
+  ) then
+    raise exception 'User % is not a member of workspace %',
+      target_user_id,
+      target_ws_id;
+  end if;
+
+  select
+    true,
+    coalesce(
+      nullif(pg_catalog.btrim(app_user.display_name), ''),
+      nullif(pg_catalog.btrim(private_details.full_name), ''),
+      nullif(pg_catalog.btrim(app_user.handle), ''),
+      nullif(pg_catalog.btrim(private_details.email), ''),
+      pg_catalog.format('User %s', pg_catalog.left(target_user_id::text, 8))
+    ),
+    nullif(
+      pg_catalog.btrim(coalesce(private_details.email, '')),
+      ''
+    )
+  into user_exists, user_display_name, user_email
+  from public.users app_user
+  left join public.user_private_details private_details
+    on private_details.user_id = app_user.id
+  where app_user.id = target_user_id;
+
+  if user_exists is not true then
+    raise exception 'User % not found', target_user_id;
+  end if;
+
+  new_workspace_user_id := extensions.gen_random_uuid();
+  insert into public.workspace_users (id, ws_id, display_name, email)
+  values (new_workspace_user_id, target_ws_id, user_display_name, coalesce(user_email, ''));
+
+  insert into public.workspace_user_linked_users (
+    platform_user_id,
+    virtual_user_id,
+    ws_id
+  )
+  values (target_user_id, new_workspace_user_id, target_ws_id);
+
+  return new_workspace_user_id;
+end;
+$$;
+
+
+create or replace function public.consolidate_workspace_user_links(
+  target_ws_id uuid default null
+)
+returns table (
+  platform_user_id uuid,
+  ws_id uuid,
+  action text
+)
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  rec record;
+begin
+  if auth.role() is distinct from 'service_role' then
+    raise exception 'consolidate_workspace_user_links requires the service role'
+      using errcode = '42501';
+  end if;
+
+  for rec in
+    select wm.user_id, wm.ws_id
+    from public.workspace_members wm
+    where (target_ws_id is null or wm.ws_id = target_ws_id)
+      and not exists (
+        select 1
+        from public.workspace_user_linked_users wul
+        where wul.platform_user_id = wm.user_id
+          and wul.ws_id = wm.ws_id
+      )
+  loop
+    perform public.ensure_workspace_user_link(rec.user_id, rec.ws_id);
+    action := 'created';
+
+    platform_user_id := rec.user_id;
+    ws_id := rec.ws_id;
+    return next;
+  end loop;
+end;
+$$;
+
+
+drop trigger if exists consolidate_user_group_manager_link
+  on public.workspace_user_groups_users;
+drop trigger if exists consolidate_user_group_manager_links_on_membership
+  on public.workspace_members;
+drop function if exists private.consolidate_user_group_manager_link_trigger();
+drop function if exists private.consolidate_user_group_manager_links_on_membership();
+drop function if exists private.consolidate_user_group_manager_link(uuid, uuid);

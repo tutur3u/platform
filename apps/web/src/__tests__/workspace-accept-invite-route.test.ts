@@ -363,7 +363,7 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     expect(mocks.authGetUser).toHaveBeenCalled();
     expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
   });
-  it('joins as guest via RPC candidate when enabled', async () => {
+  it('requires consent for an email-matched guest profile', async () => {
     const { resolveGuestSelfJoinCandidate } =
       await import('@tuturuuu/utils/workspace-helper');
     vi.mocked(resolveGuestSelfJoinCandidate).mockResolvedValueOnce({
@@ -379,29 +379,15 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     const response = await POST(new NextRequest('http://localhost/test'), {
       params: Promise.resolve({ wsId: 'ws-1' }),
     });
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      errorCode: 'confirmation_required',
+    });
     expect(resolveGuestSelfJoinCandidate).toHaveBeenCalled();
-    expect(mocks.adminLinkedUsersUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        platform_user_id: 'user-1',
-        ws_id: NORMALIZED_WS_ID,
-        virtual_user_id: 'virtual-user-1',
-      }),
-      expect.objectContaining({
-        onConflict: 'platform_user_id,ws_id',
-      })
-    );
-    expect(mocks.finalizeWorkspaceInvitationNotifications).toHaveBeenCalledWith(
-      expect.objectContaining({
-        action: 'accepted',
-        userId: 'user-1',
-        workspaceId: NORMALIZED_WS_ID,
-      })
-    );
-    expect(mocks.finalizeMembershipRpc).toHaveBeenCalledWith(
-      'finalize_workspace_invitation_membership_v2',
-      expect.objectContaining({ p_member_type: 'GUEST' })
-    );
+    expect(mocks.adminLinkedUsersUpsert).not.toHaveBeenCalled();
+    expect(
+      mocks.finalizeWorkspaceInvitationNotifications
+    ).not.toHaveBeenCalled();
   });
   it('blocks seat assignment while compensation is pending', async () => {
     mocks.adminEmailInviteIn.mockResolvedValueOnce({

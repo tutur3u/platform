@@ -202,7 +202,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
           .find((row): row is PendingInvite => Boolean(row)) ?? null)
       : null;
 
-    let inviteMemberType: 'MEMBER' | 'GUEST' =
+    const inviteMemberType: 'MEMBER' | 'GUEST' =
       pendingInvite?.type ?? pendingEmailInvite?.type ?? 'MEMBER';
     let pendingRoleIds: string[] = [];
     if (pendingInvite || pendingEmailInvite) {
@@ -228,7 +228,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
       }
     }
-    let matchedWorkspaceUserId: string | null = null;
 
     // Make acceptance idempotent for stale invites or partially completed flows.
     const existingMember = await verifyWorkspaceMembershipType({
@@ -298,8 +297,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      inviteMemberType = 'GUEST';
-      matchedWorkspaceUserId = guestSelfJoinCandidate.virtualUserId;
+      return NextResponse.json(
+        {
+          error: 'Account holder confirmation is required',
+          errorCode: 'confirmation_required',
+        },
+        { status: 409 }
+      );
     }
 
     if (existingMember.ok) {
@@ -381,42 +385,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
     }
 
-    if (matchedWorkspaceUserId) {
-      const { error: linkError } = await sbAdmin
-        .from('workspace_user_linked_users')
-        .upsert(
-          {
-            platform_user_id: user.id,
-            ws_id: wsId,
-            virtual_user_id: matchedWorkspaceUserId,
-          },
-          {
-            onConflict: 'platform_user_id,ws_id',
-            ignoreDuplicates: false,
-          }
-        );
-
-      if (linkError) {
-        if (seatAssignment.required) {
-          await revokeInvitationSeatOrRecord({
-            admin: sbAdmin,
-            polar,
-            seatId: seatAssignment.seatId,
-            userId: user.id,
-            workspaceId: wsId,
-          });
-        }
-        console.error(
-          'Failed to link platform user to workspace user:',
-          linkError
-        );
-        return NextResponse.json(
-          { error: 'Failed to prepare guest workspace link' },
-          { status: 500 }
-        );
-      }
-    }
-
     let membershipCreated = false;
     try {
       const result = await finalizeInvitedWorkspaceMembership({
@@ -436,15 +404,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
           userId: user.id,
           workspaceId: wsId,
         });
-      }
-
-      if (matchedWorkspaceUserId) {
-        await sbAdmin
-          .from('workspace_user_linked_users')
-          .delete()
-          .eq('platform_user_id', user.id)
-          .eq('ws_id', wsId)
-          .eq('virtual_user_id', matchedWorkspaceUserId);
       }
 
       console.error('Failed to assign invited workspace role:', roleError);

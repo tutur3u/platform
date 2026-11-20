@@ -4,37 +4,12 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, private, extensions;
 
-select plan(10);
+select plan(7);
 
-select has_function(
-  'private',
-  'consolidate_user_group_manager_link',
-  array['uuid', 'uuid'],
-  'manager link consolidation helper exists in the private schema'
-);
-
-select has_trigger(
-  'public',
-  'workspace_user_groups_users',
-  'consolidate_user_group_manager_link',
-  'manager memberships trigger automatic link consolidation'
-);
-
-select has_trigger(
-  'public',
-  'workspace_members',
-  'consolidate_user_group_manager_links_on_membership',
-  'workspace membership triggers pending manager link consolidation'
-);
-
-select ok(
-  not has_function_privilege(
-    'authenticated',
-    'private.consolidate_user_group_manager_link(uuid, uuid)',
-    'execute'
-  ),
-  'authenticated callers cannot execute the private consolidation helper'
-);
+select hasnt_trigger('public', 'workspace_user_groups_users',
+  'consolidate_user_group_manager_link', 'group assignments cannot create account links');
+select hasnt_trigger('public', 'workspace_members',
+  'consolidate_user_group_manager_links_on_membership', 'membership cannot match manager emails');
 
 insert into public.users (id, display_name)
 values
@@ -150,12 +125,12 @@ where group_id = '00000000-0000-0000-0000-000000032101'
 
 select is(
   (
-    select platform_user_id
+    select count(*)::integer
     from public.workspace_user_linked_users
     where virtual_user_id = '00000000-0000-0000-0000-000000032201'
   ),
-  '00000000-0000-0000-0000-000000032002'::uuid,
-  'promoting a unique matching workspace member to manager creates its link'
+  0,
+  'a matching email does not link a promoted manager'
 );
 
 insert into public.workspace_user_groups_users (group_id, user_id, role)
@@ -200,21 +175,12 @@ values (
 
 select is(
   (
-    select platform_user_id
+    select count(*)::integer
     from public.workspace_user_linked_users
     where virtual_user_id = '00000000-0000-0000-0000-000000032203'
   ),
-  '00000000-0000-0000-0000-000000032005'::uuid,
-  'adding the matching workspace member completes the manager link automatically'
-);
-
-select is(
-  private.consolidate_user_group_manager_link(
-    '00000000-0000-0000-0000-000000032201',
-    '00000000-0000-0000-0000-000000032010'
-  ),
-  '00000000-0000-0000-0000-000000032002'::uuid,
-  'consolidation is idempotent for an existing manager link'
+  0,
+  'adding a workspace member leaves an existing manager contact unlinked'
 );
 
 select * from finish();

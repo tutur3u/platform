@@ -160,13 +160,13 @@ select is(
   'repair is idempotent for an existing link'
 );
 
-select is(
+select isnt(
   public.ensure_workspace_user_link(
     '00000000-0000-0000-0000-000000041003',
     '00000000-0000-0000-0000-000000041010'
   ),
   '00000000-0000-0000-0000-000000041101'::uuid,
-  'a unique case-insensitive email match reuses the existing workspace profile'
+  'provisioning leaves the existing email-matched contact unlinked'
 );
 
 select isnt(
