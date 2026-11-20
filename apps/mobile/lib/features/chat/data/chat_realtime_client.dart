@@ -88,6 +88,10 @@ class ChatRealtimeClient {
           '/api/v1/workspaces/$wsId/chat/realtime',
           accept: 'text/event-stream',
         );
+        if (response.statusCode == 204) {
+          yield const ChatRealtimeErrorEvent('Realtime disabled');
+          return;
+        }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           yield ChatRealtimeErrorEvent(
             'Realtime unavailable (${response.statusCode})',
@@ -109,6 +113,9 @@ class ChatRealtimeClient {
         for (final payload in parser.close()) {
           final event = _eventFromPayload(payload);
           if (event != null) yield event;
+        }
+        if (!_disposed) {
+          yield const ChatRealtimeErrorEvent('Realtime disconnected');
         }
       } on Object catch (error) {
         if (_disposed) break;

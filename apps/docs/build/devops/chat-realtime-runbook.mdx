@@ -1,7 +1,7 @@
 ---
 title: Chat Realtime Runbook
 description: Operating notes for the internal Chat realtime sidecar and web API proxy.
-updatedAt: "2026-05-29"
+updatedAt: "2026-11-20"
 audience: developers
 ---
 
@@ -12,26 +12,24 @@ the sidecar directly; they subscribe to
 mints a short-lived internal token, connects to the sidecar, and forwards SSE
 events back through the normal web origin.
 
-## Required Environment
+## Configuration
 
 - `CHAT_REALTIME_TOKEN_SECRET`: preferred shared HMAC secret used by `apps/web`
   and `apps/chat-realtime`. If unset, both fall back to the platform Supabase
   service secret. Production should set this explicitly when rotating realtime
   credentials independently.
-- `CHAT_REALTIME_INTERNAL_URL`: Docker-internal origin for `apps/web`, normally
-  `http://chat-realtime:7817`. Local non-Docker `bun dev` defaults to
-  `http://localhost:7817`.
+- `CHAT_REALTIME_INTERNAL_URL` sets the upstream HTTP origin for web and
+  infrastructure. `CHAT_REALTIME_URL` is the fallback variable. Development
+  defaults to `http://localhost:7817` and production requires an explicit origin.
 
-No Cloudflare tunnel port is required for Chat realtime. The public route is the
-existing `apps/web` API path, which keeps authorization, cookies, app-session
-auth, and deployment topology owned by the web container.
+When production has no origin, publishing is disabled and logs one warning per
+process. The authenticated SSE endpoint returns 204 without attempting an
+upstream connection. It returns 503 when the configured upstream cannot open a
+stream. Browser and mobile clients refetch chat data while SSE is unavailable.
 
-## Blue/Green Deployment
-
-`docker-compose.web.prod.yml` includes `chat-realtime` as a support sidecar
-managed by the blue/green watcher. The sidecar exposes only port `7817` inside
-the Compose network. `apps/web` publishes committed chat mutations to
-`POST /publish`; clients receive them via the proxied SSE stream.
+Chat realtime currently ships as an internal Bun service. The retained Docker
+Compose definitions document the retired sidecar deployment. Current production
+environments can leave the origin unset to use polling.
 
 Every published event must include an explicit `audience`. Channel events use a
 workspace audience, while direct, group, and AI conversation events use a
@@ -39,7 +37,3 @@ user-list audience derived from the authorized conversation members. The sidecar
 keeps workspace rooms for connection management, but it filters each event by
 that audience before sending any full conversation or message payload to a
 client.
-
-If Chat realtime is unavailable, chat mutations still succeed. The web API logs
-the publish failure and clients continue to recover through normal query
-refetching and reconnects.

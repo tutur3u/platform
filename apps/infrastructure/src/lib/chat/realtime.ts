@@ -9,10 +9,7 @@ import { signChatRealtimeToken } from '@tuturuuu/realtime/chat/token';
 import type { ChatConversation } from '@/lib/chat/private-rpc';
 
 const TOKEN_TTL_MS = 10 * 60_000;
-const DEFAULT_CHAT_REALTIME_INTERNAL_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'http://chat-realtime:7817'
-    : 'http://localhost:7817';
+let warnedAboutMissingRealtimeUrl = false;
 
 type ChatRealtimeEventInput = ChatRealtimeEvent extends infer Event
   ? Event extends ChatRealtimeEvent
@@ -40,14 +37,13 @@ function getChatRealtimeTokenSecret() {
   return 'chat-local-development-token-secret';
 }
 
-function getChatRealtimeInternalBaseUrl() {
+export function getChatRealtimeInternalBaseUrl() {
   const configured =
-    process.env.CHAT_REALTIME_INTERNAL_URL || process.env.CHAT_REALTIME_URL;
+    process.env.CHAT_REALTIME_INTERNAL_URL?.trim() ||
+    process.env.CHAT_REALTIME_URL?.trim();
 
-  return (configured || DEFAULT_CHAT_REALTIME_INTERNAL_URL).replace(
-    /\/+$/u,
-    ''
-  );
+  if (configured) return configured.replace(/\/+$/u, '');
+  return process.env.NODE_ENV === 'production' ? null : 'http://localhost:7817';
 }
 
 function signChatRealtimeAccess(input: {
@@ -98,17 +94,31 @@ export function getChatRealtimeSubscribeUrl(input: {
   userId: string;
   wsId: string;
 }) {
+  const baseUrl = getChatRealtimeInternalBaseUrl();
+  if (!baseUrl) return null;
+
   const signed = signChatRealtimeAccess({
     scopes: ['subscribe'],
     userId: input.userId,
     wsId: input.wsId,
   });
-  const url = new URL(`${getChatRealtimeInternalBaseUrl()}/realtime`);
+  const url = new URL(`${baseUrl}/realtime`);
   url.searchParams.set('token', signed.token);
   return { expiresAt: signed.expiresAt, url };
 }
 
 export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
+  const baseUrl = getChatRealtimeInternalBaseUrl();
+  if (!baseUrl) {
+    if (!warnedAboutMissingRealtimeUrl) {
+      warnedAboutMissingRealtimeUrl = true;
+      console.warn(
+        'Chat realtime publishing disabled because no URL is configured'
+      );
+    }
+    return;
+  }
+
   const parsed = chatRealtimeEventSchema.parse({
     ...event,
     id: crypto.randomUUID(),
@@ -121,18 +131,15 @@ export async function publishChatRealtimeEvent(event: ChatRealtimeEventInput) {
   });
 
   try {
-    const response = await fetch(
-      `${getChatRealtimeInternalBaseUrl()}/publish`,
-      {
-        body: JSON.stringify(parsed),
-        cache: 'no-store',
-        headers: {
-          Authorization: `Bearer ${signed.token}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      }
-    );
+    const response = await fetch(`${baseUrl}/publish`, {
+      body: JSON.stringify(parsed),
+      cache: 'no-store',
+      headers: {
+        Authorization: `Bearer ${signed.token}`,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    });
 
     if (!response.ok) {
       console.error('Chat realtime publish failed', {

@@ -53,6 +53,8 @@ class ChatCubit extends Cubit<ChatState> {
   final ChatRealtimeClient _realtimeClient;
   StreamSubscription<ChatRealtimeEvent>? _realtimeSubscription;
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
+  Timer? _realtimeFallback;
+  bool _refreshingFallback = false;
   int _loadToken = 0;
   int _searchRequestVersion = 0;
 
@@ -93,6 +95,8 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     final token = ++_loadToken;
+    _realtimeFallback?.cancel();
+    _realtimeFallback = null;
     await _realtimeSubscription?.cancel();
     if (!_scopeActive || token != _loadToken) return;
     emit(
@@ -134,24 +138,31 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  Future<void> refresh() async {
+  Future<void> refresh({bool quietly = false}) async {
     final wsId = state.wsId;
     if (wsId == null) return;
-    final token = ++_loadToken;
-    emit(
-      state.copyWith(
-        status: ChatStatus.loading,
-        isLoadingMore: false,
-        clearError: true,
-      ),
-    );
+    final token = quietly ? _loadToken : ++_loadToken;
+    final archived = state.archivedFilter;
+    if (!quietly) {
+      emit(
+        state.copyWith(
+          status: ChatStatus.loading,
+          isLoadingMore: false,
+          clearError: true,
+        ),
+      );
+    }
 
     try {
       final page = await _repository.listConversations(
         wsId,
-        archived: state.archivedFilter,
+        archived: archived,
       );
-      if (!_scopeActive || token != _loadToken) return;
+      if (!_scopeActive ||
+          token != _loadToken ||
+          archived != state.archivedFilter) {
+        return;
+      }
       final selectedId = _resolveSelectedConversationId(
         page.conversations,
         preferredId: state.selectedConversationId,
@@ -166,10 +177,14 @@ class ChatCubit extends Cubit<ChatState> {
         ),
       );
       if (selectedId != null) {
-        await selectConversation(selectedId, forceRefresh: true);
+        await selectConversation(
+          selectedId,
+          forceRefresh: true,
+          quietly: quietly,
+        );
       }
     } on ApiException catch (error) {
-      if (_scopeActive && token == _loadToken) {
+      if (!quietly && _scopeActive && token == _loadToken) {
         emit(state.copyWith(status: ChatStatus.error, error: error.message));
       }
     }
@@ -218,6 +233,7 @@ class ChatCubit extends Cubit<ChatState> {
   Future<void> selectConversation(
     String conversationId, {
     bool forceRefresh = false,
+    bool quietly = false,
   }) async {
     final wsId = state.wsId;
     if (wsId == null || conversationId.isEmpty) return;
@@ -225,17 +241,20 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        selectedConversationId: conversationId,
-        messageStatus: ChatMessageStatus.loading,
-        streamingAssistantText: '',
-        sharedContent: null,
-        aiSettings: null,
-        aiObservability: null,
-        clearError: true,
-      ),
-    );
+    final token = _loadToken;
+    if (!quietly) {
+      emit(
+        state.copyWith(
+          selectedConversationId: conversationId,
+          messageStatus: ChatMessageStatus.loading,
+          streamingAssistantText: '',
+          sharedContent: null,
+          aiSettings: null,
+          aiObservability: null,
+          clearError: true,
+        ),
+      );
+    }
 
     final selected = state.selectedConversation;
     if (_isPendingChatItem(wsId, conversationId) &&
@@ -265,7 +284,10 @@ class ChatCubit extends Cubit<ChatState> {
 
     try {
       final messages = await _repository.listMessages(wsId, conversationId);
-      if (!_scopeActive || state.selectedConversationId != conversationId) {
+      if (!_scopeActive ||
+          wsId != state.wsId ||
+          token != _loadToken ||
+          state.selectedConversationId != conversationId) {
         return;
       }
       final allMessages = Map<String, List<ChatMessage>>.from(state.messages);
@@ -276,10 +298,16 @@ class ChatCubit extends Cubit<ChatState> {
           messages: allMessages,
         ),
       );
-      unawaited(_repository.markRead(wsId, conversationId));
-      unawaited(loadConversationPanels());
+      if (!quietly) {
+        unawaited(_repository.markRead(wsId, conversationId));
+        unawaited(loadConversationPanels());
+      }
     } on ApiException catch (error) {
-      if (_scopeActive && state.selectedConversationId == conversationId) {
+      if (!quietly &&
+          _scopeActive &&
+          wsId == state.wsId &&
+          token == _loadToken &&
+          state.selectedConversationId == conversationId) {
         emit(
           state.copyWith(
             messageStatus: ChatMessageStatus.error,
@@ -295,6 +323,16 @@ class ChatCubit extends Cubit<ChatState> {
       if (!_scopeActive || state.wsId != wsId) return;
       _handleRealtimeEvent(event);
     });
+  }
+
+  Future<void> _refetchWhenRealtimeUnavailable() async {
+    if (!_scopeActive || _refreshingFallback || state.isSending) return;
+    _refreshingFallback = true;
+    try {
+      await refresh(quietly: true);
+    } finally {
+      _refreshingFallback = false;
+    }
   }
 
   void _handleRealtimeEvent(ChatRealtimeEvent event) {
@@ -317,10 +355,15 @@ class ChatCubit extends Cubit<ChatState> {
         final next = Set<String>.from(state.typingUserIds);
         isTyping ? next.add(actorUserId) : next.remove(actorUserId);
         emit(state.copyWith(typingUserIds: next));
-      case ChatRealtimeErrorEvent(:final message):
-        emit(state.copyWith(error: message));
+      case ChatRealtimeErrorEvent():
+        if (_realtimeFallback != null) return;
+        unawaited(_refetchWhenRealtimeUnavailable());
+        _realtimeFallback = Timer.periodic(const Duration(seconds: 30), (_) {
+          unawaited(_refetchWhenRealtimeUnavailable());
+        });
       case ChatRealtimeReadyEvent():
-        break;
+        _realtimeFallback?.cancel();
+        _realtimeFallback = null;
     }
   }
 
@@ -456,6 +499,8 @@ class ChatCubit extends Cubit<ChatState> {
     ++_loadToken;
     ++_searchRequestVersion;
     await _sendSubscription?.cancel();
+    _realtimeFallback?.cancel();
+    _realtimeFallback = null;
     await _realtimeSubscription?.cancel();
     _repository.dispose();
     _realtimeClient.dispose();

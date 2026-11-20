@@ -67,11 +67,33 @@ export function useChatRealtime(wsId: string) {
       `/api/v1/workspaces/${encodeURIComponent(wsId)}/chat/realtime`
     );
 
+    let fallbackTimer: ReturnType<typeof setInterval> | undefined;
+    const refetchChat = () => {
+      if (document.visibilityState === 'hidden') return;
+      void queryClient.refetchQueries(
+        { queryKey: chatQueryKeys.all(wsId), type: 'active' },
+        { cancelRefetch: false }
+      );
+    };
+
+    const startFallback = () => {
+      if (fallbackTimer !== undefined) return;
+      refetchChat();
+      fallbackTimer = setInterval(refetchChat, 30_000);
+    };
+    source.onerror = startFallback;
+    source.onopen = () => {
+      clearInterval(fallbackTimer);
+      fallbackTimer = undefined;
+      refetchChat();
+    };
+
     source.onmessage = (event) => {
       const parsed = parseChatRealtimeEvent(event.data);
       if (!parsed || parsed.type === 'ping' || parsed.type === 'ready') return;
       if (parsed.type === 'error') {
         source.close();
+        startFallback();
         return;
       }
 
@@ -102,6 +124,7 @@ export function useChatRealtime(wsId: string) {
     const timers = typingTimeouts.current;
     return () => {
       source.close();
+      clearInterval(fallbackTimer);
       for (const timeout of timers.values()) clearTimeout(timeout);
       timers.clear();
     };

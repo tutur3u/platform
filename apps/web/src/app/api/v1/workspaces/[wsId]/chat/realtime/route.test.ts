@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  connection: async () => {},
+}));
 
 const mocks = {
   auth: {
@@ -9,7 +13,6 @@ const mocks = {
   },
   getChatRealtimeSubscribeUrl: vi.fn(),
   resolveChatRouteContext: vi.fn(),
-  serverError: vi.fn(),
 };
 
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -31,13 +34,6 @@ vi.mock('@/lib/chat/realtime', () => ({
   getChatRealtimeSubscribeUrl: (
     ...args: Parameters<typeof mocks.getChatRealtimeSubscribeUrl>
   ) => mocks.getChatRealtimeSubscribeUrl(...args),
-}));
-
-vi.mock('@/lib/infrastructure/log-drain', () => ({
-  serverLogger: {
-    error: (...args: Parameters<typeof mocks.serverError>) =>
-      mocks.serverError(...args),
-  },
 }));
 
 function createRequest() {
@@ -120,7 +116,20 @@ describe('chat realtime route', () => {
     await expect(response.text()).resolves.toContain('"type":"ready"');
   });
 
-  it('converts upstream 400 responses into an SSE error event', async () => {
+  it('returns 204 without fetching when realtime is disabled', async () => {
+    mocks.getChatRealtimeSubscribeUrl.mockReturnValue(null);
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+
+    const { GET } = await import('./route');
+    const response = await GET(createRequest() as never, createRouteContext());
+
+    expect(response.status).toBe(204);
+    expect(response.body).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('returns 503 when the upstream rejects subscriptions', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => new Response('bad subscribe', { status: 400 }))
@@ -129,16 +138,15 @@ describe('chat realtime route', () => {
     const { GET } = await import('./route');
     const response = await GET(createRequest() as never, createRouteContext());
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toContain('text/event-stream');
-    await expect(response.text()).resolves.toContain('realtime_unavailable');
+    expect(response.status).toBe(503);
+    expect(response.body).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalledWith(
       'Chat realtime upstream unavailable',
       expect.objectContaining({ status: 400, wsId: 'workspace-1' })
     );
   });
 
-  it('converts subscribe URL setup failures into an SSE error event', async () => {
+  it('returns 503 when subscription setup fails', async () => {
     mocks.getChatRealtimeSubscribeUrl.mockImplementationOnce(() => {
       throw new Error('signing failed');
     });
@@ -146,11 +154,10 @@ describe('chat realtime route', () => {
     const { GET } = await import('./route');
     const response = await GET(createRequest() as never, createRouteContext());
 
-    expect(response.status).toBe(200);
-    expect(response.headers.get('content-type')).toContain('text/event-stream');
-    await expect(response.text()).resolves.toContain('realtime_unavailable');
+    expect(response.status).toBe(503);
+    expect(response.body).toBeNull();
     expect(consoleErrorSpy).toHaveBeenCalledWith(
-      'Chat realtime subscribe URL failed',
+      'Chat realtime subscription failed',
       expect.objectContaining({ wsId: 'workspace-1' })
     );
   });
