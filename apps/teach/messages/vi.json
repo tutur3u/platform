@@ -1188,10 +1188,11 @@
     "needsSupport": "Học viên dưới 50%",
     "notSubmitted": "Bài chưa nộp",
     "pendingGrading": "Chờ chấm điểm",
-    "quizzes": "Thư viện bài kiểm tra",
     "quickLinks": "Lối tắt giảng dạy",
+    "quizzes": "Thư viện bài kiểm tra",
     "reports": "Báo cáo",
     "retry": "Thử lại",
+    "searchNavigation": "Tìm trang",
     "timetable": "Thời khóa biểu",
     "title": "Tổng quan giảng dạy",
     "unavailable": "Không có dữ liệu"
@@ -1259,6 +1260,7 @@
     "noReportsYetBody": "Tạo báo cáo cho học viên và báo cáo sẽ xuất hiện ở đây để xem trước và theo dõi.",
     "noSessionBody": "Chọn ngày học trong công cụ lịch. Teach chỉ cho phép điểm danh vào các ngày có buổi học.",
     "noSessionTitle": "Ngày này không có lớp",
+    "noUpcomingLessons": "Không có buổi học sắp tới",
     "openLearnAssignments": "Mở bài tập trong Learn",
     "openLearnCourse": "Mở khóa học trong Learn",
     "openLearnMarks": "Mở điểm trong Learn",
@@ -1287,6 +1289,7 @@
     },
     "reportTitle": "Tiêu đề báo cáo",
     "reset": "Đặt lại",
+    "retrySchedule": "Tải lại thời khóa biểu",
     "saveAttendance": "Lưu điểm danh",
     "savedValues": "Giá trị đã lưu",
     "saveMetrics": "Lưu metrics",
@@ -1301,7 +1304,8 @@
     "startDate": "Ngày bắt đầu",
     "summaryTotal": "Tổng",
     "summaryUnset": "Chưa đặt",
-    "untitledPost": "Bài đăng chưa đặt tên"
+    "untitledPost": "Bài đăng chưa đặt tên",
+    "upcomingLessons": "Buổi học sắp tới"
   },
   "teachSettings": {
     "backToDashboard": "Quay lại dashboard",

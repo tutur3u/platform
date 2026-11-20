@@ -1,4 +1,6 @@
-import { ListTodo } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import NewQuizClient from './client';
@@ -21,20 +23,28 @@ export default async function NewQuizPage({ params }: Props) {
   const t = await getTranslations();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 py-6">
-      <div className="flex items-center gap-2">
-        <ListTodo className="h-6 w-6 text-dynamic-purple" />
-        <h1 className="font-bold text-2xl text-foreground">
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 md:px-8">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-semibold text-2xl tracking-tight">
           {t('ws-quizzes.manual_create')}
         </h1>
-      </div>
-      <div className="rounded-lg rounded-xl border border-border bg-card p-6 shadow-md">
-        <NewQuizClient
-          wsId={resolvedWsId}
-          moduleId={moduleId}
-          courseId={courseId}
-        />
-      </div>
-    </div>
+        <Button asChild variant="outline">
+          <Link
+            href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/quizzes`}
+          >
+            {t('ws-quizzes.plural')}
+          </Link>
+        </Button>
+      </header>
+      <Card>
+        <CardContent>
+          <NewQuizClient
+            wsId={resolvedWsId}
+            moduleId={moduleId}
+            courseId={courseId}
+          />
+        </CardContent>
+      </Card>
+    </main>
   );
 }

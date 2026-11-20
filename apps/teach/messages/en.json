@@ -1188,10 +1188,11 @@
     "needsSupport": "Learners below 50%",
     "notSubmitted": "Missing submissions",
     "pendingGrading": "Awaiting grading",
-    "quizzes": "Quiz library",
     "quickLinks": "Teaching shortcuts",
+    "quizzes": "Quiz library",
     "reports": "Reports",
     "retry": "Retry",
+    "searchNavigation": "Search navigation",
     "timetable": "Timetable",
     "title": "Teaching dashboard",
     "unavailable": "Unavailable"
@@ -1259,6 +1260,7 @@
     "noReportsYetBody": "Create a learner report and it will appear here for preview and follow-up.",
     "noSessionBody": "Pick class days in the schedule tool. Teach will only allow attendance on scheduled class days.",
     "noSessionTitle": "No class on this day",
+    "noUpcomingLessons": "No upcoming lessons",
     "openLearnAssignments": "Open Learn assignments",
     "openLearnCourse": "Open Learn course",
     "openLearnMarks": "Open Learn marks",
@@ -1287,6 +1289,7 @@
     },
     "reportTitle": "Report title",
     "reset": "Reset",
+    "retrySchedule": "Retry timetable",
     "saveAttendance": "Save attendance",
     "savedValues": "Saved values",
     "saveMetrics": "Save metrics",
@@ -1301,7 +1304,8 @@
     "startDate": "Start date",
     "summaryTotal": "Total",
     "summaryUnset": "Unset",
-    "untitledPost": "Untitled post"
+    "untitledPost": "Untitled post",
+    "upcomingLessons": "Upcoming lessons"
   },
   "teachSettings": {
     "backToDashboard": "Back to dashboard",

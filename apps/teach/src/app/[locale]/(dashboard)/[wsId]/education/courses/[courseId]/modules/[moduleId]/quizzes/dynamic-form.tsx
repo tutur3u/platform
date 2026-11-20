@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -212,7 +212,7 @@ export default function DynamicQuizForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid gap-4">
+      <div className="grid gap-4 sm:grid-cols-[12rem_minmax(0,1fr)]">
         {/* Question Type Select */}
         <div className="space-y-2">
           <Label htmlFor="question-type">{t('ws-quizzes.question_type')}</Label>
@@ -244,21 +244,21 @@ export default function DynamicQuizForm({
         {/* Question Input */}
         <div className="space-y-2">
           <Label htmlFor="quiz-question">{t('ws-quizzes.question')}</Label>
-          <Input
+          <Textarea
             id="quiz-question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder={t('ws-quizzes.question')}
-            className="rounded-md border-foreground/20 shadow-sm"
+            className="min-h-28"
             required
           />
         </div>
       </div>
 
-      <Separator />
-
-      {/* Conditionally Render Content Input based on Type */}
-      <div className="space-y-4">
+      <fieldset className="min-w-0 space-y-4 rounded-lg border p-4">
+        <legend className="px-2 font-medium text-sm">
+          {t('ws-quizzes.answer')}
+        </legend>
         {type === 'true_false' && (
           <div className="space-y-3">
             <Label>{t('ws-quizzes.correct_answer')}</Label>
@@ -437,22 +437,15 @@ export default function DynamicQuizForm({
             </div>
           </div>
         )}
-      </div>
+      </fieldset>
 
-      <Separator />
-
-      {/* Buttons */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
         {onFinish && (
           <Button type="button" variant="ghost" onClick={onFinish}>
             {t('common.cancel')}
           </Button>
         )}
-        <Button
-          type="submit"
-          disabled={saveMutation.isPending}
-          className="bg-dynamic-purple text-white hover:bg-dynamic-purple/95"
-        >
+        <Button type="submit" disabled={saveMutation.isPending}>
           {saveMutation.isPending ? (
             <>
               <Loader className="mr-2 h-4 w-4 animate-spin" />

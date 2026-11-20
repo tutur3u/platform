@@ -20,37 +20,19 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  BookOpenText,
-  ClipboardCheck,
-  Copy,
-  GripVertical,
-  Link as LinkIcon,
-  ListTodo,
-  Paperclip,
-  Plus,
-  SwatchBook,
-  Trash2,
-} from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import { GripVertical, Plus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
-import { StorageObjectForm } from '@tuturuuu/ui/custom/education/modules/resources/file-upload-form';
-import YouTubeLinkForm from '@tuturuuu/ui/custom/education/modules/youtube/form';
 import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/education-content-surface';
 import { EducationKpiStrip } from '@tuturuuu/ui/custom/education/shell/education-kpi-strip';
 import { EducationPageHeader } from '@tuturuuu/ui/custom/education/shell/education-page-header';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
-import FlashcardForm from '../../../flashcards/form';
-import QuizSetForm from '../../../quiz-sets/form';
-import QuizForm from '../../../quizzes/form';
-import { ModuleContentEditor } from '../modules/[moduleId]/content/content-editor';
 import { ModuleGroupForm } from './module-group-form';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { ModuleEditor } from './module-editor';
+import { PublishChecklist } from './publish-checklist';
 import { SortableGroup } from './sortable-group';
 import { useCourseBuilder } from './use-course-builder';
 
@@ -446,70 +428,49 @@ export function CourseBuilderClient({
       ? (moduleParentMap.get(activeId) ?? null)
       : null;
 
+  const header = (
+    <EducationPageHeader
+      title={courseName}
+      description={headerDescription}
+      primaryAction={
+        <div className="flex flex-wrap items-center gap-2">
+          {extraHeaderActions}
+          <Button asChild variant="outline">
+            <Link href={backHref ?? `/${routeWsId}/education/courses`}>
+              {backLabel ?? t('workspace-education-tabs.courses')}
+            </Link>
+          </Button>
+          <Button
+            disabled={isLoading}
+            onClick={() => setIsCreateGroupOpen(true)}
+          >
+            <Plus aria-hidden />
+            {t('ws-course-modules.create_group')}
+          </Button>
+        </div>
+      }
+    />
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-5 p-4">
-        <EducationPageHeader
-          title={t('workspace-education-tabs.course_builder')}
-          description={headerDescription}
-          badge={
-            <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
-              <BookOpenText className="h-3.5 w-3.5" />
-              {courseName}
-            </div>
-          }
-          primaryAction={
-            <div className="flex items-center gap-2">
-              {extraHeaderActions}
-              <Button
-                asChild
-                className="h-11 rounded-2xl bg-foreground px-5 text-background"
-              >
-                <Link href={backHref ?? `/${routeWsId}/education/courses`}>
-                  {backLabel ?? t('workspace-education-tabs.courses')}
-                </Link>
-              </Button>
-            </div>
-          }
-        />
-
-        <EducationContentSurface className="min-h-120" padded>
-          <div className="flex min-h-105 items-center justify-center rounded-2xl border border-border/70 border-dashed bg-foreground/5 text-foreground/65">
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="h-10 w-10 animate-spin rounded-full border border-dynamic-blue border-t-transparent" />
-              <div className="font-medium text-sm">{t('common.loading')}</div>
-            </div>
-          </div>
-        </EducationContentSurface>
+        {header}
+        <div
+          role="status"
+          aria-label={t('common.loading')}
+          className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]"
+        >
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-5 p-4">
-      <EducationPageHeader
-        title={t('workspace-education-tabs.course_builder')}
-        description={headerDescription}
-        badge={
-          <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-1 font-medium text-dynamic-blue text-xs">
-            <BookOpenText className="h-3.5 w-3.5" />
-            {courseName}
-          </div>
-        }
-        primaryAction={
-          <div className="flex items-center gap-2">
-            {extraHeaderActions}
-            <Button
-              asChild
-              className="h-11 rounded-2xl bg-foreground px-5 text-background"
-            >
-              <Link href={backHref ?? `/${routeWsId}/education/courses`}>
-                {backLabel ?? t('workspace-education-tabs.courses')}
-              </Link>
-            </Button>
-          </div>
-        }
-      />
+      {header}
 
       <EducationKpiStrip
         items={[
@@ -536,7 +497,7 @@ export function CourseBuilderClient({
         ]}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)_320px]">
+      <div className="grid gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <EducationContentSurface className="h-fit" padded>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold text-foreground/70 text-sm uppercase tracking-wide">
@@ -554,12 +515,6 @@ export function CourseBuilderClient({
                   onSubmit={(data) => upsertGroupMutation.mutateAsync({ data })}
                   onFinish={() => setIsCreateGroupOpen(false)}
                 />
-              }
-              trigger={
-                <Button size="sm" variant="outline" className="rounded-xl">
-                  <Plus className="h-4 w-4" />
-                  {t('ws-course-modules.create_group')}
-                </Button>
               }
             />
           </div>
@@ -689,203 +644,24 @@ export function CourseBuilderClient({
               {t('common.no_content_yet')}
             </div>
           ) : (
-            <Tabs defaultValue="content" className="space-y-4">
-              <TabsList className="grid h-auto w-full grid-cols-3 gap-1 rounded-xl bg-muted/60 p-1 md:grid-cols-7">
-                <TabsTrigger value="content">
-                  {t('course-details-tabs.module_content')}
-                </TabsTrigger>
-                <TabsTrigger value="resources">
-                  {t('course-details-tabs.resources')}
-                </TabsTrigger>
-                <TabsTrigger value="youtube">
-                  {t('course-details-tabs.youtube_links')}
-                </TabsTrigger>
-                <TabsTrigger value="quiz-sets">
-                  {t('ws-quiz-sets.plural')}
-                </TabsTrigger>
-                <TabsTrigger value="quizzes">
-                  {t('ws-quizzes.plural')}
-                </TabsTrigger>
-                <TabsTrigger value="flashcards">
-                  {t('ws-flashcards.plural')}
-                </TabsTrigger>
-                <TabsTrigger value="extra">
-                  {t('course-details-tabs.extra_reading')}
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="content" className="space-y-3">
-                <ModuleContentEditor
-                  wsId={resolvedWsId}
-                  courseId={courseId}
-                  moduleId={activeModule.id}
-                  content={(activeModule.content as never) ?? undefined}
-                />
-              </TabsContent>
-
-              <TabsContent value="resources" className="space-y-3">
-                <StorageObjectForm
-                  wsId={resolvedWsId}
-                  submitLabel={t('common.upload')}
-                  path={`${resolvedWsId}/courses/${courseId}/modules/${activeModule.id}/resources/`}
-                />
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link
-                    href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/resources`}
-                  >
-                    <Paperclip className="h-4 w-4" />
-                    {t('common.view')}
-                  </Link>
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="youtube" className="space-y-3">
-                <YouTubeLinkForm
-                  wsId={resolvedWsId}
-                  moduleId={activeModule.id}
-                  links={activeModule.youtube_links || []}
-                />
-              </TabsContent>
-
-              <TabsContent value="quiz-sets" className="space-y-3">
-                <QuizSetForm wsId={resolvedWsId} moduleId={activeModule.id} />
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link
-                    href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/quiz-sets`}
-                  >
-                    <ListTodo className="h-4 w-4" />
-                    {t('common.view')}
-                  </Link>
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="quizzes" className="space-y-3">
-                <QuizForm wsId={resolvedWsId} moduleId={activeModule.id} />
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link
-                    href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/quizzes`}
-                  >
-                    <ClipboardCheck className="h-4 w-4" />
-                    {t('common.view')}
-                  </Link>
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="flashcards" className="space-y-3">
-                <FlashcardForm wsId={resolvedWsId} moduleId={activeModule.id} />
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link
-                    href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/flashcards`}
-                  >
-                    <SwatchBook className="h-4 w-4" />
-                    {t('common.view')}
-                  </Link>
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="extra" className="space-y-3">
-                <Button asChild variant="outline" className="rounded-xl">
-                  <Link
-                    href={`/${routeWsId}/education/courses/${courseId}/modules/${activeModule.id}/extra-content`}
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    {t('common.open')}
-                  </Link>
-                </Button>
-              </TabsContent>
-            </Tabs>
+            <ModuleEditor
+              activeModule={activeModule}
+              courseId={courseId}
+              resolvedWsId={resolvedWsId}
+              routeWsId={routeWsId}
+            />
           )}
         </EducationContentSurface>
 
-        <EducationContentSurface className="h-fit" padded>
-          <div className="space-y-4">
-            <h2 className="font-semibold text-foreground/70 text-sm uppercase tracking-wide">
-              {t('workspace-education-tabs.publish_checklist')}
-            </h2>
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {t('common.status')}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span>{t('ws-course-modules.plural')}</span>
-                  <Badge variant={totalModules > 0 ? 'default' : 'secondary'}>
-                    {totalModules > 0
-                      ? t('calendar-sidebar.ready')
-                      : t('common.pending')}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>{t('course-details-tabs.module_content')}</span>
-                  <Badge
-                    variant={
-                      totalModules > 0 && modulesWithContent === totalModules
-                        ? 'default'
-                        : 'secondary'
-                    }
-                  >
-                    {modulesWithContent}/{totalModules}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {activeModule && (
-              <Card className="border-border/60">
-                <CardHeader>
-                  <CardTitle className="text-base">
-                    {activeModule.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <ModuleToggles
-                    wsId={resolvedWsId}
-                    courseId={courseId}
-                    moduleId={activeModule.id}
-                    isPublished={activeModule.is_published}
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      className="rounded-xl"
-                      disabled={duplicateMutation.isPending}
-                      onClick={() =>
-                        duplicateMutation.mutate({
-                          content: activeModule.content,
-                          extra_content: activeModule.extra_content,
-                          is_public: activeModule.is_public,
-                          is_published: false,
-                          module_group_id: activeModule.module_group_id,
-                          name: `${activeModule.name} (Copy)`,
-                          youtube_links: activeModule.youtube_links ?? [],
-                        })
-                      }
-                    >
-                      <Copy className="h-4 w-4" />
-                      {t('ws-task-boards.row_actions.duplicate')}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      className="rounded-xl"
-                      disabled={deleteModuleMutation.isPending}
-                      onClick={() =>
-                        deleteModuleMutation.mutate({
-                          moduleGroupId: activeModule.module_group_id,
-                          moduleId: activeModule.id,
-                        })
-                      }
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {t('common.delete')}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </EducationContentSurface>
+        <PublishChecklist
+          totalModules={totalModules}
+          modulesWithContent={modulesWithContent}
+          activeModule={activeModule}
+          resolvedWsId={resolvedWsId}
+          courseId={courseId}
+          duplicateMutation={duplicateMutation}
+          deleteModuleMutation={deleteModuleMutation}
+        />
       </div>
     </div>
   );

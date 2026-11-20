@@ -1,5 +1,5 @@
 import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@tuturuuu/education-core/education/access';
-import { ClipboardList, Filter } from '@tuturuuu/icons';
+import { Filter } from '@tuturuuu/icons';
 import { getSatelliteWorkspacePermissions } from '@tuturuuu/satellite/workspace-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types/db';
@@ -87,7 +87,8 @@ export default async function QuizAttemptsPage({
     )
     .eq('workspace_quiz_sets.ws_id', resolvedWsId);
 
-  if (search.setId) queryBuilder.eq('set_id', search.setId);
+  if (search.setId && search.setId !== 'all')
+    queryBuilder.eq('set_id', search.setId);
   if (search.learnerId) queryBuilder.eq('user_id', search.learnerId);
   if (search.status === 'completed')
     queryBuilder.not('completed_at', 'is', null);
@@ -151,14 +152,8 @@ export default async function QuizAttemptsPage({
   return (
     <div className="space-y-5 p-4">
       <EducationPageHeader
-        title={t('workspace-education-tabs.attempts')}
+        title={t('teacherWorkspace.gradebook')}
         description={t('workspace-education-tabs.attempts_description')}
-        badge={
-          <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-orange/20 bg-dynamic-orange/10 px-3 py-1 font-medium text-dynamic-orange text-xs">
-            <ClipboardList className="h-3.5 w-3.5" />
-            {t('workspace-education-tabs.teacher_review_queue')}
-          </div>
-        }
       />
 
       <EducationKpiStrip
@@ -182,10 +177,11 @@ export default async function QuizAttemptsPage({
       />
 
       <EducationContentSurface>
-        <form className="grid gap-3 rounded-2xl border border-border/60 bg-background/70 p-3 md:grid-cols-6">
-          <div className="space-y-1.5 md:col-span-2">
-            <Label>{t('ws-quiz-sets.singular')}</Label>
+        <form className="grid gap-3 border-b p-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-1.5 lg:col-span-2">
+            <Label htmlFor="grades-setId">{t('ws-quiz-sets.singular')}</Label>
             <select
+              id="grades-setId"
               name="setId"
               defaultValue={search.setId || 'all'}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -199,9 +195,10 @@ export default async function QuizAttemptsPage({
             </select>
           </div>
 
-          <div className="space-y-1.5 md:col-span-2">
-            <Label>{t('common.status')}</Label>
+          <div className="space-y-1.5 lg:col-span-2">
+            <Label htmlFor="grades-status">{t('common.status')}</Label>
             <select
+              id="grades-status"
               name="status"
               defaultValue={search.status || 'all'}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -213,16 +210,18 @@ export default async function QuizAttemptsPage({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('common.from')}</Label>
+            <Label htmlFor="grades-dateFrom">{t('common.from')}</Label>
             <Input
+              id="grades-dateFrom"
               name="dateFrom"
               type="date"
               defaultValue={search.dateFrom || ''}
             />
           </div>
           <div className="space-y-1.5">
-            <Label>{t('common.to')}</Label>
+            <Label htmlFor="grades-dateTo">{t('common.to')}</Label>
             <Input
+              id="grades-dateTo"
               name="dateTo"
               type="date"
               defaultValue={search.dateTo || ''}
@@ -230,8 +229,9 @@ export default async function QuizAttemptsPage({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('common.sort')}</Label>
+            <Label htmlFor="grades-sortBy">{t('common.sort')}</Label>
             <select
+              id="grades-sortBy"
               name="sortBy"
               defaultValue={search.sortBy || 'newest'}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
@@ -243,8 +243,9 @@ export default async function QuizAttemptsPage({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{t('common.order')}</Label>
+            <Label htmlFor="grades-sortDirection">{t('common.order')}</Label>
             <select
+              id="grades-sortDirection"
               name="sortDirection"
               defaultValue={search.sortDirection || 'desc'}
               className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"

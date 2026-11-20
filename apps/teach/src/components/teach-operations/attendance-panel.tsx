@@ -15,11 +15,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveUserFullName } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
+import { useFormatter, useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { AttendanceCalendar } from './attendance-calendar';
 import { AttendanceSchedulePanel } from './attendance-schedule-panel';
@@ -51,6 +52,7 @@ export function AttendancePanel({
   wsId: string;
 }) {
   const t = useTranslations('teachOperations');
+  const format = useFormatter();
   const queryClient = useQueryClient();
   const fallbackDate = course.starting_date ?? todayIsoDate();
   const [date, setDate] = useState(fallbackDate);
@@ -108,6 +110,10 @@ export function AttendancePanel({
       ),
     [sessionsQuery.data?.data]
   );
+  const upcomingDates = [...new Set(sessionDates)]
+    .filter((day) => day >= todayIsoDate())
+    .sort()
+    .slice(0, 7);
   const attendanceByUser = new Map(
     (attendanceQuery.data?.data ?? []).map((entry) => [entry.user_id, entry])
   );
@@ -195,6 +201,49 @@ export function AttendancePanel({
   return (
     <section className="grid gap-5 xl:grid-cols-[24rem_minmax(0,1fr)]">
       <div className="space-y-5">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('upcomingLessons')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sessionsQuery.isError && !sessionsQuery.data ? (
+              <Button
+                variant="outline"
+                onClick={() => void sessionsQuery.refetch()}
+              >
+                {t('retrySchedule')}
+              </Button>
+            ) : sessionsQuery.isPending ? (
+              <p role="status" className="text-muted-foreground text-sm">
+                {t('loading')}
+              </p>
+            ) : upcomingDates.length ? (
+              <ul className="space-y-1">
+                {upcomingDates.map((day) => (
+                  <li key={day}>
+                    <Button
+                      className="w-full justify-start"
+                      variant={day === date ? 'secondary' : 'ghost'}
+                      aria-pressed={day === date}
+                      onClick={() => {
+                        setMonthDate(parseIsoDate(day));
+                        if (day !== date) setActiveDate(day);
+                      }}
+                    >
+                      {format.dateTime(parseIsoDate(day), {
+                        dateStyle: 'full',
+                      })}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {t('noUpcomingLessons')}
+              </p>
+            )}
+          </CardContent>
+        </Card>
         <AttendanceCalendar
           date={date}
           endingDate={course.ending_date}
