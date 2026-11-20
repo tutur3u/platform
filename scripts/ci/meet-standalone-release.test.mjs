@@ -398,7 +398,10 @@ test('workflow keeps admission, policy, serialization, token isolation and no-bu
     assert.equal(gate.if, undefined);
     assert.match(gate.run, /meet-standalone-release.mjs/);
   }
-  assert.equal(workflow.jobs.deploy.environment, 'meet-production');
+  assert.equal(
+    workflow.jobs.deploy.environment,
+    "${{ vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && 'meet-cloudflare-production' || 'meet-production' }}"
+  );
   assert.equal(
     workflow.jobs.validate.outputs.realtime_sha256,
     '${{ steps.realtime-seal.outputs.sha256 }}'
