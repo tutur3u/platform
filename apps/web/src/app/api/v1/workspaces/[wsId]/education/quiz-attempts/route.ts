@@ -24,19 +24,13 @@ const practiceQuizSchema = z.object({
   quiz_options: z.array(z.object({ id: z.string(), value: z.string() })),
 });
 
-const practiceQuizLink = z.object({ quiz: practiceQuizSchema.nullable() });
-const coursePracticeSchema = z.object({
-  modules: z.array(
-    z.object({
-      direct: z.array(practiceQuizLink),
-      sets: z.array(
-        z.object({
-          set: z.object({ items: z.array(practiceQuizLink) }).nullable(),
-        })
-      ),
-    })
-  ),
-});
+const practiceLinksSchema = z.array(
+  z.object({
+    module_id: z.string(),
+    quiz_id: z.string(),
+    quiz_position: z.number().int(),
+  })
+);
 
 type AttemptRpcClient = {
   schema(schema: 'private'): {
@@ -114,53 +108,56 @@ export async function GET(
   if (enrolled.error) return failed();
   if (!enrolled.data) return forbidden();
 
-  const quizColumns = 'id, question, quiz_options(id, value)';
   const course = await sbAdmin
     .from('workspace_user_groups')
-    .select(`id, modules:workspace_course_modules(
-      direct:course_module_quizzes(quiz:workspace_quizzes(${quizColumns})),
-      sets:course_module_quiz_sets(set:workspace_quiz_sets(
-        items:quiz_set_quizzes(quiz:workspace_quizzes(${quizColumns}))
-      ))
-    )`)
+    .select('id')
     .eq('id', courseId.data)
     .eq('ws_id', wsId)
     .eq('archived', false)
     .not('is_guest', 'is', true)
     .eq('is_course_published', true)
-    .eq('modules.is_published', true)
-    .eq('modules.direct.quiz.ws_id', wsId)
-    .eq('modules.direct.quiz.type', 'multiple_choice')
-    .eq('modules.sets.set.ws_id', wsId)
-    .eq('modules.sets.set.items.quiz.ws_id', wsId)
-    .eq('modules.sets.set.items.quiz.type', 'multiple_choice')
-    .order('sort_key', { referencedTable: 'modules', ascending: true })
-    .order('id', { referencedTable: 'modules', ascending: true })
-    .limit(20, { referencedTable: 'modules' })
-    .limit(20, { referencedTable: 'modules.direct' })
-    .limit(20, { referencedTable: 'modules.sets' })
-    .limit(20, { referencedTable: 'modules.sets.set.items' })
     .maybeSingle();
   if (course.error) return failed();
   if (!course.data) return forbidden();
 
-  const parsedCourse = coursePracticeSchema.safeParse(course.data);
-  if (!parsedCourse.success) return failed();
+  // The submit RPC accepts exactly this list: published modules,
+  // multiple-choice quizzes with two or more options, at most 20.
+  const practice = await (sbAdmin as unknown as AttemptRpcClient)
+    .schema('private')
+    .rpc('education_learner_practice_quizzes', {
+      p_ws_id: wsId,
+      p_course_id: courseId.data,
+    });
+  if (practice.error) return failed();
+  const links = practiceLinksSchema.safeParse(practice.data ?? []);
+  if (!links.success) return failed();
 
-  const candidates = parsedCourse.data.modules.flatMap((module) => [
-    ...module.direct.map(({ quiz }) => quiz),
-    ...module.sets.flatMap(
-      ({ set }) => set?.items.map(({ quiz }) => quiz) ?? []
-    ),
-  ]);
-  const quizzes = new Map<string, z.infer<typeof practiceQuizSchema>>();
-  for (const quiz of candidates) {
-    if (quiz && quiz.quiz_options.length >= 2) quizzes.set(quiz.id, quiz);
+  const positions = new Map<string, number>();
+  for (const link of links.data) {
+    const current = positions.get(link.quiz_id);
+    if (current === undefined || link.quiz_position < current) {
+      positions.set(link.quiz_id, link.quiz_position);
+    }
   }
-  return NextResponse.json(
-    { data: [...quizzes.values()].slice(0, 20) },
-    { headers }
-  );
+  if (positions.size === 0) {
+    return NextResponse.json({ data: [] }, { headers });
+  }
+
+  const quizzes = await sbAdmin
+    .from('workspace_quizzes')
+    .select('id, question, quiz_options(id, value)')
+    .eq('ws_id', wsId)
+    .in('id', [...positions.keys()]);
+  if (quizzes.error) return failed();
+  const parsedQuizzes = z.array(practiceQuizSchema).safeParse(quizzes.data);
+  if (!parsedQuizzes.success) return failed();
+
+  const position = (id: string) => positions.get(id) ?? Number.MAX_SAFE_INTEGER;
+  const served = parsedQuizzes.data
+    .filter((quiz) => quiz.quiz_options.length >= 2)
+    .sort((left, right) => position(left.id) - position(right.id))
+    .slice(0, 20);
+  return NextResponse.json({ data: served }, { headers });
 }
 
 // Practice module quizzes only. The saved attempt includes is_correct per

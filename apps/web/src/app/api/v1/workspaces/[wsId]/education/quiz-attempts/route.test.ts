@@ -242,43 +242,46 @@ describe('learner quiz attempts', () => {
     });
   });
 
-  it('deduplicates direct and quiz-set questions for an enrolled course', async () => {
-    const quiz = {
-      id: 'question',
-      question: 'Question?',
-      quiz_options: [
-        { id: 'a', value: 'First option' },
-        { id: 'b', value: 'Second option' },
-      ],
-    };
+  it('serves the shared practice list in order for an enrolled course', async () => {
+    const quiz = (id: string, optionCount = 2) => ({
+      id,
+      question: `${id}?`,
+      quiz_options: Array.from({ length: optionCount }, (_, index) => ({
+        id: `${id}-${index}`,
+        value: `Option ${index}`,
+      })),
+    });
     const entries = tables();
     entries.workspace_user_groups_users = query([
       { group_id: savedAttempt.course_id, user_id: 'student' },
     ]);
-    entries.workspace_user_groups = query({
-      id: savedAttempt.course_id,
-      modules: [
-        {
-          direct: [
-            {
-              quiz: {
-                ...quiz,
-                answer: 'First option',
-                quiz_options: quiz.quiz_options.map((option) => ({
-                  ...option,
-                  is_correct: option.id === 'a',
-                })),
-              },
-            },
-            { quiz: null },
-          ],
-          sets: [{ set: { items: [{ quiz }] } }],
-        },
+    entries.workspace_user_groups = query({ id: savedAttempt.course_id });
+    // Extra columns, such as an option's is_correct, never reach the learner.
+    entries.workspace_quizzes = query([
+      {
+        ...quiz('second'),
+        ws_id: 'workspace',
+        quiz_options: quiz('second').quiz_options.map((option) => ({
+          ...option,
+          is_correct: true,
+        })),
+      },
+      { ...quiz('first'), ws_id: 'workspace' },
+      { ...quiz('single', 1), ws_id: 'workspace' },
+      { ...quiz('foreign'), ws_id: 'other-workspace' },
+    ]);
+    const practiceRpc = vi.fn().mockResolvedValue({
+      data: [
+        { module_id: 'module-b', quiz_id: 'second', quiz_position: 2 },
+        { module_id: 'module-a', quiz_id: 'first', quiz_position: 1 },
+        { module_id: 'module-b', quiz_id: 'first', quiz_position: 1 },
+        { module_id: 'module-b', quiz_id: 'single', quiz_position: 3 },
       ],
+      error: null,
     });
     const from = vi.fn((name: keyof typeof entries) => entries[name]);
     mocks.requireLearnerWorkspace.mockResolvedValue({
-      sbAdmin: { from },
+      sbAdmin: { from, schema: () => ({ from, rpc: practiceRpc }) },
       headers: {},
       userId: 'learner',
       wsId: 'workspace',
@@ -288,7 +291,13 @@ describe('learner quiz attempts', () => {
     );
     const response = requireResponse(await getPractice(request, params));
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ data: [quiz] });
+    expect(await response.json()).toEqual({
+      data: [quiz('first'), quiz('second')],
+    });
+    expect(practiceRpc).toHaveBeenCalledWith(
+      'education_learner_practice_quizzes',
+      { p_ws_id: 'workspace', p_course_id: savedAttempt.course_id }
+    );
     expect(
       (entries.workspace_user_groups as { filters: QueryFilter[] }).filters
     ).toContainEqual({
@@ -300,10 +309,12 @@ describe('learner quiz attempts', () => {
 
     entries.workspace_user_groups_users = query(null);
     from.mockClear();
+    practiceRpc.mockClear();
     expect(requireResponse(await getPractice(request, params)).status).toBe(
       403
     );
     expect(from).not.toHaveBeenCalledWith('workspace_user_groups');
+    expect(practiceRpc).not.toHaveBeenCalled();
   });
 
   it('returns the server grade for a new attempt', async () => {
