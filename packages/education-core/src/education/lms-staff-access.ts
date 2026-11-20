@@ -32,7 +32,7 @@ export type LmsStaffAccess =
 /**
  * Teach-area admission used by the LMS shells and the web staff routes.
  * Membership, `view_user_groups`, the education flag, and either
- * `update_user_groups` or a linked contact are required.
+ * `manage_courses` or a linked contact are required.
  */
 export async function checkLmsStaffAccess({
   supabase,
@@ -68,7 +68,7 @@ export async function checkLmsStaffAccess({
   }
 
   let scope: LmsStaffScope;
-  if (permissions.containsPermission('update_user_groups')) {
+  if (permissions.containsPermission('manage_courses')) {
     scope = { kind: 'administrator' };
   } else {
     const teacher = await teacherScope(db, user.id, wsId);

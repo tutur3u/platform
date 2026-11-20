@@ -10,7 +10,12 @@ function supabaseFixture({
   roles = [{ id: 'role-1', ws_id: 'workspace-b' }],
   creators = { 'workspace-b': 'creator-b' },
 }: {
-  permissions?: Array<{ enabled?: boolean; role_id: string; ws_id: string }>;
+  permissions?: Array<{
+    enabled?: boolean;
+    permission?: string;
+    role_id: string;
+    ws_id: string;
+  }>;
   roles?: Array<{ id: string; ws_id: string }>;
   creators?: Record<string, string>;
 } = {}) {
@@ -19,13 +24,16 @@ function supabaseFixture({
       const query: Record<string, unknown> = {};
       let workspaceId: null | string = null;
       let workspaceIds: string[] = [];
-      let enabledOnly = false;
+      let filterCourseGrants = false;
       query.select = () => query;
       query.eq = (column: string, value: boolean | string) => {
         if (table === 'workspaces' && column === 'id')
           workspaceId = String(value);
-        if (table === 'workspace_role_permissions' && column === 'enabled')
-          enabledOnly = value === true || value === 'true';
+        return query;
+      };
+      query.or = (expression: string) => {
+        filterCourseGrants =
+          expression === 'enabled.eq.true,permission.eq.manage_courses';
         return query;
       };
       query.in = (column: string, values: string[]) => {
@@ -46,7 +54,10 @@ function supabaseFixture({
               ? roles
               : table === 'workspace_role_permissions'
                 ? permissions.filter(
-                    (permission) => !enabledOnly || permission.enabled !== false
+                    (permission) =>
+                      !filterCourseGrants ||
+                      permission.enabled !== false ||
+                      permission.permission === 'manage_courses'
                   )
                 : table === 'workspaces'
                   ? workspaceIds.map((id) => ({ id, creator_id: creators[id] }))
@@ -59,6 +70,26 @@ function supabaseFixture({
 }
 
 describe('creator-granted role membership checks', () => {
+  it('keeps a suspended course manager role protected from default administrators', async () => {
+    const supabase = supabaseFixture({
+      permissions: [
+        {
+          enabled: false,
+          permission: 'manage_courses',
+          role_id: 'role-1',
+          ws_id: 'workspace-b',
+        },
+      ],
+    });
+    await expect(
+      canAddCreatorGrantRoleMember(supabase, {
+        roleId: 'role-1',
+        userId: 'ordinary-member',
+        wsId: 'workspace-b',
+      })
+    ).resolves.toBe(false);
+  });
+
   it('fails closed when the role belongs to a different workspace', async () => {
     const supabase = supabaseFixture({
       roles: [{ id: 'role-1', ws_id: 'workspace-a' }],

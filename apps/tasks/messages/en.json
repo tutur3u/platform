@@ -14224,6 +14224,8 @@
     "manage_calendar_description": "Allows members to view, create, edit, and delete events in the workspace.",
     "manage_changelog": "Manage Changelog",
     "manage_changelog_description": "Create, edit, publish, and delete platform changelog entries.",
+    "manage_courses": "Manage courses",
+    "manage_courses_description": "Allows members to publish, edit, and delete courses and manage course enrollment.",
     "manage_default_permissions": "Manage default permissions",
     "manage_desktop_deployment_vault": "Manage desktop deployment vault",
     "manage_desktop_deployment_vault_description": "Allows root workspace members to manage private Windows/macOS signing resources and protected workflow tokens. Does not enable delivery.",

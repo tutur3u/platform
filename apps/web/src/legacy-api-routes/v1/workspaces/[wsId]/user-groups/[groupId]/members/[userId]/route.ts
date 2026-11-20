@@ -25,7 +25,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
   const { withoutPermission } = permissions;
-  if (withoutPermission('update_user_groups')) {
+  if (withoutPermission('manage_courses')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update user groups' },
       { status: 403 }
@@ -34,6 +34,8 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
   const actorAuthUid = await resolveRequestActorAuthUid(req);
+  if (!actorAuthUid)
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
   const { data: deletedMember, error } = await sbAdmin
     .schema('private')
@@ -41,14 +43,14 @@ export async function DELETE(req: Request, { params }: Params) {
       p_ws_id: normalizedWsId,
       p_group_id: groupId,
       p_user_id: userId,
-      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_actor_auth_uid: actorAuthUid,
     });
 
   if (error) {
     console.error('Error removing group member:', error);
     return NextResponse.json(
       { message: 'Error removing group member' },
-      { status: 500 }
+      { status: error.code === '42501' ? 403 : 500 }
     );
   }
 

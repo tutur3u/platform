@@ -57,6 +57,7 @@ function createQuery(table: string) {
       filters[column] = values;
       return query;
     },
+    or: () => query,
     maybeSingle: async () => resultFor(table, filters),
     select: () => query,
   };

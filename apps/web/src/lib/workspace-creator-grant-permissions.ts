@@ -29,8 +29,8 @@ export async function isWorkspaceCreator(
 
 /**
  * Role editors write with the admin client, so the database guard does not
- * see the caller. Keep creator-grant permissions (manage_subscription) in the
- * payload only when the caller is the workspace creator.
+ * see the caller. Keep creator-grant permissions in the payload only when
+ * the caller is the workspace creator.
  */
 export async function filterCreatorGrantPermissions(
   supabase: TypedSupabaseClient,
@@ -92,7 +92,11 @@ async function findCreatorGrantRoleDetails(
     .select('role_id,ws_id')
     .in('role_id', uniqueRoleIds)
     .in('permission', [...CREATOR_GRANT_PERMISSIONS]);
-  if (!includeDisabled) permissionQuery = permissionQuery.eq('enabled', true);
+  if (!includeDisabled) {
+    permissionQuery = permissionQuery.or(
+      'enabled.eq.true,permission.eq.manage_courses'
+    );
+  }
   const { data, error } = await permissionQuery;
 
   if (error) return null;

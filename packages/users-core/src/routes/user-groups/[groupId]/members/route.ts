@@ -93,7 +93,7 @@ export async function POST(req: Request, { params }: Params) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
   const { withoutPermission } = permissions;
-  if (withoutPermission('update_user_groups')) {
+  if (withoutPermission('manage_courses')) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update user groups' },
       { status: 403 }
@@ -111,6 +111,8 @@ export async function POST(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
   const actorAuthUid = await resolveRequestActorAuthUid(req);
+  if (!actorAuthUid)
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
 
   const { error: groupError } = await sbAdmin
     .schema('private')
@@ -119,14 +121,14 @@ export async function POST(req: Request, { params }: Params) {
       p_group_id: groupId,
       p_user_ids: data.data.memberIds,
       p_role: data.data.role,
-      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_actor_auth_uid: actorAuthUid,
     });
 
   if (groupError) {
     console.error('Error adding new members to group:', groupError);
     return NextResponse.json(
       { message: 'Error adding new members to group' },
-      { status: 500 }
+      { status: groupError.code === '42501' ? 403 : 500 }
     );
   }
 

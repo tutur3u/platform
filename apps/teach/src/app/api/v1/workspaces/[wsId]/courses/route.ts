@@ -1,5 +1,6 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { Constants } from '@tuturuuu/types';
+import { Constants } from '@tuturuuu/types/supabase';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -230,11 +231,26 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { error, data } = await context.supabase
+    if (
+      parsedBody.data.is_course_published &&
+      permissions.withoutPermission('manage_courses')
+    ) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to publish courses' },
+        { status: 403 }
+      );
+    }
+
+    const writer = await createAdminClient({
+      noCookie: true,
+      auditActorId: context.user.id,
+    });
+    const { error, data } = await writer
       .from('workspace_user_groups')
       .insert({
         ...parsedBody.data,
         ws_id: access.normalizedWsId,
+        creator_id: context.user.id,
         archived: false,
         is_guest: false,
         is_course_published: parsedBody.data.is_course_published ?? false,

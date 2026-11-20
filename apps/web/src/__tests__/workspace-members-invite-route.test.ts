@@ -63,7 +63,8 @@ const mocks = vi.hoisted(() => {
       if (table === 'workspace_role_permissions') {
         // No requested role holds a creator-grant permission here.
         const query: Record<string, unknown> = {};
-        for (const op of ['eq', 'in', 'select']) query[op] = vi.fn(() => query);
+        for (const op of ['eq', 'in', 'or', 'select'])
+          query[op] = vi.fn(() => query);
         query.then = (resolve: (value: unknown) => unknown) =>
           Promise.resolve({ data: [], error: null }).then(resolve);
         return query;

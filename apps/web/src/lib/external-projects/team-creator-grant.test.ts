@@ -96,6 +96,10 @@ function createAccess({
         return query;
       },
       maybeSingle: async () => result(),
+      or: (condition: string) => {
+        expect(condition).toBe('enabled.eq.true,permission.eq.manage_courses');
+        return query;
+      },
       select: () => query,
       single: async () =>
         table === 'workspace_roles' && !filters.id

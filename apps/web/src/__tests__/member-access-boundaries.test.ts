@@ -78,6 +78,13 @@ function query(initial: Row[]) {
       rows = rows.filter((row) => values.includes(row[key]));
       return q;
     },
+    or: (condition: string) => {
+      expect(condition).toBe('enabled.eq.true,permission.eq.manage_courses');
+      rows = rows.filter(
+        (row) => row.enabled === true || row.permission === 'manage_courses'
+      );
+      return q;
+    },
     order: () => q,
     insert: (payload: unknown) => {
       writes(payload);

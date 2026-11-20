@@ -72,6 +72,22 @@ idempotent processing and a durable stop path.
 The publication hold lifts after the canonical `/lms` mount passes signed-in
 acceptance. Each shared education migration requires review before publication.
 
+### Course publishing and creator assignment
+
+Workspace staff with `create_user_groups` can create a class draft. Publishing
+on creation also requires `manage_courses`. The same permission controls Teach
+edits and deletion, direct workspace group updates, and visibility or deletion
+of published courses through Contacts. The workspace creator can manage courses and can delegate
+through an explicit workspace role. Default member or admin grants confer
+only their ordinary permissions.
+
+Automatic teacher assignment requires an active Contacts link for the verified
+creator in the same workspace and `manage_courses`. The same grant controls
+enrollment and course role changes in Teach and Contacts. The shared writer
+records the verified actor and retains the existing membership date on role
+changes. A creator with draft permission can save their class for a manager
+to publish or assign staff.
+
 ## Education center integrations
 
 Current education-center operations use Contacts groups for rosters, class
@@ -146,7 +162,7 @@ requested view.
 | Query | Behavior |
 | --- | --- |
 | `view=learning` | Default. A learner sees published classes where their Contacts record has a student membership. An approved linked guardian sees the selected learner's same catalog. Use `student_id` for explicit guardian selection. Learn app sessions are accepted. |
-| `view=staff` | A workspace member with group view permission can request the staff catalog. Group managers see active non-guest class groups, including drafts. Other staff see only groups where their Contacts record is a teacher. Teach app sessions are accepted. |
+| `view=staff` | A workspace member with group view permission can request the staff catalog. Staff with `manage_courses` see active non-guest class groups, including drafts. Other staff see only groups where their Contacts record is a teacher. Teach app sessions are accepted. |
 | `after` | Opaque continuation value from the last response. Keep the same workspace, view, and selected learner when replaying it. |
 | `limit` | Optional integer from 1 to 50. Defaults to 20. |
 
@@ -172,8 +188,8 @@ original contracts.
 same availability gate as the catalog. Pass a platform or Teach app session,
 the class's Contacts group ID, and optional `after` and `limit` (1–50, default
 20). The caller needs group view permission and Contacts name access
-(`view_users_public_info` or `view_users_private_info`). A caller with group
-update permission can read the workspace's active class groups. Other staff
+(`view_users_public_info` or `view_users_private_info`). A caller with
+`manage_courses` can read the workspace's active class groups. Other staff
 can read a class only while their active workspace contact is assigned as
 its teacher. Student and guardian screens use the learning catalog.
 

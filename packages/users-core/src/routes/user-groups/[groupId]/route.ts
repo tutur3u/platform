@@ -157,6 +157,12 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (error) {
     console.error('Error updating workspace user group:', error);
+    if (error.code === '42501') {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to change course visibility' },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { message: 'Error updating workspace user group' },
       { status: 500 }
@@ -204,6 +210,12 @@ export async function DELETE(req: Request, { params }: Params) {
 
   if (error) {
     console.error('Error deleting workspace user group:', error);
+    if (error.code === '42501') {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to delete this group' },
+        { status: 403 }
+      );
+    }
     return NextResponse.json(
       { message: 'Error deleting workspace user group' },
       { status: 500 }

@@ -68733,7 +68733,8 @@ export type Database = {
         | 'view_workspace_domains'
         | 'manage_workspace_domains'
         | 'manage_qa_test_users'
-        | 'operate_mira_channels';
+        | 'operate_mira_channels'
+        | 'manage_courses';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -71708,6 +71709,7 @@ export const Constants = {
         'manage_workspace_domains',
         'manage_qa_test_users',
         'operate_mira_channels',
+        'manage_courses',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

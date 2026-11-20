@@ -32,7 +32,7 @@ function createQuery(table: string) {
     return { data: null, error: null };
   };
   const query: Record<string, unknown> = {};
-  for (const op of ['select', 'eq', 'in', 'insert']) {
+  for (const op of ['select', 'eq', 'in', 'or', 'insert']) {
     query[op] = vi.fn((...args: unknown[]) => {
       mocks.calls.push({ table, op, args });
       return query;

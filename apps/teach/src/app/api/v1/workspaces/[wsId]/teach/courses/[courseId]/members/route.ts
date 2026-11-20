@@ -118,7 +118,7 @@ export const POST = withSessionAuth(
 
     const access = await requireTeachWorkspaceAccess({
       context,
-      permission: 'update_user_groups',
+      permission: 'manage_courses',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -179,21 +179,20 @@ export const POST = withSessionAuth(
     }
 
     const { error } = await access.sbAdmin
-      .from('workspace_user_groups_users')
-      .upsert(
-        uniqueMemberIds.map((memberId) => ({
-          group_id: parsedParams.data.courseId,
-          role: parsedBody.data.role ?? 'STUDENT',
-          user_id: memberId,
-        })),
-        { onConflict: 'group_id,user_id' }
-      );
+      .schema('private')
+      .rpc('admin_upsert_workspace_user_group_members_with_audit_actor', {
+        p_ws_id: access.normalizedWsId,
+        p_group_id: parsedParams.data.courseId,
+        p_user_ids: uniqueMemberIds,
+        p_role: parsedBody.data.role ?? 'STUDENT',
+        p_actor_auth_uid: access.userId,
+      });
 
     if (error) {
       console.error('Failed to add Teach course members', { error });
       return NextResponse.json(
         { message: 'Error adding course members' },
-        { status: 500 }
+        { status: error.code === '42501' ? 403 : 500 }
       );
     }
 

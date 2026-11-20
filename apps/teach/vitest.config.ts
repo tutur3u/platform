@@ -16,6 +16,10 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@tuturuuu/types/supabase',
+        replacement: resolve(__dirname, '../../packages/types/src/supabase.ts'),
+      },
+      {
         find: '@tuturuuu/internal-api/workspace-config-ids',
         replacement: resolve(
           __dirname,

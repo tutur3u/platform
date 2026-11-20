@@ -30,7 +30,7 @@ export const DELETE = withSessionAuth(
 
     const access = await requireTeachWorkspaceAccess({
       context,
-      permission: 'update_user_groups',
+      permission: 'manage_courses',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -48,16 +48,19 @@ export const DELETE = withSessionAuth(
     }
 
     const { error } = await access.sbAdmin
-      .from('workspace_user_groups_users')
-      .delete()
-      .eq('group_id', parsedParams.data.courseId)
-      .eq('user_id', parsedParams.data.userId);
+      .schema('private')
+      .rpc('admin_delete_workspace_user_group_member_with_audit_actor', {
+        p_ws_id: access.normalizedWsId,
+        p_group_id: parsedParams.data.courseId,
+        p_user_id: parsedParams.data.userId,
+        p_actor_auth_uid: access.userId,
+      });
 
     if (error) {
       console.error('Failed to remove Teach course member', { error });
       return NextResponse.json(
         { message: 'Error removing course member' },
-        { status: 500 }
+        { status: error.code === '42501' ? 403 : 500 }
       );
     }
 

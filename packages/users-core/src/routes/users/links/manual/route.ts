@@ -42,6 +42,7 @@ async function getAccess(request: Request, rawWsId: string) {
   return {
     wsId: await resolveUserGroupRouteWorkspaceId(rawWsId, request),
     admin: await createAdminClient({ noCookie: true }),
+    permissions,
   } as const;
 }
 
@@ -216,6 +217,15 @@ export async function POST(request: Request, { params }: Params) {
     );
 
     if (platformLink && !virtualLink && groupId) {
+      if (access.permissions.withoutPermission('manage_courses')) {
+        return NextResponse.json(
+          {
+            error:
+              'Insufficient permissions to move a course teacher assignment',
+          },
+          { status: 403 }
+        );
+      }
       const targetVirtualUserId = platformLink.virtual_user_id;
       const [
         { data: group },

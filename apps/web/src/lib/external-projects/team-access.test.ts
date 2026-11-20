@@ -176,7 +176,7 @@ function createAccess({
           },
           select() {
             const query: Record<string, unknown> = {};
-            for (const op of ['eq', 'in']) query[op] = () => query;
+            for (const op of ['eq', 'in', 'or']) query[op] = () => query;
             query.then = (resolve: (value: unknown) => unknown) =>
               Promise.resolve({ data: [], error: null }).then(resolve);
             return query;

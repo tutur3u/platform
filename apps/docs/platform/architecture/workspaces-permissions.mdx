@@ -501,24 +501,27 @@ When the current workspace is the root workspace, an additional infrastructure g
 `admin` is just another permission ID in the catalog, but `containsPermission()` treats it as a near-full bypass:
 
 - creator => all permissions
-- `admin` => all permissions except the creator-grant ones (`manage_subscription`)
+- `admin` => ordinary permissions. Creator-grant permissions require the workspace creator or a permitted grant.
 - explicit permission match => specific permission granted
 
 That means `admin` is a permission bit, not a separate role engine.
 
 #### Creator-grant permissions
 
-`manage_subscription` controls billing, so `admin` never implies it. This matches
-the SQL `has_workspace_permission()` and applies to `getPermissions()`, dashboard
-route guards and API-key permission checks. The list lives in
+`manage_subscription` controls billing and `manage_courses` controls course
+publication and management. The SQL `has_workspace_permission()` and application
+`getPermissions()` evaluate both grants independently of `admin`. The list lives in
 `packages/utils/src/creator-grant-permissions.ts`.
 
-Only the workspace creator (or the service role) can enable a creator-grant
-permission on a role or as a default permission, or add members to a role that
-holds one. Role and default-permission routes (including the external-project
+Only the workspace creator (or an authorized service path) can enable a
+creator-grant permission on a role or add members to a role that holds one.
+The creator can enable `manage_subscription` as a default permission. Course
+managers are delegated through workspace roles. Role and default-permission routes (including the external-project
 team routes) drop these entries from non-creator payloads and keep their stored
 state; the role members routes return 403. Database triggers apply the same rule
-to direct API writes. Disabling a grant stays open to role managers.
+to direct API writes. Role managers can disable a subscription grant. The
+creator controls changes to a course management grant, and its role membership
+stays protected while the grant is disabled.
 
 Invitations follow the same rule. Only the creator can put a role holding a
 creator-grant permission on a pending invitation; the invite routes return 403
@@ -543,6 +546,7 @@ API users: `manage_subscription` holders can read them, and only the service rol
 
 Regression coverage: `apps/database/supabase/tests/subscription-write-scope.sql`,
 `apps/database/supabase/tests/subscription-invite-scope.sql`,
+`apps/database/supabase/tests/lms-course-publication-permissions.sql`,
 `packages/utils/src/__tests__/workspace-helper-admin-subscription.test.ts`, the
 role route tests under `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/`,
 `apps/web/src/app/api/workspaces/[wsId]/members/invite/route.creator-grant.test.ts`
@@ -776,7 +780,7 @@ For a new SDK/API-key route:
 
 - A member can exist without any effective permissions.
 - The creator always has the full catalog, even if no roles/defaults exist yet.
-- `admin` is a permission bit that grants every permission except `manage_subscription` through the helper.
+- `admin` grants ordinary permissions. Course management and subscription access use their creator-grant rules.
 - `workspace_users` is not the access-control table.
 - Browser URLs prefer `personal` and `internal`, but DB queries should use canonical UUIDs.
 - New privileged routes should reuse the shared helpers instead of reimplementing role/default joins.

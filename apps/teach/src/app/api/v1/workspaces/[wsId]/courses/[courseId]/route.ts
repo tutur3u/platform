@@ -1,5 +1,6 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { Constants, type TablesUpdate } from '@tuturuuu/types';
+import { Constants, type TablesUpdate } from '@tuturuuu/types/supabase';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -103,7 +104,7 @@ export const PUT = withSessionAuth(
     if (!permissions) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    if (permissions.withoutPermission('update_user_groups')) {
+    if (permissions.withoutPermission('manage_courses')) {
       return NextResponse.json(
         { message: 'Insufficient permissions to update courses' },
         { status: 403 }
@@ -151,7 +152,11 @@ export const PUT = withSessionAuth(
       updatePayload.starting_date = parsedBody.data.starting_date;
     }
 
-    const { data: updated, error } = await context.supabase
+    const writer = await createAdminClient({
+      noCookie: true,
+      auditActorId: context.user.id,
+    });
+    const { data: updated, error } = await writer
       .from('workspace_user_groups')
       .update(updatePayload)
       .eq('id', parsedParams.data.courseId)
@@ -207,14 +212,18 @@ export const DELETE = withSessionAuth(
     if (!permissions) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    if (permissions.withoutPermission('update_user_groups')) {
+    if (permissions.withoutPermission('manage_courses')) {
       return NextResponse.json(
         { message: 'Insufficient permissions to delete courses' },
         { status: 403 }
       );
     }
 
-    const { data: deleted, error } = await context.supabase
+    const writer = await createAdminClient({
+      noCookie: true,
+      auditActorId: context.user.id,
+    });
+    const { data: deleted, error } = await writer
       .from('workspace_user_groups')
       .delete()
       .eq('id', parsedParams.data.courseId)

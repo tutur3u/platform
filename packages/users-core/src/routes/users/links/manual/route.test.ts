@@ -242,7 +242,7 @@ describe('manual profile linking route', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     fixture = new SupabaseFixture();
-    authorize('update_users', 'view_users_public_info');
+    authorize('update_users', 'view_users_public_info', 'manage_courses');
     mocks.resolveWorkspaceId.mockResolvedValue(WORKSPACE_ID);
     mocks.createAdminClient.mockResolvedValue(fixture.admin);
   });
@@ -337,6 +337,25 @@ describe('manual profile linking route', () => {
     expect(await responseJson(response)).toEqual({
       error: 'Account holder confirmation is required',
     });
+    expect(fixture.mutations).toEqual([]);
+  });
+
+  it('denies moving a teacher assignment without the course manager grant', async () => {
+    authorize('update_users', 'view_users_public_info', 'admin');
+    enqueueContainedProfiles();
+    fixture.enqueue('workspace_user_linked_users', {
+      data: [
+        {
+          platform_user_id: PLATFORM_USER_ID,
+          virtual_user_id: TARGET_VIRTUAL_USER_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const response = await post(validBody({ groupId: GROUP_ID }));
+
+    expect(response.status).toBe(403);
     expect(fixture.mutations).toEqual([]);
   });
 
