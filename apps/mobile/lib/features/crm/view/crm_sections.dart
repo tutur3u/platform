@@ -113,6 +113,18 @@ extension _CrmSections on _CrmPageState {
 
   Future<void> _openSectionRecord(ContactSectionRecord record) async {
     final section = _section;
+    final report = record.report;
+    if (section == _ContactSection.reports && report != null) {
+      await _showOwnedSheet<void>(
+        context: context,
+        builder: (context) => ContactReportPreview(
+          title: record.title,
+          subtitle: record.subtitle,
+          report: report,
+        ),
+      );
+      return;
+    }
     if (section == _ContactSection.attendance) {
       final group = _groups.where((item) => item.id == record.id).firstOrNull;
       if (group == null) return;

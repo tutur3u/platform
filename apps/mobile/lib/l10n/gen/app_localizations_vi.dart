@@ -2537,6 +2537,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsPermissionDenied => 'Bạn không có quyền xem danh bạ này.';
 
   @override
+  String get contactsReportContent => 'Nội dung báo cáo';
+
+  @override
+  String get contactsReportPeriod => 'Kỳ báo cáo';
+
+  @override
+  String get contactsReportEmptyBody => 'Báo cáo này chưa có nội dung hoặc phản hồi.';
+
+  @override
   String get contactsReports => 'Báo cáo';
 
   @override

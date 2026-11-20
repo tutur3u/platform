@@ -4957,6 +4957,24 @@ abstract class AppLocalizations {
   /// **'You do not have permission to view contacts.'**
   String get contactsPermissionDenied;
 
+  /// No description provided for @contactsReportContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Report content'**
+  String get contactsReportContent;
+
+  /// No description provided for @contactsReportPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting period'**
+  String get contactsReportPeriod;
+
+  /// No description provided for @contactsReportEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This report has no content or feedback yet.'**
+  String get contactsReportEmptyBody;
+
   /// No description provided for @contactsReports.
   ///
   /// In en, this message translates to:

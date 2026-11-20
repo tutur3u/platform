@@ -9,12 +9,22 @@ void main() {
           'id': 'r1',
           'title': 'March',
           'user_email': 'ada@example.com',
+          'user_name': 'Ada',
+          'content': 'March progress',
+          'group_name': 'Morning group',
+          'period_start': '2026-03-01',
+          'feedback': '   ',
           'report_stage': 'draft',
         },
       ],
     });
     expect(records.single.title, 'March');
-    expect(records.single.subtitle, 'ada@example.com');
+    expect(records.single.subtitle, 'Ada');
+    final report = records.single.report!;
+    expect(report.group, 'Morning group');
+    expect(report.content, 'March progress');
+    expect(report.feedback, isNull);
+    expect(report.periodStart, DateTime(2026, 3));
     expect(records.single.trailing, 'draft');
   });
 

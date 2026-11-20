@@ -31,6 +31,14 @@ class _CrmOwnedOverlay extends StatefulWidget {
 }
 
 class _CrmOwnedOverlayState extends State<_CrmOwnedOverlay> {
+  ModalRoute<Object?>? _route;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _route = ModalRoute.of(context);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -39,10 +47,11 @@ class _CrmOwnedOverlayState extends State<_CrmOwnedOverlay> {
 
   void _ownerChanged() {
     if (widget.alive.value || !mounted) return;
-    final route = ModalRoute.of(context);
-    final navigator = Navigator.of(context);
+    final route = _route;
+    if (route == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (route != null && route.isActive && navigator.mounted) {
+      final navigator = route.navigator;
+      if (route.isActive && navigator != null && navigator.mounted) {
         navigator.removeRoute(route);
       }
     });

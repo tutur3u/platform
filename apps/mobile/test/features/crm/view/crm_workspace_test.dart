@@ -1,13 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/data/repositories/crm_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mocktail/mocktail.dart';
 
 import '../../../helpers/design_render_harness.dart';
@@ -423,6 +427,60 @@ void main() {
       expect(find.text('SYNTHETIC-17'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await DesignRender.capture(tester, 'contacts-private-fields-$theme');
+    });
+  }
+
+  for (final theme in ['light', 'dark']) {
+    testWidgets('opens a Contacts report preview in $theme', (tester) async {
+      when(() => repository.loadReports('ws')).thenAnswer(
+        (_) async => contactReportRecords({
+          'data': [
+            {
+              'id': 'sample-report',
+              'title': 'March progress',
+              'user_name': 'Ava Nguyen',
+              'group_name': 'Afternoon group',
+              'period_start': '2026-03-01',
+              'period_end': '2026-03-31',
+              'report_stage': 'draft',
+              'content': 'Completed the reading exercises.',
+              'feedback': 'Review chapter four before the next session.',
+            },
+          ],
+        }),
+      );
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      await tester.runAsync(DesignRender.loadFonts);
+      final (settings, brightness) = DesignRender.themes[theme]!;
+      final chrome = ShellChromeActionsCubit();
+      addTearDown(chrome.close);
+      await tester.pumpWidget(
+        DesignRenderApp(
+          settings: settings,
+          brightness: brightness,
+          child: BlocProvider.value(value: chrome, child: page()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      chrome.state
+          .resolveForLocation(Routes.contacts)
+          .firstWhere((action) => action.id == 'crm-tools')
+          .onPressed!();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sections'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reports'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('March progress'));
+      await tester.pumpAndSettle();
+      expect(find.text('Afternoon group'), findsOneWidget);
+      expect(find.text('Mar 1, 2026 – Mar 31, 2026'), findsOneWidget);
+      expect(find.text('Completed the reading exercises.'), findsOneWidget);
+      expect(
+        find.text('Review chapter four before the next session.'),
+        findsOneWidget,
+      );
+      await DesignRender.capture(tester, 'contacts-report-preview-$theme');
     });
   }
 

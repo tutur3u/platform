@@ -2551,6 +2551,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsPermissionDenied => 'You do not have permission to view contacts.';
 
   @override
+  String get contactsReportContent => 'Report content';
+
+  @override
+  String get contactsReportPeriod => 'Reporting period';
+
+  @override
+  String get contactsReportEmptyBody => 'This report has no content or feedback yet.';
+
+  @override
   String get contactsReports => 'Reports';
 
   @override

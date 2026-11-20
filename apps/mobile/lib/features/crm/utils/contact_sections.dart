@@ -7,22 +7,49 @@ class ContactSectionRecord {
     required this.title,
     this.subtitle,
     this.trailing,
+    this.report,
   });
 
   final String id;
   final String title;
   final String? subtitle;
   final String? trailing;
+  final ContactReportDetails? report;
+}
+
+class ContactReportDetails {
+  const ContactReportDetails({
+    this.group,
+    this.content,
+    this.feedback,
+    this.periodStart,
+    this.periodEnd,
+  });
+
+  final String? group;
+  final String? content;
+  final String? feedback;
+  final DateTime? periodStart;
+  final DateTime? periodEnd;
 }
 
 List<ContactSectionRecord> contactReportRecords(Map<String, dynamic> json) {
   return _records(json['data'], (row) {
+    final member =
+        crmAsString(row['user_name']) ?? crmAsString(row['user_email']);
     final title = crmAsString(row['title']);
     return ContactSectionRecord(
       id: crmAsString(row['id']) ?? '',
-      title: title ?? crmAsString(row['user_email']) ?? '',
-      subtitle: title == null ? null : crmAsString(row['user_email']),
+      title: title ?? member ?? '',
+      subtitle: title == null ? null : member,
       trailing: crmAsString(row['report_stage']),
+      report: ContactReportDetails(
+        group: crmAsString(row['group_name']),
+        content: crmAsString(row['content']),
+        feedback: crmAsString(row['feedback']),
+        periodStart: DateTime.tryParse(crmAsString(row['period_start']) ?? ''),
+        periodEnd: DateTime.tryParse(crmAsString(row['period_end']) ?? ''),
+      ),
     );
   });
 }

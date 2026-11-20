@@ -37,6 +37,7 @@ import 'package:mobile/features/crm/view/contact_group_editor.dart';
 import 'package:mobile/features/crm/view/contact_group_members.dart';
 import 'package:mobile/features/crm/view/contact_list_row.dart';
 import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
+import 'package:mobile/features/crm/view/contact_report_preview.dart';
 import 'package:mobile/features/crm/view/contact_section_list.dart';
 import 'package:mobile/features/crm/view/contact_tag_editor.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
