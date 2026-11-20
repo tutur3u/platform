@@ -15,6 +15,7 @@ import test from 'node:test';
 import {
   admissionOutputs,
   admitRelease,
+  MAX_READ_BYTES,
   admitWorkflowRuns,
   bindProductionIntent,
   liveSource,
@@ -482,4 +483,34 @@ test('admission outputs carry only a full previous live commit', () => {
       admissionOutputs({ guardCode: 'MEET_RELEASE_ADMITTED', live: value }),
       'superseded=false\n'
     );
+});
+
+test('admission reads run pages up to the bounded size', async () => {
+  const run = (_bin, args) => (args[0] === 'rev-parse' ? source : '');
+  const page = (bytes) => async (url) => ({
+    ok: true,
+    text: async () =>
+      JSON.stringify(
+        new URL(url).origin === 'https://api.github.com'
+          ? { workflow_runs: [green], padding: 'x'.repeat(bytes) }
+          : metadata
+      ),
+  });
+  const admitted = [];
+  await admitRelease({
+    env,
+    run,
+    fetcher: page(600 * 1024),
+    receipt: (value) => admitted.push(value),
+  });
+  assert.equal(admitted.at(-1).guardCode, 'MEET_RELEASE_ADMITTED');
+  await assert.rejects(
+    admitRelease({
+      env,
+      run,
+      fetcher: page(MAX_READ_BYTES),
+      receipt: () => {},
+    }),
+    /MEET_RELEASE_READ_TOO_LARGE/
+  );
 });

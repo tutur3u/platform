@@ -23,6 +23,9 @@ const exactWorkflows = ['security-checks.yaml', 'meet-cloudflare.yaml'];
 const sharedWorkflows = EQUIVALENT_WORKFLOWS;
 // At most this many equivalent commits have their run's jobs read.
 const MAX_EXECUTION_READS = 3;
+// A page of 40 main workflow runs is about 0.5 MiB and grows with run
+// metadata; keep reads bounded with headroom.
+export const MAX_READ_BYTES = 2 * 1024 * 1024;
 const workflows = [...sharedWorkflows, ...exactWorkflows];
 
 function stop(code) {
@@ -146,7 +149,7 @@ async function readJson(url, token, fetcher) {
   });
   if (!response.ok) stop('MEET_RELEASE_READ_FAILED');
   const text = await response.text();
-  if (text.length > 512 * 1024) stop('MEET_RELEASE_READ_TOO_LARGE');
+  if (text.length > MAX_READ_BYTES) stop('MEET_RELEASE_READ_TOO_LARGE');
   return JSON.parse(text);
 }
 
