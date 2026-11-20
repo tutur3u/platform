@@ -5293,6 +5293,66 @@ abstract class AppLocalizations {
   /// **'Stopped after {completed} of {total} confirmed merges. Close this sheet and check duplicates again before retrying.'**
   String crmBulkMergeStopped(int completed, int total);
 
+  /// No description provided for @crmContactAccountCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create invitation'**
+  String get crmContactAccountCreate;
+
+  /// No description provided for @crmContactAccountInvitation.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite account holder to link'**
+  String get crmContactAccountInvitation;
+
+  /// No description provided for @crmContactAccountInvitationInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the workspace account that should confirm this contact link.'**
+  String get crmContactAccountInvitationInstructions;
+
+  /// No description provided for @crmContactAccountNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching accounts'**
+  String get crmContactAccountNone;
+
+  /// No description provided for @crmContactAccountRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke invitation'**
+  String get crmContactAccountRevoke;
+
+  /// No description provided for @crmContactAccountRevokeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel the active invitation for this contact?'**
+  String get crmContactAccountRevokeConfirm;
+
+  /// No description provided for @crmContactAccountSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a workspace account'**
+  String get crmContactAccountSearch;
+
+  /// No description provided for @crmContactAccountShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share invitation'**
+  String get crmContactAccountShare;
+
+  /// No description provided for @crmContactAccountShareInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this invitation with the selected account holder. They must sign in and confirm.'**
+  String get crmContactAccountShareInstructions;
+
+  /// No description provided for @crmContactAccountUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The invitation could not be completed. Check the contact and the selected account before trying again.'**
+  String get crmContactAccountUnavailable;
+
   /// No description provided for @crmCreateUser.
   ///
   /// In en, this message translates to:

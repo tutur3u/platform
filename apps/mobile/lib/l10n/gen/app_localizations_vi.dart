@@ -2717,6 +2717,36 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get crmContactAccountCreate => 'Tạo lời mời';
+
+  @override
+  String get crmContactAccountInvitation => 'Mời chủ tài khoản liên kết';
+
+  @override
+  String get crmContactAccountInvitationInstructions => 'Chọn tài khoản trong không gian làm việc sẽ xác nhận liên kết này.';
+
+  @override
+  String get crmContactAccountNone => 'Không có tài khoản phù hợp';
+
+  @override
+  String get crmContactAccountRevoke => 'Thu hồi lời mời';
+
+  @override
+  String get crmContactAccountRevokeConfirm => 'Hủy lời mời đang hoạt động cho liên hệ này?';
+
+  @override
+  String get crmContactAccountSearch => 'Tìm tài khoản trong không gian làm việc';
+
+  @override
+  String get crmContactAccountShare => 'Chia sẻ lời mời';
+
+  @override
+  String get crmContactAccountShareInstructions => 'Chia sẻ lời mời với chủ tài khoản đã chọn. Họ phải đăng nhập và xác nhận.';
+
+  @override
+  String get crmContactAccountUnavailable => 'Không thể hoàn tất lời mời. Hãy kiểm tra liên hệ và tài khoản đã chọn trước khi thử lại.';
+
+  @override
   String get crmCreateUser => 'Tạo người dùng';
 
   @override

@@ -13,6 +13,28 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
+      if (
+        table === 'workspace_members' ||
+        table === 'workspace_invites' ||
+        table === 'workspace_user_linked_users'
+      ) {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: vi.fn().mockResolvedValue({
+                  data:
+                    table === 'workspace_members'
+                      ? { user_id: 'member' }
+                      : null,
+                  error: null,
+                }),
+              })),
+            })),
+          })),
+        };
+      }
+
       if (table === 'workspace_email_invites') {
         return {
           select: vi.fn(() => ({
@@ -113,6 +135,27 @@ describe('PUT /api/workspaces/[wsId]/members/profile', () => {
       },
       error: null,
     });
+  });
+
+  it('requires account holder confirmation for an unlinked member', async () => {
+    const { PUT } = await import('./route');
+
+    const response = await PUT(
+      createRequest({
+        displayName: 'Server Alice',
+        email: 'invite@example.com',
+        userId: '00000000-0000-4000-8000-000000000002',
+      }),
+      { params: Promise.resolve({ wsId: WORKSPACE_ID }) }
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      message: 'Account holder confirmation is required',
+    });
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
+      'workspace_users'
+    );
   });
 
   it('creates an early workspace profile for a pending email invite', async () => {

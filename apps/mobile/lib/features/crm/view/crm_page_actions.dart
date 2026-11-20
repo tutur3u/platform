@@ -77,6 +77,31 @@ extension _CrmPageActions on _CrmPageState {
     );
   }
 
+  Future<void> _showContactAccountInvitation(CrmUser contact) =>
+      _showOwnedSheet<void>(
+        context: context,
+        builder: (context) => ContactAccountInvitation(
+          loadAccounts: () =>
+              _repository.getContactAccountChoices(widget.workspaceId),
+          createInvitation: (accountId) =>
+              _repository.inviteToContactAccountLink(
+                widget.workspaceId,
+                contact.id,
+                accountId,
+              ),
+          revokeInvitation: () => _repository.revokeContactAccountLink(
+            widget.workspaceId,
+            contact.id,
+          ),
+          shareInvitation: (link, position) async {
+            if (!mounted) return;
+            await SharePlus.instance.share(
+              ShareParams(uri: link, sharePositionOrigin: position),
+            );
+          },
+        ),
+      );
+
   Future<void> _showDuplicateSheet() async {
     final wsId = _wsId;
     if (wsId == null) return;

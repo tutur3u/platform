@@ -135,6 +135,18 @@ extension _CrmPageLayout on _CrmPageState {
                   inDock: true,
                   onPressed: () => _showUserSheet(user: selected),
                 ),
+              if (selected != null &&
+                  selected.linkedUsers.isEmpty &&
+                  _canUpdateUsers &&
+                  (_userPermissions?.hasPrivateInfo ?? false) &&
+                  (_userPermissions?.hasPublicInfo ?? false))
+                ShellActionSpec(
+                  id: 'crm-account-invitation',
+                  icon: LucideIcons.link,
+                  tooltip: l10n.crmContactAccountInvitation,
+                  callbackToken: selected,
+                  onPressed: () => _showContactAccountInvitation(selected),
+                ),
               if (selected != null && _canViewFeedbacks)
                 ShellActionSpec(
                   id: 'crm-feedback',

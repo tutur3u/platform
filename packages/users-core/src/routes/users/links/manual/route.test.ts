@@ -327,31 +327,17 @@ describe('manual profile linking route', () => {
     }
   );
 
-  it('inserts an ordinary link after both containment reads', async () => {
+  it('requires account holder consent even when the operator can edit both profiles', async () => {
     enqueueContainedProfiles();
     fixture.enqueue('workspace_user_linked_users', { data: [], error: null });
-    fixture.enqueue('workspace_user_linked_users', { error: null });
 
     const response = await post(validBody());
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(409);
     expect(await responseJson(response)).toEqual({
-      alreadyLinked: false,
-      success: true,
+      error: 'Account holder confirmation is required',
     });
-    expect(fixture.mutations).toEqual([
-      {
-        filters: [],
-        operation: 'insert',
-        options: undefined,
-        payload: {
-          platform_user_id: PLATFORM_USER_ID,
-          virtual_user_id: VIRTUAL_USER_ID,
-          ws_id: WORKSPACE_ID,
-        },
-        table: 'workspace_user_linked_users',
-      },
-    ]);
+    expect(fixture.mutations).toEqual([]);
   });
 
   it('returns exact-link idempotency without mutations', async () => {

@@ -2367,6 +2367,16 @@
       }
     }
   },
+  "crmContactAccountCreate": "Create invitation",
+  "crmContactAccountInvitation": "Invite account holder to link",
+  "crmContactAccountInvitationInstructions": "Choose the workspace account that should confirm this contact link.",
+  "crmContactAccountNone": "No matching accounts",
+  "crmContactAccountRevoke": "Revoke invitation",
+  "crmContactAccountRevokeConfirm": "Cancel the active invitation for this contact?",
+  "crmContactAccountSearch": "Find a workspace account",
+  "crmContactAccountShare": "Share invitation",
+  "crmContactAccountShareInstructions": "Share this invitation with the selected account holder. They must sign in and confirm.",
+  "crmContactAccountUnavailable": "The invitation could not be completed. Check the contact and the selected account before trying again.",
   "crmCreateUser": "Create user",
   "crmCsvExportFields": "CSV columns",
   "crmCsvExportStatus": "Contact status",

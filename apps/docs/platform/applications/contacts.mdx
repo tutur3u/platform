@@ -88,6 +88,31 @@ amount comes from the grouped subscription calculation.
 The mobile contact billing widget tests exercise opening the section and paging
 through invoice history in light and dark appearance.
 
+## Contact account-link confirmation
+
+From an unlinked contact in the mobile app, choose **Invite account holder to
+link**. Select one workspace account, create the invitation, then share it with
+that account holder. This action requires permission to update contacts and view
+both public and private contact information.
+
+The recipient signs into Tuturuuu to review the inviter, contact display name,
+workspace, and expiration. They can confirm or decline. An authorized operator
+can revoke an active invitation. Issuing a new invitation replaces any active
+invitation for the contact.
+
+Invitations expire after one day and can be used once by the selected account.
+The database rechecks the workspace, contact, membership, and eligibility at
+confirmation. The link and its actor-attributed audit event commit together.
+The confirmation page and API omit contact email and platform account IDs.
+Direct signed-in writes to the link table are denied. Manual group linking can
+move a teaching assignment to an already linked profile. Creating a mapping
+through manual linking or member profile editing requires an invitation.
+
+The contact-link route and confirmation tests cover explicit consent and
+permission failures. The Supabase contact-account-link-confirmation test
+covers direct write denial, edited email matches, recipient binding, audit
+attribution, and replay.
+
 ## Mobile audit activity
 
 Open **Audit log** from the Contacts dock if your role can manage workspace

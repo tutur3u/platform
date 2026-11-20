@@ -5974,6 +5974,17 @@
       "title": "Liên Kết Nhanh"
     }
   },
+  "contact-link": {
+    "confirm": "Xác nhận liên kết tài khoản",
+    "confirming": "Đang xác nhận…",
+    "decline": "Từ chối",
+    "declined": "Bạn đã từ chối lời mời này.",
+    "description": "{inviter} mời bạn liên kết tài khoản đang đăng nhập với {contact} trong {workspace}. Thao tác này gắn liên hệ trong không gian làm việc với tài khoản Tuturuuu của bạn.",
+    "expires": "Hết hạn lúc {date} UTC.",
+    "linked": "Tài khoản của bạn đã được liên kết với liên hệ này.",
+    "title": "Xác nhận liên kết tài khoản liên hệ",
+    "unavailable": "Lời mời này không khả dụng. Hãy nhờ người đã chia sẻ kiểm tra lại liên kết."
+  },
   "course-data-table": {
     "created_at": "Ngày tạo",
     "id": "Mã số",

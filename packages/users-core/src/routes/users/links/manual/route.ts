@@ -303,14 +303,10 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const { error } = await admin.from('workspace_user_linked_users').insert({
-      platform_user_id: platformUserId,
-      virtual_user_id: virtualUserId,
-      ws_id: wsId,
-    });
-    if (error) throw error;
-
-    return NextResponse.json({ alreadyLinked: false, success: true });
+    return NextResponse.json(
+      { error: 'Account holder confirmation is required' },
+      { status: 409 }
+    );
   } catch (error) {
     console.error('Error manually linking workspace user profiles', { error });
     return NextResponse.json(

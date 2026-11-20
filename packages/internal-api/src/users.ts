@@ -945,24 +945,10 @@ export async function listWorkspaceUserApprovalLogs<
   );
 }
 
-export async function repairWorkspaceUserPlatformLinks(
-  workspaceId: string,
-  payload: WorkspaceUserPlatformLinkRepairPayload = {},
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<WorkspaceUserPlatformLinkRepairResponse>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/links/repair`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      cache: 'no-store',
-    }
-  );
-}
+export {
+  repairWorkspaceUserPlatformLinks,
+  respondToWorkspaceContactAccountLink,
+} from './users-link-actions';
 
 export interface WorkspaceUserLinkCandidate {
   avatarUrl: string | null;

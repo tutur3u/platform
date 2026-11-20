@@ -2731,6 +2731,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get crmContactAccountCreate => 'Create invitation';
+
+  @override
+  String get crmContactAccountInvitation => 'Invite account holder to link';
+
+  @override
+  String get crmContactAccountInvitationInstructions => 'Choose the workspace account that should confirm this contact link.';
+
+  @override
+  String get crmContactAccountNone => 'No matching accounts';
+
+  @override
+  String get crmContactAccountRevoke => 'Revoke invitation';
+
+  @override
+  String get crmContactAccountRevokeConfirm => 'Cancel the active invitation for this contact?';
+
+  @override
+  String get crmContactAccountSearch => 'Find a workspace account';
+
+  @override
+  String get crmContactAccountShare => 'Share invitation';
+
+  @override
+  String get crmContactAccountShareInstructions => 'Share this invitation with the selected account holder. They must sign in and confirm.';
+
+  @override
+  String get crmContactAccountUnavailable => 'The invitation could not be completed. Check the contact and the selected account before trying again.';
+
+  @override
   String get crmCreateUser => 'Create user';
 
   @override

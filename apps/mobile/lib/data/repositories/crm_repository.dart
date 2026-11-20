@@ -16,10 +16,15 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
+part 'crm_repository_account_links.dart';
 part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
 
-class CrmRepository with _CrmGroupMembershipRepository, _CrmBillingRepository {
+class CrmRepository
+    with
+        _CrmGroupMembershipRepository,
+        _CrmBillingRepository,
+        _CrmAccountLinkRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,

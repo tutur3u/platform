@@ -1,0 +1,255 @@
+drop policy if exists "Allow insert for workspace users"
+  on public.workspace_user_linked_users;
+revoke insert, update, delete, truncate
+  on public.workspace_user_linked_users from public, anon, authenticated;
+
+create table private.contact_account_link_invitations (
+  id uuid primary key default gen_random_uuid(),
+  ws_id uuid not null references public.workspaces(id) on delete cascade,
+  contact_id uuid not null references public.workspace_users(id) on delete cascade,
+  account_id uuid not null references public.users(id) on delete cascade,
+  invited_by uuid not null references public.users(id) on delete cascade,
+  expires_at timestamptz not null default (now() + interval '1 day'),
+  consumed_at timestamptz
+);
+
+create table private.contact_account_link_audit (
+  id bigint generated always as identity primary key,
+  occurred_at timestamptz not null default now(),
+  ws_id uuid not null,
+  contact_id uuid not null,
+  actor_id uuid not null,
+  invitation_id uuid,
+  account_id uuid,
+  invited_by uuid,
+  outcome text not null check (
+    outcome in ('invited', 'confirmation_required', 'ineligible', 'linked', 'declined', 'revoked')
+  )
+);
+
+alter table private.contact_account_link_invitations enable row level security;
+alter table private.contact_account_link_audit enable row level security;
+revoke all on table private.contact_account_link_invitations,
+  private.contact_account_link_audit from public, anon, authenticated, service_role;
+
+-- Only the API's verified request actor is passed to this function. No
+-- authorization or candidate selection relies on mutable contact fields.
+create function private.invite_contact_account_link(
+  p_ws_id uuid, p_contact_id uuid, p_account_id uuid, p_actor_id uuid
+) returns uuid
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  v_invitation_id uuid;
+begin
+  if not exists (
+    select 1 from public.workspace_members
+    where ws_id = p_ws_id and user_id = p_actor_id
+  ) or not (
+    public.has_workspace_permission(p_ws_id, p_actor_id, 'update_users')
+    and public.has_workspace_permission(p_ws_id, p_actor_id, 'view_users_private_info')
+    and public.has_workspace_permission(p_ws_id, p_actor_id, 'view_users_public_info')
+  ) then
+    raise exception 'Insufficient permissions' using errcode = '42501';
+  end if;
+
+  perform 1 from public.workspace_users
+  where id = p_contact_id and ws_id = p_ws_id for update;
+  if not found or not exists (
+    select 1 from public.workspace_members
+    where ws_id = p_ws_id and user_id = p_account_id
+  ) or exists (
+    select 1 from public.workspace_user_linked_users
+    where ws_id = p_ws_id
+      and (platform_user_id = p_account_id or virtual_user_id = p_contact_id)
+  ) then
+    insert into private.contact_account_link_audit
+      (ws_id, contact_id, actor_id, outcome)
+    values (p_ws_id, p_contact_id, p_actor_id, 'ineligible');
+    return null;
+  end if;
+
+  with superseded as (
+    update private.contact_account_link_invitations
+    set consumed_at = statement_timestamp()
+    where ws_id = p_ws_id and contact_id = p_contact_id and consumed_at is null
+    returning id, account_id, invited_by
+  )
+  insert into private.contact_account_link_audit
+    (ws_id, contact_id, actor_id, outcome, invitation_id, account_id, invited_by)
+  select p_ws_id, p_contact_id, p_actor_id, 'revoked', id, account_id, invited_by
+  from superseded;
+
+  insert into private.contact_account_link_invitations
+    (ws_id, contact_id, account_id, invited_by)
+  values (p_ws_id, p_contact_id, p_account_id, p_actor_id)
+  returning id into v_invitation_id;
+
+  insert into private.contact_account_link_audit
+    (ws_id, contact_id, actor_id, outcome, invitation_id, account_id, invited_by)
+  values (p_ws_id, p_contact_id, p_actor_id, 'invited', v_invitation_id, p_account_id, p_actor_id);
+  return v_invitation_id;
+end;
+$$;
+
+create function private.confirm_contact_account_link(
+  p_ws_id uuid, p_contact_id uuid, p_invitation_id uuid, p_actor_id uuid
+) returns text
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  v_invitation private.contact_account_link_invitations%rowtype;
+  v_outcome text := 'confirmation_required';
+begin
+  -- Use the same contact-then-invitation lock order on every write path.
+  perform 1 from public.workspace_users
+  where id = p_contact_id and ws_id = p_ws_id for update;
+  if found then
+    select * into v_invitation
+    from private.contact_account_link_invitations
+    where id = p_invitation_id and ws_id = p_ws_id
+      and contact_id = p_contact_id and account_id = p_actor_id
+      and expires_at > statement_timestamp() and consumed_at is null
+    for update;
+  end if;
+
+  if v_invitation.id is not null then
+    v_outcome := 'ineligible';
+    perform 1 from public.workspace_members
+    where ws_id = p_ws_id and user_id = p_actor_id for share;
+    if found and exists (
+      select 1 from public.workspace_members
+      where ws_id = p_ws_id and user_id = v_invitation.invited_by
+    ) and (
+      public.has_workspace_permission(p_ws_id, v_invitation.invited_by, 'update_users')
+      and public.has_workspace_permission(p_ws_id, v_invitation.invited_by, 'view_users_private_info')
+      and public.has_workspace_permission(p_ws_id, v_invitation.invited_by, 'view_users_public_info')
+    ) and not exists (
+      select 1 from public.workspace_user_linked_users
+      where ws_id = p_ws_id and virtual_user_id = p_contact_id
+    ) then
+      insert into public.workspace_user_linked_users
+        (ws_id, virtual_user_id, platform_user_id)
+      values (p_ws_id, p_contact_id, p_actor_id)
+      on conflict (platform_user_id, ws_id) do nothing;
+      if found then
+        v_outcome := 'linked';
+      end if;
+    end if;
+
+    update private.contact_account_link_invitations
+    set consumed_at = statement_timestamp() where id = v_invitation.id;
+  end if;
+
+  insert into private.contact_account_link_audit
+    (ws_id, contact_id, actor_id, outcome, invitation_id, account_id, invited_by)
+  values (p_ws_id, p_contact_id, p_actor_id, v_outcome,
+    v_invitation.id, v_invitation.account_id, v_invitation.invited_by);
+  return v_outcome;
+end;
+$$;
+
+create function private.preview_contact_account_link(
+  p_ws_id uuid, p_contact_id uuid, p_invitation_id uuid, p_actor_id uuid
+) returns jsonb
+language sql
+stable
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+  select jsonb_build_object(
+    'workspace', w.name,
+    'contact', nullif(btrim(c.display_name), ''),
+    'inviter', nullif(btrim(u.display_name), ''),
+    'expiresAt', i.expires_at
+  )
+  from private.contact_account_link_invitations i
+  join public.workspace_users c on c.id = i.contact_id and c.ws_id = i.ws_id
+  join public.workspaces w on w.id = i.ws_id
+  join public.users u on u.id = i.invited_by
+  join public.workspace_members m on m.ws_id = i.ws_id and m.user_id = i.account_id
+  join public.workspace_members inviter_membership
+    on inviter_membership.ws_id = i.ws_id and inviter_membership.user_id = i.invited_by
+  where i.id = p_invitation_id and i.ws_id = p_ws_id
+    and i.contact_id = p_contact_id and i.account_id = p_actor_id
+    and i.expires_at > statement_timestamp() and i.consumed_at is null
+    and public.has_workspace_permission(i.ws_id, i.invited_by, 'update_users')
+    and public.has_workspace_permission(i.ws_id, i.invited_by, 'view_users_private_info')
+    and public.has_workspace_permission(i.ws_id, i.invited_by, 'view_users_public_info')
+    and not exists (
+      select 1 from public.workspace_user_linked_users links
+      where links.ws_id = i.ws_id
+        and (links.virtual_user_id = i.contact_id or links.platform_user_id = i.account_id)
+    );
+$$;
+
+create function private.finish_contact_account_link_invitation(
+  p_ws_id uuid, p_contact_id uuid, p_invitation_id uuid, p_actor_id uuid, p_action text
+) returns text
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  v_invitation private.contact_account_link_invitations%rowtype;
+  v_outcome text;
+begin
+  if p_action not in ('decline', 'revoke') or p_action is null then
+    raise exception 'Invalid action' using errcode = '22023';
+  end if;
+  if p_action = 'revoke' and (
+    not exists (
+      select 1 from public.workspace_members
+      where ws_id = p_ws_id and user_id = p_actor_id
+    ) or not (
+      public.has_workspace_permission(p_ws_id, p_actor_id, 'update_users')
+      and public.has_workspace_permission(p_ws_id, p_actor_id, 'view_users_private_info')
+      and public.has_workspace_permission(p_ws_id, p_actor_id, 'view_users_public_info')
+    )
+  ) then
+    raise exception 'Insufficient permissions' using errcode = '42501';
+  end if;
+
+  perform 1 from public.workspace_users
+  where id = p_contact_id and ws_id = p_ws_id for update;
+  if not found then return 'confirmation_required'; end if;
+
+  update private.contact_account_link_invitations
+  set consumed_at = statement_timestamp()
+  where ws_id = p_ws_id and contact_id = p_contact_id
+    and (id = p_invitation_id or (p_action = 'revoke' and p_invitation_id is null))
+    and consumed_at is null and expires_at > statement_timestamp()
+    and (
+      p_action = 'revoke' or (
+        account_id = p_actor_id and exists (
+          select 1 from public.workspace_members
+          where ws_id = p_ws_id and user_id = p_actor_id
+        )
+      )
+    )
+  returning * into v_invitation;
+
+  if not found then return 'confirmation_required'; end if;
+  v_outcome := case when p_action = 'decline' then 'declined' else 'revoked' end;
+  insert into private.contact_account_link_audit
+    (ws_id, contact_id, actor_id, outcome, invitation_id, account_id, invited_by)
+  values (p_ws_id, p_contact_id, p_actor_id, v_outcome,
+    v_invitation.id, v_invitation.account_id, v_invitation.invited_by);
+  return v_outcome;
+end;
+$$;
+
+revoke all on function private.invite_contact_account_link(uuid, uuid, uuid, uuid),
+  private.confirm_contact_account_link(uuid, uuid, uuid, uuid),
+  private.preview_contact_account_link(uuid, uuid, uuid, uuid),
+  private.finish_contact_account_link_invitation(uuid, uuid, uuid, uuid, text)
+  from public, anon, authenticated, service_role;
+grant execute on function private.invite_contact_account_link(uuid, uuid, uuid, uuid),
+  private.confirm_contact_account_link(uuid, uuid, uuid, uuid),
+  private.preview_contact_account_link(uuid, uuid, uuid, uuid),
+  private.finish_contact_account_link_invitation(uuid, uuid, uuid, uuid, text)
+  to service_role;

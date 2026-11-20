@@ -28,6 +28,7 @@ import 'package:mobile/features/crm/utils/crm_csv_export.dart';
 import 'package:mobile/features/crm/utils/crm_csv_import.dart';
 import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
+import 'package:mobile/features/crm/view/contact_account_invitation.dart';
 import 'package:mobile/features/crm/view/contact_attendance_sheet.dart';
 import 'package:mobile/features/crm/view/contact_billing.dart';
 import 'package:mobile/features/crm/view/contact_csv_export_sheet.dart';

@@ -5974,6 +5974,17 @@
       "title": "Quick Links"
     }
   },
+  "contact-link": {
+    "confirm": "Confirm account link",
+    "confirming": "Confirming…",
+    "decline": "Decline",
+    "declined": "You declined this invitation.",
+    "description": "{inviter} invited you to link your signed-in account to {contact} in {workspace}. Linking associates this workspace contact with your Tuturuuu account.",
+    "expires": "Expires {date} UTC.",
+    "linked": "Your account is now linked to this contact.",
+    "title": "Confirm a contact account link",
+    "unavailable": "This invitation is unavailable. Ask the person who shared it to check the link."
+  },
   "course-data-table": {
     "created_at": "Created At",
     "id": "ID",
