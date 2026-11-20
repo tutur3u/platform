@@ -10,11 +10,11 @@ import { learnerProgressRoutesEnabled } from '@tuturuuu/education-core/education
 import { ArrowUpRight, Search, UserMinus, UserPlus } from '@tuturuuu/icons';
 import {
   addWorkspaceCourseMembers,
-  getClassTuition,
   listWorkspaceCourseMembers,
   listWorkspaceUsers,
   removeWorkspaceCourseMember,
 } from '@tuturuuu/internal-api';
+import { getClassTuition } from '@tuturuuu/internal-api/finance-class-tuition';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';

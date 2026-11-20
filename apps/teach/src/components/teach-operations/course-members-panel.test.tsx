@@ -24,6 +24,10 @@ vi.mock('@tuturuuu/education-core/education/lms-rollout', () => ({
   learnerProgressRoutesEnabled: rollout.enabled,
 }));
 
+vi.mock('@tuturuuu/internal-api/finance-class-tuition', () => ({
+  getClassTuition: api.getClassTuition,
+}));
+
 vi.mock('@tuturuuu/internal-api', () => ({
   ...api,
   addWorkspaceCourseMembers: vi.fn(),

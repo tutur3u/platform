@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { learnerProgressRoutesEnabled } from '@tuturuuu/education-core/education/lms-rollout';
-import { getClassTuition } from '@tuturuuu/internal-api';
+import { getClassTuition } from '@tuturuuu/internal-api/finance-class-tuition';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';

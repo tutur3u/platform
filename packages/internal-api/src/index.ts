@@ -1882,9 +1882,3 @@ export {
   type WorkspaceInviteStatusResponse,
   type WorkspaceMemberSettingsResponse,
 } from './workspaces';
-
-export {
-  type ClassTuitionResponse,
-  type ClassTuitionStatus,
-  getClassTuition,
-} from './finance-class-tuition';

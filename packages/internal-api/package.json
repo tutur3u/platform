@@ -46,6 +46,11 @@
       "import": "./dist/user-bootstrap.js",
       "require": "./dist/user-bootstrap.js"
     },
+    "./finance-class-tuition": {
+      "types": "./dist/finance-class-tuition.d.ts",
+      "import": "./dist/finance-class-tuition.js",
+      "require": "./dist/finance-class-tuition.js"
+    },
     "./people": {
       "types": "./dist/people.d.ts",
       "import": "./dist/people.js",

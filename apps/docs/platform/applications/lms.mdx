@@ -275,7 +275,10 @@ Responses use the class outline's access errors and private cache policy.
 ### Monthly class tuition status
 
 Teach opens the active month's tuition status from the class roster. Learners
-and approved guardians open it from the course overview. The Finance endpoint
+and approved guardians open it from the course overview. Learner access uses
+the signed-in account's verified Contacts link. Guardian access uses the
+approved parent link to the selected learner's Contacts record. Each view
+returns only that learner's tuition status. The Finance endpoint
 serves both views with the same coverage and billing rules. Data loads on
 request without polling and uses the existing learner rollout gate.
 See [Class tuition status](/platform/applications/finance#class-tuition-status)

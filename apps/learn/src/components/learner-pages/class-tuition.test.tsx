@@ -6,7 +6,9 @@ import en from '../../../messages/en.json';
 import { LearnerClassTuition } from './class-tuition';
 
 const mocks = vi.hoisted(() => ({ enabled: vi.fn(), read: vi.fn() }));
-vi.mock('@tuturuuu/internal-api', () => ({ getClassTuition: mocks.read }));
+vi.mock('@tuturuuu/internal-api/finance-class-tuition', () => ({
+  getClassTuition: mocks.read,
+}));
 vi.mock('@tuturuuu/education-core/education/lms-rollout', () => ({
   learnerProgressRoutesEnabled: mocks.enabled,
 }));
