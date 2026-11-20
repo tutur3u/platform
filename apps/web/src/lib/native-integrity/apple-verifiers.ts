@@ -5,11 +5,15 @@ const versions = (name: string) =>
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
-function profile(platform: 'ios' | 'macos') {
+function profile(
+  platform: 'ios' | 'macos',
+  options?: { allowDevelopment: boolean }
+) {
   return createAppleIntegrityVerifier({
     platform,
     teamId: process.env.NATIVE_INTEGRITY_APPLE_TEAM_ID ?? '',
     allowDevelopment:
+      options?.allowDevelopment ??
       process.env.NATIVE_INTEGRITY_APPLE_ENVIRONMENT === 'development',
     bundleId:
       (platform === 'ios'
@@ -30,6 +34,12 @@ function profile(platform: 'ios' | 'macos') {
     ),
   });
 }
+export function configuredIosNativeIntegrityVerifier(options: {
+  allowDevelopment: boolean;
+}) {
+  return profile('ios', options);
+}
+
 export function configuredAppleVerifiers() {
   return {
     async attest(

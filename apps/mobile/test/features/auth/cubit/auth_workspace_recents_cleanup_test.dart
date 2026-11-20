@@ -42,6 +42,8 @@ Future<Set<String>> _storedActors() async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   const channel = MethodChannel('plugins.flutter.io/path_provider');
+  const approvalChannel = MethodChannel('mobile/approval_key');
+  late List<Object?> approvalDeletions;
   late Directory directory;
   late StreamController<supa.AuthState> events;
   late _Repository repo;
@@ -50,6 +52,13 @@ void main() {
     directory = await Directory.systemTemp.createTemp('auth-recents-');
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, (_) async => directory.path);
+    approvalDeletions = [];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(approvalChannel, (call) async {
+          expect(call.method, 'deleteKeys');
+          approvalDeletions.add(call.arguments);
+          return null;
+        });
     SharedPreferences.setMockInitialValues({
       _key(_active): ['ws-1'],
       _key(_other): ['ws-2'],
@@ -109,6 +118,8 @@ void main() {
     }
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(channel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(approvalChannel, null);
     await directory.delete(recursive: true);
   });
 
@@ -125,16 +136,25 @@ void main() {
   test('signing out the current account removes only its recents', () async {
     await (await cubit()).signOutCurrentAccount();
     expect(await _storedActors(), {_other});
+    expect(approvalDeletions, [
+      {'accountId': _active},
+    ]);
   });
 
   test('removing another account removes its recents', () async {
     await (await cubit()).removeAccount(_other);
     expect(await _storedActors(), {_active});
+    expect(approvalDeletions, [
+      {'accountId': _other},
+    ]);
   });
 
   test('removing the active account removes its recents', () async {
     await (await cubit()).removeAccount(_active);
     expect(await _storedActors(), {_other});
+    expect(approvalDeletions, [
+      {'accountId': _active},
+    ]);
   });
 
   for (final all in [true, false]) {
@@ -147,6 +167,7 @@ void main() {
         await auth.signOut();
       }
       expect(await _storedActors(), isEmpty);
+      expect(approvalDeletions, [<String, Object?>{}]);
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(_unrelatedKey), 'kept');
     });
@@ -155,6 +176,7 @@ void main() {
   test('switching accounts keeps every list', () async {
     await (await cubit()).switchAccount(_other);
     expect(await _storedActors(), {_active, _other});
+    expect(approvalDeletions, isEmpty);
   });
 
   for (final addAccountFlow in [false, true]) {
@@ -174,5 +196,6 @@ void main() {
   test('device data cleanup ignores a missing account id', () async {
     await clearAccountDeviceData();
     expect(await _storedActors(), {_active, _other});
+    expect(approvalDeletions, isEmpty);
   });
 }

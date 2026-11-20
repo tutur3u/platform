@@ -74,7 +74,12 @@ export const integrityBytesSchema = z
   .instanceof(Uint8Array)
   .transform((value) => Buffer.from(value));
 
-type DerNode = { tag: number; value: Buffer; children: DerNode[] };
+type DerNode = {
+  tag: number;
+  tagNumber: number;
+  value: Buffer;
+  children: DerNode[];
+};
 export function parseIntegrityDer(bytes: Buffer, depth = 0): DerNode[] {
   if (depth > 12 || bytes.length > 16_384) throw new Error('invalid-der');
   let offset = 0;
@@ -82,9 +87,21 @@ export function parseIntegrityDer(bytes: Buffer, depth = 0): DerNode[] {
   while (offset < bytes.length) {
     if (nodes.length >= 128) throw new Error('invalid-der');
     const tag = bytes[offset++];
+    if (tag === undefined) throw new Error('invalid-der');
+    let tagNumber = tag & 31;
+    if (tagNumber === 31) {
+      tagNumber = 0;
+      for (let width = 0; ; width++) {
+        const octet = bytes[offset++];
+        if (octet === undefined || width >= 3 || (width === 0 && octet === 128))
+          throw new Error('invalid-der');
+        tagNumber = tagNumber * 128 + (octet & 127);
+        if (!(octet & 128)) break;
+      }
+      if (tagNumber < 31) throw new Error('invalid-der');
+    }
     const initial = bytes[offset++];
-    if (tag === undefined || initial === undefined)
-      throw new Error('invalid-der');
+    if (initial === undefined) throw new Error('invalid-der');
     let length = initial;
     if (initial & 128) {
       const width = initial & 127;
@@ -98,6 +115,7 @@ export function parseIntegrityDer(bytes: Buffer, depth = 0): DerNode[] {
     offset += length;
     nodes.push({
       tag,
+      tagNumber,
       value,
       children: tag & 32 ? parseIntegrityDer(value, depth + 1) : [],
     });

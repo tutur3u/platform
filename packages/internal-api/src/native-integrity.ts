@@ -324,4 +324,5 @@ export class NativeIntegrityService {
 }
 
 export { createAppleIntegrityVerifier } from './native-integrity-apple';
+export { verifyAndroidApprovalKeyAttestation } from './native-integrity-android-key';
 export { createPlayIntegrityVerifier } from './native-integrity-play';

@@ -9,6 +9,7 @@ void main() {
   const channel = MethodChannel('test/mobile_approval_key');
   const key = MobileApprovalKey(channel: channel);
   const account = '25db9e4c-ef85-4c71-9ac4-1b2373f47474';
+  const keyId = 'c7679660-b38b-4f3d-8e99-45eb2dcaffcd';
   const challenge = MobileApprovalSignatureInput(
     challengeId: 'c7679660-b38b-4f3d-8e99-45eb2dcaffcd',
     nonce: 'KfY5Ffne33EibYJql4vaRa13ZpBQqFN2xet6-SvLM18',
@@ -27,15 +28,31 @@ void main() {
         .setMockMethodCallHandler(channel, null);
   });
 
-  test('passes the account ID and returns only the public key', () async {
-    final spki = Uint8List.fromList(List<int>.generate(91, (i) => i));
+  test('retains the scoped hardware enrollment and its attestation', () async {
+    final spki = base64.encode(List<int>.generate(91, (i) => i));
+    final nonce = Uint8List(32);
     mockChannel((call) async {
-      expect(call.method, 'ensureKey');
-      expect(call.arguments, {'accountId': account});
-      return spki;
+      expect(call.method, 'prepareEnrollment');
+      expect(call.arguments, {
+        'accountId': account,
+        'keyId': keyId,
+        'challenge': nonce,
+      });
+      return {
+        'publicKey': spki,
+        'securityLevel': 'strongbox',
+        'certificateChain': ['leaf', 'issuer'],
+      };
     });
 
-    expect(await key.ensurePublicKey(account), base64.encode(spki));
+    final result = await key.prepareEnrollment(
+      accountId: account,
+      keyId: keyId,
+      challenge: nonce,
+    );
+    expect(result.publicKey, spki);
+    expect(result.securityLevel, 'strongbox');
+    expect(result.certificateChain, ['leaf', 'issuer']);
   });
 
   test(
@@ -45,7 +62,8 @@ void main() {
         expect(call.method, 'sign');
         final arguments = call.arguments as Map<Object?, Object?>;
         expect(arguments['accountId'], account);
-        expect(arguments['reason'], 'Confirm sign-in');
+        expect(arguments['keyId'], keyId);
+        expect(arguments.keys, unorderedEquals(['accountId', 'keyId', 'data']));
         expect(
           utf8.decode(arguments['data']! as Uint8List),
           '["tuturuuu.mobile-approval.v2",'
@@ -61,10 +79,10 @@ void main() {
       expect(
         await key.sign(
           accountId: account,
+          keyId: keyId,
           input: challenge,
-          action: 'approve',
+          action: MobileApprovalAction.approve,
           value: '03',
-          reason: 'Confirm sign-in',
         ),
         '_-4',
       );
@@ -79,10 +97,10 @@ void main() {
       await expectLater(
         key.sign(
           accountId: account,
+          keyId: keyId,
           input: challenge,
-          action: 'reject',
-          value: '',
-          reason: 'Deny sign-in',
+          action: MobileApprovalAction.reject,
+          value: 'deny',
         ),
         throwsA(
           isA<PlatformException>().having(
@@ -92,6 +110,26 @@ void main() {
           ),
         ),
       );
+    },
+  );
+
+  test(
+    'deletes the selected account or every account on this device',
+    () async {
+      final arguments = <Object?>[];
+      mockChannel((call) async {
+        expect(call.method, 'deleteKeys');
+        arguments.add(call.arguments);
+        return null;
+      });
+
+      await key.deleteKeys(accountId: account);
+      await key.deleteKeys();
+
+      expect(arguments, [
+        {'accountId': account},
+        <String, Object?>{},
+      ]);
     },
   );
 }

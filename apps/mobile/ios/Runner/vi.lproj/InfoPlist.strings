@@ -1,3 +1,6 @@
 "NSPhotoLibraryUsageDescription" = "Ứng dụng này cần quyền truy cập vào thư viện ảnh của bạn để chọn ảnh đại diện.";
 "NSCameraUsageDescription" = "Ứng dụng này cần quyền truy cập vào máy ảnh của bạn để chụp ảnh hồ sơ.";
 "NSFaceIDUsageDescription" = "Ứng dụng này dùng Face ID để mở khóa ứng dụng và xác nhận đăng nhập web an toàn cũng như các yêu cầu nhạy cảm, bao gồm cả phê duyệt của Iris.";
+"MobileApprovalVerifyNumber" = "Phê duyệt đăng nhập với số %@";
+"MobileApprovalVerifyDenial" = "Từ chối yêu cầu đăng nhập này";
+"MobileApprovalVerifyEnrollment" = "Đăng ký điện thoại này để phê duyệt đăng nhập";

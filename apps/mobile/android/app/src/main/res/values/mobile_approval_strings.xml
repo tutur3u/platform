@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_approval_verify_number">Approve sign-in with number %1$s</string>
+    <string name="mobile_approval_verify_denial">Deny this sign-in</string>
+    <string name="mobile_approval_verify_enrollment">Register this phone for sign-in approvals</string>
+</resources>

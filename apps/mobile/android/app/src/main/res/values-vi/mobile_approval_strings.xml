@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mobile_approval_verify_number">Phê duyệt đăng nhập với số %1$s</string>
+    <string name="mobile_approval_verify_denial">Từ chối yêu cầu đăng nhập này</string>
+    <string name="mobile_approval_verify_enrollment">Đăng ký điện thoại này để phê duyệt đăng nhập</string>
+</resources>

@@ -1,4 +1,5 @@
 import CryptoKit
+import DeviceCheck
 import Flutter
 import Foundation
 import LocalAuthentication
@@ -226,31 +227,60 @@ final class MobileApprovalKeyPlugin: NSObject, FlutterPlugin {
     registrar.addMethodCallDelegate(MobileApprovalKeyPlugin(), channel: channel)
   }
 
+  private static let tagPrefix = "com.tuturuuu.mobile.approval-key.v2."
+
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard call.method == "ensureKey" || call.method == "sign" else {
+    let args = call.arguments as? [String: Any]
+    if call.method == "deleteKeys" {
+      let accountId = args?["accountId"] as? String
+      let account = accountId.flatMap(UUID.init(uuidString:))
+      guard accountId == nil || account != nil else {
+        result(Self.failure("bad_arguments"))
+        return
+      }
+      run(result) { try self.deleteKeys(account: account); return nil }
+      return
+    }
+    guard call.method == "prepareEnrollment" || call.method == "sign" else {
       result(FlutterMethodNotImplemented)
       return
     }
-    guard let args = call.arguments as? [String: Any],
-          let account = (args["accountId"] as? String).flatMap(UUID.init(uuidString:))
+    guard let account = (args?["accountId"] as? String).flatMap(UUID.init(uuidString:)),
+          let keyId = (args?["keyId"] as? String).flatMap(UUID.init(uuidString:))
     else {
       result(Self.failure("bad_arguments"))
       return
     }
+    let tag = Data((Self.accountPrefix(account) + keyId.uuidString.lowercased()).utf8)
+    if call.method == "prepareEnrollment" {
+      guard let challenge = (args?["challenge"] as? FlutterStandardTypedData)?.data,
+            challenge.count == 32 else {
+        result(Self.failure("bad_arguments"))
+        return
+      }
+      prepareEnrollment(tag: tag, challenge: challenge, result: result)
+      return
+    }
+    guard let data = (args?["data"] as? FlutterStandardTypedData)?.data,
+          let reason = Self.promptText(data) else {
+      result(Self.failure("bad_arguments"))
+      return
+    }
+    run(result) {
+      FlutterStandardTypedData(bytes: try self.sign(data, tag: tag, reason: reason))
+    }
+  }
+
+  private static func accountPrefix(_ account: UUID) -> String {
+    tagPrefix + account.uuidString.lowercased() + "."
+  }
+
+  private func run(_ result: @escaping FlutterResult, _ work: @escaping () throws -> Any?) {
     queue.async {
-      let value: Any
+      let value: Any?
       do {
         guard SecureEnclave.isAvailable else { throw KeyError("unsupported") }
-        let tag = Data("com.tuturuuu.mobile.approval-key.v2.\(account.uuidString.lowercased())".utf8)
-        if call.method == "ensureKey" {
-          value = try self.ensurePublicKey(tag: tag)
-        } else {
-          guard let data = (args["data"] as? FlutterStandardTypedData)?.data,
-                Self.isApprovalMessage(data),
-                let reason = args["reason"] as? String, !reason.isEmpty, reason.count <= 200
-          else { throw KeyError("bad_arguments") }
-          value = FlutterStandardTypedData(bytes: try self.sign(data, tag: tag, reason: reason))
-        }
+        value = try work()
       } catch let error as KeyError {
         value = Self.failure(error.code)
       } catch {
@@ -260,19 +290,68 @@ final class MobileApprovalKeyPlugin: NSObject, FlutterPlugin {
     }
   }
 
-  private static func isApprovalMessage(_ data: Data) -> Bool {
+  private static func promptText(_ data: Data) -> String? {
     guard data.count <= 512,
           let fields = (try? JSONSerialization.jsonObject(with: data)) as? [String],
-          fields.count == 8, fields.first == "tuturuuu.mobile-approval.v2"
-    else { return false }
-    return fields[1...4].allSatisfy { !$0.isEmpty }
+          fields.count == 8, fields.first == "tuturuuu.mobile-approval.v2",
+          fields.dropFirst().allSatisfy({ !$0.isEmpty })
+    else { return nil }
+    let value = fields[6]
+    switch fields[5] {
+    case "approve" where value.range(of: "^[0-9]{2}$", options: .regularExpression) != nil:
+      return String(format: prompt("MobileApprovalVerifyNumber", "Approve sign-in with number %@"), value)
+    case "reject" where value == "deny":
+      return prompt("MobileApprovalVerifyDenial", "Deny this sign-in")
+    case "enroll" where value.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil:
+      return prompt("MobileApprovalVerifyEnrollment", "Register this phone for sign-in approvals")
+    default: return nil
+    }
+  }
+
+  private static func prompt(_ key: String, _ fallback: String) -> String {
+    Bundle.main.localizedString(forKey: key, value: fallback, table: "InfoPlist")
   }
 
   private static func failure(_ code: String) -> FlutterError {
     FlutterError(code: code, message: "Mobile approval key unavailable", details: nil)
   }
 
-  private func ensurePublicKey(tag: Data) throws -> FlutterStandardTypedData {
+  private func prepareEnrollment(tag: Data, challenge: Data, result: @escaping FlutterResult) {
+    let attest = DCAppAttestService.shared
+    guard attest.isSupported else {
+      result(Self.failure("unsupported"))
+      return
+    }
+    run({ response in
+      guard let publicKey = response as? Data else { result(response); return }
+      let domain = Data("tuturuuu.mobile-approval.ios-attest.v2\0".utf8)
+      let clientDataHash = Data(SHA256.hash(data: domain + challenge + publicKey))
+      attest.generateKey { keyId, _ in
+        guard let keyId else {
+          DispatchQueue.main.async { result(Self.failure("attestation_failed")) }
+          return
+        }
+        attest.attestKey(keyId, clientDataHash: clientDataHash) { attestation, _ in
+          DispatchQueue.main.async {
+            guard let attestation else {
+              result(Self.failure("attestation_failed"))
+              return
+            }
+            result([
+              "publicKey": publicKey.base64EncodedString(),
+              "securityLevel": "secure_enclave",
+              "attestationKeyId": keyId,
+              "attestation": attestation.base64EncodedString(),
+            ])
+          }
+        }
+      }
+    }) {
+      try self.ensurePublicKey(tag: tag)
+    }
+  }
+
+  private func ensurePublicKey(tag: Data) throws -> Data {
     let context = LAContext()
     context.interactionNotAllowed = true
     defer { context.invalidate() }
@@ -281,7 +360,38 @@ final class MobileApprovalKeyPlugin: NSObject, FlutterPlugin {
           let point = SecKeyCopyExternalRepresentation(publicKey, nil) as Data?,
           point.count == 65, point.first == 0x04
     else { throw KeyError("failed") }
-    return FlutterStandardTypedData(bytes: p256SpkiPrefix + point)
+    return p256SpkiPrefix + point
+  }
+
+  private func deleteKeys(account: UUID?) throws {
+    let context = LAContext()
+    context.interactionNotAllowed = true
+    defer { context.invalidate() }
+    let scope: [String: Any] = [
+      kSecClass as String: kSecClassKey,
+      kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
+      kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
+      kSecUseAuthenticationContext as String: context,
+    ]
+    var query = scope
+    query[kSecMatchLimit as String] = kSecMatchLimitAll
+    query[kSecReturnAttributes as String] = true
+    var found: CFTypeRef?
+    let status = SecItemCopyMatching(query as CFDictionary, &found)
+    if status == errSecItemNotFound { return }
+    guard status == errSecSuccess, let items = found as? [[String: Any]]
+    else { throw KeyError("failed") }
+    let prefix = account.map(Self.accountPrefix) ?? Self.tagPrefix
+    for attributes in items {
+      guard let tag = attributes[kSecAttrApplicationTag as String] as? Data,
+            String(decoding: tag, as: UTF8.self).hasPrefix(prefix)
+      else { continue }
+      var delete = scope
+      delete[kSecAttrApplicationTag as String] = tag
+      let status = SecItemDelete(delete as CFDictionary)
+      guard status == errSecSuccess || status == errSecItemNotFound
+      else { throw KeyError("failed") }
+    }
   }
 
   private func findKey(tag: Data, context: LAContext) throws -> SecKey? {

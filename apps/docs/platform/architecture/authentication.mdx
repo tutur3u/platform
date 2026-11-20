@@ -122,6 +122,53 @@ recording frame by frame. Repeat with light and dark appearance.
    background it, and return. Wait at least 30 seconds before unlocking.
    Verify Fleet does not fetch while locked and refreshes once on unlock.
 
+## Mobile approval keys
+
+Signed phone approval uses an installation-local P-256 key scoped to the
+account and enrollment. The operating system verifies the user for each
+signature and derives the prompt from the signed action and number.
+Explicit sign-out and account removal delete that account's approval keys.
+A device-wide sign-out deletes all approval keys. Switching between saved
+accounts retains their separate keys.
+
+iOS uses a Secure Enclave key with a passcode-set, device-only accessibility
+class and a fresh user-presence check. Adding or replacing a biometric can
+still leave the key usable through the current passcode. Removing the
+passcode invalidates the device-only Keychain item. App Attest binds the
+approval public key and one-time enrollment challenge to a production app
+installation. The Secure Enclave user-presence policy is enforced locally.
+
+Android 11 and later require secure hardware to enforce authentication for
+each ECDSA operation. StrongBox is preferred when the Keystore can create an
+attested key there. The server can require StrongBox or accept an attested
+Trusted Execution Environment. Allowing the device credential means
+Android's biometric-only enrollment invalidation rule does not apply.
+Resetting the secure lock can invalidate the Android key and require
+registration again. Android 11 exposes a hardware boolean to the app. The
+server distinguishes StrongBox from TEE using the verified certificate chain.
+
+Before enabling enrollment, run the following checks with a synthetic
+account and the exact signed build on physical devices.
+
+1. On Android 11 and a newer device, enroll and confirm the hardware level
+   in the verified attestation. Check that the Keystore reports
+   `userAuthenticationValidityDurationSeconds == -1` for the signing key.
+2. On iOS, enroll with a production App Attest identity and confirm approval
+   and denial each request system verification. Repeat on Android, including
+   with the device credential.
+3. Enter `03` and verify that the system prompt includes both digits.
+   Cancel the prompt and verify that the peer login remains pending.
+4. Change biometric enrollment and remove the secure lock separately.
+   Check the behavior for the applicable platform and register again if
+   the operating system invalidates the key.
+5. Sign out one account and confirm that its old key can no longer sign.
+   Switch between two saved accounts and verify each retains its own key.
+   Sign out all accounts and check that their signing keys are removed.
+
+The [mobile signing tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/security/device_mfa/mobile_approval_key_test.dart)
+cover exact signing bytes and platform cancellation. The [account lifecycle tests](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/cubit/auth_workspace_recents_cleanup_test.dart)
+cover account-specific and device-wide key removal requests.
+
 ## Web CSRF and forwarded workspace requests
 
 Web's CSRF rollout is controlled by `TTR_CSRF_MODE`: unset or invalid values
