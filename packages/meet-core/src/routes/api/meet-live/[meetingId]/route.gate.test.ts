@@ -123,12 +123,17 @@ it('rejects a stale notice version and disables room/workspace review', async ()
   expect(f.sign).not.toHaveBeenCalled();
 });
 
-it('denies every public and legacy private mention without forwarding any author or history', async () => {
+it('rejects legacy public and private mention bodies without forwarding any author or history', async () => {
   const { POST: publicChat } =
     await import('../../meet-call/[meetingId]/assistant/route');
   const { POST: privateChat } =
     await import('../../meet-call/[meetingId]/assistant/personal/route');
-  for (const handler of [publicChat, privateChat])
+  // Room chat accepts only a stored room message id; legacy free-form
+  // bodies are invalid before any authority, context or provider work.
+  for (const [handler, status] of [
+    [publicChat, 400],
+    [privateChat, 403],
+  ] as const)
     for (const body of ['@Tuturuuu hello', '@ttr hello', '@mira hello'])
       expect(
         (
@@ -138,7 +143,7 @@ it('denies every public and legacy private mention without forwarding any author
             history: [{ author: 'other', text: 'excluded' }],
           })
         ).status
-      ).toBe(403);
+      ).toBe(status);
   expect(f.fetch).not.toHaveBeenCalled();
   expect(f.sign).not.toHaveBeenCalled();
 });

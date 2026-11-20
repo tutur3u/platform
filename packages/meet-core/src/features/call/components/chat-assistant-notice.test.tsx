@@ -309,3 +309,13 @@ it('renders action cards only for trusted Mira messages and dispatches authorize
     ])
   );
 });
+
+it('maps the room consent fence separately from unavailable room Mira', () => {
+  expect(
+    assistantFailureNotice({ status: 409, code: 'MIRA_ROOM_CONSENT_REQUIRED' })
+  ).toBe('consent_pending');
+  expect(assistantFailureNotice({ status: 403 })).toBe('room_unavailable');
+  expect(assistantFailureNotice({ status: 409 })).toBe('failed');
+  expect(assistantFailureNotice(null)).toBe('failed');
+  expect(call.assistant_consent_pending).toBeTruthy();
+});

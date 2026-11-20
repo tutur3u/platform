@@ -47,6 +47,7 @@ import type { RoomProgrammingMira } from './room-programming-mira';
 import type { RoomRecording } from './room-recording';
 import { summarizeRoomUsage } from './room-usage';
 import { transcriptionClientSnapshot } from './transcription';
+import type { MiraRoomState } from './room-mira-consent';
 import { applyPrivateMira, type MiraPrivateState } from './room-mira-private';
 import { isGuestRemovalBlocked } from './room-removed-guests';
 
@@ -74,6 +75,7 @@ export type RoomServiceState = MeetRoomSnapshot & {
   whiteboard?: RoomWhiteboard;
   breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;
+  miraRoom?: MiraRoomState;
   programmingMira?: RoomProgrammingMira;
   personalChatReceipts?: PersonalChatReceipts;
   chat?: RoomChatMessage[];

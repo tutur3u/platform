@@ -592,3 +592,35 @@ export function assistMeetDocument(
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+/** Room Mira notice state for the caller; counts only, never identities. */
+export type RoomMiraConsent =
+  | { available: false }
+  | {
+      available: true;
+      version: string;
+      choice: 'continue' | 'mute' | null;
+      fence: { ready: boolean; pending: number; admitted: number };
+    };
+
+export function readRoomMiraConsent(meetingId: string) {
+  return getInternalApiClient().json<RoomMiraConsent>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/mira-room`,
+    { cache: 'no-store' }
+  );
+}
+
+export function setRoomMiraChoice(
+  meetingId: string,
+  choice: 'continue' | 'mute',
+  version: string
+) {
+  return getInternalApiClient().json<RoomMiraConsent>(
+    `/api/meet-call/${encodePathSegment(meetingId)}/mira-room`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ choice, version }),
+    }
+  );
+}

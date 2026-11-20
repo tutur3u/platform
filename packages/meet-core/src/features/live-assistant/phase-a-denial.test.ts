@@ -30,7 +30,7 @@ vi.mock('../meeting-ai/server/access', () => ({
 }));
 vi.mock('../meeting-ai/server/sessions', () => ({ readMeetAi: vi.fn() }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
-it('denies all room input and output commands without consulting environment gates', () => {
+it('denies room Live commands and fences room chat without consulting environment gates', () => {
   const token = meetRealtimeTokenPayloadSchema.parse({
     exp: 2000000000,
     limits: {},
@@ -42,9 +42,16 @@ it('denies all room input and output commands without consulting environment gat
     meetingId: '00000000-0000-4000-8000-000000000002',
     wsId: '00000000-0000-4000-8000-000000000003',
   });
+  // Room chat waits for every admitted participant's Continue; an empty or
+  // unconsented room never releases chat context.
+  for (const action of ['ai.reserve', 'ai.review.claim'])
+    expect(
+      roomService(createMeetRoomSnapshot(), token, { action })
+    ).toMatchObject({
+      status: 409,
+      body: { code: 'MIRA_ROOM_CONSENT_REQUIRED' },
+    });
   for (const action of [
-    'ai.reserve',
-    'ai.review.claim',
     'live.reserve',
     'live.audio',
     'live.transcript',

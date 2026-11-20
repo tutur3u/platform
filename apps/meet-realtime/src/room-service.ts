@@ -5,6 +5,10 @@ import {
 import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet/primitives';
 import { applyRoomClassroomTools } from '../../../packages/realtime/src/meet/room-classroom-tools';
+import {
+  applyMiraRoomConsent,
+  fenceMiraRoomRequest,
+} from '../../../packages/realtime/src/meet/room-mira-consent';
 import { MIRA_ROOM_DENIED } from '../../../packages/realtime/src/meet/room-mira-private';
 import {
   type RoomServiceResult,
@@ -24,8 +28,7 @@ export function roomService(
     typeof input === 'object' &&
     'action' in input &&
     [
-      'ai.reserve',
-      'ai.review.claim',
+      // Room chat (@mira) is fenced below; room Live voice stays denied.
       'live.reserve',
       'live.audio',
       'live.transcript',
@@ -34,8 +37,11 @@ export function roomService(
     ].includes(String(input.action))
   )
     return { state, body: { error: MIRA_ROOM_DENIED }, status: 403 };
-  return (
-    applyRoomClassroomTools(state, token, input) ??
+  const classroom = applyRoomClassroomTools(state, token, input);
+  if (classroom) return classroom;
+  const consent = applyMiraRoomConsent(state, token, input);
+  if (consent) return consent;
+  return fenceMiraRoomRequest(state, token, input, () =>
     applyRoomService(state, token, input, features, formsEnv)
   );
 }

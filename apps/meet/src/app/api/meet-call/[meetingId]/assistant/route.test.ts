@@ -1,33 +1,26 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
+const ROOT = '00000000-0000-0000-0000-000000000000';
+const MEETING_WS = '00000000-0000-4000-8000-0000000000a1';
 const mocks = vi.hoisted(() => ({
-  model: vi.fn(async () => ({
-    id: 'google/gemini-3.5-flash-lite',
-    providerModelId: 'gemini-3.5-flash-lite',
-    inputPricePerToken: 0.3 / 1_000_000,
-    outputPricePerToken: 2.5 / 1_000_000,
-    cacheReadPricePerToken: null,
-    tieredPricing: false,
-  })),
-  personal: vi.fn(async () => 'tagger-personal-workspace'),
-  service: vi.fn(async () => ({
-    chat: [{ body: 'Recent context', displayName: 'Guest' }],
-    prompt: '@Tuturuuu original question',
-  })),
-  check: vi.fn(async () => ({
-    allowed: true,
-    remainingCredits: 100,
-    maxOutputTokens: 1024,
-  })),
-  cap: vi.fn(async () => 1024),
-  answer: vi.fn(async () => ({
-    text: 'Answer',
-    costUsd: 0.001,
-    usage: { available: true, inputTokens: 100, outputTokens: 20 },
-  })),
-  settle: vi.fn(async (_input: Record<string, unknown>) => undefined),
-  begin: vi.fn(async () => ({ runId: 'run', reservationId: 'hold' })),
+  authority: vi.fn(),
+  fence: vi.fn(),
+  model: vi.fn(),
+  personal: vi.fn(),
+  service: vi.fn(),
+  check: vi.fn(),
+  cap: vi.fn(),
+  answer: vi.fn(),
+  settle: vi.fn(),
+  begin: vi.fn(),
 }));
+vi.mock(
+  '../../../../../../../../packages/meet-core/src/features/live-assistant/server/room-mira-authority',
+  () => ({
+    requireRoomMiraAuthority: mocks.authority,
+    requireRoomMiraFence: mocks.fence,
+  })
+);
 vi.mock('@tuturuuu/ai/studio/metering', () => ({
   beginAiStudioRun: mocks.begin,
   settleAiStudioRun: mocks.settle,
@@ -52,7 +45,8 @@ vi.mock('@tuturuuu/meet-core/features/call/lib/call-access', () => ({
   MeetCallAccessError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
@@ -85,144 +79,155 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     Response.json(
       await run({
         user: { id: 'tagger' },
-        meeting: {
-          id: 'room',
-          creator_id: 'creator',
-          ws_id: '00000000-0000-4000-8000-0000000000a1',
-        },
+        canReadWorkspace: true,
+        meeting: { id: 'room', creator_id: 'creator', ws_id: MEETING_WS },
       })
     ),
 }));
 
 import { POST } from './route';
 
-// The Worker context crosses the app/core adapter package boundary.
-const allowlist = (value: string | undefined) =>
-  vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
-    env: {
-      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
-      MEET_AI_ENABLED_WORKSPACE_IDS: value,
-      MEET_AI_DISABLED: value ? 'false' : 'true',
-    },
-  });
-afterEach(() => {
-  vi.unstubAllGlobals();
+const post = (body: unknown) =>
+  POST(
+    new Request('https://meet.test/api/meet-call/room/assistant', {
+      method: 'POST',
+      body: typeof body === 'string' ? body : JSON.stringify(body),
+    }),
+    { params: Promise.resolve({ meetingId: 'room' }) }
+  );
+const context = {
+  chat: [{ body: 'Recent context', displayName: 'Guest' }],
+  prompt: '@mira original question',
+  meetingContext: {
+    observedAt: '2026-11-20T00:00:00Z',
+    participantCount: 2,
+    deviceCount: 2,
+    participants: [],
+  },
+};
+const room = (payer: 'tuturuuu' | 'account') => ({
+  payer,
+  billingWorkspaceId: payer === 'tuturuuu' ? ROOT : MEETING_WS,
+  apiKey: 'synthetic-key',
 });
 
-const request = () =>
-  new Request('https://meet.test/api/meet-call/room/assistant', {
-    method: 'POST',
-    body: JSON.stringify({ messageId: 'message' }),
-  });
 beforeEach(() => {
   vi.resetAllMocks();
-  allowlist('00000000-0000-4000-8000-0000000000a1');
+  mocks.authority.mockResolvedValue(room('account'));
+  mocks.fence.mockResolvedValue(undefined);
+  mocks.personal.mockResolvedValue('tagger-personal-workspace');
+  mocks.model.mockResolvedValue({
+    id: 'google/gemini-3.5-flash-lite',
+    providerModelId: 'gemini-3.5-flash-lite',
+  });
+  mocks.check.mockResolvedValue({
+    allowed: true,
+    remainingCredits: 100,
+    maxOutputTokens: 1024,
+  });
+  mocks.cap.mockResolvedValue(1024);
+  mocks.begin.mockResolvedValue({ runId: 'run', reservationId: 'hold' });
+  mocks.settle.mockResolvedValue(undefined);
+  mocks.answer.mockResolvedValue({
+    text: 'Answer',
+    costUsd: 0.001,
+    usage: { available: true, inputTokens: 100, outputTokens: 20 },
+  });
+  mocks.service.mockImplementation(async (_access, command) =>
+    command.action === 'ai.reserve' ? context : { ok: true }
+  );
 });
 
 const noAiWork = () => {
-  for (const mock of Object.values(mocks)) expect(mock).not.toHaveBeenCalled();
+  for (const mock of [
+    mocks.check,
+    mocks.answer,
+    mocks.begin,
+    mocks.settle,
+    mocks.service,
+  ])
+    expect(mock).not.toHaveBeenCalled();
 };
+
 it.each([
-  ['personal billing and recent room context', { messageId: 'message' }],
-  ['quota denied', { messageId: 'message' }],
-  ['settlement unavailable', { messageId: 'message' }],
-  ['duplicate settlement retry', { messageId: 'message' }],
   ['malformed JSON', '{'],
-  [
-    'private preview with no settlement retry',
-    { messageId: 'message', privateResult: true },
-  ],
-  [
-    'private preview after three uncertain settlements',
-    { messageId: 'message', privateResult: true },
-  ],
+  ['legacy free-form body', { body: '@mira hi', audience: 'everyone' }],
   ['invalid timezone', { messageId: 'message', timezone: 'bad/timezone' }],
-  ['blank model answer', { messageId: 'message' }],
-  [
-    'persisted Continue cannot enable room chat',
-    { messageId: 'message', choice: 'continue' },
-  ],
-])(
-  'denies room chat before %s can reach credits, context, provider or publication',
-  async (scenario, body) => {
-    if (scenario === 'quota denied')
-      mocks.check.mockResolvedValueOnce({
-        allowed: false,
-        remainingCredits: 0,
-        maxOutputTokens: 0,
-      });
-    if (scenario === 'settlement unavailable')
-      mocks.settle.mockRejectedValueOnce(
-        new Error('Synthetic settlement unavailable')
-      );
-    if (scenario === 'duplicate settlement retry')
-      mocks.service.mockRejectedValueOnce(new Error('Synthetic response lost'));
-    if (scenario === 'blank model answer')
-      mocks.answer.mockResolvedValueOnce({
-        text: ' ',
-        costUsd: 0,
-        usage: { available: true, inputTokens: 0, outputTokens: 0 },
-      });
-    await expect(
-      POST(
-        new Request('https://meet.test/api/meet-call/room/assistant', {
-          method: 'POST',
-          body: typeof body === 'string' ? body : JSON.stringify(body),
-        }),
-        { params: Promise.resolve({ meetingId: 'room' }) }
-      )
-    ).rejects.toMatchObject({
-      status: 403,
-      message:
-        'Room AI chat is unavailable. Use Private Mira after choosing Continue.',
-    });
-    noAiWork();
-  }
-);
-it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
-  'denies a saved continuation before reading or settling it: %s',
-  async (continuation) => {
-    const { generateMeetAssistant } =
-      await import('@tuturuuu/meet-core/features/call/server/assistant-generation');
-    mocks.service.mockResolvedValueOnce({
-      workspaceId: 'workspace',
-      continuation,
-      approvals: [],
-      timezone: 'UTC',
-    } as never);
-    await expect(
-      generateMeetAssistant(
-        {
-          user: { id: 'tagger' },
-          meeting: {
-            id: 'room',
-            ws_id: '00000000-0000-4000-8000-0000000000a1',
-          },
-        } as never,
-        {
-          messageId: 'message',
-          timezone: 'UTC',
-          resume: { revision: 1, approved: true },
-        }
-      )
-    ).rejects.toMatchObject({
-      status: 403,
-      message: 'Meet AI is temporarily unavailable',
-    });
-    noAiWork();
-  }
-);
-it('denies room chat across every runtime allowlist and kill-switch setting', async () => {
-  for (const value of [
-    undefined,
-    '',
-    '*',
-    '00000000-0000-4000-8000-0000000000a1',
-  ]) {
-    allowlist(value);
-    await expect(
-      POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
-    ).rejects.toMatchObject({ status: 403 });
-  }
+])('rejects %s before any room Mira work', async (_, body) => {
+  await expect(post(body)).rejects.toMatchObject({ status: 400 });
+  expect(mocks.authority).not.toHaveBeenCalled();
   noAiWork();
+});
+
+it('denies room chat before credits or context when room authority fails', async () => {
+  mocks.authority.mockRejectedValue(
+    Object.assign(new Error('Room Mira is unavailable'), { status: 403 })
+  );
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 403,
+  });
+  expect(mocks.fence).not.toHaveBeenCalled();
+  noAiWork();
+});
+
+it('waits for every participant before credits, context or provider', async () => {
+  mocks.fence.mockRejectedValue(
+    Object.assign(new Error('waiting'), {
+      status: 409,
+      code: 'MIRA_ROOM_CONSENT_REQUIRED',
+    })
+  );
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 409,
+    code: 'MIRA_ROOM_CONSENT_REQUIRED',
+  });
+  noAiWork();
+});
+
+it.each([
+  ['staff requester drains the root workspace', 'tuturuuu', ROOT],
+  ['paid requester charges the meeting workspace', 'account', MEETING_WS],
+] as const)('%s', async (_, payer, billed) => {
+  mocks.authority.mockResolvedValue(room(payer));
+  const response = await post({ messageId: 'message', timezone: 'UTC' });
+  expect(await response.json()).toEqual({ ok: true });
+  expect(mocks.check.mock.calls[0]?.[0]).toBe(billed);
+  expect(mocks.begin).toHaveBeenCalledWith(
+    expect.objectContaining({ actorId: 'tagger', workspaceId: billed })
+  );
+  // The provider key is the Worker's own; tools default to the requester's
+  // Personal workspace, never the billing workspace.
+  const options = mocks.answer.mock.calls[0]?.at(-1);
+  expect(options.provider).toEqual({ apiKey: 'synthetic-key' });
+  expect(mocks.answer.mock.calls[0]?.[0]).toEqual(context.chat);
+  expect(mocks.service).toHaveBeenCalledWith(expect.anything(), {
+    action: 'ai.reserve',
+    messageId: 'message',
+  });
+  expect(mocks.service).toHaveBeenLastCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'ai.finish', body: 'Answer' })
+  );
+  expect(mocks.fence.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.check.mock.invocationCallOrder[0]!
+  );
+});
+
+it('never posts a blank answer and records incurred cost', async () => {
+  mocks.answer.mockResolvedValueOnce({
+    text: ' ',
+    costUsd: 0,
+    usage: { available: true, inputTokens: 0, outputTokens: 0 },
+  });
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 503,
+  });
+  expect(mocks.service).toHaveBeenLastCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'ai.finish', costUsd: 0 })
+  );
+  expect(mocks.service).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ body: ' ' })
+  );
 });

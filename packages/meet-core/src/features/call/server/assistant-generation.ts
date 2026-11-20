@@ -1,7 +1,9 @@
-import { assertMeetAiRoom } from '@tuturuuu/meet-core/features/meeting-ai/server/room-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
-import { meetingProviderTransport } from '../../meeting-ai/server/provider-transport';
+import {
+  requireRoomMiraAuthority,
+  requireRoomMiraFence,
+} from '../../live-assistant/server/room-mira-authority';
 import 'server-only';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
@@ -65,15 +67,23 @@ export async function generateMeetAssistant(
     resume?: { revision: number; approved: boolean };
   }
 ) {
-  await assertMeetAiRoom(access);
-  const wsId = await personalWorkspace(access.user.id);
+  // Room Mira: eligible requester, attested meeting workspace, and payer.
+  const room = await requireRoomMiraAuthority(access);
+  // Checked before any credit work; the room rechecks it atomically when it
+  // releases room content for this request.
+  await requireRoomMiraFence(access);
+  const wsId = room.billingWorkspaceId;
   const existing = input.resume
     ? await callRoomService<PrivateAssistantReview>(access, {
         action: 'ai.review.get',
         messageId: input.messageId,
       })
     : undefined;
-  const workspaceId = existing?.workspaceId ?? input.workspaceId ?? wsId;
+  // Tools act in the requester's chosen workspace, never the billing one.
+  const workspaceId =
+    existing?.workspaceId ??
+    input.workspaceId ??
+    (await personalWorkspace(access.user.id));
   const db = await createAdminClient({ noCookie: true });
   const membership = await verifyWorkspaceMembershipType({
     supabase: db,
@@ -194,7 +204,7 @@ export async function generateMeetAssistant(
           {
             messages,
             allowSearch,
-            provider: await meetingProviderTransport(),
+            provider: { apiKey: room.apiKey },
             scenarioInstructions,
             workspaceTools: createMeetWorkspaceTools(
               {

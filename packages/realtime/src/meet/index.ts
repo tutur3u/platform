@@ -257,6 +257,12 @@ export {
   MIRA_PRIVATE_NOTICE_VERSION,
   MIRA_ROOM_DENIED,
 } from './room-mira-private';
+export {
+  MIRA_ROOM_CONSENT_REQUIRED,
+  MIRA_ROOM_NOTICE_VERSION,
+  type MiraRoomFence,
+  miraRoomFence,
+} from './room-mira-consent';
 
 export {
   canCloseMeetSubscriptions,

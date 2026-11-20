@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   service: vi.fn(),
   generate: vi.fn(),
+  authority: vi.fn(),
   access: {
     user: { id: 'requester' },
     meeting: { ws_id: '00000000-0000-4000-8000-0000000000a1' },
@@ -10,6 +11,10 @@ const mocks = vi.hoisted(() => ({
 }));
 const access = mocks.access;
 vi.mock('next/server', () => ({ connection: async () => undefined }));
+vi.mock(
+  '../../../../../../../../../packages/meet-core/src/features/live-assistant/server/room-mira-authority',
+  () => ({ requireRoomMiraAuthority: mocks.authority })
+);
 vi.mock(
   '@tuturuuu/meet-core/features/call/server/assistant-generation',
   () => ({
@@ -62,6 +67,9 @@ beforeEach(() => {
     status: 'ready',
   });
   mocks.generate.mockResolvedValue({ ok: true, reviewId: 'message' });
+  mocks.authority.mockRejectedValue(
+    Object.assign(new Error('Room Mira is unavailable'), { status: 403 })
+  );
 });
 it('returns private display data without the provider continuation', async () => {
   const response = await GET(
@@ -100,7 +108,7 @@ it.each(['approve', 'deny', 'share', 'discard'])(
       )
     ).rejects.toMatchObject({
       status: 403,
-      message: 'Meet AI is temporarily unavailable',
+      message: 'Room Mira is unavailable',
     });
     expect(mocks.generate).not.toHaveBeenCalled();
     expect(mocks.service).not.toHaveBeenCalled();
@@ -112,7 +120,7 @@ it('rejects invalid review ids before accessing the room', async () => {
   ).rejects.toMatchObject({ status: 400 });
   expect(mocks.service).not.toHaveBeenCalled();
 });
-it('denies review writes outside the Meet AI allowlist but keeps reads open', async () => {
+it('denies review writes without room Mira authority but keeps reads open', async () => {
   allowlist(undefined);
   for (const action of ['approve', 'deny', 'share', 'discard']) {
     await expect(
@@ -130,5 +138,33 @@ it('denies review writes outside the Meet AI allowlist but keeps reads open', as
   await GET(new Request('https://meet.test/review'), params);
   expect(mocks.service).toHaveBeenCalledWith(access, {
     action: 'ai.review.list',
+  });
+});
+
+it('resumes approvals through generation and forwards share or discard with authority', async () => {
+  mocks.authority.mockResolvedValue({
+    payer: 'account',
+    billingWorkspaceId: '00000000-0000-4000-8000-0000000000a1',
+    apiKey: 'synthetic-key',
+  });
+  const post = (action: string) =>
+    POST(
+      new Request('https://meet.test/review', {
+        method: 'POST',
+        body: JSON.stringify({ messageId: 'message', revision: 1, action }),
+      }),
+      params
+    );
+  await post('approve');
+  expect(mocks.generate).toHaveBeenCalledWith(access, {
+    messageId: 'message',
+    timezone: 'UTC',
+    resume: { revision: 1, approved: true },
+  });
+  await post('share');
+  expect(mocks.service).toHaveBeenLastCalledWith(access, {
+    action: 'ai.review.share',
+    messageId: 'message',
+    revision: 1,
   });
 });

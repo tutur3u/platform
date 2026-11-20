@@ -162,3 +162,17 @@ it('handles OPTIONS and 405 for /api/meet-call/[meetingId]/guest lazily', async 
   );
   expect(notAllowed?.status).toBe(405);
 });
+
+it('dispatches /api/meet-call/[meetingId]/mira-room for GET and POST only', async () => {
+  const id = '7f2a528e-3bff-40ee-bfda-5b944ad03ed8';
+  const url = `https://meet.test/api/meet-call/${id}/mira-room`;
+  const options = await dispatchMeetEndpoint(
+    new NextRequest(url, { method: 'OPTIONS' })
+  );
+  expect(options?.status).toBe(204);
+  expect(options?.headers.get('Allow')).toBe('GET, POST, HEAD, OPTIONS');
+  expect(
+    (await dispatchMeetEndpoint(new NextRequest(url, { method: 'DELETE' })))
+      ?.status
+  ).toBe(405);
+});

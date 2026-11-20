@@ -35,6 +35,8 @@ const api11 = () => import('../app/api/meet-call/[meetingId]/document/route');
 const api12 = () => import('../app/api/meet-call/[meetingId]/files/route');
 const apiGuest = () => import('../app/api/meet-call/[meetingId]/guest/route');
 const apiPolls = () => import('../app/api/meet-call/[meetingId]/polls/route');
+const apiMiraRoom = () =>
+  import('../app/api/meet-call/[meetingId]/mira-room/route');
 const apiQuizArena = () =>
   import('../app/api/meet-call/[meetingId]/quiz-arena/route');
 const api13 = () =>
@@ -251,6 +253,23 @@ export const meetEndpoints: Endpoint[] = [
         }),
       POST: async (request, params) =>
         (await apiClassroomTools()).POST(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+    },
+  },
+  {
+    pattern: '/api/meet-call/[meetingId]/mira-room',
+    methods: {
+      GET: async (request, params) =>
+        (await apiMiraRoom()).GET(request, {
+          params: Promise.resolve({
+            meetingId: routeParam(params, 'meetingId'),
+          }),
+        }),
+      POST: async (request, params) =>
+        (await apiMiraRoom()).POST(request, {
           params: Promise.resolve({
             meetingId: routeParam(params, 'meetingId'),
           }),

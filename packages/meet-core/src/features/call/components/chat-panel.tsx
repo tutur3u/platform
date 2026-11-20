@@ -45,6 +45,7 @@ import {
 } from './mira-permissions-card';
 import { MiraLiveDot, MiraModeTag } from './mira-presence';
 import { MiraAvatar, MiraProfile } from './mira-profile';
+import { RoomMiraNotice, roomMiraConsentKey } from './room-mira-notice';
 import {
   type MiraToolAction,
   type MiraToolCall,
@@ -70,13 +71,13 @@ type RoomMira = {
   permissions?: MiraPermissionsProps;
 };
 
-type AssistantFailureNotice = 'room_unavailable' | 'failed';
-/** Room Mira is denied server-side with 403; anything else is a failed answer. */
+type AssistantFailureNotice = 'room_unavailable' | 'consent_pending' | 'failed';
+/** 403: room Mira unavailable; consent code: waiting for everyone's Continue. */
 export function assistantFailureNotice(error: unknown): AssistantFailureNotice {
-  return error &&
-    typeof error === 'object' &&
-    'status' in error &&
-    error.status === 403
+  if (!error || typeof error !== 'object') return 'failed';
+  if ('code' in error && error.code === 'MIRA_ROOM_CONSENT_REQUIRED')
+    return 'consent_pending';
+  return 'status' in error && error.status === 403
     ? 'room_unavailable'
     : 'failed';
 }
@@ -284,6 +285,9 @@ export function ChatPanel({
         } catch (error) {
           if (mounted.current)
             setAssistantNotice(assistantFailureNotice(error));
+          void queryClient.invalidateQueries({
+            queryKey: roomMiraConsentKey(meetingId),
+          });
         } finally {
           await queryClient.invalidateQueries({
             queryKey: ['meet-assistant-reviews', meetingId, selfUserId],
@@ -438,7 +442,9 @@ export function ChatPanel({
               {t(
                 assistantNotice === 'room_unavailable'
                   ? 'assistant_private_only'
-                  : 'assistant_failed'
+                  : assistantNotice === 'consent_pending'
+                    ? 'assistant_consent_pending'
+                    : 'assistant_failed'
               )}
             </p>
             {assistantNotice === 'room_unavailable' && onOpenPrivateMira && (
@@ -463,6 +469,9 @@ export function ChatPanel({
           </div>
         )}
         <div ref={bottom} />
+        <div className="mt-3">
+          <RoomMiraNotice meetingId={meetingId} />
+        </div>
         <div className="mt-3">
           <MiraPermissionsCard {...mira?.permissions} />
         </div>
