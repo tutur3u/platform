@@ -108,6 +108,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.live.LiveScreenCapturePlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.meet.MeetScreenSharePlugin())
         flutterEngine.plugins.add(com.tuturuuu.app.mobile.iris.IrisDeviceKeyPlugin())
+        flutterEngine.plugins.add(com.tuturuuu.app.mobile.security.MobileApprovalKeyPlugin())
 
         // Safety-net registration for video_player. Auto-registration should
         // already handle this, but explicit registration avoids runtime

@@ -265,6 +265,9 @@ import UserNotifications
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "IrisDeviceKeyPlugin") {
       IrisDeviceKeyPlugin.register(with: registrar)
     }
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MobileApprovalKeyPlugin") {
+      MobileApprovalKeyPlugin.register(with: registrar)
+    }
   }
 }
 
