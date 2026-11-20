@@ -76,7 +76,8 @@ it.each(PRIVATE_DRIVE_RESOURCE_PATHS)(
 it('filters private namespaces out of the root response', async () => {
   mocks.listWorkspaceStorageDirectory.mockResolvedValue({
     data: [{ name: 'chats' }, { name: 'documents' }],
-    total: 2,
+    total: 1,
+    hasMore: true,
   });
   const response = await GET(
     new NextRequest(
@@ -86,5 +87,6 @@ it('filters private namespaces out of the root response', async () => {
   );
   expect(await response.json()).toMatchObject({
     data: [{ name: 'documents' }],
+    pagination: { total: 1, hasMore: true },
   });
 });

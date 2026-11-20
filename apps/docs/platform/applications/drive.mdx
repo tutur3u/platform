@@ -47,6 +47,32 @@ message remains visible, and a subsequent definitive denial still clears entries
 
 Regression coverage: `apps/mobile/test/features/drive/drive_page_test.dart`.
 
+## Move entries between folders
+
+On mobile, choose **Move to folder** from an entry menu or start selection with
+a long press and move several entries together. The folder picker runs within
+the selected workspace. It omits selected folders so their descendants cannot
+be destinations. Moves require `manage_drive`.
+
+The protected move API accepts up to 20 entries, 64 stored objects (including
+empty-folder markers), and 2 GiB per request. Preflight verifies object sizes and
+checks for destination conflicts before any write. The move also checks each
+destination folder before starting it and each destination key before moving
+the corresponding object. Supabase rejects concurrent writes to the same key.
+Unrelated files added after a folder move starts can remain alongside the moved
+files.
+
+If a move fails after execution begins, the response identifies completed,
+stopped, and skipped entries. The mobile result shows the number of visible
+files confirmed moved and the reason the move stopped. If the outcome is unknown,
+inspect both folders before trying again.
+
+The move endpoint supports Supabase workspaces. R2 workspaces receive an error
+before mutation because an R2 copy followed by a delete cannot condition that
+delete on the source version. The API rejects cross-workspace moves and
+destinations in private application storage. Route and widget tests cover the
+authorization boundaries, collisions, partial results, and picker behavior.
+
 ## API Ownership
 
 Protected storage APIs remain centralized in `apps/web`:

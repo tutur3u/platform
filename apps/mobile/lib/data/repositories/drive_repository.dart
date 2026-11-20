@@ -16,6 +16,8 @@ class DriveRepository {
     : _api = apiClient ?? ApiClient(),
       _http = httpClient ?? http.Client();
 
+  static const maxMoveEntries = 20;
+
   final ApiClient _api;
   final http.Client _http;
 
@@ -173,6 +175,45 @@ class DriveRepository {
     await CacheStore.instance.invalidateTags({
       'module:drive',
     }, workspaceId: wsId);
+  }
+
+  Future<List<DriveMoveResult>> moveEntries(
+    String wsId, {
+    required String source,
+    required String destination,
+    required List<DriveEntry> entries,
+    required String actorId,
+    required bool Function() isCurrent,
+  }) async {
+    try {
+      final response = await _api.postJsonAcknowledged(
+        DriveEndpoints.move(wsId),
+        {
+          'source': {'workspaceId': wsId, 'path': source},
+          'destination': {'workspaceId': wsId, 'path': destination},
+          'entries': [
+            for (final entry in entries)
+              {'name': entry.name, 'isFolder': entry.isFolder},
+          ],
+        },
+        actorId: actorId,
+        isCurrent: isCurrent,
+      );
+      final data = response['data'];
+      if (data is! List<dynamic> || data.length != entries.length) {
+        throw const FormatException('Invalid Drive move receipt');
+      }
+      return [
+        for (final item in data)
+          DriveMoveResult.fromJson(item as Map<String, dynamic>),
+      ];
+    } finally {
+      if (isCurrent()) {
+        await CacheStore.instance.invalidateTags({
+          'module:drive',
+        }, workspaceId: wsId);
+      }
+    }
   }
 
   Future<void> deleteFile(String wsId, {required String path}) async {

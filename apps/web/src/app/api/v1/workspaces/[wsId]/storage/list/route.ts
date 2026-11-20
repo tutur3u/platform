@@ -114,6 +114,7 @@ async function listWorkspaceStorage(
         limit,
         offset,
         total: result.total,
+        hasMore: result.hasMore,
       },
     });
   } catch (error) {

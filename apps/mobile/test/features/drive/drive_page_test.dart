@@ -27,6 +27,8 @@ import 'package:supabase_flutter/supabase_flutter.dart' show User;
 
 import '../../helpers/design_render_harness.dart';
 
+part 'drive_page_move_cases.dart';
+
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
@@ -65,6 +67,37 @@ class _Drive extends Fake implements DriveRepository {
         Future.value(result(['Synthetic folder'], offset: offset)));
   }
 
+  List<DriveMoveResult>? moveResults;
+  final moves = <({String source, String destination, List<String> entries})>[];
+
+  @override
+  Future<List<DriveMoveResult>> moveEntries(
+    String wsId, {
+    required String source,
+    required String destination,
+    required List<DriveEntry> entries,
+    required String actorId,
+    required bool Function() isCurrent,
+  }) async {
+    if (!isCurrent()) throw StateError('Move started outside its scope');
+    moves.add((
+      source: source,
+      destination: destination,
+      entries: entries.map((entry) => entry.name).toList(),
+    ));
+    return moveResults ??
+        [
+          for (final entry in entries)
+            DriveMoveResult(
+              name: entry.name,
+              status: DriveMoveStatus.moved,
+              totalFiles: 1,
+              movedFiles: 1,
+              movedMarkers: 0,
+            ),
+        ];
+  }
+
   @override
   Future<String> createSignedUrl(
     String wsId, {
@@ -79,7 +112,7 @@ DriveListResult result(List<String> names, {int offset = 0, int? total}) =>
           .map((name) => DriveEntry(name: name, isFolder: true))
           .toList(),
       total: total ?? names.length,
-      limit: 50,
+      limit: 100,
       offset: offset,
     );
 const initial = WorkspaceState(
@@ -239,6 +272,13 @@ void main() {
     expect(repository.paths.last, '');
     expect(actions.state.backForLocation(Routes.drive), isNull);
   });
+
+  _registerDriveMoveTests(
+    mount: mount,
+    repository: () => repository,
+    actions: () => actions,
+    onAuth: (state) => actors.add(state),
+  );
 
   testWidgets('phones keep View in the single dock slot ahead of Search', (
     tester,

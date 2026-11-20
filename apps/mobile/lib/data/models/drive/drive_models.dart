@@ -162,7 +162,8 @@ class DriveListResult extends Equatable {
     required this.total,
     required this.limit,
     required this.offset,
-  });
+    bool? hasMore,
+  }) : hasMore = hasMore ?? (limit > 0 && offset + limit < total);
 
   factory DriveListResult.fromJson(Map<String, dynamic> json) {
     final pagination = _asMap(json['pagination']);
@@ -174,6 +175,7 @@ class DriveListResult extends Equatable {
       total: _asInt(pagination['total']),
       limit: _asInt(pagination['limit']),
       offset: _asInt(pagination['offset']),
+      hasMore: pagination['hasMore'] as bool?,
     );
   }
 
@@ -181,9 +183,10 @@ class DriveListResult extends Equatable {
   final int total;
   final int limit;
   final int offset;
+  final bool hasMore;
 
   @override
-  List<Object?> get props => [entries, total, limit, offset];
+  List<Object?> get props => [entries, total, limit, offset, hasMore];
 }
 
 class DriveExportFile extends Equatable {
@@ -289,4 +292,49 @@ class DriveUploadResult extends Equatable {
     autoExtractStatus,
     autoExtractMessage,
   ];
+}
+
+enum DriveMoveStatus { moved, conflict, missing, uncertain, skipped }
+
+class DriveMoveResult {
+  const DriveMoveResult({
+    required this.name,
+    required this.status,
+    required this.totalFiles,
+    required this.movedFiles,
+    required this.movedMarkers,
+  });
+
+  factory DriveMoveResult.fromJson(Map<String, dynamic> json) {
+    final name = json['name'];
+    final status = DriveMoveStatus.values
+        .where((status) => status.name == json['status'])
+        .firstOrNull;
+    final totalFiles = json['totalFiles'];
+    final movedFiles = json['movedFiles'];
+    final movedMarkers = json['movedMarkers'];
+    if (name is! String ||
+        status == null ||
+        totalFiles is! int ||
+        movedFiles is! int ||
+        movedMarkers is! int ||
+        movedFiles < 0 ||
+        totalFiles < movedFiles ||
+        movedMarkers < 0) {
+      throw const FormatException('Invalid Drive move result');
+    }
+    return DriveMoveResult(
+      name: name,
+      status: status,
+      totalFiles: totalFiles,
+      movedFiles: movedFiles,
+      movedMarkers: movedMarkers,
+    );
+  }
+
+  final String name;
+  final DriveMoveStatus status;
+  final int totalFiles;
+  final int movedFiles;
+  final int movedMarkers;
 }

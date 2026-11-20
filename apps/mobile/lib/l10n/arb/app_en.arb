@@ -244,6 +244,36 @@
       }
     }
   },
+  "@driveMoveLimit": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@driveMovePartial": {
+    "placeholders": {
+      "moved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "@driveMoveSummary": {
+    "placeholders": {
+      "moved": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "@educationDeleteCourseConfirm": {
     "placeholders": {
       "name": {
@@ -2545,6 +2575,19 @@
   "driveLimitLabel": "Limit",
   "driveLinkCopied": "Link copied.",
   "driveListView": "List view",
+  "driveMoveConflict": "An entry with this name already exists.",
+  "driveMoveHere": "Move here",
+  "driveMoveLimit": "Select up to {limit} entries to move.",
+  "driveMoveMissing": "The source entry or destination folder could not be found.",
+  "driveMoveNoFolders": "No subfolders",
+  "driveMovePartial": "{moved} of {total} files moved. {reason}",
+  "driveMoveProvider": "Moving entries is unavailable for this workspace’s storage provider.",
+  "driveMoveSizeUnknown": "Could not verify the size of an entry.",
+  "driveMoveSkipped": "Skipped after the move stopped.",
+  "driveMoveSummary": "Moved {moved} of {total} entries",
+  "driveMoveTitle": "Move to folder",
+  "driveMoveTooLarge": "Move fewer entries or choose a smaller folder.",
+  "driveMoveUncertain": "The move result is unknown. Check both folders before trying again.",
   "drivePathCopied": "Path copied.",
   "drivePermissionDenied": "You do not have permission to manage Drive.",
   "driveRenameHint": "New name",

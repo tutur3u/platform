@@ -3368,6 +3368,51 @@ class AppLocalizationsVi extends AppLocalizations {
   String get driveListView => 'Dạng danh sách';
 
   @override
+  String get driveMoveConflict => 'Đã có mục trùng tên.';
+
+  @override
+  String get driveMoveHere => 'Di chuyển vào đây';
+
+  @override
+  String driveMoveLimit(int limit) {
+    return 'Chọn tối đa $limit mục để di chuyển.';
+  }
+
+  @override
+  String get driveMoveMissing => 'Không tìm thấy mục nguồn hoặc thư mục đích.';
+
+  @override
+  String get driveMoveNoFolders => 'Không có thư mục con';
+
+  @override
+  String driveMovePartial(int moved, int total, String reason) {
+    return 'Đã di chuyển $moved/$total tệp. $reason';
+  }
+
+  @override
+  String get driveMoveProvider => 'Nhà cung cấp lưu trữ của không gian làm việc này chưa hỗ trợ di chuyển mục.';
+
+  @override
+  String get driveMoveSizeUnknown => 'Không thể xác minh kích thước của một mục.';
+
+  @override
+  String get driveMoveSkipped => 'Đã bỏ qua do thao tác di chuyển dừng lại.';
+
+  @override
+  String driveMoveSummary(int moved, int total) {
+    return 'Đã di chuyển $moved/$total mục';
+  }
+
+  @override
+  String get driveMoveTitle => 'Di chuyển vào thư mục';
+
+  @override
+  String get driveMoveTooLarge => 'Hãy di chuyển ít mục hơn hoặc chọn thư mục nhỏ hơn.';
+
+  @override
+  String get driveMoveUncertain => 'Chưa xác định được kết quả. Kiểm tra cả hai thư mục trước khi thử lại.';
+
+  @override
   String get drivePathCopied => 'Đã sao chép đường dẫn.';
 
   @override

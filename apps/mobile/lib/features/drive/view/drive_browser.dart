@@ -149,6 +149,15 @@ extension _DriveBrowser on _DrivePageState {
                   ),
                 if (selecting && _canManageDrive)
                   ShellActionSpec(
+                    id: 'drive-move-selected',
+                    icon: LucideIcons.folderInput,
+                    tooltip: context.l10n.driveMoveTitle,
+                    enabled: !_isMoving,
+                    callbackToken: _selectedNames.length,
+                    onPressed: () => _moveEntries(_selectedEntries),
+                  ),
+                if (selecting && _canManageDrive)
+                  ShellActionSpec(
                     id: 'drive-delete-selected',
                     icon: Icons.delete_outline_rounded,
                     tooltip: context.l10n.driveDeleteSelected(
@@ -259,6 +268,12 @@ extension _DriveBrowser on _DrivePageState {
       context: context,
       title: entry.name,
       actions: [
+        if (_canManageDrive && !_isMoving)
+          AppSheetAction(
+            icon: LucideIcons.folderInput,
+            label: l10n.driveMoveTitle,
+            value: 'move',
+          ),
         if (_canManageDrive)
           AppSheetAction(
             icon: LucideIcons.pencil,
@@ -299,6 +314,8 @@ extension _DriveBrowser on _DrivePageState {
     );
     if (!_isCurrentRequest(token, wsId, actorId)) return;
     switch (action) {
+      case 'move':
+        await _moveEntries([entry]);
       case 'rename':
         await _renameEntry(entry);
       case 'copy':

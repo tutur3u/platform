@@ -3382,6 +3382,51 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driveListView => 'List view';
 
   @override
+  String get driveMoveConflict => 'An entry with this name already exists.';
+
+  @override
+  String get driveMoveHere => 'Move here';
+
+  @override
+  String driveMoveLimit(int limit) {
+    return 'Select up to $limit entries to move.';
+  }
+
+  @override
+  String get driveMoveMissing => 'The source entry or destination folder could not be found.';
+
+  @override
+  String get driveMoveNoFolders => 'No subfolders';
+
+  @override
+  String driveMovePartial(int moved, int total, String reason) {
+    return '$moved of $total files moved. $reason';
+  }
+
+  @override
+  String get driveMoveProvider => 'Moving entries is unavailable for this workspace’s storage provider.';
+
+  @override
+  String get driveMoveSizeUnknown => 'Could not verify the size of an entry.';
+
+  @override
+  String get driveMoveSkipped => 'Skipped after the move stopped.';
+
+  @override
+  String driveMoveSummary(int moved, int total) {
+    return 'Moved $moved of $total entries';
+  }
+
+  @override
+  String get driveMoveTitle => 'Move to folder';
+
+  @override
+  String get driveMoveTooLarge => 'Move fewer entries or choose a smaller folder.';
+
+  @override
+  String get driveMoveUncertain => 'The move result is unknown. Check both folders before trying again.';
+
+  @override
   String get drivePathCopied => 'Path copied.';
 
   @override

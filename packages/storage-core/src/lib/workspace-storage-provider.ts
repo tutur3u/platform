@@ -101,6 +101,7 @@ export interface WorkspaceStorageListOptions {
 export interface WorkspaceStorageListResult {
   data: StorageObject[];
   total: number;
+  hasMore: boolean;
   provider: WorkspaceStorageProvider;
 }
 
@@ -510,6 +511,7 @@ async function listR2Directory(
   return {
     data: sorted.slice(offset, offset + limit),
     total: sorted.length,
+    hasMore: offset + limit < sorted.length,
     provider: WORKSPACE_STORAGE_PROVIDER_R2,
   };
 }
@@ -891,21 +893,16 @@ export async function listWorkspaceStorageDirectory(
       ...options,
       path: relativePath,
     });
-    const data = filterDriveEntries(wsId, relativePath, result.data);
-
-    return {
-      ...result,
-      data,
-      total: relativePath ? result.total : data.length,
-    };
+    return relativePath ? result : { ...result, total: result.data.length };
   }
 
   const supabase = await createDynamicAdminClient();
   const storagePath = buildWorkspaceStorageKey(wsId, relativePath);
+  const limit = options.limit ?? 50;
   const { data, error } = await supabase.storage
     .from('workspaces')
     .list(storagePath, {
-      limit: options.limit ?? 50,
+      limit: limit + 1,
       offset: options.offset ?? 0,
       sortBy: {
         column: options.sortBy ?? 'name',
@@ -921,13 +918,16 @@ export async function listWorkspaceStorageDirectory(
   const filtered = filterDriveEntries(
     wsId,
     relativePath,
-    (data ?? []).filter(
-      (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
-    ) as StorageObject[]
+    (data ?? [])
+      .slice(0, limit)
+      .filter(
+        (entry) => entry.name !== EMPTY_FOLDER_PLACEHOLDER_NAME
+      ) as StorageObject[]
   );
 
   return {
     data: filtered,
+    hasMore: (data?.length ?? 0) > limit,
     total: relativePath
       ? await countSupabaseDirectoryEntries(
           supabase,

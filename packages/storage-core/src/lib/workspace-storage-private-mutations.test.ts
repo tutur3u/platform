@@ -93,3 +93,36 @@ it('excludes private image children from Mira directory data and pagination', as
   const result = await listWorkspaceStorageDirectory('ws-1', { path: 'mira' });
   expect(result).toMatchObject({ data: [{ name: 'notes.txt' }], total: 1 });
 });
+
+it('uses raw root pages to advance past filtered entries', async () => {
+  const entries = [
+    { name: 'chats' },
+    { name: 'documents' },
+    { name: 'reports' },
+  ];
+  const list = vi.fn(
+    async (
+      _path: string,
+      { limit, offset }: { limit: number; offset: number }
+    ) => ({
+      data: entries.slice(offset, offset + limit),
+      error: null,
+    })
+  );
+  mocks.client.mockResolvedValue({ storage: { from: () => ({ list }) } });
+  const first = await listWorkspaceStorageDirectory('ws-1', { limit: 2 });
+  expect(first).toMatchObject({
+    data: [{ name: 'documents' }],
+    total: 1,
+    hasMore: true,
+  });
+  const second = await listWorkspaceStorageDirectory('ws-1', {
+    limit: 2,
+    offset: 2,
+  });
+  expect(second).toMatchObject({
+    data: [{ name: 'reports' }],
+    total: 1,
+    hasMore: false,
+  });
+});

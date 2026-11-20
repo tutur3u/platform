@@ -34,6 +34,7 @@ import 'package:url_launcher/url_launcher.dart';
 part 'drive_browser.dart';
 part 'drive_actions.dart';
 part 'drive_grid.dart';
+part 'drive_move.dart';
 part 'drive_page_preview.dart';
 part 'drive_page_widgets.dart';
 
@@ -64,6 +65,7 @@ class _DrivePageState extends State<DrivePage> {
   bool _showGrid = false;
   bool _searching = false;
   bool _previewOpen = false;
+  bool _isMoving = false;
 
   void _update(VoidCallback update) => setState(update);
   String _sortBy = 'name';
@@ -71,7 +73,7 @@ class _DrivePageState extends State<DrivePage> {
   String _path = '';
   String? _error;
   int _offset = 0;
-  int _total = 0;
+  bool _hasMore = false;
   int _requestToken = 0;
 
   String? get _wsId =>
@@ -81,8 +83,6 @@ class _DrivePageState extends State<DrivePage> {
 
   bool _isCurrentRequest(int token, String wsId, String? actorId) =>
       mounted && token == _requestToken && _wsId == wsId && _actorId == actorId;
-
-  bool get _hasMore => _offset + _pageSize < _total;
 
   @override
   void initState() {
@@ -159,7 +159,7 @@ class _DrivePageState extends State<DrivePage> {
               }.values.toList(growable: false)
             : listResult.entries;
         _offset = listResult.offset;
-        _total = listResult.total;
+        _hasMore = listResult.hasMore;
         _error = _canManageDrive ? null : context.l10n.drivePermissionDenied;
         _selectedNames
           ..clear()
@@ -177,7 +177,7 @@ class _DrivePageState extends State<DrivePage> {
           _entries = const [];
           _selectedNames.clear();
           _canManageDrive = false;
-          _total = 0;
+          _hasMore = false;
         }
         _error = error.message;
       });
@@ -220,7 +220,7 @@ class _DrivePageState extends State<DrivePage> {
       _searching = false;
       _canManageDrive = false;
       _offset = 0;
-      _total = 0;
+      _hasMore = false;
       _error = null;
       _isLoading = false;
       _isLoadingMore = false;
@@ -263,7 +263,7 @@ class _DrivePageState extends State<DrivePage> {
       _path = path;
       _entries = const [];
       _offset = 0;
-      _total = 0;
+      _hasMore = false;
       _selectedNames.clear();
       _searching = false;
       _searchController.clear();

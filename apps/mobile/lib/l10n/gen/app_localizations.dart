@@ -6547,6 +6547,84 @@ abstract class AppLocalizations {
   /// **'List view'**
   String get driveListView;
 
+  /// No description provided for @driveMoveConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'An entry with this name already exists.'**
+  String get driveMoveConflict;
+
+  /// No description provided for @driveMoveHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Move here'**
+  String get driveMoveHere;
+
+  /// No description provided for @driveMoveLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Select up to {limit} entries to move.'**
+  String driveMoveLimit(int limit);
+
+  /// No description provided for @driveMoveMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'The source entry or destination folder could not be found.'**
+  String get driveMoveMissing;
+
+  /// No description provided for @driveMoveNoFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'No subfolders'**
+  String get driveMoveNoFolders;
+
+  /// No description provided for @driveMovePartial.
+  ///
+  /// In en, this message translates to:
+  /// **'{moved} of {total} files moved. {reason}'**
+  String driveMovePartial(int moved, int total, String reason);
+
+  /// No description provided for @driveMoveProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Moving entries is unavailable for this workspace’s storage provider.'**
+  String get driveMoveProvider;
+
+  /// No description provided for @driveMoveSizeUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not verify the size of an entry.'**
+  String get driveMoveSizeUnknown;
+
+  /// No description provided for @driveMoveSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped after the move stopped.'**
+  String get driveMoveSkipped;
+
+  /// No description provided for @driveMoveSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Moved {moved} of {total} entries'**
+  String driveMoveSummary(int moved, int total);
+
+  /// No description provided for @driveMoveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to folder'**
+  String get driveMoveTitle;
+
+  /// No description provided for @driveMoveTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Move fewer entries or choose a smaller folder.'**
+  String get driveMoveTooLarge;
+
+  /// No description provided for @driveMoveUncertain.
+  ///
+  /// In en, this message translates to:
+  /// **'The move result is unknown. Check both folders before trying again.'**
+  String get driveMoveUncertain;
+
   /// No description provided for @drivePathCopied.
   ///
   /// In en, this message translates to:

@@ -425,9 +425,9 @@ abstract final class DriveEndpoints {
 
   static String folders(String wsId) =>
       '/api/v1/workspaces/$wsId/storage/folders';
-
   static String rename(String wsId) =>
       '/api/v1/workspaces/$wsId/storage/rename';
+  static String move(String wsId) => '/api/v1/workspaces/$wsId/storage/move';
 
   static String object(String wsId) =>
       '/api/v1/workspaces/$wsId/storage/object';
