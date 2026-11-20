@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart' hide AlertDialog;
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/core/theme/dynamic_colors.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
 import 'package:mobile/features/time_tracker/widgets/time_tracking_category_chip.dart';
@@ -31,7 +30,7 @@ class SessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final colors = AppTokens.of(context).colorScheme;
     final l10n = context.l10n;
 
     final dur = session.duration;
@@ -55,22 +54,16 @@ class SessionTile extends StatelessWidget {
       child: Dismissible(
         key: Key(session.id),
         background: Container(
-          color: theme.colorScheme.primary,
-          alignment: Alignment.centerLeft,
-          padding: const EdgeInsets.only(left: 20),
-          child: Icon(
-            LucideIcons.pencil,
-            color: theme.colorScheme.primaryForeground,
-          ),
+          color: colors.primary,
+          alignment: AlignmentDirectional.centerStart,
+          padding: const EdgeInsetsDirectional.only(start: AppSpacing.lg),
+          child: Icon(LucideIcons.pencil, color: colors.primaryForeground),
         ),
         secondaryBackground: Container(
-          color: theme.colorScheme.destructive,
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: 20),
-          child: Icon(
-            LucideIcons.trash2,
-            color: theme.colorScheme.primaryForeground,
-          ),
+          color: colors.destructive,
+          alignment: AlignmentDirectional.centerEnd,
+          padding: const EdgeInsetsDirectional.only(end: AppSpacing.lg),
+          child: Icon(LucideIcons.trash2, color: colors.primaryForeground),
         ),
         confirmDismiss: (direction) async {
           if (direction == DismissDirection.startToEnd) {
@@ -86,93 +79,57 @@ class SessionTile extends StatelessWidget {
           }
         },
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Material(
-            color: theme.colorScheme.card,
-            borderRadius: BorderRadius.circular(12),
-            clipBehavior: Clip.antiAlias,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: onTap ?? onEdit,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: theme.colorScheme.border),
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: AppGroupedCard(
+            children: [
+              AppGroupedRow(
+                leading: const AppIconTile(
+                  icon: LucideIcons.clock,
+                  tone: AppTone.primary,
                 ),
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                title: Text(session.title ?? l10n.timerRunningSessionNoTitle),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    if (timeRange.isNotEmpty) Text(timeRange),
+                    const AppGap(AppSpacing.xxs),
+                    Wrap(
+                      spacing: AppSpacing.xs,
+                      runSpacing: AppSpacing.xs,
                       children: [
-                        Expanded(
-                          child: Text(
-                            session.title ?? l10n.timerRunningSessionNoTitle,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.typography.base.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                        TimeTrackingCategoryChip(
+                          label: categoryLabel,
+                          rawColor: colorKey,
                         ),
-                        const shad.Gap(10),
-                        _SessionDurationBadge(label: durationText),
+                        if (session.pendingApproval)
+                          AppBadge(
+                            variant: AppBadgeVariant.warning,
+                            child: Text(l10n.timerRequestPending),
+                          ),
                       ],
                     ),
-                    const shad.Gap(8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: [
-                              TimeTrackingCategoryChip(
-                                label: categoryLabel,
-                                rawColor: colorKey,
-                              ),
-                              if (session.pendingApproval)
-                                shad.OutlineBadge(
-                                  child: Text(
-                                    l10n.timerRequestPending,
-                                    style: theme.typography.small.copyWith(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        if (timeRange.isNotEmpty) ...[
-                          const shad.Gap(8),
-                          Flexible(
-                            child: Align(
-                              alignment: AlignmentDirectional.centerEnd,
-                              child: _SessionTimeRangeChip(label: timeRange),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (descriptionPreview != null) ...[
-                      const shad.Gap(6),
+                    if (descriptionPreview != null)
                       Text(
                         descriptionPreview,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.typography.small.copyWith(
-                          color: theme.colorScheme.mutedForeground,
-                          height: 1.25,
-                        ),
                       ),
-                    ],
                   ],
                 ),
+                trailing: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 104),
+                  child: Text(
+                    durationText,
+                    textAlign: TextAlign.end,
+                    style: const TextStyle(
+                      fontFeatures: [FontFeature.tabularFigures()],
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                onTap: onTap ?? onEdit,
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -180,18 +137,17 @@ class SessionTile extends StatelessWidget {
   }
 
   Future<bool?> _confirmDelete(BuildContext context, AppLocalizations l10n) {
-    return shad.showDialog<bool>(
+    return showAppDialog<bool>(
       context: context,
-      builder: (dialogContext) => shad.AlertDialog(
-        barrierColor: Colors.transparent,
-        title: Text(l10n.timerDeleteSession),
+      builder: (dialogContext) => AppDialog(
+        title: l10n.timerDeleteSession,
         content: Text(l10n.timerDeleteConfirm),
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(l10n.commonCancel),
           ),
-          shad.DestructiveButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(l10n.timerDeleteSession),
           ),
@@ -214,83 +170,5 @@ class SessionTile extends StatelessWidget {
     final collapsed = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
     if (collapsed.isEmpty) return null;
     return collapsed;
-  }
-}
-
-/// Matches web session duration: dynamic-orange/10 surface, orange ring, mono text.
-class _SessionDurationBadge extends StatelessWidget {
-  const _SessionDurationBadge({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final orange = DynamicColors.of(context).orange;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: orange.withAlpha(26),
-        border: Border.all(color: orange.withAlpha(51)),
-      ),
-      child: Text(
-        label,
-        style: theme.typography.small.copyWith(
-          fontFamily: 'monospace',
-          fontWeight: FontWeight.w700,
-          fontFeatures: const [FontFeature.tabularFigures()],
-          color: orange,
-          fontSize: 14,
-          height: 1.2,
-        ),
-      ),
-    );
-  }
-}
-
-/// Clock readout chip: mono digits, dynamic-blue tint (secondary to duration).
-class _SessionTimeRangeChip extends StatelessWidget {
-  const _SessionTimeRangeChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final blue = DynamicColors.of(context).blue;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        color: blue.withAlpha(26),
-        border: Border.all(color: blue.withAlpha(51)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.schedule, size: 13, color: blue.withAlpha(230)),
-          const shad.Gap(5),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 168),
-            child: Text(
-              label,
-              style: theme.typography.small.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w600,
-                fontFeatures: const [FontFeature.tabularFigures()],
-                color: blue,
-                fontSize: 11,
-                height: 1.2,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }

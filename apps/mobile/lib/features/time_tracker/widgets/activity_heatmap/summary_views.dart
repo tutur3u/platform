@@ -16,7 +16,7 @@ class _YearOverview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final now = DateTime.now();
     final year = selectedMonth.year;
     final yearActivity = dailyActivity
@@ -52,7 +52,8 @@ class _YearOverview extends StatelessWidget {
     );
     final activeDaysYear = yearActivity.where((d) => d.duration > 0).length;
 
-    return shad.Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
         child: Column(
@@ -76,7 +77,7 @@ class _YearOverview extends StatelessWidget {
                 ),
               ],
             ),
-            const shad.Gap(10),
+            const AppGap(AppSpacing.sm),
             SizedBox(
               height: 52,
               child: Row(
@@ -138,7 +139,7 @@ class _YearOverview extends StatelessWidget {
                 }),
               ),
             ),
-            const shad.Gap(4),
+            const AppGap(AppSpacing.xs),
             Row(
               children: List.generate(12, (index) {
                 final entry = monthly[index];
@@ -214,26 +215,10 @@ class _MonthlyCalendarView extends StatelessWidget {
   final VoidCallback onNextMonth;
   final VoidCallback? onPickMonth;
 
-  static const _kWebGreenLight = [
-    Color(0xFFF3F4F6),
-    Color(0xFFD1FAE5),
-    Color(0xFF6EE7B7),
-    Color(0xFF34D399),
-    Color(0xFF059669),
-  ];
-
-  static const _kWebGreenDark = [
-    Color(0xFF1F2937),
-    Color(0xFF064E3B),
-    Color(0xFF065F46),
-    Color(0xFF047857),
-    Color(0xFF10B981),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final monthStart = DateTime(selectedMonth.year, selectedMonth.month);
     final monthEnd = DateTime(selectedMonth.year, selectedMonth.month + 1, 0);
     final monthStartWeekdayIndex = monthStart.weekday % 7;
@@ -293,16 +278,17 @@ class _MonthlyCalendarView extends StatelessWidget {
       (index) => localizedWeekdayLabels[(firstDayOfWeekIndex + index) % 7],
     );
 
-    return shad.Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             Row(
               children: [
-                shad.GhostButton(
+                AppButton.ghost(
                   onPressed: onPrevMonth,
-                  density: shad.ButtonDensity.icon,
+                  size: AppButtonSize.small,
                   child: Icon(
                     LucideIcons.chevronLeft,
                     size: 16,
@@ -347,9 +333,9 @@ class _MonthlyCalendarView extends StatelessWidget {
                     ),
                   ),
                 ),
-                shad.GhostButton(
+                AppButton.ghost(
                   onPressed: onNextMonth,
-                  density: shad.ButtonDensity.icon,
+                  size: AppButtonSize.small,
                   child: Icon(
                     LucideIcons.chevronRight,
                     size: 16,
@@ -358,7 +344,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                 ),
               ],
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             Row(
               children: weekdayLabels
                   .map(
@@ -375,7 +361,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                   )
                   .toList(),
             ),
-            const shad.Gap(6),
+            const AppGap(AppSpacing.xs),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -395,7 +381,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                     day.year == selectedMonth.year &&
                     day.month == selectedMonth.month;
                 final backgroundColor = inMonth
-                    ? _colorForDuration(context, dayDuration, maxDuration)
+                    ? _activityCellColor(context, dayDuration, maxDuration)
                     : _outOfMonthColor(context);
                 return Tooltip(
                   message:
@@ -437,7 +423,7 @@ class _MonthlyCalendarView extends StatelessWidget {
                 );
               },
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -468,47 +454,32 @@ class _MonthlyCalendarView extends StatelessWidget {
         date.day == now.day;
   }
 
-  Color _colorForDuration(BuildContext context, int duration, int maxDuration) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final palette = isDark ? _kWebGreenDark : _kWebGreenLight;
-    if (duration <= 0) return palette[0];
-
-    final ratio = (duration / maxDuration).clamp(0.0, 1.0);
-    final level = ratio < 0.25
-        ? 1
-        : ratio < 0.5
-        ? 2
-        : ratio < 0.75
-        ? 3
-        : 4;
-
-    return palette[level];
-  }
-
   Color _outOfMonthColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final palette = isDark ? _kWebGreenDark : _kWebGreenLight;
-    return palette[0].withValues(alpha: isDark ? 0.4 : 0.65);
+    final colors = AppTokens.of(context).colorScheme;
+    return colors.muted.withValues(alpha: 0.45);
   }
 
-  Color _todayBorderColor(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final palette = isDark ? _kWebGreenDark : _kWebGreenLight;
-    return palette[4];
-  }
+  Color _todayBorderColor(BuildContext context) =>
+      AppTokens.of(context).colorScheme.primary;
 
   Color _textColorForDate(
     BuildContext context, {
     required bool inMonth,
     required Color backgroundColor,
   }) {
-    if (!inMonth) {
-      return shad.Theme.of(context).colorScheme.mutedForeground;
+    final colors = AppTokens.of(context).colorScheme;
+    if (!inMonth) return colors.mutedForeground;
+
+    final background = backgroundColor.computeLuminance();
+    double contrast(Color color) {
+      final foreground = color.computeLuminance();
+      return (math.max(foreground, background) + 0.05) /
+          (math.min(foreground, background) + 0.05);
     }
 
-    return backgroundColor.computeLuminance() < 0.45
-        ? Colors.white
-        : const Color(0xFF0F172A);
+    return contrast(colors.foreground) >= contrast(colors.primaryForeground)
+        ? colors.foreground
+        : colors.primaryForeground;
   }
 }
 
@@ -541,7 +512,8 @@ class _CompactCardsView extends StatelessWidget {
     final visibleKeys = keys.take(4).toList();
 
     if (visibleKeys.isEmpty) {
-      return shad.Card(
+      return AppCard(
+        padding: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(l10n.timerHeatmapNoActivityYet),
@@ -560,7 +532,8 @@ class _CompactCardsView extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.only(bottom: 8),
-          child: shad.Card(
+          child: AppCard(
+            padding: EdgeInsets.zero,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
@@ -568,7 +541,7 @@ class _CompactCardsView extends StatelessWidget {
                   Expanded(
                     child: Text(
                       label,
-                      style: shad.Theme.of(
+                      style: AppTokens.of(
                         context,
                       ).typography.small.copyWith(fontWeight: FontWeight.w700),
                     ),

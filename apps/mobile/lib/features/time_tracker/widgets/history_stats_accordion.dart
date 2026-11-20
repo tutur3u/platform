@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/period_stats.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryStatsAccordion extends StatelessWidget {
   const HistoryStatsAccordion({
@@ -22,9 +22,10 @@ class HistoryStatsAccordion extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
-    return shad.Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -42,7 +43,7 @@ class HistoryStatsAccordion extends StatelessWidget {
                       size: 16,
                       color: theme.colorScheme.mutedForeground,
                     ),
-                    const shad.Gap(8),
+                    const AppGap(AppSpacing.sm),
                     Expanded(
                       child: Text(
                         l10n.timerHistoryOverview,
@@ -87,7 +88,7 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     if (isLoading) {
       return const Center(
@@ -122,7 +123,7 @@ class _Body extends StatelessWidget {
                 value: _formatSeconds(totalDuration),
               ),
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             Expanded(
               child: _SummaryStat(
                 label: l10n.timerTotalSessions,
@@ -132,7 +133,7 @@ class _Body extends StatelessWidget {
           ],
         ),
         if (breakdown.isNotEmpty) ...[
-          const shad.Gap(12),
+          const AppGap(AppSpacing.md),
           ...breakdown.map((entry) {
             final percent = totalDuration > 0
                 ? entry.duration / totalDuration
@@ -157,14 +158,14 @@ class _Body extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const shad.Gap(8),
+                      const AppGap(AppSpacing.sm),
                       Text(
                         '${(percent * 100).toStringAsFixed(0)}%',
                         style: theme.typography.small.copyWith(
                           color: theme.colorScheme.mutedForeground,
                         ),
                       ),
-                      const shad.Gap(8),
+                      const AppGap(AppSpacing.sm),
                       Text(
                         _formatSeconds(entry.duration),
                         style: theme.typography.small.copyWith(
@@ -173,7 +174,7 @@ class _Body extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const shad.Gap(6),
+                  const AppGap(AppSpacing.xs),
                   _CategoryShareBar(
                     value: percent.clamp(0, 1),
                     fillColor: fillColor,
@@ -243,7 +244,7 @@ class _SummaryStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -257,7 +258,7 @@ class _SummaryStat extends StatelessWidget {
             value,
             style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
           ),
-          const shad.Gap(2),
+          const AppGap(AppSpacing.xxs),
           Text(
             label,
             style: theme.typography.small.copyWith(

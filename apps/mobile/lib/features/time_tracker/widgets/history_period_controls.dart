@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryPeriodControls extends StatelessWidget {
   const HistoryPeriodControls({
@@ -22,7 +22,7 @@ class HistoryPeriodControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final firstDayOfWeek = firstDayOfWeekForContext(context);
     final period = _periodRange(viewMode, anchorDate, firstDayOfWeek);
@@ -41,7 +41,8 @@ class HistoryPeriodControls extends StatelessWidget {
       children: [
         Row(
           children: [
-            shad.IconButton.ghost(
+            AppIconButton(
+              tooltip: MaterialLocalizations.of(context).previousPageTooltip,
               onPressed: onPrevious,
               icon: const Icon(Icons.chevron_left),
             ),
@@ -83,7 +84,8 @@ class HistoryPeriodControls extends StatelessWidget {
                 ),
               ),
             ),
-            shad.IconButton.ghost(
+            AppIconButton(
+              tooltip: MaterialLocalizations.of(context).nextPageTooltip,
               onPressed: onNext,
               icon: const Icon(Icons.chevron_right),
             ),

@@ -5,7 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -18,7 +18,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerStatsScope { personal, workspace }
 
@@ -105,7 +104,7 @@ class _StatsTabState extends State<StatsTab> {
     final l10n = context.l10n;
     final workspaceState = context.watch<WorkspaceCubit>().state;
     final wsId = workspaceState.currentWorkspace?.id ?? '';
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return BlocConsumer<TimeTrackerCubit, TimeTrackerState>(
       listener: (context, state) {
@@ -173,7 +172,7 @@ class _StatsTabState extends State<StatsTab> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   children: [
                     StatsCards(stats: state.stats),
-                    const shad.Gap(8),
+                    const AppGap(AppSpacing.sm),
                     ActivityHeatmap(
                       dailyActivity: state.stats?.dailyActivity ?? [],
                     ),
@@ -200,14 +199,14 @@ class _StatsTabState extends State<StatsTab> {
                     else if (workspaceState.status == WorkspaceStatus.error)
                       Text(
                         l10n.commonSomethingWentWrong,
-                        style: theme.typography.textSmall.copyWith(
+                        style: theme.typography.small.copyWith(
                           color: theme.colorScheme.mutedForeground,
                         ),
                       )
                     else if (workspaceState.status == WorkspaceStatus.loaded)
                       Text(
                         l10n.workspaceSelectEmpty,
-                        style: theme.typography.textSmall.copyWith(
+                        style: theme.typography.small.copyWith(
                           color: theme.colorScheme.mutedForeground,
                         ),
                       )

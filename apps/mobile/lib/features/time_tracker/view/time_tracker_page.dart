@@ -23,7 +23,6 @@ import 'package:mobile/features/time_tracker/widgets/timer_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerSection { timer, history, stats }
 
@@ -296,7 +295,7 @@ class _TimeTrackerViewState extends State<_TimeTrackerView> {
           },
         ),
       ],
-      child: shad.Scaffold(
+      child: SizedBox.expand(
         child: BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
           buildWhen: (prev, curr) => prev.status != curr.status,
           builder: (context, state) {
@@ -400,7 +399,7 @@ class _ErrorView extends StatelessWidget {
             const AppGap(16),
             Text(error ?? l10n.timerTitle, textAlign: TextAlign.center),
             const AppGap(16),
-            shad.SecondaryButton(
+            AppButton.secondary(
               onPressed: () async {
                 final wsId =
                     context.read<WorkspaceCubit>().state.currentWorkspace?.id ??

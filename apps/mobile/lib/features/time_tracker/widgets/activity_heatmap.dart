@@ -9,15 +9,13 @@ import 'package:mobile/core/layout/app_horizontal_scroll_view.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/overlays/app_action_sheet.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/first_day_of_week.dart';
 import 'package:mobile/features/time_tracker/widgets/history_period_selector_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:shared_preferences/shared_preferences.dart';
 
 part 'activity_heatmap/mode_controls.dart';
@@ -128,7 +126,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final localeTag = Localizations.localeOf(context).toLanguageTag();
 
     final activityByDate = <String, DailyActivity>{};
@@ -168,7 +166,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                   color: theme.colorScheme.primary,
                 ),
               ),
-              const shad.Gap(10),
+              const AppGap(AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +190,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
                   ],
                 ),
               ),
-              const shad.Gap(8),
+              const AppGap(AppSpacing.sm),
               _ViewModeSelector(
                 label: _modeLabel(l10n, _viewMode),
                 onTap: () => _showViewModeSheet(context),
@@ -237,7 +235,7 @@ class _ActivityHeatmapState extends State<ActivityHeatmap> {
               onSelectMonth: (month) => setState(() => _selectedMonth = month),
               localeTag: localeTag,
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             _MonthlyCalendarView(
               activityByDate: activityByDate,
               selectedMonth: _selectedMonth,

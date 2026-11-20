@@ -87,3 +87,10 @@ String _formatDuration(int totalSeconds, AppLocalizations l10n) {
   }
   return '$minutes${l10n.timerMinuteUnitShort}';
 }
+
+Color _activityCellColor(BuildContext context, int duration, int maxDuration) {
+  final colors = AppTokens.of(context).colorScheme;
+  if (duration <= 0) return colors.muted;
+  final ratio = (duration / math.max(1, maxDuration)).clamp(0.0, 1.0);
+  return Color.lerp(colors.muted, colors.primary, 0.24 + 0.76 * ratio)!;
+}

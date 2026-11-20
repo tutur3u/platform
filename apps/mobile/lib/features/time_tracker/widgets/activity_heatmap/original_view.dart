@@ -93,7 +93,7 @@ class _OriginalHeatmapView extends StatelessWidget {
                 ...weekdayLabels.map(_DayLabel.new),
               ],
             ),
-            const shad.Gap(4),
+            const AppGap(AppSpacing.xs),
             ...List.generate(_numWeeks, (wi) {
               final week = weeks[wi];
               return Column(
@@ -111,7 +111,6 @@ class _OriginalHeatmapView extends StatelessWidget {
                         duration: day.duration,
                         maxDuration: maxDuration,
                         size: cellSize,
-                        useGreen: true,
                       ),
                     ),
                   ),

@@ -10,7 +10,8 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/theme/dynamic_colors.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -19,7 +20,6 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'workspace_stats_cards.dart';
 
@@ -98,7 +98,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final hasActiveSearch = _searchCtrl.text.trim().isNotEmpty;
 
     return BlocListener<WorkspaceCubit, WorkspaceState>(
@@ -147,8 +147,8 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                         color: theme.colorScheme.destructive,
                       ),
                     ),
-                    const shad.Gap(12),
-                    shad.SecondaryButton(
+                    const AppGap(AppSpacing.md),
+                    AppButton.secondary(
                       onPressed: () => unawaited(_load(forceRefresh: true)),
                       child: Text(l10n.commonRetry),
                     ),
@@ -172,7 +172,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                       unawaited(_load(forceRefresh: true));
                     },
                   ),
-                  const shad.Gap(12),
+                  const AppGap(AppSpacing.md),
                   _RangeHeroCard(
                     title: _periodLabel(l10n, _period),
                     rangeLabel: _rangeLabel(),
@@ -181,7 +181,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                         ? _searchCtrl.text.trim()
                         : null,
                   ),
-                  const shad.Gap(12),
+                  const AppGap(AppSpacing.md),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -196,13 +196,13 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                         label: l10n.timerActiveUsers,
                         value: '${_uniqueUsers()}',
                         icon: LucideIcons.users,
-                        color: const Color(0xFF22C55E),
+                        color: theme.colorScheme.success,
                       ),
                       _MetricCard(
                         label: l10n.timerHistoryTotalTime,
                         value: _formatDuration(_totalTrackedDuration),
                         icon: LucideIcons.clock3,
-                        color: const Color(0xFFF59E0B),
+                        color: theme.colorScheme.warning,
                       ),
                       _MetricCard(
                         label: l10n.timerRunning,
@@ -213,10 +213,10 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                     ],
                   ),
                   if (_isRefreshing) ...[
-                    const shad.Gap(12),
+                    const AppGap(AppSpacing.md),
                     const NovaLoadingIndicator(size: 20),
                   ],
-                  const shad.Gap(16),
+                  const AppGap(AppSpacing.lg),
                   if (_sessions.isEmpty)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8, 28, 8, 0),
@@ -227,10 +227,12 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                             size: 40,
                             color: theme.colorScheme.mutedForeground,
                           ),
-                          const shad.Gap(12),
+                          const AppGap(AppSpacing.md),
                           Text(
                             l10n.timerHistoryNoSessionsForPeriod,
-                            style: theme.typography.textMuted,
+                            style: theme.typography.small.copyWith(
+                              color: theme.colorScheme.mutedForeground,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -430,7 +432,7 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
   }
 
   List<Widget> _buildGroupedSessionSections(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final grouped = <DateTime, List<TimeTrackingSession>>{};
     for (final session in _sessions) {
       final start = session.startTime?.toLocal() ?? DateTime.now();
@@ -474,7 +476,8 @@ class _WorkspaceStatsTabState extends State<WorkspaceStatsTab> {
                     session: daySessions[index],
                     durationLabel: _formatDuration(daySessions[index].duration),
                   ),
-                  if (index < daySessions.length - 1) const shad.Gap(8),
+                  if (index < daySessions.length - 1)
+                    const AppGap(AppSpacing.sm),
                 ],
               ],
             ),
@@ -498,7 +501,7 @@ class _ManagementPeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final accent = theme.colorScheme.primary;
 
     Widget buildButton(_ManagementPeriod value, String label) {
@@ -547,9 +550,9 @@ class _ManagementPeriodSelector extends StatelessWidget {
       child: Row(
         children: [
           buildButton(_ManagementPeriod.day, l10n.calendarDayView),
-          const shad.Gap(4),
+          const AppGap(AppSpacing.xs),
           buildButton(_ManagementPeriod.week, l10n.calendarWeekView),
-          const shad.Gap(4),
+          const AppGap(AppSpacing.xs),
           buildButton(_ManagementPeriod.month, l10n.calendarMonthView),
         ],
       ),
@@ -572,96 +575,15 @@ class _RangeHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.18),
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            theme.colorScheme.primary.withValues(alpha: 0.12),
-            theme.colorScheme.card,
-          ],
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              LucideIcons.chartColumn,
-              size: 20,
-              color: theme.colorScheme.primary,
-            ),
-          ),
-          const shad.Gap(12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: theme.typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const shad.Gap(4),
-                Text(
-                  rangeLabel,
-                  style: theme.typography.xSmall.copyWith(
-                    color: theme.colorScheme.mutedForeground,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const shad.Gap(8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '$sessionCount',
-              style: theme.typography.xSmall.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          if (searchQuery != null && searchQuery!.isNotEmpty) ...[
-            const shad.Gap(8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                searchQuery!,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.typography.xSmall.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
+    final l10n = context.l10n;
+    return AppSummaryHero(
+      eyebrow: title,
+      headline: rangeLabel,
+      icon: LucideIcons.chartColumn,
+      facts: [
+        AppHeroFact(label: l10n.timerTotalSessions, value: '$sessionCount'),
+      ],
+      supporting: searchQuery,
     );
   }
 }

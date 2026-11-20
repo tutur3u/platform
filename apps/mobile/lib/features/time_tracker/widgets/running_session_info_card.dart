@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Read-only summary card shown while a session is running or paused.
 ///
@@ -29,7 +28,7 @@ class RunningSessionInfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
 
     final effectiveTitle = title?.trim();
@@ -52,13 +51,8 @@ class RunningSessionInfoCard extends StatelessWidget {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: colorScheme.border),
-        color: colorScheme.card,
-      ),
+    return AppCard(
+      borderColor: colorScheme.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -79,7 +73,7 @@ class RunningSessionInfoCard extends StatelessWidget {
           // Description
           if (effectiveDescription != null &&
               effectiveDescription.isNotEmpty) ...[
-            const shad.Gap(6),
+            const AppGap(AppSpacing.xs),
             Text(
               effectiveDescription,
               maxLines: 2,
@@ -91,7 +85,7 @@ class RunningSessionInfoCard extends StatelessWidget {
           ],
           // Category + Task chips
           if (hasChips) ...[
-            const shad.Gap(10),
+            const AppGap(AppSpacing.sm),
             Wrap(
               spacing: 8,
               runSpacing: 6,
@@ -113,7 +107,7 @@ class RunningSessionInfoCard extends StatelessWidget {
               ],
             ),
           ] else ...[
-            const shad.Gap(6),
+            const AppGap(AppSpacing.xs),
             Text(
               l10n.timerRunningSessionNoDetails,
               style: theme.typography.small.copyWith(
@@ -138,8 +132,8 @@ class _InfoChip extends StatelessWidget {
 
   final String label;
   final Color? dotColor;
-  final shad.ThemeData theme;
-  final shad.ColorScheme colorScheme;
+  final AppTokens theme;
+  final AppColorTokens colorScheme;
 
   @override
   Widget build(BuildContext context) {
@@ -162,10 +156,10 @@ class _InfoChip extends StatelessWidget {
                 color: dotColor,
               ),
             ),
-            const shad.Gap(5),
+            const AppGap(AppSpacing.xs),
           ] else ...[
             Icon(LucideIcons.tag, size: 11, color: colorScheme.mutedForeground),
-            const shad.Gap(4),
+            const AppGap(AppSpacing.xs),
           ],
           Flexible(
             child: Text(
@@ -194,8 +188,8 @@ class _TaskChip extends StatelessWidget {
 
   final String taskName;
   final String? ticketLabel;
-  final shad.ThemeData theme;
-  final shad.ColorScheme colorScheme;
+  final AppTokens theme;
+  final AppColorTokens colorScheme;
 
   @override
   Widget build(BuildContext context) {
@@ -210,7 +204,7 @@ class _TaskChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(LucideIcons.squareCheck, size: 11, color: colorScheme.primary),
-          const shad.Gap(5),
+          const AppGap(AppSpacing.xs),
           if (ticketLabel != null && ticketLabel!.isNotEmpty) ...[
             Text(
               ticketLabel!,
@@ -219,7 +213,7 @@ class _TaskChip extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const shad.Gap(4),
+            const AppGap(AppSpacing.xs),
           ],
           Flexible(
             child: Text(

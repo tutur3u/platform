@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart'
-    hide AlertDialog, FilledButton, TextButton, TextField;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
@@ -20,7 +20,6 @@ import 'package:mobile/features/time_tracker/widgets/timer_dock_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_refresh_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerTab extends StatefulWidget {
   const TimerTab({super.key});
@@ -69,8 +68,6 @@ class _TimerTabState extends State<TimerTab> {
           child: AppPageListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
-              const shad.Gap(AppSpacing.xxl),
-              // Timer display
               BlocBuilder<TimeTrackerCubit, TimeTrackerState>(
                 buildWhen: (previous, current) =>
                     previous.elapsed != current.elapsed ||
@@ -86,7 +83,7 @@ class _TimerTabState extends State<TimerTab> {
                   ),
                 ),
               ),
-              const shad.Gap(24),
+              const AppGap(AppSpacing.lg),
               TimerDockActions(
                 isRunning: state.isRunning,
                 isPaused: state.isPaused,
@@ -105,8 +102,6 @@ class _TimerTabState extends State<TimerTab> {
                     unawaited(_handlePause(context, cubit, wsId, userId)),
                 onResume: () => unawaited(_handleResume(context, cubit)),
               ),
-              const PomodoroPanel(),
-              const shad.Gap(16),
               // Running session info card (read-only summary while running/paused)
               if (state.isRunning || state.isPaused) ...[
                 RunningSessionInfoCard(
@@ -117,23 +112,20 @@ class _TimerTabState extends State<TimerTab> {
                   taskName: state.runningSessionTaskName,
                   taskTicketLabel: state.runningSessionTaskTicketLabel,
                 ),
-                const shad.Gap(8),
+                const AppGap(AppSpacing.sm),
               ],
               // Session title input
               if (!state.isRunning && !state.isPaused)
-                shad.FormField(
-                  key: const shad.FormKey<String>(#sessionTitle),
-                  label: Text(l10n.timerSessionTitle),
-                  child: shad.TextField(
-                    placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
-                    selectionControls: platformTextSelectionControls(),
-                    contextMenuBuilder: platformTextContextMenuBuilder(),
-                    onChanged: cubit.setTitle,
-                  ),
+                AppTextField(
+                  label: l10n.timerSessionTitle,
+                  placeholder: l10n.inputPlaceholderTimeTitle,
+                  selectionControls: platformTextSelectionControls(),
+                  contextMenuBuilder: platformTextContextMenuBuilder(),
+                  onChanged: cubit.setTitle,
                 ),
               // Advanced section (category, description, task link)
               if (!state.isRunning && !state.isPaused) ...[
-                const shad.Gap(16),
+                const AppGap(AppSpacing.lg),
                 TimerAdvancedSection(
                   categories: state.categories,
                   selectedCategoryId: state.selectedCategoryId,
@@ -173,6 +165,8 @@ class _TimerTabState extends State<TimerTab> {
                   },
                 ),
               ],
+              const AppGap(AppSpacing.md),
+              const PomodoroPanel(),
             ],
           ),
         );
@@ -227,10 +221,10 @@ class _TimerTabState extends State<TimerTab> {
       if (!toastContext.mounted) {
         return;
       }
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, overlay) =>
-            shad.Alert(content: Text(ctx.l10n.timerSessionStopSuccess)),
+      showAppToast(
+        toastContext,
+        message: toastContext.l10n.timerSessionStopSuccess,
+        variant: AppAlertVariant.success,
       );
     } on Exception catch (error) {
       if (!toastContext.mounted) {
@@ -270,10 +264,10 @@ class _TimerTabState extends State<TimerTab> {
       if (!toastContext.mounted) {
         return;
       }
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, overlay) =>
-            shad.Alert(content: Text(ctx.l10n.timerSessionPauseSuccess)),
+      showAppToast(
+        toastContext,
+        message: toastContext.l10n.timerSessionPauseSuccess,
+        variant: AppAlertVariant.success,
       );
     } on Exception catch (error) {
       if (!toastContext.mounted) {
@@ -301,10 +295,10 @@ class _TimerTabState extends State<TimerTab> {
       if (!toastContext.mounted) {
         return;
       }
-      shad.showToast(
-        context: toastContext,
-        builder: (ctx, overlay) =>
-            shad.Alert(content: Text(ctx.l10n.timerSessionResumeSuccess)),
+      showAppToast(
+        toastContext,
+        message: toastContext.l10n.timerSessionResumeSuccess,
+        variant: AppAlertVariant.success,
       );
     } on Exception catch (error) {
       if (!toastContext.mounted) {
@@ -380,12 +374,11 @@ class _TimerTabState extends State<TimerTab> {
   }
 
   void _showActionError(BuildContext context, Object error) {
-    shad.showToast(
-      context: context,
-      builder: (context, overlay) => shad.Alert.destructive(
-        title: Text(context.l10n.commonSomethingWentWrong),
-        content: Text(error.toString()),
-      ),
+    showAppToast(
+      context,
+      title: context.l10n.commonSomethingWentWrong,
+      message: error.toString(),
+      variant: AppAlertVariant.destructive,
     );
   }
 
@@ -393,34 +386,28 @@ class _TimerTabState extends State<TimerTab> {
     BuildContext context,
   ) {
     final l10n = context.l10n;
-    return showDialog<_ExceededSessionAction>(
+    return showAppDialog<_ExceededSessionAction>(
       context: context,
-      builder: (dialogCtx) => Center(
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.85,
-          child: shad.AlertDialog(
-            barrierColor: Colors.transparent,
-            title: Text(l10n.timerSessionExceeded),
-            content: Text(l10n.timerSessionExceededDescription),
-            actions: [
-              shad.OutlineButton(
-                onPressed: () => Navigator.of(dialogCtx).pop(),
-                child: Text(context.l10n.commonCancel),
-              ),
-              shad.DestructiveButton(
-                onPressed: () =>
-                    Navigator.of(dialogCtx).pop(_ExceededSessionAction.discard),
-                child: Text(l10n.timerDiscardSession),
-              ),
-              shad.PrimaryButton(
-                onPressed: () => Navigator.of(
-                  dialogCtx,
-                ).pop(_ExceededSessionAction.submitRequest),
-                child: Text(l10n.timerSubmitAsRequest),
-              ),
-            ],
+      builder: (dialogContext) => AppDialog(
+        title: l10n.timerSessionExceeded,
+        content: Text(l10n.timerSessionExceededDescription),
+        actions: [
+          AppButton.outline(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.commonCancel),
           ),
-        ),
+          AppButton.destructive(
+            onPressed: () =>
+                Navigator.of(dialogContext).pop(_ExceededSessionAction.discard),
+            child: Text(l10n.timerDiscardSession),
+          ),
+          AppButton.primary(
+            onPressed: () => Navigator.of(
+              dialogContext,
+            ).pop(_ExceededSessionAction.submitRequest),
+            child: Text(l10n.timerSubmitAsRequest),
+          ),
+        ],
       ),
     );
   }

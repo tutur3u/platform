@@ -15,14 +15,15 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) => SizedBox(
         width: constraints.maxWidth.isFinite && constraints.maxWidth > 8
             ? ((constraints.maxWidth - 8) / 2).floorToDouble()
             : 160,
-        child: shad.Card(
+        child: AppCard(
+          padding: EdgeInsets.zero,
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Row(
@@ -36,7 +37,7 @@ class _MetricCard extends StatelessWidget {
                   ),
                   child: Icon(icon, size: 18, color: color),
                 ),
-                const shad.Gap(10),
+                const AppGap(AppSpacing.sm),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +50,7 @@ class _MetricCard extends StatelessWidget {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const shad.Gap(2),
+                      const AppGap(AppSpacing.xxs),
                       Text(
                         label,
                         maxLines: 2,
@@ -81,7 +82,7 @@ class _ManagementSessionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final timeFormat = DateFormat.jm();
     final start = session.startTime?.toLocal();
     final end = session.endTime?.toLocal();
@@ -91,7 +92,8 @@ class _ManagementSessionTile extends StatelessWidget {
         ? '${timeFormat.format(start)} - ${context.l10n.timerRunning}'
         : context.l10n.commonSomethingWentWrong;
 
-    return shad.Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Row(
@@ -110,7 +112,7 @@ class _ManagementSessionTile extends StatelessWidget {
                 color: theme.colorScheme.primary,
               ),
             ),
-            const shad.Gap(12),
+            const AppGap(AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,7 +127,7 @@ class _ManagementSessionTile extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const shad.Gap(4),
+                  const AppGap(AppSpacing.xs),
                   Text(
                     subtitle,
                     style: theme.typography.xSmall.copyWith(
@@ -133,7 +135,7 @@ class _ManagementSessionTile extends StatelessWidget {
                     ),
                   ),
                   if (session.categoryName?.trim().isNotEmpty ?? false) ...[
-                    const shad.Gap(8),
+                    const AppGap(AppSpacing.sm),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -157,7 +159,7 @@ class _ManagementSessionTile extends StatelessWidget {
                 ],
               ),
             ),
-            const shad.Gap(12),
+            const AppGap(AppSpacing.md),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -168,7 +170,7 @@ class _ManagementSessionTile extends StatelessWidget {
                   ),
                 ),
                 if (session.isRunning) ...[
-                  const shad.Gap(6),
+                  const AppGap(AppSpacing.xs),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,

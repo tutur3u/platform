@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -24,7 +25,6 @@ import 'package:mobile/features/time_tracker/widgets/session_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HistoryTab extends StatefulWidget {
   const HistoryTab({super.key});
@@ -79,7 +79,7 @@ class _HistoryTabState extends State<HistoryTab> {
       builder: (context, state) {
         final l10n = context.l10n;
         final sessions = state.historySessions;
-        final theme = shad.Theme.of(context);
+        final theme = AppTokens.of(context);
         final cubit = context.read<TimeTrackerCubit>();
         final wsId =
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
@@ -248,10 +248,12 @@ class _HistoryTabState extends State<HistoryTab> {
                                 size: 40,
                                 color: theme.colorScheme.mutedForeground,
                               ),
-                              const shad.Gap(12),
+                              const AppGap(AppSpacing.md),
                               Text(
                                 l10n.timerHistoryNoSessionsForPeriod,
-                                style: theme.typography.textMuted,
+                                style: theme.typography.small.copyWith(
+                                  color: theme.colorScheme.mutedForeground,
+                                ),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -300,7 +302,7 @@ class _HistoryTabState extends State<HistoryTab> {
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.only(top: AppSpacing.sm),
-                          child: shad.OutlineButton(
+                          child: AppButton.outline(
                             onPressed: () {
                               unawaited(
                                 cubit.loadHistoryMore(

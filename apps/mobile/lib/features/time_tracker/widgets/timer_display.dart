@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerDisplay extends StatelessWidget {
   const TimerDisplay({
@@ -19,61 +20,68 @@ class TimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-
-    final color = isPaused
-        ? theme.colorScheme.destructive
+    final l10n = context.l10n;
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
+    final tone = isPaused
+        ? AppTone.warning
         : isRunning
-        ? theme.colorScheme.primary
-        : theme.colorScheme.foreground;
+        ? AppTone.primary
+        : AppTone.neutral;
+    final status = isPaused
+        ? l10n.timerPaused
+        : isRunning
+        ? l10n.timerRunning
+        : l10n.timerStopped;
+    final statusIcon = isPaused
+        ? LucideIcons.pause
+        : isRunning
+        ? LucideIcons.play
+        : LucideIcons.timer;
 
     final hours = elapsed.inHours.toString().padLeft(2, '0');
     final minutes = (elapsed.inMinutes % 60).toString().padLeft(2, '0');
     final seconds = (elapsed.inSeconds % 60).toString().padLeft(2, '0');
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (pomodoroPhase != PomodoroPhase.idle)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: shad.OutlineBadge(
+    return AppCard(
+      fillColor: isPaused || isRunning ? tone.fill(colors) : colors.card,
+      borderColor: colors.border,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: AppBadge.outline(
+              leading: Icon(statusIcon),
+              child: Text(status),
+            ),
+          ),
+          const AppGap(AppSpacing.md),
+          Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
-                _phaseLabel(context),
-                style: theme.typography.small.copyWith(
-                  color: _phaseColor(theme.colorScheme),
-                  fontWeight: FontWeight.w600,
+                '$hours:$minutes:$seconds',
+                style: tokens.typography.h1.copyWith(
+                  color: colors.foreground,
+                  fontSize: 62,
+                  fontWeight: FontWeight.w500,
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '$hours:$minutes:$seconds',
-              style: theme.typography.h1.copyWith(
-                fontWeight: FontWeight.w300,
-                fontSize: 64,
-                color: color,
-                fontFeatures: [const FontFeature.tabularFigures()],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          isPaused
-              ? context.l10n.timerPaused
-              : isRunning
-              ? context.l10n.timerRunning
-              : context.l10n.timerStopped,
-          style: theme.typography.small.copyWith(
-            color: theme.colorScheme.mutedForeground,
-          ),
-        ),
-      ],
+          if (pomodoroPhase != PomodoroPhase.idle) ...[
+            const AppGap(AppSpacing.md),
+            Center(child: AppBadge(child: Text(_phaseLabel(context)))),
+          ],
+        ],
+      ),
     );
   }
 
@@ -83,15 +91,6 @@ class TimerDisplay extends StatelessWidget {
       PomodoroPhase.shortBreak => context.l10n.timerShortBreak,
       PomodoroPhase.longBreak => context.l10n.timerLongBreak,
       PomodoroPhase.idle => '',
-    };
-  }
-
-  Color _phaseColor(shad.ColorScheme colorScheme) {
-    return switch (pomodoroPhase) {
-      PomodoroPhase.focus => colorScheme.primary,
-      PomodoroPhase.shortBreak => colorScheme.secondary,
-      PomodoroPhase.longBreak => colorScheme.secondary,
-      PomodoroPhase.idle => colorScheme.foreground,
     };
   }
 }

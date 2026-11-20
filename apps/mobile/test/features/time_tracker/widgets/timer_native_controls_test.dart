@@ -2,14 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_dock_actions.dart';
 
+import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/helpers.dart';
 
 void main() {
+  setUpAll(DesignRender.loadFonts);
+  for (final brightness in Brightness.values) {
+    testWidgets('running timer renders in ${brightness.name}', (tester) async {
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      await tester.pumpWidget(
+        DesignRenderApp(
+          settings: const AppearanceSettings(),
+          brightness: brightness,
+          child: const Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: TimerDisplay(
+                elapsed: Duration(minutes: 28, seconds: 14),
+                isRunning: true,
+                isPaused: false,
+                pomodoroPhase: PomodoroPhase.focus,
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('00:28:14'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'timer-running-${brightness.name}');
+    });
+  }
+
   testWidgets('session controls hand off in one shell registration', (
     tester,
   ) async {

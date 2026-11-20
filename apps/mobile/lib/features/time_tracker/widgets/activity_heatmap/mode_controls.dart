@@ -8,7 +8,7 @@ class _ViewModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -26,7 +26,7 @@ class _ViewModeSelector extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const shad.Gap(4),
+            const AppGap(AppSpacing.xs),
             Icon(
               LucideIcons.chevronDown,
               size: 12,
@@ -47,7 +47,7 @@ class _LegendRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
 
     return Row(
       children: [
@@ -57,7 +57,7 @@ class _LegendRow extends StatelessWidget {
             color: theme.colorScheme.mutedForeground,
           ),
         ),
-        const shad.Gap(8),
+        const AppGap(AppSpacing.sm),
         ...List.generate(4, (index) {
           final intensity = index + 1;
           return Padding(
@@ -66,11 +66,10 @@ class _LegendRow extends StatelessWidget {
               duration: (maxDuration * intensity) ~/ 4,
               maxDuration: maxDuration,
               size: 10,
-              useGreen: true,
             ),
           );
         }),
-        const shad.Gap(2),
+        const AppGap(AppSpacing.xxs),
         Text(
           l10n.timerHeatmapLegendMore,
           style: theme.typography.small.copyWith(

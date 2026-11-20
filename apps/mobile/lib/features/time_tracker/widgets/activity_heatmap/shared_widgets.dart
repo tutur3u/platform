@@ -8,7 +8,7 @@ class _SummaryStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Column(
       children: [
         Text(
@@ -18,7 +18,7 @@ class _SummaryStat extends StatelessWidget {
             fontSize: 11,
           ),
         ),
-        const shad.Gap(2),
+        const AppGap(AppSpacing.xxs),
         Text(
           value,
           style: theme.typography.small.copyWith(fontWeight: FontWeight.w700),
@@ -41,7 +41,7 @@ class _MonthColumnLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final fontSize = responsiveValue<double>(
       context,
       compact: 12,
@@ -82,7 +82,7 @@ class _DayLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final double labelHeight = responsiveValue(
       context,
       compact: 14,
@@ -109,62 +109,15 @@ class _HeatCell extends StatelessWidget {
     required this.duration,
     required this.maxDuration,
     required this.size,
-    this.useGreen = false,
   });
 
   final int duration;
   final int maxDuration;
   final double size;
-  final bool useGreen;
-
-  static const _kGreenLight = [
-    Color(0xFF9BE9A8),
-    Color(0xFF40C463),
-    Color(0xFF30A14E),
-    Color(0xFF216E39),
-  ];
-
-  static const _kGreenDark = [
-    Color(0xFF0E4429),
-    Color(0xFF006D32),
-    Color(0xFF26A641),
-    Color(0xFF39D353),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (duration <= 0) {
-      return Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(2),
-          color: theme.colorScheme.muted,
-        ),
-      );
-    }
-
-    final intensity = (duration / maxDuration).clamp(0.0, 1.0);
-    final Color cellColor;
-
-    if (useGreen) {
-      final greens = isDark ? _kGreenDark : _kGreenLight;
-      final level = intensity < 0.25
-          ? 0
-          : intensity < 0.5
-          ? 1
-          : intensity < 0.75
-          ? 2
-          : 3;
-      cellColor = greens[level];
-    } else {
-      cellColor = theme.colorScheme.primary.withValues(
-        alpha: 0.2 + intensity * 0.8,
-      );
-    }
+    final cellColor = _activityCellColor(context, duration, maxDuration);
 
     return Container(
       width: size,

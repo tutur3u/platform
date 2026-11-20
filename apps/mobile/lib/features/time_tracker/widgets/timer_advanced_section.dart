@@ -1,10 +1,9 @@
-import 'package:flutter/material.dart' hide TextField;
+import 'package:flutter/material.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/features/time_tracker/widgets/category_selector_button.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Collapsible "Advanced" section shown beneath the session title input
 /// on the timer tab (only when the timer is not running/paused).
@@ -62,7 +61,7 @@ class _TaskLinkField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
 
     return Container(
@@ -105,7 +104,7 @@ class _TaskLinkField extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const shad.Gap(8),
+                          const AppGap(AppSpacing.sm),
                           Icon(
                             LucideIcons.chevronsUpDown,
                             size: 14,
@@ -127,8 +126,8 @@ class _TaskLinkField extends StatelessWidget {
 
   Widget _buildTaskLabel(
     BuildContext context,
-    shad.ThemeData theme,
-    shad.ColorScheme colorScheme,
+    AppTokens theme,
+    AppColorTokens colorScheme,
   ) {
     final label = ticketLabel;
     final name = taskName?.trim().isNotEmpty == true ? taskName!.trim() : null;
@@ -146,7 +145,7 @@ class _TaskLinkField extends StatelessWidget {
               letterSpacing: 0.5,
             ),
           ),
-          const shad.Gap(2),
+          const AppGap(AppSpacing.xxs),
           Text(
             name,
             maxLines: 1,
@@ -192,7 +191,7 @@ class _ClearButton extends StatelessWidget {
   const _ClearButton({required this.onClear, required this.colorScheme});
 
   final VoidCallback onClear;
-  final shad.ColorScheme colorScheme;
+  final AppColorTokens colorScheme;
 
   @override
   Widget build(BuildContext context) {
@@ -254,13 +253,19 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final colorScheme = theme.colorScheme;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        CategorySelectorButton(
+          categories: widget.categories,
+          selectedCategoryId: widget.selectedCategoryId,
+          onTap: widget.onOpenCategoryPicker,
+        ),
+        const AppGap(AppSpacing.sm),
         // Toggle row
         InkWell(
           borderRadius: BorderRadius.circular(8),
@@ -274,7 +279,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                   size: 14,
                   color: colorScheme.mutedForeground,
                 ),
-                const shad.Gap(6),
+                const AppGap(AppSpacing.xs),
                 Text(
                   l10n.timerAdvanced,
                   style: theme.typography.small.copyWith(
@@ -305,7 +310,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const shad.Gap(4),
+                    const AppGap(AppSpacing.xs),
 
                     // Description field
                     Text(
@@ -315,33 +320,17 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const shad.Gap(6),
-                    shad.TextField(
+                    const AppGap(AppSpacing.xs),
+                    AppTextField(
                       selectionControls: platformTextSelectionControls(),
                       contextMenuBuilder: platformTextContextMenuBuilder(),
                       controller: _descController,
-                      hintText: l10n.timerSessionDescription,
+                      placeholder: l10n.timerSessionDescription,
                       maxLines: 4,
                       minLines: 2,
                       onChanged: widget.onDescriptionChanged,
                     ),
-                    const shad.Gap(12),
-
-                    // Category (optional)
-                    Text(
-                      l10n.timerCategory,
-                      style: theme.typography.small.copyWith(
-                        color: colorScheme.mutedForeground,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const shad.Gap(6),
-                    CategorySelectorButton(
-                      categories: widget.categories,
-                      selectedCategoryId: widget.selectedCategoryId,
-                      onTap: widget.onOpenCategoryPicker,
-                    ),
-                    const shad.Gap(12),
+                    const AppGap(AppSpacing.md),
 
                     // Task link field
                     Text(
@@ -351,7 +340,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const shad.Gap(6),
+                    const AppGap(AppSpacing.xs),
                     _TaskLinkField(
                       taskId: widget.initialTaskId,
                       taskName: widget.initialTaskName,
@@ -360,7 +349,7 @@ class _TimerAdvancedSectionState extends State<TimerAdvancedSection>
                       onTap: widget.onOpenTaskPicker,
                       onClear: widget.onClearTask,
                     ),
-                    const shad.Gap(12),
+                    const AppGap(AppSpacing.md),
                   ],
                 )
               : const SizedBox.shrink(),

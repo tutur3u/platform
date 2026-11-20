@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/time_tracking/goal.dart';
 import 'package:mobile/features/time_tracker/utils/category_color.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class GoalCard extends StatelessWidget {
   const GoalCard({
@@ -21,7 +22,7 @@ class GoalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final categoryName = goal.category?.name ?? l10n.timerGoalsGeneral;
     final categoryColor = resolveTimeTrackingCategoryColor(
       context,
@@ -37,81 +38,45 @@ class GoalCard extends StatelessWidget {
         ? null
         : _calculateProgress(categoryWeekSeconds, weeklyGoal);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.background,
-            border: Border.all(color: theme.colorScheme.border),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: categoryColor,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const shad.Gap(8),
-                    Expanded(
-                      child: Text(
-                        categoryName,
-                        style: theme.typography.small.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: goal.isActive
-                            ? theme.colorScheme.primary.withValues(alpha: 0.12)
-                            : theme.colorScheme.muted,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        goal.isActive
-                            ? l10n.timerGoalsActive
-                            : l10n.timerGoalsInactive,
-                        style: theme.typography.textSmall,
-                      ),
-                    ),
-                  ],
-                ),
-                const shad.Gap(8),
-                _GoalProgressRow(
-                  title: l10n.timerGoalsDailyProgress,
-                  progressPercent: dailyProgress,
-                  progressLabel:
-                      '${_formatSeconds(context, categoryTodaySeconds)} / ${_formatMinutes(context, goal.dailyGoalMinutes)}',
-                ),
-                if (weeklyProgress != null) ...[
-                  const shad.Gap(8),
-                  _GoalProgressRow(
-                    title: l10n.timerGoalsWeeklyProgress,
-                    progressPercent: weeklyProgress,
-                    progressLabel:
-                        '${_formatSeconds(context, categoryWeekSeconds)} / ${_formatMinutes(context, weeklyGoal!)}',
+    return AppCard(
+      onTap: onTap,
+      borderColor: theme.colorScheme.border,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(LucideIcons.target, color: categoryColor, size: 18),
+              const AppGap(AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  categoryName,
+                  style: theme.typography.base.copyWith(
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ],
-            ),
+                ),
+              ),
+              if (!goal.isActive)
+                AppBadge.outline(child: Text(l10n.timerGoalsInactive)),
+            ],
           ),
-        ),
+          const AppGap(AppSpacing.md),
+          _GoalProgressRow(
+            title: l10n.timerGoalsDailyProgress,
+            progressPercent: dailyProgress,
+            progressLabel:
+                '${_formatSeconds(context, categoryTodaySeconds)} / ${_formatMinutes(context, goal.dailyGoalMinutes)}',
+          ),
+          if (weeklyProgress != null) ...[
+            const AppGap(AppSpacing.md),
+            _GoalProgressRow(
+              title: l10n.timerGoalsWeeklyProgress,
+              progressPercent: weeklyProgress,
+              progressLabel:
+                  '${_formatSeconds(context, categoryWeekSeconds)} / ${_formatMinutes(context, weeklyGoal!)}',
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -159,24 +124,22 @@ class _GoalProgressRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            Expanded(child: Text(title, style: theme.typography.textSmall)),
+            Expanded(child: Text(title, style: theme.typography.small)),
             Text('${progressPercent.round()}%'),
           ],
         ),
-        const shad.Gap(6),
-        shad.LinearProgressIndicator(
-          value: (progressPercent / 100).clamp(0, 1),
-        ),
-        const shad.Gap(4),
+        const AppGap(AppSpacing.xs),
+        AppMeter(value: (progressPercent / 100).clamp(0, 1)),
+        const AppGap(AppSpacing.xs),
         Text(
           progressLabel,
-          style: theme.typography.textSmall.copyWith(
+          style: theme.typography.small.copyWith(
             color: theme.colorScheme.mutedForeground,
           ),
         ),
