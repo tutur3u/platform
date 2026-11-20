@@ -115,6 +115,7 @@ export async function resolveMeetGuestJoin(
 
 export type MeetGuestCallAccess = {
   guest: true;
+  turnstileVerified?: true;
   user: { id: string };
   meeting: GuestMeeting;
   isHost: false;
@@ -147,6 +148,7 @@ export async function getMeetGuestCallAccess(
   if (state.kind !== 'available') return null;
   const access: MeetGuestCallAccess = {
     guest: true,
+    ...(session.turnstileVerified ? { turnstileVerified: true } : {}),
     user: { id: session.guestId },
     meeting: state.meeting,
     isHost: false,

@@ -47,6 +47,9 @@ export async function callRoomService<T>(
   const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
     guest: anonymousGuest,
+    guestTurnstileVerified: anonymousGuest
+      ? access.turnstileVerified
+      : undefined,
     meetingId: access.meeting.id,
     wsId: access.meeting.ws_id,
     userId: access.user.id,

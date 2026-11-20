@@ -2,16 +2,22 @@ import {
   extractTurnstileRemoteIp,
   verifyTurnstileToken,
 } from '@tuturuuu/cloudflare/turnstile/server';
-import { getMeetRealtimeTokenSecret } from '@tuturuuu/meet-core/features/call/lib/call-session';
+import {
+  getMeetRealtimeTokenSecret,
+  meetDeviceIdentity,
+} from '@tuturuuu/meet-core/features/call/lib/call-session';
 import { resolveMeetGuestJoin } from '@tuturuuu/meet-core/features/call/lib/guest-access';
 import { checkMeetGuestJoinLimit } from '@tuturuuu/meet-core/features/call/lib/guest-rate-limit';
 import {
+  MEET_GUEST_COOKIE,
   MEET_GUEST_TTL_SECONDS,
   meetGuestCookieHeader,
   normalizeMeetGuestName,
   signMeetGuestSession,
+  verifyMeetGuestSession,
 } from '@tuturuuu/meet-core/features/call/lib/guest-session';
 import { meetAiUsageGuard } from '@tuturuuu/meet-core/features/meeting-ai/server/usage-limit';
+import { cookies } from 'next/headers';
 import { z } from 'zod';
 
 const headers = { 'Cache-Control': 'private, no-store' };
@@ -33,9 +39,8 @@ async function guestJoinLimiter() {
 /**
  * Anonymous guest join. Order matters: same-origin check, input validation,
  * the per-network attempt limit (failed checks count), the guest-join gates,
- * then Turnstile. Only then does the server mint a random guest id and set
- * the signed cookie; the guest still waits in the lobby unless the host
- * admits everyone automatically.
+ * then Turnstile for a new guest session. Guests wait in the lobby for
+ * approval even when the room skips the lobby for signed-in participants.
  */
 export async function POST(
   request: Request,
@@ -74,8 +79,19 @@ export async function POST(
       { error: 'Guest join is unavailable', code: 'MEET_GUEST_UNAVAILABLE' },
       { status: 403, headers }
     );
+  const secret = getMeetRealtimeTokenSecret();
+  const existing = await verifyMeetGuestSession(
+    (await cookies()).get(MEET_GUEST_COOKIE)?.value,
+    meetingId,
+    secret
+  );
+  if (existing?.turnstileVerified)
+    return Response.json({ ok: true }, { headers });
+  const turnstileToken = parsed.data.turnstileToken?.trim();
+  const devMode = process.env.NODE_ENV === 'development';
   try {
-    await verifyTurnstileToken(request, parsed.data.turnstileToken, {
+    await verifyTurnstileToken(request, turnstileToken, {
+      devMode,
       expectedHostname: new URL(request.url).hostname,
     });
   } catch {
@@ -85,9 +101,21 @@ export async function POST(
     );
   }
   const exp = Math.floor(Date.now() / 1000) + MEET_GUEST_TTL_SECONDS;
+  const verified = !devMode && !!turnstileToken;
+  const guestId =
+    existing?.guestId ??
+    (verified
+      ? await meetDeviceIdentity(meetingId, `guest-turnstile:${turnstileToken}`)
+      : crypto.randomUUID());
   const cookie = await signMeetGuestSession(
-    { guestId: crypto.randomUUID(), meetingId, displayName, exp },
-    getMeetRealtimeTokenSecret()
+    {
+      guestId,
+      meetingId,
+      displayName,
+      exp,
+      ...(verified ? { turnstileVerified: true } : {}),
+    },
+    secret
   );
   return Response.json(
     { ok: true },

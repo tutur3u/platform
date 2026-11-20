@@ -2,8 +2,12 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   resolve: vi.fn(),
+  cookie: vi.fn(),
   verify: vi.fn(),
   limit: vi.fn(),
+}));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: mocks.cookie }),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/meet-core/features/call/lib/guest-access', () => ({
@@ -37,6 +41,7 @@ const params = { params: Promise.resolve({ meetingId }) };
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.cookie.mockReturnValue(undefined);
   mocks.limit.mockResolvedValue({ ok: true });
   mocks.resolve.mockResolvedValue({ kind: 'available', meeting: {} });
   mocks.verify.mockResolvedValue(undefined);
@@ -90,6 +95,7 @@ it('refuses a failed Turnstile check without a cookie', async () => {
   expect((await response.json()).code).toBe('MEET_GUEST_TURNSTILE_FAILED');
   expect(response.headers.get('Set-Cookie')).toBeNull();
   expect(mocks.verify).toHaveBeenCalledWith(expect.any(Request), 't', {
+    devMode: false,
     expectedHostname: 'meet.test',
   });
 });
@@ -109,7 +115,11 @@ it('sets a signed guest cookie bound to this meeting', async () => {
       meetingId,
       'meet-local-development-token-secret'
     )
-  ).resolves.toMatchObject({ meetingId, displayName: 'Hà My' });
+  ).resolves.toMatchObject({
+    meetingId,
+    displayName: 'Hà My',
+    turnstileVerified: true,
+  });
 });
 
 it('clears the guest cookie on DELETE', async () => {
@@ -120,4 +130,31 @@ it('clears the guest cookie on DELETE', async () => {
     })
   );
   expect(response.headers.get('Set-Cookie')).toContain('Max-Age=0');
+});
+
+it('binds the same verified challenge to one identity and keeps the existing verified cookie', async () => {
+  const join = (turnstileToken: string) =>
+    POST(request({ displayName: 'An', turnstileToken }), params);
+  const first = (await join('verified-token')).headers
+    .get('Set-Cookie')
+    ?.split(';')[0];
+  const second = (await join('verified-token')).headers
+    .get('Set-Cookie')
+    ?.split(';')[0];
+  const value = first?.slice(first.indexOf('=') + 1);
+  expect(value).toBeTruthy();
+  const other = second?.slice(second.indexOf('=') + 1);
+  const secret = 'meet-local-development-token-secret';
+  const session = await verifyMeetGuestSession(value, meetingId, secret);
+  expect(session).toMatchObject({ turnstileVerified: true });
+  await expect(
+    verifyMeetGuestSession(other, meetingId, secret)
+  ).resolves.toMatchObject({
+    guestId: session?.guestId,
+  });
+  mocks.cookie.mockReturnValue({ value });
+  const repeated = await join('new-token');
+  expect(repeated.status).toBe(200);
+  expect(repeated.headers.get('Set-Cookie')).toBeNull();
+  expect(mocks.verify).toHaveBeenCalledTimes(2);
 });

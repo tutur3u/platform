@@ -1,7 +1,7 @@
 /**
  * Signed, meeting-bound identity for anonymous Meet guests.
  *
- * A guest has no Tuturuuu account, so the server mints a random participant id
+ * A guest has no Tuturuuu account, so the server mints a participant id
  * after a Turnstile check and stores it with the chosen display name in an
  * HttpOnly cookie. The HMAC key is derived from the realtime token secret with
  * a purpose label, so a guest cookie can never be replayed as a realtime token.
@@ -14,6 +14,7 @@ export const MEET_GUEST_NAME_MAX = 60;
 
 export type MeetGuestSession = {
   guestId: string;
+  turnstileVerified?: true;
   meetingId: string;
   displayName: string;
   /** Expiry in Unix seconds. */
@@ -89,6 +90,7 @@ export async function signMeetGuestSession(
         m: session.meetingId,
         n: session.displayName,
         e: session.exp,
+        ...(session.turnstileVerified ? { t: true } : {}),
       })
     )
   );
@@ -126,6 +128,7 @@ export async function verifyMeetGuestSession(
       m?: unknown;
       n?: unknown;
       e?: unknown;
+      t?: unknown;
     };
     const displayName = normalizeMeetGuestName(parsed.n);
     if (
@@ -145,6 +148,7 @@ export async function verifyMeetGuestSession(
       meetingId,
       displayName,
       exp: parsed.e,
+      ...(parsed.t === true ? { turnstileVerified: true } : {}),
     };
   } catch {
     return null;

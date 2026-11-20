@@ -90,7 +90,7 @@ it('finds permissions with shared settings search and dispatches all host lock t
     'Lock microphones',
     'Lock cameras',
     'Lock screen sharing',
-    'Admit everyone automatically',
+    'Admit signed-in participants automatically',
   ])
     fireEvent.click(screen.getByRole('switch', { name }));
   expect(updateSettings.mock.calls).toEqual([

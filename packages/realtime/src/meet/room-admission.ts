@@ -84,10 +84,11 @@ export function admitOrHold(
       disconnect: [token.userId],
     });
   if (
-    token.admission === 'lobby' &&
+    (token.guest || token.admission === 'lobby') &&
     !state.presence[token.userId] &&
     !state.approved?.[token.accountId ?? token.userId] &&
     !(
+      !token.guest &&
       state.settings?.skipLobby &&
       !state.settings.admissionClosed &&
       !state.deniedAutoAdmission?.includes(token.accountId ?? token.userId) &&
@@ -299,6 +300,7 @@ function decideParticipant(
         ...(pending.canManageParticipants
           ? { canManageParticipants: true }
           : {}),
+        ...(pending.guest ? { guest: true as const } : {}),
         accountId: pending.accountId,
         avatarUrl: pending.avatarUrl,
         displayName: pending.displayName,

@@ -136,6 +136,7 @@ describe('anonymous guest poll voting', () => {
   const guestId = '33333333-3333-4333-8333-333333333333';
   const token = meetRealtimeTokenPayloadSchema.parse({
     guest: true,
+    guestTurnstileVerified: true,
     admission: 'lobby',
     exp: 2_000_000_000,
     limits: {
@@ -214,6 +215,29 @@ describe('anonymous guest poll voting', () => {
     });
     expect(voted.state.polls?.[0]?.responses).toEqual([
       expect.objectContaining({ userId: guestId }),
+    ]);
+  });
+  it('requires a verified session and counts one response across devices', () => {
+    const vote = {
+      action: 'poll.vote',
+      pollId: poll.id,
+      response: { type: 'single_choice', optionId: poll.options[0]!.id },
+    } as const;
+    expect(
+      applyRoomPolls(
+        snapshot,
+        { ...token, guestTurnstileVerified: undefined },
+        vote
+      )
+    ).toMatchObject({ status: 403 });
+    const first = applyRoomPolls(snapshot, token, vote);
+    const second = applyRoomPolls(
+      first.state,
+      { ...token, userId: '44444444-4444-4444-8444-444444444444' },
+      { ...vote, response: { ...vote.response, optionId: poll.options[1]!.id } }
+    );
+    expect(second.state.polls?.[0]?.responses).toMatchObject([
+      { userId: guestId, response: { optionId: poll.options[1]!.id } },
     ]);
   });
 });

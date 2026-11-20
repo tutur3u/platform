@@ -441,6 +441,8 @@ export function applyRoomPolls(
         body: { question: poll.question, results: pollResults(poll) },
       };
     case 'poll.vote': {
+      if (token.guest && (!token.guestTurnstileVerified || !token.accountId))
+        return fail('Guest verification required', 403);
       if (poll.status !== 'active') return fail('Poll is closed', 409);
       if (!responseFits(poll, command.response))
         return fail('Invalid poll response', 400);

@@ -101,8 +101,10 @@ export const meetRoomLimitsSchema = z
 
 export const meetRealtimeTokenPayloadSchema = z.object({
   accountId: z.uuid().optional(),
-  /** An anonymous, Turnstile-verified guest without a Tuturuuu account. */
+  /** An anonymous guest without a Tuturuuu account. */
   guest: z.literal(true).optional(),
+  /** Set on room-service tokens issued from a verified guest cookie. */
+  guestTurnstileVerified: z.literal(true).optional(),
   admission: meetRealtimeAdmissionSchema.default('open'),
   avatarUrl: z
     .url()

@@ -594,22 +594,22 @@ setting is on, the meeting has not ended, and both Turnstile keys are configured
 Turning the setting off, ending the meeting or a lapsed plan stops guests at their
 next token.
 
-- The server mints a random participant id and stores it with the name in an
-  HttpOnly, host-only `__Host-meet-guest` cookie signed with a key derived from
+- The server derives a participant id from the verified Turnstile token and
+  stores it with the name in an HttpOnly, host-only `__Host-meet-guest` cookie signed with a key derived from
   `MEET_REALTIME_TOKEN_SECRET`; it is bound to one meeting and lasts 12 hours.
-- Guests always join through the lobby. **Admit everyone automatically** admits
-  them too; media locks apply to them like any participant; hosts see a Guest badge.
+- Guests need host approval even when **Admit signed-in participants automatically** is on.
+  Media locks apply to guests, and hosts see a Guest badge.
 - Each network may attempt five guest joins per meeting link every ten minutes.
   Failed checks count. The shared abuse-guard store decides when it is bound;
   otherwise attempts are counted per isolate, with Turnstile still required.
 - Guests can vote in live polls while they are admitted to the call. The server
-  binds votes to the signed guest id in the HttpOnly cookie; guests cannot
-  create or manage polls.
+  binds one response per poll to the verified guest session across devices.
+  Guests cannot create or manage polls.
 - Documents, Quiz Arena, notes, recordings and other account-backed features
   show **Sign in to use this** for guests instead of failing loudly.
 - When a host removes an anonymous guest, that guest id cannot rejoin the same
-  meeting for ten minutes. Token refresh, guest join and reconnect all enforce
-  the ban with a clear English and Vietnamese message.
+  meeting for ten minutes. Token refresh and reconnect enforce the ban.
+  A new guest identity still requires host approval.
 - The Meet Worker needs `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and
   `TURNSTILE_SECRET_KEY`, with the Meet hostname allowed for that site key. Without
   both, guest join stays closed. Development uses Cloudflare's test key.
