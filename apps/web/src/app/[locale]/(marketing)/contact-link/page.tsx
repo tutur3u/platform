@@ -26,8 +26,9 @@ const ConfirmationSearch = z.object({
 
 const ConsentDetails = z.object({
   workspace: z.string().min(1),
-  contact: z.string().min(1),
-  inviter: z.string().min(1),
+  contact: z.string().nullable(),
+  inviter: z.string().nullable(),
+  replacesProvisionedProfile: z.boolean().optional(),
   expiresAt: z.iso.datetime({ offset: true }),
 });
 
@@ -95,9 +96,12 @@ async function ContactLinkContent({
                 confirming: t('confirming'),
                 description: t('description', {
                   workspace: details.workspace,
-                  contact: details.contact,
-                  inviter: details.inviter,
+                  contact: details.contact?.trim() || t('contactFallback'),
+                  inviter: details.inviter?.trim() || t('inviterFallback'),
                 }),
+                replacement: details.replacesProvisionedProfile
+                  ? t('replacement')
+                  : undefined,
                 expires: t('expires', {
                   date: new Intl.DateTimeFormat(locale, {
                     dateStyle: 'medium',

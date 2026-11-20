@@ -16,6 +16,7 @@ export function ContactLinkConfirmation({
     declined: string;
     expires: string;
     description: string;
+    replacement?: string;
     linked: string;
     unavailable: string;
   };
@@ -50,6 +51,7 @@ export function ContactLinkConfirmation({
   return (
     <div className="space-y-4">
       <p>{copy.description}</p>
+      {copy.replacement && <p>{copy.replacement}</p>}
       <p className="text-sm text-muted-foreground">{copy.expires}</p>
       <div className="flex flex-wrap gap-2">
         <Button disabled={pending} onClick={() => respond('confirm')}>

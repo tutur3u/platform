@@ -103,6 +103,13 @@ invitation for the contact.
 Invitations expire after one day and can be used once by the selected account.
 The database rechecks the workspace, contact, membership, and eligibility at
 confirmation. The link and its actor-attributed audit event commit together.
+When provisioning records an account’s starter profile, the invitation can
+identify that profile for replacement. The account holder reviews the merge
+before confirming. The sender must also have permission to delete users, since
+the merge transfers the starter profile’s records and removes that profile.
+Earlier mappings without provisioning provenance cannot be replaced this way.
+An authorized duplicate contact merge may transfer the source’s existing
+account link to the retained contact when the retained contact is unlinked.
 The confirmation page and API omit contact email and platform account IDs.
 Linked account holders and workspace operators with permission to update
 contacts can unlink an account from the contact details. Unlinking preserves

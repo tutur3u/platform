@@ -6095,11 +6095,14 @@
   "contact-link": {
     "confirm": "Confirm account link",
     "confirming": "Confirming…",
+    "contactFallback": "a workspace contact",
     "decline": "Decline",
     "declined": "You declined this invitation.",
     "description": "{inviter} invited you to link your signed-in account to {contact} in {workspace}. Linking associates this workspace contact with your Tuturuuu account.",
     "expires": "Expires {date} UTC.",
+    "inviterFallback": "a workspace operator",
     "linked": "Your account is now linked to this contact.",
+    "replacement": "Your starter workspace profile and its records will be merged into this contact.",
     "title": "Confirm a contact account link",
     "unavailable": "This invitation is unavailable. Ask the person who shared it to check the link."
   },
