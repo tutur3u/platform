@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
   verifyHasSecrets,
@@ -81,7 +82,7 @@ const hasKey = (key: string) => {
 };
 
 const getMessages = async (
-  admin: Awaited<ReturnType<typeof createAdminClient>>,
+  admin: TypedSupabaseClient,
   chatId: string,
   userId: string
 ) => {
