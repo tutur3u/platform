@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 819,
+    "total": 820,
     "categories": {
-      "api": 621,
+      "api": 622,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 807 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 808 }
   },
   "routes": [
     {
@@ -4111,6 +4111,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/domains",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/domains/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/education/classes/[classId]/attendance",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/[classId]/attendance/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

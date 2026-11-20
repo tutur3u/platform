@@ -3320,11 +3320,21 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/education/classes/{classId}/attendance",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/[classId]/attendance/route.ts",
+    "sourceSha256": "d17ce82f6c844b6e2ca99192d07a0127490c39c0a56f3d5fbb3517865ea03c71",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/education/classes/{classId}/lessons",
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/[classId]/lessons/route.ts",
-    "sourceSha256": "252f59429ba93a39dae896280f943284de69f0a87f50842403062bd869a0f164",
+    "sourceSha256": "6a15a4ae37f76d62823338f7bfff3d2f0b1a1d7f5dcf357ce07281990c016813",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3344,7 +3354,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/route.ts",
-    "sourceSha256": "6b8b0cb1b15c8fc6597f11ce02106f24fae8dbe2af91f438818eb3e0bec0750e",
+    "sourceSha256": "6396477a738f7d6c1988684609497307c9ac40c9ceaa3217479ba66ab2581cc6",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

@@ -1,18 +1,13 @@
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { listLmsClasses } from '@/lib/education/lms-class-catalog';
+import { lmsLearningAccessFailure } from '@/lib/education/lms-learning-access';
 import {
-  lmsLearningAccessFailure,
-  resolveLmsLearningAccess,
-} from '@/lib/education/lms-learning-access';
-import {
-  lmsAuthFailure,
   lmsFailure,
   lmsNotAvailable,
   lmsPrivateHeaders,
 } from '@/lib/education/lms-response';
-import { resolveLmsStaffAccess } from '@/lib/education/lms-staff-access';
+import { resolveLmsViewAccess } from '@/lib/education/lms-view-access';
 import { learnerProgressRoutesEnabled } from '@/lib/education/learner-progress-flag';
 
 const querySchema = z
@@ -66,35 +61,16 @@ export async function GET(
   }
 
   try {
-    const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: {
-        targetApp: query.data.view === 'staff' ? 'teach' : 'learn',
-      },
-    });
-    if (!auth.ok) return lmsAuthFailure(auth.response.status);
-
     const { wsId: routeWsId } = await params;
     const { after, limit, view, student_id } = query.data;
-    if (view === 'learning') {
-      const access = await resolveLmsLearningAccess(
-        auth,
-        routeWsId,
-        student_id
-      );
-      const { db, scope, wsId, role, readOnly } = access;
-      const classes = await listLmsClasses({
-        after,
-        db,
-        limit: limit + 1,
-        scope,
-        wsId,
-      });
-      return classPage(classes, { limit, role, readOnly });
-    }
-
-    const staff = await resolveLmsStaffAccess(auth, routeWsId);
-    if (staff.error) return staff.error;
-    const { db, scope, wsId } = staff;
+    const access = await resolveLmsViewAccess({
+      request,
+      wsId: routeWsId,
+      view,
+      studentId: student_id,
+    });
+    if (access.error) return access.error;
+    const { db, scope, wsId, role, readOnly } = access;
     const classes = await listLmsClasses({
       after,
       db,
@@ -102,7 +78,7 @@ export async function GET(
       scope,
       wsId,
     });
-    return classPage(classes, { limit, role: scope.kind, readOnly: true });
+    return classPage(classes, { limit, role, readOnly });
   } catch (error) {
     const accessError = lmsLearningAccessFailure(error);
     if (accessError) return accessError;

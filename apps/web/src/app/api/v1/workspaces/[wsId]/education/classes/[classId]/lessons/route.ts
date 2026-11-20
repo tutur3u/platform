@@ -1,19 +1,14 @@
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { learnerProgressRoutesEnabled } from '@/lib/education/learner-progress-flag';
 import { listLmsClassLessons } from '@/lib/education/lms-class-lessons';
+import { lmsLearningAccessFailure } from '@/lib/education/lms-learning-access';
 import {
-  lmsLearningAccessFailure,
-  resolveLmsLearningAccess,
-} from '@/lib/education/lms-learning-access';
-import {
-  lmsAuthFailure,
   lmsFailure,
   lmsNotAvailable,
   lmsPrivateHeaders,
 } from '@/lib/education/lms-response';
-import { resolveLmsStaffAccess } from '@/lib/education/lms-staff-access';
+import { resolveLmsViewAccess } from '@/lib/education/lms-view-access';
 
 const cursorSchema = z
   .string()
@@ -54,16 +49,13 @@ export async function GET(
 
   try {
     const { view, student_id, after, limit } = query.data;
-    const auth = await resolveSessionAuthContext(request, {
-      allowAppSessionAuth: { targetApp: view === 'staff' ? 'teach' : 'learn' },
+    const access = await resolveLmsViewAccess({
+      request,
+      wsId: routeWsId,
+      view,
+      studentId: student_id,
     });
-    if (!auth.ok) return lmsAuthFailure(auth.response.status);
-
-    const access =
-      view === 'staff'
-        ? await resolveLmsStaffAccess(auth, routeWsId)
-        : await resolveLmsLearningAccess(auth, routeWsId, student_id);
-    if ('error' in access && access.error) return access.error;
+    if (access.error) return access.error;
 
     const { db, scope, wsId } = access;
     const rows = await listLmsClassLessons({
@@ -82,8 +74,8 @@ export async function GET(
     return NextResponse.json(
       {
         class_id: classId,
-        role: 'role' in access ? access.role : scope.kind,
-        read_only: 'readOnly' in access ? access.readOnly : true,
+        role: access.role,
+        read_only: access.readOnly,
         data: page.map(({ id, name, sort_key, is_published }) => ({
           id,
           name,
