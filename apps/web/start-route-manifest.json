@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 821,
+    "total": 822,
     "categories": {
-      "api": 623,
+      "api": 624,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 809 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 810 }
   },
   "routes": [
     {
@@ -4143,6 +4143,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/education/classes/[classId]/schedule",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/[classId]/schedule/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/education/classes/[classId]/tuition-invoices",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/classes/[classId]/tuition-invoices/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -250,6 +250,26 @@ reconcile removals, moves outside the window, and access changes. Session
 descriptions, files, and meeting links have their own resource permissions.
 Responses use the class outline's access errors and private cache policy.
 
+### Class tuition invoices
+
+`GET /api/v1/workspaces/{wsId}/education/classes/{classId}/tuition-invoices`
+returns Finance invoice links for current learners in the class roster. Use
+a platform or Teach app session. The caller must be an assigned teacher or
+group manager with group view permission and Finance's `view_invoices`
+permission. Use `contact_id` to filter by the roster's Contacts ID. Page with
+`limit` from 1 to 50 (default 20) and the previous `next_cursor` as `after`.
+
+The response contains `class_id`, `role`, `data`, and `next_cursor`.
+Rows are ordered by `invoice_id` and include `contact_id`, Finance's recorded
+`completed_at`, `subscription_months`, and `valid_until`. `status` is
+`completed` when Finance has a completion timestamp and `open` otherwise.
+Use `invoice_id` to open the authorized Finance invoice. Finance still
+determines the periods covered, outstanding tuition, promotions, and payment
+amounts. An empty page means there are no visible invoice links in the current
+selection. This read uses existing invoice and class links. `updated_at` is
+null because invoices have no authoritative modification timestamp.
+Responses use the attendance endpoint's privacy and stable error rules.
+
 Mobile integration still requires separate versioned contracts for class
 mutations, lesson materials and completion, assessment delivery and grades,
 assignment submissions, notifications, and rewards. Learner and teacher screens

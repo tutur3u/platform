@@ -70,5 +70,6 @@ export async function resolveLmsStaffAccess(
     canViewContactNames:
       permissions.containsPermission('view_users_public_info') ||
       permissions.containsPermission('view_users_private_info'),
+    canViewInvoices: permissions.containsPermission('view_invoices'),
   };
 }
