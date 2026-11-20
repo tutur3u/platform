@@ -798,7 +798,12 @@ configures the incremental cache. Build with `bun run build:cloudflare` from
 The normal CI build uses Turbopack. `bun run preview:cloudflare` runs the built
 frontend in workerd for runtime verification. Run `bun run cf:typegen` after
 binding changes and `bun run cf:typecheck` to validate the generated environment
-with Worker types separately from browser types. CI runs this check after building.
+with Worker types separately from browser types. Before pushing Meet or
+Meet Realtime changes, including shared Forms and room Mira changes, run
+`bun run --cwd apps/meet cf:typecheck` and `bun run --cwd apps/meet test`
+from the repository root with workspace dependencies restored. The Worker
+type check verifies its source file list, and the Vitest suite loads the
+legacy room page with its server-only fixture.
 
 The frontend requires `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and
