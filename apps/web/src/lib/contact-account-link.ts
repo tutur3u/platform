@@ -9,6 +9,10 @@ export type ContactLinkDatabase = {
     Tables: Record<never, never>;
     Views: Record<never, never>;
     Functions: {
+      unlink_contact_account_link: {
+        Args: LinkParameters & { p_account_id: string };
+        Returns: string;
+      };
       invite_contact_account_link: {
         Args: LinkParameters & { p_account_id: string };
         Returns: string | null;

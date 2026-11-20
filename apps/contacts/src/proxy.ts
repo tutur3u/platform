@@ -11,6 +11,7 @@ import {
 import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
+  getRequestHeadersWithResponseCookies,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
@@ -258,6 +259,38 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
       return preserveMfaRecoveryCookies(request, guardResponse);
+    }
+
+    if (
+      request.method === 'POST' &&
+      /^\/api\/v1\/workspaces\/[^/]+\/users\/links\/repair$/u.test(
+        request.nextUrl.pathname
+      )
+    ) {
+      const origin = request.headers.get('origin');
+      if (origin !== request.nextUrl.origin) {
+        return preserveMfaRecoveryCookies(
+          request,
+          NextResponse.json({ outcome: 'forbidden' }, { status: 403 })
+        );
+      }
+      const destination = new URL(request.nextUrl.pathname, WEB_APP_URL);
+      const requestHeaders = appSessionRefresh
+        ? getRequestHeadersWithResponseCookies(
+            request,
+            appSessionRefresh.response
+          )
+        : new Headers(request.headers);
+      requestHeaders.set('origin', destination.origin);
+      const response = NextResponse.rewrite(destination, {
+        request: { headers: requestHeaders },
+      });
+      if (appSessionRefresh)
+        propagateAuthCookies(appSessionRefresh.response, response);
+      return preserveMfaRecoveryCookies(
+        request,
+        clearSupabaseAuthCookies(request, response)
+      );
     }
 
     // Only collection reads and preview POST are local; Web owns the rest.

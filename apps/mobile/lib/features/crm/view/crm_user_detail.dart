@@ -6,6 +6,8 @@ class _CrmUserDetail extends StatelessWidget {
     required this.user,
     required this.privateInfo,
     required this.publicInfo,
+    required this.canUnlink,
+    required this.onUnlink,
     this.billing,
   });
 
@@ -13,6 +15,8 @@ class _CrmUserDetail extends StatelessWidget {
   final bool privateInfo;
   final bool publicInfo;
   final Widget? billing;
+  final bool Function(CrmLinkedUser) canUnlink;
+  final ValueChanged<CrmLinkedUser> onUnlink;
 
   @override
   Widget build(BuildContext context) {
@@ -101,6 +105,13 @@ class _CrmUserDetail extends StatelessWidget {
                     ),
                     child: AppRichRow(
                       title: user.linkedUsers[index].label,
+                      trailing: canUnlink(user.linkedUsers[index])
+                          ? AppButton.ghost(
+                              onPressed: () =>
+                                  onUnlink(user.linkedUsers[index]),
+                              child: Text(l10n.crmContactAccountUnlink),
+                            )
+                          : null,
                       leading: const AppIconTile(
                         icon: LucideIcons.link,
                         tone: AppTone.info,

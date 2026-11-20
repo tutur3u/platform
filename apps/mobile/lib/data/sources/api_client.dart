@@ -292,25 +292,10 @@ class ApiClient {
     Object? body, {
     bool requiresAuth = true,
     Duration timeout = const Duration(seconds: 30),
-  }) async {
-    final url = _url(path);
+  }) => _postJson(path, body, requiresAuth: requiresAuth, timeout: timeout);
 
-    final response = await _performRequest(
-      () async => await _client
-          .post(
-            url,
-            headers: await _getHeaders(
-              contentType: 'application/json',
-              requiresAuth: requiresAuth,
-            ),
-            body: jsonEncode(body),
-          )
-          .timeout(timeout),
-      requiresAuth: requiresAuth,
-    );
-
-    return _handleResponse(response);
-  }
+  Future<Map<String, dynamic>> postSameOriginJson(String path, Object? body) =>
+      _postJson(path, body, sendOrigin: true);
 
   Future<Map<String, dynamic>> postJsonAcknowledged(
     String path,

@@ -5329,6 +5329,18 @@ abstract class AppLocalizations {
   /// **'Cancel the active invitation for this contact?'**
   String get crmContactAccountRevokeConfirm;
 
+  /// No description provided for @crmContactAccountUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink account'**
+  String get crmContactAccountUnlink;
+
+  /// No description provided for @crmContactAccountUnlinkConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this account’s link to the contact?'**
+  String get crmContactAccountUnlinkConfirm;
+
   /// No description provided for @crmContactAccountSearch.
   ///
   /// In en, this message translates to:

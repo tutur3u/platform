@@ -55,6 +55,35 @@ final class ApiMutationNotDispatched extends ApiException {
 }
 
 extension _ApiClientMutations on ApiClient {
+  Future<Map<String, dynamic>> _postJson(
+    String path,
+    Object? body, {
+    bool requiresAuth = true,
+    bool sendOrigin = false,
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    final url = _url(path);
+
+    final response = await _performRequest(
+      () async => await _client
+          .post(
+            url,
+            headers: {
+              ...await _getHeaders(
+                contentType: 'application/json',
+                requiresAuth: requiresAuth,
+              ),
+              if (sendOrigin) 'Origin': url.origin,
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(timeout),
+      requiresAuth: requiresAuth,
+    );
+
+    return _handleResponse(response);
+  }
+
   Future<Map<String, dynamic>> _putJsonOperation(
     String path,
     Map<String, dynamic> body,

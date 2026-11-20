@@ -19,6 +19,11 @@ vi.mock('@tuturuuu/auth/proxy', () => ({
   preserveMfaRecoveryCookies: (_request: unknown, response: unknown) =>
     response,
   consumeVerifyTokenRequest: vi.fn(),
+  getRequestHeadersWithResponseCookies: (request: NextRequest) => {
+    const headers = new Headers(request.headers);
+    headers.set('authorization', 'Bearer fixture');
+    return headers;
+  },
   propagateAuthCookies: mocks.propagate,
   refreshAppSessionForRequest: mocks.refresh,
 }));
@@ -204,6 +209,39 @@ describe('workspace redirects stay on Web', () => {
     const target = new URL(result.headers.get('location') ?? '');
     expect(target.pathname + target.search).toBe(
       '/workspace/billing?tab=history'
+    );
+  });
+});
+
+describe('contact account-link proxy', () => {
+  const origin = 'https://contacts.example.test';
+  const linkPath = '/api/v1/workspaces/synthetic-workspace/users/links/repair';
+
+  it('rejects cross-origin actions before forwarding to the web app', async () => {
+    const response = await proxy(
+      new NextRequest(origin + linkPath, {
+        method: 'POST',
+        headers: { origin: 'https://other.example.test' },
+      })
+    );
+    expect(response.status).toBe(403);
+    expect(response.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+
+  it('forwards same-origin actions with the verified session and destination origin', async () => {
+    const response = await proxy(
+      new NextRequest(origin + linkPath, {
+        method: 'POST',
+        headers: { origin },
+      })
+    );
+    const destination = new URL(response.headers.get('x-middleware-rewrite')!);
+    expect(destination.pathname).toBe(linkPath);
+    expect(response.headers.get('x-middleware-request-origin')).toBe(
+      destination.origin
+    );
+    expect(response.headers.get('x-middleware-request-authorization')).toBe(
+      'Bearer fixture'
     );
   });
 });

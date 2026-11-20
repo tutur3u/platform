@@ -2735,6 +2735,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmContactAccountRevokeConfirm => 'Hủy lời mời đang hoạt động cho liên hệ này?';
 
   @override
+  String get crmContactAccountUnlink => 'Hủy liên kết tài khoản';
+
+  @override
+  String get crmContactAccountUnlinkConfirm => 'Xóa liên kết của tài khoản này với liên hệ?';
+
+  @override
   String get crmContactAccountSearch => 'Tìm tài khoản trong không gian làm việc';
 
   @override

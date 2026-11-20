@@ -2159,6 +2159,8 @@
   "crmContactAccountNone": "Không có tài khoản phù hợp",
   "crmContactAccountRevoke": "Thu hồi lời mời",
   "crmContactAccountRevokeConfirm": "Hủy lời mời đang hoạt động cho liên hệ này?",
+  "crmContactAccountUnlink": "Hủy liên kết tài khoản",
+  "crmContactAccountUnlinkConfirm": "Xóa liên kết của tài khoản này với liên hệ?",
   "crmContactAccountSearch": "Tìm tài khoản trong không gian làm việc",
   "crmContactAccountShare": "Chia sẻ lời mời",
   "crmContactAccountShareInstructions": "Chia sẻ lời mời với chủ tài khoản đã chọn. Họ phải đăng nhập và xác nhận.",

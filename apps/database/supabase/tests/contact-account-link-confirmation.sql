@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(12);
+select plan(15);
 
 insert into public.users (id, display_name) values
   ('07400000-0000-4000-8000-000000000001', 'Synthetic owner'),
@@ -107,5 +107,26 @@ select is(private.confirm_contact_account_link(
   (select id from link_test_invitation),
   '07400000-0000-4000-8000-000000000002'
 ), 'confirmation_required', 'A consumed invitation cannot be replayed');
+select throws_ok(
+  $$select private.unlink_contact_account_link(
+    '07400000-0000-4000-8000-000000000010',
+    '07400000-0000-4000-8000-000000000011',
+    '07400000-0000-4000-8000-000000000002',
+    '07400000-0000-4000-8000-000000000099'
+  )$$,
+  '42501', 'Insufficient permissions', 'An outsider cannot unlink an account'
+);
+select is(private.unlink_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000011',
+  '07400000-0000-4000-8000-000000000002',
+  '07400000-0000-4000-8000-000000000002'
+), 'unlinked', 'The linked account holder can unlink');
+select is((select count(*) from private.contact_account_link_audit
+  where ws_id = '07400000-0000-4000-8000-000000000010'
+    and contact_id = '07400000-0000-4000-8000-000000000011'
+    and actor_id = '07400000-0000-4000-8000-000000000002'
+    and account_id = '07400000-0000-4000-8000-000000000002'
+    and outcome = 'unlinked'), 1::bigint, 'Unlink commits with an attributed audit event');
 select * from finish();
 rollback;

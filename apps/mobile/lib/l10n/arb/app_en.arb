@@ -2373,6 +2373,8 @@
   "crmContactAccountNone": "No matching accounts",
   "crmContactAccountRevoke": "Revoke invitation",
   "crmContactAccountRevokeConfirm": "Cancel the active invitation for this contact?",
+  "crmContactAccountUnlink": "Unlink account",
+  "crmContactAccountUnlinkConfirm": "Remove this account’s link to the contact?",
   "crmContactAccountSearch": "Find a workspace account",
   "crmContactAccountShare": "Share invitation",
   "crmContactAccountShareInstructions": "Share this invitation with the selected account holder. They must sign in and confirm.",

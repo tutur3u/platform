@@ -2749,6 +2749,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmContactAccountRevokeConfirm => 'Cancel the active invitation for this contact?';
 
   @override
+  String get crmContactAccountUnlink => 'Unlink account';
+
+  @override
+  String get crmContactAccountUnlinkConfirm => 'Remove this account’s link to the contact?';
+
+  @override
   String get crmContactAccountSearch => 'Find a workspace account';
 
   @override

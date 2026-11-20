@@ -17,6 +17,11 @@ const ContactLinkRequest = z.discriminatedUnion('action', [
     invitationId: z.guid(),
   }),
   z.strictObject({
+    action: z.literal('unlink'),
+    workspaceUserId: z.guid(),
+    platformAccountId: z.guid(),
+  }),
+  z.strictObject({
     action: z.literal('revoke'),
     workspaceUserId: z.guid(),
   }),
@@ -57,7 +62,7 @@ export async function POST(
   const parsed = ContactLinkRequest.safeParse(body);
   const action = parsed.success ? parsed.data.action : null;
   const recipientAction = action === 'confirm' || action === 'decline';
-  if (recipientAction) {
+  if (recipientAction || action === 'unlink') {
     const origin = request.headers.get('origin');
     const sameOrigin = origin
       ? origin === new URL(request.url).origin
@@ -117,6 +122,19 @@ export async function POST(
       { outcome: 'invited', invitationId: data },
       { headers: { 'Cache-Control': 'private, no-store' } }
     );
+  }
+
+  if (link.action === 'unlink') {
+    const { data, error } = await linkService.rpc(
+      'unlink_contact_account_link',
+      {
+        ...identity,
+        p_account_id: link.platformAccountId,
+      }
+    );
+    if (error?.code === '42501') return result('forbidden', 403);
+    if (error) return result('unavailable', 500);
+    return data === 'unlinked' ? result('unlinked') : result('ineligible', 409);
   }
 
   const invitation = {

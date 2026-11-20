@@ -104,6 +104,9 @@ Invitations expire after one day and can be used once by the selected account.
 The database rechecks the workspace, contact, membership, and eligibility at
 confirmation. The link and its actor-attributed audit event commit together.
 The confirmation page and API omit contact email and platform account IDs.
+Linked account holders and workspace operators with permission to update
+contacts can unlink an account from the contact details. Unlinking preserves
+the contact and writes an attributed audit event.
 Direct signed-in writes to the link table are denied. Manual group linking can
 move a teaching assignment to an already linked profile. Creating a mapping
 through manual linking or member profile editing requires an invitation.

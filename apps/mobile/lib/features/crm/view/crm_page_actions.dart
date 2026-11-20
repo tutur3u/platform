@@ -77,6 +77,32 @@ extension _CrmPageActions on _CrmPageState {
     );
   }
 
+  Future<void> _unlinkContactAccount(
+    CrmUser contact,
+    CrmLinkedUser account,
+  ) async {
+    final confirmed = await showAppConfirmDialog(
+      context: context,
+      title: context.l10n.crmContactAccountUnlink,
+      message: context.l10n.crmContactAccountUnlinkConfirm,
+      confirmLabel: context.l10n.crmContactAccountUnlink,
+      cancelLabel: context.l10n.commonCancel,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+
+    try {
+      await _repository.unlinkContactAccount(
+        widget.workspaceId,
+        contact.id,
+        account.id,
+      );
+      if (mounted) await _loadInitial();
+    } on ApiException catch (error) {
+      if (mounted) _toast(error.message, destructive: true);
+    }
+  }
+
   Future<void> _showContactAccountInvitation(CrmUser contact) =>
       _showOwnedSheet<void>(
         context: context,

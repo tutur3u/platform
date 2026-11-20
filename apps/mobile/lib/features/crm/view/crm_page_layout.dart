@@ -176,6 +176,9 @@ extension _CrmPageLayout on _CrmPageState {
           else if (selected != null)
             _CrmUserDetail(
               user: selected,
+              canUnlink: (account) =>
+                  _canUpdateUsers || account.id == widget.actorId,
+              onUnlink: (account) => _unlinkContactAccount(selected, account),
               billing: _workspacePermissions.containsPermission('view_invoices')
                   ? ContactBilling(
                       key: ValueKey((widget.workspaceId, selected.id)),

@@ -125,6 +125,32 @@ describe('contact account-link confirmation', () => {
     );
   });
 
+  it('rejects cross-origin unlink before resolving the actor', async () => {
+    const response = await submit(
+      { action: 'unlink', workspaceUserId, platformAccountId },
+      'https://other.example.test'
+    );
+    expect(response.status).toBe(403);
+    expect(deps.authorize).not.toHaveBeenCalled();
+  });
+
+  it('passes the authenticated unlink actor and returns only the outcome', async () => {
+    deps.rpc.mockResolvedValue({ data: 'unlinked', error: null });
+    const response = await submit({
+      action: 'unlink',
+      workspaceUserId,
+      platformAccountId,
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ outcome: 'unlinked' });
+    expect(deps.rpc).toHaveBeenCalledWith('unlink_contact_account_link', {
+      p_ws_id: 'verified-workspace',
+      p_actor_id: 'verified-actor',
+      p_contact_id: workspaceUserId,
+      p_account_id: platformAccountId,
+    });
+  });
+
   it('uses the verified account holder and returns only the outcome', async () => {
     deps.rpc.mockResolvedValue({ data: 'linked', error: null });
     const response = await submit({

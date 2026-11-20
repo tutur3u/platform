@@ -56,4 +56,17 @@ mixin _CrmAccountLinkRepository {
       'workspaceUserId': contactId,
     });
   }
+
+  Future<void> unlinkContactAccount(
+    String workspaceId,
+    String contactId,
+    String accountId,
+  ) async {
+    final users = CrmEndpoints.users(Uri.encodeComponent(workspaceId));
+    await _api.postSameOriginJson('$users/links/repair', {
+      'action': 'unlink',
+      'workspaceUserId': contactId,
+      'platformAccountId': accountId,
+    });
+  }
 }

@@ -1,3 +1,4 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { InvoiceUserHistoryAccordion } from '@tuturuuu/ui/finance/invoices/components/invoice-user-history-accordion';
 import UserMonthAttendance from '@tuturuuu/users-ui/components/user-month-attendance';
 import type { Metadata } from 'next';
@@ -23,6 +24,7 @@ import {
 } from './data';
 import EditUserDialog from './edit-user-dialog';
 import { partitionUserGroupsBySchedule } from './group-schedule';
+import { LinkedContactAccounts } from './linked-contact-accounts';
 import LinkedPromotionsClient from './linked-promotions-client';
 import { ProfileHeader } from './profile-header';
 import { ProfileInfoPanel } from './profile-info-panel';
@@ -57,7 +59,9 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
   if (!workspace) notFound();
   const wsId = workspace.id;
 
-  const permissions = await getContactsWorkspacePermissions(wsId);
+  const actor = await getSatelliteAppSessionUser('contacts');
+  if (!actor) notFound();
+  const permissions = await getContactsWorkspacePermissions(wsId, actor);
   if (!permissions) notFound();
   const { containsPermission } = permissions;
 
@@ -194,28 +198,39 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
       value: 'overview',
       label: t('overview'),
       content: (
-        <ProfileInfoPanel
-          user={data}
-          hasPrivateInfo={hasPrivateInfo}
-          hasPublicInfo={hasPublicInfo}
-          labels={{
-            address: t('address'),
-            basicInformation: t('basic_information'),
-            birthday: t('birthday'),
-            createdAt: t('created_at'),
-            displayName: t('display_name'),
-            email: t('email'),
-            empty: t('common.empty'),
-            ethnicity: t('ethnicity'),
-            fullName: t('full_name'),
-            gender: t('gender'),
-            guardian: t('guardian'),
-            nationalId: t('national_id'),
-            note: t('note'),
-            phone: t('phone'),
-            updatedAt: t('updated_at'),
-          }}
-        />
+        <div className="space-y-4">
+          <ProfileInfoPanel
+            user={data}
+            hasPrivateInfo={hasPrivateInfo}
+            hasPublicInfo={hasPublicInfo}
+            labels={{
+              address: t('address'),
+              basicInformation: t('basic_information'),
+              birthday: t('birthday'),
+              createdAt: t('created_at'),
+              displayName: t('display_name'),
+              email: t('email'),
+              empty: t('common.empty'),
+              ethnicity: t('ethnicity'),
+              fullName: t('full_name'),
+              gender: t('gender'),
+              guardian: t('guardian'),
+              nationalId: t('national_id'),
+              note: t('note'),
+              phone: t('phone'),
+              updatedAt: t('updated_at'),
+            }}
+          />
+          {hasPublicInfo && data.linked_users?.length ? (
+            <LinkedContactAccounts
+              accounts={data.linked_users}
+              actorId={actor.id}
+              canUpdateUsers={canUpdateUsers}
+              contactId={userId}
+              workspaceId={wsId}
+            />
+          ) : null}
+        </div>
       ),
     },
   ];
