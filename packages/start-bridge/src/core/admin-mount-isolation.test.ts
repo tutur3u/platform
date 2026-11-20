@@ -1,19 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import {
   isolateMountedCookieHeader,
   scopeMountedResponseCookies,
 } from './mount-isolation';
 
+// The Admin app's own config test pins `isolation` to this value.
 it('restricts Admin cookies to the app and strips the provider refresh token', () => {
-  const config = readFileSync(
-    new URL(
-      '../../../../apps/infrastructure/start-bridge.config.ts',
-      import.meta.url
-    ),
-    'utf8'
-  );
-  expect(config).toMatch(/isolation: \{ ownedCookies: \['NEXT_LOCALE'\] \}/u);
   const isolation = { ownedCookies: ['NEXT_LOCALE'] };
 
   const key = 'sb-project-auth-token';
