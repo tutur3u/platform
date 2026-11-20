@@ -224,8 +224,19 @@ export function verifyVersion({
   uploaded,
   live,
   strict,
+  inheritedSecrets = [],
 }) {
   const problems = [];
+  // Versions inherit secrets from the latest version, which can be newer
+  // than the serving one; callers name those secrets, and each must arrive.
+  const latestSecrets = new Set(inheritedSecrets);
+  for (const name of latestSecrets)
+    if (
+      !Object.hasOwn(workerConfig.env, name) &&
+      uploaded.bindings.find((binding) => binding.name === name)?.type !==
+        'secret_text'
+    )
+      problems.push(`${name}: inherited secret missing from upload`);
   const byName = new Map(uploaded.bindings.map((b) => [b.name, b]));
   const liveByName = new Map(live.bindings.map((b) => [b.name, b]));
   for (const [name, expected] of Object.entries(workerConfig.env))
@@ -235,7 +246,7 @@ export function verifyVersion({
     // Versions inherit every secret already bound on the Worker.
     const inherited =
       binding.type === 'secret_text' &&
-      liveByName.get(name)?.type === 'secret_text';
+      (liveByName.get(name)?.type === 'secret_text' || latestSecrets.has(name));
     if (!inherited) problems.push(`${name}: unexpected uploaded binding`);
   }
   for (const [name, binding] of byName) {
@@ -284,7 +295,11 @@ export function verifyVersion({
         problems.push(`${name}: differs from the serving version`);
     }
     for (const name of byName.keys())
-      if (!liveByName.has(name) && !overrides.has(name))
+      if (
+        !liveByName.has(name) &&
+        !overrides.has(name) &&
+        !(latestSecrets.has(name) && byName.get(name).type === 'secret_text')
+      )
         problems.push(`${name}: absent from the serving version`);
   }
   return problems;
@@ -322,6 +337,8 @@ export function publish(
   );
   const versionId = parseCfVersionId(output);
   assert.ok(VERSION_ID.test(versionId ?? ''), 'cf returned no version id');
+  // Let the caller record the uploaded version before its readback can fail.
+  deps.onUploaded?.(versionId);
   const uploaded = JSON.parse(
     readBack(
       () =>
@@ -338,6 +355,7 @@ export function publish(
     uploaded,
     live: live.version,
     strict,
+    inheritedSecrets: deps.inheritedSecrets,
   });
   assert.deepEqual(problems, [], `uploaded version rejected: ${problems}`);
   return { worker, versionId, previousVersionId: live.versionId, strict };

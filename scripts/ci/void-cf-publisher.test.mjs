@@ -549,3 +549,30 @@ test('a newly mounted path starts from an explicit absent baseline', () => {
     }
   );
 });
+
+test('named inherited secrets are accepted and required', () => {
+  const after = uploaded();
+  after.bindings.push({ name: 'NEW_SECRET', type: 'secret_text' });
+  assert.deepEqual(
+    verifyVersion({
+      workerConfig,
+      receipt,
+      uploaded: after,
+      live: live(),
+      strict: true,
+      inheritedSecrets: ['TOKEN', 'NEW_SECRET'],
+    }),
+    []
+  );
+  assert.deepEqual(
+    verifyVersion({
+      workerConfig,
+      receipt,
+      uploaded: uploaded(),
+      live: live(),
+      strict: true,
+      inheritedSecrets: ['NEW_SECRET'],
+    }),
+    ['NEW_SECRET: inherited secret missing from upload']
+  );
+});

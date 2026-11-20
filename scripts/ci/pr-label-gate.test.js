@@ -132,6 +132,13 @@ const EXTRA_PROTECTED_INPUTS = {
   'cms-cloudflare.yaml': ['scripts/ci/cms-cutover-smoke.mjs'],
   'contacts-cloudflare.yaml': ['scripts/ci/contacts-native-artifact.test.py'],
   'finance-cloudflare.yaml': ['scripts/ci/finance-cutover-*'],
+  'mail-calendar-tasks-builds.yaml': [
+    'scripts/ci/tasks-cf-upload*',
+    'scripts/ci/tasks-native-publish*',
+    'scripts/ci/void-cf-*',
+    'scripts/ci/wave1-cf-output.mjs',
+    'scripts/ci/cf-build-output-publisher.mjs',
+  ],
 };
 
 function assertProtectedTriggers(file, on) {

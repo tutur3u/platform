@@ -167,6 +167,7 @@ test('mixed runtime, unverified tests and build inputs still deploy', () => {
 test('extracted planner helpers retain platform and migration gate coverage', () => {
   for (const filePath of [
     'scripts/ci/production-test-only-paths.ts',
+    'scripts/ci/tasks-production-inputs.ts',
     'scripts/ci/workspace-dependency-closure.ts',
   ]) {
     for (const workflowName of [

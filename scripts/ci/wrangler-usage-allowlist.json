@@ -71,6 +71,11 @@
       "owner": "Marketing native qualification and cf/Void migration maintainers",
       "removal": "Replace the direct generator after a qualified cf/Void producer consumes the same emitted bindings, preserves interface/declaration parity and leaves the sealed artifact unchanged; retire or separately classify the remaining guard reference."
     },
+    "void-emitted-config-name": {
+      "reason": "cf Void publishers read the Worker configuration that Void emits under its own file name (dist/server/wrangler.json) and convert it to cf Build Output. The path is data; no Wrangler CLI or SDK is invoked.",
+      "owner": "cf/Void Wrangler-exit lane",
+      "removal": "Remove when Void emits cf Build Output (or a differently named config) for the app, so the publisher no longer names the emitted file."
+    },
     "void-emitted-runtime": {
       "reason": "Void emits dist/server/wrangler.json rather than cf Build Output. The qualified cf/Vite runtime harness accepts cloudflare.config.ts or .cloudflare/output/v0 and has no equivalent sealed Void-config runner with injected bindings, outboundService interception and fail-closed provider auth. Retain the isolated unstable_startWorker fixture and its pinned dependency; no publication is admitted.",
       "owner": "Mastermind native Start qualification owner and cf/Void Wrangler-exit lane",
@@ -3462,6 +3467,16 @@
       },
       "digest": "06dc1c0c44ba14771d1cc73b5b7eae49f602a795d50959122913be5847fad3fd"
     },
+    "scripts/ci/tasks-cf-upload.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-emitted-config-name",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/f84b5abe7701cfaf80e326c4b3f7d93b2335eaed",
+        "reason": "Tasks uploads its sealed version through the generic cf Void publisher (cf workers versions create --prebuilt, strict binding readback) and dry-runs the same output without credentials in CI. The single reference is the emitted config path; the Wrangler versions upload in tasks-native-publish.mjs is removed."
+      },
+      "digest": "3906803cfece51a437bfc387f6caf1fbd43333a3eae6acc69bd3630505ad969b"
+    },
     "scripts/ci/tasks-native-artifact.test.py": {
       "lines": 11,
       "uses": 12,
@@ -3471,16 +3486,6 @@
         "reason": "REV-7644: production config qualification, sealed archive restore and matching emitted-config regression fixtures; no new Wrangler command. Existing publication gap and removal condition remain."
       },
       "digest": "4631db45929dc1645af9ca37d74fb366606d1bf9d9447528077f513622452644"
-    },
-    "scripts/ci/tasks-native-publish.mjs": {
-      "lines": 5,
-      "uses": 5,
-      "gap": "void-wave1-publication",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/4e152efa6d01894e4b5502a0a3abe742f881f83a",
-        "reason": "Ship the sealed Tasks production profile using the admitted Void fallback until cf qualifies the same server modules, assets, and production bindings."
-      },
-      "digest": "42290c87d561f3865ae829b612baa036a394a2b3d2babd7269c8d17762cae75e"
     },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,

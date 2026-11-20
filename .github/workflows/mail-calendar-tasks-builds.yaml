@@ -24,6 +24,11 @@ on:
       - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
       - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/tasks-cf-upload*'
+      - 'scripts/ci/tasks-native-publish*'
+      - 'scripts/ci/void-cf-*'
+      - 'scripts/ci/wave1-cf-output.mjs'
+      - 'scripts/ci/cf-build-output-publisher.mjs'
       - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
@@ -56,6 +61,11 @@ on:
       - 'scripts/ci/apps-native-runtime-pointer.mjs'
       - 'scripts/ci/calendar-emitted-defaults*'
       - 'scripts/ci/tasks-native-artifact*'
+      - 'scripts/ci/tasks-cf-upload*'
+      - 'scripts/ci/tasks-native-publish*'
+      - 'scripts/ci/void-cf-*'
+      - 'scripts/ci/wave1-cf-output.mjs'
+      - 'scripts/ci/cf-build-output-publisher.mjs'
       - 'scripts/ci/apps-native-artifact.py'
       - '.github/actions/**'
       - '.github/workflows/ci-check.yml'
@@ -686,6 +696,12 @@ jobs:
           python3 scripts/ci/tasks-native-artifact.py --profile production restore "$restored" --archive "$RUNNER_TEMP/tasks-production-artifact.tar.gz" --receipt "$restored/tasks-production-artifact.json"
           cmp "$RUNNER_TEMP/tasks-production-artifact.json" "$restored/tasks-production-artifact.json"
           python3 scripts/ci/tasks-native-artifact.py --profile production verify "$restored" --receipt "$restored/tasks-production-artifact.json"
+          python3 scripts/ci/tasks-native-artifact.py --profile production verify apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json"
+      - name: Dry-run the sealed output as cf Build Output without credentials
+        env:
+          TASKS_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: |
+          node scripts/ci/tasks-cf-upload.mjs rehearse "$RUNNER_TEMP/tasks-cf-output-check" "$SOURCE_SHA"
           python3 scripts/ci/tasks-native-artifact.py --profile production verify apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json"
       - name: Record the Tasks archive SHA-256
         id: digest

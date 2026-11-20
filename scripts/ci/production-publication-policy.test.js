@@ -130,6 +130,7 @@ function fixture(t, policy) {
     'scripts/ci/calendar-native-inventory.mjs',
     'scripts/ci/mobile-build-selection.ts',
     'scripts/ci/production-test-only-paths.ts',
+    'scripts/ci/tasks-production-inputs.ts',
     'scripts/ci/workspace-dependency-closure.ts',
     'scripts/ci/resolve-production-vercel-targets.ts',
     'scripts/ci/resolve-changed-files-core.ts',

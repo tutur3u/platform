@@ -1,5 +1,6 @@
 import { getMobileBuildDecision } from './scripts/ci/mobile-build-selection.ts';
 import { isVerifiedProductionTestPath } from './scripts/ci/production-test-only-paths.ts';
+import { tasksProductionInputs } from './scripts/ci/tasks-production-inputs.ts';
 import { buildWorkspaceDependencyClosure } from './scripts/ci/workspace-dependency-closure.ts';
 import { ci } from './tuturuuu.ci.ts';
 export { ci } from './tuturuuu.ci.ts';
@@ -306,12 +307,7 @@ export const cloudflareProductionTargets = [
     packageName: `@tuturuuu/${app}`,
     additionalPaths:
       app === 'tasks'
-        ? [
-            '.github/workflows/mail-calendar-tasks-builds.yaml',
-            'scripts/ci/apps-native-artifact.py',
-            'scripts/ci/tasks-native-',
-            'scripts/native-cutover/smoke-checks.mjs',
-          ]
+        ? tasksProductionInputs
         : ['scripts/ci/wave1-', '.github/workflows/wave1-'],
     productionWorkflow: `${app}-cloudflare.yaml`,
   })),
@@ -393,6 +389,7 @@ const databaseMigrationAffectingPaths = new Set([
   'scripts/ci/github-deployment-markers.ts',
   'scripts/ci/record-deployment-marker.ts',
   'scripts/ci/production-test-only-paths.ts',
+  'scripts/ci/tasks-production-inputs.ts',
   'scripts/ci/workspace-dependency-closure.ts',
   'scripts/ci/resolve-changed-files-core.ts',
   'scripts/ci/resolve-changed-files.ts',

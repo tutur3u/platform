@@ -10,6 +10,11 @@ import {
   matchesTasksPublicationSmoke,
   runSmoke,
 } from '../native-cutover/smoke-checks.mjs';
+import {
+  deleteTasksVersion,
+  inheritanceSource,
+  uploadTasksVersion,
+} from './tasks-cf-upload.mjs';
 import { waitForTasksPreview } from './tasks-preview-readback.mjs';
 
 const origin = 'https://tasks.tuturuuu.com';
@@ -213,44 +218,63 @@ async function rollback() {
   console.log(`Restored Tasks version ${receipt.previousVersion}`);
 }
 
-function upload() {
-  const output = join(directory, 'upload.ndjson');
-  execFileSync(
-    'bun',
-    [
-      'x',
-      '--no-install',
-      'wrangler',
-      'versions',
-      'upload',
-      '--no-bundle',
-      '--keep-vars',
-      '-c',
-      'apps/tasks/dist/server/wrangler.json',
-      '--message',
-      sourceSha,
-    ],
-    {
-      env: {
-        ...process.env,
-        WRANGLER_OUTPUT_FILE_PATH: output,
-        WRANGLER_SEND_METRICS: 'false',
-        WRANGLER_WRITE_LOGS: 'false',
+async function latestVersion() {
+  const { items } = await provider(`/workers/scripts/${worker}/versions`);
+  assert.ok(Array.isArray(items) && items.length > 0, 'No Tasks versions');
+  for (const item of items) assert.ok(Number.isInteger(item.number));
+  const latest = items.reduce((a, b) => (b.number > a.number ? b : a));
+  assert.match(latest.id ?? '', uuid);
+  return latest;
+}
+
+async function upload(receipt, previousVersion) {
+  const { id, number } = await inheritanceSource({
+    servingVersion: previousVersion,
+    latestVersion,
+    read: provider,
+    remove: deleteTasksVersion,
+  });
+  // The candidate must directly follow this version; see publish().
+  receipt.inheritedFrom = { id, number };
+  save(receipt);
+  const latest = await provider(`/workers/scripts/${worker}/versions/${id}`);
+  try {
+    return await uploadTasksVersion(
+      {
+        destination: join(directory, 'cf-output'),
+        servingVersion: previousVersion,
+        latestBindings: latest.resources?.bindings,
+        sourceSha,
       },
-      stdio: ['ignore', 'inherit', 'inherit'],
-      timeout: 360_000,
-    }
-  );
-  const uploads = readFileSync(output, 'utf8')
-    .trim()
-    .split('\n')
-    .map((line) => JSON.parse(line))
-    .filter((entry) => entry.type === 'version-upload');
-  assert.equal(uploads.length, 1, 'Expected one uploaded version');
-  const { version_id: candidate, worker_name: name } = uploads[0];
-  assert.equal(name, worker);
-  assert.match(candidate, uuid);
-  return candidate;
+      {
+        onUploaded(version) {
+          receipt.uploadedVersion = version;
+          save(receipt);
+        },
+      }
+    );
+  } catch (error) {
+    // An uploaded version that failed verification never received traffic;
+    // remove it so no later release inherits its bindings. A version whose id
+    // never reached the receipt is removed by the next inheritanceSource().
+    if (receipt.uploadedVersion)
+      discardCandidate(receipt, receipt.uploadedVersion);
+    throw error;
+  }
+}
+
+/** Best effort; the next release's inheritanceSource() removes leftovers. */
+function discardCandidate(receipt, version) {
+  try {
+    deleteTasksVersion(version);
+    receipt.deletedCandidate = version;
+  } catch (error) {
+    console.error(
+      `Could not delete Tasks candidate ${version}: ${error.message}`
+    );
+    receipt.undeletedCandidate = version;
+  }
+  save(receipt);
 }
 
 async function publish() {
@@ -290,7 +314,9 @@ async function publish() {
     return;
   }
 
-  const candidate = process.env.TASKS_UPLOADED_VERSION ?? upload();
+  const candidate =
+    process.env.TASKS_UPLOADED_VERSION ??
+    (await upload(receipt, previousVersion));
   assert.match(candidate, uuid);
   assert.notEqual(candidate, previousVersion);
   receipt.candidateVersion = candidate;
@@ -299,6 +325,16 @@ async function publish() {
     `/workers/scripts/${worker}/versions/${candidate}`
   );
   assert.equal(version.id, candidate);
+  if (
+    receipt.inheritedFrom &&
+    version.number !== receipt.inheritedFrom.number + 1
+  ) {
+    // Another upload or secret change came in between, so this candidate's
+    // carried-forward vars and inherited secrets may not belong together.
+    // Remove it so no later release inherits from it.
+    discardCandidate(receipt, candidate);
+    throw new Error('Another Tasks version was created during this release');
+  }
   assert.equal(version.annotations?.['workers/message'], sourceSha);
   const bindings = new Set(version.resources.bindings.map(({ name }) => name));
   for (const name of [
