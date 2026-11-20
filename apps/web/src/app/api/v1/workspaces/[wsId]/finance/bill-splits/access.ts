@@ -1,3 +1,4 @@
+import { selectAbuseGuard } from '@tuturuuu/utils/abuse-guard/select';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -11,7 +12,7 @@ export const bodyLimit = 131072;
 export const options = {
   allowAppSessionAuth: { targetApp: ['finance'] },
   maxPayloadSize: bodyLimit,
-  rateLimit: { windowMs: 60_000, maxRequests: 20 },
+  rateLimit: false,
 } satisfies NonNullable<Parameters<typeof withSessionAuth>[1]>;
 
 export function responseError(message: string, status: number) {
@@ -26,6 +27,31 @@ export async function authorize(
 ) {
   if (process.env.ENABLE_FINANCE_BILL_SPLITS !== 'true') {
     return { response: responseError('Not found', 404) };
+  }
+
+  const accessKind = request.method === 'GET' ? 'read' : 'write';
+  const guard = selectAbuseGuard('ratelimit');
+  if (guard.kind !== 'durable-object') {
+    return {
+      response: responseError('Bill splits are temporarily unavailable', 503),
+    };
+  }
+  try {
+    const quota = await guard.client.hitWindows([
+      {
+        partition: `finance-bill-splits:${accessKind}:${context.user.id}`,
+        windows: [
+          { key: 'requests', algo: 'sliding', limit: 20, windowMs: 60_000 },
+        ],
+      },
+    ]);
+    if (!quota.ok) {
+      return { response: responseError('Too many bill split requests', 429) };
+    }
+  } catch {
+    return {
+      response: responseError('Bill splits are temporarily unavailable', 503),
+    };
   }
 
   const wsId = await normalizeWorkspaceId(
@@ -60,6 +86,7 @@ export async function authorize(
 }
 
 export function storeError(code: string) {
+  if (code === 'PT429') return responseError('Reminder quota reached', 429);
   if (code === 'PT409')
     return responseError(
       'Split creation conflicts with an existing operation',

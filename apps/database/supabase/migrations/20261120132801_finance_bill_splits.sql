@@ -3,6 +3,37 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
+create index contact_account_link_audit_finance_provenance
+  on private.contact_account_link_audit (ws_id, contact_id, account_id, occurred_at)
+  where outcome = 'linked' and invitation_id is not null;
+
+create function private.finance_verified_contact_accounts(p_ws_id uuid, p_contact_id uuid)
+returns table (platform_user_id uuid)
+language sql
+stable
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+  select link.platform_user_id
+  from public.workspace_user_linked_users as link
+  join public.workspace_users as contact
+    on contact.ws_id = link.ws_id and contact.id = link.virtual_user_id
+  where link.ws_id = p_ws_id and link.virtual_user_id = p_contact_id
+    and not contact.archived
+    and exists (
+      select 1 from private.contact_account_link_audit as audit
+      where audit.ws_id = link.ws_id and audit.contact_id = link.virtual_user_id
+        and audit.account_id = link.platform_user_id and audit.actor_id = link.platform_user_id
+        and audit.outcome = 'linked' and audit.invitation_id is not null
+        and audit.occurred_at >= link.created_at
+    );
+$$;
+
+revoke all on function private.finance_verified_contact_accounts(uuid, uuid)
+  from public, anon, authenticated;
+grant execute on function private.finance_verified_contact_accounts(uuid, uuid)
+  to service_role;
+
 create table private.finance_bill_splits (
   id uuid primary key default gen_random_uuid(),
   ws_id uuid not null references public.workspaces(id) on delete cascade,
@@ -192,8 +223,7 @@ as $$
           cross join lateral (
             select coalesce(bool_or(link.platform_user_id = p_actor_id), false) as linked,
               count(*) > 0 as has_link
-            from public.workspace_user_linked_users as link
-            where link.ws_id = p_ws_id and link.virtual_user_id = participant.contact_id
+            from private.finance_verified_contact_accounts(p_ws_id, participant.contact_id) as link
           ) as actor
           where participant.ws_id = p_ws_id and participant.split_id = split.id
         )
@@ -218,9 +248,8 @@ as $$
           where participant.ws_id = p_ws_id and participant.split_id = split.id
             and (
               participant.member_id = p_actor_id or exists (
-                select 1 from public.workspace_user_linked_users as link
-                where link.ws_id = p_ws_id and link.virtual_user_id = participant.contact_id
-                  and link.platform_user_id = p_actor_id
+                select 1 from private.finance_verified_contact_accounts(p_ws_id, participant.contact_id) as link
+                where link.platform_user_id = p_actor_id
               )
             )
         )

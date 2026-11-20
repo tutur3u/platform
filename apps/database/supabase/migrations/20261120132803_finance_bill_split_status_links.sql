@@ -9,8 +9,9 @@ create table private.finance_bill_split_status_links (
   split_id uuid not null,
   participant_id uuid,
   receiving_participant_id uuid,
+  receiving_consent_revision uuid,
   public_name text check (
-    length(btrim(public_name)) between 1 and 80 and participant_id is not null
+    public_name is null or (length(btrim(public_name)) between 1 and 80 and participant_id is not null)
   ),
   digest text not null unique check (digest ~ '^[0-9a-f]{64}$'),
   created_at timestamptz not null default now(),
@@ -22,12 +23,17 @@ create table private.finance_bill_split_status_links (
     references private.finance_bill_split_participants(ws_id, split_id, id),
   foreign key (ws_id, split_id, receiving_participant_id)
     references private.finance_bill_split_participants(ws_id, split_id, id),
+  check ((receiving_participant_id is null) = (receiving_consent_revision is null)),
   check (expires_at > created_at and expires_at <= created_at + interval '168 hours'),
   check (revoked_at is null or revoked_at >= created_at)
 );
 
 create index finance_bill_split_status_links_split
   on private.finance_bill_split_status_links(ws_id, split_id, participant_id);
+
+create index finance_bill_split_status_links_receiving_consent
+  on private.finance_bill_split_status_links(ws_id, receiving_consent_revision)
+  where receiving_consent_revision is not null and revoked_at is null;
 
 alter table private.finance_bill_split_status_links enable row level security;
 revoke all on table private.finance_bill_split_status_links from public, anon, authenticated, service_role;
@@ -51,6 +57,8 @@ set search_path = pg_catalog, pg_temp
 as $$
 declare
   link_id uuid;
+  receiving_contact uuid;
+  consent_revision uuid;
 begin
   if not exists (
     select 1
@@ -85,15 +93,20 @@ begin
     raise sqlstate 'PT409' using message = 'Sharing requires a finalized split';
   end if;
 
-  if p_receiving_participant_id is not null and not exists (
-    select 1
+  if p_receiving_participant_id is not null then
+    select participant.contact_id into receiving_contact
     from private.finance_bill_split_participants as participant
-    join public.workspace_user_linked_users as link
-      on link.ws_id = participant.ws_id and link.virtual_user_id = participant.contact_id
     where participant.ws_id = p_ws_id and participant.split_id = p_split_id
-      and participant.id = p_receiving_participant_id and link.platform_user_id = p_actor_id
-  ) then
-    raise insufficient_privilege using message = 'Only the owner can share their own receiving QR';
+      and participant.id = p_receiving_participant_id;
+
+    if receiving_contact is not null then
+      consent_revision := (private.finance_contact_bank_command(
+        p_ws_id, p_actor_id, receiving_contact, 'grant_qr'
+      )->>'consentRevision')::uuid;
+    end if;
+    if consent_revision is null then
+      raise insufficient_privilege using message = 'Only the verified holder can share an active receiving account';
+    end if;
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended('bill-split-link/' || p_ws_id::text || '/' || p_split_id::text, 0));
@@ -107,9 +120,9 @@ begin
   end if;
 
   insert into private.finance_bill_split_status_links (
-    ws_id, split_id, participant_id, receiving_participant_id, public_name, digest, expires_at
+    ws_id, split_id, participant_id, receiving_participant_id, receiving_consent_revision, public_name, digest, expires_at
   ) values (
-    p_ws_id, p_split_id, p_participant_id, p_receiving_participant_id, p_public_name, p_digest, now() + make_interval(hours => p_hours)
+    p_ws_id, p_split_id, p_participant_id, p_receiving_participant_id, consent_revision, p_public_name, p_digest, now() + make_interval(hours => p_hours)
   ) returning id into link_id;
   return link_id;
 end;
@@ -134,7 +147,8 @@ as $$
     'participantId', link.participant_id,
     'publicName', link.public_name,
     'receivingParticipantId', receiver.id,
-    'receivingContactId', receiver.contact_id
+    'receivingContactId', receiver.contact_id,
+    'receivingConsentRevision', link.receiving_consent_revision
   )
   from private.finance_bill_split_status_links as link
   join private.finance_bill_splits as split

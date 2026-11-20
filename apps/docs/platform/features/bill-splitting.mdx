@@ -12,7 +12,9 @@ contacts or members, enter expenses and payers, and preview each person's share
 before finalizing. A contact without a linked workspace account can be included
 in the calculation. A separately authenticated, authorized actor records any
 payment on that contact's behalf. Membership changes take effect on the next
-access check.
+access check. A contact mapping grants signed-in split and payment access only
+after the account holder confirms the link through Contacts. Older mappings
+without a matching confirmation record do not grant Finance access.
 
 A split has one settlement currency. Each expense records its original currency,
 payers, attendees, lines, adjustments, and, when needed, an explicit exchange
@@ -46,7 +48,8 @@ and solves for the remaining net debtors and creditors. It counts distinct
 directed pairs, coalescing an additional transfer on a reserved pair into the
 same payment. The plan routes the residual directly from debtors to creditors
 without asking a participant to relay payments. Finalized revisions and
-confirmed payments are immutable. Corrections use a new revision or a recorded
+confirmed payments are immutable. Confirmation rejects payments that exceed the
+original plan total or leave a settlement outside the supported minor-unit range. Corrections use a new revision or a recorded
 reversal with its own audit event.
 
 The solver explores residual balance states. For each possible debtor and
@@ -153,6 +156,8 @@ The bank routes require `ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS` and use a
 server-only `FINANCE_CONTACT_BANK_ENCRYPTION_KEY` for the AES-256-GCM envelope.
 Consent must come from the workspace member linked to the contact. Withdraw
 consent to remove the account, and require fresh consent for a replacement.
+Withdrawal or replacement revokes existing links that share that account’s QR.
+The verified holder must explicitly share the replacement account through a new link.
 Access records contain actor, contact, workspace, action, and time. Preserve
 key custody across restores so consenting holders can continue using their
 account. VietQR uses the account-transfer payload, and the recipient enters
@@ -185,7 +190,12 @@ The payment reminder schedules one in-app notification 24 hours later for a
 linked debtor. The feature requires `ENABLE_FINANCE_BILL_SPLIT_REMINDERS` to
 schedule and the independently default-off `finance-bill-split-reminders`
 Cron Control job to deliver. Each fenced Worker run makes one call and handles
-at most 20 due entries. Re-check recipient preferences, workspace admission,
-and the payment fence in the delivery transaction. A confirmed payment cancels
+at most 20 due entries. A sender can schedule up to ten reminders and a
+recipient can receive up to three scheduled reminders across splits in a rolling
+24-hour window. Delivery rechecks the recipient’s Web notification preference,
+both actors’ Finance permission, workspace admission and the payment fence. A confirmed payment cancels
 reminders based on the original plan. The notification and terminal state commit
 together, and the scheduler drops jobs that have expired.
+
+Signed-in bill split requests use separate read and write quotas per actor.
+The API requires the Durable Object quota service before accessing the split store.

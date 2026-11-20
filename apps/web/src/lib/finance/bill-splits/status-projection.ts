@@ -8,6 +8,7 @@ export const statusLinkScope = z.object({
   participantId: z.uuid().nullable(),
   publicName: z.string().max(80).nullable(),
   receivingParticipantId: z.uuid().nullable().optional(),
+  receivingConsentRevision: z.uuid().nullable().optional(),
   receivingContactId: z.uuid().nullable().optional(),
 });
 

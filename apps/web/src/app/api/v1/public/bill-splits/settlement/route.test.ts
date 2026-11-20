@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { encryptBankAccount } from '@/lib/finance/bill-splits/contact-bank';
 import { createStatusLinkToken } from '@/lib/finance/bill-splits/status-link';
 
 const server = vi.hoisted(() => ({
@@ -123,6 +124,53 @@ describe('anonymous settlement status', () => {
     });
     expect(server.rpc.mock.calls.flatMap((call) => call)).not.toContain(token);
   });
+
+  it.each([true, false])(
+    'checks the issued consent revision for QR disclosure (active=%s)',
+    async (active) => {
+      const key = Buffer.alloc(32, 1);
+      vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS', 'true');
+      vi.stubEnv(
+        'FINANCE_CONTACT_BANK_ENCRYPTION_KEY',
+        key.toString('base64url')
+      );
+      const scoped = {
+        ...link,
+        receivingContactId: id,
+        receivingParticipantId: receiver,
+        receivingConsentRevision: payer,
+      };
+      server.rpc
+        .mockResolvedValueOnce({ data: scoped })
+        .mockResolvedValueOnce({ data: [snapshot] })
+        .mockResolvedValueOnce({ data: [] })
+        .mockResolvedValueOnce({ data: scoped })
+        .mockResolvedValueOnce({
+          data: {
+            bankBin: '970436',
+            encryptedDetails: encryptBankAccount(
+              { holderName: 'Test Holder', accountNumber: '0001234567' },
+              { wsId: id, contactId: id },
+              key
+            ),
+          },
+        })
+        .mockResolvedValueOnce({ data: active ? scoped : null });
+
+      const response = await POST(request());
+      expect(server.rpc).toHaveBeenCalledWith('finance_contact_bank_command', {
+        p_ws_id: id,
+        p_actor_id: id,
+        p_contact_id: id,
+        p_action: 'public_qr',
+        p_consent_revision: payer,
+      });
+      expect(response.status).toBe(active ? 200 : 404);
+      const result = await response.json();
+      if (active) expect(result.receivingQr).toEqual(expect.any(String));
+      else expect(result).toEqual({ message: 'Status unavailable' });
+    }
+  );
 
   it('returns no projection after the link is revoked during redemption', async () => {
     server.rpc

@@ -55,6 +55,7 @@ type BankArguments = {
   p_bank_bin?: string;
   p_last_four?: string;
   p_encrypted_details?: string;
+  p_consent_revision?: string;
 };
 
 type ReportProofArguments = Required<

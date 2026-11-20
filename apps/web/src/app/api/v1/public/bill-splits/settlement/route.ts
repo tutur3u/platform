@@ -68,6 +68,7 @@ async function permittedReceivingQr(
 ) {
   if (
     process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS !== 'true' ||
+    !scope.receivingConsentRevision ||
     !scope.receivingContactId ||
     !scope.receivingParticipantId
   )
@@ -88,6 +89,7 @@ async function permittedReceivingQr(
     p_actor_id: scope.creatorId,
     p_contact_id: scope.receivingContactId,
     p_action: 'public_qr',
+    p_consent_revision: scope.receivingConsentRevision,
   });
   const details = z
     .object({ bankBin: z.string(), encryptedDetails: z.string() })
@@ -202,8 +204,15 @@ export async function POST(request: NextRequest) {
       const active = await store.rpc('lookup_finance_bill_split_link', {
         p_digest: digest,
       });
-      if (active.error || !statusLinkScope.safeParse(active.data).success)
+      const checked = statusLinkScope.safeParse(active.data);
+      if (
+        active.error ||
+        !checked.success ||
+        checked.data.receivingConsentRevision !==
+          current.data.receivingConsentRevision
+      ) {
         return unavailable();
+      }
     }
     return NextResponse.json(
       {

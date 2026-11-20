@@ -6637,6 +6637,7 @@ export type Database = {
           id: string;
           participant_id: string | null;
           public_name: string | null;
+          receiving_consent_revision: string | null;
           receiving_participant_id: string | null;
           revoked_at: string | null;
           split_id: string;
@@ -6650,6 +6651,7 @@ export type Database = {
           id?: string;
           participant_id?: string | null;
           public_name?: string | null;
+          receiving_consent_revision?: string | null;
           receiving_participant_id?: string | null;
           revoked_at?: string | null;
           split_id: string;
@@ -6662,6 +6664,7 @@ export type Database = {
           id?: string;
           participant_id?: string | null;
           public_name?: string | null;
+          receiving_consent_revision?: string | null;
           receiving_participant_id?: string | null;
           revoked_at?: string | null;
           split_id?: string;
@@ -6742,6 +6745,7 @@ export type Database = {
           bank_bin: string;
           bank_name: string;
           consent_actor_id: string;
+          consent_revision: string;
           consented_at: string;
           contact_id: string;
           encrypted_details: string;
@@ -6753,6 +6757,7 @@ export type Database = {
           bank_bin: string;
           bank_name: string;
           consent_actor_id: string;
+          consent_revision?: string;
           consented_at?: string;
           contact_id: string;
           encrypted_details: string;
@@ -6763,6 +6768,7 @@ export type Database = {
           bank_bin?: string;
           bank_name?: string;
           consent_actor_id?: string;
+          consent_revision?: string;
           consented_at?: string;
           contact_id?: string;
           encrypted_details?: string;
@@ -24602,6 +24608,7 @@ export type Database = {
           p_actor_id: string;
           p_bank_bin?: string;
           p_bank_name?: string;
+          p_consent_revision?: string;
           p_contact_id: string;
           p_encrypted_details?: string;
           p_last_four?: string;
@@ -24612,6 +24619,12 @@ export type Database = {
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
+      };
+      finance_verified_contact_accounts: {
+        Args: { p_contact_id: string; p_ws_id: string };
+        Returns: {
+          platform_user_id: string;
+        }[];
       };
       finish_meet_transcript_purge_run: {
         Args: { p_run_id: string; p_status: string };

@@ -7,6 +7,14 @@ const state = vi.hoisted(() => ({
   member: true,
   admin: vi.fn(),
   rpc: vi.fn(),
+  hitWindows: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/abuse-guard/select', () => ({
+  selectAbuseGuard: () => ({
+    kind: 'durable-object',
+    client: { hitWindows: state.hitWindows },
+  }),
 }));
 
 vi.mock('next/server', async (original) => ({
@@ -91,6 +99,7 @@ describe('Finance bill splits API', () => {
     state.admin
       .mockReset()
       .mockResolvedValue({ schema: () => ({ rpc: state.rpc }) });
+    state.hitWindows.mockReset().mockResolvedValue({ ok: true });
     state.rpc.mockReset().mockResolvedValue({ data: [], error: null });
   });
 
@@ -122,6 +131,29 @@ describe('Finance bill splits API', () => {
       p_actor_id: 'current-actor',
       p_id: id,
     });
+  });
+
+  it('gates writes before quota work and fails closed when the guard is unavailable', async () => {
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLITS', '');
+    expect(
+      (await POST(request('POST', JSON.stringify(valid)), params)).status
+    ).toBe(404);
+    expect(state.hitWindows).not.toHaveBeenCalled();
+
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLITS', 'true');
+    state.hitWindows.mockRejectedValueOnce(new Error('Guard unavailable'));
+    expect(
+      (await POST(request('POST', JSON.stringify(valid)), params)).status
+    ).toBe(503);
+    expect(state.hitWindows).toHaveBeenCalledWith([
+      {
+        partition: 'finance-bill-splits:write:current-actor',
+        windows: [
+          { key: 'requests', algo: 'sliding', limit: 20, windowMs: 60_000 },
+        ],
+      },
+    ]);
+    expect(state.admin).not.toHaveBeenCalled();
   });
 
   it('stores a server-calculated ledger under the authorized actor and workspace', async () => {

@@ -24,8 +24,8 @@ create index finance_bill_split_reminders_due
   on private.finance_bill_split_reminders(due_at, id) where state = 'pending';
 create index finance_bill_split_reminders_participant on
   private.finance_bill_split_reminders(ws_id, split_id, participant_id);
-create index finance_bill_split_reminders_actor on private.finance_bill_split_reminders(actor_id);
-create index finance_bill_split_reminders_recipient on private.finance_bill_split_reminders(recipient_id);
+create index finance_bill_split_reminders_actor on private.finance_bill_split_reminders(actor_id, created_at);
+create index finance_bill_split_reminders_recipient on private.finance_bill_split_reminders(recipient_id, created_at);
 
 alter table private.finance_bill_split_reminders enable row level security;
 revoke all on table private.finance_bill_split_reminders from public, anon, authenticated, service_role;
@@ -60,9 +60,8 @@ begin
   where participant.ws_id = p_ws_id and participant.split_id = p_split_id and participant.id = p_participant_id
     and member.type = 'MEMBER'
     and (member.user_id = participant.member_id or exists (
-      select 1 from public.workspace_user_linked_users as link
-      where link.ws_id = p_ws_id and link.virtual_user_id = participant.contact_id
-        and link.platform_user_id = member.user_id
+      select 1 from private.finance_verified_contact_accounts(p_ws_id, participant.contact_id) as link
+      where link.platform_user_id = member.user_id
     ))
   order by member.user_id
   limit 1;
@@ -80,9 +79,24 @@ begin
     raise sqlstate 'PT409' using message = 'Settlement changed; reminder is unavailable';
   end if;
 
+  select reminder.id into reminder_id
+  from private.finance_bill_split_reminders as reminder
+  where reminder.ws_id = p_ws_id and reminder.split_id = p_split_id
+    and reminder.participant_id = p_participant_id and reminder.payment_fence = fence;
+  if reminder_id is not null then return reminder_id; end if;
+
+  perform pg_advisory_xact_lock(hashtextextended('finance-reminder-sender/' || p_actor_id::text, 0));
+  perform pg_advisory_xact_lock(hashtextextended('finance-reminder-recipient/' || recipient::text, 0));
+  if (select count(*) from private.finance_bill_split_reminders
+        where actor_id = p_actor_id and created_at > clock_timestamp() - interval '24 hours') >= 10
+    or (select count(*) from private.finance_bill_split_reminders
+        where recipient_id = recipient and created_at > clock_timestamp() - interval '24 hours') >= 3 then
+    raise sqlstate 'PT429' using message = 'Reminder quota reached';
+  end if;
+
   insert into private.finance_bill_split_reminders (
-    ws_id, split_id, participant_id, actor_id, recipient_id, due_at, payment_fence
-  ) values (p_ws_id, p_split_id, p_participant_id, p_actor_id, recipient, now() + interval '24 hours', fence)
+    ws_id, split_id, participant_id, actor_id, recipient_id, due_at, payment_fence, created_at
+  ) values (p_ws_id, p_split_id, p_participant_id, p_actor_id, recipient, clock_timestamp() + interval '24 hours', fence, clock_timestamp())
   on conflict (ws_id, split_id, participant_id, payment_fence) do nothing
   returning id into reminder_id;
   return coalesce(reminder_id, (
@@ -128,7 +142,9 @@ begin
       and (select count(*) from private.finance_bill_split_activity as activity
         where activity.ws_id = job.ws_id and activity.split_id = job.split_id
           and activity.kind = 'payment_confirm') = job.payment_fence
-      and public.should_send_notification(job.recipient_id, 'system_announcement', 'in_app', 'workspace', job.ws_id) then
+      and public.has_workspace_permission(job.ws_id, job.actor_id, 'create_transactions')
+      and public.has_workspace_permission(job.ws_id, job.recipient_id, 'view_transactions')
+      and public.should_send_notification(job.recipient_id, 'system_announcement', 'web', 'workspace', job.ws_id) then
 
       insert into public.notifications (
         id, ws_id, user_id, type, title, data, entity_type, entity_id, created_by, scope, action_url

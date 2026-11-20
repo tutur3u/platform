@@ -74,9 +74,8 @@ as $$
       and (
         participant.member_id = p_actor_id
         or exists (
-          select 1 from public.workspace_user_linked_users as link
-          where link.ws_id = p_ws_id and link.virtual_user_id = participant.contact_id
-            and link.platform_user_id = p_actor_id
+          select 1 from private.finance_verified_contact_accounts(p_ws_id, participant.contact_id) as link
+          where link.platform_user_id = p_actor_id
         )
       )
   );
@@ -107,6 +106,9 @@ declare
   split jsonb;
   receiver uuid;
 begin
+  if p_kind = 'payment_confirm' then
+    perform pg_advisory_xact_lock(hashtextextended(p_ws_id::text || '/' || p_split_id::text, 0));
+  end if;
   split := private.read_finance_bill_splits(p_ws_id, p_actor_id, p_split_id)->0;
   if split is null then
     raise insufficient_privilege using message = 'Bill split access required';
@@ -128,8 +130,7 @@ begin
         and participant.id = p_from_id
         and participant.member_id is null
         and not exists (
-          select 1 from public.workspace_user_linked_users as link
-          where link.ws_id = p_ws_id and link.virtual_user_id = participant.contact_id
+          select 1 from private.finance_verified_contact_accounts(p_ws_id, participant.contact_id)
         )
     ) then
       raise insufficient_privilege using message = 'Only the sender can report this payment';
@@ -137,7 +138,6 @@ begin
   end if;
 
   if p_kind = 'payment_confirm' then
-    perform pg_advisory_xact_lock(hashtextextended(p_ws_id::text || '/' || p_split_id::text, 0));
     select event.to_id into receiver
     from private.finance_bill_split_activity as event
     where event.ws_id = p_ws_id and event.split_id = p_split_id
@@ -150,17 +150,58 @@ begin
       select 1 from private.finance_bill_split_activity
       where ws_id = p_ws_id and split_id = p_split_id and report_id = p_report_id
     ) and (
-      select coalesce(sum(report.amount_minor), 0)
-      from private.finance_bill_split_activity as report
-      where report.ws_id = p_ws_id and report.split_id = p_split_id
-        and (report.id = p_report_id or exists (
-          select 1
-          from private.finance_bill_split_activity as confirmation
-          where confirmation.ws_id = p_ws_id and confirmation.split_id = p_split_id
-            and confirmation.report_id = report.id
-        ))
-    ) > 9007199254740991 then
-      raise sqlstate 'PT409' using message = 'Confirmed amount would exceed the supported limit';
+      with confirmed as (
+        select report.from_id::text as sender, report.to_id::text as recipient,
+          sum(report.amount_minor) as amount
+        from private.finance_bill_split_activity as report
+        where report.ws_id = p_ws_id and report.split_id = p_split_id
+          and report.kind = 'payment_report'
+          and (report.id = p_report_id or exists (
+            select 1 from private.finance_bill_split_activity as confirmation
+            where confirmation.ws_id = p_ws_id and confirmation.split_id = p_split_id
+              and confirmation.report_id = report.id and confirmation.kind = 'payment_confirm'
+          ))
+        group by report.from_id, report.to_id
+      ), direct as (
+        select transfer->>'from' as sender, transfer->>'to' as recipient,
+          sum((transfer->>'amountMinor')::numeric) as amount
+        from jsonb_array_elements(split->'input'->'direct') as transfer
+        group by 1, 2
+      ), outstanding_direct as (
+        select direct.sender, direct.recipient,
+          greatest(direct.amount - coalesce(confirmed.amount, 0), 0) as amount
+        from direct left join confirmed using (sender, recipient)
+      ), deltas as (
+        select balance->>'participantId' as participant,
+          (balance->>'amountMinor')::numeric as amount
+        from jsonb_array_elements(split->'ledger'->'balances') as balance
+        union all
+        select sender, amount from confirmed
+        union all
+        select recipient, -amount from confirmed
+        union all
+        select sender, amount from outstanding_direct
+        union all
+        select recipient, -amount from outstanding_direct
+      ), residual as (
+        select participant, sum(amount) as amount from deltas group by participant
+      )
+      -- The solver can combine residual flows with direct obligations on one edge.
+      select coalesce((select sum(amount) from confirmed), 0) > 9007199254740991
+        or exists (select 1 from residual where abs(amount) > 9007199254740991)
+        or exists (
+          select 1 from outstanding_direct as direct
+          join residual as sender on sender.participant = direct.sender
+          join residual as recipient on recipient.participant = direct.recipient
+          where direct.amount + greatest(least(-sender.amount, recipient.amount), 0)
+            > 9007199254740991
+        )
+        or (select report.amount_minor from private.finance_bill_split_activity as report
+          where report.ws_id = p_ws_id and report.split_id = p_split_id and report.id = p_report_id)
+          > coalesce((select sum((transfer->>'amountMinor')::numeric)
+            from jsonb_array_elements(split->'ledger'->'settlement'->'transfers') as transfer), 0)
+    ) then
+      raise sqlstate 'PT409' using message = 'Confirmation exceeds the supported settlement bounds';
     end if;
   end if;
 
