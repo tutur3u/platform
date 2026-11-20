@@ -19,6 +19,8 @@ const optionalDayOfMonth = z.preprocess(
 
 export const walletPayloadSchema = z
   .object({
+    /** Archives (true) or restores (false) the wallet; updates only. */
+    archived: z.boolean().optional(),
     balance: optionalNumber,
     currency: z.string().min(1).optional(),
     description: z.string().max(500).nullable().optional(),

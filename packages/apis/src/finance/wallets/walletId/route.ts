@@ -69,7 +69,15 @@ export async function PUT(
   }
 
   // Extract credit-specific fields before updating the wallet
-  const { limit, statement_date, payment_date, ...walletData } = data;
+  const { archived, limit, statement_date, payment_date, ...walletFields } =
+    data;
+  const walletData =
+    archived === undefined
+      ? walletFields
+      : {
+          ...walletFields,
+          archived_at: archived ? new Date().toISOString() : null,
+        };
 
   const { data: updatedWallet, error } = await access.context.sbAdmin
     .schema('private')

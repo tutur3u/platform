@@ -16801,4 +16801,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeFeeLockNoLines => 'No configured tuition lines for this student';
+
+  @override
+  String get financePeriodDay => 'Day';
+
+  @override
+  String get financePeriodCustom => 'Custom';
+
+  @override
+  String get financeCheckpointsMismatched => 'Mismatched';
+
+  @override
+  String get financeCheckpointsUnchecked => 'Unchecked';
+
+  @override
+  String get financeCheckpointsArchived => 'Archived';
+
+  @override
+  String get financeCheckpointsBalanced => 'Balanced';
+
+  @override
+  String financeCheckpointsCheckedOn(String date) {
+    return 'Checked $date';
+  }
+
+  @override
+  String get financeCheckpointsSort => 'Sort wallets';
+
+  @override
+  String get financeCheckpointsSortName => 'Name';
+
+  @override
+  String get financeCheckpointsSortVariance => 'Largest variance';
+
+  @override
+  String get financeCheckpointsSortLastChecked => 'Least recently checked';
+
+  @override
+  String get financeCheckpointsNoMatches => 'No wallets match this filter';
+
+  @override
+  String financeCheckpointsLedgerPreview(String ledger, String variance) {
+    return 'Ledger $ledger · Variance $variance';
+  }
+
+  @override
+  String get financeWalletArchive => 'Archive';
+
+  @override
+  String get financeWalletRestore => 'Restore';
+
+  @override
+  String financeWalletArchivedToast(String wallet) {
+    return '$wallet archived';
+  }
+
+  @override
+  String financeWalletRestoredToast(String wallet) {
+    return '$wallet restored';
+  }
+
+  @override
+  String get financeUndo => 'Undo';
 }

@@ -16,6 +16,7 @@ class Wallet extends Equatable {
     this.reportOptIn,
     this.wsId,
     this.createdAt,
+    this.archivedAt,
   });
 
   factory Wallet.fromJson(Map<String, dynamic> json) => Wallet(
@@ -35,6 +36,10 @@ class Wallet extends Equatable {
     createdAt: json['created_at'] != null
         ? DateTime.parse(json['created_at'] as String)
         : null,
+    archivedAt: switch (json['archived_at']) {
+      final String value => DateTime.tryParse(value),
+      _ => null,
+    },
   );
 
   final String id;
@@ -52,6 +57,30 @@ class Wallet extends Equatable {
   final String? wsId;
   final DateTime? createdAt;
 
+  /// When the wallet was archived; null while it is active.
+  final DateTime? archivedAt;
+
+  bool get isArchived => archivedAt != null;
+
+  /// This wallet archived at [value], or restored when it is null.
+  Wallet withArchivedAt(DateTime? value) => Wallet(
+    id: id,
+    name: name,
+    description: description,
+    balance: balance,
+    currency: currency,
+    type: type,
+    icon: icon,
+    imageSrc: imageSrc,
+    limit: limit,
+    statementDate: statementDate,
+    paymentDate: paymentDate,
+    reportOptIn: reportOptIn,
+    wsId: wsId,
+    createdAt: createdAt,
+    archivedAt: value,
+  );
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -67,6 +96,7 @@ class Wallet extends Equatable {
     'report_opt_in': reportOptIn,
     'ws_id': wsId,
     'created_at': createdAt?.toIso8601String(),
+    'archived_at': archivedAt?.toIso8601String(),
   };
 
   @override
@@ -85,5 +115,6 @@ class Wallet extends Equatable {
     reportOptIn,
     wsId,
     createdAt,
+    archivedAt,
   ];
 }

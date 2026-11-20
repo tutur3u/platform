@@ -5,10 +5,13 @@ import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/l10n/l10n.dart';
 
+/// Tone of a checkpoint variance: a shortfall (actual below the ledger) is
+/// destructive, a surplus is a warning because it is still unexplained, and
+/// a balanced wallet is a success.
 AppTone checkpointVarianceTone(double variance) {
   if (variance < 0) return AppTone.destructive;
-  if (variance > 0) return AppTone.success;
-  return AppTone.neutral;
+  if (variance > 0) return AppTone.warning;
+  return AppTone.success;
 }
 
 class CheckpointAmounts extends StatelessWidget {

@@ -90,6 +90,7 @@ class _WalletCheckpointBatchSheetState
                   signed: true,
                 ),
                 controller: _inputs[wallet.id],
+                helperText: _preview(context, wallet, amounts[wallet.id]),
                 onChanged: (_) => setState(() {}),
                 errorText:
                     amounts.containsKey(wallet.id) && amounts[wallet.id] == null
@@ -109,6 +110,22 @@ class _WalletCheckpointBatchSheetState
           ),
         ),
       ],
+    );
+  }
+
+  /// Ledger balance and the variance the entered [actual] would record.
+  String? _preview(BuildContext context, Wallet wallet, double? actual) {
+    final ledger = wallet.balance;
+    final currency = wallet.currency;
+    if (actual == null || ledger == null || currency == null) return null;
+    return context.l10n.financeCheckpointsLedgerPreview(
+      financeMoney(context, ledger, currency),
+      financeMoney(
+        context,
+        checkpointVariance(actual, ledger),
+        currency,
+        signed: true,
+      ),
     );
   }
 

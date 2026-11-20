@@ -319,6 +319,49 @@ describe('wallet detail route', () => {
     });
   });
 
+  it('archives and restores a wallet without touching other fields', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-20T03:00:00.000Z'));
+    try {
+      for (const [archived, archivedAt] of [
+        [true, '2026-11-20T03:00:00.000Z'],
+        [false, null],
+      ] as const) {
+        const updateClient = createUpdateClient();
+        mocks.getAccessibleWallet.mockResolvedValue({
+          context: {
+            normalizedWsId: 'ws-1',
+            requiredPermission: 'update_wallets',
+            sbAdmin: updateClient.sbAdmin,
+            supabase: {},
+            userId: 'user-1',
+          },
+          wallet: { id: 'wallet-1' },
+        });
+
+        const { PUT } = await import('./route.js');
+        const response = await PUT(
+          new Request('http://localhost/wallets/wallet-1', {
+            method: 'PUT',
+            body: JSON.stringify({ archived }),
+          }),
+          {
+            params: Promise.resolve({ wsId: 'ws-1', walletId: 'wallet-1' }),
+          }
+        );
+
+        expect(response.status).toBe(200);
+        expect(updateClient.update).toHaveBeenCalledWith({
+          archived_at: archivedAt,
+        });
+        expect(updateClient.creditUpsert).not.toHaveBeenCalled();
+        expect(updateClient.creditDelete).not.toHaveBeenCalled();
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('deletes credit metadata when explicitly switching to standard', async () => {
     const updateClient = createUpdateClient();
     mocks.getAccessibleWallet.mockResolvedValue({

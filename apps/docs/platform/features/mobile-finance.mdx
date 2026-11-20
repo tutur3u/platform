@@ -33,11 +33,18 @@ Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
 
 ## Periods
 
-Transactions and a wallet page pin a period bar: previous, the period, next
-(never past today) and a Week / Month / Year chooser. Finance managers can also filter Transactions by
-tag. Both open on the current
-month; Transactions also offers All time, which search uses. Weeks start on
-Monday.
+Transactions and a wallet page pin a period selector: previous and next
+(never past today) around one title that names the granularity above the
+period. The title opens the granularity sheet, and each choice shows the
+period it lands on: other granularities keep the visible period's start,
+while choosing the current one again returns to today's period.
+Transactions offers Day, Week, Month, Year, a custom date range and All
+time, which search uses. Wallet pages and reports chart several buckets per
+period, so they offer Week, Month and Year. Both open on the current month.
+Weeks start on Monday. The wallet, category, tag and creator chips share the
+kind pills' fill and clip only at the screen edge. Finance managers can also
+filter Transactions by tag. `finance_period_selector_test.dart` covers the
+granularity anchors, the Next limit and the centred label.
 
 ## Empty transactions
 
@@ -80,10 +87,28 @@ calculates the adjustment from the current ledger and skips it when the
 difference is zero. Wallet-update permission controls recording, editing and
 deleting checks. Each check uses its wallet's currency.
 
-All-wallet check records several observations at one time. Its vertical list
-opens the relevant wallet, and the amount-visibility control masks variances as
-well as balances. The focused `wallet_checkpoint_ui_test.dart` covers signed
-balance inputs, variance direction and light and dark renders.
+All-wallet check records several observations at one time for every active
+wallet. Each entered balance previews the wallet's ledger balance and the
+variance it would record, and the amount-visibility control masks variances
+as well as balances. The focused `wallet_checkpoint_ui_test.dart` covers
+signed balance inputs, variance direction and light and dark renders.
+
+Variance tones are shared by the checkpoint list, the review sheet and the
+timeline: balanced is success, a shortfall (observed below the ledger) is
+destructive and a surplus is a warning, because both differences still need
+an explanation.
+
+The Checkpoints list filters active wallets by All, Mismatched and Unchecked
+with counts, and sorts by name, largest variance or least recently checked.
+Each row opens that wallet's reconciliation view. People with wallet-create
+permission add a wallet from the dock without leaving Checkpoints. Wallet
+editors swipe a row to archive it and can Undo from the toast; the Archived
+filter, shown while any wallet is archived, lists them and swipes to
+restore. Archiving sets the wallet's `archived_at` and keeps its balance,
+transactions and checkpoints. Only mobile Checkpoints and its all-wallet
+check hide archived wallets; other wallet pickers and web Finance still list
+them. `checkpoint_wallets_test.dart` and `finance_checkpoints_page_test.dart`
+cover the filters, sorting, archive overrides and Undo.
 
 ## Budgets
 
@@ -211,7 +236,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Recurring transactions | Schedule and manage recurring rules and view upcoming entries | List, create, edit and delete rules. Next dates appear in the list |
 | Invoices | Create and manage invoices, subscriptions, fee locks and reporting | Search, create, edit, delete, collect and set up subscriptions, change wallets, restore eligible deleted invoices, and manage fee lock drafts and revisions |
 | Reports and charts | Balance trend, cash flow, category breakdown and invoice analytics | Wallet and cross-wallet cash flow, cumulative movement, category totals, and invoice totals by wallet and creator |
-| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check. Review status is shared with web |
+| Wallet checkpoints | Record observed balances, batch check, history and transaction adjustments | Inline wallet review and timeline, checkpoint and interval adjustments, compact all-wallet check, filters, sorting, quick wallet creation and archive with Undo. Review status is shared with web; archiving is mobile-only |
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export, Money Lover import, and CSV or Excel exports for created and pending invoices |

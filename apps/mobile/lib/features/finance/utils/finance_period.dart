@@ -4,7 +4,7 @@ import 'package:mobile/data/models/finance/transaction.dart';
 import 'package:mobile/data/models/finance/transaction_query.dart';
 
 /// Length of a finance reporting period.
-enum FinancePeriodKind { week, month, year }
+enum FinancePeriodKind { day, week, month, year }
 
 /// A local calendar period (start inclusive, end exclusive). Weeks start on
 /// Monday.
@@ -14,6 +14,7 @@ class FinancePeriod extends Equatable {
   /// The [kind] period containing [date].
   factory FinancePeriod.containing(FinancePeriodKind kind, DateTime date) =>
       FinancePeriod._(kind, switch (kind) {
+        FinancePeriodKind.day => DateTime(date.year, date.month, date.day),
         FinancePeriodKind.week => DateTime(
           date.year,
           date.month,
@@ -30,6 +31,11 @@ class FinancePeriod extends Equatable {
 
   /// The period [count] steps away (negative goes back).
   FinancePeriod shift(int count) => FinancePeriod._(kind, switch (kind) {
+    FinancePeriodKind.day => DateTime(
+      start.year,
+      start.month,
+      start.day + count,
+    ),
     FinancePeriodKind.week => DateTime(
       start.year,
       start.month,
@@ -44,9 +50,10 @@ class FinancePeriod extends Equatable {
   FinanceTransactionQuery get query =>
       FinanceTransactionQuery(start: start, end: end);
 
-  /// Bars the period chart draws: days for a week or month, months for a
-  /// year.
+  /// Bars the period chart draws: one for a day, days for a week or month,
+  /// months for a year.
   int get bucketCount => switch (kind) {
+    FinancePeriodKind.day => 1,
     FinancePeriodKind.week => 7,
     FinancePeriodKind.month => DateTime(start.year, start.month + 1, 0).day,
     FinancePeriodKind.year => 12,
@@ -66,8 +73,10 @@ class FinancePeriod extends Equatable {
     };
   }
 
-  /// "16 – 22 Nov 2026", "November 2026" or "2026" in [locale].
+  /// "Fri, Nov 20, 2026", "16 – 22 Nov 2026", "November 2026" or "2026" in
+  /// [locale].
   String label(String locale) => switch (kind) {
+    FinancePeriodKind.day => DateFormat.yMMMEd(locale).format(start),
     FinancePeriodKind.week => () {
       final last = DateTime(start.year, start.month, start.day + 6);
       final sameMonth = last.month == start.month;
@@ -83,7 +92,7 @@ class FinancePeriod extends Equatable {
 }
 
 /// The calendar period [query] covers exactly, or null for all time or a
-/// range that is no single week, month or year.
+/// range that is no single day, week, month or year.
 FinancePeriod? financePeriodOf(FinanceTransactionQuery query) {
   final start = query.start;
   if (start == null) return null;

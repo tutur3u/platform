@@ -87,6 +87,38 @@ mixin FinanceRepositoryCheckpoints {
   Future<void> _invalidateCheckpoints(String wsId) => _cacheStore
       .invalidateTags(const ['finance:checkpoints'], workspaceId: wsId);
 
+  /// Archives or restores a wallet. Archived wallets keep their history and
+  /// leave day-to-day lists such as checkpoints.
+  Future<void> setWalletArchived({
+    required String wsId,
+    required String walletId,
+    required bool archived,
+    DateTime? now,
+  }) async {
+    final payload = <String, dynamic>{
+      'archived': archived,
+      // Lets the pending overlay show the change before the server answers.
+      'archived_at': archived
+          ? (now ?? DateTime.now()).toUtc().toIso8601String()
+          : null,
+    };
+    final path = FinanceEndpoints.wallet(wsId, walletId);
+    await queueOrSendVoid(
+      queue: _mutationQueue,
+      apiClient: _api,
+      feature: 'finance',
+      method: 'PUT',
+      path: path,
+      workspaceId: wsId,
+      payload: payload,
+      entityId: walletId,
+      send: () async {
+        await _api.putJson(path, payload);
+      },
+    );
+    await _invalidateCheckpoints(wsId);
+  }
+
   Future<WalletCheckpointSummaryResponse> getWalletCheckpointSummary({
     required String wsId,
     bool forceRefresh = false,

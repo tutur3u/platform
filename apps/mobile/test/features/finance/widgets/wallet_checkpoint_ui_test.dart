@@ -78,7 +78,7 @@ void main() {
         final surplus = find.text('+25 ₫');
         expect(
           tester.widget<Text>(surplus).style?.color,
-          tester.element(surplus).tokens.colorScheme.success,
+          tester.element(surplus).tokens.colorScheme.warning,
         );
         await tester.enterText(input, '100');
         await tester.pumpAndSettle();

@@ -266,7 +266,11 @@ page level; never stack a caption under a section header.
   `finance_segmented_row_test.dart`, `appearance_application_test.dart`.
 - Sorting and scopes (a collection, a wallet) use an `AppFilterButton` that
   names the current choice, opens an `AppOptionTile` sheet and shows `active`
-  while it narrows the list.
+  while it narrows the list. Set `menu` when the button sits in a strip of
+  filter pills: it takes the pills' fill and a trailing chevron. A sort
+  button in such a strip goes in `AppFilterBar.leading`, which scrolls with
+  the pills so the strip clips only at the screen edge; `trailing` stays
+  pinned and clips the pills before it.
 - Search uses the shell search action (`AppSheetSearch` in sheets). Do not put
   an inline search field above a list inside the shell.
 - Multi-select filters (labels, people, ranges) open a sheet and show their

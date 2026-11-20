@@ -220,8 +220,31 @@ class FinanceSceneRepository extends FinanceRepository {
     required String wsId,
     bool forceRefresh = false,
   }) async => WalletCheckpointSummaryResponse(
-    wallets: _wallets,
-    latestCheckpoints: [_checkpoint],
+    wallets: [
+      ..._wallets,
+      Wallet(
+        id: 'wallet-old',
+        name: 'Old cash',
+        currency: 'VND',
+        archivedAt: financeSceneDate,
+      ),
+    ],
+    latestCheckpoints: [
+      _checkpoint,
+      WalletCheckpoint(
+        id: 'checkpoint-usd',
+        walletId: 'wallet-usd',
+        actualBalance: 1224.5,
+        ledgerBalance: 1240,
+        currentLedgerBalance: 1240,
+        originalVariance: -15.5,
+        currentVariance: -15.5,
+        currency: 'USD',
+        checkedAt: financeSceneDate,
+        createdAt: financeSceneDate,
+        updatedAt: financeSceneDate,
+      ),
+    ],
     totalsByCurrency: const [
       WalletCheckpointCurrencyTotal(
         currency: 'VND',
@@ -333,6 +356,7 @@ const Set<FinanceScene> financeSceneCreates = {
   FinanceScene.budgets,
   FinanceScene.wallets,
   FinanceScene.walletDetail,
+  FinanceScene.checkpoints,
 };
 
 class FinanceScreenScene extends StatefulWidget {

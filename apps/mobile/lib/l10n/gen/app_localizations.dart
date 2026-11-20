@@ -31116,6 +31116,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No configured tuition lines for this student'**
   String get financeFeeLockNoLines;
+
+  /// No description provided for @financePeriodDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get financePeriodDay;
+
+  /// No description provided for @financePeriodCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get financePeriodCustom;
+
+  /// No description provided for @financeCheckpointsMismatched.
+  ///
+  /// In en, this message translates to:
+  /// **'Mismatched'**
+  String get financeCheckpointsMismatched;
+
+  /// No description provided for @financeCheckpointsUnchecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unchecked'**
+  String get financeCheckpointsUnchecked;
+
+  /// No description provided for @financeCheckpointsArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get financeCheckpointsArchived;
+
+  /// No description provided for @financeCheckpointsBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get financeCheckpointsBalanced;
+
+  /// No description provided for @financeCheckpointsCheckedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked {date}'**
+  String financeCheckpointsCheckedOn(String date);
+
+  /// No description provided for @financeCheckpointsSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort wallets'**
+  String get financeCheckpointsSort;
+
+  /// No description provided for @financeCheckpointsSortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get financeCheckpointsSortName;
+
+  /// No description provided for @financeCheckpointsSortVariance.
+  ///
+  /// In en, this message translates to:
+  /// **'Largest variance'**
+  String get financeCheckpointsSortVariance;
+
+  /// No description provided for @financeCheckpointsSortLastChecked.
+  ///
+  /// In en, this message translates to:
+  /// **'Least recently checked'**
+  String get financeCheckpointsSortLastChecked;
+
+  /// No description provided for @financeCheckpointsNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallets match this filter'**
+  String get financeCheckpointsNoMatches;
+
+  /// No description provided for @financeCheckpointsLedgerPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Ledger {ledger} · Variance {variance}'**
+  String financeCheckpointsLedgerPreview(String ledger, String variance);
+
+  /// No description provided for @financeWalletArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get financeWalletArchive;
+
+  /// No description provided for @financeWalletRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get financeWalletRestore;
+
+  /// No description provided for @financeWalletArchivedToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{wallet} archived'**
+  String financeWalletArchivedToast(String wallet);
+
+  /// No description provided for @financeWalletRestoredToast.
+  ///
+  /// In en, this message translates to:
+  /// **'{wallet} restored'**
+  String financeWalletRestoredToast(String wallet);
+
+  /// No description provided for @financeUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get financeUndo;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -16594,4 +16594,66 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeFeeLockNoLines => 'Chưa có dòng học phí được cấu hình cho học viên này';
+
+  @override
+  String get financePeriodDay => 'Ngày';
+
+  @override
+  String get financePeriodCustom => 'Tùy chỉnh';
+
+  @override
+  String get financeCheckpointsMismatched => 'Lệch';
+
+  @override
+  String get financeCheckpointsUnchecked => 'Chưa kiểm';
+
+  @override
+  String get financeCheckpointsArchived => 'Đã lưu trữ';
+
+  @override
+  String get financeCheckpointsBalanced => 'Khớp';
+
+  @override
+  String financeCheckpointsCheckedOn(String date) {
+    return 'Kiểm $date';
+  }
+
+  @override
+  String get financeCheckpointsSort => 'Sắp xếp ví';
+
+  @override
+  String get financeCheckpointsSortName => 'Tên';
+
+  @override
+  String get financeCheckpointsSortVariance => 'Chênh lệch lớn nhất';
+
+  @override
+  String get financeCheckpointsSortLastChecked => 'Lâu chưa kiểm nhất';
+
+  @override
+  String get financeCheckpointsNoMatches => 'Không có ví phù hợp bộ lọc';
+
+  @override
+  String financeCheckpointsLedgerPreview(String ledger, String variance) {
+    return 'Sổ sách $ledger · Chênh lệch $variance';
+  }
+
+  @override
+  String get financeWalletArchive => 'Lưu trữ';
+
+  @override
+  String get financeWalletRestore => 'Khôi phục';
+
+  @override
+  String financeWalletArchivedToast(String wallet) {
+    return 'Đã lưu trữ $wallet';
+  }
+
+  @override
+  String financeWalletRestoredToast(String wallet) {
+    return 'Đã khôi phục $wallet';
+  }
+
+  @override
+  String get financeUndo => 'Hoàn tác';
 }

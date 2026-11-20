@@ -14,12 +14,15 @@ import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/utils/checkpoint_wallets.dart';
 import 'package:mobile/features/finance/view/wallet_reconciliation_panel.dart';
-import 'package:mobile/features/finance/widgets/checkpoint_amounts.dart';
-import 'package:mobile/features/finance/widgets/finance_money.dart';
+import 'package:mobile/features/finance/widgets/checkpoint_wallet_list.dart';
+import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/wallet_checkpoint_sheets.dart';
+import 'package:mobile/features/finance/widgets/wallet_dialog.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
+import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -94,6 +97,11 @@ class _CheckpointOverviewState extends State<_CheckpointOverview> {
   bool _failed = false;
   bool _busy = false;
   bool _scopeChanged = false;
+  CheckpointWalletFilter _filter = CheckpointWalletFilter.all;
+  CheckpointWalletSort _sort = CheckpointWalletSort.name;
+
+  /// Archive changes the server summary has not caught up with yet.
+  final Map<String, DateTime?> _archived = {};
   late final StreamSubscription<String?> _workspaceSubscription;
   StreamSubscription<String?>? _actorSubscription;
 
@@ -166,7 +174,15 @@ class _CheckpointOverviewState extends State<_CheckpointOverview> {
         context: context,
         size: AppSheetSize.large,
         builder: (_) {
-          final form = WalletCheckpointBatchSheet(wallets: summary.wallets);
+          final form = WalletCheckpointBatchSheet(
+            wallets: [
+              for (final wallet in summary.wallets)
+                if (!(_archived.containsKey(wallet.id)
+                    ? _archived[wallet.id] != null
+                    : wallet.isArchived))
+                  wallet,
+            ],
+          );
           return preferences == null
               ? form
               : BlocProvider.value(value: preferences, child: form);
@@ -217,21 +233,83 @@ class _CheckpointOverviewState extends State<_CheckpointOverview> {
     }
   }
 
+  Future<void> _createWallet() async {
+    if (!_active) return;
+    final created = await showFinanceFullscreenModal<bool>(
+      context: context,
+      builder: (_) => WalletDialog(
+        wsId: widget.workspace,
+        repository: context.read<FinanceRepository>(),
+      ),
+    );
+    if (created != true || !mounted || !_active) return;
+    FinanceCubit.clearWorkspaceCache(widget.workspace);
+    await _load(force: true);
+  }
+
+  /// Archives or restores the entry's wallet at once, then offers Undo.
+  Future<void> _setArchived(
+    CheckpointWalletEntry entry,
+    bool archived, {
+    bool undoable = true,
+  }) async {
+    if (!_active) return;
+    final wallet = entry.wallet;
+    final repository = context.read<FinanceRepository>();
+    final l10n = context.l10n;
+    final name = wallet.name ?? l10n.financeWallet;
+    final previous = wallet.archivedAt;
+    setState(() => _archived[wallet.id] = archived ? DateTime.now() : null);
+    if (undoable) {
+      showAppToast(
+        context,
+        message: archived
+            ? l10n.financeWalletArchivedToast(name)
+            : l10n.financeWalletRestoredToast(name),
+        actionLabel: l10n.financeUndo,
+        onAction: () => unawaited(
+          _setArchived(
+            CheckpointWalletEntry(
+              wallet.withArchivedAt(_archived[wallet.id]),
+              entry.latest,
+            ),
+            !archived,
+            undoable: false,
+          ),
+        ),
+      );
+    }
+    try {
+      await repository.setWalletArchived(
+        wsId: widget.workspace,
+        walletId: wallet.id,
+        archived: archived,
+      );
+      if (!mounted || !_active) return;
+      FinanceCubit.clearWorkspaceCache(widget.workspace);
+      await _load(force: true);
+    } on Exception {
+      if (!mounted || !_active) return;
+      setState(() => _archived[wallet.id] = previous);
+      showAppToast(context, message: l10n.commonSomethingWentWrong);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final summary = _summary;
     final l10n = context.l10n;
-    final visible = financeAmountsVisible(context);
     final selected = summary?.wallets
         .where((wallet) => wallet.id == widget.initialWalletId)
         .firstOrNull;
-    final latest = {
-      for (final row in summary?.latestCheckpoints ?? <WalletCheckpoint>[])
-        row.walletId: row,
-    };
-    return NovaRefreshIndicator(
-      onRefresh: () => _load(force: true),
-      child: AppPageListView(
+    final canUpdate = canManageFinance(context, 'update_wallets');
+    final canCreate = canManageFinance(context, 'create_wallets');
+    final entries = summary == null
+        ? const <CheckpointWalletEntry>[]
+        : checkpointWalletEntries(summary, archived: _archived);
+    final Widget body;
+    if (summary == null || summary.wallets.isEmpty || selected != null) {
+      body = AppPageListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           if (_failed)
@@ -249,6 +327,8 @@ class _CheckpointOverviewState extends State<_CheckpointOverview> {
               icon: LucideIcons.wallet,
               title: l10n.financeCheckpointsNoWallets,
               message: l10n.financeCheckpointsNoWalletsDetail,
+              actionLabel: canCreate ? l10n.financeCreateWallet : null,
+              onAction: canCreate ? () => unawaited(_createWallet()) : null,
             )
           else if (selected != null) ...[
             AppGroupedCard(
@@ -268,45 +348,99 @@ class _CheckpointOverviewState extends State<_CheckpointOverview> {
               revision: _request,
               onAdjustment: () => _load(force: true),
             ),
-          ] else if (summary != null) ...[
-            if (canManageFinance(context, 'update_wallets')) ...[
-              AppButton.primary(
-                onPressed: _busy ? null : () => unawaited(_batchCheck(summary)),
-                child: Text(l10n.financeCheckpointsBatchRecord),
-              ),
-              const AppGap(AppLayout.itemGap),
-            ],
-            AppGroupedCard(
-              children: [
-                for (final wallet in summary.wallets)
-                  AppRichRow(
-                    key: ValueKey(wallet.id),
-                    title: wallet.name ?? l10n.financeWallet,
-                    subtitle: latest[wallet.id] == null
-                        ? l10n.financeCheckpointsNoCheckpoint
-                        : l10n.financeCheckpointsCurrentVariance,
-                    leading: const AppIconTile(icon: LucideIcons.wallet),
-                    trailing: switch (latest[wallet.id]) {
-                      final checkpoint? => FinanceAmountText(
-                        checkpoint.currentVariance,
-                        checkpoint.currency,
-                        signed: true,
-                        color: visible
-                            ? checkpointVarianceTone(
-                                checkpoint.currentVariance,
-                              ).foreground(context.tokens.colorScheme)
-                            : null,
-                      ),
-                      null => null,
-                    },
-                    onTap: () =>
-                        context.push(Routes.walletDetailPath(wallet.id)),
-                  ),
-              ],
-            ),
           ],
         ],
-      ),
+      );
+    } else {
+      final visible = visibleCheckpointWallets(
+        entries,
+        filter: _filter,
+        sort: _sort,
+      );
+      body = CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          if (_failed || canUpdate)
+            SliverAppPage(
+              includeBottom: false,
+              sliver: SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: AppLayout.itemGap),
+                  child: _failed
+                      ? AppStateMessage.inline(
+                          icon: LucideIcons.circleAlert,
+                          title: l10n.commonSomethingWentWrong,
+                          tone: AppTone.destructive,
+                          actionLabel: l10n.commonRetry,
+                          onAction: () => unawaited(_load(force: true)),
+                        )
+                      : AppButton.primary(
+                          key: const ValueKey('checkpoint-batch'),
+                          onPressed:
+                              _busy ||
+                                  !entries.any(
+                                    (entry) => !entry.wallet.isArchived,
+                                  )
+                              ? null
+                              : () => unawaited(_batchCheck(summary)),
+                          leading: const Icon(LucideIcons.listChecks),
+                          child: Text(l10n.financeCheckpointsBatchRecord),
+                        ),
+                ),
+              ),
+            ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.only(
+                top: _failed || canUpdate ? 0 : AppLayout.pageTop,
+              ),
+              child: CheckpointWalletFilters(
+                entries: entries,
+                filter: _filter,
+                sort: _sort,
+                onFilterChanged: (filter) => setState(() => _filter = filter),
+                onSortChanged: (sort) => setState(() => _sort = sort),
+              ),
+            ),
+          ),
+          SliverAppPage(
+            includeTop: false,
+            sliver: SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: AppLayout.itemGap),
+                child: CheckpointWalletCard(
+                  entries: visible,
+                  onOpen: (entry) => context.push(
+                    Routes.financeCheckpointsPath(walletId: entry.wallet.id),
+                  ),
+                  onArchive: canUpdate
+                      ? (entry, archived) =>
+                            unawaited(_setArchived(entry, archived))
+                      : null,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ShellChromeActions(
+          ownerId: 'finance-checkpoints-create-wallet',
+          locations: const {Routes.financeCheckpoints},
+          actions: [
+            if (canCreate && selected == null)
+              financeCreateAction(
+                id: 'finance-checkpoints-create-wallet',
+                tooltip: l10n.financeCreateWallet,
+                onPressed: () => unawaited(_createWallet()),
+              ),
+          ],
+        ),
+        NovaRefreshIndicator(onRefresh: () => _load(force: true), child: body),
+      ],
     );
   }
 }

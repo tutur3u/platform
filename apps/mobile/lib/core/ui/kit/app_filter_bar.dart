@@ -34,6 +34,7 @@ class AppFilterBar<T> extends StatelessWidget {
     required this.options,
     required this.selected,
     required this.onSelected,
+    this.leading,
     this.trailing,
     this.scrollPadding = EdgeInsets.zero,
     super.key,
@@ -42,6 +43,10 @@ class AppFilterBar<T> extends StatelessWidget {
   final List<AppFilterOption<T>> options;
   final T selected;
   final ValueChanged<T> onSelected;
+
+  /// Control that scrolls with the pills ahead of them, such as a sort
+  /// [AppFilterButton] in a strip that must clip only at the screen edge.
+  final Widget? leading;
   final Widget? trailing;
   final EdgeInsetsGeometry scrollPadding;
 
@@ -53,6 +58,10 @@ class AppFilterBar<T> extends StatelessWidget {
           padding: scrollPadding,
           child: Row(
             children: [
+              if (leading case final leading?) ...[
+                leading,
+                const SizedBox(width: AppSpacing.sm),
+              ],
               for (final (index, option) in options.indexed) ...[
                 if (index > 0) const SizedBox(width: AppSpacing.sm),
                 _FilterPill(
@@ -149,6 +158,7 @@ class AppFilterButton extends StatelessWidget {
     this.icon = LucideIcons.arrowUpDown,
     this.tooltip,
     this.active = false,
+    this.menu = false,
     super.key,
   });
 
@@ -159,6 +169,10 @@ class AppFilterButton extends StatelessWidget {
 
   /// Highlights the button while it narrows the list (not the default).
   final bool active;
+
+  /// Draws the button as a picker chip that sits in a row of filter pills:
+  /// the pills' muted fill and a trailing chevron for the sheet it opens.
+  final bool menu;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +188,11 @@ class AppFilterButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           constraints: const BoxConstraints(maxWidth: 200),
           decoration: BoxDecoration(
-            color: active ? c.accent : null,
+            color: active
+                ? c.accent
+                : menu
+                ? c.muted.withValues(alpha: 0.7)
+                : null,
             borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(color: active ? c.primary : c.border),
           ),
@@ -194,6 +212,14 @@ class AppFilterButton extends StatelessWidget {
                   ),
                 ),
               ),
+              if (menu) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Icon(
+                  LucideIcons.chevronDown,
+                  size: 14,
+                  color: c.mutedForeground,
+                ),
+              ],
             ],
           ),
         ),

@@ -79,6 +79,7 @@ class TransactionListFilters extends StatelessWidget {
                     icon: LucideIcons.wallet,
                     label: state.selectedWallet?.name ?? l10n.financeAllWallets,
                     active: state.walletId != null,
+                    menu: true,
                     onPressed: () => unawaited(_pickWallet(context)),
                   ),
                   AppFilterButton(
@@ -91,6 +92,7 @@ class TransactionListFilters extends StatelessWidget {
                             ?.name ??
                         l10n.financeCategory,
                     active: query.categoryId != null,
+                    menu: true,
                     onPressed: () => unawaited(_pickCategory(context)),
                   ),
                   if (showTagFilter)
@@ -99,6 +101,7 @@ class TransactionListFilters extends StatelessWidget {
                       icon: LucideIcons.tags,
                       label: l10n.financeTags,
                       active: query.tagId != null,
+                      menu: true,
                       onPressed: () => unawaited(_pickTag(context)),
                     ),
                   if (showCreatorFilter)
@@ -107,6 +110,7 @@ class TransactionListFilters extends StatelessWidget {
                       icon: LucideIcons.userRound,
                       label: l10n.financeCreator,
                       active: query.creatorId != null,
+                      menu: true,
                       onPressed: () => unawaited(_pickCreator(context)),
                     ),
                 ],

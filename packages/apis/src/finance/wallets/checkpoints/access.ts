@@ -275,7 +275,8 @@ export async function listAccessibleCheckpointWallets(
   let query = context.sbAdmin
     .schema('private')
     .from('workspace_wallets')
-    .select('id,name,currency,balance,type,icon,image_src')
+    // Every column, so archived_at reaches clients once the column exists.
+    .select('*')
     .eq('ws_id', context.normalizedWsId);
 
   if (walletIds) {

@@ -87,6 +87,7 @@ class TransactionListBody extends StatelessWidget {
                   key: const ValueKey('finance-transactions-period'),
                   period: customLabel == null ? financePeriodOf(query) : null,
                   customLabel: customLabel,
+                  kinds: financeAllPeriodKinds,
                   onCustomRange: () => _pickDateRange(context, today),
                   now: today,
                   onChanged: (period) => onFiltersChanged(

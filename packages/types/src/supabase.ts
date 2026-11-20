@@ -21135,6 +21135,7 @@ export type Database = {
       };
       workspace_wallets: {
         Row: {
+          archived_at: string | null;
           balance: number | null;
           created_at: string | null;
           currency: string;
@@ -21149,6 +21150,7 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          archived_at?: string | null;
           balance?: number | null;
           created_at?: string | null;
           currency?: string;
@@ -21162,6 +21164,7 @@ export type Database = {
           ws_id: string;
         };
         Update: {
+          archived_at?: string | null;
           balance?: number | null;
           created_at?: string | null;
           currency?: string;

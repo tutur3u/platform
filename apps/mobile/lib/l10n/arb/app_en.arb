@@ -7984,5 +7984,54 @@
   "financeFeeLockChanged": "Refresh the fee lock before trying again.",
   "financeFeeLockReason": "Reason",
   "financeFeeLockSessions": "Billable sessions",
-  "financeFeeLockNoLines": "No configured tuition lines for this student"
+  "financeFeeLockNoLines": "No configured tuition lines for this student",
+  "financePeriodDay": "Day",
+  "financePeriodCustom": "Custom",
+  "financeCheckpointsMismatched": "Mismatched",
+  "financeCheckpointsUnchecked": "Unchecked",
+  "financeCheckpointsArchived": "Archived",
+  "financeCheckpointsBalanced": "Balanced",
+  "financeCheckpointsCheckedOn": "Checked {date}",
+  "@financeCheckpointsCheckedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "financeCheckpointsSort": "Sort wallets",
+  "financeCheckpointsSortName": "Name",
+  "financeCheckpointsSortVariance": "Largest variance",
+  "financeCheckpointsSortLastChecked": "Least recently checked",
+  "financeCheckpointsNoMatches": "No wallets match this filter",
+  "financeCheckpointsLedgerPreview": "Ledger {ledger} · Variance {variance}",
+  "@financeCheckpointsLedgerPreview": {
+    "placeholders": {
+      "ledger": {
+        "type": "String"
+      },
+      "variance": {
+        "type": "String"
+      }
+    }
+  },
+  "financeWalletArchive": "Archive",
+  "financeWalletRestore": "Restore",
+  "financeWalletArchivedToast": "{wallet} archived",
+  "@financeWalletArchivedToast": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "financeWalletRestoredToast": "{wallet} restored",
+  "@financeWalletRestoredToast": {
+    "placeholders": {
+      "wallet": {
+        "type": "String"
+      }
+    }
+  },
+  "financeUndo": "Undo"
 }
