@@ -1,10 +1,11 @@
 -- A learner who is a plain workspace member can read courses and rosters
--- but cannot enrol themselves, edit a course or remove anyone. Group
--- permissions keep the Teach course routes and roster RPCs working.
+-- but cannot enrol themselves, edit a course or remove anyone. Course and
+-- roster writes need manage_courses; update_user_groups keeps course content
+-- writes such as grade release and quiz sets.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(21);
+select plan(23);
 
 insert into auth.users (
   id, aud, role, email, email_confirmed_at, created_at, updated_at
@@ -13,14 +14,16 @@ values
   ('c1940000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'roster-owner@example.com', now(), now(), now()),
   ('c1940000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'roster-learner@example.com', now(), now(), now()),
   ('c1940000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'roster-creator@example.com', now(), now(), now()),
-  ('c1940000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'roster-teacher@example.com', now(), now(), now());
+  ('c1940000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'roster-teacher@example.com', now(), now(), now()),
+  ('c1940000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'roster-manager@example.com', now(), now(), now());
 
 insert into public.users (id, display_name)
 values
   ('c1940000-0000-4000-8000-000000000001', 'Roster Owner'),
   ('c1940000-0000-4000-8000-000000000002', 'Roster Learner'),
   ('c1940000-0000-4000-8000-000000000003', 'Roster Creator'),
-  ('c1940000-0000-4000-8000-000000000004', 'Roster Teacher')
+  ('c1940000-0000-4000-8000-000000000004', 'Roster Teacher'),
+  ('c1940000-0000-4000-8000-000000000005', 'Roster Manager')
 on conflict (id) do nothing;
 
 insert into public.workspaces (id, name, personal, creator_id)
@@ -41,22 +44,26 @@ insert into public.workspace_members (ws_id, user_id, type)
 values
   ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000002', 'MEMBER'),
   ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000003', 'MEMBER'),
-  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000004', 'MEMBER');
+  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000004', 'MEMBER'),
+  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000005', 'MEMBER');
 
 insert into public.workspace_roles (id, ws_id, name)
 values
   ('c1940000-0000-4000-8000-000000000011', 'c1940000-0000-4000-8000-000000000010', 'Course creators'),
-  ('c1940000-0000-4000-8000-000000000012', 'c1940000-0000-4000-8000-000000000010', 'Teachers');
+  ('c1940000-0000-4000-8000-000000000012', 'c1940000-0000-4000-8000-000000000010', 'Teachers'),
+  ('c1940000-0000-4000-8000-000000000013', 'c1940000-0000-4000-8000-000000000010', 'Course managers');
 
 insert into public.workspace_role_permissions (ws_id, role_id, permission, enabled)
 values
   ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000011', 'create_user_groups', true),
-  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000012', 'update_user_groups', true);
+  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000012', 'update_user_groups', true),
+  ('c1940000-0000-4000-8000-000000000010', 'c1940000-0000-4000-8000-000000000013', 'manage_courses', true);
 
 insert into public.workspace_role_members (role_id, user_id)
 values
   ('c1940000-0000-4000-8000-000000000011', 'c1940000-0000-4000-8000-000000000003'),
-  ('c1940000-0000-4000-8000-000000000012', 'c1940000-0000-4000-8000-000000000004');
+  ('c1940000-0000-4000-8000-000000000012', 'c1940000-0000-4000-8000-000000000004'),
+  ('c1940000-0000-4000-8000-000000000013', 'c1940000-0000-4000-8000-000000000005');
 
 insert into public.workspace_user_groups (id, ws_id, name, is_course_published)
 values
@@ -228,23 +235,30 @@ select throws_ok(
   'create_user_groups alone does not manage rosters'
 );
 
--- update_user_groups manages rosters and edits courses.
+-- update_user_groups manages course content but not rosters or courses.
 select set_config(
   'request.jwt.claims',
   '{"sub":"c1940000-0000-4000-8000-000000000004","role":"authenticated","aal":"aal2"}',
   true
 );
-select lives_ok(
+select throws_ok(
   $$insert into public.workspace_user_groups_users (group_id, user_id, role)
     select 'c1940000-0000-4000-8000-000000000021', learner, 'STUDENT'
     from roster_people$$,
-  'an update_user_groups member enrols a learner'
+  '42501',
+  'new row violates row-level security policy for table "workspace_user_groups_users"',
+  'update_user_groups alone does not manage rosters'
 );
-select lives_ok(
-  $$update public.workspace_user_groups
-    set name = 'Renamed course'
-    where id = 'c1940000-0000-4000-8000-000000000020'$$,
-  'an update_user_groups member edits a course'
+with renamed as (
+  update public.workspace_user_groups
+  set name = 'Teacher rename'
+  where id = 'c1940000-0000-4000-8000-000000000020'
+  returning id
+)
+select is(
+  (select count(*)::integer from renamed),
+  0,
+  'update_user_groups alone does not edit a course'
 );
 with updated as (
   update public.workspace_course_modules
@@ -261,6 +275,25 @@ select lives_ok(
   $$insert into public.workspace_quiz_sets (ws_id, name)
     values ('c1940000-0000-4000-8000-000000000010', 'Teacher quiz set')$$,
   'an update_user_groups member creates a quiz set'
+);
+
+-- manage_courses manages rosters and edits courses.
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"c1940000-0000-4000-8000-000000000005","role":"authenticated","aal":"aal2"}',
+  true
+);
+select lives_ok(
+  $$insert into public.workspace_user_groups_users (group_id, user_id, role)
+    select 'c1940000-0000-4000-8000-000000000021', learner, 'STUDENT'
+    from roster_people$$,
+  'a manage_courses member enrols a learner'
+);
+select lives_ok(
+  $$update public.workspace_user_groups
+    set name = 'Renamed course'
+    where id = 'c1940000-0000-4000-8000-000000000020'$$,
+  'a manage_courses member edits a course'
 );
 
 reset role;

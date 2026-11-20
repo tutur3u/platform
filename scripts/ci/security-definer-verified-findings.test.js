@@ -252,6 +252,11 @@ const expectedVerifiedIdentities = [
     'workspace_storage.object_access(text,text,workspace_storage . actor_access)',
     'public-execute',
   ],
+  [
+    'apps/database/supabase/migrations/20261124064900_lms_course_manager_permission.sql',
+    'public.has_workspace_permission(uuid,uuid,text)',
+    'public-execute',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>

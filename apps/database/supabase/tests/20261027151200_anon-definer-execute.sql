@@ -386,7 +386,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.get_workspace_wallets_income(uuid,timestamp with time zone,timestamp with time zone,boolean)', false, true),
   ('public.get_workspace_wallets_income(uuid,uuid,timestamp with time zone,timestamp with time zone,boolean)', true, true),
   ('public.get_workspace_wallets_net_total(uuid,uuid,timestamp with time zone,timestamp with time zone,boolean)', true, false),
-  ('public.handle_workspace_user_group_creator_assignment()', true, true),
+  ('public.handle_workspace_user_group_creator_assignment()', false, false),
   ('public.has_task_permission(uuid,text)', true, true),
   ('public.has_workspace_permission(uuid,uuid,text)', true, true),
   ('public.has_workspace_secret(uuid,text)', true, true),

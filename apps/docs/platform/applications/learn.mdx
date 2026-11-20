@@ -352,11 +352,11 @@ web education routes; there is no learner-facing exception.
   gate. Learners get prompts from the Learn server.
 - Courses (`workspace_user_groups`) and rosters
   (`workspace_user_groups_users`) stay readable by workspace members. Creating
-  a course needs `create_user_groups`, editing needs `update_user_groups`,
-  deleting needs `delete_user_groups` or `update_user_groups`, and roster
-  changes need `update_user_groups`. Roster changes in the apps go through the
-  audited service-role RPCs. Module release and quiz-set or quiz-link updates
-  also require `update_user_groups`. Practice attempts check and lock
+  a draft course needs `create_user_groups`; publishing, editing, deleting and
+  roster changes need the creator-granted `manage_courses` (see
+  [course publishing](/platform/applications/lms#course-publishing-and-creator-assignment)).
+  Roster changes in the apps go through the audited service-role RPCs. Module
+  release and quiz-set or quiz-link updates require `update_user_groups`. Practice attempts check and lock
   membership, the learner link, the course and enrollment in the same
   transaction, including when returning an existing result on retry.
 - A test, its module and its questions must belong to the same workspace.
