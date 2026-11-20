@@ -125,3 +125,24 @@ it('never bills more than the hold and bills nothing when no answer was received
     })
   );
 });
+
+it('settles an answer without measurable usage once, through the unpriced hold', async () => {
+  await expect(
+    billMeetChat(input, async () => ({
+      text: 'Answer',
+      costUsd: null,
+      searchCount: 0,
+      usage: { available: false, inputTokens: 0, outputTokens: 0 },
+    }))
+  ).rejects.toMatchObject({ status: 503 });
+  expect(f.settle).toHaveBeenCalledTimes(1);
+  expect(f.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      runId: 'run',
+      status: 'failed',
+      actualCredits: 40,
+      metadata: expect.objectContaining({ usage_source: 'unpriced_partial' }),
+    })
+  );
+  expect(f.step).not.toHaveBeenCalled();
+});

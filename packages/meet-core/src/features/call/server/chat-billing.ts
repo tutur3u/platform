@@ -92,6 +92,13 @@ export async function billMeetChat(
   let answer: Answer;
   try {
     answer = await generate(allowSearch);
+    // An answer without measurable usage settles once, through the same
+    // unpriced path as any received answer whose usage is unknown.
+    if (!answer.usage.available)
+      throw withObservedUsage(
+        new MeetCallAccessError(503, 'AI usage accounting is unavailable'),
+        { costUsd: null, searchCount: answer.searchCount, usage: answer.usage }
+      );
   } catch (error) {
     const observed = observedUsage(error);
     const usage = observed?.usage;
@@ -136,8 +143,6 @@ export async function billMeetChat(
     });
     throw error;
   }
-  if (!answer.usage.available)
-    throw new MeetCallAccessError(503, 'AI usage accounting is unavailable');
   const actual = await calculateAiStudioUsageCost({
     workspaceId: input.workspaceId,
     modelId: input.model.id,

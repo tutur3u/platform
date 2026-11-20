@@ -367,3 +367,37 @@ it('discards an answer whose consent changed while it was in flight and settles 
     expect.objectContaining({ body: expect.anything() })
   );
 });
+
+it('settles an answer without measurable usage once as unpriced in both receipts', async () => {
+  mocks.answer.mockImplementationOnce(async () => ({
+    text: 'Answer',
+    costUsd: null,
+    searchCount: 0,
+    usage: { available: false, inputTokens: 0, outputTokens: 0 },
+  }));
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 503,
+  });
+  // AI Studio: one settlement that captures exactly the reserved hold.
+  expect(mocks.settle).toHaveBeenCalledTimes(1);
+  const reserved = (mocks.begin.mock.calls[0] as unknown as [
+    { reservedCredits: number },
+  ])[0].reservedCredits;
+  expect(mocks.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 'failed',
+      actualCredits: reserved,
+      metadata: expect.objectContaining({ usage_source: 'unpriced_partial' }),
+    })
+  );
+  // Room: the request finalizes as unpriced and posts nothing.
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'ai.finish',
+    messageId: 'message',
+    costUsd: null,
+  });
+  expect(mocks.service).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ body: expect.anything() })
+  );
+});

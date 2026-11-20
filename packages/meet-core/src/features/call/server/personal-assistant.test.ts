@@ -180,7 +180,7 @@ it('retries settlement with the same run without regenerating or double billing'
     'run',
   ]);
 });
-it('keeps unknown usage reserved for reconciliation and withholds the output', async () => {
+it('captures the reserved hold once for unknown usage and withholds the output', async () => {
   f.answer.mockResolvedValueOnce({
     text: 'answer',
     searchCount: 0,
@@ -189,7 +189,14 @@ it('keeps unknown usage reserved for reconciliation and withholds the output', a
   await expect(
     answerPersonalMeetChat('requester', input)
   ).rejects.toMatchObject({ status: 503 });
-  expect(f.settle).not.toHaveBeenCalled();
+  expect(f.settle).toHaveBeenCalledOnce();
+  expect(f.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 'failed',
+      metadata: expect.objectContaining({ usage_source: 'unpriced_partial' }),
+    })
+  );
+  expect(f.settle.mock.calls[0]![0].actualCredits).toBeGreaterThan(0);
 });
 it('accounts for empty output before reporting the provider failure', async () => {
   f.answer.mockResolvedValueOnce({
