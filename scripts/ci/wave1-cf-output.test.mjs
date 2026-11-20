@@ -142,3 +142,79 @@ test('multi-chunk sealed output passes cf deploy prebuilt dry-run', async (t) =>
     exec: execCfFromRepo,
   });
 });
+
+test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) => {
+  const appRoot = fixture(t, 'apps');
+  mkdirSync(join(appRoot, 'dist/server/assets'), { recursive: true });
+  mkdirSync(join(appRoot, 'dist/server/.vite'), { recursive: true });
+  writeFileSync(
+    join(appRoot, 'dist/server/assets', 'index-abc12345.js'),
+    'export default { fetch() { return new Response("apps"); } };\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/assets', 'chunk-xyz98765.js'),
+    'export const shared = true;\n'
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/.vite/manifest.json'),
+    JSON.stringify({
+      entry: {
+        file: 'assets/index-abc12345.js',
+        isEntry: true,
+        imports: ['chunk'],
+      },
+      chunk: { file: 'assets/chunk-xyz98765.js', imports: [] },
+    })
+  );
+  writeFileSync(
+    join(appRoot, 'dist/server/wrangler.json'),
+    JSON.stringify({
+      ...JSON.parse(
+        readFileSync(join(appRoot, 'dist/server/wrangler.json'), 'utf8')
+      ),
+      main: './assets/index-abc12345.js',
+      rules: [{ type: 'ESModule', globs: ['**/*.js', '**/*.mjs'] }],
+    })
+  );
+  prepare(appRoot, 'apps', 'production', 'tuturuuu-e89', sha);
+  const env = {
+    ...process.env,
+    RUNNER_TEMP: mkdtempSync(join(tmpdir(), 'wave1-cf-apps-entry-')),
+  };
+  t.after(() => rmSync(env.RUNNER_TEMP, { recursive: true, force: true }));
+  const parent = realpathSync(
+    mkdtempSync(join(tmpdir(), 'wave1-cf-apps-emit-'))
+  );
+  const destination = join(parent, 'build-output');
+  t.after(() => rmSync(parent, { recursive: true, force: true }));
+  await emitWave1Output({
+    appRoot,
+    app: 'apps',
+    environment: 'production',
+    sha,
+    destination,
+  });
+  const worker = JSON.parse(
+    readFileSync(
+      join(
+        destination,
+        '.cloudflare/output/v0/workers/default/worker.config.json'
+      ),
+      'utf8'
+    )
+  );
+  assert.equal(worker.manifest.mainModule, 'assets/index-abc12345.js');
+  assert.deepEqual(Object.keys(worker.manifest.modules).sort(), [
+    'assets/chunk-xyz98765.js',
+    'assets/index-abc12345.js',
+  ]);
+  await rehearseWave1Publication({
+    appRoot,
+    app: 'apps',
+    environment: 'production',
+    sha,
+    configPath: join(appRoot, 'dist/wave1/wrangler.json'),
+    env,
+    exec: execCfFromRepo,
+  });
+});

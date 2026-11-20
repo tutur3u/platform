@@ -89,10 +89,16 @@ function buildInput(appRoot, app, environment, sha) {
   const verified = verify(appRoot, app, environment, sha);
   const config = JSON.parse(readFileSync(verified.config, 'utf8'));
   assert.equal(config.no_bundle, true);
+  const dist = resolve(appRoot, 'dist');
+  const serverRoot = resolve(dist, 'server');
   const configDir = dirname(verified.config);
   const mainRel = posix(config.main.replace(/^\.\//, ''));
   const mainPath = resolve(configDir, mainRel);
-  const bundleRoot = dirname(mainPath);
+  assert.ok(
+    mainPath === serverRoot || mainPath.startsWith(serverRoot + sep),
+    'main must remain within dist/server'
+  );
+  const bundleRoot = serverRoot;
   const mainModule = posix(relative(bundleRoot, mainPath));
   const modules = discoverCfBuildOutputEsmModules(
     bundleRoot,

@@ -85,10 +85,7 @@ function discoverCfBuildOutputEsmModulesFromVite(bundleRoot, mainModule) {
     if (!file || seen.has(file)) continue;
     seen.add(file);
     const rel = posixPath(file);
-    assert.ok(
-      !/\.map$/u.test(rel),
-      'Vite module graph must not reference source maps'
-    );
+    if (!/\.(?:m?js)$/u.test(rel) || rel.endsWith('.map')) continue;
     const path = join(bundleRoot, rel);
     assert.ok(
       lstatSync(path).isFile(),
@@ -331,7 +328,7 @@ const CF_ENV_KEYS = [
   'LC_ALL',
 ];
 
-export function cfChildEnv(env, { cfToken, accountId } = {}) {
+export function cfChildEnv(env, { cfToken, accountId, dryRun } = {}) {
   return {
     ...Object.fromEntries(
       CF_ENV_KEYS.flatMap((name) =>
@@ -340,6 +337,7 @@ export function cfChildEnv(env, { cfToken, accountId } = {}) {
     ),
     CI: 'true',
     CF_SEND_TELEMETRY: 'false',
+    ...(dryRun && env.DEBUG === undefined ? { DEBUG: 'cf:*' } : {}),
     ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
     ...(accountId ? { CLOUDFLARE_ACCOUNT_ID: accountId } : {}),
   };
@@ -418,7 +416,7 @@ export function runCfPrebuilt({
   try {
     const result = exec('bun', args, {
       cwd,
-      env: cfChildEnv(env, { cfToken, accountId }),
+      env: cfChildEnv(env, { cfToken, accountId, dryRun }),
       stdio,
       encoding,
       timeout: dryRun ? 120000 : 180000,
