@@ -401,6 +401,7 @@ export function registerExchangeTestSetup() {
       expire: vi.fn(),
       get: mocks.redisGet,
       incr: vi.fn(),
+      incrRateWindow: vi.fn(async () => ({ n: 1, ttlMs: 60_000 })),
       mget: vi.fn(),
       scan: vi.fn(),
       set: mocks.redisSet,

@@ -86,6 +86,7 @@ describe('cross-app app-session refresh route', () => {
       expire: vi.fn(),
       get: vi.fn().mockResolvedValue(null),
       incr: vi.fn(),
+      incrRateWindow: vi.fn(async () => ({ n: 1, ttlMs: 60_000 })),
       mget: vi.fn(),
       scan: vi.fn(),
       set: vi.fn().mockResolvedValue('OK'),
