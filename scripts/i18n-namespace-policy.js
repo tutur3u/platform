@@ -53,6 +53,10 @@ const UNCHECKED_APPS = new Set([
 const APP_SHARED_PACKAGE_SCOPES = new Map([
   ['apps/hive', new Set(['packages/hive-ui'])],
   ['apps/mind', new Set(['packages/mind-ui'])],
+  // apps/lms renders only namespace-free primitives (button, card) from
+  // packages/ui and ships its own learn/teach bundle, so no shared package
+  // namespaces apply; its own namespace usage is still checked.
+  ['apps/lms', new Set()],
 ]);
 
 // Bare root-qualified keys in shared packages need app-level rollout scopes:

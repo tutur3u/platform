@@ -34,6 +34,7 @@ const APPS = [
   { name: 'apps/shortener', dir: 'apps/shortener' },
   { name: 'apps/marketing', dir: 'apps/marketing' },
   { name: 'apps/workspace', dir: 'apps/workspace' },
+  { name: 'apps/lms', dir: 'apps/lms' },
 ];
 
 module.exports = { APPS, SHARED_PACKAGES };
