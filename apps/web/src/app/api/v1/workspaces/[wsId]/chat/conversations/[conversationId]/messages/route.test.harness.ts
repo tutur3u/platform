@@ -248,19 +248,51 @@ export function createAdminClientMock(settingsError: unknown = null) {
         }),
       },
     },
-    from: vi.fn(() => {
+    from: vi.fn((table: string) => {
       const deleteQuery = {
         eq: vi.fn(async () => ({ error: null })),
       };
-      return {
+      const tableQuery = {
         delete: vi.fn(() => deleteQuery),
         upsert: vi.fn(async () => ({ error: null })),
       };
+      // Receipt reads share the admin `from` entry point; the cast keeps the
+      // write-side shape that most tests customize.
+      return table === 'ai_chat_messages'
+        ? (createAiMessageReceiptQuery() as unknown as typeof tableQuery)
+        : tableQuery;
     }),
     schema: vi.fn(() => ({
       from: vi.fn(() => settingsQuery),
     })),
   };
+}
+
+function createAiMessageReceiptQuery() {
+  const query = {
+    eq: vi.fn(() => query),
+    limit: vi.fn(async () => ({
+      data: mocks.aiRouteBodies.length > 0 ? [assistantAiRow] : [],
+      error: null,
+    })),
+    order: vi.fn(() => query),
+    select: vi.fn(() => query),
+  };
+  return query;
+}
+
+// Session clients hold no table SELECT on `ai_chat_messages`; every receipt
+// read must go through the server client.
+export function useAdminAiMessageQuery(
+  query: unknown,
+  admin = createAdminClientMock()
+) {
+  const base = admin.from.getMockImplementation()!;
+  admin.from.mockImplementation((table: string) =>
+    table === 'ai_chat_messages' ? (query as never) : base(table)
+  );
+  mocks.createAdminClient.mockResolvedValue(admin);
+  return admin;
 }
 
 function createSupabaseMock() {
@@ -269,8 +301,11 @@ function createSupabaseMock() {
       const query = {
         eq: vi.fn(() => query),
         limit: vi.fn(async () => ({
-          data: mocks.aiRouteBodies.length > 0 ? [assistantAiRow] : [],
-          error: null,
+          data: null,
+          error: {
+            code: '42501',
+            message: 'permission denied for table ai_chat_messages',
+          },
         })),
         order: vi.fn(() => query),
         select: vi.fn(() => query),

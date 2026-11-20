@@ -224,7 +224,6 @@ export async function sendNativeAiConversationMessages({
   let assistantResponse = await getLatestAiAssistantMessage({
     chatId: shadowChatId,
     requestId: userMessage.id,
-    supabase: auth.supabase,
   });
 
   if (!assistantResponse) {
@@ -305,7 +304,6 @@ export async function sendNativeAiConversationMessages({
       assistantResponse = await getLatestAiAssistantMessage({
         chatId: shadowChatId,
         requestId: userMessage.id,
-        supabase: auth.supabase,
       });
       if (assistantResponse) break;
     }
@@ -452,16 +450,20 @@ async function ensureNativeAiShadowChat({
   return { ok: true };
 }
 
+// The shadow chat id is server-derived from the actor's own persisted user
+// message and the row is written by the server-side AI route, so the receipt
+// is read with the service client. Session clients may not hold table SELECT
+// on `ai_chat_messages` (public-schema privatization), which previously made a
+// saved, billed reply look unsaved and surfaced as a failed send on mobile.
 async function getLatestAiAssistantMessage({
   chatId,
   requestId,
-  supabase,
 }: {
   chatId: string;
   requestId: string;
-  supabase: SessionAuthContext['supabase'];
 }) {
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin
     .from('ai_chat_messages')
     .select('id, content, metadata, model, prompt_tokens, completion_tokens')
     .eq('chat_id', chatId)

@@ -11,6 +11,7 @@ import {
   mocks,
   resetMessageRouteMocks,
   userMessage,
+  useAdminAiMessageQuery,
 } from './route.test.harness';
 
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
@@ -63,8 +64,8 @@ it('saves long completed replies, reopens, and sends a follow-up with the full p
   const shadowRows: Record<string, unknown>[] = [];
   let currentUser = { ...userMessage };
   const reply = `${'A'.repeat(10_000)}The ending is required for the follow-up.`;
-  mocks.auth.supabase = {
-    from: () => {
+  useAdminAiMessageQuery({
+    ...(() => {
       let chatId: unknown;
       const query = {
         select: () => query,
@@ -79,8 +80,8 @@ it('saves long completed replies, reopens, and sends a follow-up with the full p
         }),
       };
       return query;
-    },
-  };
+    })(),
+  });
   mocks.createAiChatPost.mockReturnValue(async (request: Request) => {
     const body = aiBodySchema.parse(await request.json());
     mocks.aiRouteBodies.push(body);

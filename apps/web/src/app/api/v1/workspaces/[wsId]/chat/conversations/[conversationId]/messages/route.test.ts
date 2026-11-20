@@ -10,6 +10,7 @@ import {
   mocks,
   resetMessageRouteMocks,
   userMessage,
+  useAdminAiMessageQuery,
 } from './route.test.harness';
 
 describe('native AI chat message route', () => {
@@ -437,7 +438,7 @@ describe('native AI chat message route', () => {
       order: vi.fn(() => shadowQuery),
       select: vi.fn(() => shadowQuery),
     };
-    mocks.auth.supabase = { from: vi.fn(() => shadowQuery) };
+    useAdminAiMessageQuery(shadowQuery);
     mocks.callPrivateChatRpc.mockImplementation(async (name: string) => {
       if (name === 'chat_send_user_message_idempotent') {
         return { message: userMessage, replayed: true };

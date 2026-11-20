@@ -51,8 +51,11 @@ for (const prompt of ['thanks', "today's focus"]) {
           await wait(80);
           return { data: null, error: null };
         });
-      const table = admin.from();
-      admin.from.mockReturnValue(table);
+      const receiptFrom = admin.from.getMockImplementation()!;
+      const table = admin.from('ai_chats');
+      admin.from.mockImplementation((name: string) =>
+        name === 'ai_chat_messages' ? receiptFrom(name) : table
+      );
       const upsert = table.upsert;
       upsert.mockImplementation(async () => {
         await wait(20);

@@ -24,8 +24,8 @@ describe('native AI durable receipt cleanup boundary', () => {
           return admin;
         });
         const originalFrom = admin.from.getMockImplementation()!;
-        admin.from.mockImplementation(() => {
-          const result = originalFrom();
+        admin.from.mockImplementation((table: string) => {
+          const result = originalFrom(table);
           if (saved && failure === 'delete') {
             result.delete.mockReturnValue({
               eq: vi.fn(async () => {
