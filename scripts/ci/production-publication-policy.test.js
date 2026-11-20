@@ -16,6 +16,7 @@ const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
 const apps = [
+  'lms',
   'forms',
   'inventory',
   'nova',
@@ -281,9 +282,14 @@ for (const app of apps.filter((name) => name !== 'mind')) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const target = ['meet', 'calendar', 'mail', 'apps', 'workspace'].includes(
-      app
-    )
+    const target = [
+      'meet',
+      'calendar',
+      'mail',
+      'apps',
+      'workspace',
+      'lms',
+    ].includes(app)
       ? workflow
       : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
@@ -423,9 +429,9 @@ test('Git admission opens its route-free upload and adds no Cloudflare publisher
 
 const publishers = [
   ...apps
-    // Workspace has no Vercel publisher; its only workflow is the dispatch-only seal.
+    // LMS and Workspace have no Vercel publisher.
     // Git's Vercel publisher predates the policy gate and stays outside it.
-    .filter((app) => !['mastermind', 'workspace', 'git'].includes(app))
+    .filter((app) => !['lms', 'mastermind', 'workspace', 'git'].includes(app))
     .map((app) => ({
       workflow: `vercel-production-${app}.yaml`,
       job: 'Deploy-Production',

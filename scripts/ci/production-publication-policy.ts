@@ -10,6 +10,7 @@ import {
 } from '../../tuturuuu.ts';
 
 const protectedSurfaces = {
+  lms: ['frontend'],
   forms: ['frontend'],
   inventory: ['frontend'],
   nova: ['frontend'],
