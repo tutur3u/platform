@@ -18,9 +18,12 @@ test('staging qualification is a private main dispatch', () => {
   assert.match(text, /^permissions:\n {2}contents: read\n/m);
   assert.doesNotMatch(text, /contents: write/);
   assert.doesNotMatch(text, /contents:\s*write/);
+  assert.doesNotMatch(text, /\bcontents\s*:\s*write\b/);
   assert.match('"schedule":', /["']schedule["']\s*:/);
   assert.match('contents:  write', /contents:\s*write/);
-  assert.doesNotMatch('contents: read', /contents:\s*write/);
+  assert.match('contents : write', /\bcontents\s*:\s*write\b/);
+  assert.doesNotMatch('contents: read', /\bcontents\s*:\s*write\b/);
+  assert.doesNotMatch('contents : read', /\bcontents\s*:\s*write\b/);
   assert.match(
     text,
     /^ {4}if: github\.repository == 'tutur3u\/platform' && github\.ref == 'refs\/heads\/main'$/m

@@ -175,12 +175,26 @@ class ChatRealtimeClient {
         _reportPresence(false);
       },
     );
-    _connectivity ??= Connectivity().onConnectivityChanged.listen((results) {
-      if (_disposed) return;
-      if (results.any((value) => value != ConnectivityResult.none)) {
-        retry();
-      }
-    }, onError: (Object _) {});
+    // The listener misses a transition that already happened, such as the
+    // app going inactive while the workspace list was loading.
+    _applyObservedLifecycle();
+    try {
+      _connectivity ??= Connectivity().onConnectivityChanged.listen((results) {
+        if (_disposed) return;
+        if (results.any((value) => value != ConnectivityResult.none)) {
+          retry();
+        }
+      }, onError: (Object _) {});
+    } on Object {
+      // A test binding has no connectivity plugin. Lifecycle still applies.
+    }
+  }
+
+  void _applyObservedLifecycle() {
+    final state = WidgetsBinding.instance.lifecycleState;
+    if (state == null || state == AppLifecycleState.resumed) return;
+    _inForeground = false;
+    _reportPresence(false);
   }
 
   void _reportPresence(bool foreground) {
