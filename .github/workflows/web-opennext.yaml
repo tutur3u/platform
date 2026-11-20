@@ -396,7 +396,7 @@ jobs:
           previous=$(jq -er .result.versionId "$RUNNER_TEMP/gateway-settings.json")
           echo "Rollback target $previous. Roll back with:"
           echo "cf workers deployments create --worker tuturuuu-gateway --strategy percentage --versions '[{\"version_id\":\"$previous\",\"percentage\":100}]'"
-          echo "If Cloudflare rejects the rollback because secrets changed since $previous, review the change and rerun with --bypass-deployment-checks."
+          echo "If Cloudflare rejects the rollback because secrets changed since $previous, review the change and repeat the command with --bypass-deployment-checks."
           # A just-uploaded version can be briefly undeployable (100146; exit
           # 75, nothing written). Any other outcome is final: serve reconciles
           # failed requests by readback and never repeats a successful one.
