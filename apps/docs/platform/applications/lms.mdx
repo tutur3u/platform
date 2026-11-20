@@ -228,6 +228,28 @@ modification timestamp, so `updated_at` is null. Refresh from the first page
 after marks or access change. Responses use the class outline's private cache
 policy and error codes. Existing Contacts attendance APIs retain their contracts.
 
+### Class schedule
+
+`GET /api/v1/workspaces/{wsId}/education/classes/{classId}/schedule` reads
+the same session occurrences as the Contacts timetable under the LMS availability
+gate. Use `view=learning` for a student or linked guardian, `student_id` for an
+authorized guardian selection, or `view=staff` for the assigned teacher or group
+manager. Request `from` (inclusive) and `to` (exclusive) as ISO 8601 timestamps
+with a timezone. They filter the session start time. Each window covers up to
+90 days. Set `limit` from 1 to 50 (default 20) and replay `next_cursor` as
+`after` using the same selection and window.
+
+The response contains `class_id`, `role`, `data`, and `next_cursor`.
+Each row has the existing session `id`, `title`, `starts_at`, `ends_at`,
+`start_timezone`, `end_timezone`, `status` (`scheduled` or `cancelled`),
+and the database's `updated_at`. Rows sort by start time then ID. Schedule
+records can refer to the same `session_id` used by attendance. Use
+`updated_since` for inclusive filtering by modification time and merge by
+session ID. Preserve timestamp precision and refresh the full window to
+reconcile removals, moves outside the window, and access changes. Session
+descriptions, files, and meeting links have their own resource permissions.
+Responses use the class outline's access errors and private cache policy.
+
 Mobile integration still requires separate versioned contracts for class
 mutations, lesson materials and completion, assessment delivery and grades,
 assignment submissions, notifications, and rewards. Learner and teacher screens

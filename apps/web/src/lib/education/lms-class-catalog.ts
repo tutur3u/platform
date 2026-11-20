@@ -18,12 +18,14 @@ export async function listLmsClasses({
   db,
   wsId,
   scope,
+  classId,
   after,
   limit,
 }: {
   db: TypedSupabaseClient;
   wsId: string;
   scope: ClassScope;
+  classId?: string;
   after?: string;
   limit: number;
 }): Promise<ClassRow[]> {
@@ -37,6 +39,7 @@ export async function listLmsClasses({
       .order('id')
       .limit(limit);
 
+    if (classId) query.eq('id', classId);
     if (after) query.gt('id', after);
 
     const { data, error } = await query;
@@ -60,6 +63,7 @@ export async function listLmsClasses({
     .limit(limit);
 
   if (scope.kind === 'student') query.eq('group.is_course_published', true);
+  if (classId) query.eq('group_id', classId);
   if (after) query.gt('group_id', after);
 
   const { data, error } = await query;
