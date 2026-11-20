@@ -30,9 +30,10 @@ defaults never satisfy it.
 
 An active Private Live session rechecks the kill switch and the full workspace
 gate (protected ids, denylist, reviewed opt-in or allowlist) on every client
-turn and on its 20-second tick. A closed gate ends the session with
-`workspace_not_enabled`; ending stays ungated, so billing settles and cleanup
-runs. The Live Durable Object rechecks the account, audience and payer before
+turn and on its 20-second tick, before any disconnected recovery or reconnect.
+A closed gate ends the session with `workspace_not_enabled` and closes the
+provider without sending further input (no end-of-stream signal); usage already
+received settles, pending usage is marked incomplete, and cleanup runs. The Live Durable Object rechecks the account, audience and payer before
 code tools run, reading the paid tier and attestation over its server-only REST
 client. A saved session whose billing workspace no longer matches the payer
 (for example, a staff session after the account loses staff status) is denied.
@@ -108,8 +109,9 @@ current Continue, checked atomically with the state it reads. One Pause, a new
 participant who has not chosen, or a new notice version pauses room Mira for
 everyone; a mention then shows that Mira answers after everyone chooses
 Continue. The context sent to the provider contains only messages written by
-accounts with a current Continue, plus Mira's own replies; messages from people
-who left without choosing never leave the room. Choices are cleared when an
+accounts with a current Continue. Mira's own earlier replies are omitted, since
+they can quote people who have since withdrawn; messages from people who left
+without choosing never leave the room. Choices are cleared when an
 ended room is restored.
 
 Each reserved request records its source accounts (the requester and every
@@ -117,7 +119,11 @@ author whose messages it carries) with their exact consent revision. Sending
 that saved context to the provider again (`ai.review.claim`), the server's
 check immediately before dispatch (`mira.room.verify`), saving a private review
 and every publication (a reply posted by `ai.finish`, `ai.review.share`) require
-the all-participant fence and every source unchanged. A source who pauses and
+the all-participant fence and every source unchanged. Generation hands the
+provider a guarded fetch: every outbound provider request, including each model
+step and the model-backed web search, runs `mira.room.verify` first, so a
+withdrawal between steps stops the next request before it leaves. Usage from
+requests that already ran is recorded as unpriced, never as zero. A source who pauses and
 leaves, or returns with a new Continue (a new revision), makes the request and
 its saved review stale; the requester can still discard it, and incurred cost
 settles without posting a reply. Requests reserved without recorded sources are
@@ -169,9 +175,13 @@ and `mira-audience-settings.test.tsx`, `ai-workspace-gate.test.ts` (reviewed
 opt-in), `check-meet-ai-containment.test.js`, `private-notice.test.tsx`,
 `room-mira-private.test.ts`, `route.gate.test.ts`, `route.billing.test.ts`
 (staff root billing), `room-mira-sources.test.ts` (pause then leave, rejoin
-with a new revision, stale saved reviews), `workspace-gate.test.ts` and
-`session.recovery.test.ts` (denylist and opt-in withdrawal end an active Live
-session with billing finalization), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
+with a new revision, stale saved reviews, an earlier Mira reply quoting a
+withdrawn author), `chat-provider-fetch.test.ts` (`packages/ai`: every model
+step and the search use the guarded fetch), the Meet `assistant/route.test.ts`
+(consent verified before each provider request, a mid-generation withdrawal), `workspace-gate.test.ts` and
+`session.recovery.test.ts` and `provider-drain.test.ts` (a revoked turn sends no
+input upstream, a disconnected revoked session never re-arms recovery, billing
+finalizes), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
 and `token.test.ts`. Synthetic checks do not establish production key identity,
 hosted credit settlement on the root workspace or successful live invitations.
 
