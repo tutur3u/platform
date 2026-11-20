@@ -47,7 +47,11 @@ const LEGACY_VERCEL_PLANNER_CONTRACTS = Object.freeze([
 const POST_RETIREMENT_PLANNER_CONTRACT =
   '8c90988f9299c5c28d9f49049077a0b93b225b3d';
 // This planner also skips superseded pushes before selecting targets.
-const CURRENT_PLANNER_CONTRACT = '821f197ff27852c19c422fcaabcbbe7c37e8fe5e';
+const SUPERSEDED_SKIP_PLANNER_CONTRACT =
+  '821f197ff27852c19c422fcaabcbbe7c37e8fe5e';
+// This planner also grants the Colab job id-token: write for the deployment
+// coordinator. Platform proof is unchanged.
+const CURRENT_PLANNER_CONTRACT = '8bbb84a2ff0c72db5127a2ff2f8c8943a530c697';
 
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
@@ -71,6 +75,7 @@ const PRODUCTION_PLATFORM = {
       [
         ...LEGACY_VERCEL_PLANNER_CONTRACTS,
         POST_RETIREMENT_PLANNER_CONTRACT,
+        SUPERSEDED_SKIP_PLANNER_CONTRACT,
         CURRENT_PLANNER_CONTRACT,
       ],
     ],

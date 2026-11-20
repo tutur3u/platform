@@ -58,6 +58,7 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY apps/cms-renderer/package.json ./apps/cms-renderer/package.json
 COPY apps/coordination/package.json ./apps/coordination/package.json
 COPY apps/cron-control/package.json ./apps/cron-control/package.json
+COPY apps/deploy-coordinator/package.json ./apps/deploy-coordinator/package.json
 COPY apps/devbox-control/package.json ./apps/devbox-control/package.json
 COPY apps/gateway/package.json ./apps/gateway/package.json
 COPY apps/marketing/package.json ./apps/marketing/package.json
