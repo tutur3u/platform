@@ -1726,7 +1726,7 @@
   "assistantReasoningLabel": "Reasoning",
   "assistantRenameAction": "Rename",
   "assistantRenameTitle": "Rename assistant",
-  "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
+  "assistantReplyFailed": "Mira couldn't reply. Your message is saved.",
   "assistantSaveAction": "Save",
   "assistantScrollToBottomAction": "Jump to latest",
   "assistantSearchModels": "Search models",
@@ -8110,5 +8110,30 @@
         "type": "String"
       }
     }
-  }
+  },
+  "assistantLiveFailurePaused": "Live voice is paused right now. Text chat with Mira still works.",
+  "assistantLiveFailureDailyLimit": "You've used today's free Live time. It resets tomorrow.",
+  "assistantLiveFailureBusy": "Another Live call is still open. End it, then try again.",
+  "assistantLiveFailureCredits": "Not enough AI credits for Live. Top up or switch the credit source.",
+  "assistantLiveFailureNotAllowed": "Live isn't included in this workspace's plan.",
+  "assistantLiveFailureSignedOut": "Your session expired. Sign in again to use Live.",
+  "assistantLiveFailureOffline": "You're offline. Check your connection, then retry.",
+  "assistantLiveFailureTimeout": "Mira took too long to pick up. Retry in a moment.",
+  "assistantLiveFailureServer": "Mira's voice service hit a problem. Retry in a moment.",
+  "assistantLiveFailureDropped": "The connection dropped. Mira is reconnecting.",
+  "assistantLiveFailureMicrophone": "Microphone access is off. Allow it in Settings to talk with Mira.",
+  "assistantLiveFailureCamera": "Camera access is off. Allow it in Settings to share video.",
+  "assistantLiveFailureNoWorkspace": "Choose a workspace to start Live.",
+  "assistantLiveFailureUnknown": "Mira couldn't start the call. Retry in a moment.",
+  "assistantLiveOpenSettings": "Settings",
+  "assistantLiveCallListening": "Listening",
+  "assistantLiveCallSpeaking": "Speaking",
+  "assistantReplyFailedOffline": "You're offline. Your message is saved; retry when you're back online.",
+  "assistantReplyFailedTimeout": "Mira took too long to reply. Your message is saved.",
+  "assistantReplyFailedSignedOut": "Your session expired. Sign in again to keep chatting.",
+  "assistantReplyFailedAccess": "Mira can't reply here. Check AI credits or workspace access.",
+  "assistantReplyFailedBusy": "Mira is busy. Wait a moment, then retry.",
+  "assistantReplyFailedInterrupted": "Mira couldn't finish this reply. Your message is saved.",
+  "assistantReplyFailedServer": "Mira hit a server problem. Your message is saved.",
+  "assistantReplyFailedReload": "Reload this chat to check Mira's reply."
 }

@@ -20,6 +20,7 @@ import 'package:mobile/features/assistant/data/assistant_chat_persistence_contra
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
+import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
@@ -464,7 +465,7 @@ void main() {
       expect(pcmCalls, contains('setup'));
       expect(live.state.status, AssistantLiveConnectionStatus.error);
       expect(live.state.scopeKey, 'synthetic-scope');
-      expect(live.state.error, contains('synthetic-audio-admission'));
+      expect(live.state.error, AssistantLiveFailure.unknown);
       expect(networkAttempts, 0);
       expect(api.posts, 1);
       final baseline = h.host.writes;

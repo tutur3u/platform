@@ -19,6 +19,7 @@ import 'package:mobile/features/assistant/data/assistant_live_screen_service.dar
 import 'package:mobile/features/assistant/data/assistant_live_socket.dart';
 import 'package:mobile/features/assistant/models/assistant_live_call_phase.dart';
 import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
+import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_startup_timings.dart';
@@ -321,15 +322,9 @@ class AssistantLiveCubit extends Cubit<AssistantLiveState> {
       // still be retired by a namespace switch before it dispatches.
       timings.finish();
       await binding.then<void>((_) {}, onError: (Object _) {});
-    } on ApiException catch (error) {
-      if (!currentRequest()) return null;
-      _emitError(error.message);
-    } on TimeoutException {
-      if (!currentRequest()) return null;
-      _emitError('Timed out while connecting to live session.');
     } on Exception catch (error) {
       if (!currentRequest()) return null;
-      _emitError(error.toString());
+      _emitError(classifyAssistantLiveFailure(error));
     } finally {
       timings.finish();
       // A retired attempt that still owns the latest request may have opened

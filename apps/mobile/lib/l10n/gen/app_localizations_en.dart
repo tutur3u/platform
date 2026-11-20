@@ -1163,7 +1163,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantRenameTitle => 'Rename assistant';
 
   @override
-  String get assistantReplyFailed => 'Mira\'s reply stopped. Your message is still here. Retry';
+  String get assistantReplyFailed => 'Mira couldn\'t reply. Your message is saved.';
 
   @override
   String get assistantSaveAction => 'Save';
@@ -16971,4 +16971,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String settingsWorkspaceDeleted(String name) {
     return '$name was deleted';
   }
+
+  @override
+  String get assistantLiveFailurePaused => 'Live voice is paused right now. Text chat with Mira still works.';
+
+  @override
+  String get assistantLiveFailureDailyLimit => 'You\'ve used today\'s free Live time. It resets tomorrow.';
+
+  @override
+  String get assistantLiveFailureBusy => 'Another Live call is still open. End it, then try again.';
+
+  @override
+  String get assistantLiveFailureCredits => 'Not enough AI credits for Live. Top up or switch the credit source.';
+
+  @override
+  String get assistantLiveFailureNotAllowed => 'Live isn\'t included in this workspace\'s plan.';
+
+  @override
+  String get assistantLiveFailureSignedOut => 'Your session expired. Sign in again to use Live.';
+
+  @override
+  String get assistantLiveFailureOffline => 'You\'re offline. Check your connection, then retry.';
+
+  @override
+  String get assistantLiveFailureTimeout => 'Mira took too long to pick up. Retry in a moment.';
+
+  @override
+  String get assistantLiveFailureServer => 'Mira\'s voice service hit a problem. Retry in a moment.';
+
+  @override
+  String get assistantLiveFailureDropped => 'The connection dropped. Mira is reconnecting.';
+
+  @override
+  String get assistantLiveFailureMicrophone => 'Microphone access is off. Allow it in Settings to talk with Mira.';
+
+  @override
+  String get assistantLiveFailureCamera => 'Camera access is off. Allow it in Settings to share video.';
+
+  @override
+  String get assistantLiveFailureNoWorkspace => 'Choose a workspace to start Live.';
+
+  @override
+  String get assistantLiveFailureUnknown => 'Mira couldn\'t start the call. Retry in a moment.';
+
+  @override
+  String get assistantLiveOpenSettings => 'Settings';
+
+  @override
+  String get assistantLiveCallListening => 'Listening';
+
+  @override
+  String get assistantLiveCallSpeaking => 'Speaking';
+
+  @override
+  String get assistantReplyFailedOffline => 'You\'re offline. Your message is saved; retry when you\'re back online.';
+
+  @override
+  String get assistantReplyFailedTimeout => 'Mira took too long to reply. Your message is saved.';
+
+  @override
+  String get assistantReplyFailedSignedOut => 'Your session expired. Sign in again to keep chatting.';
+
+  @override
+  String get assistantReplyFailedAccess => 'Mira can\'t reply here. Check AI credits or workspace access.';
+
+  @override
+  String get assistantReplyFailedBusy => 'Mira is busy. Wait a moment, then retry.';
+
+  @override
+  String get assistantReplyFailedInterrupted => 'Mira couldn\'t finish this reply. Your message is saved.';
+
+  @override
+  String get assistantReplyFailedServer => 'Mira hit a server problem. Your message is saved.';
+
+  @override
+  String get assistantReplyFailedReload => 'Reload this chat to check Mira\'s reply.';
 }

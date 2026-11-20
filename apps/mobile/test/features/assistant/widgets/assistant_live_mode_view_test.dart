@@ -88,7 +88,8 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
+        await tester.pump();
+        await tester.pump(const Duration(seconds: 1));
         expect(tester.takeException(), isNull);
         await tester.tap(find.byIcon(LucideIcons.mic).last);
         expect(microphoneTaps, 1);

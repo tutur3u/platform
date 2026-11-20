@@ -108,6 +108,8 @@ class _AssistantLiveCallViewState extends State<AssistantLiveCallView> {
                         startedAt: state.callStartedAt,
                         endedDuration: state.lastCallDuration,
                         orbSize: showCaptions ? orbSize * .7 : orbSize,
+                        listeningLevel: state.audioLevel,
+                        error: state.error,
                       ),
                       Column(
                         mainAxisSize: MainAxisSize.min,
@@ -140,6 +142,7 @@ class _AssistantLiveCallViewState extends State<AssistantLiveCallView> {
                           else
                             AssistantLiveCallEndedActions(
                               failed: phase == AssistantLiveCallPhase.failed,
+                              error: state.error,
                               onCallAgain: actions.callAgain,
                               onClose: actions.minimize,
                             ),

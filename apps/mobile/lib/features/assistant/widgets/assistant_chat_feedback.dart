@@ -3,6 +3,7 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
+import 'package:mobile/features/assistant/models/assistant_reply_failure.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/internal_diagnostics_copy.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
@@ -21,6 +22,13 @@ class AssistantChatFeedback extends StatelessWidget {
       return Center(child: Text(context.l10n.assistantNotAvailableOffline));
     }
     if (state.status == AssistantChatStatus.error) {
+      final failure = classifyAssistantReplyFailure(
+        error: state.error,
+        diagnostics: state.diagnostics,
+      );
+      final onRetry = assistantReplyFailureRetryable(failure)
+          ? this.onRetry
+          : null;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: DecoratedBox(
@@ -43,7 +51,8 @@ class AssistantChatFeedback extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    context.l10n.assistantReplyFailed,
+                    assistantReplyFailureLabel(context.l10n, failure),
+                    key: ValueKey('assistant-reply-failure-${failure.name}'),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 13,

@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
+import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_live_call_screen.dart';
@@ -106,12 +108,12 @@ void main() {
       );
       await h.renderLiveStatus(tester, AssistantLiveConnectionStatus.error);
       expect(h.live.state.status, AssistantLiveConnectionStatus.error);
-      expect(h.live.state.error, contains('startup token failure'));
+      expect(h.live.state.error, AssistantLiveFailure.unknown);
       expect(h.permissions.single.isCompleted, isFalse);
       expect(h.live.state.isMicrophoneActive, isFalse);
       expect(h.recorder.captures, 0);
       final l10n = tester.element(find.byType(AssistantPage)).l10n;
-      expect(find.text(l10n.assistantLiveDescriptionError), findsOneWidget);
+      expect(find.text(l10n.assistantLiveFailureUnknown), findsOneWidget);
       await h.retry(tester);
       expect(h.tokens.requests, hasLength(2));
       expect(h.live.state.status, AssistantLiveConnectionStatus.preparing);
@@ -153,7 +155,9 @@ void main() {
       expect(h.tokens.requests, hasLength(2));
       expect(h.tokens.requests.first.isCompleted, isFalse);
       expect(h.permissions.single.isCompleted, isFalse);
-      h.tokens.requests.last.completeError(Exception('replacement failure'));
+      h.tokens.requests.last.completeError(
+        const ApiException.transport(message: 'replacement failure'),
+      );
       await tester.pump();
       await driveLiveStartupFuture(
         tester,
@@ -163,7 +167,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       expect(h.chrome.state.isLiveMode, isTrue);
       expect(h.live.state.status, AssistantLiveConnectionStatus.error);
-      expect(h.live.state.error, contains('replacement failure'));
+      expect(h.live.state.error, AssistantLiveFailure.offline);
       expect(h.recorder.captures, 0);
 
       h.permissions.single.complete(true);
@@ -176,7 +180,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(h.live.state.status, AssistantLiveConnectionStatus.error);
-      expect(h.live.state.error, contains('replacement failure'));
+      expect(h.live.state.error, AssistantLiveFailure.offline);
       expect(h.live.state.isMicrophoneActive, isFalse);
       expect(h.tokens.requests, hasLength(2));
       expect(h.permissions, hasLength(1));

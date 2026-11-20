@@ -2302,7 +2302,7 @@ abstract class AppLocalizations {
   /// No description provided for @assistantReplyFailed.
   ///
   /// In en, this message translates to:
-  /// **'Mira\'s reply stopped. Your message is still here. Retry'**
+  /// **'Mira couldn\'t reply. Your message is saved.'**
   String get assistantReplyFailed;
 
   /// No description provided for @assistantSaveAction.
@@ -31416,6 +31416,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{name} was deleted'**
   String settingsWorkspaceDeleted(String name);
+
+  /// No description provided for @assistantLiveFailurePaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Live voice is paused right now. Text chat with Mira still works.'**
+  String get assistantLiveFailurePaused;
+
+  /// No description provided for @assistantLiveFailureDailyLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve used today\'s free Live time. It resets tomorrow.'**
+  String get assistantLiveFailureDailyLimit;
+
+  /// No description provided for @assistantLiveFailureBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Another Live call is still open. End it, then try again.'**
+  String get assistantLiveFailureBusy;
+
+  /// No description provided for @assistantLiveFailureCredits.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough AI credits for Live. Top up or switch the credit source.'**
+  String get assistantLiveFailureCredits;
+
+  /// No description provided for @assistantLiveFailureNotAllowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Live isn\'t included in this workspace\'s plan.'**
+  String get assistantLiveFailureNotAllowed;
+
+  /// No description provided for @assistantLiveFailureSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Sign in again to use Live.'**
+  String get assistantLiveFailureSignedOut;
+
+  /// No description provided for @assistantLiveFailureOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Check your connection, then retry.'**
+  String get assistantLiveFailureOffline;
+
+  /// No description provided for @assistantLiveFailureTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira took too long to pick up. Retry in a moment.'**
+  String get assistantLiveFailureTimeout;
+
+  /// No description provided for @assistantLiveFailureServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira\'s voice service hit a problem. Retry in a moment.'**
+  String get assistantLiveFailureServer;
+
+  /// No description provided for @assistantLiveFailureDropped.
+  ///
+  /// In en, this message translates to:
+  /// **'The connection dropped. Mira is reconnecting.'**
+  String get assistantLiveFailureDropped;
+
+  /// No description provided for @assistantLiveFailureMicrophone.
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone access is off. Allow it in Settings to talk with Mira.'**
+  String get assistantLiveFailureMicrophone;
+
+  /// No description provided for @assistantLiveFailureCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off. Allow it in Settings to share video.'**
+  String get assistantLiveFailureCamera;
+
+  /// No description provided for @assistantLiveFailureNoWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a workspace to start Live.'**
+  String get assistantLiveFailureNoWorkspace;
+
+  /// No description provided for @assistantLiveFailureUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t start the call. Retry in a moment.'**
+  String get assistantLiveFailureUnknown;
+
+  /// No description provided for @assistantLiveOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get assistantLiveOpenSettings;
+
+  /// No description provided for @assistantLiveCallListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get assistantLiveCallListening;
+
+  /// No description provided for @assistantLiveCallSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get assistantLiveCallSpeaking;
+
+  /// No description provided for @assistantReplyFailedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Your message is saved; retry when you\'re back online.'**
+  String get assistantReplyFailedOffline;
+
+  /// No description provided for @assistantReplyFailedTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira took too long to reply. Your message is saved.'**
+  String get assistantReplyFailedTimeout;
+
+  /// No description provided for @assistantReplyFailedSignedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session expired. Sign in again to keep chatting.'**
+  String get assistantReplyFailedSignedOut;
+
+  /// No description provided for @assistantReplyFailedAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira can\'t reply here. Check AI credits or workspace access.'**
+  String get assistantReplyFailedAccess;
+
+  /// No description provided for @assistantReplyFailedBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira is busy. Wait a moment, then retry.'**
+  String get assistantReplyFailedBusy;
+
+  /// No description provided for @assistantReplyFailedInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira couldn\'t finish this reply. Your message is saved.'**
+  String get assistantReplyFailedInterrupted;
+
+  /// No description provided for @assistantReplyFailedServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Mira hit a server problem. Your message is saved.'**
+  String get assistantReplyFailedServer;
+
+  /// No description provided for @assistantReplyFailedReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload this chat to check Mira\'s reply.'**
+  String get assistantReplyFailedReload;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

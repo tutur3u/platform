@@ -156,12 +156,14 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
     expect(find.byKey(const ValueKey('assistant-live-call-timer')), findsOne);
 
     await tester.tap(find.bySemanticsLabel('Minimize'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(AssistantLiveCallScreen), findsNothing);
     expect(find.text('host page'), findsOneWidget);
     expect(cubit.isClosed, isFalse);
@@ -195,7 +197,8 @@ void main() {
         actions: (_) => LiveCallActionLog().actions,
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
 
     // Native teardown awaits real stream cancellation, so let real event-loop
@@ -207,7 +210,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     expect(closed, isTrue);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(AssistantLiveCallScreen), findsNothing);
   });
 
@@ -228,7 +232,8 @@ void main() {
     // Backgrounding and hidden-page teardown call disconnect() without
     // finishTurn; the surface must not fall back to "Connecting…".
     await cubit.disconnect();
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
     expect(find.byType(AssistantLiveCallScreen), findsOneWidget);
     expect(find.text('Connecting…'), findsNothing);
     expect(find.textContaining('Call ended'), findsOneWidget);

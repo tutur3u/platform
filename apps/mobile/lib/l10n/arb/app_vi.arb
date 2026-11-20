@@ -1633,7 +1633,7 @@
   "assistantReasoningLabel": "Lý do",
   "assistantRenameAction": "Đổi tên",
   "assistantRenameTitle": "Đổi tên trợ lý",
-  "assistantReplyFailed": "Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại",
+  "assistantReplyFailed": "Mira chưa trả lời được. Tin nhắn của bạn đã được lưu.",
   "assistantSaveAction": "Lưu",
   "assistantScrollToBottomAction": "Tới tin mới nhất",
   "assistantSearchModels": "Tìm mô hình",
@@ -7350,5 +7350,30 @@
         "type": "String"
       }
     }
-  }
+  },
+  "assistantLiveFailurePaused": "Live voice đang tạm dừng. Bạn vẫn có thể nhắn tin với Mira.",
+  "assistantLiveFailureDailyLimit": "Bạn đã dùng hết thời lượng Live miễn phí hôm nay. Hạn mức sẽ đặt lại vào ngày mai.",
+  "assistantLiveFailureBusy": "Một cuộc gọi Live khác vẫn đang mở. Hãy kết thúc cuộc gọi đó rồi thử lại.",
+  "assistantLiveFailureCredits": "Không đủ tín dụng AI cho Live. Hãy nạp thêm hoặc đổi nguồn tín dụng.",
+  "assistantLiveFailureNotAllowed": "Gói của không gian làm việc này chưa bao gồm Live.",
+  "assistantLiveFailureSignedOut": "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để dùng Live.",
+  "assistantLiveFailureOffline": "Bạn đang ngoại tuyến. Hãy kiểm tra kết nối rồi thử lại.",
+  "assistantLiveFailureTimeout": "Mira phản hồi quá lâu. Hãy thử lại sau giây lát.",
+  "assistantLiveFailureServer": "Dịch vụ giọng nói của Mira gặp sự cố. Hãy thử lại sau giây lát.",
+  "assistantLiveFailureDropped": "Kết nối bị gián đoạn. Mira đang kết nối lại.",
+  "assistantLiveFailureMicrophone": "Quyền micro đang tắt. Hãy bật trong Cài đặt để trò chuyện với Mira.",
+  "assistantLiveFailureCamera": "Quyền camera đang tắt. Hãy bật trong Cài đặt để chia sẻ video.",
+  "assistantLiveFailureNoWorkspace": "Hãy chọn một không gian làm việc để bắt đầu Live.",
+  "assistantLiveFailureUnknown": "Mira chưa thể bắt đầu cuộc gọi. Hãy thử lại sau giây lát.",
+  "assistantLiveOpenSettings": "Cài đặt",
+  "assistantLiveCallListening": "Đang nghe",
+  "assistantLiveCallSpeaking": "Đang nói",
+  "assistantReplyFailedOffline": "Bạn đang ngoại tuyến. Tin nhắn đã được lưu; hãy thử lại khi có mạng.",
+  "assistantReplyFailedTimeout": "Mira phản hồi quá lâu. Tin nhắn của bạn đã được lưu.",
+  "assistantReplyFailedSignedOut": "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để tiếp tục trò chuyện.",
+  "assistantReplyFailedAccess": "Mira chưa thể trả lời ở đây. Hãy kiểm tra tín dụng AI hoặc quyền truy cập không gian làm việc.",
+  "assistantReplyFailedBusy": "Mira đang bận. Hãy đợi giây lát rồi thử lại.",
+  "assistantReplyFailedInterrupted": "Mira chưa hoàn thành câu trả lời. Tin nhắn của bạn đã được lưu.",
+  "assistantReplyFailedServer": "Máy chủ của Mira gặp sự cố. Tin nhắn của bạn đã được lưu.",
+  "assistantReplyFailedReload": "Hãy tải lại cuộc trò chuyện để xem câu trả lời của Mira."
 }

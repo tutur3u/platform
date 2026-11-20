@@ -26,7 +26,7 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
           ),
         );
         unawaited(_drainStartupAudio());
-      case AssistantLiveSocketClosed(:final reason):
+      case AssistantLiveSocketClosed():
         if (!_manualDisconnect) _transportFailureVersion++;
         unawaited(stopScreenSharing());
         if (_manualDisconnect) {
@@ -41,17 +41,17 @@ extension _AssistantLiveSocketEvents on AssistantLiveCubit {
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.reconnecting,
-            error: reason.isEmpty ? state.error : reason,
+            error: AssistantLiveFailure.dropped,
           ),
         );
         _scheduleReconnect();
-      case AssistantLiveSocketError(:final message):
+      case AssistantLiveSocketError():
         _transportFailureVersion++;
         unawaited(stopScreenSharing());
         _emitMicrophoneState(
           state.copyWith(
             status: AssistantLiveConnectionStatus.error,
-            error: message,
+            error: AssistantLiveFailure.dropped,
           ),
         );
         _scheduleReconnect();

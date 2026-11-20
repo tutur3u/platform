@@ -1163,7 +1163,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantRenameTitle => 'Đổi tên trợ lý';
 
   @override
-  String get assistantReplyFailed => 'Mira chưa trả lời xong. Tin nhắn của bạn vẫn ở đây. Thử lại';
+  String get assistantReplyFailed => 'Mira chưa trả lời được. Tin nhắn của bạn đã được lưu.';
 
   @override
   String get assistantSaveAction => 'Lưu';
@@ -16764,4 +16764,79 @@ class AppLocalizationsVi extends AppLocalizations {
   String settingsWorkspaceDeleted(String name) {
     return 'Đã xóa $name';
   }
+
+  @override
+  String get assistantLiveFailurePaused => 'Live voice đang tạm dừng. Bạn vẫn có thể nhắn tin với Mira.';
+
+  @override
+  String get assistantLiveFailureDailyLimit => 'Bạn đã dùng hết thời lượng Live miễn phí hôm nay. Hạn mức sẽ đặt lại vào ngày mai.';
+
+  @override
+  String get assistantLiveFailureBusy => 'Một cuộc gọi Live khác vẫn đang mở. Hãy kết thúc cuộc gọi đó rồi thử lại.';
+
+  @override
+  String get assistantLiveFailureCredits => 'Không đủ tín dụng AI cho Live. Hãy nạp thêm hoặc đổi nguồn tín dụng.';
+
+  @override
+  String get assistantLiveFailureNotAllowed => 'Gói của không gian làm việc này chưa bao gồm Live.';
+
+  @override
+  String get assistantLiveFailureSignedOut => 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để dùng Live.';
+
+  @override
+  String get assistantLiveFailureOffline => 'Bạn đang ngoại tuyến. Hãy kiểm tra kết nối rồi thử lại.';
+
+  @override
+  String get assistantLiveFailureTimeout => 'Mira phản hồi quá lâu. Hãy thử lại sau giây lát.';
+
+  @override
+  String get assistantLiveFailureServer => 'Dịch vụ giọng nói của Mira gặp sự cố. Hãy thử lại sau giây lát.';
+
+  @override
+  String get assistantLiveFailureDropped => 'Kết nối bị gián đoạn. Mira đang kết nối lại.';
+
+  @override
+  String get assistantLiveFailureMicrophone => 'Quyền micro đang tắt. Hãy bật trong Cài đặt để trò chuyện với Mira.';
+
+  @override
+  String get assistantLiveFailureCamera => 'Quyền camera đang tắt. Hãy bật trong Cài đặt để chia sẻ video.';
+
+  @override
+  String get assistantLiveFailureNoWorkspace => 'Hãy chọn một không gian làm việc để bắt đầu Live.';
+
+  @override
+  String get assistantLiveFailureUnknown => 'Mira chưa thể bắt đầu cuộc gọi. Hãy thử lại sau giây lát.';
+
+  @override
+  String get assistantLiveOpenSettings => 'Cài đặt';
+
+  @override
+  String get assistantLiveCallListening => 'Đang nghe';
+
+  @override
+  String get assistantLiveCallSpeaking => 'Đang nói';
+
+  @override
+  String get assistantReplyFailedOffline => 'Bạn đang ngoại tuyến. Tin nhắn đã được lưu; hãy thử lại khi có mạng.';
+
+  @override
+  String get assistantReplyFailedTimeout => 'Mira phản hồi quá lâu. Tin nhắn của bạn đã được lưu.';
+
+  @override
+  String get assistantReplyFailedSignedOut => 'Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại để tiếp tục trò chuyện.';
+
+  @override
+  String get assistantReplyFailedAccess => 'Mira chưa thể trả lời ở đây. Hãy kiểm tra tín dụng AI hoặc quyền truy cập không gian làm việc.';
+
+  @override
+  String get assistantReplyFailedBusy => 'Mira đang bận. Hãy đợi giây lát rồi thử lại.';
+
+  @override
+  String get assistantReplyFailedInterrupted => 'Mira chưa hoàn thành câu trả lời. Tin nhắn của bạn đã được lưu.';
+
+  @override
+  String get assistantReplyFailedServer => 'Máy chủ của Mira gặp sự cố. Tin nhắn của bạn đã được lưu.';
+
+  @override
+  String get assistantReplyFailedReload => 'Hãy tải lại cuộc trò chuyện để xem câu trả lời của Mira.';
 }

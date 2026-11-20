@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/models/assistant_live_call_phase.dart';
+import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_timer.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_playback_blob.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -19,6 +20,8 @@ class AssistantLiveCallHeader extends StatelessWidget {
     this.startedAt,
     this.endedDuration,
     this.orbSize = 220,
+    this.listeningLevel = 0,
+    this.error,
     super.key,
   });
 
@@ -31,6 +34,24 @@ class AssistantLiveCallHeader extends StatelessWidget {
   final DateTime? startedAt;
   final Duration? endedDuration;
   final double orbSize;
+
+  /// Microphone level in `[0, 1]`; the orb pulses with it while listening.
+  final double listeningLevel;
+
+  /// Failure token from `AssistantLiveFailure`, explained under the status.
+  final String? error;
+
+  AssistantLiveOrbMode get _orbMode => switch (phase) {
+    AssistantLiveCallPhase.connecting ||
+    AssistantLiveCallPhase.reconnecting => AssistantLiveOrbMode.connecting,
+    AssistantLiveCallPhase.failed => AssistantLiveOrbMode.failed,
+    AssistantLiveCallPhase.ended => AssistantLiveOrbMode.idle,
+    AssistantLiveCallPhase.connected when speaking =>
+      AssistantLiveOrbMode.speaking,
+    AssistantLiveCallPhase.connected when !muted =>
+      AssistantLiveOrbMode.listening,
+    AssistantLiveCallPhase.connected => AssistantLiveOrbMode.idle,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +94,8 @@ class AssistantLiveCallHeader extends StatelessWidget {
                     bands: bands,
                     active:
                         phase == AssistantLiveCallPhase.connected && speaking,
+                    mode: _orbMode,
+                    listeningLevel: listeningLevel,
                   ),
                 ),
               ),
@@ -97,6 +120,31 @@ class AssistantLiveCallHeader extends StatelessWidget {
           liveRegion: phase != AssistantLiveCallPhase.connected,
           child: status,
         ),
+        if (phase == AssistantLiveCallPhase.connected && !muted) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            speaking
+                ? context.l10n.assistantLiveCallSpeaking
+                : context.l10n.assistantLiveCallListening,
+            key: const ValueKey('assistant-live-call-activity'),
+            style: theme.textTheme.labelLarge?.copyWith(color: colors.primary),
+          ),
+        ],
+        if ((phase == AssistantLiveCallPhase.failed ||
+                phase == AssistantLiveCallPhase.reconnecting) &&
+            error?.isNotEmpty == true) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            assistantLiveErrorLabel(context.l10n, error!),
+            key: const ValueKey('assistant-live-call-error'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: phase == AssistantLiveCallPhase.failed
+                  ? colors.error
+                  : colors.onSurfaceVariant,
+            ),
+          ),
+        ],
         if (muted && phase == AssistantLiveCallPhase.connected) ...[
           const SizedBox(height: AppSpacing.sm),
           _MutedBadge(label: context.l10n.assistantLiveCallMuted),

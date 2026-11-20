@@ -14,6 +14,7 @@ import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
 import 'package:mobile/features/assistant/local/assistant_local_chat_cubit.dart';
 import 'package:mobile/features/assistant/local/assistant_local_model.dart';
+import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
 import 'package:mobile/features/assistant/view/assistant_page.dart';
@@ -244,7 +245,7 @@ Future<void> _connect(
   // Capture the real page's session lease before seeding provider-only state.
   await live.prepareSession(wsId: _workspace, chatId: _chat);
   expect(live.state.status, AssistantLiveConnectionStatus.error);
-  expect(live.state.error, contains('Synthetic provider boundary'));
+  expect(live.state.error, AssistantLiveFailure.unknown);
   live.emit(
     AssistantLiveState(workspaceId: _workspace, chatId: _chat, status: status),
   );

@@ -146,13 +146,9 @@ extension _AssistantLivePersistence on AssistantLiveCubit {
             clearError: true,
           ),
         );
-      } on ApiException catch (error) {
-        if (stale()) return;
-        _emitError(error.message, preserveDrafts: true);
-        return;
       } on Exception catch (error) {
         if (stale()) return;
-        _emitError(error.toString(), preserveDrafts: true);
+        _emitError(classifyAssistantLiveFailure(error), preserveDrafts: true);
         return;
       }
     }

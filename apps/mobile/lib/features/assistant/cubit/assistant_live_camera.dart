@@ -22,13 +22,13 @@ extension AssistantLiveCameraControls on AssistantLiveCubit {
       ),
     );
     if (!granted) {
-      _emitError('Camera permission was denied.');
+      _emitError(AssistantLiveFailure.cameraPermission);
       return;
     }
 
     final wsId = state.workspaceId;
     if (wsId == null) {
-      _emitError('No workspace is selected.');
+      _emitError(AssistantLiveFailure.noWorkspace);
       return;
     }
 

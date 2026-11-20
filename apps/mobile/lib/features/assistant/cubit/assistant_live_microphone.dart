@@ -54,7 +54,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
         ),
       );
       if (!granted) {
-        _emitError('Microphone permission was denied.');
+        _emitError(AssistantLiveFailure.microphonePermission);
         return;
       }
       final wsId = state.workspaceId;
@@ -68,7 +68,7 @@ extension AssistantLiveMicrophoneControls on AssistantLiveCubit {
           if (_isClosing || isClosed || version != _microphoneVersion) return;
           if (!_startupAudio.add(bytes)) {
             unawaited(toggleMicrophone());
-            _emitError('Connection took too long. Please try recording again.');
+            _emitError(AssistantLiveFailure.timeout);
             return;
           }
           if (state.status == AssistantLiveConnectionStatus.connected) {
