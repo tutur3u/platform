@@ -622,7 +622,9 @@ class CrmMergeResult extends Equatable {
   factory CrmMergeResult.fromJson(Map<String, dynamic> json) {
     final message = crmAsString(json['message']) ?? 'success';
     return CrmMergeResult(
-      success: crmAsBool(json['success']) || message == 'success',
+      success: json['success'] == null
+          ? message == 'success'
+          : crmAsBool(json['success']),
       message: message,
     );
   }

@@ -2673,6 +2673,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmBirthday => 'Ngày sinh';
 
   @override
+  String get crmBulkMerge => 'Gộp các cặp đã xem xét';
+
+  @override
+  String crmBulkMergeConfirm(int count) {
+    return 'Gộp $count cặp trùng lặp vào các liên hệ được chọn để giữ lại?';
+  }
+
+  @override
+  String crmBulkMergeProgress(int completed, int total) {
+    return 'Đã xác nhận $completed/$total lượt gộp.';
+  }
+
+  @override
+  String crmBulkMergeStopped(int completed, int total) {
+    return 'Đã dừng sau $completed/$total lượt gộp được xác nhận. Đóng bảng này và kiểm tra lại liên hệ trùng lặp trước khi thử lại.';
+  }
+
+  @override
   String get crmCreateUser => 'Tạo người dùng';
 
   @override

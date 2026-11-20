@@ -5221,6 +5221,30 @@ abstract class AppLocalizations {
   /// **'Birthday'**
   String get crmBirthday;
 
+  /// No description provided for @crmBulkMerge.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge reviewed pairs'**
+  String get crmBulkMerge;
+
+  /// No description provided for @crmBulkMergeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge {count} duplicate pairs into the selected surviving contacts?'**
+  String crmBulkMergeConfirm(int count);
+
+  /// No description provided for @crmBulkMergeProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} merges confirmed.'**
+  String crmBulkMergeProgress(int completed, int total);
+
+  /// No description provided for @crmBulkMergeStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Stopped after {completed} of {total} confirmed merges. Close this sheet and check duplicates again before retrying.'**
+  String crmBulkMergeStopped(int completed, int total);
+
   /// No description provided for @crmCreateUser.
   ///
   /// In en, this message translates to:

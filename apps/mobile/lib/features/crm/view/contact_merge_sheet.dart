@@ -10,12 +10,14 @@ class ContactMergeSheet extends StatefulWidget {
   const ContactMergeSheet({
     required this.result,
     required this.onMerge,
+    this.confirmBulkMerge,
     super.key,
   });
 
   final CrmDuplicateDetectionResult result;
   final Future<CrmMergeResult> Function(String sourceId, String targetId)
   onMerge;
+  final Future<bool> Function(int count)? confirmBulkMerge;
 
   @override
   State<ContactMergeSheet> createState() => ContactMergeSheetState();
@@ -24,6 +26,45 @@ class ContactMergeSheet extends StatefulWidget {
 class ContactMergeSheetState extends State<ContactMergeSheet> {
   late final Map<int, String> _selectedTargets;
   bool _merging = false;
+  int _completedCount = 0;
+  int? _batchSize;
+
+  List<(String, String)> get _independentPairs {
+    final pairs = <(String, String)>[];
+    final used = <String>{};
+    for (final cluster in widget.result.clusters) {
+      if (cluster.users.length != 2) continue;
+      final target = _selectedTargets[cluster.clusterId];
+      final source = cluster.users.where((user) => user.id != target);
+      if (target == null || source.length != 1) continue;
+      final sourceId = source.single.id;
+      if (!used.add(sourceId) || !used.add(target)) return const [];
+      pairs.add((sourceId, target));
+    }
+    return pairs;
+  }
+
+  Future<void> _mergeBatch() async {
+    final confirm = widget.confirmBulkMerge;
+    if (confirm == null || _merging || _batchSize != null) return;
+    final pairs = _independentPairs;
+    if (pairs.length < 2) return;
+    setState(() => _merging = true);
+    try {
+      if (!await confirm(pairs.length) || !mounted) return;
+      setState(() => _batchSize = pairs.length);
+      for (final (source, target) in pairs) {
+        if (!mounted) return;
+        final result = await widget.onMerge(source, target);
+        if (!mounted || !result.success) return;
+        setState(() => _completedCount++);
+      }
+    } on Object {
+      // Keep the confirmed count visible after an uncertain write.
+    } finally {
+      if (mounted) setState(() => _merging = false);
+    }
+  }
 
   @override
   void initState() {
@@ -63,6 +104,21 @@ class ContactMergeSheetState extends State<ContactMergeSheet> {
           ).typography.large.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: AppSpacing.lg),
+        if (_batchSize case final total?)
+          AppPanel(
+            child: Text(
+              _merging || _completedCount == total
+                  ? l10n.crmBulkMergeProgress(_completedCount, total)
+                  : l10n.crmBulkMergeStopped(_completedCount, total),
+            ),
+          )
+        else if (widget.confirmBulkMerge != null &&
+            _independentPairs.length > 1)
+          AppButton.outline(
+            onPressed: _merging ? null : _mergeBatch,
+            child: Text(l10n.crmBulkMerge),
+          ),
+        const SizedBox(height: AppSpacing.md),
         for (final cluster in widget.result.clusters) ...[
           AppPanel(
             title: cluster.matchReason,
@@ -81,7 +137,7 @@ class ContactMergeSheetState extends State<ContactMergeSheet> {
                         description: _duplicateSecondary(user),
                       ),
                   ],
-                  onChanged: _merging
+                  onChanged: _merging || _batchSize != null
                       ? null
                       : (value) => setState(() {
                           _selectedTargets[cluster.clusterId] = value;
@@ -106,7 +162,9 @@ class ContactMergeSheetState extends State<ContactMergeSheet> {
                 AppButton.primary(
                   key: ValueKey('contact-merge-${cluster.clusterId}'),
                   loading: _merging,
-                  onPressed: _merging ? null : () => _mergeCluster(cluster),
+                  onPressed: _merging || _batchSize != null
+                      ? null
+                      : () => _mergeCluster(cluster),
                   child: Text(l10n.crmMergeUsers),
                 ),
               ],

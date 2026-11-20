@@ -2687,6 +2687,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmBirthday => 'Birthday';
 
   @override
+  String get crmBulkMerge => 'Merge reviewed pairs';
+
+  @override
+  String crmBulkMergeConfirm(int count) {
+    return 'Merge $count duplicate pairs into the selected surviving contacts?';
+  }
+
+  @override
+  String crmBulkMergeProgress(int completed, int total) {
+    return '$completed of $total merges confirmed.';
+  }
+
+  @override
+  String crmBulkMergeStopped(int completed, int total) {
+    return 'Stopped after $completed of $total confirmed merges. Close this sheet and check duplicates again before retrying.';
+  }
+
+  @override
   String get crmCreateUser => 'Create user';
 
   @override

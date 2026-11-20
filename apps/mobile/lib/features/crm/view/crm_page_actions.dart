@@ -206,6 +206,29 @@ extension _CrmPageActions on _CrmPageState {
           heightFactor: 0.88,
           child: ContactMergeSheet(
             result: result,
+            confirmBulkMerge: (count) async {
+              final confirmed = await _showOwnedDialog<bool>(
+                context: this.context,
+                builder: (dialogContext) {
+                  final l10n = dialogContext.l10n;
+                  return AppDialog(
+                    title: l10n.crmBulkMerge,
+                    content: Text(l10n.crmBulkMergeConfirm(count)),
+                    actions: [
+                      AppButton.ghost(
+                        onPressed: () => Navigator.of(dialogContext).pop(false),
+                        child: Text(l10n.commonCancel),
+                      ),
+                      AppButton.destructive(
+                        onPressed: () => Navigator.of(dialogContext).pop(true),
+                        child: Text(l10n.crmBulkMerge),
+                      ),
+                    ],
+                  );
+                },
+              );
+              return confirmed ?? false;
+            },
             onMerge: (sourceId, targetId) => _repository.mergeUsers(
               wsId,
               sourceId: sourceId,

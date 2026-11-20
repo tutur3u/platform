@@ -2288,6 +2288,13 @@
     }
   },
   "crmBirthday": "Birthday",
+  "crmBulkMerge": "Merge reviewed pairs",
+  "crmBulkMergeConfirm": "Merge {count} duplicate pairs into the selected surviving contacts?",
+  "@crmBulkMergeConfirm": {"placeholders": {"count": {"type": "int"}}},
+  "crmBulkMergeProgress": "{completed} of {total} merges confirmed.",
+  "@crmBulkMergeProgress": {"placeholders": {"completed": {"type": "int"}, "total": {"type": "int"}}},
+  "crmBulkMergeStopped": "Stopped after {completed} of {total} confirmed merges. Close this sheet and check duplicates again before retrying.",
+  "@crmBulkMergeStopped": {"placeholders": {"completed": {"type": "int"}, "total": {"type": "int"}}},
   "crmCreateUser": "Create user",
   "crmDeleteUserConfirm": "Delete this user?",
   "crmDeleteUserSuccess": "User deleted.",
