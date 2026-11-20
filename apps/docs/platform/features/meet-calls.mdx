@@ -1015,8 +1015,9 @@ Checks run in this order; the first match wins:
 | 2 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
 | 3 | `MEET_AI_DISABLED` (kill switch) | Present and anything other than `0`/`false` (trimmed, case-insensitive) denies every workspace, including blank and non-string values. Unset, `0` or `false` moves on. |
 | 4 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
-| 5 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Required comma/whitespace-separated UUID allowlist, case-insensitive. Missing, blank, non-string, `*` or any non-UUID entry denies every workspace and is logged once per isolate (`[meet-ai-gate]`, no ids). `*` is **not** an allow-all value; an allow-all switch would need its own, separately reviewed opt-in. |
-| 6 | Allowlist match | Allow; existing credit checks still apply. |
+| 5 | `MEET_AI_ALL_WORKSPACES` | Reviewed allow-all opt-in (decision 20 November 2026). Only the exact value `reviewed-allow-all-2026-11-20` allows every workspace that passed rows 1-4. Unset or blank moves on; any other value (including `*`, `true` or `1`) is ignored and logged once per isolate. Changing what it admits requires a new reviewed value. |
+| 6 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Comma/whitespace-separated UUID allowlist, case-insensitive. Missing, blank, non-string, `*` or any non-UUID entry denies every workspace and is logged once per isolate (`[meet-ai-gate]`, no ids). `*` is **not** an allow-all value. |
+| 7 | Allowlist match | Allow; existing credit checks still apply. |
 
 The Worker and room DO read only injected bindings, never ambient `process.env`.
 If the Meet Worker cannot read its Cloudflare context, the gate fails closed as
@@ -1036,6 +1037,10 @@ post-call note sharing, and success for disabling both. Only set
 UUID with no database row, allowlisted on the realtime Worker only, never on
 Meet. Never allowlist a real workspace to satisfy a deploy check. An empty
 `MEET_AI_ENABLED_WORKSPACE_IDS` secret is the expected production default.
+`MEET_AI_ALL_WORKSPACES` is set only as a release-time Worker secret; the
+containment check rejects it in source deploy configs. Mira eligibility,
+billing and the 18+ setting are described in
+[Meet Live assistants](/platform/features/meet-live-assistants).
 
 For operators: to enable Meet AI for a workspace, add its id to
 `MEET_AI_ENABLED_WORKSPACE_IDS` on **all three surfaces**. To stop AI, set

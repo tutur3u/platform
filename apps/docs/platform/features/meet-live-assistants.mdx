@@ -2,7 +2,7 @@
 title: Meet Live assistants
 updated: '2026-09-23'
 description: Operate personal and room-wide Mira voice sessions with private context, explicit approvals, and metered usage.
-updatedAt: "2026-10-10"
+updatedAt: "2026-11-20"
 audience: users
 ---
 
@@ -11,20 +11,40 @@ existing `tuturuuu-meet` Worker. It does not require a self-hosted process.
 The Worker holds the Gemini API key; browsers receive short-lived,
 purpose-bound session tokens and connect through `/live-connect`.
 
-## Private-only availability
+## Availability and eligibility
 
-Mira is off by default. The raw Worker binding `MEET_AI_DISABLED` must be
-explicitly `false` to enable the private path; absent, empty or invalid values
-remain off. The API key stays server-side in `GOOGLE_GENERATIVE_AI_API_KEY`.
+Product decision (20 November 2026). Scope: Private Mira (Live voice, private
+chat, document assist, programming, polls and quiz boards) and room Mira (room
+chat **@mira**) in Meet and Parley. Default: off. Every check runs on the
+server against current Auth and stored data; client values and environment
+defaults never satisfy it.
 
-An authoritative, current Auth user is checked with
-`isVerifiedTuturuuuStaffSession`. The demo exception permits verified staff only
-in their own Personal workspace: `personal = true` and `creator_id = account id`.
-Workspace membership and current meeting participation are required independently.
-Other workspaces require an administrator's server-stored audiences-18+
-attestation. The attestation reader returns no attestation until storage and
-settings UI are implemented; it cannot be satisfied by a client value or an
-environment default. No attestation setting is available in this release.
+| Requirement | Rule |
+| --- | --- |
+| Deployment | The raw Worker binding `MEET_AI_DISABLED` must be exactly `false` or `0`. Source configuration keeps `true`, so enabling is an explicit release-time override. The API key stays server-side in `GOOGLE_GENERATIVE_AI_API_KEY`. |
+| Workspace gate | The meeting workspace must pass the Meet AI gate described in [Meet calls](/platform/features/meet-calls): hard denies (the workspace excluded in code and `MEET_AI_PROTECTED_WORKSPACE_IDS`), the kill switch and `MEET_AI_DISABLED_WORKSPACE_IDS` always apply, then either the allowlist or the reviewed opt-in `MEET_AI_ALL_WORKSPACES=reviewed-allow-all-2026-11-20`. |
+| Account | The same rule as Meet hosting (`canVerifiedAccountHostMeeting`): a verified @tuturuuu.com staff session (`isVerifiedTuturuuuStaffSession`), or a confirmed account whose own Personal subscription is Plus, Pro or Enterprise while `MEET_PAID_TIER_HOSTING_ENABLED` is exactly `true`. Free accounts are denied even in an attested workspace. |
+| Membership and presence | Workspace membership and current admitted meeting participation are required independently. |
+| Audience (18+) | The meeting workspace needs a stored 18+ audience attestation, set by a workspace settings manager. Exception: verified staff using Private Mira in their own Personal workspace (`personal = true`, `creator_id` = account). Room Mira has no exception, because other participants are present. |
+| Billing | Staff requests drain the Tuturuuu root workspace. Paid accounts pay with their own credits: Private Mira charges the requester's Personal workspace and room Mira charges the meeting workspace. Reservation is atomic, as before. A selected tool workspace never changes the payer. |
+
+The Live Durable Object rechecks the account, audience and payer before code
+tools run, reading the paid tier and attestation over its server-only REST
+client. A saved session whose billing workspace no longer matches the payer
+(for example, a staff session after the account loses staff status) is denied.
+
+### Workspace 18+ setting
+
+Workspace settings in `workspace.tuturuuu.com` and `tuturuuu.com` show **Meet
+Mira → Meeting audience is 18+** to holders of `manage_workspace_settings`
+(Personal workspace owners hold it). Turning it on opens a confirmation; turning
+it off withdraws immediately. The setting is stored in the service-only
+`private.workspace_mira_audience_attestations` table (one row per workspace).
+The settings route checks the permission, records the authenticated manager and
+server time and withdraws by deleting the row; browsers and the anon or
+authenticated roles have no table access. Erasing the attesting account clears `attested_by`, which invalidates
+the attestation until a current manager confirms again. Meet and Parley tell an
+ineligible requester to ask an admin to turn this setting on.
 
 ## Participant choice and microphone privacy
 
@@ -65,27 +85,45 @@ enable Live or bypass its authorization, audio consent, or limits. Synthetic
 regression coverage: `invite-unavailable.test.tsx`, `live-errors.test.ts` and
 `live-workspace-identity.test.tsx`.
 
-## Room features deliberately unavailable
+## Room Mira and the all-participant fence
 
-Room Live input and output are denied on the server, independent of environment
-settings, pending an all-participant click fence for the mixed transport.
-Room chat generation through **@mira**, **@ttr**, or **@tuturuuu** is also
-denied. Private text inside an accepted Live
-session remains available. The Private Mira tab in room chat uses the same
-current account choice and eligibility as Private Mira Live. It sends the
-requester’s question and bounded private history, charges their personal
-workspace, and shows the reply only to that requester unless they share it.
-An eligible requester can choose **Enable Mira** in private chat, confirm the
-current consent notice, and retry the same message. If the workspace is
-ineligible, Meet and Parley explain the restriction and link to workspace
-settings so the requester can identify a workspace administrator. That page
-provides workspace administration and has no Private Mira attestation control.
+Room chat generation through **@mira**, **@ttr** or **@tuturuuu** requires room
+Mira authority for the requester (deployment, workspace gate, account rule and
+the meeting workspace's stored 18+ attestation) and an all-participant fence.
+
+While room Mira is available in a meeting, chat shows a **Room Mira** notice to
+every admitted participant, anonymous guests included. Each participant chooses
+**Continue** or **Pause** for their own account; nobody can choose for someone
+else. The notice shows only aggregate counts, never who has not chosen. The
+meeting room Durable Object stores each choice with the notice version
+(`2026-11-20-room-v1`), meeting, account, server time and revision.
+
+The room releases chat context for a mention (`ai.reserve`) or resumes an
+approved tool step (`ai.review.claim`) only while every admitted account has a
+current Continue, checked atomically with the state it reads. One Pause, a new
+participant who has not chosen, or a new notice version pauses room Mira for
+everyone; a mention then shows that Mira answers after everyone chooses
+Continue. The context sent to the provider contains only messages written by
+accounts with a current Continue, plus Mira's own replies; messages from people
+who left without choosing never leave the room. Choices are cleared when an
+ended room is restored. The server checks the fence again before any credit
+work. Generation uses the Meet Worker's own provider key; the room
+transcription provider binding stays closed.
+
+Room Live input and output (mixed room audio) remain denied on the server,
+independent of environment settings. The fence above is the gate a future room
+Live transport must use; it does not enable room voice by itself. Private text
+inside an accepted Live session remains available. The Private Mira tab in room
+chat uses the same current account choice and eligibility as Private Mira Live.
+It sends the requester's question and bounded private history, charges the
+Private Mira payer, and shows the reply only to that requester unless they
+share it. An eligible requester can choose **Enable Mira** in private chat,
+confirm the current consent notice, and retry the same message.
 See the [private chat regression tests](https://github.com/tutur3u/platform/blob/main/packages/meet-core/src/features/call/components/personal-chat.test.tsx).
 
-Meeting WAV transcription and notes are off. Room history and mixed audio stay
-outside provider requests. A
-denied room chat mention shows an inline notice that Room Mira is unavailable and
-points to Private Mira. Private Mira startup reports blocked, missing or busy
+Meeting WAV transcription and notes are off. Mixed audio stays outside provider
+requests. A room chat mention denied by room Mira authority shows an inline
+notice that Room Mira is unavailable and points to Private Mira. Private Mira startup reports blocked, missing or busy
 microphones and unavailable audio output with specific messages.
 
 Meet and Parley offer `/poll`, `/summary`, `/actions`, and `/review` in the room
@@ -96,16 +134,28 @@ before posting the selected text to the room. Room tool controls require an
 authorized operation from the owning surface. Access to private notes and
 tutor chats is blocked in the room permissions card.
 
-Deploy `tuturuuu-meet-realtime` with the choice protocol and command denials before
-`tuturuuu-meet`. Enabling the private path requires an explicit runtime override
-because the source configuration retains `MEET_AI_DISABLED: 'true'`. Both Workers
-must run the qualified source. Enabling this flag does not re-enable room mode.
+Deploy `tuturuuu-meet-realtime` with the choice protocol, the room Mira fence and
+the room Live denials before `tuturuuu-meet`. Enabling requires an explicit
+runtime override because the source configuration retains
+`MEET_AI_DISABLED: 'true'`, and `scripts/check-meet-ai-containment.js` rejects a
+source config that declares `MEET_AI_ALL_WORKSPACES`. Both Workers must run the
+qualified source. Enabling these settings does not re-enable room Live voice.
 
-Regression coverage includes `demo-admission.test.ts`,
-`server/demo-authority.test.ts`, `private-notice.test.tsx`,
-`room-mira-private.test.ts`, `route.gate.test.ts`, `route.billing.test.ts`,
-`phase-a-denial.test.ts`, and `token.test.ts`. Synthetic checks do not establish
-production key identity or successful live invitations.
+Regression coverage includes `demo-admission.test.ts` (account rule, payer,
+attestation), `mira-entitlement.test.ts`, `server/demo-authority.test.ts`
+(hosting rule, workspace gate, stored attestation), `private-grant-paid.test.ts`
+and `session-tools.test.ts` (Durable Object recheck and payer binding),
+`room-mira-consent.test.ts` (`packages/realtime`: fence, guests, Pause,
+consenting authors only), `server/room-mira-authority.test.ts`,
+`mira-room/route.test.ts`, `room-mira-notice.test.tsx`,
+`chat-assistant-notice.test.tsx`, the Meet `assistant/route.test.ts` and
+`assistant/review/route.test.ts`, the web `settings/mira-audience/route.test.ts`
+and `mira-audience-settings.test.tsx`, `ai-workspace-gate.test.ts` (reviewed
+opt-in), `check-meet-ai-containment.test.js`, `private-notice.test.tsx`,
+`room-mira-private.test.ts`, `route.gate.test.ts`, `route.billing.test.ts`
+(staff root billing), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
+and `token.test.ts`. Synthetic checks do not establish production key identity,
+hosted credit settlement on the root workspace or successful live invitations.
 
 ## Memory and context
 
@@ -135,9 +185,12 @@ the service cannot be reconstructed after an outage.
 Live reservations and settlement use the platform's existing AI credit ledger
 as follows. The room assistant (meeting transcription and notes) charges the
 meeting workspace (`workspace_meetings.ws_id`), and the initiating user remains
-attributed for per-user limits. A personal assistant session ("Talk to Mira",
-voice or text) charges the participant's own personal workspace. A selected tool
-workspace does not change billing. Usage is accumulated from
+attributed for per-user limits. Room Mira chat charges the meeting workspace for
+paid requesters. A personal assistant session ("Talk to Mira", voice or text)
+charges the participant's own personal workspace. Requests by verified staff
+charge the Tuturuuu root workspace instead, on every Mira surface, with the
+staff member still attributed. A selected tool workspace does not change
+billing. Usage is accumulated from
 provider events by modality. Reservations use nine-minute holds and renew after eight minutes or before exhaustion; failed
 settlements remain durable and retry after the session ends. Final provider usage
 is collected during shutdown. Interrupted turns without a final usage receipt
@@ -283,8 +336,27 @@ privacy revocation and the complete stop/reschedule path remain release gates.
 
 ## Deployment and verification
 
-Apply the additive `meet_private_ai_memory` migration through the repository's
-normal migration pipeline. The Worker needs its existing Supabase configuration,
+Apply the additive `meet_private_ai_memory` and
+`20261120193000_workspace_mira_audience_attestations` migrations through the
+repository's normal migration pipeline. The attestation migration only adds one
+service-only private table, so it is independent of other batches.
+
+Release configuration for paid and staff Mira (set by the release owner; the
+source keeps every value off):
+
+| Worker | Setting | Value |
+| --- | --- | --- |
+| `tuturuuu-meet` (including its Live Durable Object) | `MEET_AI_DISABLED` (var override at deploy) | `false` |
+| `tuturuuu-meet` | `MEET_AI_ALL_WORKSPACES` (secret) | `reviewed-allow-all-2026-11-20` |
+| `tuturuuu-meet` | `MEET_PAID_TIER_HOSTING_ENABLED` | `true` (shared with Meet hosting) |
+| `tuturuuu-meet` | `MEET_AI_PROTECTED_WORKSPACE_IDS`, `GOOGLE_GENERATIVE_AI_API_KEY` | existing required secrets, nonempty |
+
+`MEET_AI_ENABLED_WORKSPACE_IDS` can stay empty with the reviewed opt-in.
+`tuturuuu-meet-realtime` needs only the new source for the fence; its Meet AI
+variables still gate note sharing and can stay contained. To stop Mira
+everywhere, deploy without the `MEET_AI_DISABLED` override (or set it to
+`true`); to exclude one workspace, list it in `MEET_AI_DISABLED_WORKSPACE_IDS`.
+The Tuturuuu root workspace needs AI credits for staff usage. The Worker needs its existing Supabase configuration,
 `MEET_REALTIME_TOKEN_SECRET`, and `GOOGLE_GENERATIVE_AI_API_KEY`; no key is sent
 to another Worker or to the browser. Wrangler's `meet-live-v1` migration creates
 the SQLite Durable Object binding `MEET_LIVE`.

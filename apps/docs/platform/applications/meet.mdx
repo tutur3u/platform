@@ -504,11 +504,14 @@ Regression coverage lives in
 
 The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is
 absent or invalid. Only exact lowercase `false` or `0` passes the switch; all
-protected-workspace, denylist and explicit allowlist rules still apply. This
-control applies to Meet and Parley callers of the shared gate. Private Mira
-retains its separate durable participant consent and verified staff Personal
-workspace admission rules; workspace-wide AI remains disabled without adult
-audience attestation storage.
+protected-workspace, denylist and explicit allowlist (or reviewed
+`MEET_AI_ALL_WORKSPACES` opt-in) rules still apply. This control applies to
+Meet and Parley callers of the shared gate, including Private Mira and room
+Mira chat. Mira additionally requires an eligible account (staff or a paid
+Personal plan), the workspace's stored 18+ setting and, for room chat, every
+participant's Continue; see
+[Meet Live assistants](/platform/features/meet-live-assistants). Meeting
+transcription, notes and room Live voice remain disabled.
 
 Regression coverage: `packages/realtime/src/meet/ai-workspace-gate.test.ts`,
 `packages/realtime/src/meet/ai-workspace-identity.test.ts`,
