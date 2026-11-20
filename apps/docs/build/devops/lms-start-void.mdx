@@ -1,0 +1,61 @@
+---
+title: "LMS on Start and Void"
+description: "Verify the sealed LMS Worker, its area bindings, and the canonical gateway cutover."
+---
+
+## Qualification
+
+`lms-cloudflare.yaml` emits the route-free `tuturuuu-lms` Worker with Void on
+Vite+. The artifact includes the exact source SHA and per-file hashes in
+`lms-native-artifact.json`, plus `lms-native-artifact.sha256` for the receipt
+and archive. The archive disables public previews and has no routes or schedules.
+The workflow does not upload a Worker or change traffic.
+
+The Worker receives the original apex request through `MOUNT_LMS`. The
+`TEACH` and `LEARN` service bindings carry that request unchanged to
+`tuturuuu-teach` and `tuturuuu-learn`. Those builds must independently pass
+their emitted-Worker tests for the nested area mounts. Service binding mocks
+in the LMS Workerd suite prove the dispatch boundary. They do not replace
+acceptance with the actual bound versions. Each dispatch chooses one service
+and makes one call, with no retry or background work. Clearing the LMS gateway
+paths stops ingress to the deployment.
+
+## Gateway handoff
+
+1. Record the pinned LMS, Teach, Learn and gateway version IDs, exact commit
+   hashes, DNS and route definitions, mounted paths, and service bindings.
+   Check that the LMS archive digest and both area build identities match the
+   reviewed source.
+2. Bind `MOUNT_LMS` and add `/lms,/lms/*` to `GATEWAY_MOUNTED_PATHS`. Keep the
+   existing Teach mount, legacy domains, and old Learn route available during
+   acceptance. The gateway owner enables the canonical landing's indexing
+   through `TUTURUUU_NOINDEX=0` after staging acceptance.
+3. Verify HTTPS `/lms`, `/lms/api/build-info`, and both area build-info paths.
+   Load all emitted assets, including fonts, in English and Vietnamese. Check
+   that fingerprinted assets cache and private responses do not. Compare cold
+   and warm header latency on the landing, learner dashboard, and static assets.
+4. Using the approved fleet identity, follow Web login back to a nested lesson.
+   Confirm one shared session when switching areas. Open the teacher dashboard,
+   edit and revert a disposable course module and quiz, enter and revert
+   attendance, and verify gradebook and report access. In Learn, open a course,
+   resume a practice activity, verify progress, and test an approved parent
+   invitation fixture without logging its token. Repeat with a learner-only
+   and a dual-role account. An unauthorized workspace or role must never load
+   protected content.
+5. Only after those checks pass, enable `GATEWAY_LMS_REDIRECTS=1` and route
+   legacy document requests at the edge to the gateway. Preserve existing
+   machine traffic on the legacy origins during transition. Verify HTTP 301
+   from all three subdomains and the two apex mounts, with encoded nested
+   paths and repeated queries. Verify the canonical route does not loop.
+
+## Rollback
+
+Restore the captured serving gateway configuration in one operation and
+restore the captured legacy host routes if they changed. Clearing the redirect
+flag stops new redirects. Keep the canonical mount available to browsers that
+already followed permanent redirects when possible. Validate the restored Teach
+mount and Learn subdomain with a signed-in smoke. Data remains in the shared
+education store through either routing configuration.
+
+See [LMS product behavior](/platform/applications/lms), [Teach qualification](/build/devops/teach-start-void),
+and [Learn qualification](/build/devops/learn-start-void).

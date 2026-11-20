@@ -1,0 +1,90 @@
+---
+title: "Learning Management System"
+description: "Role-aware teaching and learning at one canonical address."
+---
+
+## Product decision
+
+Tuturuuu LMS uses `https://tuturuuu.com/lms` as its canonical entry.
+One workspace can expose Teach, Learn, or both depending on existing
+membership, teaching permissions, and learner access. Hiding a navigation
+link does not grant or revoke access. Each page and mutation enforces its
+existing authorization at the server. Invitations remain accessible to
+their intended recipients through the existing verification and consent flow.
+
+| Area | Audience | Destinations |
+| --- | --- | --- |
+| Teach | Teachers and education administrators with workspace access | Dashboard, courses and modules, quiz authoring, timetable, lessons, attendance, grading, and reports |
+| Learn | Learners with access to the selected workspace | Home, courses, practice, progress, and library |
+
+The public entry links to both areas. The area dashboard resolves an eligible
+workspace from the signed-in account.
+Users with both roles can switch areas without reauthenticating. The Teach
+dashboard surfaces work awaiting grading and links directly to courses,
+quiz authoring, and the timetable. The Learn home prioritizes
+resuming study and finding assigned work. The current education and learning
+data models remain authoritative for both areas.
+
+## Routes and canonical URLs
+
+| Canonical path | Purpose |
+| --- | --- |
+| `/lms` | Public entry |
+| `/lms/login` | Shared sign-in entry through Web |
+| `/lms/teach/{workspace}/…` | Teaching workspace and existing teaching deep links |
+| `/lms/learn/{workspace}/…` | Learning workspace and existing learning deep links |
+| `/lms/learn/parent-invite` | Parent invitation handoff |
+
+The area segment precedes the existing route path. This preserves localized
+links, workspace aliases, course IDs, modules, lesson IDs, and invitation
+parameters without overloading a shared URL with two access models. Legacy locale
+segments stay in the initial redirect. The receiving area stores the selected
+locale before continuing to the unprefixed path.
+
+| Incoming URL | Permanent destination after cutover |
+| --- | --- |
+| `https://teach.tuturuuu.com/{path}`, `https://tuturuuu.com/teach/{path}` | `https://tuturuuu.com/lms/teach/{path}` |
+| `https://learn.tuturuuu.com/{path}`, `https://tuturuuu.com/learn/{path}` | `https://tuturuuu.com/lms/learn/{path}` |
+| `https://lms.tuturuuu.com/{path}` | `https://tuturuuu.com/lms/{path}` |
+
+Navigation redirects use HTTP 301 and preserve encoded paths and the query
+string, including repeated parameters. Exercise non-GET API clients against
+their existing origins before retiring compatibility routes. Public LMS
+documents declare their apex canonical URL. Private pages, authentication
+pages, and staging hosts carry `noindex`.
+
+## Session and performance
+
+The apex mount uses the shared Tuturuuu session. Teach loaders share one bootstrap result per rendered request. The mounted
+Teach and Learn menus use their verified bootstrap profile. Each mutation
+continues to enforce its own resource and session checks. Fingerprinted assets may be cached immutably.
+Authenticated documents, data, and authentication redirects remain private.
+The initial consolidation introduces no background jobs.
+
+## Migration and rollback
+
+Use TanStack Start, Vite+, and Void on Cloudflare. Introduce `apps/lms` as a
+separate deployment identity so the active Teach deployment and the retained
+Learn deployment stay available during qualification. The entry Worker dispatches Teach and Learn paths through service bindings
+to the existing runtimes, with each area serving its own assets and APIs.
+Both areas use the shared education packages. Keep course, enrollment, and progress
+records in place.
+
+1. Qualify the route-free LMS artifact in Workerd and on a pinned staging
+   version. Record the source SHA, artifact digest, and host, session, asset,
+   and latency checks.
+2. The gateway owner captures the current serving versions, bindings, routes,
+   and DNS, then mounts LMS at `/lms`. Verify signed-in teacher, administrator,
+   learner, dual-role, and unauthorized workspace paths. Compare cold and warm
+   header latency for landing, dashboard, and asset requests.
+3. Activate the permanent legacy redirects after canonical verification.
+   Exercise localized lessons, quiz authoring, attendance, grading, progress,
+   and invitation deep links from every old entry.
+4. Restore the captured gateway version and legacy routing if the mount
+   regresses. Keep the canonical route serviceable for browsers retaining
+   a permanent redirect. Recovery needs no data migration.
+
+See [LMS artifact acceptance](/build/devops/lms-start-void), the
+[native Start runbook](/build/devops/native-start-migration) and
+[gateway runbook](/build/devops/gateway-worker) for artifact and routing
+acceptance.
