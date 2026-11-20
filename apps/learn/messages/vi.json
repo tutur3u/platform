@@ -904,9 +904,13 @@
     "yourRecording": "Bản ghi âm của bạn"
   },
   "learnerWorkspace": {
+    "allAssignments": "Tất cả bài tập",
     "flashcardCount": "{count} thẻ ghi nhớ",
     "library": "Thư viện",
+    "moduleCompletion": "Đã hoàn thành {completed}/{total} học phần",
+    "nextUp": "Tiếp theo",
     "noMaterials": "Khóa học này chưa có tài liệu bài học khả dụng.",
+    "noOpenAssignments": "Không có bài tập đang chờ.",
     "openMaterials": "Mở tài liệu",
     "practiceError": "Không thể lưu câu trả lời. Hãy thử lại.",
     "progress": "Tiến độ",

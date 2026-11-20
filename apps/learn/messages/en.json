@@ -904,9 +904,13 @@
     "yourRecording": "Your recording"
   },
   "learnerWorkspace": {
+    "allAssignments": "All assignments",
     "flashcardCount": "{count, plural, one {# flashcard} other {# flashcards}}",
     "library": "Library",
+    "moduleCompletion": "{completed} of {total} modules complete",
+    "nextUp": "Next up",
     "noMaterials": "There are no available lesson materials in this course.",
+    "noOpenAssignments": "No open assignments.",
     "openMaterials": "Open materials",
     "practiceError": "Could not save your answer. Try again.",
     "progress": "Progress",
