@@ -8,10 +8,11 @@ import {
 
 type UseExternalProjectLivePreviewOptions = {
   enabled: boolean;
+  fetch?: InternalApiClientOptions['fetch'];
   refreshToken: number;
   selectedEntryId: string | null;
   workspaceId: string;
-} & Pick<InternalApiClientOptions, 'fetch'>;
+};
 
 export function useCmsLivePreview({
   enabled,

@@ -8,12 +8,16 @@ const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   create: vi.fn(),
   list: vi.fn(),
+  selectStudioMedia: vi.fn(),
   update: vi.fn(),
 }));
 
 vi.mock('server-only', () => ({}));
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: mocks.access,
+}));
+vi.mock('@/lib/external-projects/studio-media', () => ({
+  updateStudioMedia: mocks.selectStudioMedia,
 }));
 vi.mock('@/lib/external-projects/store', () => ({
   createWorkspaceExternalProjectAsset: mocks.create,
@@ -130,11 +134,20 @@ it('isolates re-finalizations of one archive and leaves the current package inta
   expect((await finalize()).status).toBe(502);
   expect(current.storage_path).toBe(originalRoot);
   expect(mocks.update).not.toHaveBeenCalled();
+  expect(mocks.selectStudioMedia).not.toHaveBeenCalled();
 
   const third = await finalize();
   const fourth = await finalize();
   expect(third.status).toBe(200);
   expect(fourth.status).toBe(200);
+  expect(mocks.selectStudioMedia).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      entryId,
+      selection: { webgl: 'asset-1' },
+      workspaceId,
+    })
+  );
   expect(new Set(roots).size).toBe(4);
   expect(await fourth.json()).toMatchObject({
     artifact: {

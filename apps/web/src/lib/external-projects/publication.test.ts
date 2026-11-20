@@ -7,12 +7,16 @@ import {
   isPublishedAsset,
   loadPublishedAssetManifests,
   publicationEventId,
+  readPublishedAssetDigest,
 } from './published-assets';
 import { PublicationDatabaseError } from './publication';
 import {
   bulkUpdateWorkspaceExternalProjectEntries,
+  createWorkspaceExternalProjectAsset,
   publishWorkspaceExternalProjectEntry,
+  updateWorkspaceExternalProjectEntry,
 } from './store';
+import { updateStudioMedia } from './studio-media';
 import {
   buildWebglPackageArtifact,
   WEBGL_PACKAGE_ASSET_TYPE,
@@ -24,6 +28,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
+}));
+
+const readAssetBytes = vi.hoisted(() => vi.fn());
+vi.mock('./asset-publication-bytes', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./asset-publication-bytes')>()),
+  readExternalProjectAssetBytes: readAssetBytes,
 }));
 
 const invalidate = vi.hoisted(() => vi.fn());
@@ -138,6 +148,7 @@ function database() {
     const rows = tableRows.get(table) ?? [];
     const conditions: ((row: Row) => boolean)[] = [];
     let patch: Row | undefined;
+    let inserted: Row | undefined;
     const matches = () =>
       rows.filter((row) => conditions.every((test) => test(row)));
     return {
@@ -159,7 +170,13 @@ function database() {
         patch = updateEntry(values);
         return this;
       },
+      insert(values: Row) {
+        inserted = { block_id: null, updated_at: beforePublication, ...values };
+        rows.push(inserted);
+        return this;
+      },
       async single() {
+        if (inserted) return { data: { ...inserted }, error: null };
         const [row] = matches();
         if (!row) return { data: null, error: { message: 'missing row' } };
         if (patch)
@@ -167,7 +184,10 @@ function database() {
         return { data: { ...row }, error: null };
       },
       async maybeSingle() {
-        return { data: matches()[0] ?? null, error: null };
+        const [row] = matches();
+        if (row && patch)
+          Object.assign(row, patch, { updated_at: new Date().toISOString() });
+        return { data: row ? { ...row } : null, error: null };
       },
       async range() {
         return { data: matches(), error: null };
@@ -211,9 +231,188 @@ const input = {
   workspaceId,
   visibilityScope: 'public',
 };
-
 describe('CMS publication settlement', () => {
-  beforeEach(() => invalidate.mockReset().mockResolvedValue(undefined));
+  beforeEach(() => {
+    invalidate.mockReset().mockResolvedValue(undefined);
+    readAssetBytes.mockReset();
+  });
+
+  const publishInput = {
+    actorId: 'editor',
+    binding,
+    entryId,
+    workspaceId,
+    eventKind: 'publish',
+    visibilityScope: 'public',
+  } as const;
+
+  function uploadImage(admin: TypedSupabaseClient, id: string) {
+    return createWorkspaceExternalProjectAsset(
+      {
+        actorId: 'editor',
+        workspaceId,
+        id,
+        asset_type: 'image',
+        entry_id: entryId,
+        metadata: {},
+        sort_order: 0,
+        source_url: null,
+        storage_path: `external-projects/custom/games/game/${id}.png`,
+      },
+      admin
+    );
+  }
+
+  function confirmMedia(
+    admin: TypedSupabaseClient,
+    selection: Parameters<typeof updateStudioMedia>[1]['selection']
+  ) {
+    return updateStudioMedia(admin, {
+      actorId: 'editor',
+      entryId,
+      selection,
+      workspaceId,
+    });
+  }
+
+  it('includes the selected studio cover in the publish event and direct asset proof', async () => {
+    const { admin, events } = database();
+    const cover = await uploadImage(admin, 'cover');
+    await confirmMedia(admin, { cover: cover.id });
+    readAssetBytes.mockResolvedValue({
+      buffer: Buffer.from('studio cover'),
+      contentType: 'image/png',
+    });
+    const entry = await publishWorkspaceExternalProjectEntry(
+      publishInput,
+      admin
+    );
+
+    expect(readAssetBytes).toHaveBeenCalledWith(
+      workspaceId,
+      cover.storage_path
+    );
+    expect(events[0]?.payload).toMatchObject({
+      collections: [
+        {
+          entries: [
+            {
+              assets: expect.arrayContaining([
+                expect.objectContaining({ id: cover.id, published: true }),
+              ]),
+            },
+          ],
+        },
+      ],
+    });
+    const digest = await readPublishedAssetDigest(
+      admin,
+      workspaceId,
+      canonicalProjectId,
+      cover,
+      {
+        ...entry,
+        workspace_external_project_collections: { slug: 'games', config: {} },
+      }
+    );
+    expect(digest).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('keeps abandoned uploads and a replaced cover private', async () => {
+    const { admin } = database();
+    const abandoned = await uploadImage(admin, 'abandoned');
+    const original = await uploadImage(admin, 'original-cover');
+    const replacement = await uploadImage(admin, 'replacement-cover');
+    readAssetBytes.mockResolvedValue({ buffer: Buffer.from('cover bytes') });
+
+    await confirmMedia(admin, { cover: original.id });
+    const initial = await publishWorkspaceExternalProjectEntry(
+      publishInput,
+      admin
+    );
+    const initialProof = await loadPublishedAssetManifests(
+      admin,
+      workspaceId,
+      canonicalProjectId,
+      [initial]
+    );
+    expect(isPublishedAsset(initialProof, original)).toBe(true);
+    expect(isPublishedAsset(initialProof, abandoned)).toBe(false);
+
+    await confirmMedia(admin, { cover: replacement.id });
+    // A stale title or custom-field editor must not restore the previous cover.
+    await updateWorkspaceExternalProjectEntry(
+      entryId,
+      {
+        actorId: 'editor',
+        workspaceId,
+        profile_data: {
+          studioMedia: { cover: original.id },
+          tagline: 'Updated',
+        },
+      },
+      admin
+    );
+    readAssetBytes.mockClear();
+    const updated = await publishWorkspaceExternalProjectEntry(
+      publishInput,
+      admin
+    );
+    const updatedProof = await loadPublishedAssetManifests(
+      admin,
+      workspaceId,
+      canonicalProjectId,
+      [updated]
+    );
+    expect(isPublishedAsset(updatedProof, replacement)).toBe(true);
+    expect(isPublishedAsset(updatedProof, abandoned)).toBe(false);
+    expect(isPublishedAsset(updatedProof, original)).toBe(false);
+    expect(readAssetBytes).toHaveBeenCalledExactlyOnceWith(
+      workspaceId,
+      replacement.storage_path
+    );
+  });
+
+  it('publishes all selected assets at the 24-asset limit including the finalized WebGL package', async () => {
+    const { admin } = database();
+    const gallery = await Promise.all(
+      Array.from({ length: 23 }, (_, index) =>
+        uploadImage(admin, `gallery-${index}`)
+      )
+    );
+    await confirmMedia(admin, { gallery: gallery.map((asset) => asset.id) });
+    readAssetBytes.mockResolvedValue({ buffer: Buffer.from('gallery bytes') });
+    const entry = await publishWorkspaceExternalProjectEntry(
+      publishInput,
+      admin
+    );
+    const manifest = await loadPublishedAssetManifests(
+      admin,
+      workspaceId,
+      canonicalProjectId,
+      [entry]
+    );
+    for (const asset of gallery)
+      expect(isPublishedAsset(manifest, asset)).toBe(true);
+    expect(readAssetBytes).toHaveBeenCalledTimes(23);
+  });
+
+  it('rejects an oversized selection before reading bytes or publishing', async () => {
+    const { admin, rpc } = database();
+    const gallery = await Promise.all(
+      Array.from({ length: 24 }, (_, index) =>
+        uploadImage(admin, `gallery-${index}`)
+      )
+    );
+    await confirmMedia(admin, { gallery: gallery.map((asset) => asset.id) });
+    await expect(
+      publishWorkspaceExternalProjectEntry(publishInput, admin)
+    ).rejects.toMatchObject({
+      message: 'An entry can publish up to 24 media assets',
+    });
+    expect(readAssetBytes).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
+  });
 
   it('publishes an entry-level finalized WebGL package through bulk set-status', async () => {
     const { admin, events, proofs, webgl, staged, rpc, updateEntry } =

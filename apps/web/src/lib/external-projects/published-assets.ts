@@ -16,6 +16,7 @@ type Entry = {
   published_at: string | null;
   updated_at: string;
   profile_data: unknown;
+  metadata?: unknown;
 };
 type Asset = { id: string; entry_id: string | null; updated_at: string };
 type Block = { id: string; entry_id: string; updated_at: string };
@@ -64,6 +65,12 @@ export function assetPublicationProofId(
   );
 }
 
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 function isEntryWebglPackage(asset: AttachedAsset) {
   if (asset.block_id || asset.asset_type !== WEBGL_PACKAGE_ASSET_TYPE)
     return false;
@@ -74,10 +81,22 @@ function isEntryWebglPackage(asset: AttachedAsset) {
   );
 }
 
-function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
+function entryAssetReferences(entry: Entry) {
+  const references = new Set<string>();
+  const pending = [entry.profile_data, entry.metadata];
+  while (pending.length > 0) {
+    const value = pending.pop();
+    if (typeof value === 'string') {
+      references.add(value);
+    } else {
+      for (const child of Array.isArray(value)
+        ? value
+        : Object.values(record(value))) {
+        pending.push(child);
+      }
+    }
+  }
+  return references;
 }
 
 export function publishedAssetManifest(
@@ -85,7 +104,9 @@ export function publishedAssetManifest(
   assets: AttachedAsset[],
   blocks: Block[]
 ) {
-  const media = Object.values(record(record(entry.profile_data).media));
+  const references = entryAssetReferences(entry);
+  const studioMedia = record(record(entry.profile_data).studioMedia);
+  const hasSelectedWebgl = typeof studioMedia.webgl === 'string';
   const blockIds = new Set(
     blocks
       .filter(
@@ -101,9 +122,9 @@ export function publishedAssetManifest(
         (asset) =>
           asset.entry_id === entry.id &&
           beforePublication(asset.updated_at, entry.published_at) &&
-          (media.includes(asset.id) ||
-            (asset.block_id && blockIds.has(asset.block_id)) ||
-            isEntryWebglPackage(asset))
+          (references.has(asset.id) ||
+            (asset.block_id != null && blockIds.has(asset.block_id)) ||
+            (!hasSelectedWebgl && isEntryWebglPackage(asset)))
       )
       .map((asset) => [asset.id, asset.updated_at])
   );
@@ -135,6 +156,16 @@ function webglInventoryDigest(asset: AttachedAsset) {
   );
 }
 
+export const MAX_PUBLISHED_ENTRY_ASSETS = 24;
+
+export class PublicationAssetLimitError extends Error {
+  constructor() {
+    super(
+      `An entry can publish up to ${MAX_PUBLISHED_ENTRY_ASSETS} media assets`
+    );
+  }
+}
+
 export async function captureAssetProofs({
   workspaceId,
   entry,
@@ -147,9 +178,12 @@ export async function captureAssetProofs({
   blocks: Block[];
 }): Promise<AssetPublicationManifest> {
   const references = publishedAssetManifest(entry, assets, blocks);
-  const selected = assets
-    .filter((asset) => Object.hasOwn(references, asset.id))
-    .slice(0, 24);
+  const selected = assets.filter((asset) =>
+    Object.hasOwn(references, asset.id)
+  );
+  if (selected.length > MAX_PUBLISHED_ENTRY_ASSETS) {
+    throw new PublicationAssetLimitError();
+  }
   const manifest: AssetPublicationManifest = {};
   for (let start = 0; start < selected.length; start += 2) {
     await Promise.all(

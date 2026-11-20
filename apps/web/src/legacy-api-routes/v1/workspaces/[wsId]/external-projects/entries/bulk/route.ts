@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { PublicationAssetLimitError } from '@/lib/external-projects/published-assets';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { bulkUpdateWorkspaceExternalProjectEntries } from '@/lib/external-projects/store';
 
@@ -52,6 +53,10 @@ export async function POST(
 
     return NextResponse.json(entries);
   } catch (error) {
+    if (error instanceof PublicationAssetLimitError) {
+      return NextResponse.json({ error: error.message }, { status: 422 });
+    }
+
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid payload', details: error.flatten() },

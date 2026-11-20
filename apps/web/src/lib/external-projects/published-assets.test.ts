@@ -54,17 +54,57 @@ function database(
 }
 
 describe('workspace asset publication', () => {
-  it('admits referenced assets only at the revision captured by publish', async () => {
+  it.each(['slides', 'sides'])(
+    'captures Fysh %s banner media by reference',
+    (kind) => {
+      const image = { ...used, id: 'desktop-banner' };
+      const imagePhone = { ...used, id: 'phone-banner' };
+      expect(
+        publishedAssetManifest(
+          {
+            ...entry,
+            profile_data: {
+              schema: 'fysh/1',
+              kind,
+              fields: { alt: 'Banner' },
+              media: { image: image.id, imagePhone: imagePhone.id },
+            },
+          },
+          [image, imagePhone, { ...used, id: 'unused-banner' }],
+          []
+        )
+      ).toEqual({ [image.id]: updated_at, [imagePhone.id]: updated_at });
+    }
+  );
+
+  it('checks nested entry fields, media, and blocks against the publication revision', async () => {
     const manifest = publishedAssetManifest(
-      entry,
+      {
+        ...entry,
+        profile_data: {
+          ...entry.profile_data,
+          nested: [{ assetId: 'cover' }, { assetId: 'other-entry-cover' }],
+        },
+        metadata: { customAudio: ['audio'] },
+      },
       [
         used,
         { ...used, id: 'unreferenced' },
+        { ...used, id: 'audio' },
+        { ...used, id: 'other-entry-cover', entry_id: 'other-entry' },
+        { ...used, id: 'block-media', block_id: 'block' },
+        { ...used, id: 'unattached-block', block_id: 'other-block' },
+        { ...used, id: 'cover', block_id: null },
         { ...staged, id: 'late', block_id: 'block' },
       ],
       [{ id: 'block', entry_id: entry.id, updated_at }]
     );
-    expect(manifest).toEqual({ used: updated_at });
+    expect(manifest).toEqual({
+      used: updated_at,
+      cover: updated_at,
+      audio: updated_at,
+      'block-media': updated_at,
+    });
     const { admin: fake } = database({
       used: { revision: manifest.used!, sha256: 'a'.repeat(64) },
     });

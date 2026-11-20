@@ -23,9 +23,10 @@ export function useCmsStudio({
   initialData,
   workspaceId,
 }: {
+  fetch?: InternalApiClientOptions['fetch'];
   initialData?: CmsStudioQueryData;
   workspaceId: string;
-} & Pick<InternalApiClientOptions, 'fetch'>) {
+}) {
   return useQuery({
     gcTime: 30 * 60_000,
     initialData,

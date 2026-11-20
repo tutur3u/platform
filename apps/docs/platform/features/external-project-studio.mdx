@@ -71,9 +71,14 @@ workspace-scoped under `/{wsId}`; the root workspace uses the `internal` slug
 ## Media publication and withdrawal
 
 Uploads are available to workspace editors while staged. Public delivery
-includes only media linked to the published entry revision through an entry
-media field, an eligible content block, or a finalized entry-level WebGL
-package. Single and bulk publication capture the same revision proof.
+includes media selected as a Studio cover, gallery image, audio item or
+finalized WebGL package, media IDs referenced by entry fields, and attachments
+on eligible blocks. An upload linked only to the entry stays private. A
+replaced cover stays private at the next publication unless another field
+still references it. Single and bulk publication apply the same selection rules. A finalized
+entry-level WebGL package counts as selected for older entries that have no
+saved WebGL selection. Publication rejects entries with more than 24 eligible
+assets before reading their stored bytes.
 Publishing commits the entry status, delivery event, and revision proof in one
 database transaction. A retry reuses a complete receipt for the current
 revision. If an older publish left the entry without its event or proof, the
@@ -81,6 +86,9 @@ retry records a complete revision for the same entry.
 Each publication event stores the project's delivery snapshot, including media
 references. The event payload is limited to 256 KiB of stored JSON text. If
 the snapshot exceeds that limit, the publication transaction rolls back.
+For older uploads without a saved selection, use Set as Cover for an existing
+image or add the gallery and audio items again before republishing.
+
 Only the server writes media publication proofs. Older event logs do not
 establish a media revision. Re-publish older entries or edited entries to
 record the verified media references for their current revision. Publication verifies
@@ -89,8 +97,7 @@ asset or revision check verifies the stored bytes before serving or
 authorizing reuse of cached media. Public media without a private stored
 object stays out of withdrawable delivery. Upload a new file to replace
 an attached object. Ordinary public asset reads cap originals at 10 MiB.
-The publication step checks up to 24 referenced assets per entry.
- Private collections and entries never deliver media anonymously.
+Private collections and entries never deliver media anonymously.
 
 Every WebGL finalization extracts into its own storage directory. The
 extraction service records the files and their SHA-256 digests after upload.

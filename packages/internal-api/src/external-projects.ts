@@ -1259,7 +1259,7 @@ export async function updateWorkspaceExternalProjectEntry(
   workspaceId: string,
   entryId: string,
   payload: Partial<WorkspaceExternalProjectEntryPayload> & {
-    scheduled_for?: string | null;
+    studio_media?: { cover?: string; gallery?: string[]; audio?: string[] };
   },
   options?: InternalApiClientOptions
 ) {

@@ -14,6 +14,7 @@ import {
   createWorkspaceExternalProjectAsset,
   updateWorkspaceExternalProjectAsset,
 } from '@/lib/external-projects/store';
+import { updateStudioMedia } from '@/lib/external-projects/studio-media';
 import {
   webglExtractedInventorySchema,
   webglExtractionCallbackToken,
@@ -235,6 +236,13 @@ export async function POST(
           { ...assetValues, id: assetId, sort_order: 0 },
           access.admin
         );
+
+    await updateStudioMedia(access.admin, {
+      actorId: access.user.id,
+      entryId: payload.entryId,
+      selection: { webgl: updatedAsset.id },
+      workspaceId: access.normalizedWorkspaceId,
+    });
 
     return NextResponse.json({
       artifact,

@@ -1,11 +1,32 @@
 import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { MAX_PUBLISHED_ENTRY_ASSETS } from '@/lib/external-projects/published-assets';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import {
   deleteWorkspaceExternalProjectEntry,
   updateWorkspaceExternalProjectEntry,
 } from '@/lib/external-projects/store';
+import {
+  StudioMediaConflict,
+  updateStudioMedia,
+} from '@/lib/external-projects/studio-media';
+
+const studioMediaSchema = z
+  .object({
+    studio_media: z.object({
+      audio: z
+        .array(z.string().uuid())
+        .max(MAX_PUBLISHED_ENTRY_ASSETS)
+        .optional(),
+      cover: z.string().uuid().optional(),
+      gallery: z
+        .array(z.string().uuid())
+        .max(MAX_PUBLISHED_ENTRY_ASSETS)
+        .optional(),
+    }),
+  })
+  .strict();
 
 const updateEntrySchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
@@ -31,7 +52,17 @@ export async function PATCH(
   if (!access.ok) return access.response;
 
   try {
-    const body = await request.json();
+    const body: unknown = await request.json();
+    if (body && typeof body === 'object' && 'studio_media' in body) {
+      const { studio_media: selection } = studioMediaSchema.parse(body);
+      const entry = await updateStudioMedia(access.admin, {
+        actorId: access.user.id,
+        entryId,
+        selection,
+        workspaceId: access.normalizedWorkspaceId,
+      });
+      return NextResponse.json(entry);
+    }
     const payload = updateEntrySchema.parse(body);
     const entry = await updateWorkspaceExternalProjectEntry(
       entryId,
@@ -59,6 +90,9 @@ export async function PATCH(
       );
     }
 
+    if (error instanceof StudioMediaConflict) {
+      return NextResponse.json({ error: error.message }, { status: 409 });
+    }
     console.error('Failed to update workspace external project entry', error);
     return NextResponse.json(
       { error: 'Failed to update workspace external project entry' },

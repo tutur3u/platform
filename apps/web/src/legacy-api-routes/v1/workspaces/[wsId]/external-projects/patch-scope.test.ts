@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
   updateWorkspaceExternalProjectBlock: vi.fn(),
   updateWorkspaceExternalProjectCollection: vi.fn(),
   updateWorkspaceExternalProjectEntry: vi.fn(),
+  updateStudioMedia: vi.fn(),
 }));
+
+vi.mock('server-only', () => ({}));
 
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: (
@@ -35,6 +38,11 @@ vi.mock('@/lib/external-projects/store', () => ({
   updateWorkspaceExternalProjectEntry: (
     ...args: Parameters<typeof mocks.updateWorkspaceExternalProjectEntry>
   ) => mocks.updateWorkspaceExternalProjectEntry(...args),
+}));
+
+vi.mock('@/lib/external-projects/studio-media', () => ({
+  StudioMediaConflict: class extends Error {},
+  updateStudioMedia: mocks.updateStudioMedia,
 }));
 
 describe('external project PATCH route workspace scoping', () => {
@@ -195,5 +203,38 @@ describe('external project PATCH route workspace scoping', () => {
       }),
       access.admin
     );
+  });
+
+  it('saves Studio media on the authorized entry through the normal PATCH route', async () => {
+    const cover = '11111111-1111-4111-8111-111111111111';
+    const selection = { cover };
+    mocks.updateStudioMedia.mockResolvedValue({
+      id: 'entry-1',
+      profile_data: { studioMedia: selection },
+    });
+    const { PATCH } =
+      await import('@/app/api/v1/workspaces/[wsId]/external-projects/entries/[entryId]/route');
+
+    const response = await PATCH(
+      new Request(
+        'http://localhost/api/v1/workspaces/personal/external-projects/entries/entry-1',
+        { body: JSON.stringify({ studio_media: selection }), method: 'PATCH' }
+      ),
+      { params: Promise.resolve({ entryId: 'entry-1', wsId: 'personal' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      profile_data: { studioMedia: { cover } },
+    });
+    expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: 'manage', wsId: 'personal' })
+    );
+    expect(mocks.updateStudioMedia).toHaveBeenCalledWith(access.admin, {
+      actorId: 'user-1',
+      entryId: 'entry-1',
+      selection,
+      workspaceId: 'ws-normalized',
+    });
   });
 });

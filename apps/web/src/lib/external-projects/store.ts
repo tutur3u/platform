@@ -59,6 +59,7 @@ import {
   includePendingPublication,
   recordEntryPublication,
 } from './publication';
+import { updateExternalProjectEntryFields } from './studio-media';
 import {
   assertExternalProjectStoragePath,
   isExternalProjectStoragePath,
@@ -1996,23 +1997,11 @@ export async function updateWorkspaceExternalProjectEntry(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { actorId, workspaceId, ...values } = payload;
-  const { data, error } = await admin
-    .from('workspace_external_project_entries')
-    .update({
-      ...values,
-      updated_by: actorId,
-    })
-    .eq('ws_id', workspaceId)
-    .eq('id', entryId)
-    .select('*')
-    .single();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  await invalidateWorkspaceExternalProjectCache(workspaceId);
-  return data;
+  return updateExternalProjectEntryFields(
+    admin,
+    { actorId, entryId, workspaceId },
+    values
+  );
 }
 
 export async function deleteWorkspaceExternalProjectEntry(

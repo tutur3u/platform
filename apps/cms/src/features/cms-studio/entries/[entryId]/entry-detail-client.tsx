@@ -70,9 +70,12 @@ import {
   asProfileDataRecord,
   clampUploadPercent,
   dedupeStrings,
+  editableEntryProfile,
+  entryEditorRevision,
   getCmsPublicWebglPlayerPath,
   getFeaturedProfileSlugs,
   getMediaInputAccept,
+  getStudioCoverId,
   getUploadProgressId,
   mergeAssetCaptionMetadata,
   mergeFeaturedProfileData,
@@ -84,6 +87,7 @@ import {
   parseTaxonomyDraft,
   resolveUploadAssetType,
   stableStringify,
+  uploadedStudioMedia,
 } from './entry-detail-helpers';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
 import { EntryDetailMainColumn } from './entry-detail-main-column';
@@ -218,18 +222,16 @@ export function EntryDetailClient({
     () => getMediaInputAccept(supportedAssetTypes),
     [supportedAssetTypes]
   );
-  const imageAssets = useMemo(
-    () => sortImageAssets(assets, entryId),
-    [assets, entryId]
-  );
-  const audioAssets = useMemo(
-    () => sortEntryAssetsByType(assets, entryId, 'audio'),
-    [assets, entryId]
-  );
-  const mediaAssets = useMemo(
-    () => [...imageAssets, ...audioAssets],
-    [audioAssets, imageAssets]
-  );
+  const { imageAssets, mediaAssets } = useMemo(() => {
+    const imageAssets = sortImageAssets(assets, entryId);
+    return {
+      imageAssets,
+      mediaAssets: [
+        ...imageAssets,
+        ...sortEntryAssetsByType(assets, entryId, 'audio'),
+      ],
+    };
+  }, [assets, entryId]);
   const webglPackageAsset = useMemo(
     () =>
       assets.find(
@@ -248,7 +250,8 @@ export function EntryDetailClient({
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0] ?? null,
     [blocks, entryId]
   );
-  const coverAsset = imageAssets[0] ?? null;
+  const coverId = getStudioCoverId(activeEntry?.profile_data);
+  const coverAsset = imageAssets.find((asset) => asset.id === coverId) ?? null;
   const supportsWebglPackage = Boolean(
     cmsGamesEnabled &&
     activeCollection &&
@@ -321,7 +324,7 @@ export function EntryDetailClient({
   );
   const [schemaProfileData, setSchemaProfileData] = useState<
     Record<string, unknown>
-  >(() => asProfileDataRecord(activeEntry?.profile_data));
+  >(() => editableEntryProfile(activeEntry?.profile_data));
   const [schemaMetadata, setSchemaMetadata] = useState<Record<string, unknown>>(
     () => asProfileDataRecord(activeEntry?.metadata)
   );
@@ -641,7 +644,7 @@ export function EntryDetailClient({
   const schemaProfileDataDirty =
     activeFieldDefinitions.length > 0 &&
     stableStringify(schemaProfileData) !==
-      stableStringify(asProfileDataRecord(activeEntry?.profile_data));
+      stableStringify(editableEntryProfile(activeEntry?.profile_data));
   const schemaMetadataDirty =
     activeFieldDefinitions.length > 0 &&
     stableStringify(schemaMetadata) !==
@@ -751,19 +754,18 @@ export function EntryDetailClient({
     }, 1200);
   };
 
+  const editorRevision = useRef<string | null>(null);
   useEffect(() => {
-    if (!activeEntry) {
-      setEntryForm(null);
-      return;
-    }
-
-    setEntryForm(buildEntryFormState(activeEntry));
+    const revision = activeEntry && entryEditorRevision(activeEntry);
+    if (revision === editorRevision.current) return;
+    editorRevision.current = revision;
+    setEntryForm(activeEntry ? buildEntryFormState(activeEntry) : null);
     setCategoryDraft('');
     setCategoryCreateOpen(false);
     setTagDraft('');
     setTagCreateOpen(false);
-    setSchemaProfileData(asProfileDataRecord(activeEntry.profile_data));
-    setSchemaMetadata(asProfileDataRecord(activeEntry.metadata));
+    setSchemaProfileData(editableEntryProfile(activeEntry?.profile_data));
+    setSchemaMetadata(asProfileDataRecord(activeEntry?.metadata));
   }, [activeEntry]);
 
   useEffect(() => {
@@ -781,27 +783,21 @@ export function EntryDetailClient({
   }, [activeEntry?.summary]);
 
   useEffect(() => {
-    if (!activeEntry) {
-      setCoverAltText('');
-      return;
-    }
-
-    setCoverAltText(coverAsset?.alt_text ?? activeEntry.title);
-  }, [activeEntry, coverAsset?.alt_text]);
+    setCoverAltText(coverAsset?.alt_text ?? activeEntry?.title ?? '');
+  }, [activeEntry?.id, activeEntry?.title, coverAsset?.alt_text]);
 
   useEffect(() => {
     setBodyMarkdown(getMarkdownBlockContent(markdownBlock));
   }, [markdownBlock]);
 
+  const savedArtworkSlug = asProfileDataRecord(
+    activeEntry?.profile_data
+  ).artworkSlug;
   useEffect(() => {
-    const profileData = asProfileDataRecord(activeEntry?.profile_data);
-
     setPairedArtworkSlug(
-      typeof profileData.artworkSlug === 'string'
-        ? profileData.artworkSlug
-        : '__none__'
+      typeof savedArtworkSlug === 'string' ? savedArtworkSlug : '__none__'
     );
-  }, [activeEntry?.profile_data]);
+  }, [activeEntry?.id, savedArtworkSlug]);
 
   useEffect(() => {
     setFeaturedEntrySlugs(initialFeaturedEntrySlugs);
@@ -1237,7 +1233,6 @@ export function EntryDetailClient({
           adapter: binding.adapter,
           collectionType: activeCollection.collection_type,
           entrySlug: entryForm?.slug.trim() || activeEntry?.slug || 'entry',
-          upsert: true,
         },
         {
           onUploadProgress: (progress) =>
@@ -1259,17 +1254,7 @@ export function EntryDetailClient({
         total: optimizedFile.size,
       });
 
-      if (coverAsset) {
-        return updateWorkspaceExternalProjectAsset(workspaceId, coverAsset.id, {
-          alt_text: coverAltText.trim() || file.name,
-          asset_type: 'image',
-          sort_order: 0,
-          source_url: null,
-          storage_path: upload.path,
-        });
-      }
-
-      return createWorkspaceExternalProjectAsset(workspaceId, {
+      const asset = await createWorkspaceExternalProjectAsset(workspaceId, {
         alt_text: coverAltText.trim() || file.name,
         asset_type: 'image',
         entry_id: activeEntry?.id ?? entryId,
@@ -1278,13 +1263,18 @@ export function EntryDetailClient({
         source_url: null,
         storage_path: upload.path,
       });
+      await updateWorkspaceExternalProjectEntry(workspaceId, entryId, {
+        studio_media: { cover: asset.id },
+      });
+      return asset;
     },
     onSuccess: async (asset) => {
-      mergeAsset(toStudioAsset(asset, coverAsset));
+      mergeAsset(toStudioAsset(asset));
       setPreviewRefreshToken((value) => value + 1);
       await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
     },
+    onError: () => toast.error(strings.saveFailedToast),
     onSettled: (_data, _error, file) => {
       removeUploadProgressItems([getUploadProgressId('cover', file)]);
     },
@@ -1296,7 +1286,7 @@ export function EntryDetailClient({
         throw new Error(strings.emptyCollection);
       }
 
-      return Promise.all(
+      const createdAssets = await Promise.all(
         files.map(async (file, index) => {
           const assetType = resolveUploadAssetType(file, supportedAssetTypes);
           if (!assetType) {
@@ -1392,6 +1382,10 @@ export function EntryDetailClient({
           });
         })
       );
+      await updateWorkspaceExternalProjectEntry(workspaceId, entryId, {
+        studio_media: uploadedStudioMedia(createdAssets, coverAsset?.id),
+      });
+      return createdAssets;
     },
     onSuccess: async (createdAssets) => {
       updateStudioCache((current) => ({
@@ -1535,14 +1529,19 @@ export function EntryDetailClient({
         ...imageAssets.filter((asset) => asset.id !== assetId),
       ];
 
-      return Promise.all(
+      const assets = await Promise.all(
         nextOrder.map((asset, index) =>
           updateWorkspaceExternalProjectAsset(workspaceId, asset.id, {
             sort_order: index,
           })
         )
       );
+      await updateWorkspaceExternalProjectEntry(workspaceId, entryId, {
+        studio_media: { cover: assetId },
+      });
+      return assets;
     },
+    onError: () => toast.error(strings.saveFailedToast),
     onSuccess: async (updatedAssets) => {
       updateStudioCache((current) => ({
         ...current,
@@ -1612,11 +1611,6 @@ export function EntryDetailClient({
           )
         ),
       }));
-      setCoverAltText(
-        updatedAssets.find((asset) => asset.asset_type === 'image')?.alt_text ??
-          imageAssets[0]?.alt_text ??
-          activeEntryTitle
-      );
       await refreshStudioFromBackend();
       toast.success(strings.saveMediaDetailsAction);
     },
@@ -1884,7 +1878,7 @@ export function EntryDetailClient({
   const saveProcessing =
     saveEntryMutation.isPending ||
     saveMarkdownMutation.isPending ||
-    saveCoverMutation.isPending;
+    mediaProcessing;
   const featuredPlacementProcessing =
     updateFeaturedPlacementMutation.isPending ||
     createFeaturedPlacementConfigMutation.isPending;

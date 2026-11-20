@@ -142,6 +142,36 @@ export function asProfileDataRecord(
     : {};
 }
 
+export function editableEntryProfile(profileData?: Json) {
+  const { studioMedia: _selection, ...profile } =
+    asProfileDataRecord(profileData);
+  return profile;
+}
+
+export function entryEditorRevision(entry: ExternalProjectEntry) {
+  const { updated_at, updated_by, profile_data, ...fields } = entry;
+  return stableStringify([fields, editableEntryProfile(profile_data)]);
+}
+
+export function getStudioCoverId(profileData: Json | undefined) {
+  const media = asProfileDataRecord(profileData).studioMedia;
+  if (!media || typeof media !== 'object' || !('cover' in media)) return null;
+  return typeof media.cover === 'string' ? media.cover : null;
+}
+
+export function uploadedStudioMedia(
+  assets: { id: string; asset_type: string }[],
+  coverId?: string
+) {
+  const gallery = assets
+    .filter((asset) => asset.asset_type === 'image')
+    .map((asset) => asset.id);
+  const audio = assets
+    .filter((asset) => asset.asset_type === 'audio')
+    .map((asset) => asset.id);
+  return { cover: coverId ? undefined : gallery.shift(), gallery, audio };
+}
+
 export function asStringArray(value: unknown) {
   return Array.isArray(value)
     ? value
