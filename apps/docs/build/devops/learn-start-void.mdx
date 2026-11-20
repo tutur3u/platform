@@ -56,6 +56,19 @@ and preserve the full parent-invite destination through the Web login and
 verification redirects. The mounted Worker rejects attempts to mint an app
 session. Runtime credentials and outbound API responses use fixtures.
 
+The same cutover suite checks the Learn side of the nested `tuturuuu.com/lms/learn`
+mount on the candidate bytes (`cloudflare/lms-mount-acceptance.mjs`). A signed-out
+registered nested page, with an encoded segment and repeated query, redirects to
+the mounted login, which hands Web a `/verify-token` return URL naming the same
+`/lms/learn` path. A localized link drops its locale inside the mount, and the
+dashboard entry requires sign-in. A well-formed app session token with the wrong
+signature redirects to login without outbound requests. The sampled responses
+never set or clear a per-app session cookie, both minting endpoints answer `409`,
+and the landing declares its apex canonical. The Worker answers `404` without
+outbound requests for `/lms`, `/lms/teach` and look-alike prefixes. These checks
+do not run Web's return flow, switch areas, or load the deployed `LEARN` binding;
+hosted acceptance covers those with approved identities.
+
 ## Private smoke and route watch
 
 ```bash

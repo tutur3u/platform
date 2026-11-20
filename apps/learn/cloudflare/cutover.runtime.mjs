@@ -7,6 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { assertRenderedAssets } from '../../../scripts/start-bridge-codemod/html-asset-acceptance.mjs';
+import { assertLmsMount } from './lms-mount-acceptance.mjs';
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
@@ -63,6 +64,7 @@ test(
         },
       ])
     );
+    const egress = [];
     const sdk = require('wrangler');
     const worker = await sdk.unstable_startWorker({
       config: local,
@@ -85,8 +87,10 @@ test(
         auth: () => {
           throw new Error('Provider auth forbidden in cutover smoke');
         },
-        outboundService: () =>
-          new Response('Outbound denied by fixture', { status: 401 }),
+        outboundService: (request) => {
+          egress.push(new URL(request.url).origin);
+          return new Response('Outbound denied by fixture', { status: 401 });
+        },
       },
     });
     t.after(() => worker.dispose());
@@ -99,6 +103,7 @@ test(
       return {
         status: response.status,
         headers: Object.fromEntries(response.headers),
+        setCookies: response.headers.getSetCookie(),
         body: await response.text(),
       };
     };
@@ -175,6 +180,10 @@ test(
     for (const path of ['/', '/learning', '/api/build-info']) {
       assert.equal((await call(path, apex)).status, 404, path);
     }
+    await t.test(
+      'the nested LMS mount qualifies for signed-in acceptance',
+      () => assertLmsMount(call, egress, source)
+    );
     await t.test('every rendered asset loads on both hosts', (t) =>
       assertRenderedAssets(
         t,

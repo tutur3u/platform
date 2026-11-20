@@ -20,6 +20,12 @@ acceptance with the actual bound versions. Each dispatch chooses one service
 and makes one call, with no retry or background work. Clearing the LMS gateway
 paths stops ingress to the deployment.
 
+Learn's cutover suite also checks its side of the nested mount on the candidate
+archive: the login return URL, per-app cookie suppression on sampled responses,
+and rejection of other LMS paths. See
+[Learn qualification](/build/devops/learn-start-void#build-and-qualification).
+The hosted checks below remain the evidence for the bound versions.
+
 ## Request latency
 
 The LMS shell renders on the compiled `/lms` router base and serves immutable,
