@@ -2789,6 +2789,32 @@
   "financeCheckpointsNoCheckpointShort": "No checkpoint",
   "financeBillSplitNew": "New split",
   "financeBillSplitName": "Bill name",
+  "financeBillSplitNamePlaceholder": "e.g. Dinner",
+  "financeBillSplitMethod": "Split method",
+  "financeBillSplitEqual": "Equal shares",
+  "financeBillSplitExact": "Exact amounts",
+  "financeBillSplitPercentage": "Percentages",
+  "financeBillSplitExactShare": "Share for {name} ({currency})",
+  "@financeBillSplitExactShare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "financeBillSplitPercentageShare": "Share for {name} (%)",
+  "@financeBillSplitPercentageShare": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "financeBillSplitExactTotal": "Enter a share for each attendee that adds up to the bill total.",
+  "financeBillSplitPercentageTotal": "Enter a percentage for each attendee that adds up to 100%.",
   "financeBillSplitAmount": "Total ({currency})",
   "financeBillSplitPeopleEmpty": "Search for a workspace contact or member.",
   "financeBillSplitAddPerson": "Add a person",
@@ -8213,6 +8239,8 @@
   "financeFeeLockConfirm": "Lock fees",
   "financeFeeLockConfirmHelp": "Save an immutable snapshot of the current draft.",
   "financeFeeLockChanged": "Refresh the fee lock before trying again.",
+  "financeFeeLockNotesPlaceholder": "Add an optional note",
+  "financeFeeLockReasonPlaceholder": "Explain why you are making this change",
   "financeFeeLockReason": "Reason",
   "financeFeeLockSessions": "Billable sessions",
   "financeFeeLockNoLines": "No configured tuition lines for this student",

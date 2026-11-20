@@ -3981,6 +3981,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeBillSplitName => 'Bill name';
 
   @override
+  String get financeBillSplitNamePlaceholder => 'e.g. Dinner';
+
+  @override
+  String get financeBillSplitMethod => 'Split method';
+
+  @override
+  String get financeBillSplitEqual => 'Equal shares';
+
+  @override
+  String get financeBillSplitExact => 'Exact amounts';
+
+  @override
+  String get financeBillSplitPercentage => 'Percentages';
+
+  @override
+  String financeBillSplitExactShare(String name, String currency) {
+    return 'Share for $name ($currency)';
+  }
+
+  @override
+  String financeBillSplitPercentageShare(String name) {
+    return 'Share for $name (%)';
+  }
+
+  @override
+  String get financeBillSplitExactTotal => 'Enter a share for each attendee that adds up to the bill total.';
+
+  @override
+  String get financeBillSplitPercentageTotal => 'Enter a percentage for each attendee that adds up to 100%.';
+
+  @override
   String financeBillSplitAmount(String currency) {
     return 'Total ($currency)';
   }
@@ -17113,6 +17144,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeFeeLockChanged => 'Refresh the fee lock before trying again.';
+
+  @override
+  String get financeFeeLockNotesPlaceholder => 'Add an optional note';
+
+  @override
+  String get financeFeeLockReasonPlaceholder => 'Explain why you are making this change';
 
   @override
   String get financeFeeLockReason => 'Reason';

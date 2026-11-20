@@ -315,6 +315,7 @@ class _FeeLockEditorState extends State<_FeeLockEditor> {
             AppTextField(
               controller: _notes,
               label: l10n.financeInvoiceNotes,
+              placeholder: l10n.financeFeeLockNotesPlaceholder,
               enabled: canEdit && !_busy && !_failed,
               maxLines: 3,
               maxLength: 2000,
@@ -324,6 +325,7 @@ class _FeeLockEditorState extends State<_FeeLockEditor> {
               AppTextField(
                 controller: _reason,
                 label: l10n.financeFeeLockReason,
+                placeholder: l10n.financeFeeLockReasonPlaceholder,
                 enabled: !_busy && !_failed,
                 maxLines: 2,
                 maxLength: 500,

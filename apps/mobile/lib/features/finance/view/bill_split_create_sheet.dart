@@ -43,11 +43,15 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
   final String _id = newBillSplitId();
   final _people = <_Person>[];
   final _excluded = <String>{};
+  final _exactShares = <String, TextEditingController>{};
+  final _percentageShares = <String, TextEditingController>{};
   late final Future<String> _currency = _loadCurrency();
+  _Allocation _allocation = _Allocation.equal;
   String? _payer;
   Map<String, dynamic>? _preview;
   var _busy = false;
   var _failed = false;
+  var _sharesInvalid = false;
 
   String get _workspacePath =>
       '/api/v1/workspaces/${Uri.encodeComponent(widget.workspaceId)}';
@@ -61,13 +65,47 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
   void dispose() {
     _title.dispose();
     _amount.dispose();
+    for (final controller in [
+      ..._exactShares.values,
+      ..._percentageShares.values,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
   void _edit() => setState(() {
     _preview = null;
     _failed = false;
+    _sharesInvalid = false;
   });
+
+  Map<String, Object>? _buildAllocation(
+    List<String> included,
+    int amount,
+    int digits,
+  ) {
+    if (_allocation == _Allocation.equal) {
+      return {'kind': _allocation.name, 'participantIds': included};
+    }
+    final percentage = _allocation == _Allocation.percentage;
+    final controllers = percentage ? _percentageShares : _exactShares;
+    final shares = <Map<String, Object>>[];
+    var remaining = percentage ? 10000 : amount;
+    for (final id in included) {
+      final share = _parseBillSplitUnits(
+        controllers[id]?.text ?? '',
+        percentage ? 2 : digits,
+      );
+      if (share == null || share > remaining) return null;
+      remaining -= share;
+      shares.add({
+        'participantId': id,
+        (percentage ? 'basisPoints' : 'amountMinor'): share,
+      });
+    }
+    return remaining == 0 ? {'kind': _allocation.name, 'shares': shares} : null;
+  }
 
   Future<void> _addPerson() async {
     final labels = context.l10n;
@@ -118,6 +156,8 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
     );
     if (!mounted || person == null || _people.length >= 100) return;
     _people.add(person);
+    _exactShares[person.id] = TextEditingController();
+    _percentageShares[person.id] = TextEditingController();
     _payer ??= person.id;
     _edit();
   }
@@ -135,6 +175,11 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
         .toList();
     if (amount == null || title.isEmpty || payer == null || included.isEmpty) {
       setState(() => _failed = true);
+      return;
+    }
+    final allocation = _buildAllocation(included, amount, digits);
+    if (allocation == null) {
+      setState(() => _sharesInvalid = true);
       return;
     }
     final preview = _preview == null;
@@ -161,7 +206,7 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
                 {
                   'label': title,
                   'amountMinor': amount,
-                  'allocation': {'kind': 'equal', 'participantIds': included},
+                  'allocation': allocation,
                 },
               ],
               'payments': [
@@ -196,6 +241,14 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
         return AppSheetScaffold(
           title: l10n.financeBillSplitNew,
           actions: [
+            if (_sharesInvalid)
+              AppStateMessage.inline(
+                icon: LucideIcons.circleAlert,
+                tone: AppTone.destructive,
+                title: _allocation == _Allocation.percentage
+                    ? l10n.financeBillSplitPercentageTotal
+                    : l10n.financeBillSplitExactTotal,
+              ),
             AppButton.primary(
               onPressed: currency != null && _people.length >= 2 && !_busy
                   ? () => _submit(currency)
@@ -214,24 +267,48 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
               AppTextField(
                 controller: _title,
                 label: l10n.financeBillSplitName,
+                placeholder: l10n.financeBillSplitNamePlaceholder,
                 maxLength: 120,
                 enabled: !_busy,
                 onChanged: (_) => _edit(),
               ),
-              AppTextField(
+              _SplitNumberField(
                 controller: _amount,
                 label: l10n.financeBillSplitAmount(currency ?? ''),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                maxLength: 24,
+                privateAmount: true,
                 enabled: !_busy,
-                onChanged: (_) => _edit(),
+                onChanged: _edit,
               ),
               AppButton.secondary(
                 onPressed: _busy || _people.length >= 100 ? null : _addPerson,
                 child: Text(l10n.financeBillSplitAddPerson),
               ),
+              if (_people.length >= 2)
+                AppSelect<_Allocation>(
+                  title: l10n.financeBillSplitMethod,
+                  value: _allocation,
+                  onChanged: _busy
+                      ? null
+                      : (value) {
+                          if (!mounted || _allocation == value) return;
+                          _allocation = value;
+                          _edit();
+                        },
+                  options: [
+                    AppSelectOption(
+                      value: _Allocation.equal,
+                      label: l10n.financeBillSplitEqual,
+                    ),
+                    AppSelectOption(
+                      value: _Allocation.exact,
+                      label: l10n.financeBillSplitExact,
+                    ),
+                    AppSelectOption(
+                      value: _Allocation.percentage,
+                      label: l10n.financeBillSplitPercentage,
+                    ),
+                  ],
+                ),
               if (_people.isNotEmpty)
                 AppGroupedCard(
                   children: [
@@ -263,6 +340,10 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
                       ),
                   ],
                 ),
+              if (_allocation != _Allocation.equal)
+                for (final person in _people)
+                  if (!_excluded.contains(person.id))
+                    _shareField(person, l10n, currency),
               if (_preview case final preview?)
                 AppGroupedSection(
                   caption: l10n.financeBillSplitBalances,
@@ -294,9 +375,31 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
       },
     );
   }
+
+  Widget _shareField(_Person person, AppLocalizations l10n, String? currency) {
+    final percentage = _allocation == _Allocation.percentage;
+    final shares = percentage ? _percentageShares : _exactShares;
+    return _SplitNumberField(
+      key: ValueKey((_allocation, person.id)),
+      controller: shares[person.id]!,
+      label: percentage
+          ? l10n.financeBillSplitPercentageShare(person.name)
+          : l10n.financeBillSplitExactShare(person.name, currency ?? ''),
+      privateAmount: !percentage,
+      enabled: !_busy,
+      onChanged: _edit,
+    );
+  }
 }
 
+enum _Allocation { equal, exact, percentage }
+
 int? billSplitMinorAmount(String value, int minorDigits) {
+  final minor = _parseBillSplitUnits(value, minorDigits);
+  return minor == 0 ? null : minor;
+}
+
+int? _parseBillSplitUnits(String value, int minorDigits) {
   final match = RegExp(r'^([0-9]+)(?:[.,]([0-9]+))?$').firstMatch(value.trim());
   if (match == null) return null;
   final fraction = match.group(2) ?? '';
@@ -304,8 +407,51 @@ int? billSplitMinorAmount(String value, int minorDigits) {
   final minor = int.tryParse(
     '${match.group(1)}${fraction.padRight(minorDigits, '0')}',
   );
-  if (minor == null || minor <= 0 || minor > 9007199254740991) return null;
+  if (minor == null || minor > 9007199254740991) return null;
   return minor;
+}
+
+class _SplitNumberField extends StatefulWidget {
+  const _SplitNumberField({
+    required this.controller,
+    required this.label,
+    required this.privateAmount,
+    required this.enabled,
+    required this.onChanged,
+    super.key,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final bool privateAmount;
+  final bool enabled;
+  final VoidCallback onChanged;
+
+  @override
+  State<_SplitNumberField> createState() => _SplitNumberFieldState();
+}
+
+class _SplitNumberFieldState extends State<_SplitNumberField> {
+  var _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final privateAmount =
+        widget.privateAmount && !financeAmountsVisible(context);
+    return Focus(
+      onFocusChange: (focused) => setState(() => _focused = focused),
+      child: AppTextField(
+        controller: widget.controller,
+        label: widget.label,
+        placeholder: '0',
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        maxLength: 24,
+        enabled: widget.enabled,
+        obscureText: privateAmount && !_focused,
+        onChanged: (_) => widget.onChanged(),
+      ),
+    );
+  }
 }
 
 class _Person {

@@ -99,6 +99,9 @@ class _BillSplitActivityPanelState extends State<BillSplitActivityPanel> {
               children: [
                 AppTextField(
                   label: title,
+                  placeholder: comment
+                      ? context.l10n.inputPlaceholderComment
+                      : '0',
                   controller: controller,
                   maxLength: comment ? 2000 : 24,
                   maxLines: comment ? 3 : 1,

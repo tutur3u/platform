@@ -7597,6 +7597,60 @@ abstract class AppLocalizations {
   /// **'Bill name'**
   String get financeBillSplitName;
 
+  /// No description provided for @financeBillSplitNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Dinner'**
+  String get financeBillSplitNamePlaceholder;
+
+  /// No description provided for @financeBillSplitMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Split method'**
+  String get financeBillSplitMethod;
+
+  /// No description provided for @financeBillSplitEqual.
+  ///
+  /// In en, this message translates to:
+  /// **'Equal shares'**
+  String get financeBillSplitEqual;
+
+  /// No description provided for @financeBillSplitExact.
+  ///
+  /// In en, this message translates to:
+  /// **'Exact amounts'**
+  String get financeBillSplitExact;
+
+  /// No description provided for @financeBillSplitPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Percentages'**
+  String get financeBillSplitPercentage;
+
+  /// No description provided for @financeBillSplitExactShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share for {name} ({currency})'**
+  String financeBillSplitExactShare(String name, String currency);
+
+  /// No description provided for @financeBillSplitPercentageShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share for {name} (%)'**
+  String financeBillSplitPercentageShare(String name);
+
+  /// No description provided for @financeBillSplitExactTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a share for each attendee that adds up to the bill total.'**
+  String get financeBillSplitExactTotal;
+
+  /// No description provided for @financeBillSplitPercentageTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a percentage for each attendee that adds up to 100%.'**
+  String get financeBillSplitPercentageTotal;
+
   /// No description provided for @financeBillSplitAmount.
   ///
   /// In en, this message translates to:
@@ -31692,6 +31746,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Refresh the fee lock before trying again.'**
   String get financeFeeLockChanged;
+
+  /// No description provided for @financeFeeLockNotesPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an optional note'**
+  String get financeFeeLockNotesPlaceholder;
+
+  /// No description provided for @financeFeeLockReasonPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Explain why you are making this change'**
+  String get financeFeeLockReasonPlaceholder;
 
   /// No description provided for @financeFeeLockReason.
   ///

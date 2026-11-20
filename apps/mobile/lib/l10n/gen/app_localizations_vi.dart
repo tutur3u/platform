@@ -3966,6 +3966,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeBillSplitName => 'Tên hóa đơn';
 
   @override
+  String get financeBillSplitNamePlaceholder => 'Ví dụ: Bữa tối';
+
+  @override
+  String get financeBillSplitMethod => 'Cách chia hóa đơn';
+
+  @override
+  String get financeBillSplitEqual => 'Chia đều';
+
+  @override
+  String get financeBillSplitExact => 'Chia theo số tiền';
+
+  @override
+  String get financeBillSplitPercentage => 'Chia theo tỷ lệ phần trăm';
+
+  @override
+  String financeBillSplitExactShare(String name, String currency) {
+    return 'Phần của $name ($currency)';
+  }
+
+  @override
+  String financeBillSplitPercentageShare(String name) {
+    return 'Phần của $name (%)';
+  }
+
+  @override
+  String get financeBillSplitExactTotal => 'Nhập phần của từng người tham gia sao cho tổng bằng số tiền của hóa đơn.';
+
+  @override
+  String get financeBillSplitPercentageTotal => 'Nhập tỷ lệ của từng người tham gia sao cho tổng bằng 100%.';
+
+  @override
   String financeBillSplitAmount(String currency) {
     return 'Tổng ($currency)';
   }
@@ -16906,6 +16937,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeFeeLockChanged => 'Làm mới bản chốt học phí trước khi thử lại.';
+
+  @override
+  String get financeFeeLockNotesPlaceholder => 'Thêm ghi chú nếu cần';
+
+  @override
+  String get financeFeeLockReasonPlaceholder => 'Giải thích lý do thay đổi';
 
   @override
   String get financeFeeLockReason => 'Lý do';
