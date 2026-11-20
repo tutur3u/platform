@@ -61,6 +61,8 @@ const PRODUCTION_PLATFORM = {
         '76197c03e41dca432e53619bc384cfdd1c879576',
         // The Tasks job calls its native publisher. Platform proof is unchanged.
         '45d2697d42ff3a645b2d5b8722342d5c64dd08ef',
+        // The Tasks job forwards secrets to its publisher. Platform proof is unchanged.
+        '0d1e108c5cce714a6628816b40cb506c87769ace',
       ],
     ],
     [
