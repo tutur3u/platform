@@ -221,24 +221,25 @@ jobs:
           persist-credentials: false
 
       # A diff-scoped main push extracts JavaScript/TypeScript only from the
-      # touched workspaces. The list is JSON from the trusted scope job.
-      - name: Write diff-scoped CodeQL config
+      # touched workspaces. The list is JSON from the trusted scope job; the
+      # config goes inline because init rejects a config file outside the
+      # workspace, and one inside it would be scanned.
+      - name: Build diff-scoped CodeQL config
         id: config
         if: matrix.language == 'javascript-typescript' && needs.scope.outputs.paths != ''
         env:
           SCAN_PATHS: ${{ needs.scope.outputs.paths }}
         run: |
           set -euo pipefail
-          file="$RUNNER_TEMP/codeql-scoped-config.yml"
-          jq -n --argjson paths "$SCAN_PATHS" \
-            'if ($paths | type) == "array" and ($paths | length) > 0 and all($paths[]; type == "string") then {paths: $paths} else error("invalid scan paths") end' > "$file"
-          echo "file=$file" >> "$GITHUB_OUTPUT"
+          config="$(jq -cn --argjson paths "$SCAN_PATHS" \
+            'if ($paths | type) == "array" and ($paths | length) > 0 and all($paths[]; type == "string") then {paths: $paths} else error("invalid scan paths") end')"
+          echo "config=$config" >> "$GITHUB_OUTPUT"
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           build-mode: none
-          config-file: ${{ steps.config.outputs.file }}
+          config: ${{ steps.config.outputs.config }}
           languages: ${{ matrix.language }}
           queries: security-extended
 
@@ -327,7 +328,7 @@ jobs:
       # outside the scanned workspaces until the nightly full scan.
       # The job permission security-events: write already covers this upload.
       - name: Upload main CodeQL results
-        if: (success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.file == ''
+        if: (success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.config == ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: ${{ runner.temp }}/codeql-sarif

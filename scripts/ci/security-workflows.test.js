@@ -112,8 +112,10 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     "matrix.language == 'javascript-typescript' && needs.scope.outputs.paths != ''"
   );
   assert.equal(config.env.SCAN_PATHS, '${{ needs.scope.outputs.paths }}');
-  assert.match(config.run, /jq -n --argjson paths "\$SCAN_PATHS"/u);
-  assert.equal(init.with['config-file'], '${{ steps.config.outputs.file }}');
+  assert.match(config.run, /jq -cn --argjson paths "\$SCAN_PATHS"/u);
+  // Inline: init rejects a config file outside the workspace.
+  assert.equal(init.with.config, '${{ steps.config.outputs.config }}');
+  assert.equal(init.with['config-file'], undefined);
   assert.equal(init.with.queries, 'security-extended');
   assert.equal(init.with['build-mode'], 'none');
   assert.match(
@@ -155,7 +157,7 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   // so only whole-language main analyses upload.
   assert.equal(
     upload.if,
-    "(success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.file == ''"
+    "(success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.config == ''"
   );
   assert.equal(upload.with.sarif_file, '${{ runner.temp }}/codeql-sarif');
   assert.equal(upload.with.category, '/language:${{ matrix.language }}');
