@@ -252,6 +252,9 @@ describe('learner quiz attempts', () => {
       ],
     };
     const entries = tables();
+    entries.workspace_user_groups_users = query([
+      { group_id: savedAttempt.course_id, user_id: 'student' },
+    ]);
     entries.workspace_user_groups = query({
       id: savedAttempt.course_id,
       modules: [
@@ -276,6 +279,7 @@ describe('learner quiz attempts', () => {
     const from = vi.fn((name: keyof typeof entries) => entries[name]);
     mocks.requireLearnerWorkspace.mockResolvedValue({
       sbAdmin: { from },
+      headers: {},
       userId: 'learner',
       wsId: 'workspace',
     });
