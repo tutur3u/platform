@@ -26,7 +26,8 @@ destination shown), the shell shows it as a filled top-bar button instead.
 ## Destinations
 
 The dock holds Overview, Transactions, Budgets and Wallets; More opens
-Categories and Checkpoints. Finance has no separate Manage page: creating a
+Categories, Checkpoints and Debts & loans, and reserves the next entry for
+the bill-splitting module's Split bills. Finance has no separate Manage page: creating a
 wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
 Overview also opens All-wallet check directly.
 Coverage: `finance_manage_redirect_test.dart` and `app_registry_test.dart`.
@@ -109,6 +110,22 @@ transactions and checkpoints. Only mobile Checkpoints and its all-wallet
 check hide archived wallets; other wallet pickers and web Finance still list
 them. `checkpoint_wallets_test.dart` and `finance_checkpoints_page_test.dart`
 cover the filters, sorting, archive overrides and Undo.
+
+## Debts and loans
+
+Debts & loans (`/finance/debts`) leads with the net position: what others
+owe the workspace minus what it owes, with both totals and their active
+counts. A status chooser (Active by default, or any status) and Debts /
+Loans pills with counts filter the list, which shows overdue entries first,
+then the nearest due date. Each row shows the counterparty, due date (Overdue
+in the destructive tone), repayment progress and remaining balance. Rows open
+the repayment overview and terms. People with `manage_finance` create and
+edit entries (type, name, counterparty, principal and currency, annual rate
+with simple or compound interest, start and due dates, wallet and notes),
+mark one paid, set any status and delete after confirming. The server derives
+every balance, so writes need a connection; the list and summary read through
+the offline cache. Linked repayment transactions are not listed on web or
+mobile. Coverage: `debts_page_test.dart`.
 
 ## Budgets
 
@@ -240,7 +257,8 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Multi-currency | Wallet currencies, exchange rates and converted workspace totals | Wallet currencies, exchange rates, converted workspace totals and amount masking |
 | Filters and search | Text search plus wallet, category, tag, creator, date and transaction type filters | Text search, wallet, category, tag, creator, type and custom date ranges |
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export, Money Lover import, and CSV or Excel exports for created and pending invoices |
-| Debts, promotions and inventory reconciliation | Dedicated web workflows | Open |
+| Debts and loans | List, summary, create, edit, status and delete | Same, with the net position hero and overdue-first ordering |
+| Promotions and inventory reconciliation | Dedicated web workflows | Open |
 
 Mobile requests use the Finance repository and its bearer-authenticated endpoint
 mappings. Verify routes and response contracts before adding a new client call.

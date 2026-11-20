@@ -61,6 +61,13 @@ const financeExtraNavItems = <MiniAppNavItem>[
     icon: LucideIcons.listChecks,
     labelBuilder: _checkpoints,
   ),
+  MiniAppNavItem(
+    id: 'finance_debts',
+    route: Routes.financeDebts,
+    icon: LucideIcons.handCoins,
+    labelBuilder: _debts,
+  ),
+  // Reserved: the bill-splitting module adds its "Split bills" entry here.
 ];
 
 const _fallbackNavItems = <MiniAppNavItem>[
@@ -68,7 +75,11 @@ const _fallbackNavItems = <MiniAppNavItem>[
   MiniAppNavItem(
     id: 'finance_more',
     route: Routes.financeMore,
-    aliasRoutes: [Routes.categories, Routes.financeCheckpoints],
+    aliasRoutes: [
+      Routes.categories,
+      Routes.financeCheckpoints,
+      Routes.financeDebts,
+    ],
     icon: Icons.more_horiz,
     labelBuilder: _more,
   ),
@@ -193,6 +204,7 @@ String _wallets(AppLocalizations l10n) => l10n.financeWallets;
 String _budgets(AppLocalizations l10n) => l10n.financeBudgets;
 String _categories(AppLocalizations l10n) => l10n.financeCategories;
 String _checkpoints(AppLocalizations l10n) => l10n.financeCheckpointsShortLabel;
+String _debts(AppLocalizations l10n) => l10n.financeDebts;
 Widget _page(BuildContext context) => const FinanceDockRegistration(
   location: Routes.finance,
   child: FinancePage(),

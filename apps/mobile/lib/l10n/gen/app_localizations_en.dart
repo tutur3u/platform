@@ -17073,4 +17073,156 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantReplyFailedReload => 'Reload this chat to check Mira\'s reply.';
+
+  @override
+  String get financeDebts => 'Debts & loans';
+
+  @override
+  String get financeDebtNew => 'New debt or loan';
+
+  @override
+  String get financeDebtEditTitle => 'Edit debt or loan';
+
+  @override
+  String get financeDebtTypeDebt => 'Debt';
+
+  @override
+  String get financeDebtTypeLoan => 'Loan';
+
+  @override
+  String get financeDebtTypesDebt => 'Debts';
+
+  @override
+  String get financeDebtTypesLoan => 'Loans';
+
+  @override
+  String get financeDebtsNetPosition => 'Net position';
+
+  @override
+  String get financeDebtsYouOwe => 'You owe';
+
+  @override
+  String get financeDebtsOwedToYou => 'Owed to you';
+
+  @override
+  String get financeDebtsEmpty => 'No debts or loans';
+
+  @override
+  String get financeDebtsEmptyBody => 'Track money you owe and money you lent, with repayment progress.';
+
+  @override
+  String get financeDebtsNoMatches => 'Nothing matches these filters';
+
+  @override
+  String get financeDebtStatus => 'Status';
+
+  @override
+  String get financeDebtStatusAll => 'All statuses';
+
+  @override
+  String get financeDebtStatusActive => 'Active';
+
+  @override
+  String get financeDebtStatusPaid => 'Paid off';
+
+  @override
+  String get financeDebtStatusDefaulted => 'Defaulted';
+
+  @override
+  String get financeDebtStatusCancelled => 'Cancelled';
+
+  @override
+  String get financeDebtPrincipal => 'Principal';
+
+  @override
+  String get financeDebtAmountPaid => 'Amount paid';
+
+  @override
+  String get financeDebtInterestPaid => 'Interest paid';
+
+  @override
+  String get financeDebtRemaining => 'Remaining';
+
+  @override
+  String get financeDebtName => 'Name';
+
+  @override
+  String get financeDebtNamePlaceholder => 'Car loan';
+
+  @override
+  String get financeDebtNameRequired => 'Enter a name';
+
+  @override
+  String get financeDebtCounterparty => 'Counterparty';
+
+  @override
+  String get financeDebtCounterpartyPlaceholder => 'Person or organisation';
+
+  @override
+  String get financeDebtAmountPlaceholder => '0';
+
+  @override
+  String get financeDebtAmountRequired => 'Enter an amount above zero';
+
+  @override
+  String get financeDebtInterestRate => 'Interest rate (% a year)';
+
+  @override
+  String get financeDebtInterestType => 'Interest type';
+
+  @override
+  String get financeDebtInterestSimple => 'Simple';
+
+  @override
+  String get financeDebtInterestCompound => 'Compound';
+
+  @override
+  String financeDebtInterestValue(String rate, String type) {
+    return '$rate% a year · $type';
+  }
+
+  @override
+  String get financeDebtDueDate => 'Due date';
+
+  @override
+  String get financeDebtNoDueDate => 'No due date';
+
+  @override
+  String financeDebtDueOn(String date) {
+    return 'Due $date';
+  }
+
+  @override
+  String get financeDebtOverdue => 'Overdue';
+
+  @override
+  String get financeDebtNoWallet => 'No wallet';
+
+  @override
+  String get financeDebtDescriptionPlaceholder => 'Terms or reminders';
+
+  @override
+  String financeDebtRepaid(String percent) {
+    return '$percent% repaid';
+  }
+
+  @override
+  String get financeDebtSaved => 'Saved';
+
+  @override
+  String get financeDebtDeleted => 'Deleted';
+
+  @override
+  String financeDebtDeleteTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get financeDebtDeleteBody => 'This cannot be undone.';
+
+  @override
+  String get financeDebtStatusChanged => 'Status updated';
+
+  @override
+  String get financeDebtMarkPaid => 'Mark as paid';
 }

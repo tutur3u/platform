@@ -31620,6 +31620,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reload this chat to check Mira\'s reply.'**
   String get assistantReplyFailedReload;
+
+  /// No description provided for @financeDebts.
+  ///
+  /// In en, this message translates to:
+  /// **'Debts & loans'**
+  String get financeDebts;
+
+  /// No description provided for @financeDebtNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New debt or loan'**
+  String get financeDebtNew;
+
+  /// No description provided for @financeDebtEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit debt or loan'**
+  String get financeDebtEditTitle;
+
+  /// No description provided for @financeDebtTypeDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Debt'**
+  String get financeDebtTypeDebt;
+
+  /// No description provided for @financeDebtTypeLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'Loan'**
+  String get financeDebtTypeLoan;
+
+  /// No description provided for @financeDebtTypesDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Debts'**
+  String get financeDebtTypesDebt;
+
+  /// No description provided for @financeDebtTypesLoan.
+  ///
+  /// In en, this message translates to:
+  /// **'Loans'**
+  String get financeDebtTypesLoan;
+
+  /// No description provided for @financeDebtsNetPosition.
+  ///
+  /// In en, this message translates to:
+  /// **'Net position'**
+  String get financeDebtsNetPosition;
+
+  /// No description provided for @financeDebtsYouOwe.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe'**
+  String get financeDebtsYouOwe;
+
+  /// No description provided for @financeDebtsOwedToYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Owed to you'**
+  String get financeDebtsOwedToYou;
+
+  /// No description provided for @financeDebtsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No debts or loans'**
+  String get financeDebtsEmpty;
+
+  /// No description provided for @financeDebtsEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Track money you owe and money you lent, with repayment progress.'**
+  String get financeDebtsEmptyBody;
+
+  /// No description provided for @financeDebtsNoMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches these filters'**
+  String get financeDebtsNoMatches;
+
+  /// No description provided for @financeDebtStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get financeDebtStatus;
+
+  /// No description provided for @financeDebtStatusAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All statuses'**
+  String get financeDebtStatusAll;
+
+  /// No description provided for @financeDebtStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get financeDebtStatusActive;
+
+  /// No description provided for @financeDebtStatusPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid off'**
+  String get financeDebtStatusPaid;
+
+  /// No description provided for @financeDebtStatusDefaulted.
+  ///
+  /// In en, this message translates to:
+  /// **'Defaulted'**
+  String get financeDebtStatusDefaulted;
+
+  /// No description provided for @financeDebtStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get financeDebtStatusCancelled;
+
+  /// No description provided for @financeDebtPrincipal.
+  ///
+  /// In en, this message translates to:
+  /// **'Principal'**
+  String get financeDebtPrincipal;
+
+  /// No description provided for @financeDebtAmountPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount paid'**
+  String get financeDebtAmountPaid;
+
+  /// No description provided for @financeDebtInterestPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest paid'**
+  String get financeDebtInterestPaid;
+
+  /// No description provided for @financeDebtRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get financeDebtRemaining;
+
+  /// No description provided for @financeDebtName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get financeDebtName;
+
+  /// No description provided for @financeDebtNamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Car loan'**
+  String get financeDebtNamePlaceholder;
+
+  /// No description provided for @financeDebtNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get financeDebtNameRequired;
+
+  /// No description provided for @financeDebtCounterparty.
+  ///
+  /// In en, this message translates to:
+  /// **'Counterparty'**
+  String get financeDebtCounterparty;
+
+  /// No description provided for @financeDebtCounterpartyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Person or organisation'**
+  String get financeDebtCounterpartyPlaceholder;
+
+  /// No description provided for @financeDebtAmountPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'0'**
+  String get financeDebtAmountPlaceholder;
+
+  /// No description provided for @financeDebtAmountRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter an amount above zero'**
+  String get financeDebtAmountRequired;
+
+  /// No description provided for @financeDebtInterestRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest rate (% a year)'**
+  String get financeDebtInterestRate;
+
+  /// No description provided for @financeDebtInterestType.
+  ///
+  /// In en, this message translates to:
+  /// **'Interest type'**
+  String get financeDebtInterestType;
+
+  /// No description provided for @financeDebtInterestSimple.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple'**
+  String get financeDebtInterestSimple;
+
+  /// No description provided for @financeDebtInterestCompound.
+  ///
+  /// In en, this message translates to:
+  /// **'Compound'**
+  String get financeDebtInterestCompound;
+
+  /// No description provided for @financeDebtInterestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate}% a year · {type}'**
+  String financeDebtInterestValue(String rate, String type);
+
+  /// No description provided for @financeDebtDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get financeDebtDueDate;
+
+  /// No description provided for @financeDebtNoDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get financeDebtNoDueDate;
+
+  /// No description provided for @financeDebtDueOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String financeDebtDueOn(String date);
+
+  /// No description provided for @financeDebtOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get financeDebtOverdue;
+
+  /// No description provided for @financeDebtNoWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'No wallet'**
+  String get financeDebtNoWallet;
+
+  /// No description provided for @financeDebtDescriptionPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms or reminders'**
+  String get financeDebtDescriptionPlaceholder;
+
+  /// No description provided for @financeDebtRepaid.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% repaid'**
+  String financeDebtRepaid(String percent);
+
+  /// No description provided for @financeDebtSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get financeDebtSaved;
+
+  /// No description provided for @financeDebtDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted'**
+  String get financeDebtDeleted;
+
+  /// No description provided for @financeDebtDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String financeDebtDeleteTitle(String name);
+
+  /// No description provided for @financeDebtDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get financeDebtDeleteBody;
+
+  /// No description provided for @financeDebtStatusChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Status updated'**
+  String get financeDebtStatusChanged;
+
+  /// No description provided for @financeDebtMarkPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as paid'**
+  String get financeDebtMarkPaid;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

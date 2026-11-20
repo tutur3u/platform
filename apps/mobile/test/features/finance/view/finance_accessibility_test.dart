@@ -33,6 +33,7 @@ void main() {
     FinanceScene.walletDetail: '1[,.]250[,.]000',
     FinanceScene.checkpoints: '15[,.]50',
     FinanceScene.categories: '420[,.]000',
+    FinanceScene.debts: '750[,.]000',
   };
   for (final MapEntry(key: scene, value: pattern) in displayedAmounts.entries) {
     testWidgets('${scene.name} masks amounts and announces their state', (

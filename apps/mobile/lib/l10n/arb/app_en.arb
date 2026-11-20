@@ -2249,11 +2249,26 @@
   "crmArchived": "Archived",
   "crmArchivedUntil": "Archived until",
   "crmAuditActivity": "{action} · {subject}",
-  "@crmAuditActivity": {"placeholders": {"action": {"type": "String"}, "subject": {"type": "String"}}},
+  "@crmAuditActivity": {
+    "placeholders": {
+      "action": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "crmAuditActor": "Actor",
   "crmAuditAffectedUser": "Affected user",
   "crmAuditBy": "By {actor}",
-  "@crmAuditBy": {"placeholders": {"actor": {"type": "String"}}},
+  "@crmAuditBy": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "crmAuditEmptyValue": "Empty",
   "crmAuditEvent": "Audit event",
   "crmAuditRange": "Date range",
@@ -2262,7 +2277,16 @@
   "crmAuditTab": "Audit log",
   "crmAuditUnknownTime": "Time unavailable",
   "crmAuditValueChange": "{before} to {after}",
-  "@crmAuditValueChange": {"placeholders": {"before": {"type": "String"}, "after": {"type": "String"}}},
+  "@crmAuditValueChange": {
+    "placeholders": {
+      "before": {
+        "type": "String"
+      },
+      "after": {
+        "type": "String"
+      }
+    }
+  },
   "crmBirthday": "Birthday",
   "crmCreateUser": "Create user",
   "crmDeleteUserConfirm": "Delete this user?",
@@ -8144,5 +8168,84 @@
   "assistantReplyFailedBusy": "Mira is busy. Wait a moment, then retry.",
   "assistantReplyFailedInterrupted": "Mira couldn't finish this reply. Your message is saved.",
   "assistantReplyFailedServer": "Mira hit a server problem. Your message is saved.",
-  "assistantReplyFailedReload": "Reload this chat to check Mira's reply."
+  "assistantReplyFailedReload": "Reload this chat to check Mira's reply.",
+  "financeDebts": "Debts & loans",
+  "financeDebtNew": "New debt or loan",
+  "financeDebtEditTitle": "Edit debt or loan",
+  "financeDebtTypeDebt": "Debt",
+  "financeDebtTypeLoan": "Loan",
+  "financeDebtTypesDebt": "Debts",
+  "financeDebtTypesLoan": "Loans",
+  "financeDebtsNetPosition": "Net position",
+  "financeDebtsYouOwe": "You owe",
+  "financeDebtsOwedToYou": "Owed to you",
+  "financeDebtsEmpty": "No debts or loans",
+  "financeDebtsEmptyBody": "Track money you owe and money you lent, with repayment progress.",
+  "financeDebtsNoMatches": "Nothing matches these filters",
+  "financeDebtStatus": "Status",
+  "financeDebtStatusAll": "All statuses",
+  "financeDebtStatusActive": "Active",
+  "financeDebtStatusPaid": "Paid off",
+  "financeDebtStatusDefaulted": "Defaulted",
+  "financeDebtStatusCancelled": "Cancelled",
+  "financeDebtPrincipal": "Principal",
+  "financeDebtAmountPaid": "Amount paid",
+  "financeDebtInterestPaid": "Interest paid",
+  "financeDebtRemaining": "Remaining",
+  "financeDebtName": "Name",
+  "financeDebtNamePlaceholder": "Car loan",
+  "financeDebtNameRequired": "Enter a name",
+  "financeDebtCounterparty": "Counterparty",
+  "financeDebtCounterpartyPlaceholder": "Person or organisation",
+  "financeDebtAmountPlaceholder": "0",
+  "financeDebtAmountRequired": "Enter an amount above zero",
+  "financeDebtInterestRate": "Interest rate (% a year)",
+  "financeDebtInterestType": "Interest type",
+  "financeDebtInterestSimple": "Simple",
+  "financeDebtInterestCompound": "Compound",
+  "financeDebtInterestValue": "{rate}% a year · {type}",
+  "@financeDebtInterestValue": {
+    "placeholders": {
+      "rate": {
+        "type": "String"
+      },
+      "type": {
+        "type": "String"
+      }
+    }
+  },
+  "financeDebtDueDate": "Due date",
+  "financeDebtNoDueDate": "No due date",
+  "financeDebtDueOn": "Due {date}",
+  "@financeDebtDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "financeDebtOverdue": "Overdue",
+  "financeDebtNoWallet": "No wallet",
+  "financeDebtDescriptionPlaceholder": "Terms or reminders",
+  "financeDebtRepaid": "{percent}% repaid",
+  "@financeDebtRepaid": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "financeDebtSaved": "Saved",
+  "financeDebtDeleted": "Deleted",
+  "financeDebtDeleteTitle": "Delete {name}?",
+  "@financeDebtDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "financeDebtDeleteBody": "This cannot be undone.",
+  "financeDebtStatusChanged": "Status updated",
+  "financeDebtMarkPaid": "Mark as paid"
 }

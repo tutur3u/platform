@@ -16866,4 +16866,156 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantReplyFailedReload => 'Hãy tải lại cuộc trò chuyện để xem câu trả lời của Mira.';
+
+  @override
+  String get financeDebts => 'Nợ & cho vay';
+
+  @override
+  String get financeDebtNew => 'Khoản nợ hoặc cho vay mới';
+
+  @override
+  String get financeDebtEditTitle => 'Sửa khoản nợ hoặc cho vay';
+
+  @override
+  String get financeDebtTypeDebt => 'Khoản nợ';
+
+  @override
+  String get financeDebtTypeLoan => 'Cho vay';
+
+  @override
+  String get financeDebtTypesDebt => 'Khoản nợ';
+
+  @override
+  String get financeDebtTypesLoan => 'Cho vay';
+
+  @override
+  String get financeDebtsNetPosition => 'Chênh lệch ròng';
+
+  @override
+  String get financeDebtsYouOwe => 'Bạn nợ';
+
+  @override
+  String get financeDebtsOwedToYou => 'Người khác nợ bạn';
+
+  @override
+  String get financeDebtsEmpty => 'Chưa có khoản nợ hoặc cho vay';
+
+  @override
+  String get financeDebtsEmptyBody => 'Theo dõi tiền bạn nợ và tiền bạn cho vay, cùng tiến độ trả.';
+
+  @override
+  String get financeDebtsNoMatches => 'Không có khoản nào khớp bộ lọc';
+
+  @override
+  String get financeDebtStatus => 'Trạng thái';
+
+  @override
+  String get financeDebtStatusAll => 'Mọi trạng thái';
+
+  @override
+  String get financeDebtStatusActive => 'Đang mở';
+
+  @override
+  String get financeDebtStatusPaid => 'Đã trả xong';
+
+  @override
+  String get financeDebtStatusDefaulted => 'Vỡ nợ';
+
+  @override
+  String get financeDebtStatusCancelled => 'Đã hủy';
+
+  @override
+  String get financeDebtPrincipal => 'Tiền gốc';
+
+  @override
+  String get financeDebtAmountPaid => 'Đã trả';
+
+  @override
+  String get financeDebtInterestPaid => 'Lãi đã trả';
+
+  @override
+  String get financeDebtRemaining => 'Còn lại';
+
+  @override
+  String get financeDebtName => 'Tên';
+
+  @override
+  String get financeDebtNamePlaceholder => 'Vay mua xe';
+
+  @override
+  String get financeDebtNameRequired => 'Nhập tên';
+
+  @override
+  String get financeDebtCounterparty => 'Đối tác';
+
+  @override
+  String get financeDebtCounterpartyPlaceholder => 'Cá nhân hoặc tổ chức';
+
+  @override
+  String get financeDebtAmountPlaceholder => '0';
+
+  @override
+  String get financeDebtAmountRequired => 'Nhập số tiền lớn hơn 0';
+
+  @override
+  String get financeDebtInterestRate => 'Lãi suất (%/năm)';
+
+  @override
+  String get financeDebtInterestType => 'Cách tính lãi';
+
+  @override
+  String get financeDebtInterestSimple => 'Lãi đơn';
+
+  @override
+  String get financeDebtInterestCompound => 'Lãi kép';
+
+  @override
+  String financeDebtInterestValue(String rate, String type) {
+    return '$rate%/năm · $type';
+  }
+
+  @override
+  String get financeDebtDueDate => 'Hạn trả';
+
+  @override
+  String get financeDebtNoDueDate => 'Không có hạn';
+
+  @override
+  String financeDebtDueOn(String date) {
+    return 'Hạn $date';
+  }
+
+  @override
+  String get financeDebtOverdue => 'Quá hạn';
+
+  @override
+  String get financeDebtNoWallet => 'Không gắn ví';
+
+  @override
+  String get financeDebtDescriptionPlaceholder => 'Điều khoản hoặc ghi chú';
+
+  @override
+  String financeDebtRepaid(String percent) {
+    return 'Đã trả $percent%';
+  }
+
+  @override
+  String get financeDebtSaved => 'Đã lưu';
+
+  @override
+  String get financeDebtDeleted => 'Đã xóa';
+
+  @override
+  String financeDebtDeleteTitle(String name) {
+    return 'Xóa $name?';
+  }
+
+  @override
+  String get financeDebtDeleteBody => 'Không thể hoàn tác.';
+
+  @override
+  String get financeDebtStatusChanged => 'Đã cập nhật trạng thái';
+
+  @override
+  String get financeDebtMarkPaid => 'Đánh dấu đã trả xong';
 }

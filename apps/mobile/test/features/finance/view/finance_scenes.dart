@@ -28,6 +28,7 @@ import 'package:mobile/features/finance/cubit/transaction_list_cubit.dart';
 import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/utils/finance_flow.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
+import 'package:mobile/features/finance/view/debts_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
@@ -46,6 +47,8 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mocktail/mocktail.dart';
+
+import 'finance_debt_fixtures.dart';
 
 /// Waits for views that finish publishing their cache on real disk I/O.
 Future<void> pumpFinanceUntilVisible(WidgetTester tester, Finder target) async {
@@ -341,7 +344,8 @@ enum FinanceScene {
   wallets('Wallets', Routes.wallets),
   walletDetail('Everyday', Routes.walletDetail),
   checkpoints('Checkpoints', Routes.financeCheckpoints),
-  categories('Categories', Routes.categories);
+  categories('Categories', Routes.categories),
+  debts('Debts & loans', Routes.financeDebts);
 
   const FinanceScene(this.title, this.route);
 
@@ -357,6 +361,7 @@ const Set<FinanceScene> financeSceneCreates = {
   FinanceScene.wallets,
   FinanceScene.walletDetail,
   FinanceScene.checkpoints,
+  FinanceScene.debts,
 };
 
 class FinanceScreenScene extends StatefulWidget {
@@ -471,6 +476,11 @@ class _FinanceScreenSceneState extends State<FinanceScreenScene> {
     FinanceScene.checkpoints => FinanceCheckpointsPage(repository: _repository),
     FinanceScene.categories => TransactionCategoriesPage(
       repository: _repository,
+    ),
+    FinanceScene.debts => DebtsPage(
+      repository: FinanceSceneDebtsRepository(),
+      financeRepository: _repository,
+      now: financeSceneDate,
     ),
   };
 
