@@ -106,6 +106,7 @@ COPY apps/cron-control/package.json ./apps/cron-control/package.json
 COPY apps/devbox-control/package.json ./apps/devbox-control/package.json
 COPY apps/gateway/package.json ./apps/gateway/package.json
 COPY apps/marketing/package.json ./apps/marketing/package.json
+COPY apps/mastermind-store/package.json ./apps/mastermind-store/package.json
 COPY apps/mastermind/package.json ./apps/mastermind/package.json
 COPY apps/meet-realtime/package.json ./apps/meet-realtime/package.json
 COPY apps/ops-hub/package.json ./apps/ops-hub/package.json
