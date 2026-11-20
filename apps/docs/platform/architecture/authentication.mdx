@@ -50,14 +50,48 @@ returning to protected content requires local authentication. The unlock action
 is visible on the first resumed Flutter frame. App-owned foreground refreshes
 wait for the gate to clear.
 
-The Flutter boundary hides protected routes during lifecycle transitions.
-On iOS the window cover attaches when the scene starts to deactivate and
-remains until Flutter paints a foreground frame. Android 13 and later suppress
-the Overview thumbnail with the platform setting. Older Android versions mark
-the window secure during the pause transition until the foreground frame.
+The Flutter boundary hides protected routes and their toasts during lifecycle
+transitions. On iOS the window cover attaches when the scene starts to deactivate.
+The app submits a safe frame for the current activation, then the native cover
+stays in place through the next display interval. Android 13 and later suppress
+the Overview thumbnail. Android 12 and earlier keep the entire window secure
+while App Lock is enabled and an account is signed in.
 
-`test/features/security/view/app_lock_lifecycle_test.dart` covers the resume,
-Add Account cancellation, deferred refresh, and stale native-auth result.
+The mobile lifecycle tests exercise first-frame privacy, deferred refresh and
+stale prompts. The registered destinations tests drive Add Account cancellation
+and a platform deep link through the production router.
+
+### Verify device snapshot ordering
+
+Use the same candidate build on an iPhone with a device passcode and on an
+Android 12 device with a PIN. Sign into a test account, set App Lock to
+**Immediately**, and open a workspace or mailbox with recognizable test text.
+Use an external camera in slow motion to record the screen and inspect the
+recording frame by frame. Repeat with light and dark appearance.
+
+1. **iOS.** Open the app switcher directly from the protected page. Check that its
+   preview contains no test text. Reopen the app, cancel authentication, and
+   confirm that the first frame after the native cover is the lock screen.
+   Rapidly repeat the switch twice and return to the app. Confirm that neither
+   a stale page nor a stuck cover appears. Unlock using Face ID or Touch ID, then
+   repeat using the device passcode. Repeat after terminating the app from the
+   switcher and launching it directly.
+2. **Android 12.** While the protected page is visible, press Power and Volume
+   Down. Confirm the OS rejects the screenshot or captures a blank app window.
+   Open Overview without leaving the page first and check that the thumbnail
+   contains no test text. Return and unlock using the device PIN. Repeat the
+   screenshot on the restored page. Disable App Lock and confirm a normal
+   foreground screenshot works. On Android 13 or later, repeat the Overview
+   check to verify the platform thumbnail policy.
+3. **Both.** Open Add Account, background the app, return, and tap its cancel
+   button. Verify that the lock screen precedes Home, including any workspace
+   toast. Repeat by tapping `https://tuturuuu.com/apps` from another app.
+   Start disabling App Lock from Settings, background during authentication,
+   then return. Confirm that a
+   new unlock works and the stale prompt cannot disable App Lock.
+4. **Both.** Leave Mail open when backgrounding. Return and cancel the unlock.
+   Confirm the mailbox fetch logs show zero resume refreshes. Unlock and
+   confirm the refresh fires after authentication.
 
 ## Web CSRF and forwarded workspace requests
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
@@ -12,6 +13,18 @@ import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 extension PumpApp on WidgetTester {
+  void showLegacyToast(BuildContext context, Widget content) {
+    shad.showToast(context: context, builder: (_, _) => content);
+  }
+
+  Future<void> setAppLifecycle(AppLifecycleState state) async {
+    await binding.defaultBinaryMessenger.handlePlatformMessage(
+      SystemChannels.lifecycle.name,
+      SystemChannels.lifecycle.codec.encodeMessage(state.toString()),
+      null,
+    );
+  }
+
   Future<void> pumpApp(Widget widget, {ThemeMode? themeMode}) {
     final router = GoRouter(
       initialLocation: '/test',
@@ -100,6 +113,7 @@ extension PumpApp on WidgetTester {
 /// Real appearance/router boundary shared by shell regression fixtures.
 Widget shellTestApp({
   required GoRouter router,
+  Widget Function(Widget)? navigatorBoundary,
   Brightness brightness = Brightness.light,
 }) => shad.ShadcnApp.router(
   debugShowCheckedModeBanner: false,
@@ -112,7 +126,10 @@ Widget shellTestApp({
   routerConfig: router,
   builder: (context, child) => AppearanceBackdrop(
     settings: const AppearanceSettings(),
-    child: ShadcnMaterialBridge(child: child!),
+    child: ShadcnMaterialBridge(
+      navigatorBoundary: navigatorBoundary,
+      child: child!,
+    ),
   ),
 );
 

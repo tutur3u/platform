@@ -10,6 +10,7 @@ import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
+import androidx.lifecycle.Lifecycle
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -21,10 +22,14 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
     private var shellBackChannel: MethodChannel? = null
     private var snapshotFlagOwned = false
+    private var secureSnapshotRequired = true
+    private var snapshotActivation = 0
+    private var safeSnapshotFrame = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val shellBack = ShellBackCoordinator(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        protectLegacySnapshot()
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -41,14 +46,28 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         }
     }
 
-    override fun onPause() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            val secureFlag = WindowManager.LayoutParams.FLAG_SECURE
-            if (window.attributes.flags and secureFlag == 0) {
-                window.addFlags(secureFlag)
-                snapshotFlagOwned = true
-            }
+    private fun protectLegacySnapshot() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return
+        val secureFlag = WindowManager.LayoutParams.FLAG_SECURE
+        if (window.attributes.flags and secureFlag == 0) {
+            window.addFlags(secureFlag)
+            snapshotFlagOwned = true
         }
+    }
+
+    private fun syncLegacySnapshotPolicy() {
+        if (secureSnapshotRequired) {
+            protectLegacySnapshot()
+        } else if (safeSnapshotFrame && snapshotFlagOwned) {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            snapshotFlagOwned = false
+        }
+    }
+
+    override fun onPause() {
+        snapshotActivation += 1
+        safeSnapshotFrame = false
+        protectLegacySnapshot()
         super.onPause()
     }
 
@@ -76,17 +95,28 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
             flutterEngine.dartExecutor.binaryMessenger,
             "mobile/app_snapshot_privacy",
         ).setMethodCallHandler { call, result ->
-            if (call.method == "foregroundFrameReady") {
-                if (snapshotFlagOwned && lifecycle.currentState.isAtLeast(
-                        androidx.lifecycle.Lifecycle.State.RESUMED,
-                    )
-                ) {
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    snapshotFlagOwned = false
+            when (call.method) {
+                "snapshotActivation" -> result.success(snapshotActivation)
+                "setSecureSnapshotRequired" -> {
+                    val required = call.arguments as? Boolean
+                    if (required == null) {
+                        result.error("bad_arguments", "Expected a privacy policy", null)
+                    } else {
+                        secureSnapshotRequired = required
+                        syncLegacySnapshotPolicy()
+                        result.success(null)
+                    }
                 }
-                result.success(null)
-            } else {
-                result.notImplemented()
+                "foregroundFrameReady" -> {
+                    if (call.arguments == snapshotActivation &&
+                        lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                    ) {
+                        safeSnapshotFrame = true
+                        syncLegacySnapshotPolicy()
+                    }
+                    result.success(null)
+                }
+                else -> result.notImplemented()
             }
         }
 

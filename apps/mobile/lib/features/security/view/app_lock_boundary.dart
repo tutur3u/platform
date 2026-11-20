@@ -1,7 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide ButtonStyle;
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/core/router/router_location.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/view/app_lock_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -13,13 +18,25 @@ class AppLockBoundary extends StatefulWidget {
     this.excluded = false,
     this.isExcluded,
     this.routeChanges,
+    this.nativePrivacyReady,
     super.key,
   });
+
+  AppLockBoundary.router({
+    required GoRouter router,
+    required this.child,
+    this.nativePrivacyReady,
+    super.key,
+  }) : excluded = false,
+       isExcluded = (() =>
+           isAppLockExcludedRoute(router.currentMatchedLocation)),
+       routeChanges = router.routerDelegate;
 
   final Widget child;
   final bool excluded;
   final bool Function()? isExcluded;
   final Listenable? routeChanges;
+  final ValueListenable<bool>? nativePrivacyReady;
 
   @override
   State<AppLockBoundary> createState() => _AppLockBoundaryState();
@@ -39,6 +56,27 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.routeChanges?.addListener(_routeChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppLockBoundary oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.routeChanges == widget.routeChanges) return;
+    oldWidget.routeChanges?.removeListener(_routeChanged);
+    widget.routeChanges?.addListener(_routeChanged);
+  }
+
+  void _routeChanged() {
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      // The router can restore its configuration while its subtree builds.
+      scheduleMicrotask(() {
+        if (mounted) setState(() {});
+      });
+      return;
+    }
+    setState(() {});
   }
 
   @override
@@ -49,6 +87,7 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
 
   @override
   void dispose() {
+    widget.routeChanges?.removeListener(_routeChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -77,7 +116,13 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
     final loading =
         protected && (!lock.hasLoaded || lock.status == AppLockStatus.loading);
     final locked = protected && lock.enabled && lock.locked;
-    final screenCovered = !_foreground || loading || locked;
+    final nativeReady = widget.nativePrivacyReady?.value ?? true;
+    final checkRouteAtPaint =
+        !protected &&
+        (!lock.hasLoaded ||
+            lock.status == AppLockStatus.loading ||
+            lock.locked);
+    final screenCovered = !_foreground || loading || locked || !nativeReady;
 
     if (!locked) _requestedAutomaticUnlock = false;
     if (_foreground && locked && lock.status == AppLockStatus.idle) {
@@ -89,9 +134,20 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
       children: [
         Offstage(
           offstage: screenCovered,
-          child: ExcludeFocus(excluding: screenCovered, child: widget.child),
+          child: ExcludeFocus(
+            excluding: screenCovered,
+            child: ClipRect(
+              // A synchronous router restore cannot expose the new route
+              // between the build and the next privacy-boundary rebuild.
+              clipBehavior: checkRouteAtPaint ? Clip.hardEdge : Clip.none,
+              clipper: checkRouteAtPaint
+                  ? _ExcludedRouteClip(() => _excluded, widget.routeChanges)
+                  : null,
+              child: widget.child,
+            ),
+          ),
         ),
-        if (!_foreground || loading)
+        if (!_foreground || loading || !nativeReady)
           const AppSplashSurface(key: ValueKey('app-lock-privacy-cover'))
         else if (locked)
           AppLockGate(
@@ -105,12 +161,24 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
 
   @override
   Widget build(BuildContext context) {
-    final routes = widget.routeChanges;
-    return routes == null
-        ? _paint(context)
-        : ListenableBuilder(
-            listenable: routes,
-            builder: (context, _) => _paint(context),
-          );
+    final privacy = widget.nativePrivacyReady;
+    if (privacy == null) return _paint(context);
+    return ListenableBuilder(
+      listenable: privacy,
+      builder: (context, _) => _paint(context),
+    );
   }
+}
+
+class _ExcludedRouteClip extends CustomClipper<Rect> {
+  _ExcludedRouteClip(this.isExcluded, Listenable? changes)
+    : super(reclip: changes);
+
+  final bool Function() isExcluded;
+
+  @override
+  Rect getClip(Size size) => isExcluded() ? Offset.zero & size : Rect.zero;
+
+  @override
+  bool shouldReclip(covariant _ExcludedRouteClip oldClipper) => true;
 }

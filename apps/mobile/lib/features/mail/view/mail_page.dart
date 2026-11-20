@@ -6,6 +6,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -229,15 +230,21 @@ class _MailWorkspaceState extends State<MailWorkspace> {
         _refreshVisibleMailbox();
       }
     });
-    _lifecycle = AppLifecycleListener(onResume: _refreshVisibleMailbox);
+    _lifecycle = AppLifecycleListener(onResume: _requestForegroundRefresh);
     unawaited(_swipePreferences.load());
     _snoozeRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
           ['inbox', 'snoozed'].contains(_folder)) {
-        _refreshVisibleMailbox();
+        _requestForegroundRefresh();
       }
     });
     unawaited(_bootstrap());
+  }
+
+  void _requestForegroundRefresh() {
+    ForegroundRefresh.request(this, () {
+      if (mounted) _refreshVisibleMailbox();
+    });
   }
 
   void _onCacheAccessRevoked() {

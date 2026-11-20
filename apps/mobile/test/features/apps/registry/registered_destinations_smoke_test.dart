@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,12 +7,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/auth/view/login_page.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
@@ -18,6 +24,10 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
+import 'package:mobile/features/security/data/app_lock_settings_store.dart';
+import 'package:mobile/features/security/data/local_auth_service.dart';
+import 'package:mobile/features/security/view/app_lock_boundary.dart';
+import 'package:mobile/features/security/view/app_lock_lifecycle.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
@@ -32,6 +42,7 @@ import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
@@ -39,6 +50,31 @@ import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/pump_app.dart';
 
 const _workspace = Workspace(id: 'smoke-workspace', name: 'Smoke workspace');
+
+const _actor = supa.User(
+  id: 'smoke-user',
+  appMetadata: {},
+  userMetadata: {},
+  aud: 'authenticated',
+  createdAt: '2026-01-01T00:00:00Z',
+);
+
+class _AuthRepository extends Mock implements AuthRepository {}
+
+class _LockStore extends Mock implements AppLockSettingsStore {}
+
+class _Credential extends Mock implements LocalAuthService {}
+
+AuthCubit _signedInAccount() {
+  final repo = _AuthRepository();
+  when(repo.getCurrentUserSync).thenReturn(_actor);
+  when(repo.checkMfaRequired).thenReturn(false);
+  when(repo.onAuthStateChange).thenAnswer((_) => const Stream.empty());
+  when(repo.getStoredAccounts).thenAnswer((_) async => <StoredAuthAccount>[]);
+  when(repo.refreshSession).thenAnswer((_) async {});
+  final auth = AuthCubit(authRepository: repo);
+  return auth..setAddAccountFlow(enabled: true);
+}
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -78,8 +114,107 @@ void main() {
     await supa.Supabase.initialize(
       url: 'https://example.supabase.co',
       publishableKey: 'test-anon-key',
+      authOptions: const supa.FlutterAuthClientOptions(autoRefreshToken: false),
     );
   });
+
+  for (final cancel in [true, false]) {
+    testWidgets(
+      cancel
+          ? 'Add Account cancel hides production Home and toasts'
+          : 'a protected platform deep link from Add Account stays locked',
+      (tester) async {
+        await tester.setAppLifecycle(AppLifecycleState.resumed);
+        tester.view
+          ..devicePixelRatio = 1
+          ..physicalSize = const Size(390, 844);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
+        });
+        final store = _LockStore();
+        when(store.isEnabled).thenAnswer((_) async => true);
+        when(store.readDelay).thenAnswer((_) async => AppLockDelay.immediately);
+        final prompt = Completer<bool>();
+        final credential = _Credential();
+        when(
+          () => credential.authenticate(reason: any(named: 'reason')),
+        ).thenAnswer((_) => prompt.future);
+        final lock = AppLockCubit(
+          localAuthService: credential,
+          settingsStore: store,
+        );
+        await lock.load();
+        final lifecycle = AppLockLifecycle(
+          lock: lock,
+          hasAccount: () => true,
+          onSuspend: (_) {},
+          refresh: () {},
+        );
+        final harness = _DestinationHarness(
+          Routes.addAccount,
+          hasWorkspace: true,
+          realAuth: _signedInAccount(),
+          realLock: lock,
+        );
+        addTearDown(() async {
+          await tester.pumpWidget(const SizedBox.shrink());
+          lifecycle.dispose();
+          await harness.dispose();
+        });
+        await harness.mastermind.setAccess(TestAccess.enabled);
+        await tester.pumpWidget(harness.build(protectNavigator: true));
+        await tester.pump();
+        expect(find.byType(LoginPage), findsOneWidget);
+
+        await tester.setAppLifecycle(AppLifecycleState.inactive);
+        await tester.setAppLifecycle(AppLifecycleState.paused);
+        await tester.setAppLifecycle(AppLifecycleState.resumed);
+        await tester.pump();
+        expect(lock.state.locked, isTrue);
+        expect(find.byType(LoginPage), findsOneWidget);
+        final loginContext = tester.element(find.byType(LoginPage));
+        tester.showLegacyToast(
+          loginContext,
+          const Text('Private workspace toast'),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('Private workspace toast'), findsOneWidget);
+
+        final destination = cancel ? Routes.home : Routes.apps;
+        if (cancel) {
+          await tester.tap(find.byIcon(Icons.arrow_back));
+        } else {
+          await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+            SystemChannels.navigation.name,
+            SystemChannels.navigation.codec.encodeMethodCall(
+              MethodCall('pushRouteInformation', {'location': destination}),
+            ),
+            null,
+          );
+        }
+        await tester.pump();
+        expect(
+          harness.router.routeInformationProvider.value.uri.path,
+          destination,
+        );
+        if (cancel) expect(harness.auth.state.isAddAccountFlow, isFalse);
+        expect(find.byType(ShellPage), findsNothing);
+        expect(find.text('Private workspace toast'), findsNothing);
+        expect(
+          find.byKey(const ValueKey('app-lock-unlock-button')),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.byKey(const ValueKey('app-lock-unlock-button')));
+        prompt.complete(true);
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(ShellPage), findsOneWidget);
+        await tester.pump(const Duration(seconds: 6));
+      },
+    );
+  }
 
   final destinations = <String>{
     for (final module in AppRegistry.allModules) ...[
@@ -165,20 +300,20 @@ void main() {
 // workspace without a backend session. Loaded-data branches still need feature
 // fixtures; no network identity or native plugin session is established here.
 class _DestinationHarness {
-  _DestinationHarness(String destination, {required bool hasWorkspace}) {
-    whenListen(
-      auth,
-      const Stream<AuthState>.empty(),
-      initialState: const AuthState.authenticated(
-        supa.User(
-          id: 'smoke-user',
-          appMetadata: {},
-          userMetadata: {},
-          aud: 'authenticated',
-          createdAt: '2026-01-01T00:00:00Z',
-        ),
-      ),
-    );
+  _DestinationHarness(
+    String destination, {
+    required bool hasWorkspace,
+    AuthCubit? realAuth,
+    AppLockCubit? realLock,
+  }) : auth = realAuth ?? _Auth(),
+       lock = realLock ?? _Lock() {
+    if (auth case final _Auth mocked) {
+      whenListen(
+        mocked,
+        const Stream<AuthState>.empty(),
+        initialState: const AuthState.authenticated(_actor),
+      );
+    }
     whenListen(
       workspace,
       const Stream<WorkspaceState>.empty(),
@@ -228,11 +363,13 @@ class _DestinationHarness {
         resolved: true,
       ),
     );
-    whenListen(
-      lock,
-      const Stream<AppLockState>.empty(),
-      initialState: const AppLockState(hasLoaded: true),
-    );
+    if (lock case final _Lock mocked) {
+      whenListen(
+        mocked,
+        const Stream<AppLockState>.empty(),
+        initialState: const AppLockState(hasLoaded: true),
+      );
+    }
     router = createAppRouter(
       auth,
       workspace,
@@ -245,14 +382,14 @@ class _DestinationHarness {
     );
   }
 
-  final auth = _Auth();
+  final AuthCubit auth;
   final workspace = _Workspace();
   final habits = _Habits();
   final education = _Education();
   final inventory = _Inventory();
   final profile = _Profile();
   final timezone = _Timezone();
-  final lock = _Lock();
+  final AppLockCubit lock;
   // Real cubits over a fake hub: Mastermind is gated on a loaded access check.
   final mastermind = MastermindViewHarness();
   final settings = SettingsRepository();
@@ -267,7 +404,7 @@ class _DestinationHarness {
   final title = ShellTitleOverrideCubit();
   late final GoRouter router;
 
-  Widget build() => MultiBlocProvider(
+  Widget build({bool protectNavigator = false}) => MultiBlocProvider(
     providers: [
       BlocProvider<AuthCubit>.value(value: auth),
       BlocProvider<WorkspaceCubit>.value(value: workspace),
@@ -290,7 +427,12 @@ class _DestinationHarness {
       BlocProvider.value(value: miniNav),
       BlocProvider.value(value: title),
     ],
-    child: shellTestApp(router: router),
+    child: shellTestApp(
+      router: router,
+      navigatorBoundary: protectNavigator
+          ? (child) => AppLockBoundary.router(router: router, child: child)
+          : null,
+    ),
   );
 
   Future<void> dispose() async {

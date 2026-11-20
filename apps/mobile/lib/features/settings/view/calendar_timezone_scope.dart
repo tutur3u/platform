@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/repositories/timezone_settings_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -53,7 +54,11 @@ class _CalendarTimezoneScopeState extends State<CalendarTimezoneScope>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _load();
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () {
+        if (mounted) _load();
+      });
+    }
   }
 
   @override

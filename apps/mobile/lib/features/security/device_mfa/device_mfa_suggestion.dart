@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
@@ -47,7 +48,11 @@ class _DeviceMfaSuggestionState extends State<DeviceMfaSuggestion>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_load());
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_load());
+      });
+    }
   }
 
   Future<void> _load() async {

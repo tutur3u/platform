@@ -9,6 +9,7 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/layout/app_page.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/data/models/calendar_event.dart';
 import 'package:mobile/data/models/google_calendar_color.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
@@ -109,13 +110,14 @@ class _CalendarViewState extends State<_CalendarView> {
     super.initState();
     _scheduleInitialEventOpen();
     _lifecycle = AppLifecycleListener(
-      onResume: () {
+      onResume: () => ForegroundRefresh.request(this, () {
+        if (!mounted) return;
         final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
         final cubit = context.read<CalendarCubit>();
         if (wsId != null && !cubit.state.isRefreshing) {
           unawaited(cubit.loadEvents(wsId, forceRefresh: true));
         }
-      },
+      }),
     );
   }
 

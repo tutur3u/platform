@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/notifications_repository.dart';
@@ -116,7 +117,9 @@ class _NotificationsActionButtonState extends State<NotificationsActionButton>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      unawaited(_notificationsCubit.refreshUnreadCount());
+      ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_notificationsCubit.refreshUnreadCount());
+      });
     }
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -47,7 +48,9 @@ class _ClassesTodayScopeState extends State<ClassesTodayScope> {
     // Dart timers pause while the device sleeps, so the midnight wake can
     // miss the day rolling over; catch up as soon as the app is back.
     _lifecycle = AppLifecycleListener(
-      onResume: () => unawaited(_cubit.resume()),
+      onResume: () => ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_cubit.resume());
+      }),
     );
   }
 

@@ -20,7 +20,6 @@ import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
-import 'package:mobile/core/router/router_location.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
@@ -548,7 +547,7 @@ class _AppState extends State<App> {
               listenWhen: (prev, curr) =>
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
-                _appLockLifecycle.scheduleRefresh();
+                _appLockLifecycle.accountOrLockChanged();
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 _bindAudienceMode();
                 ProfileCubit.clearMemoryCache();
@@ -649,26 +648,26 @@ class _AppState extends State<App> {
                         appearance: appearance,
                         sorbet: sorbet,
                         child: ShadcnMaterialBridge(
-                          child: MastermindPrivacyShield(
-                            location: () => _router
-                                .routerDelegate
-                                .currentConfiguration
-                                .uri
-                                .path,
-                            locationChanges: _router.routerDelegate,
-                            child: _showRevocationWarnings(
-                              AuthSessionBoundary(
-                                identity: authIdentity,
-                                child: DismissKeyboardOnPointerDown(
-                                  child: AppLockBoundary(
-                                    routeChanges: _router.routerDelegate,
-                                    isExcluded: () => isAppLockExcludedRoute(
-                                      _router.currentMatchedLocation,
-                                    ),
-                                    child: MobileMfaApprovalListener(
-                                      child: AppVersionGate(child: child!),
-                                    ),
-                                  ),
+                          navigatorBoundary: (navigator) =>
+                              MastermindPrivacyShield(
+                                location: () => _router
+                                    .routerDelegate
+                                    .currentConfiguration
+                                    .uri
+                                    .path,
+                                child: AppLockBoundary.router(
+                                  router: _router,
+                                  nativePrivacyReady:
+                                      _appLockLifecycle.nativePrivacyReady,
+                                  child: navigator,
+                                ),
+                              ),
+                          child: _showRevocationWarnings(
+                            AuthSessionBoundary(
+                              identity: authIdentity,
+                              child: DismissKeyboardOnPointerDown(
+                                child: MobileMfaApprovalListener(
+                                  child: AppVersionGate(child: child!),
                                 ),
                               ),
                             ),

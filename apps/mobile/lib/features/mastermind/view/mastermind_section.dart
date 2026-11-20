@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/feature_flags/mobile_flags.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
@@ -105,16 +106,19 @@ class _AttachedSectionState extends State<_AttachedSection>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final resumed = state == AppLifecycleState.resumed;
-    _runtime.scheduler.setForeground(foreground: resumed);
-    if (_isBackgrounded(state)) _backgrounded = true;
-    // Coming back from the background is a refresh trigger of its own: the
-    // held snapshot may be hours old, and a backoff that grew while asleep
-    // should not delay it. Returning from a mere `inactive` is not.
-    if (resumed && _backgrounded) {
-      _backgrounded = false;
-      unawaited(_runtime.scheduler.refreshNow());
+    if (state != AppLifecycleState.resumed) {
+      _runtime.scheduler.setForeground(foreground: false);
+      if (_isBackgrounded(state)) _backgrounded = true;
+      return;
     }
+    ForegroundRefresh.request(this, () {
+      if (!mounted) return;
+      _runtime.scheduler.setForeground(foreground: true);
+      if (_backgrounded) {
+        _backgrounded = false;
+        unawaited(_runtime.scheduler.refreshNow());
+      }
+    });
   }
 
   @override

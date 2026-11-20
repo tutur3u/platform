@@ -16,8 +16,12 @@ import UserNotifications
   private var pushAdmitted = false
   private var meetNoticeSound: SystemSoundID = 0
   private var snapshotCovers: [ObjectIdentifier: UIView] = [:]
+  private var snapshotActivation = 0
+  private var snapshotPresentationLink: CADisplayLink?
+  private var snapshotPresentationTicks = 0
 
   deinit {
+    snapshotPresentationLink?.invalidate()
     if meetNoticeSound != 0 { AudioServicesDisposeSystemSoundID(meetNoticeSound) }
   }
 
@@ -48,6 +52,9 @@ import UserNotifications
 
   @objc private func coverSceneForSnapshot(_ notification: Notification) {
     guard let scene = notification.object as? UIWindowScene else { return }
+    snapshotActivation += 1
+    snapshotPresentationLink?.invalidate()
+    snapshotPresentationLink = nil
     for window in scene.windows where window.rootViewController != nil {
       let id = ObjectIdentifier(window)
       guard snapshotCovers[id] == nil else { continue }
@@ -58,6 +65,25 @@ import UserNotifications
       window.addSubview(cover)
       snapshotCovers[id] = cover
     }
+  }
+
+  private func waitForSnapshotPresentation(activation: Int) {
+    guard activation == snapshotActivation, !snapshotCovers.isEmpty else { return }
+    snapshotPresentationLink?.invalidate()
+    snapshotPresentationTicks = 0
+    let link = CADisplayLink(target: self, selector: #selector(snapshotPresentationTick(_:)))
+    snapshotPresentationLink = link
+    link.add(to: .main, forMode: .common)
+  }
+
+  @objc private func snapshotPresentationTick(_ link: CADisplayLink) {
+    guard link === snapshotPresentationLink else { return }
+    snapshotPresentationTicks += 1
+    // Keep the cover through the first display interval after Flutter submits the frame.
+    guard snapshotPresentationTicks >= 2 else { return }
+    link.invalidate()
+    snapshotPresentationLink = nil
+    revealForegroundScenes()
   }
 
   private func revealForegroundScenes() {
@@ -133,12 +159,17 @@ import UserNotifications
         name: "mobile/app_snapshot_privacy", binaryMessenger: registrar.messenger()
       )
       channel.setMethodCallHandler { [weak self] call, result in
-        guard call.method == "foregroundFrameReady" else {
+        switch call.method {
+        case "snapshotActivation":
+          result(self?.snapshotActivation)
+        case "foregroundFrameReady":
+          if let activation = call.arguments as? Int {
+            self?.waitForSnapshotPresentation(activation: activation)
+          }
+          result(nil)
+        default:
           result(FlutterMethodNotImplemented)
-          return
         }
-        self?.revealForegroundScenes()
-        result(nil)
       }
     }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {

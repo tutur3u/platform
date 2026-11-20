@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/security/account/account_security_repository.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/settings/view/settings_dialogs.dart';
@@ -43,7 +44,11 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_busy) unawaited(_load());
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () {
+        if (mounted && !_busy) unawaited(_load());
+      });
+    }
   }
 
   Future<void> _load() async {

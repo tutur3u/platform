@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/gallery_platform_file.dart';
 import 'package:mobile/core/utils/timezone.dart';
@@ -318,8 +319,11 @@ class _AssistantPageState extends State<AssistantPage>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) _liveHaptics.suspend();
     if (state == AppLifecycleState.resumed) {
-      _appIsForeground = true;
-      _resumeLocal();
+      ForegroundRefresh.request(this, () {
+        if (!mounted) return;
+        _appIsForeground = true;
+        _resumeLocal();
+      });
     }
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {

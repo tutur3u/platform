@@ -25,6 +25,7 @@ import 'package:mobile/core/cache/task_description_image_delivery.dart';
 import 'package:mobile/core/cache/time_request_image_delivery.dart';
 import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
@@ -164,7 +165,9 @@ class OfflineMutationQueue with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _scheduleSync(onResume: true);
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () => _scheduleSync(onResume: true));
+    }
   }
 
   void _scheduleSync({bool onResume = false}) {

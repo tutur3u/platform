@@ -704,3 +704,11 @@ than selecting the first duplicate. If attachment placement changes, navigate
 to its actual tab in `mail_reader_clearance_test.dart`, populate enough files to
 force scrolling, and retain the final-control geometry bound against the dock.
 A passing isolated reader render does not cover the composed split-pane header.
+
+### Foreground refresh
+
+Schedule feature-owned network work from lifecycle resume with
+`ForegroundRefresh.request(owner, work)`. Use the widget or service as the
+owner to coalesce repeated resume work. Check that the widget is still mounted
+inside the callback. Keep background cancellation synchronous. The root drains
+queued work after the Flutter frame and App Lock check.

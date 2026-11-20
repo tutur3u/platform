@@ -13,6 +13,7 @@ import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/breakpoints.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/notes/ai/notes_local_ai_cubit.dart';
@@ -193,7 +194,11 @@ class NotesPageState extends State<NotesPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_refresh());
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_refresh());
+      });
+    }
     if (state == AppLifecycleState.inactive) {
       unawaited(_save());
     }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
@@ -67,13 +68,16 @@ class _MobileMfaApprovalListenerState extends State<MobileMfaApprovalListener>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    _foreground = state == AppLifecycleState.resumed;
-
-    if (_foreground) {
-      _syncPolling(pollNow: true);
-    } else {
+    if (state != AppLifecycleState.resumed) {
+      _foreground = false;
       _stopPolling();
+      return;
     }
+    ForegroundRefresh.request(this, () {
+      if (!mounted) return;
+      _foreground = true;
+      _syncPolling(pollNow: true);
+    });
   }
 
   void _syncPolling({bool pollNow = false}) {

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/core/ui/components/app_alert.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -100,7 +101,9 @@ class _IrisChatViewState extends State<IrisChatView>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
       case AppLifecycleState.resumed:
-        _feed.start();
+        ForegroundRefresh.request(this, () {
+          if (mounted) _feed.start();
+        });
       case AppLifecycleState.paused || AppLifecycleState.hidden:
         // The app lock takes over in the background; history goes with it.
         _feed.clear();

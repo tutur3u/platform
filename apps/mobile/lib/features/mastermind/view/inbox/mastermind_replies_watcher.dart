@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
@@ -53,7 +54,11 @@ class _MastermindRepliesWatcherState extends State<MastermindRepliesWatcher>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_wake());
+    if (state == AppLifecycleState.resumed) {
+      ForegroundRefresh.request(this, () {
+        if (mounted) unawaited(_wake());
+      });
+    }
     if (state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
