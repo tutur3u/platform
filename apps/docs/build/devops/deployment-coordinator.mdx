@@ -1,0 +1,313 @@
+---
+title: 'Deployment coordinator'
+description: 'Design of the Tuturuuu-hosted deployment authority: projects, environments and deployments on a Cloudflare Worker with one Durable Object per project environment, serialized publishes, supersession, promotion and rollback markers, a durable stop fence and a bounded cost ceiling.'
+updatedAt: '2026-11-20'
+audience: developers
+---
+
+The deployment coordinator is the platform's own deployment authority. GitHub
+Actions keeps building and publishing; the coordinator decides **which** build
+may publish **when**, records what happened, and gives the Infrastructure
+dashboard one place to see, promote and roll back deployments.
+
+It is the `tuturuuu-deploy-coordinator` Worker in `apps/deploy-coordinator`.
+The Worker holds no Vercel or Cloudflare deploy credentials and never calls a
+provider or dispatches a workflow. Executors stay in GitHub Actions; the
+coordinator issues them fenced grants.
+
+## Delivery status
+
+| Part | State |
+| ---- | ----- |
+| This design | Accepted |
+| Worker, Durable Object state machine, API | Planned |
+| GitHub Actions begin/finish steps | Planned, behind `DEPLOY_COORDINATOR_MODE`, default off |
+| Infrastructure **Deployments** page | Planned |
+| Executor workflow for promotion and rollback markers | Not built; markers are resolved by operators |
+| Hostname, secrets and Worker publication | Release-authority steps |
+
+## Model
+
+```text
+project (catalog entry, e.g. "calendar")
+└── environment: preview | staging | production   ← one Durable Object each
+    └── lane: "default", or the preview ref for preview
+        └── deployment
+            id, kind (deploy | promotion | rollback), commit SHA, ref, run id,
+            plan reference, status, epoch, attempt, artifact identity,
+            URL, logs URL (GitHub run), actor, timestamps
+```
+
+- **Projects** come from the committed catalog in
+  `apps/deploy-coordinator/src/projects.ts`. Each entry names the provider
+  (`vercel` or `cloudflare`) and the workflow files allowed to report for it.
+  An unknown project or environment is a `404`; adding one is a reviewed code
+  change. The catalog bounds how many Durable Objects can exist.
+- **Environments** follow the existing branch flow (see
+  [environments and release flow](/build/devops/environments-release-flow)):
+  production deploys run on `refs/heads/production`, staging on
+  `refs/heads/main`, and previews are dispatched manually from `main` with a
+  `preview_ref` input.
+- **Lanes** are the unit of serialization. Staging and production have one
+  `default` lane. Every preview token carries `ref` `refs/heads/main`, so the
+  preview lane is the `preview_ref` the caller states. That value is accepted
+  only from an allowlisted preview workflow on `main`, which is already the
+  trust boundary for preview dispatch.
+- **Deployments** carry the plan they were built from. The coordinator stores
+  the CI affected-planner's plan reference (`source`, `sha256` digest, run URL)
+  and never recomputes affected apps.
+
+### Statuses
+
+```text
+queued ──claim──▶ publishing ──complete──▶ succeeded | failed
+  │                   │
+  │                   └─lease + grace lapsed──▶ unknown ──late complete, same attempt──▶ succeeded | failed (reconciled)
+  ├─newer deploy run in lane, or a rollback──▶ superseded
+  └─skip (held or not needed), operator cancel, 6 h queue expiry──▶ cancelled
+```
+
+`succeeded`, `failed`, `superseded`, `cancelled` and `unknown` release the
+lane. `unknown` still accepts one reconciling completion from the same
+attempt; that record never becomes the current deployment over a newer epoch.
+
+## Serialization rules
+
+Each environment Durable Object keeps its lanes in SQLite. A call reads and
+writes synchronously without awaiting I/O, so a claim's read and write never
+interleave with another request.
+
+1. **One publisher per lane.** `claim` grants the lane lock to one deployment;
+   the oldest claimable queued deployment goes first. Others receive `wait`
+   with a bounded `retryAfterSeconds`.
+2. **Newest run wins the queue.** Deployments are ordered by GitHub `run_id`,
+   which increases with run creation, so a re-run of an older run cannot
+   overtake a newer one. A new `deploy` supersedes queued `deploy` rows with a
+   lower run id. A `deploy` whose run id is lower than a queued, publishing or
+   succeeded `deploy` in the lane is created already `superseded`. Promotions
+   and rollbacks are never superseded by deploys. A superseded job exits
+   successfully without publishing; this is the durable answer superseded-build
+   skipping can consult.
+3. **A publish in progress is never aborted.** Supersession, stop, hold and
+   rollback never touch a `publishing` deployment.
+4. **Fenced grants.** Every claim increments the lane epoch and issues a random
+   `attemptId`. Heartbeat and completion must present the current epoch and
+   attempt; anything else is `STALE_GRANT`. The one exception is the
+   reconciling completion of an `unknown` attempt described above.
+5. **Leases.** A lease lasts five minutes, heartbeats extend it, and an attempt
+   may publish for at most 90 minutes. The lock stays held for a two-minute
+   grace after the lease lapses, then the deployment becomes `unknown` and the
+   lane frees. Executors **self-fence**: they must not start a provider effect
+   after `leaseDeadline`, the same rule as the offline adapter's arm deadline.
+   An unknown effect is never replayed automatically.
+6. **Lazy evaluation instead of scheduling.** Lease lapses and queue expiry are
+   applied at the start of every call to the object, reads included. The
+   coordinator schedules nothing: no alarms, crons, queues or timers. A lane
+   that nobody calls costs nothing and holds its state until the next call.
+7. **Idempotency.** `create` requires an `idempotencyKey`; the same key with the
+   same body returns the same deployment and a different body is a `409`.
+   Repeating a completion with the same outcome returns the recorded result; a
+   different outcome is a `409`.
+
+## Promotion and rollback
+
+- **Promote** takes a `succeeded` staging deployment and queues a production
+  `promotion` for the same commit. Production builds its own artifacts (it
+  never reuses preview or staging builds), so a promotion releases a verified
+  commit rather than copying an artifact. Preview deployments are not
+  promotable.
+- **Rollback** takes an earlier `succeeded` deployment in staging or
+  production, queues a `rollback` carrying that deployment's commit and
+  artifact identity, supersedes queued deploys and places the lane on
+  **hold**. While held, deploys still register but `claim` answers `held` and
+  the job records a skip; promotions and rollbacks can still claim. Releasing
+  the hold, or a successful promotion, resumes automatic deploys, so a
+  rollback is not immediately overwritten by the next merge. Skipped deploys
+  are not replayed: after releasing a hold, an untouched project stays on the
+  rolled-back version until its next deploy or an explicit dispatch.
+- **Execution.** Promotion and rollback rows are markers. The coordinator never
+  dispatches anything. An executor workflow that claims a marker by id, holding
+  provider credentials in its own GitHub Environment, is a separate reviewed
+  change. Until it exists, an operator performs the provider action with the
+  owning release tooling and records the outcome with `resolve`. Queue
+  admission never authorizes production activation, environment approval or
+  route changes.
+
+## API
+
+All responses are JSON with `Cache-Control: no-store`. Bodies are limited to
+8 KiB and every string field has a length bound. Unknown routes return `404`.
+
+| Method and path                                           | Caller       | Purpose |
+| --------------------------------------------------------- | ------------ | ------- |
+| `GET /health`                                             | anyone       | Liveness only |
+| `GET /v1/projects`                                        | operator     | Catalog only; no Durable Object calls |
+| `GET /v1/projects/:p/environments/:e`                     | operator     | Lanes, locks, hold and stop state, recent deployments |
+| `POST /v1/projects/:p/environments/:e/deployments`        | CI           | Register a deployment |
+| `POST …/deployments/:id/claim`                            | CI, same run | `granted`, `wait`, `held`, `stopped`, `superseded` or `terminal` |
+| `POST …/deployments/:id/heartbeat`                        | CI, same run | Extend the lease |
+| `POST …/deployments/:id/complete`                         | CI, same run | Record `succeeded` or `failed` with URL and artifact |
+| `POST …/deployments/:id/skip`                             | CI, same run | Cancel its own queued deployment |
+| `POST …/deployments/:id/cancel`                           | operator     | Cancel a queued deployment |
+| `POST …/deployments/:id/resolve`                          | operator     | Record the outcome of a queued promotion or rollback marker |
+| `POST …/deployments/:id/promote`                          | operator     | Queue a production promotion from staging |
+| `POST …/deployments/:id/rollback`                         | operator     | Queue a rollback marker and hold the lane |
+| `POST /v1/projects/:p/environments/:e/hold/release`       | operator     | Resume automatic deploys in a lane |
+| `POST /v1/projects/:p/environments/:e/stop` and `/resume` | operator     | Durable stop fence for the environment |
+
+The read endpoints are the stable shape for CLI consumers such as a `ttr`
+deploy-queue view.
+
+### Authentication
+
+**CI** sends a GitHub Actions OIDC token. The Worker verifies:
+
+- RS256 against GitHub's JWKS, cached per isolate and refetched at most once a
+  minute for an unknown key id;
+- `iss`, `aud` (`DEPLOY_COORDINATOR_OIDC_AUDIENCE`), `exp` and `nbf`, and the
+  immutable `repository_id` (`DEPLOY_COORDINATOR_REPOSITORY_ID`);
+- `event_name` is `push`, `workflow_dispatch` or `schedule`; pull request
+  events, including `pull_request_target`, are rejected, and fork pull
+  requests never receive tokens;
+- `job_workflow_ref` names a workflow file the catalog allows for the project,
+  at the same protected ref as `ref`: `refs/heads/production` for production,
+  `refs/heads/main` for staging and preview.
+
+For staging and production the commit SHA comes from the token's `sha` claim.
+The logs URL is built from the token's `repository`, `run_id` and
+`run_attempt`, never from the body. Claim, heartbeat, completion and skip must
+come from the run that created the deployment.
+
+**Operators** are the Infrastructure app's server routes. They send
+`DEPLOY_COORDINATOR_OPERATOR_TOKEN`, compared in constant time, and an
+`X-Deploy-Actor` user id. The Worker records that id for audit and trusts it
+only because the token holder has already authorized the user.
+
+The Worker has no public route until release authority approves a hostname;
+`workersDev` and preview URLs stay disabled.
+
+## GitHub Actions integration
+
+Composite actions have no post step, so the integration is
+`.github/actions/deploy-coordinator` used twice in a deploy job:
+
+1. `phase: begin`, before the publish steps: registers the deployment, waits
+   for a grant, and starts a bounded background heartbeat for the job.
+2. `phase: finish`, with `if: always()`: stops the heartbeat and reports
+   `succeeded` or `failed` from the job status.
+
+When the coordinator answers `superseded` or `held`, `begin` records a skip
+and sets `publish=false`; later steps check that output. The repository
+variable `DEPLOY_COORDINATOR_MODE` selects:
+
+| Mode        | Behaviour |
+| ----------- | --------- |
+| unset/`off` | Steps skipped; CI behaves exactly as without them. This is the default. |
+| `observe`   | Register and report; `publish` is always `true` and every error falls open. |
+| `enforce`   | Wait for a grant, bounded by `max-wait-minutes`; skip publishing when superseded or held. |
+
+In `enforce`, an unreachable coordinator, an exhausted budget or the bounded
+wait running out still falls open so an outage cannot block a release; GitHub
+concurrency groups keep their serialization. The consequence is explicit: the
+stop fence and a rollback hold are advisory to CI while the coordinator is
+unreachable. Making the coordinator a required authority is a separate
+reviewed change.
+
+## Dashboard
+
+The Infrastructure app's **Deployments** page lists catalog projects, and for
+the selected project each environment's lanes, current deployment, queue,
+statuses and GitHub run links. Viewing requires `view_infrastructure`.
+Promote, rollback, cancel, resolve, hold release and stop/resume go through
+Infrastructure API routes that require the root-workspace operator permission
+(`manage_workspace_roles`, via `authorizeInfrastructureOperator`). Without
+`DEPLOY_COORDINATOR_ORIGIN` and the operator token the page shows an
+unconfigured state.
+
+## Cost and stop-fence analysis
+
+The coordinator adds Worker requests, Durable Object requests and SQLite row
+operations. It adds no alarms, queues, crons, WebSockets, outbound provider
+calls or retries of its own. Its objects do no I/O beyond synchronous SQLite,
+so they are eligible for hibernation whenever idle and accrue duration only
+while handling a call ([pricing](https://developers.cloudflare.com/durable-objects/platform/pricing/)).
+
+| Item | Bound |
+| ---- | ----- |
+| Durable Objects | catalog projects × 3 environments; no other names are addressable |
+| Calls per deployment | create 1, claim polls every ≥20 s for ≤30 min (≤90), heartbeats every 60 s for ≤90 min (≤90), finish 1: worst case ~182, typical under 10 |
+| Client retries | 3 attempts with backoff on network errors and `5xx` only |
+| Daily budget | 5,000 calls per environment object per UTC day, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Stop, resume and environment reads by operators stay available |
+| Preview lanes | 50 open lanes per preview environment; more is `429 CAPACITY` |
+| Retention | 100 finished deployments per lane, pruned on write; no log content, only links |
+| Payload | 8 KiB request bodies |
+
+A busy production environment of 20 deployments a day at the worst case uses
+about 3,600 calls, inside its budget. The hard ceiling, with every catalog
+environment pinned at its budget every day:
+
+- 35 projects × 3 environments × 5,000 calls ≈ 525,000 calls a day, about
+  15.8 million a month.
+- Worker requests above the 10 million included: about $1.75 a month.
+- Durable Object requests above the 1 million included: about $2.20.
+- SQLite rows written, at most 4 per call (budget counter, deployment, lane,
+  metadata) ≈ 63 million against 50 million included: about $13.
+- Rows read stay far below the 25 billion included; duration is the
+  millisecond-scale handling time of each call, far below 400,000 GB-s.
+
+The ceiling is about $17 a month above the plan and scales linearly with the
+catalog size; a catalog test pins the project count, so growing it is a
+reviewed change to this figure. Requests rejected before
+reaching an object (bad token, unknown route) cost Worker requests only and
+are not bounded by the coordinator; that ingress limit belongs to the hostname's
+WAF rules when one is assigned.
+
+Stop fences, outermost first:
+
+1. **Global switch.** `DEPLOY_COORDINATOR_ENABLED` set to anything other than
+   `true` makes every CI call return `503 COORDINATOR_OFF` before any Durable
+   Object call.
+2. **Environment stop.** `POST …/stop` durably sets `stopped` and increments
+   `stopRevision`. Claims answer `stopped`; queued deployments stay queued and
+   publishing ones may still complete. The fence lives in Durable Object
+   storage and survives restarts and redeploys.
+3. **Daily budget.** The durable per-environment counter caps rows written even
+   if a client loops. Rejected calls that still reach an object are billed
+   requests; the global switch is the hard cap on call count.
+4. **Client.** The steps' wait, heartbeat and retry ceilings; setting
+   `DEPLOY_COORDINATOR_MODE` to `off` stops all CI traffic without a code
+   change.
+
+A rate limit or billing alert alone is not a spend cap; the durable budget and
+the catalog-bounded object count are.
+
+## Relationship to existing pieces
+
+- **Offline queue adapter** (`scripts/ci/release-cf-queue*.mjs`): grants use the
+  adapter's fields (`jobId`, `attemptId`, `workerId`, `epoch`, `targetLockId`,
+  `stopRevision`, `leaseDeadline`). Statuses map as `queued` → `queued`,
+  `publishing` → `running`, `succeeded`, `failed` and `unknown` unchanged, and
+  `superseded` or `cancelled` → `stopped`. The adapter's
+  `submit`/`renew`/`requestStop` port and per-phase receipts have no binding to
+  the coordinator yet; that binding would be a separate adapter.
+- **Production planner** (`.github/workflows/vercel-production.yaml`) and
+  per-workflow concurrency groups remain the trigger and first serialization
+  layer. The coordinator adds cross-run supersession, a lane lock and history.
+- **CI affected-planner**: each deployment stores its plan digest and run URL.
+- **Superseded-build skipping**: a `superseded` claim answer is a durable,
+  cross-run reason to skip a build.
+- **Cron Control and Devbox Control**: the Worker follows their layout (cf
+  config, Vite+ build, SQLite Durable Object, `cf-vite-worker.mjs` runtime
+  harness).
+
+## Verification
+
+Planned coverage, landing with each part:
+
+- `bun --cwd apps/deploy-coordinator test` covers the state machine:
+  supersession by run order, lock exclusivity, epochs, lease lapse and
+  reconciliation, idempotent create and completion, hold, stop, budget,
+  capacity and retention, plus OIDC claim checks with generated keys.
+- `node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs` runs
+  the real Worker and Durable Object in workerd through the Vite runtime,
+  including the stop fence and lane state surviving a restart.

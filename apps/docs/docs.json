@@ -199,6 +199,7 @@
                 "pages": [
                   "build/devops/overview",
                   "build/devops/deployment-configuration",
+                  "build/devops/deployment-coordinator",
                   "build/devops/active-runtime",
                   "build/devops/standalone-api",
                   "build/devops/native-start-migration",

@@ -101,6 +101,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; the operations runbook is internal |
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
 | Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
+| Deploy coordinator | New native Worker and per-environment SQLite DO; publication held | No alarms, queues or outbound calls; catalog-bounded objects, durable daily call budget and environment stop fence. See the [deployment coordinator](/build/devops/deployment-coordinator) |
 | Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
 
 This inventory follows active checked-in Wrangler configurations. Existing
@@ -377,6 +378,14 @@ rows, charges a durable daily write budget before running a batch, deletes at
 most 20 expired rows per write, and holds a durable operator stop fence. Its
 cost envelope and regressions are in the
 [Mastermind store runbook](/build/devops/mastermind-store).
+
+The deploy coordinator Worker (`apps/deploy-coordinator`) schedules nothing:
+lease lapses and queue expiry are applied lazily at the start of each call. Its
+objects are limited to catalog projects × three environments, each charging a
+durable 5,000-call daily budget before other work and holding a durable
+environment stop fence. The worst-case ceiling of about $17 a month and the
+stop order are in the
+[deployment coordinator design](/build/devops/deployment-coordinator#cost-and-stop-fence-analysis).
 
 The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and
 stop-fence evidence in the [abuse-guard store runbook](/build/devops/abuse-guard-store).
