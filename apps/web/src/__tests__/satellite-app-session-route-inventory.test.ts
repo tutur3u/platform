@@ -116,6 +116,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/personal/route.ts',
   // Owner-only review of server-held Mira continuations on the Meet Worker.
   'apps/meet/src/app/api/meet-call/[meetingId]/assistant/review/route.ts',
+  // Admitted participants read the room Mira notice and record their own choice.
+  'apps/meet/src/app/api/meet-call/[meetingId]/mira-room/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts',
   // Host and co-host attendance. App session plus the host or workspace-admin check.
   // Rows live in a private table. The service client reads them after that check.
