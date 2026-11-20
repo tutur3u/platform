@@ -119,7 +119,10 @@ test('production Vercel planner resolves once and calls affected apps in the pus
     tasksJob,
     /contains\(fromJSON\(needs\.plan\.outputs\.workflows_json\), 'tasks-cloudflare\.yaml'\)/
   );
-  assert.doesNotMatch(tasksJob, /secrets: inherit|vercel-production-tasks/);
+  // Without forwarded secrets the publish job's tasks-production environment
+  // secret resolves empty and tasks-native-publish.mjs aborts.
+  assert.match(tasksJob, /^ {4}secrets: inherit$/mu);
+  assert.doesNotMatch(tasksJob, /vercel-production-tasks/);
   const tasksPublish = readWorkflowJobBlock('tasks-cloudflare.yaml', 'publish');
   assert.match(tasksPublish, /needs: \[production-policy, artifact\]/);
   assert.match(

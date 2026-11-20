@@ -350,6 +350,10 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'tasks-cloudflare.yaml')
     uses: ./.github/workflows/tasks-cloudflare.yaml
+    # Reusable workflows only resolve tasks-production environment secrets
+    # (TASKS_CLOUDFLARE_API_TOKEN) when the caller forwards secrets; every
+    # secret reference inside tasks-cloudflare.yaml stays production-gated.
+    secrets: inherit
 
   deploy-teach:
     needs: [plan, deploy-platform]

@@ -33,6 +33,9 @@ output, then verifies the production profile, source SHA and sealed file
 hashes. The production-only `tasks-production` environment supplies
 `TASKS_CLOUDFLARE_API_TOKEN`. Use an Individual Workers Editor grant scoped to
 `tuturuuu-tasks`.
+The `deploy-tasks` caller in `vercel-production.yaml` must keep
+`secrets: inherit`; a reusable workflow resolves that environment secret as
+empty without forwarded secrets, and the publisher aborts before any write.
 The job uses the pinned Wrangler upload adapter for the sealed Void output.
 The `cf` upload path can replace it after qualification against the same
 Tasks server modules, static assets and existing bindings.
