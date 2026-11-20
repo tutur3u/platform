@@ -1,12 +1,76 @@
 ---
 title: Mobile Mastermind
 description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
-updatedAt: "2026-11-01"
+updatedAt: "2026-11-20"
 audience: users
 ---
 
-Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
-product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
+Mastermind is an internal fleet overview. Today, Inbox and Work read the live
+fleet snapshot from Web (see Fleet sync); Ship and Insights still read the
+sanitized snapshot from the Mastermind hub Worker. This page records the
+product rules of the shell entry and every tab.
+
+## Fleet sync
+
+- **Scope:** the Today, Inbox and Work tabs, `PUT`/`GET
+  /api/v1/mastermind/fleet/state`, `POST
+  /api/v1/mastermind/fleet/decisions/{id}/answer` and `GET`/`POST
+  /api/v1/mastermind/fleet/answers`.
+- **Source:** `scripts/mastermind-fleet/publish.mjs` runs on the orchestrator
+  Mac every 30 seconds. It reads the local T3 state database read-only
+  (`PRAGMA query_only`) and selects run statuses, thread titles, project names,
+  providers, models, lineage and peer-machine reachability. It never selects
+  message bodies, prompts, runtime requests or peer secrets. Thread ids leave
+  only as one-way `lane-<hash>` ids.
+- **Counts:** a lane is one non-archived thread with an active run (running,
+  waiting or queued) or a run in the last 24 hours (failed or idle). Threads
+  with no run in 24 hours are not counted, so idle reflects recent work rather
+  than every thread ever created.
+- **Decisions:** the orchestrator writes one JSON file per open decision to
+  `~/.local/share/fleet-sync/decisions/open/<id>.json` with `id` (lowercase
+  slug), `title`, optional `body`, `urgency` (`urgent`, `high`, `normal`,
+  `fyi`), up to six `options` (`{id, label}`), optional `recommendedOptionId`,
+  `laneId`, `deadlineAt`, and `createdAt`. Unreadable files are skipped and
+  only counted. Removing the file closes the decision on the next publish.
+- **Answers:** Approve, Hold and Reply post an owner answer with an
+  `Idempotency-Key`. Web stores it as a durable record; a retry with the same
+  key returns the same record, and a new answer to the same decision becomes
+  the next revision. The publisher pulls unacknowledged answers, writes each to
+  `~/.local/share/fleet-sync/decisions/answers/<id>.r<revision>.json` (mode
+  0600) and acknowledges it. The phone shows "Waiting for Iris" until the
+  acknowledgement, then "Received by Iris". Nothing messages a fleet thread;
+  the orchestrator reads the answers folder.
+- **Authentication:** reads and answers are owner-only: root Mastermind
+  permission (the rule of `GET /api/v1/mastermind/access`) and membership of
+  `MASTERMIND_FLEET_OWNER_IDS` (falling back to `MASTERMIND_PUSH_OWNER_IDS`);
+  an empty allowlist admits nobody. Publisher calls carry an HMAC-SHA256 over
+  `<unix seconds>.<METHOD> <path+query>\n<body>` with
+  `MASTERMIND_FLEET_PUBLISHER_SECRET` (rotation slot
+  `MASTERMIND_FLEET_PUBLISHER_SECRET_NEXT`), a five-minute skew window and a
+  15-minute single-use signature fence. Without a secret every publisher call
+  answers 503.
+- **Payload rules:** every free-text field is scrubbed on Web before storage
+  (URLs, emails, paths, IPs, UUIDs, token and key shapes, long opaque runs and
+  invisible characters are removed) and length-capped; lane and machine labels
+  fall back to a neutral label, and a decision whose title scrubs to nothing is
+  refused. The phone never receives reply text back. Snapshot and answers live
+  in Upstash Redis for 14 days.
+- **Freshness:** the publisher sends on change and at least every two minutes.
+  The phone polls every 15 seconds while a fleet tab is in the foreground and
+  on pull-to-refresh, shows "Updated <age>" from the receive time, and warns
+  once the snapshot is more than five minutes old.
+- **Runbook:** store the secret in Vercel production as
+  `MASTERMIND_FLEET_PUBLISHER_SECRET` and on the orchestrator Mac in
+  `~/.local/share/fleet-sync/publisher-secret` (mode 0600, at least 32
+  characters). Optional `~/.local/share/fleet-sync/config.json` sets
+  `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
+  `^\[Iris\]`). Schedule `node scripts/mastermind-fleet/publish.mjs --origin
+  https://tuturuuu.com` with launchd `StartInterval` 30; it logs counts only.
+- **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
+  `apps/web/src/lib/mastermind/fleet/contract.test.ts`,
+  `apps/web/src/lib/mastermind/fleet/store.redis.test.ts` (answer and ack
+  scripts on a real redis-server), `scripts/mastermind-fleet/*.test.mjs` and
+  `apps/mobile/test/features/mastermind/fleet/`.
 
 ## Native Worker live admission
 

@@ -910,6 +910,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/auth/fleet-smoke",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/auth/fleet-smoke/route.ts",
+    "sourceSha256": "122544248a9f15a40d969b2adf359ff24f633f0bae01f7e97f12a7f7ff3e7e4d",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/auth/mfa/devices",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -1615,6 +1625,36 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/access/route.ts",
     "sourceSha256": "8466f5c251e89d1e19afc2030b872c4268c3106f294f5a370ef199394e645a9b",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/answers",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/answers/route.ts",
+    "sourceSha256": "76aaf5638892da6d321a3d10d2893e09410a826e42da2ae2c8c9d555a9ce40b0",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/decisions/{decisionId}/answer",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/decisions/[decisionId]/answer/route.ts",
+    "sourceSha256": "5a0a3aa4ce102670e951df452b8937bc8c4357d5c246e8fccf30d3e31077fa81",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/state",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/state/route.ts",
+    "sourceSha256": "0f9974e71058e9acd2a542e3748304a8f7cc7b543beb9ee758814596e4f2f4ea",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2730,51 +2770,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}/rotate",
+    "path": "/api/v1/workspaces/{wsId}/api-keys/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/rotate/route.ts",
-    "sourceSha256": "43be72a5af621800b84ac7965da28371e9d48eaf4c93f16a381ac1e948308278",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/route.ts",
-    "sourceSha256": "af8e74d22a5da321e0acfde5ae30feca70c10243fd451bc0d99997d3d65eedd5",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/api-keys/{keyId}/usage-logs",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[keyId]/usage-logs/route.ts",
-    "sourceSha256": "2d565833606414f8833bf2771b8a04ebe7b54bcc47966b38ad8dcb0e6088ba6a",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/api-keys/roles",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/roles/route.ts",
-    "sourceSha256": "cad3bcca0e0dfa045aebb29d74f303f7918083bdac5ff97d0de96a8ab1bc016c",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/api-keys",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/route.ts",
-    "sourceSha256": "e85687862fc48c1d4919a995c3b39094f0f0922dee51bb8057a70240432d7dd7",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/api-keys/[[...segments]]/route.ts",
+    "sourceSha256": "22deab90a9ced8418d39209b1fd9973d80a4fac41b3131f40906a339510c5f40",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3254,7 +3254,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/[documentId]/route.ts",
-    "sourceSha256": "c296f07e05ef2613e8eb7dc4a0d56963909f5f5fba306b812ddcd9983ea977b5",
+    "sourceSha256": "eef2b0539f2bed939703456fe7993e67049f724e687076b5cb545f1c10f27ccb",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3264,7 +3264,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/documents/route.ts",
-    "sourceSha256": "9f027b236d8599dfaf00f022cd58733ac4ce55bd2de749dd25076ed1c8ba415c",
+    "sourceSha256": "d5c3f0827eedf0c74cce058c39d14497f1a4d5d530218b93e1aacca1c98742fc",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3300,181 +3300,41 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/encryption/fix",
+    "path": "/api/v1/workspaces/{wsId}/education/learner-progress",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/fix/route.ts",
-    "sourceSha256": "9ceeef7ea996456ad139ea87c3fcc929f0a07d161f0e7928e28c48b128b02365",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/learner-progress/route.ts",
+    "sourceSha256": "d67b4134a55bba6382410d7a04f4cf626cce1adc8041032ee3e0dc9b01c9e4f3",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/encryption/migrate",
+    "path": "/api/v1/workspaces/{wsId}/education/quiz-attempts",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/migrate/route.ts",
-    "sourceSha256": "303ca97b74c83766551d5a8148eba645d849fd685e800aa8784402428f92b96b",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/education/quiz-attempts/route.ts",
+    "sourceSha256": "1f19a07966e88c64fd5f77a03c4810355a6351777a852e7f9788489477faacb4",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/encryption",
+    "path": "/api/v1/workspaces/{wsId}/encryption/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/route.ts",
-    "sourceSha256": "f257c13ae19e8624b6e75f2b68aa80849bc90df3083e034171a805966409005b",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/encryption/[[...segments]]/route.ts",
+    "sourceSha256": "60329464c6e102e7a06abb839286c4069bf8e654e0887535214d4f5ef045542d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron/executions",
+    "path": "/api/v1/workspaces/{wsId}/external-apps/{...segments}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/executions/route.ts",
-    "sourceSha256": "5b05f6bb661752984fe56368f5f2c5c7f4c6614ef23f6d3eebdb839c9c943270",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron/jobs/{jobKey}/executions",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/executions/route.ts",
-    "sourceSha256": "2a413f71061a3be9f16dd1509136a720ffbef4576e4e5d5b2ae58632b2163151",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron/jobs/{jobKey}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/route.ts",
-    "sourceSha256": "93f83cc4716b5cecd862a1c8a6e8b0bb5bb7509759f255846321e64ff79ef9a9",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron/jobs/{jobKey}/run-now",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/jobs/[jobKey]/run-now/route.ts",
-    "sourceSha256": "eaeddfff399962077fdc5c07d92d90adeb3d1abf6ff487b413e0182dd4c4bd16",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/route.ts",
-    "sourceSha256": "2aeed164a8a7074a3037250fc6c2138628966b728d92d632bc260b1797618607",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/cron/setup",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/cron/setup/route.ts",
-    "sourceSha256": "7ebd9a53c5089b4abb57ac231e96b4365f512e34673d530df589180a6bb2a5b6",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/drive/finalize",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/drive/finalize/route.ts",
-    "sourceSha256": "03ec87c2c7d5d7251b58047a82e6f42817a15536d65bf9876b7eba9fdfb4a2eb",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/drive/read-url",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/drive/read-url/route.ts",
-    "sourceSha256": "48cfda2ca254a4a7554781fcbf389fbac25bdf7f80c9d1728bf4be6235c704ae",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/drive",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/drive/route.ts",
-    "sourceSha256": "e84f1f22e1fd9d9417bc09087e1a82c75026524ba13d888f581dd4c4689bbad4",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/drive/upload-url",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/drive/upload-url/route.ts",
-    "sourceSha256": "6556eef5a46780d981b0eadc91e7eb09533e064f308f0281d6bb9894a05a2012",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/members/{userId}/role",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/[userId]/role/route.ts",
-    "sourceSha256": "77a73d0020f86cca8053fe926e69cc30d4398f51dc8a6dd43cd4464a9d9abdbc",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/members/access",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/access/route.ts",
-    "sourceSha256": "5f5729ef5f64cc59ada68aacd53bb9f56995dbd8a79d3c84c56bec40f00931cb",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/members/default-admin",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/default-admin/route.ts",
-    "sourceSha256": "38ccfc2dfbd59a912d4843ca0c3d11f6c354768385f8c657e69f49ac584dab99",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/members/invitations",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/invitations/route.ts",
-    "sourceSha256": "fe0a244b175ffd7260fd716d2ef5311c6e9c11edf3b73d36e5b78ef4b26abc2e",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/external-apps/members",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/members/route.ts",
-    "sourceSha256": "0744fd49bb2433cc4232c86830bc11c094f04813437d968782f401de54c066f7",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-apps/[...segments]/route.ts",
+    "sourceSha256": "af9166abaac0895ae8889dcb648d17727b7d74f041ab0cb972cceeb4e2545273",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4040,121 +3900,31 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/group-tags/{tagId}",
+    "path": "/api/v1/workspaces/{wsId}/finance/wallets/{walletId}/checkpoints/{checkpointId}/review",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/route.ts",
-    "sourceSha256": "d4d97732f016d43cbad73e5463c5b8c7d82ed567ec66708aa8166c37ffa0b288",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/wallets/[walletId]/checkpoints/[checkpointId]/review/route.ts",
+    "sourceSha256": "27d042c08ed5d92efcf0c3340edd1b2e10704ee3d05b745c1f411666aa1dd31c",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/group-tags/{tagId}/user-groups/{groupId}",
+    "path": "/api/v1/workspaces/{wsId}/group-tags/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/[groupId]/route.ts",
-    "sourceSha256": "2c0f51d0b6d9a524138a8d5a320ddd34085c8773b25f883989deabddec48a268",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[[...segments]]/route.ts",
+    "sourceSha256": "5db1f0c2417e6de78bbe9d3565460c07805c65ca3d6d3c773faef5d57ca4202a",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/group-tags/{tagId}/user-groups",
+    "path": "/api/v1/workspaces/{wsId}/integrations/{...segments}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/route.ts",
-    "sourceSha256": "0286aa54dda969cb017384dfeb69ab7b0979b0ae458bf65b5c4dd85cc3299511",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/group-tags",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/group-tags/route.ts",
-    "sourceSha256": "35f0bc24c2411fd785f4723f7213776d27eb8b2b5374ee677f57fee4b366fdd7",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/disconnect",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/disconnect/route.ts",
-    "sourceSha256": "db394975026d4a820e8fb2b3f4f62e3f9c5a635610999e4f552dd1f71592e9e8",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/endpoints/{id}/rotate",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/endpoints/[id]/rotate/route.ts",
-    "sourceSha256": "7e58fbfb567a74082660715068c6931324556152ad3711c178f826920749e0a6",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/endpoints/{id}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/endpoints/[id]/route.ts",
-    "sourceSha256": "50b2cf8cbfc4917e156a27c22bdc30ac4c4fda21d932081dacd99042f968cae8",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/endpoints",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/endpoints/route.ts",
-    "sourceSha256": "73f1cb332ed4bc92973dd4873548b7927b154917d6c6bb28468ef9c19eee12b0",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/oauth/callback",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/oauth/callback/route.ts",
-    "sourceSha256": "ffd8e62a6570999d52b11fc1d98fbefc9ef48bec34b752a1a02f124d0c72c05d",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/oauth/start",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/oauth/start/route.ts",
-    "sourceSha256": "ecc6d40d811977892e652457c6f119c45676f2fb2baaa65bbfe41db6930d4ddc",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/provision-webhooks",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/provision-webhooks/route.ts",
-    "sourceSha256": "d41db4a4e1a67ded31deb887e1455c8396fab139b20aba1383ff61c72d58070e",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/integrations/sepay/sync-bank-accounts",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/sepay/sync-bank-accounts/route.ts",
-    "sourceSha256": "9bf4ea97c4f60423e86b9cc48c07c822ac343d6fbe66ba0870d25aa109516335",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/integrations/[...segments]/route.ts",
+    "sourceSha256": "322be97fa017422a1e51c1fb3cf730cf971248b2f2a924f6e1c2e386234741c8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4364,7 +4134,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/route.ts",
-    "sourceSha256": "b1847cfa0868bd689674eac76b256b451d9615fd55fb9a76b00d11e9916290da",
+    "sourceSha256": "7a800338f978507e82eed6a841d22a5163e9cf405636a25258efba8c3512d8dc",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4590,61 +4360,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/posts/bootstrap",
+    "path": "/api/v1/workspaces/{wsId}/posts/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/bootstrap/route.ts",
-    "sourceSha256": "422e3ebc9ae84376fd70b4c41082266fc51a56f4dfff5e3ecff233a788d1fd1b",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/posts/filter-options",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/filter-options/route.ts",
-    "sourceSha256": "9ff1035d54fc55e6f62549bc0bcf690406df675c08cd93c15f4722cc98949a3d",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/posts/force-send",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/force-send/route.ts",
-    "sourceSha256": "1e924f180dac952216e261a8553f167f5f592d3e2612fd8f6cc80f5cbeca72b1",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/posts/permissions",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts",
-    "sourceSha256": "c1f158948f46812a14804d7fb2d0eda20cd6f7c07bc1103a8f405a4ebab42949",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/posts",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/route.ts",
-    "sourceSha256": "2c35897edf3a00a3e2f435bd626ef9ec0ee1919154b261f62cf0bb4e630420bc",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/posts/status",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/status/route.ts",
-    "sourceSha256": "b3841fae94941caabde9fa7923869d014a6d74dfdb510d1a4610202e4044fb95",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/posts/[[...segments]]/route.ts",
+    "sourceSha256": "47fc449b1f619a0ed1f9d509c52b893357b9a9b41c3d8f7800a62a1f1ccc7202",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5140,251 +4860,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/analytics",
+    "path": "/api/v1/workspaces/{wsId}/time-tracking/{...segments}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/analytics/route.ts",
-    "sourceSha256": "e798795c0ce13a8c2e795352307ba0675153f9e1af550a8b0b9c10451125af2e",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/break-types/{breakTypeId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]/route.ts",
-    "sourceSha256": "13cb29c90c08341354f896d287b47141b3e921ab92c1fbfe48659638da4c4117",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/break-types",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/break-types/route.ts",
-    "sourceSha256": "afca9e4d54d42b87c8574fada2fe88c756020b886caedc6d44183f18ded7b4cf",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/breaks",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/breaks/route.ts",
-    "sourceSha256": "5fa78e5badf45c1c72656f0c85d54034b5c3148e2f5bd565c1f4ad1692ea5665",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/categories/{categoryId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/categories/[categoryId]/route.ts",
-    "sourceSha256": "7abcb8e7eb1513882ad42acbea441670179a19a858c251197a7d7ec222989d60",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/categories/copy",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/categories/copy/route.ts",
-    "sourceSha256": "ade05c79bffc8924add8a903cef579964de750923c2c2fb47a65008d5ea55e1c",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/categories",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/categories/route.ts",
-    "sourceSha256": "f2ffc6efd8d489c749a52f652861d5c8627624222066bd4830f12d170d6648ed",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/goals/{goalId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/goals/[goalId]/route.ts",
-    "sourceSha256": "b234d8bb0e5ef02a4e055ef2989c648a7192b89e0bca68f0735a4feca6369b95",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/goals",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/goals/route.ts",
-    "sourceSha256": "5e4343a24ee3f5261c8b336758042bf18a8c722b3a9e1d073b79fd0b227b6e49",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/quick-start",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/quick-start/route.ts",
-    "sourceSha256": "3eb3baba511b55195d3dacbbd9e9b406abed1ee302e09169efefcc1301054cc5",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/{id}/activity",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/activity/route.ts",
-    "sourceSha256": "742b40352661d904504518284c9f004b138800b0d209b44f38bd7076a8938fd6",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/{id}/comments/{commentId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/comments/[commentId]/route.ts",
-    "sourceSha256": "89745a5e0ed257b90f33d1ac0c84b0956117c864bcb5b8288c1cde3f50ee23de",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/{id}/comments",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/comments/route.ts",
-    "sourceSha256": "e680de8229f5ab7aa2cb6aedbd17ff0f296b336d11dd6a74a11bd45df5bb2346",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/{id}/image-urls",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/image-urls/route.ts",
-    "sourceSha256": "04ddcdd8a4e404f3dac57be0ec5c29753360b7b9cd6c724b3fc1ec9caeccc5c1",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/{id}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/[id]/route.ts",
-    "sourceSha256": "c0791d786c107a7c94d7f74371f433cfca3a6c7af8cb357f84d2b548daa592d8",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/route.ts",
-    "sourceSha256": "4fccc4af3d639421f0304d1312e81d8a968e4901d01b37560c74859b84aafebb",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/upload-url",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/upload-url/route.ts",
-    "sourceSha256": "b9c08a3cf42257a8caa4738f00ff22c1f4b2c06a8fc40ab581de86abc8ee8156",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/requests/users",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/requests/users/route.ts",
-    "sourceSha256": "3390520e39457b90b0f79ee12d6d6e217ea6d4296e0554029b8a2dfbdb894fee",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/sessions/{sessionId}/breaks/active",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/breaks/active/route.ts",
-    "sourceSha256": "58f0091e8a135b2a49a84124f329a7856fc11420338c60d788bedbde8e860a6c",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/sessions/{sessionId}/move",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/move/route.ts",
-    "sourceSha256": "c4c96a9e394cda59469d1111780ca10258b83a3464967fdd4a85bfaa34dce7e9",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/sessions/{sessionId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/[sessionId]/route.ts",
-    "sourceSha256": "d6c99a21f834f31b8e77a599172d3233ab31f5b0e506e76d6872c345ad4aa0ca",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/sessions",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/sessions/route.ts",
-    "sourceSha256": "8201bc24317cb74ab4089600d2b883189747f6bf122cd79baac48d1e22582c56",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/stats/period",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/stats/period/route.ts",
-    "sourceSha256": "b60f30872e628ae93e2ac9b0f0e3f3c57d1684acc42b615c45a72313696202a6",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/templates",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/templates/route.ts",
-    "sourceSha256": "78efd900e0519d7e83e518ee74289e2e6b2f2ecfd6dd37854217b7b822c73582",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/time-tracking/threshold",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/threshold/route.ts",
-    "sourceSha256": "1ce56ffa9d48628fbb1f9092cdaf680f4cc5a680cdc7a74ff5a6edb1c171b649",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking/[...segments]/route.ts",
+    "sourceSha256": "4f7bbcebc224633f058d04d38d0e8b83e290d1cca9b7f7de3bba87bf46cc7da8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -5960,31 +5440,11 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/user-profile-links/{linkId}",
+    "path": "/api/v1/workspaces/{wsId}/user-profile-links/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/user-profile-links/[linkId]/route.ts",
-    "sourceSha256": "80aa63e4baea282e6a20782d784310df3c2582d49eb67814e136afdee320cc94",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/user-profile-links",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/user-profile-links/route.ts",
-    "sourceSha256": "8fe29bce5d62f5bc909c23e106a63c4e1bf014aeda75c1e72270ef6c04c5e519",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/user-profile-links/users",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/user-profile-links/users/route.ts",
-    "sourceSha256": "c3964224266f6b61c353c0c46ba6fca1fd12d59f06691b45de1faac409e7b516",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/user-profile-links/[[...segments]]/route.ts",
+    "sourceSha256": "e18d207512e2fca22328953ee9e29924a84b31edcedd95c8c7320622283e56e9",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -6360,61 +5820,21 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/wallets/{walletId}/roles/{roleId}",
+    "path": "/api/v1/workspaces/{wsId}/wallets/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/wallets/[walletId]/roles/[roleId]/route.ts",
-    "sourceSha256": "593dae7b373fd2da14c7dc1834037af6a9229f01b3faf2344e746c0d694b1576",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/wallets/[[...segments]]/route.ts",
+    "sourceSha256": "b1cf3ee9002db923669580f7b284e89fc67ede42b8edd831ed119b996174b4a7",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
-    "path": "/api/v1/workspaces/{wsId}/wallets/{walletId}/roles",
+    "path": "/api/v1/workspaces/{wsId}/whiteboards/{...segments?}",
     "sideEffects": "unknown",
     "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/wallets/[walletId]/roles/route.ts",
-    "sourceSha256": "7edcc6c855d4ba081fbbbde5dc203316c675a4fae72e596379a70271e84bcb0c",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/wallets",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/wallets/route.ts",
-    "sourceSha256": "323c2ed4dc01be56f101642585a3458b49b91db0f5725c76ce09005ca0503bd3",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/whiteboards/{boardId}/image-url",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/image-url/route.ts",
-    "sourceSha256": "3b1ed2ccdc6df37ac8e1b054d0119286f7cfa9cebdebf628b0a2a8bfa0e9a35c",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/whiteboards/{boardId}",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/whiteboards/[boardId]/route.ts",
-    "sourceSha256": "01b0389eabbf59ca08c60fff895258cd4a1421ad2398f76c4e3509a21177c260",
-    "runtime": "retained-next",
-    "policy": "retained-next-proxy",
-    "reason": "Unflipped; preserve existing Next handler and proxy guards"
-  },
-  {
-    "path": "/api/v1/workspaces/{wsId}/whiteboards",
-    "sideEffects": "unknown",
-    "shadow": "never",
-    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/whiteboards/route.ts",
-    "sourceSha256": "6e7c633ddc97f308da77be6062afaf4e74a4e1a679a950ad3389ee964376b1ef",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/whiteboards/[[...segments]]/route.ts",
+    "sourceSha256": "1e16fb50cae2347aed5d47f5481d702ecd3af31beecf6f8af8ad433a9b9e9a4f",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

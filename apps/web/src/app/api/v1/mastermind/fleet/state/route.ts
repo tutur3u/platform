@@ -1,0 +1,103 @@
+import { createHash } from 'node:crypto';
+import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
+import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
+import {
+  FLEET_MAX_BODY_BYTES,
+  type FleetAnswerRecord,
+  fleetStateSchema,
+} from '@/lib/mastermind/fleet/contract';
+import {
+  authorizeFleetPublisher,
+  FLEET_NO_STORE,
+  fleetError,
+  fleetRedis,
+} from '@/lib/mastermind/fleet/http';
+import {
+  readFleetAnswers,
+  readFleetState,
+  writeFleetState,
+} from '@/lib/mastermind/fleet/store';
+
+/** What the phone sees of an answer: never the reply text itself. */
+function answerSummary(answer: FleetAnswerRecord) {
+  return {
+    action: answer.action,
+    ...(answer.optionId ? { optionId: answer.optionId } : {}),
+    revision: answer.revision,
+    answeredAt: answer.answeredAt,
+    pickedUp: answer.pickedUpRevision >= answer.revision,
+  };
+}
+
+/** Owner read of the latest fleet snapshot with its answer receipts. */
+export const GET = withSessionAuth(
+  async (request, { user }) => {
+    if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
+    const redis = await fleetRedis();
+    if (!redis) return fleetError('unavailable', 503);
+
+    let stored: Awaited<ReturnType<typeof readFleetState>>;
+    let answers: Record<string, FleetAnswerRecord>;
+    try {
+      [stored, answers] = await Promise.all([
+        readFleetState(redis),
+        readFleetAnswers(redis),
+      ]);
+    } catch {
+      return fleetError('unavailable', 503);
+    }
+    if (!stored) return fleetError('not_published', 404);
+
+    const openIds = new Set(stored.state.decisions.map((d) => d.id));
+    const receipts = Object.fromEntries(
+      Object.values(answers)
+        .filter((answer) => openIds.has(answer.decisionId))
+        .map((answer) => [answer.decisionId, answerSummary(answer)])
+    );
+    const etag = `"${createHash('sha256')
+      .update(`${stored.etag}|${stored.receivedAt}|${JSON.stringify(receipts)}`)
+      .digest('hex')
+      .slice(0, 32)}"`;
+    const headers = { ...FLEET_NO_STORE, etag };
+    if (request.headers.get('if-none-match') === etag)
+      return new NextResponse(null, { status: 304, headers });
+
+    return NextResponse.json(
+      {
+        state: stored.state,
+        receivedAt: stored.receivedAt,
+        answers: receipts,
+      },
+      { headers }
+    );
+  },
+  {
+    rateLimit: { windowMs: 60_000, maxRequests: 60 },
+  }
+);
+
+/** Orchestrator publish: HMAC-signed, schema-validated, scrubbed, capped. */
+export async function PUT(request: Request) {
+  const auth = await authorizeFleetPublisher(request, FLEET_MAX_BODY_BYTES);
+  if (!auth.ok) return auth.response;
+
+  let json: unknown;
+  try {
+    json = JSON.parse(auth.body);
+  } catch {
+    return fleetError('invalid_json', 400);
+  }
+  const parsed = fleetStateSchema.safeParse(json);
+  if (!parsed.success) return fleetError('invalid_state', 422);
+
+  try {
+    const stored = await writeFleetState(auth.redis, parsed.data);
+    return NextResponse.json(
+      { accepted: true, etag: stored.etag, receivedAt: stored.receivedAt },
+      { headers: FLEET_NO_STORE }
+    );
+  } catch {
+    return fleetError('unavailable', 503);
+  }
+}

@@ -1,0 +1,77 @@
+import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
+import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
+import { fleetAnswerInputSchema } from '@/lib/mastermind/fleet/contract';
+import {
+  FLEET_NO_STORE,
+  fleetError,
+  fleetRedis,
+  readCappedText,
+} from '@/lib/mastermind/fleet/http';
+import {
+  readFleetState,
+  recordFleetAnswer,
+} from '@/lib/mastermind/fleet/store';
+
+const IDEMPOTENCY_KEY =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const DECISION_ID = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+
+/**
+ * Owner answer to an open fleet decision. It is stored as a durable record the
+ * orchestrator pulls; nothing here messages a fleet thread.
+ */
+export const POST = withSessionAuth<{ decisionId: string }>(
+  async (request, { user }, { decisionId }) => {
+    if (!DECISION_ID.test(decisionId)) return fleetError('not_found', 404);
+    if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
+
+    const idempotencyKey = request.headers.get('idempotency-key')?.trim() ?? '';
+    if (!IDEMPOTENCY_KEY.test(idempotencyKey))
+      return fleetError('idempotency_key_required', 400);
+
+    const body = await readCappedText(request, 8 * 1024);
+    if (body === null) return fleetError('payload_too_large', 413);
+    let json: unknown;
+    try {
+      json = JSON.parse(body);
+    } catch {
+      return fleetError('invalid_json', 400);
+    }
+    const parsed = fleetAnswerInputSchema.safeParse(json);
+    if (!parsed.success) return fleetError('invalid_answer', 422);
+
+    const redis = await fleetRedis();
+    if (!redis) return fleetError('unavailable', 503);
+    try {
+      const stored = await readFleetState(redis);
+      const decision = stored?.state.decisions.find((d) => d.id === decisionId);
+      if (!decision) return fleetError('decision_closed', 409);
+      if (
+        parsed.data.optionId &&
+        !decision.options.some((option) => option.id === parsed.data.optionId)
+      )
+        return fleetError('unknown_option', 422);
+
+      const answer = await recordFleetAnswer(
+        redis,
+        decisionId,
+        parsed.data,
+        idempotencyKey
+      );
+      return NextResponse.json(
+        {
+          action: answer.action,
+          ...(answer.optionId ? { optionId: answer.optionId } : {}),
+          revision: answer.revision,
+          answeredAt: answer.answeredAt,
+          pickedUp: answer.pickedUpRevision >= answer.revision,
+        },
+        { status: 202, headers: FLEET_NO_STORE }
+      );
+    } catch {
+      return fleetError('unavailable', 503);
+    }
+  },
+  { rateLimit: { windowMs: 60_000, maxRequests: 30 }, maxPayloadSize: 8192 }
+);
