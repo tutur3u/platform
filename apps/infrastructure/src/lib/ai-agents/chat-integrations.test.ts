@@ -1,5 +1,5 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createChatIntegrationChannel } from './chat-integrations';
 import type {
   AiAgentChannelConfig,
@@ -10,8 +10,13 @@ import type {
 vi.mock('server-only', () => ({}));
 
 const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
   getAiAgentById: vi.fn(),
   saveAiAgent: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
 vi.mock('./registry', () => ({
@@ -22,6 +27,10 @@ vi.mock('./registry', () => ({
 }));
 
 describe('chat integration AI-agent channels', () => {
+  afterEach(() => {
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getAiAgentById.mockResolvedValue(null);
