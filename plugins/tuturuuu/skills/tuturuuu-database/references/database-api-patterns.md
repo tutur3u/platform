@@ -267,6 +267,13 @@ No non-disposable apply is authorized by this verifier or the proposal migration
   `apps/docs/build/development-tools/employee-schema-qualification.mdx` for the
   exact input combination and staged BEFORE/AFTER boundary.
 
+- New workspaces seed `workspace_default_permissions` with `admin` for every
+  `MEMBER`. An RLS fixture that models a learner or other low-privilege member
+  must disable that row first, or every permission check passes. Client
+  inserts and renames on `workspace_user_groups` already fail on the private
+  name-index helper; grant it inside the rolled-back test to observe RLS alone.
+  See `education-course-roster-access.sql`.
+
 - Full-schema admission fixtures must assert membership in the target workspace.
   Auth bootstrap can independently create a personal workspace for a synthetic
   user; that membership does not admit them to another workspace.

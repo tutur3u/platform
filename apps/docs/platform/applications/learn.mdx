@@ -126,7 +126,16 @@ Courses, modules, quiz sets, flashcards, assignments, monthly reports, and marks
 
 ## Practice quizzes and graded tests
 
-`POST /api/v1/workspaces/[wsId]/education/quiz-attempts` is for practice module quizzes only. It accepts quizzes linked to a module in the enrolled course, directly or through a quiz set, and returns `is_correct` on each answer so the learner can review that practice. Do not reuse this route for a graded course test. That response would reveal the answer key before the score is published. Graded tests stay on the Tulearn course-test attempt APIs, which withhold `is_correct` until the score is published.
+`POST /api/v1/workspaces/[wsId]/education/quiz-attempts` is for practice module quizzes only. It returns `is_correct` on each answer so the learner can review that practice. Do not reuse this route for a graded course test. That response would reveal the answer key before the score is published. Graded tests stay on the Tulearn course-test attempt APIs, which withhold `is_correct` until the score is published.
+
+The practice list has one definition, `private.education_learner_practice_quizzes`.
+The practice `GET` serves it and the submit RPC accepts only it: the first 20
+published modules of a published, unarchived course, multiple-choice quizzes in
+the workspace with at least two options, quiz sets in the workspace, and at most
+20 distinct quizzes (module order, direct links first). Submit locks the learner
+link, course and enrollment rows `FOR SHARE` before grading, so a concurrent
+unlink, archive, unpublish or roster removal either waits for the attempt or
+makes it fail.
 
 Learner progress counts a module only when that module has a quiz in the same workspace, through a direct link or a quiz set. A content-only module is outside the total, so it does not stop the course from reaching 100% once every quiz-linked module is complete.
 
@@ -326,3 +335,46 @@ identity in the workspace and the parent's own acceptance (see Parent links).
 Regression coverage is in Teach's `src/test/*access.test.*` and
 `attendance-scope.test.ts`, plus Learn's parent-link, reset-access and vocabulary
 route tests. These rules apply to the active Teach and Learn surfaces.
+
+## Answer keys, grades and course writes
+
+Learners never read an answer key, an unreleased grade or another learner's
+roster change through the database. These rules apply to Learn, Teach and the
+web education routes; there is no learner-facing exception.
+
+- Matching pairs and ordering sequences live in
+  `private.workspace_quiz_answers`. `workspace_quizzes.content` holds only the
+  prompt: matching `{ pairs: [{ left }], choices }` and ordering
+  `{ items, shuffled: true }`. The shuffle depends on the quiz id and the
+  values, never on the authored order. Teach writers send the key as `answer`
+  and the server builds the prompt; a trigger moves any key a legacy writer
+  still puts in `content`. Teach editors and previews read the key from the
+  private answer.
+- Learn sends quiz content only through `projectLearnerQuizPrompt`, an
+  allowlist per quiz type, in both the lesson and the course-test paths.
+  Grading uses the private key, falling back only to legacy authored content,
+  never to a stored prompt.
+- `workspace_quizzes` is readable directly only with `view_user_groups` or
+  `update_user_groups` and writable only with `update_user_groups`. Learners
+  get prompts from the Learn server.
+- Courses (`workspace_user_groups`) and rosters
+  (`workspace_user_groups_users`) stay readable by workspace members. Creating
+  a course needs `create_user_groups`, editing needs `update_user_groups`,
+  deleting needs `delete_user_groups` or `update_user_groups`, and roster
+  changes need `update_user_groups`. Roster changes in the apps go through the
+  audited service-role RPCs.
+- Client roles have no access to `course_test_attempts`,
+  `course_test_attempt_answers` or `course_module_quiz_submissions`. The test
+  submit response and attempt reads show a score only after
+  `is_score_published`. Lesson option explanations follow the module's
+  `is_quiz_score_published`, because they often name the right answer.
+- New workspaces default every `MEMBER` to `admin`. A school that enrols
+  learners as members must turn that default off, or those learners keep
+  course-manager access.
+
+Regression coverage: the pgTAP files `education-quiz-key-access.sql`,
+`education-course-roster-access.sql`, `education-learner-grade-access.sql`,
+`education-learner-practice-links.sql` and
+`education-learner-attempt-submit.sql`; `quiz-answer-key.test.ts` in
+education-core; Learn's test `release.test.ts`; Teach's quiz `route.test.ts`;
+and the web `quiz-attempts` route test.
