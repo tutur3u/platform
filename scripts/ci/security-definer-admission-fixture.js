@@ -30,7 +30,11 @@ function sh(cwd, ...args) {
 }
 
 // A base commit with one migration and an empty trusted ledger, then a PR head.
-function fixture(t, change = (root) => write(root, NEW, definer('fresh'))) {
+function fixture(
+  t,
+  change = (root) => write(root, NEW, definer('fresh')),
+  configureBase
+) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'definer-admission-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   sh(root, 'init', '-q', '-b', 'main');
@@ -42,6 +46,7 @@ function fixture(t, change = (root) => write(root, NEW, definer('fresh'))) {
     'scripts/ci/security-definer-verified-findings.json'
   );
   write(root, 'scripts/ci/security-definer-verified-findings.json', '[]\n');
+  configureBase?.(root, ledger);
   sh(root, 'add', '-A');
   sh(root, 'commit', '-q', '-m', 'base');
   const base = sh(root, 'rev-parse', 'HEAD');
@@ -53,7 +58,7 @@ function fixture(t, change = (root) => write(root, NEW, definer('fresh'))) {
   );
   change(root);
   sh(root, 'add', '-A');
-  sh(root, 'commit', '-q', '-m', 'head');
+  sh(root, 'commit', '-q', '--allow-empty', '-m', 'head');
   const head = sh(root, 'rev-parse', 'HEAD');
   return { root, base, head, ledger, trusted };
 }
@@ -106,7 +111,7 @@ function api(bySha, calls = []) {
   };
 }
 
-function admit(f, records, { fetch, env = {} } = {}) {
+function admit(f, records, { fetch, env = {}, now } = {}) {
   fs.writeFileSync(f.ledger, JSON.stringify(records));
   return admitVerifiedFindings({
     root: f.root,
@@ -120,6 +125,7 @@ function admit(f, records, { fetch, env = {} } = {}) {
       ...env,
     },
     fetch,
+    now,
   });
 }
 

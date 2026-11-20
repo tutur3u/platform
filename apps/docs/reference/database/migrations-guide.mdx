@@ -1001,10 +1001,14 @@ are admitted by `scripts/ci/security-definer-admission.js`, which CI loads from
 the base commit. Base records are append-only. A change can add a record for
 a migration it adds. For an unchanged, earlier migration, the record must set
 `remediationMigration` to the repo-relative path of a later migration added in
-the same change. The guard checks the new migration at the attested head for a
+the same change and `remediationDigest` to its SHA-256 digest. The guard replays
+the routine identity across intervening migrations and checks the replacement
+at the attested head for a
 complete replacement of the exact routine, a pinned `pg_catalog, pg_temp`
 search path, and explicit revocation from `PUBLIC`, `anon`, and
-`authenticated`. Keep the proof static so the guard can verify it.
+`authenticated`. Keep the proof static so the guard can verify it. The proof
+is checked again whenever the trusted record is used. Removing or changing the
+remediation migration reopens the finding.
 A change may rebind a base record by changing only its `sourceDigest` for a
 migration it modifies. Every added or rebound record must match a finding the
 trusted guard recomputes over the head bytes.
@@ -1019,10 +1023,16 @@ records the guard scans with. Coverage: `security-definer-admission.test.js`,
 A verified record that reaches the trusted ledger without that attestation
 needs a release-authority risk acceptance in `.github/security/risk-acceptances.json`
 with `kind: "definer-records"`. It names an `RA-` ID, the exact records
-(file, line, rule, signature, digest), an owner, guards and an expiry of at most
-90 days. It carries no `advisory`, so it never changes a dependency finding.
+(file, line, rule, signature, finding digest and source digest), an owner,
+guards and an expiry of at most 90 days. It also pins the remediating migration
+path and digest. It carries no `advisory`, so it never changes a dependency finding.
 `security-findings-register.test.js` checks that every covered record exists in
-the definer ledger.
+the definer ledger. The definer guard stops accepting those records at
+`expiresAt`. To keep the findings closed, add only the proof fields to each
+scoped record and obtain the pinned release bot's `definer-rebinds` attestation
+on the exact head. For that conversion, the trusted acceptance must already
+name the remediating migration. Keep the acceptance row until every covered
+record has been converted.
 
 ### Changing a migration that security records pin
 

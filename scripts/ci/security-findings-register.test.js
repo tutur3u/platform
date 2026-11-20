@@ -271,12 +271,18 @@ test('every shipped risk acceptance is well formed and windowed', () => {
       assert.match(item.id, /^RA-\d{8}-[A-Z0-9-]+$/u);
       assert.equal(item.advisory, undefined, item.id);
       assert.ok(item.scope?.records?.length > 0, item.id);
+      assert.match(item.remediationDigest, /^[0-9a-f]{64}$/u, item.id);
       for (const record of item.scope.records)
         assert.ok(
           ledger.some((entry) =>
-            ['file', 'line', 'rule', 'signature', 'digest'].every(
-              (key) => entry[key] === record[key]
-            )
+            [
+              'file',
+              'line',
+              'rule',
+              'signature',
+              'digest',
+              'sourceDigest',
+            ].every((key) => entry[key] === record[key])
           ),
           `${item.id} covers a record missing from the definer ledger`
         );

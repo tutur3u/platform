@@ -24,6 +24,19 @@ const ATTESTER = Object.freeze({
   login: 'tuturuuu-release-bot',
   id: 348951514,
 });
+const RISK_ACCEPTANCES = '.github/security/risk-acceptances.json';
+const MIGRATION_PATH =
+  /^apps\/database\/supabase\/migrations\/(\d{14})_[\w-]+\.sql$/;
+const RECORD_KEYS = [
+  'file',
+  'line',
+  'rule',
+  'signature',
+  'digest',
+  'sourceDigest',
+];
+const sha256 = (source) =>
+  crypto.createHash('sha256').update(source).digest('hex');
 const STATUS_PAGES = 10;
 const SHA = /^[0-9a-f]{40}$/;
 
@@ -61,9 +74,13 @@ function withoutSourceDigest(entry) {
   return canonicalJson(rest);
 }
 
-// A rebind replaces a base record with one that differs ONLY in sourceDigest,
-// for a migration this change modified. Every other edit or removal still
-// fails as append-only. Leftovers are additions.
+// A rebind changes only sourceDigest or adds the proof fields for a scoped
+// legacy record. Both variants still require successful head attestation.
+function withoutRemediation(entry) {
+  const { remediationMigration, remediationDigest, ...legacy } = entry;
+  return legacy;
+}
+
 function splitLedger(trusted, proposed) {
   if (!Array.isArray(trusted) || !Array.isArray(proposed))
     throw new Error('Verified finding ledgers must be JSON arrays.');
@@ -86,6 +103,17 @@ function splitLedger(trusted, proposed) {
         entry.sourceDigest !== from.sourceDigest &&
         withoutSourceDigest(entry) === withoutSourceDigest(from)
     );
+    if (matches.length === 0 && !from.remediationMigration) {
+      matches.push(
+        ...leftovers.filter(
+          (entry) =>
+            entry &&
+            entry.remediationMigration &&
+            entry.remediationDigest &&
+            canonicalJson(withoutRemediation(entry)) === canonicalJson(from)
+        )
+      );
+    }
     if (matches.length !== 1)
       throw new Error(
         `Verified finding record changed or removed (base records are append-only): ${from.file}`
@@ -218,12 +246,21 @@ function modifiedMigrations(root, base, head) {
 
 // Each rebind must target a modified migration and match a finding the trusted
 // guard recomputed over the pull request's bytes.
-function bindRebinds(rebinds, findings, modified) {
-  for (const { to } of rebinds) {
+function bindRebinds(rebinds, findings, modified, proveLegacy) {
+  for (const { from, to } of rebinds) {
+    const upgraded = !from.remediationMigration && to.remediationMigration;
     if (
-      typeof to.file !== 'string' ||
-      !to.file.startsWith(MIGRATIONS) ||
-      !modified.has(to.file)
+      (upgraded && !proveLegacy?.(from, to)) ||
+      (!upgraded && to.remediationMigration)
+    )
+      throw new Error(
+        `Verified finding rebind lacks an approved remediation: ${to.file}`
+      );
+    if (
+      !upgraded &&
+      (typeof to.file !== 'string' ||
+        !to.file.startsWith(MIGRATIONS) ||
+        !modified.has(to.file))
     )
       throw new Error(
         `Verified finding rebind must target a migration modified by this change: ${to.file}`
@@ -252,7 +289,9 @@ function bindAdditions(additions, findings, added, proveFixForward) {
     if (
       typeof entry.file !== 'string' ||
       !entry.file.startsWith(MIGRATIONS) ||
-      (!added.has(entry.file) && !proveFixForward?.(entry))
+      (entry.remediationMigration
+        ? !proveFixForward?.(entry)
+        : !added.has(entry.file))
     )
       throw new Error(
         `Verified finding addition must target a migration added by this change or prove a fix-forward: ${entry.file}`
@@ -349,6 +388,141 @@ async function verifyAttestation({
   );
 }
 
+function readRiskAcceptances(root, env) {
+  let source;
+  if (SHA.test(env.BASE_SHA ?? '')) {
+    try {
+      source = git(root, ['show', `${env.BASE_SHA}:${RISK_ACCEPTANCES}`]);
+    } catch {
+      // A base predating the acceptance register has no exceptions.
+      git(root, ['cat-file', '-e', `${env.BASE_SHA}^{commit}`]);
+      return [];
+    }
+  } else {
+    const file = path.join(root, RISK_ACCEPTANCES);
+    if (!fs.existsSync(file)) return [];
+    source = fs.readFileSync(file, 'utf8');
+  }
+  const ledger = JSON.parse(source);
+  if (
+    ledger.format !== 'tuturuuu-risk-acceptances/v1' ||
+    !Array.isArray(ledger.acceptances)
+  )
+    throw new Error('Invalid trusted risk acceptance register.');
+  return ledger.acceptances.filter((entry) => entry.kind === 'definer-records');
+}
+
+function riskFor(risks, entry) {
+  return risks.find(
+    (risk) =>
+      risk.scope?.ledger === `scripts/ci/${LEDGER}` &&
+      risk.scope.records?.some((record) =>
+        RECORD_KEYS.every(
+          (key) =>
+            record[key] === entry[key] ||
+            (key === 'sourceDigest' && record[key] === undefined)
+        )
+      )
+  );
+}
+
+function riskActive(risk, now) {
+  const proposed = Date.parse(risk.proposedAt);
+  const approved = Date.parse(risk.approvedAt);
+  const expires = Date.parse(risk.expiresAt);
+  return (
+    risk.status === 'accepted' &&
+    Boolean(risk.approvedBy?.trim()) &&
+    proposed <= approved &&
+    approved <= now &&
+    now < expires &&
+    expires - proposed <= 90 * 24 * 60 * 60 * 1000
+  );
+}
+
+function remediationValid(entry, paths, read, verify) {
+  const originalVersion = MIGRATION_PATH.exec(entry.file)?.[1];
+  const remediationVersion = MIGRATION_PATH.exec(
+    entry.remediationMigration
+  )?.[1];
+  if (
+    !verify ||
+    !originalVersion ||
+    !remediationVersion ||
+    remediationVersion <= originalVersion ||
+    !paths.includes(entry.file) ||
+    !paths.includes(entry.remediationMigration)
+  )
+    return false;
+  const original = read(entry.file);
+  const sql = read(entry.remediationMigration);
+  if (
+    original === undefined ||
+    sql === undefined ||
+    sha256(original) !== entry.sourceDigest ||
+    sha256(sql) !== entry.remediationDigest
+  )
+    return false;
+  const ordered = paths
+    .filter((file) => {
+      const version = MIGRATION_PATH.exec(file)?.[1];
+      return (
+        version && version >= originalVersion && version <= remediationVersion
+      );
+    })
+    .sort();
+  const versions = new Set(ordered.map((file) => MIGRATION_PATH.exec(file)[1]));
+  if (versions.size !== ordered.length) return false;
+  const intervening = ordered.slice(1, -1).map(read);
+  return (
+    intervening.every((source) => source !== undefined) &&
+    verify(sql, { original, entry, intervening })
+  );
+}
+
+function trustedRecordsForScan(
+  root,
+  trusted,
+  verifyRemediation,
+  risks = readRiskAcceptances(root, {}),
+  now = Date.now()
+) {
+  const workingPaths = () =>
+    git(root, ['ls-files', '-z', '--', MIGRATIONS]).split('\0').filter(Boolean);
+  const diskRead = (file) => {
+    try {
+      return fs.readFileSync(path.join(root, file), 'utf8');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      return undefined;
+    }
+  };
+  return trusted.filter((entry) => {
+    if (entry.remediationMigration)
+      return remediationValid(
+        entry,
+        workingPaths(),
+        diskRead,
+        verifyRemediation
+      );
+    const risk = riskFor(risks, entry);
+    if (!risk) return true;
+    return (
+      riskActive(risk, now) &&
+      remediationValid(
+        {
+          ...entry,
+          remediationMigration: risk.remediatedBy,
+          remediationDigest: risk.remediationDigest,
+        },
+        workingPaths(),
+        diskRead,
+        verifyRemediation
+      )
+    );
+  });
+}
+
 // Entry point for the trusted guard. `scan` runs checkRepository with the given
 // verified records; additions are never used to suppress findings unless they
 // pass every check above.
@@ -359,6 +533,7 @@ async function admitVerifiedFindings({
   verifyRemediation,
   env = process.env,
   fetch = globalThis.fetch,
+  now = Date.now(),
 }) {
   const read = (directory) =>
     JSON.parse(fs.readFileSync(path.join(directory, LEDGER), 'utf8'));
@@ -367,38 +542,77 @@ async function admitVerifiedFindings({
     trusted,
     read(path.join(root, 'scripts/ci'))
   );
-  const findings = scan(trusted);
+  const risks = readRiskAcceptances(root, env);
+  const pendingUpgrade = new Set(
+    rebinds
+      .filter(
+        ({ from, to }) => !from.remediationMigration && to.remediationMigration
+      )
+      .map(({ from }) => from)
+  );
+  const continuingLegacyRisks = trusted
+    .filter(
+      (entry) => !entry.remediationMigration && !pendingUpgrade.has(entry)
+    )
+    .map((entry) => riskFor(risks, entry))
+    .filter(Boolean);
+  if (continuingLegacyRisks.length) {
+    const proposedRisks = readRiskAcceptances(root, {});
+    for (const risk of continuingLegacyRisks) {
+      if (
+        !proposedRisks.some(
+          (entry) => canonicalJson(entry) === canonicalJson(risk)
+        )
+      )
+        throw new Error(
+          `Definer risk acceptance changed before its records were attested: ${risk.id}`
+        );
+    }
+  }
+  const active = trustedRecordsForScan(
+    root,
+    trusted.filter((entry) => !pendingUpgrade.has(entry)),
+    verifyRemediation,
+    risks,
+    now
+  );
+  const findings = scan(active);
   if (!additions.length && !rebinds.length) return findings;
   const { base, head } = resolveShas(root, env);
-  if (rebinds.length)
-    bindRebinds(rebinds, findings, modifiedMigrations(root, base, head));
   const added = addedMigrations(root, base, head);
-  const proveFixForward = (entry) => {
-    const remediation = entry.remediationMigration;
-    const migrationVersion =
-      /^apps\/database\/supabase\/migrations\/(\d{14})_[\w-]+\.sql$/;
-    const originalVersion = migrationVersion.exec(entry.file)?.[1];
-    const remediationVersion = migrationVersion.exec(remediation)?.[1];
-    if (
-      !verifyRemediation ||
-      !originalVersion ||
-      !remediationVersion ||
-      remediationVersion <= originalVersion ||
-      !added.has(remediation)
-    )
-      return false;
-    const original = git(root, ['show', `${base}:${entry.file}`]);
-    if (
-      original !== git(root, ['show', `${head}:${entry.file}`]) ||
-      crypto.createHash('sha256').update(original).digest('hex') !==
-        entry.sourceDigest
-    )
-      return false;
-    return verifyRemediation(
-      git(root, ['show', `${head}:${remediation}`]),
-      entry
+  const headPaths = git(root, [
+    'ls-tree',
+    '-r',
+    '--name-only',
+    '-z',
+    head,
+    '--',
+    MIGRATIONS,
+  ])
+    .split('\0')
+    .filter(Boolean);
+  const headRead = (file) => git(root, ['show', `${head}:${file}`]);
+  const prove = (entry) =>
+    headRead(entry.file) === git(root, ['show', `${base}:${entry.file}`]) &&
+    remediationValid(entry, headPaths, headRead, verifyRemediation);
+  const proveFixForward = (entry) =>
+    added.has(entry.remediationMigration) && prove(entry);
+  const proveLegacy = (from, to) => {
+    const risk = riskFor(risks, from);
+    return (
+      risk?.remediatedBy === to.remediationMigration &&
+      risk.remediationDigest === to.remediationDigest &&
+      riskActive(risk, Date.parse(risk.approvedAt)) &&
+      prove(to)
     );
   };
+  if (rebinds.length)
+    bindRebinds(
+      rebinds,
+      findings,
+      modifiedMigrations(root, base, head),
+      proveLegacy
+    );
   const remaining = bindAdditions(additions, findings, added, proveFixForward);
   const description = await verifyAttestation({
     additions,
@@ -415,7 +629,13 @@ async function admitVerifiedFindings({
   if (!rebinds.length) return remaining;
   return bindAdditions(
     additions,
-    scan(applyRebinds(trusted, rebinds)),
+    scan(
+      applyRebinds(active, rebinds).concat(
+        rebinds
+          .filter(({ from }) => pendingUpgrade.has(from))
+          .map(({ to }) => to)
+      )
+    ),
     added,
     proveFixForward
   );
@@ -435,6 +655,7 @@ module.exports = {
   recordsDigest,
   splitLedger,
   splitVerifiedRecords,
+  trustedRecordsForScan,
   verifyAttestation,
 };
 

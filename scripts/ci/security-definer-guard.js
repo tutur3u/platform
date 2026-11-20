@@ -17,12 +17,16 @@ const {
   reviewedBlockMatches,
   verifyRemediation: verifyStaticRemediation,
 } = require('./security-definer-blocks');
-const { admitVerifiedFindings } = require('./security-definer-admission');
-const verifyRemediation = (sql, entry) =>
-  verifyStaticRemediation(sql, entry, {
+const {
+  admitVerifiedFindings,
+  trustedRecordsForScan,
+} = require('./security-definer-admission');
+const verifyRemediation = (sql, proof) =>
+  verifyStaticRemediation(sql, proof, {
     catalogEntry,
     lintMigration,
     parseAcl,
+    routineTarget,
     targetMatches,
   });
 const MIGRATIONS = 'apps/database/supabase/migrations/';
@@ -39,7 +43,6 @@ const {
   routineKey,
   signatureTypes,
 } = require('./sql-grant-identifiers');
-
 function unsafeGuards(body) {
   const code = values(tokens(body).filter((t) => t.kind === 'word')).replace(
     / :: (?:[\w]+ \. )?[\w]+(?: \[ \])?/g,
@@ -102,7 +105,6 @@ const BUILTIN_TYPES = new Set(
 function keyword(token, value) {
   return token?.kind === 'word' && !token.quoted && token.value === value;
 }
-
 function splitList(ts) {
   const groups = [];
   let depth = 0;
@@ -118,7 +120,6 @@ function splitList(ts) {
   if (group.length) groups.push(group);
   return groups;
 }
-
 function argumentType(ts) {
   let parts = [...ts];
   if (keyword(parts[0], 'out')) return null;
@@ -163,7 +164,6 @@ function argumentType(ts) {
       : null) ?? { key: values(parts), ambiguous: true }
   );
 }
-
 function routineTarget(ts) {
   let i = 1;
   const names = [ts[0]?.value];
@@ -189,18 +189,15 @@ function routineTarget(ts) {
     args,
   };
 }
-
 function catalogEntry(fn) {
   const start =
     fn.tokens.findIndex((t) => ['function', 'procedure'].includes(t.value)) + 1;
   const end = identity(fn.tokens, start, true).end;
   return { ...fn, target: routineTarget(fn.tokens.slice(start, end)) };
 }
-
 function catalogKey(fn) {
   return JSON.stringify({ parts: fn.target.parts, args: fn.target.args });
 }
-
 function recipients(ts) {
   const end = ts.findIndex((t) =>
     ['with', 'granted', 'cascade', 'restrict'].some((v) => keyword(t, v))
@@ -210,7 +207,6 @@ function recipients(ts) {
     .filter((t) => ![',', 'group'].some((v) => keyword(t, v)))
     .map((t) => t.value);
 }
-
 function parseAcl(ts) {
   const action = ts[0]?.value;
   if (!['grant', 'revoke'].includes(action)) return null;
@@ -252,7 +248,6 @@ function parseAcl(ts) {
   if (!targets.length) throw new Error('Missing ACL target');
   return { action, roles, targets };
 }
-
 function targetMatches(target, fn, action) {
   const known = fn.target;
   if (
@@ -268,7 +263,6 @@ function targetMatches(target, fn, action) {
   if (ambiguous) return action === 'grant';
   return target.args.every((a, i) => a.key === known.args[i].key);
 }
-
 function aclStatements(parsed, fn) {
   return parsed
     .filter((acl) =>
@@ -278,7 +272,6 @@ function aclStatements(parsed, fn) {
     )
     .map(({ action, roles }) => ({ action, roles }));
 }
-
 function reviewFinding(ts, rule, sql) {
   return {
     function: '<migration>',
@@ -300,7 +293,6 @@ function reviewFinding(ts, rule, sql) {
       .digest('hex'),
   };
 }
-
 function opaqueFindings(ts, sql) {
   const code = values(ts.filter((t) => t.kind === 'word'));
   const findings = [];
@@ -508,7 +500,12 @@ function checkRepository({
   verifiedFindings,
 } = {}) {
   const verified =
-    verifiedFindings ?? require('./security-definer-verified-findings.json');
+    verifiedFindings ??
+    trustedRecordsForScan(
+      root,
+      require('./security-definer-verified-findings.json'),
+      verifyRemediation
+    );
   const historical =
     historicalBlocks ?? require('./security-definer-historical-blocks.json');
   const blocks =

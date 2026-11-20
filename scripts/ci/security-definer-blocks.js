@@ -1,6 +1,12 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { tokens, statements, definitions, values } = require('./security-sql');
+const {
+  tokens,
+  statements,
+  definitions,
+  identity,
+  values,
+} = require('./security-sql');
 
 function assertShrinkingBlocks(reviewed, proposed) {
   const keys = new Set(
@@ -103,18 +109,123 @@ function verifiedFindingMatches(entry, file, finding, sourceDigest) {
 module.exports.readReviewedFile = readReviewedFile;
 module.exports.verifiedFindingMatches = verifiedFindingMatches;
 
+const keyword = (token, value) =>
+  token?.kind === 'word' && !token.quoted && token.value === value;
+
+function routineStatement(ts, start, routineTarget) {
+  const end = identity(ts, start).end;
+  const target = routineTarget(ts.slice(start, end));
+  if (
+    !target.qualified ||
+    target.parts.length !== 2 ||
+    target.args.some((arg) => arg.ambiguous)
+  )
+    return null;
+  return { target, end };
+}
+
+function routineKey(target) {
+  return JSON.stringify([target.parts, target.args.map(({ key }) => key)]);
+}
+
+function originalTarget(sql, entry, routineTarget) {
+  const matches = statements(sql).flatMap((ts) => {
+    const line = sql.slice(0, ts[0].start).split('\n').length;
+    if (line !== entry.line) return [];
+    const start =
+      ts.findIndex((t) => keyword(t, 'function') || keyword(t, 'procedure')) +
+      1;
+    if (!start || !['create', 'alter'].some((verb) => keyword(ts[0], verb)))
+      return [];
+    if (
+      identity(ts, start, keyword(ts[0], 'create')).signature !==
+      entry.signature
+    )
+      return [];
+    const parsed = routineStatement(ts, start, routineTarget);
+    return parsed ? [{ ...parsed, offset: ts.at(-1).end }] : [];
+  });
+  return matches.length === 1 ? matches[0] : null;
+}
+
+function replayRoutineIdentity(target, migrations, routineTarget) {
+  for (const sql of migrations) {
+    for (const ts of statements(sql)) {
+      const alter = keyword(ts[0], 'alter');
+      const drop = keyword(ts[0], 'drop');
+      if (['do', 'call', 'execute'].some((verb) => keyword(ts[0], verb)))
+        return null;
+      if (!alter && !drop) continue;
+      if (
+        drop &&
+        (keyword(ts[1], 'owned') ||
+          keyword(ts[1], 'extension') ||
+          ts.some((token) => keyword(token, 'cascade')))
+      )
+        return null;
+      if (
+        keyword(ts[1], 'schema') &&
+        ts.some((token) => keyword(token, 'rename'))
+      )
+        return null;
+      if (drop && keyword(ts[1], 'schema')) return null;
+      if (
+        !['function', 'procedure', 'routine'].some((kind) =>
+          keyword(ts[1], kind)
+        )
+      )
+        continue;
+      const rename = ts.findIndex((token) => keyword(token, 'rename'));
+      const move = ts.findIndex(
+        (token, index) =>
+          keyword(token, 'set') && keyword(ts[index + 1], 'schema')
+      );
+      if (!drop && rename < 0 && move < 0) continue;
+      if (drop) return null;
+      const parsed = routineStatement(ts, 2, routineTarget);
+      if (!parsed) return null;
+      if (routineKey(parsed.target) !== routineKey(target)) continue;
+      const parts = [...target.parts];
+      if (
+        parsed.end === rename &&
+        keyword(ts[rename + 1], 'to') &&
+        ts[rename + 2]?.kind === 'word'
+      )
+        parts[1] = ts[rename + 2].value;
+      else if (parsed.end === move && ts[move + 2]?.kind === 'word')
+        parts[0] = ts[move + 2].value;
+      else return null;
+      target = { ...target, parts };
+    }
+  }
+  return target;
+}
+
 // Fix-forward proof is restricted to static routine definitions and ACLs.
 function verifyRemediation(
   sql,
-  entry,
-  { catalogEntry, lintMigration, parseAcl, targetMatches }
+  { original, entry, intervening },
+  { catalogEntry, lintMigration, parseAcl, routineTarget, targetMatches }
 ) {
-  const keyword = (token, value) =>
-    token?.kind === 'word' && !token.quoted && token.value === value;
+  const source = originalTarget(original, entry, routineTarget);
+  if (!source) return false;
+  const target = replayRoutineIdentity(
+    source.target,
+    [original.slice(source.offset), ...intervening],
+    routineTarget
+  );
+  if (!target) return false;
   const defs = definitions(sql);
-  const matches = defs.filter((fn) => fn.signature === entry.signature);
+  const matches = defs
+    .map(catalogEntry)
+    .filter(
+      ({ target: candidate }) =>
+        candidate.args &&
+        candidate.args.every((arg) => !arg.ambiguous) &&
+        routineKey(candidate) === routineKey(target)
+    );
   if (matches.length !== 1 || lintMigration(sql).length) return false;
-  const fn = catalogEntry(matches[0]);
+  const [fn] = matches;
   if (
     !fn.target.qualified ||
     !keyword(fn.tokens[1], 'or') ||
