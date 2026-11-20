@@ -13,6 +13,7 @@
   "apps/devbox-control/src/": ["packages/sdk"],
   "apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/": ["packages/ui"],
   "apps/finance/messages/": ["packages/ui"],
+  "apps/finance/src/lib/mounted-auth": ["apps/web"],
   "apps/gateway/src/": ["apps/web"],
   "apps/infrastructure/e2e/fixtures/": ["apps/database"],
   "apps/infrastructure/src/lib/mobile-calendar/": ["apps/calendar"],
