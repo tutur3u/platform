@@ -1,18 +1,18 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BookOpen, ChevronLeft, ChevronRight, Play } from '@tuturuuu/icons';
+import { ChevronLeft, Play } from '@tuturuuu/icons';
 import {
   getTulearnCourse,
   getTulearnCourseModule,
   type TulearnCourseDetail,
 } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
-import { cn } from '@tuturuuu/utils/format';
+import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { CourseLearningPath } from './course-learning-path';
 import { ModuleDetailView } from './module-detail-view';
 import {
   EmptyState,
@@ -34,9 +34,22 @@ export function CourseDetailPage({
   const t = useTranslations();
   const studentId = useStudentId();
   const requestedModuleId = useSearchParams().get('moduleId');
-  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(
-    requestedModuleId
-  );
+  const selectionScope = JSON.stringify([
+    wsId,
+    courseId,
+    studentId,
+    requestedModuleId,
+  ]);
+  const [selection, setSelection] = useState<{
+    scope: string;
+    moduleId: string | null;
+  }>();
+  const selectedModuleId =
+    selection?.scope === selectionScope
+      ? selection.moduleId
+      : requestedModuleId;
+  const setSelectedModuleId = (moduleId: string | null) =>
+    setSelection({ scope: selectionScope, moduleId });
   const coursesHref = useStudentHref(`/${wsId}/courses`);
 
   const course = useQuery({
@@ -49,7 +62,7 @@ export function CourseDetailPage({
   const selectedModule =
     modules.find((module) => module.id === selectedModuleId) ?? null;
   const selectedModuleDetail = useQuery({
-    enabled: Boolean(selectedModule && !selectedModule.locked),
+    enabled: Boolean(selectedModule?.is_published && !selectedModule.locked),
     queryFn: () =>
       getTulearnCourseModule(
         wsId,
@@ -98,7 +111,7 @@ export function CourseDetailPage({
       : null;
 
   if (selectedModule) {
-    if (selectedModule.locked) {
+    if (selectedModule.locked || !selectedModule.is_published) {
       return (
         <EmptyState
           action={
@@ -138,11 +151,17 @@ export function CourseDetailPage({
         courseModule={selectedModuleDetail.data}
         group={group}
         moduleIndex={selectedIndex}
-        nextModule={nextModule && !nextModule.locked ? nextModule : undefined}
+        nextModule={
+          nextModule?.is_published && !nextModule.locked
+            ? nextModule
+            : undefined
+        }
         onBack={() => setSelectedModuleId(null)}
         onNavigate={(id) => setSelectedModuleId(id)}
         previousModule={
-          previousModule && !previousModule.locked ? previousModule : undefined
+          previousModule?.is_published && !previousModule.locked
+            ? previousModule
+            : undefined
         }
         totalModules={modules.length}
       />
@@ -151,211 +170,98 @@ export function CourseDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link
-        className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 font-bold text-sm transition"
-        href={coursesHref}
-      >
-        <ChevronLeft className="h-4 w-4" />
-        {t('common.back')}
-      </Link>
+      <Button asChild size="sm" variant="outline">
+        <Link href={coursesHref}>
+          <ChevronLeft aria-hidden />
+          {t('common.back')}
+        </Link>
+      </Button>
 
-      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
-        <aside className="space-y-4">
-          <SurfaceCard className="p-5">
-            <Badge className="mb-3 border border-border bg-dynamic-yellow/15 font-bold text-foreground">
-              <BookOpen className="mr-1.5 h-3 w-3" />
-              {t('courses.sharedCourse')}
-            </Badge>
-            <h2 className="font-semibold text-xl leading-tight">
-              {group.name ?? t('courses.untitled')}
-            </h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {t('courses.publishedModules', { count: modules.length })}
-            </p>
-          </SurfaceCard>
+      <div>
+        <h1 className="font-semibold text-3xl leading-tight tracking-tight">
+          {group.name ?? t('courses.untitled')}
+        </h1>
+        {group.description && (
+          <p className="mt-2 text-muted-foreground text-sm">
+            {group.description}
+          </p>
+        )}
+      </div>
 
-          <SurfaceCard className="p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm">
-                {t('courses.courseOutline')}
-              </h3>
-              <span className="text-muted-foreground text-xs">
-                {modules.length}
-              </span>
-            </div>
-            <div className="mt-3 space-y-1.5">
-              {modules.map((courseModule, index) => (
-                <button
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition',
-                    courseModule.locked
-                      ? 'cursor-not-allowed opacity-60'
-                      : 'hover:bg-muted/60'
-                  )}
-                  disabled={courseModule.locked}
-                  key={courseModule.id}
-                  onClick={() => setSelectedModuleId(courseModule.id)}
-                  type="button"
-                >
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg border border-border bg-muted font-bold text-[10px]">
-                    {index + 1}
-                  </span>
-                  <span className="truncate">
-                    {courseModule.name ?? t('courses.untitled')}
-                  </span>
-                  {courseModule.locked ? (
-                    <span className="ml-auto text-[10px] text-muted-foreground uppercase">
-                      {t('courses.locked')}
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          </SurfaceCard>
-        </aside>
+      <CourseLearningPath
+        course={course.data}
+        onOpenModule={setSelectedModuleId}
+      />
 
-        <div className="space-y-5">
+      {/* Tests Section */}
+      {tests.length > 0 && (
+        <div className="space-y-4 border-border border-t pt-6">
           <div>
             <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
-              {t('courses.modules')}
+              {t('courses.tests')}
             </p>
-            <h1 className="mt-1 font-semibold text-3xl leading-tight tracking-normal">
-              {group.name ?? t('courses.untitled')}
-            </h1>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {t('courses.selectModule')}
-            </p>
+            <h2 className="mt-1 font-semibold text-2xl leading-tight tracking-normal">
+              {t('courses.courseAssessments')}
+            </h2>
           </div>
 
           <div className="space-y-3">
-            {modules.map((courseModule, index) => {
+            {tests.map((test, index) => {
               return (
-                <SurfaceCard key={courseModule.id} className="p-0">
-                  <button
-                    className={cn(
-                      'flex w-full items-center gap-4 px-5 py-4 text-left transition',
-                      courseModule.locked
-                        ? 'cursor-not-allowed opacity-60'
-                        : 'hover:bg-muted/30'
-                    )}
-                    disabled={courseModule.locked}
-                    onClick={() => setSelectedModuleId(courseModule.id)}
-                    type="button"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-primary font-bold text-primary-foreground text-sm">
-                      {index + 1}
+                <SurfaceCard key={test.id} className="p-0">
+                  <div className="flex w-full items-center gap-4 px-5 py-4 text-left">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15 font-bold text-foreground text-sm">
+                      T{index + 1}
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate font-bold text-base">
-                        {courseModule.name ?? t('courses.untitled')}
+                        {test.name}
                       </h3>
-                      <div className="mt-0.5 flex items-center gap-3 text-muted-foreground text-xs">
-                        {courseModule.counts.quizzes > 0 && (
+                      {test.description && (
+                        <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
+                          {test.description}
+                        </p>
+                      )}
+                      <div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
+                        {test.start_at && (
                           <span>
-                            {t('courses.quizCount', {
-                              count: courseModule.counts.quizzes,
+                            {t('courses.testDetailsStartAt')}:{' '}
+                            {new Date(test.start_at).toLocaleString([], {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
                             })}
                           </span>
                         )}
-                        {courseModule.counts.flashcards > 0 && (
+                        {test.duration_in_minutes && (
                           <span>
-                            {t('courses.flashcardCount', {
-                              count: courseModule.counts.flashcards,
+                            {t('courses.testDetailsDuration')}:{' '}
+                            {t('courses.durationMinutes', {
+                              minutes: test.duration_in_minutes,
                             })}
                           </span>
                         )}
-                        {courseModule.locked ? (
-                          <span>{t('courses.locked')}</span>
-                        ) : null}
+                        <span>{t('courses.onlineTest')}</span>
                       </div>
                     </div>
-                    <span className="flex items-center gap-1 font-bold text-muted-foreground text-sm transition group-hover:text-foreground">
-                      {courseModule.locked
-                        ? t('courses.locked')
-                        : t('courses.openModule')}
-                      {!courseModule.locked ? (
-                        <ChevronRight className="h-4 w-4" />
-                      ) : null}
-                    </span>
-                  </button>
+
+                    <Link
+                      href={
+                        studentId
+                          ? `/${wsId}/courses/${courseId}/tests/${test.id}?studentId=${studentId}`
+                          : `/${wsId}/courses/${courseId}/tests/${test.id}`
+                      }
+                      className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs transition"
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      {t('courses.startTest')}
+                    </Link>
+                  </div>
                 </SurfaceCard>
               );
             })}
           </div>
-
-          {!modules.length ? <EmptyState label={t('courses.empty')} /> : null}
-
-          {/* Tests Section */}
-          {tests.length > 0 && (
-            <div className="space-y-4 border-border border-t pt-6">
-              <div>
-                <p className="font-bold text-muted-foreground text-xs uppercase tracking-widest">
-                  {t('courses.tests')}
-                </p>
-                <h2 className="mt-1 font-semibold text-2xl leading-tight tracking-normal">
-                  {t('courses.courseAssessments')}
-                </h2>
-              </div>
-
-              <div className="space-y-3">
-                {tests.map((test, index) => {
-                  return (
-                    <SurfaceCard key={test.id} className="p-0">
-                      <div className="flex w-full items-center gap-4 px-5 py-4 text-left">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15 font-bold text-foreground text-sm">
-                          T{index + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="truncate font-bold text-base">
-                            {test.name}
-                          </h3>
-                          {test.description && (
-                            <p className="mt-0.5 line-clamp-2 text-muted-foreground text-xs leading-relaxed">
-                              {test.description}
-                            </p>
-                          )}
-                          <div className="mt-0.5 flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
-                            {test.start_at && (
-                              <span>
-                                {t('courses.testDetailsStartAt')}:{' '}
-                                {new Date(test.start_at).toLocaleString([], {
-                                  dateStyle: 'short',
-                                  timeStyle: 'short',
-                                })}
-                              </span>
-                            )}
-                            {test.duration_in_minutes && (
-                              <span>
-                                {t('courses.testDetailsDuration')}:{' '}
-                                {t('courses.durationMinutes', {
-                                  minutes: test.duration_in_minutes,
-                                })}
-                              </span>
-                            )}
-                            <span>{t('courses.onlineTest')}</span>
-                          </div>
-                        </div>
-
-                        <Link
-                          href={
-                            studentId
-                              ? `/${wsId}/courses/${courseId}/tests/${test.id}?studentId=${studentId}`
-                              : `/${wsId}/courses/${courseId}/tests/${test.id}`
-                          }
-                          className="inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-primary px-3.5 py-1.5 font-bold text-primary-foreground text-xs transition"
-                        >
-                          <Play className="h-3.5 w-3.5" />
-                          {t('courses.startTest')}
-                        </Link>
-                      </div>
-                    </SurfaceCard>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
