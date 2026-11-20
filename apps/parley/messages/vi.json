@@ -4525,6 +4525,7 @@
       "room_mira_failed": "Không thể lưu lựa chọn của bạn",
       "room_mira_pause": "Tạm dừng",
       "room_mira_paused": "Bạn đã tạm dừng Mira trong phòng. Mira không thể trả lời cho đến khi bạn chọn Tiếp tục.",
+      "room_mira_pausing": "Đang tạm dừng…",
       "room_mira_prompt": "Cho phép @mira trả lời tại đây? Mira chỉ đọc tin nhắn của những người chọn Tiếp tục và chỉ trả lời khi mọi người trong cuộc họp đều đã chọn.",
       "room_mira_ready": "Mọi người đã chọn Tiếp tục. @mira có thể trả lời trong cuộc trò chuyện này.",
       "room_mira_title": "Mira trong phòng",

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Pause, Users } from '@tuturuuu/icons';
+import { Check, Loader2, Pause, Users } from '@tuturuuu/icons';
 import {
   type RoomMiraConsent,
   readRoomMiraConsent,
@@ -28,8 +28,12 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
   const consent = useQuery({
     queryKey: roomMiraConsentKey(meetingId),
     queryFn: () => readRoomMiraConsent(meetingId),
-    // People join and choose while the panel is open.
-    refetchInterval: 15000,
+    // People join and choose while the panel is open; a pending Pause settles
+    // within the in-flight request, so it refreshes sooner.
+    refetchInterval: (query) => {
+      const current = query.state.data;
+      return current?.available && current.pausing ? 2000 : 15000;
+    },
     retry: false,
   });
   const data = consent.data;
@@ -46,8 +50,10 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
   });
   if (!data?.available) return null;
 
-  const status =
-    data.choice === 'mute'
+  const pausing = data.pausing === true;
+  const status = pausing
+    ? t('room_mira_pausing')
+    : data.choice === 'mute'
       ? t('room_mira_paused')
       : data.choice !== 'continue'
         ? t('room_mira_prompt')
@@ -63,40 +69,46 @@ export function RoomMiraNotice({ meetingId }: { meetingId: string }) {
       <MiraAvatar size={20} />
       <div className="min-w-0 flex-1 space-y-2">
         <p className="font-medium">{t('room_mira_title')}</p>
-        <p className="text-muted-foreground" role="status">
+        <p
+          className="inline-flex items-center gap-1.5 text-muted-foreground"
+          role="status"
+        >
+          {pausing && <Loader2 className="size-3.5 animate-spin" />}
           {status}
         </p>
-        <div className="flex flex-wrap gap-2">
-          {data.choice !== 'continue' && (
-            <Button
-              type="button"
-              size="sm"
-              disabled={choose.isPending}
-              onClick={() => choose.mutate('continue')}
-            >
-              <Check className="size-4" />
-              {t('room_mira_continue')}
-            </Button>
-          )}
-          {data.choice !== 'mute' && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={choose.isPending}
-              onClick={() => choose.mutate('mute')}
-            >
-              <Pause className="size-4" />
-              {t('room_mira_pause')}
-            </Button>
-          )}
-          {data.choice === 'continue' && !data.fence.ready && (
-            <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
-              <Users className="size-3.5" />
-              {data.fence.admitted - data.fence.pending}/{data.fence.admitted}
-            </span>
-          )}
-        </div>
+        {!pausing && (
+          <div className="flex flex-wrap gap-2">
+            {data.choice !== 'continue' && (
+              <Button
+                type="button"
+                size="sm"
+                disabled={choose.isPending}
+                onClick={() => choose.mutate('continue')}
+              >
+                <Check className="size-4" />
+                {t('room_mira_continue')}
+              </Button>
+            )}
+            {data.choice !== 'mute' && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={choose.isPending}
+                onClick={() => choose.mutate('mute')}
+              >
+                <Pause className="size-4" />
+                {t('room_mira_pause')}
+              </Button>
+            )}
+            {data.choice === 'continue' && !data.fence.ready && (
+              <span className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                <Users className="size-3.5" />
+                {data.fence.admitted - data.fence.pending}/{data.fence.admitted}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </section>
   );

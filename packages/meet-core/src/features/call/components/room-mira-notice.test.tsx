@@ -74,3 +74,48 @@ it('shows that everyone chose Continue', async () => {
   show();
   await screen.findByText(call.room_mira_ready);
 });
+
+it('shows Pausing… until already-admitted sends settle, then the effective Pause', async () => {
+  const continuing = {
+    available: true,
+    version,
+    choice: 'continue',
+    pausing: false,
+    fence: { ready: true, pending: 0, admitted: 2 },
+  };
+  const pausing = {
+    ...continuing,
+    pausing: true,
+    fence: { ready: false, pending: 1, admitted: 2 },
+  };
+  const paused = { ...pausing, choice: 'mute', pausing: false };
+  f.read.mockResolvedValue(continuing);
+  f.choose.mockResolvedValue(pausing);
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  render(
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <RoomMiraNotice meetingId="room" />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  await screen.findByText(call.room_mira_ready);
+  fireEvent.click(screen.getByRole('button', { name: call.room_mira_pause }));
+  await vi.waitFor(() =>
+    expect(f.choose).toHaveBeenCalledWith('room', 'mute', version)
+  );
+  const status = await screen.findByText(call.room_mira_pausing);
+  expect(status.closest('[role="status"]')).toBeTruthy();
+  // No choice can be made while the Pause is settling.
+  expect(screen.queryByRole('button')).toBeNull();
+  // The room makes the Pause effective once the admitted sends settle.
+  f.read.mockResolvedValue(paused);
+  await client.refetchQueries();
+  await screen.findByText(call.room_mira_paused);
+  expect(screen.queryByText(call.room_mira_pausing)).toBeNull();
+  expect(
+    screen.getByRole('button', { name: call.room_mira_continue })
+  ).toBeTruthy();
+});

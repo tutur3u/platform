@@ -4525,6 +4525,7 @@
       "room_mira_failed": "Couldn't save your choice",
       "room_mira_pause": "Pause",
       "room_mira_paused": "You paused room Mira. It can't answer until you choose Continue.",
+      "room_mira_pausing": "Pausing…",
       "room_mira_prompt": "Allow @mira to answer here? Mira reads chat only from people who choose Continue, and answers only after everyone in the meeting has.",
       "room_mira_ready": "Everyone chose Continue. @mira can answer in this chat.",
       "room_mira_title": "Room Mira",

@@ -600,6 +600,8 @@ export type RoomMiraConsent =
       available: true;
       version: string;
       choice: 'continue' | 'mute' | null;
+      /** A requested Pause waiting for already-admitted sends to settle. */
+      pausing?: boolean;
       fence: { ready: boolean; pending: number; admitted: number };
     };
 

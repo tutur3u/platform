@@ -14,6 +14,7 @@ import { readRoomMiraAvailability } from '../../../../../features/live-assistant
 type RoomMiraConsent = {
   version: string;
   choice: 'continue' | 'mute' | null;
+  pausing: boolean;
   fence: MiraRoomFence;
 };
 const choice = z
