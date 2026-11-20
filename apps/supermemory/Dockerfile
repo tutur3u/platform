@@ -47,6 +47,7 @@ COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/lettin/package.json ./apps/lettin/package.json
+COPY apps/lms/package.json ./apps/lms/package.json
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ai/package.json ./packages/ai/package.json
 COPY packages/meet-core/package.json ./packages/meet-core/package.json

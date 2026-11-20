@@ -51,6 +51,7 @@ COPY apps/tools/package.json ./apps/tools/package.json
 COPY apps/track/package.json ./apps/track/package.json
 COPY apps/learn/package.json ./apps/learn/package.json
 COPY apps/lettin/package.json ./apps/lettin/package.json
+COPY apps/lms/package.json ./apps/lms/package.json
 COPY apps/abuse-guard/package.json ./apps/abuse-guard/package.json
 COPY apps/api/package.json ./apps/api/package.json
 COPY apps/cms-renderer/package.json ./apps/cms-renderer/package.json
