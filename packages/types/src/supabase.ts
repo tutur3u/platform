@@ -26143,6 +26143,7 @@ export type Database = {
         Args: {
           p_actor_id: string;
           p_digest?: string;
+          p_expected_consent_revision?: string;
           p_hours?: number;
           p_participant_id?: string;
           p_public_name?: string;

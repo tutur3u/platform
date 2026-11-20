@@ -32,6 +32,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     error: state.member ? undefined : 'membership_missing',
   }),
   getPermissions: async () => ({ containsPermission: () => state.allowed }),
+  getWorkspaceTier: async () => 'PLUS',
 }));
 
 vi.mock('@/lib/workspace-helper', () => ({
@@ -51,6 +52,7 @@ vi.mock('@/lib/api-auth', () => ({
         : NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
 }));
 
+import { POST as issueStatusLink } from './[splitId]/status-links/route';
 import { GET, POST } from './route';
 
 const id = '9abafaf3-e1ca-4fcf-8729-f3916b0c913b';
@@ -154,6 +156,37 @@ describe('Finance bill splits API', () => {
       },
     ]);
     expect(state.admin).not.toHaveBeenCalled();
+  });
+
+  it('requires the selected consent revision to issue a receiving QR link', async () => {
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_STATUS_LINKS', 'true');
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS', 'true');
+    vi.stubEnv('FINANCE_BILL_SPLIT_STATUS_ORIGIN', 'https://example.test');
+    const context = { params: { wsId: 'personal', splitId: id } };
+    const body = { kind: 'issue', hours: 1, receivingParticipantId: person };
+
+    expect(
+      (await issueStatusLink(request('POST', JSON.stringify(body)), context))
+        .status
+    ).toBe(400);
+    expect(state.admin).not.toHaveBeenCalled();
+
+    state.rpc.mockResolvedValue({ data: id, error: null });
+    const response = await issueStatusLink(
+      request(
+        'POST',
+        JSON.stringify({ ...body, receivingConsentRevision: id })
+      ),
+      context
+    );
+    expect(response.status).toBe(201);
+    expect(state.rpc).toHaveBeenCalledWith(
+      'manage_finance_bill_split_link',
+      expect.objectContaining({
+        p_receiving_participant_id: person,
+        p_expected_consent_revision: id,
+      })
+    );
   });
 
   it('stores a server-calculated ledger under the authorized actor and workspace', async () => {

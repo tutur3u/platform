@@ -106,8 +106,8 @@ begin
     delete from private.finance_contact_bank_accounts
     where ws_id = p_ws_id and contact_id = p_contact_id and consent_actor_id = p_actor_id;
     if not found then return jsonb_build_object('deleted', true); end if;
-  elsif p_action in ('masked_read', 'qr', 'public_qr', 'grant_qr') then
-    if p_action in ('public_qr', 'grant_qr') and not owns_contact then return null; end if;
+  elsif p_action in ('masked_read', 'qr', 'public_qr', 'share_account') then
+    if p_action in ('public_qr', 'share_account') and not owns_contact then return null; end if;
     select stored.* into account
     from private.finance_contact_bank_accounts as stored
     join public.workspace_users as contact
@@ -118,23 +118,24 @@ begin
       on holder.ws_id = stored.ws_id and holder.user_id = stored.consent_actor_id
     where stored.ws_id = p_ws_id and stored.contact_id = p_contact_id
       and not contact.archived and holder.type = 'MEMBER'
-      and (p_action not in ('public_qr', 'grant_qr') or stored.consent_actor_id = p_actor_id)
+      and (p_action not in ('public_qr', 'share_account') or stored.consent_actor_id = p_actor_id)
       and (p_action <> 'public_qr' or stored.consent_revision = p_consent_revision);
     if not found then return null; end if;
   else
     raise invalid_parameter_value using message = 'Invalid bank account operation';
   end if;
 
-  if p_action = 'grant_qr' then
-    return jsonb_build_object('consentRevision', account.consent_revision);
-  end if;
-
   insert into private.finance_contact_bank_audit (ws_id, contact_id, actor_id, action)
-    values (p_ws_id, p_contact_id, p_actor_id, p_action);
+    values (p_ws_id, p_contact_id, p_actor_id,
+      case when p_action = 'share_account' then 'masked_read' else p_action end);
 
   case p_action
     when 'consent' then return jsonb_build_object('saved', true);
     when 'revoke' then return jsonb_build_object('deleted', true);
+    when 'share_account' then return jsonb_build_object(
+      'bankName', account.bank_name, 'lastFour', account.last_four,
+      'consentRevision', account.consent_revision
+    );
     when 'masked_read' then return jsonb_build_object(
       'bankName', account.bank_name, 'lastFour', account.last_four
     );

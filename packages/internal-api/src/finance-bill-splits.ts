@@ -194,6 +194,7 @@ type StatusCommand =
       participantId?: string;
       publicName?: string;
       receivingParticipantId?: string;
+      receivingConsentRevision?: string;
     }
   | { kind: 'revoke'; linkId: string };
 
@@ -236,12 +237,13 @@ type BankInput =
       bankBin: string;
       details: { holderName: string; accountNumber: string };
     }
-  | { kind: 'revoke' | 'qr' | 'masked_read' };
+  | { kind: 'revoke' | 'qr' | 'masked_read' | 'share_account' };
 type BankResult = {
   qr?: string;
   holderName?: string;
   bankName?: string;
   account?: string;
+  consentRevision?: string;
   ok?: boolean;
 };
 

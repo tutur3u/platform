@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type BillSplitDetail,
+  billSplitContactBank,
   listBillSplitStatusLinks,
   writeBillSplitStatusLink,
 } from '@tuturuuu/internal-api/finance-bill-splits';
@@ -35,6 +36,13 @@ export function BillSplitStatusLinks({
   const [participantId, setParticipantId] = useState('');
   const [name, setName] = useState('');
   const [receiver, setReceiver] = useState('');
+  const account = useMutation({
+    mutationFn: (contactId: string) =>
+      billSplitContactBank(wsId, contactId, { kind: 'share_account' }),
+  });
+  const selectedRevision = account.data?.consentRevision;
+  const wantsQr = bankEnabled && Boolean(receiver);
+  const canIssue = !wantsQr || Boolean(selectedRevision);
   const ownReceivingContacts = split.participants.filter(
     (person) => person.canConfirm && person.contactId
   );
@@ -52,11 +60,19 @@ export function BillSplitStatusLinks({
   const change = useMutation({
     mutationFn: (input: Parameters<typeof writeBillSplitStatusLink>[2]) =>
       writeBillSplitStatusLink(wsId, split.id, input),
+    onError: (_error, input) => {
+      if (input.kind === 'issue' && input.receivingParticipantId) {
+        setReceiver('');
+        account.reset();
+      }
+    },
     onSuccess: (result) => {
       if (result.url) {
         setUrl(result.url);
         setLinkId(result.id);
         setCopied(false);
+        setReceiver('');
+        account.reset();
       } else if (result.id === linkId) {
         setUrl('');
         setLinkId('');
@@ -74,6 +90,8 @@ export function BillSplitStatusLinks({
           setUrl('');
           setLinkId('');
           setCopied(false);
+          setReceiver('');
+          account.reset();
           change.reset();
         }
         setOpen(next);
@@ -93,15 +111,18 @@ export function BillSplitStatusLinks({
           className="space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
-            if (!change.isPending)
+            if (!change.isPending && canIssue)
               change.mutate({
                 kind: 'issue',
                 hours: 24,
                 ...(participantId
                   ? { participantId, publicName: name.trim() || undefined }
                   : {}),
-                ...(receiver && bankEnabled
-                  ? { receivingParticipantId: receiver }
+                ...(wantsQr && selectedRevision
+                  ? {
+                      receivingParticipantId: receiver,
+                      receivingConsentRevision: selectedRevision,
+                    }
                   : {}),
               });
           }}
@@ -143,8 +164,16 @@ export function BillSplitStatusLinks({
               <select
                 id="bill-split-share-qr"
                 value={receiver}
-                disabled={change.isPending}
-                onChange={(event) => setReceiver(event.target.value)}
+                disabled={change.isPending || account.isPending}
+                onChange={(event) => {
+                  const participantId = event.target.value;
+                  setReceiver(participantId);
+                  account.reset();
+                  const contact = ownReceivingContacts.find(
+                    (person) => person.id === participantId
+                  )?.contactId;
+                  if (contact) account.mutate(contact);
+                }}
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               >
                 <option value="">{t('no-qr')}</option>
@@ -154,14 +183,22 @@ export function BillSplitStatusLinks({
                   </option>
                 ))}
               </select>
-              {receiver && (
-                <p className="text-muted-foreground text-sm">
-                  {t('qr-disclosure')}
+              {receiver && account.isError && (
+                <p role="alert" className="text-destructive text-sm">
+                  {t('bank-error')}
                 </p>
+              )}
+              {receiver && selectedRevision && account.data && (
+                <div className="text-muted-foreground text-sm">
+                  <p>
+                    {account.data.bankName} · {account.data.account}
+                  </p>
+                  <p>{t('qr-disclosure')}</p>
+                </div>
               )}
             </div>
           )}
-          <Button type="submit" disabled={change.isPending}>
+          <Button type="submit" disabled={change.isPending || !canIssue}>
             {t('create-link')}
           </Button>
         </form>

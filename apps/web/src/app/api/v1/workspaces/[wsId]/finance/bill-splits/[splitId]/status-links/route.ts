@@ -34,6 +34,7 @@ const command = z.discriminatedUnion('kind', [
       .regex(/^[\p{L}\p{M} .'-]+$/u)
       .optional(),
     receivingParticipantId: billSplitId.optional(),
+    receivingConsentRevision: billSplitId.optional(),
   }),
   z.strictObject({ kind: z.literal('revoke'), linkId: billSplitId }),
 ]);
@@ -86,6 +87,11 @@ export const POST = withSessionAuth<Params>(
     const input = parsed.data;
     if (input.kind === 'issue') {
       if (
+        Boolean(input.receivingParticipantId) !==
+        Boolean(input.receivingConsentRevision)
+      )
+        return responseError('Invalid receiving account scope', 400);
+      if (
         input.receivingParticipantId &&
         process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS !== 'true'
       ) {
@@ -116,6 +122,7 @@ export const POST = withSessionAuth<Params>(
             p_participant_id: input.participantId,
             p_public_name: input.publicName,
             p_receiving_participant_id: input.receivingParticipantId,
+            p_expected_consent_revision: input.receivingConsentRevision,
           }
         : {}),
       ...(input.kind === 'revoke' ? { p_revoke_id: input.linkId } : {}),

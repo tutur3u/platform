@@ -44,13 +44,20 @@ type LinkArguments = {
   p_public_name?: string;
   p_revoke_id?: string;
   p_receiving_participant_id?: string;
+  p_expected_consent_revision?: string;
 };
 
 type BankArguments = {
   p_ws_id: string;
   p_actor_id: string;
   p_contact_id: string;
-  p_action: 'consent' | 'revoke' | 'masked_read' | 'qr' | 'public_qr';
+  p_action:
+    | 'consent'
+    | 'revoke'
+    | 'masked_read'
+    | 'qr'
+    | 'public_qr'
+    | 'share_account';
   p_bank_name?: string;
   p_bank_bin?: string;
   p_last_four?: string;

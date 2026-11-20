@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(40);
+select plan(42);
 
 select is(
   (select count(*) from pg_catalog.pg_class c
@@ -259,9 +259,18 @@ select private.finance_contact_bank_command(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('50'), 'consent',
   'Test bank', '123456', '1234', repeat('a', 40)
 );
+select throws_ok($$
+  select private.manage_finance_bill_split_link(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('54'), repeat('d',64), 1,
+    p_receiving_participant_id => pg_temp.fixture('55')
+  )
+$$, '22023', 'Receiving QR requires an account revision', 'QR issuance requires express consent for the selected account');
 select private.manage_finance_bill_split_link(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('54'), repeat('b',64), 1,
-  p_receiving_participant_id => pg_temp.fixture('55')
+  p_receiving_participant_id => pg_temp.fixture('55'),
+  p_expected_consent_revision => (private.finance_contact_bank_command(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('50'), 'share_account'
+  )->>'consentRevision')::uuid
 );
 create temp table fixture_consent as
 select (private.lookup_finance_bill_split_link(repeat('b',64))->>'receivingConsentRevision')::uuid as id;
@@ -280,9 +289,20 @@ select is(private.finance_contact_bank_command(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('50'), 'public_qr',
   p_consent_revision => (select id from fixture_consent)
 ), null::jsonb, 'A stale grant cannot read replacement bank details');
+select throws_ok($$
+  select private.manage_finance_bill_split_link(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('54'), repeat('d',64), 1,
+    p_receiving_participant_id => pg_temp.fixture('55'),
+    p_expected_consent_revision => (select id from fixture_consent)
+  )
+$$, 'PT409', 'Receiving account changed; select it again',
+  'A stale issuance request cannot grant disclosure for the new account');
 select private.manage_finance_bill_split_link(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('54'), repeat('c',64), 1,
-  p_receiving_participant_id => pg_temp.fixture('55')
+  p_receiving_participant_id => pg_temp.fixture('55'),
+  p_expected_consent_revision => (private.finance_contact_bank_command(
+    pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('50'), 'share_account'
+  )->>'consentRevision')::uuid
 );
 select private.finance_contact_bank_command(
   pg_temp.fixture('10'), pg_temp.fixture('01'), pg_temp.fixture('50'), 'revoke'

@@ -157,7 +157,9 @@ server-only `FINANCE_CONTACT_BANK_ENCRYPTION_KEY` for the AES-256-GCM envelope.
 Consent must come from the workspace member linked to the contact. Withdraw
 consent to remove the account, and require fresh consent for a replacement.
 Withdrawal or replacement revokes existing links that share that account’s QR.
-The verified holder must explicitly share the replacement account through a new link.
+The holder must select the replacement account again to create a QR link.
+The dialog shows the masked account and the server rejects a selection if its
+consent revision changed before submission.
 Access records contain actor, contact, workspace, action, and time. Preserve
 key custody across restores so consenting holders can continue using their
 account. VietQR uses the account-transfer payload, and the recipient enters

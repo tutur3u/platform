@@ -33,6 +33,7 @@ const command = z.discriminatedUnion('kind', [
   }),
   z.strictObject({ kind: z.literal('revoke') }),
   z.strictObject({ kind: z.literal('masked_read') }),
+  z.strictObject({ kind: z.literal('share_account') }),
   z.strictObject({ kind: z.literal('qr') }),
 ]);
 const qrResult = z.object({ bankBin, encryptedDetails: z.string() });
@@ -104,13 +105,20 @@ export const POST = withSessionAuth<Params>(
     if (action === 'consent' || action === 'revoke')
       return NextResponse.json({ ok: true }, { headers });
 
-    if (action === 'masked_read') {
-      const masked = maskedResult.safeParse(data);
+    if (action === 'masked_read' || action === 'share_account') {
+      const schema =
+        action === 'share_account'
+          ? maskedResult.extend({ consentRevision: billSplitId })
+          : maskedResult;
+      const masked = schema.safeParse(data);
       if (!masked.success) return responseError('Not found', 404);
       return NextResponse.json(
         {
           bankName: masked.data.bankName,
           account: `••••${masked.data.lastFour}`,
+          ...('consentRevision' in masked.data
+            ? { consentRevision: masked.data.consentRevision }
+            : {}),
         },
         { headers }
       );

@@ -49,7 +49,8 @@ create function private.manage_finance_bill_split_link(
   p_participant_id uuid default null,
   p_public_name text default null,
   p_revoke_id uuid default null,
-  p_receiving_participant_id uuid default null
+  p_receiving_participant_id uuid default null,
+  p_expected_consent_revision uuid default null
 ) returns uuid
 language plpgsql
 security invoker
@@ -93,6 +94,9 @@ begin
     raise sqlstate 'PT409' using message = 'Sharing requires a finalized split';
   end if;
 
+  if (p_receiving_participant_id is null) <> (p_expected_consent_revision is null) then
+    raise invalid_parameter_value using message = 'Receiving QR requires an account revision';
+  end if;
   if p_receiving_participant_id is not null then
     select participant.contact_id into receiving_contact
     from private.finance_bill_split_participants as participant
@@ -101,11 +105,14 @@ begin
 
     if receiving_contact is not null then
       consent_revision := (private.finance_contact_bank_command(
-        p_ws_id, p_actor_id, receiving_contact, 'grant_qr'
+        p_ws_id, p_actor_id, receiving_contact, 'share_account'
       )->>'consentRevision')::uuid;
     end if;
     if consent_revision is null then
       raise insufficient_privilege using message = 'Only the verified holder can share an active receiving account';
+    end if;
+    if consent_revision <> p_expected_consent_revision then
+      raise sqlstate 'PT409' using message = 'Receiving account changed; select it again';
     end if;
   end if;
 
@@ -128,9 +135,9 @@ begin
 end;
 $$;
 
-revoke all on function private.manage_finance_bill_split_link(uuid, uuid, uuid, text, integer, uuid, text, uuid, uuid)
+revoke all on function private.manage_finance_bill_split_link(uuid, uuid, uuid, text, integer, uuid, text, uuid, uuid, uuid)
   from public, anon, authenticated;
-grant execute on function private.manage_finance_bill_split_link(uuid, uuid, uuid, text, integer, uuid, text, uuid, uuid)
+grant execute on function private.manage_finance_bill_split_link(uuid, uuid, uuid, text, integer, uuid, text, uuid, uuid, uuid)
   to service_role;
 
 create function private.lookup_finance_bill_split_link(p_digest text)
