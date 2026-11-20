@@ -17,7 +17,7 @@ The existing Vercel deployment remains the rollback target until cutover.
 | --- | --- |
 | Production Worker | `tuturuuu-ai` (`VITE_AI_NATIVE_PROFILE=production`) |
 | Staging Worker | the staging Worker name |
-| Hosts | `ai.tuturuuu.com` and, for the production candidate, `tuturuuu.com/ai`. The release operator attaches routes. |
+| Worker host admission | `ai.tuturuuu.com`, `ai.tutur3u.com`, and `tuturuuu.com/ai` for the production artifact. The release operator maps ingress separately. |
 | Bindings | `ASSETS` (`dist/client`), `TUTURUUU_NOINDEX=1` in the source config; production artifact policy must be checked in its emitted config |
 | Secret names | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`; provider credentials are optional: `GOOGLE_GENERATIVE_AI_API_KEY` or `GOOGLE_API_KEY`, `AI_GATEWAY_API_KEY` or `VERCEL_OIDC_TOKEN` |
 | Build | `VITE_AI_NATIVE_PROFILE=production bun run --cwd apps/ai build:cloudflare` |
@@ -33,6 +33,13 @@ The `ai-cloudflare.yaml` cutover jobs run the emitted Worker checks before
 upload and repeat them from a fresh restore. The production fixture checks
 mounted asset caching and preserves the upstream WebGL sandbox while denying
 framing on adjacent paths.
+
+The emitted Worker verifies `/`, `/models`, `/v1/models` and `/api/build-info`
+on both admitted root hosts and on the production apex mount. It also fetches
+the rendered error document's assets on each variant. For private smoke, pin
+the candidate at an operator-provided ingress that preserves the intended Host
+and path. Record the Host and build-info source for each request so the smoke
+proves the native Worker handled it.
 
 Run the production build and emitted suite from the repository root:
 

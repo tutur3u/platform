@@ -58,6 +58,7 @@ const WORKER_CONFIG = {
   ],
 };
 const APEX = 'tuturuuu.com';
+const LEGACY_ROOT_HOSTS = ['ai.tuturuuu.com', 'ai.tutur3u.com'];
 const MOUNTED = (MOUNTS.mountHosts ?? []).some(
   (host) => host.toLowerCase() === APEX
 );
@@ -220,7 +221,7 @@ test(
 
     await t.test('every rendered resource loads from its page origin', (t) =>
       assertRenderedAssets(t, require, call, [
-        { host: ROOT_HOST, path: '/auth-error' },
+        ...LEGACY_ROOT_HOSTS.map((host) => ({ host, path: '/auth-error' })),
         ...(MOUNTED
           ? [{ host: APEX, path: `${BASE}/auth-error`, base: BASE }]
           : []),
@@ -260,16 +261,31 @@ test(
     );
 
     await t.test(
-      'every configured root host serves the root page',
+      'both legacy root hosts preserve login, models and build identity',
       async () => {
-        for (const host of MOUNTS.rootHosts) {
+        const targets = LEGACY_ROOT_HOSTS.map((host) => ({ host, base: '' }));
+        if (MOUNTED) targets.push({ host: APEX, base: BASE });
+        const query = '?x=1&x=2&q=a%2Fb';
+        for (const { host, base } of targets) {
+          const root = base || '/';
           const failure = runtimeOutcomeFailure({
-            path: '/',
+            path: root,
             expected: EXPECTED['/'],
-            ...(await call('/', host)),
+            ...(await call(root + query, host)),
             origin: `http://${host}`,
+            base,
           });
           assert.equal(failure, null, `${host}: ${failure}`);
+          const models = await call(`${base}/models${query}`, host);
+          assert.equal(models.status, 307, host);
+          const login = new URL(models.location, `http://${host}`);
+          assert.equal(login.host, host);
+          assert.equal(login.pathname, `${base}/login`);
+          assert.equal(login.searchParams.get('next'), `/models${query}`);
+          assert.equal((await call(`${base}/v1/models`, host)).status, 401);
+          const info = await call(`${base}/api/build-info`, host);
+          assert.equal(info.status, 200, host);
+          assert.equal(JSON.parse(info.body).commitHash, source, host);
         }
       }
     );
