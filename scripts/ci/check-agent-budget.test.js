@@ -6,15 +6,15 @@ const test = require('node:test');
 
 const {
   EXAMPLE_FILES,
-  MARKER_FILES,
+  GOVERNANCE_FILES,
   checkRepository,
   main,
-  parseProjectCap,
   validateAllocation,
 } = require('./check-agent-budget.js');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OWNER = 'owner';
+// An illustrative program allocation; there is no fixed project-wide cap.
 const CAP = 10;
 
 function workers(count, parent = OWNER, prefix = 'w') {
@@ -38,7 +38,7 @@ function allocation(agents, overrides = {}) {
 }
 
 function errorsFor(agents, overrides) {
-  return validateAllocation(allocation(agents, overrides), { cap: CAP }).errors;
+  return validateAllocation(allocation(agents, overrides)).errors;
 }
 
 function assertRejected(errors, pattern) {
@@ -48,22 +48,22 @@ function assertRejected(errors, pattern) {
   );
 }
 
-test('the repository governance files agree and the example is valid', () => {
+test('the repository declares no fixed cap and the example is valid', () => {
   const result = checkRepository(ROOT);
   assert.deepEqual(result.errors, []);
-  assert.equal(result.cap, 10);
 });
 
-test('AGENTS.md must declare exactly one allocation marker', () => {
-  assert.equal(parseProjectCap('Budget `agent-allocation: 10` here.'), 10);
-  assert.throws(() => parseProjectCap('no marker'), /exactly one/u);
-  assert.throws(
-    () => parseProjectCap('`agent-allocation: 10` and `agent-allocation: 5`'),
-    /exactly one/u
+test('a program allocation above ten is accepted', () => {
+  assert.deepEqual(
+    errorsFor(workers(25), {
+      allocation: 25,
+      observedRuntimeLimit: { limit: 25, unit: 'per-thread-tree' },
+    }),
+    []
   );
 });
 
-test('ten live agents fit and an eleventh is rejected', () => {
+test('live agents fit the declared allocation and one more is rejected', () => {
   assert.deepEqual(errorsFor(workers(10)), []);
   const errors = errorsFor(workers(11));
   assertRejected(errors, /11 live agents exceed the allocation of 10/u);
@@ -119,14 +119,14 @@ test('the allocation records and respects the observed runtime limit', () => {
   );
 });
 
-test('an allocation file cannot raise the project allocation', () => {
+test('an allocation cannot exceed the observed tree limit', () => {
   assertRejected(
     errorsFor(workers(2), { allocation: 11 }),
-    /exceeds the project allocation 10/u
+    /allocation 11 exceeds the observed runtime limit 10/u
   );
 });
 
-test('a nested lead gets a remaining budget, not ten new slots', () => {
+test('a nested lead gets a remaining budget, not a fresh allocation', () => {
   const lead = {
     id: 'lead',
     parent: OWNER,
@@ -223,7 +223,7 @@ test('structural errors are rejected', () => {
     errorsFor([{ id: 'x', parent: OWNER, role: 'worker', state: 'idle' }]),
     /state/u
   );
-  assert.deepEqual(validateAllocation(null, { cap: CAP }).errors, [
+  assert.deepEqual(validateAllocation(null).errors, [
     'Allocation must be a JSON object.',
   ]);
 });
@@ -306,15 +306,12 @@ test('validation lanes are admitted separately from the agent count', () => {
   assert.deepEqual(errorsFor(agents, { validationLanes: 3 }), []);
 });
 
-test('checkRepository rejects disagreeing markers and invalid examples', () => {
+test('checkRepository rejects a restored fixed cap and invalid examples', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'agent-budget-'));
   try {
-    for (const file of MARKER_FILES) {
+    for (const file of GOVERNANCE_FILES) {
       fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
-      fs.writeFileSync(
-        path.join(root, file),
-        'Budget `agent-allocation: 10`.\n'
-      );
+      fs.writeFileSync(path.join(root, file), 'No fixed agent count.\n');
     }
     const example = path.join(root, EXAMPLE_FILES[0]);
     fs.mkdirSync(path.dirname(example), { recursive: true });
@@ -322,12 +319,12 @@ test('checkRepository rejects disagreeing markers and invalid examples', () => {
     assert.deepEqual(checkRepository(root).errors, []);
 
     fs.writeFileSync(
-      path.join(root, MARKER_FILES[2]),
+      path.join(root, GOVERNANCE_FILES[2]),
       'Budget `agent-allocation: 5`.\n'
     );
     fs.writeFileSync(example, JSON.stringify(allocation(workers(11))));
     const { errors } = checkRepository(root);
-    assertRejected(errors, /disagrees with AGENTS\.md \(10\)/u);
+    assertRejected(errors, /declares a fixed `agent-allocation: <n>` cap/u);
     assertRejected(errors, /11 live agents/u);
 
     const declared = path.join(root, 'allocation.json');

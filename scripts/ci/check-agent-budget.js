@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-// Finite structural check for the agent operating model. The T3 runtime does
-// not enforce the ten-agent ceiling, and no live session is claimed to support
-// ten; the budget is a repository contract that this checker verifies against
-// declared allocation files. It never contacts T3, GitHub or a model provider,
-// and a passing result is not proof that a live thread tree stayed in budget.
+// Finite structural check for the agent operating model. There is no fixed
+// project-wide agent count: each program declares the allocation it admitted
+// for its ready backlog, bounded by the observed runtime limit, resource
+// admission and provider quota. This checker verifies declared allocation files
+// against that structure. It never contacts T3, GitHub or a model provider, and
+// a passing result is not proof that a live thread tree stayed in budget.
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -25,8 +26,8 @@ const STATES = new Set([...LIVE_STATES, 'done', 'retired']);
 const MAX_DEPTH = 3;
 const RUNTIME_UNITS = new Set(['per-thread-tree', 'per-parent']);
 
-// Every governance surface must declare the same project allocation.
-const MARKER_FILES = [
+// Governance surfaces must not reintroduce a fixed project-wide agent cap.
+const GOVERNANCE_FILES = [
   'AGENTS.md',
   'plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md',
   'docs-internal/build/development-tools/agent-operating-model.mdx',
@@ -39,17 +40,6 @@ function readMarkers(text) {
   return [...text.matchAll(MARKER_RE)].map((match) => Number(match[1]));
 }
 
-/** Reads the canonical project allocation from AGENTS.md text. */
-function parseProjectCap(agentsText) {
-  const values = readMarkers(agentsText);
-  if (values.length !== 1) {
-    throw new Error(
-      `AGENTS.md must declare exactly one \`agent-allocation: <n>\` marker (found ${values.length}).`
-    );
-  }
-  return values[0];
-}
-
 function isPositiveInteger(value) {
   return Number.isInteger(value) && value > 0;
 }
@@ -59,10 +49,10 @@ function reservation(agent) {
 }
 
 /**
- * Validates one declared allocation. `cap` is the project allocation from
- * AGENTS.md; the file may declare a smaller allocation but never a larger one.
+ * Validates one declared allocation. There is no fixed project-wide cap; the
+ * allocation is what the owner admitted for the ready backlog.
  */
-function validateAllocation(allocation, { cap }) {
+function validateAllocation(allocation) {
   const errors = [];
   const fail = (message) => errors.push(message);
 
@@ -76,14 +66,10 @@ function validateAllocation(allocation, { cap }) {
   }
   if (!isPositiveInteger(allocation.allocation)) {
     fail('allocation must be a positive integer.');
-  } else if (allocation.allocation > cap) {
-    fail(
-      `allocation ${allocation.allocation} exceeds the project allocation ${cap} declared in AGENTS.md.`
-    );
   }
-  // The allocation is the lowest of the ceiling, the runtime limit observed for
-  // the launching session (with its unit), resource admission and any explicit
-  // lower allocation, so the observed limit must be recorded.
+  // The allocation is the lowest of the admitted backlog, the runtime limit
+  // observed for the launching session (with its unit), resource admission and
+  // provider quota, so the observed limit must be recorded.
   const observed = allocation.observedRuntimeLimit;
   if (
     !observed ||
@@ -270,61 +256,45 @@ function validateAllocation(allocation, { cap }) {
   return { errors, live: live.length };
 }
 
-/** Checks marker consistency across governance files and the shipped examples. */
+/** Checks that no governance file restores a fixed cap and the examples are valid. */
 function checkRepository(root = ROOT_DIR) {
   const errors = [];
-  let cap = null;
-  try {
-    cap = parseProjectCap(
-      fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8')
-    );
-  } catch (error) {
-    errors.push(error.message);
-  }
-  for (const file of MARKER_FILES.slice(1)) {
-    let values = [];
+  for (const file of GOVERNANCE_FILES) {
+    let text;
     try {
-      values = readMarkers(fs.readFileSync(path.join(root, file), 'utf8'));
+      text = fs.readFileSync(path.join(root, file), 'utf8');
     } catch {
       errors.push(`${file}: missing governance file.`);
       continue;
     }
-    if (values.length === 0)
-      errors.push(`${file}: missing \`agent-allocation: <n>\` marker.`);
-    for (const value of values) {
-      if (cap !== null && value !== cap) {
-        errors.push(
-          `${file}: agent-allocation ${value} disagrees with AGENTS.md (${cap}).`
-        );
-      }
+    if (readMarkers(text).length > 0) {
+      errors.push(
+        `${file}: declares a fixed \`agent-allocation: <n>\` cap; there is no fixed agent count.`
+      );
     }
   }
-  if (cap !== null) {
-    for (const file of EXAMPLE_FILES) {
-      const result = validateFile(path.join(root, file), { cap });
-      errors.push(...result.errors.map((error) => `${file}: ${error}`));
-    }
+  for (const file of EXAMPLE_FILES) {
+    const result = validateFile(path.join(root, file));
+    errors.push(...result.errors.map((error) => `${file}: ${error}`));
   }
-  return { cap, errors };
+  return { errors };
 }
 
-function validateFile(filePath, { cap }) {
+function validateFile(filePath) {
   let parsed;
   try {
     parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
     return { errors: [`cannot read allocation: ${error.message}`], live: 0 };
   }
-  return validateAllocation(parsed, { cap });
+  return validateAllocation(parsed);
 }
 
 function main(argv = process.argv.slice(2), root = ROOT_DIR) {
   const repository = checkRepository(root);
   const errors = [...repository.errors];
   for (const file of argv) {
-    const result = validateFile(path.resolve(file), {
-      cap: repository.cap ?? 0,
-    });
+    const result = validateFile(path.resolve(file));
     errors.push(...result.errors.map((error) => `${file}: ${error}`));
     if (result.errors.length === 0) {
       console.log(`${file}: ${result.live} live agents within budget.`);
@@ -335,7 +305,7 @@ function main(argv = process.argv.slice(2), root = ROOT_DIR) {
     return 1;
   }
   console.log(
-    `Agent budget contract: allocation ${repository.cap}, governance files agree.`
+    'Agent budget contract: no fixed agent cap; governance files and examples are valid.'
   );
   return 0;
 }
@@ -344,9 +314,8 @@ if (require.main === module) process.exitCode = main();
 
 module.exports = {
   EXAMPLE_FILES,
-  MARKER_FILES,
+  GOVERNANCE_FILES,
   checkRepository,
   main,
-  parseProjectCap,
   validateAllocation,
 };

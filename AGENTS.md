@@ -30,8 +30,10 @@ Route and switch accounts per its [account-balancing guidance](~/.codex/skills/p
 Send inter-thread messages with mode `auto` by default; check the target queue first and consolidate
 instead of piling queued items. Keep long-running owners and children steerable, with no long turns.
 
-Operating model: `agent-allocation: 10` is the thread-tree ceiling, subject to
-observed runtime scope, resource admission and parent grants. Follow the
+Operating model: there is no fixed agent count. Scale lanes to the admitted
+backlog, subject to resource admission (`ttr resources`), provider quota and
+account balancing, shared-worktree safety, observed runtime scope and parent
+grants. Follow the
 [operating model and budget](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
 for roles, independent review, publication, receipts and retirement.
 

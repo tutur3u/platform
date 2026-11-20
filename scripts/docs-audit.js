@@ -364,8 +364,8 @@ module.exports = {
 };
 if (require.main === module) {
   const result = audit();
-  // The agent operating model page must agree with AGENTS.md and the plugin
-  // reference on the shared subagent allocation.
+  // Governance files must not restore a fixed subagent cap, and the shipped
+  // allocation example must stay valid.
   const { checkRepository } = require('./ci/check-agent-budget.js');
   result.errors.push(...checkRepository().errors);
   console.log(

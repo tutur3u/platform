@@ -39,15 +39,16 @@ Run work as a bounded company hierarchy:
 | Worker | A delegated child | Its own work branch and PR only, on an isolated worktree |
 | Reviewer | A child that did not author the change | An independent review receipt |
 
-The ceiling is `agent-allocation: 10` subagents per thread tree, counting every
-descendant. It supersedes the older five-child ceiling. Ten is a ceiling, not a
-target.
+There is no fixed agent count per thread tree. Scale lanes to the admitted
+ready backlog, subject to resource admission (`ttr resources`), provider quota
+and account balancing, and shared-worktree safety. Every descendant still counts
+toward the program's declared allocation.
 
-- **Declared allocation:** each project declares its allocation as the lowest
+- **Declared allocation:** each program declares its allocation as the lowest
   of:
-  - ten;
+  - the admitted ready backlog;
   - the observed runtime/provider limit when its scope is `per-thread-tree`;
-  - resource admission;
+  - resource admission and provider quota;
   - any explicit lower allocation.
 
   `observedRuntimeLimit.unit` must be `per-thread-tree` or `per-parent`.
@@ -63,12 +64,12 @@ target.
   simultaneous leads cannot oversubscribe the next free slot.
 - **Grants:** the owner grants each lead an explicit remaining budget out of
   that allocation. A lead's children, including nested leads with their own
-  grants, must fit inside the grant. A nested lead never receives ten new
-  slots.
+  grants, must fit inside the grant. A nested lead never receives a fresh
+  allocation of its own.
 - **Hierarchy depth:** at most three subagent levels below the owner. Only
   leads delegate.
-- **Enforcement:** the T3 runtime does not enforce ten, and no live session is
-  claimed to support ten. The budget is a contract plus this checker; a local
+- **Enforcement:** the T3 runtime does not enforce a project allocation. The
+  budget is a contract plus this checker; a local
   checker cannot configure or enforce T3's runtime limit. Declare live
   allocations, including `observedRuntimeLimit: { limit, unit }`, in the
   program's ignored `allocation.json` (shape: [example](agent-allocation.example.json))
@@ -79,8 +80,8 @@ target.
   ```
 
   The checker rejects:
-  - more live agents than the allocation, so 11 is rejected;
-  - an allocation above AGENTS.md or an observed tree limit, direct children
+  - more live agents than the declared allocation;
+  - an allocation above an observed tree limit, direct children
     above an observed per-parent limit, or a missing/unknown runtime scope;
   - grants that oversubscribe the owner or a lead;
   - unbounded nesting;
@@ -89,7 +90,7 @@ target.
   - any subagent that claims integration writes.
 
   With no arguments it checks that AGENTS.md, this reference and the docs page
-  declare the same allocation. The docs audit (`node scripts/docs-audit.js`, run by
+  do not restore a fixed `agent-allocation` cap and that the example is valid. The docs audit (`node scripts/docs-audit.js`, run by
   the Documentation and SEO contracts workflow) runs it, and the root script test
   suite runs its tests.
 

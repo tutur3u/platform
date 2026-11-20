@@ -1,7 +1,7 @@
 ---
 title: 'Agent Operating Model'
 description: 'Roles, the shared subagent budget, publication and review rules, and the security default for autonomous agent work.'
-updatedAt: '2026-10-23'
+updatedAt: '2026-11-20'
 ---
 
 Autonomous agent work on Tuturuuu runs as a small, bounded company hierarchy.
@@ -22,14 +22,15 @@ The user-local shared `pstack-t3-workflow` skill is an optional convenience.
 
 ## Subagent budget
 
-Each thread tree may have up to `agent-allocation: 10` subagents, counting every
-descendant. This replaces the older five-child ceiling. Ten is a ceiling, not a
-target.
+There is no fixed agent count per thread tree. Scale lanes to the admitted ready
+backlog, subject to resource admission (`ttr resources`), provider quota and
+account balancing, and shared-worktree safety. Every descendant still counts
+toward the program's declared allocation.
 
-- A project declares its allocation as the lowest of:
-  - ten;
+- A program declares its allocation as the lowest of:
+  - the admitted ready backlog;
   - the observed runtime limit when scoped `per-thread-tree`;
-  - resource admission;
+  - resource admission and provider quota;
   - any explicit lower allocation.
 - `observedRuntimeLimit.unit` accepts only `per-thread-tree` or `per-parent`.
   A tree limit caps the allocation; a per-parent limit caps each parent's live
@@ -39,12 +40,12 @@ target.
   slot. Only drained `done` and `retired` agents release theirs.
 - The owner grants each lead an explicit remaining budget, and the lead's
   children must fit inside it. Nested leads share their parent's grant. They
-  never get ten new slots.
+  never get a fresh allocation of their own.
 - The hierarchy is at most three subagent levels deep, and only leads delegate.
 
 <Warning>
-  The T3 runtime does not enforce ten, and no live session is claimed to
-  support ten. The budget is a repository contract plus a checker that
+  The T3 runtime does not enforce a project allocation. The budget is a
+  repository contract plus a checker that
   validates declared allocation files. It cannot configure or enforce T3's
   runtime limit.
 </Warning>
@@ -59,8 +60,8 @@ node scripts/ci/check-agent-budget.js tmp/agent-coordination/<program>/allocatio
 
 The checker rejects:
 
-- more live agents than the allocation (11 fails);
-- a file allocation above `AGENTS.md` or an observed tree limit, direct children
+- more live agents than the declared allocation;
+- an allocation above an observed tree limit, direct children
   above a per-parent limit, or a missing/unknown runtime scope;
 - lead grants that oversubscribe their parent;
 - excess nesting;
@@ -69,7 +70,8 @@ The checker rejects:
 - any subagent that claims integration writes.
 
 Without arguments, it confirms that `AGENTS.md`, the plugin reference and this
-page declare the same allocation. `node scripts/docs-audit.js`, which the
+page do not restore a fixed `agent-allocation` cap, and that the shipped example
+is valid. `node scripts/docs-audit.js`, which the
 Documentation and SEO contracts workflow runs, includes
 that consistency check. The root script test suite runs the checker's tests.
 
