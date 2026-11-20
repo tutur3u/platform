@@ -16,24 +16,27 @@ const functionProxy = vi.fn(async () =>
 );
 const start = vi.fn(async () => new Response('start'));
 
-const handle = createBridgeHandler<Env, typeof ctx>({
+const options = (proxyAllMountedPaths: boolean) => ({
   mounts: {
     app: 'infrastructure',
     rootHosts: ['infrastructure.tuturuuu.com'],
     mountHosts: ['tuturuuu.com'],
     basePath: '/admin',
+    proxyAllMountedPaths,
   },
   start: { fetch: start },
   proxy,
   // Next's usual matcher: it skips every path with a dot.
-  matches: (pathname) => !/^\/(?:_next|.*\..*)/u.test(pathname),
+  matches: (pathname: string) => !/^\/(?:_next|.*\..*)/u.test(pathname),
   serverFnBase: '/_serverFn',
   functionBase: '/_serverFn',
   functionProxy,
   publicAssets: new Set(['/robots.txt']),
-  assets: (bindings) => bindings.ASSETS,
+  assets: (bindings: Env) => bindings.ASSETS,
   centralApiOrigin: () => 'https://central.example',
 });
+const handle = createBridgeHandler<Env, typeof ctx>(options(true));
+const matcherOnly = createBridgeHandler<Env, typeof ctx>(options(false));
 
 const get = (url: string) => handle(new Request(url), env, ctx);
 
@@ -49,12 +52,30 @@ describe('proxy gate independent of the app matcher', () => {
     expect(start).not.toHaveBeenCalled();
   });
 
-  it('runs the app proxy for a dotted page path on the mount', async () => {
+  it('runs the app proxy for a dotted page path on an opted-in mount', async () => {
     vi.clearAllMocks();
     const response = await get('https://tuturuuu.com/admin/vi/root/jobs/a.b');
     expect(response.status).toBe(401);
     expect(proxy).toHaveBeenCalledOnce();
     expect(start).not.toHaveBeenCalled();
+  });
+
+  it('keeps the matcher on a mount that does not opt in', async () => {
+    vi.clearAllMocks();
+    const page = await matcherOnly(
+      new Request('https://tuturuuu.com/admin/vi/root/jobs/a.b'),
+      env,
+      ctx
+    );
+    expect(await page.text()).toBe('start');
+    expect(proxy).not.toHaveBeenCalled();
+    const fn = await matcherOnly(
+      new Request('https://tuturuuu.com/admin/_serverFn/id/x.y'),
+      env,
+      ctx
+    );
+    expect(fn.status).toBe(403);
+    expect(functionProxy).toHaveBeenCalledOnce();
   });
 
   it('serves a mounted public asset without the proxy', async () => {

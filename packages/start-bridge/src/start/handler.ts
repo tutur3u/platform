@@ -154,18 +154,20 @@ export function createBridgeHandler<
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
   const rootMatches = options.matches ?? defaultProxyMatches;
+  const proxyAllMountedPaths = options.mounts?.proxyAllMountedPaths === true;
   /**
    * Whether a request runs the app's proxy (or function proxy). A server
    * function always does: its id is the first segment, so a trailing dotted
-   * segment must not skip the session check. On a mount every non-asset path
-   * does, because the apex session is provider-only and Start pages and actions
-   * do not re-check assurance; assets are served before this point. The app's
-   * matcher applies at the root host.
+   * segment must not skip the session check. A mount with
+   * `proxyAllMountedPaths` runs it on every non-asset path (assets are served
+   * before this point); otherwise the app's matcher decides.
    */
   const proxyMatches =
     (mounted: boolean) =>
     (path: string): boolean =>
-      mounted || inFunctionBase(path) || rootMatches(path);
+      (mounted && proxyAllMountedPaths) ||
+      inFunctionBase(path) ||
+      rootMatches(path);
 
   /**
    * The one-origin switch `TTR_ONE_ORIGIN_<APP>` (`off`/`shadow`/`on`, with

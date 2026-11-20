@@ -14,6 +14,8 @@ export default defineBridgeAppConfig({
     basePath: '/admin',
     unknownHost: 'reject',
     isolation: { ownedCookies: ['NEXT_LOCALE'] },
+    // Admin pages and endpoints rely on the proxy for the apex session.
+    proxyAllMountedPaths: true,
   },
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only

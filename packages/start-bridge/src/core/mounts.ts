@@ -33,6 +33,14 @@ export interface AppMountConfig {
    * Unset keeps the shared-session behaviour (see `mount-isolation`).
    */
   isolation?: MountIsolationConfig;
+  /**
+   * Run the app proxy for every non-asset mounted request, whatever its
+   * `config.matcher` says. Set it when the app's pages and own endpoints rely
+   * on the proxy for the apex session (a matcher that skips dotted paths
+   * would otherwise let `/<base>/x.y` render without it). Unset keeps the
+   * matcher on the mount too, so dotted central API forwards stay unproxied.
+   */
+  proxyAllMountedPaths?: boolean;
 }
 
 export interface ResolvedMount {

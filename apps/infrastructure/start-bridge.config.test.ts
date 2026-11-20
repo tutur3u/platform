@@ -29,4 +29,8 @@ describe('Admin start-bridge mounts', () => {
       ownedCookies: ['NEXT_LOCALE'],
     });
   });
+
+  it('runs the proxy on every mounted path, including dotted ones', () => {
+    expect(bridgeConfig.mounts?.proxyAllMountedPaths).toBe(true);
+  });
 });
