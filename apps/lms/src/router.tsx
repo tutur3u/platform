@@ -1,15 +1,11 @@
 import { createRouter } from '@tanstack/react-router';
-import {
-  requestNonce,
-  routerBasepath,
-} from '@tuturuuu/start-bridge/start/base-path';
+import { LMS_BASE } from '../cloudflare/routing';
 import { routeTree } from './routeTree.gen';
 
 export function getRouter() {
   return createRouter({
     routeTree,
-    basepath: routerBasepath(),
-    ssr: { nonce: requestNonce() },
+    basepath: LMS_BASE,
     scrollRestoration: true,
     defaultPreload: false,
   });
