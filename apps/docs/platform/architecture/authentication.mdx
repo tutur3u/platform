@@ -50,12 +50,17 @@ returning to protected content requires local authentication. The unlock action
 is visible on the first resumed Flutter frame. App-owned foreground refreshes
 wait for the gate to clear.
 
-The Flutter boundary hides protected routes and their toasts during lifecycle
-transitions. On iOS the window cover attaches when the scene starts to deactivate.
+The Flutter boundary hides protected routes during lifecycle transitions.
+App Lock hides account toasts even on Add Account. Lock and account changes
+discard queued toasts from the former UI session. On iOS the window cover attaches when the scene starts to deactivate.
 The app submits a safe frame for the current activation, then the native cover
 stays in place through the next display interval. Android 13 and later suppress
 the Overview thumbnail. Android 12 and earlier keep the entire window secure
-while App Lock is enabled and an account is signed in.
+while App Lock is enabled and an account is signed in. A policy or account
+change requires its own Flutter frame acknowledgment and a native display
+interval before Android clears the secure flag. Both bridges retry transient
+failures within the current transition. If retries fail, privacy stays in
+place and the next activation starts a fresh handshake.
 
 The mobile lifecycle tests exercise first-frame privacy, deferred refresh and
 stale prompts. The registered destinations tests drive Add Account cancellation
@@ -80,9 +85,11 @@ recording frame by frame. Repeat with light and dark appearance.
    Down. Confirm the OS rejects the screenshot or captures a blank app window.
    Open Overview without leaving the page first and check that the thumbnail
    contains no test text. Return and unlock using the device PIN. Repeat the
-   screenshot on the restored page. Disable App Lock and confirm a normal
-   foreground screenshot works. On Android 13 or later, repeat the Overview
-   check to verify the platform thumbnail policy.
+   screenshot on the restored page. Switch to a second test account and
+   verify screenshots stay blocked across the transition. Sign out and verify
+   screenshots work after the sign-in screen replaces the signed-in content.
+   Sign in again, disable App Lock, and confirm screenshots work on the
+   current page. On Android 13 or later, repeat the Overview check.
 3. **Both.** Open Add Account, background the app, return, and tap its cancel
    button. Verify that the lock screen precedes Home, including any workspace
    toast. Repeat by tapping `https://tuturuuu.com/apps` from another app.

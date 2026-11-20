@@ -7,6 +7,7 @@ import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/appearance/interface_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_theme.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -60,11 +61,41 @@ class ShadcnMaterialBridge extends StatelessWidget {
             child: AnnotatedRegion<SystemUiOverlayStyle>(
               value: AppTheme.systemUiOverlayStyleFor(theme.brightness),
               child:
-                  navigatorBoundary?.call(shad.ToastLayer(child: child)) ??
+                  navigatorBoundary?.call(_AccountToastLayer(child: child)) ??
                   child,
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AccountToastLayer extends StatefulWidget {
+  const _AccountToastLayer({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_AccountToastLayer> createState() => _AccountToastLayerState();
+}
+
+class _AccountToastLayerState extends State<_AccountToastLayer> {
+  final GlobalKey _navigatorKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = AccountOverlayScope.maybeOf(context);
+    final toastTheme =
+        shad.ComponentTheme.maybeOf<shad.ToastTheme>(context) ??
+        const shad.ToastTheme();
+    return shad.ComponentTheme(
+      data: scope?.allowed == false
+          ? const shad.ToastTheme(maxStackedEntries: 0)
+          : toastTheme,
+      child: shad.ToastLayer(
+        key: ValueKey(scope?.epoch),
+        child: KeyedSubtree(key: _navigatorKey, child: widget.child),
       ),
     );
   }

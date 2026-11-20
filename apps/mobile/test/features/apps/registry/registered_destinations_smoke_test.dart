@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/data/models/stored_auth_account.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
@@ -125,6 +126,10 @@ void main() {
           : 'a protected platform deep link from Add Account stays locked',
       (tester) async {
         await tester.setAppLifecycle(AppLifecycleState.resumed);
+        const shellBack = MethodChannel('mobile/shell_back');
+        final messenger = tester.binding.defaultBinaryMessenger
+          ..setMockMethodCallHandler(shellBack, (_) async => null);
+        addTearDown(() => messenger.setMockMethodCallHandler(shellBack, null));
         tester.view
           ..devicePixelRatio = 1
           ..physicalSize = const Size(390, 844);
@@ -147,7 +152,7 @@ void main() {
         await lock.load();
         final lifecycle = AppLockLifecycle(
           lock: lock,
-          hasAccount: () => true,
+          accountIdentity: () => 'test-account',
           onSuspend: (_) {},
           refresh: () {},
         );
@@ -167,19 +172,35 @@ void main() {
         await tester.pump();
         expect(find.byType(LoginPage), findsOneWidget);
 
+        final loginContext = tester.element(find.byType(LoginPage));
+        tester.showLegacyToast(
+          loginContext,
+          const Text('Private workspace toast'),
+        );
+        showAppToast(loginContext, message: 'Private account notice');
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(find.text('Private workspace toast'), findsOneWidget);
+        expect(find.text('Private account notice'), findsOneWidget);
+
         await tester.setAppLifecycle(AppLifecycleState.inactive);
         await tester.setAppLifecycle(AppLifecycleState.paused);
         await tester.setAppLifecycle(AppLifecycleState.resumed);
         await tester.pump();
         expect(lock.state.locked, isTrue);
         expect(find.byType(LoginPage), findsOneWidget);
-        final loginContext = tester.element(find.byType(LoginPage));
+        expect(find.text('Private workspace toast'), findsNothing);
+        expect(find.text('Private account notice'), findsNothing);
         tester.showLegacyToast(
-          loginContext,
-          const Text('Private workspace toast'),
+          tester.element(find.byType(LoginPage)),
+          const Text('Late workspace toast'),
+        );
+        showAppToast(
+          tester.element(find.byType(LoginPage)),
+          message: 'Late account notice',
         );
         await tester.pump(const Duration(milliseconds: 300));
-        expect(find.text('Private workspace toast'), findsOneWidget);
+        expect(find.text('Late workspace toast'), findsNothing);
+        expect(find.text('Late account notice'), findsNothing);
 
         final destination = cancel ? Routes.home : Routes.apps;
         if (cancel) {
@@ -211,7 +232,12 @@ void main() {
         await tester.pump();
         await tester.pump();
         expect(find.byType(ShellPage), findsOneWidget);
+        expect(find.text('Private workspace toast'), findsNothing);
+        expect(find.text('Late workspace toast'), findsNothing);
+        expect(find.text('Private account notice'), findsNothing);
+        expect(find.text('Late account notice'), findsNothing);
         await tester.pump(const Duration(seconds: 6));
+        await tester.pumpWidget(const SizedBox.shrink());
       },
     );
   }
@@ -430,7 +456,11 @@ class _DestinationHarness {
     child: shellTestApp(
       router: router,
       navigatorBoundary: protectNavigator
-          ? (child) => AppLockBoundary.router(router: router, child: child)
+          ? (child) => AppLockBoundary.router(
+              router: router,
+              accountIdentity: auth.state.user?.id,
+              child: child,
+            )
           : null,
     ),
   );

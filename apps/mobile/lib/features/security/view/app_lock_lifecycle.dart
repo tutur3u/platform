@@ -10,28 +10,36 @@ import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 class AppLockLifecycle with WidgetsBindingObserver {
   AppLockLifecycle({
     required AppLockCubit lock,
-    required bool Function() hasAccount,
+    required String? Function() accountIdentity,
     required ValueChanged<AppLifecycleState> onSuspend,
     required VoidCallback refresh,
     DateTime Function()? now,
+    TargetPlatform? snapshotPlatform,
   }) : _lock = lock,
-       _hasAccount = hasAccount,
+       _accountIdentity = accountIdentity,
        _onSuspend = onSuspend,
        _refresh = refresh,
-       _now = now ?? DateTime.now {
+       _now = now ?? DateTime.now,
+       _snapshotPlatform =
+           snapshotPlatform ??
+           (Platform.isAndroid
+               ? TargetPlatform.android
+               : Platform.isIOS
+               ? TargetPlatform.iOS
+               : null) {
     _subscription = _lock.stream.listen((_) => accountOrLockChanged());
     _unbindRefresh = ForegroundRefresh.bind(_enqueue);
-    accountOrLockChanged();
-    if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
-      unawaited(_captureActivation());
-    }
+    _androidPolicy = _currentAndroidPolicy();
+    if (_androidPolicy?.required == true) nativePrivacyReady.value = false;
+    if (_resumed) _beginSnapshotHandshake();
     WidgetsBinding.instance.addObserver(this);
   }
 
   static const _snapshot = MethodChannel('mobile/app_snapshot_privacy');
 
   final AppLockCubit _lock;
-  final bool Function() _hasAccount;
+  final String? Function() _accountIdentity;
+  final TargetPlatform? _snapshotPlatform;
   final ValueChanged<AppLifecycleState> _onSuspend;
   final VoidCallback _refresh;
   final DateTime Function() _now;
@@ -39,10 +47,9 @@ class AppLockLifecycle with WidgetsBindingObserver {
   late final VoidCallback _unbindRefresh;
   final _featureWork = <Object, VoidCallback>{};
   final nativePrivacyReady = ValueNotifier<bool>(true);
-  bool? _androidPrivacyRequired;
-  int _androidPrivacyRevision = 0;
-  int _activationRevision = 0;
-  int? _frameActivation;
+  ({String? account, bool required})? _androidPolicy;
+  int _snapshotRevision = 0;
+  Timer? _snapshotRetry;
   DateTime? _backgroundedAt;
   bool _frameScheduled = false;
   bool _refreshPending = false;
@@ -57,8 +64,7 @@ class AppLockLifecycle with WidgetsBindingObserver {
               _lock.state.delay != AppLockDelay.immediately)) {
         _backgroundedAt ??= _now();
       }
-      _activationRevision++;
-      _frameActivation = null;
+      _invalidateSnapshot();
       _onSuspend(state);
       return;
     }
@@ -71,7 +77,7 @@ class AppLockLifecycle with WidgetsBindingObserver {
       _lock.lock();
     }
     _refreshPending = true;
-    unawaited(_captureActivation());
+    _beginSnapshotHandshake();
     scheduleRefresh();
   }
 
@@ -81,40 +87,112 @@ class AppLockLifecycle with WidgetsBindingObserver {
     scheduleRefresh();
   }
 
+  bool get _resumed =>
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  ({String? account, bool required})? _currentAndroidPolicy() {
+    if (_snapshotPlatform != TargetPlatform.android) return null;
+    final account = _accountIdentity();
+    final lock = _lock.state;
+    return (
+      account: account,
+      required: account != null && (!lock.hasLoaded || lock.enabled),
+    );
+  }
+
   void accountOrLockChanged() {
-    if (Platform.isAndroid && _lock.state.hasLoaded) {
-      final required = _hasAccount() && _lock.state.enabled;
-      if (_androidPrivacyRequired != required) {
-        _androidPrivacyRequired = required;
-        nativePrivacyReady.value = !required;
-        unawaited(_applyAndroidPrivacy(required, ++_androidPrivacyRevision));
-      }
+    final policy = _currentAndroidPolicy();
+    if (_androidPolicy != policy) {
+      _androidPolicy = policy;
+      nativePrivacyReady.value = policy?.required != true;
+      _beginSnapshotHandshake();
     }
     scheduleRefresh();
   }
 
-  Future<void> _applyAndroidPrivacy(bool required, int revision) async {
-    try {
-      await _snapshot.invokeMethod<void>('setSecureSnapshotRequired', required);
-      if (!_disposed && revision == _androidPrivacyRevision) {
-        nativePrivacyReady.value = true;
-        scheduleRefresh();
-      }
-    } on PlatformException catch (error) {
-      debugPrint(
-        'App Lock Android privacy could not be applied: ${error.code}',
-      );
-    } on MissingPluginException {
-      debugPrint('App Lock Android privacy bridge unavailable');
+  void _invalidateSnapshot() {
+    _snapshotRevision++;
+    _snapshotRetry?.cancel();
+    _snapshotRetry = null;
+  }
+
+  bool _snapshotIsCurrent(int revision) =>
+      !_disposed &&
+      _resumed &&
+      revision == _snapshotRevision &&
+      _currentAndroidPolicy() == _androidPolicy;
+
+  void _beginSnapshotHandshake() {
+    _invalidateSnapshot();
+    if (_snapshotPlatform != null && _resumed) {
+      unawaited(_prepareSnapshot(_snapshotRevision, attempt: 0));
     }
+  }
+
+  Future<void> _prepareSnapshot(int revision, {required int attempt}) async {
+    final policy = _androidPolicy;
+    try {
+      final token = policy == null
+          ? await _snapshot.invokeMethod<int>('snapshotActivation')
+          : await _snapshot.invokeMethod<String>(
+              'preparePrivacyFrame',
+              policy.required,
+            );
+      if (!_snapshotIsCurrent(revision)) return;
+      if (token == null) {
+        _retrySnapshot(revision, attempt);
+        return;
+      }
+
+      // Android has installed the secure policy. The upcoming frame can
+      // render, but a release still requires its own acknowledgment.
+      if (policy != null) nativePrivacyReady.value = true;
+      WidgetsBinding.instance
+        ..addPostFrameCallback((_) {
+          if (_snapshotIsCurrent(revision)) {
+            unawaited(_submitSafeFrame(token, revision, attempt));
+          }
+        })
+        ..ensureVisualUpdate();
+      scheduleRefresh();
+    } on PlatformException catch (error) {
+      debugPrint('App Lock snapshot preparation failed: ${error.code}');
+      _retrySnapshot(revision, attempt);
+    } on MissingPluginException {
+      _retrySnapshot(revision, attempt);
+    }
+  }
+
+  Future<void> _submitSafeFrame(Object token, int revision, int attempt) async {
+    try {
+      final accepted = await _snapshot.invokeMethod<bool>(
+        'foregroundFrameReady',
+        token,
+      );
+      if (accepted != true) _retrySnapshot(revision, attempt);
+    } on PlatformException catch (error) {
+      debugPrint('App Lock snapshot acknowledgment failed: ${error.code}');
+      _retrySnapshot(revision, attempt);
+    } on MissingPluginException {
+      _retrySnapshot(revision, attempt);
+    }
+  }
+
+  void _retrySnapshot(int revision, int attempt) {
+    if (!_snapshotIsCurrent(revision) || attempt >= 2) return;
+    _snapshotRetry?.cancel();
+    _snapshotRetry = Timer(Duration(milliseconds: 100 << attempt), () {
+      _snapshotRetry = null;
+      if (_snapshotIsCurrent(revision)) {
+        unawaited(_prepareSnapshot(revision, attempt: attempt + 1));
+      }
+    });
   }
 
   void scheduleRefresh() {
     if (_disposed ||
         _frameScheduled ||
-        (!_refreshPending &&
-            _frameActivation == null &&
-            _featureWork.isEmpty)) {
+        (!_refreshPending && _featureWork.isEmpty)) {
       return;
     }
     _frameScheduled = true;
@@ -124,13 +202,8 @@ class AppLockLifecycle with WidgetsBindingObserver {
       if (_disposed || binding.lifecycleState != AppLifecycleState.resumed) {
         return;
       }
-      final activation = _frameActivation;
-      if (activation != null) {
-        _frameActivation = null;
-        unawaited(_submitSafeFrame(activation));
-      }
       final lock = _lock.state;
-      if (_hasAccount() &&
+      if (_accountIdentity() != null &&
           (!lock.hasLoaded ||
               lock.locked ||
               lock.status == AppLockStatus.loading ||
@@ -150,36 +223,9 @@ class AppLockLifecycle with WidgetsBindingObserver {
     binding.ensureVisualUpdate();
   }
 
-  Future<void> _captureActivation() async {
-    final revision = _activationRevision;
-    try {
-      final activation = await _snapshot.invokeMethod<int>(
-        'snapshotActivation',
-      );
-      if (_disposed || revision != _activationRevision || activation == null) {
-        return;
-      }
-      _frameActivation = activation;
-      scheduleRefresh();
-    } on MissingPluginException {
-      // Platforms without a native cover still use the Flutter boundary.
-    } on PlatformException catch (error) {
-      debugPrint('App Lock snapshot activation failed: ${error.code}');
-    }
-  }
-
-  Future<void> _submitSafeFrame(int activation) async {
-    try {
-      await _snapshot.invokeMethod<void>('foregroundFrameReady', activation);
-    } on PlatformException catch (error) {
-      debugPrint('App Lock snapshot handshake failed: ${error.code}');
-    } on MissingPluginException {
-      // The native bridge can detach while an activity is recreated.
-    }
-  }
-
   void dispose() {
     _disposed = true;
+    _invalidateSnapshot();
     _unbindRefresh();
     _featureWork.clear();
     nativePrivacyReady.dispose();

@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/router_location.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/view/app_lock_gate.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -19,6 +20,7 @@ class AppLockBoundary extends StatefulWidget {
     this.isExcluded,
     this.routeChanges,
     this.nativePrivacyReady,
+    this.accountIdentity,
     super.key,
   });
 
@@ -26,6 +28,7 @@ class AppLockBoundary extends StatefulWidget {
     required GoRouter router,
     required this.child,
     this.nativePrivacyReady,
+    this.accountIdentity,
     super.key,
   }) : excluded = false,
        isExcluded = (() =>
@@ -37,6 +40,7 @@ class AppLockBoundary extends StatefulWidget {
   final bool Function()? isExcluded;
   final Listenable? routeChanges;
   final ValueListenable<bool>? nativePrivacyReady;
+  final String? accountIdentity;
 
   @override
   State<AppLockBoundary> createState() => _AppLockBoundaryState();
@@ -45,6 +49,8 @@ class AppLockBoundary extends StatefulWidget {
 class _AppLockBoundaryState extends State<AppLockBoundary>
     with WidgetsBindingObserver {
   bool _requestedAutomaticUnlock = false;
+  Object _overlayEpoch = Object();
+  bool? _overlaysAllowed;
   bool _foreground = _isForeground(WidgetsBinding.instance.lifecycleState);
 
   static bool _isForeground(AppLifecycleState? state) =>
@@ -62,6 +68,9 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
   @override
   void didUpdateWidget(covariant AppLockBoundary oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.accountIdentity != widget.accountIdentity) {
+      _overlayEpoch = Object();
+    }
     if (oldWidget.routeChanges == widget.routeChanges) return;
     oldWidget.routeChanges?.removeListener(_routeChanged);
     widget.routeChanges?.addListener(_routeChanged);
@@ -123,6 +132,15 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
             lock.status == AppLockStatus.loading ||
             lock.locked);
     final screenCovered = !_foreground || loading || locked || !nativeReady;
+    final overlaysAllowed =
+        !screenCovered &&
+        !lock.locked &&
+        (widget.accountIdentity == null ||
+            (lock.hasLoaded && lock.status != AppLockStatus.loading));
+    if (_overlaysAllowed != overlaysAllowed) {
+      _overlaysAllowed = overlaysAllowed;
+      _overlayEpoch = Object();
+    }
 
     if (!locked) _requestedAutomaticUnlock = false;
     if (_foreground && locked && lock.status == AppLockStatus.idle) {
@@ -143,11 +161,15 @@ class _AppLockBoundaryState extends State<AppLockBoundary>
               clipper: checkRouteAtPaint
                   ? _ExcludedRouteClip(() => _excluded, widget.routeChanges)
                   : null,
-              child: widget.child,
+              child: AccountOverlayScope(
+                epoch: _overlayEpoch,
+                allowed: overlaysAllowed,
+                child: widget.child,
+              ),
             ),
           ),
         ),
-        if (!_foreground || loading || !nativeReady)
+        if (!_foreground || loading || (!nativeReady && !locked))
           const AppSplashSurface(key: ValueKey('app-lock-privacy-cover'))
         else if (locked)
           AppLockGate(

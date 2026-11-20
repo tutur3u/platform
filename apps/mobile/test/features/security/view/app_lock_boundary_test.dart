@@ -4,6 +4,8 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
@@ -27,6 +29,67 @@ class _LocalAuth extends Mock implements LocalAuthService {}
 
 void main() {
   group('AppLockBoundary', () {
+    testWidgets('account changes retire both toast layers', (tester) async {
+      final lock = _MockAppLockCubit();
+      whenListen(
+        lock,
+        const Stream<AppLockState>.empty(),
+        initialState: const AppLockState(enabled: true, hasLoaded: true),
+      );
+      final actor = ValueNotifier<String>('first');
+      final router = GoRouter(
+        routes: [
+          GoRoute(
+            path: '/',
+            builder: (_, _) => const Center(child: Text('Toast origin')),
+          ),
+        ],
+      );
+      addTearDown(actor.dispose);
+      addTearDown(router.dispose);
+      addTearDown(lock.close);
+      await tester.setAppLifecycle(AppLifecycleState.resumed);
+      await tester.pumpWidget(
+        BlocProvider<AppLockCubit>.value(
+          value: lock,
+          child: shellTestApp(
+            router: router,
+            navigatorBoundary: (navigator) => ValueListenableBuilder(
+              valueListenable: actor,
+              builder: (_, actor, _) => AppLockBoundary.router(
+                router: router,
+                accountIdentity: actor,
+                child: navigator,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      void showToasts(String account) {
+        final context = tester.element(find.text('Toast origin'));
+        tester.showLegacyToast(context, Text('$account legacy notice'));
+        showAppToast(context, message: '$account account notice');
+      }
+
+      showToasts('First');
+      await tester.pump();
+      expect(find.text('First legacy notice'), findsOneWidget);
+      expect(find.text('First account notice'), findsOneWidget);
+
+      actor.value = 'second';
+      await tester.pump();
+      expect(find.text('First legacy notice'), findsNothing);
+      expect(find.text('First account notice'), findsNothing);
+
+      showToasts('Second');
+      await tester.pump();
+      expect(find.text('Second legacy notice'), findsOneWidget);
+      expect(find.text('Second account notice'), findsOneWidget);
+      await tester.drainShadToastTimers();
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     testWidgets('covers authenticated content while lock state is loading', (
       tester,
     ) async {

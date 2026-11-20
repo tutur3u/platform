@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.view.Choreographer
 import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
@@ -15,6 +16,7 @@ import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.videoplayer.VideoPlayerPlugin
+import java.util.UUID
 
 class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var exitMessage: String = "Press back again to exit"
@@ -22,9 +24,8 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
     private var shellBackChannel: MethodChannel? = null
     private var snapshotFlagOwned = false
-    private var secureSnapshotRequired = true
-    private var snapshotActivation = 0
-    private var safeSnapshotFrame = false
+    private data class PrivacyFrame(val token: String, val required: Boolean)
+    private var pendingPrivacyFrame: PrivacyFrame? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private val shellBack = ShellBackCoordinator(this)
 
@@ -55,18 +56,44 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         }
     }
 
-    private fun syncLegacySnapshotPolicy() {
-        if (secureSnapshotRequired) {
-            protectLegacySnapshot()
-        } else if (safeSnapshotFrame && snapshotFlagOwned) {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            snapshotFlagOwned = false
+    private fun preparePrivacyFrame(required: Boolean): String {
+        protectLegacySnapshot()
+        val frame = PrivacyFrame(UUID.randomUUID().toString(), required)
+        pendingPrivacyFrame = frame
+        return frame.token
+    }
+
+    private fun acknowledgePrivacyFrame(token: Any?): Boolean {
+        val frame = pendingPrivacyFrame ?: return false
+        if (frame.token != token || !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            return false
         }
+        if (frame.required || Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pendingPrivacyFrame = null
+            return true
+        }
+
+        // Keep the secure flag through the next display interval. A new policy
+        // or pause replaces the entitlement even after an acknowledgment arrives.
+        val choreographer = Choreographer.getInstance()
+        choreographer.postFrameCallback {
+            choreographer.postFrameCallback {
+                if (pendingPrivacyFrame === frame &&
+                    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                ) {
+                    pendingPrivacyFrame = null
+                    if (snapshotFlagOwned) {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                        snapshotFlagOwned = false
+                    }
+                }
+            }
+        }
+        return true
     }
 
     override fun onPause() {
-        snapshotActivation += 1
-        safeSnapshotFrame = false
+        pendingPrivacyFrame = null
         protectLegacySnapshot()
         super.onPause()
     }
@@ -96,26 +123,15 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
             "mobile/app_snapshot_privacy",
         ).setMethodCallHandler { call, result ->
             when (call.method) {
-                "snapshotActivation" -> result.success(snapshotActivation)
-                "setSecureSnapshotRequired" -> {
+                "preparePrivacyFrame" -> {
                     val required = call.arguments as? Boolean
                     if (required == null) {
                         result.error("bad_arguments", "Expected a privacy policy", null)
                     } else {
-                        secureSnapshotRequired = required
-                        syncLegacySnapshotPolicy()
-                        result.success(null)
+                        result.success(preparePrivacyFrame(required))
                     }
                 }
-                "foregroundFrameReady" -> {
-                    if (call.arguments == snapshotActivation &&
-                        lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-                    ) {
-                        safeSnapshotFrame = true
-                        syncLegacySnapshotPolicy()
-                    }
-                    result.success(null)
-                }
+                "foregroundFrameReady" -> result.success(acknowledgePrivacyFrame(call.arguments))
                 else -> result.notImplemented()
             }
         }

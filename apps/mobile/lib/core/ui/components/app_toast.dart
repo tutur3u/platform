@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout_tokens.dart';
+import 'package:mobile/core/ui/components/account_overlay_scope.dart';
 import 'package:mobile/core/ui/components/app_alert.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
@@ -53,33 +54,44 @@ AppToastHandle showAppToast(
 }) {
   _current?.close();
   final overlay = Overlay.of(context, rootOverlay: true);
+  final epoch = AccountOverlayScope.epochOf(context);
   final clearance = MediaQuery.paddingOf(context).bottom;
   final bottom =
       math.max(clearance, bottomClearance ?? clearance) + AppSpacing.md;
   late final AppToastHandle handle;
   final entry = OverlayEntry(
-    builder: (overlayContext) => Positioned(
-      left: AppSpacing.lg,
-      right: AppSpacing.lg,
-      bottom: bottom,
-      child: SafeArea(
-        top: false,
-        child: _AppToast(
-          message: message,
-          title: title,
-          variant: variant,
-          actionLabel: actionLabel,
-          onAction: onAction == null
-              ? null
-              : () {
-                  handle.close();
-                  onAction();
-                },
-          onDismiss: () => handle.close(),
-          onDispose: handle._onDisposed,
+    builder: (overlayContext) {
+      final scope = AccountOverlayScope.maybeOf(overlayContext);
+      final hidden = scope?.allowed == false || scope?.epoch != epoch;
+      return Positioned(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        bottom: bottom,
+        child: Offstage(
+          offstage: hidden,
+          child: ExcludeFocus(
+            excluding: hidden,
+            child: SafeArea(
+              top: false,
+              child: _AppToast(
+                message: message,
+                title: title,
+                variant: variant,
+                actionLabel: actionLabel,
+                onAction: onAction == null
+                    ? null
+                    : () {
+                        handle.close();
+                        onAction();
+                      },
+                onDismiss: () => handle.close(),
+                onDispose: handle._onDisposed,
+              ),
+            ),
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
   handle = AppToastHandle._(entry);
   overlay.insert(entry);

@@ -5,14 +5,20 @@ extension _AppPushNavigation on _AppState {
       BlocListener<AuthCubit, AuthState>(
         listenWhen: (previous, current) =>
             current.revocationUnconfirmed && !previous.revocationUnconfirmed,
-        listener: (context, state) => shad.showToast(
-          context: context,
-          location: shad.ToastLocation.topCenter,
-          builder: (context, _) => AppAlert(
-            variant: AppAlertVariant.warning,
-            title: Text(context.l10n.authDeviceRevocationUnconfirmed),
-          ),
-        ),
+        listener: (context, state) {
+          // Present the warning under the account scope for the new frame.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            shad.showToast(
+              context: context,
+              location: shad.ToastLocation.topCenter,
+              builder: (context, _) => AppAlert(
+                variant: AppAlertVariant.warning,
+                title: Text(context.l10n.authDeviceRevocationUnconfirmed),
+              ),
+            );
+          });
+        },
         child: child,
       );
 
@@ -74,7 +80,7 @@ extension _AppPushNavigation on _AppState {
   void _registerAppLockLifecycle() {
     _appLockLifecycle = AppLockLifecycle(
       lock: _appLockCubit,
-      hasAccount: () => _authCubit.state.user != null,
+      accountIdentity: () => _authCubit.state.user?.id,
       onSuspend: (state) {
         _mobileFlags.setForeground(foreground: false);
         _mastermind.irisLifecycle(state);

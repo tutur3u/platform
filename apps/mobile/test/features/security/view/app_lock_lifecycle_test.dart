@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/app/view/auth_session_boundary.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/security/data/app_lock_settings_store.dart';
@@ -38,7 +39,7 @@ void main() {
     final refreshes = <String>[];
     final lifecycle = AppLockLifecycle(
       lock: lock,
-      hasAccount: () => true,
+      accountIdentity: () => 'test-account',
       onSuspend: (_) {},
       refresh: () => refreshes.add('app'),
       now: () => now,
@@ -113,7 +114,7 @@ void main() {
       await tester.setAppLifecycle(AppLifecycleState.resumed);
       final lifecycle = AppLockLifecycle(
         lock: lock,
-        hasAccount: () => true,
+        accountIdentity: () => 'test-account',
         onSuspend: (_) {},
         refresh: () {},
       );
@@ -135,6 +136,144 @@ void main() {
       expect(lock.state.locked, isFalse);
     },
   );
+
+  testWidgets('Android retries required privacy and fences account frames', (
+    tester,
+  ) async {
+    final store = _Store();
+    when(store.isEnabled).thenAnswer((_) async => true);
+    when(store.readDelay).thenAnswer((_) async => AppLockDelay.immediately);
+    final lock = AppLockCubit(
+      localAuthService: _LocalAuth(),
+      settingsStore: store,
+    );
+    await lock.load();
+    addTearDown(lock.close);
+
+    final account = ValueNotifier<String?>('old');
+    addTearDown(account.dispose);
+    final prepared = <bool>[];
+    final acknowledged = <String>[];
+    final stale = Completer<String>();
+    final release = Completer<String>();
+    var oldAccountVisibleAtRelease = false;
+    final messenger = tester.binding.defaultBinaryMessenger
+      ..setMockMethodCallHandler(_snapshot, (call) async {
+        if (call.method == 'preparePrivacyFrame') {
+          prepared.add(call.arguments as bool);
+          return switch (prepared.length) {
+            1 => throw PlatformException(code: 'bridge'),
+            2 => 'old-secure',
+            3 => stale.future,
+            _ => release.future,
+          };
+        }
+        expect(call.method, 'foregroundFrameReady');
+        acknowledged.add(call.arguments as String);
+        if (call.arguments == 'signed-out') {
+          oldAccountVisibleAtRelease = find
+              .text('Account old')
+              .evaluate()
+              .isNotEmpty;
+        }
+        return true;
+      });
+    addTearDown(() => messenger.setMockMethodCallHandler(_snapshot, null));
+
+    await tester.setAppLifecycle(AppLifecycleState.resumed);
+    final lifecycle = AppLockLifecycle(
+      lock: lock,
+      accountIdentity: () => account.value,
+      snapshotPlatform: TargetPlatform.android,
+      onSuspend: (_) {},
+      refresh: () {},
+    );
+    account.addListener(lifecycle.accountOrLockChanged);
+    addTearDown(lifecycle.dispose);
+    await tester.pumpApp(
+      BlocProvider.value(
+        value: lock,
+        child: AppLockBoundary(
+          nativePrivacyReady: lifecycle.nativePrivacyReady,
+          child: ValueListenableBuilder(
+            valueListenable: account,
+            builder: (_, account, _) => AuthSessionBoundary(
+              identity: account,
+              child: Text('Account ${account ?? 'signed out'}'),
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(prepared, [true]);
+    expect(find.text('Account old'), findsNothing);
+    expect(acknowledged, isEmpty);
+
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    expect(prepared, [true, true]);
+    expect(acknowledged, ['old-secure']);
+    expect(find.text('Account old'), findsOneWidget);
+
+    account.value = 'new';
+    expect(prepared, [true, true, true]);
+    await tester.pump();
+    expect(find.text('Account new'), findsNothing);
+
+    account.value = null;
+    expect(prepared, [true, true, true, false]);
+    stale.complete('stale');
+    await tester.pump();
+    expect(acknowledged, ['old-secure']);
+    expect(find.text('Account old'), findsNothing);
+
+    release.complete('signed-out');
+    await tester.idle();
+    expect(acknowledged, ['old-secure']);
+    await tester.pump();
+    expect(acknowledged, ['old-secure', 'signed-out']);
+    expect(oldAccountVisibleAtRelease, isFalse);
+    expect(find.text('Account signed out'), findsOneWidget);
+  });
+
+  testWidgets('a failed iOS frame acknowledgment retries in place', (
+    tester,
+  ) async {
+    final store = _Store();
+    when(store.isEnabled).thenAnswer((_) async => false);
+    when(store.readDelay).thenAnswer((_) async => AppLockDelay.immediately);
+    final lock = AppLockCubit(
+      localAuthService: _LocalAuth(),
+      settingsStore: store,
+    );
+    await lock.load();
+    addTearDown(lock.close);
+    final reveals = <int>[];
+    final messenger = tester.binding.defaultBinaryMessenger
+      ..setMockMethodCallHandler(_snapshot, (call) async {
+        if (call.method == 'snapshotActivation') return 7;
+        reveals.add(call.arguments as int);
+        if (reveals.length == 1) throw PlatformException(code: 'bridge');
+        return true;
+      });
+    addTearDown(() => messenger.setMockMethodCallHandler(_snapshot, null));
+    await tester.setAppLifecycle(AppLifecycleState.resumed);
+    final lifecycle = AppLockLifecycle(
+      lock: lock,
+      accountIdentity: () => 'test-account',
+      snapshotPlatform: TargetPlatform.iOS,
+      onSuspend: (_) {},
+      refresh: () {},
+    );
+    addTearDown(lifecycle.dispose);
+    await tester.pump();
+    await tester.pump();
+    expect(reveals, [7]);
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump();
+    await tester.pump();
+    expect(reveals, [7, 7]);
+  });
 
   testWidgets('already resumed startup submits only the current activation', (
     tester,
@@ -158,13 +297,14 @@ void main() {
         }
         expect(call.method, 'foregroundFrameReady');
         reveals.add(call.arguments as int);
-        return null;
+        return true;
       });
     addTearDown(() => messenger.setMockMethodCallHandler(_snapshot, null));
     await tester.setAppLifecycle(AppLifecycleState.resumed);
     final lifecycle = AppLockLifecycle(
       lock: lock,
-      hasAccount: () => true,
+      accountIdentity: () => 'test-account',
+      snapshotPlatform: TargetPlatform.iOS,
       onSuspend: (_) {},
       refresh: () {},
     );

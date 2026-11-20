@@ -67,13 +67,18 @@ import UserNotifications
     }
   }
 
-  private func waitForSnapshotPresentation(activation: Int) {
-    guard activation == snapshotActivation, !snapshotCovers.isEmpty else { return }
+  private func waitForSnapshotPresentation(activation: Int) -> Bool {
+    guard activation == snapshotActivation else { return false }
+    guard !snapshotCovers.isEmpty else { return true }
+    guard snapshotCovers.values.contains(where: { cover in
+      cover.window == nil || cover.window?.windowScene?.activationState == .foregroundActive
+    }) else { return false }
     snapshotPresentationLink?.invalidate()
     snapshotPresentationTicks = 0
     let link = CADisplayLink(target: self, selector: #selector(snapshotPresentationTick(_:)))
     snapshotPresentationLink = link
     link.add(to: .main, forMode: .common)
+    return true
   }
 
   @objc private func snapshotPresentationTick(_ link: CADisplayLink) {
@@ -164,9 +169,10 @@ import UserNotifications
           result(self?.snapshotActivation)
         case "foregroundFrameReady":
           if let activation = call.arguments as? Int {
-            self?.waitForSnapshotPresentation(activation: activation)
+            result(self?.waitForSnapshotPresentation(activation: activation) ?? false)
+          } else {
+            result(false)
           }
-          result(nil)
         default:
           result(FlutterMethodNotImplemented)
         }

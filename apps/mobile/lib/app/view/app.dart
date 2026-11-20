@@ -657,6 +657,7 @@ class _AppState extends State<App> {
                                     .path,
                                 child: AppLockBoundary.router(
                                   router: _router,
+                                  accountIdentity: authIdentity,
                                   nativePrivacyReady:
                                       _appLockLifecycle.nativePrivacyReady,
                                   child: navigator,

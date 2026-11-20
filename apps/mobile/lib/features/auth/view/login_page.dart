@@ -68,6 +68,7 @@ class _LoginPageState extends State<LoginPage> {
   Timer? _retryAfterTimer;
   Timer? _otpAvailabilityGraceTimer;
   bool _otpAvailabilityGraceExpired = false;
+  bool _cancelAddAccountFailed = false;
 
   bool get _isOtpStage => _stage == _LoginStage.otp;
   bool get _isPasswordStage => _stage == _LoginStage.password;
@@ -351,24 +352,8 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _onCancelAddAccount() async {
     final authCubit = context.read<AuthCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
     final ok = await authCubit.cancelAddAccountFlow();
-    if (!mounted) {
-      return;
-    }
-    if (ok) {
-      return;
-    }
-    final message = authCubit.state.error;
-    if (!toastContext.mounted) {
-      return;
-    }
-    shad.showToast(
-      context: toastContext,
-      builder: (ctx, _) => shad.Alert.destructive(
-        title: Text(message ?? ctx.l10n.authSwitchAccountFailed),
-      ),
-    );
+    if (mounted && !ok) setState(() => _cancelAddAccountFailed = true);
   }
 
   @override
@@ -437,11 +422,15 @@ class _LoginPageState extends State<LoginPage> {
             buildWhen: (prev, curr) =>
                 prev.error != curr.error || prev.errorCode != curr.errorCode,
             builder: (context, state) {
-              final errorText = resolveAuthErrorMessage(
-                l10n: l10n,
-                error: state.error,
-                errorCode: state.errorCode,
-              );
+              final errorText =
+                  resolveAuthErrorMessage(
+                    l10n: l10n,
+                    error: state.error,
+                    errorCode: state.errorCode,
+                  ) ??
+                  (_cancelAddAccountFailed && widget.addAccountMode
+                      ? l10n.authSwitchAccountFailed
+                      : null);
               final shouldHideCooldownError =
                   (_stage == _LoginStage.otp && _retryAfter > 0) ||
                   (_stage != _LoginStage.identify &&
