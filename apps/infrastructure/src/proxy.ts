@@ -33,6 +33,11 @@ import {
   calendarPreferenceGuardPrefix,
   isCalendarPreferenceRequest,
 } from './lib/mobile-calendar/preference-guard';
+import {
+  isExplicitBearerRequest,
+  mountedAuthorizationRefusal,
+  refusesMountedAuthorization,
+} from './runtime/mounted-bearer';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const ADMIN_BASE_PATH = getAppBasePath('infra');
@@ -136,7 +141,14 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     const isBuildInfoRead =
       request.nextUrl.pathname === '/api/build-info' &&
       (request.method === 'GET' || request.method === 'HEAD');
-    const hasBearerApiSession = hasAuthenticatedBearerToken(request.headers);
+    // The apex admits only a verified coordination bearer without cookies; a
+    // provider JWT there would skip the provider-only session and MFA checks.
+    if (mounted && refusesMountedAuthorization(request)) {
+      return mountedAuthorizationRefusal();
+    }
+    const hasBearerApiSession = mounted
+      ? isExplicitBearerRequest(request)
+      : hasAuthenticatedBearerToken(request.headers);
     // Scheduler credentials authenticate independently of browser sessions.
     // Keep the shared guard and route-level secret checks in place.
     const hasTrustedCron =

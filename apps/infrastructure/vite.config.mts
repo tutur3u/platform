@@ -16,6 +16,11 @@ const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'infrastructure',
   aliases: {
+    // Admin's apex mount resolves the provider-only session before any
+    // server function runs (see src/runtime/function-proxy.ts).
+    '@tuturuuu/start-bridge/function-proxy': fileURLToPath(
+      new URL('./src/runtime/function-proxy.ts', import.meta.url)
+    ),
     playwright: fileURLToPath(
       new URL('./src/start-bridge/playwright-unavailable.ts', import.meta.url)
     ),

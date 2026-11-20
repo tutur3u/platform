@@ -130,6 +130,49 @@ describe('Infra proxy', () => {
     expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['another app mount', 'https://tuturuuu.com/finance/root', '/finance'],
+    ['the bare apex', 'https://tuturuuu.com/root', ''],
+  ])('answers 404 for %s on the platform apex', async (_, url, basePath) => {
+    const request = new NextRequest(url, { nextConfig: { basePath } });
+    const response = await proxy(request);
+    expect(response.status).toBe(404);
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it('refuses a cookie-less provider bearer on the apex API before any session work', async () => {
+    const request = new NextRequest('https://tuturuuu.com/admin/api/private', {
+      nextConfig: { basePath: '/admin' },
+      headers: { authorization: 'Bearer not-a-coordination-token' },
+    });
+    const response = await proxy(request);
+    expect(response.status).toBe(401);
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  it.each(['MFA required', 'Account assurance unavailable'])(
+    'answers an apex page %s refusal without clearing the central session',
+    async (error) => {
+      const request = new NextRequest('https://tuturuuu.com/admin/root', {
+        nextConfig: { basePath: '/admin' },
+      });
+      mocks.refreshAppSessionForRequest.mockResolvedValue({
+        ok: false,
+        error,
+        response: NextResponse.next(),
+      });
+      const response = await proxy(request);
+      expect(response.status).not.toBe(200);
+      expect(
+        response.headers
+          .getSetCookie()
+          .filter((cookie) => /Max-Age=0/u.test(cookie))
+      ).toEqual([]);
+      expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
+    }
+  );
+
   describe('protected build-info reads', () => {
     it.each(['GET', 'HEAD'])(
       'preserves credentials for %s without refreshing or writing cookies',

@@ -63,7 +63,7 @@ export function getMountedAppVerifyTokenMatch(
   if (
     !app ||
     app === 'platform' ||
-    (app === 'infra' && basePath !== getAppBasePath(app)) ||
+    basePath !== (getAppBasePath(app) ?? basePath) ||
     !activeMounts.has(app) ||
     tail.join('/') !== 'verify-token'
   )
