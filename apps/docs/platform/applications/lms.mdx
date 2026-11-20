@@ -159,8 +159,29 @@ Errors use `{ code, message }`. Handle `LMS_INVALID_QUERY` (400),
 All responses are private and uncached. Existing application APIs keep their
 original contracts.
 
-Mobile integration still requires separate versioned contracts for class roster
-and management, lesson materials and completion, assessment delivery and grades,
+### Staff class roster
+
+`GET /api/v1/workspaces/{wsId}/education/classes/{classId}/roster` uses the
+same availability gate as the catalog. Pass a platform or Teach app session,
+the class's Contacts group ID, and optional `after` and `limit` (1–50, default
+20). The caller needs group view permission and Contacts name access
+(`view_users_public_info` or `view_users_private_info`). A caller with group
+update permission can read the workspace's active class groups. Other staff
+can read a class only while their active workspace contact is assigned as
+its teacher. Student and guardian screens use the learning catalog.
+
+The response includes `class_id`, the staff projection `role`, `data`, and
+`next_cursor`. Each row contains `contact_id`, `name`, the recorded membership
+`role`, `joined_at`, and `updated_at`. Contact ID is the cursor order. Archived
+contacts and rows from another workspace are excluded. The response contains
+no contact emails, guardian details, billing, or grades. Membership rows have
+no reliable modification timestamp, so `updated_at` is null and clients
+reconcile membership removals by restarting from the first page. A missing or
+inaccessible class returns `LMS_CLASS_NOT_FOUND` (404). Other errors follow the
+class catalog contract.
+
+Mobile integration still requires separate versioned contracts for class
+mutations, lesson materials and completion, assessment delivery and grades,
 assignment submissions, notifications, and rewards. Learner and teacher screens
 use only their own projections. Forward links can continue opening the authorized
 Contacts, Finance, Calendar, Meet, Drive, Mail, and Tasks surfaces as their
