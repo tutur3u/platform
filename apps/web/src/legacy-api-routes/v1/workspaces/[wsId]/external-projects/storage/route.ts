@@ -163,7 +163,7 @@ async function getExternalProjectStorageAssetRows({
   kind: z.infer<typeof storageEntryKindSchema>;
   prefix: string;
   relativePath: string;
-}) {
+}): Promise<ExternalProjectAssetPathRow[]> {
   if (kind === 'file') {
     const { data, error } = await access.admin
       .from('workspace_external_project_assets')
@@ -189,7 +189,7 @@ async function getExternalProjectStorageAssetRows({
   }
 
   const scopedPath = toScopedPath(prefix, relativePath);
-  return (data ?? []).filter(
+  return ((data ?? []) as ExternalProjectAssetPathRow[]).filter(
     ({ storage_path }) =>
       storage_path === scopedPath || storage_path?.startsWith(`${scopedPath}/`)
   );

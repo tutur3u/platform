@@ -7,6 +7,7 @@ import type {
 import { assetPublicationProofs } from './asset-publication-store';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
+  type AssetPublicationManifest,
   assetPublicationProofId,
   publicationEventId,
 } from './published-assets';
