@@ -64,3 +64,30 @@ Longest queues (p90): Oxc Check / check-ci / Check CI Config 34.3 min; Coordinat
 Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
 
 Baseline before main coalescing (74ca3852f4). Workflow wall time was mostly queue: Cloudflare Source runs took 38-41 min p50 while their jobs executed in 2-7 min, and tiny Check CI Config jobs queued up to 30 min, because 26 workflows gave every main SHA its own group and each push to a shared package queued about five jobs in each of 23 Cloudflare Source workflows. 74ca3852f4 moves Cloudflare Source, docs/SEO, Test and Type Check to one shared main group without cancelling: the active run finishes and only the pending run is replaced. CodeQL (per-tip security baseline) and Oxc (job-level locks) keep per-SHA groups. Rollback condition: a promotion or release gate that needs evidence for an intermediate main SHA. Also fixed: the SDK portable closure test expected 28 sources after task-history joined (7a246d8107), and web Vitest pins apps/web/tsconfig.json (d69934ece9) because Oxc tsconfig discovery walks past tsconfig files that do not include a test and, in a worktree nested in another checkout, reached that checkout's unresolvable package configs. A changed web Vitest config runs the whole web suite in bun check:changed, which needs an owned Redis: wrap it with scripts/fleet-ci/with-redis.sh. Under host load, subprocess and crypto tests with fixed 0.4-7 s budgets time out on fleet Macs (sdk-qualification-phase, qualify-sdk-package, native-integrity-apple, agent-quota positional admission); they passed on hosted runners, so they stay unconfirmed flake candidates.
+
+## 2026-11-20 | Daily CI sample
+
+Window 2026-11-19T00:34 to 2026-11-20T00:34 UTC, main branch: 1000 workflow runs (531 success, 227 cancelled, 110 failure, 47 queued, 43 skipped, 31 pending, 11 in_progress). Job timing covers 120 sampled runs; execution uses successful jobs only.
+
+| Slowest workflows (wall) | p50 / p90 (n) |
+| --- | ---: |
+| Mobile Build Android | 69.0 min / 69.0 min (1) |
+| mobile | 64.1 min / 64.1 min (1) |
+| Inventory Cloudflare Source | 42.7 min / 50.6 min (4) |
+| Workspace Cloudflare Source | 42.1 min / 50.2 min (4) |
+| Mobile Build Linux | 41.0 min / 41.0 min (1) |
+| Hive Cloudflare Source | 39.3 min / 49.9 min (4) |
+
+| Slowest jobs (execution) | p50 / p90 (n) | queue p90 |
+| --- | ---: | ---: |
+| CodeQL Manual Fallback / Analyze (javascript-typescript) | 22.7 min / 22.7 min (1) | 27 s |
+| Mobile Build Android / Build Android APK (Development) | 17.4 min / 17.4 min (1) | 9 s |
+| Mail Calendar Tasks builds / calendar-native | 9.0 min / 9.0 min (1) | 47 s |
+| Workspace Cloudflare Source / native / validate | 3.9 min / 3.9 min (1) | 7.9 min |
+| Mail Calendar Tasks builds / build (web) | 3.8 min / 4.6 min (2) | 2.3 min |
+| Infrastructure Cloudflare Source / native / validate | 3.8 min / 3.8 min (1) | 4.5 min |
+
+Longest queues (p90): Oxc Check / check-ci / Check CI Config 28.8 min; Lettin Cloudflare / check-ci / Check CI Config 27.9 min; Rewise Cloudflare Source / check-ci / Check CI Config 23.1 min; i18n Check / check-ci / Check CI Config 22.6 min.
+Failed then passed on a later attempt: none. Treat these as flake candidates until the failed assertion is confirmed.
+
+No workflow change. Check CI Config queues stay hosted-pool saturation, not concurrency: in one Native Mail main run the affected-gate job queued 18 s and check-ci, created 21 s later on the same ubuntu-latest label, queued 16 min. Each package-touching main push starts about 37 affected-gate jobs that only emit run=true off pull requests yet take a hosted slot and a billed minute each. Skipping the gate on non-PR events needs status-function guards on every consumer, which affected-gate-workflows.test.js forbids so a failed upstream cannot release a production job; the change needs the Cloudflare Source owner and a consumer-guard redesign, not a daily edit. Native Mail main failures are production upload refusals in the cutover lane, not flakes. No failed-then-passed job, so no flake fix.
