@@ -272,3 +272,40 @@ test('learner attempt helpers stay closed unless the ACL restatement is present'
     [24, 58, 86]
   );
 });
+
+test('QA test user definers stay flagged unless the pinned restatement is present', () => {
+  const fs = require('node:fs');
+  const verifiedFindings = require('./sql-grant-guard-verified-findings');
+  const hardening =
+    'apps/database/supabase/migrations/20261120225500_pin_qa_test_user_definers.sql';
+  const bound = verifiedFindings.filter(
+    (e) => e.requiredMigration === hardening
+  );
+  assert.equal(bound.length, 16);
+  const sql = fs.readFileSync(hardening, 'utf8').toLowerCase();
+  assert.doesNotMatch(sql, /set search_path = ''/);
+  assert.match(sql, /-- tuturuuu: no-grant \(internal\)/);
+  assert.match(
+    sql,
+    /revoke all on function private\.staff_identity_verified\(uuid\) from public, anon, authenticated, service_role;/
+  );
+  const files = [
+    ...new Set(
+      verifiedFindings.flatMap((e) =>
+        [e.path, e.requiredMigration].filter(Boolean)
+      )
+    ),
+  ];
+  const run = (list) =>
+    evaluateSqlFiles({
+      files: list,
+      readFile: (f) => fs.readFileSync(f, 'utf8'),
+      verifiedFindings,
+    });
+  const bindsQa = (f) => bound.some((e) => e.path === f.file);
+  assert.deepEqual(run(files).violations.filter(bindsQa), []);
+  assert.equal(
+    run(files.filter((f) => f !== hardening)).violations.filter(bindsQa).length,
+    bound.length
+  );
+});

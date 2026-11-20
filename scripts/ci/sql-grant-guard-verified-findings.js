@@ -5,6 +5,7 @@ const HARDENING_MIGRATION_FILENAME =
 const requiredMigration = `apps/database/supabase/migrations/${HARDENING_MIGRATION_FILENAME}`;
 module.exports = [
   ...require('./sql-grant-guard-verified-findings-meet'),
+  ...require('./sql-grant-guard-verified-findings-qa'),
   {
     path: 'apps/database/supabase/migrations/20261030112010_workspace_delete_fk_cascade_guard.sql',
     line: 2,
