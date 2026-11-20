@@ -66,6 +66,59 @@ idempotent processing and a durable stop path.
 The publication hold lifts after the canonical `/lms` mount passes signed-in
 acceptance. Each shared education migration requires review before publication.
 
+## Education center integrations
+
+Current education-center operations use Contacts groups for rosters, class
+sessions, attendance, and daily and periodic reports. Finance bills tuition for
+a contact and their class using those same groups, schedules, and attendance
+records. LMS preserves the saved identifiers, configuration, history, and API
+contracts behind these workflows. Existing workspaces can adopt LMS without an
+import, backfill, or data migration.
+
+| Workflow | Existing source | LMS behavior |
+| --- | --- | --- |
+| Learners, teachers, and assistants | Contacts workspace users, explicit platform-account links, and group membership | Use the same contact and group IDs. Each LMS class or independently rostered section uses its Contacts group. The existing manager-only membership operation owns enrollment and role changes. Scope invitations and join codes to that operation and keep the original membership date and audit history. |
+| Guardians and contact profiles | Contacts contact details and explicit Learn invitation and consent links | Resolve notification recipients from authorized Contacts data. Verified, active guardian links authorize access to the intended learner. Signed-in Contacts profiles can link to LMS progress and released grades. Public profile shares carry no new academic fields or access grants. |
+| Timetables and attendance | Contacts group session recurrence, scheduled occurrences, canceled exceptions, and group attendance | Read the same occurrence IDs, time zone, and roster. Calendar displays those sessions. Teach records marks through the group attendance workflow, so the same edits appear in Contacts and feed the existing Finance policy. |
+| Reports | Contacts daily post checks and periodic reports, including approvals, stages, and delivery history | Show the same reports in Contacts and share only eligible results in Learn. Keep skipped historical delivery records, recipient verification, review and send controls intact. |
+| Tuition and payments | Finance invoice customer, invoice-to-group links, payment transactions, and tuition coverage | Show the billing period and payment status in the class roster only with the existing Finance permission. Link to Finance with the selected contact and group. Finance owns invoicing, settlements, cancellations, credits, and audits. |
+| Discounts | Finance promotions, saved invoice discounts, and linked promotion eligibility | Use Finance's existing promotion selection and validation when billing tuition. Preserve the terms recorded on historical invoices. |
+
+Use `workspace_users`, `workspace_user_linked_users`, `workspace_user_groups`,
+and `workspace_user_groups_users` as the identity and roster join. Calendar
+views use Contacts' resolved group sessions and `user_group_attendance`
+records. Finance links `finance_invoices.customer_id` to the same workspace
+user and `finance_invoice_user_groups` to the same class. An invoice can cover
+more than one class. Finance's explicit `subscription_months` and legacy
+coverage remain authoritative, including the membership start date, planned
+and canceled sessions, configured attendance billing, and linked tuition
+products. LMS displays Finance's status without recalculating or duplicating it.
+See [Contacts](/platform/applications/contacts),
+[Finance tuition coverage](/platform/applications/finance#subscription-coverage-and-tuition-reporting),
+and [Reports](/platform/applications/reports).
+
+Meet owns live sessions and participant intervals. Link live sessions to a
+lesson and its class occurrence. When Meet attendance is enabled, match only
+verified identities to the class roster and feed the existing Contacts
+attendance workflow. Preserve staff corrections and keep guest identities
+unmatched until staff can verify them. Drive owns file permissions and links
+for lesson resources and submissions. Mail and notifications deliver class
+announcements and assignment reminders through their existing recipient and
+delivery controls. Tasks can show teacher follow-ups and grading work linked
+to the LMS item. The LMS submission and gradebook remain authoritative for
+the outcome.
+
+Every cross-app action checks the destination app's workspace and resource
+permissions, even when a link starts in another app. Add new fields or views
+without changing existing response shapes, routes, or writes. Verify that the
+same group and student appear in Contacts and LMS, the same class occurrence
+appears in the schedule and attendance views, and Finance gives the same
+tuition result before and after LMS adoption. Check that a roster viewer
+without invoice access sees no billing information. Keep those comparisons
+read-only for active workspaces and exercise writes in a controlled workspace.
+The existing Contacts attendance, report scope, and Finance
+pending-tuition and subscription-context regressions anchor these checks.
+
 ## Routes and canonical URLs
 
 | Canonical path | Purpose |
