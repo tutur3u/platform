@@ -263,6 +263,8 @@ The API checks ownership again inside the database transaction. A successful del
 
 Deletion is permanent. Changing the existing workspace marker can leave tasks accessible through membership. Service routes and storage use independent access checks. A workspace with dependencies that must be retained can fail deletion; the transaction leaves its records intact. Account deletion and last-member cleanup are separate flows.
 
+On mobile, the owner of a team workspace sees **Settings → Workspace → Danger zone → Delete workspace**. Other members, personal workspaces and the platform workspace never show the row. The sheet reads `GET /api/workspaces/{wsId}/deletion-status` first: a protected workspace or blocking billing shows the reason without a delete action. When deletion is allowed, the sheet lists the consequences and enables **Delete permanently** only after the exact workspace name is typed; the request goes through the same `DELETE /api/workspaces/{wsId}` route, so the server repeats every check. A server failure (5xx) or an unreachable server shows a retryable "isn't available right now" message instead of the raw error. After deletion, the app switches to the personal workspace and refreshes the workspace list. Mobile coverage is `apps/mobile/test/features/settings/view/workspace_deletion_test.dart`.
+
 Regression coverage includes [the workspace deletion route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/workspaces/%5BwsId%5D/route.test.ts) and [the database deletion policy tests](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/owner-only-workspace-deletion.sql).
 
 ## Layout and contrast

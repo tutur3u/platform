@@ -1,45 +1,53 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/config/api_config.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace_management.dart';
 import 'package:mobile/data/repositories/workspace_management_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/features/settings/view/settings_dock_search.dart';
+import 'package:mobile/features/settings/view/settings_workspace_member_sheets.dart';
+import 'package:mobile/features/settings/view/settings_workspace_members_view.dart';
+import 'package:mobile/features/settings/view/workspace_admin_widgets.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:mobile/widgets/pending_sync_frame.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
-part 'settings_workspace_members_cards.dart';
+final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
 class SettingsWorkspaceMembersPage extends StatelessWidget {
-  const SettingsWorkspaceMembersPage({super.key});
+  const SettingsWorkspaceMembersPage({
+    this.repository,
+    this.permissionsRepository,
+    super.key,
+  });
+
+  final WorkspaceManagementRepository? repository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => WorkspaceManagementRepository(),
-      child: const _SettingsWorkspaceMembersView(),
+      create: (_) => repository ?? WorkspaceManagementRepository(),
+      child: _SettingsWorkspaceMembersView(
+        permissionsRepository:
+            permissionsRepository ?? WorkspacePermissionsRepository(),
+      ),
     );
   }
 }
 
 class _SettingsWorkspaceMembersView extends StatefulWidget {
-  const _SettingsWorkspaceMembersView();
+  const _SettingsWorkspaceMembersView({required this.permissionsRepository});
+
+  final WorkspacePermissionsRepository permissionsRepository;
 
   @override
   State<_SettingsWorkspaceMembersView> createState() =>
@@ -48,205 +56,112 @@ class _SettingsWorkspaceMembersView extends StatefulWidget {
 
 class _SettingsWorkspaceMembersViewState
     extends State<_SettingsWorkspaceMembersView> {
-  late final WorkspacePermissionsRepository _permissionsRepository;
+  final _searchController = TextEditingController();
+  bool _searchActive = false;
+  String _query = '';
 
   bool _loading = true;
   bool _canManageMembers = false;
+  bool _canManageRoles = false;
   String? _error;
+  int _loadToken = 0;
   List<WorkspaceMemberListItem> _members = const [];
   List<WorkspaceInviteLink> _inviteLinks = const [];
+  List<WorkspaceRoleListItem> _roles = const [];
+
+  WorkspaceManagementRepository get _repository =>
+      context.read<WorkspaceManagementRepository>();
+
+  String? get _wsId =>
+      context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
   @override
   void initState() {
     super.initState();
-    _permissionsRepository = WorkspacePermissionsRepository();
     unawaited(_loadData());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
-    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
-    final activeMembers = _members.where((member) => !member.pending).toList();
-    final pendingMembers = _members.where((member) => member.pending).toList();
-
+    final canInvite = _canManageMembers && !_loading;
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
       listener: (context, state) => unawaited(_loadData()),
-      child: shad.Scaffold(
-        child: NovaRefreshIndicator(
-          onRefresh: _loadData,
-          child: ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: SettingsRowLayout.scrollPadding(
-                context,
-                horizontalPadding,
-              ),
-              children: [
-                FinancePanel(
-                  radius: 26,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          FinanceStatChip(
-                            label: l10n.settingsWorkspaceMembersTitle,
-                            value: '${activeMembers.length}',
-                            icon: Icons.group_outlined,
-                          ),
-                          FinanceStatChip(
-                            label: l10n.settingsWorkspaceMembersPendingChip,
-                            value: '${pendingMembers.length}',
-                            icon: Icons.mark_email_unread_outlined,
-                          ),
-                          FinanceStatChip(
-                            label: l10n.settingsWorkspaceMembersLinksSection,
-                            value: '${_inviteLinks.length}',
-                            icon: Icons.link_rounded,
-                          ),
-                        ],
+      child: NovaRefreshIndicator(
+        onRefresh: _loadData,
+        child: AppPageListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          children: [
+            SettingsDockSearch(
+              ownerId: 'settings-workspace-members',
+              location: Routes.settingsWorkspaceMembers,
+              controller: _searchController,
+              hint: l10n.settingsWorkspaceMembersSearchPlaceholder,
+              active: _searchActive,
+              onActiveChanged: (active) =>
+                  setState(() => _searchActive = active),
+              onChanged: (value) => setState(() => _query = value),
+              actions: [
+                if (canInvite)
+                  ShellActionSpec(
+                    id: 'settings-workspace-members-invite',
+                    icon: LucideIcons.userPlus,
+                    tooltip: l10n.settingsWorkspaceMembersInviteAction,
+                    onPressed: () => unawaited(_onInviteMember()),
+                  ),
+              ],
+              fallback: Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppSearchField(
+                        controller: _searchController,
+                        placeholder:
+                            l10n.settingsWorkspaceMembersSearchPlaceholder,
+                        onChanged: (value) => setState(() => _query = value),
                       ),
-                      const shad.Gap(14),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          shad.OutlineButton(
-                            onPressed: !_canManageMembers || _loading
-                                ? null
-                                : _onCreateInviteLink,
-                            child: Text(
-                              l10n.settingsWorkspaceMembersLinkAction,
-                            ),
-                          ),
-                          shad.PrimaryButton(
-                            onPressed: !_canManageMembers || _loading
-                                ? null
-                                : _onInviteMember,
-                            child: Text(
-                              l10n.settingsWorkspaceMembersInviteAction,
-                            ),
-                          ),
-                        ],
+                    ),
+                    if (canInvite) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      AppIconButton(
+                        key: const ValueKey('workspace-members-invite'),
+                        variant: AppButtonVariant.primary,
+                        tooltip: l10n.settingsWorkspaceMembersInviteAction,
+                        icon: const Icon(LucideIcons.userPlus),
+                        onPressed: () => unawaited(_onInviteMember()),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                const shad.Gap(16),
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: AppLoadingIndicator.page(),
-                  )
-                else if (_error != null)
-                  _MembersStatePanel(
-                    message: _error!,
-                    actionLabel: l10n.commonRetry,
-                    onPressed: _loadData,
-                  )
-                else if (!_canManageMembers)
-                  _MembersStatePanel(
-                    message: l10n.settingsWorkspaceMembersAccessDenied,
-                  )
-                else ...[
-                  FinanceSectionHeader(
-                    title: l10n.settingsWorkspaceMembersActiveSection(
-                      activeMembers.length,
-                    ),
-                  ),
-                  const shad.Gap(10),
-                  if (activeMembers.isEmpty)
-                    _MembersStatePanel(
-                      message: l10n.settingsWorkspaceMembersEmpty,
-                    )
-                  else
-                    ...activeMembers.map(
-                      (member) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: PendingSyncFrame(
-                          workspaceId: wsId,
-                          entityId: member.id,
-                          feature: 'workspace-management',
-                          relatedEntityIds: [
-                            if (member.email != null) member.email!,
-                          ],
-                          child: _MemberCard(
-                            member: member,
-                            onRemove: member.isCreator
-                                ? null
-                                : () => _onRemoveMember(member),
-                          ),
-                        ),
-                      ),
-                    ),
-                  const shad.Gap(18),
-                  FinanceSectionHeader(
-                    title: l10n.settingsWorkspaceMembersPendingSection(
-                      pendingMembers.length,
-                    ),
-                  ),
-                  const shad.Gap(10),
-                  if (pendingMembers.isEmpty)
-                    _MembersStatePanel(
-                      message: l10n.settingsWorkspaceMembersPendingEmpty,
-                    )
-                  else
-                    ...pendingMembers.map(
-                      (member) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: PendingSyncFrame(
-                          workspaceId: wsId,
-                          entityId: member.id,
-                          feature: 'workspace-management',
-                          relatedEntityIds: [
-                            if (member.email != null) member.email!,
-                          ],
-                          child: _MemberCard(
-                            member: member,
-                            onRemove: () => _onRemoveMember(member),
-                          ),
-                        ),
-                      ),
-                    ),
-                  const shad.Gap(18),
-                  FinanceSectionHeader(
-                    title: l10n.settingsWorkspaceMembersLinksSection,
-                  ),
-                  const shad.Gap(10),
-                  if (_inviteLinks.isEmpty)
-                    _MembersStatePanel(
-                      message: l10n.settingsWorkspaceMembersLinksEmpty,
-                    )
-                  else
-                    ..._inviteLinks.map(
-                      (link) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: PendingSyncFrame(
-                          workspaceId: wsId,
-                          entityId: link.id,
-                          feature: 'workspace-management',
-                          child: _InviteLinkCard(
-                            link: link,
-                            onCopy: () => _copyLink(link),
-                            onRemove: () => _onRemoveInviteLink(link),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ],
+              ),
             ),
-          ),
+            WorkspaceMembersView(
+              workspaceId: _wsId ?? '',
+              loading: _loading,
+              canManage: _canManageMembers,
+              error: _error,
+              query: _query,
+              members: _members,
+              inviteLinks: _inviteLinks,
+              onRetry: () => unawaited(_loadData()),
+              onOpenMember: (member) => unawaited(_onOpenMember(member)),
+              onRevokeInvite: (member) => unawaited(_onRemoveMember(member)),
+              onCopyLink: (link) => unawaited(_copyLink(link)),
+              onDeleteLink: (link) => unawaited(_onRemoveInviteLink(link)),
+              onCreateLink: () => unawaited(_onCreateInviteLink()),
+            ),
+          ],
         ),
       ),
     );
@@ -255,361 +170,218 @@ class _SettingsWorkspaceMembersViewState
   Future<void> _loadData() async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
-    if (wsId == null || wsId.isEmpty) {
-      if (!mounted) return;
+    final token = ++_loadToken;
+    if (wsId == null || wsId.isEmpty || workspace?.personal == true) {
       setState(() {
         _loading = false;
         _canManageMembers = false;
       });
       return;
     }
-
     setState(() {
-      _loading = true;
+      _loading = _members.isEmpty;
       _error = null;
     });
 
     try {
-      final repository = context.read<WorkspaceManagementRepository>();
-      final permissions = await _permissionsRepository.getPermissions(
+      final repository = _repository;
+      final permissions = await widget.permissionsRepository.getPermissions(
         wsId: wsId,
       );
-      final canManageMembers =
-          workspace?.personal == false &&
-          permissions.containsPermission('manage_workspace_members');
-
+      final canManageMembers = permissions.containsPermission(
+        'manage_workspace_members',
+      );
+      final canManageRoles = permissions.containsPermission(
+        manageWorkspaceRolesPermission,
+      );
       if (!canManageMembers) {
-        if (!mounted) return;
+        if (!mounted || token != _loadToken) return;
         setState(() {
           _loading = false;
           _canManageMembers = false;
+          _canManageRoles = canManageRoles;
           _members = const [];
           _inviteLinks = const [];
         });
         return;
       }
 
-      final results = await Future.wait<dynamic>([
+      final results = await Future.wait<Object>([
         repository.getMembers(wsId),
         repository.getInviteLinks(wsId),
+        if (canManageRoles) repository.getRoles(wsId),
       ]);
-
-      if (!mounted) return;
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _loading = false;
         _canManageMembers = true;
+        _canManageRoles = canManageRoles;
         _members = results[0] as List<WorkspaceMemberListItem>;
         _inviteLinks = results[1] as List<WorkspaceInviteLink>;
+        _roles = canManageRoles
+            ? results[2] as List<WorkspaceRoleListItem>
+            : const [];
       });
-    } on ApiException catch (error) {
-      if (!mounted) return;
+    } on Exception catch (error) {
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _loading = false;
-        _error = error.message;
-      });
-    } on Exception catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = context.l10n.commonSomethingWentWrong;
+        _error = describeWorkspaceAdminError(context, error);
       });
     }
   }
 
   Future<void> _onInviteMember() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = _wsId;
     if (wsId == null) return;
-    final repository = context.read<WorkspaceManagementRepository>();
-    final changed = await showFinanceFullscreenModal<bool>(
+    final l10n = context.l10n;
+    final repository = _repository;
+    final sent = await showWorkspaceFieldSheet(
       context: context,
-      builder: (_) => RepositoryProvider.value(
-        value: repository,
-        child: _InviteMemberEditorPage(wsId: wsId),
-      ),
+      title: l10n.settingsWorkspaceMembersInviteAction,
+      icon: LucideIcons.userPlus,
+      label: l10n.settingsWorkspaceMembersEmailField,
+      placeholder: l10n.settingsWorkspaceMembersEmailPlaceholder,
+      submitLabel: l10n.settingsWorkspaceMembersInviteAction,
+      keyboardType: TextInputType.emailAddress,
+      validate: (value) => _emailPattern.hasMatch(value)
+          ? null
+          : l10n.settingsWorkspaceMembersEmailInvalid,
+      onSubmit: (email) =>
+          repository.inviteMember(wsId: wsId, email: email.toLowerCase()),
     );
-    if (changed == true && mounted) {
-      await _loadData();
-    }
+    if (!sent || !mounted) return;
+    showAppToast(
+      context,
+      message: l10n.settingsWorkspaceMembersInviteSent,
+      variant: AppAlertVariant.success,
+    );
+    await _loadData();
   }
 
   Future<void> _onCreateInviteLink() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = _wsId;
     if (wsId == null) return;
-    final repository = context.read<WorkspaceManagementRepository>();
-    final changed = await showFinanceFullscreenModal<bool>(
+    final l10n = context.l10n;
+    final repository = _repository;
+    final created = await showWorkspaceFieldSheet(
       context: context,
-      builder: (_) => RepositoryProvider.value(
-        value: repository,
-        child: _InviteLinkEditorPage(wsId: wsId),
+      title: l10n.settingsWorkspaceMembersLinkAction,
+      icon: LucideIcons.link,
+      label: l10n.settingsWorkspaceMembersLinkLimitField,
+      placeholder: l10n.settingsWorkspaceMembersLinkLimitPlaceholder,
+      submitLabel: l10n.commonCreate,
+      keyboardType: TextInputType.number,
+      validate: (value) {
+        if (value.isEmpty) return null;
+        final parsed = int.tryParse(value);
+        return parsed == null || parsed <= 0
+            ? l10n.settingsWorkspaceMembersLinkLimitInvalid
+            : null;
+      },
+      onSubmit: (value) => repository.createInviteLink(
+        wsId: wsId,
+        maxUses: value.isEmpty ? null : int.parse(value),
       ),
     );
-    if (changed == true && mounted) {
-      await _loadData();
+    if (!created || !mounted) return;
+    showAppToast(
+      context,
+      message: l10n.settingsWorkspaceMembersLinkCreated,
+      variant: AppAlertVariant.success,
+    );
+    await _loadData();
+  }
+
+  Future<void> _onOpenMember(WorkspaceMemberListItem member) async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+    final l10n = context.l10n;
+    final repository = _repository;
+    final result = await showAppSheet<WorkspaceMemberSheetResult>(
+      context: context,
+      builder: (_) => WorkspaceMemberSheet(
+        member: member,
+        roles: _roles,
+        canEditRoles: _canManageRoles,
+        canRemove: _canManageMembers && !member.isCreator,
+        onSaveRoles: (current, selected) => repository.setMemberRoles(
+          wsId: wsId,
+          userId: member.id,
+          currentRoleIds: current,
+          selectedRoleIds: selected,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    switch (result) {
+      case WorkspaceMemberSheetResult.rolesSaved:
+        showAppToast(
+          context,
+          message: l10n.settingsWorkspaceMembersRolesSaved,
+          variant: AppAlertVariant.success,
+        );
+        await _loadData();
+      case WorkspaceMemberSheetResult.remove:
+        await _onRemoveMember(member);
+      case null:
+        break;
     }
   }
 
   Future<void> _copyLink(WorkspaceInviteLink link) async {
-    final url = '${ApiConfig.baseUrl}/invite/${link.code}';
-    await Clipboard.setData(ClipboardData(text: url));
+    await Clipboard.setData(
+      ClipboardData(text: '${ApiConfig.baseUrl}/invite/${link.code}'),
+    );
     if (!mounted) return;
-    shad.showToast(
-      context: context,
-      builder: (_, overlay) => shad.Alert(
-        content: Text(context.l10n.settingsWorkspaceMembersLinkCopied),
-      ),
+    showAppToast(
+      context,
+      message: context.l10n.settingsWorkspaceMembersLinkCopied,
     );
   }
 
   Future<void> _onRemoveMember(WorkspaceMemberListItem member) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = _wsId;
     if (wsId == null) return;
-    final deleted =
-        await shad.showDialog<bool>(
-          context: context,
-          builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.settingsWorkspaceMembersRemoveTitle,
-            message: context.l10n.settingsWorkspaceMembersRemoveMessage(
-              member.label,
-            ),
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.settingsWorkspaceMembersRemoveTitle,
-            toastContext: Navigator.of(context, rootNavigator: true).context,
-            onConfirm: () =>
-                context.read<WorkspaceManagementRepository>().removeMember(
-                  wsId: wsId,
-                  userId: member.pending ? null : member.id,
-                  email: member.pending ? member.email : null,
-                ),
-          ),
-        ) ??
-        false;
-    if (!deleted || !mounted) return;
-    await _loadData();
+    final l10n = context.l10n;
+    final repository = _repository;
+    final title = member.pending
+        ? l10n.settingsWorkspaceMembersRevokeTitle
+        : l10n.settingsWorkspaceMembersRemoveTitle;
+    final removed = await showAppAsyncConfirmDialog(
+      context: context,
+      title: title,
+      message: member.pending
+          ? l10n.settingsWorkspaceMembersRevokeMessage(
+              member.email ?? member.label,
+            )
+          : l10n.settingsWorkspaceMembersRemoveMessage(member.label),
+      confirmLabel: title,
+      cancelLabel: l10n.commonCancel,
+      describeError: (error) => describeWorkspaceAdminError(context, error),
+      onConfirm: () => repository.removeMember(
+        wsId: wsId,
+        userId: member.pending ? null : member.id,
+        email: member.pending ? member.email : null,
+      ),
+    );
+    if (removed && mounted) await _loadData();
   }
 
   Future<void> _onRemoveInviteLink(WorkspaceInviteLink link) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    final wsId = _wsId;
     if (wsId == null) return;
-    final deleted =
-        await shad.showDialog<bool>(
-          context: context,
-          builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.settingsWorkspaceMembersLinkDeleteTitle,
-            message: context.l10n.settingsWorkspaceMembersLinkDeleteMessage,
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.settingsWorkspaceMembersLinkDeleteTitle,
-            toastContext: Navigator.of(context, rootNavigator: true).context,
-            onConfirm: () => context
-                .read<WorkspaceManagementRepository>()
-                .deleteInviteLink(wsId: wsId, linkId: link.id),
-          ),
-        ) ??
-        false;
-    if (!deleted || !mounted) return;
-    await _loadData();
-  }
-}
-
-class _InviteMemberEditorPage extends StatefulWidget {
-  const _InviteMemberEditorPage({required this.wsId});
-
-  final String wsId;
-
-  @override
-  State<_InviteMemberEditorPage> createState() =>
-      _InviteMemberEditorPageState();
-}
-
-class _InviteMemberEditorPageState extends State<_InviteMemberEditorPage> {
-  late final TextEditingController _emailController;
-  bool _saving = false;
-  String? _emailError;
-
-  @override
-  void initState() {
-    super.initState();
-    _emailController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FinanceFullscreenFormScaffold(
-      title: context.l10n.settingsWorkspaceMembersInviteAction,
-      primaryActionLabel: context.l10n.settingsWorkspaceMembersInviteAction,
-      isSaving: _saving,
-      onPrimaryPressed: _save,
-      child: ListView(
-        children: [
-          FinanceFormSection(
-            title: context.l10n.settingsWorkspaceMembersEmailField,
-            child: _MembersTextField(
-              controller: _emailController,
-              placeholder:
-                  context.l10n.settingsWorkspaceMembersEmailPlaceholder,
-              keyboardType: TextInputType.emailAddress,
-              errorText: _emailError,
-              onChanged: (_) {
-                if (_emailError != null) {
-                  setState(() => _emailError = null);
-                }
-              },
-            ),
-          ),
-        ],
-      ),
+    final l10n = context.l10n;
+    final repository = _repository;
+    final removed = await showAppAsyncConfirmDialog(
+      context: context,
+      title: l10n.settingsWorkspaceMembersLinkDeleteTitle,
+      message: l10n.settingsWorkspaceMembersLinkDeleteMessage,
+      confirmLabel: l10n.settingsWorkspaceMembersLinkDeleteTitle,
+      cancelLabel: l10n.commonCancel,
+      describeError: (error) => describeWorkspaceAdminError(context, error),
+      onConfirm: () => repository.deleteInviteLink(wsId: wsId, linkId: link.id),
     );
-  }
-
-  Future<void> _save() async {
-    final email = _emailController.text.trim();
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    if (!emailRegex.hasMatch(email)) {
-      setState(() {
-        _emailError = context.l10n.settingsWorkspaceMembersEmailInvalid;
-      });
-      return;
-    }
-
-    setState(() => _saving = true);
-    try {
-      await context.read<WorkspaceManagementRepository>().inviteMember(
-        wsId: widget.wsId,
-        email: email,
-      );
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) => shad.Alert(
-          content: Text(context.l10n.settingsWorkspaceMembersInviteSent),
-        ),
-      );
-      Navigator.of(context).pop(true);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) =>
-            shad.Alert.destructive(content: Text(error.message)),
-      );
-      setState(() => _saving = false);
-    } on Exception catch (_) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) => shad.Alert.destructive(
-          content: Text(context.l10n.commonSomethingWentWrong),
-        ),
-      );
-      setState(() => _saving = false);
-    }
-  }
-}
-
-class _InviteLinkEditorPage extends StatefulWidget {
-  const _InviteLinkEditorPage({required this.wsId});
-
-  final String wsId;
-
-  @override
-  State<_InviteLinkEditorPage> createState() => _InviteLinkEditorPageState();
-}
-
-class _InviteLinkEditorPageState extends State<_InviteLinkEditorPage> {
-  late final TextEditingController _maxUsesController;
-  bool _saving = false;
-  String? _maxUsesError;
-
-  @override
-  void initState() {
-    super.initState();
-    _maxUsesController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _maxUsesController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FinanceFullscreenFormScaffold(
-      title: context.l10n.settingsWorkspaceMembersLinkAction,
-      primaryActionLabel: context.l10n.settingsWorkspaceMembersLinkAction,
-      isSaving: _saving,
-      onPrimaryPressed: _save,
-      child: ListView(
-        children: [
-          FinanceFormSection(
-            title: context.l10n.settingsWorkspaceMembersLinkLimitField,
-            child: _MembersTextField(
-              controller: _maxUsesController,
-              placeholder:
-                  context.l10n.settingsWorkspaceMembersLinkLimitPlaceholder,
-              keyboardType: TextInputType.number,
-              errorText: _maxUsesError,
-              onChanged: (_) {
-                if (_maxUsesError != null) {
-                  setState(() => _maxUsesError = null);
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _save() async {
-    final rawValue = _maxUsesController.text.trim();
-    int? maxUses;
-    if (rawValue.isNotEmpty) {
-      maxUses = int.tryParse(rawValue);
-      if (maxUses == null || maxUses <= 0) {
-        setState(() {
-          _maxUsesError = context.l10n.settingsWorkspaceMembersLinkLimitInvalid;
-        });
-        return;
-      }
-    }
-
-    setState(() => _saving = true);
-    try {
-      await context.read<WorkspaceManagementRepository>().createInviteLink(
-        wsId: widget.wsId,
-        maxUses: maxUses,
-      );
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) => shad.Alert(
-          content: Text(context.l10n.settingsWorkspaceMembersLinkCreated),
-        ),
-      );
-      Navigator.of(context).pop(true);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) =>
-            shad.Alert.destructive(content: Text(error.message)),
-      );
-      setState(() => _saving = false);
-    } on Exception catch (_) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) => shad.Alert.destructive(
-          content: Text(context.l10n.commonSomethingWentWrong),
-        ),
-      );
-      setState(() => _saving = false);
-    }
+    if (removed && mounted) await _loadData();
   }
 }

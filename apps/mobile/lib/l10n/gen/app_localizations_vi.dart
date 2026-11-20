@@ -16662,4 +16662,106 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeUndo => 'Hoàn tác';
+
+  @override
+  String get settingsWorkspaceMembersSearchPlaceholder => 'Tìm thành viên';
+
+  @override
+  String get settingsWorkspaceMembersRolesSection => 'Vai trò';
+
+  @override
+  String get settingsWorkspaceMembersRolesSaved => 'Đã cập nhật vai trò';
+
+  @override
+  String get settingsWorkspaceMembersNoRoles => 'Chưa được gán vai trò';
+
+  @override
+  String get settingsWorkspaceMembersRevokeTitle => 'Thu hồi lời mời';
+
+  @override
+  String settingsWorkspaceMembersRevokeMessage(String email) {
+    return '$email sẽ không thể tham gia bằng lời mời này nữa.';
+  }
+
+  @override
+  String settingsWorkspaceMembersLinkUsage(String uses, String expiry) {
+    return '$uses lượt dùng · $expiry';
+  }
+
+  @override
+  String settingsWorkspaceMembersLinkExpires(String date) {
+    return 'Hết hạn $date';
+  }
+
+  @override
+  String get settingsWorkspaceRolesSearchPlaceholder => 'Tìm vai trò';
+
+  @override
+  String get settingsWorkspaceRolesSelectGroup => 'Chọn tất cả';
+
+  @override
+  String get settingsWorkspaceRolesClearGroup => 'Bỏ chọn tất cả';
+
+  @override
+  String get settingsWorkspaceRolesAdminNote => 'Quản trị viên có mọi quyền trong không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceSecretsReveal => 'Hiện giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsHide => 'Ẩn giá trị';
+
+  @override
+  String get settingsWorkspaceSecretsCopied => 'Đã sao chép giá trị bí mật';
+
+  @override
+  String get settingsWorkspaceDangerZone => 'Vùng nguy hiểm';
+
+  @override
+  String get settingsWorkspaceDeleteTitle => 'Xóa không gian làm việc';
+
+  @override
+  String get settingsWorkspaceDeleteAction => 'Xóa vĩnh viễn';
+
+  @override
+  String get settingsWorkspaceDeleteWarningTitle => 'Không thể hoàn tác';
+
+  @override
+  String settingsWorkspaceDeleteConsequenceData(String name) {
+    return '$name cùng toàn bộ công việc, tài liệu, dữ liệu tài chính, tệp và cài đặt sẽ bị xóa vĩnh viễn.';
+  }
+
+  @override
+  String get settingsWorkspaceDeleteConsequenceMembers => 'Mọi thành viên mất quyền truy cập; lời mời và liên kết mời đang chờ sẽ ngừng hoạt động.';
+
+  @override
+  String get settingsWorkspaceDeleteConsequenceFinal => 'Không gian làm việc đã xóa không thể khôi phục.';
+
+  @override
+  String settingsWorkspaceDeleteConfirmLabel(String name) {
+    return 'Nhập $name để xác nhận';
+  }
+
+  @override
+  String get settingsWorkspaceDeleteMismatch => 'Tên không khớp với không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDeleteProtected => 'Không gian làm việc này đang bị khóa xóa.';
+
+  @override
+  String get settingsWorkspaceDeleteSubscription => 'Hãy xử lý gói trả phí hoặc thanh toán chưa xác minh trước khi xóa không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDeleteOwnerOnly => 'Chỉ chủ sở hữu mới có thể xóa không gian làm việc này.';
+
+  @override
+  String get settingsWorkspaceDeleteNotFound => 'Không gian làm việc này không còn tồn tại.';
+
+  @override
+  String get settingsWorkspaceDeleteUnavailable => 'Hiện chưa thể xóa không gian làm việc. Vui lòng thử lại sau.';
+
+  @override
+  String settingsWorkspaceDeleted(String name) {
+    return 'Đã xóa $name';
+  }
 }

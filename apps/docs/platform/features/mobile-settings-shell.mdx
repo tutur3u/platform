@@ -797,6 +797,32 @@ includes `settings_forms_render_test.dart` (Feedback and Offline in English and
 Vietnamese, light and dark), `offline_module_page_test.dart` and the Mail
 settings regressions.
 
+## Workspace members, roles and secrets
+
+Settings → Workspace → Members, Roles and Secrets are plain grouped lists in
+the settings sub-page template, with no summary cards above them. Each page
+registers dock search and, for users who can act, a top-bar add action (Invite,
+New role, New secret). Permission checks run on the server; the pages only hide
+actions the current user cannot take.
+
+- **Members** lists active members (owner first, with Creator and role
+  badges), pending invitations with a revoke action, and invite links with
+  status, copy and delete. A member opens a sheet where role managers assign
+  roles and member managers remove the member; the owner cannot be removed.
+- **Roles** shows Default access and the custom roles. The full-height role
+  editor holds the name, the permission matrix grouped by area with Select all
+  per group, and member assignment for existing roles. Turning on Admin shows
+  that it grants every permission.
+- **Secrets** (root workspace, `manage_workspace_secrets`) shows the Drive
+  storage rollout, the rollout secrets and every secret. Values stay masked
+  until revealed per row and can be copied; boolean secrets toggle in place.
+- Removals and migrations confirm through `showAppAsyncConfirmDialog`, which
+  keeps the dialog open with the server error so the user can retry.
+
+Coverage: `workspace_admin_views_test.dart`, `workspace_role_editor_test.dart`
+and `workspace_admin_render_test.dart` (English and Vietnamese, light and dark,
+written to `DESIGN_RENDER_DIR/workspace-admin`).
+
 ## Handled timezone operational failures
 
 Mobile timezone diagnostics distinguish preference load (`timezoneRead`), API

@@ -31236,6 +31236,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Undo'**
   String get financeUndo;
+
+  /// No description provided for @settingsWorkspaceMembersSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search members'**
+  String get settingsWorkspaceMembersSearchPlaceholder;
+
+  /// No description provided for @settingsWorkspaceMembersRolesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles'**
+  String get settingsWorkspaceMembersRolesSection;
+
+  /// No description provided for @settingsWorkspaceMembersRolesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Roles updated'**
+  String get settingsWorkspaceMembersRolesSaved;
+
+  /// No description provided for @settingsWorkspaceMembersNoRoles.
+  ///
+  /// In en, this message translates to:
+  /// **'No roles assigned'**
+  String get settingsWorkspaceMembersNoRoles;
+
+  /// No description provided for @settingsWorkspaceMembersRevokeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke invitation'**
+  String get settingsWorkspaceMembersRevokeTitle;
+
+  /// No description provided for @settingsWorkspaceMembersRevokeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'{email} will no longer be able to join with this invitation.'**
+  String settingsWorkspaceMembersRevokeMessage(String email);
+
+  /// No description provided for @settingsWorkspaceMembersLinkUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'{uses} uses · {expiry}'**
+  String settingsWorkspaceMembersLinkUsage(String uses, String expiry);
+
+  /// No description provided for @settingsWorkspaceMembersLinkExpires.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires {date}'**
+  String settingsWorkspaceMembersLinkExpires(String date);
+
+  /// No description provided for @settingsWorkspaceRolesSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search roles'**
+  String get settingsWorkspaceRolesSearchPlaceholder;
+
+  /// No description provided for @settingsWorkspaceRolesSelectGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Select all'**
+  String get settingsWorkspaceRolesSelectGroup;
+
+  /// No description provided for @settingsWorkspaceRolesClearGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get settingsWorkspaceRolesClearGroup;
+
+  /// No description provided for @settingsWorkspaceRolesAdminNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrators have every permission in this workspace.'**
+  String get settingsWorkspaceRolesAdminNote;
+
+  /// No description provided for @settingsWorkspaceSecretsReveal.
+  ///
+  /// In en, this message translates to:
+  /// **'Show value'**
+  String get settingsWorkspaceSecretsReveal;
+
+  /// No description provided for @settingsWorkspaceSecretsHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide value'**
+  String get settingsWorkspaceSecretsHide;
+
+  /// No description provided for @settingsWorkspaceSecretsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Secret value copied'**
+  String get settingsWorkspaceSecretsCopied;
+
+  /// No description provided for @settingsWorkspaceDangerZone.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger zone'**
+  String get settingsWorkspaceDangerZone;
+
+  /// No description provided for @settingsWorkspaceDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete workspace'**
+  String get settingsWorkspaceDeleteTitle;
+
+  /// No description provided for @settingsWorkspaceDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get settingsWorkspaceDeleteAction;
+
+  /// No description provided for @settingsWorkspaceDeleteWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This can\'t be undone'**
+  String get settingsWorkspaceDeleteWarningTitle;
+
+  /// No description provided for @settingsWorkspaceDeleteConsequenceData.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and all of its tasks, documents, finance records, files and settings are permanently deleted.'**
+  String settingsWorkspaceDeleteConsequenceData(String name);
+
+  /// No description provided for @settingsWorkspaceDeleteConsequenceMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Every member loses access, and pending invitations and invite links stop working.'**
+  String get settingsWorkspaceDeleteConsequenceMembers;
+
+  /// No description provided for @settingsWorkspaceDeleteConsequenceFinal.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted workspaces can\'t be restored.'**
+  String get settingsWorkspaceDeleteConsequenceFinal;
+
+  /// No description provided for @settingsWorkspaceDeleteConfirmLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type {name} to confirm'**
+  String settingsWorkspaceDeleteConfirmLabel(String name);
+
+  /// No description provided for @settingsWorkspaceDeleteMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The name doesn\'t match this workspace.'**
+  String get settingsWorkspaceDeleteMismatch;
+
+  /// No description provided for @settingsWorkspaceDeleteProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion is locked for this workspace.'**
+  String get settingsWorkspaceDeleteProtected;
+
+  /// No description provided for @settingsWorkspaceDeleteSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolve paid or unverified billing before deleting this workspace.'**
+  String get settingsWorkspaceDeleteSubscription;
+
+  /// No description provided for @settingsWorkspaceDeleteOwnerOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the workspace owner can delete it.'**
+  String get settingsWorkspaceDeleteOwnerOnly;
+
+  /// No description provided for @settingsWorkspaceDeleteNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This workspace no longer exists.'**
+  String get settingsWorkspaceDeleteNotFound;
+
+  /// No description provided for @settingsWorkspaceDeleteUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace deletion isn\'t available right now. Please try again later.'**
+  String get settingsWorkspaceDeleteUnavailable;
+
+  /// No description provided for @settingsWorkspaceDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was deleted'**
+  String settingsWorkspaceDeleted(String name);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

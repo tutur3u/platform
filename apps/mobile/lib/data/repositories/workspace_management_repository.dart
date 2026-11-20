@@ -277,6 +277,32 @@ class WorkspaceManagementRepository {
     }
   }
 
+  /// Assigns and unassigns one member's roles through each role's member
+  /// endpoints, so the server checks role management for every change.
+  Future<void> setMemberRoles({
+    required String wsId,
+    required String userId,
+    required Set<String> currentRoleIds,
+    required Set<String> selectedRoleIds,
+  }) async {
+    for (final roleId in selectedRoleIds.difference(currentRoleIds)) {
+      await replaceRoleMembers(
+        wsId: wsId,
+        roleId: roleId,
+        currentMemberIds: const {},
+        selectedMemberIds: {userId},
+      );
+    }
+    for (final roleId in currentRoleIds.difference(selectedRoleIds)) {
+      await replaceRoleMembers(
+        wsId: wsId,
+        roleId: roleId,
+        currentMemberIds: {userId},
+        selectedMemberIds: const {},
+      );
+    }
+  }
+
   Future<List<WorkspaceMemberListItem>> getMembers(String wsId) async {
     final response = await readThroughJsonList(
       api: _api,

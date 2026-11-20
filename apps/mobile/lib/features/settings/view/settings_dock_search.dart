@@ -5,7 +5,8 @@ import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 
 /// Search as the route's primary floating dock action. The shell owns the
 /// field while [active]; isolated previews without the shell chrome registry
-/// render [fallback] inline instead.
+/// render [fallback] inline instead. [actions] are the route's other shell
+/// actions, such as an add action in the top bar.
 class SettingsDockSearch extends StatelessWidget {
   const SettingsDockSearch({
     required this.ownerId,
@@ -16,6 +17,7 @@ class SettingsDockSearch extends StatelessWidget {
     required this.onActiveChanged,
     required this.onChanged,
     required this.fallback,
+    this.actions = const [],
     super.key,
   });
 
@@ -27,6 +29,7 @@ class SettingsDockSearch extends StatelessWidget {
   final ValueChanged<bool> onActiveChanged;
   final ValueChanged<String> onChanged;
   final Widget fallback;
+  final List<ShellActionSpec> actions;
 
   void _close() {
     FocusManager.instance.primaryFocus?.unfocus();
@@ -58,6 +61,7 @@ class SettingsDockSearch extends StatelessWidget {
           onCloseSearch: _close,
           onPressed: () => active ? _close() : onActiveChanged(true),
         ),
+        ...actions,
       ],
     );
   }

@@ -145,6 +145,12 @@ localization changes.
   background (use `AppSheetHandle`). `showAdaptiveSheet` remains a
   compatibility path that draws the same `AppSheetSurface`, handle and
   keyboard inset, with the same Back binding.
+- Confirm destructive or server-backed actions with
+  `showAppAsyncConfirmDialog`: it runs the action inside the dialog, locks
+  both buttons while it runs and keeps the dialog open with the server error.
+  Do not use `AsyncDeleteConfirmationDialog` (shadcn) in new code. Settings
+  sub-pages that need search plus an add action pass `actions:` to
+  `SettingsDockSearch` instead of drawing a body toolbar or summary header.
 - Dialogs and fit sheets consume keyboard insets at the host boundary. Do not
   add a second IME padding layer in their bodies. Verify phone paths with a
   keyboard open and tap OK/Save; a tablet-only picker test does not cover them.

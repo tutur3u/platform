@@ -205,16 +205,12 @@ extension _MobileVersionSettingsPageLogic on _MobileVersionSettingsPageState {
   }
 
   void _showToast({required String message, bool destructive = false}) {
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    if (!toastContext.mounted) {
-      return;
-    }
-
-    shad.showToast(
-      context: toastContext,
-      builder: (context, overlay) => destructive
-          ? shad.Alert.destructive(content: Text(message))
-          : shad.Alert(content: Text(message)),
+    showAppToast(
+      context,
+      message: message,
+      variant: destructive
+          ? AppAlertVariant.destructive
+          : AppAlertVariant.success,
     );
   }
 

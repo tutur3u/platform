@@ -16869,4 +16869,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeUndo => 'Undo';
+
+  @override
+  String get settingsWorkspaceMembersSearchPlaceholder => 'Search members';
+
+  @override
+  String get settingsWorkspaceMembersRolesSection => 'Roles';
+
+  @override
+  String get settingsWorkspaceMembersRolesSaved => 'Roles updated';
+
+  @override
+  String get settingsWorkspaceMembersNoRoles => 'No roles assigned';
+
+  @override
+  String get settingsWorkspaceMembersRevokeTitle => 'Revoke invitation';
+
+  @override
+  String settingsWorkspaceMembersRevokeMessage(String email) {
+    return '$email will no longer be able to join with this invitation.';
+  }
+
+  @override
+  String settingsWorkspaceMembersLinkUsage(String uses, String expiry) {
+    return '$uses uses · $expiry';
+  }
+
+  @override
+  String settingsWorkspaceMembersLinkExpires(String date) {
+    return 'Expires $date';
+  }
+
+  @override
+  String get settingsWorkspaceRolesSearchPlaceholder => 'Search roles';
+
+  @override
+  String get settingsWorkspaceRolesSelectGroup => 'Select all';
+
+  @override
+  String get settingsWorkspaceRolesClearGroup => 'Clear all';
+
+  @override
+  String get settingsWorkspaceRolesAdminNote => 'Administrators have every permission in this workspace.';
+
+  @override
+  String get settingsWorkspaceSecretsReveal => 'Show value';
+
+  @override
+  String get settingsWorkspaceSecretsHide => 'Hide value';
+
+  @override
+  String get settingsWorkspaceSecretsCopied => 'Secret value copied';
+
+  @override
+  String get settingsWorkspaceDangerZone => 'Danger zone';
+
+  @override
+  String get settingsWorkspaceDeleteTitle => 'Delete workspace';
+
+  @override
+  String get settingsWorkspaceDeleteAction => 'Delete permanently';
+
+  @override
+  String get settingsWorkspaceDeleteWarningTitle => 'This can\'t be undone';
+
+  @override
+  String settingsWorkspaceDeleteConsequenceData(String name) {
+    return '$name and all of its tasks, documents, finance records, files and settings are permanently deleted.';
+  }
+
+  @override
+  String get settingsWorkspaceDeleteConsequenceMembers => 'Every member loses access, and pending invitations and invite links stop working.';
+
+  @override
+  String get settingsWorkspaceDeleteConsequenceFinal => 'Deleted workspaces can\'t be restored.';
+
+  @override
+  String settingsWorkspaceDeleteConfirmLabel(String name) {
+    return 'Type $name to confirm';
+  }
+
+  @override
+  String get settingsWorkspaceDeleteMismatch => 'The name doesn\'t match this workspace.';
+
+  @override
+  String get settingsWorkspaceDeleteProtected => 'Deletion is locked for this workspace.';
+
+  @override
+  String get settingsWorkspaceDeleteSubscription => 'Resolve paid or unverified billing before deleting this workspace.';
+
+  @override
+  String get settingsWorkspaceDeleteOwnerOnly => 'Only the workspace owner can delete it.';
+
+  @override
+  String get settingsWorkspaceDeleteNotFound => 'This workspace no longer exists.';
+
+  @override
+  String get settingsWorkspaceDeleteUnavailable => 'Workspace deletion isn\'t available right now. Please try again later.';
+
+  @override
+  String settingsWorkspaceDeleted(String name) {
+    return '$name was deleted';
+  }
 }

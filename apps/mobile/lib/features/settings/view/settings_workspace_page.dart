@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart' show AppAlertVariant, showAppToast;
 import 'package:mobile/core/utils/supported_currencies.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -17,6 +18,8 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/settings/view/settings_audience_mode_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/workspace_danger_zone_section.dart';
+import 'package:mobile/features/settings/view/workspace_deletion_sheet.dart';
 import 'package:mobile/features/settings/view/workspace_properties_dialog.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -42,6 +45,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
   bool _canManageWorkspaceMembers = false;
   bool _canManageWorkspaceSecrets = false;
   bool _canManageWorkspaceRoles = false;
+  bool _isWorkspaceOwner = false;
   bool _isWorkspacePermissionLoading = false;
   bool _isWorkspaceCurrencyLoading = true;
   String? _workspaceDefaultCurrency;
@@ -120,6 +124,12 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
                       ?.personal ??
                   false,
             ),
+            if (_isWorkspaceOwner && !_isWorkspacePermissionLoading)
+              if (context.read<WorkspaceCubit>().state.currentWorkspace
+                  case final workspace? when !workspace.personal)
+                WorkspaceDangerZoneSection(
+                  onDelete: () => unawaited(_deleteWorkspace(workspace)),
+                ),
           ],
         ),
       ),
@@ -152,6 +162,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         _canManageWorkspaceMembers = false;
         _canManageWorkspaceSecrets = false;
         _canManageWorkspaceRoles = false;
+        _isWorkspaceOwner = false;
         _isWorkspacePermissionLoading = workspaceId != null;
       });
     }
@@ -165,6 +176,7 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         _canManageWorkspaceMembers = false;
         _canManageWorkspaceSecrets = false;
         _canManageWorkspaceRoles = false;
+        _isWorkspaceOwner = false;
         _isWorkspacePermissionLoading = false;
       });
       return;
@@ -224,6 +236,8 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
       _canManageWorkspaceRoles = workspacePermissions.containsPermission(
         'manage_workspace_roles',
       );
+      _isWorkspaceOwner =
+          workspacePermissions.isCreator && workspaceId != rootWorkspaceId;
       _isWorkspacePermissionLoading = false;
     });
   }
@@ -274,6 +288,31 @@ class _SettingsWorkspacePageState extends State<SettingsWorkspacePage> {
         setState(() => _isWorkspaceCurrencyLoading = false);
       }
     }
+  }
+
+  Future<void> _deleteWorkspace(Workspace workspace) async {
+    final l10n = context.l10n;
+    final workspaceCubit = context.read<WorkspaceCubit>();
+    final deleted = await showWorkspaceDeletionSheet(
+      context: context,
+      workspace: workspace,
+    );
+    if (!deleted || !mounted) return;
+    final replacement =
+        workspaceCubit.state.workspaces
+            .where((item) => item.id != workspace.id && item.personal)
+            .firstOrNull ??
+        workspaceCubit.state.workspaces
+            .where((item) => item.id != workspace.id)
+            .firstOrNull;
+    if (replacement != null) await workspaceCubit.selectWorkspace(replacement);
+    if (!mounted) return;
+    showAppToast(
+      context,
+      message: l10n.settingsWorkspaceDeleted(workspace.name ?? ''),
+      variant: AppAlertVariant.success,
+    );
+    await workspaceCubit.loadWorkspaces(forceRefresh: true);
   }
 
   Future<void> _showWorkspacePropertiesDialog(Workspace workspace) async {

@@ -8035,5 +8035,80 @@
       }
     }
   },
-  "financeUndo": "Undo"
+  "financeUndo": "Undo",
+  "settingsWorkspaceMembersSearchPlaceholder": "Search members",
+  "settingsWorkspaceMembersRolesSection": "Roles",
+  "settingsWorkspaceMembersRolesSaved": "Roles updated",
+  "settingsWorkspaceMembersNoRoles": "No roles assigned",
+  "settingsWorkspaceMembersRevokeTitle": "Revoke invitation",
+  "settingsWorkspaceMembersRevokeMessage": "{email} will no longer be able to join with this invitation.",
+  "@settingsWorkspaceMembersRevokeMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceMembersLinkUsage": "{uses} uses · {expiry}",
+  "@settingsWorkspaceMembersLinkUsage": {
+    "placeholders": {
+      "uses": {
+        "type": "String"
+      },
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceMembersLinkExpires": "Expires {date}",
+  "@settingsWorkspaceMembersLinkExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceRolesSearchPlaceholder": "Search roles",
+  "settingsWorkspaceRolesSelectGroup": "Select all",
+  "settingsWorkspaceRolesClearGroup": "Clear all",
+  "settingsWorkspaceRolesAdminNote": "Administrators have every permission in this workspace.",
+  "settingsWorkspaceSecretsReveal": "Show value",
+  "settingsWorkspaceSecretsHide": "Hide value",
+  "settingsWorkspaceSecretsCopied": "Secret value copied",
+  "settingsWorkspaceDangerZone": "Danger zone",
+  "settingsWorkspaceDeleteTitle": "Delete workspace",
+  "settingsWorkspaceDeleteAction": "Delete permanently",
+  "settingsWorkspaceDeleteWarningTitle": "This can't be undone",
+  "settingsWorkspaceDeleteConsequenceData": "{name} and all of its tasks, documents, finance records, files and settings are permanently deleted.",
+  "@settingsWorkspaceDeleteConsequenceData": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceDeleteConsequenceMembers": "Every member loses access, and pending invitations and invite links stop working.",
+  "settingsWorkspaceDeleteConsequenceFinal": "Deleted workspaces can't be restored.",
+  "settingsWorkspaceDeleteConfirmLabel": "Type {name} to confirm",
+  "@settingsWorkspaceDeleteConfirmLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceDeleteMismatch": "The name doesn't match this workspace.",
+  "settingsWorkspaceDeleteProtected": "Deletion is locked for this workspace.",
+  "settingsWorkspaceDeleteSubscription": "Resolve paid or unverified billing before deleting this workspace.",
+  "settingsWorkspaceDeleteOwnerOnly": "Only the workspace owner can delete it.",
+  "settingsWorkspaceDeleteNotFound": "This workspace no longer exists.",
+  "settingsWorkspaceDeleteUnavailable": "Workspace deletion isn't available right now. Please try again later.",
+  "settingsWorkspaceDeleted": "{name} was deleted",
+  "@settingsWorkspaceDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

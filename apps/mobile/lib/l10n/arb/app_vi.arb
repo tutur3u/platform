@@ -7275,5 +7275,80 @@
   "financeWalletRestore": "Khôi phục",
   "financeWalletArchivedToast": "Đã lưu trữ {wallet}",
   "financeWalletRestoredToast": "Đã khôi phục {wallet}",
-  "financeUndo": "Hoàn tác"
+  "financeUndo": "Hoàn tác",
+  "settingsWorkspaceMembersSearchPlaceholder": "Tìm thành viên",
+  "settingsWorkspaceMembersRolesSection": "Vai trò",
+  "settingsWorkspaceMembersRolesSaved": "Đã cập nhật vai trò",
+  "settingsWorkspaceMembersNoRoles": "Chưa được gán vai trò",
+  "settingsWorkspaceMembersRevokeTitle": "Thu hồi lời mời",
+  "settingsWorkspaceMembersRevokeMessage": "{email} sẽ không thể tham gia bằng lời mời này nữa.",
+  "@settingsWorkspaceMembersRevokeMessage": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceMembersLinkUsage": "{uses} lượt dùng · {expiry}",
+  "@settingsWorkspaceMembersLinkUsage": {
+    "placeholders": {
+      "uses": {
+        "type": "String"
+      },
+      "expiry": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceMembersLinkExpires": "Hết hạn {date}",
+  "@settingsWorkspaceMembersLinkExpires": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceRolesSearchPlaceholder": "Tìm vai trò",
+  "settingsWorkspaceRolesSelectGroup": "Chọn tất cả",
+  "settingsWorkspaceRolesClearGroup": "Bỏ chọn tất cả",
+  "settingsWorkspaceRolesAdminNote": "Quản trị viên có mọi quyền trong không gian làm việc này.",
+  "settingsWorkspaceSecretsReveal": "Hiện giá trị",
+  "settingsWorkspaceSecretsHide": "Ẩn giá trị",
+  "settingsWorkspaceSecretsCopied": "Đã sao chép giá trị bí mật",
+  "settingsWorkspaceDangerZone": "Vùng nguy hiểm",
+  "settingsWorkspaceDeleteTitle": "Xóa không gian làm việc",
+  "settingsWorkspaceDeleteAction": "Xóa vĩnh viễn",
+  "settingsWorkspaceDeleteWarningTitle": "Không thể hoàn tác",
+  "settingsWorkspaceDeleteConsequenceData": "{name} cùng toàn bộ công việc, tài liệu, dữ liệu tài chính, tệp và cài đặt sẽ bị xóa vĩnh viễn.",
+  "@settingsWorkspaceDeleteConsequenceData": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceDeleteConsequenceMembers": "Mọi thành viên mất quyền truy cập; lời mời và liên kết mời đang chờ sẽ ngừng hoạt động.",
+  "settingsWorkspaceDeleteConsequenceFinal": "Không gian làm việc đã xóa không thể khôi phục.",
+  "settingsWorkspaceDeleteConfirmLabel": "Nhập {name} để xác nhận",
+  "@settingsWorkspaceDeleteConfirmLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsWorkspaceDeleteMismatch": "Tên không khớp với không gian làm việc này.",
+  "settingsWorkspaceDeleteProtected": "Không gian làm việc này đang bị khóa xóa.",
+  "settingsWorkspaceDeleteSubscription": "Hãy xử lý gói trả phí hoặc thanh toán chưa xác minh trước khi xóa không gian làm việc này.",
+  "settingsWorkspaceDeleteOwnerOnly": "Chỉ chủ sở hữu mới có thể xóa không gian làm việc này.",
+  "settingsWorkspaceDeleteNotFound": "Không gian làm việc này không còn tồn tại.",
+  "settingsWorkspaceDeleteUnavailable": "Hiện chưa thể xóa không gian làm việc. Vui lòng thử lại sau.",
+  "settingsWorkspaceDeleted": "Đã xóa {name}",
+  "@settingsWorkspaceDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

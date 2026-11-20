@@ -1,43 +1,49 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide AppBar, Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/responsive/responsive_padding.dart';
-import 'package:mobile/core/responsive/responsive_values.dart';
-import 'package:mobile/core/responsive/responsive_wrapper.dart';
-import 'package:mobile/core/widgets/shadcn_flutter_compat.dart' as shad;
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/workspace_management.dart';
 import 'package:mobile/data/repositories/workspace_management_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
-import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
-import 'package:mobile/features/settings/view/settings_row_layout.dart';
-import 'package:mobile/features/settings/view/workspace_role_permission_catalog.dart';
+import 'package:mobile/features/settings/view/settings_dock_search.dart';
+import 'package:mobile/features/settings/view/workspace_admin_widgets.dart';
+import 'package:mobile/features/settings/view/workspace_role_editor_sheet.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/async_delete_confirmation_dialog.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
-part 'settings_workspace_roles_cards.dart';
-
 class SettingsWorkspaceRolesPage extends StatelessWidget {
-  const SettingsWorkspaceRolesPage({super.key});
+  const SettingsWorkspaceRolesPage({
+    this.repository,
+    this.permissionsRepository,
+    super.key,
+  });
+
+  final WorkspaceManagementRepository? repository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   Widget build(BuildContext context) {
     return RepositoryProvider(
-      create: (_) => WorkspaceManagementRepository(),
-      child: const _SettingsWorkspaceRolesView(),
+      create: (_) => repository ?? WorkspaceManagementRepository(),
+      child: _SettingsWorkspaceRolesView(
+        permissionsRepository:
+            permissionsRepository ?? WorkspacePermissionsRepository(),
+      ),
     );
   }
 }
 
 class _SettingsWorkspaceRolesView extends StatefulWidget {
-  const _SettingsWorkspaceRolesView();
+  const _SettingsWorkspaceRolesView({required this.permissionsRepository});
+
+  final WorkspacePermissionsRepository permissionsRepository;
 
   @override
   State<_SettingsWorkspaceRolesView> createState() =>
@@ -46,145 +52,104 @@ class _SettingsWorkspaceRolesView extends StatefulWidget {
 
 class _SettingsWorkspaceRolesViewState
     extends State<_SettingsWorkspaceRolesView> {
-  late final WorkspacePermissionsRepository _permissionsRepository;
+  final _searchController = TextEditingController();
+  bool _searchActive = false;
+  String _query = '';
 
   bool _loading = true;
   bool _canManageRoles = false;
   String? _error;
+  int _loadToken = 0;
   WorkspaceRoleDetail? _defaultRole;
   List<WorkspaceRoleListItem> _roles = const [];
+
+  String? get _wsId =>
+      context.read<WorkspaceCubit>().state.currentWorkspace?.id;
 
   @override
   void initState() {
     super.initState();
-    _permissionsRepository = WorkspacePermissionsRepository();
     unawaited(_loadData());
   }
 
   @override
-  Widget build(BuildContext context) {
-    final horizontalPadding = ResponsivePadding.horizontal(context.deviceClass);
-    final l10n = context.l10n;
-    final wsId =
-        context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final canCreate = _canManageRoles && !_loading;
     return BlocListener<WorkspaceCubit, WorkspaceState>(
       listenWhen: (previous, current) =>
           previous.currentWorkspace?.id != current.currentWorkspace?.id,
       listener: (context, state) => unawaited(_loadData()),
-      child: shad.Scaffold(
-        child: NovaRefreshIndicator(
-          onRefresh: _loadData,
-          child: ResponsiveWrapper(
-            maxWidth: ResponsivePadding.maxContentWidth(context.deviceClass),
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: SettingsRowLayout.scrollPadding(
-                context,
-                horizontalPadding,
-              ),
-              children: [
-                FinancePanel(
-                  radius: 26,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          FinanceStatChip(
-                            label: l10n.settingsWorkspaceRolesDefaultTitle,
-                            value: _permissionCountLabel(
-                              _defaultRole?.permissions ?? const [],
-                            ),
-                            icon: Icons.lock_open_rounded,
-                          ),
-                          FinanceStatChip(
-                            label: l10n.settingsWorkspaceRolesListTitle,
-                            value: '${_roles.length}',
-                            icon: Icons.admin_panel_settings_outlined,
-                          ),
-                        ],
+      child: NovaRefreshIndicator(
+        onRefresh: _loadData,
+        child: AppPageListView(
+          physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics(),
+          ),
+          children: [
+            SettingsDockSearch(
+              ownerId: 'settings-workspace-roles',
+              location: Routes.settingsWorkspaceRoles,
+              controller: _searchController,
+              hint: l10n.settingsWorkspaceRolesSearchPlaceholder,
+              active: _searchActive,
+              onActiveChanged: (active) =>
+                  setState(() => _searchActive = active),
+              onChanged: (value) => setState(() => _query = value),
+              actions: [
+                if (canCreate)
+                  ShellActionSpec(
+                    id: 'settings-workspace-roles-create',
+                    icon: AppIcons.add,
+                    tooltip: l10n.settingsWorkspaceRolesCreate,
+                    onPressed: () => unawaited(_openEditor()),
+                  ),
+              ],
+              fallback: Padding(
+                padding: const EdgeInsets.only(bottom: AppLayout.sectionGap),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: AppSearchField(
+                        controller: _searchController,
+                        placeholder:
+                            l10n.settingsWorkspaceRolesSearchPlaceholder,
+                        onChanged: (value) => setState(() => _query = value),
                       ),
-                      const shad.Gap(14),
-                      shad.PrimaryButton(
-                        onPressed: !_canManageRoles || _loading
-                            ? null
-                            : _onCreateRole,
-                        child: Text(l10n.settingsWorkspaceRolesCreate),
+                    ),
+                    if (canCreate) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      AppIconButton(
+                        key: const ValueKey('workspace-roles-create'),
+                        variant: AppButtonVariant.primary,
+                        tooltip: l10n.settingsWorkspaceRolesCreate,
+                        icon: const Icon(AppIcons.add),
+                        onPressed: () => unawaited(_openEditor()),
                       ),
                     ],
-                  ),
+                  ],
                 ),
-                const shad.Gap(16),
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 48),
-                    child: AppLoadingIndicator.page(),
-                  )
-                else if (_error != null)
-                  _SettingsStatePanel(
-                    message: _error!,
-                    actionLabel: l10n.commonRetry,
-                    onPressed: _loadData,
-                  )
-                else if (!_canManageRoles)
-                  _SettingsStatePanel(
-                    message: l10n.settingsWorkspaceRolesAccessDenied,
-                  )
-                else ...[
-                  FinanceSectionHeader(
-                    title: l10n.settingsWorkspaceRolesDefaultTitle,
-                  ),
-                  const shad.Gap(10),
-                  PendingSyncFrame(
-                    workspaceId: wsId,
-                    entityId: 'default',
-                    feature: 'workspace-management',
-                    child: _RoleSummaryCard(
-                      title: l10n.settingsWorkspaceRolesDefaultTitle,
-                      subtitle: _permissionCountLabel(
-                        _defaultRole?.permissions ?? const [],
-                      ),
-                      onTap: _defaultRole == null ? null : _onEditDefaultRole,
-                    ),
-                  ),
-                  const shad.Gap(18),
-                  FinanceSectionHeader(
-                    title: l10n.settingsWorkspaceRolesListTitle,
-                  ),
-                  const shad.Gap(10),
-                  if (_roles.isEmpty)
-                    _SettingsStatePanel(
-                      message: l10n.settingsWorkspaceRolesEmpty,
-                    )
-                  else
-                    ..._roles.map(
-                      (role) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: PendingSyncFrame(
-                          workspaceId: wsId,
-                          entityId: role.id,
-                          feature: 'workspace-management',
-                          child: _RoleSummaryCard(
-                            title: role.name,
-                            onTap: () => _onEditRole(role),
-                            trailing: shad.GhostButton(
-                              density: shad.ButtonDensity.compact,
-                              onPressed: () => _onDeleteRole(role),
-                              child: const Icon(Icons.delete_outline_rounded),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ],
+              ),
             ),
-          ),
+            WorkspaceRolesView(
+              workspaceId: _wsId ?? '',
+              loading: _loading,
+              canManage: _canManageRoles,
+              error: _error,
+              query: _query,
+              defaultRole: _defaultRole,
+              roles: _roles,
+              onRetry: () => unawaited(_loadData()),
+              onOpenDefault: () => unawaited(_openEditor(forceDefault: true)),
+              onOpenRole: (role) => unawaited(_openEditor(role: role)),
+            ),
+          ],
         ),
       ),
     );
@@ -193,8 +158,8 @@ class _SettingsWorkspaceRolesViewState
   Future<void> _loadData() async {
     final workspace = context.read<WorkspaceCubit>().state.currentWorkspace;
     final wsId = workspace?.id;
+    final token = ++_loadToken;
     if (wsId == null || wsId.isEmpty) {
-      if (!mounted) return;
       setState(() {
         _loading = false;
         _canManageRoles = false;
@@ -203,23 +168,20 @@ class _SettingsWorkspaceRolesViewState
       });
       return;
     }
-
     setState(() {
-      _loading = true;
+      _loading = _defaultRole == null;
       _error = null;
     });
-
     try {
       final repository = context.read<WorkspaceManagementRepository>();
-      final permissions = await _permissionsRepository.getPermissions(
+      final permissions = await widget.permissionsRepository.getPermissions(
         wsId: wsId,
       );
       final canManageRoles =
           workspace?.personal == true ||
           permissions.containsPermission(manageWorkspaceRolesPermission);
-
       if (!canManageRoles) {
-        if (!mounted) return;
+        if (!mounted || token != _loadToken) return;
         setState(() {
           _loading = false;
           _canManageRoles = false;
@@ -228,413 +190,179 @@ class _SettingsWorkspaceRolesViewState
         });
         return;
       }
-
-      final results = await Future.wait<dynamic>([
+      final results = await Future.wait<Object>([
         repository.getDefaultRole(wsId),
         repository.getRoles(wsId),
       ]);
-
-      if (!mounted) return;
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _loading = false;
         _canManageRoles = true;
         _defaultRole = results[0] as WorkspaceRoleDetail;
         _roles = results[1] as List<WorkspaceRoleListItem>;
       });
-    } on ApiException catch (error) {
-      if (!mounted) return;
+    } on Exception catch (error) {
+      if (!mounted || token != _loadToken) return;
       setState(() {
         _loading = false;
-        _error = error.message;
-      });
-    } on Exception catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = context.l10n.commonSomethingWentWrong;
+        _error = describeWorkspaceAdminError(context, error);
       });
     }
   }
 
-  Future<void> _onCreateRole() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+  Future<void> _openEditor({
+    WorkspaceRoleListItem? role,
+    bool forceDefault = false,
+  }) async {
+    final wsId = _wsId;
     if (wsId == null) return;
+    final l10n = context.l10n;
     final repository = context.read<WorkspaceManagementRepository>();
-    final changed = await showFinanceFullscreenModal<bool>(
+    final result = await showWorkspaceRoleEditor(
       context: context,
-      builder: (_) => RepositoryProvider.value(
-        value: repository,
-        child: WorkspaceRoleEditorPage(wsId: wsId),
-      ),
+      repository: repository,
+      wsId: wsId,
+      roleId: role?.id,
+      forceDefault: forceDefault,
     );
-    if (changed == true && mounted) {
-      await _loadData();
-    }
-  }
-
-  Future<void> _onEditRole(WorkspaceRoleListItem role) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    final repository = context.read<WorkspaceManagementRepository>();
-    final changed = await showFinanceFullscreenModal<bool>(
-      context: context,
-      builder: (_) => RepositoryProvider.value(
-        value: repository,
-        child: WorkspaceRoleEditorPage(wsId: wsId, roleId: role.id),
-      ),
-    );
-    if (changed == true && mounted) {
-      await _loadData();
-    }
-  }
-
-  Future<void> _onEditDefaultRole() async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    final repository = context.read<WorkspaceManagementRepository>();
-    final changed = await showFinanceFullscreenModal<bool>(
-      context: context,
-      builder: (_) => RepositoryProvider.value(
-        value: repository,
-        child: WorkspaceRoleEditorPage(wsId: wsId, forceDefault: true),
-      ),
-    );
-    if (changed == true && mounted) {
-      await _loadData();
-    }
-  }
-
-  Future<void> _onDeleteRole(WorkspaceRoleListItem role) async {
-    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
-    if (wsId == null) return;
-    final deleted =
-        await shad.showDialog<bool>(
+    if (!mounted) return;
+    switch (result) {
+      case WorkspaceRoleEditorResult.saved:
+        showAppToast(
+          context,
+          message: l10n.settingsWorkspaceRolesSaved,
+          variant: AppAlertVariant.success,
+        );
+        await _loadData();
+      case WorkspaceRoleEditorResult.delete when role != null:
+        final deleted = await showAppAsyncConfirmDialog(
           context: context,
-          builder: (_) => AsyncDeleteConfirmationDialog(
-            title: context.l10n.settingsWorkspaceRolesDeleteTitle,
-            message: context.l10n.settingsWorkspaceRolesDeleteMessage(
-              role.name,
-            ),
-            cancelLabel: context.l10n.commonCancel,
-            confirmLabel: context.l10n.settingsWorkspaceRolesDeleteTitle,
-            toastContext: Navigator.of(context, rootNavigator: true).context,
-            onConfirm: () => context
-                .read<WorkspaceManagementRepository>()
-                .deleteRole(wsId: wsId, roleId: role.id),
-          ),
-        ) ??
-        false;
-    if (!deleted || !mounted) return;
-    await _loadData();
-  }
-
-  String _permissionCountLabel(List<WorkspaceRolePermissionState> permissions) {
-    final enabledCount = permissions
-        .where((permission) => permission.enabled)
-        .length;
-    return context.l10n.settingsWorkspaceRolesPermissionCount(enabledCount);
+          title: l10n.settingsWorkspaceRolesDeleteTitle,
+          message: l10n.settingsWorkspaceRolesDeleteMessage(role.name),
+          confirmLabel: l10n.settingsWorkspaceRolesDeleteTitle,
+          cancelLabel: l10n.commonCancel,
+          describeError: (error) => describeWorkspaceAdminError(context, error),
+          onConfirm: () => repository.deleteRole(wsId: wsId, roleId: role.id),
+        );
+        if (deleted && mounted) await _loadData();
+      case WorkspaceRoleEditorResult.delete:
+      case null:
+        break;
+    }
   }
 }
 
-class WorkspaceRoleEditorPage extends StatefulWidget {
-  const WorkspaceRoleEditorPage({
-    required this.wsId,
-    this.roleId,
-    this.forceDefault = false,
+/// Default access and the custom roles of one workspace.
+class WorkspaceRolesView extends StatelessWidget {
+  const WorkspaceRolesView({
+    required this.workspaceId,
+    required this.loading,
+    required this.canManage,
+    required this.roles,
+    required this.onRetry,
+    required this.onOpenDefault,
+    required this.onOpenRole,
+    this.defaultRole,
+    this.error,
+    this.query = '',
     super.key,
   });
 
-  final String wsId;
-  final String? roleId;
-  final bool forceDefault;
-
-  @override
-  State<WorkspaceRoleEditorPage> createState() =>
-      _WorkspaceRoleEditorPageState();
-}
-
-class _WorkspaceRoleEditorPageState extends State<WorkspaceRoleEditorPage> {
-  late final TextEditingController _nameController;
-  final Map<String, bool> _permissions = {
-    for (final group in workspacePermissionCatalog)
-      for (final permission in group.permissions) permission: false,
-  };
-  final Set<String> _selectedMemberIds = <String>{};
-
-  bool _loading = true;
-  bool _saving = false;
-  String? _nameError;
-  String? _error;
-  List<WorkspaceMemberListItem> _availableMembers = const [];
-  Set<String> _currentMemberIds = const <String>{};
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-    unawaited(_load());
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
+  final String workspaceId;
+  final bool loading;
+  final bool canManage;
+  final String? error;
+  final String query;
+  final WorkspaceRoleDetail? defaultRole;
+  final List<WorkspaceRoleListItem> roles;
+  final VoidCallback onRetry;
+  final VoidCallback onOpenDefault;
+  final ValueChanged<WorkspaceRoleListItem> onOpenRole;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return FinanceFullscreenFormScaffold(
-      title: widget.forceDefault
-          ? l10n.settingsWorkspaceRolesDefaultTitle
-          : widget.roleId == null
-          ? l10n.settingsWorkspaceRolesCreate
-          : l10n.settingsWorkspaceRolesEdit,
-      primaryActionLabel: widget.roleId == null && !widget.forceDefault
-          ? l10n.settingsWorkspaceRolesCreate
-          : l10n.settingsWorkspaceRolesSave,
-      isSaving: _saving,
-      onPrimaryPressed: _saving ? null : _save,
-      child: _loading
-          ? const AppLoadingIndicator.page()
-          : _error != null
-          ? _SettingsStatePanel(
-              message: _error!,
-              actionLabel: l10n.commonRetry,
-              onPressed: _load,
-            )
-          : ListView(
-              physics: const BouncingScrollPhysics(),
-              children: [
-                if (!widget.forceDefault) ...[
-                  FinanceFormSection(
-                    title: l10n.settingsWorkspaceRolesNameField,
-                    child: _FinanceStyleTextField(
-                      controller: _nameController,
-                      placeholder: l10n.settingsWorkspaceRolesNamePlaceholder,
-                      errorText: _nameError,
-                      onChanged: (_) {
-                        if (_nameError != null) {
-                          setState(() => _nameError = null);
-                        }
-                      },
-                    ),
-                  ),
-                  const shad.Gap(14),
-                ],
-                FinanceFormSection(
-                  title: l10n.settingsWorkspaceRolesPermissionsSection,
-                  child: Column(
-                    children: [
-                      for (
-                        var groupIndex = 0;
-                        groupIndex < workspacePermissionCatalog.length;
-                        groupIndex++
-                      ) ...[
-                        _PermissionGroupCard(
-                          title: workspacePermissionGroupLabel(
-                            context,
-                            workspacePermissionCatalog[groupIndex].id,
-                          ),
-                          children: workspacePermissionCatalog[groupIndex]
-                              .permissions
-                              .map(
-                                (permissionId) => _PermissionToggleRow(
-                                  label: workspacePermissionLabel(
-                                    context,
-                                    permissionId,
-                                  ),
-                                  value: _permissions[permissionId] ?? false,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _permissions[permissionId] = value;
-                                    });
-                                  },
-                                ),
-                              )
-                              .toList(growable: false),
-                        ),
-                        if (groupIndex != workspacePermissionCatalog.length - 1)
-                          const shad.Gap(10),
-                      ],
-                    ],
-                  ),
+    if (loading) {
+      return AppGroupedSection(
+        caption: l10n.settingsWorkspaceRolesListTitle,
+        children: const [AppSkeletonRows(count: 3)],
+      );
+    }
+    if (error case final error?) {
+      return AppStateMessage(
+        icon: LucideIcons.circleAlert,
+        tone: AppTone.destructive,
+        title: l10n.commonSomethingWentWrong,
+        message: error,
+        actionLabel: l10n.commonRetry,
+        onAction: onRetry,
+      );
+    }
+    if (!canManage) {
+      return AppStateMessage(
+        icon: LucideIcons.lock,
+        title: l10n.settingsWorkspaceRolesAccessDenied,
+      );
+    }
+    final needle = query.trim().toLowerCase();
+    final filtered =
+        roles.where((role) => role.name.toLowerCase().contains(needle)).toList()
+          ..sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+          );
+    final enabledDefaults =
+        defaultRole?.permissions.where((entry) => entry.enabled).length ?? 0;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (needle.isEmpty)
+          AppGroupedSection.spaced(
+            children: [
+              AppGroupedRow(
+                key: const ValueKey('workspace-roles-default'),
+                leading: const AppIconTile(
+                  icon: LucideIcons.shield,
+                  tone: AppTone.primary,
                 ),
-                if (!widget.forceDefault && widget.roleId != null) ...[
-                  const shad.Gap(14),
-                  FinanceFormSection(
-                    title: l10n.settingsWorkspaceRolesMembersSection,
-                    child: _availableMembers.isEmpty
-                        ? Text(
-                            l10n.settingsWorkspaceRolesMembersEmpty,
-                            style: shad.Theme.of(context).typography.textSmall
-                                .copyWith(
-                                  color: shad.Theme.of(
-                                    context,
-                                  ).colorScheme.mutedForeground,
-                                ),
-                          )
-                        : Column(
-                            children: [
-                              for (
-                                var index = 0;
-                                index < _availableMembers.length;
-                                index++
-                              ) ...[
-                                _MemberAssignmentRow(
-                                  member: _availableMembers[index],
-                                  selected: _selectedMemberIds.contains(
-                                    _availableMembers[index].id,
-                                  ),
-                                  onChanged: (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedMemberIds.add(
-                                          _availableMembers[index].id,
-                                        );
-                                      } else {
-                                        _selectedMemberIds.remove(
-                                          _availableMembers[index].id,
-                                        );
-                                      }
-                                    });
-                                  },
-                                ),
-                                if (index != _availableMembers.length - 1)
-                                  const shad.Gap(10),
-                              ],
-                            ],
-                          ),
+                title: Text(l10n.settingsWorkspaceRolesDefaultTitle),
+                subtitle: Text(
+                  l10n.settingsWorkspaceRolesPermissionCount(enabledDefaults),
+                ),
+                showChevron: true,
+                onTap: onOpenDefault,
+              ),
+            ],
+          ),
+        AppGroupedSection(
+          caption: l10n.settingsWorkspaceRolesListTitle,
+          children: filtered.isEmpty
+              ? [
+                  AppStateMessage.inline(
+                    icon: needle.isEmpty
+                        ? LucideIcons.userCog
+                        : LucideIcons.searchX,
+                    title: needle.isEmpty
+                        ? l10n.settingsWorkspaceRolesEmpty
+                        : l10n.commonNoSearchResults,
                   ),
+                ]
+              : [
+                  for (final role in filtered)
+                    PendingSyncFrame(
+                      workspaceId: workspaceId,
+                      entityId: role.id,
+                      feature: 'workspace-management',
+                      child: AppGroupedRow(
+                        key: ValueKey('workspace-role-${role.id}'),
+                        leading: const AppIconTile(icon: LucideIcons.userCog),
+                        title: Text(role.name),
+                        showChevron: true,
+                        onTap: () => onOpenRole(role),
+                      ),
+                    ),
                 ],
-              ],
-            ),
-    );
-  }
-
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-
-    final repository = context.read<WorkspaceManagementRepository>();
-
-    try {
-      final members = widget.forceDefault
-          ? const <WorkspaceMemberListItem>[]
-          : await repository.getMembers(widget.wsId);
-
-      var detail = const WorkspaceRoleDetail(id: '', name: '', permissions: []);
-      var currentMemberIds = const <String>{};
-
-      if (widget.forceDefault) {
-        detail = await repository.getDefaultRole(widget.wsId);
-      } else if (widget.roleId != null) {
-        final results = await Future.wait<dynamic>([
-          repository.getRole(widget.wsId, widget.roleId!),
-          repository.getRoleMembers(widget.wsId, widget.roleId!),
-        ]);
-        detail = results[0] as WorkspaceRoleDetail;
-        currentMemberIds = (results[1] as List<WorkspaceRoleMember>)
-            .map((member) => member.id)
-            .toSet();
-      }
-
-      _nameController.text = detail.name == 'DEFAULT' ? '' : detail.name;
-      for (final permission in _permissions.keys) {
-        _permissions[permission] = detail.permissions.any(
-          (entry) => entry.id == permission && entry.enabled,
-        );
-      }
-
-      _selectedMemberIds
-        ..clear()
-        ..addAll(currentMemberIds);
-
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _availableMembers = members.where((member) => !member.pending).toList();
-        _currentMemberIds = currentMemberIds;
-      });
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = error.message;
-      });
-    } on Exception catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = context.l10n.commonSomethingWentWrong;
-      });
-    }
-  }
-
-  Future<void> _save() async {
-    final l10n = context.l10n;
-    final name = _nameController.text.trim();
-    if (!widget.forceDefault && name.isEmpty) {
-      setState(() => _nameError = l10n.settingsWorkspaceRolesNameRequired);
-      return;
-    }
-
-    setState(() => _saving = true);
-
-    final repository = context.read<WorkspaceManagementRepository>();
-    try {
-      if (widget.forceDefault) {
-        await repository.updateDefaultPermissions(
-          wsId: widget.wsId,
-          permissions: _permissions,
-        );
-      } else if (widget.roleId == null) {
-        await repository.createRole(
-          wsId: widget.wsId,
-          name: name,
-          permissions: _permissions,
-        );
-      } else {
-        await repository.updateRole(
-          wsId: widget.wsId,
-          roleId: widget.roleId!,
-          name: name,
-          permissions: _permissions,
-        );
-        await repository.replaceRoleMembers(
-          wsId: widget.wsId,
-          roleId: widget.roleId!,
-          currentMemberIds: _currentMemberIds,
-          selectedMemberIds: _selectedMemberIds,
-        );
-      }
-
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) =>
-            shad.Alert(content: Text(l10n.settingsWorkspaceRolesSaved)),
-      );
-      Navigator.of(context).pop(true);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) =>
-            shad.Alert.destructive(content: Text(error.message)),
-      );
-      setState(() => _saving = false);
-    } on Exception catch (_) {
-      if (!mounted) return;
-      shad.showToast(
-        context: context,
-        builder: (_, overlay) => shad.Alert.destructive(
-          content: Text(l10n.commonSomethingWentWrong),
         ),
-      );
-      setState(() => _saving = false);
-    }
+      ],
+    );
   }
 }
