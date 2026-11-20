@@ -3200,6 +3200,10 @@
     "digest": "c33dde7606ddab9dc9ffb68936eb1fdb2bca6b9ddf5aefd275659fbf4022e8db"
   },
   {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/mira-room/route.ts",
+    "digest": "37563f4c8562fe72cb4c8bc0db46da4635c2e4fe07821492d544ab45dc7c01b0"
+  },
+  {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/polls/route.ts",
     "digest": "e316713c055672f7a3de136165fbecea007830b429c6ee7f49aaae41c34c4e50"
   },
@@ -3470,6 +3474,10 @@
   {
     "file": "apps/parley/src/app/api/meet-call/[meetingId]/files/route.ts",
     "digest": "9b5deee23cbdeee611526fd1f5c0fdbeecb8ceab4be019271c3ff47256a21775"
+  },
+  {
+    "file": "apps/parley/src/app/api/meet-call/[meetingId]/mira-room/route.ts",
+    "digest": "37563f4c8562fe72cb4c8bc0db46da4635c2e4fe07821492d544ab45dc7c01b0"
   },
   {
     "file": "apps/parley/src/app/api/meet-call/[meetingId]/public-info/route.ts",
@@ -5875,6 +5883,10 @@
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/members/route.ts",
     "digest": "f69e702451f12602648a9a7c32d71b83d430a85cd4746e946ad40fad379b6cac"
+  },
+  {
+    "file": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/mira-audience/route.ts",
+    "digest": "736f206dc579e49d0e061bc529aa21d53dc656e0c0b5fc73868d6571e2e782fc"
   },
   {
     "file": "apps/web/src/app/api/v1/workspaces/[wsId]/settings/permissions/check/route.ts",
