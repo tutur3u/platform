@@ -95,7 +95,6 @@ const mainExceptions = {
   'oxc-check.yaml':
     'Each main SHA keeps its own non-cancelling validation run; mutation locks stay separate',
   'tanstack-route-manifest.yaml': 'TanStack runtime is paused',
-  'codeql.yml': 'Each main SHA keeps its own non-cancelling analysis',
   'abuse-guard-cloudflare.yaml':
     'Each main SHA keeps its own non-cancelling artifact run; publication pins that run',
   'chat-realtime-cloudflare.yaml':
@@ -106,9 +105,8 @@ const mainExceptions = {
 // These workflows do not cancel a main push, and each main SHA has its own
 // group. A shared "latest" group drops the previous pending run when
 // cancel-in-progress is false, so the proof tests require distinct groups.
-// CodeQL keeps an analysis per pushed tip for the security baseline; Oxc keeps
-// job-level mutation locks outside a shared group.
-const queuedMainBaselines = new Set(['codeql.yml', 'oxc-check.yaml']);
+// Oxc keeps job-level mutation locks outside a shared group.
+const queuedMainBaselines = new Set(['oxc-check.yaml']);
 const boundedMainProducers = new Set();
 // Main pushes may still supersede these: their newest run is the only signal.
 const mainSupersedeAllowed = {

@@ -722,9 +722,10 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   and ref without cancelling the active run: `cancel-in-progress` exempts
   `refs/heads/main`, so a newer push replaces only the pending run and long
   workflows still finish under frequent pushes. This includes Test, Type Check,
-  docs/SEO and every Cloudflare Source workflow: per-SHA main groups queued a
-  full run per push and made the newest head wait behind older SHAs. Only
-  CodeQL (sensitive-path scans per tip) and Oxc (job-level locks) keep per-SHA
+  docs/SEO, CodeQL and every Cloudflare Source workflow: per-SHA main groups
+  queued a full run per push and made the newest head wait behind older SHAs.
+  CodeQL push scans diff from the last successful push scan, so a replaced
+  pending commit is still analyzed. Only Oxc (job-level locks) keeps per-SHA
   main groups; only report-only smoke and preview workflows supersede active
   main runs. Production, generated Release Please refs and manual qualification
   retain SHA/run/attempt identity. Explicit reruns (`github.run_attempt > 1`)
@@ -789,7 +790,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   `'!**/*.mdx'` to PR `paths`, or use docs-only `paths-ignore`). Leave main push
   filters unchanged for promotion gates. CodeQL is the exception: push and PR
   runs share one security-sensitive path list and the nightly
-  `security-checks.yaml` run is the complete baseline.
+  `security-checks.yaml` run is the complete, uploaded baseline. Main push
+  scans are diff-scoped (`codeql-push-scope.js`: JavaScript/TypeScript extracts
+  touched workspaces plus direct dependents of touched packages; failed scan
+  history selects the full scan), fail on new high/critical results and never
+  upload a path-scoped analysis. The gate baseline accepts the nightly scan,
+  which lists under `security-checks.yaml`, not `codeql.yml`. Release admission never waits on CodeQL; app release
+  gates evaluate app-relevant checks (`release-relevant-ci.mjs`).
   Check rulesets first, because a trigger-filtered required check never reports.
   Required checks need a job-level `check-ci` skip instead. Moving PR CI to
   self-hosted fleet runners is a follow-up and is not adopted. See the

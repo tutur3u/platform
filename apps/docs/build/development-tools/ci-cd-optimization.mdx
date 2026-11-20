@@ -377,9 +377,24 @@ schedules it at 02:17 UTC with every language. Pull requests and `main` pushes
 run it only when they touch security-sensitive paths: auth, middleware and
 `proxy.ts`, API routes, SQL and migrations, Supabase, `packages/internal-api`,
 `packages/auth*`, workflows and actions, and files named for crypto, secrets,
-sessions or tokens. Both triggers share one path list. A release gate that needs
-a CodeQL run for an exact `main` SHA dispatches the workflow for that SHA.
-`bun git-sync` mirrors the already-scanned `main` SHA to `production`.
+sessions or tokens. Both triggers share one path list.
+
+A `main` push scan is diff-scoped (`scripts/ci/codeql-push-scope.js`). Its range
+starts at the newest `main` commit whose push scan succeeded; unreadable scan
+history or no scanned ancestor selects the full scan. Python and Actions scans
+stay whole-language (about two minutes each); JavaScript/TypeScript extracts,
+through a CodeQL `paths` filter, the touched `apps/*` or `packages/*`
+workspaces (deletions included), top-level directories or root files, plus the
+direct dependents of every touched package so a changed helper is analyzed with
+its callers. More than 30 roots, more than 400 commits, or an unsafe path
+selects the full scan. The new-alert gate's baseline is the newest completed
+`main` analysis, including the nightly scan listed under `security-checks.yaml`. Main pushes share one
+concurrency group without cancelling: the active scan finishes and a newer push
+replaces only the pending run, which the next range still covers. A scoped scan
+fails on new high or critical results but never uploads, because a partial
+analysis would close every alert outside its workspaces; the nightly full scan
+is the uploaded code-scanning baseline. No release or deploy gate waits on
+CodeQL. `bun git-sync` mirrors `main` to `production`.
 
 The full Dockerized E2E graph is created for E2E specs, Playwright and Docker
 configuration, database fixtures, package manifests, lockfiles, and its own

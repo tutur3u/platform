@@ -85,10 +85,11 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
   // a separate API-only backstop).
   assert.equal(on.schedule, undefined);
   assert.match(codeql.concurrency.group, /codeql-/u);
-  // Main-push baselines must complete; only PR scans may be cancelled.
-  assert.doesNotMatch(
+  // An active main scan always completes (protected-workflow-main-queue.test.js
+  // renders the policy); only PR scans and non-main pushes may be cancelled.
+  assert.match(
     String(codeql.concurrency['cancel-in-progress']),
-    /'push'/u
+    /github\.event_name == 'push' && github\.ref != 'refs\/heads\/main'/u
   );
   assert.match(
     String(codeql.concurrency['cancel-in-progress']),
@@ -101,8 +102,18 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     expression('fromJSON(needs.scope.outputs.languages)')
   );
   assert.equal(analyze.permissions['security-events'], 'write');
-  const [checkout, init, run, gate] = analyze.steps;
+  const [checkout, config, init, run, gate] = analyze.steps;
   assert.equal(checkout.with['persist-credentials'], false);
+  // A diff-scoped main push passes the trusted scope job's workspace list to
+  // CodeQL as a paths filter, for JavaScript/TypeScript only.
+  assert.equal(config.id, 'config');
+  assert.equal(
+    config.if,
+    "matrix.language == 'javascript-typescript' && needs.scope.outputs.paths != ''"
+  );
+  assert.equal(config.env.SCAN_PATHS, '${{ needs.scope.outputs.paths }}');
+  assert.match(config.run, /jq -n --argjson paths "\$SCAN_PATHS"/u);
+  assert.equal(init.with['config-file'], '${{ steps.config.outputs.file }}');
   assert.equal(init.with.queries, 'security-extended');
   assert.equal(init.with['build-mode'], 'none');
   assert.match(
@@ -140,9 +151,11 @@ test('CodeQL runs on pull requests and main pushes with the extended suite', () 
     upload.uses,
     'github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066'
   );
+  // A path-scoped analysis would close every alert outside its workspaces,
+  // so only whole-language main analyses upload.
   assert.equal(
     upload.if,
-    "(success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main'"
+    "(success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.file == ''"
   );
   assert.equal(upload.with.sarif_file, '${{ runner.temp }}/codeql-sarif');
   assert.equal(upload.with.category, '/language:${{ matrix.language }}');

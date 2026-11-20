@@ -40,14 +40,32 @@ holds and provider authorization. The candidate must include the accepted startu
 and authentication regression fixes. A source review or green build does not
 replace the per-dispatch authorization or source-range receipt.
 
-The admission gate requires the latest completed successful run for that exact
-main SHA of Types, Security, Test, CodeQL, Oxc and Meet Cloudflare. It excludes the
-current release run. A successful Meet workflow whose `validate` job was skipped
-by the affected-path gate counts as green for this historical CI predicate. It is
-not an emitted-artifact qualification receipt: the release dispatch must execute
-its own validation, restored-artifact checks and production-input provenance.
-CodeQL runs on `main` pushes only for security-sensitive paths, so a candidate
-SHA may have no CodeQL run; dispatch `codeql.yml` on `main` for that SHA first.
+The admission gate evaluates only checks relevant to Meet. Security Checks and
+Meet Cloudflare need the latest completed successful run for the exact main SHA.
+Type Check, Test and Oxc are repository-wide and check the whole tree when they
+execute. The exact SHA's green run counts. Otherwise the nearest green run of
+that workflow on an ancestor commit (at most 200 commits back) counts when no
+relevant file changed between the two commits and that run's own jobs show its
+checks executed rather than skipping: Type Check's `Run type check` step, every
+Test unit shard plus the root script tests, and both Oxc jobs. Release-only and
+release-merge pushes conclude green with those skipped, so they never count. Relevant files are `apps/meet` and every workspace it depends on,
+paths those files reference by relative specifier (for example
+`scripts/ci/meet-native-policy.mjs`), root files, `.github/actions`, `patches`
+and the checking workflow itself. Descendant commits never count, because a
+later green run may have skipped its checks. A red or superseded run caused
+only by another app therefore does not block Meet; any relevant change still
+needs the exact SHA's green run. The receipt records the equivalent commit
+(`equivalentSha`) and its distance. The logic lives in
+`scripts/ci/release-relevant-ci.mjs`.
+
+CodeQL is not a release gate. Its diff-scoped main push scan and the nightly
+full scan surface new high or critical results without holding a release; an
+open high or critical finding still holds the release under the security
+default. The gate excludes the current release run. A successful Meet workflow
+whose `validate` job was skipped by the affected-path gate counts as green for
+this historical CI predicate. It is not an emitted-artifact qualification
+receipt: the release dispatch must execute its own validation, restored-artifact
+checks and production-input provenance.
 
 ## Dispatch and approve
 

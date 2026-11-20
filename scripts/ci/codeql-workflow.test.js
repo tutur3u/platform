@@ -3,6 +3,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
+const {
+  context,
+  queuedMainBaselines,
+  render,
+  workflows,
+} = require('./protected-workflow-concurrency-helpers.js');
 
 test('checked-in CodeQL is the only CodeQL configuration and scans every change', () => {
   const workflow = fs.readFileSync(
@@ -36,4 +42,38 @@ test('checked-in CodeQL is the only CodeQL configuration and scans every change'
   );
   assert.doesNotMatch(switchboard, /'codeql\.yml'/);
   assert.doesNotMatch(switchboard, /'security-checks\.yaml'/);
+});
+
+test('CodeQL main pushes coalesce without cancelling and pull requests still supersede', () => {
+  const policy = workflows['codeql.yml'].concurrency;
+  const first = {
+    ...context('refs/heads/main', 'a'.repeat(40), 11),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  const second = {
+    ...context('refs/heads/main', 'b'.repeat(40), 22),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  // The active scan finishes and a newer push replaces only the pending run;
+  // the next scan diffs from the last successful push scan, so the replaced
+  // commit is still analyzed (scripts/ci/codeql-push-scope.js).
+  assert.equal(render(policy.group, first), render(policy.group, second));
+  assert.equal(queuedMainBaselines.has('codeql.yml'), false);
+  assert.equal(render(policy['cancel-in-progress'], first), false);
+  assert.equal(render(policy['cancel-in-progress'], second), false);
+  const pull = {
+    ...context('refs/pull/7/merge', 'c'.repeat(40), 3, 'pull_request', 7),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  assert.equal(render(policy['cancel-in-progress'], pull), true);
+  assert.notEqual(render(policy.group, pull), render(policy.group, first));
+  // Reruns and dispatches keep their own immutable slot.
+  const rerun = { ...first, run_attempt: 2 };
+  assert.notEqual(render(policy.group, rerun), render(policy.group, first));
+  assert.equal(render(policy['cancel-in-progress'], rerun), false);
+  const dispatch = {
+    ...context('refs/heads/main', 'c'.repeat(40), 33, 'workflow_dispatch'),
+    workflow: 'CodeQL Manual Fallback',
+  };
+  assert.notEqual(render(policy.group, dispatch), render(policy.group, first));
 });

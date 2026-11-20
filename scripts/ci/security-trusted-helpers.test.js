@@ -363,9 +363,13 @@ test('scan scope comes from the base, or runs every scan', (t) => {
     null,
     { full: true }
   );
-  for (const [file, selectName] of [
-    ['security-checks.yaml', 'Select scans'],
-    ['codeql.yml', 'Select CodeQL languages'],
+  for (const [file, selectName, extraScopeFiles] of [
+    ['security-checks.yaml', 'Select scans', []],
+    [
+      'codeql.yml',
+      'Select CodeQL languages',
+      ['scripts/ci/codeql-push-scope.js'],
+    ],
   ]) {
     const load = stepScript(file, 'Load trusted scope scripts');
     const select = stepScript(file, selectName);
@@ -382,7 +386,10 @@ test('scan scope comes from the base, or runs every scan', (t) => {
       const base = commit(
         box.repo,
         Object.fromEntries(
-          (baseHasScope ? scopeFiles : ['README.md']).map((name) => [
+          (baseHasScope
+            ? [...scopeFiles, ...extraScopeFiles]
+            : ['README.md']
+          ).map((name) => [
             name,
             name === 'README.md'
               ? 'base\n'

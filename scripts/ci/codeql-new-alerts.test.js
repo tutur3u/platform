@@ -89,16 +89,18 @@ function harness(t, { analyses, baseline, head, runs }) {
     const parsed = new URL(url);
     if (String(url).includes('/actions/workflows/')) {
       const sha = parsed.searchParams.get('head_sha');
+      const workflow = parsed.pathname.split('/').at(-2);
       return {
         json: async () => ({
-          workflow_runs: runs?.[sha] ?? [
-            {
-              conclusion: 'success',
-              event: 'push',
-              head_branch: 'main',
-              head_sha: sha,
-            },
-          ],
+          workflow_runs: runs?.[`${workflow}|${sha}`] ??
+            runs?.[sha] ?? [
+              {
+                conclusion: 'success',
+                event: 'push',
+                head_branch: 'main',
+                head_sha: sha,
+              },
+            ],
         }),
         ok: true,
         status: 200,
@@ -245,6 +247,55 @@ test('a cancelled-only analysis is skipped for the last completed main SHA', asy
   );
   assert.match(run.output(), new RegExp(`baseline \\(${completed}\\)`));
   assert.doesNotMatch(run.output(), /exploit detail/u);
+});
+
+test('the nightly scan, listed under security-checks.yaml, is a baseline', async (t) => {
+  const nightly = 'd'.repeat(40);
+  const pushOnly = 'e'.repeat(40);
+  const run = harness(t, {
+    analyses: [
+      [
+        { category: '/language:python', commit_sha: pushOnly, id: 8 },
+        { category: '/language:python', commit_sha: nightly, id: 5 },
+      ],
+    ],
+    baseline: sarif([result('py/high', 'h1'), result('py/critical', 'h3')]),
+    runs: {
+      [`codeql.yml|${pushOnly}`]: [],
+      // A Security Checks push run never executes CodeQL.
+      [`security-checks.yaml|${pushOnly}`]: [
+        {
+          conclusion: 'success',
+          event: 'push',
+          head_branch: 'main',
+          head_sha: pushOnly,
+        },
+      ],
+      [`codeql.yml|${nightly}`]: [],
+      [`security-checks.yaml|${nightly}`]: [
+        {
+          conclusion: 'failure',
+          event: 'schedule',
+          head_branch: 'main',
+          head_sha: nightly,
+        },
+      ],
+    },
+  });
+  await main([run.dir, '/language:python']);
+  assert.equal(process.exitCode, undefined, run.output());
+  assert.ok(run.requests.some((url) => url.endsWith('/analyses/5')));
+  assert.equal(
+    run.requests.some((url) => url.endsWith('/analyses/8')),
+    false
+  );
+  assert.ok(
+    run.requests.some((url) =>
+      url.includes(
+        `/actions/workflows/security-checks.yaml/runs?head_sha=${nightly}`
+      )
+    )
+  );
 });
 
 test('baseline paging is bounded', async (t) => {

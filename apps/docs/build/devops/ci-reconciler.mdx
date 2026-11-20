@@ -30,8 +30,10 @@ The trusted operational manifest explicitly names eight core producers:
 - Codex Plugin Check
 - Required account MFA database contract
 
-CodeQL runs on pushes only for security-sensitive paths, so a head without a
-CodeQL run is expected; the nightly Security Checks schedule scans it.
+CodeQL runs on pushes only for security-sensitive paths, and main pushes share
+one coalescing group, so a head without a CodeQL run is expected: the next push
+scan diffs from the last successful one, and the nightly Security Checks
+schedule scans everything.
 
 The manifest covers `main` and `production` explicitly. It is not proof that all
 apps, builds, Mobile checks, or release requirements are green. App applicability

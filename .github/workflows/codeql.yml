@@ -3,12 +3,16 @@ name: CodeQL Manual Fallback
 # Repository-owned CodeQL. GitHub default setup is not configured; do not enable
 # it alongside this workflow (code scanning rejects advanced-setup uploads while
 # default setup is on). The full scan runs nightly: security-checks.yaml calls
-# this workflow on its daily schedule (the only timer) with every language.
+# this workflow on its daily schedule (the only timer) with every language, and
+# its upload is the code-scanning baseline.
 # Pull requests and main pushes scan only when they touch security-sensitive
 # paths (auth, middleware/proxy, API routes, SQL and migrations, Supabase,
 # internal-api, workflows, crypto/secret/session/token handling), and then only
-# the languages their diff touches. Release gates that need a CodeQL run for an
-# exact main SHA dispatch this workflow for it.
+# the languages their diff touches. A main push is diff-scoped: it covers every
+# change since the last successful push scan, extracts JavaScript/TypeScript
+# only from the touched workspaces (scripts/ci/codeql-push-scope.js), fails on
+# new high or critical results, and never uploads a partial analysis. No
+# release or deploy gate waits on this workflow.
 # Merge queue (merge_group) runs scan the candidate merge commit M and gate it
 # against the default-branch baseline. They are untrusted candidate code: scope
 # and gate scripts load from the queue base B, every job stays on GitHub-hosted
@@ -74,14 +78,14 @@ on:
 
 # The codeql- prefix keeps the group distinct from security-checks.yaml when
 # this runs as its reusable workflow (github.workflow names the caller there).
-# A first-attempt push to main uses a per-SHA group. GitHub keeps only one
-# pending run in a shared group, so a shared "latest" group drops the previous
-# main analysis even when cancel-in-progress is false.
+# First-attempt main pushes share one group: the active scan finishes and a
+# newer push replaces only the pending run. The next scan's range starts at the
+# last successful push scan, so a replaced commit is still analyzed.
 concurrency:
-  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 && github.workflow == 'CodeQL Manual Fallback') && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('codeql-{0}-{1}-{2}{3}', github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
-  # Only superseded PR scans are cancelled. Each main push keeps its own
-  # non-cancelling analysis, so every pushed tip can complete.
-  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') }}
+  group: ${{ ((github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && github.run_attempt == 1 && github.workflow == 'CodeQL Manual Fallback') && format('{0}-pr-{1}', github.workflow, github.event.pull_request.number) || format('codeql-{0}-{1}-{2}{3}', github.event_name, github.event.pull_request.number || github.ref, (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest', github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '') }}
+  # Only superseded PR scans are cancelled in progress. An active main scan
+  # always completes, so a stream of pushes cannot starve it.
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
   contents: read
@@ -96,9 +100,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      # Reads the last successful push scan for the main push range.
+      actions: read
       contents: read
     outputs:
       languages: ${{ steps.scope.outputs.codeql_languages }}
+      paths: ${{ steps.scope.outputs.codeql_paths }}
       run: ${{ steps.scope.outputs.codeql }}
     steps:
       - name: Check out scope inputs
@@ -107,6 +114,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
           sparse-checkout: |
+            scripts/ci/codeql-push-scope.js
             scripts/ci/github-deployment-markers.ts
             scripts/ci/resolve-changed-files-core.ts
             scripts/ci/resolve-changed-files.ts
@@ -137,8 +145,9 @@ jobs:
             fi
           fi
           dir="$RUNNER_TEMP/trusted-scope"
-          for file in scripts/ci/github-deployment-markers.ts scripts/ci/resolve-changed-files-core.ts \
-            scripts/ci/resolve-changed-files.ts scripts/ci/security-paths.js; do
+          for file in scripts/ci/codeql-push-scope.js scripts/ci/github-deployment-markers.ts \
+            scripts/ci/resolve-changed-files-core.ts scripts/ci/resolve-changed-files.ts \
+            scripts/ci/security-paths.js; do
             if [ -z "$trusted" ] || ! git cat-file -e "$trusted:$file" 2>/dev/null; then
               echo "::warning::Trusted scope scripts are unavailable; running every scan."
               echo "available=false" >> "$GITHUB_OUTPUT"
@@ -152,7 +161,7 @@ jobs:
 
       - name: Compute changed files
         id: changed_files
-        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || github.event_name == 'push' || github.event_name == 'merge_group')
+        if: steps.trusted_scope.outputs.available == 'true' && (github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref != 'refs/heads/main') || github.event_name == 'merge_group')
         env:
           GITHUB_TOKEN: ${{ github.token }}
           TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
@@ -165,20 +174,23 @@ jobs:
           AVAILABLE: ${{ steps.trusted_scope.outputs.available }}
           CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
           EVENT_NAME: ${{ github.event_name }}
+          GITHUB_TOKEN: ${{ github.token }}
           TRUSTED_SCOPE: ${{ steps.trusted_scope.outputs.dir }}
         run: |
           set -euo pipefail
           full() {
             printf '%s\n' 'codeql_languages=["actions","javascript-typescript","python"]' \
-              codeql=true dependencies=true workflows=true | tee -a "$GITHUB_OUTPUT"
+              codeql=true codeql_paths= dependencies=true workflows=true | tee -a "$GITHUB_OUTPUT"
           }
-          # A main push scans every language. The scope diff is only the
-          # immediate parent, so a lost intermediate commit would otherwise
-          # never be analyzed. Pull requests and merge groups stay narrow.
-          if [ "$AVAILABLE" = true ] && { [ "${EVENT_NAME:-}" != push ] || [ "${GITHUB_REF:-}" != refs/heads/main ]; }; then
-            node "$TRUSTED_SCOPE/scripts/ci/security-paths.js" scope
-          else
+          # A main push diffs from the last successful push scan, or runs the
+          # full scan, so a replaced pending commit is still covered.
+          # Pull requests and merge groups stay narrow and unscoped by path.
+          if [ "$AVAILABLE" != true ]; then
             full
+          elif [ "${EVENT_NAME:-}" = push ] && [ "${GITHUB_REF:-}" = refs/heads/main ]; then
+            node "$TRUSTED_SCOPE/scripts/ci/codeql-push-scope.js"
+          else
+            node "$TRUSTED_SCOPE/scripts/ci/security-paths.js" scope
           fi
 
   analyze:
@@ -208,10 +220,25 @@ jobs:
           fetch-depth: ${{ (github.event_name == 'merge_group' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) && '0' || 2 }}
           persist-credentials: false
 
+      # A diff-scoped main push extracts JavaScript/TypeScript only from the
+      # touched workspaces. The list is JSON from the trusted scope job.
+      - name: Write diff-scoped CodeQL config
+        id: config
+        if: matrix.language == 'javascript-typescript' && needs.scope.outputs.paths != ''
+        env:
+          SCAN_PATHS: ${{ needs.scope.outputs.paths }}
+        run: |
+          set -euo pipefail
+          file="$RUNNER_TEMP/codeql-scoped-config.yml"
+          jq -n --argjson paths "$SCAN_PATHS" \
+            'if ($paths | type) == "array" and ($paths | length) > 0 and all($paths[]; type == "string") then {paths: $paths} else error("invalid scan paths") end' > "$file"
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
       - name: Initialize CodeQL
         uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           build-mode: none
+          config-file: ${{ steps.config.outputs.file }}
           languages: ${{ matrix.language }}
           queries: security-extended
 
@@ -296,9 +323,11 @@ jobs:
       # is compared against, and a new high result would not fail the job.
       # success() || failure() still uploads a red gate, and skips a
       # cancelled run so a partial SARIF cannot become the next baseline.
+      # A path-scoped analysis is never uploaded: it would close every alert
+      # outside the scanned workspaces until the nightly full scan.
       # The job permission security-events: write already covers this upload.
       - name: Upload main CodeQL results
-        if: (success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (success() || failure()) && github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.config.outputs.file == ''
         uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           sarif_file: ${{ runner.temp }}/codeql-sarif

@@ -3,16 +3,27 @@ import { createHash } from 'node:crypto';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {
+  EQUIVALENT_WORKFLOWS,
+  equivalentAncestors,
+  equivalentCandidates,
+  externalReferences,
+  runExecuted,
+  readWorkspaceManifests,
+  workspaceClosure,
+} from './release-relevant-ci.mjs';
 
 const SHA = /^[a-f0-9]{40}$/;
-const workflows = [
-  'type-check.yaml',
-  'security-checks.yaml',
-  'turbo-unit-tests.yaml',
-  'codeql.yml',
-  'oxc-check.yaml',
-  'meet-cloudflare.yaml',
-];
+// Meet's own validation and the security checks must be green on the exact
+// source. CodeQL is not a release gate: the push scan and the nightly full
+// scan surface new results without holding a release.
+const exactWorkflows = ['security-checks.yaml', 'meet-cloudflare.yaml'];
+// Repository-wide checks also accept a green run on a nearby main commit
+// when Meet's workspace closure is identical (release-relevant-ci.mjs).
+const sharedWorkflows = EQUIVALENT_WORKFLOWS;
+// At most this many equivalent commits have their run's jobs read.
+const MAX_EXECUTION_READS = 3;
+const workflows = [...sharedWorkflows, ...exactWorkflows];
 
 function stop(code) {
   throw Object.assign(new Error(code), { guardCode: code });
@@ -159,7 +170,7 @@ export async function admitRelease({
       run('git', args, {
         encoding: 'utf8',
         timeout: 30_000,
-        maxBuffer: 1024 * 1024,
+        maxBuffer: 16 * 1024 * 1024,
         stdio: ['ignore', 'pipe', 'pipe'],
       }).trim();
     phase = 'ancestry';
@@ -202,13 +213,73 @@ export async function admitRelease({
     }
     phase = 'ci';
     const checks = {};
+    const runsUrl = (workflow, query) =>
+      `https://api.github.com/repos/tutur3u/platform/actions/workflows/${workflow}/runs?${query}`;
+    const exactRuns = async (workflow, sha) =>
+      admitWorkflowRuns(
+        await readJson(
+          runsUrl(workflow, `head_sha=${sha}&per_page=100`),
+          env.GH_TOKEN,
+          fetcher
+        ),
+        sha,
+        env.GITHUB_RUN_ID
+      );
+    let closure;
+    let references;
     for (const workflow of workflows) {
-      const url = `https://api.github.com/repos/tutur3u/platform/actions/workflows/${workflow}/runs?head_sha=${env.SOURCE_SHA}&per_page=100`;
-      checks[workflow] = admitWorkflowRuns(
-        await readJson(url, env.GH_TOKEN, fetcher),
+      try {
+        checks[workflow] = await exactRuns(workflow, env.SOURCE_SHA);
+        continue;
+      } catch (error) {
+        if (
+          error.guardCode !== 'MEET_RELEASE_CI_NOT_GREEN' ||
+          !sharedWorkflows.includes(workflow)
+        )
+          throw error;
+      }
+      closure ??= workspaceClosure(
+        'apps/meet',
+        readWorkspaceManifests(git, env.SOURCE_SHA)
+      );
+      references ??= externalReferences(git, env.SOURCE_SHA, closure);
+      const candidates = equivalentCandidates(
+        await readJson(
+          runsUrl(workflow, 'branch=main&status=success&per_page=40'),
+          env.GH_TOKEN,
+          fetcher
+        ),
         env.SOURCE_SHA,
         env.GITHUB_RUN_ID
       );
+      const ancestors = equivalentAncestors({
+        candidates,
+        closure,
+        git,
+        references,
+        source: env.SOURCE_SHA,
+        workflow,
+      }).slice(0, MAX_EXECUTION_READS);
+      for (const { sha, distance } of ancestors) {
+        // The commit's newest run must itself be green and must have run its
+        // checks rather than skipping them.
+        let admitted;
+        try {
+          admitted = await exactRuns(workflow, sha);
+        } catch (error) {
+          if (error.guardCode === 'MEET_RELEASE_CI_NOT_GREEN') continue;
+          throw error;
+        }
+        const jobs = await readJson(
+          `https://api.github.com/repos/tutur3u/platform/actions/runs/${admitted.id}/attempts/${admitted.attempt}/jobs?per_page=100`,
+          env.GH_TOKEN,
+          fetcher
+        );
+        if (!runExecuted(workflow, jobs)) continue;
+        checks[workflow] = { ...admitted, equivalentSha: sha, distance };
+        break;
+      }
+      if (!checks[workflow]) stop('MEET_RELEASE_CI_NOT_GREEN');
     }
     const result = {
       guardCode: 'MEET_RELEASE_ADMITTED',

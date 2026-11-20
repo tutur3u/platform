@@ -178,7 +178,7 @@ test('admission checks ancestry and every exact workflow, with a fixed stop rece
       (args) => args.join(' ') === `merge-base --is-ancestor ${live} ${source}`
     )
   );
-  assert.equal(urls.length, 7);
+  assert.equal(urls.length, 6);
   assert.equal(receipts.at(-1).guardCode, 'MEET_RELEASE_ADMITTED');
   await assert.rejects(
     admitRelease({

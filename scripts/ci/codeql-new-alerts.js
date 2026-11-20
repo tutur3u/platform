@@ -90,26 +90,41 @@ async function github(url, accept) {
   return response.json();
 }
 
+// The nightly full scan runs as a workflow_call from security-checks.yaml, so
+// its runs list under that workflow, never under codeql.yml. Only its
+// scheduled or dispatched runs execute CodeQL.
+const baselineWorkflows = [
+  { file: 'codeql.yml', events: null },
+  { file: 'security-checks.yaml', events: ['schedule', 'workflow_dispatch'] },
+];
+
 async function completedMainCodeql(api, repo, sha) {
   const query = new URLSearchParams({
     head_sha: sha,
     per_page: '20',
     status: 'completed',
   });
-  const body = await github(
-    `${api}/repos/${repo}/actions/workflows/codeql.yml/runs?${query}`,
-    'application/vnd.github+json'
-  );
-  const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
-  // A completed success or failure counts, including a daily workflow_call
-  // or dispatch on main. A cancelled-only SHA is not a baseline: the next
-  // finished run still has to cover everything since the last real one.
-  return runs.some(
-    (run) =>
-      run.head_sha === sha &&
-      run.head_branch === 'main' &&
-      (run.conclusion === 'success' || run.conclusion === 'failure')
-  );
+  for (const { file, events } of baselineWorkflows) {
+    const body = await github(
+      `${api}/repos/${repo}/actions/workflows/${file}/runs?${query}`,
+      'application/vnd.github+json'
+    );
+    const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
+    // A completed success or failure counts, including the nightly scan or a
+    // dispatch on main. A cancelled-only SHA is not a baseline: the next
+    // finished run still has to cover everything since the last real one.
+    if (
+      runs.some(
+        (run) =>
+          run.head_sha === sha &&
+          run.head_branch === 'main' &&
+          (!events || events.includes(run.event)) &&
+          (run.conclusion === 'success' || run.conclusion === 'failure')
+      )
+    )
+      return true;
+  }
+  return false;
 }
 
 async function baselineSarif({ category, ref, repo }) {
