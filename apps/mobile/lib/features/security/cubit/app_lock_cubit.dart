@@ -10,6 +10,7 @@ class AppLockState extends Equatable {
     this.enabled = false,
     this.locked = false,
     this.hasLoaded = false,
+    this.showUnlockImmediately = false,
     this.delay = AppLockDelay.after30Seconds,
     this.status = AppLockStatus.idle,
     this.error,
@@ -18,6 +19,7 @@ class AppLockState extends Equatable {
   final bool enabled;
   final bool locked;
   final bool hasLoaded;
+  final bool showUnlockImmediately;
   final AppLockDelay delay;
   final AppLockStatus status;
   final String? error;
@@ -26,6 +28,7 @@ class AppLockState extends Equatable {
     bool? enabled,
     bool? locked,
     bool? hasLoaded,
+    bool? showUnlockImmediately,
     AppLockDelay? delay,
     AppLockStatus? status,
     String? error,
@@ -34,6 +37,8 @@ class AppLockState extends Equatable {
       enabled: enabled ?? this.enabled,
       locked: locked ?? this.locked,
       hasLoaded: hasLoaded ?? this.hasLoaded,
+      showUnlockImmediately:
+          showUnlockImmediately ?? this.showUnlockImmediately,
       delay: delay ?? this.delay,
       status: status ?? this.status,
       error: error,
@@ -41,7 +46,15 @@ class AppLockState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [enabled, locked, hasLoaded, delay, status, error];
+  List<Object?> get props => [
+    enabled,
+    locked,
+    hasLoaded,
+    showUnlockImmediately,
+    delay,
+    status,
+    error,
+  ];
 }
 
 class AppLockCubit extends Cubit<AppLockState> {
@@ -65,6 +78,7 @@ class AppLockCubit extends Cubit<AppLockState> {
   bool _currentLifetime(int lifetime) => !isClosed && lifetime == _lifetime;
 
   Future<bool> _authenticate(String reason, int generation) async {
+    final lifetime = _lifetime;
     _authenticationInFlight = true;
     try {
       return await _localAuthService.authenticate(reason: reason);
@@ -75,6 +89,12 @@ class AppLockCubit extends Cubit<AppLockState> {
       rethrow;
     } finally {
       _authenticationInFlight = false;
+      if (_currentLifetime(lifetime) &&
+          !_current(generation) &&
+          state.locked &&
+          state.status == AppLockStatus.authenticating) {
+        emit(state.copyWith(status: AppLockStatus.idle));
+      }
     }
   }
 
@@ -161,7 +181,15 @@ class AppLockCubit extends Cubit<AppLockState> {
     }
 
     ++_generation;
-    emit(state.copyWith(locked: true));
+    emit(
+      state.copyWith(
+        locked: true,
+        showUnlockImmediately: true,
+        status: _authenticationInFlight
+            ? AppLockStatus.authenticating
+            : AppLockStatus.idle,
+      ),
+    );
   }
 
   void resetLockState() {
@@ -194,7 +222,11 @@ class AppLockCubit extends Cubit<AppLockState> {
     if (!_current(generation)) return false;
     emit(
       authenticated
-          ? state.copyWith(locked: false, status: AppLockStatus.idle)
+          ? state.copyWith(
+              locked: false,
+              showUnlockImmediately: false,
+              status: AppLockStatus.idle,
+            )
           : state.copyWith(status: AppLockStatus.idle),
     );
     return authenticated;

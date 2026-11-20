@@ -15,6 +15,7 @@ import UserNotifications
   private var analyticsStarted = false
   private var pushAdmitted = false
   private var meetNoticeSound: SystemSoundID = 0
+  private var snapshotCovers: [ObjectIdentifier: UIView] = [:]
 
   deinit {
     if meetNoticeSound != 0 { AudioServicesDisposeSystemSoundID(meetNoticeSound) }
@@ -37,8 +38,37 @@ import UserNotifications
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Dart configures Firebase after sign-in.
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(coverSceneForSnapshot(_:)),
+      name: UIScene.willDeactivateNotification, object: nil
+    )
     UNUserNotificationCenter.current().delegate = self
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  @objc private func coverSceneForSnapshot(_ notification: Notification) {
+    guard let scene = notification.object as? UIWindowScene else { return }
+    for window in scene.windows where window.rootViewController != nil {
+      let id = ObjectIdentifier(window)
+      guard snapshotCovers[id] == nil else { continue }
+      let cover = UIView(frame: window.bounds)
+      cover.backgroundColor = .systemBackground
+      cover.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+      cover.accessibilityViewIsModal = true
+      window.addSubview(cover)
+      snapshotCovers[id] = cover
+    }
+  }
+
+  private func revealForegroundScenes() {
+    let activeCovers = snapshotCovers.filter { _, cover in
+      cover.window?.windowScene?.activationState == .foregroundActive
+        || cover.window == nil
+    }
+    for (id, cover) in activeCovers {
+      cover.removeFromSuperview()
+      snapshotCovers.removeValue(forKey: id)
+    }
   }
 
   override func application(
@@ -98,6 +128,19 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppSnapshotPrivacy") {
+      let channel = FlutterMethodChannel(
+        name: "mobile/app_snapshot_privacy", binaryMessenger: registrar.messenger()
+      )
+      channel.setMethodCallHandler { [weak self] call, result in
+        guard call.method == "foregroundFrameReady" else {
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        self?.revealForegroundScenes()
+        result(nil)
+      }
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {
       let channel = FlutterMethodChannel(name: "mobile/firebase_startup", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { call, result in

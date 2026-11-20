@@ -71,31 +71,23 @@ extension _AppPushNavigation on _AppState {
     }
   }
 
-  void _handleLifecycleState(AppLifecycleState state) {
-    _mobileFlags.setForeground(foreground: state == AppLifecycleState.resumed);
-    _mastermind.irisLifecycle(state);
-    if (state == AppLifecycleState.paused ||
-        (state == AppLifecycleState.inactive &&
-            _appLockCubit.state.delay != AppLockDelay.immediately) ||
-        state == AppLifecycleState.hidden) {
-      _backgroundedAt ??= DateTime.now();
-      return;
-    }
-    if (state != AppLifecycleState.resumed) return;
-    // Phases that ended while the app slept are settled before anything
-    // else reads the Pomodoro.
+  void _registerAppLockLifecycle() {
+    _appLockLifecycle = AppLockLifecycle(
+      lock: _appLockCubit,
+      hasAccount: () => _authCubit.state.user != null,
+      onSuspend: (state) {
+        _mobileFlags.setForeground(foreground: false);
+        _mastermind.irisLifecycle(state);
+      },
+      refresh: _refreshAfterResume,
+    );
+  }
+
+  void _refreshAfterResume() {
+    _mobileFlags.setForeground(foreground: true);
+    _mastermind.irisLifecycle(AppLifecycleState.resumed);
     unawaited(_pomodoroController.reconcile());
     unawaited(PushNotificationService.instance.refreshRegistration());
-
-    final backgroundedAt = _backgroundedAt;
-    _backgroundedAt = null;
-    if (backgroundedAt != null &&
-        DateTime.now().difference(backgroundedAt) >=
-            _appLockCubit.state.delay.duration &&
-        _authCubit.state.status == AuthStatus.authenticated &&
-        !isAppLockExcludedRoute(_router.currentMatchedLocation)) {
-      _appLockCubit.lock();
-    }
 
     unawaited(
       _mastermind.retryAccessAfterError(
@@ -194,16 +186,5 @@ extension _AppPushNavigation on _AppState {
       return;
     }
     _router.go(Routes.notifications);
-  }
-}
-
-final class _AppLifecycleObserver extends WidgetsBindingObserver {
-  _AppLifecycleObserver(this._onStateChanged);
-
-  final ValueChanged<AppLifecycleState> _onStateChanged;
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    _onStateChanged(state);
   }
 }

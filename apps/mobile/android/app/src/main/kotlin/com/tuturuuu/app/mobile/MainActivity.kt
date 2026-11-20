@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
@@ -19,6 +20,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
     private var exitHintMessage: String = "Tap back once more to close the app"
     private var onBackInvokedCallback: OnBackInvokedCallback? = null
     private var shellBackChannel: MethodChannel? = null
+    private var snapshotFlagOwned = false
     private val mainHandler = Handler(Looper.getMainLooper())
     private val shellBack = ShellBackCoordinator(this)
 
@@ -26,6 +28,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
         super.onCreate(savedInstanceState)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(false)
             val callback = OnBackInvokedCallback {
                 Log.d("MainActivity", "OnBackInvokedCallback.handleBack")
                 shellBack.onBack()
@@ -36,6 +39,17 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
                 callback,
             )
         }
+    }
+
+    override fun onPause() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            val secureFlag = WindowManager.LayoutParams.FLAG_SECURE
+            if (window.attributes.flags and secureFlag == 0) {
+                window.addFlags(secureFlag)
+                snapshotFlagOwned = true
+            }
+        }
+        super.onPause()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -56,6 +70,24 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
             flutterEngine.plugins.add(VideoPlayerPlugin())
         }.onFailure { error ->
             Log.w("MainActivity", "video_player explicit registration skipped: $error")
+        }
+
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "mobile/app_snapshot_privacy",
+        ).setMethodCallHandler { call, result ->
+            if (call.method == "foregroundFrameReady") {
+                if (snapshotFlagOwned && lifecycle.currentState.isAtLeast(
+                        androidx.lifecycle.Lifecycle.State.RESUMED,
+                    )
+                ) {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    snapshotFlagOwned = false
+                }
+                result.success(null)
+            } else {
+                result.notImplemented()
+            }
         }
 
         val channel = MethodChannel(

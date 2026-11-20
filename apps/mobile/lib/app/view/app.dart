@@ -89,6 +89,7 @@ import 'package:mobile/features/security/data/app_lock_settings_store.dart';
 import 'package:mobile/features/security/data/local_auth_service.dart';
 import 'package:mobile/features/security/mfa_approval/view/mfa_approval_listener.dart';
 import 'package:mobile/features/security/view/app_lock_boundary.dart';
+import 'package:mobile/features/security/view/app_lock_lifecycle.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
@@ -184,12 +185,11 @@ class _AppState extends State<App> {
   late final PomodoroController _pomodoroController;
   late final AppLinks _appLinks;
   late final GoRouter _router;
-  late final _AppLifecycleObserver _lifecycleObserver;
+  late final AppLockLifecycle _appLockLifecycle;
   StreamSubscription<Uri>? _appLinkSubscription;
   StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
   StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
   MobileDeepLink? _pendingDeepLink;
-  DateTime? _backgroundedAt;
 
   @override
   void initState() {
@@ -282,8 +282,7 @@ class _AppState extends State<App> {
       notificationCopy: _pomodoroNotificationCopy,
     );
     _appLinks = AppLinks();
-    _lifecycleObserver = _AppLifecycleObserver(_handleLifecycleState);
-    WidgetsBinding.instance.addObserver(_lifecycleObserver);
+    _registerAppLockLifecycle();
     _registerWarmupTasks();
     _registerOfflinePreparation();
     unawaited(_appTabCubit.loadLastApp());
@@ -486,7 +485,7 @@ class _AppState extends State<App> {
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
-    WidgetsBinding.instance.removeObserver(_lifecycleObserver);
+    _appLockLifecycle.dispose();
     unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
     unawaited(_authCubit.close());
@@ -549,6 +548,7 @@ class _AppState extends State<App> {
               listenWhen: (prev, curr) =>
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
+                _appLockLifecycle.scheduleRefresh();
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 _bindAudienceMode();
                 ProfileCubit.clearMemoryCache();
@@ -661,7 +661,8 @@ class _AppState extends State<App> {
                                 identity: authIdentity,
                                 child: DismissKeyboardOnPointerDown(
                                   child: AppLockBoundary(
-                                    excluded: isAppLockExcludedRoute(
+                                    routeChanges: _router.routerDelegate,
+                                    isExcluded: () => isAppLockExcludedRoute(
                                       _router.currentMatchedLocation,
                                     ),
                                     child: MobileMfaApprovalListener(

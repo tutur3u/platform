@@ -42,6 +42,23 @@ Customer sign-in supports configured OAuth providers. Staff sign-in has a separa
 
 Browser sign-in uses the browser session flow. Raw access and refresh tokens are reserved for supported native-client authentication flows; browser requests to those native token flows are refused. Native-client compatibility and browser session behavior require separate verification.
 
+## Mobile App Lock
+
+An elapsed App Lock timeout applies to the device's signed-in content even when
+the app resumes into an authentication route. Add Account stays available, and
+returning to protected content requires local authentication. The unlock action
+is visible on the first resumed Flutter frame. App-owned foreground refreshes
+wait for the gate to clear.
+
+The Flutter boundary hides protected routes during lifecycle transitions.
+On iOS the window cover attaches when the scene starts to deactivate and
+remains until Flutter paints a foreground frame. Android 13 and later suppress
+the Overview thumbnail with the platform setting. Older Android versions mark
+the window secure during the pause transition until the foreground frame.
+
+`test/features/security/view/app_lock_lifecycle_test.dart` covers the resume,
+Add Account cancellation, deferred refresh, and stale native-auth result.
+
 ## Web CSRF and forwarded workspace requests
 
 Web's CSRF rollout is controlled by `TTR_CSRF_MODE`: unset or invalid values

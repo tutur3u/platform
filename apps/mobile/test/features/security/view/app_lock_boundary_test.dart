@@ -100,6 +100,54 @@ void main() {
       await lock.close();
     });
 
+    testWidgets('cached resume lock exposes unlock on the first frame', (
+      tester,
+    ) async {
+      final store = _Store();
+      final auth = _LocalAuth();
+      final pendingAuthentication = Completer<bool>();
+      when(store.isEnabled).thenAnswer((_) async => true);
+      when(store.readDelay).thenAnswer((_) async => AppLockDelay.immediately);
+      when(
+        () => auth.authenticate(reason: any(named: 'reason')),
+      ).thenAnswer((_) => pendingAuthentication.future);
+      final lock = AppLockCubit(localAuthService: auth, settingsStore: store);
+      final account = _MockAuthCubit();
+      whenListen(
+        account,
+        const Stream<AuthState>.empty(),
+        initialState: _authenticatedState(),
+      );
+      await lock.load();
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: account),
+            BlocProvider<AppLockCubit>.value(value: lock),
+          ],
+          child: const AppLockBoundary(child: Text('Sensitive workspace')),
+        ),
+      );
+      expect(find.bySemanticsLabel('Sensitive workspace'), findsOneWidget);
+      lock.lock();
+      // No fake clock advancement or asynchronous storage/network result.
+      await tester.pump();
+      expect(
+        find.byKey(const ValueKey('app-lock-unlock-button')),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Sensitive workspace'), findsNothing);
+      verify(store.isEnabled).called(1);
+      verify(store.readDelay).called(1);
+      verify(() => auth.authenticate(reason: any(named: 'reason'))).called(1);
+      pendingAuthentication.complete(true);
+      await tester.pump();
+      await tester.pump();
+      expect(find.bySemanticsLabel('Sensitive workspace'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await lock.close();
+    });
+
     testWidgets('locked content is excluded from accessibility', (
       tester,
     ) async {

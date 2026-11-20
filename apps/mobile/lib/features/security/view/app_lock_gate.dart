@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart' hide ButtonStyle;
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/app_splash_surface.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -11,11 +12,13 @@ class AppLockGate extends StatefulWidget {
   const AppLockGate({
     required this.authenticating,
     required this.onUnlock,
+    this.showUnlockImmediately = false,
     super.key,
   });
 
   final bool authenticating;
   final VoidCallback onUnlock;
+  final bool showUnlockImmediately;
 
   @override
   State<AppLockGate> createState() => _AppLockGateState();
@@ -60,7 +63,7 @@ class _AppLockGateState extends State<AppLockGate> {
         scopesRoute: true,
         explicitChildNodes: true,
         child: AppSplashSurface(
-          child: !_showRecovery
+          child: !(_showRecovery || widget.showUnlockImmediately)
               ? null
               : SafeArea(
                   child: Align(
@@ -81,7 +84,7 @@ class _AppLockGateState extends State<AppLockGate> {
                               key: const ValueKey('app-lock-unlock-button'),
                               width: double.infinity,
                               height: 48,
-                              child: shad.PrimaryButton(
+                              child: AppButton.primary(
                                 enabled: !widget.authenticating,
                                 onPressed: widget.onUnlock,
                                 alignment: Alignment.center,
