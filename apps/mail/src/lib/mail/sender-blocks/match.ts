@@ -7,7 +7,8 @@ export type SenderBlockKind = 'address' | 'domain';
 
 export type SenderBlockRule = { kind: SenderBlockKind; value: string };
 
-const ADDRESS = /^[^@\s]+@[^@\s]+\.[^@\s]+$/u;
+const MAX_RULE_LENGTH = 320;
+const WHITESPACE = /\s/u;
 const DOMAIN = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/u;
 
 /** Public mailbox providers that must never be blocked as a whole domain. */
@@ -37,22 +38,43 @@ export function normalizeSenderBlock(
   raw: string
 ): SenderBlockRule | null {
   const value = raw.trim().toLowerCase().replace(/^@/u, '');
-  if (value.length < 3 || value.length > 320) return null;
-  if (kind === 'address') return ADDRESS.test(value) ? { kind, value } : null;
+  if (value.length < 3 || value.length > MAX_RULE_LENGTH) return null;
+  if (kind === 'address') return isAddress(value) ? { kind, value } : null;
   if (!DOMAIN.test(value) || SHARED_PROVIDER_DOMAINS.has(value)) return null;
   return { kind, value };
+}
+
+/**
+ * `local@domain.tld` shape: one `@`, no whitespace, and a dot inside the
+ * domain. Checked by index scans rather than an ambiguous regex because the
+ * value is a sender address chosen by whoever sends the mail.
+ */
+function isAddress(value: string) {
+  if (WHITESPACE.test(value)) return false;
+  const at = value.indexOf('@');
+  if (at < 1 || value.includes('@', at + 1)) return false;
+  const domain = value.slice(at + 1);
+  const dot = domain.indexOf('.', 1);
+  return dot !== -1 && dot < domain.length - 1;
+}
+
+/** Linear trailing-dot trim; a fully qualified trailing dot names the same domain. */
+function trimTrailingDots(value: string) {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === '.') end -= 1;
+  return value.slice(0, end);
 }
 
 export function senderDomain(address: string) {
   const at = address.lastIndexOf('@');
   return at === -1
     ? ''
-    : address
-        .slice(at + 1)
-        .trim()
-        .toLowerCase()
-        // A fully qualified trailing dot names the same domain.
-        .replace(/\.+$/u, '');
+    : trimTrailingDots(
+        address
+          .slice(at + 1)
+          .trim()
+          .toLowerCase()
+      );
 }
 
 /** Escapes LIKE wildcards so a value matches only itself. */
@@ -65,14 +87,27 @@ export function exactLikePattern(value: string) {
  * parent domain with at least two labels.
  */
 export function senderBlockCandidates(address: string | null | undefined) {
-  const email = address?.trim().toLowerCase().replace(/\.+$/u, '') ?? '';
-  if (!ADDRESS.test(email)) return [];
-  const labels = senderDomain(email).split('.');
+  const email = trimTrailingDots(address?.trim().toLowerCase() ?? '');
+  if (!isAddress(email)) return [];
+  const domain = senderDomain(email);
+  const lastDot = domain.lastIndexOf('.');
   const domains: SenderBlockRule[] = [];
-  for (let start = 0; start <= labels.length - 2; start += 1) {
-    domains.push({ kind: 'domain', value: labels.slice(start).join('.') });
+  // A stored rule is at most MAX_RULE_LENGTH long, so longer suffixes can
+  // never match; skipping them keeps hostile label runs linear.
+  for (
+    let start = Math.max(0, domain.length - MAX_RULE_LENGTH);
+    start <= lastDot;
+    start += 1
+  ) {
+    if (start === 0 || domain[start - 1] === '.') {
+      domains.push({ kind: 'domain', value: domain.slice(start) });
+    }
   }
-  return [{ kind: 'address' as const, value: email }, ...domains];
+  // An address longer than any stored rule cannot match one, and would only
+  // bloat the lookup query that domain blocks depend on.
+  return email.length > MAX_RULE_LENGTH
+    ? domains
+    : [{ kind: 'address' as const, value: email }, ...domains];
 }
 
 export function matchesSenderBlock(
