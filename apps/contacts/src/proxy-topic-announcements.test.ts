@@ -31,6 +31,7 @@ vi.mock('@tuturuuu/utils/shared-cookie', () => ({
 }));
 vi.mock('next-intl/middleware', () => ({ default: () => vi.fn() }));
 
+import { WEB_APP_URL } from './constants/common';
 import { proxy } from './proxy';
 
 beforeEach(() => {
@@ -145,6 +146,46 @@ describe('workspace redirects stay on Web', () => {
     expect(result.status).toBe(400);
     expect(result.headers.get('location')).toBeNull();
   });
+
+  it.each([
+    ['https://contacts.tuturuuu.com', ''],
+    ['https://tuturuuu.com', '/contacts'],
+  ])(
+    'keeps normalized workspace redirects on Web from %s',
+    async (origin, basePath) => {
+      mocks.hasWebSession.mockReturnValue(true);
+      mocks.refresh.mockResolvedValue({
+        ok: true,
+        claims: { sub: 'fixture' },
+        response: NextResponse.next(),
+      });
+      for (const path of [
+        '/%2F%2Fforeign-host',
+        '/%5Cforeign-host',
+        '/\\foreign-host',
+        '/\t/foreign-host',
+        '/\n/foreign-host',
+        '/..//foreign-host',
+        '/%2e%2e//foreign-host',
+      ]) {
+        const result = await proxy(
+          new NextRequest(`${origin}${basePath}${path}/workspace/billing`, {
+            nextConfig: { basePath },
+          })
+        );
+        const location = result.headers.get('location');
+        if (location === null) {
+          expect(result.status, JSON.stringify(path)).toBe(400);
+          continue;
+        }
+
+        expect(result.status, JSON.stringify(path)).toBe(307);
+        expect(new URL(location).origin, JSON.stringify(path)).toBe(
+          new URL(WEB_APP_URL).origin
+        );
+      }
+    }
+  );
 
   it('preserves a Web-owned workspace path and query from the apex mount', async () => {
     mocks.hasWebSession.mockReturnValue(true);

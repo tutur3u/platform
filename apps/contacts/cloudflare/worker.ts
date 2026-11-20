@@ -2,6 +2,7 @@
 import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { defaultProxyMatches } from '@tuturuuu/start-bridge/proxy-bridge';
 import { createProxyMatcher } from '@tuturuuu/start-bridge/proxy-matcher';
 import {
@@ -44,6 +45,14 @@ const mounts = {
   ...appConfig.mounts,
 };
 
+function hasAmbiguousAppPath(request: Request) {
+  const url = new URL(request.url);
+  const doubleSlash = url.pathname.indexOf('//');
+  if (doubleSlash < 0) return false;
+  const mount = resolveAppBase(url, mounts);
+  return mount !== null && doubleSlash === mount.basePath.length;
+}
+
 // Route handlers are server code (`server-only` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const createHandler = () =>
@@ -79,13 +88,16 @@ export default {
     async (request: Request, env: ContactsEnvironment, ctx: WorkerContext) => {
       let response: Response;
       try {
-        if (hasContactsBindings(env)) {
-          handler ??= createHandler();
-          response = await (await handler)(request, env, ctx);
-        } else {
+        if (!hasContactsBindings(env)) {
           response = new Response('Contacts configuration unavailable', {
             status: 503,
           });
+        } else if (hasAmbiguousAppPath(request)) {
+          // Dotted paths skip the application proxy and still enter Start.
+          response = new Response('Invalid workspace path', { status: 400 });
+        } else {
+          handler ??= createHandler();
+          response = await (await handler)(request, env, ctx);
         }
       } catch (error) {
         // Even a failed route load answers through the response policy.

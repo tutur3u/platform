@@ -183,6 +183,53 @@ test(
       assert.equal(ambiguous.status, 400, ambiguous.body);
       assert.equal(ambiguous.headers.location, undefined);
 
+      const dotted = await call(
+        `${base}//foreign.invalid/${workspace}/billing`,
+        host,
+        { headers: signedHeaders() }
+      );
+      assert.ok(
+        [400, 404].includes(dotted.status),
+        JSON.stringify({
+          host,
+          status: dotted.status,
+          location: dotted.headers.location,
+        })
+      );
+      assert.equal(dotted.headers.location, undefined);
+
+      for (const path of [
+        '/%2F%2Fforeign-host',
+        '/%5Cforeign-host',
+        '/\\foreign-host',
+        '/\t/foreign-host',
+        '/\n/foreign-host',
+        '/..//foreign-host',
+        '/%2e%2e//foreign-host',
+      ]) {
+        const response = await call(
+          `${base}${path}/${workspace}/billing`,
+          host,
+          {
+            headers: signedHeaders(),
+          }
+        );
+        const probe = `${host} ${JSON.stringify(path)}`;
+        const location = response.headers.location;
+        if (location === undefined) {
+          assert.ok([400, 404].includes(response.status), probe);
+          continue;
+        }
+
+        assert.equal(response.status, 307, probe);
+        const origin = `https://${host}`;
+        const target = new URL(location, origin);
+        assert.ok(
+          [origin, `https://${apexHost}`].includes(target.origin),
+          probe
+        );
+      }
+
       for (const path of [billingPath, '/api/workspaces/invitations']) {
         const shared = await call(`${base}${path}`, host, {
           headers: signedHeaders(),
