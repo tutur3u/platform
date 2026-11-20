@@ -949,9 +949,14 @@
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachMembers": {
-    "remove": "Gỡ học viên",
-    "searchPlaceholder": "Tìm người dùng hiện có trong workspace",
-    "title": "Học viên"
+    "empty": "Lớp chưa có thành viên.",
+    "loadError": "Không tải được danh sách lớp.",
+    "openContacts": "Mở lớp trong Danh bạ",
+    "remove": "Xóa thành viên khỏi lớp",
+    "searchPlaceholder": "Tìm trong danh bạ",
+    "student": "Học viên",
+    "teacher": "Giáo viên",
+    "title": "Danh sách lớp"
   },
   "teachModules": {
     "addFeedback": "+ Thêm phản hồi của giáo viên",

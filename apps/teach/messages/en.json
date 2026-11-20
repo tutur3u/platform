@@ -949,9 +949,14 @@
     "workspaceFallback": "Education workspace"
   },
   "teachMembers": {
-    "remove": "Remove learner",
-    "searchPlaceholder": "Search existing workspace users",
-    "title": "Learners"
+    "empty": "No class members yet.",
+    "loadError": "Could not load the class roster.",
+    "openContacts": "Open class in Contacts",
+    "remove": "Remove class member",
+    "searchPlaceholder": "Find a workspace contact",
+    "student": "Student",
+    "teacher": "Teacher",
+    "title": "Class roster"
   },
   "teachModules": {
     "addFeedback": "+ Add teacher feedback",
