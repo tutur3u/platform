@@ -67,7 +67,7 @@
   "packages/sdk/src/cli/": ["packages/education-core"],
   "packages/start-bridge/src/": ["packages/internal-api"],
   "packages/start-bridge/src/next/": ["packages/hive-ui"],
-  "packages/supabase/src/": ["apps/tools"],
+  "packages/supabase/src/": ["apps/storefront", "apps/tools"],
   "packages/supabase/src/next/": ["apps/tanstack-web"],
   "packages/types/src/": ["apps/database"],
   "packages/typescript-config/": ["apps/database"],

@@ -24,46 +24,33 @@ revoke all on function private.purge_expired_meet_attendance(timestamptz)
 grant execute on function private.purge_expired_meet_attendance(timestamptz)
   to service_role;
 
-do $$
-declare
-  pending record;
-  subject_user uuid;
-  subject_guest uuid;
-begin
-  for pending in
-    select kind, subject_key, plan
-    from private.meet_attendance_pending_erasures
-    where plan->>'phase' = 'confirmed'
-  loop
-    if pending.plan->'sql'->>'op' = 'meeting'
-      and pending.plan->'sql'->>'meetingId' ~* '^[0-9a-f-]{36}$'
-    then
-      delete from private.meet_attendance_sessions
-      where meeting_id = (pending.plan->'sql'->>'meetingId')::uuid;
-    elsif pending.plan->'sql'->>'op' = 'workspace'
-      and pending.plan->'sql'->>'wsId' ~* '^[0-9a-f-]{36}$'
-    then
-      delete from private.meet_attendance_sessions
-      where ws_id = (pending.plan->'sql'->>'wsId')::uuid;
-    elsif pending.plan->'sql'->>'op' = 'subject' then
-      subject_user := null;
-      subject_guest := null;
-      if pending.plan->'sql'->>'userId' ~* '^[0-9a-f-]{36}$' then
-        subject_user := (pending.plan->'sql'->>'userId')::uuid;
-      end if;
-      if pending.plan->'sql'->>'guestId' ~* '^[0-9a-f-]{36}$' then
-        subject_guest := (pending.plan->'sql'->>'guestId')::uuid;
-      end if;
-      if subject_user is not null or subject_guest is not null then
-        delete from private.meet_attendance_sessions
-        where (subject_user is not null and user_id = subject_user)
-          or (subject_user is not null and guest_id = subject_user)
-          or (subject_guest is not null and guest_id = subject_guest);
-      end if;
-    end if;
-  end loop;
-end;
-$$;
+-- Drain confirmed erasures before dropping the pending-plan table.
+lock table private.meet_attendance_pending_erasures in access exclusive mode;
+
+with confirmed as materialized (
+  select
+    case when plan->'sql'->>'op' = 'meeting'
+      and plan->'sql'->>'meetingId' ~* '^[0-9a-f-]{36}$'
+      then (plan->'sql'->>'meetingId')::uuid end as meeting_id,
+    case when plan->'sql'->>'op' = 'workspace'
+      and plan->'sql'->>'wsId' ~* '^[0-9a-f-]{36}$'
+      then (plan->'sql'->>'wsId')::uuid end as ws_id,
+    case when plan->'sql'->>'op' = 'subject'
+      and plan->'sql'->>'userId' ~* '^[0-9a-f-]{36}$'
+      then (plan->'sql'->>'userId')::uuid end as user_id,
+    case when plan->'sql'->>'op' = 'subject'
+      and plan->'sql'->>'guestId' ~* '^[0-9a-f-]{36}$'
+      then (plan->'sql'->>'guestId')::uuid end as guest_id
+  from private.meet_attendance_pending_erasures
+  where plan->>'phase' = 'confirmed'
+)
+delete from private.meet_attendance_sessions as session
+using confirmed
+where session.meeting_id = confirmed.meeting_id
+  or session.ws_id = confirmed.ws_id
+  or session.user_id = confirmed.user_id
+  or session.guest_id = confirmed.user_id
+  or session.guest_id = confirmed.guest_id;
 
 drop table if exists private.meet_attendance_pending_erasures;
 drop function if exists private.bump_meet_attendance_fence(uuid, uuid);
