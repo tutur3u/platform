@@ -4477,7 +4477,7 @@
       "personal_share_confirm": "Chia sẻ với mọi người",
       "personal_share_hint": "Chỉ nội dung bên dưới được gửi dưới tên bạn tới mọi người trong phòng. Người tham gia sau có thể đọc tin nhắn đã lưu.",
       "personal_workspace_settings": "Cài đặt không gian làm việc",
-      "personal_workspace_unavailable": "Không gian làm việc này chưa đủ điều kiện sử dụng Mira riêng tư. Hãy hỏi quản trị viên.",
+      "personal_workspace_unavailable": "Mira riêng tư cần quản trị viên xác nhận trong cài đặt không gian làm việc rằng người tham gia họp tại đây từ 18 tuổi trở lên.",
       "playback_volume": "Âm lượng phát",
       "playback_volume_hint": "Chỉ thay đổi âm thanh bạn nghe. Âm lượng tổng điều chỉnh giọng nói, âm thanh chia sẻ, Mira và âm báo.",
       "preferences": "Tùy chọn",

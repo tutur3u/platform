@@ -215,3 +215,37 @@ export async function getWorkspaceUsersDatabaseFilterSettings(
     featuredGroupIds,
   };
 }
+
+/** Meet Mira 18+ audience attestation as shown to workspace settings managers. */
+export type MiraAudienceAttestation = {
+  attested: boolean;
+  attestedAt: string | null;
+  attestedByCurrentUser: boolean;
+};
+
+export async function getMiraAudienceAttestation(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MiraAudienceAttestation>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/mira-audience`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function updateMiraAudienceAttestation(
+  workspaceId: string,
+  attested: boolean,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<MiraAudienceAttestation>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/settings/mira-audience`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ attested }),
+    }
+  );
+}

@@ -21176,6 +21176,28 @@ export type Database = {
           },
         ];
       };
+      workspace_mira_audience_attestations: {
+        Row: {
+          attested_at: string;
+          attested_by: string | null;
+          audience: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attested_at?: string;
+          attested_by?: string | null;
+          audience?: string;
+          ws_id: string;
+        };
+        Update: {
+          attested_at?: string;
+          attested_by?: string | null;
+          audience?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_promotions: {
         Row: {
           code: string | null;

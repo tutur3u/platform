@@ -1,6 +1,7 @@
 import { UserPlus } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { MiraAudienceSettings } from '@tuturuuu/ui/custom/mira-audience-settings';
 import { WorkspaceDeletionSettings } from '@tuturuuu/ui/custom/workspace-deletion-settings';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -141,6 +142,12 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         )}
 
         {canManageWorkspace && <ProfileLinkDefaultsSettings wsId={wsId} />}
+
+        {canManageWorkspace && (
+          <div className="lg:col-span-2">
+            <MiraAudienceSettings wsId={wsId} />
+          </div>
+        )}
 
         {canManageWorkspace && (
           <div className="lg:col-span-2">

@@ -4631,7 +4631,7 @@
       "personal_share_confirm": "Share with everyone",
       "personal_share_hint": "Only the text below will be sent as your message to everyone in the room. Saved messages can be read by later participants.",
       "personal_workspace_settings": "Workspace settings",
-      "personal_workspace_unavailable": "This workspace is not eligible for Private Mira. Ask a workspace admin.",
+      "personal_workspace_unavailable": "Private Mira needs a workspace admin to confirm in workspace settings that meetings here are 18+.",
       "phone": {
         "active_speaker_label": "Active speaker",
         "anonymous_badge": "Anonymous",

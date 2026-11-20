@@ -7,9 +7,10 @@ import {
   isMeetAiEnabledForWorkspace,
   meetAiGateEnv,
 } from '../../meeting-ai/server/workspace-gate';
-import { miraDemoAdmission, readMiraAdultAttestation } from '../demo-admission';
+import { miraDemoAdmission } from '../demo-admission';
+import { readMiraAdultAttestation } from './mira-attestation';
 
-export { readMiraAdultAttestation } from '../demo-admission';
+export { readMiraAdultAttestation } from './mira-attestation';
 
 export async function readMiraDemoAuthority(input: {
   accountId: string;
@@ -28,7 +29,9 @@ export async function readMiraDemoAuthority(input: {
         .select('id, personal, creator_id, deleted')
         .eq('id', input.workspaceId)
         .maybeSingle(),
-      readMiraAdultAttestation(input.workspaceId),
+      // A failed read is no attestation: only the staff Personal exception
+      // can pass, so a missing migration never widens access.
+      readMiraAdultAttestation(input.workspaceId).catch(() => null),
       input.workspaceMember
         ? verifyWorkspaceMembershipType({
             supabase: db,

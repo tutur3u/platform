@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import {
+  miraAttestationFromRow,
   miraDemoAdmission,
-  readMiraAdultAttestation,
 } from '../../features/live-assistant/demo-admission';
 import {
   isMiraPaidTier,
@@ -69,6 +69,16 @@ const workspaceResult = z
   )
   .length(1);
 const membershipResult = z.array(z.object({ type: z.string() })).length(1);
+const attestationResult = z
+  .array(
+    z.object({
+      ws_id: z.uuid(),
+      audience: z.string(),
+      attested_by: z.uuid().nullable(),
+      attested_at: z.string(),
+    })
+  )
+  .max(1);
 const personalResult = z.array(z.object({ id: z.uuid() })).max(1);
 const subscriptionResult = z.array(
   z.object({
@@ -133,8 +143,8 @@ export async function requireCurrentLiveDemoAuthority(
     throw new Error('Private Mira demo authority is unavailable');
   const ownerId = z.uuid().parse(saved.claims.ownerId);
   const workspaceId = z.uuid().parse(saved.identity.workspaceId);
-  const [rawUser, rawWorkspace, rawMembership, attestation] = await Promise.all(
-    [
+  const [rawUser, rawWorkspace, rawMembership, rawAttestation] =
+    await Promise.all([
       liveAuthUser(env, ownerId),
       liveDatabase<unknown>(
         env,
@@ -144,12 +154,17 @@ export async function requireCurrentLiveDemoAuthority(
         env,
         `workspace_members?ws_id=eq.${workspaceId}&user_id=eq.${ownerId}&select=type&limit=1`
       ),
-      readMiraAdultAttestation(workspaceId),
-    ]
-  );
+      liveDatabase<unknown>(
+        env,
+        `workspace_mira_audience_attestations?ws_id=eq.${workspaceId}&select=ws_id,audience,attested_by,attested_at&limit=1`,
+        { schema: 'private' }
+      ),
+    ]);
   const actor = authResult.parse(rawUser);
   const [workspace] = workspaceResult.parse(rawWorkspace);
   const [membership] = membershipResult.parse(rawMembership);
+  const [attestationRow] = attestationResult.parse(rawAttestation);
+  const attestation = miraAttestationFromRow(attestationRow, workspaceId);
   if (
     actor.id !== ownerId ||
     workspace?.id !== workspaceId ||

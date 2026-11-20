@@ -67,16 +67,18 @@ beforeEach(() => {
   vi.resetAllMocks();
   f.auth.mockResolvedValue(actor);
   f.database.mockImplementation((_env, path: string) =>
-    path.startsWith('workspaces?')
-      ? [
-          {
-            id: workspaceId,
-            creator_id: ownerId,
-            personal: true,
-            deleted: false,
-          },
-        ]
-      : [{ type: 'MEMBER' }]
+    path.startsWith('workspace_mira_audience_attestations?')
+      ? []
+      : path.startsWith('workspaces?')
+        ? [
+            {
+              id: workspaceId,
+              creator_id: ownerId,
+              personal: true,
+              deleted: false,
+            },
+          ]
+        : [{ type: 'MEMBER' }]
   );
   f.room.mockImplementation((_env, _claims, _identity, command) =>
     command.action === 'mira.private.read' ? consent : selected

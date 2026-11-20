@@ -47,11 +47,32 @@ export type MiraAdmission =
         | 'workspace';
     };
 
-export async function readMiraAdultAttestation(
-  _workspaceId: string
-): Promise<MiraWorkspaceAttestation | null> {
-  // No authoritative attestation store is configured.
-  return null;
+/** Stored row in private.workspace_mira_audience_attestations. */
+export type MiraAttestationRow = {
+  ws_id: string;
+  audience: string;
+  attested_by: string | null;
+  attested_at: string;
+};
+
+/**
+ * Maps the server-stored attestation row; anything incomplete is no
+ * attestation. Client values and environment defaults never reach here.
+ */
+export function miraAttestationFromRow(
+  row: MiraAttestationRow | null | undefined,
+  workspaceId: string
+): MiraWorkspaceAttestation | null {
+  if (!row || row.ws_id !== workspaceId || !row.attested_by) return null;
+  const attestedAt = Date.parse(row.attested_at);
+  if (row.audience !== 'adults-only' || !Number.isSafeInteger(attestedAt))
+    return null;
+  return {
+    workspaceId,
+    actorId: row.attested_by,
+    attestedAt,
+    audience: 'adults-only',
+  };
 }
 
 /**
