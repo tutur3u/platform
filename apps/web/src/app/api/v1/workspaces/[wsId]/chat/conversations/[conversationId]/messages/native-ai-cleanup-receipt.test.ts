@@ -23,15 +23,19 @@ describe('native AI durable receipt cleanup boundary', () => {
             throw new Error('cleanup unavailable');
           return admin;
         });
+        const rejectCleanup = vi.fn(
+          (_resolve: unknown, reject: (error: Error) => void) =>
+            reject(new Error('cleanup unavailable'))
+        );
+        const deleteQuery = {
+          eq: vi.fn(() => deleteQuery),
+          then: rejectCleanup,
+        };
         const originalFrom = admin.from.getMockImplementation()!;
         admin.from.mockImplementation((table: string) => {
           const result = originalFrom(table);
-          if (saved && failure === 'delete') {
-            result.delete.mockReturnValue({
-              eq: vi.fn(async () => {
-                throw new Error('cleanup unavailable');
-              }),
-            });
+          if (table === 'ai_chats' && saved && failure === 'delete') {
+            result.delete.mockReturnValue(deleteQuery);
           }
           return result;
         });
@@ -76,6 +80,7 @@ describe('native AI durable receipt cleanup boundary', () => {
           });
         }
         expect(saved).toBe(true);
+        if (failure === 'delete') expect(rejectCleanup).toHaveBeenCalledOnce();
         const writes = mocks.callPrivateChatRpc.mock.calls.filter(
           ([name]) => name === 'chat_persist_ai_message_batch_idempotent'
         );
