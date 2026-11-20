@@ -208,7 +208,7 @@ export default async function ExecutiveView({ snapshot, wsId }: Props) {
         </ExecutivePanel>
       </div>
 
-      <DataCoverage snapshot={snapshot} />
+      <DataCoverage snapshot={snapshot} wsId={wsId} />
     </div>
   );
 }

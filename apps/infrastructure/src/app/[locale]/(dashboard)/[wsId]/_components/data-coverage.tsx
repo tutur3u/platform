@@ -16,10 +16,10 @@ const CONNECTED_SOURCES = [
 ] as const satisfies readonly (keyof ExecutiveSnapshot)[];
 
 /**
- * Decision data the admin surface does not have a verified source for yet.
- * Listed explicitly so nobody reads its absence as "zero".
+ * Decision data outside the executive snapshot. Some sources are available in
+ * other Admin views.
  */
-export const NOT_CONNECTED_SOURCES = [
+export const OUTSIDE_OVERVIEW_SOURCES = [
   'cloud-spend',
   'mobile-telemetry',
   'app-ecosystem',
@@ -28,13 +28,22 @@ export const NOT_CONNECTED_SOURCES = [
 
 export default async function DataCoverage({
   snapshot,
+  wsId,
 }: {
   snapshot: ExecutiveSnapshot;
+  wsId: string;
 }) {
   const t = await getTranslations('infrastructure-analytics.coverage');
 
   return (
-    <ExecutivePanel description={t('description')} title={t('title')}>
+    <ExecutivePanel
+      action={{
+        href: `/${wsId}/monitoring/observability`,
+        label: t('open-observability'),
+      }}
+      description={t('description')}
+      title={t('title')}
+    >
       <ul className="divide-y divide-border">
         {CONNECTED_SOURCES.map((key) => {
           const ok = snapshot[key].status === 'ok';
@@ -60,7 +69,7 @@ export default async function DataCoverage({
             </li>
           );
         })}
-        {NOT_CONNECTED_SOURCES.map((key) => (
+        {OUTSIDE_OVERVIEW_SOURCES.map((key) => (
           <li
             className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between"
             key={key}
@@ -74,7 +83,7 @@ export default async function DataCoverage({
               </div>
             </div>
             <Badge className="w-fit font-normal" variant="outline">
-              {t('status.not-connected')}
+              {t('status.outside-overview')}
             </Badge>
           </li>
         ))}

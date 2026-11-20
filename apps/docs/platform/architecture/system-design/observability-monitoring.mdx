@@ -147,6 +147,13 @@ Logs are read back through the internal observability API under
 which power the in-app infrastructure/observability dashboard. There is no
 third-party log platform (no Datadog/ELK) in the loop.
 
+The Admin Executive overview links to Monitoring → Observability from
+**Data coverage**. The overview reads usage from the AI credit ledger.
+Observability shows reviewed provider invoices to staff with both
+`view_infrastructure` and `view_finance_stats`. The invoice list covers the
+previous 30 calendar days in UTC, including today, with up to 100 records.
+The overview does not compute a reconciled spend total from that list.
+
 ---
 
 ## 3. Metrics and Usage Telemetry

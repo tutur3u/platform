@@ -9090,7 +9090,7 @@
         "bonus": "Tín dụng thưởng",
         "workspace-wallets": "Ví không gian làm việc",
         "user-wallets": "Ví người dùng",
-        "unit-note": "Đo bằng tín dụng AI, không phải tiền thanh toán. Hóa đơn đám mây và nhà cung cấp chưa được kết nối."
+        "unit-note": "Đo bằng tín dụng AI."
       },
       "reach": {
         "title": "Phạm vi theo thiết bị",
@@ -9104,11 +9104,12 @@
     },
     "coverage": {
       "title": "Phạm vi dữ liệu",
-      "description": "Những gì chế độ xem này đang đọc và dữ liệu ra quyết định nào chưa có nguồn đã xác minh.",
+      "description": "Các nguồn dữ liệu được sử dụng và những dữ liệu nằm ngoài phần tổng quan này.",
+      "open-observability": "Mở mục Observability",
       "status": {
         "live": "Trực tiếp",
         "failed": "Truy vấn thất bại",
-        "not-connected": "Chưa kết nối"
+        "outside-overview": "Ngoài phạm vi tổng quan"
       },
       "sources": {
         "engagement": {
@@ -9135,7 +9136,7 @@
       "gaps": {
         "cloud-spend": {
           "title": "Chi phí đám mây và nhà cung cấp",
-          "detail": "Hóa đơn lưu trữ, cơ sở dữ liệu và nhà cung cấp bằng tiền chưa được thu thập."
+          "detail": "Phần tổng quan này chưa có tổng chi phí đã đối soát. Người có quyền xem số liệu tài chính có thể xem hóa đơn nhà cung cấp đã được rà soát trong mục Observability."
         },
         "mobile-telemetry": {
           "title": "Dữ liệu đo lường ứng dụng di động",
@@ -9147,7 +9148,7 @@
         },
         "role-scoped-views": {
           "title": "Chế độ xem theo vai trò",
-          "detail": "Mọi người có quyền hạ tầng đều thấy cùng dữ liệu; vai trò chi tiết hơn chưa được định nghĩa."
+          "detail": "Người có quyền truy cập Admin dùng chung chế độ xem này. Mỗi công cụ có thể yêu cầu thêm quyền."
         }
       }
     },

@@ -9090,7 +9090,7 @@
         "bonus": "Bonus credits",
         "workspace-wallets": "Workspace wallets",
         "user-wallets": "User wallets",
-        "unit-note": "Measured in AI credits, not billed currency. Cloud and vendor invoices are not connected yet."
+        "unit-note": "Measured in AI credits."
       },
       "reach": {
         "title": "Reach by device",
@@ -9104,11 +9104,12 @@
     },
     "coverage": {
       "title": "Data coverage",
-      "description": "What this view reads today and which decision data still has no verified source.",
+      "description": "Sources used in this overview and data it does not include.",
+      "open-observability": "Open Observability",
       "status": {
         "live": "Live",
         "failed": "Query failed",
-        "not-connected": "Not connected"
+        "outside-overview": "Outside this overview"
       },
       "sources": {
         "engagement": {
@@ -9135,7 +9136,7 @@
       "gaps": {
         "cloud-spend": {
           "title": "Cloud and vendor spend",
-          "detail": "Hosting, database and provider invoices in currency are not ingested."
+          "detail": "This overview has no reconciled spend total. Observability shows reviewed provider invoices to staff with finance access."
         },
         "mobile-telemetry": {
           "title": "Mobile app telemetry",
@@ -9147,7 +9148,7 @@
         },
         "role-scoped-views": {
           "title": "Role-scoped views",
-          "detail": "Everyone with infrastructure access sees the same data; finer roles are not defined yet."
+          "detail": "Authorized Admin users share this executive view. Individual tools can require additional permissions."
         }
       }
     },

@@ -1,12 +1,15 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import en from '../../../../../../messages/en.json';
 import vi_ from '../../../../../../messages/vi.json';
 
-vi.mock('next-intl/server', () => ({ getTranslations: vi.fn() }));
+const { getTranslations } = vi.hoisted(() => ({ getTranslations: vi.fn() }));
 
-import { NOT_CONNECTED_SOURCES } from './data-coverage';
+vi.mock('next-intl/server', () => ({ getTranslations }));
+
+import DataCoverage, { OUTSIDE_OVERVIEW_SOURCES } from './data-coverage';
 import { getOperationsDrilldownGroups } from './operations-drilldown';
 import {
   getOverviewViewHref,
@@ -87,9 +90,33 @@ describe('operations drill-down', () => {
 });
 
 describe('data coverage', () => {
-  it('labels every unconnected decision source in both locales', () => {
+  it('links to workspace Observability with a localized label', async () => {
+    getTranslations.mockResolvedValueOnce((key: string) =>
+      lookup(vi_, `infrastructure-analytics.coverage.${key}`)
+    );
+
+    const unavailable = { status: 'unavailable' } as const;
+    const coverage = await DataCoverage({
+      snapshot: {
+        aiCredits: unavailable,
+        devices: unavailable,
+        engagement: unavailable,
+        growth: unavailable,
+        workspaces: unavailable,
+      },
+      wsId: 'internal',
+    });
+    const rendered = renderToStaticMarkup(coverage);
+
+    expect(rendered).toMatch(
+      /<a\b[^>]*href="\/internal\/monitoring\/observability"[^>]*>Mở mục Observability/
+    );
+    expect(rendered).toContain('Ngoài phạm vi tổng quan');
+  });
+
+  it('labels each source outside the overview in both locales', () => {
     for (const messages of [en, vi_]) {
-      for (const key of NOT_CONNECTED_SOURCES) {
+      for (const key of OUTSIDE_OVERVIEW_SOURCES) {
         expect(
           lookup(
             messages,
