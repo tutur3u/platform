@@ -33,6 +33,22 @@ class ContactReportDetails {
   final DateTime? periodEnd;
 }
 
+class ContactReportPage {
+  const ContactReportPage({required this.records, required this.total});
+
+  factory ContactReportPage.fromJson(Map<String, dynamic> json) {
+    return ContactReportPage(
+      records: contactReportRecords(json),
+      total: crmAsInt(json['total']),
+    );
+  }
+
+  static const pageSize = 30;
+
+  final List<ContactSectionRecord> records;
+  final int total;
+}
+
 List<ContactSectionRecord> contactReportRecords(Map<String, dynamic> json) {
   return _records(json['data'], (row) {
     final member =

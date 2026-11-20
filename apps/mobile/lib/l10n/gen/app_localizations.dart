@@ -4963,6 +4963,12 @@ abstract class AppLocalizations {
   /// **'Report content'**
   String get contactsReportContent;
 
+  /// No description provided for @contactsReportPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {page} of {total}'**
+  String contactsReportPage(int page, int total);
+
   /// No description provided for @contactsReportPeriod.
   ///
   /// In en, this message translates to:

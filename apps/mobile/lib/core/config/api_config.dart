@@ -510,9 +510,6 @@ abstract final class CrmEndpoints {
 
   static String users(String wsId) => '/api/v1/workspaces/$wsId/users';
 
-  static String reports(String wsId) =>
-      '/api/v1/workspaces/$wsId/users/reports?page=1&pageSize=30';
-
   static String approvals(String wsId, {required String kind}) =>
       '/api/v1/workspaces/$wsId/users/approvals?kind=$kind&status=pending&page=1&limit=30';
 

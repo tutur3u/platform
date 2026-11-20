@@ -2540,6 +2540,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsReportContent => 'Nội dung báo cáo';
 
   @override
+  String contactsReportPage(int page, int total) {
+    return 'Trang $page/$total';
+  }
+
+  @override
   String get contactsReportPeriod => 'Kỳ báo cáo';
 
   @override

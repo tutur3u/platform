@@ -15,6 +15,7 @@ class ContactSectionList extends StatelessWidget {
     this.error,
     this.emptyMessage,
     this.onOpen,
+    this.footer,
     super.key,
   });
 
@@ -22,6 +23,7 @@ class ContactSectionList extends StatelessWidget {
   final bool loading;
   final String? error;
   final String? emptyMessage;
+  final Widget? footer;
   final Future<void> Function() onRefresh;
   final void Function(ContactSectionRecord record)? onOpen;
 
@@ -73,6 +75,10 @@ class ContactSectionList extends StatelessWidget {
                   onTap: onOpen == null ? null : () => onOpen!(records[index]),
                 ),
               ),
+          if (footer != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            footer!,
+          ],
         ],
       ),
     );

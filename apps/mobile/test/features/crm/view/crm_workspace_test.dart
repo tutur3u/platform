@@ -432,8 +432,9 @@ void main() {
 
   for (final theme in ['light', 'dark']) {
     testWidgets('opens a Contacts report preview in $theme', (tester) async {
-      when(() => repository.loadReports('ws')).thenAnswer(
-        (_) async => contactReportRecords({
+      when(() => repository.loadReports('ws', page: 1)).thenAnswer(
+        (_) async => ContactReportPage.fromJson({
+          'total': 31,
           'data': [
             {
               'id': 'sample-report',
@@ -446,6 +447,14 @@ void main() {
               'content': 'Completed the reading exercises.',
               'feedback': 'Review chapter four before the next session.',
             },
+          ],
+        }),
+      );
+      when(() => repository.loadReports('ws', page: 2)).thenAnswer(
+        (_) async => ContactReportPage.fromJson({
+          'total': 31,
+          'data': [
+            {'id': 'next-report', 'title': 'April progress'},
           ],
         }),
       );
@@ -481,6 +490,14 @@ void main() {
         findsOneWidget,
       );
       await DesignRender.capture(tester, 'contacts-report-preview-$theme');
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+      expect(find.text('Page 1 of 2'), findsOneWidget);
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
+      expect(find.text('Page 2 of 2'), findsOneWidget);
+      expect(find.text('April progress'), findsOneWidget);
+      expect(find.text('March progress'), findsNothing);
     });
   }
 

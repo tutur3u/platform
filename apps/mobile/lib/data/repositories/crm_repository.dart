@@ -245,8 +245,19 @@ class CrmRepository
     );
   }
 
-  Future<List<ContactSectionRecord>> loadReports(String wsId) async {
-    return contactReportRecords(await _api.getJson(CrmEndpoints.reports(wsId)));
+  Future<ContactReportPage> loadReports(
+    String wsId, {
+    required int page,
+  }) async {
+    final uri = Uri(
+      path: '${CrmEndpoints.users(wsId)}/reports',
+      queryParameters: {
+        'page': '$page',
+        'pageSize': '${ContactReportPage.pageSize}',
+        'cadence': 'all',
+      },
+    );
+    return ContactReportPage.fromJson(await _api.getJson(uri.toString()));
   }
 
   Future<List<ContactSectionRecord>> loadApprovals(String wsId) async {

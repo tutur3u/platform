@@ -2554,6 +2554,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsReportContent => 'Report content';
 
   @override
+  String contactsReportPage(int page, int total) {
+    return 'Page $page of $total';
+  }
+
+  @override
   String get contactsReportPeriod => 'Reporting period';
 
   @override

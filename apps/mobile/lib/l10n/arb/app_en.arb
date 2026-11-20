@@ -2265,6 +2265,8 @@
   "contactsPresent": "Present",
   "contactsPermissionDenied": "You do not have permission to view contacts.",
   "contactsReportContent": "Report content",
+  "contactsReportPage": "Page {page} of {total}",
+  "@contactsReportPage": {"placeholders": {"page": {"type": "int"}, "total": {"type": "int"}}},
   "contactsReportPeriod": "Reporting period",
   "contactsReportEmptyBody": "This report has no content or feedback yet.",
   "contactsReports": "Reports",

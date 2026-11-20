@@ -2098,6 +2098,7 @@
   "contactsPresent": "Có mặt",
   "contactsPermissionDenied": "Bạn không có quyền xem danh bạ này.",
   "contactsReportContent": "Nội dung báo cáo",
+  "contactsReportPage": "Trang {page}/{total}",
   "contactsReportPeriod": "Kỳ báo cáo",
   "contactsReportEmptyBody": "Báo cáo này chưa có nội dung hoặc phản hồi.",
   "contactsReports": "Báo cáo",

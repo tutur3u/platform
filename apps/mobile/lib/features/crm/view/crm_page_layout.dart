@@ -165,7 +165,14 @@ extension _CrmPageLayout on _CrmPageState {
                 ),
             ],
           ),
-          if (_section != null)
+          if (_section == _ContactSection.reports)
+            ContactReportsSection(
+              key: ValueKey(widget.workspaceId),
+              workspaceId: widget.workspaceId,
+              repository: _repository,
+              onOpen: _openSectionRecord,
+            )
+          else if (_section != null)
             ContactSectionList(
               records: _sectionRecords,
               loading: _sectionLoading,

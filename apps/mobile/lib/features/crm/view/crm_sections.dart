@@ -18,10 +18,10 @@ extension _CrmSections on _CrmPageState {
       _section = section;
       _sectionDrill = null;
       _sectionRecords = const [];
-      _sectionLoading = true;
+      _sectionLoading = section != _ContactSection.reports;
       _sectionError = null;
     });
-    await _reloadSection();
+    if (section != _ContactSection.reports) await _reloadSection();
   }
 
   Future<void> _reloadSection() async {
@@ -52,7 +52,7 @@ extension _CrmSections on _CrmPageState {
     String wsId,
   ) async {
     return switch (section) {
-      _ContactSection.reports => await _repository.loadReports(wsId),
+      _ContactSection.reports => const [],
       _ContactSection.approvals => await _repository.loadApprovals(wsId),
       _ContactSection.announcements => await _repository.loadAnnouncements(
         wsId,
