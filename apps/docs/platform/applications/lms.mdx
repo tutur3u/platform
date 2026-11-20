@@ -25,6 +25,47 @@ quiz authoring, and the timetable. The Learn home prioritizes
 resuming study and finding assigned work. The current education and learning
 data models remain authoritative for both areas.
 
+## E-learning roadmap
+
+| Area | Planned experience |
+| --- | --- |
+| Classes | Manage sections, rosters, teachers and assistants, invitations and join codes, timetables, announcements, and attendance. |
+| Lessons | Build courses, modules, and lessons with rich text, video, Drive files, and approved embeds. Save drafts, publish, and set prerequisites and release dates. Track completion per learner. |
+| Assessments | Build reusable question banks with single and multiple choice, short answer, matching, and ordering. Evaluate code and math against grading and accessibility requirements. Support timed tests, randomized forms, automatic and manual grading, rubrics, and controlled results publication. |
+| Assignments | Set due dates and late policies. Accept text and file submissions, preserve resubmission history, and bring feedback and grades into the class gradebook. |
+| Motivation | Offer class-controlled XP, levels, streaks, badges, achievements, progress rings, and daily goals. Class leaderboards are optional and exclude learners who opt out. Celebrations respect reduced-motion preferences. |
+| Learner workspace | Bring next-up lessons and assignments together with progress, practice, the library, and notifications. |
+| Teacher workspace | Bring class activity, a grading inbox, and analytics together in the teaching dashboard. |
+
+Start with navigation and next-up using existing Teach and Learn data. Add class
+and lesson workflows on the shared education model, then extend assessment and
+assignment delivery. Introduce motivation features as classes gain reliable
+completion and grading events. Teachers choose which motivation features to
+enable for each class. Rewards reflect recorded learning activity and have no
+effect on academic grades.
+
+Workspace managers control class enrollment and role assignment. Join codes
+and invitations use explicit class scope, expiry, and the permitted enrollment
+path. Learners see released content and their own eligible submissions and
+grades. Practice, active tests, and published review each have a separate
+response contract. Practice exposes feedback only for eligible submitted work.
+Active tests carry prompts and the learner's saved responses. Graded test
+review exposes results and answer keys only after submission and authorized
+release. Grading uses the saved attempt and its question snapshot. Repeated
+requests preserve a single submission and reward outcome.
+
+Reuse Education Core and the existing Teach and Learn records. Extend the
+shared model through reviewed migrations that preserve the enrollment,
+snapshot, and idempotency boundaries. Web uses the existing satellite session.
+Shared APIs carry the same role, release, and workspace rules for later mobile
+clients. The web experience ships in English and Vietnamese with the design
+system, keyboard navigation, and reduced-motion support. Cloudflare work is
+bounded per request or event, and asynchronous rewards or notifications require
+idempotent processing and a durable stop path.
+
+The publication hold lifts after the canonical `/lms` mount passes signed-in
+acceptance. Each shared education migration requires review before publication.
+
 ## Routes and canonical URLs
 
 | Canonical path | Purpose |
