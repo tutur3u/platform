@@ -1951,6 +1951,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatIncoming => 'Incoming';
 
   @override
+  String get chatLeaveConversation => 'Leave chat';
+
+  @override
+  String get chatLeaveConversationConfirm => 'You stop seeing this chat. Messages stay for the other people.';
+
+  @override
   String get chatLinks => 'Links';
 
   @override
@@ -1980,7 +1986,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatMessagesLoadError => 'Couldn\'t load messages.';
 
   @override
+  String get chatMuteNotifications => 'Mute notifications';
+
+  @override
+  String get chatMuteNotificationsDescription => 'New messages stay quiet.';
+
+  @override
   String get chatNew => 'New chat';
+
+  @override
+  String get chatNotifications => 'Notifications';
 
   @override
   String get chatNoAccessDescription => 'You don\'t have permission to view chat in this workspace.';
@@ -1996,6 +2011,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatNoDirectoryResults => 'No people found.';
+
+  @override
+  String get chatNoMembers => 'No members yet.';
 
   @override
   String get chatNoMessagesDescription => 'Send the first message to start the conversation.';

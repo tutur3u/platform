@@ -3805,6 +3805,18 @@ abstract class AppLocalizations {
   /// **'Incoming'**
   String get chatIncoming;
 
+  /// No description provided for @chatLeaveConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave chat'**
+  String get chatLeaveConversation;
+
+  /// No description provided for @chatLeaveConversationConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'You stop seeing this chat. Messages stay for the other people.'**
+  String get chatLeaveConversationConfirm;
+
   /// No description provided for @chatLinks.
   ///
   /// In en, this message translates to:
@@ -3847,11 +3859,29 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load messages.'**
   String get chatMessagesLoadError;
 
+  /// No description provided for @chatMuteNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute notifications'**
+  String get chatMuteNotifications;
+
+  /// No description provided for @chatMuteNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'New messages stay quiet.'**
+  String get chatMuteNotificationsDescription;
+
   /// No description provided for @chatNew.
   ///
   /// In en, this message translates to:
   /// **'New chat'**
   String get chatNew;
+
+  /// No description provided for @chatNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get chatNotifications;
 
   /// No description provided for @chatNoAccessDescription.
   ///
@@ -3882,6 +3912,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No people found.'**
   String get chatNoDirectoryResults;
+
+  /// No description provided for @chatNoMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get chatNoMembers;
 
   /// No description provided for @chatNoMessagesDescription.
   ///

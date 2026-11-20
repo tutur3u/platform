@@ -338,7 +338,11 @@ class _ChatPageState extends State<_ChatActorHost> {
             icon: LucideIcons.panelRight,
             tooltip: l10n.chatDetails,
             onPressed: () => unawaited(
-              showChatDetailsSheet(context: context, cubit: _chatCubit),
+              showChatDetailsSheet(
+                context: context,
+                cubit: _chatCubit,
+                currentUserId: context.read<AuthCubit>().state.user?.id,
+              ),
             ),
           ),
       ],

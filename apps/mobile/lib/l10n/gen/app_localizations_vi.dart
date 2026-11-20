@@ -1938,6 +1938,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatIncoming => 'Đến';
 
   @override
+  String get chatLeaveConversation => 'Rời trò chuyện';
+
+  @override
+  String get chatLeaveConversationConfirm => 'Bạn không còn thấy cuộc trò chuyện này. Tin nhắn vẫn còn với những người khác.';
+
+  @override
   String get chatLinks => 'Liên kết';
 
   @override
@@ -1967,7 +1973,16 @@ class AppLocalizationsVi extends AppLocalizations {
   String get chatMessagesLoadError => 'Không thể tải tin nhắn.';
 
   @override
+  String get chatMuteNotifications => 'Tắt thông báo';
+
+  @override
+  String get chatMuteNotificationsDescription => 'Tin nhắn mới không kêu.';
+
+  @override
   String get chatNew => 'Cuộc trò chuyện mới';
+
+  @override
+  String get chatNotifications => 'Thông báo';
 
   @override
   String get chatNoAccessDescription => 'Bạn không có quyền xem trò chuyện trong workspace này.';
@@ -1983,6 +1998,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatNoDirectoryResults => 'Không tìm thấy người nào.';
+
+  @override
+  String get chatNoMembers => 'Chưa có thành viên.';
 
   @override
   String get chatNoMessagesDescription => 'Gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện.';

@@ -23,6 +23,7 @@ class AppSheetScaffold extends StatelessWidget {
     required this.title,
     this.description,
     this.icon,
+    this.leading,
     this.child,
     this.slivers,
     this.actions = const [],
@@ -40,6 +41,9 @@ class AppSheetScaffold extends StatelessWidget {
   final String title;
   final String? description;
   final IconData? icon;
+
+  /// Replaces [icon] in the single title row, for an avatar or mark.
+  final Widget? leading;
   final Widget? child;
 
   /// Lazy body; prefer this for long lists.
@@ -79,7 +83,10 @@ class AppSheetScaffold extends StatelessWidget {
             ? CrossAxisAlignment.center
             : CrossAxisAlignment.start,
         children: [
-          if (icon != null) ...[
+          if (leading != null) ...[
+            leading!,
+            const SizedBox(width: AppSpacing.md),
+          ] else if (icon != null) ...[
             Container(
               width: 40,
               height: 40,

@@ -25,6 +25,7 @@ type RouteParams = {
 
 const updateConversationSchema = z.object({
   description: z.string().trim().max(2000).nullable().optional(),
+  muted: z.boolean().optional(),
   pinned: z.boolean().optional(),
   title: z.string().trim().max(255).nullable().optional(),
 });
@@ -56,16 +57,43 @@ export const PATCH = withSessionAuth<RouteParams>(
       );
     }
 
+    const { muted, ...conversationInput } = parsed.data;
+    const updatesConversation =
+      muted === undefined ||
+      conversationInput.description !== undefined ||
+      conversationInput.pinned !== undefined ||
+      conversationInput.title !== undefined;
+
     try {
-      const conversation = await callPrivateChatRpc<ChatConversation>(
-        'chat_update_conversation',
-        {
-          p_actor_user_id: auth.user.id,
-          p_conversation_id: params.conversationId,
-          p_input: parsed.data,
-          p_ws_id: context.context.normalizedWsId,
-        }
-      );
+      let conversation: ChatConversation | undefined;
+      if (updatesConversation) {
+        conversation = await callPrivateChatRpc<ChatConversation>(
+          'chat_update_conversation',
+          {
+            p_actor_user_id: auth.user.id,
+            p_conversation_id: params.conversationId,
+            p_input: conversationInput,
+            p_ws_id: context.context.normalizedWsId,
+          }
+        );
+      }
+      if (muted !== undefined) {
+        conversation = await callPrivateChatRpc<ChatConversation>(
+          'chat_set_own_mute',
+          {
+            p_actor_user_id: auth.user.id,
+            p_conversation_id: params.conversationId,
+            p_muted: muted,
+            p_ws_id: context.context.normalizedWsId,
+          }
+        );
+      }
+      if (!conversation) {
+        return NextResponse.json(
+          { message: 'Invalid request body' },
+          { status: 400 }
+        );
+      }
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,

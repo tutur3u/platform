@@ -187,12 +187,14 @@ class ChatRepository {
     String? title,
     String? description,
     bool? pinned,
+    bool? muted,
   }) async {
     final path = _conversationPath(wsId, conversationId);
     final payload = <String, dynamic>{
       if (title != null) 'title': title,
       if (description != null) 'description': description,
       if (pinned != null) 'pinned': pinned,
+      if (muted != null) 'muted': muted,
     };
     return await queueOrSendValue(
       feature: 'chat',

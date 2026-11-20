@@ -6,6 +6,7 @@ import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart' hide AppLayout, AppRadius, AppSpacing;
+import 'package:mobile/core/widgets/network_avatar.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -49,13 +50,16 @@ Future<void> showChatDirectorySheet({
 Future<void> showChatDetailsSheet({
   required BuildContext context,
   required ChatCubit cubit,
+  String? currentUserId,
 }) {
   return showAppSheet<void>(
     context: context,
     useRootNavigator: true,
     size: AppSheetSize.large,
     maxDialogWidth: 680,
-    builder: (_) =>
-        BlocProvider.value(value: cubit, child: const ChatDetailsSheet()),
+    builder: (_) => BlocProvider.value(
+      value: cubit,
+      child: ChatDetailsSheet(currentUserId: currentUserId),
+    ),
   );
 }

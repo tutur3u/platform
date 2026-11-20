@@ -211,6 +211,50 @@ extension ChatCubitActions on ChatCubit {
     }
   }
 
+  Future<void> setMuted(
+    ChatConversation conversation, {
+    required String userId,
+    required bool muted,
+  }) async {
+    if (!_scopeActive) return;
+    final wsId = state.wsId;
+    if (wsId == null || conversation.isReadOnlyAgent) return;
+    try {
+      final updated = await _repository.updateConversation(
+        wsId,
+        conversation.id,
+        muted: muted,
+      );
+      _upsertConversation(
+        _isPendingChatItem(wsId, conversation.id)
+            ? conversation.copyWith(
+                members: [
+                  for (final member in conversation.members)
+                    if (member.userId == userId)
+                      ChatConversationMember(
+                        id: member.id,
+                        conversationId: member.conversationId,
+                        userId: member.userId,
+                        user: member.user,
+                        role: member.role,
+                        joinedAt: member.joinedAt,
+                        lastReadAt: member.lastReadAt,
+                        mutedAt: muted ? DateTime.now() : null,
+                        pinnedAt: member.pinnedAt,
+                        archivedAt: member.archivedAt,
+                      )
+                    else
+                      member,
+                ],
+                updatedAt: DateTime.now(),
+              )
+            : updated,
+      );
+    } on ApiException catch (error) {
+      _emitState(state.copyWith(error: error.message));
+    }
+  }
+
   Future<void> togglePin(ChatConversation conversation) async {
     if (!_scopeActive) return;
     final wsId = state.wsId;
