@@ -88,9 +88,10 @@ function setup(activeConversationId: string | null = ROOM) {
 }
 
 const invalidatedKeys = (spy: ReturnType<typeof vi.spyOn>) =>
-  spy.mock.calls.map(
-    ([filters]) => (filters as { queryKey: unknown }).queryKey
-  );
+  spy.mock.calls.map((call: readonly [unknown]) => {
+    const filters = call[0] as { queryKey: unknown };
+    return filters.queryKey;
+  });
 
 describe('useChatRealtime', () => {
   beforeEach(() => {
