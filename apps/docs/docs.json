@@ -562,6 +562,7 @@
                   "reference/repository/routes/coordination",
                   "reference/repository/routes/cron-control",
                   "reference/repository/routes/database",
+                  "reference/repository/routes/deploy-coordinator",
                   "reference/repository/routes/devbox-control",
                   "reference/repository/routes/discord",
                   "reference/repository/routes/docs",

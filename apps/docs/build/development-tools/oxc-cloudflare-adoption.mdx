@@ -1,7 +1,7 @@
 ---
 title: 'Oxc and Cloudflare adoption'
 description: 'Canonical Oxlint/Oxfmt tooling, portable first-party libraries, and Vite-native Worker migration boundaries.'
-updatedAt: '2026-10-24'
+updatedAt: '2026-11-20'
 audience: developers
 ---
 
@@ -391,8 +391,11 @@ The deploy coordinator Worker (`apps/deploy-coordinator`) schedules nothing:
 lease lapses and queue expiry are applied lazily at the start of each call. Its
 objects are limited to catalog projects × three environments, each charging a
 durable 5,000-call daily budget before other work and holding a durable
-environment stop fence. The worst-case ceiling of about $17 a month and the
-stop order are in the
+environment stop fence. Rows written are counted with their index rows and
+pinned per call by a cost test: at most 25 a create, 9 for any other call once
+deferred transitions are charged to the create they belong to. That puts the
+hard ceiling at about $325 a month with every environment at budget, about $28
+for the CI client's own worst case; the figures and the stop order are in the
 [deployment coordinator design](/build/devops/deployment-coordinator#cost-and-stop-fence-analysis).
 
 The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and

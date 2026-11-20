@@ -20,7 +20,7 @@ coordinator issues them fenced grants.
 | Part | State |
 | ---- | ----- |
 | This design | Accepted |
-| Worker, Durable Object state machine, API | Planned |
+| Worker, Durable Object state machine, API | Source, unit and workerd tests; not published. Shared CI runs its unit tests and type check; the workerd harness runs locally until the Worker has its own workflow |
 | GitHub Actions begin/finish steps | Planned, behind `DEPLOY_COORDINATOR_MODE`, default off |
 | Infrastructure **Deployments** page | Planned |
 | Executor workflow for promotion and rollback markers | Not built; markers are resolved by operators |
@@ -40,9 +40,38 @@ project (catalog entry, e.g. "calendar")
 
 - **Projects** come from the committed catalog in
   `apps/deploy-coordinator/src/projects.ts`. Each entry names the provider
-  (`vercel` or `cloudflare`) and the workflow files allowed to report for it.
-  An unknown project or environment is a `404`; adding one is a reviewed code
-  change. The catalog bounds how many Durable Objects can exist.
+  (`vercel` or `cloudflare`) and, per environment, the workflow files whose
+  jobs may report for it. An unknown project or environment is a `404`; adding
+  one is a reviewed code change. The catalog bounds how many Durable Objects
+  can exist.
+
+  Only workflows that publish the environment are listed:
+
+  | Environment | Vercel apps | Cloudflare Workers |
+  | ----------- | ----------- | ------------------ |
+  | production  | `vercel-production-<app>.yaml`; also `meet-cloudflare.yaml` for `meet` and `tasks-cloudflare.yaml` for `tasks`, which publish their native Workers | `<worker>-cloudflare.yaml` |
+  | staging     | `wave1-native-publish.yaml` called from `<app>-cloudflare.yaml`, for `apps`, `calendar` and `mail`; none for the others, whose `<app>-cloudflare.yaml` only qualifies builds | none |
+  | preview     | `vercel-preview-<app>.yaml` | none: Worker previews run on pull request events, which are rejected |
+
+  Chat, CMS, Drive, Forms, Teach, Tools and Track publish production natively
+  on Cloudflare after their Vercel production workflows retired (see
+  [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project)).
+  That release does not report to the coordinator yet, so they list no
+  production workflow; their retained `vercel-preview-<app>.yaml` may still
+  report previews.
+
+  A job inside a reusable workflow reports that reusable file as its
+  `job_workflow_ref` and the workflow the run started from as its
+  `workflow_ref`. A shared publisher is therefore listed with its caller, and
+  both claims must match, so a `wave1-native-publish.yaml` run started from
+  `mail-cloudflare.yaml` cannot report for `calendar`. `platform` (`apps/web`)
+  staging is not listed: `wave1-web-staging.yaml` publishes a dispatched
+  `source_sha` that can differ from the token's `sha`, so its record would name
+  the wrong commit until that workflow can state its source commit. The
+  catalog tests check that every listed file exists, that each production
+  file has a job gated on the production ref in a GitHub Environment, that
+  each staging caller runs the shared publisher with its own `app` and
+  `profile: staging`, and that preview workflows are dispatch-only.
 - **Environments** follow the existing branch flow (see
   [environments and release flow](/build/devops/environments-release-flow)):
   production deploys run on `refs/heads/production`, staging on
@@ -79,7 +108,10 @@ interleave with another request.
 
 1. **One publisher per lane.** `claim` grants the lane lock to one deployment;
    the oldest claimable queued deployment goes first. Others receive `wait`
-   with a bounded `retryAfterSeconds`.
+   with a bounded `retryAfterSeconds`. A deploy queues only behind older
+   deploys: promotion and rollback markers are resolved by operators rather
+   than claimed by CI, so an unresolved marker never holds deploys for its
+   six-hour queue lifetime. Resolving a marker needs the lane lock to be free.
 2. **Newest run wins the queue.** Deployments are ordered by GitHub `run_id`,
    which increases with run creation, so a re-run of an older run cannot
    overtake a newer one. A new `deploy` supersedes queued `deploy` rows with a
@@ -104,8 +136,9 @@ interleave with another request.
    applied at the start of every call to the object, reads included. The
    coordinator schedules nothing: no alarms, crons, queues or timers. A lane
    that nobody calls costs nothing and holds its state until the next call.
-7. **Idempotency.** `create` requires an `idempotencyKey`; the same key with the
-   same body returns the same deployment and a different body is a `409`.
+7. **Idempotency.** `create` is keyed by run id, run attempt and lane from the
+   verified token; repeating it with the same body returns the same
+   deployment and a different body is a `409`.
    Repeating a completion with the same outcome returns the recorded result; a
    different outcome is a `409`.
 
@@ -122,9 +155,17 @@ interleave with another request.
   **hold**. While held, deploys still register but `claim` answers `held` and
   the job records a skip; promotions and rollbacks can still claim. Releasing
   the hold, or a successful promotion, resumes automatic deploys, so a
-  rollback is not immediately overwritten by the next merge. Skipped deploys
-  are not replayed: after releasing a hold, an untouched project stays on the
-  rolled-back version until its next deploy or an explicit dispatch.
+  rollback is not immediately overwritten by the next merge. An operator
+  cancelling the rollback that placed the hold releases it; a rollback that
+  fails or expires keeps the hold until an operator releases it, because the
+  lane may still be serving the version that prompted the rollback. Skipped
+  deploys are not replayed: after releasing a hold, an untouched project stays
+  on the rolled-back version until its next deploy or an explicit dispatch.
+- **Retries.** Repeating a promote or rollback request returns its open or
+  succeeded marker. Once the latest marker for the same request finished
+  without succeeding (`failed`, `cancelled` or `unknown`), the request queues
+  a new marker keyed after it, so a failed promotion or rollback can be
+  retried.
 - **Execution.** Promotion and rollback rows are markers. The coordinator never
   dispatches anything. An executor workflow that claims a marker by id, holding
   provider credentials in its own GitHub Environment, is a separate reviewed
@@ -135,8 +176,9 @@ interleave with another request.
 
 ## API
 
-All responses are JSON with `Cache-Control: no-store`. Bodies are limited to
-8 KiB and every string field has a length bound. Unknown routes return `404`.
+All responses are JSON with `Cache-Control: no-store`. Bodies are read as a
+stream and rejected once they pass 8 KiB, whatever `Content-Length` says, and
+every string field has a length bound. Unknown routes return `404`.
 
 | Method and path                                           | Caller       | Purpose |
 | --------------------------------------------------------- | ------------ | ------- |
@@ -171,12 +213,17 @@ deploy-queue view.
   requests never receive tokens;
 - `job_workflow_ref` names a workflow file the catalog allows for the project,
   at the same protected ref as `ref`: `refs/heads/production` for production,
-  `refs/heads/main` for staging and preview.
+  `refs/heads/main` for staging and preview. For a shared reusable publisher,
+  `workflow_ref` must also name the project's calling workflow at that ref.
 
 For staging and production the commit SHA comes from the token's `sha` claim.
 The logs URL is built from the token's `repository`, `run_id` and
 `run_attempt`, never from the body. Claim, heartbeat, completion and skip must
-come from the run that created the deployment.
+come from the run that created the deployment. Ownership is checked by
+`run_id` without `run_attempt` on purpose: a re-run attempt registers its own
+deployment, because the create key carries the attempt, yet can still skip or
+close one its earlier attempt left open. Publishing rights stay fenced by the
+grant's `attemptId` and epoch, which another attempt never holds.
 
 **Operators** are the Infrastructure app's server routes. They send
 `DEPLOY_COORDINATOR_OPERATOR_TOKEN`, compared in constant time, and an
@@ -237,27 +284,59 @@ while handling a call ([pricing](https://developers.cloudflare.com/durable-objec
 | Durable Objects | catalog projects × 3 environments; no other names are addressable |
 | Calls per deployment | create 1, claim polls every ≥20 s for ≤30 min (≤90), heartbeats every 60 s for ≤90 min (≤90), finish 1: worst case ~182, typical under 10 |
 | Client retries | 3 attempts with backoff on network errors and `5xx` only |
-| Daily budget | 5,000 calls per environment object per UTC day, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Stop, resume and environment reads by operators stay available |
+| Daily budget | 5,000 calls per environment object per UTC day, counted durably before any other work; beyond it `429 BUDGET_EXHAUSTED`, which writes no rows. The Worker remembers an exhausted environment in isolate memory until UTC midnight and answers without calling the object. Operator stop, resume and reads are neither counted nor rejected, write no rows and cost one Durable Object request each; the dashboard reads on demand and never polls |
 | Preview lanes | 50 open lanes per preview environment; more is `429 CAPACITY` |
-| Retention | 100 finished deployments per lane, pruned on write; no log content, only links |
+| Lanes | 200 per environment. A new lane evicts the least recently used idle lane with its rows, except a lane with an `unknown` attempt from the last six hours, which GitHub-hosted jobs can still reconcile; with no evictable lane, `429 CAPACITY` |
+| Retention | 100 finished deployments per lane, pruned on write, plus any `unknown` attempt from the last six hours, which can still reconcile (one publisher per lane and the seven-minute lease plus grace keep that under about 52); no log content, only links |
 | Payload | 8 KiB request bodies |
 
 A busy production environment of 20 deployments a day at the worst case uses
 about 3,600 calls, inside its budget. The hard ceiling, with every catalog
 environment pinned at its budget every day:
 
-- 35 projects × 3 environments × 5,000 calls ≈ 525,000 calls a day, about
-  15.8 million a month.
-- Worker requests above the 10 million included: about $1.75 a month.
-- Durable Object requests above the 1 million included: about $2.20.
-- SQLite rows written, at most 4 per call (budget counter, deployment, lane,
-  metadata) ≈ 63 million against 50 million included: about $13.
+- 33 projects × 3 environments × 5,000 calls ≈ 495,000 calls a day, about
+  14.9 million a month.
+- Worker requests above the 10 million included: about $1.46 a month.
+- Durable Object requests above the 1 million included: about $2.08.
+- SQLite rows written. Cloudflare bills each row a write touches in a table
+  and in every index on it. The schema weighs a deployment write at 5 rows
+  (row, primary key, idempotency key, lane order and status indexes), a lane
+  or budget write at 2 and the sequence counter at 1. Pinned per call by
+  `src/cost.test.ts`:
+
+  | Call | Rows written |
+  | ---- | ------------ |
+  | Budget-rejected call; operator read | 0 |
+  | Operator stop or resume | 1 |
+  | Resolve a marker | 11, of which its terminal transition (7) belongs to the marker's create |
+  | Claim answered `wait`, `held`, `stopped` or `superseded`; repeated create | 2 |
+  | Heartbeat | 7 |
+  | Granted claim, completion | 9 |
+  | Create | 10, 11 for an environment's first |
+  | Create that supersedes a queued deploy and prunes past retention | 22 |
+
+  A call can also apply transitions that belong to earlier calls: lazy lease
+  lapse and queue expiry, supersession, pruning and lane eviction. Each
+  deployment row is terminated and deleted at most once, so those writes are
+  charged to the create that inserted it: at most 25 rows a create (11, its
+  terminal transition 7, its deletion 5, its lane 2), and no other call
+  exceeds 9 once its share is counted. The first counted call of each UTC day
+  also replaces the budget row, 2 more rows once a day per environment.
+- Hard ceiling, every call a create: 495,000 × 25 ≈ 12.4 million rows a day,
+  about 371 million a month against 50 million included: about $321.
+- Realistic ceiling, every environment at budget running the CI client's
+  worst-case lifecycle (create, 90 wait polls, a grant, 90 heartbeats,
+  completion), which the cost test pins below 5 rows a call: about 74 million
+  a month, about $24.
 - Rows read stay far below the 25 billion included; duration is the
   millisecond-scale handling time of each call, far below 400,000 GB-s.
 
-The ceiling is about $17 a month above the plan and scales linearly with the
-catalog size; a catalog test pins the project count, so growing it is a
-reviewed change to this figure. Requests rejected before
+The hard ceiling is about $325 a month above the plan, about $28 for the CI
+client's own worst case, and both scale linearly with the catalog size. A CI
+create is idempotent per run attempt and lane, so reaching the hard ceiling
+needs a distinct GitHub run, or a distinct preview lane, for every call. The
+catalog test pins the project count and the cost test pins the rows per call,
+so growing either is a reviewed change to these figures. Requests rejected before
 reaching an object (bad token, unknown route) cost Worker requests only and
 are not bounded by the coordinator; that ingress limit belongs to the hostname's
 WAF rules when one is assigned.
@@ -271,8 +350,8 @@ Stop fences, outermost first:
    `stopRevision`. Claims answer `stopped`; queued deployments stay queued and
    publishing ones may still complete. The fence lives in Durable Object
    storage and survives restarts and redeploys.
-3. **Daily budget.** The durable per-environment counter caps rows written even
-   if a client loops. Rejected calls that still reach an object are billed
+3. **Daily budget.** The durable per-environment counter caps calls, and with
+   them rows written, even if a client loops. Rejected calls that still reach an object are billed
    requests; the global switch is the hard cap on call count.
 4. **Client.** The steps' wait, heartbeat and retry ceilings; setting
    `DEPLOY_COORDINATOR_MODE` to `off` stops all CI traffic without a code
@@ -302,12 +381,23 @@ the catalog-bounded object count are.
 
 ## Verification
 
-Planned coverage, landing with each part:
+Run from the repository root:
 
-- `bun --cwd apps/deploy-coordinator test` covers the state machine:
-  supersession by run order, lock exclusivity, epochs, lease lapse and
-  reconciliation, idempotent create and completion, hold, stop, budget,
-  capacity and retention, plus OIDC claim checks with generated keys.
+- `bun --cwd apps/deploy-coordinator test` runs the state machine suite twice,
+  against the in-memory store and against real SQLite (`node:sqlite`) through
+  the same `exec` contract as the Durable Object. It covers supersession by run
+  order, lock exclusivity, epochs, lease lapse and reconciliation, idempotent
+  create and completion, hold, marker retries, stop, budget, capacity, queue
+  expiry, lane eviction and retention. The cost suite meters index-weighted
+  rows written per call against SQLite and pins the figures above. The router suite drives the HTTP API with OIDC tokens signed by a
+  generated RSA key; the OIDC suite covers claim, event, workflow and ref
+  checks and the rate-limited key refetch.
 - `node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs` runs
-  the real Worker and Durable Object in workerd through the Vite runtime,
-  including the stop fence and lane state surviving a restart.
+  the real Worker and Durable Object in workerd through the Vite runtime: the
+  private config, closed routes, and a seeded lane lock, stop fence and
+  exhausted budget surviving `restart()`. It sends no token that could reach
+  GitHub's JWKS. The harness warms the first Durable Object route and reads
+  once after a restart before using the Local Explorer, which can reload the
+  runtime on a cold path.
+- Source for the operating limits is `LIMITS` in
+  `apps/deploy-coordinator/src/core.ts`; change this page with it.
