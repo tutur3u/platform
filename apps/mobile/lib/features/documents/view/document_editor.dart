@@ -14,7 +14,9 @@ class DocumentEditor extends StatelessWidget {
     required this.focusNode,
     required this.scrollController,
     required this.status,
+    required this.owner,
     required this.onTitleChanged,
+    this.lastEdited,
     super.key,
   });
 
@@ -23,6 +25,8 @@ class DocumentEditor extends StatelessWidget {
   final FocusNode focusNode;
   final ScrollController scrollController;
   final DocumentSaveStatus status;
+  final String owner;
+  final String? lastEdited;
   final ValueChanged<String> onTitleChanged;
 
   @override
@@ -53,6 +57,15 @@ class DocumentEditor extends StatelessWidget {
               height: 1.2,
             ),
             onChanged: onTitleChanged,
+          ),
+          Wrap(
+            spacing: AppSpacing.md,
+            runSpacing: AppSpacing.xs,
+            children: [
+              AppMetaItem(icon: LucideIcons.user, label: owner),
+              if (lastEdited case final edited?)
+                AppMetaItem(icon: LucideIcons.clock, label: edited),
+            ],
           ),
           if (statusLabel != null)
             Padding(

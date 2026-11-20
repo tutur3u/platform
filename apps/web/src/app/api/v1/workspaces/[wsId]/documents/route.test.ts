@@ -295,6 +295,7 @@ describe('workspace document schema compatibility', () => {
         count: 37,
         error: null,
       });
+      mocks.query.order.mockClear();
       terminal.mockResolvedValueOnce(result(current));
       const currentResponse = await handler(readRequest, params);
       const currentBody = await currentResponse.json();
@@ -305,6 +306,12 @@ describe('workspace document schema compatibility', () => {
         owner_is_viewer: true,
       });
       expect(terminal).toHaveBeenCalledTimes(1);
+      if (list) {
+        expect(mocks.query.order.mock.calls).toEqual([
+          ['updated_at', { ascending: false }],
+          ['id', { ascending: false }],
+        ]);
+      }
       terminal.mockClear();
 
       for (const error of [
@@ -350,6 +357,9 @@ describe('workspace document schema compatibility', () => {
       if (list) {
         expect(mocks.query.select).toHaveBeenLastCalledWith(legacyProjection, {
           count: 'exact',
+        });
+        expect(mocks.query.order).toHaveBeenCalledWith('created_at', {
+          ascending: false,
         });
         expect(mocks.query.range).toHaveBeenLastCalledWith(10, 14);
         expect(mocks.query.ilike).toHaveBeenLastCalledWith('name', '%road%');

@@ -54,11 +54,21 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
   bool get _hasMore => _documents.length < _total;
 
-  String _ownerLabel(WorkspaceDocument document, AppLocalizations l10n) {
-    if (document.ownerIsViewer) return l10n.documentsOwnerYou;
-    final name = document.ownerName?.trim();
-    if (name != null && name.isNotEmpty) return name;
-    return l10n.documentsOwnerUnknown;
+  Future<void> _openDocument(String id) async {
+    final workspaceId = _wsId;
+    var returned = false;
+    void refresh() {
+      if (mounted && _wsId == workspaceId) unawaited(_reload());
+    }
+
+    await context.push<void>(
+      Routes.documentDetailPath(id),
+      extra: () {
+        if (returned) refresh();
+      },
+    );
+    returned = true;
+    refresh();
   }
 
   @override
@@ -151,7 +161,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
       final documentId = await _repository.createDocument(wsId, name: '');
       if (!mounted) return;
       if (documentId.isEmpty) return;
-      unawaited(context.push(Routes.documentDetailPath(documentId)));
+      unawaited(_openDocument(documentId));
     } on ApiException catch (error) {
       if (!mounted) return;
       _toast(error.message, destructive: true);
@@ -361,11 +371,10 @@ class _DocumentsPageState extends State<DocumentsPage> {
                             entityId: document.id,
                             child: _DocumentRow(
                               document: document,
-                              owner: _ownerLabel(document, l10n),
+                              owner: documentOwnerLabel(document, l10n),
                               locale: locale,
-                              onTap: () => context.push(
-                                Routes.documentDetailPath(document.id),
-                              ),
+                              onTap: () =>
+                                  unawaited(_openDocument(document.id)),
                             ),
                           ),
                       ],

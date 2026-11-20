@@ -515,7 +515,13 @@ GoRouter createAppRouter(
               if (documentId == null || documentId.isEmpty) {
                 return const DocumentsPage();
               }
-              return DocumentDetailPage(documentId: documentId);
+              return DocumentDetailPage(
+                documentId: documentId,
+                onSaved: switch (state.extra) {
+                  final VoidCallback callback => callback,
+                  _ => null,
+                },
+              );
             },
           ),
           ...financeRoutes(),

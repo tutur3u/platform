@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
@@ -13,6 +14,7 @@ import 'package:mobile/data/models/documents/workspace_document.dart';
 import 'package:mobile/data/repositories/document_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/documents/documents_content.dart';
+import 'package:mobile/features/documents/documents_labels.dart';
 import 'package:mobile/features/documents/view/document_editor.dart';
 import 'package:mobile/features/documents/view/document_share_sheet.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
@@ -27,10 +29,12 @@ class DocumentDetailPage extends StatefulWidget {
     required this.documentId,
     super.key,
     this.repository,
+    this.onSaved,
   });
 
   final String documentId;
   final DocumentRepository? repository;
+  final VoidCallback? onSaved;
 
   @override
   State<DocumentDetailPage> createState() => _DocumentDetailPageState();
@@ -56,6 +60,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   String? _wsIdCache;
   int _requestToken = 0;
   Timer? _saveTimer;
+  Future<void> _pendingSave = Future<void>.value();
   StreamSubscription<DocChange>? _changes;
 
   @override
@@ -150,38 +155,42 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
     _saveTimer = Timer(_autosaveDelay, () => unawaited(_persist()));
   }
 
-  Future<void> _persist() async {
-    if (!_dirty || _document == null) return;
+  Future<void> _persist() {
+    if (!_dirty || _document == null) return _pendingSave;
     final wsId = _wsIdCache;
-    if (wsId == null || wsId.isEmpty) return;
+    if (wsId == null || wsId.isEmpty) return _pendingSave;
     _dirty = false;
     _saveTimer?.cancel();
     final name = _title.text;
     final content = documentContentPayload(_editor.document);
-    final document = _document!;
+    final onSaved = widget.onSaved;
+    final documentId = widget.documentId;
     if (mounted && !_closed) {
       setState(() => _status = DocumentSaveStatus.saving);
     }
-    try {
-      await _repository.updateDocument(
-        wsId,
-        widget.documentId,
-        name: name,
-        content: content,
-      );
-      if (!mounted || _closed) return;
-      setState(() {
-        _status = DocumentSaveStatus.saved;
-        _document = document.copyWith(
+    return _pendingSave = _pendingSave.then((_) async {
+      try {
+        await _repository.updateDocument(
+          wsId,
+          documentId,
           name: name,
-          content: content is String ? content : jsonEncode(content),
+          content: content,
         );
-      });
-    } on Object {
-      _dirty = true;
-      if (!mounted || _closed) return;
-      setState(() => _status = DocumentSaveStatus.error);
-    }
+        onSaved?.call();
+        if (!mounted || _closed) return;
+        setState(() {
+          _status = DocumentSaveStatus.saved;
+          _document = _document?.copyWith(
+            name: name,
+            content: content is String ? content : jsonEncode(content),
+          );
+        });
+      } on Object {
+        _dirty = true;
+        if (!mounted || _closed) return;
+        setState(() => _status = DocumentSaveStatus.error);
+      }
+    });
   }
 
   Future<bool> _setPublic(bool value) async {
@@ -241,6 +250,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
       _closed = true;
       _dirty = false;
       _saveTimer?.cancel();
+      await _pendingSave;
       await _repository.deleteDocument(wsId, widget.documentId);
       if (!mounted) return;
       _toast(context.l10n.documentsDeleted);
@@ -298,6 +308,11 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final document = _document;
+    final editedAt = documentEditedAt(document?.editedAtRaw ?? '');
+    final edited = editedAt == null
+        ? null
+        : DateFormat.yMMMd(l10n.localeName).add_jm().format(editedAt.toLocal());
     final ready = !_isLoading && _error == null && _document != null;
     final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     final dock = MediaQuery.paddingOf(context).bottom;
@@ -354,7 +369,7 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             actionLabel: l10n.commonRetry,
                             onAction: _load,
                           )
-                        : _document == null
+                        : document == null
                         ? AppStateMessage(
                             icon: LucideIcons.fileText,
                             title: l10n.documentsTitle,
@@ -366,6 +381,8 @@ class _DocumentDetailPageState extends State<DocumentDetailPage> {
                             focusNode: _editorFocus,
                             scrollController: _editorScroll,
                             status: _status,
+                            owner: documentOwnerLabel(document, l10n),
+                            lastEdited: edited,
                             onTitleChanged: (_) => _scheduleSave(),
                           ),
                   ),

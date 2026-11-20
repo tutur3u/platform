@@ -92,18 +92,22 @@ export async function GET(req: Request, { params }: Params) {
   const {
     result: { data, error, count },
     legacy,
-  } = await selectDocumentsWithSchemaFallback(hierarchyEnabled, (columns) => {
-    let query = sbAdmin
-      .from('workspace_documents')
-      .select(columns, { count: 'exact' })
-      .eq('ws_id', wsId)
-      .order('created_at', { ascending: false });
+  } = await selectDocumentsWithSchemaFallback(
+    hierarchyEnabled,
+    (columns, legacy) => {
+      let query = sbAdmin
+        .from('workspace_documents')
+        .select(columns, { count: 'exact' })
+        .eq('ws_id', wsId)
+        .order(legacy ? 'created_at' : 'updated_at', { ascending: false })
+        .order('id', { ascending: false });
 
-    if (search) {
-      query = query.ilike('name', `%${search}%`);
+      if (search) {
+        query = query.ilike('name', `%${search}%`);
+      }
+      return query.range(offset, offset + limit - 1);
     }
-    return query.range(offset, offset + limit - 1);
-  });
+  );
 
   if (error) {
     console.error('Error listing documents:', error.message);

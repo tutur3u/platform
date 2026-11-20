@@ -26,20 +26,23 @@ function isMissingColumn(
 // TODO: Remove after the workspace document owner and timestamp migrations reach production.
 export async function selectDocumentsWithSchemaFallback(
   hierarchyEnabled: boolean,
-  select: (columns: string) => PromiseLike<{
+  select: (
+    columns: string,
+    legacy: boolean
+  ) => PromiseLike<{
     data: unknown;
     error: PostgrestError | null;
     count?: number | null;
   }>
 ) {
-  const result = await select(documentColumns(hierarchyEnabled));
+  const result = await select(documentColumns(hierarchyEnabled), false);
   if (!isMissingColumn(result.error, ['owner_id', 'updated_at'])) {
     return { result, legacy: false };
   }
 
   console.warn('Workspace documents are using the legacy read schema');
   return {
-    result: await select(documentColumns(hierarchyEnabled, false)),
+    result: await select(documentColumns(hierarchyEnabled, false), true),
     legacy: true,
   };
 }

@@ -1,4 +1,12 @@
 import 'package:intl/intl.dart';
+import 'package:mobile/data/models/documents/workspace_document.dart';
+import 'package:mobile/l10n/l10n.dart';
+
+String documentOwnerLabel(WorkspaceDocument document, AppLocalizations l10n) {
+  if (document.ownerIsViewer) return l10n.documentsOwnerYou;
+  final name = document.ownerName?.trim();
+  return name == null || name.isEmpty ? l10n.documentsOwnerUnknown : name;
+}
 
 enum DocumentVisibilityFilter { all, privateOnly, publicOnly }
 
