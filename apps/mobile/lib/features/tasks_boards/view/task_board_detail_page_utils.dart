@@ -500,32 +500,11 @@ String _taskSmartDate(BuildContext context, DateTime date, {DateTime? now}) {
   return context.l10n.taskBoardDetailDaysAgo(diff.abs());
 }
 
-bool _taskIsOverdue(TaskBoardTask task) {
-  if (_taskIsCompletedInBoard(task)) return false;
-  if (task.endDate == null) return false;
-  final dueDate = DateTime(
-    task.endDate!.year,
-    task.endDate!.month,
-    task.endDate!.day,
-  );
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  return dueDate.isBefore(today);
-}
-
-bool _taskIsOverdueForList(TaskBoardTask task, TaskBoardList? list) {
-  if (_taskListSuppressesDeadlines(list)) return false;
-  return _taskIsOverdue(task);
-}
-
 bool _taskIsCompletedInBoard(TaskBoardTask task, [TaskBoardList? list]) {
   return task.closedAt != null || task.completed == true || _taskListDone(list);
 }
 
 bool _taskListDone(TaskBoardList? list) => list?.completesWork ?? false;
-
-bool _taskListSuppressesDeadlines(TaskBoardList? list) =>
-    list?.suppressesDeadlines ?? false;
 
 List<int> _taskEstimationOptions(TaskBoardDetail board) {
   final estimationType = board.estimationType?.trim();

@@ -323,8 +323,8 @@ localization changes.
   edit, so consecutive edits never save a stale snapshot. Edits made where
   the saved value is visible pass `announce: false` (no success toast; a toast
   there covers the next picker's footer). Drop taps while the cubit
-  `isMutating`; its single-mutation guard throws a `StateError`, not an
-  `Exception`.
+  `isMutating`; its single-mutation guard throws
+  `TaskBoardMutationInProgressException`.
 - The detail sheet opens at `AppSheetSize.medium`. `ensureVisible` does not
   move a detented sheet, so tests drag it to full height first
   (`expandTaskSheet`) or use `scrollUntilVisible` on its scrollable.
@@ -353,11 +353,14 @@ localization changes.
   plus `TaskTimelineProjectionCache`. `filteredTasksByListId` regroups into
   new collections on every build while reusing task objects, so memoize on
   element identity, not map identity. The day strip and body share
-  `TaskTimelineMetrics`; the grid is one `CustomPaint` behind a single
-  `ListView.builder` of caption and bar rows. The span is a kit
-  `AppSegmentedControl` (Week, 2 weeks, Month) above the range label and
-  Today button; the control's own surface is not a header edge, and its
-  empty-range `AppIllustration` animates unless motion is reduced. The
+  `TaskTimelineMetrics` and a single horizontal viewport when the dates need
+  more room. The grid is one `CustomPaint` behind a lazy vertical list. Keep
+  task names and group captions aligned to the visible viewport. A plain
+  horizontal drag scrolls. A press-and-hold drag shifts calendar dates through
+  `taskStartOfDayIn` and `taskEndOfDayIn` so daylight-saving days keep the
+  expected date. Disable shifts while a mutation is active and use
+  `showAppToast` for failed saves. The kit `AppSegmentedControl` switches
+  spans and `AppIllustration` supplies the empty-range state. The
   timeline header draws no edge: its scroll notifications reach the shell, which draws the one
   hairline at the body viewport's top once scrolled and keeps the dock
   auto-hide. Date-placed views must load every page of the

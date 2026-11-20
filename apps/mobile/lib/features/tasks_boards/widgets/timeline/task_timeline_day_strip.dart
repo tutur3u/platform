@@ -12,15 +12,15 @@ class TaskTimelineDayStrip extends StatefulWidget {
     required this.window,
     required this.today,
     required this.metrics,
-    required this.onShift,
     required this.onCentre,
+    this.onShift,
     super.key,
   });
 
   final TaskTimelineWindow window;
   final DateTime today;
   final TaskTimelineMetrics metrics;
-  final ValueChanged<int> onShift;
+  final ValueChanged<int>? onShift;
   final ValueChanged<DateTime> onCentre;
 
   @override
@@ -35,20 +35,24 @@ class _DayStripState extends State<TaskTimelineDayStrip> {
   @override
   Widget build(BuildContext context) {
     final metrics = widget.metrics;
-    final narrow = metrics.columnWidth < 22;
-    final compact = metrics.columnWidth < 28;
+    final onShift = widget.onShift;
     return GestureDetector(
       key: const ValueKey('task-timeline-day-strip'),
       behavior: HitTestBehavior.opaque,
-      onHorizontalDragStart: (_) => _drag = 0,
-      onHorizontalDragUpdate: (details) => _drag += details.delta.dx,
-      onHorizontalDragEnd: (details) {
-        final velocity = details.primaryVelocity ?? 0;
-        if (_drag.abs() >= _swipeDistance || velocity.abs() >= _swipeVelocity) {
-          widget.onShift((_drag + velocity) < 0 ? 1 : -1);
-        }
-        _drag = 0;
-      },
+      onHorizontalDragStart: onShift == null ? null : (_) => _drag = 0,
+      onHorizontalDragUpdate: onShift == null
+          ? null
+          : (details) => _drag += details.delta.dx,
+      onHorizontalDragEnd: onShift == null
+          ? null
+          : (details) {
+              final velocity = details.primaryVelocity ?? 0;
+              if (_drag.abs() >= _swipeDistance ||
+                  velocity.abs() >= _swipeVelocity) {
+                onShift((_drag + velocity) < 0 ? 1 : -1);
+              }
+              _drag = 0;
+            },
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: metrics.inset),
         child: Row(
@@ -58,9 +62,8 @@ class _DayStripState extends State<TaskTimelineDayStrip> {
                 width: metrics.columnWidth,
                 child: _DayCell(
                   day: widget.window.dayAt(column),
+                  showWeekdayAbbreviation: metrics.columnWidth >= 44,
                   isToday: widget.window.dayAt(column) == widget.today,
-                  narrow: narrow,
-                  compact: compact,
                   onTap: () => widget.onCentre(widget.window.dayAt(column)),
                 ),
               ),
@@ -75,16 +78,14 @@ class _DayCell extends StatelessWidget {
   const _DayCell({
     required this.day,
     required this.isToday,
-    required this.narrow,
-    required this.compact,
+    required this.showWeekdayAbbreviation,
     required this.onTap,
   });
 
   final DateTime day;
   final bool isToday;
+  final bool showWeekdayAbbreviation;
 
-  final bool narrow;
-  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -92,15 +93,16 @@ class _DayCell extends StatelessWidget {
     final tokens = AppTokens.of(context);
     final c = tokens.colorScheme;
     final locale = context.l10n.localeName;
-    final weekday = DateFormat.EEEEE(locale).format(day);
-    final numberStyle =
-        (compact ? tokens.typography.xSmall : tokens.typography.small).copyWith(
-          fontSize: narrow ? 10 : null,
-          fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-          color: isToday ? c.background : c.foreground,
-          fontFeatures: const [FontFeature.tabularFigures()],
-        );
-    final diameter = compact ? (narrow ? 20.0 : 22.0) : 30.0;
+    final weekday =
+        (showWeekdayAbbreviation
+                ? DateFormat.E(locale)
+                : DateFormat.EEEEE(locale))
+            .format(day);
+    final numberStyle = tokens.typography.small.copyWith(
+      fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+      color: isToday ? c.background : c.foreground,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
     return Semantics(
       button: true,
       selected: isToday,
@@ -124,7 +126,6 @@ class _DayCell extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.clip,
                   style: tokens.typography.xSmall.copyWith(
-                    fontSize: narrow ? 9 : null,
                     color: isToday ? c.foreground : c.mutedForeground,
                     fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
                   ),
@@ -132,8 +133,8 @@ class _DayCell extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.xxs),
               Container(
-                width: diameter,
-                height: diameter,
+                width: MediaQuery.textScalerOf(context).scale(30),
+                height: MediaQuery.textScalerOf(context).scale(30),
                 alignment: Alignment.center,
                 decoration: isToday
                     ? BoxDecoration(color: c.foreground, shape: BoxShape.circle)

@@ -82,4 +82,44 @@ extension _TimelineLoading on _TaskBoardDetailPageViewState {
       _setBoardView(context, TaskBoardDetailView.list);
     }
   }
+
+  Future<void> _shiftTaskTimeline(
+    BuildContext context, {
+    required TaskBoardTask task,
+    required int deltaDays,
+  }) async {
+    final cubit = context.read<TaskBoardDetailCubit>();
+    if (deltaDays == 0 || cubit.state.isMutating) return;
+    final zone = taskTimezone(context);
+    final l10n = context.l10n;
+
+    DateTime shiftedDay(DateTime date) {
+      final day = taskDay(date, zone);
+      return DateTime(day.year, day.month, day.day + deltaDays);
+    }
+
+    final start = task.startDate;
+    final end = task.endDate;
+    try {
+      await cubit.updateTask(
+        taskId: task.id,
+        name: task.name?.trim().isNotEmpty == true
+            ? task.name!.trim()
+            : l10n.taskBoardDetailUntitledTask,
+        startDate: start == null
+            ? null
+            : taskStartOfDayIn(shiftedDay(start), zone),
+        endDate: end == null ? null : taskEndOfDayIn(shiftedDay(end), zone),
+      );
+    } on TaskBoardMutationInProgressException {
+      return;
+    } on Exception {
+      if (!context.mounted) return;
+      showAppToast(
+        context,
+        message: l10n.taskTimelineRescheduleFailed,
+        variant: AppAlertVariant.destructive,
+      );
+    }
+  }
 }

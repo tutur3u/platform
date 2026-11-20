@@ -11150,6 +11150,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskTimelineEmptyWeek => 'Nothing scheduled this week';
 
   @override
+  String get taskTimelineRescheduleFailed => 'Couldn\'t move the task. Try again.';
+
+  @override
+  String get taskTimelineRescheduleHint => 'Press and hold, then drag to change dates';
+
+  @override
   String get taskTimelineScheduleTask => 'Schedule a task';
 
   @override

@@ -104,10 +104,12 @@ class _TaskBoardEnhancedListViewState
   Widget build(BuildContext context) {
     final sortedTasks = _sortedTasks;
     final zone = taskTimezone(context);
+    final now = widget.clock();
+    final today = taskDay(now, zone);
     final sections = buildTaskListDateGroups(
       tasks: sortedTasks,
       lists: widget.lists,
-      now: widget.clock(),
+      now: now,
       zone: zone,
     );
     final hasMoreTasks = _hasMoreTasks;
@@ -215,17 +217,17 @@ class _TaskBoardEnhancedListViewState
                 name: context.l10n.taskBoardDetailUntitledList,
               ),
             );
-            final style = _taskBoardListVisualStyle(context, list);
             final sliceCount = section.tasks.length;
 
             return AppGroupedSlice(
+              key: ValueKey(task.id),
               position: AppSlicePosition.of(taskIndex, sliceCount),
               child: _TaskCard(
                 task: task,
                 board: widget.board,
-                lists: widget.lists,
-                listStyle: style,
-                isLast: taskIndex == sliceCount - 1,
+                list: list,
+                today: today,
+                zone: zone,
                 onTap: () => widget.onTaskTap(task),
                 onToggleDone: (targetStatus) =>
                     widget.onTaskToggleDone(task, targetStatus),

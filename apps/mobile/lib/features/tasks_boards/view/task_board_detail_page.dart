@@ -109,7 +109,6 @@ part 'task_board_detail_page_list_view_chips.dart';
 part 'task_board_detail_page_list_view_sort_sheet.dart';
 part 'task_board_detail_page_list_view_sorting.dart';
 part 'task_board_detail_page_list_view_task_card.dart';
-part 'task_board_detail_page_list_view_task_toggles.dart';
 part 'task_board_detail_page_sheet.dart';
 part 'task_board_detail_page_sheet_dialogs.dart';
 part 'task_board_detail_page_sheet_logic.dart';

@@ -12,6 +12,7 @@ import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+import 'package:mobile/data/sources/api_exception.dart';
 import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
@@ -244,6 +245,28 @@ void main() {
       expect(find.byTooltip('Open full details'), findsWidgets);
     });
 
+    testWidgets('a failed reschedule shows the shared task toast', (
+      tester,
+    ) async {
+      final repository = await _pumpTimeline(tester, _standardTasks);
+      repository.updateError = const ApiException(
+        message: 'Could not update dates',
+        statusCode: 500,
+      );
+      final row = _key('task-timeline-row-task-1');
+      final gesture = await tester.startGesture(tester.getCenter(row));
+      await tester.pump(const Duration(milliseconds: 600));
+      await gesture.moveBy(const Offset(52, 0));
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('app-toast')), findsOneWidget);
+      expect(find.text("Couldn't move the task. Try again."), findsOneWidget);
+      expect(find.text('Something went wrong'), findsNothing);
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+    });
+
     testWidgets('builds only the rows near the viewport', (tester) async {
       await _pumpTimeline(tester, [
         for (var i = 0; i < 1500; i++)
@@ -413,13 +436,23 @@ void main() {
             await tester.pump(const Duration(milliseconds: 350));
           }
           await tester.pumpAndSettle();
-          BlocProvider.of<TaskBoardDetailCubit>(
-            tester.element(find.byType(Scrollable).first),
-          ).setView(TaskBoardDetailView.timeline);
+          final cubit = readRowActionsCubit(tester)
+            ..setView(TaskBoardDetailView.list);
           await tester.pumpAndSettle();
+          expect(find.text('Alpha task'), findsOneWidget);
+          await DesignRender.capture(tester, 'task-list-$device-$name');
 
+          cubit.setView(TaskBoardDetailView.timeline);
+          await tester.pumpAndSettle();
           expect(_key('task-timeline-header'), findsOneWidget);
-          await DesignRender.capture(tester, 'task-timeline-$device-$name');
+          await tester.tap(find.text('Month'));
+          await tester.pumpAndSettle();
+          expect(_key('task-timeline-horizontal-viewport'), findsOneWidget);
+          expect(tester.takeException(), isNull);
+          await DesignRender.capture(
+            tester,
+            'task-timeline-month-$device-$name',
+          );
         });
       }
     }

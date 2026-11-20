@@ -11019,6 +11019,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskTimelineEmptyWeek => 'Tuần này chưa có lịch';
 
   @override
+  String get taskTimelineRescheduleFailed => 'Không thể đổi lịch công việc. Vui lòng thử lại.';
+
+  @override
+  String get taskTimelineRescheduleHint => 'Nhấn giữ rồi kéo để đổi ngày';
+
+  @override
   String get taskTimelineScheduleTask => 'Lên lịch công việc';
 
   @override

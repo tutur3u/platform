@@ -15,6 +15,8 @@ class TaskTimelineBody extends StatelessWidget {
   const TaskTimelineBody({
     required this.projection,
     required this.metrics,
+    required this.viewportLeft,
+    required this.viewportWidth,
     required this.listNames,
     required this.listColors,
     required this.scrollController,
@@ -27,6 +29,8 @@ class TaskTimelineBody extends StatelessWidget {
 
   final TaskTimelineProjection projection;
   final TaskTimelineMetrics metrics;
+  final double viewportLeft;
+  final double viewportWidth;
   final Map<String, String> listNames;
   final Map<String, Color> listColors;
   final ScrollController scrollController;
@@ -75,18 +79,25 @@ class TaskTimelineBody extends StatelessWidget {
           ),
           itemCount: rows.length + (footer == null ? 0 : 1),
           itemBuilder: (context, index) {
-            if (index == rows.length) return footer;
+            if (index == rows.length) {
+              return Padding(padding: _viewportPadding, child: footer);
+            }
             return switch (rows[index]) {
-              final TaskTimelineCaption caption => TaskTimelineCaptionRow(
-                caption: caption,
-                metrics: metrics,
-                label: caption.isOverdue
-                    ? l10n.taskTimelineOverdueCount(caption.overdueCount!)
-                    : listNames[caption.listId] ?? '',
+              final TaskTimelineCaption caption => Padding(
+                padding: _viewportPadding,
+                child: TaskTimelineCaptionRow(
+                  caption: caption,
+                  metrics: metrics,
+                  label: caption.isOverdue
+                      ? l10n.taskTimelineOverdueCount(caption.overdueCount!)
+                      : listNames[caption.listId] ?? '',
+                ),
               ),
               final TaskTimelineLane lane => TaskTimelineLaneRow(
                 bars: lane.bars,
                 metrics: metrics,
+                viewportLeft: viewportLeft,
+                viewportWidth: viewportWidth,
                 tall: tall,
                 listColors: listColors,
                 onTaskTap: onTaskTap,
@@ -95,6 +106,8 @@ class TaskTimelineBody extends StatelessWidget {
               final TaskTimelineBar bar => TaskTimelineBarRow(
                 bar: bar,
                 metrics: metrics,
+                viewportLeft: viewportLeft,
+                viewportWidth: viewportWidth,
                 tall: tall,
                 color: listColors[bar.task.listId] ?? c.mutedForeground,
                 onTap: () => onTaskTap(bar.task),
@@ -108,4 +121,12 @@ class TaskTimelineBody extends StatelessWidget {
       ],
     );
   }
+
+  EdgeInsets get _viewportPadding => EdgeInsets.only(
+    left: viewportLeft,
+    right: (metrics.width - viewportLeft - viewportWidth).clamp(
+      0,
+      double.infinity,
+    ),
+  );
 }

@@ -58,6 +58,7 @@ String _dayKey(DateTime day) =>
 
 class _Harness {
   final List<TaskBoardTask> tapped = [];
+  final shifts = <(TaskBoardTask, int)>[];
   int undatedOpened = 0;
 
   Future<void> pump(
@@ -82,6 +83,7 @@ class _Harness {
         scrollController: controller,
         onLoadMore: () {},
         onTaskTap: (task) async => tapped.add(task),
+        onBarShift: (task, days) async => shifts.add((task, days)),
         onShowUndated: () => undatedOpened += 1,
         clock: () => _now,
       ),
@@ -379,6 +381,64 @@ void main() {
       await pick('Week');
       expect(control().selected, TaskTimelineSpan.week);
       expect(cells(), findsNWidgets(7));
+    });
+
+    testWidgets('Month scrolls dates and bars together without editing', (
+      tester,
+    ) async {
+      final harness = _Harness();
+      final task = _task(
+        'release',
+        'product',
+        start: _offset(-3),
+        end: _offset(10),
+      );
+      await harness.pump(tester, [task]);
+      await tester.tap(find.text('Month'));
+      await tester.pumpAndSettle();
+
+      final viewport = _key('task-timeline-horizontal-viewport');
+      final today = _key(_dayKey(_today));
+      final bar = _key('task-timeline-bar-release');
+      final dayWidth = tester.getSize(today).width;
+      expect(dayWidth, greaterThanOrEqualTo(44));
+      expect(
+        tester.getCenter(today).dx,
+        closeTo(tester.getCenter(viewport).dx, 0.5),
+      );
+      expect(
+        tester.getRect(bar).left,
+        closeTo(tester.getRect(_key(_dayKey(_offset(-3)))).left + 1, 0.5),
+      );
+
+      final barLeft = tester.getRect(bar).left;
+      final todayLeft = tester.getRect(today).left;
+      await tester.dragFrom(
+        Offset(tester.getCenter(viewport).dx, tester.getCenter(bar).dy),
+        const Offset(-140, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getRect(today).left, lessThan(todayLeft));
+      expect(
+        tester.getRect(bar).left - barLeft,
+        closeTo(tester.getRect(today).left - todayLeft, 0.5),
+      );
+      expect(harness.shifts, isEmpty);
+
+      final barPoint = Offset(
+        tester.getCenter(viewport).dx,
+        tester.getCenter(bar).dy,
+      );
+      await tester.tapAt(barPoint);
+      expect(harness.tapped, [task]);
+
+      final gesture = await tester.startGesture(barPoint);
+      await tester.pump(const Duration(milliseconds: 600));
+      await gesture.moveBy(Offset(dayWidth, 0));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(harness.shifts, [(task, 1)]);
+      expect(tester.takeException(), isNull);
     });
 
     testWidgets('the span control follows the theme in light and dark', (

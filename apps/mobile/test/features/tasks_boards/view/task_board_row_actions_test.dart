@@ -24,6 +24,21 @@ void main() {
 
   Finder row(String title) => taskRow(title);
 
+  testWidgets('the list checkbox completes a task with one tap', (
+    tester,
+  ) async {
+    await pumpBoard(tester);
+
+    final checkbox = find.byKey(
+      const ValueKey('task-board-list-complete-task-1'),
+    );
+    expect(tester.getSize(checkbox).width, greaterThanOrEqualTo(44));
+    await tester.tap(checkbox);
+    await tester.pumpAndSettle();
+
+    expect(repository.moves, ['task-1->list-2']);
+  });
+
   testWidgets('swiping a row toward the end completes it', (tester) async {
     await pumpBoard(tester);
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -10,6 +11,7 @@ import 'package:mobile/features/tasks_boards/utils/task_timeline_projection.dart
 import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
 import 'package:mobile/features/tasks_boards/widgets/task_board_list_colors.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_body.dart';
+import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_day_strip.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_empty.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_header.dart';
 import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_metrics.dart';
@@ -78,6 +80,8 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
   TaskTimelineWindow? _window;
   Timer? _midnight;
   double _pinchScale = 1;
+  DateTime? _focusedDay;
+  int _rangeRevision = 0;
 
   @override
   void dispose() {
@@ -119,33 +123,79 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final viewportWidth = constraints.maxWidth;
+        final inset = AppPageInsets.gutterOf(context, width: viewportWidth);
+        final dayWidth = MediaQuery.textScalerOf(
+          context,
+        ).scale(span == TaskTimelineSpan.week ? 36 : 44);
         final metrics = TaskTimelineMetrics(
-          width: constraints.maxWidth,
-          inset: AppPageInsets.gutterOf(context, width: constraints.maxWidth),
+          width: math.max(viewportWidth, inset * 2 + dayWidth * window.days),
+          inset: inset,
           days: window.days,
         );
+        final scrollsHorizontally = metrics.width > viewportWidth;
+        final focusedDay =
+            _focusedDay ?? (window.contains(today) ? today : window.start);
+        final axis = TaskTimelineDayStrip(
+          window: window,
+          today: today,
+          metrics: metrics,
+          onShift: scrollsHorizontally
+              ? null
+              : (steps) => _show(window.shift(steps)),
+          onCentre: (day) => scrollsHorizontally
+              ? _show(window, focus: day)
+              : _show(TaskTimelineWindow.centredOn(span, day)),
+        );
+        final empty = projection.isEmpty
+            ? TaskTimelineEmpty(
+                span: span,
+                undatedCount: projection.undatedCount,
+                loading: widget.hasMoreTasks && widget.isLoadingMoreTasks,
+                onShowUndated: widget.onShowUndated,
+                onScheduleTask: widget.onScheduleTask,
+                onLoadMore: widget.hasMoreTasks && !widget.hasLoadError
+                    ? widget.onLoadMore
+                    : null,
+              )
+            : null;
+        Widget body({double offset = 0}) => TaskTimelineBody(
+          projection: projection,
+          metrics: metrics,
+          viewportLeft: offset,
+          viewportWidth: viewportWidth,
+          tall: tablet && !scrollsHorizontally,
+          listNames: _listNames(context),
+          listColors: {
+            for (final list in widget.lists)
+              list.id: taskBoardListColor(context, list.color),
+          },
+          scrollController: widget.scrollController,
+          onTaskTap: (task) => unawaited(widget.onTaskTap(task)),
+          onBarShift: widget.onBarShift,
+          footer: _footer(context),
+        );
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TaskTimelineHeader(
               window: window,
-              today: today,
-              metrics: metrics,
+              inset: inset,
+              dayStrip: scrollsHorizontally ? null : axis,
+              showRangeArrows: scrollsHorizontally,
               onSpanChanged: (picked) => _showSpan(picked, window, today),
               onShift: (steps) => _show(window.shift(steps)),
-              onCentre: (day) => _show(TaskTimelineWindow.centredOn(span, day)),
-              onToday: window.contains(today)
+              onToday: !scrollsHorizontally && window.contains(today)
                   ? null
-                  : () => _show(TaskTimelineWindow.around(span, today)),
+                  : () => _show(
+                      TaskTimelineWindow.around(span, today),
+                      focus: today,
+                    ),
             ),
             if (widget.hasLoadError)
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                  metrics.inset,
-                  AppSpacing.sm,
-                  metrics.inset,
-                  0,
-                ),
+                padding: EdgeInsets.fromLTRB(inset, AppSpacing.sm, inset, 0),
                 child: Row(
                   children: [
                     Expanded(child: Text(l10n.commonSomethingWentWrong)),
@@ -164,6 +214,7 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
                 behavior: HitTestBehavior.deferToChild,
                 onScaleStart: (_) => _pinchScale = 1,
                 onScaleUpdate: (details) {
+                  if (details.pointerCount < 2) return;
                   final delta = details.scale - _pinchScale;
                   _pinchScale = details.scale;
                   if (delta.abs() < 0.02) return;
@@ -173,32 +224,26 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
                     _zoomSpan(1, window, today);
                   }
                 },
-                child: projection.isEmpty
-                    ? TaskTimelineEmpty(
-                        span: span,
-                        undatedCount: projection.undatedCount,
-                        loading:
-                            widget.hasMoreTasks && widget.isLoadingMoreTasks,
-                        onShowUndated: widget.onShowUndated,
-                        onScheduleTask: widget.onScheduleTask,
-                        onLoadMore: widget.hasMoreTasks && !widget.hasLoadError
-                            ? widget.onLoadMore
+                child: scrollsHorizontally
+                    ? _TimelineHorizontalViewport(
+                        key: ValueKey((
+                          window,
+                          _rangeRevision,
+                          viewportWidth,
+                          metrics.width,
+                        )),
+                        contentWidth: metrics.width,
+                        initialOffset:
+                            (metrics.centre(window.columnOf(focusedDay)) -
+                                    viewportWidth / 2)
+                                .clamp(0.0, metrics.width - viewportWidth),
+                        axis: axis,
+                        body: empty == null
+                            ? (offset) => body(offset: offset)
                             : null,
+                        empty: empty,
                       )
-                    : TaskTimelineBody(
-                        projection: projection,
-                        metrics: metrics,
-                        tall: tablet,
-                        listNames: _listNames(context),
-                        listColors: {
-                          for (final list in widget.lists)
-                            list.id: taskBoardListColor(context, list.color),
-                        },
-                        scrollController: widget.scrollController,
-                        onTaskTap: (task) => unawaited(widget.onTaskTap(task)),
-                        onBarShift: widget.onBarShift,
-                        footer: _footer(context),
-                      ),
+                    : empty ?? body(),
               ),
             ),
           ],
@@ -234,19 +279,26 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
     );
   }
 
-  void _show(TaskTimelineWindow window) {
-    setState(() => _window = window);
+  void _show(TaskTimelineWindow window, {DateTime? focus}) {
+    if (focus != null && window == _window) {
+      setState(() {
+        _focusedDay = focus;
+        _rangeRevision++;
+      });
+      return;
+    }
+    setState(() {
+      _window = window;
+      _focusedDay = focus;
+      _rangeRevision++;
+    });
     final controller = widget.scrollController;
     if (controller.hasClients) controller.jumpTo(0);
   }
 
   /// Keeps today in view when the range holds it, otherwise the middle of
   /// the current range.
-  void _zoomSpan(
-    int direction,
-    TaskTimelineWindow window,
-    DateTime today,
-  ) {
+  void _zoomSpan(int direction, TaskTimelineWindow window, DateTime today) {
     const order = TaskTimelineSpan.values;
     final current = _chosenSpan ?? window.span;
     final index = order.indexOf(current);
@@ -265,5 +317,104 @@ class _TaskTimelineViewState extends State<TaskTimelineView> {
         : window.dayAt(window.days ~/ 2);
     _chosenSpan = picked;
     _show(TaskTimelineWindow.around(picked, anchor));
+  }
+}
+
+class _TimelineHorizontalViewport extends StatefulWidget {
+  const _TimelineHorizontalViewport({
+    required this.contentWidth,
+    required this.initialOffset,
+    required this.axis,
+    required this.body,
+    required this.empty,
+    super.key,
+  });
+
+  final double contentWidth;
+  final double initialOffset;
+  final Widget axis;
+  final Widget Function(double offset)? body;
+  final Widget? empty;
+
+  @override
+  State<_TimelineHorizontalViewport> createState() =>
+      _TimelineHorizontalViewportState();
+}
+
+class _TimelineHorizontalViewportState
+    extends State<_TimelineHorizontalViewport> {
+  late final _controller = ScrollController(
+    initialScrollOffset: widget.initialOffset,
+    keepScrollOffset: false,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final body = widget.body;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final viewport = SingleChildScrollView(
+          key: const ValueKey('task-timeline-horizontal-viewport'),
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: widget.contentWidth,
+            height: body == null ? null : constraints.maxHeight,
+            child: Column(
+              children: [
+                widget.axis,
+                if (body != null)
+                  Expanded(
+                    child: NotificationListener<ScrollMetricsNotification>(
+                      onNotification: (notification) {
+                        if (notification.depth != 0 ||
+                            notification.metrics.axis != Axis.vertical) {
+                          return false;
+                        }
+                        notification.dispatch(context);
+                        return true;
+                      },
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification.depth != 0 ||
+                              notification.metrics.axis != Axis.vertical) {
+                            return false;
+                          }
+                          // The body is the page's primary vertical scrollable.
+                          // Keep depth zero past the horizontal viewport.
+                          notification.dispatch(context);
+                          return true;
+                        },
+                        child: ListenableBuilder(
+                          listenable: _controller,
+                          builder: (context, _) => body(
+                            _controller.hasClients
+                                ? _controller.offset
+                                : widget.initialOffset,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+        return widget.empty == null
+            ? viewport
+            : Column(
+                children: [
+                  viewport,
+                  Expanded(child: widget.empty!),
+                ],
+              );
+      },
+    );
   }
 }

@@ -7,12 +7,12 @@ class _ListViewAssigneeAvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final tokens = AppTokens.of(context);
     final visible = assignees.take(3).toList(growable: false);
     final overflowCount = assignees.length - visible.length;
     Widget child = SizedBox(
-      height: 20,
-      width: visible.length * 14 + 14 + (overflowCount > 0 ? 6 : 0),
+      height: 24,
+      width: (visible.length - 1) * 14 + 24 + (overflowCount > 0 ? 14 : 0),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -25,16 +25,16 @@ class _ListViewAssigneeAvatarStack extends StatelessWidget {
             Positioned(
               left: visible.length * 14,
               child: Container(
-                width: 20,
-                height: 20,
+                width: 24,
+                height: 24,
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.muted.withValues(alpha: 0.4),
+                  color: tokens.colorScheme.muted,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
                   child: Text(
                     '+$overflowCount',
-                    style: theme.typography.small.copyWith(
+                    style: tokens.typography.xSmall.copyWith(
                       fontSize: 8,
                       fontWeight: FontWeight.w600,
                     ),
@@ -66,8 +66,7 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final colors = context.dynamicColors;
+    final tokens = AppTokens.of(context);
     final name = (assignee.displayName?.trim().isNotEmpty == true)
         ? assignee.displayName!.trim()
         : assignee.id;
@@ -76,7 +75,11 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
 
     final initials = name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
 
-    final avatarColor = colors.blue;
+    final avatarColor = tokens.colorScheme.secondary;
+    final initialsStyle = tokens.typography.xSmall.copyWith(
+      color: tokens.colorScheme.secondaryForeground,
+      fontWeight: FontWeight.w600,
+    );
 
     if (hasAvatar) {
       return Container(
@@ -84,7 +87,7 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
         height: 24,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: theme.colorScheme.card, width: 2),
+          border: Border.all(color: tokens.colorScheme.card, width: 2),
         ),
         child: ClipOval(
           child: Image.network(
@@ -95,16 +98,7 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
             cacheWidth: (24 * MediaQuery.devicePixelRatioOf(context)).ceil(),
             errorBuilder: (_, _, _) => ColoredBox(
               color: avatarColor,
-              child: Center(
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              child: Center(child: Text(initials, style: initialsStyle)),
             ),
           ),
         ),
@@ -117,18 +111,9 @@ class _ListViewAssigneeAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: avatarColor,
-        border: Border.all(color: theme.colorScheme.card, width: 2),
+        border: Border.all(color: tokens.colorScheme.card, width: 2),
       ),
-      child: Center(
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      child: Center(child: Text(initials, style: initialsStyle)),
     );
   }
 }

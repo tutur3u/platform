@@ -15,6 +15,8 @@ class TaskTimelineBarRow extends StatelessWidget {
     required this.bar,
     required this.color,
     required this.metrics,
+    required this.viewportLeft,
+    required this.viewportWidth,
     required this.onTap,
     this.tall = false,
     this.onBarShift,
@@ -32,6 +34,8 @@ class TaskTimelineBarRow extends StatelessWidget {
   /// The list colour; overdue bars use the destructive token instead.
   final Color color;
   final TaskTimelineMetrics metrics;
+  final double viewportLeft;
+  final double viewportWidth;
   final VoidCallback onTap;
   final bool tall;
   final Future<void> Function(int columnDelta)? onBarShift;
@@ -74,10 +78,12 @@ class TaskTimelineBarRow extends StatelessWidget {
     return Semantics(
       button: true,
       label: title,
+      hint: onBarShift != null && !bar.done
+          ? l10n.taskTimelineRescheduleHint
+          : null,
       child: _TimelineBarInteractions(
         taskId: bar.task.id,
         metrics: metrics,
-        columnSpan: bar.columnSpan,
         enabled: onBarShift != null && !bar.done,
         onTap: onTap,
         onBarShift: onBarShift,
@@ -94,17 +100,17 @@ class TaskTimelineBarRow extends StatelessWidget {
     double barLeft,
     double barWidth,
   ) {
-    final titleLeft = math.max(
-      metrics.inset,
-      math.min(barLeft, metrics.width - metrics.inset - minTitleWidth),
-    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(left: titleLeft, right: metrics.inset),
+            padding: EdgeInsets.only(
+              left: viewportLeft + metrics.inset,
+              right:
+                  metrics.width - viewportLeft - viewportWidth + metrics.inset,
+            ),
             child: _TitleLine(title: title, style: titleStyle, late: late),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -212,7 +218,6 @@ class _TimelineBarInteractions extends StatefulWidget {
   const _TimelineBarInteractions({
     required this.taskId,
     required this.metrics,
-    required this.columnSpan,
     required this.enabled,
     required this.onTap,
     required this.onBarShift,
@@ -221,7 +226,6 @@ class _TimelineBarInteractions extends StatefulWidget {
 
   final String taskId;
   final TaskTimelineMetrics metrics;
-  final int columnSpan;
   final bool enabled;
   final VoidCallback onTap;
   final Future<void> Function(int columnDelta)? onBarShift;
@@ -233,7 +237,7 @@ class _TimelineBarInteractions extends StatefulWidget {
 }
 
 class _TimelineBarInteractionsState extends State<_TimelineBarInteractions> {
-  double _dragDx = 0;
+  double _dragStart = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -241,20 +245,18 @@ class _TimelineBarInteractionsState extends State<_TimelineBarInteractions> {
       key: ValueKey('task-timeline-row-${widget.taskId}'),
       behavior: HitTestBehavior.opaque,
       onTap: widget.onTap,
-      onHorizontalDragStart: widget.enabled ? (_) => _dragDx = 0 : null,
-      onHorizontalDragUpdate: widget.enabled
-          ? (details) => _dragDx += details.delta.dx
-          : null,
-      onHorizontalDragEnd: widget.enabled
-          ? (_) {
+      onLongPressEnd: widget.enabled && widget.onBarShift != null
+          ? (details) {
               final columnWidth = widget.metrics.columnWidth;
-              if (columnWidth <= 0 || widget.onBarShift == null) return;
-              final delta = (_dragDx / columnWidth).round();
-              _dragDx = 0;
-              if (delta != 0) {
-                unawaited(widget.onBarShift!(delta));
-              }
+              if (columnWidth <= 0) return;
+              final delta =
+                  (details.localPosition.dx - _dragStart) / columnWidth;
+              final days = delta.round();
+              if (days != 0) unawaited(widget.onBarShift!(days));
             }
+          : null,
+      onLongPressStart: widget.enabled
+          ? (details) => _dragStart = details.localPosition.dx
           : null,
       child: widget.child,
     );
@@ -266,6 +268,8 @@ class TaskTimelineLaneRow extends StatelessWidget {
   const TaskTimelineLaneRow({
     required this.bars,
     required this.metrics,
+    required this.viewportLeft,
+    required this.viewportWidth,
     required this.listColors,
     required this.onTaskTap,
     this.tall = false,
@@ -275,6 +279,8 @@ class TaskTimelineLaneRow extends StatelessWidget {
 
   final List<TaskTimelineBar> bars;
   final TaskTimelineMetrics metrics;
+  final double viewportLeft;
+  final double viewportWidth;
   final Map<String, Color> listColors;
   final ValueChanged<TaskBoardTask> onTaskTap;
   final bool tall;
@@ -288,6 +294,8 @@ class TaskTimelineLaneRow extends StatelessWidget {
       return TaskTimelineBarRow(
         bar: bar,
         metrics: metrics,
+        viewportLeft: viewportLeft,
+        viewportWidth: viewportWidth,
         tall: tall,
         color: listColors[bar.task.listId] ?? c.mutedForeground,
         onTap: () => onTaskTap(bar.task),
@@ -304,6 +312,8 @@ class TaskTimelineLaneRow extends StatelessWidget {
           TaskTimelineBarRow(
             bar: bar,
             metrics: metrics,
+            viewportLeft: viewportLeft,
+            viewportWidth: viewportWidth,
             tall: tall,
             color:
                 listColors[bar.task.listId] ??
@@ -339,7 +349,7 @@ class _TitleLine extends StatelessWidget {
       ),
       if (late case final late?) ...[
         const SizedBox(width: AppSpacing.xs + AppSpacing.xxs),
-        late,
+        Flexible(child: late),
       ],
     ],
   );

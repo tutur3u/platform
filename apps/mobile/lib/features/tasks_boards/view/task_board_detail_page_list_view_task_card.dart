@@ -4,9 +4,9 @@ class _TaskCard extends StatelessWidget {
   const _TaskCard({
     required this.task,
     required this.board,
-    required this.lists,
-    required this.listStyle,
-    required this.isLast,
+    required this.list,
+    required this.today,
+    required this.zone,
     required this.onTap,
     required this.onToggleDone,
     required this.rowActions,
@@ -17,9 +17,9 @@ class _TaskCard extends StatelessWidget {
 
   final TaskBoardTask task;
   final TaskBoardDetail board;
-  final List<TaskBoardList> lists;
-  final _TaskBoardListVisualStyle listStyle;
-  final bool isLast;
+  final TaskBoardList list;
+  final DateTime today;
+  final String? zone;
   final VoidCallback onTap;
   final void Function(String targetStatus) onToggleDone;
   final _TaskRowActionHandlers rowActions;
@@ -29,160 +29,120 @@ class _TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
-    final list = lists.firstWhere(
-      (l) => l.id == task.listId,
-      orElse: () =>
-          TaskBoardList(id: task.listId, boardId: board.id, name: 'Unknown'),
-    );
-    final isOverdue = _taskIsOverdueForList(task, list);
-    final isCompleted = _taskIsCompletedInBoard(task, list);
-    final normalizedStatus = TaskBoardList.normalizeSupportedStatus(
-      list.status,
-    );
-    final doneTargetStatus = normalizedStatus == 'done'
-        ? 'not_started'
-        : 'done';
-    final borderColor = isSelected
-        ? listStyle.accent.withValues(alpha: 0.36)
-        : listStyle.surfaceBorder.withValues(alpha: 0.18);
-    final titleColor =
-        Color.lerp(theme.colorScheme.foreground, listStyle.accent, 0.16) ??
-        theme.colorScheme.foreground;
+    final tokens = AppTokens.of(context);
+    final colors = tokens.colorScheme;
+    final l10n = context.l10n;
+    final isCompleted = !taskListTaskIsOpen(task, list);
+    final target = _taskRowDoneTarget(list);
+    final endDate = task.endDate;
+    final dueDay = endDate == null ? null : taskDay(endDate, zone);
+    final isOverdue =
+        !isCompleted &&
+        !list.suppressesDeadlines &&
+        (dueDay?.isBefore(today) ?? false);
+    final fleet = fleetMetaOrNull(task, listStatus: list.status);
+    final toggleLabel = target == 'done'
+        ? l10n.taskBoardDetailCompleteTask
+        : l10n.taskBoardDetailReopenTask;
 
     return PendingSyncFrame(
       workspaceId: board.wsId,
       feature: 'tasks',
       entityId: task.id,
-      child: Padding(
-        padding: EdgeInsets.only(bottom: isLast ? 0 : 2),
-        child: _TaskRowSwipe(
-          task: task,
-          list: list,
-          enabled: !isBulkSelectMode,
-          onToggleDone: onToggleDone,
-          rowActions: rowActions,
-          child: _buildRow(
-            context,
-            list: list,
-            isOverdue: isOverdue,
-            isCompleted: isCompleted,
-            normalizedStatus: normalizedStatus,
-            doneTargetStatus: doneTargetStatus,
-            borderColor: borderColor,
-            titleColor: titleColor,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRow(
-    BuildContext context, {
-    required TaskBoardList list,
-    required bool isOverdue,
-    required bool isCompleted,
-    required String? normalizedStatus,
-    required String doneTargetStatus,
-    required Color borderColor,
-    required Color titleColor,
-  }) {
-    final theme = shad.Theme.of(context);
-    final fleet = fleetMetaOrNull(task, listStatus: list.status);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isBulkSelectMode ? onToggleSelected : onTap,
-        // Outside bulk mode a long press opens the row's context menu,
-        // whose Select action enters bulk mode.
-        onLongPress: () {
-          unawaited(AppHaptics.pickup());
-          if (isBulkSelectMode) {
-            onToggleSelected();
-          } else {
-            rowActions.onContextMenu(task);
-          }
-        },
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: isSelected
-                ? listStyle.accent.withValues(alpha: 0.08)
-                : Colors.transparent,
-            border: Border(
-              bottom: isLast ? BorderSide.none : BorderSide(color: borderColor),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(2, 10, 2, 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: _TaskRowSwipe(
+        task: task,
+        list: list,
+        enabled: !isBulkSelectMode,
+        onToggleDone: onToggleDone,
+        rowActions: rowActions,
+        child: Material(
+          type: MaterialType.transparency,
+          child: Ink(
+            decoration: BoxDecoration(color: isSelected ? colors.muted : null),
+            child: InkWell(
+              onTap: isBulkSelectMode ? onToggleSelected : onTap,
+              onLongPress: () {
+                unawaited(AppHaptics.pickup());
+                if (isBulkSelectMode) {
+                  onToggleSelected();
+                } else {
+                  rowActions.onContextMenu(task);
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(
+                  AppSpacing.xs,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (isBulkSelectMode)
-                      _TaskSelectionToggle(
-                        isSelected: isSelected,
-                        listStyle: listStyle,
-                        onPressed: onToggleSelected,
+                      AppCheckbox(
+                        value: isSelected,
+                        onChanged: (_) => onToggleSelected(),
                       )
                     else
-                      _TaskCompletionToggle(
-                        task: task,
-                        list: list,
-                        listStyle: listStyle,
-                        targetStatus: doneTargetStatus,
-                        enabled: normalizedStatus != 'closed',
-                        onPressed: () => onToggleDone(doneTargetStatus),
+                      AppCheckbox(
+                        key: ValueKey('task-board-list-complete-${task.id}'),
+                        value: isCompleted,
+                        semanticLabel: target == null ? null : toggleLabel,
+                        onChanged: target == null
+                            ? null
+                            : (_) => onToggleDone(target),
                       ),
-                    const shad.Gap(8),
+                    const SizedBox(width: AppSpacing.xs),
                     Expanded(
-                      child: Text(
-                        task.name?.trim().isNotEmpty == true
-                            ? task.name!.trim()
-                            : context.l10n.taskBoardDetailUntitledTask,
-                        style: theme.typography.small.copyWith(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          height: 1.18,
-                          decoration: isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: isCompleted
-                              ? theme.colorScheme.mutedForeground
-                              : titleColor,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.xs,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              task.name?.trim().isNotEmpty == true
+                                  ? task.name!.trim()
+                                  : l10n.taskBoardDetailUntitledTask,
+                              style: tokens.typography.body.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: isCompleted
+                                    ? colors.mutedForeground
+                                    : colors.foreground,
+                                decoration: isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            _TaskMetadataRow(
+                              task: task,
+                              board: board,
+                              dueDay: dueDay,
+                              today: today,
+                              isOverdue: isOverdue,
+                            ),
+                            if (fleet != null)
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  top: AppSpacing.xs,
+                                ),
+                                child: FleetTaskTileBlock(meta: fleet),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
+                    if (task.assignees.isNotEmpty) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      _ListViewAssigneeAvatarStack(assignees: task.assignees),
+                    ],
                   ],
                 ),
-                const shad.Gap(5),
-                Padding(
-                  padding: const EdgeInsets.only(left: 29),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _TaskMetadataRow(
-                          task: task,
-                          board: board,
-                          isOverdue: isOverdue,
-                          isCompleted: isCompleted,
-                        ),
-                      ),
-                      if (task.assignees.isNotEmpty) ...[
-                        const shad.Gap(6),
-                        _ListViewAssigneeAvatarStack(assignees: task.assignees),
-                      ],
-                    ],
-                  ),
-                ),
-                if (fleet != null)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 29, top: 6),
-                    child: FleetTaskTileBlock(meta: fleet),
-                  ),
-              ],
+              ),
             ),
           ),
         ),

@@ -21115,6 +21115,18 @@ abstract class AppLocalizations {
   /// **'Nothing scheduled this week'**
   String get taskTimelineEmptyWeek;
 
+  /// No description provided for @taskTimelineRescheduleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t move the task. Try again.'**
+  String get taskTimelineRescheduleFailed;
+
+  /// No description provided for @taskTimelineRescheduleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Press and hold, then drag to change dates'**
+  String get taskTimelineRescheduleHint;
+
   /// No description provided for @taskTimelineScheduleTask.
   ///
   /// In en, this message translates to:

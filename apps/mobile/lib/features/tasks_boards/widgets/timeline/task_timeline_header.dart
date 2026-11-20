@@ -3,8 +3,6 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/tasks_boards/utils/task_timeline_window.dart';
-import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_day_strip.dart';
-import 'package:mobile/features/tasks_boards/widgets/timeline/task_timeline_metrics.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// "Nov 16 – 22", "Nov 30 – Dec 6", or with years when they differ.
@@ -29,18 +27,17 @@ String taskTimelineRangeLabel(TaskTimelineWindow window, String locale) {
 class TaskTimelineHeader extends StatelessWidget {
   const TaskTimelineHeader({
     required this.window,
-    required this.today,
-    required this.metrics,
+    required this.inset,
     required this.onSpanChanged,
     required this.onShift,
-    required this.onCentre,
+    this.dayStrip,
+    this.showRangeArrows = false,
     this.onToday,
     super.key,
   });
 
   final TaskTimelineWindow window;
-  final DateTime today;
-  final TaskTimelineMetrics metrics;
+  final double inset;
 
   /// Shows Week, 2 weeks or Month around the current range.
   final ValueChanged<TaskTimelineSpan> onSpanChanged;
@@ -48,8 +45,8 @@ class TaskTimelineHeader extends StatelessWidget {
   /// Moves the window by whole spans; negative goes back.
   final ValueChanged<int> onShift;
 
-  /// Recentres the window on a tapped day.
-  final ValueChanged<DateTime> onCentre;
+  final Widget? dayStrip;
+  final bool showRangeArrows;
 
   /// Returns to the window holding today; null hides the button.
   final VoidCallback? onToday;
@@ -65,12 +62,7 @@ class TaskTimelineHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(
-              metrics.inset,
-              AppSpacing.xs,
-              metrics.inset,
-              0,
-            ),
+            padding: EdgeInsets.fromLTRB(inset, AppSpacing.xs, inset, 0),
             child: Semantics(
               container: true,
               label: l10n.taskTimelineRangeTitle,
@@ -98,13 +90,21 @@ class TaskTimelineHeader extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: metrics.inset),
+            padding: EdgeInsets.symmetric(horizontal: inset),
             // Holds the Today button's height, so the strip never moves
             // when the button appears.
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: kAppMinTapTarget),
               child: Row(
                 children: [
+                  if (showRangeArrows)
+                    AppIconButton(
+                      icon: const Icon(LucideIcons.chevronLeft),
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).previousPageTooltip,
+                      onPressed: () => onShift(-1),
+                    ),
                   Expanded(
                     child: Semantics(
                       header: true,
@@ -132,17 +132,19 @@ class TaskTimelineHeader extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                  if (showRangeArrows)
+                    AppIconButton(
+                      icon: const Icon(LucideIcons.chevronRight),
+                      tooltip: MaterialLocalizations.of(
+                        context,
+                      ).nextPageTooltip,
+                      onPressed: () => onShift(1),
+                    ),
                 ],
               ),
             ),
           ),
-          TaskTimelineDayStrip(
-            window: window,
-            today: today,
-            metrics: metrics,
-            onShift: onShift,
-            onCentre: onCentre,
-          ),
+          if (dayStrip != null) dayStrip!,
         ],
       ),
     );

@@ -4846,6 +4846,8 @@
   "taskTimelineEmptyMonth": "Tháng này chưa có lịch",
   "taskTimelineEmptyTwoWeeks": "Hai tuần này chưa có lịch",
   "taskTimelineEmptyWeek": "Tuần này chưa có lịch",
+  "taskTimelineRescheduleFailed": "Không thể đổi lịch công việc. Vui lòng thử lại.",
+  "taskTimelineRescheduleHint": "Nhấn giữ rồi kéo để đổi ngày",
   "taskTimelineScheduleTask": "Lên lịch công việc",
   "taskTimelineOverdueCount": "Quá hạn {count}",
   "taskTimelineTodayButton": "Hôm nay",

@@ -663,6 +663,24 @@ The row model must preserve personal and external task metadata and keep
 unknown-list tasks grouped under the virtual unknown-list section instead of
 dropping them from the schedule.
 
+#### Mobile board List and Timeline
+
+The mobile List groups tasks under Overdue, Today, Upcoming, and No date.
+Open tasks become overdue on the day after their due date in the user's time
+zone. Completed work and lists that suppress deadlines stay out of Overdue.
+The checkbox completes or reopens a task. Swipe toward the end for the same
+shortcut, or toward the start to schedule, change priority, or delete.
+
+The mobile Timeline opens on Week on phones and 2 weeks on tablets. Wider
+ranges scroll horizontally, with dates and bars moving together and task names
+remaining readable. Month opens around today when the range contains it. Tap a
+task to open it. Press and hold a bar before dragging to move its scheduled
+days. The board uses the existing task mutation and stops accepting reschedules
+while it saves. A failed save keeps the original dates and shows one message.
+
+Mobile regressions cover Month scrolling, task taps, failed rescheduling and
+one-tap completion in [the board test suite](https://github.com/tutur3u/platform/tree/main/apps/mobile/test/features/tasks_boards).
+
 #### Personal external tasks
 
 Personal task boards can reference tasks from other workspaces without cloning

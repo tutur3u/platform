@@ -124,49 +124,63 @@ void main() {
     ('classic', null),
     ('sorbet', const SorbetTheme()),
   ]) {
-    testWidgets('$design timeline header: no line at rest, one hairline at '
-        'the strip bottom once scrolled, no shadow, dock auto-hides', (
-      tester,
-    ) async {
-      final visibility = await _mount(tester, sorbet);
+    for (final span in ['Week', 'Month']) {
+      testWidgets(
+        '$design $span has one hairline on scroll and hides the dock',
+        (tester) async {
+          final visibility = await _mount(tester, sorbet);
+          if (span == 'Month') {
+            await tester.tap(find.text('Month'));
+            await tester.pumpAndSettle();
+          }
 
-      expect(find.byKey(_composite), findsNothing);
-      expect(_shellHeaderHairline(tester), isFalse);
-      expect(_shellHeaderShadow(tester), isFalse);
-      expect(_timelineHeaderEdges(), isEmpty);
-      expect(_dockOpacity(tester), 1);
+          expect(find.byKey(_composite), findsNothing);
+          expect(_shellHeaderHairline(tester), isFalse);
+          expect(_shellHeaderShadow(tester), isFalse);
+          expect(_timelineHeaderEdges(), isEmpty);
+          expect(_dockOpacity(tester), 1);
 
-      await tester.drag(
-        find.byKey(const ValueKey('task-timeline-body')),
-        const Offset(0, -300),
-      );
-      await tester.pump();
+          final body = find.byKey(const ValueKey('task-timeline-body'));
+          await tester.dragFrom(
+            Offset(195, tester.getTopLeft(body).dy + 100),
+            const Offset(0, -300),
+          );
+          await tester.pump();
 
-      expect(find.byKey(_composite), findsOneWidget);
-      expect(
-        tester.getRect(find.byKey(_composite)).bottom,
-        closeTo(tester.getRect(find.byKey(_timelineHeader)).bottom, 0.01),
-      );
-      expect(_shellHeaderHairline(tester), isFalse);
-      expect(_shellHeaderShadow(tester), isFalse);
-      expect(_timelineHeaderEdges(), isEmpty);
-      // The body's scroll still reaches the shell: the dock hides.
-      expect(visibility, contains(false));
-      expect(_dockOpacity(tester), 0);
-
-      await tester.pumpAndSettle(const Duration(seconds: 2));
-      tester
-          .state<ScrollableState>(
-            find.descendant(
-              of: find.byKey(const ValueKey('task-timeline-body')),
-              matching: find.byType(Scrollable),
+          expect(find.byKey(_composite), findsOneWidget);
+          expect(
+            tester.getRect(find.byKey(_composite)).bottom,
+            closeTo(
+              tester
+                  .getRect(
+                    find.byKey(const ValueKey('task-timeline-day-strip')),
+                  )
+                  .bottom,
+              0.01,
             ),
-          )
-          .position
-          .jumpTo(0);
-      await tester.pumpAndSettle();
-      expect(find.byKey(_composite), findsNothing);
-      expect(tester.takeException(), isNull);
-    });
+          );
+          expect(_shellHeaderHairline(tester), isFalse);
+          expect(_shellHeaderShadow(tester), isFalse);
+          expect(_timelineHeaderEdges(), isEmpty);
+          // The body's scroll still reaches the shell: the dock hides.
+          expect(visibility, contains(false));
+          expect(_dockOpacity(tester), 0);
+
+          await tester.pumpAndSettle(const Duration(seconds: 2));
+          tester
+              .state<ScrollableState>(
+                find.descendant(
+                  of: find.byKey(const ValueKey('task-timeline-body')),
+                  matching: find.byType(Scrollable),
+                ),
+              )
+              .position
+              .jumpTo(0);
+          await tester.pumpAndSettle();
+          expect(find.byKey(_composite), findsNothing);
+          expect(tester.takeException(), isNull);
+        },
+      );
+    }
   }
 }
