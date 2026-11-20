@@ -11,6 +11,7 @@ import {
   servingVersion,
   settledServing,
   awaitServedBuild,
+  servedBaseline,
   verifyVersion,
 } from './void-cf-publisher.mjs';
 
@@ -475,5 +476,76 @@ test('assign proves the public build identity before and after', () => {
         sleep: () => {},
       }),
     /did not serve new-sha/
+  );
+});
+
+test('a newly mounted path starts from an explicit absent baseline', () => {
+  const missing = () => {
+    throw Object.assign(new Error('HTTP 404'), { status: 404 });
+  };
+  assert.equal(
+    servedBaseline(
+      'https://app/new',
+      { expectAbsent: true },
+      { fetchBuild: missing }
+    ),
+    'absent'
+  );
+  assert.throws(
+    () => servedBaseline('https://app/new', {}, { fetchBuild: missing }),
+    /HTTP 404/
+  );
+  assert.throws(
+    () =>
+      servedBaseline(
+        'https://app/new',
+        { expectAbsent: true },
+        { fetchBuild: () => 'old-sha' }
+      ),
+    /already serves old-sha/
+  );
+  const unavailable = () => {
+    throw Object.assign(new Error('HTTP 503'), { status: 503 });
+  };
+  assert.throws(
+    () =>
+      servedBaseline(
+        'https://app/new',
+        { expectAbsent: true },
+        { fetchBuild: unavailable }
+      ),
+    /HTTP 503/
+  );
+  const served = ['new-sha', 'new-sha', 'new-sha'];
+  let first = true;
+  const deps = {
+    ...sequenceCf([V1, V1, V1, V2, V2, V2]),
+    fetchBuild: () => {
+      if (first) {
+        first = false;
+        return missing();
+      }
+      return served[0];
+    },
+  };
+  assert.deepEqual(
+    assign(
+      {
+        worker: 'app',
+        version: V2,
+        expectCurrent: V1,
+        buildInfoUrl: 'https://app/new',
+        expectBuild: 'new-sha',
+        expectBeforeAbsent: true,
+      },
+      deps
+    ),
+    {
+      worker: 'app',
+      previousVersionId: V1,
+      versionId: V2,
+      servedBefore: 'absent',
+      servedAfter: 'new-sha',
+    }
   );
 });

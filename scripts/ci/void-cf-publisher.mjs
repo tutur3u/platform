@@ -113,13 +113,44 @@ export function settledServing(worker, deps = {}, { target } = {}) {
   );
 }
 
+/** The served commitHash; throws an error carrying the HTTP `status`. */
 function defaultFetchBuild(url) {
-  const body = execFileSync(
+  const output = execFileSync(
     'curl',
-    ['--fail', '--silent', '--show-error', '--max-time', '10', url],
+    [
+      '--silent',
+      '--show-error',
+      '--max-time',
+      '10',
+      '--write-out',
+      '\n%{http_code}',
+      url,
+    ],
     { encoding: 'utf8', timeout: 30000 }
   );
-  return JSON.parse(body).commitHash;
+  const at = output.lastIndexOf('\n');
+  const status = Number(output.slice(at + 1));
+  if (status < 200 || status > 299)
+    throw Object.assign(new Error(`HTTP ${status} from ${url}`), { status });
+  return JSON.parse(output.slice(0, at)).commitHash;
+}
+
+/**
+ * The served identity before a traffic move. With `expectAbsent` (a newly
+ * mounted path) the endpoint must answer 404, recorded as `absent`.
+ */
+export function servedBaseline(url, { expectAbsent = false } = {}, deps = {}) {
+  const fetchBuild = deps.fetchBuild ?? defaultFetchBuild;
+  if (!expectAbsent) return fetchBuild(url);
+  try {
+    const served = fetchBuild(url);
+    throw Object.assign(new Error(`${url} already serves ${served}`), {
+      present: true,
+    });
+  } catch (error) {
+    if (error?.status === 404) return 'absent';
+    throw error;
+  }
 }
 
 /** Poll a public build-info endpoint until it reports `expected`. */
@@ -313,7 +344,14 @@ export function publish(
 }
 
 export function assign(
-  { worker, version, expectCurrent, buildInfoUrl, expectBuild },
+  {
+    worker,
+    version,
+    expectCurrent,
+    buildInfoUrl,
+    expectBuild,
+    expectBeforeAbsent = false,
+  },
   deps = {}
 ) {
   assert.ok(VERSION_ID.test(version), 'invalid version id');
@@ -323,8 +361,9 @@ export function assign(
     assert.equal(before, expectCurrent, 'serving version moved since capture');
   // Recorded for the receipt; re-publishing the same build serves the same
   // identity before and after, so only the post-move identity is enforced.
+  assert.ok(!expectBeforeAbsent || buildInfoUrl, 'absent baseline needs a URL');
   const servedBefore = buildInfoUrl
-    ? (deps.fetchBuild ?? defaultFetchBuild)(buildInfoUrl)
+    ? servedBaseline(buildInfoUrl, { expectAbsent: expectBeforeAbsent }, deps)
     : undefined;
   cf(
     [
@@ -357,6 +396,7 @@ function parseFlags(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const key = argv[i].replace(/^--/u, '');
     if (key === 'strict') flags.strict = true;
+    else if (key === 'expect-before-absent') flags.expectBeforeAbsent = true;
     else {
       assert.ok(argv[i + 1] !== undefined, `missing value for --${key}`);
       flags[key.replace(/-(\w)/gu, (_, c) => c.toUpperCase())] = argv[++i];

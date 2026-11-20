@@ -410,7 +410,9 @@ serving version only after three identical reads five seconds apart, before
 capture, before moving traffic and until the new version is serving. With
 `--build-info-url <url> --expect-build <sha>`, `assign` also records the
 publicly served build before the move and waits for three consecutive
-responses reporting the expected build after it. cf also
+responses reporting the expected build after it. For a newly mounted path,
+add `--expect-before-absent`: the endpoint must answer 404 before the move
+(recorded as `absent`), and any served build or other error stops it. cf also
 refuses an upload whose required secrets are missing on the target Worker.
 
 ### Durable Object lifecycle
