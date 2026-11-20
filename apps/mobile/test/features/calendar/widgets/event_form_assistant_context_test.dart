@@ -159,6 +159,7 @@ void main() {
         field['key']: field['value'],
     };
     expect(fields['title'], 'Team standup');
+    expect(fields['location'], '');
     expect(fields['all_day'], 'false');
     // Wall time in the calendar zone (UTC+7) with its offset, never as UTC.
     expect(fields['start'], '2026-10-26T09:00:00+07:00');

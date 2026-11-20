@@ -473,6 +473,12 @@ widget regressions cover both raw `<p>` and Markdown source, malformed/mixed
 content, formatting, URL rejection and accessible enlarged text. A widget fixture
 is not installed-device or provider delivery evidence.
 
+Meeting `location` is the event place string, not a working-location all-day
+event. Parse it, show it on the agenda, timed card, and detail, and send it on
+create and update. An empty editor value clears it. Cap entry at 500 characters.
+The detail action opens Maps through `openMobileLink`. Dedup keeps events that
+differ only by place.
+
 ## Mail notification entry privacy
 
 - Keep Mail push routing actor-bound and UUID-only, then verify mailbox bootstrap

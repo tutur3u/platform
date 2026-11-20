@@ -219,6 +219,17 @@ class _AgendaEventCard extends StatelessWidget {
                         ),
                       ),
                       if (!wide) ...[const SizedBox(height: 4), timeLabel],
+                      if (event.place case final place?) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          place,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: titleColor,
+                          ),
+                        ),
+                      ],
                       if (event.description?.isNotEmpty == true) ...[
                         const SizedBox(height: 6),
                         Text(

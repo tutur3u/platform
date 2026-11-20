@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/calendar_event.dart';
@@ -64,6 +65,7 @@ class _EventFormContent extends StatefulWidget {
 
 class _EventFormContentState extends State<_EventFormContent> {
   late final TextEditingController _titleController;
+  late final TextEditingController _locationController;
   late final TextEditingController _descriptionController;
   late DateTime _startDate;
   late TimeOfDay _startTime;
@@ -109,6 +111,7 @@ class _EventFormContentState extends State<_EventFormContent> {
         : calendarProjectEvent(widget.event!, widget.timezone);
 
     _titleController = TextEditingController(text: event?.title ?? '');
+    _locationController = TextEditingController(text: event?.place ?? '');
     _descriptionController = TextEditingController(
       text: event?.description ?? '',
     );
@@ -174,6 +177,7 @@ class _EventFormContentState extends State<_EventFormContent> {
   @override
   void dispose() {
     _titleController.dispose();
+    _locationController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -230,6 +234,7 @@ class _EventFormContentState extends State<_EventFormContent> {
       if (_providerColor != null) {
         final original = widget.event!;
         if (title != (original.title ?? '').trim() ||
+            _locationController.text.trim() != (original.place ?? '') ||
             _descriptionController.text.trim() !=
                 (original.description ?? '').trim() ||
             start != _originalStart?.toUtc() ||
@@ -250,6 +255,7 @@ class _EventFormContentState extends State<_EventFormContent> {
       Navigator.of(context).pop(<String, dynamic>{
         'title': title,
         'description': _descriptionController.text.trim(),
+        'location': _locationController.text.trim(),
         'startAt': start,
         'endAt': end,
         'color': _color,
@@ -311,6 +317,11 @@ class _EventFormContentState extends State<_EventFormContent> {
           key: 'title',
           label: l10n.calendarEventTitle,
           controller: _titleController,
+        ),
+        AssistantFormFieldContext.text(
+          key: 'location',
+          label: l10n.calendarEventLocation,
+          controller: _locationController,
         ),
         AssistantFormFieldContext.text(
           key: 'description',
@@ -379,6 +390,17 @@ class _EventFormContentState extends State<_EventFormContent> {
             onChanged: (_) => setState(() {}),
             label: l10n.calendarEventTitle,
             placeholder: l10n.calendarEventTitleHint,
+          ),
+          const SizedBox(height: 12),
+
+          AppTextField(
+            controller: _locationController,
+            textCapitalization: TextCapitalization.sentences,
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(calendarLocationMaxLength),
+            ],
+            label: l10n.calendarEventLocation,
+            placeholder: l10n.calendarEventLocationHint,
           ),
           const SizedBox(height: 12),
 

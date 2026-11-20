@@ -5,6 +5,16 @@ const _sentinel = Object();
 /// Milliseconds in exactly 24 hours.
 const int _msPerDay = 24 * 60 * 60 * 1000;
 
+/// `updateEventSchema` caps `location` at `MAX_SEARCH_LENGTH`.
+const int calendarLocationMaxLength = 500;
+
+String? _calendarLocation(Object? value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return null;
+  return trimmed;
+}
+
 enum WorkingLocationKind { home, office, school, custom }
 
 class CalendarEvent extends Equatable {
@@ -12,6 +22,7 @@ class CalendarEvent extends Equatable {
     required this.id,
     this.title,
     this.description,
+    this.location,
     this.startAt,
     this.endAt,
     this.color,
@@ -36,6 +47,7 @@ class CalendarEvent extends Equatable {
       id: json['id'] as String,
       title: json['title'] as String?,
       description: json['description'] as String?,
+      location: _calendarLocation(json['location']),
       startAt: rawStart?.toUtc(),
       endAt: rawEnd?.toUtc(),
       color: json['color'] as String?,
@@ -55,6 +67,9 @@ class CalendarEvent extends Equatable {
   final String id;
   final String? title;
   final String? description;
+
+  /// Meeting place. Working-location events use [workingLocationKind] instead.
+  final String? location;
   final DateTime? startAt;
   final DateTime? endAt;
   final String? color;
@@ -110,6 +125,13 @@ class CalendarEvent extends Equatable {
 
   bool get isWorkingLocation => workingLocationKind != null;
 
+  /// Blank locations are absent. Callers that build events directly still trim.
+  String? get place {
+    final value = location?.trim();
+    if (value == null || value.isEmpty) return null;
+    return value;
+  }
+
   /// Duration in minutes between start and end, or 0 if either is null.
   int get durationMinutes {
     if (startAt == null || endAt == null) return 0;
@@ -128,6 +150,7 @@ class CalendarEvent extends Equatable {
     String? id,
     Object? title = _sentinel,
     Object? description = _sentinel,
+    Object? location = _sentinel,
     Object? startAt = _sentinel,
     Object? endAt = _sentinel,
     Object? color = _sentinel,
@@ -147,6 +170,7 @@ class CalendarEvent extends Equatable {
     description: description == _sentinel
         ? this.description
         : description as String?,
+    location: location == _sentinel ? this.location : location as String?,
     startAt: startAt == _sentinel ? this.startAt : startAt as DateTime?,
     endAt: endAt == _sentinel ? this.endAt : endAt as DateTime?,
     color: color == _sentinel ? this.color : color as String?,
@@ -168,6 +192,7 @@ class CalendarEvent extends Equatable {
     'id': id,
     'title': title,
     'description': description,
+    'location': location,
     'start_at': startAt?.toUtc().toIso8601String(),
     'end_at': endAt?.toUtc().toIso8601String(),
     'color': color,
@@ -184,6 +209,7 @@ class CalendarEvent extends Equatable {
     id,
     title,
     description,
+    location,
     startAt,
     endAt,
     color,

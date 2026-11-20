@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/router/mobile_link_launcher.dart';
+import 'package:mobile/core/ui/components/app_button.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/kit/app_event_block.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/data/models/calendar_event.dart';
+import 'package:mobile/features/calendar/utils/calendar_location.dart';
 import 'package:mobile/features/calendar/utils/calendar_time_format.dart';
 import 'package:mobile/features/calendar/utils/event_tone.dart';
 import 'package:mobile/features/calendar/widgets/calendar_description_body.dart';
@@ -44,6 +48,8 @@ class EventDetailContent extends StatelessWidget {
     final endDate = end != null && event.isMultiDay
         ? ' – ${DateFormat.MMMEd(locale).format(end)}'
         : '';
+    final place = event.place;
+    final mapUri = calendarLocationMapUri(place);
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         20,
@@ -107,6 +113,22 @@ class EventDetailContent extends StatelessWidget {
               ),
             ],
           ),
+          if (place != null && mapUri != null) ...[
+            const SizedBox(height: 16),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: AppButton.ghost(
+                semanticLabel: l10n.calendarEventOpenLocation,
+                leading: const Icon(LucideIcons.mapPin),
+                onPressed: () => openMobileLink(context, mapUri),
+                child: Text(
+                  place,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
           if (event.description?.isNotEmpty ?? false) ...[
             const SizedBox(height: 24),
             CalendarDescriptionBody(description: event.description!),

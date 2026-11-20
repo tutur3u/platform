@@ -3499,6 +3499,24 @@ abstract class AppLocalizations {
   /// **'End time'**
   String get calendarEventEndTime;
 
+  /// No description provided for @calendarEventLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get calendarEventLocation;
+
+  /// No description provided for @calendarEventLocationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get calendarEventLocationHint;
+
+  /// No description provided for @calendarEventOpenLocation.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in Maps'**
+  String get calendarEventOpenLocation;
+
   /// No description provided for @calendarEventSave.
   ///
   /// In en, this message translates to:

@@ -34,6 +34,7 @@ class _CalendarEventFingerprint {
       <Object?>[
         _normalizeText(event.title),
         _normalizeText(event.description),
+        _normalizeText(event.place),
         event.startAt?.toUtc().microsecondsSinceEpoch,
         event.endAt?.toUtc().microsecondsSinceEpoch,
         event.color?.trim().toLowerCase(),

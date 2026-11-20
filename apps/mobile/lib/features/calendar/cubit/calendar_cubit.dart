@@ -529,6 +529,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     required DateTime startAt,
     required DateTime endAt,
     String? description,
+    String? location,
     String? color,
   }) async {
     if (isClosed || _wsId != wsId) return;
@@ -541,6 +542,7 @@ class CalendarCubit extends Cubit<CalendarState> {
         'start_at': startAt.toUtc().toIso8601String(),
         'end_at': endAt.toUtc().toIso8601String(),
         'color': color,
+        if (location != null) 'location': location,
       });
 
       if (userId != currentCacheUserId()) return;
@@ -566,6 +568,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     String eventId, {
     String? title,
     String? description,
+    String? location,
     DateTime? startAt,
     DateTime? endAt,
     String? color,
@@ -573,6 +576,7 @@ class CalendarCubit extends Cubit<CalendarState> {
     final data = <String, dynamic>{};
     if (title != null) data['title'] = title;
     if (description != null) data['description'] = description;
+    if (location != null) data['location'] = location;
     if (startAt != null) data['start_at'] = startAt.toUtc().toIso8601String();
     if (endAt != null) data['end_at'] = endAt.toUtc().toIso8601String();
     if (color != null) data['color'] = color;
@@ -584,6 +588,7 @@ class CalendarCubit extends Cubit<CalendarState> {
       return e.copyWith(
         title: title ?? e.title,
         description: description ?? e.description,
+        location: location ?? e.location,
         startAt: startAt ?? e.startAt,
         endAt: endAt ?? e.endAt,
         color: color ?? e.color,

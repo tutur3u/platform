@@ -1,7 +1,7 @@
 ---
 title: "Calendar"
 description: "Calendar behavior across Web, standalone Calendar, and mobile."
-updatedAt: "2026-11-14"
+updatedAt: "2026-11-20"
 audience: users
 ---
 
@@ -120,6 +120,19 @@ the same Google occurrence independently after an edit; a local toast is not
 provider read-back evidence. The current Google write mapper uses `dateTime`
 fields and does not provide native Google date-only all-day writes. Native
 Tuturuuu all-day events do not require that provider path.
+
+## Event location
+
+A calendar event's `location` is the meeting place. It is separate from the
+working-location strip (Home, Office, School). Web reads and edits the string
+on the event, and a non-empty value can open Google Maps.
+
+Mobile uses that same field. The agenda, the timed event card, and the event
+detail show it. Create and update send it, including an empty string when the
+editor clears it. The editor accepts at most 500 characters, the calendar
+update schema limit. The detail action opens Maps through the mobile link
+launcher. Import deduplication treats a different location as a different
+event. Coverage lives in the mobile calendar location tests.
 
 ## Default calendar view
 

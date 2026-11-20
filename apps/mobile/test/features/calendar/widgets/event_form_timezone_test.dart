@@ -137,7 +137,10 @@ void main() {
       );
       await tester.tap(find.text('Open editor'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Oct 5, 2026').first);
+      final date = find.text('Oct 5, 2026').first;
+      await tester.ensureVisible(date);
+      await tester.pumpAndSettle();
+      await tester.tap(date);
       await tester.pumpAndSettle();
       await tester.tap(
         find.descendant(

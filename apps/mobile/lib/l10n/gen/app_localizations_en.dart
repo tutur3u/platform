@@ -1794,6 +1794,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarEventEndTime => 'End time';
 
   @override
+  String get calendarEventLocation => 'Location';
+
+  @override
+  String get calendarEventLocationHint => 'Add location';
+
+  @override
+  String get calendarEventOpenLocation => 'Open in Maps';
+
+  @override
   String get calendarEventSave => 'Save';
 
   @override

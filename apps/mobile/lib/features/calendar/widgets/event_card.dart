@@ -64,6 +64,7 @@ class EventCard extends StatelessWidget {
     final width = columnWidth - 2; // 2px gap between columns.
 
     final time = formatCalendarTimeRange(context, event.startAt, event.endAt);
+    final place = event.place;
 
     return Positioned(
       top: top,
@@ -72,7 +73,11 @@ class EventCard extends StatelessWidget {
       height: height,
       child: Semantics(
         button: true,
-        label: [event.title ?? '', if (time.isNotEmpty) time].join(', '),
+        label: [
+          event.title ?? '',
+          if (time.isNotEmpty) time,
+          if (place != null) place,
+        ].join(', '),
         onTap: onTap,
         excludeSemantics: true,
         child: GestureDetector(
@@ -107,6 +112,17 @@ class EventCard extends StatelessWidget {
                     if (showTime)
                       Text(
                         time,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontSize: 10,
+                          height: 1.1,
+                          color: titleColor,
+                        ),
+                      ),
+                    if (showTime && place != null)
+                      Text(
+                        place,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(

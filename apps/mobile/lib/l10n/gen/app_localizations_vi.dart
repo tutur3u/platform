@@ -1781,6 +1781,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get calendarEventEndTime => 'Giờ kết thúc';
 
   @override
+  String get calendarEventLocation => 'Địa điểm';
+
+  @override
+  String get calendarEventLocationHint => 'Thêm địa điểm';
+
+  @override
+  String get calendarEventOpenLocation => 'Mở trong Bản đồ';
+
+  @override
   String get calendarEventSave => 'Lưu';
 
   @override
