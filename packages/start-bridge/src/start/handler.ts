@@ -25,6 +25,7 @@ import { fromNextSourcePattern, matchRoute } from '../core/route-match';
 import { publishWebApiOriginPolicy } from '../core/web-api-origin-policy';
 import {
   type BridgeDispatch,
+  defaultProxyMatches,
   dispatchThroughProxy,
   type NextProxy,
 } from '../next/proxy-bridge';
@@ -152,6 +153,19 @@ export function createBridgeHandler<
     path === prefix || path.startsWith(`${prefix}/`);
   const inFunctionBase = (path: string) =>
     !!options.functionBase && inBase(path, options.functionBase);
+  const rootMatches = options.matches ?? defaultProxyMatches;
+  /**
+   * Whether a request runs the app's proxy (or function proxy). A server
+   * function always does: its id is the first segment, so a trailing dotted
+   * segment must not skip the session check. On a mount every non-asset path
+   * does, because the apex session is provider-only and Start pages and actions
+   * do not re-check assurance; assets are served before this point. The app's
+   * matcher applies at the root host.
+   */
+  const proxyMatches =
+    (mounted: boolean) =>
+    (path: string): boolean =>
+      mounted || inFunctionBase(path) || rootMatches(path);
 
   /**
    * The one-origin switch `TTR_ONE_ORIGIN_<APP>` (`off`/`shadow`/`on`, with
@@ -312,7 +326,7 @@ export function createBridgeHandler<
           : (work) => ctx.waitUntil(work),
         cloudflare: { env, ctx },
         observeNavigation: options.observeNavigation,
-        matches: options.matches,
+        matches: proxyMatches(!base.isRoot),
         requestInit: options.requestInit,
         rewriteOrigins: [centralApiOrigin(env)],
         nonce,
