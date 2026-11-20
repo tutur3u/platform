@@ -18,6 +18,8 @@ import {
 // framing, sniffing, referrer and private caching on every response; only
 // GET/HEAD static files keep their own caching.
 const rootPolicy = createRootResponsePolicy({ seo: appRobots });
+const FINGERPRINTED_ASSET =
+  /^\/assets\/.+-[\w-]{8}\.(?:css|js|mjs|woff2?|wasm|png|svg|webp)$/u;
 
 function readVar(env: unknown, name: string) {
   const binding =
@@ -51,6 +53,24 @@ export default defineBridgeAppConfig({
   csp: defaultContentSecurityPolicy,
   async wrapResponse(response, context) {
     const secured = await rootPolicy(response, context);
+    const { request } = context;
+    const url = new URL(request.url);
+    const path =
+      url.hostname === 'tuturuuu.com'
+        ? url.pathname.slice('/learn'.length)
+        : url.pathname;
+    if (
+      (request.method === 'GET' || request.method === 'HEAD') &&
+      secured.status === 200 &&
+      FINGERPRINTED_ASSET.test(path) &&
+      secured.headers.get('Cache-Control')?.startsWith('public,') &&
+      !secured.headers.has('Set-Cookie')
+    ) {
+      secured.headers.set(
+        'Cache-Control',
+        'public, max-age=31536000, immutable'
+      );
+    }
     if (response.headers.get('Referrer-Policy') === 'no-referrer') {
       secured.headers.set('Referrer-Policy', 'no-referrer');
     }
@@ -58,7 +78,7 @@ export default defineBridgeAppConfig({
       secured,
       learnSecurityProfile(context.env),
       {
-        requestOrigin: new URL(context.request.url).origin,
+        requestOrigin: url.origin,
         sharedOrigin:
           readVar(context.env, 'NEXT_PUBLIC_WEB_APP_URL') ??
           'https://tuturuuu.com',
