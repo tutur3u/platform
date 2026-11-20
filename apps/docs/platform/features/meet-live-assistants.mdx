@@ -30,7 +30,8 @@ defaults never satisfy it.
 
 An active Private Live session rechecks the kill switch and the full workspace
 gate (protected ids, denylist, reviewed opt-in or allowlist) on every client
-turn and on its 20-second tick, before any disconnected recovery or reconnect.
+turn (including a client stop), on an abnormal socket close and on its
+20-second tick, before any end-of-input signal, recovery or reconnect.
 A closed gate ends the session with `workspace_not_enabled` and closes the
 provider without sending further input (no end-of-stream signal); usage already
 received settles, pending usage is marked incomplete, and cleanup runs. The Live Durable Object rechecks the account, audience and payer before
@@ -116,14 +117,29 @@ ended room is restored.
 
 Each reserved request records its source accounts (the requester and every
 author whose messages it carries) with their exact consent revision. Sending
-that saved context to the provider again (`ai.review.claim`), the server's
-check immediately before dispatch (`mira.room.verify`), saving a private review
+that saved context to the provider again (`ai.review.claim`), every provider
+request (below), saving a private review
 and every publication (a reply posted by `ai.finish`, `ai.review.share`) require
-the all-participant fence and every source unchanged. Generation hands the
-provider a guarded fetch: every outbound provider request, including each model
-step and the model-backed web search, runs `mira.room.verify` first, so a
-withdrawal between steps stops the next request before it leaves. Usage from
-requests that already ran is recorded as unpriced, never as zero. A source who pauses and
+the all-participant fence and every source unchanged.
+
+Every outbound provider request, including each model step and the
+model-backed web search, holds a dispatch lease in the meeting room. The room
+admits it (`mira.room.dispatch`) only while the fence and every source revision
+are current, serialized with consent changes, and the release
+(`mira.room.release`) reports whether consent stayed unchanged until the
+answer arrived. A Pause recorded after admission is ordered after that request:
+its answer is discarded and every later request is refused, so no output
+produced across a withdrawal is used or published. The provider key and
+destination stay in the Meet Worker; the room records only admission. An
+admitted request's bytes may already have left when a Pause lands; fully
+serializing transport with consent would require the room to hold dispatch
+for the request's duration.
+
+Settlement carries what was received: usage measured from every provider
+answer (including a discarded one) bills both the AI Studio run and the room
+cost. When a received answer lacks usage, or a request failed without an
+answer, the room cost is unpriced and AI Studio keeps the reserved hold; with
+no request sent, nothing is billed. A source who pauses and
 leaves, or returns with a new Continue (a new revision), makes the request and
 its saved review stale; the requester can still discard it, and incurred cost
 settles without posting a reply. Requests reserved without recorded sources are
@@ -178,10 +194,14 @@ opt-in), `check-meet-ai-containment.test.js`, `private-notice.test.tsx`,
 with a new revision, stale saved reviews, an earlier Mira reply quoting a
 withdrawn author), `chat-provider-fetch.test.ts` (`packages/ai`: every model
 step and the search use the guarded fetch), the Meet `assistant/route.test.ts`
-(consent verified before each provider request, a mid-generation withdrawal), `workspace-gate.test.ts` and
-`session.recovery.test.ts` and `provider-drain.test.ts` (a revoked turn sends no
-input upstream, a disconnected revoked session never re-arms recovery, billing
-finalizes), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
+(a mid-generation withdrawal, a consent change during flight, both
+settlements), `room-mira-provider-fetch.test.ts` (real room reducer with a
+Pause before admission, between admission and transport, and in flight),
+`chat-billing.test.ts` (observed, unpriced and empty partial settlement), `workspace-gate.test.ts` and
+`session.recovery.test.ts` and `provider-drain.test.ts` (a revoked turn, client
+stop or abnormal close sends no input upstream and never arms recovery, a
+disconnected revoked session ends, billing finalizes with pending usage marked
+incomplete), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
 and `token.test.ts`. Synthetic checks do not establish production key identity,
 hosted credit settlement on the root workspace or successful live invitations.
 
