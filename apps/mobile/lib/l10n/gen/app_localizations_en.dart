@@ -2507,6 +2507,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsAttendanceClear => 'Not marked';
 
   @override
+  String contactsAttendanceForDay(String group, String date) {
+    return '$group · $date';
+  }
+
+  @override
   String get contactsAttendanceSaved => 'Attendance saved.';
 
   @override

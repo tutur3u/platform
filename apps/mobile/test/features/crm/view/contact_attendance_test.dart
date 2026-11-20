@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
 import 'package:mobile/features/crm/view/contact_attendance_sheet.dart';
 
+import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/pump_app.dart';
 
 void main() {
@@ -30,4 +31,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(saved, {'u1': 'PRESENT'});
   });
+
+  for (final theme in ['light', 'dark']) {
+    testWidgets('clears an existing attendance mark in $theme', (tester) async {
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      await tester.runAsync(DesignRender.loadFonts);
+      final (settings, brightness) = DesignRender.themes[theme]!;
+      Map<String, String>? saved;
+      await tester.pumpWidget(
+        DesignRenderApp(
+          settings: settings,
+          brightness: brightness,
+          child: ContactAttendanceSheet(
+            title: 'Study group · Nov 19, 2026',
+            members: const [
+              CrmGroupMember(id: 'ava', displayName: 'Ava Nguyen'),
+              CrmGroupMember(id: 'sam', displayName: 'Sam Le'),
+            ],
+            initialStatus: const {'ava': 'ABSENT', 'sam': 'PRESENT'},
+            canEdit: true,
+            onSave: (status) async => saved = Map.of(status),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Ava Nguyen'));
+      await tester.pumpAndSettle();
+      expect(find.text('Not marked'), findsOneWidget);
+      await DesignRender.capture(tester, 'contacts-attendance-$theme');
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      expect(saved, {'ava': 'NONE', 'sam': 'PRESENT'});
+    });
+  }
 }

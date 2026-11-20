@@ -2493,6 +2493,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get contactsAttendanceClear => 'Chưa điểm danh';
 
   @override
+  String contactsAttendanceForDay(String group, String date) {
+    return '$group · $date';
+  }
+
+  @override
   String get contactsAttendanceSaved => 'Đã lưu điểm danh.';
 
   @override

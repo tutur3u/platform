@@ -2091,6 +2091,7 @@
   "contactsApprovals": "Phê duyệt",
   "contactsAttendance": "Điểm danh",
   "contactsAttendanceClear": "Chưa điểm danh",
+  "contactsAttendanceForDay": "{group} · {date}",
   "contactsAttendanceSaved": "Đã lưu điểm danh.",
   "contactsAttentionCaption": "Trong danh sách đã tải",
   "contactsDetails": "Chi tiết",

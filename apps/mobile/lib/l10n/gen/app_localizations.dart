@@ -4873,6 +4873,12 @@ abstract class AppLocalizations {
   /// **'Not marked'**
   String get contactsAttendanceClear;
 
+  /// No description provided for @contactsAttendanceForDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{group} · {date}'**
+  String contactsAttendanceForDay(String group, String date);
+
   /// No description provided for @contactsAttendanceSaved.
   ///
   /// In en, this message translates to:

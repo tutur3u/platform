@@ -54,6 +54,7 @@ class CrmAttendanceMark extends Equatable {
     required this.userId,
     required this.status,
     this.sessionId,
+    this.notes,
   });
 
   factory CrmAttendanceMark.fromJson(Map<String, dynamic> json) {
@@ -61,15 +62,17 @@ class CrmAttendanceMark extends Equatable {
       userId: crmAsString(json['user_id']) ?? '',
       status: crmAsString(json['status']) ?? 'NONE',
       sessionId: crmAsString(json['session_id']),
+      notes: crmAsString(json['notes']),
     );
   }
 
   final String userId;
   final String status;
   final String? sessionId;
+  final String? notes;
 
   @override
-  List<Object?> get props => [userId, status, sessionId];
+  List<Object?> get props => [userId, status, sessionId, notes];
 }
 
 class CrmGroupMember extends Equatable {

@@ -276,30 +276,30 @@ extension _CrmPageActions on _CrmPageState {
         sessionId: session.id,
       );
       if (!mounted) return;
+      final marksByUser = {
+        for (final mark in marks)
+          if (mark.sessionId == null) mark.userId: mark,
+        for (final mark in marks)
+          if (mark.sessionId == session.id) mark.userId: mark,
+      };
+      final initial = marksByUser.map((id, mark) => MapEntry(id, mark.status));
       final saved = await _showOwnedSheet<bool>(
         context: context,
         builder: (context) => ContactAttendanceSheet(
           title: session.label,
           members: members,
           canEdit: _canCheckAttendance,
-          initialStatus: {
-            for (final mark in marks)
-              if (mark.sessionId == null || mark.sessionId == session.id)
-                mark.userId: mark.status,
-          },
-          onSave: (statusByUser) {
-            final payload = [
-              for (final entry in statusByUser.entries)
-                if (entry.value != 'NONE')
-                  {
-                    'date': date,
-                    'status': entry.value,
-                    'user_id': entry.key,
-                    'session_id': session.id,
-                  },
-            ];
-            if (payload.isEmpty) return Future<void>.value();
-            return _repository.saveAttendance(wsId, session.groupId, payload);
+          initialStatus: initial,
+          onSave: (statusByUser) async {
+            final payload = contactAttendanceChanges(
+              date: date,
+              initial: marksByUser,
+              current: statusByUser,
+              sessionId: session.id,
+            );
+            if (payload.isNotEmpty) {
+              await _repository.saveAttendance(wsId, session.groupId, payload);
+            }
           },
         ),
       );

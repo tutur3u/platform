@@ -128,29 +128,44 @@ extension _CrmSections on _CrmPageState {
   Future<void> _showGroupAttendance(CrmGroup group) async {
     final wsId = _wsId;
     if (wsId == null) return;
-    final now = DateTime.now();
-    final month = now.month.toString().padLeft(2, '0');
-    final day = now.day.toString().padLeft(2, '0');
-    final date = '${now.year}-$month-$day';
+    final today = DateUtils.dateOnly(DateTime.now());
+    final start = DateTime.tryParse(group.startingDate ?? '');
+    final firstDate = start != null && !start.isAfter(today)
+        ? DateUtils.dateOnly(start)
+        : DateTime(1900);
+    final selected = await showAppDatePicker(
+      context: context,
+      initialDate: today,
+      firstDate: firstDate,
+      lastDate: today,
+    );
+    if (!mounted || selected == null) return;
+    final date = DateFormat('yyyy-MM-dd', 'en').format(selected);
     try {
       final members = await _repository.getGroupMembers(wsId, group.id);
       final marks = await _repository.getAttendance(wsId, group.id, date: date);
       if (!mounted) return;
+      final marksByUser = {for (final mark in marks) mark.userId: mark};
+      final initial = marksByUser.map((id, mark) => MapEntry(id, mark.status));
+      final dayLabel = DateFormat.yMMMd(
+        Localizations.localeOf(context).toString(),
+      ).format(selected);
       await _showOwnedSheet<bool>(
         context: context,
         builder: (context) => ContactAttendanceSheet(
-          title: group.name,
+          title: context.l10n.contactsAttendanceForDay(group.name, dayLabel),
           members: members,
           canEdit: _canCheckAttendance,
-          initialStatus: {for (final mark in marks) mark.userId: mark.status},
-          onSave: (statusByUser) {
-            final payload = [
-              for (final entry in statusByUser.entries)
-                if (entry.value != 'NONE')
-                  {'date': date, 'status': entry.value, 'user_id': entry.key},
-            ];
-            if (payload.isEmpty) return Future<void>.value();
-            return _repository.saveAttendance(wsId, group.id, payload);
+          initialStatus: initial,
+          onSave: (statusByUser) async {
+            final payload = contactAttendanceChanges(
+              date: date,
+              initial: marksByUser,
+              current: statusByUser,
+            );
+            if (payload.isNotEmpty) {
+              await _repository.saveAttendance(wsId, group.id, payload);
+            }
           },
         ),
       );

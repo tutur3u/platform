@@ -30,4 +30,31 @@ void main() {
     expect(contactNextAttendanceStatus('LATE'), 'ABSENT');
     expect(contactNextAttendanceStatus('ABSENT'), 'NONE');
   });
+
+  test('attendance changes preserve a clear and omit unchanged marks', () {
+    expect(
+      contactAttendanceChanges(
+        date: '2026-11-20',
+        initial: const {
+          'clear': CrmAttendanceMark(
+            userId: 'clear',
+            status: 'LATE',
+            notes: 'Excused delay',
+          ),
+          'keep': CrmAttendanceMark(userId: 'keep', status: 'PRESENT'),
+        },
+        current: const {'clear': 'NONE', 'keep': 'PRESENT', 'empty': 'NONE'},
+        sessionId: 'session',
+      ),
+      [
+        {
+          'date': '2026-11-20',
+          'status': 'NONE',
+          'user_id': 'clear',
+          'session_id': 'session',
+          'notes': 'Excused delay',
+        },
+      ],
+    );
+  });
 }

@@ -45,3 +45,20 @@ String contactNextAttendanceStatus(String status) {
     _ => 'NONE',
   };
 }
+
+List<Map<String, String>> contactAttendanceChanges({
+  required String date,
+  required Map<String, CrmAttendanceMark> initial,
+  required Map<String, String> current,
+  String? sessionId,
+}) => [
+  for (final entry in current.entries)
+    if ((initial[entry.key]?.status ?? 'NONE') != entry.value)
+      {
+        'date': date,
+        'status': entry.value,
+        'user_id': entry.key,
+        if (initial[entry.key]?.notes case final note?) 'notes': note,
+        if (sessionId != null) 'session_id': sessionId,
+      },
+];
