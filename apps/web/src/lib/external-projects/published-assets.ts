@@ -3,7 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   parseWebglPackageArtifactMetadata,
   WEBGL_PACKAGE_ASSET_TYPE,
-} from './webgl-packages';
+} from './webgl-package-artifact';
 
 type Entry = { id: string; published_at: string | null; profile_data: unknown };
 type Asset = { id: string; entry_id: string | null; updated_at: string };
