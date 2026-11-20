@@ -4,7 +4,6 @@ import {
   validateTeachCourse,
   validateTeachCourseModule,
 } from '@tuturuuu/education-core/teach/api';
-import { updateModuleCompletionStatus } from '@tuturuuu/education-core/tulearn/completion';
 import type { Json } from '@tuturuuu/types/db';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -345,8 +344,6 @@ export const POST = withSessionAuth(
           { status: 404 }
         );
       }
-
-      await updateModuleCompletionStatus(access.sbAdmin, moduleId, userId);
 
       return NextResponse.json({ success: true });
     } catch (error) {

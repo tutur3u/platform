@@ -2,7 +2,6 @@ import {
   resolveMatchingKey,
   resolveOrderingKey,
 } from '@tuturuuu/education-core/education/quiz-answer-key';
-import { updateModuleCompletionStatus } from '@tuturuuu/education-core/tulearn/completion';
 import {
   asRecord,
   displayText,
@@ -435,12 +434,6 @@ export const POST = withSessionAuth<Params>(
 
       if (insertErr) throw insertErr;
 
-      await updateModuleCompletionStatus(
-        sbAdmin,
-        moduleId,
-        subject.studentPlatformUserId
-      );
-
       return NextResponse.json({
         id: submission.id,
         correct_answer: revealScores ? correctAnswerFeedback : null,
@@ -511,12 +504,6 @@ export const DELETE = withSessionAuth<Params>(
         .eq('user_id', subject.studentPlatformUserId);
 
       if (error) throw error;
-
-      await updateModuleCompletionStatus(
-        sbAdmin,
-        moduleId,
-        subject.studentPlatformUserId
-      );
 
       return NextResponse.json({ success: true });
     } catch (error) {

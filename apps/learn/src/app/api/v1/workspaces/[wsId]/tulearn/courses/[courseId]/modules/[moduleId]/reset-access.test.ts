@@ -4,7 +4,6 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const state = vi.hoisted(() => ({
   module: vi.fn(),
   writes: vi.fn(),
-  completion: vi.fn(),
 }));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
@@ -17,9 +16,6 @@ vi.mock('@/lib/api-auth', () => ({
     ) =>
     (request: NextRequest, route: { params: unknown }) =>
       handler(request, { user: { id: 'actor' }, supabase: {} }, route.params),
-}));
-vi.mock('@tuturuuu/education-core/tulearn/completion', () => ({
-  updateModuleCompletionStatus: state.completion,
 }));
 vi.mock('@tuturuuu/education-core/tulearn/quiz-content', () => ({}));
 vi.mock('@tuturuuu/education-core/tulearn/service', () => ({
@@ -58,7 +54,6 @@ import { DELETE } from './route';
 beforeEach(() => {
   state.module.mockReset().mockResolvedValue(null);
   state.writes.mockReset();
-  state.completion.mockReset();
 });
 function reset() {
   return DELETE(new NextRequest('http://localhost/module'), {
@@ -68,7 +63,6 @@ function reset() {
 it('denies a reset outside the assigned course without progress writes', async () => {
   expect((await reset()).status).toBe(404);
   expect(state.writes).not.toHaveBeenCalled();
-  expect(state.completion).not.toHaveBeenCalled();
 });
 it('preserves reset inside an assigned course', async () => {
   state.module.mockResolvedValue({ id: 'module', quiz_deadline: null });
@@ -81,5 +75,7 @@ it('preserves reset inside an assigned course', async () => {
       studentWorkspaceUserId: 'virtual',
     })
   );
-  expect(state.completion).toHaveBeenCalledOnce();
+  expect(state.writes).toHaveBeenCalledExactlyOnceWith(
+    'course_module_quiz_submissions'
+  );
 });

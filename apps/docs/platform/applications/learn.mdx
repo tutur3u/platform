@@ -304,7 +304,7 @@ Tutoring lists explicitly assigned, pending, unresolved sessions. Assignments,
 lessons and tests come only from the actor's actual STUDENT course memberships
 in active, non-guest, published courses. Only approved assignments and published
 lessons/tests are visible. Completion comes from this actor's assignment checks,
-module completion records and submitted test attempts. Completed entries are
+score-release-aware lesson progress and submitted test attempts. Completed entries are
 hidden on the current page by default; the count includes assigned completed
 entries, and the toggle plus pagination avoids presenting an empty page as an
 empty workspace. Sessions show their recorded local date/time and duration,
@@ -375,6 +375,13 @@ web education routes; there is no learner-facing exception.
   submit response and attempt reads show a score only after
   `is_score_published`. Lesson option explanations follow the module's
   `is_quiz_score_published`, because they often name the right answer.
+- For a lesson with quizzes, Learn waits for quiz scores to be published
+  before marking the lesson complete or unlocking the next lesson. After
+  release, at least half of the lesson's current linked quizzes must be
+  correct. Lessons without quizzes count as complete. The course list,
+  course detail and personal To do apply the same rule.
+- Teach and Web save marks through server routes that check
+  `update_user_groups_scores` and validate the grade targets.
 - New workspaces default every `MEMBER` to `admin`. A school that enrols
   learners as members must turn that default off, or those learners keep
   course-manager access.
@@ -382,6 +389,8 @@ web education routes; there is no learner-facing exception.
 Regression coverage: the pgTAP files `education-quiz-key-access.sql`,
 `education-course-roster-access.sql`, `education-learner-grade-access.sql`,
 `education-learner-practice-links.sql` and
-`education-learner-attempt-submit.sql`; `quiz-answer-key.test.ts` in
+`education-learner-attempt-submit.sql` and
+`education-learner-marks-and-completion.sql`; `courses.test.ts` and
+`quiz-answer-key.test.ts` in
 education-core; Learn's test `release.test.ts`; Teach's quiz `route.test.ts`;
 and the web `quiz-attempts` route test.

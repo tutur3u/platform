@@ -298,13 +298,26 @@ describe('personal education to do', () => {
           workspace_course_modules: [
             {
               data: [
-                { id: 'lesson', name: 'Synthetic lesson', group_id: 'course' },
+                {
+                  id: 'lesson',
+                  name: 'Synthetic lesson',
+                  group_id: 'course',
+                  is_quiz_score_published: true,
+                  course_module_quizzes: [{ quiz_id: 'quiz' }],
+                },
+                {
+                  id: 'unreleased',
+                  name: 'Unreleased lesson',
+                  group_id: 'course',
+                  is_quiz_score_published: false,
+                  course_module_quizzes: [{ quiz_id: 'quiz' }],
+                },
               ],
               count: 1,
             },
           ],
-          course_module_completion_status: [
-            { data: [{ module_id: 'lesson' }] },
+          course_module_quiz_submissions: [
+            { data: [{ module_id: 'lesson', quiz_id: 'quiz' }] },
           ],
         })
       );
@@ -325,12 +338,19 @@ describe('personal education to do', () => {
         args: ['is_published', app === 'learn'],
       });
       expect(result.data[0]?.completed).toBe(app === 'learn');
-      if (app === 'learn')
+      expect(result.data[1]?.completed).toBe(false);
+      if (app === 'learn') {
         expect(calls).toContainEqual({
-          table: 'course_module_completion_status',
+          table: 'course_module_quiz_submissions',
           method: 'eq',
           args: ['user_id', 'signed-in-user'],
         });
+        expect(calls).toContainEqual({
+          table: 'course_module_quiz_submissions',
+          method: 'in',
+          args: ['module_id', ['lesson']],
+        });
+      }
     }
   );
   it('counts only this learner submitted test attempts as completed', async () => {

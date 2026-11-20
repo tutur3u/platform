@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { hasEducationEnabled, TulearnAccessError } from '../tulearn/access';
+import { getLearnerCompletedModuleIds } from '../tulearn/completion';
 
 export type TodoKind = 'tutoring' | 'assignments' | 'lessons' | 'tests';
 export type TodoApp = 'learn' | 'teach';
@@ -203,27 +204,20 @@ export async function listEducationTodo({
   if (kind === 'lessons') {
     const { data, error, count } = await db
       .from('workspace_course_modules')
-      .select('id, name, group_id, quiz_deadline', { count: 'exact' })
+      .select(
+        'id, name, group_id, quiz_deadline, is_quiz_score_published, course_module_quizzes(quiz_id)',
+        { count: 'exact' }
+      )
       .in('group_id', courseIds)
       .eq('is_published', app === 'learn')
       .order('sort_key')
       .order('id')
       .range(from, to);
     if (error) throw error;
-    const ids = (data ?? []).map((row) => row.id);
-    const completions =
-      app === 'learn' && ids.length
-        ? await db
-            .from('course_module_completion_status')
-            .select('module_id')
-            .eq('user_id', userId)
-            .eq('completion_status', true)
-            .in('module_id', ids)
-        : { data: [], error: null };
-    if (completions.error) throw completions.error;
-    const completed = new Set(
-      (completions.data ?? []).map((row) => row.module_id)
-    );
+    const completed =
+      app === 'learn'
+        ? await getLearnerCompletedModuleIds(db, data ?? [], userId)
+        : new Set<string>();
     return {
       ...empty,
       data: (data ?? []).map((row) => ({
