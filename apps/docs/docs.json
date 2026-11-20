@@ -107,6 +107,7 @@
               "platform/features/assistant-reaction-retention",
               "platform/features/assistant-local-models",
               "platform/personal-proactive-execution",
+              "platform/features/bill-splitting",
               "platform/features/mobile-finance",
               "platform/features/mobile-timer",
               "platform/features/mira-health-planning-tools",

@@ -1,0 +1,141 @@
+---
+title: "Bill splitting"
+description: "Allocation, settlement, collaboration, and sharing rules for Tuturuuu Finance."
+audience: users
+---
+
+## Product scope
+
+Bill splits are private workspace records in standalone Finance, Finance in Web,
+and the Flutter Finance app. Finance editors create a draft, choose workspace
+contacts or members, enter expenses and payers, and preview each person's share
+before finalizing. A contact without a linked workspace account can be included
+in the calculation. A separately authenticated, authorized actor records any
+payment on that contact's behalf. Membership changes take effect on the next
+access check.
+
+A split has one settlement currency. Each expense records its original currency,
+payers, attendees, lines, adjustments, and, when needed, an explicit exchange
+rate. Each finalized revision preserves those inputs and the normalized ledger.
+Equal, percentage, and exact allocation apply to the whole expense or to each
+item. An expense attendee can be omitted from individual items. Tax, tip, and
+discount are allocated by each attendee's share of the expense subtotal unless
+the adjustment specifies its own allocation. A full sponsorship covers the
+beneficiary's remaining eligible share. A partial sponsorship moves a fixed
+amount of that share to the sponsor. Sponsorship is a reassignment of cost. Any
+reimbursement due to a sponsor is represented in the ledger and can carry a
+direct payment requirement.
+
+## Amounts and settlement
+
+Compute and store integer minor units. Convert an expense with a pinned rational
+rate in major units, accounting for both currencies' scales, and round its total
+half up. Allocate rounding differences with largest remainders and stable
+participant IDs for ties. Reconcile payer credits and share debits independently
+to the same converted total. A draft cannot finalize when payers do not reconcile,
+an exact split does not sum to its input, a sponsorship exceeds the remaining
+share, or a discount leaves a negative share. Foreign amounts remain visible
+alongside the normalized settlement amounts.
+
+A confirmed transfer reduces the sender's debt and the recipient's receivable by
+the confirmed amount. A report awaiting confirmation has no effect on balances.
+Confirmed partial payments reduce any matching direct obligation before routing
+the rest. Excess across a required pair remains a confirmed credit in the net
+ledger. The plan reserves the unpaid portion of each mandatory direct transfer
+and solves for the remaining net debtors and creditors. It counts distinct
+directed pairs, coalescing an additional transfer on a reserved pair into the
+same payment. The plan routes the residual directly from debtors to creditors
+without asking a participant to relay payments. Finalized revisions and
+confirmed payments are immutable. Corrections use a new revision or a recorded
+reversal with its own audit event.
+
+The solver explores residual balance states. For each possible debtor and
+creditor it considers a transfer of the smaller remaining amount, then continues
+with at least one endpoint cleared. An optimal residual flow can be made
+acyclic by canceling flow around cycles without adding edges. Every acyclic
+flow has a leaf whose transfer clears an endpoint, so searching these states
+covers an optimal solution. Memoization reuses the optimal continuation. A
+direct pair reserved earlier adds zero edges when reused. The endpoint and
+search-work bounds keep the calculation predictable. When a bound prevents
+proving optimality, label the feasible plan as a suggestion and retain the
+direct obligations. Verified plans show the minimum within this routing policy.
+
+## Data and permissions
+
+Store split headers and revisions, identities, expense allocations, directed
+obligations, payment events, comments, audit events, reminder jobs and link
+metadata in the private schema with RLS and explicit role grants. A composite
+workspace/split reference scopes each child; contacts and selected workspace
+members are validated against the same workspace. Use transactional revision
+checks and idempotency keys for mutations. Signed-in workspace members with
+Finance access read splits they manage or have joined. Editors manage their own
+splits. A linked debtor can report a payment and attach proof. Only the receiving
+party confirms it. Private proof downloads authorize against the payment and the
+current actor on every request. Comments and activity are visible only to split
+members. Realtime signals carry a revision or event cursor; each client refetches
+through its authorized API. Reminders run on Cloudflare with bounded retries,
+recipient preferences, deduplication, and a durable cancellation fence when a
+payment is confirmed, access is withdrawn, or reminders are disabled.
+
+Contact bank details live in a separate private relation with explicit consent and
+revocation history, independent of split display labels. Authorized members see
+masked details. A reveal or QR render requires reassessing workspace access and
+consent and records who accessed the account and why. Store bank identifiers and
+account details privately, and keep audit rows free of raw bank values. Consent
+withdrawal removes the usable details and invalidates QR access. Generate VietQR
+locally from validated bank details, without sending the account number to a
+third-party image generator.
+
+## Links and entitlement
+
+Canonical universal links open
+`/{locale}/{workspaceId}/finance/bill-splits/{splitId}` on Tuturuuu, with optional
+`/participants/{participantId}` and `/settlement` destinations. Standalone Finance
+uses the equivalent workspace route under its Finance mount. The app verifies
+the workspace, split, and target together before rendering. A signed-in link is
+navigation and does not confer membership. It prompts for login on both free and
+paid workspaces.
+
+A paid workspace can opt into a separate read-only settlement status link.
+Issue and redeem it only while the workspace passes the existing subscription
+tier check and the public feature flag is enabled. Missing billing or guard
+state fails closed. Use a random 256-bit token with a stored digest, expiry,
+revocation, and participant or settlement scope. The public entry page accepts
+the capability in the fragment and exchanges it in a same-origin request body
+to keep it out of request URLs and referrers. Responses contain settlement
+amounts and status plus explicitly chosen display names or nicknames. They omit
+contacts, workspace identifiers, item descriptions, comments, proof and account
+numbers. The link owner may explicitly include their own receiving QR. Show that
+a payment app can decode the QR into account details before enabling it. Downgrade,
+revocation, consent withdrawal and flag changes apply on the next request.
+Keep redemption and its projection private with `Cache-Control: no-store`.
+
+## Shared public abuse protection
+
+Screen public requests before looking up split data. Use the existing
+`tuturuuu-abuse-guard` service with trusted ingress identity, durable command
+budgets, per-IP admission before lookup, and a second quota keyed by a verified
+link digest. Require the existing Turnstile verifier on suspicious traffic,
+binding successful challenges to the server-owned action and trusted origin.
+Never allocate a per-link limiter to arbitrary supplied tokens. Denied,
+missing, expired and revoked links share the same resource-not-found response.
+Limit body size and reject malformed encodings before storage access. Exclude
+raw tokens, proof references and sensitive fields from logs and telemetry.
+
+Other public routes can reuse the admission adapter by supplying a fixed
+surface ID, trusted source identity, a verified subject when available, and
+surface-specific challenge policy. Stop admission durably before scheduling
+further work when the budget or activation fence closes. Keep bank, anonymous
+sharing and new public abuse call sites disabled by server-side flags until
+independent security review and staging verification are complete.
+
+## Verification
+
+Allocation tests cover integer conservation, excluded attendees, percentage and
+exact validation, sponsorships, multiple payers, adjustments and foreign rates.
+Settlement properties compare the plan's edge count with an independent
+brute-force oracle for small ledgers, and check conservation after direct and
+partial payments. Database and API coverage must establish cross-workspace
+denials, confirmation and retry behavior, bank and proof access, and anonymous
+projection and entitlement boundaries. Native acceptance covers universal links,
+authentication handoff and the Finance dock.
