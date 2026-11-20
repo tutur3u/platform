@@ -1,5 +1,5 @@
 // Bounded Worker log inventory for recent invocations. Replaces one-shot
-// wrangler tail review with cf logs query; live streaming remains a Wrangler gap.
+// Legacy CLI tail review with cf logs query; live streaming remains shared-toolchain.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -104,7 +104,7 @@ async function main() {
     console.log(`Usage: node scripts/ci/cf-worker-observability.mjs <worker> [--since minutes] [--limit n]
 
 Query recent Worker invocation logs with cf logs query. This path is bounded and
-non-streaming; wrangler tail remains required for a live tail until cf supports it.`);
+non-streaming; live tails stay on shared-toolchain until cf supports streaming.`);
     return;
   }
   const worker = positionals[0];

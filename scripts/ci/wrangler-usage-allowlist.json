@@ -465,13 +465,13 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 13,
-      "uses": 15,
-      "digest": "010069c682daa7284540b738215c242510fcc77667accd5376458aeee4f79e6e",
+      "lines": 18,
+      "uses": 20,
+      "digest": "56204f0159424fb472deaff511e5928224bd4c598a620f55d7c6dcf0a1114690",
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
-        "reason": "The added step label documents that the opt-in cf rehearsal leaves the current OpenNext publisher in charge. It adds no legacy CLI invocation."
+        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
+        "reason": "Gateway production slice adds owner-gated cf rehearsal and live upload steps while Wrangler remains the default publisher and traffic deploy path."
       }
     },
     ".github/workflows/web-start-candidate.yaml": {
@@ -2313,24 +2313,14 @@
       "digest": "66f103085b57e80756d101f8e6d643838195b02c80731d24fd147f834120c634"
     },
     "scripts/check-cloudflare-workers.js": {
-      "lines": 54,
-      "uses": 62,
+      "lines": 1,
+      "uses": 1,
       "gap": "paused-runtime",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/8394",
-        "reason": "#8361 checks that Worker configs disable public development origins; reads config names, no CLI invocation."
+        "reason": "Paused-runtime Cloudflare checks retain gitignore rules and root shared CLI devDependency only; backend and TanStack config guardrails removed from the active path."
       },
-      "digest": "7b5a8f5b0fce9fa38680fa5bb888484abea3175e690054d25448140bf5223869"
-    },
-    "scripts/check-cloudflare-workers.test.js": {
-      "lines": 48,
-      "uses": 52,
-      "gap": "paused-runtime",
-      "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
-      },
-      "digest": "066ababd236575df1327eb049f12227da1d7478509a73c8820972f51fb70e61d"
+      "digest": "1a231637348946a4b2425955f4fb18661b4fcba1647b067ef064f7110339dd6e"
     },
     "scripts/check-meet-ai-containment.js": {
       "lines": 1,
@@ -2794,13 +2784,13 @@
     },
     "scripts/ci/fixtures/cf-toolchain-receipts.json": {
       "lines": 36,
-      "uses": 47,
+      "uses": 48,
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/66efe40514443839360781f130807325630d9f56",
-        "reason": "Adds gateway-m4-cf-version-rehearsal qualified receipt alongside prior void-wave1 and DO switches."
+        "decision": "https://github.com/tutur3u/platform/commit/823191d00b6b979b3736e0f341b5979e62c9da8f",
+        "reason": "Records observability qualification alongside gateway production slice receipts; prose references retained legacy CLI operations."
       },
-      "digest": "794546ca73fd71c3a5c39ea3036517987cbec9303d38a9f3135d5aa61ba32100"
+      "digest": "9966617af1dc76c8ffd1d4a009508d66bf86121a36893621a585d846eb8de0a4"
     },
     "scripts/ci/fixtures/cf-worker-parity/coordination.json": {
       "lines": 1,
@@ -2857,10 +2847,10 @@
       "uses": 5,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/d0f9c1c4e12f7550af7e93049b7480e8bb96c3b1",
-        "reason": "Writes the gateway Wrangler deploy config from the committed config plus live settings and lists the secret names each family wrangler config requires."
+        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
+        "reason": "Gateway deploy config writer reads cloudflare.config.ts for operator merge parity while OpenNext family deploy configs remain on the legacy JSONC shape."
       },
-      "digest": "02a90047e3f8af075b839b50b2cfa48380de194c7221f2748ec58b855df655f3"
+      "digest": "d6c8e9ef37cb66793a0ad104d2718eecaae4d0f8d4ca52a10f473533baab4f28"
     },
     "scripts/ci/gateway-deploy-config.test.mjs": {
       "lines": 1,
@@ -3641,6 +3631,16 @@
         "reason": "Four fixture path literals, no CLI: the seal regression reads the sealed publication config the admitted wave1-native-artifact writes (dist/wave1/wrangler.json), tampers it, and checks the recreated Void pointer and its Void-emitted server/wrangler.json target. Remove with wave1-web-seal.mjs's entry, when the wave-1 seal publishes a cf Build Output instead of a Void-emitted Wrangler config."
       },
       "digest": "a4a353fa3c894f530726d9581cda208933d0ef09a4753282f43934c4437cade3"
+    },
+    "scripts/ci/web-opennext-gateway-workflow.test.js": {
+      "lines": 5,
+      "uses": 6,
+      "gap": "opennext-web-families",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
+        "reason": "Regression test asserts owner-gated cf upload and Wrangler fallback steps in the production gateway workflow."
+      },
+      "digest": "34b2e8859a22c122b1dbead53d1e097f0bf8851d623bc97470eafa1647837ee1"
     },
     "scripts/ci/web-opennext-size.mjs": {
       "lines": 7,
