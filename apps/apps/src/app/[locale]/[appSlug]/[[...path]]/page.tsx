@@ -1,7 +1,12 @@
 import { NO_INDEX_ROBOTS } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import { buildGatewayRedirectUrl, getGatewayApp } from '@/lib/apps-registry';
+import {
+  buildGatewayRedirectUrl,
+  GATEWAY_SEARCH_HEADER,
+  getGatewayApp,
+} from '@/lib/apps-registry';
 
 export const metadata: Metadata = {
   robots: NO_INDEX_ROBOTS,
@@ -12,13 +17,9 @@ interface Props {
     appSlug: string;
     path?: string[];
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function GatewayRedirectPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function GatewayRedirectPage({ params }: Props) {
   const { appSlug, path } = await params;
   const app = getGatewayApp(appSlug);
 
@@ -30,7 +31,7 @@ export default async function GatewayRedirectPage({
     buildGatewayRedirectUrl({
       app,
       path,
-      searchParams: await searchParams,
+      search: (await headers()).get(GATEWAY_SEARCH_HEADER) ?? '',
     })
   );
 }

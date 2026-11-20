@@ -17,6 +17,10 @@ for (const [path, area] of [
 
 for (const [next, expected] of [
   ['/lms/learn/w/parent-invite?x=1&x=2', '/lms/learn/w/parent-invite?x=1&x=2'],
+  [
+    '/lms?x=1&empty=&x=2&space=a+b&space=a%20b&slash=%2f&unicode=caf%C3%A9#section',
+    '/lms?x=1&empty=&x=2&space=a+b&space=a%20b&slash=%2f&unicode=caf%C3%A9',
+  ],
   ['//evil.example/lms', '/lms'],
   ['/lms/../account', '/lms'],
   ['/lms/login', '/lms'],

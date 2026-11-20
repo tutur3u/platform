@@ -125,16 +125,10 @@ async function handleGatewayRequest(request: Request, env: GatewayEnvironment) {
   if (first) {
     const app = getGatewayApp(first) ?? getLaunchableAppByTitle(first);
     if (!app) return response(404, 'Not found');
-    const searchParams = Object.fromEntries(
-      [...new Set(url.searchParams.keys())].map((key) => [
-        key,
-        url.searchParams.getAll(key),
-      ])
-    );
     const destination = buildGatewayRedirectUrl({
       app,
       path: path.slice(1),
-      searchParams,
+      search: url.search,
     });
     // A staging build must never redirect a visitor to a developer's localhost.
     if (new URL(destination).origin !== new URL(app.productionUrl).origin)

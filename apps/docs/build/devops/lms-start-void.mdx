@@ -61,7 +61,9 @@ before enabling permanent redirects.
    legacy document requests at the edge to the gateway. Preserve existing
    machine traffic on the legacy origins during transition. Verify HTTP 301
    from all three subdomains and the two apex mounts, with encoded nested
-   paths and repeated queries. With redirects enabled, verify GET and HEAD
+   paths and exact query strings. Compare the raw `Location` query for repeated
+   keys interleaved with empty values, percent-encoded Unicode, and both `+`
+   and `%20`. Check that `/lms` serves the landing directly with that query. With redirects enabled, verify GET and HEAD
    build-info, server function and asset requests still reach their legacy
    serving paths. Verify the canonical route does not loop.
 

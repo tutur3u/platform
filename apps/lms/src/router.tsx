@@ -6,6 +6,11 @@ export function getRouter() {
   return createRouter({
     routeTree,
     basepath: LMS_BASE,
+    // The shell has no search schema. Pass the incoming search through Start's
+    // canonicalization without normalizing or grouping any parameters.
+    parseSearch: (search) => ({ rawSearch: search }),
+    stringifySearch: ({ rawSearch }) =>
+      typeof rawSearch === 'string' ? rawSearch : '',
     scrollRestoration: true,
     defaultPreload: false,
   });

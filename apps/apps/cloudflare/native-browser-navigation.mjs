@@ -13,13 +13,13 @@ export const nativeRedirectCases = [
     input:
       '?source=one&tag=a&source=two&next=%2Fpersonal&tracking=a%2Bb&empty=&flag',
     output:
-      '?source=one&tag=a&source=two&next=%2Fpersonal&tracking=a%2Bb&empty=&flag=',
+      '?source=one&tag=a&source=two&next=%2Fpersonal&tracking=a%2Bb&empty=&flag',
   },
   {
     input:
       '?2=two&1=one&2=again&source=&next=%2Fpersonal&space=a%20b&plus=%2B&=empty-name',
     output:
-      '?2=two&1=one&2=again&source=&next=%2Fpersonal&space=a+b&plus=%2B&=empty-name',
+      '?2=two&1=one&2=again&source=&next=%2Fpersonal&space=a%20b&plus=%2B&=empty-name',
   },
 ];
 

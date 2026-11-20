@@ -14,6 +14,8 @@ export type AppCategory = LaunchableAppCategory;
 export type GatewayApp = LaunchableApp;
 export type GatewayAppSlug = LaunchableAppSlug;
 
+export const GATEWAY_SEARCH_HEADER = 'x-tuturuuu-gateway-search';
+
 export const GATEWAY_APPS = LAUNCHABLE_APPS;
 
 export function getGatewayApp(slug: string) {
@@ -37,11 +39,11 @@ function trimTrailingSlashes(value: string) {
 export function buildGatewayRedirectUrl({
   app,
   path = [],
-  searchParams,
+  search,
 }: {
   app: GatewayApp;
   path?: string[];
-  searchParams: Record<string, string | string[] | undefined>;
+  search: string;
 }) {
   const url = new URL(getGatewayAppOrigin(app));
   const suffix = path.map((segment) => encodeURIComponent(segment)).join('/');
@@ -50,21 +52,9 @@ export function buildGatewayRedirectUrl({
     url.pathname = `${trimTrailingSlashes(url.pathname)}/${suffix}`;
   }
 
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        url.searchParams.append(key, item);
-      }
-      continue;
-    }
-
-    if (value !== undefined) {
-      url.searchParams.set(key, value);
-    }
-  }
-
+  url.search = search;
   if (!url.searchParams.has('source')) {
-    url.searchParams.set('source', 'apps');
+    url.search = search ? `${search}&source=apps` : '?source=apps';
   }
 
   return url.toString();

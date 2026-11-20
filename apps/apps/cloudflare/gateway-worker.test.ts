@@ -20,12 +20,14 @@ afterEach(() => vi.unstubAllEnvs());
 describe('additive public Apps Worker', () => {
   it('uses only allowlisted destinations, preserving path encoding, repeat query and source', async () => {
     const result = await gatewayRequest(
-      request('/pay/a%2Fb?tag=x&tag=y'),
+      request(
+        '/pay/a%2Fb?tag=x&empty=&tag=y&space=a%20b&space=a+b&q=%2f&name=caf%C3%A9#client-only'
+      ),
       environment()
     );
     expect(result.status).toBe(307);
     expect(result.headers.get('location')).toBe(
-      'https://pay.tuturuuu.com/a%2Fb?tag=x&tag=y&source=apps'
+      'https://pay.tuturuuu.com/a%2Fb?tag=x&empty=&tag=y&space=a%20b&space=a+b&q=%2f&name=caf%C3%A9&source=apps'
     );
     expect(result.headers.get('cache-control')).toContain('no-store');
     expect(result.headers.get('x-frame-options')).toBe('DENY');

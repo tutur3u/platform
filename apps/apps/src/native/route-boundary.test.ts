@@ -65,7 +65,7 @@ describe('Apps native route parity', () => {
     );
     expect(result).toEqual({
       kind: 'redirect',
-      href: 'https://meet.tuturuuu.com/a%2Fb?tag=1&__proto__=keep&tag=2&constructor=ctor&prototype=proto&next=%2Fpersonal%3Fx%3D1&json=%5B1%2C2%5D&source=one&source=two&utm_source=fixture&space=a+b&plus=%2B',
+      href: 'https://meet.tuturuuu.com/a%2Fb?tag=1&__proto__=keep&tag=2&constructor=ctor&prototype=proto&next=%2Fpersonal%3Fx%3D1&json=%5B1%2C2%5D&source=one&source=two&utm_source=fixture&space=a%20b&plus=%2B',
     });
     expect(Object.getPrototypeOf({})).toBe(before);
     expect(Object.hasOwn(Object.prototype, 'keep')).toBe(false);

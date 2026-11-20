@@ -25,9 +25,10 @@ describe('LMS legacy routes', () => {
     ['lms.tuturuuu.com/lms/teach/w', '/lms/teach/w'],
     ['lms.tuturuuu.com//evil.example', '/lms//evil.example'],
   ])('maps %s to %s with the exact query', (from, suffix) => {
-    const query = '?x=1&x=2&q=a%2fb&token=';
+    const query =
+      '?x=1&empty=&x=2&space=a+b&space=a%20b&slash=%2f&unicode=caf%C3%A9';
     const destination = lmsRedirectDestination(
-      new Request(`https://${from}${query}`, { method: 'HEAD' })
+      new Request(`https://${from}${query}#client-only`, { method: 'HEAD' })
     );
     expect(destination?.href).toBe(`https://tuturuuu.com${suffix}${query}`);
   });

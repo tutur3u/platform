@@ -63,10 +63,20 @@ test(
     assert.match(process.env.LMS_SOURCE_SHA ?? '', /^[0-9a-f]{40}$/u);
     const call = (path, init) =>
       runtime.dispatchFetch(`https://tuturuuu.com${path}`, init);
-    const landing = await call('/lms?x=1&x=2', {
+    const query =
+      '?x=1&empty=&x=2&space=a+b&space=a%20b&slash=%2f&unicode=Ti%E1%BA%BFng+Vi%E1%BB%87t';
+    const landing = await call(`/lms${query}`, {
+      redirect: 'manual',
       headers: { 'Accept-Language': 'vi' },
     });
     assert.equal(landing.status, 200, 'Bare canonical mount renders the index');
+    assert.equal(landing.headers.get('location'), null);
+    const slash = await call(`/lms/${query}`, {
+      method: 'HEAD',
+      redirect: 'manual',
+    });
+    assert.equal(slash.status, 200);
+    assert.equal(slash.headers.get('location'), null);
     assert.match(landing.headers.get('x-robots-tag'), /noindex/u);
     assert.match(landing.headers.get('cache-control'), /no-store/u);
     const html = await landing.text();

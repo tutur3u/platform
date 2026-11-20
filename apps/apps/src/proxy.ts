@@ -3,11 +3,12 @@ import {
   withCanonicalLocaleCookie,
 } from '@tuturuuu/auth/locale-cookie';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
-import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { BASE_URL, LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+
+import { GATEWAY_SEARCH_HEADER } from './lib/apps-registry';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCALE_COOKIE_OPTIONS = {
@@ -81,7 +82,10 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     return canonicalLocaleRedirect;
   }
 
-  return intlMiddleware(request);
+  // The redirect page receives the original query through the locale rewrite.
+  const headers = new Headers(request.headers);
+  headers.set(GATEWAY_SEARCH_HEADER, request.nextUrl.search);
+  return intlMiddleware(new NextRequest(request, { headers }));
 }
 
 export const proxy = withCanonicalLocaleCookie(
@@ -90,5 +94,5 @@ export const proxy = withCanonicalLocaleCookie(
 );
 
 export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)'],
+  matcher: ['/((?!_next|[^/]*\\.[^/]*(?:/|$)).*)'],
 };

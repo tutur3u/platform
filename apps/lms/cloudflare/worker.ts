@@ -1,5 +1,5 @@
 import { type AssetsBinding, fetchAsset } from '@tuturuuu/start-bridge/assets';
-import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import { createBasePath, retarget } from '@tuturuuu/start-bridge/base-path';
 import {
   createRootResponsePolicy,
   withHstsResponsePolicy,
@@ -106,8 +106,11 @@ async function handleRequest(
       });
     }
     if (isAsset) return fetchAsset(env.ASSETS, routed);
+    // Start canonicalizes the mounted index to a slash. Render that path
+    // internally so the public landing stays at the bare mount.
+    if (url.pathname === LMS_BASE) url.pathname = `${LMS_BASE}/`;
     return withBridgeRequest({ request, appBase: LMS_BASE }, () =>
-      render.fetch(request)
+      render.fetch(url.href === request.url ? request : retarget(request, url))
     );
   }
 }

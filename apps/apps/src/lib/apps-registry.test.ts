@@ -14,7 +14,7 @@ describe('buildGatewayRedirectUrl', () => {
     expect(
       buildGatewayRedirectUrl({
         app: app!,
-        searchParams: {},
+        search: '',
       })
     ).toBe('https://pay.tuturuuu.localhost/?source=apps');
   });
@@ -26,7 +26,7 @@ describe('buildGatewayRedirectUrl', () => {
     expect(
       buildGatewayRedirectUrl({
         app: app!,
-        searchParams: { source: 'sidebar-apps' },
+        search: '?source=sidebar-apps',
       })
     ).toBe('https://pay.tuturuuu.localhost/?source=sidebar-apps');
   });
@@ -39,7 +39,7 @@ describe('buildGatewayRedirectUrl', () => {
     expect(
       buildGatewayRedirectUrl({
         app,
-        searchParams: { url: 'https://evil.test', source: 'sidebar-apps' },
+        search: '?url=https%3A%2F%2Fevil.test&source=sidebar-apps',
       })
     ).toBe(
       'https://pay.tuturuuu.com/?url=https%3A%2F%2Fevil.test&source=sidebar-apps'
