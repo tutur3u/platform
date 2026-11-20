@@ -128,7 +128,9 @@ function assertValidationConcurrency(policy) {
       ref:
         event_name === 'pull_request'
           ? 'refs/pull/99/merge'
-          : 'refs/heads/main',
+          : event_name === 'push'
+            ? 'refs/heads/validation'
+            : 'refs/heads/main',
     };
     const initial = policy(first);
     assert.equal(initial.cancel, true, `${event_name} supersedes validation`);
@@ -160,6 +162,16 @@ function assertValidationConcurrency(policy) {
       policy({ ...first, run_attempt: 2, sha: 'next-sha' }).group
     );
   }
+  const main = policy();
+  assert.equal(main.cancel, false, 'main preserves active validation');
+  assert.ok(main.group);
+  assert.deepEqual(policy({ sha: 'next-sha', run_id: 2 }), main);
+  assert.notEqual(policy({ ref: 'refs/heads/validation' }).group, main.group);
+  const mainRerun = policy({ run_attempt: 2 });
+  assert.equal(mainRerun.cancel, false);
+  assert.notEqual(mainRerun.group, main.group);
+  assert.notEqual(policy({ run_attempt: 2, run_id: 2 }).group, mainRerun.group);
+  assert.notEqual(policy({ run_attempt: 3 }).group, mainRerun.group);
   for (const ref of [
     'refs/heads/production',
     'refs/heads/release-please--branches--production--release-notes',
@@ -207,7 +219,7 @@ function assertValidationConcurrency(policy) {
   }
 }
 
-test('validation supersedes main/PR runs while protected pushes and qualification remain isolated', () => {
+test('main preserves active validation while PRs supersede and qualification stays isolated', () => {
   const workflow = read(
     '../../../.github/workflows/topic-delivery-foundation-contract.yaml'
   );
@@ -248,6 +260,7 @@ test('concurrency controls reject the old main policy and missing isolation or c
       "github.ref == 'refs/heads/production'",
       "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'"
     ),
+    workflow.replace("github.ref != 'refs/heads/main' && ", ''),
     workflow.replace(
       /^ {2}cancel-in-progress: .+$/mu,
       '  cancel-in-progress: false'
