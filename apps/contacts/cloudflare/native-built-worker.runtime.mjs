@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import { get as httpGet } from 'node:http';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -142,6 +143,33 @@ test(
       UPSTASH_REDIS_REST_URL: redisOrigin,
       UPSTASH_REDIS_REST_TOKEN: 'disposable-rate-limit-token',
     });
+
+    const origin = await worker.ready;
+    for (const { host, base } of profiles) {
+      const response = await new Promise((resolve, reject) => {
+        httpGet(
+          new URL(`${base}/api/build-info`, origin),
+          { headers: { host } },
+          resolve
+        ).on('error', reject);
+      });
+      response.resume();
+      assert.equal(response.statusCode, 401, host);
+      assert.equal(
+        response.rawHeaders.filter(
+          (name, index) =>
+            index % 2 === 0 &&
+            name.toLowerCase() === 'strict-transport-security'
+        ).length,
+        1,
+        host
+      );
+      assert.equal(
+        response.headers['strict-transport-security'],
+        'max-age=63072000',
+        host
+      );
+    }
 
     async function call(path, host, init) {
       const response = await worker.dispatchFetch(`https://${host}${path}`, {

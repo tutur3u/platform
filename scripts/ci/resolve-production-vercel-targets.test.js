@@ -695,7 +695,7 @@ test('package resume also consults independent pending migration range', () => {
   );
 });
 
-test('pending migration selection leaves Contacts on its own deployment range', () => {
+test('pending platform migrations do not bypass the Contacts publication hold', () => {
   const { migrationBase, platformBase, resolve } = migrationFixture();
   const contacts = 'vercel-production-contacts.yaml';
   const decisions = resolve(migrationBase, {
@@ -706,14 +706,14 @@ test('pending migration selection leaves Contacts on its own deployment range', 
     workflowMarkers: {
       [platformWorkflow]: { sha: platformBase },
       [migrationWorkflow]: { sha: migrationBase },
-      [contacts]: { sha: platformBase },
     },
   });
   assert.deepEqual(
     decisions.map(({ shouldRun }) => shouldRun),
     [true, false]
   );
-  assert.equal(decisions[1].changeResult.baseSha, platformBase);
+  assert.equal(decisions[1].held, true);
+  assert.equal(decisions[1].changeResult.source, 'publication-hold');
   assert.equal(decisions[1].migrationChangeResult, undefined);
 });
 
