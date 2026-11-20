@@ -45,6 +45,33 @@ callers. The live-socket stop fixture switches the room binding in process.
 Hosted secret rotation, Web API authorization, Supabase and push delivery
 require staging checks.
 
+The local ticket probe uses a second Supabase stack so it cannot attach to the
+shared `tuturuuu` project. From the repository root:
+
+```sh
+bun --conditions=react-server apps/chat-realtime/scripts/probe-ticket-publish.mjs
+```
+
+Run it through resource admission. The script writes a temporary project
+`chatrtprobe20` with API port 18521, database port 18522, and the rest of that
+block through 18529. It symlinks this repo's migrations, seeds one fixture,
+and starts workerd with a disposable HMAC secret. The ticket and publish calls
+are `createChatRealtimeSubscribeTicket` and `publishChatRealtimeWorkerEvent`.
+Membership is the same `private.chat_get_conversation` RPC the ticket route
+uses. The probe does not boot Next, so session authentication stays on the
+staging workflow below. It prints PASS or FAIL names and removes the temporary
+stack and workdir when it finishes.
+
+## Staging qualification
+
+The **Chat Realtime Staging Qualification** workflow is `workflow_dispatch`
+only, and only from `main` on `tutur3u/platform`. Store the `QUALIFY_*`
+settings as repository secrets. The job fails before any request when one is
+unset, and the qualification script prints check names rather than identities,
+tokens, origins, or message text. Phases are `live`, `stopped`, and `disabled`.
+Do not set `QUALIFY_LOCAL` on that workflow; the local workerd path is the
+probe above.
+
 ## Artifact and acceptance
 
 1. Use the **Chat Realtime Cloudflare Artifact** workflow at the reviewed source
