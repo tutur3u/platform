@@ -59,8 +59,18 @@ describe('cross-project budget admission', { timeout: 60_000 }, () => {
     // a1 fills project a's token share and records its granted workers.
     const probe = await workerProbe(path, 'vitest', 'a1');
     const a1 = job(path, a, 2, [probe, 'run']);
-    await a1.until(() => exists(join(path, 'a1.json')));
-    const granted = JSON.parse(await readFile(join(path, 'a1.json'), 'utf8'));
+    // The probe writes its grant non-atomically; wait for a complete file.
+    let granted: { vitest?: string; args: string[] } | undefined;
+    await a1.until(async () => {
+      if (!(await exists(join(path, 'a1.json')))) return false;
+      try {
+        granted = JSON.parse(await readFile(join(path, 'a1.json'), 'utf8'));
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    if (!granted) throw new Error('grant file never completed');
     expect(granted.vitest).toBe('2');
     expect(granted.args).toContain('--maxWorkers=2');
     // a2 exceeds a's share; b is idle, so it borrows and fills the budget.
