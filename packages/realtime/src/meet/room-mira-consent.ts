@@ -21,7 +21,16 @@ export type MiraRoomChoice = {
   recordedAt: number;
   revision: number;
 };
-export type MiraRoomState = { choices: Record<string, MiraRoomChoice> };
+/**
+ * A Pause requested while already-admitted provider requests carry the
+ * account's words. It blocks every new room-derived send at once and becomes
+ * the effective choice when those bounded leases release or expire.
+ */
+export type MiraRoomPendingPause = { requestedAt: number; meetingId: string };
+export type MiraRoomState = {
+  choices: Record<string, MiraRoomChoice>;
+  pending?: Record<string, MiraRoomPendingPause>;
+};
 
 export type MiraRoomFence = {
   ready: boolean;
@@ -69,6 +78,8 @@ export function isCurrentMiraRoomContinue(
   const choice = state.miraRoom?.choices[accountId];
   return !!(
     meetingId &&
+    // A requested Pause stops every new send before it is effective.
+    !state.miraRoom?.pending?.[accountId] &&
     choice &&
     choice.choice === 'continue' &&
     choice.accountId === accountId &&
@@ -122,59 +133,131 @@ export function applyMiraRoomConsent(
   token: MeetRealtimeTokenPayload,
   input: unknown,
   now = Date.now()
-) {
+): { state: RoomServiceState; body: unknown; status?: number } | null {
   const parsed = command.safeParse(input);
   if (!parsed.success) return null;
   if (!token.scopes.includes('meet:server'))
     return { state, body: { error: 'Forbidden' }, status: 403 };
   const accountId = token.accountId ?? token.userId;
-  const admitted = admittedMiraRoomAccounts(state).includes(accountId);
-  if (!admitted || state.ended)
+  // A release always ends its lease, even after the requester left, so a
+  // pending Pause never waits longer than the request itself.
+  if (parsed.data.action === 'mira.room.release')
+    return miraRoomDispatch(state, token, accountId, parsed.data, now);
+  const settled = settleMiraRoomWithdrawals(state, now);
+  const admitted = admittedMiraRoomAccounts(settled).includes(accountId);
+  if (!admitted || settled.ended)
     return {
-      state,
+      state: settled,
       body: { error: 'Join an active meeting first' },
       status: 403,
     };
-  const current = state.miraRoom ?? { choices: {} };
-  const own = current.choices[accountId];
+  const own = settled.miraRoom?.choices[accountId];
+  const pending = settled.miraRoom?.pending?.[accountId];
   const view = (next: RoomServiceState) => ({
     version: MIRA_ROOM_NOTICE_VERSION,
     choice:
       next.miraRoom?.choices[accountId]?.version === MIRA_ROOM_NOTICE_VERSION
         ? next.miraRoom.choices[accountId]!.choice
         : null,
+    pausing: !!next.miraRoom?.pending?.[accountId],
     fence: miraRoomFence(next, token.meetingId),
   });
-  if (parsed.data.action === 'mira.room.read')
-    return { state, body: view(state) };
+  const reply = (next: RoomServiceState) => ({ state: next, body: view(next) });
+  if (parsed.data.action === 'mira.room.read') return reply(settled);
+  if (parsed.data.action === 'mira.room.dispatch')
+    return miraRoomDispatch(settled, token, accountId, parsed.data, now);
+  const choice = parsed.data.choice;
+  if (choice === 'mute') {
+    if (pending) return reply(settled);
+    // Already-admitted sends carrying this account finish under their lease;
+    // nothing new starts, and the Pause takes effect when they settle.
+    if (
+      own?.choice === 'continue' &&
+      activeMiraRoomLeases(settled, accountId, now) > 0
+    )
+      return reply({
+        ...settled,
+        miraRoom: {
+          choices: settled.miraRoom?.choices ?? {},
+          pending: {
+            ...settled.miraRoom?.pending,
+            [accountId]: { requestedAt: now, meetingId: token.meetingId ?? '' },
+          },
+        },
+      });
+  }
+  // Continue while pausing cancels the Pause with a new revision, so requests
+  // reserved before it stay stale.
   if (
-    parsed.data.action === 'mira.room.dispatch' ||
-    parsed.data.action === 'mira.room.release'
-  )
-    return miraRoomDispatch(state, token, accountId, parsed.data, now);
-  if (
-    own?.choice === parsed.data.choice &&
+    !pending &&
+    own?.choice === choice &&
     own.version === MIRA_ROOM_NOTICE_VERSION &&
     own.meetingId === token.meetingId
   )
-    return { state, body: view(state) };
-  const next: RoomServiceState = {
+    return reply(settled);
+  return reply(
+    recordMiraRoomChoice(settled, accountId, token.meetingId ?? '', choice, now)
+  );
+}
+
+function recordMiraRoomChoice(
+  state: RoomServiceState,
+  accountId: string,
+  meetingId: string,
+  choice: MiraRoomChoice['choice'],
+  now: number
+): RoomServiceState {
+  const own = state.miraRoom?.choices[accountId];
+  const { [accountId]: _cleared, ...pending } = state.miraRoom?.pending ?? {};
+  return {
     ...state,
     miraRoom: {
       choices: {
-        ...current.choices,
+        ...state.miraRoom?.choices,
         [accountId]: {
-          choice: parsed.data.choice,
+          choice,
           version: MIRA_ROOM_NOTICE_VERSION,
-          meetingId: token.meetingId ?? '',
+          meetingId,
           accountId,
           recordedAt: now,
-          revision: own?.meetingId === token.meetingId ? own.revision + 1 : 1,
+          revision: own?.meetingId === meetingId ? own.revision + 1 : 1,
         },
       },
+      pending,
     },
   };
-  return { state: next, body: view(next) };
+}
+
+/** Unexpired dispatch leases on requests that carry this account's words. */
+export function activeMiraRoomLeases(
+  state: RoomServiceState,
+  accountId: string,
+  now: number
+) {
+  return Object.values(state.aiRequests ?? {})
+    .filter((request) => request.miraRoomSources?.[accountId] !== undefined)
+    .flatMap((request) => Object.values(request.miraDispatches ?? {}))
+    .filter((admittedAt) => now - admittedAt < DISPATCH_TTL_MS).length;
+}
+
+/** Makes each pending Pause effective once its account has no active lease. */
+export function settleMiraRoomWithdrawals(
+  state: RoomServiceState,
+  now: number
+): RoomServiceState {
+  let next = state;
+  for (const [accountId, pause] of Object.entries(
+    state.miraRoom?.pending ?? {}
+  ))
+    if (activeMiraRoomLeases(next, accountId, now) === 0)
+      next = recordMiraRoomChoice(
+        next,
+        accountId,
+        pause.meetingId,
+        'mute',
+        now
+      );
+  return next;
 }
 
 /** Accounts whose words a request carries, bound to their consent revision. */
@@ -262,7 +345,11 @@ function miraRoomDispatch(
   now: number
 ): { state: RoomServiceState; body: unknown; status?: number } {
   const request = state.aiRequests?.[input.messageId];
-  if (request?.userId !== accountId || request.status !== 'pending')
+  const admitting = input.action === 'mira.room.dispatch';
+  if (
+    request?.userId !== accountId ||
+    (admitting && request.status !== 'pending')
+  )
     return consentRequired(state);
   const leases = Object.fromEntries(
     Object.entries(request.miraDispatches ?? {}).filter(
@@ -271,7 +358,6 @@ function miraRoomDispatch(
     )
   );
   const current = miraRoomRequestReady(state, token.meetingId, input.messageId);
-  const admitting = input.action === 'mira.room.dispatch';
   const held = request.miraDispatches?.[input.leaseId];
   if (admitting && (!current || Object.keys(leases).length >= MAX_DISPATCHES))
     return consentRequired(state);
@@ -290,7 +376,8 @@ function miraRoomDispatch(
   return admitting
     ? { state: next, body: { ok: true, leaseId: input.leaseId } }
     : {
-        state: next,
+        // Ending the last lease makes any pending Pause effective.
+        state: settleMiraRoomWithdrawals(next, now),
         body: {
           current:
             current && held !== undefined && now - held < DISPATCH_TTL_MS,

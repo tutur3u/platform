@@ -128,6 +128,8 @@ it('sends nothing when a source pauses before admission', async () => {
   const upstream = vi.fn(async () => answer());
   const provider = roomMiraProviderFetch(access, mention, model, upstream);
   pause();
+  // No admitted send carries Bob, so the Pause is effective at once.
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
   await expect(provider.fetch(url)).rejects.toMatchObject({
     status: 409,
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
@@ -138,8 +140,11 @@ it('sends nothing when a source pauses before admission', async () => {
 
 it('discards the response when a Pause lands after admission but before transport', async () => {
   const upstream = vi.fn(async () => {
-    // The admission RPC has returned; the Pause is serialized after it.
+    // The admission RPC has returned; the Pause is serialized after it and
+    // stays pending while this admitted send finishes.
     pause();
+    expect(room.miraRoom?.pending?.[bob]).toBeDefined();
+    expect(room.miraRoom?.choices[bob]?.choice).toBe('continue');
     return answer();
   });
   const provider = roomMiraProviderFetch(access, mention, model, upstream);
@@ -151,6 +156,9 @@ it('discards the response when a Pause lands after admission but before transpor
   await expect(provider.fetch(url)).rejects.toMatchObject({ status: 409 });
   expect(upstream).toHaveBeenCalledTimes(1);
   expect(f.call.mock.calls.length).toBe(calls);
+  // Releasing the last lease makes Bob's Pause effective.
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
+  expect(room.miraRoom?.pending?.[bob]).toBeUndefined();
   // The discarded answer's usage still settles.
   expect(provider.observed()?.usage).toMatchObject({
     available: true,
@@ -172,6 +180,7 @@ it('discards the response when a Pause lands while it is in flight', async () =>
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
   });
   expect(room.aiRequests?.[mention]?.miraDispatches).toEqual({});
+  expect(room.miraRoom?.choices[bob]?.choice).toBe('mute');
 });
 
 it('counts a request that failed without an answer as unpriced, never zero', async () => {

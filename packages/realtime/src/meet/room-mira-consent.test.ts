@@ -118,6 +118,7 @@ describe('room Mira all-participant fence', () => {
     expect(result.body).toEqual({
       version,
       choice: 'continue',
+      pausing: false,
       fence: { ready: true, pending: 0, admitted: 1 },
     });
   });
