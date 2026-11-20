@@ -1,0 +1,121 @@
+name: Deploy Coordinator Cloudflare
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      - 'apps/deploy-coordinator/**'
+      - '.github/workflows/deploy-coordinator-cloudflare.yaml'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/deploy-coordinator/**'
+      - '.github/actions/setup-bun-with-retry/**'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/deploy-coordinator-client.mjs'
+      - 'scripts/ci/deploy-coordinator-client.test.mjs'
+      - 'scripts/ci/run-with-backoff.sh'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - 'bun.lock'
+      - 'package.json'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/deploy-coordinator/**'
+      - '.github/workflows/deploy-coordinator-cloudflare.yaml'
+      - '.github/workflows/ci-check.yml'
+      - '.github/actions/deploy-coordinator/**'
+      - '.github/actions/setup-bun-with-retry/**'
+      - 'scripts/ci/cf-vite-worker.mjs'
+      - 'scripts/ci/deploy-coordinator-client.mjs'
+      - 'scripts/ci/deploy-coordinator-client.test.mjs'
+      - 'scripts/ci/run-with-backoff.sh'
+      - 'tuturuuu.ts'
+      - 'tuturuuu.ci.ts'
+      - 'bun.lock'
+      - 'package.json'
+  workflow_dispatch:
+permissions:
+  contents: read
+  deployments: read
+concurrency:
+  group: deploy-coordinator-cloudflare-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  affected-gate:
+    # Pull requests only: skip the heavy jobs when deploy-coordinator is unaffected.
+    # Other events never check out or run the gate: they resolve to run=true, so a
+    # gate failure can never block a production deploy. Any error also resolves to run=true.
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    outputs:
+      run: ${{ github.event_name != 'pull_request' && 'true' || steps.app.outputs.run || 'true' }}
+      reason: ${{ steps.app.outputs.reason }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout: |
+            /.github/actions/affected-gate/
+            /scripts/ci/affected-apps.mjs
+            /scripts/ci/affected-apps.extra-edges.json
+            /scripts/ci/affected-gate.mjs
+            /apps/*/package.json
+            /packages/*/package.json
+          sparse-checkout-cone-mode: false
+      - id: app
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        uses: ./.github/actions/affected-gate
+        with:
+          app: deploy-coordinator
+  check-ci:
+    needs: affected-gate
+    if: ${{ (needs.affected-gate.outputs.run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: deploy-coordinator-cloudflare.yaml
+  validate:
+    name: Validate the deployment coordinator Worker
+    needs: [check-ci, affected-gate]
+    if: ${{ (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    env:
+      CF_SEND_TELEMETRY: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - run: bun run type-check
+        working-directory: apps/deploy-coordinator
+      - run: bun run lint
+        working-directory: apps/deploy-coordinator
+      - run: bun run format:check
+        working-directory: apps/deploy-coordinator
+      - run: bun run test --maxWorkers=2
+        working-directory: apps/deploy-coordinator
+      - name: Test the GitHub Actions client
+        run: node --test scripts/ci/deploy-coordinator-client.test.mjs
+      # The Worker is not published; this accepts the source Worker and its
+      # Durable Object state surviving a restart in workerd.
+      - name: Accept the Worker, lane lock and stop fence in workerd
+        run: node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs

@@ -48,6 +48,7 @@ export const ci = {
   'coordination-cloudflare.yaml': true,
   'ops-hub-cloudflare.yaml': true,
   'turbo-cache-cloudflare.yaml': true,
+  'deploy-coordinator-cloudflare.yaml': true,
   'api-cloudflare.yaml': true,
   'status-api-cloudflare.yaml': true,
   'gateway-cloudflare.yaml': true,

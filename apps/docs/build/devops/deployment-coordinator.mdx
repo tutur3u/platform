@@ -20,8 +20,8 @@ coordinator issues them fenced grants.
 | Part | State |
 | ---- | ----- |
 | This design | Accepted |
-| Worker, Durable Object state machine, API | Source, unit and workerd tests; not published. Shared CI runs its unit tests and type check; the workerd harness runs locally until the Worker has its own workflow |
-| GitHub Actions begin/finish steps | Planned, behind `DEPLOY_COORDINATOR_MODE`, default off |
+| Worker, Durable Object state machine, API | Source, unit and workerd tests; not published. `deploy-coordinator-cloudflare.yaml` runs its type check, lint, format check, unit suites, the client tests and the workerd harness |
+| GitHub Actions begin/check/finish steps | `.github/actions/deploy-coordinator`, piloted on the Colab production deploy; `DEPLOY_COORDINATOR_MODE` unset, so off |
 | Infrastructure **Deployments** page | Planned |
 | Executor workflow for promotion and rollback markers | Not built; markers are resolved by operators |
 | Hostname, secrets and Worker publication | Release-authority steps |
@@ -236,16 +236,43 @@ The Worker has no public route until release authority approves a hostname;
 ## GitHub Actions integration
 
 Composite actions have no post step, so the integration is
-`.github/actions/deploy-coordinator` used twice in a deploy job:
+`.github/actions/deploy-coordinator` (running
+`scripts/ci/deploy-coordinator-client.mjs`) used up to three times in a deploy
+job:
 
 1. `phase: begin`, before the publish steps: registers the deployment, waits
    for a grant, and starts a bounded background heartbeat for the job.
-2. `phase: finish`, with `if: always()`: stops the heartbeat and reports
-   `succeeded` or `failed` from the job status.
+2. `phase: check`, immediately before each provider effect: in `enforce`,
+   fails the step when the heartbeat was refused, so a fenced job never starts
+   an effect after its lease (the self-fence in rule 5).
+3. `phase: finish`, with `if: always()`: stops the heartbeat and reports
+   `succeeded` or `failed` from the `job-status` input (`job.status`).
 
 When the coordinator answers `superseded` or `held`, `begin` records a skip
-and sets `publish=false`; later steps check that output. The repository
-variable `DEPLOY_COORDINATOR_MODE` selects:
+and sets `publish=false`; later steps check that output. Composite actions
+cannot read repository variables, so each step passes `mode` and `origin` from
+`vars.DEPLOY_COORDINATOR_MODE` and `vars.DEPLOY_COORDINATOR_ORIGIN`, and is
+itself skipped unless the mode is `observe` or `enforce`. The job needs
+`id-token: write`; when the deploy workflow runs as a reusable workflow, its
+caller job must grant it too (the production planner grants it to
+`deploy-colab-cloudflare` only). The pilot is the Colab production `deploy` job
+in `colab-cloudflare.yaml`:
+
+```yaml
+- id: coordinator
+  if: vars.DEPLOY_COORDINATOR_MODE == 'observe' || vars.DEPLOY_COORDINATOR_MODE == 'enforce'
+  uses: ./.github/actions/deploy-coordinator
+  with:
+    phase: begin
+    mode: ${{ vars.DEPLOY_COORDINATOR_MODE }}
+    origin: ${{ vars.DEPLOY_COORDINATOR_ORIGIN }}
+    project: colab
+    environment: production
+# publish steps: if: steps.coordinator.outputs.publish != 'false'
+# phase: check before `wrangler deploy`; phase: finish under if: always()
+```
+
+The repository variable `DEPLOY_COORDINATOR_MODE` selects:
 
 | Mode        | Behaviour |
 | ----------- | --------- |
@@ -255,10 +282,13 @@ variable `DEPLOY_COORDINATOR_MODE` selects:
 
 In `enforce`, an unreachable coordinator, an exhausted budget or the bounded
 wait running out still falls open so an outage cannot block a release; GitHub
-concurrency groups keep their serialization. The consequence is explicit: the
-stop fence and a rollback hold are advisory to CI while the coordinator is
-unreachable. Making the coordinator a required authority is a separate
-reviewed change.
+concurrency groups keep their serialization. The consequence is explicit: a
+rollback hold is advisory to CI while the coordinator is unreachable, and the
+environment stop fence is advisory to CI both then and once the bounded wait
+runs out on a reachable `stopped` answer. A job that publishes without a grant
+first skips its deployment with `PUBLISHED_UNCOORDINATED`, so the dashboard
+never shows it queued. Making the coordinator a required authority is a
+separate reviewed change.
 
 ## Dashboard
 
@@ -392,6 +422,8 @@ Run from the repository root:
   rows written per call against SQLite and pins the figures above. The router suite drives the HTTP API with OIDC tokens signed by a
   generated RSA key; the OIDC suite covers claim, event, workflow and ref
   checks and the rate-limited key refetch.
+- `node --test scripts/ci/deploy-coordinator-client.test.mjs` covers the
+  client's phases, fall-open paths, bounded waits and retries.
 - `node --test apps/deploy-coordinator/scripts/verify-worker-runtime.mjs` runs
   the real Worker and Durable Object in workerd through the Vite runtime: the
   private config, closed routes, and a seeded lane lock, stop fence and

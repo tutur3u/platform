@@ -146,6 +146,17 @@ workerd. The shared cf harness uses disposable secrets and isolated persistence;
 it verifies default-off, transactional initialization and stop/restart. Keep
 hosted enabled-traffic/cost acceptance separate from local-runtime evidence.
 
+Deploy jobs report to the deployment coordinator through
+`.github/actions/deploy-coordinator` (`begin`, `check` before each provider
+effect, `finish` under `if: always()`), skipped unless
+`vars.DEPLOY_COORDINATOR_MODE` is `observe` or `enforce`. The job needs
+`id-token: write`, and a reusable workflow's caller job must grant it as well;
+`workflow-permissions.test.js` rejects a callee requesting more than its caller
+grants. Publish steps gate on `steps.<id>.outputs.publish != 'false'`. Add a
+catalog entry in `apps/deploy-coordinator/src/projects.ts` naming the reporting
+workflow file for the environment; see
+`apps/docs/build/devops/deployment-coordinator.mdx`.
+
 ## Cloudflare backend ownership guard
 
 New crons, queues, schedulers and heavy/long-running backend work go to Cloudflare

@@ -1,0 +1,145 @@
+name: Deploy coordinator
+description: >-
+  Register a deploy job with the Tuturuuu deployment coordinator, fence provider
+  effects on its lease and report the outcome. Composite actions have no post
+  step, so a job uses it with phase begin before publishing, check before each
+  provider effect and finish under if: always(). The job needs id-token: write.
+  Mode off skips everything; observe and every coordinator failure fall open.
+inputs:
+  phase:
+    description: begin, check or finish
+    required: true
+  mode:
+    description: off, observe or enforce; pass vars.DEPLOY_COORDINATOR_MODE
+    required: false
+    default: 'off'
+  origin:
+    description: Coordinator https origin; pass vars.DEPLOY_COORDINATOR_ORIGIN
+    required: false
+    default: ''
+  project:
+    description: Catalog project id (apps/deploy-coordinator/src/projects.ts)
+    required: false
+    default: ''
+  environment:
+    description: preview, staging or production
+    required: false
+    default: ''
+  lane:
+    description: Preview lane (the preview_ref); ignored outside preview
+    required: false
+    default: ''
+  sha:
+    description: Preview commit SHA; staging and production use the token's
+    required: false
+    default: ''
+  plan-digest:
+    description: sha256 digest of the affected-planner plan, when known
+    required: false
+    default: ''
+  plan-url:
+    description: Run URL of the affected-planner plan, when known
+    required: false
+    default: ''
+  max-wait-minutes:
+    description: Enforce-mode bound on waiting for the lane, 1 to 60
+    required: false
+    default: '30'
+  job-status:
+    description: finish only; pass job.status
+    required: false
+    default: ''
+  url:
+    description: finish only; the published deployment URL
+    required: false
+    default: ''
+  artifact-kind:
+    description: finish only; artifact kind, for example worker-version
+    required: false
+    default: ''
+  artifact-id:
+    description: finish only; provider artifact or version id
+    required: false
+    default: ''
+  artifact-digest:
+    description: finish only; sha256 digest of the artifact, when known
+    required: false
+    default: ''
+outputs:
+  publish:
+    description: >-
+      "false" only when enforce mode durably decided the job must not publish
+      (superseded, held or already terminal); otherwise "true"
+    value: ${{ steps.begin.outputs.publish || 'true' }}
+  deployment-id:
+    description: Coordinator deployment id, when registered
+    value: ${{ steps.begin.outputs.deployment-id }}
+runs:
+  using: composite
+  steps:
+    - id: begin
+      if: inputs.phase == 'begin'
+      shell: bash
+      env:
+        DEPLOY_COORDINATOR_MODE: ${{ inputs.mode }}
+        DEPLOY_COORDINATOR_ORIGIN: ${{ inputs.origin }}
+        DC_PROJECT: ${{ inputs.project }}
+        DC_ENVIRONMENT: ${{ inputs.environment }}
+        DC_LANE: ${{ inputs.lane }}
+        DC_SHA: ${{ inputs.sha }}
+        DC_PLAN_DIGEST: ${{ inputs.plan-digest }}
+        DC_PLAN_URL: ${{ inputs.plan-url }}
+        DC_MAX_WAIT_MINUTES: ${{ inputs.max-wait-minutes }}
+        DC_JOB_STATUS: ${{ inputs.job-status }}
+        DC_URL: ${{ inputs.url }}
+        DC_ARTIFACT_KIND: ${{ inputs.artifact-kind }}
+        DC_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        DC_ARTIFACT_DIGEST: ${{ inputs.artifact-digest }}
+      run: |
+        # Fall open: a client that cannot start never blocks publishing.
+        if ! node "${GITHUB_WORKSPACE}/scripts/ci/deploy-coordinator-client.mjs" begin; then
+          echo 'publish=true' >> "$GITHUB_OUTPUT"
+        fi
+    - if: inputs.phase == 'check'
+      shell: bash
+      env:
+        DEPLOY_COORDINATOR_MODE: ${{ inputs.mode }}
+        DEPLOY_COORDINATOR_ORIGIN: ${{ inputs.origin }}
+        DC_PROJECT: ${{ inputs.project }}
+        DC_ENVIRONMENT: ${{ inputs.environment }}
+        DC_LANE: ${{ inputs.lane }}
+        DC_SHA: ${{ inputs.sha }}
+        DC_PLAN_DIGEST: ${{ inputs.plan-digest }}
+        DC_PLAN_URL: ${{ inputs.plan-url }}
+        DC_MAX_WAIT_MINUTES: ${{ inputs.max-wait-minutes }}
+        DC_JOB_STATUS: ${{ inputs.job-status }}
+        DC_URL: ${{ inputs.url }}
+        DC_ARTIFACT_KIND: ${{ inputs.artifact-kind }}
+        DC_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        DC_ARTIFACT_DIGEST: ${{ inputs.artifact-digest }}
+      run: node "${GITHUB_WORKSPACE}/scripts/ci/deploy-coordinator-client.mjs" check
+    - if: inputs.phase == 'finish'
+      shell: bash
+      env:
+        DEPLOY_COORDINATOR_MODE: ${{ inputs.mode }}
+        DEPLOY_COORDINATOR_ORIGIN: ${{ inputs.origin }}
+        DC_PROJECT: ${{ inputs.project }}
+        DC_ENVIRONMENT: ${{ inputs.environment }}
+        DC_LANE: ${{ inputs.lane }}
+        DC_SHA: ${{ inputs.sha }}
+        DC_PLAN_DIGEST: ${{ inputs.plan-digest }}
+        DC_PLAN_URL: ${{ inputs.plan-url }}
+        DC_MAX_WAIT_MINUTES: ${{ inputs.max-wait-minutes }}
+        DC_JOB_STATUS: ${{ inputs.job-status }}
+        DC_URL: ${{ inputs.url }}
+        DC_ARTIFACT_KIND: ${{ inputs.artifact-kind }}
+        DC_ARTIFACT_ID: ${{ inputs.artifact-id }}
+        DC_ARTIFACT_DIGEST: ${{ inputs.artifact-digest }}
+      run: node "${GITHUB_WORKSPACE}/scripts/ci/deploy-coordinator-client.mjs" finish || true
+    - if: inputs.phase != 'begin' && inputs.phase != 'check' && inputs.phase != 'finish'
+      shell: bash
+      env:
+        PHASE: ${{ inputs.phase }}
+      run: |
+        echo "Unknown deploy coordinator phase: $PHASE" >&2
+        exit 1

@@ -49,6 +49,7 @@ const HEAVY_PR_WORKFLOWS = [
   'coordination-cloudflare.yaml',
   'creator-identity-contract.yaml',
   'cron-control-cloudflare.yaml',
+  'deploy-coordinator-cloudflare.yaml',
   'desktop-beta.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-python-ci.yml',

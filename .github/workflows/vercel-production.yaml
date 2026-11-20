@@ -104,6 +104,11 @@ jobs:
     needs: plan
     if: contains(fromJSON(needs.plan.outputs.workflows_json), 'colab-cloudflare.yaml')
     uses: ./.github/workflows/colab-cloudflare.yaml
+    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
     secrets: inherit
 
   deploy-coordination-cloudflare:
