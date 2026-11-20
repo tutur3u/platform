@@ -110,21 +110,32 @@ const context = await browser.newContext({
 
 ## Expiry cleanup
 
-Cron Control job `web-qa-test-user-cleanup` runs every 15 minutes and calls
-`POST /api/cron/qa/test-user-cleanup` on web. Each slot deletes at most 25
-expired accounts inside a 60-second budget. The ledger leases each deletion for
-10 minutes and settles it only after Auth confirms the account is absent;
-unknown outcomes stay leased and are re-verified by a later slot, never replayed
-blindly. Unsettled deletions report the slot as failed, so repeated failures
+Cron Control job `qa-test-user-cleanup` runs every 15 minutes as a native
+Cloudflare Worker processor (`apps/cron-control/src/processors/qa-test-user-cleanup.ts`).
+It calls the ledger RPCs and the Auth admin API with the service key; no web
+route is involved. Each slot lists at most 25 expired accounts and deletes them
+one at a time within a 90-second deadline. The ledger leases each deletion for
+10 minutes. The Worker removes the run workspace with its last account and
+records that before the account settles, bans then deletes the Auth account,
+and settles only after Auth reports it absent. The cleanup fence is checked
+when each deletion begins and the Cron Control fence before every destructive
+request. A refused step leaves the lease to lapse and fails the slot; an
+unconfirmed write ends the slot as unknown before another deletion starts. A
+later slot re-verifies either; nothing is replayed blindly. Repeated failures
 trip Cron Control's consecutive-failure stop.
+
+The Worker does not run Meet attendance subject erasure. Attendance rows of
+these synthetic accounts age out through attendance retention.
+`ttr qa users cleanup` uses the web operator path, which erases them
+immediately; run it when a QA pass ends.
 
 | Stop | How |
 | --- | --- |
 | Pause cleanup | `update private.qa_test_user_control set cleanup_enabled = false` |
 | Pause provisioning | `update private.qa_test_user_control set provisioning_enabled = false` |
-| Stop the schedule | Cron Control operator `stop` for `web-qa-test-user-cleanup`, or remove it from `CRON_CONTROL_ENABLED_JOBS` |
+| Stop the schedule | Cron Control operator `stop` for `qa-test-user-cleanup`, or remove it from `CRON_CONTROL_ENABLED_JOBS` |
 
-The job is off until `web-qa-test-user-cleanup` is listed in
+The job is off until `qa-test-user-cleanup` is listed in
 `CRON_CONTROL_ENABLED_JOBS`. Until then, run `ttr qa users cleanup --expired`
 after each run: Auth does not expire the accounts by itself.
 
@@ -144,7 +155,8 @@ only.
   `auth/v1/admin/users` create, activate, magic-link verify, ban (refresh
   refused), workspace and account delete, settle.
 - `apps/web/src/lib/qa-test-users/*.test.ts` and the route tests under
-  `apps/web/src/app/api/v1/admin/qa/test-users/` and
-  `apps/web/src/app/api/cron/qa/test-user-cleanup/`.
-- `apps/cron-control/src/qa-test-user-cleanup.test.ts`.
+  `apps/web/src/app/api/v1/admin/qa/test-users/`.
+- `apps/cron-control/src/processors/qa-test-user-cleanup.test.ts`: fences,
+  request order, leased unknown outcomes, key headers. The processor was also
+  run once against the local Supabase and Auth stack.
 - `packages/sdk/src/cli/qa-users.test.ts`: secret handling and file modes.

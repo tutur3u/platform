@@ -27,6 +27,7 @@ export type WorkerProcessorId =
   | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
+  | 'qa-test-user-cleanup'
   | 'storage-access-audit-retention';
 
 // Native database maintenance: the Worker calls this private RPC with the
@@ -41,6 +42,8 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
+  // Lists expired accounts; the Worker then drives the ledger and Auth deletes.
+  'qa-test-user-cleanup': 'qa_test_list_expired',
   'storage-access-audit-retention': 'prune_storage_access_events',
 };
 
@@ -239,16 +242,22 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     'claim-fenced',
     { timeoutMs: LONG_TIMEOUT_MS }
   ),
-  // Deletes expired QA test accounts, at most 25 per slot. The ledger lease
-  // and the database stop fence (private.qa_test_user_control) make repeated
-  // or overlapping slots converge; unknown Auth outcomes stay leased.
+  // Deletes expired QA test accounts, at most 25 per slot, natively in the
+  // Worker. The ledger lease and the database stop fence
+  // (private.qa_test_user_control) make repeated or overlapping slots
+  // converge; unknown Auth outcomes stay leased.
   job(
-    'web-qa-test-user-cleanup',
+    'qa-test-user-cleanup',
     '*/15 * * * *',
     'web',
-    '/api/cron/qa/test-user-cleanup',
+    '/rest/v1/rpc/qa_test_list_expired',
     'claim-fenced',
-    { method: 'POST', timeoutMs: 90_000 }
+    {
+      method: 'POST',
+      // Two-attempt lease: a 90-second processor deadline per slot.
+      timeoutMs: 45_000,
+      workerProcessor: 'qa-test-user-cleanup',
+    }
   ),
   job(
     'web-post-email-queue',

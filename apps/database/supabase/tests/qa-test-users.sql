@@ -1,5 +1,5 @@
 begin;
-select plan(47);
+select plan(49);
 select set_config('request.jwt.claims', '{}', true);
 
 select ok(not has_table_privilege('authenticated', 'private.qa_test_users', 'select'), 'clients cannot read the QA ledger');
@@ -128,6 +128,8 @@ update private.qa_test_runs set expires_at = now() - interval '1 minute', create
 select is(jsonb_array_length(private.qa_test_list_expired(25) -> 'userIds'), 2, 'expired live accounts are listed for cleanup');
 update private.qa_test_user_control set cleanup_enabled = false;
 select is(private.qa_test_list_expired(25) ->> 'mode', 'fenced', 'the stop fence halts cleanup');
+select is((select private.qa_test_begin_delete(id, 'cron', null) ->> 'state' from host), 'fenced', 'the stop fence halts a scheduled deletion that has not begun');
+select is((select state from private.qa_test_users where user_id = (select id from host)), 'active', 'a fenced deletion leaves the account untouched');
 update private.qa_test_user_control set cleanup_enabled = true;
 
 select is((select status::text from public.workspace_subscriptions where ws_id = (select id from public.workspaces where creator_id = (select id from host) and personal) order by created_at desc limit 1), 'active', 'host subscription stays until its deletion');

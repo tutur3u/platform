@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { chmod, lstat, mkdir, readFile, rm } from 'node:fs/promises';
+import { constants, existsSync } from 'node:fs';
+import { lstat, mkdir, open, rm } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { writeFileAtomically } from './atomic-file';
@@ -59,12 +59,27 @@ function assertUserId(userId: string) {
 /** Creates (or verifies) an owner-only real directory, never a symlink. */
 export async function ensurePrivateDirectory(path: string) {
   await mkdir(path, { recursive: true, mode: 0o700 });
-  const info = await lstat(path);
-  if (!info.isDirectory() || info.isSymbolicLink())
+  // Checked and tightened through one descriptor, so a path swapped for a
+  // symlink after mkdir is refused rather than followed.
+  let handle: Awaited<ReturnType<typeof open>>;
+  try {
+    handle = await open(
+      path,
+      constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW
+    );
+  } catch {
     throw new Error('QA credential directory must be a real directory.');
-  if (typeof process.getuid === 'function' && info.uid !== process.getuid())
-    throw new Error('QA credential directory must be owned by you.');
-  if ((info.mode & 0o777) !== 0o700) await chmod(path, 0o700);
+  }
+  try {
+    const info = await handle.stat();
+    if (!info.isDirectory())
+      throw new Error('QA credential directory must be a real directory.');
+    if (typeof process.getuid === 'function' && info.uid !== process.getuid())
+      throw new Error('QA credential directory must be owned by you.');
+    if ((info.mode & 0o777) !== 0o700) await handle.chmod(0o700);
+  } finally {
+    await handle.close();
+  }
 }
 
 export async function runDirectory(runId: string) {
@@ -85,8 +100,8 @@ export async function writePrivateFile(path: string, contents: string) {
   const parent = await lstat(dirname(target)).catch(() => undefined);
   if (!parent?.isDirectory())
     throw new Error('Credential output directory does not exist.');
+  // The temporary file is created (or fchmod-ed) 0600 before the rename.
   await writeFileAtomically(target, contents, { mode: 0o600 });
-  await chmod(target, 0o600);
   return target;
 }
 
@@ -98,16 +113,46 @@ export function sessionFileName(
   return `${userId}.${format === 'tokens' ? 'tokens' : 'storage-state'}.json`;
 }
 
+const MAX_CREDENTIALS_BYTES = 1024 * 1024;
+
+/**
+ * Opens the credentials file once without following a symlink, checks the
+ * type, owner and size on that descriptor, and parses only the bytes read
+ * from it, so a path swapped after the check is never read. O_NONBLOCK makes
+ * a FIFO fail the type check instead of blocking for a writer.
+ */
 async function readCredentials(path: string): Promise<QaCredential[]> {
-  const info = await lstat(path).catch(() => undefined);
-  if (!info) return [];
-  if (!info.isFile() || info.isSymbolicLink())
-    throw new Error('Refusing to read credentials through a non-file path.');
+  let handle: Awaited<ReturnType<typeof open>>;
   try {
-    const parsed = JSON.parse(await readFile(path, 'utf8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    throw new Error('QA credentials file is unreadable.');
+    handle = await open(
+      path,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK
+    );
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+    throw new Error('Refusing to read credentials through a non-file path.');
+  }
+  try {
+    const info = await handle.stat();
+    if (
+      !info.isFile() ||
+      (typeof process.getuid === 'function' && info.uid !== process.getuid()) ||
+      info.size > MAX_CREDENTIALS_BYTES
+    )
+      throw new Error('Refusing to read credentials through a non-file path.');
+    const buffer = Buffer.alloc(MAX_CREDENTIALS_BYTES + 1);
+    const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
+    if (bytesRead > MAX_CREDENTIALS_BYTES)
+      throw new Error('QA credentials file is unreadable.');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(buffer.subarray(0, bytesRead).toString('utf8'));
+    } catch {
+      throw new Error('QA credentials file is unreadable.');
+    }
+    return Array.isArray(parsed) ? (parsed as QaCredential[]) : [];
+  } finally {
+    await handle.close();
   }
 }
 

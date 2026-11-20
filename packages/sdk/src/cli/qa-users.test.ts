@@ -1,9 +1,10 @@
+import { constants } from 'node:fs';
 import {
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
-  stat,
   symlink,
   writeFile,
 } from 'node:fs/promises';
@@ -18,6 +19,32 @@ import {
   type SecurityRunner,
   writePrivateFile,
 } from './qa-users-secrets';
+
+/** Mode and contents from one descriptor, so the checked file is the file read. */
+async function readPrivate(path: string) {
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    return {
+      mode: (await handle.stat()).mode & 0o777,
+      text: await handle.readFile('utf8'),
+    };
+  } finally {
+    await handle.close();
+  }
+}
+
+/** Mode of a directory, read through a descriptor opened on it. */
+async function directoryMode(path: string) {
+  const handle = await open(
+    path,
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW
+  );
+  try {
+    return (await handle.stat()).mode & 0o777;
+  } finally {
+    await handle.close();
+  }
+}
 
 const RUN = 'abcd1234';
 const USER = '11111111-2222-4333-8444-555555555555';
@@ -191,9 +218,10 @@ describe('qa users', () => {
     });
     expectNoSecrets(out.join(''));
     const file = join(home, 'qa', RUN, 'credentials.json');
-    expect((await stat(file)).mode & 0o777).toBe(0o600);
-    expect((await stat(join(home, 'qa', RUN))).mode & 0o777).toBe(0o700);
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual([
+    const credentials = await readPrivate(file);
+    expect(credentials.mode).toBe(0o600);
+    expect(await directoryMode(join(home, 'qa', RUN))).toBe(0o700);
+    expect(JSON.parse(credentials.text)).toEqual([
       { userId: USER, email: EMAIL, password: PASSWORD },
     ]);
   });
@@ -233,7 +261,7 @@ describe('qa users', () => {
       d
     );
     expect(
-      (await stat(join(home, 'qa', RUN, 'credentials.json'))).mode & 0o777
+      (await readPrivate(join(home, 'qa', RUN, 'credentials.json'))).mode
     ).toBe(0o600);
   });
 
@@ -289,12 +317,12 @@ describe('qa users', () => {
     expectNoSecrets(out.join(''));
     const state = join(home, 'qa', RUN, `${USER}.storage-state.json`);
     const tokens = join(home, 'qa', RUN, `${USER}.tokens.json`);
-    expect((await stat(state)).mode & 0o777).toBe(0o600);
-    expect((await stat(tokens)).mode & 0o777).toBe(0o600);
-    expect(await readFile(state, 'utf8')).toContain(COOKIE);
-    expect(JSON.parse(await readFile(tokens, 'utf8')).refreshToken).toBe(
-      REFRESH
-    );
+    const stateFile = await readPrivate(state);
+    const tokensFile = await readPrivate(tokens);
+    expect(stateFile.mode).toBe(0o600);
+    expect(tokensFile.mode).toBe(0o600);
+    expect(stateFile.text).toContain(COOKIE);
+    expect(JSON.parse(tokensFile.text).refreshToken).toBe(REFRESH);
   });
 
   it('refuses to write credentials through a symlink', async () => {

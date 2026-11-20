@@ -35,10 +35,12 @@ vi.mock('next/server', async (original) => ({
   connection: vi.fn(async () => undefined),
 }));
 vi.mock('@tuturuuu/supabase/next/common', () => ({
-  getSupabaseCookieOptions: (_url: string, origin: string) =>
-    new URL(origin).hostname.endsWith('tuturuuu.com')
+  getSupabaseCookieOptions: (_url: string, origin: string) => {
+    const { hostname } = new URL(origin);
+    return hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com')
       ? { domain: '.tuturuuu.com' }
-      : {},
+      : {};
+  },
 }));
 
 import { DELETE } from './[userId]/route';
