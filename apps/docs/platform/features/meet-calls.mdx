@@ -128,11 +128,26 @@ the move are collected under the new workspace.
 
 Intervals live in the private `meet_attendance_sessions` table. The retention
 clock is `joined_at`. Rows expire 90 days after that timestamp, the same
-ceiling as raw interaction events. `private.purge_expired_meet_attendance`
-deletes expired rows. The forward migration retires the daily Postgres job.
-**Release gate:** Keep attendance disabled in production until the Meet
-redesign ships and verifies a Cloudflare scheduled job that enforces the
-90-day retention limit.
+ceiling as raw interaction events. Cron Control owns retention and erasure on
+Cloudflare; Postgres runs no schedule for attendance:
+
+- `meet-attendance-retention` runs daily at 01:17 GMT+7 and calls
+  `private.purge_expired_meet_attendance` for at most 200 rows per slot.
+- `meet-attendance-erasure` runs every 10 minutes. Each slot reconciles one
+  page of erasure intents, claims at most four pages of 128 rooms, erases each
+  room copy through the Meet realtime `AttendanceErasure` entrypoint, and
+  records which claims each room accepted.
+
+Both jobs stay out of `CRON_CONTROL_ENABLED_JOBS`, and the
+`private.meet_attendance_retention_control` stop fence starts closed. Only the
+database owner can open it; `service_role` can read it but not change it.
+**Release gate:** Keep attendance disabled in production until Cron Control
+enables both jobs and binds `MEET_ATTENDANCE_ERASURE` to the
+`tuturuuu-meet-realtime` `AttendanceErasure` entrypoint. The
+`meet-attendance-retention-job` CI test refuses a production attendance flag
+before then, and the server also requires `MEET_ATTENDANCE_RETENTION_VERIFIED`
+to name both jobs.
+
 Opening the panel also deletes expired rows for that meeting and workspace and
 pages the rest in stable `joined_at`, `source_key` order past the 1,000-row
 API limit. Equivalent timestamps, including `Z` and `+00:00`, count as
@@ -172,6 +187,32 @@ the old end. The attendance directory stores a room name so a cold alarm can
 still publish and forget, writes only when the room's subjects change, and
 keeps a bounded set of rooms.
 
+Each erasure intent is stored in the same transaction as the delete it
+follows. Meeting and workspace deletes store a confirmed intent in the
+transaction that removes the row. Account deletion stores a planned intent
+first, because the auth delete runs outside that transaction; a trigger on
+`auth.users` confirms the intent in the transaction that removes the account.
+The erasure job also reconciles any planned intent it finds: a missing
+account, meeting, or workspace confirms it, and a row that still exists a day
+later cancels it.
+
+A confirmed intent has one `private.meet_attendance_erasure_rooms` row per
+room, so a plan of any size is worked in pages. Claiming a room assigns its
+fence generation if it has none and leases it for five minutes, so an
+overlapping slot skips it. If a slot stops between the claim and the
+acknowledgement, the lease lapses and the room is claimed again. An
+acknowledgement counts only for the generation that was claimed. When another
+writer raises a room's generation, that room needs a new acknowledgement. A
+room that fails 16 times stops being claimed and is reported as `stuck`. The
+intent is removed only after its session rows are deleted and every room has
+acknowledged. Account erasure covers the member copy (user id) and the guest
+copy stored under the same id, which is how a signed-in person outside the
+workspace is recorded. Every writer stores a plan through
+`private.store_meet_attendance_intent`, which merges under a row lock. A
+confirmed intent never returns to planned, and a room keeps its highest
+generation and that generation's acknowledgements. The rollback copies room
+progress back onto each plan before it drops the table.
+
 Row level security allows only the meeting creator to select rows, and client
 roles have no grants. Co-hosts are workspace admins. The Meet API checks that
 the caller is the host or a co-host, then reads and writes through the service
@@ -181,7 +222,11 @@ Regression coverage lives in `class-features.test.ts`, `class-service.test.ts`,
 `class-timer.test.ts`, `attendance-ledger.test.ts`,
 `attendance-directory.test.ts`, `attendance-scope.test.ts`,
 `attendance-erasure.test.ts`, `call-clock.test.tsx`, the attendance route
-tests, and `meet-class-attendance-acl.test.mjs`.
+tests, `meet-class-attendance-acl.test.mjs`,
+`meet-attendance-erasure-rooms.test.mjs` (crash after the delete or the claim,
+concurrent writers, more than 128 rooms, rollback),
+`meet-attendance-erasure.test.ts` in Cron Control, and
+`attendance-room-erase.test.ts` in Meet realtime.
 
 ## Pieces
 

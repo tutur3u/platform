@@ -14,6 +14,7 @@ import { verifyMeetRealtimeToken } from '../../../packages/realtime/src/meet/tok
 import type { MeetRoomEnv } from './room-do';
 
 export { MeetRoomDurableObject } from './room-do';
+export { AttendanceErasure } from './attendance-erasure-entrypoint';
 
 /**
  * Cloudflare Worker entry for Tuturuuu Meet realtime.

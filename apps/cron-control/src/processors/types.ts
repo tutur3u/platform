@@ -1,8 +1,11 @@
 import type { RunOutcome } from '../ledger';
+import type { MeetAttendanceErasureBinding } from './meet-attendance-erasure';
 
 export interface ProcessorEnv {
   /** Exactly 'off', 'dry-run' or 'delete'; any other value (including unset) means off. */
   AI_STUDIO_RETENTION_MODE?: string;
+  /** Service binding to the Meet realtime `AttendanceErasure` entrypoint. */
+  MEET_ATTENDANCE_ERASURE?: MeetAttendanceErasureBinding;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
 }

@@ -27,6 +27,8 @@
   "include": [
     "cloudflare-env.d.ts",
     "../meet-realtime/src/attendance-directory-request.ts",
+    "../meet-realtime/src/attendance-erasure-entrypoint.ts",
+    "../meet-realtime/src/attendance-room-erase.ts",
     "../meet-realtime/src/channel-room-do.ts",
     "../meet-realtime/src/channel-worker.ts",
     "../meet-realtime/src/collaboration-room-do.ts",

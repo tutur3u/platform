@@ -22,6 +22,7 @@ export type WorkerProcessorId =
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'devbox-unauthorized-run-sweep'
+  | 'meet-attendance-erasure'
   | 'meet-attendance-retention'
   | 'meet-transcript-retention'
   | 'storage-access-audit-retention';
@@ -34,6 +35,7 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
+  'meet-attendance-erasure': 'advance_meet_attendance_erasure_intents',
   'meet-attendance-retention': 'purge_expired_meet_attendance',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -121,6 +123,18 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/purge_expired_meet_attendance',
     'idempotent',
     { workerProcessor: 'meet-attendance-retention', timeoutMs: 30_000 }
+  ),
+  // Every 10 minutes. Erases room copies for confirmed attendance erasure
+  // intents through the Meet realtime binding. Room claims carry a lease, so
+  // an overlapping slot skips them. Stays out of CRON_CONTROL_ENABLED_JOBS
+  // until attendance is admitted. The database fence starts closed.
+  job(
+    'meet-attendance-erasure',
+    '*/10 * * * *',
+    'web',
+    '/rest/v1/rpc/advance_meet_attendance_erasure_intents',
+    'claim-fenced',
+    { workerProcessor: 'meet-attendance-erasure', timeoutMs: 60_000 }
   ),
   // Daily, sharing the media cleanup trigger. The database fence keeps it a
   // no-op (or a count-only dry run) until deletion is separately approved.

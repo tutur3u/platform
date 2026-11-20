@@ -14,7 +14,6 @@ import { readAttendancePages } from './attendance-scope';
 import {
   attendanceErasureKey,
   eraseClaimKey,
-  mergeAttendanceIntent,
   planMeetingAttendanceRooms,
   planSubjectAttendanceRooms,
   planWorkspaceAttendanceRooms,
@@ -74,16 +73,20 @@ interface PrivateSchema {
   ): AttendanceFilter;
   from(name: 'meet_attendance_pending_erasures'): {
     select(columns: string): PendingQuery;
-    upsert(
-      row: unknown,
-      options: { onConflict: string }
-    ): Promise<{ error: QueryError }>;
     delete(): PendingQuery;
   };
   rpc(
     fn: 'bump_meet_attendance_fence',
     args: { p_meeting_id: string; p_ws_id: string }
   ): Promise<{ data: number | string | null; error: QueryError }>;
+  rpc(
+    fn: 'store_meet_attendance_intent',
+    args: {
+      p_kind: string;
+      p_subject_key: string;
+      p_plan: AttendanceErasurePlan;
+    }
+  ): Promise<{ data: null; error: QueryError }>;
 }
 
 interface PrivateAttendanceClient {
@@ -254,23 +257,24 @@ async function readPending(sql: AttendanceErasureSql) {
   return read.data?.[0]?.plan ?? null;
 }
 
+/** The database merges under a row lock, so a concurrent writer cannot undo confirmed work. */
 async function savePending(plan: AttendanceErasurePlan) {
-  const existing = await readPending(plan.sql);
-  const merged = mergeAttendanceIntent(existing, plan);
-  if (!merged) return;
-  plan.phase = merged.phase;
-  plan.rooms = merged.rooms;
-  plan.attempts = merged.attempts;
-  plan.sqlDone = merged.sqlDone;
   const key = attendanceErasureKey(plan.sql);
   await throwIfError(
     (
-      await pendingTable(await admin()).upsert(
-        { kind: key.kind, subject_key: key.subjectKey, plan },
-        { onConflict: 'kind,subject_key' }
-      )
+      await privateSchema(await admin()).rpc('store_meet_attendance_intent', {
+        p_kind: key.kind,
+        p_subject_key: key.subjectKey,
+        p_plan: plan,
+      })
     ).error
   );
+  const stored = await readPending(plan.sql);
+  if (!stored) return;
+  plan.phase = stored.phase;
+  plan.rooms = stored.rooms;
+  plan.attempts = stored.attempts;
+  plan.sqlDone = stored.sqlDone;
 }
 
 async function finishPending(sql: AttendanceErasureSql) {

@@ -48,7 +48,12 @@ test('the Cloudflare retention job declares its schedule and calls the purge', (
   );
   assert.ok(
     features.includes(
-      '`${MEET_ATTENDANCE_RETENTION_JOB_ID}:${MEET_ATTENDANCE_RETENTION_CRON}:${MEET_ATTENDANCE_RETENTION_RPC}`'
+      "export const MEET_ATTENDANCE_ERASURE_JOB_ID = 'meet-attendance-erasure'"
+    )
+  );
+  assert.ok(
+    features.includes(
+      '`${MEET_ATTENDANCE_RETENTION_JOB_ID}:${MEET_ATTENDANCE_RETENTION_CRON}:${MEET_ATTENDANCE_RETENTION_RPC}+${MEET_ATTENDANCE_ERASURE_JOB_ID}`'
     )
   );
   const migrations = readdirSync(
@@ -84,20 +89,55 @@ function productionConfig(file) {
   );
 }
 
-test('production attendance requires an enabled Cloudflare retention job', () => {
+const ERASURE_JOB_ID = 'meet-attendance-erasure';
+
+test('the Cloudflare erasure job claims rooms through the realtime entrypoint', () => {
+  const jobs = read('apps/cron-control/src/jobs.ts');
+  const registration = [
+    ...jobs.matchAll(
+      /\bjob\(\s*'([^']+)',\s*'([^']+)',\s*'[^']+',\s*'([^']+)',\s*'([^']+)'/gu
+    ),
+  ].find(([, id]) => id === ERASURE_JOB_ID);
+  assert.deepEqual(registration?.slice(1), [
+    ERASURE_JOB_ID,
+    '*/10 * * * *',
+    '/rest/v1/rpc/advance_meet_attendance_erasure_intents',
+    'claim-fenced',
+  ]);
+  const processor = read(
+    'apps/cron-control/src/processors/meet-attendance-erasure.ts'
+  );
+  for (const rpc of [
+    'claim_meet_attendance_erasure_rooms',
+    'ack_meet_attendance_erasure_room',
+  ])
+    assert.ok(processor.includes(`'${rpc}'`));
+  assert.match(
+    read('apps/meet-realtime/src/worker.ts'),
+    /export \{ AttendanceErasure \} from '\.\/attendance-erasure-entrypoint';/u
+  );
+});
+
+function attendanceJobsReady() {
   const enabled = cronControlConfig.worker.env.CRON_CONTROL_ENABLED_JOBS;
   assert.equal(
     enabled?.type,
     'text',
     'expected explicit Cron Control job enablement'
   );
-  if (
-    enabled.value
-      .split(',')
-      .map((job) => job.trim())
-      .includes(JOB_ID)
-  )
-    return;
+  const jobs = enabled.value.split(',').map((job) => job.trim());
+  const binding = cronControlConfig.worker.env.MEET_ATTENDANCE_ERASURE;
+  return (
+    jobs.includes(JOB_ID) &&
+    jobs.includes(ERASURE_JOB_ID) &&
+    binding?.type === 'worker' &&
+    binding.worker === 'tuturuuu-meet-realtime' &&
+    binding.exportName === 'AttendanceErasure'
+  );
+}
+
+test('production attendance requires enabled Cloudflare retention and erasure jobs', () => {
+  if (attendanceJobsReady()) return;
   const matches = execFileSync(
     'git',
     ['grep', '-n', '-I', '-F', flag, '--', 'apps', '.github/workflows'],
@@ -124,6 +164,6 @@ test('production attendance requires an enabled Cloudflare retention job', () =>
       .filter(({ source }) => !disabled.test(source))
       .map(({ location }) => location),
     [],
-    'Keep production attendance disabled until Cron Control enables meet-attendance-retention.'
+    'Keep production attendance disabled until Cron Control enables meet-attendance-retention and meet-attendance-erasure with the AttendanceErasure binding.'
   );
 });

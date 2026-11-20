@@ -72,7 +72,7 @@ it('prepares erasure only while the switch is on', async () => {
   vi.stubEnv('MEET_CLASS_ATTENDANCE_ENABLED', 'true');
   vi.stubEnv(
     'MEET_ATTENDANCE_RETENTION_VERIFIED',
-    'meet-attendance-retention:17 18 * * *:purge_expired_meet_attendance'
+    'meet-attendance-retention:17 18 * * *:purge_expired_meet_attendance+meet-attendance-erasure'
   );
   const remove = vi.fn(async () => ({ error: null }));
   await hooks().deleteWorkspace('ws', remove);

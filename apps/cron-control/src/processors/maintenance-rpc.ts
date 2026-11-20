@@ -12,13 +12,15 @@ export type PrivateRpcResult =
 
 /**
  * POSTs one private RPC with the service key under the run deadline. Network
- * errors and the deadline throw. A response must be at most 1 KiB of JSON;
- * anything unreadable is `invalid`, so its outcome is unknown.
+ * errors and the deadline throw. A response must be at most `maxBytes` (1 KiB
+ * by default) of JSON; anything unreadable is `invalid`, so its outcome is
+ * unknown.
  */
 export async function postPrivateRpc(
   context: ProcessorContext,
   rpc: string,
-  body: Record<string, unknown>
+  body: Record<string, unknown>,
+  maxBytes = MAX_RPC_RESPONSE_BYTES
 ): Promise<PrivateRpcResult> {
   const timeout = AbortSignal.timeout(
     Math.max(1, Math.min(30_000, context.deadline - context.now()))
@@ -52,7 +54,7 @@ export async function postPrivateRpc(
       );
       if (done) break;
       bytes += value.byteLength;
-      if (bytes > MAX_RPC_RESPONSE_BYTES) return { kind: 'invalid' };
+      if (bytes > maxBytes) return { kind: 'invalid' };
       text += decoder.decode(value, { stream: true });
     }
     text += decoder.decode();
