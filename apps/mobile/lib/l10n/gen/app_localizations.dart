@@ -33247,6 +33247,30 @@ abstract class AppLocalizations {
   /// **'Manage your plan on the web at tuturuuu.com.'**
   String get assistantLiveBlockedManageOnWeb;
 
+  /// No description provided for @assistantLiveBlockedIosPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live is unavailable with your current access'**
+  String get assistantLiveBlockedIosPlanTitle;
+
+  /// No description provided for @assistantLiveBlockedIosPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still chat with Mira by text.'**
+  String get assistantLiveBlockedIosPlanBody;
+
+  /// No description provided for @assistantLiveBlockedIosCreditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Insufficient credits for Live'**
+  String get assistantLiveBlockedIosCreditsTitle;
+
+  /// No description provided for @financeInterestAnnualRatePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 4.5'**
+  String get financeInterestAnnualRatePlaceholder;
+
   /// No description provided for @assistantLiveBlockedGotIt.
   ///
   /// In en, this message translates to:

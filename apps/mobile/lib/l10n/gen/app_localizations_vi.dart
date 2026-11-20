@@ -17802,6 +17802,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveBlockedManageOnWeb => 'Quản lý gói của bạn trên web tại tuturuuu.com.';
 
   @override
+  String get assistantLiveBlockedIosPlanTitle => 'Quyền truy cập hiện tại không bao gồm Live';
+
+  @override
+  String get assistantLiveBlockedIosPlanBody => 'Bạn vẫn có thể nhắn tin với Mira.';
+
+  @override
+  String get assistantLiveBlockedIosCreditsTitle => 'Không đủ tín dụng để dùng Live';
+
+  @override
+  String get financeInterestAnnualRatePlaceholder => 'Ví dụ: 4,5';
+
+  @override
   String get assistantLiveBlockedGotIt => 'Đã hiểu';
 
   @override

@@ -59,11 +59,22 @@ void main() {
           ),
         );
         await tester.pumpAndSettle();
-        expect(find.text(eligibility.title(l10n)), findsOneWidget);
-        expect(
-          find.text(eligibility.body(l10n, now: DateTime(2026, 11, 20, 9))),
-          findsOneWidget,
-        );
+        final ios = platform == TargetPlatform.iOS;
+        final title = switch (reason) {
+          AssistantLiveBlockReason.planRequired when ios =>
+            l10n.assistantLiveBlockedIosPlanTitle,
+          AssistantLiveBlockReason.creditsExhausted when ios =>
+            l10n.assistantLiveBlockedIosCreditsTitle,
+          _ => eligibility.title(l10n),
+        };
+        final body = ios && reason == AssistantLiveBlockReason.planRequired
+            ? l10n.assistantLiveBlockedIosPlanBody
+            : eligibility.body(l10n, now: DateTime(2026, 11, 20, 9));
+        expect(find.text(title), findsOneWidget);
+        expect(find.text(body), findsOneWidget);
+        if (ios && title != eligibility.title(l10n)) {
+          expect(find.text(eligibility.title(l10n)), findsNothing);
+        }
         expect(
           find.text(l10n.assistantLiveBlockedBilledTo('Phuc personal')),
           findsOneWidget,
@@ -86,18 +97,7 @@ void main() {
           find.byKey(const ValueKey('live-blocked-open-billing')),
           findsNothing,
         );
-        expect(
-          find.text(l10n.assistantLiveBlockedManageOnWeb),
-          billing ? findsOneWidget : findsNothing,
-        );
-        // The web hint is plain text, never a link.
-        expect(
-          find.ancestor(
-            of: find.text(l10n.assistantLiveBlockedManageOnWeb),
-            matching: find.byType(InkWell),
-          ),
-          findsNothing,
-        );
+        expect(find.text(l10n.assistantLiveBlockedManageOnWeb), findsNothing);
         await tester.tap(find.byKey(const ValueKey('live-blocked-got-it')));
         expect(closed, 1);
         expect(opened, 0);
@@ -125,10 +125,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Nạp thêm để dùng Live'), findsOneWidget);
+    expect(find.text('Không đủ tín dụng để dùng Live'), findsOneWidget);
     expect(
       find.text('Quản lý gói của bạn trên web tại tuturuuu.com.'),
-      findsOneWidget,
+      findsNothing,
     );
     expect(tester.takeException(), isNull);
   });

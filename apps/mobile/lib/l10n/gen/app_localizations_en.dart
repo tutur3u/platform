@@ -18015,6 +18015,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveBlockedManageOnWeb => 'Manage your plan on the web at tuturuuu.com.';
 
   @override
+  String get assistantLiveBlockedIosPlanTitle => 'Live is unavailable with your current access';
+
+  @override
+  String get assistantLiveBlockedIosPlanBody => 'You can still chat with Mira by text.';
+
+  @override
+  String get assistantLiveBlockedIosCreditsTitle => 'Insufficient credits for Live';
+
+  @override
+  String get financeInterestAnnualRatePlaceholder => 'e.g. 4.5';
+
+  @override
   String get assistantLiveBlockedGotIt => 'Got it';
 
   @override

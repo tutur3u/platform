@@ -65,7 +65,9 @@ class _TransactionExportSheetState extends State<_TransactionExportSheet> {
     try {
       await SharePlus.instance.share(
         ShareParams(
-          files: [XFile.fromData(utf8.encode(csv), mimeType: 'text/csv')],
+          files: [
+            XFile.fromData(utf8.encode('\uFEFF$csv'), mimeType: 'text/csv'),
+          ],
           fileNameOverrides: ['transactions.csv'],
           sharePositionOrigin: origin,
         ),

@@ -133,3 +133,6 @@ GoogleService-Info.plist
 
 # Android native Firebase files are injected locally or by CI.
 **/google-services.json
+
+# Flutter golden failure output
+test/**/failures/

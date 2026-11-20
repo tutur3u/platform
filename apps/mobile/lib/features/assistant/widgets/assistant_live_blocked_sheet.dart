@@ -15,9 +15,8 @@ Uri assistantLiveBillingUri(String wsId) => Uri(
 
 /// Why Live cannot start, with one primary action and "Not now".
 ///
-/// Plan and credit refusals never offer purchase on iOS (App Store guideline
-/// 3.1.1): they say where to manage the plan as plain text. Android may open
-/// the web billing page through [onOpenBilling].
+/// iOS shows eligibility information. Android may open billing through
+/// [onOpenBilling].
 class AssistantLiveBlockedSheet extends StatelessWidget {
   const AssistantLiveBlockedSheet({
     required this.eligibility,
@@ -47,13 +46,25 @@ class AssistantLiveBlockedSheet extends StatelessWidget {
       AssistantLiveBlockReason.creditsExhausted => true,
       _ => false,
     };
-    final android =
-        (platform ?? defaultTargetPlatform) == TargetPlatform.android;
+    final targetPlatform = platform ?? defaultTargetPlatform;
+    final android = targetPlatform == TargetPlatform.android;
+    final ios = targetPlatform == TargetPlatform.iOS;
     final openBilling = billingReason && android ? onOpenBilling : null;
-    final manageOnWeb = billingReason && openBilling == null;
+    final manageOnWeb = billingReason && !ios && openBilling == null;
+    final title = switch (eligibility.reason) {
+      AssistantLiveBlockReason.planRequired when ios =>
+        l10n.assistantLiveBlockedIosPlanTitle,
+      AssistantLiveBlockReason.creditsExhausted when ios =>
+        l10n.assistantLiveBlockedIosCreditsTitle,
+      _ => eligibility.title(l10n),
+    };
+    final body =
+        ios && eligibility.reason == AssistantLiveBlockReason.planRequired
+        ? l10n.assistantLiveBlockedIosPlanBody
+        : eligibility.body(l10n, now: now);
     return AppSheetScaffold(
       key: ValueKey('live-blocked-${eligibility.reason?.code ?? 'paused'}'),
-      title: eligibility.title(l10n),
+      title: title,
       showCloseButton: false,
       actions: [
         if (openBilling != null) ...[
@@ -96,7 +107,7 @@ class AssistantLiveBlockedSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            eligibility.body(l10n, now: now),
+            body,
             key: const ValueKey('live-blocked-body'),
             textAlign: TextAlign.center,
             style: tokens.typography.p.copyWith(

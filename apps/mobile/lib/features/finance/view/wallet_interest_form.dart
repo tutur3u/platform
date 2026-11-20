@@ -189,7 +189,7 @@ class _WalletInterestRateFormState extends State<WalletInterestRateForm> {
         children: [
           AppTextField(
             label: l10n.financeInterestAnnualRate,
-            placeholder: '5',
+            placeholder: l10n.financeInterestAnnualRatePlaceholder,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             onChanged: (value) => setState(
               () => _rate = double.tryParse(value.trim().replaceAll(',', '.')),

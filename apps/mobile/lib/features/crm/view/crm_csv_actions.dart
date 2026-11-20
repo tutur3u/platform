@@ -117,7 +117,9 @@ extension _CrmCsvActions on _CrmPageState {
       final box = context.findRenderObject();
       await SharePlus.instance.share(
         ShareParams(
-          files: [XFile.fromData(utf8.encode(csv), mimeType: 'text/csv')],
+          files: [
+            XFile.fromData(utf8.encode('\uFEFF$csv'), mimeType: 'text/csv'),
+          ],
           fileNameOverrides: ['crm-users-$timestamp.csv'],
           text: context.l10n.crmExportUsers,
           sharePositionOrigin: box is RenderBox
