@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mobile/data/models/habit_tracker.dart';
+import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
@@ -47,7 +48,11 @@ class HabitsActivitySection extends StatelessWidget {
     }
 
     if (state.activityEntries.isEmpty) {
-      return _ActivityEmptyState(message: context.l10n.habitsActivityEmptyBody);
+      return AppStateMessage(
+        icon: LucideIcons.history,
+        title: context.l10n.habitsActivityEmptyTitle,
+        message: context.l10n.habitsActivityEmptyBody,
+      );
     }
 
     final groups = _buildGroups(state.activityEntries);
@@ -63,30 +68,23 @@ class HabitsActivitySection extends StatelessWidget {
               child: const NovaLoadingIndicator(size: 20),
             ),
           ),
-        for (final group in groups) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-            child: Text(
-              _formatGroupLabel(context, group.date),
-              style: Theme.of(
-                context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-            ),
+        for (final group in groups)
+          AppGroupedSection.spaced(
+            caption: _formatGroupLabel(context, group.date),
+            children: [
+              for (final item in group.items)
+                PendingSyncFrame(
+                  key: ValueKey(item.entry.id),
+                  workspaceId: item.tracker.wsId,
+                  feature: 'habits',
+                  entityId: item.entry.id,
+                  child: _ActivityEntryCard(
+                    item: item,
+                    onTap: () => onOpenTracker(item.tracker.id),
+                  ),
+                ),
+            ],
           ),
-          for (final item in group.items) ...[
-            PendingSyncFrame(
-              workspaceId: item.tracker.wsId,
-              feature: 'habits',
-              entityId: item.entry.id,
-              child: _ActivityEntryCard(
-                item: item,
-                onTap: () => onOpenTracker(item.tracker.id),
-              ),
-            ),
-            if (item != group.items.last) const SizedBox(height: 10),
-          ],
-          if (group != groups.last) const SizedBox(height: 18),
-        ],
       ],
     );
   }
@@ -107,7 +105,6 @@ class _ActivityEntryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final tracker = item.tracker;
     final entry = item.entry;
-    final accentColor = habitTrackerColor(context, tracker.color);
     final timestamp = item.timestamp.toLocal();
     final locale = Localizations.localeOf(context).toLanguageTag();
     final timeLabel = DateFormat.Hm(locale).format(timestamp);
@@ -120,279 +117,41 @@ class _ActivityEntryCard extends StatelessWidget {
         .where((field) => field.key != primaryField?.key)
         .toList(growable: false);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              colors: [
-                accentColor.withValues(alpha: 0.12),
-                Theme.of(context).colorScheme.surfaceContainerLow,
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            border: Border.all(color: accentColor.withValues(alpha: 0.22)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: accentColor.withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      habitTrackerIcon(tracker.icon),
-                      color: accentColor,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tracker.name,
-                          style: Theme.of(context).textTheme.titleSmall
-                              ?.copyWith(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          entry.member?.label ?? entry.entryDate,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surface.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      timeLabel,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              if (primaryField != null && primaryValue != null) ...[
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surface.withValues(alpha: 0.86),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          primaryField.label,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ),
-                      Text(
-                        formatFieldValue(primaryField, primaryValue),
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-              if (fieldValues.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: fieldValues
-                      .map(
-                        (field) => _ValueChip(
-                          label: field.label,
-                          value: formatFieldValue(
-                            field,
-                            entry.values[field.key],
-                          ),
-                        ),
-                      )
-                      .toList(growable: false),
-                ),
-              ],
-              if (entry.note?.trim().isNotEmpty == true) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(13),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surface.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    entry.note!.trim(),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-              if (entry.tags.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: entry.tags
-                      .map(
-                        (tag) => Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: Theme.of(context).colorScheme.surface,
-                          ),
-                          child: Text(
-                            '#$tag',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ),
-                      )
-                      .toList(growable: false),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.subdirectory_arrow_right_rounded,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    tracker.trackingMode == HabitTrackerTrackingMode.eventLog
-                        ? context.l10n.habitsModeEventLog
-                        : context.l10n.habitsModeDailySummary,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+    final member = entry.member?.label;
+    return AppGroupedRow(
+      leading: AppIconTile(
+        icon: habitTrackerIcon(tracker.icon),
+        tone: AppTone.primary,
       ),
-    );
-  }
-}
-
-class _ValueChip extends StatelessWidget {
-  const _ValueChip({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        color: Theme.of(context).colorScheme.surface,
-      ),
-      child: Text(
-        '$label: $value',
-        style: Theme.of(
-          context,
-        ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _ActivityEmptyState extends StatelessWidget {
-  const _ActivityEmptyState({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.surfaceContainerLow,
-            Theme.of(context).colorScheme.surface,
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        border: Border.all(
-          color: Theme.of(
-            context,
-          ).colorScheme.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
+      title: Text(tracker.name),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [if (member != null) Text(member), Text(timeLabel)],
+          ),
+          if (primaryField != null && primaryValue != null)
+            Wrap(
+              spacing: AppSpacing.sm,
+              children: [
+                Text(primaryField.label),
+                Text(formatFieldValue(primaryField, primaryValue)),
+              ],
             ),
-            child: const Icon(Icons.history_rounded, size: 30),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            context.l10n.habitsActivityEmptyTitle,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          const SizedBox(height: 8),
-          Text(message, textAlign: TextAlign.center),
+          for (final field in fieldValues)
+            Text(
+              '${field.label} · '
+              '${formatFieldValue(field, entry.values[field.key])}',
+            ),
+          if (entry.note?.trim() case final note? when note.isNotEmpty)
+            Text(note),
+          if (entry.tags.isNotEmpty)
+            Text(entry.tags.map((tag) => '#$tag').join(' ')),
         ],
       ),
+      onTap: onTap,
+      showChevron: true,
     );
   }
 }

@@ -36,13 +36,7 @@ lib/features/finance/widgets/finance_modal_scaffold.dart
 lib/features/finance/widgets/finance_ui.dart
 lib/features/finance/widgets/wallet_dialog.dart
 lib/features/finance/widgets/wallet_image_picker_sheet.dart
-lib/features/habits/view/habits_library_section.dart
-lib/features/habits/view/habits_page.dart
-lib/features/habits/view/habits_page_chrome.dart
-lib/features/habits/widgets/habit_tracker_card.dart
 lib/features/habits/widgets/habit_tracker_detail_sheet.dart
-lib/features/habits/widgets/habit_tracker_entry_sheet.dart
-lib/features/habits/widgets/habit_tracker_form_sheet.dart
 lib/features/inventory/view/inventory_audit_logs_page.dart
 lib/features/inventory/view/inventory_checkout_page.dart
 lib/features/inventory/widgets/inventory_form_scaffold.dart

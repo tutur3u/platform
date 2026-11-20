@@ -6,7 +6,6 @@ import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HabitTrackerFormSheet extends StatefulWidget {
   const HabitTrackerFormSheet({
@@ -519,7 +518,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
           _FormSectionPanel(
             title: l10n.habitsFieldsTitle,
             subtitle: l10n.habitsPrimaryMetricLabel,
-            action: shad.OutlineButton(
+            action: AppButton.outline(
               onPressed: () {
                 setState(() => _showAdvancedFields = !_showAdvancedFields);
               },
@@ -590,7 +589,7 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
                     if (index != _fields.length - 1) const SizedBox(height: 12),
                   ],
                   const SizedBox(height: 14),
-                  shad.OutlineButton(
+                  AppButton.outline(
                     onPressed: _fields.length >= 4 ? null : _addField,
                     child: Text(l10n.habitsAddField),
                   ),
@@ -791,10 +790,10 @@ class _HabitTrackerFormSheetState extends State<HabitTrackerFormSheet> {
   }
 
   void _showErrorToast(BuildContext toastContext, String message) {
-    shad.showToast(
-      context: toastContext,
-      builder: (toastContext, overlay) =>
-          shad.Alert.destructive(content: Text(message)),
+    showAppToast(
+      toastContext,
+      message: message,
+      variant: AppAlertVariant.destructive,
     );
   }
 }
@@ -827,8 +826,8 @@ class _FormPreviewCard extends StatelessWidget {
     final formattedTarget = targetValue.trim().isEmpty ? '0' : targetValue;
     final suffix = unit?.trim().isNotEmpty == true ? ' ${unit!.trim()}' : '';
 
-    return FinancePanel(
-      backgroundColor: accent.withValues(alpha: 0.08),
+    return AppCard(
+      fillColor: accent.withValues(alpha: 0.08),
       borderColor: accent.withValues(alpha: 0.26),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -853,7 +852,7 @@ class _FormPreviewCard extends StatelessWidget {
                       trackerName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: shad.Theme.of(
+                      style: AppTokens.of(
                         context,
                       ).typography.large.copyWith(fontWeight: FontWeight.w800),
                     ),
@@ -863,12 +862,11 @@ class _FormPreviewCard extends StatelessWidget {
                         description.trim(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: shad.Theme.of(context).typography.textSmall
-                            .copyWith(
-                              color: shad.Theme.of(
-                                context,
-                              ).colorScheme.mutedForeground,
-                            ),
+                        style: AppTokens.of(context).typography.small.copyWith(
+                          color: AppTokens.of(
+                            context,
+                          ).colorScheme.mutedForeground,
+                        ),
                       ),
                     ],
                   ],
@@ -932,7 +930,7 @@ class _FormSectionPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

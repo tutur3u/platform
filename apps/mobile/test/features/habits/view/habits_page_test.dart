@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_state.dart';
+import 'package:mobile/features/habits/view/habits_overview_section.dart';
 import 'package:mobile/features/habits/view/habits_page.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
@@ -14,16 +17,21 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/helpers.dart';
 import 'habits_auth_fixture.dart';
 
 class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
     implements WorkspaceCubit {}
 
-class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
-  _FakeHabitTrackerRepository();
+class FakeHabitTrackerRepository implements IHabitTrackerRepository {
+  FakeHabitTrackerRepository({HabitTracker? tracker})
+    : tracker = tracker ?? _water;
 
-  final HabitTracker tracker = HabitTracker(
+  final HabitTracker tracker;
+  final submittedEntries = <HabitTrackerEntryInput>[];
+
+  static final _water = HabitTracker(
     id: 'tracker-1',
     wsId: 'ws-1',
     name: 'Water',
@@ -62,6 +70,7 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
     String trackerId,
     HabitTrackerEntryInput input,
   ) async {
+    submittedEntries.add(input);
     return HabitTrackerEntry(
       id: 'entry-1',
       wsId: wsId,
@@ -211,9 +220,10 @@ class _FakeHabitTrackerRepository implements IHabitTrackerRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(DesignRender.loadFonts);
 
   late _MockWorkspaceCubit workspaceCubit;
-  late _FakeHabitTrackerRepository repository;
+  late FakeHabitTrackerRepository repository;
 
   Widget buildHabitsTestSurface({
     required WorkspaceCubit workspaceCubit,
@@ -244,11 +254,10 @@ void main() {
     }
   }
 
-  setUp(() async {
+  setUp(() {
     HabitsCubit.clearCache();
-    await CacheStore.instance.clearScope();
     workspaceCubit = _MockWorkspaceCubit();
-    repository = _FakeHabitTrackerRepository();
+    repository = FakeHabitTrackerRepository();
     when(() => workspaceCubit.state).thenReturn(
       const WorkspaceState(
         status: WorkspaceStatus.loaded,
@@ -259,7 +268,33 @@ void main() {
     when(() => workspaceCubit.stream).thenAnswer((_) => const Stream.empty());
   });
 
+  for (final brightness in Brightness.values) {
+    testWidgets('Today renders in ${brightness.name}', (tester) async {
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      final response = await repository.listTrackers('ws-1');
+      await tester.pumpWidget(
+        DesignRenderApp(
+          settings: const AppearanceSettings(),
+          brightness: brightness,
+          child: HabitsOverviewSection(
+            filteredTrackers: response.trackers,
+            state: HabitsState(listResponse: response),
+            onCreateTracker: () async {},
+            onEditTracker: (_) async {},
+            onOpenTracker: (_) async {},
+            onQuickLog: (_) async {},
+          ),
+        ),
+      );
+      expect(find.text('Water'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'habits-today-${brightness.name}');
+    });
+  }
+
   testWidgets('renders trackers and opens the detail sheet', (tester) async {
+    await tester.runAsync(CacheStore.instance.clearScope);
     await tester.pumpApp(
       buildHabitsTestSurface(
         workspaceCubit: workspaceCubit,

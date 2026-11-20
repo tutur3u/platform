@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/features/habits/cubit/habits_state.dart';
 import 'package:mobile/features/habits/view/habits_page_chrome.dart';
@@ -29,27 +30,26 @@ class HabitsOverviewSection extends StatelessWidget {
       return HabitsEmptyView(onCreateTracker: onCreateTracker);
     }
 
-    return Column(
-      children: filteredTrackers
-          .map(
-            (tracker) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: PendingSyncFrame(
-                workspaceId: tracker.tracker.wsId,
-                feature: 'habits',
-                entityId: tracker.tracker.id,
-                child: HabitTrackerCard(
-                  summary: tracker,
-                  scope: state.selectedScope,
-                  selected: tracker.tracker.id == state.selectedTrackerId,
-                  onQuickLog: () => onQuickLog(tracker),
-                  onSelect: () => onOpenTracker(tracker.tracker.id),
-                  onEdit: () => onEditTracker(tracker.tracker),
-                ),
-              ),
+    return AppGroupedCard(
+      children: [
+        for (final tracker in filteredTrackers)
+          PendingSyncFrame(
+            key: ValueKey(tracker.tracker.id),
+            workspaceId: tracker.tracker.wsId,
+            feature: 'habits',
+            entityId: tracker.tracker.id,
+            child: HabitTrackerCard(
+              summary: tracker,
+              scope: state.selectedScope,
+              selected: tracker.tracker.id == state.selectedTrackerId,
+              onQuickLog: state.isSubmittingEntry
+                  ? null
+                  : () => onQuickLog(tracker),
+              onSelect: () => onOpenTracker(tracker.tracker.id),
+              onEdit: () => onEditTracker(tracker.tracker),
             ),
-          )
-          .toList(growable: false),
+          ),
+      ],
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/habit_tracker.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
@@ -255,6 +256,8 @@ void main() {
     await tester.tap(find.text('Member'));
     await pumpUi(tester);
 
-    expect(find.text('View member'), findsOneWidget);
+    final picker = find.byType(AppSelect<String>);
+    expect(picker, findsOneWidget);
+    expect(tester.widget<AppSelect<String>>(picker).title, 'View member');
   });
 }

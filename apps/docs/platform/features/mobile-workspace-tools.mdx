@@ -387,6 +387,12 @@ overlaid. A member detail includes queued entries only for the selected target
 member. Writes require authentication before queue admission and invalidate the
 owning account/workspace. `habit_tracker_actor_scope_test.dart` verifies owner
 filtering, delayed reads, anonymous transitions, and member-target isolation.
+Today shows period progress and streaks in compact rows. Tapping a row opens
+its history. The check button logs a simple personal check for the current
+local day. Habits with required extra fields and team or member views open
+the entry form. The Library offers ready-made templates and a custom tracker.
+The Today widget tests exercise direct logging and the detail transition.
+
 The native Habits screen recreates its cubit when the authenticated account or
 workspace changes. Screen snapshot keys and pending asynchronous publication use
 the initiating actor; closed or departed sessions cannot publish late list or

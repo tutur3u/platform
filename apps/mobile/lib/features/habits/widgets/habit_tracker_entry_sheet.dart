@@ -6,7 +6,6 @@ import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/habits/habit_tracker_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class HabitTrackerEntrySheet extends StatefulWidget {
   const HabitTrackerEntrySheet({
@@ -309,10 +308,10 @@ class _HabitTrackerEntrySheetState extends State<HabitTrackerEntrySheet> {
   }
 
   void _showErrorToast(BuildContext toastContext, String message) {
-    shad.showToast(
-      context: toastContext,
-      builder: (toastContext, overlay) =>
-          shad.Alert.destructive(content: Text(message)),
+    showAppToast(
+      toastContext,
+      message: message,
+      variant: AppAlertVariant.destructive,
     );
   }
 }
@@ -345,8 +344,8 @@ class _EntryHeroCard extends StatelessWidget {
             TimeOfDay.fromDateTime(latestOccurredAt!.toLocal()),
           );
 
-    return FinancePanel(
-      backgroundColor: accent.withValues(alpha: 0.08),
+    return AppCard(
+      fillColor: accent.withValues(alpha: 0.08),
       borderColor: accent.withValues(alpha: 0.24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,25 +497,25 @@ class _QuickCheckComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = habitTrackerColor(context, tracker.color);
 
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             context.l10n.habitsQuickCheckTitle,
-            style: shad.Theme.of(
+            style: AppTokens.of(
               context,
             ).typography.large.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
             context.l10n.habitsQuickCheckDescription,
-            style: shad.Theme.of(context).typography.textSmall.copyWith(
-              color: shad.Theme.of(context).colorScheme.mutedForeground,
+            style: AppTokens.of(context).typography.small.copyWith(
+              color: AppTokens.of(context).colorScheme.mutedForeground,
             ),
           ),
           const SizedBox(height: 16),
-          shad.PrimaryButton(
+          AppButton.primary(
             onPressed: () => onChanged(!value),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -561,7 +560,7 @@ class _QuickIncrementComposer extends StatelessWidget {
         ? tracker.composerConfig.suggestedIncrements
         : tracker.quickAddValues;
 
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -588,7 +587,7 @@ class _QuickIncrementComposer extends StatelessWidget {
             runSpacing: 8,
             children: increments
                 .map(
-                  (value) => shad.OutlineButton(
+                  (value) => AppButton.outline(
                     onPressed: () => onIncrement(value),
                     child: Text('+${formatCompactNumber(value)}'),
                   ),
@@ -617,7 +616,7 @@ class _MeasurementComposer extends StatelessWidget {
     final primaryField = primaryFieldForTracker(tracker);
     final previousValue = latestEntry?.values[tracker.primaryMetricKey] as num?;
 
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -660,7 +659,7 @@ class _AdvancedComposer extends StatelessWidget {
   Widget build(BuildContext context) {
     final primaryField = primaryFieldForTracker(tracker);
 
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -713,7 +712,7 @@ class _WorkoutSessionComposer extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FinancePanel(
+        AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -755,7 +754,7 @@ class _WorkoutSessionComposer extends StatelessWidget {
             ),
           ),
         ),
-        shad.SecondaryButton(
+        AppButton.secondary(
           onPressed: onAddBlock,
           child: Text(context.l10n.habitsAddExerciseBlock),
         ),
@@ -787,7 +786,7 @@ class _WorkoutBlockCard extends StatelessWidget {
           ]
         : tracker.composerConfig.supportedUnits;
 
-    return FinancePanel(
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -796,12 +795,13 @@ class _WorkoutBlockCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   context.l10n.habitsWorkoutBlockTitle,
-                  style: shad.Theme.of(
+                  style: AppTokens.of(
                     context,
                   ).typography.large.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
-              shad.IconButton.ghost(
+              AppIconButton(
+                tooltip: context.l10n.commonDelete,
                 icon: const Icon(Icons.delete_outline_rounded),
                 onPressed: onRemove,
               ),
@@ -904,15 +904,15 @@ class _MeasurementHeader extends StatelessWidget {
       children: [
         Text(
           title,
-          style: shad.Theme.of(
+          style: AppTokens.of(
             context,
           ).typography.large.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 6),
         Text(
           subtitle,
-          style: shad.Theme.of(context).typography.textSmall.copyWith(
-            color: shad.Theme.of(context).colorScheme.mutedForeground,
+          style: AppTokens.of(context).typography.small.copyWith(
+            color: AppTokens.of(context).colorScheme.mutedForeground,
           ),
         ),
       ],
