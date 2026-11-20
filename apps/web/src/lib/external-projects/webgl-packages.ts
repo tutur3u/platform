@@ -9,6 +9,7 @@ import {
   type WebglPackageArtifactMetadata,
   WEBGL_PACKAGE_METADATA_KIND,
   WEBGL_PACKAGE_METADATA_VERSION,
+  webglRevisionRoot,
 } from './webgl-package-artifact';
 
 export {
@@ -34,6 +35,7 @@ type WebglPackageFile = {
   contentType?: string | null;
   path: string;
   size?: number | null;
+  sha256?: string;
 };
 
 const ZIP_CONTENT_TYPES = new Set([
@@ -167,6 +169,7 @@ export function isWebglZipUpload(input: {
 
 export function buildWebglPackageArtifact(input: {
   archivePath: string;
+  revision?: string;
   assetId: string;
   files: WebglPackageFile[];
   provider: WorkspaceStorageProvider;
@@ -177,6 +180,25 @@ export function buildWebglPackageArtifact(input: {
     throw new WebglPackageError('Invalid WebGL archive path.', 400);
   }
 
+  const revisionRoot =
+    input.revision && webglRevisionRoot(archivePath, input.revision);
+  if (
+    input.revision &&
+    (!revisionRoot ||
+      input.files.some(
+        ({ path, sha256, size }) =>
+          sanitizePath(path) !== path ||
+          !path.startsWith(`${revisionRoot}/`) ||
+          !sha256 ||
+          !/^[0-9a-f]{64}$/.test(sha256) ||
+          !Number.isSafeInteger(size) ||
+          size === null ||
+          size === undefined ||
+          size < 0
+      ) ||
+      new Set(input.files.map(({ path }) => path)).size !== input.files.length)
+  )
+    throw new WebglPackageError('Invalid WebGL extraction inventory.', 502);
   const files = normalizeFilePaths(input.files);
   const rootPath = findWebglRootPath(files);
   const artifactFiles = files
@@ -187,6 +209,7 @@ export function buildWebglPackageArtifact(input: {
             contentType: file.contentType ?? null,
             relativePath,
             size: typeof file.size === 'number' ? file.size : null,
+            ...(file.sha256 ? { sha256: file.sha256 } : {}),
           }
         : null;
     })
@@ -228,7 +251,8 @@ export function buildWebglPackageArtifact(input: {
     kind: WEBGL_PACKAGE_METADATA_KIND,
     provider: input.provider,
     rootPath,
-    version: WEBGL_PACKAGE_METADATA_VERSION,
+    version: input.revision ? WEBGL_PACKAGE_METADATA_VERSION : 1,
+    ...(input.revision ? { revision: input.revision } : {}),
   };
 }
 
@@ -246,21 +270,4 @@ export function inferWebglAssetHeaders(relativePath: string): {
     contentType: contentType ?? 'application/octet-stream',
     isKnownType: Boolean(contentType),
   };
-}
-
-export function buildWebglPackageDestinationPrefix(archivePath: string) {
-  const sanitizedPath = sanitizePath(archivePath);
-  if (!sanitizedPath) {
-    throw new WebglPackageError('Invalid WebGL archive path.', 400);
-  }
-
-  const extension = posix.extname(sanitizedPath);
-  const basename = posix.basename(sanitizedPath, extension);
-  const dirname = posix.dirname(sanitizedPath);
-
-  if (!basename) {
-    throw new WebglPackageError('Invalid WebGL archive path.', 400);
-  }
-
-  return dirname === '.' ? basename : posix.join(dirname, basename);
 }

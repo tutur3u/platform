@@ -128,7 +128,7 @@ async function readAsset(
   const { data: asset, error } = await admin
     .from('workspace_external_project_assets')
     .select(
-      'id, ws_id, entry_id, metadata, source_url, storage_path, updated_at, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
+      'id, ws_id, entry_id, asset_type, metadata, source_url, storage_path, updated_at, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
     )
     .eq('id', assetId)
     .eq('ws_id', workspaceId)

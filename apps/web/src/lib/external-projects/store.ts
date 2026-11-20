@@ -2313,6 +2313,7 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
 }
 
 type UpsertAssetPayload = {
+  id?: string;
   asset_type: string;
   alt_text?: string | null;
   block_id?: string | null;

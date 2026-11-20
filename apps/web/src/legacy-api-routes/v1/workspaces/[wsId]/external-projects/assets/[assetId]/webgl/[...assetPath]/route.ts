@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
 import { posix } from 'node:path';
 import {
@@ -18,6 +19,7 @@ import {
   inferWebglAssetHeaders,
   parseWebglPackageArtifactMetadata,
   WEBGL_PACKAGE_ASSET_TYPE,
+  WEBGL_PACKAGE_METADATA_VERSION,
 } from '@/lib/external-projects/webgl-packages';
 
 const WEBGL_VIEWPORT_FILL_MARKER = 'data-tuturuuu-webgl-viewport-fill';
@@ -406,7 +408,7 @@ export async function GET(
     const { data: asset, error } = await admin
       .from('workspace_external_project_assets')
       .select(
-        'id, ws_id, entry_id, updated_at, asset_type, metadata, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
+        'id, ws_id, entry_id, updated_at, asset_type, metadata, storage_path, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
       )
       .eq('id', assetId)
       .eq('ws_id', resolvedWsId)
@@ -417,13 +419,20 @@ export async function GET(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
 
-    const isPublic = await canReadPublishedAsset(
-      admin,
-      resolvedWsId,
-      binding.canonical_project.id,
-      asset,
-      asset.workspace_external_project_entries
-    );
+    const metadata = parseWebglPackageArtifactMetadata(asset.metadata);
+    if (!metadata || metadata.rootPath !== asset.storage_path) {
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+    }
+
+    const isPublic =
+      metadata.version === WEBGL_PACKAGE_METADATA_VERSION &&
+      (await canReadPublishedAsset(
+        admin,
+        resolvedWsId,
+        binding.canonical_project.id,
+        asset,
+        asset.workspace_external_project_entries
+      ));
     if (!isPublic) {
       const access = await requireWorkspaceExternalProjectAccess({
         mode: 'read',
@@ -436,20 +445,19 @@ export async function GET(
       }
     }
 
-    const metadata = parseWebglPackageArtifactMetadata(asset.metadata);
-    if (!metadata) {
-      return NextResponse.json(
-        { error: 'WebGL artifact map not available' },
-        { status: 404 }
-      );
-    }
-
     const relativePath = sanitizePath(assetPath.join('/'));
-    if (!relativePath) {
+    if (!relativePath || relativePath !== assetPath.join('/')) {
       return NextResponse.json(
         { error: 'Missing WebGL asset path' },
         { status: 400 }
       );
+    }
+
+    const file = metadata.files.find(
+      (item) => item.relativePath === relativePath
+    );
+    if (!file) {
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
 
     const storagePath = sanitizePath(
@@ -471,6 +479,15 @@ export async function GET(
       metadata.provider,
       storagePath
     );
+    if (
+      metadata.version === WEBGL_PACKAGE_METADATA_VERSION &&
+      (downloaded.buffer.byteLength !== file.size ||
+        createHash('sha256').update(downloaded.buffer).digest('hex') !==
+          file.sha256)
+    ) {
+      return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+    }
+
     const inferred = inferWebglAssetHeaders(relativePath);
     const contentType =
       inferred.isKnownType ||

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 const MIME_TYPES = {
@@ -308,6 +309,7 @@ export function createUnzipProxyHandler({
       throw new HttpError(413, 'ZIP archive contains too many entries.');
     }
 
+    const inventory = payload.includeFileDigests ? [] : null;
     let files = 0;
     let folders = 0;
     let totalExtractedBytes = 0;
@@ -365,19 +367,29 @@ export function createUnzipProxyHandler({
         );
       }
 
+      const contentType = contentTypeForFile(entry.path);
       await uploadFile({
         body,
         callbackToken: payload.callbackToken,
         callbackUrl: payload.callbackUrl,
-        contentType: contentTypeForFile(entry.path),
+        contentType,
         filePath: targetPath,
       });
+      if (inventory) {
+        inventory.push({
+          path: targetPath,
+          contentType,
+          size: body.byteLength,
+          sha256: createHash('sha256').update(body).digest('hex'),
+        });
+      }
       files += 1;
     }
 
     return {
       files,
       folders,
+      ...(inventory ? { inventory } : {}),
       message: `Extracted ${files} file(s) and ${folders} folder(s).`,
     };
   }
@@ -432,6 +444,7 @@ export function createUnzipProxyHandler({
         callbackToken: payload.callbackToken,
         callbackUrl: callbackUrl.toString(),
         destinationPrefix: normalizedDestinationPrefix,
+        includeFileDigests: payload.includeFileDigests === true,
         sourceUrl: sourceUrl.toString(),
       });
       return json(result);

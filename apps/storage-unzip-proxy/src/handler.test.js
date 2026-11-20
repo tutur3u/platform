@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { beforeEach, describe, it, vi } from 'vitest';
 import { createUnzipProxyHandler, HttpError } from './handler.js';
 
@@ -107,6 +108,36 @@ function assertNoExtractionCalls(fixture) {
   assert.equal(fixture.postDirectory.mock.calls.length, 0);
   assert.equal(fixture.uploadFile.mock.calls.length, 0);
 }
+
+it('returns a digest inventory for completed WebGL uploads only when requested', async () => {
+  const bytes = Buffer.from('html');
+  const { handler, uploadFile } = createFixture({
+    parseArchive: async () => ({ files: [fileEntry('index.html', bytes)] }),
+  });
+  const callback = {
+    callbackToken: 'synthetic-callback-token',
+    callbackUrl: 'https://callback.example.test/upload',
+    destinationPrefix: 'fixture',
+    sourceUrl: 'https://source.example.test/archive.zip',
+  };
+  const response = await handler(
+    request({ body: { ...callback, includeFileDigests: true } })
+  );
+  assert.equal(response.status, 200);
+  assert.deepEqual((await response.json()).inventory, [
+    {
+      path: 'fixture/index.html',
+      contentType: 'text/html',
+      size: bytes.byteLength,
+      sha256: createHash('sha256').update(bytes).digest('hex'),
+    },
+  ]);
+  assert.equal(uploadFile.mock.calls.length, 1);
+  assert.equal(
+    (await (await handler(request({ body: callback }))).json()).inventory,
+    undefined
+  );
+});
 
 describe('request boundary', () => {
   let fixture;

@@ -51,11 +51,19 @@ function database() {
     updated_at: older,
     published_at: null as string | null,
   };
-  const prefix = 'external-projects/custom/games/game/webgl-packages/test';
+  const prefix = 'external-projects/custom/games/game/webgl-packages';
+  const revision = '11111111-1111-4111-8111-111111111111';
   const metadata = buildWebglPackageArtifact({
-    archivePath: `${prefix}.zip`,
+    archivePath: `${prefix}/test.zip`,
+    revision,
     assetId: 'webgl',
-    files: [{ path: `${prefix}/index.html`, size: 100 }],
+    files: [
+      {
+        path: `${prefix}/_revisions/${revision}/index.html`,
+        size: 100,
+        sha256: 'a'.repeat(64),
+      },
+    ],
     provider: 'supabase',
     wsId: workspaceId,
   });

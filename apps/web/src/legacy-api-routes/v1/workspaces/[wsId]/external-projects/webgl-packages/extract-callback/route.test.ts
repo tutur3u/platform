@@ -1,6 +1,15 @@
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { webglExtractionCallbackToken } from '@/lib/external-projects/webgl-extraction';
+
+const root =
+  'external-projects/yoola/games/mine/webgl-packages/_revisions/11111111-1111-4111-8111-111111111111';
+const callback = `http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/extract-callback?root=${encodeURIComponent(root)}`;
+const headers = () => ({
+  Authorization: `Bearer ${webglExtractionCallbackToken('token-1', 'ws-1', root)}`,
+});
+
 const mocks = vi.hoisted(() => ({
   createWorkspaceStorageFolderObject: vi.fn(),
   createWorkspaceStorageUploadPayload: vi.fn(),
@@ -54,10 +63,26 @@ describe('WebGL package extract callback route', () => {
       proxyUrl: 'http://storage-unzip-proxy:8788/extract',
     });
     mocks.uploadWorkspaceStorageFileDirect.mockResolvedValue({
-      fullPath:
-        'ws-1/external-projects/yoola/games/mine/webgl-packages/build/index.html',
-      path: 'external-projects/yoola/games/mine/webgl-packages/build/index.html',
+      fullPath: `ws-1/${root}/index.html`,
+      path: `${root}/index.html`,
     });
+  });
+
+  it('binds a callback to its revision and rejects an unrelated destination', async () => {
+    const { POST } = await import('./route');
+    const response = await POST(
+      new Request(callback, {
+        method: 'POST',
+        body: 'fixture',
+        headers: {
+          ...headers(),
+          'x-drive-auto-extract-path': `${root}-other/index.html`,
+        },
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
   });
 
   it('accepts extracted WebGL file bytes and writes them server-side', async () => {
@@ -65,20 +90,16 @@ describe('WebGL package extract callback route', () => {
       await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
-      new Request(
-        'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/extract-callback',
-        {
-          body: '<html></html>',
-          headers: {
-            Authorization: 'Bearer token-1',
-            'Content-Type': 'text/html',
-            'x-drive-auto-extract-operation': 'file',
-            'x-drive-auto-extract-path':
-              'external-projects/yoola/games/mine/webgl-packages/build/index.html',
-          },
-          method: 'POST',
-        }
-      ),
+      new Request(callback, {
+        body: '<html></html>',
+        headers: {
+          ...headers(),
+          'Content-Type': 'text/html',
+          'x-drive-auto-extract-operation': 'file',
+          'x-drive-auto-extract-path': `${root}/index.html`,
+        },
+        method: 'POST',
+      }),
       {
         params: Promise.resolve({
           wsId: 'ws-1',
@@ -92,11 +113,11 @@ describe('WebGL package extract callback route', () => {
     });
     expect(mocks.uploadWorkspaceStorageFileDirect).toHaveBeenCalledWith(
       'ws-1',
-      'external-projects/yoola/games/mine/webgl-packages/build/index.html',
+      `${root}/index.html`,
       expect.any(Uint8Array),
       {
         contentType: 'text/html',
-        upsert: true,
+        upsert: false,
       }
     );
     expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
@@ -104,12 +125,11 @@ describe('WebGL package extract callback route', () => {
 
   it('returns provider-scoped signed upload URLs for extracted WebGL files', async () => {
     mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
-      fullPath:
-        'ws-1/external-projects/yoola/games/mine/webgl-packages/build/Build/game.data',
+      fullPath: `ws-1/${root}/Build/game.data`,
       headers: {
         'Content-Type': 'application/octet-stream',
       },
-      path: 'external-projects/yoola/games/mine/webgl-packages/build/Build/game.data',
+      path: `${root}/Build/game.data`,
       provider: 'r2',
       signedUrl:
         'https://account-id.r2.cloudflarestorage.com/bucket/ws-1/game.data',
@@ -119,23 +139,19 @@ describe('WebGL package extract callback route', () => {
       await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
-      new Request(
-        'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/extract-callback',
-        {
-          body: JSON.stringify({
-            contentType: 'application/octet-stream',
-            size: 23_000_000,
-          }),
-          headers: {
-            Authorization: 'Bearer token-1',
-            'Content-Type': 'application/json',
-            'x-drive-auto-extract-operation': 'file-upload-url',
-            'x-drive-auto-extract-path':
-              'external-projects/yoola/games/mine/webgl-packages/build/Build/game.data',
-          },
-          method: 'POST',
-        }
-      ),
+      new Request(callback, {
+        body: JSON.stringify({
+          contentType: 'application/octet-stream',
+          size: 23_000_000,
+        }),
+        headers: {
+          ...headers(),
+          'Content-Type': 'application/json',
+          'x-drive-auto-extract-operation': 'file-upload-url',
+          'x-drive-auto-extract-path': `${root}/Build/game.data`,
+        },
+        method: 'POST',
+      }),
       {
         params: Promise.resolve({
           wsId: 'ws-1',
@@ -145,9 +161,8 @@ describe('WebGL package extract callback route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      fullPath:
-        'ws-1/external-projects/yoola/games/mine/webgl-packages/build/Build/game.data',
-      path: 'external-projects/yoola/games/mine/webgl-packages/build/Build/game.data',
+      fullPath: `ws-1/${root}/Build/game.data`,
+      path: `${root}/Build/game.data`,
       provider: 'r2',
       signedUrl:
         'https://account-id.r2.cloudflarestorage.com/bucket/ws-1/game.data',
@@ -157,9 +172,9 @@ describe('WebGL package extract callback route', () => {
       'game.data',
       {
         contentType: 'application/octet-stream',
-        path: 'external-projects/yoola/games/mine/webgl-packages/build/Build',
+        path: `${root}/Build`,
         size: 23_000_000,
-        upsert: true,
+        upsert: false,
       }
     );
     expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
@@ -170,20 +185,16 @@ describe('WebGL package extract callback route', () => {
       await import('@/legacy-api-routes/v1/workspaces/[wsId]/external-projects/webgl-packages/extract-callback/route');
 
     const response = await POST(
-      new Request(
-        'http://localhost/api/v1/workspaces/ws-1/external-projects/webgl-packages/extract-callback',
-        {
-          body: 'x'.repeat(MAX_PAYLOAD_SIZE + 1),
-          headers: {
-            Authorization: 'Bearer token-1',
-            'Content-Type': 'text/plain',
-            'x-drive-auto-extract-operation': 'file',
-            'x-drive-auto-extract-path':
-              'external-projects/yoola/games/mine/webgl-packages/build/large.txt',
-          },
-          method: 'POST',
-        }
-      ),
+      new Request(callback, {
+        body: 'x'.repeat(MAX_PAYLOAD_SIZE + 1),
+        headers: {
+          ...headers(),
+          'Content-Type': 'text/plain',
+          'x-drive-auto-extract-operation': 'file',
+          'x-drive-auto-extract-path': `${root}/large.txt`,
+        },
+        method: 'POST',
+      }),
       {
         params: Promise.resolve({
           wsId: 'ws-1',

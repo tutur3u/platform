@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   createWorkspaceStorageSignedReadUrl,
   listWorkspaceStorageRawObjectsForProvider,
@@ -14,8 +15,12 @@ import {
   updateWorkspaceExternalProjectAsset,
 } from '@/lib/external-projects/store';
 import {
+  webglExtractedInventorySchema,
+  webglExtractionCallbackToken,
+} from '@/lib/external-projects/webgl-extraction';
+import { webglRevisionRoot } from '@/lib/external-projects/webgl-package-artifact';
+import {
   buildWebglPackageArtifact,
-  buildWebglPackageDestinationPrefix,
   isWebglZipUpload,
   WEBGL_PACKAGE_ASSET_TYPE,
   WebglPackageError,
@@ -63,11 +68,17 @@ async function extractWebglArchive(input: {
   const callbackUrl = new URL(
     `/api/v1/workspaces/${encodeURIComponent(input.wsId)}/external-projects/webgl-packages/extract-callback`,
     callbackOrigin
-  ).toString();
+  );
+  callbackUrl.searchParams.set('root', input.destinationPrefix);
   const response = await fetch(config.proxyUrl, {
     body: JSON.stringify({
-      callbackToken: config.proxyToken,
-      callbackUrl,
+      callbackToken: webglExtractionCallbackToken(
+        config.proxyToken,
+        input.wsId,
+        input.destinationPrefix
+      ),
+      callbackUrl: callbackUrl.toString(),
+      includeFileDigests: true,
       destinationPrefix: input.destinationPrefix,
       sourceUrl,
     }),
@@ -87,11 +98,12 @@ async function extractWebglArchive(input: {
     );
   }
 
-  return (await response.json().catch(() => null)) as {
-    files?: number;
-    folders?: number;
-    message?: string;
-  } | null;
+  const result = webglExtractedInventorySchema.safeParse(
+    await response.json().catch(() => null)
+  );
+  if (!result.success || result.data.files !== result.data.inventory.length)
+    throw new WebglPackageError('Incomplete WebGL extraction inventory.', 502);
+  return result.data;
 }
 
 export async function POST(
@@ -150,34 +162,37 @@ export async function POST(
       );
     }
 
-    const destinationPrefix = buildWebglPackageDestinationPrefix(archivePath);
+    const revision = randomUUID();
+    const destinationPrefix = webglRevisionRoot(archivePath, revision);
+    if (!destinationPrefix)
+      throw new WebglPackageError('Invalid WebGL archive path.', 400);
+    const { provider } = await resolveWorkspaceStorageProvider(
+      access.normalizedWorkspaceId
+    );
     const extract = await extractWebglArchive({
       archivePath,
       destinationPrefix,
       request,
       wsId: access.normalizedWorkspaceId,
     });
-    const resolvedProvider = await resolveWorkspaceStorageProvider(
-      access.normalizedWorkspaceId
-    );
     const rawObjects = await listWorkspaceStorageRawObjectsForProvider(
       access.normalizedWorkspaceId,
-      resolvedProvider.provider,
-      {
-        pathPrefix: destinationPrefix,
-      }
+      provider,
+      { pathPrefix: destinationPrefix, limit: 2001 }
     );
-    const files = rawObjects
-      .filter(
-        (object) =>
-          !object.isFolderPlaceholder &&
-          object.path.startsWith(`${destinationPrefix}/`)
-      )
-      .map((object) => ({
-        contentType: object.contentType ?? null,
-        path: object.path,
-        size: object.size,
-      }));
+    const sizes = new Map(
+      rawObjects
+        .filter((object) => !object.isFolderPlaceholder)
+        .map((object) => [object.path, object.size])
+    );
+    if (
+      sizes.size !== extract.files ||
+      extract.inventory.some(({ path, size }) => sizes.get(path) !== size)
+    )
+      throw new WebglPackageError(
+        'Incomplete WebGL extraction inventory.',
+        502
+      );
 
     const { data: existingAsset, error: existingAssetError } =
       await access.admin
@@ -192,50 +207,43 @@ export async function POST(
       throw new Error(existingAssetError.message);
     }
 
-    const asset =
-      existingAsset ??
-      (await createWorkspaceExternalProjectAsset(
-        {
-          actorId: access.user.id,
-          asset_type: WEBGL_PACKAGE_ASSET_TYPE,
-          entry_id: payload.entryId,
-          metadata: {},
-          sort_order: 0,
-          source_url: null,
-          storage_path: destinationPrefix,
-          workspaceId: access.normalizedWorkspaceId,
-        },
-        access.admin
-      ));
+    const assetId = existingAsset?.id ?? randomUUID();
     const artifact = buildWebglPackageArtifact({
       archivePath,
-      assetId: asset.id,
-      files,
-      provider: resolvedProvider.provider,
+      revision,
+      assetId,
+      files: extract.inventory,
+      provider,
       wsId: access.normalizedWorkspaceId,
     });
-    const updatedAsset = await updateWorkspaceExternalProjectAsset(
-      asset.id,
-      {
-        actorId: access.user.id,
-        asset_type: WEBGL_PACKAGE_ASSET_TYPE,
-        entry_id: payload.entryId,
-        metadata: artifact as NonNullable<Json>,
-        source_url: null,
-        storage_path: artifact.rootPath,
-        workspaceId: access.normalizedWorkspaceId,
-      },
-      access.admin
-    );
+    const assetValues = {
+      actorId: access.user.id,
+      asset_type: WEBGL_PACKAGE_ASSET_TYPE,
+      entry_id: payload.entryId,
+      metadata: artifact as NonNullable<Json>,
+      source_url: null,
+      storage_path: artifact.rootPath,
+      workspaceId: access.normalizedWorkspaceId,
+    };
+    const updatedAsset = existingAsset
+      ? await updateWorkspaceExternalProjectAsset(
+          assetId,
+          assetValues,
+          access.admin
+        )
+      : await createWorkspaceExternalProjectAsset(
+          { ...assetValues, id: assetId, sort_order: 0 },
+          access.admin
+        );
 
     return NextResponse.json({
       artifact,
       asset: updatedAsset,
       extract: {
-        files: extract?.files ?? files.length,
-        folders: extract?.folders ?? 0,
+        files: extract.files,
+        folders: extract.folders ?? 0,
         message:
-          extract?.message ||
+          extract.message ||
           'WebGL package uploaded and extracted successfully.',
       },
     });

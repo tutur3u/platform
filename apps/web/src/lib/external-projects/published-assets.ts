@@ -3,6 +3,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   parseWebglPackageArtifactMetadata,
   WEBGL_PACKAGE_ASSET_TYPE,
+  WEBGL_PACKAGE_METADATA_VERSION,
 } from './webgl-package-artifact';
 
 type Entry = { id: string; published_at: string | null; profile_data: unknown };
@@ -43,7 +44,10 @@ function isEntryWebglPackage(asset: AttachedAsset) {
   if (asset.block_id || asset.asset_type !== WEBGL_PACKAGE_ASSET_TYPE)
     return false;
   const artifact = parseWebglPackageArtifactMetadata(asset.metadata);
-  return artifact !== null && artifact.rootPath === asset.storage_path;
+  return (
+    artifact?.version === WEBGL_PACKAGE_METADATA_VERSION &&
+    artifact.rootPath === asset.storage_path
+  );
 }
 
 function record(value: unknown): Record<string, unknown> {
@@ -217,8 +221,13 @@ export async function loadPublishedAssetManifests(
 
 export function isPublishedAsset(
   manifests: Map<string, Record<string, unknown>>,
-  asset: Asset
+  asset: AttachedAsset
 ) {
+  if (
+    asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE &&
+    !isEntryWebglPackage(asset)
+  )
+    return false;
   if (!asset.entry_id) return false;
   const manifest = manifests.get(asset.entry_id);
   return (

@@ -6,10 +6,10 @@ import {
   WorkspaceStorageError,
 } from '@tuturuuu/storage-core/workspace-storage-provider';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
-import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { webglExtractionAllows } from '@/lib/external-projects/webgl-extraction';
 import { resolveWebglPackageExtractConfig } from '../shared';
 
 const fileUploadPayloadSchema = z.object({
@@ -56,24 +56,25 @@ export async function POST(
     const { wsId } = await params;
     const normalizedWsId = await normalizeWorkspaceId(wsId);
     const config = await resolveWebglPackageExtractConfig(normalizedWsId);
-    const token = getBearerToken(request);
-
+    const root = new URL(request.url).searchParams.get('root') ?? '';
+    const sanitizedPath =
+      request.headers.get('x-drive-auto-extract-path') ?? '';
     if (
       !config.configured ||
       !config.proxyToken ||
-      token !== config.proxyToken
+      !webglExtractionAllows(
+        config.proxyToken,
+        getBearerToken(request),
+        normalizedWsId,
+        root,
+        sanitizedPath
+      )
     ) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const operation =
       request.headers.get('x-drive-auto-extract-operation') || 'file';
-    const relativePathHeader = request.headers.get('x-drive-auto-extract-path');
-    const sanitizedPath = sanitizePath(relativePathHeader || '');
-
-    if (!sanitizedPath) {
-      return NextResponse.json({ message: 'Invalid path' }, { status: 400 });
-    }
 
     if (operation === 'folder') {
       const folderParent = posix.dirname(sanitizedPath);
@@ -120,7 +121,7 @@ export async function POST(
         buffer,
         {
           contentType,
-          upsert: true,
+          upsert: false,
         }
       );
 
@@ -155,7 +156,7 @@ export async function POST(
           contentType: parsed.data.contentType,
           path: parentPath === '.' ? '' : parentPath,
           size: parsed.data.size,
-          upsert: true,
+          upsert: false,
         }
       );
 

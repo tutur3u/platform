@@ -77,6 +77,13 @@ package. Single and bulk publication capture the same revision proof.
 Re-publish an older entry if its media cannot be matched to a recorded
 publication. Private collections and entries never deliver media anonymously.
 
+Every WebGL finalization extracts into its own storage directory. The
+extraction service records the files and their SHA-256 digests after upload.
+Public requests serve only files whose bytes match that inventory. Older
+packages remain available to workspace editors for preview. Finalize and
+publish them again to restore public access. Use a ZIP extraction proxy
+that returns the digest inventory before enabling this workflow.
+
 The public delivery API returns an ETag with a no-store policy. External
 sites that cache resized media may use an anonymous HEAD request to
 `/api/v1/workspaces/{wsId}/external-projects/assets/{assetId}?entry={entryId}&v={assetRevision}`

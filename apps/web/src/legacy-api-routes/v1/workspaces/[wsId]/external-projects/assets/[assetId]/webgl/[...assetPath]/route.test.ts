@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { createHash } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -38,6 +39,9 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   ) => mocks.downloadWorkspaceStorageObjectForProvider(...args),
 }));
 
+const publishedHtml = '<!DOCTYPE html><html></html>';
+const revision = '11111111-1111-4111-8111-111111111111';
+const revisionRoot = `external-projects/yoola/games/mine/webgl-packages/_revisions/${revision}/Mine Blast WebGL`;
 const artifactMetadata = {
   archivePath: 'external-projects/yoola/games/mine/webgl-packages/package.zip',
   assetUrls: {
@@ -53,7 +57,20 @@ const artifactMetadata = {
     {
       contentType: 'text/html; charset=utf-8',
       relativePath: 'index.html',
-      size: 100,
+      size: publishedHtml.length,
+      sha256: createHash('sha256').update(publishedHtml).digest('hex'),
+    },
+    {
+      contentType: null,
+      relativePath: 'Build/Mine Blast WebGL.loader.js',
+      size: 0,
+      sha256: 'a'.repeat(64),
+    },
+    {
+      contentType: null,
+      relativePath: 'Build/Mine Blast WebGL.jpg',
+      size: 0,
+      sha256: 'a'.repeat(64),
     },
   ],
   kind: 'webgl-package',
@@ -65,7 +82,13 @@ const artifactMetadata = {
 const webglSandboxCsp =
   'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
 
-function createAdminWithAsset(status: 'draft' | 'published') {
+function createAdminWithAsset(
+  status: 'draft' | 'published',
+  immutable = status === 'published'
+) {
+  const metadata = immutable
+    ? { ...artifactMetadata, version: 2, revision, rootPath: revisionRoot }
+    : artifactMetadata;
   const updatedAt = '2026-11-20T09:00:00Z';
   const publishedAt = '2026-11-20T10:00:00Z';
   return {
@@ -95,7 +118,8 @@ function createAdminWithAsset(status: 'draft' | 'published') {
           id: 'asset-1',
           entry_id: 'entry-1',
           updated_at: updatedAt,
-          metadata: artifactMetadata,
+          metadata,
+          storage_path: metadata.rootPath,
           workspace_external_project_entries: {
             status,
             published_at: publishedAt,
@@ -138,6 +162,9 @@ describe('WebGL package asset route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: false,
+    });
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       canonical_project: {
         id: 'project-1',
@@ -253,6 +280,37 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-security-policy')).toBe(
       webglSandboxCsp
     );
+  });
+
+  it('only downloads inventoried published files and rejects bytes changed in storage', async () => {
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminWithAsset('published')
+    );
+    expect((await callRoute(['unlisted.txt'])).status).toBe(404);
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).not.toHaveBeenCalled();
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new TextEncoder().encode(publishedHtml.replace('html>', 'test>')),
+    });
+    expect((await callRoute(['index.html'])).status).toBe(404);
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).toHaveBeenCalledWith(
+      '123e4567-e89b-12d3-a456-426614174000',
+      'supabase',
+      `${revisionRoot}/index.html`
+    );
+  });
+
+  it('requires a workspace session for legacy extraction roots', async () => {
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminWithAsset('published', false)
+    );
+    expect((await callRoute(['index.html'])).status).toBe(404);
+    expect(
+      mocks.downloadWorkspaceStorageObjectForProvider
+    ).not.toHaveBeenCalled();
   });
 
   it('serves Unity Build resources from the same WebGL package route', async () => {
