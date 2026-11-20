@@ -71,6 +71,12 @@ The existing verified-platform subset policy can publish successful platforms
 when another fails. Regression coverage is in `desktop-beta-workflow.test.mjs`,
 `windows-signing.test.mjs`, and `verify-publication.test.mjs`.
 
+The installed Linux smoke test starts a disposable D-Bus session and an
+unlocked GNOME keyring. It checks that Secret Service can store, read and clear
+a fixture before launching the packaged app under Xvfb. A `LibsecretError`
+before the first frame points to the session or keyring setup. The smoke still
+requires a visible window and successful URI activation.
+
 ### Windows signing decision and costs
 
 The 2026-10-22 decision permits **UNSIGNED Windows x64 beta installers** until

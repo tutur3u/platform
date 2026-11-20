@@ -50,6 +50,17 @@ test('Windows compilation uses only public inputs before selecting signing crede
   assert.match(step('Select Windows signing mode'), /windows-signing\.mjs/);
 });
 
+test('installed Linux smoke provisions Secret Service before testing the GUI', () => {
+  const install = step('Install Linux build dependencies');
+  assert.match(install, /\bgnome-keyring libsecret-tools\b/);
+  const smoke = step('Validate installed Linux launch and URI activation');
+  assert.match(smoke, /apt-get install -y .*Tuturuuu-linux-x64\.deb/);
+  assert.match(
+    smoke,
+    /with-linux-secret-service\.sh xvfb-run -a node scripts\/desktop-deployment\/smoke-linux\.mjs/
+  );
+});
+
 test('macOS keeps strict signing admission and Windows retains separate direct and vault steps', () => {
   const early = step('Require desktop signing configuration');
   assert.match(early, /if: matrix.platform != 'windows'/);
