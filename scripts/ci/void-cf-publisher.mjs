@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseCfVersionId, VERSION_ID } from './cf-build-output-publisher.mjs';
+import { wave1CfPackagePath } from './wave1-cf-output.mjs';
 
 // Publishes cf Build Output from `void-cf-output.mjs` as a version with no
 // traffic, proves the uploaded bindings, then moves traffic only when the
@@ -24,9 +25,20 @@ const BINDING_TYPES = {
   'unsafe:durable_object_namespace': 'durable_object_namespace',
 };
 
+/**
+ * The cf CLI the Build Output suppliers come from (Calendar's pinned
+ * installation), unless `CF_BIN` names another binary.
+ */
+export function cfCommand(env = process.env, packagePath = wave1CfPackagePath) {
+  if (env.CF_BIN) return [env.CF_BIN, []];
+  const bin = join(dirname(packagePath()), 'bin', 'cf');
+  assert.ok(existsSync(bin), `cf CLI missing at ${bin}`);
+  return [process.execPath, [bin]];
+}
+
 function cf(args, { cwd, exec = execFileSync, env = process.env } = {}) {
-  const bin = env.CF_BIN;
-  return exec(bin ?? 'bun', bin ? args : ['x', '--no-install', 'cf', ...args], {
+  const [command, prefix] = exec === execFileSync ? cfCommand(env) : ['cf', []];
+  return exec(command, [...prefix, ...args], {
     cwd,
     env: { ...env, CF_SEND_TELEMETRY: 'false' },
     encoding: 'utf8',
@@ -299,9 +311,35 @@ function main([command, ...argv]) {
     return { worker: result.worker, versionId: result.versionId };
   }
   if (command === 'publish') return publish(flags);
+  if (command === 'dry-run') {
+    // Credential-free: cf checks the Build Output without uploading.
+    assert.ok(flags.build, 'dry-run needs --build <dir>');
+    const env = { ...process.env };
+    for (const name of [
+      'CLOUDFLARE_API_TOKEN',
+      'CLOUDFLARE_API_KEY',
+      'CLOUDFLARE_EMAIL',
+    ])
+      delete env[name];
+    cf(
+      [
+        'deploy',
+        '--prebuilt',
+        '--mode',
+        'production',
+        '--dry-run',
+        '--no-provision',
+      ],
+      {
+        cwd: flags.build,
+        env,
+      }
+    );
+    return { build: flags.build, dryRun: true };
+  }
   if (command === 'assign') return assign(flags);
   throw new Error(
-    'usage: void-cf-publisher.mjs capture|publish|assign --worker <name> ...'
+    'usage: void-cf-publisher.mjs capture|publish|assign|dry-run ...'
   );
 }
 

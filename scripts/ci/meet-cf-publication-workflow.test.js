@@ -56,8 +56,13 @@ test('validation dry-runs the converted output without credentials', () => {
     'Qualify the frontend cf Build Output without credentials'
   );
   assert.equal(qualify.env?.CLOUDFLARE_API_TOKEN, undefined);
-  assert.match(
-    qualify.run,
-    /cf" deploy --prebuilt --mode production --dry-run --no-provision/
-  );
+  assert.match(qualify.run, /void-cf-publisher\.mjs dry-run --build "\$out"/);
+});
+
+test('Meet publication resolves the pinned cf CLI, not a hoisted binary', () => {
+  for (const [job, name] of [
+    ['validate', 'Qualify the frontend cf Build Output without credentials'],
+    ['deploy', 'Deploy the verified frontend'],
+  ])
+    assert.doesNotMatch(step(job, name).run, /CF_BIN|node_modules\/\.bin/);
 });

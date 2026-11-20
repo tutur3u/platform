@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import {
   assign,
+  cfCommand,
   publish,
   readBack,
   servingVersion,
@@ -351,4 +352,15 @@ test('readBack retries a propagating version, then gives up', () => {
     /denied/
   );
   assert.equal(deniedCalls, 1);
+});
+
+test('resolves the pinned cf CLI that supplies the Build Output schemas', () => {
+  const [command, prefix] = cfCommand({});
+  assert.equal(command, process.execPath);
+  assert.match(prefix[0], /[\\/]cf[\\/]bin[\\/]cf$/);
+  assert.deepEqual(cfCommand({ CF_BIN: '/opt/cf' }), ['/opt/cf', []]);
+  assert.throws(
+    () => cfCommand({}, () => '/nonexistent/cf/package.json'),
+    /cf CLI missing/
+  );
 });

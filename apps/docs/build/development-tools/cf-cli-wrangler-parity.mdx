@@ -373,8 +373,10 @@ node scripts/ci/void-cf-publisher.mjs assign --worker "$WORKER" \
   --expect-current "$(jq -er .previousVersionId publish.json)"
 ```
 
-Set `CF_BIN` to the repository's `node_modules/.bin/cf` when the output
-directory is outside the checkout. `--var` overrides or adds a text variable;
+The publisher runs the cf CLI from Calendar's pinned installation, the same
+package that supplies the Build Output schemas; `CF_BIN` overrides it.
+`void-cf-publisher.mjs dry-run --build "$OUT"` checks the output without
+credentials. `--var` overrides or adds a text variable;
 `--strict` requires the serving version's bindings except those overrides, for
 flag-only variants of one artifact. `--name` renames the Worker and its
 self-referencing service binding for a disposable rehearsal.
