@@ -23,6 +23,7 @@ import net from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pointsAtSharedDatabase } from './probe-shared-port.mjs';
 import { createChatRealtimeConnection } from '../../../packages/realtime/src/chat/client.ts';
 import {
   createChatRealtimeSubscribeTicket,
@@ -130,14 +131,9 @@ function writeConfig(root) {
     throw new Error('database config no longer matches the probe port map');
   }
   const config = lines.join('\n');
-  const sharedPort = config.split('\n').find((line) => {
-    const trimmed = line.trim();
-    if (trimmed.startsWith('#')) return false;
-    return (
-      trimmed === 'project_id = "tuturuuu"' ||
-      /^[A-Za-z0-9_]*port\s*=\s*800[0-9]\b/.test(trimmed)
-    );
-  });
+  const sharedPort = config
+    .split('\n')
+    .find((line) => pointsAtSharedDatabase(line));
   if (sharedPort) {
     throw new Error('probe config still points at the shared database');
   }

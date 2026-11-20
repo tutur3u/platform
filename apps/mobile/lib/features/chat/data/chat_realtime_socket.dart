@@ -233,6 +233,9 @@ class _ChatRealtimeRun {
             selfId = frame['userId']?.toString();
             _emit(const ChatRealtimeReadyEvent());
             if (first || behind) _emit(const ChatRealtimeResyncEvent());
+            // A socket opened while the app is away defaults to foreground
+            // on the Worker. Reapply background once the socket can send.
+            if (!client._inForeground) reportPresence(false);
           case 'event':
             final seq = _seq(frame['seq']);
             if (seq != null) cursor = max(cursor ?? 0, seq);

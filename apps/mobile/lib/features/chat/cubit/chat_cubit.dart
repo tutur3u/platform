@@ -427,6 +427,8 @@ class ChatCubit extends Cubit<ChatState> {
     final sameRoom = next == _roomConversationId;
     final subscriptionMatches = (next == null) == (_roomSubscription == null);
     if (sameRoom && subscriptionMatches) return;
+    _roomFallback?.cancel();
+    _roomFallback = null;
     _roomConversationId = next;
     final previous = _roomSubscription;
     _roomSubscription = null;

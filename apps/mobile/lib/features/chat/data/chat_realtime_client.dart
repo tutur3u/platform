@@ -100,12 +100,14 @@ class ChatRealtimeClient {
     Future<void> Function(Duration delay)? wait,
     double Function()? random,
     bool watchForeground = true,
+    bool inForeground = true,
   }) : _apiClient = loadTicket == null ? (apiClient ?? ApiClient()) : apiClient,
        _loadTicket = loadTicket,
        _openSocket = openSocket ?? _defaultOpenSocket,
        _wait = wait ?? _delay,
        _random = random ?? Random().nextDouble,
-       _watchForeground = watchForeground;
+       _watchForeground = watchForeground,
+       _inForeground = inForeground;
 
   final ApiClient? _apiClient;
   final ChatRealtimeTicketLoader? _loadTicket;
@@ -113,6 +115,7 @@ class ChatRealtimeClient {
   final Future<void> Function(Duration delay) _wait;
   final double Function() _random;
   final bool _watchForeground;
+  bool _inForeground;
   final List<_ChatRealtimeRun> _runs = [];
   bool _disposed = false;
   AppLifecycleListener? _lifecycle;
@@ -155,12 +158,22 @@ class ChatRealtimeClient {
     }
     _lifecycle = AppLifecycleListener(
       onResume: () {
+        _inForeground = true;
         _reportPresence(true);
         retry();
       },
-      onPause: () => _reportPresence(false),
-      onInactive: () => _reportPresence(false),
-      onHide: () => _reportPresence(false),
+      onPause: () {
+        _inForeground = false;
+        _reportPresence(false);
+      },
+      onInactive: () {
+        _inForeground = false;
+        _reportPresence(false);
+      },
+      onHide: () {
+        _inForeground = false;
+        _reportPresence(false);
+      },
     );
     _connectivity ??= Connectivity().onConnectivityChanged.listen((results) {
       if (_disposed) return;

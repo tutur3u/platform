@@ -14,8 +14,13 @@ test('staging qualification is a private main dispatch', () => {
   assert.doesNotMatch(text, /\bpull_request/);
   assert.doesNotMatch(text, /\n {2}push:/);
   assert.doesNotMatch(text, /\bschedule:/);
+  assert.doesNotMatch(text, /["']schedule["']\s*:/);
   assert.match(text, /^permissions:\n {2}contents: read\n/m);
   assert.doesNotMatch(text, /contents: write/);
+  assert.doesNotMatch(text, /contents:\s*write/);
+  assert.match('"schedule":', /["']schedule["']\s*:/);
+  assert.match('contents:  write', /contents:\s*write/);
+  assert.doesNotMatch('contents: read', /contents:\s*write/);
   assert.match(
     text,
     /^ {4}if: github\.repository == 'tutur3u\/platform' && github\.ref == 'refs\/heads\/main'$/m

@@ -158,6 +158,7 @@ class V87Chats extends RepairChats {
     String conversationId, {
     int limit = 60,
     String? before,
+    bool forceRefresh = false,
   }) async {
     if (conversationId == repairChat || conversationId == chatB) return [];
     throw const ApiException(

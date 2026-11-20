@@ -34,6 +34,7 @@ class _Repository extends ChatRepository {
     ChatArchivedFilter archived = ChatArchivedFilter.active,
     int limit = 40,
     int offset = 0,
+    bool forceRefresh = false,
   }) async => ChatConversationPage(
     conversations: [
       ChatConversation.fromJson(const {

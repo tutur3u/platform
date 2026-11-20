@@ -192,12 +192,39 @@ void main() {
     await subscription.cancel();
     client.dispose();
   });
+
+  test('ready while away reports background presence', () async {
+    final sent = <String>[];
+    final sockets = <_ScriptedSocket>[];
+    final client = _client(
+      ticket: (_, {conversationId}) async => {
+        'enabled': true,
+        'ticket': 'tok',
+        'url': 'ws://127.0.0.1:9/v1/connect',
+      },
+      openSocket: (url, protocols) async {
+        final socket = _ScriptedSocket(url, protocols, sent: sent);
+        sockets.add(socket);
+        return socket.live;
+      },
+      inForeground: false,
+    );
+    final subscription = client.connect('workspace').listen((_) {});
+    await _until(() => sockets.length == 1);
+    sockets.single.add({'t': 'ready', 'seq': 1, 'userId': 'self'});
+    await _until(() => sent.isNotEmpty);
+    expect(sent, ['{"state":"background","t":"presence"}']);
+
+    await subscription.cancel();
+    client.dispose();
+  });
 }
 
 ChatRealtimeClient _client({
   required ChatRealtimeTicketLoader ticket,
   ChatRealtimeSocketOpener? openSocket,
   Future<void> Function(Duration delay)? wait,
+  bool inForeground = true,
 }) {
   return ChatRealtimeClient(
     loadTicket: ticket,
@@ -205,6 +232,7 @@ ChatRealtimeClient _client({
     wait: wait,
     random: () => 1,
     watchForeground: false,
+    inForeground: inForeground,
   );
 }
 
@@ -231,10 +259,12 @@ Future<void> _until(bool Function() done) async {
 }
 
 class _ScriptedSocket {
-  _ScriptedSocket(this.url, this.protocols);
+  _ScriptedSocket(this.url, this.protocols, {List<String>? sent})
+    : _sent = sent;
 
   final Uri url;
   final List<String> protocols;
+  final List<String>? _sent;
   final StreamController<dynamic> _messages = StreamController<dynamic>();
   int? code;
 
@@ -244,6 +274,7 @@ class _ScriptedSocket {
       if (!_messages.isClosed) await _messages.close();
     },
     closeCode: () => code,
+    send: _sent?.add,
   );
 
   void add(Map<String, Object?> frame) {
