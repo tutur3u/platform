@@ -9,6 +9,8 @@ extension _CrmPageLayout on _CrmPageState {
         ? _activeUserFilterCount()
         : _activeAuditFilterCount();
     final selected = _selectedUser;
+    final showDirectoryActions =
+        selected == null && _section != _ContactSection.reports;
     return AppScaffold(
       child: Stack(
         children: [
@@ -56,7 +58,7 @@ extension _CrmPageLayout on _CrmPageState {
             onBack: _back,
             onResetSection: _resetSearch,
             actions: [
-              if (selected == null && allowed)
+              if (showDirectoryActions && allowed)
                 ShellActionSpec.search(
                   id: 'crm-search',
                   active: _searching,
@@ -72,7 +74,7 @@ extension _CrmPageLayout on _CrmPageState {
                   onCloseSearch: _resetSearch,
                   onPressed: () => _updateState(() => _searching = true),
                 ),
-              if (selected == null && allowed)
+              if (showDirectoryActions && allowed)
                 ShellActionSpec(
                   id: 'crm-filters',
                   icon: LucideIcons.listFilter,
@@ -83,7 +85,7 @@ extension _CrmPageLayout on _CrmPageState {
                       ? _showUsersFilterSheet
                       : _showAuditFilterSheet,
                 ),
-              if (selected == null &&
+              if (showDirectoryActions &&
                   usersTab &&
                   _directory == _ContactDirectory.people &&
                   _canCreateUsers)
@@ -94,7 +96,7 @@ extension _CrmPageLayout on _CrmPageState {
                   callbackToken: widget.workspaceId,
                   onPressed: _showUserSheet,
                 ),
-              if (selected == null &&
+              if (showDirectoryActions &&
                   usersTab &&
                   _directory == _ContactDirectory.groups &&
                   _canCreateGroups)
@@ -105,7 +107,7 @@ extension _CrmPageLayout on _CrmPageState {
                   callbackToken: widget.workspaceId,
                   onPressed: _showGroupEditor,
                 ),
-              if (selected == null &&
+              if (showDirectoryActions &&
                   usersTab &&
                   _directory == _ContactDirectory.tags &&
                   _canCreateGroups)
@@ -171,6 +173,7 @@ extension _CrmPageLayout on _CrmPageState {
               workspaceId: widget.workspaceId,
               repository: _repository,
               onOpen: _openSectionRecord,
+              selectCadence: _selectReportCadence,
             )
           else if (_section != null)
             ContactSectionList(

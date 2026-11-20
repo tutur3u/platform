@@ -432,7 +432,14 @@ void main() {
 
   for (final theme in ['light', 'dark']) {
     testWidgets('opens a Contacts report preview in $theme', (tester) async {
-      when(() => repository.loadReports('ws', page: 1)).thenAnswer(
+      when(
+        () => repository.loadReports(
+          'ws',
+          page: 1,
+          query: '',
+          cadence: ContactReportCadence.all,
+        ),
+      ).thenAnswer(
         (_) async => ContactReportPage.fromJson({
           'total': 31,
           'data': [
@@ -450,11 +457,48 @@ void main() {
           ],
         }),
       );
-      when(() => repository.loadReports('ws', page: 2)).thenAnswer(
+      when(
+        () => repository.loadReports(
+          'ws',
+          page: 2,
+          query: '',
+          cadence: ContactReportCadence.all,
+        ),
+      ).thenAnswer(
         (_) async => ContactReportPage.fromJson({
           'total': 31,
           'data': [
             {'id': 'next-report', 'title': 'April progress'},
+          ],
+        }),
+      );
+      when(
+        () => repository.loadReports(
+          'ws',
+          page: 1,
+          query: 'April',
+          cadence: ContactReportCadence.all,
+        ),
+      ).thenAnswer(
+        (_) async => ContactReportPage.fromJson({
+          'total': 1,
+          'data': [
+            {'id': 'filtered-report', 'title': 'April weekly summary'},
+          ],
+        }),
+      );
+      when(
+        () => repository.loadReports(
+          'ws',
+          page: 1,
+          query: 'April',
+          cadence: ContactReportCadence.quarterly,
+        ),
+      ).thenAnswer(
+        (_) async => ContactReportPage.fromJson({
+          'total': 1,
+          'data': [
+            {'id': 'quarterly-report', 'title': 'April quarter review'},
           ],
         }),
       );
@@ -498,6 +542,31 @@ void main() {
       expect(find.text('Page 2 of 2'), findsOneWidget);
       expect(find.text('April progress'), findsOneWidget);
       expect(find.text('March progress'), findsNothing);
+
+      final actions = chrome.state.resolveForLocation(Routes.contacts);
+      expect(actions.any((action) => action.id == 'crm-search'), isFalse);
+      actions
+          .firstWhere((action) => action.id == 'crm-report-search')
+          .onPressed!();
+      await tester.pumpAndSettle();
+      chrome.state
+          .resolveForLocation(Routes.contacts)
+          .firstWhere((action) => action.id == 'crm-report-search')
+          .onSearchChanged!('April');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(find.text('April weekly summary'), findsOneWidget);
+      expect(find.text('April progress'), findsNothing);
+
+      chrome.state
+          .resolveForLocation(Routes.contacts)
+          .firstWhere((action) => action.id == 'crm-report-cadence')
+          .onPressed!();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Quarterly'));
+      await tester.pumpAndSettle();
+      expect(find.text('April quarter review'), findsOneWidget);
+      expect(find.text('April weekly summary'), findsNothing);
     });
   }
 

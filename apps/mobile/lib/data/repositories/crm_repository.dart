@@ -248,13 +248,16 @@ class CrmRepository
   Future<ContactReportPage> loadReports(
     String wsId, {
     required int page,
+    required String query,
+    required ContactReportCadence cadence,
   }) async {
     final uri = Uri(
       path: '${CrmEndpoints.users(wsId)}/reports',
       queryParameters: {
         'page': '$page',
         'pageSize': '${ContactReportPage.pageSize}',
-        'cadence': 'all',
+        'cadence': cadence.name,
+        if (query.isNotEmpty) 'q': query,
       },
     );
     return ContactReportPage.fromJson(await _api.getJson(uri.toString()));

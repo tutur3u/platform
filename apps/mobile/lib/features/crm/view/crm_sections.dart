@@ -111,6 +111,31 @@ extension _CrmSections on _CrmPageState {
     };
   }
 
+  Future<ContactReportCadence?> _selectReportCadence(
+    ContactReportCadence selected,
+  ) => _showOwnedSheet<ContactReportCadence>(
+    context: context,
+    builder: (context) => AppActionSheet<ContactReportCadence>(
+      title: context.l10n.contactsReportCadence,
+      actions: [
+        for (final cadence in ContactReportCadence.values)
+          AppSheetAction(
+            label: switch (cadence) {
+              ContactReportCadence.all => context.l10n.commonAll,
+              ContactReportCadence.weekly => context.l10n.contactsReportWeekly,
+              ContactReportCadence.monthly =>
+                context.l10n.contactsReportMonthly,
+              ContactReportCadence.quarterly =>
+                context.l10n.contactsReportQuarterly,
+              ContactReportCadence.yearly => context.l10n.contactsReportYearly,
+            },
+            value: cadence,
+            icon: selected == cadence ? LucideIcons.check : null,
+          ),
+      ],
+    ),
+  );
+
   Future<void> _openSectionRecord(ContactSectionRecord record) async {
     final section = _section;
     final report = record.report;

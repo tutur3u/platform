@@ -2551,6 +2551,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsPermissionDenied => 'You do not have permission to view contacts.';
 
   @override
+  String get contactsReportCadence => 'Reporting cadence';
+
+  @override
+  String get contactsReportEmptyList => 'No reports yet.';
+
+  @override
+  String get contactsReportMonthly => 'Monthly';
+
+  @override
+  String get contactsReportQuarterly => 'Quarterly';
+
+  @override
+  String get contactsReportSearchHint => 'Search reports';
+
+  @override
+  String get contactsReportWeekly => 'Weekly';
+
+  @override
+  String get contactsReportYearly => 'Yearly';
+
+  @override
   String get contactsReportContent => 'Report content';
 
   @override

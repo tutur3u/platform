@@ -33,6 +33,8 @@ class ContactReportDetails {
   final DateTime? periodEnd;
 }
 
+enum ContactReportCadence { all, weekly, monthly, quarterly, yearly }
+
 class ContactReportPage {
   const ContactReportPage({required this.records, required this.total});
 

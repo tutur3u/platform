@@ -4957,6 +4957,48 @@ abstract class AppLocalizations {
   /// **'You do not have permission to view contacts.'**
   String get contactsPermissionDenied;
 
+  /// No description provided for @contactsReportCadence.
+  ///
+  /// In en, this message translates to:
+  /// **'Reporting cadence'**
+  String get contactsReportCadence;
+
+  /// No description provided for @contactsReportEmptyList.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports yet.'**
+  String get contactsReportEmptyList;
+
+  /// No description provided for @contactsReportMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get contactsReportMonthly;
+
+  /// No description provided for @contactsReportQuarterly.
+  ///
+  /// In en, this message translates to:
+  /// **'Quarterly'**
+  String get contactsReportQuarterly;
+
+  /// No description provided for @contactsReportSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search reports'**
+  String get contactsReportSearchHint;
+
+  /// No description provided for @contactsReportWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get contactsReportWeekly;
+
+  /// No description provided for @contactsReportYearly.
+  ///
+  /// In en, this message translates to:
+  /// **'Yearly'**
+  String get contactsReportYearly;
+
   /// No description provided for @contactsReportContent.
   ///
   /// In en, this message translates to:
