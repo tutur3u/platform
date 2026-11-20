@@ -1,4 +1,5 @@
 import type { TulearnBootstrapResponse } from '@tuturuuu/internal-api';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import {
@@ -103,6 +104,9 @@ export default async function DashboardLayout({
     sidebarBehavior
   );
 
+  const menuProfile =
+    runtimeAppBase() === '/lms/learn' ? bootstrap.profile : undefined;
+
   return (
     <WorkspaceVisibilityProvider actorId={bootstrap.profile.id}>
       <SidebarProvider
@@ -115,7 +119,7 @@ export default async function DashboardLayout({
           footerActions={
             <>
               <div className="min-w-0 flex-1">
-                <AppUserNav />
+                <AppUserNav profile={menuProfile} />
               </div>
               <NotificationPopover userId={bootstrap.profile.id} />
             </>
@@ -124,7 +128,7 @@ export default async function DashboardLayout({
           notificationPopover={
             <NotificationPopover userId={bootstrap.profile.id} />
           }
-          userPopover={<AppUserNav hideMetadata />}
+          userPopover={<AppUserNav hideMetadata profile={menuProfile} />}
           wsId={wsId}
         >
           {children}

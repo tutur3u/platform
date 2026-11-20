@@ -1175,6 +1175,27 @@
     "untimed": "Không giới hạn thời gian",
     "workspace": "Workspace"
   },
+  "teacherWorkspace": {
+    "activeCourses": "Khóa học đang hoạt động",
+    "attendance": "Điểm danh",
+    "builder": "Soạn khóa học",
+    "courseCount": "Khóa học đang hoạt động",
+    "empty": "Không có khóa học đang hoạt động trong không gian này.",
+    "gradebook": "Sổ điểm",
+    "loadError": "Không thể tải khóa học.",
+    "manageCourses": "Quản lý khóa học",
+    "moduleCount": "{count} học phần",
+    "needsSupport": "Học viên dưới 50%",
+    "notSubmitted": "Bài chưa nộp",
+    "pendingGrading": "Chờ chấm điểm",
+    "quizzes": "Thư viện bài kiểm tra",
+    "quickLinks": "Lối tắt giảng dạy",
+    "reports": "Báo cáo",
+    "retry": "Thử lại",
+    "timetable": "Thời khóa biểu",
+    "title": "Tổng quan giảng dạy",
+    "unavailable": "Không có dữ liệu"
+  },
   "teachOperations": {
     "assignments": {
       "lead": "Tạo bài đăng khóa học và ghi chú bài tập mà không rời Teach.",

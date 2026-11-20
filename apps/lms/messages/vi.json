@@ -1,0 +1,14 @@
+{
+  "description": "Quản lý việc dạy và học tại một nơi.",
+  "learn": {
+    "action": "Mở khu vực học tập",
+    "description": "Tiếp tục khóa học, luyện tập kỹ năng hoặc xem tiến độ của bạn.",
+    "title": "Học tập"
+  },
+  "teach": {
+    "action": "Mở khu vực giảng dạy",
+    "description": "Quản lý khóa học, soạn bài kiểm tra, điểm danh và xem điểm.",
+    "title": "Giảng dạy"
+  },
+  "title": "Hệ thống quản lý học tập"
+}

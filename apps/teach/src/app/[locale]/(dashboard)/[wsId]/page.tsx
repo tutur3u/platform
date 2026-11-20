@@ -1,5 +1,4 @@
 import {
-  getTeachBootstrap,
   getTeachDashboardStats,
   listWorkspaceCourses,
   withForwardedInternalApiAuth,
@@ -7,6 +6,7 @@ import {
 import { headers } from 'next/headers';
 import { TeachDashboard } from '@/components/teach-dashboard';
 import { redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 
 export default async function WorkspaceTeachDashboardPage({
   params,
@@ -16,7 +16,9 @@ export default async function WorkspaceTeachDashboardPage({
   const { locale, wsId } = await params;
   const requestHeaders = await headers();
   const authOptions = withForwardedInternalApiAuth(requestHeaders);
-  const bootstrap = await getTeachBootstrap(authOptions).catch(() => null);
+  const bootstrap = await getTeachRequestBootstrap(requestHeaders).catch(
+    () => null
+  );
 
   if (!bootstrap) {
     redirect({ href: `/login?next=/${wsId}`, locale });
@@ -36,32 +38,19 @@ export default async function WorkspaceTeachDashboardPage({
     throw new Error('Redirecting to an available Teach workspace');
   }
 
-  const [coursesPayload, dashboardStats] = await Promise.all([
+  const [courses, dashboardStats] = await Promise.all([
     listWorkspaceCourses(
       wsId,
       { page: 1, pageSize: 8, status: 'active' },
       authOptions
-    ).catch(() => ({ count: 0, data: [], page: 1, pageSize: 8 })),
+    ).catch(() => null),
     getTeachDashboardStats(wsId, authOptions).catch(() => null),
   ]);
 
-  const groups = coursesPayload.data.map((course) => ({
-    attendance_amount: 0,
-    id: course.id,
-    name: course.name,
-    sessions: [],
-  }));
-  const moduleCounts = coursesPayload.data.map(
-    (course) => [course.id, course.modules_count] as const
-  );
-
   return (
     <TeachDashboard
-      bootstrap={bootstrap}
+      courses={courses}
       dashboardStats={dashboardStats}
-      groups={groups}
-      moduleCounts={Object.fromEntries(moduleCounts)}
-      totalGroups={coursesPayload.count}
       workspace={requestedWorkspace}
       wsId={wsId}
     />

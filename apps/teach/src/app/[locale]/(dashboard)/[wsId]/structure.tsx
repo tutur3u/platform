@@ -5,6 +5,7 @@ import type {
   TulearnWorkspaceSummary,
 } from '@tuturuuu/internal-api';
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import type { ReactNode } from 'react';
 import { TeachThemeControl } from '@/components/teach-theme-control';
@@ -45,7 +46,11 @@ export function Structure({
         </div>
       }
       appId="teach"
-      brandHref={WEB_APP_URL}
+      brandHref={
+        runtimeAppBase() === '/lms/teach'
+          ? 'https://tuturuuu.com/lms'
+          : WEB_APP_URL
+      }
       childContainerClassName="mx-auto w-full max-w-[1500px]"
       defaultCollapsed={defaultCollapsed}
       links={links}

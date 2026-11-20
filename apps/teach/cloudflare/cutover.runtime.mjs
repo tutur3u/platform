@@ -105,6 +105,7 @@ test(
     const profiles = [
       { host: canonical, base: '' },
       { host: apex, base: '/teach' },
+      { host: apex, base: '/lms/teach' },
     ];
     const query = '?x=1&x=2&q=a%2Fb';
     const deep = '/dashboard';
@@ -126,8 +127,15 @@ test(
       assert.equal(webLogin.pathname, '/login');
       const callback = new URL(webLogin.searchParams.get('returnUrl'));
       assert.equal(callback.origin, `https://${host}`);
-      assert.equal(callback.pathname, `${base}/verify-token`);
-      assert.equal(callback.searchParams.get('nextUrl'), deep + query);
+      const inLms = base.startsWith('/lms/');
+      assert.equal(
+        callback.pathname,
+        inLms ? '/verify-token' : `${base}/verify-token`
+      );
+      assert.equal(
+        callback.searchParams.get('nextUrl'),
+        (inLms ? base : '') + deep + query
+      );
       const localized = await call(`${base}/vi/login${query}`, host);
       assert.equal(localized.status, 307, host);
       assert.equal(

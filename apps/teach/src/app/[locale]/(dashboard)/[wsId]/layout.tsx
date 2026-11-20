@@ -1,8 +1,5 @@
-import {
-  getTeachBootstrap,
-  InternalApiError,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
+import { InternalApiError } from '@tuturuuu/internal-api';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import {
@@ -22,6 +19,7 @@ import { connection } from 'next/server';
 import type { ReactNode } from 'react';
 import { AppUserNav } from '@/components/app-user-nav';
 import { redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
 
@@ -42,11 +40,9 @@ export default async function TeachWorkspaceLayout({
     headers(),
     cookies(),
   ]);
-  let bootstrap: Awaited<ReturnType<typeof getTeachBootstrap>>;
+  let bootstrap: Awaited<ReturnType<typeof getTeachRequestBootstrap>>;
   try {
-    bootstrap = await getTeachBootstrap(
-      withForwardedInternalApiAuth(requestHeaders)
-    );
+    bootstrap = await getTeachRequestBootstrap(requestHeaders);
   } catch (error) {
     if (
       error instanceof InternalApiError &&
@@ -92,6 +88,9 @@ export default async function TeachWorkspaceLayout({
     sidebarBehavior
   );
 
+  const menuProfile =
+    runtimeAppBase() === '/lms/teach' ? bootstrap.profile : undefined;
+
   return (
     <WorkspaceVisibilityProvider actorId={bootstrap.profile.id}>
       <SidebarProvider
@@ -104,7 +103,7 @@ export default async function TeachWorkspaceLayout({
           footerActions={
             <>
               <div className="min-w-0 flex-1">
-                <AppUserNav />
+                <AppUserNav profile={menuProfile} />
               </div>
               <NotificationPopover userId={bootstrap.profile.id} />
             </>
@@ -113,7 +112,7 @@ export default async function TeachWorkspaceLayout({
           notificationPopover={
             <NotificationPopover userId={bootstrap.profile.id} />
           }
-          userPopover={<AppUserNav hideMetadata />}
+          userPopover={<AppUserNav hideMetadata profile={menuProfile} />}
           workspace={workspace}
           wsId={wsId}
         >

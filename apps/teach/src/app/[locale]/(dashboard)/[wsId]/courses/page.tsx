@@ -1,10 +1,7 @@
-import {
-  getTeachBootstrap,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import { ModulesPageClient } from '@/components/modules/modules-page-client';
 import { redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 
 export default async function WorkspaceCoursesPage({
   params,
@@ -13,8 +10,9 @@ export default async function WorkspaceCoursesPage({
 }) {
   const { locale, wsId } = await params;
   const requestHeaders = await headers();
-  const authOptions = withForwardedInternalApiAuth(requestHeaders);
-  const bootstrap = await getTeachBootstrap(authOptions).catch(() => null);
+  const bootstrap = await getTeachRequestBootstrap(requestHeaders).catch(
+    () => null
+  );
 
   if (!bootstrap) {
     redirect({ href: `/login?next=/${wsId}/courses`, locale });

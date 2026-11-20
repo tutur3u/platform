@@ -3,6 +3,7 @@
 import type { TulearnBootstrapResponse } from '@tuturuuu/internal-api';
 import { SidebarStructure } from '@tuturuuu/satellite/sidebar-structure';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types/db';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -71,7 +72,11 @@ export function Structure({
         </div>
       }
       appId="learn"
-      brandHref={WEB_APP_URL}
+      brandHref={
+        runtimeAppBase() === '/lms/learn'
+          ? 'https://tuturuuu.com/lms'
+          : WEB_APP_URL
+      }
       childContainerClassName={
         isCodingLab
           ? 'flex h-full min-h-0 w-full flex-col'

@@ -1,10 +1,7 @@
-import {
-  getTeachBootstrap,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import { OperationsPageClient } from '@/components/teach-operations/operations-page-client';
 import { redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 
 export default async function TeachMetricsPage({
   params,
@@ -15,9 +12,9 @@ export default async function TeachMetricsPage({
 }) {
   const { locale, wsId } = await params;
   const requestHeaders = await headers();
-  const bootstrap = await getTeachBootstrap(
-    withForwardedInternalApiAuth(requestHeaders)
-  ).catch(() => null);
+  const bootstrap = await getTeachRequestBootstrap(requestHeaders).catch(
+    () => null
+  );
 
   if (!bootstrap)
     return redirect({ href: `/login?next=/${wsId}/metrics`, locale });

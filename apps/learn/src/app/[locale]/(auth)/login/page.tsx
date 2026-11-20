@@ -40,11 +40,16 @@ export default async function LoginPage({
   }
 
   const base = runtimeAppBase();
+  const inLms = base === '/lms/learn';
+  // Use the platform's document-navigation continuation for the nested mount.
   const returnUrl = new URL(
-    withAppBase('/verify-token', base),
+    inLms ? '/verify-token' : withAppBase('/verify-token', base),
     base ? WEB_APP_URL : BASE_URL
   );
-  returnUrl.searchParams.set('nextUrl', nextPath);
+  returnUrl.searchParams.set(
+    'nextUrl',
+    inLms ? withAppBase(nextPath, base) : nextPath
+  );
 
   const loginUrl = new URL('/login', WEB_APP_URL);
   loginUrl.searchParams.set('returnUrl', returnUrl.toString());

@@ -152,6 +152,7 @@ export const ci = {
   'hive-cloudflare.yaml': true,
   'chat-cloudflare.yaml': true,
   'learn-cloudflare.yaml': true,
+  'lms-cloudflare.yaml': true,
   'infrastructure-cloudflare.yaml': true,
   'mind-cloudflare.yaml': true,
   'teach-cloudflare.yaml': true,
@@ -175,6 +176,11 @@ export const productionAppExclusions: Record<string, string> = {
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  lms: {
+    state: 'held',
+    reason:
+      'LMS requires signed-in staging acceptance and gateway cutover review',
+  },
   forms: {
     state: 'admitted',
     reason:

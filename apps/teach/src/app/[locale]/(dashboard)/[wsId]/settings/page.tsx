@@ -1,8 +1,4 @@
 import { Languages, LogOut } from '@tuturuuu/icons';
-import {
-  getTeachBootstrap,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { TeachThemeControl } from '@/components/teach-theme-control';
@@ -16,9 +12,9 @@ export default async function TeachSettingsPage({
   const { locale, wsId } = await params;
   const t = await getTranslations('teachSettings');
   const requestHeaders = await headers();
-  const bootstrap = await getTeachBootstrap(
-    withForwardedInternalApiAuth(requestHeaders)
-  ).catch(() => null);
+  const bootstrap = await getTeachRequestBootstrap(requestHeaders).catch(
+    () => null
+  );
 
   if (!bootstrap)
     return redirect({ href: `/login?next=/${wsId}/settings`, locale });

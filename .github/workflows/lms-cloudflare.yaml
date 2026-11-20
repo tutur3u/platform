@@ -1,0 +1,69 @@
+name: LMS Cloudflare Artifact
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths: &lms-paths
+      - 'apps/lms/**'
+      - 'packages/start-bridge/**'
+      - 'packages/ui/**'
+      - 'packages/utils/**'
+      - 'packages/icons/**'
+      - 'scripts/ci/*native-artifact.py'
+      - '.github/workflows/lms-cloudflare.yaml'
+      - 'bun.lock'
+  push:
+    branches: [main]
+    paths: *lms-paths
+permissions:
+  contents: read
+  deployments: read
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    with:
+      workflow_name: lms-cloudflare.yaml
+  artifact:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      LMS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.LMS_SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24.22.3
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Record source metadata
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.LMS_SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun scripts/ci/generate-build-metadata.ts
+      - run: bun turbo:local run build --filter="@tuturuuu/lms^..." --concurrency=2
+      - run: bun run --cwd apps/lms type-check
+      - run: bun run --cwd apps/lms test
+      - run: bun run --cwd apps/lms build:cloudflare
+      - name: Seal and exercise the emitted Worker
+        run: |
+          python3 scripts/ci/lms-native-artifact.py seal apps/lms --receipt "$RUNNER_TEMP/lms-native-artifact.json"
+          bun run --cwd apps/lms test:runtime
+          python3 scripts/ci/lms-native-artifact.py verify apps/lms --receipt "$RUNNER_TEMP/lms-native-artifact.json"
+          python3 scripts/ci/lms-native-artifact.py pack apps/lms --receipt "$RUNNER_TEMP/lms-native-artifact.json" --archive "$RUNNER_TEMP/lms-native-artifact.tar.gz"
+          cd "$RUNNER_TEMP"
+          sha256sum lms-native-artifact.json lms-native-artifact.tar.gz > lms-native-artifact.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: lms-worker-${{ env.LMS_SOURCE_SHA }}
+          path: ${{ runner.temp }}/lms-native-artifact.*
+          retention-days: 7
+          if-no-files-found: error

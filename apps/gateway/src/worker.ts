@@ -7,6 +7,7 @@ import {
   scrubBypass,
   withBypass,
 } from './acceptance-host';
+import { lmsRedirectDestination } from './lms-redirect';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
 import { dispatchWebFamily, webFamilyTarget } from './web-family';
@@ -54,6 +55,8 @@ export interface Env {
    * Clearing an app's entries is part of that app's one-step rollback.
    */
   GATEWAY_MOUNTED_PATHS?: string;
+  /** Activate legacy redirects after the LMS mount passes acceptance. */
+  GATEWAY_LMS_REDIRECTS?: string;
   /**
    * `1` releases the exact private robots value on eligible canonical
    * Marketing pages that the Marketing Worker sent without its provenance
@@ -476,6 +479,26 @@ export function createHandler(deps: HandlerDeps) {
     // The acceptance host fails closed without its bypass secret.
     if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
       return acceptanceUnavailable();
+    }
+    if (
+      env.GATEWAY_MODE !== 'passthrough' &&
+      env.GATEWAY_LMS_REDIRECTS === '1'
+    ) {
+      const target = lmsRedirectDestination(request);
+      if (
+        target &&
+        mountedAppBinding(new Request('https://tuturuuu.com/lms'), env) &&
+        mountedAppBinding(new Request(target), env)
+      ) {
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: target.href,
+            'Cache-Control': 'no-store',
+            'Referrer-Policy': 'no-referrer',
+          },
+        });
+      }
     }
     // Admitted mounts precede the Web manifest, cache and passthrough mode.
     const mounted = mountedAppBinding(request, env);

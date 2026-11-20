@@ -1,9 +1,6 @@
-import {
-  getTulearnBootstrap,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
 import { redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 import { LessonDetailClient } from './client';
 
 export default async function LessonDetailPage({
@@ -18,9 +15,10 @@ export default async function LessonDetailPage({
 }) {
   const { lessonId, locale, moduleId, wsId } = await params;
   const requestHeaders = await headers();
-  const authOptions = withForwardedInternalApiAuth(requestHeaders);
 
-  const bootstrap = await getTulearnBootstrap(authOptions).catch(() => null);
+  const bootstrap = await getTeachRequestBootstrap(requestHeaders).catch(
+    () => null
+  );
 
   if (!bootstrap) {
     redirect({

@@ -36,7 +36,7 @@ const seoPolicy = {
 };
 
 // One artifact: the subdomain root and the tuturuuu.com/learn mount.
-const mounts = {
+const legacyMounts = {
   app: 'learn',
   rootHosts: ['learn.tuturuuu.com'],
   mountHosts: ['tuturuuu.com'],
@@ -46,33 +46,50 @@ const mounts = {
 
 // Route handlers are server code (`server-only` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
-const handler = (
+const endpoints = (
   import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
-).then(({ endpoints }) =>
-  createBridgeHandler<LearnEnvironment, WorkerContext>({
-    mounts,
-    csp: appConfig.csp,
-    apiOrigin: appConfig.apiOrigin,
-    framablePaths: appConfig.framablePaths,
-    start: createBridgeStartHandler(),
-    serverFnBase: '/_serverFn',
-    proxy,
-    // The proxy's own `config.matcher`, evaluated like Next.
-    matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
-    endpoints,
-    centralFirst,
-    functionBase: '/_serverFn',
-    functionProxy: createFunctionProxy({ targetApp: 'learn' }),
-    publicAssets,
-    assets: (env) => env.ASSETS,
-    centralApiOrigin: (env) =>
-      env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
-  })
-);
+).then((entry) => entry.endpoints);
+
+function createHandler(mounts: AppMountConfig) {
+  return endpoints.then((endpoints) =>
+    createBridgeHandler<LearnEnvironment, WorkerContext>({
+      mounts,
+      csp: appConfig.csp,
+      apiOrigin: appConfig.apiOrigin,
+      framablePaths: appConfig.framablePaths,
+      start: createBridgeStartHandler(),
+      serverFnBase: '/_serverFn',
+      proxy,
+      // The proxy's own `config.matcher`, evaluated like Next.
+      matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
+      endpoints,
+      centralFirst,
+      functionBase: '/_serverFn',
+      functionProxy: createFunctionProxy({ targetApp: 'learn' }),
+      publicAssets,
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: (env) =>
+        env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
+    })
+  );
+}
+
+const lmsMounts = {
+  ...legacyMounts,
+  rootHosts: [],
+  basePath: '/lms/learn',
+  unknownHost: 'reject',
+} as const;
+const legacyHandler = createHandler(legacyMounts);
+const lmsHandler = createHandler(lmsMounts);
 
 export default {
   fetch: withHstsResponsePolicy(
     async (request: Request, env: LearnEnvironment, ctx: WorkerContext) => {
+      const url = new URL(request.url);
+      const isLms = resolveAppBase(url, lmsMounts) !== null;
+      const mounts = isLms ? lmsMounts : legacyMounts;
+      const handler = isLms ? lmsHandler : legacyHandler;
       let response: Response;
       try {
         response = await (await handler)(request, env, ctx);
@@ -88,7 +105,13 @@ export default {
             mounts,
             publicAssets,
             framablePaths: appConfig.framablePaths,
-            seoPolicy,
+            seoPolicy: isLms
+              ? {
+                  ...seoPolicy,
+                  origin: 'https://tuturuuu.com/lms/learn',
+                  publicPaths: [],
+                }
+              : seoPolicy,
           })
         : response;
     }

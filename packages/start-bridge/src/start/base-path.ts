@@ -31,7 +31,10 @@ export function appBaseHeadScript(
  * `createStart({ serverFns: { fetch } })`: sends compiled server-function
  * URLs (`/_serverFn/...`) through the mounted base in the browser.
  */
-export const bridgeServerFnFetch: typeof fetch = (input, init) => {
+export const bridgeServerFnFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> => {
   if (typeof input === 'string') return fetch(withAppBase(input), init);
   if (input instanceof URL) {
     const url = new URL(input);

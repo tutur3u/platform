@@ -2,7 +2,10 @@
 import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
-import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
+import {
+  resolveAppBase,
+  type AppMountConfig,
+} from '@tuturuuu/start-bridge/mounts';
 import { defaultProxyMatches } from '@tuturuuu/start-bridge/proxy-bridge';
 import { createProxyMatcher } from '@tuturuuu/start-bridge/proxy-matcher';
 import {
@@ -37,50 +40,66 @@ const seoPolicy = {
 };
 
 // One artifact: the subdomain root and the tuturuuu.com/teach mount.
-const mounts = {
+const legacyMounts = {
   app: 'teach',
   rootHosts: ['teach.tuturuuu.com'],
   mountHosts: ['tuturuuu.com'],
   basePath: '/teach',
   ...appConfig.mounts,
 };
-const productionMounts = { ...mounts, unknownHost: 'reject' } as const;
 
 // Route handlers are server code (`server-only` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
-const handler = (
+const endpoints = (
   import.meta.viteRsc.loadModule('rsc', 'bridge-api') as Promise<ApiEntry>
-).then(({ endpoints }) =>
-  createBridgeHandler<TeachEnvironment, WorkerContext>({
-    mounts,
-    csp: appConfig.csp,
-    apiOrigin: appConfig.apiOrigin,
-    framablePaths: appConfig.framablePaths,
-    start: createBridgeStartHandler(),
-    serverFnBase: '/_serverFn',
-    proxy,
-    // The proxy's own `config.matcher`, evaluated like Next.
-    matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
-    endpoints,
-    centralFirst,
-    functionBase: '/_serverFn',
-    functionProxy: createFunctionProxy({ targetApp: 'teach' }),
-    publicAssets,
-    assets: (env) => env.ASSETS,
-    centralApiOrigin: (env) =>
-      env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
-  })
-);
+).then((entry) => entry.endpoints);
+
+function createHandler(mounts: AppMountConfig) {
+  return endpoints.then((endpoints) =>
+    createBridgeHandler<TeachEnvironment, WorkerContext>({
+      mounts,
+      csp: appConfig.csp,
+      apiOrigin: appConfig.apiOrigin,
+      framablePaths: appConfig.framablePaths,
+      start: createBridgeStartHandler(),
+      serverFnBase: '/_serverFn',
+      proxy,
+      // The proxy's own `config.matcher`, evaluated like Next.
+      matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),
+      endpoints,
+      centralFirst,
+      functionBase: '/_serverFn',
+      functionProxy: createFunctionProxy({ targetApp: 'teach' }),
+      publicAssets,
+      assets: (env) => env.ASSETS,
+      centralApiOrigin: (env) =>
+        env.INTERNAL_WEB_API_ORIGIN ?? 'https://tuturuuu.com',
+    })
+  );
+}
+
+const lmsMounts = {
+  ...legacyMounts,
+  rootHosts: [],
+  basePath: '/lms/teach',
+  unknownHost: 'reject',
+} as const;
+const legacyHandler = createHandler(legacyMounts);
+const lmsHandler = createHandler(lmsMounts);
 
 export default {
   fetch: withHstsResponsePolicy(
     async (request: Request, env: TeachEnvironment, ctx: WorkerContext) => {
+      const url = new URL(request.url);
+      const isLms = resolveAppBase(url, lmsMounts) !== null;
+      const mounts = isLms ? lmsMounts : legacyMounts;
+      const handler = isLms ? lmsHandler : legacyHandler;
       let response: Response;
       try {
         const staging =
           env.NODE_ENV !== 'production' && env.TUTURUUU_NOINDEX === '1';
         const admitted =
-          staging || resolveAppBase(new URL(request.url), productionMounts);
+          staging || resolveAppBase(url, { ...mounts, unknownHost: 'reject' });
         response = admitted
           ? await (
               await handler
@@ -98,7 +117,13 @@ export default {
             mounts,
             publicAssets,
             framablePaths: appConfig.framablePaths,
-            seoPolicy,
+            seoPolicy: isLms
+              ? {
+                  ...seoPolicy,
+                  origin: 'https://tuturuuu.com/lms/teach',
+                  publicPaths: [],
+                }
+              : seoPolicy,
           })
         : response;
     }

@@ -348,3 +348,46 @@ describe('mount admission', () => {
     expect(cache.entries.size).toBe(0);
   });
 });
+
+describe('LMS cutover', () => {
+  it('keeps legacy mounted paths serving before the explicit switch', async () => {
+    const { handle } = handler();
+    const { env, fetch } = mountEnv('/learn,/learn/*,/lms,/lms/*');
+    const response = await handle(new Request('https://tuturuuu.com/learn/w'), {
+      ...env,
+      MOUNT_LMS: { fetch } as never,
+    });
+    expect(response.status).toBe(200);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('redirects all legacy hosts only once the canonical mount is enabled', async () => {
+    const { handle } = handler();
+    const { env, fetch } = mountEnv('/learn,/learn/*,/lms,/lms/*');
+    const cutover = {
+      ...env,
+      GATEWAY_LMS_REDIRECTS: '1',
+      MOUNT_LMS: { fetch },
+    } as unknown as Env;
+    for (const [legacy, canonical] of [
+      ['https://tuturuuu.com/learn/w', '/lms/learn/w'],
+      ['https://teach.tuturuuu.com/vi/w', '/lms/teach/vi/w'],
+      ['https://learn.tuturuuu.com/parent-invite', '/lms/learn/parent-invite'],
+      ['https://lms.tuturuuu.com/teach/w', '/lms/teach/w'],
+    ]) {
+      const result = await handle(new Request(`${legacy}?x=1&x=2`), cutover);
+      expect(result.status).toBe(301);
+      expect(result.headers.get('location')).toBe(
+        `https://tuturuuu.com${canonical}?x=1&x=2`
+      );
+      expect(result.headers.get('cache-control')).toBe('no-store');
+    }
+    expect(fetch).not.toHaveBeenCalled();
+
+    const result = await handle(new Request('https://tuturuuu.com/learn/w'), {
+      ...cutover,
+      GATEWAY_MOUNTED_PATHS: '/learn/*,/lms',
+    });
+    expect(result.status).toBe(200);
+  });
+});

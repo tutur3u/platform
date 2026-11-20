@@ -37,10 +37,13 @@ function readVar(env: unknown, name: string) {
  * this surfaces every violation (also on the tuturuuu.com/learn mount) before
  * enforcement. Scripts are already enforced by the nonce policy below.
  */
-function learnSecurityProfile(env: unknown): AppSecurityProfile {
+function learnSecurityProfile(
+  env: unknown,
+  basePath: string
+): AppSecurityProfile {
   const supabase = readVar(env, 'NEXT_PUBLIC_SUPABASE_URL');
   return {
-    basePath: '/learn',
+    basePath,
     connect: originSources(supabase, true),
     img: [...originSources(supabase), 'https:'],
     permissions: DEFAULT_PERMISSIONS,
@@ -53,11 +56,12 @@ export default defineBridgeAppConfig({
   csp: defaultContentSecurityPolicy,
   async wrapResponse(response, context) {
     const secured = await rootPolicy(response, context);
-    const { request } = context;
+    const { request, mounts } = context;
+    const basePath = mounts?.basePath ?? '/learn';
     const url = new URL(request.url);
     const path =
       url.hostname === 'tuturuuu.com'
-        ? url.pathname.slice('/learn'.length)
+        ? url.pathname.slice(basePath.length)
         : url.pathname;
     if (
       (request.method === 'GET' || request.method === 'HEAD') &&
@@ -76,7 +80,7 @@ export default defineBridgeAppConfig({
     }
     return applyDocumentSecurityHeaders(
       secured,
-      learnSecurityProfile(context.env),
+      learnSecurityProfile(context.env, basePath),
       {
         requestOrigin: url.origin,
         sharedOrigin:

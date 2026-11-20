@@ -1175,6 +1175,27 @@
     "untimed": "Untimed",
     "workspace": "Workspace"
   },
+  "teacherWorkspace": {
+    "activeCourses": "Active courses",
+    "attendance": "Attendance",
+    "builder": "Course builder",
+    "courseCount": "Active courses",
+    "empty": "No active courses in this workspace.",
+    "gradebook": "Gradebook",
+    "loadError": "Courses could not be loaded.",
+    "manageCourses": "Manage courses",
+    "moduleCount": "{count, plural, one {# module} other {# modules}}",
+    "needsSupport": "Learners below 50%",
+    "notSubmitted": "Missing submissions",
+    "pendingGrading": "Awaiting grading",
+    "quizzes": "Quiz library",
+    "quickLinks": "Teaching shortcuts",
+    "reports": "Reports",
+    "retry": "Retry",
+    "timetable": "Timetable",
+    "title": "Teaching dashboard",
+    "unavailable": "Unavailable"
+  },
   "teachOperations": {
     "assignments": {
       "lead": "Create course posts and assignment notes without leaving Teach.",

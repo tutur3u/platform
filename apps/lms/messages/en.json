@@ -1,0 +1,14 @@
+{
+  "description": "Manage teaching and learning in one place.",
+  "learn": {
+    "action": "Open Learn",
+    "description": "Resume a course, practice a skill, or review your progress.",
+    "title": "Learn"
+  },
+  "teach": {
+    "action": "Open Teach",
+    "description": "Manage courses, write quizzes, check attendance, and review grades.",
+    "title": "Teach"
+  },
+  "title": "Learning Management System"
+}

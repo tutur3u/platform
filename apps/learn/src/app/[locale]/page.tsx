@@ -1,4 +1,5 @@
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import { createPageMetadata } from '@tuturuuu/utils/common/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
@@ -13,15 +14,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const isVietnamese = locale === 'vi';
 
+  const inLms = runtimeAppBase() === '/lms/learn';
+
   return createPageMetadata({
-    baseUrl: BASE_URL,
+    baseUrl: inLms ? 'https://tuturuuu.com' : BASE_URL,
     description: isVietnamese
       ? 'Theo dõi bài học, luyện tập, bài tập, điểm số và tiến độ học tập trong một không gian học tập Tuturuuu.'
       : 'Follow lessons, practice, assignments, marks, and learning progress in one focused Tuturuuu student portal.',
-    indexable: true,
+    indexable: !inLms,
     locale,
     localePrefix: 'never',
-    pathname: '/',
+    pathname: inLms ? '/lms/learn' : '/',
     siteName: 'Learn',
     title: isVietnamese ? 'Cổng học tập Tuturuuu' : 'Tuturuuu Student Portal',
   });
