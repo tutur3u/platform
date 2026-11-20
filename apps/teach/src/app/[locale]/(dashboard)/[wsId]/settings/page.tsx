@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { TeachThemeControl } from '@/components/teach-theme-control';
 import { Link, redirect } from '@/i18n/navigation';
+import { getTeachRequestBootstrap } from '@/lib/teach-bootstrap';
 
 export default async function TeachSettingsPage({
   params,

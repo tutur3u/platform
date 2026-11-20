@@ -118,6 +118,7 @@ const PROTECTED_TRIGGERS = {
   'hive-cloudflare.yaml': '170330c93275beda',
   'infrastructure-cloudflare.yaml': '8b74315dfe557569',
   'learn-cloudflare.yaml': 'c1dc547df2674fca',
+  'lms-cloudflare.yaml': '38a3fd2a909cdb83',
   'marketing-cloudflare.yaml': '975602b8f7271cbc',
   'mind-cloudflare.yaml': '188b2dc67dc86f60',
   'teach-cloudflare.yaml': 'b37341dc49021b0b',

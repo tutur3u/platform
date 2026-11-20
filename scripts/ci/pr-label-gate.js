@@ -67,6 +67,7 @@ const HEAVY_PR_WORKFLOWS = [
   'inventory-offline-contract.yaml',
   'learn-cloudflare.yaml',
   'lettin-cloudflare.yaml',
+  'lms-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
   'mail-cloudflare.yaml',
   'mail-profile-runtime-contract.yaml',
