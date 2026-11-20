@@ -328,6 +328,53 @@ test('closes rate-limited, oversized, removed and expired sockets', async () => 
   assert.equal((await expiring.closed).code, 4001);
 });
 
+test('archiving a conversation closes sockets and fences previously issued tickets', async () => {
+  const conversationId = '00000000-0000-4000-8000-0000000000c4';
+  const ticket = await conversationTicket(ALICE, { conversationId });
+  const opened = await openSocket(server.origin, ticket);
+  const event = messageEvent('conversation.deleted', {
+    conversationId,
+    result: { conversationId, mode: 'archived', type: 'group' },
+  });
+  delete event.message;
+  assert.equal((await publish(server, event)).status, 200);
+  assert.equal((await opened.closed).code, 4003);
+  await assert.rejects(openSocket(server.origin, ticket));
+});
+
+test('a delayed member removal leaves new admission intact after re-add', async () => {
+  const conversationId = '00000000-0000-4000-8000-0000000000c5';
+  const now = Math.floor(Date.now() / 1_000);
+  const oldTicket = await conversationTicket(ALICE, {
+    conversationId,
+    iat: now - 60,
+  });
+  const boundaryTicket = await conversationTicket(ALICE, {
+    conversationId,
+    iat: now - 10,
+  });
+  const freshTicket = await conversationTicket(ALICE, { conversationId });
+  const old = await openSocket(server.origin, oldTicket);
+  const fresh = await openSocket(server.origin, freshTicket);
+  const event = messageEvent('member.removed', {
+    conversationId,
+    sentAt: new Date((now - 40) * 1_000).toISOString(),
+    userId: ALICE,
+  });
+  delete event.message;
+  assert.equal((await publish(server, event)).status, 200);
+  assert.equal((await old.closed).code, 4003);
+  await assert.rejects(openSocket(server.origin, oldTicket));
+  await assert.rejects(openSocket(server.origin, boundaryTicket));
+  assert.equal(
+    (await publish(server, messageEvent('message.created', { conversationId })))
+      .status,
+    200
+  );
+  await fresh.next((frame) => frame.event?.type === 'message.created');
+  fresh.close();
+});
+
 test('caps sockets per user per room', async () => {
   const sockets = [];
   for (let index = 0; index < 6; index += 1) {

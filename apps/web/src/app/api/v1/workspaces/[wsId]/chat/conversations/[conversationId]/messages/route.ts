@@ -496,7 +496,7 @@ export const POST = withSessionAuth<RouteParams>(
 
       const audience = getChatRealtimeAudience(conversation);
 
-      await publishChatRealtimeEvent({
+      const foregroundUserIds = await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
         audience,
         conversationId: message.conversationId,
@@ -509,6 +509,7 @@ export const POST = withSessionAuth<RouteParams>(
         await notifyChatMessageRecipients({
           actorUserId: auth.user.id,
           conversation,
+          ...(foregroundUserIds?.length ? { foregroundUserIds } : {}),
           message,
           wsId: context.context.normalizedWsId,
         });

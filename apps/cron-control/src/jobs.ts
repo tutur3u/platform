@@ -241,6 +241,14 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     { workerProcessor: 'checkout-expiry' }
   ),
   job(
+    'chat-realtime-revocations',
+    '*/5 * * * *',
+    'web',
+    '/api/cron/chat/realtime-revocations',
+    'idempotent',
+    { method: 'POST', timeoutMs: 25_000 }
+  ),
+  job(
     'web-deadline-reminders',
     '*/5 * * * *',
     'web',

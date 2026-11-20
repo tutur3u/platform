@@ -47,7 +47,7 @@ it('skips signing and network traffic in production without a configured URL', a
   expect(warn).toHaveBeenCalledTimes(1);
 });
 
-it('uses localhost for development and an explicit URL in production', () => {
+it('uses the legacy upstream only in local development', () => {
   vi.stubEnv('NODE_ENV', 'development');
   vi.stubEnv('CHAT_REALTIME_INTERNAL_URL', undefined);
   vi.stubEnv('CHAT_REALTIME_URL', undefined);
@@ -57,9 +57,11 @@ it('uses localhost for development and an explicit URL in production', () => {
     getChatRealtimeSubscribeUrl({ userId: id, wsId: id })?.url.origin
   ).toBe('http://localhost:7817');
 
-  vi.stubEnv('NODE_ENV', 'production');
-  vi.stubEnv('CHAT_REALTIME_URL', 'https://realtime.example.test/');
+  vi.stubEnv('CHAT_REALTIME_INTERNAL_URL', 'https://realtime.example.test/');
   expect(getChatRealtimeSubscribeUrl({ userId: id, wsId: id })?.url.href).toBe(
     'https://realtime.example.test/realtime?token=test-token'
   );
+
+  vi.stubEnv('NODE_ENV', 'production');
+  expect(getChatRealtimeSubscribeUrl({ userId: id, wsId: id })).toBeNull();
 });

@@ -7,13 +7,23 @@ import type {
 import { chatRealtimeEventSchema } from '@tuturuuu/realtime/chat';
 import { signChatRealtimeToken } from '@tuturuuu/realtime/chat/token';
 import type { ChatConversation } from '@/lib/chat/private-rpc';
+import {
+  isChatRealtimeWorkerConfigured,
+  publishChatRealtimeWorkerEvent,
+} from './realtime-worker';
 
 const TOKEN_TTL_MS = 10 * 60_000;
 let warnedAboutMissingRealtimeUrl = false;
 
+type ChatRealtimePublishAudience = ChatRealtimeAudience & {
+  conversationWorkspaceId?: string;
+};
+
 type ChatRealtimeEventInput = ChatRealtimeEvent extends infer Event
   ? Event extends ChatRealtimeEvent
-    ? Omit<Event, 'id' | 'sentAt'>
+    ? Omit<Event, 'audience' | 'id' | 'sentAt'> & {
+        audience: ChatRealtimePublishAudience;
+      }
     : never
   : never;
 
@@ -24,26 +34,18 @@ function getChatRealtimeTokenSecret() {
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_KEY;
 
-  if (secret?.trim()) {
-    return secret.trim();
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Chat realtime token signing requires CHAT_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
-    );
-  }
-
-  return 'chat-local-development-token-secret';
+  return secret?.trim() || 'chat-local-development-token-secret';
 }
 
 export function getChatRealtimeInternalBaseUrl() {
-  const configured =
-    process.env.CHAT_REALTIME_INTERNAL_URL?.trim() ||
-    process.env.CHAT_REALTIME_URL?.trim();
-
-  if (configured) return configured.replace(/\/+$/u, '');
-  return process.env.NODE_ENV === 'production' ? null : 'http://localhost:7817';
+  if (
+    isChatRealtimeWorkerConfigured() ||
+    process.env.NODE_ENV === 'production'
+  ) {
+    return null;
+  }
+  const configured = process.env.CHAT_REALTIME_INTERNAL_URL?.trim();
+  return configured?.replace(/\/+$/u, '') || 'http://localhost:7817';
 }
 
 function signChatRealtimeAccess(input: {
@@ -66,22 +68,30 @@ function signChatRealtimeAccess(input: {
 }
 
 export function getChatRealtimeAudience(
-  conversation: Pick<ChatConversation, 'createdBy' | 'members' | 'type'>
-): ChatRealtimeAudience {
-  if (conversation.type === 'channel') {
+  conversation: Pick<
+    ChatConversation,
+    'createdBy' | 'members' | 'type' | 'wsId'
+  >
+): ChatRealtimePublishAudience {
+  const useWorker = isChatRealtimeWorkerConfigured();
+  if (conversation.type === 'channel' && !useWorker) {
     return { scope: 'workspace' };
   }
 
   const userIds = new Set<string>();
   for (const member of conversation.members) {
-    userIds.add(member.userId);
+    if (!useWorker || !member.archivedAt) userIds.add(member.userId);
   }
 
-  if (conversation.createdBy) {
+  if (conversation.createdBy && !useWorker) {
     userIds.add(conversation.createdBy);
   }
 
-  return { scope: 'users', userIds: [...userIds] };
+  return {
+    scope: 'users',
+    userIds: [...userIds],
+    ...(useWorker ? { conversationWorkspaceId: conversation.wsId } : {}),
+  };
 }
 
 export function getChatRealtimeUserAudience(
@@ -111,29 +121,40 @@ export async function publishChatRealtimeEvent(
   event: ChatRealtimeEventInput,
   options: { signal?: AbortSignal } = {}
 ) {
+  const useWorker = isChatRealtimeWorkerConfigured();
   const baseUrl = getChatRealtimeInternalBaseUrl();
-  if (!baseUrl) {
+  if (!useWorker && !baseUrl) {
     if (!warnedAboutMissingRealtimeUrl) {
       warnedAboutMissingRealtimeUrl = true;
       console.warn(
         'Chat realtime publishing disabled because no URL is configured'
       );
     }
-    return;
+    return [];
   }
 
-  const parsed = chatRealtimeEventSchema.parse({
-    ...event,
-    id: crypto.randomUUID(),
-    sentAt: new Date().toISOString(),
-  });
-  const signed = signChatRealtimeAccess({
-    scopes: ['publish'],
-    userId: parsed.actorUserId ?? '00000000-0000-0000-0000-000000000000',
-    wsId: parsed.wsId,
-  });
-
   try {
+    const parsed = chatRealtimeEventSchema.parse({
+      ...event,
+      id: crypto.randomUUID(),
+      sentAt: new Date().toISOString(),
+      wsId:
+        useWorker &&
+        event.conversationId &&
+        event.audience.conversationWorkspaceId
+          ? event.audience.conversationWorkspaceId
+          : event.wsId,
+    });
+    if (useWorker) {
+      return await publishChatRealtimeWorkerEvent(parsed, options.signal);
+    }
+    if (!baseUrl) return [];
+
+    const signed = signChatRealtimeAccess({
+      scopes: ['publish'],
+      userId: parsed.actorUserId ?? '00000000-0000-0000-0000-000000000000',
+      wsId: parsed.wsId,
+    });
     const response = await fetch(`${baseUrl}/publish`, {
       body: JSON.stringify(parsed),
       cache: 'no-store',
@@ -155,10 +176,11 @@ export async function publishChatRealtimeEvent(
     }
   } catch (error) {
     console.error('Chat realtime publish failed', {
-      conversationId: parsed.conversationId,
+      conversationId: event.conversationId,
       error,
-      type: parsed.type,
-      wsId: parsed.wsId,
+      type: event.type,
+      wsId: event.wsId,
     });
   }
+  return [];
 }

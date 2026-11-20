@@ -14,6 +14,7 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/v1/mobile/version` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mobile/version/route.ts) |
 | `/api/v1/mobile/version-check` | GET, HEAD, OPTIONS | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mobile/version-check/route.ts) |
 | `/api/v1/native-integrity/challenge` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/native-integrity/challenge/route.ts) |
 | `/api/v1/native-integrity/enroll` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/native-integrity/enroll/route.ts) |
@@ -129,6 +130,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/chat/friend-requests` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/friend-requests/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/reactions/retire` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/reactions/retire/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/realtime` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/realtime/route.ts) |
+| `/api/v1/workspaces/[wsId]/chat/realtime/ticket` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/realtime/ticket/route.ts) |
 | `/api/v1/workspaces/[wsId]/chat/search` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/chat/search/route.ts) |
 | `/api/v1/workspaces/[wsId]/cite/library/[[...segments]]` | DELETE, GET, PATCH, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/cite/library/%5B%5B...segments%5D%5D/route.ts) |
 | `/api/v1/workspaces/[wsId]/consolidate-users` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/consolidate-users/route.ts) |
@@ -192,7 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/external-projects/entries/batch` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/batch/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/entries/bulk` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/bulk/route.ts) |
 | `/api/v1/workspaces/[wsId]/external-projects/entries/bundle` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/bundle/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/entries` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/entries/route.ts) |
-| `/api/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]` | DELETE, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/external-projects/field-definitions/%5BfieldDefinitionId%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

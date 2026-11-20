@@ -24,17 +24,20 @@ const CHAT_MESSAGE_PREVIEW_LENGTH = 160;
 export function getChatPushRecipientUserIds({
   actorUserId,
   conversation,
+  foregroundUserIds = [],
 }: {
   actorUserId: string | null;
   conversation: Pick<ChatConversation, 'members'>;
+  foregroundUserIds?: readonly string[];
 }) {
   const recipients = new Set<string>();
+  const foreground = new Set(foregroundUserIds);
 
   for (const member of conversation.members) {
     if (!member.userId || (actorUserId && member.userId === actorUserId)) {
       continue;
     }
-    if (member.mutedAt) continue;
+    if (member.mutedAt || foreground.has(member.userId)) continue;
     recipients.add(member.userId);
   }
 
@@ -44,11 +47,13 @@ export function getChatPushRecipientUserIds({
 export async function notifyChatMessageRecipients({
   actorUserId,
   conversation,
+  foregroundUserIds,
   message,
   wsId,
 }: {
   actorUserId: string | null;
   conversation: ChatConversation;
+  foregroundUserIds?: readonly string[];
   message: ChatMessage;
   wsId: string;
 }): Promise<ChatMessageNotificationResult> {
@@ -59,6 +64,7 @@ export async function notifyChatMessageRecipients({
   const recipientUserIds = getChatPushRecipientUserIds({
     actorUserId,
     conversation,
+    foregroundUserIds,
   });
 
   if (recipientUserIds.length === 0) {

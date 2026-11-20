@@ -45,12 +45,11 @@ export class RoomAdmission {
     );
   }
 
-  revoke(userId: string, now: number) {
-    const removedAt = Math.floor(now / 1_000);
+  revoke(userId: string, removedAt: number, now = Date.now()) {
     const sql = this.storage.sql;
     sql.exec(
       'DELETE FROM chat_revocations WHERE removed_at <= ?',
-      removedAt - REVOCATION_TTL_SECONDS
+      Math.floor(now / 1_000) - REVOCATION_TTL_SECONDS
     );
     sql.exec(
       `INSERT INTO chat_revocations (user_id, removed_at)
@@ -68,12 +67,16 @@ export class RoomAdmission {
         .toArray().length
     ) {
       // Preserve the revocation fence if the per-user table is at capacity.
-      sql.exec(
-        `INSERT INTO chat_revocation_overflow (slot, removed_at) VALUES (1, ?)
-          ON CONFLICT(slot) DO UPDATE SET removed_at = MAX(removed_at, excluded.removed_at)`,
-        removedAt
-      );
+      this.revokeRoom(removedAt);
     }
+  }
+
+  revokeRoom(removedAt: number) {
+    this.storage.sql.exec(
+      `INSERT INTO chat_revocation_overflow (slot, removed_at) VALUES (1, ?)
+        ON CONFLICT(slot) DO UPDATE SET removed_at = MAX(removed_at, excluded.removed_at)`,
+      removedAt
+    );
   }
 
   consumeConnect(userId: string, now: number, maxUsers: number) {

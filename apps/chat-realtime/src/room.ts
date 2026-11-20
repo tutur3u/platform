@@ -113,6 +113,7 @@ export abstract class ChatRoom extends DurableObject<Env> {
     this.saveAttachment(server, {
       count: 0,
       exp: ticket.exp,
+      iat: ticket.iat,
       state: 'foreground',
       userId: ticket.userId,
       windowStart: now,
@@ -260,9 +261,10 @@ export abstract class ChatRoom extends DurableObject<Env> {
     return users;
   }
 
-  protected closeUser(userId: string, code: number, reason: string) {
+  protected closeUser(userId: string, issuedThrough: number) {
     for (const ws of this.ctx.getWebSockets(userId)) {
-      safeClose(ws, code, reason);
+      const issuedAt = this.getAttachment(ws)?.iat ?? 0;
+      if (issuedAt <= issuedThrough) safeClose(ws, CLOSE.removed, 'removed');
     }
   }
 

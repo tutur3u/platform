@@ -7,6 +7,11 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import {
+  getChatRealtimeAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
+import { isChatRealtimeWorkerConfigured } from '@/lib/chat/realtime-worker';
 
 type RouteParams = {
   conversationId: string;
@@ -23,6 +28,35 @@ function isStaleReadAnchorError(error: unknown) {
     rpcError?.code === '22023' &&
     rpcError.message?.includes('chat_read_message_not_found') === true
   );
+}
+
+async function setReadState(input: {
+  p_actor_user_id: string;
+  p_conversation_id: string;
+  p_message_id: string | null;
+  p_ws_id: string;
+}) {
+  const conversation = await callPrivateChatRpc<ChatConversation | null>(
+    'chat_set_read_state',
+    input
+  );
+  if (!conversation || !isChatRealtimeWorkerConfigured()) return conversation;
+
+  const member = conversation.members.find(
+    ({ userId }) => userId === input.p_actor_user_id
+  );
+  if (!member?.lastReadAt) return conversation;
+
+  await publishChatRealtimeEvent({
+    actorUserId: input.p_actor_user_id,
+    audience: getChatRealtimeAudience(conversation),
+    conversationId: conversation.id,
+    lastReadAt: member.lastReadAt,
+    type: 'read.updated',
+    userId: input.p_actor_user_id,
+    wsId: input.p_ws_id,
+  });
+  return conversation;
 }
 
 export const POST = withSessionAuth<RouteParams>(
@@ -51,19 +85,16 @@ export const POST = withSessionAuth<RouteParams>(
     };
 
     try {
-      const conversation = await callPrivateChatRpc<ChatConversation>(
-        'chat_set_read_state',
-        rpcParams
-      );
+      const conversation = await setReadState(rpcParams);
 
       return NextResponse.json({ conversation });
     } catch (error) {
       if (parsed.data.messageId && isStaleReadAnchorError(error)) {
         try {
-          const conversation = await callPrivateChatRpc<ChatConversation>(
-            'chat_set_read_state',
-            { ...rpcParams, p_message_id: null }
-          );
+          const conversation = await setReadState({
+            ...rpcParams,
+            p_message_id: null,
+          });
 
           return NextResponse.json({ conversation });
         } catch (retryError) {

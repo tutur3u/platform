@@ -37,6 +37,7 @@ export type PresenceState = 'foreground' | 'background';
 export type SocketAttachment = {
   count: number;
   exp: number;
+  iat?: number;
   state: PresenceState;
   userId: string;
   windowStart: number;

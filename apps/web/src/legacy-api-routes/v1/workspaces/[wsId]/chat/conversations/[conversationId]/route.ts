@@ -17,6 +17,8 @@ import {
   getChatRealtimeUserAudience,
   publishChatRealtimeEvent,
 } from '@/lib/chat/realtime';
+import { publishLatestChatRevocation } from '@/lib/chat/realtime-revocations';
+import { isChatRealtimeWorkerConfigured } from '@/lib/chat/realtime-worker';
 
 type RouteParams = {
   conversationId: string;
@@ -164,6 +166,16 @@ export const DELETE = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      if (isChatRealtimeWorkerConfigured()) {
+        await publishLatestChatRevocation({
+          actorUserId: auth.user.id,
+          audience: getChatRealtimeAudience(conversation),
+          conversationId: params.conversationId,
+          wsId: context.context.normalizedWsId,
+        });
+        return NextResponse.json({ result });
+      }
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,

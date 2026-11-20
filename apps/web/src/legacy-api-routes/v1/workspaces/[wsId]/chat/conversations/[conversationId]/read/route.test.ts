@@ -9,6 +9,7 @@ const mocks = {
   },
   callPrivateChatRpc: vi.fn(),
   chatRpcErrorResponse: vi.fn(),
+  publishChatRealtimeEvent: vi.fn(),
   resolveChatRouteContext: vi.fn(),
 };
 
@@ -28,6 +29,15 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
+}));
+
+vi.mock('@/lib/chat/realtime', () => ({
+  getChatRealtimeAudience: () => ({ scope: 'users', userIds: ['user-1'] }),
+  publishChatRealtimeEvent: (...args: unknown[]) =>
+    mocks.publishChatRealtimeEvent(...args),
+}));
+vi.mock('@/lib/chat/realtime-worker', () => ({
+  isChatRealtimeWorkerConfigured: () => true,
 }));
 
 const conversation = {
@@ -120,6 +130,31 @@ describe('chat read state route', () => {
         p_ws_id: 'workspace-1',
       }
     );
+  });
+
+  it('publishes the committed read timestamp to the authorized conversation', async () => {
+    const lastReadAt = '2026-06-01T08:00:00.000Z';
+    mocks.callPrivateChatRpc.mockResolvedValueOnce({
+      ...conversation,
+      members: [{ userId: 'user-1', lastReadAt }],
+    });
+
+    const { POST } = await import('./route');
+    const response = await POST(
+      createRequest(null) as never,
+      createRouteContext()
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.publishChatRealtimeEvent).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      audience: { scope: 'users', userIds: ['user-1'] },
+      conversationId: conversation.id,
+      lastReadAt,
+      type: 'read.updated',
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
   });
 
   it('keeps non-stale RPC failures on the normal error path', async () => {

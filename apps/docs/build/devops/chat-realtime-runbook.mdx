@@ -21,9 +21,11 @@ against the exact request body. See the
 | `INBOX` | Worker | `ChatInboxRoom`, one SQLite Durable Object per workspace. |
 | `CONVERSATION` | Worker | `ChatConversationRoom`, one SQLite Durable Object per workspace and conversation. |
 
-The legacy SSE proxy and Bun sidecar serve the internal compatibility path.
-Enable the Cloudflare origin after the Web API and client rollout has passed
-staging. The Cloudflare path uses dedicated subscribe and publish tickets.
+The Bun sidecar serves local development when the Cloudflare URL is unset.
+The Web API returns polling mode in production when the Worker origin or
+dedicated secret is unavailable. Setting the Worker origin disables the SSE
+proxy and prevents the local Supabase service-key fallback. Enable the origin
+after the web and mobile clients pass staging.
 
 ## Local verification
 
@@ -71,6 +73,32 @@ throttles, revocations and replay survive Worker restarts. Presence broadcasts
 stop after the room budget for the current window. Expiry and revocation
 cleanup run during activity, with zero scheduled wakes. Hosted request volume
 and account cost require monitoring during acceptance.
+
+## Revocation recovery
+
+Conversation tickets use the workspace recorded on the conversation. The Web
+API checks permissions in the workspace where the user opened Chat before it
+issues the ticket. Shared direct and group conversations therefore use the
+same room when viewed from different personal workspaces.
+
+A leave or archive writes its audit entry in the same Postgres transaction as
+the membership change. Immediate publication and recovery use that entry’s ID
+and timestamp. Repeated delivery applies the same cutoff. Tickets issued after
+the removal and clock-skew allowance can reconnect after the user regains access.
+
+The `chat-realtime-revocations` job uses Cron Control’s existing five-minute
+schedule and stays off until named in `CRON_CONTROL_ENABLED_JOBS`. It calls the
+Web recovery endpoint with the Web cron credential. Recovery checks Worker
+health before reading Postgres. One invocation scans the last two complete
+five-minute slots, sends at most 32 records with at most four concurrent
+publishes, and reports overflow or failed delivery. Cron Control allows two
+attempts per slot. The Worker deduplicates by audit ID during replay retention.
+The Web API keeps the audit record when delivery fails.
+
+Before enabling the job, verify the read query plan against staging data and
+exercise a publish failure followed by recovery with disposable actors. Check
+both stop fences, partial delivery, overflow, and old-ticket denial in workerd.
+The Cron job and Web environment require separate deployment acceptance.
 
 ## Stop and rollback
 

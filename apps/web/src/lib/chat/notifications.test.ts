@@ -112,6 +112,18 @@ describe('chat notifications', () => {
     ).toEqual(['user-2', 'user-4']);
   });
 
+  it('skips push for members known to be foreground in this conversation', async () => {
+    const { getChatPushRecipientUserIds } = await import('./notifications');
+
+    expect(
+      getChatPushRecipientUserIds({
+        actorUserId: 'user-1',
+        conversation,
+        foregroundUserIds: ['user-2'],
+      })
+    ).toEqual(['user-4']);
+  });
+
   it('queues immediate chat push notifications with deep-link metadata', async () => {
     const { notifyChatMessageRecipients } = await import('./notifications');
 

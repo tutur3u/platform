@@ -1,5 +1,8 @@
 import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
-import type { ChatRealtimeSubscribeTicket } from '@tuturuuu/realtime/chat/ticket';
+import {
+  CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS,
+  type ChatRealtimeSubscribeTicket,
+} from '@tuturuuu/realtime/chat/ticket';
 import {
   CLOSE,
   type ClientFrame,
@@ -71,14 +74,23 @@ export class ChatConversationRoom extends ChatRoom {
   }
 
   protected publish(event: ChatRealtimeEvent) {
+    const effectiveAt = Math.floor(Date.parse(event.sentAt) / 1_000);
     const { duplicate, seq } = this.log.append(event, () => {
+      if (event.type === 'conversation.deleted') {
+        this.admission.revokeRoom(effectiveAt);
+      }
       if (event.type === 'member.removed') {
-        this.admission.revoke(event.userId, Date.now());
+        this.admission.revoke(event.userId, effectiveAt);
       }
     });
     if (!duplicate) {
       const removedUser = event.type === 'member.removed' ? event.userId : null;
-      if (removedUser) this.closeUser(removedUser, CLOSE.removed, 'removed');
+      if (removedUser) {
+        this.closeUser(
+          removedUser,
+          effectiveAt + CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS
+        );
+      }
       this.broadcast(
         { event, seq, t: 'event' },
         (attachment) =>
