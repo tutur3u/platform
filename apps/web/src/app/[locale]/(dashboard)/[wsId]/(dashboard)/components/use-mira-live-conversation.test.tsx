@@ -74,8 +74,8 @@ it('waits for the outstanding save before allowing the next typed turn', async (
   let finish!: () => void;
   save.mockImplementation(
     () =>
-      new Promise<void>((resolve) => {
-        finish = resolve;
+      new Promise<{ id: string }>((resolve) => {
+        finish = () => resolve({ id: 'chat' });
       })
   );
   const { result } = setup();
@@ -100,4 +100,14 @@ it('does not append an old session callback into a different chat', () => {
   rerender({ chatId: 'new-chat' });
   act(() => previous([spoken], false));
   expect(messages()).toHaveLength(1);
+});
+
+it('reports the saved conversation id when the server maps a new chat', async () => {
+  save.mockResolvedValue({ id: 'saved-chat' });
+  const { result, onSaved } = setup();
+  await act(async () => {
+    result.current.onChange([{ ...spoken, complete: true }], true);
+    await result.current.flush();
+  });
+  expect(onSaved).toHaveBeenCalledWith('saved-chat');
 });

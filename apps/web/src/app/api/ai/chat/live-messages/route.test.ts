@@ -6,29 +6,38 @@ const state = vi.hoisted(() => ({
     { id: '11111111-1111-4111-8111-111111111111', creator_id: 'owner' },
   ] as Record<string, unknown>[],
   messages: [] as Record<string, unknown>[],
-  adminCalls: 0,
-  messageReads: 0,
+  reads: [] as { table: string; columns: string; columnsUsed: string[] }[],
 }));
 function client() {
   return {
     from(table: string) {
-      if (table === 'ai_chat_messages') state.messageReads++;
       const rows = table === 'ai_chats' ? state.chats : state.messages;
       const filters: ((row: Record<string, unknown>) => boolean)[] = [];
       let action = 'select';
       let values: Record<string, unknown> = {};
       let single = false;
       let descending = false;
+      let columns = '';
+      const columnsUsed: string[] = [];
+      function field(row: Record<string, unknown>, name: string) {
+        const [column, key] = name.split('->>');
+        if (!key || !column) return row[name];
+        const json = row[column] as Record<string, unknown> | null;
+        return json?.[key] ?? null;
+      }
       const query = {
-        select() {
+        select(projected: string) {
+          columns = projected;
           return query;
         },
         eq(key: string, value: unknown) {
-          filters.push((row) => row[key] === value);
+          columnsUsed.push(key);
+          filters.push((row) => field(row, key) === value);
           return query;
         },
         in(key: string, ids: unknown[]) {
-          filters.push((row) => ids.includes(row[key]));
+          columnsUsed.push(key);
+          filters.push((row) => ids.includes(field(row, key)));
           return query;
         },
         order() {
@@ -73,6 +82,8 @@ function client() {
               })
             );
           }
+          if (action === 'select')
+            state.reads.push({ table, columns, columnsUsed });
           if (action === 'insert' || action === 'upsert') {
             if (!rows.some((row) => row.id === values.id)) rows.push(values);
           }
@@ -87,6 +98,13 @@ function client() {
             matches = [...matches].sort((a, b) =>
               String(b.created_at).localeCompare(String(a.created_at))
             );
+          if (columns.includes('client_message_id:')) {
+            matches = matches.map((row) => ({
+              id: row.id,
+              channel: field(row, 'metadata->>channel'),
+              client_message_id: field(row, 'metadata->>liveMessageId'),
+            }));
+          }
           return Promise.resolve(
             resolve({
               data: single ? (matches[0] ?? null) : matches,
@@ -106,10 +124,7 @@ vi.mock('@/lib/api-auth', () => ({
       handler(request, { user: { id: 'owner' }, supabase: client() }),
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: () => {
-    state.adminCalls++;
-    return client();
-  },
+  createAdminClient: client,
 }));
 
 import { POST } from './route';
@@ -136,16 +151,15 @@ const second = {
     { type: 'text', text: 'Here they are' },
   ],
 };
-const request = (messages = [first, second]) =>
+const request = (messages = [first, second], conversationId = chatId) =>
   new NextRequest('https://example.test/api/ai/chat/live-messages', {
     method: 'POST',
-    body: JSON.stringify({ chatId, messages }),
+    body: JSON.stringify({ chatId: conversationId, messages }),
   });
 beforeEach(() => {
   state.chats = [{ id: chatId, creator_id: 'owner' }];
   state.messages = [];
-  state.adminCalls = 0;
-  state.messageReads = 0;
+  state.reads = [];
 });
 it('persists ordered parts and stable message timestamps on retries', async () => {
   expect((await POST(request())).status).toBe(200);
@@ -161,38 +175,79 @@ it('persists ordered parts and stable message timestamps on retries', async () =
     timestamps
   );
 });
-it('rejects another owner before opening the admin client', async () => {
-  state.chats[0]!.creator_id = 'someone-else';
-  expect((await POST(request())).status).toBe(404);
-  expect(state.adminCalls).toBe(1);
-  expect(state.messageReads).toBe(0);
-  expect(state.messages).toEqual([]);
-});
-it('does not overwrite a normal chat message or a message in another conversation', async () => {
-  state.messages = [
-    {
-      id: first.id,
-      chat_id: chatId,
-      creator_id: 'owner',
-      content: 'Original',
-      metadata: {},
-    },
-  ];
-  expect((await POST(request())).status).toBe(409);
-  expect(state.messages[0]?.content).toBe('Original');
-  state.messages[0]!.chat_id = 'another-chat';
-  state.messages[0]!.metadata = { channel: 'live' };
-  expect((await POST(request())).status).toBe(409);
-});
-it('creates a new owned conversation without generating a second AI reply', async () => {
-  state.chats = [];
+it('treats a foreign chat id like an unused id and creates a stable actor-scoped conversation', async () => {
+  const foreign = { id: chatId, creator_id: 'someone-else', title: 'Original' };
+  state.chats = [foreign];
+  const { id } = await (await POST(request([first]))).json();
+  expect(id).not.toBe(chatId);
+  expect(state.chats).toEqual([
+    foreign,
+    { id, creator_id: 'owner', title: 'Show tasks' },
+  ]);
   expect((await POST(request([first]))).status).toBe(200);
-  expect(state.chats[0]).toMatchObject({
-    id: chatId,
-    creator_id: 'owner',
-    title: 'Show tasks',
-  });
   expect(state.messages).toHaveLength(1);
+  expect(state.messages[0]?.chat_id).toBe(id);
+  expect(
+    state.reads
+      .filter(({ table }) => table === 'ai_chats')
+      .every(({ columnsUsed }) => columnsUsed.includes('creator_id'))
+  ).toBe(true);
+
+  state.chats = [];
+  state.messages = [];
+  const unusedId = await (await POST(request([first]))).json();
+  expect(unusedId).toEqual({ id });
+});
+
+it('ignores the same client message id in another conversation', async () => {
+  const foreignMessage = {
+    id: first.id,
+    chat_id: 'another-chat',
+    creator_id: 'someone-else',
+    content: 'Original',
+    metadata: { channel: 'live' },
+  };
+  state.messages = [foreignMessage];
+  expect((await POST(request([first]))).status).toBe(200);
+  const owned = state.messages[1];
+  expect(owned?.id).not.toBe(first.id);
+  expect(owned).toMatchObject({ chat_id: chatId, creator_id: 'owner' });
+  expect(state.messages[0]).toEqual(foreignMessage);
+  const reads = state.reads.filter(
+    ({ table, columnsUsed }) =>
+      table === 'ai_chat_messages' && columnsUsed.includes('id')
+  );
+  expect(reads.length).toBe(3);
+  for (const { columnsUsed } of reads) {
+    expect(columnsUsed).toEqual(
+      expect.arrayContaining(['chat_id', 'creator_id'])
+    );
+  }
+
+  const otherOwnedChat = '44444444-4444-4444-8444-444444444444';
+  state.chats.push({ id: otherOwnedChat, creator_id: 'owner' });
+  expect((await POST(request([first], otherOwnedChat))).status).toBe(200);
+  expect(state.messages[2]?.id).not.toBe(owned?.id);
+  expect((await POST(request([first], otherOwnedChat))).status).toBe(200);
+  expect(state.messages).toHaveLength(3);
+});
+
+it('updates an owned legacy live message in place and preserves normal chat messages', async () => {
+  const original = {
+    id: first.id,
+    chat_id: chatId,
+    creator_id: 'owner',
+    content: 'Original',
+    metadata: {},
+  };
+  state.messages = [original];
+  expect((await POST(request([first]))).status).toBe(409);
+  expect(original.content).toBe('Original');
+  original.metadata = { channel: 'live' };
+  expect((await POST(request([first]))).status).toBe(200);
+  expect((await POST(request([first]))).status).toBe(200);
+  expect(state.messages).toHaveLength(1);
+  expect(original.content).toBe('Show tasks');
 });
 
 it('retains complete long Unicode transcripts in canonical parts on save and retry', async () => {

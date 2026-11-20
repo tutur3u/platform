@@ -14,7 +14,7 @@ export function createMiraRequestPreparer(
   onRequestStart?: () => void
 ): PrepareRequest {
   return async ({ id, messages, body, headers }) => {
-    const snapshot = { ...body };
+    const { savedChatId, ...snapshot } = body ?? {};
     const subscription =
       typeof snapshot.model === 'string' &&
       snapshot.model.startsWith('chatgpt/');
@@ -34,7 +34,11 @@ export function createMiraRequestPreparer(
     return {
       api: subscription ? '/api/ai/chatgpt' : '/api/ai/chat',
       headers: requestHeaders,
-      body: { ...snapshot, id, messages },
+      body: {
+        ...snapshot,
+        id: typeof savedChatId === 'string' ? savedChatId : id,
+        messages,
+      },
     };
   };
 }

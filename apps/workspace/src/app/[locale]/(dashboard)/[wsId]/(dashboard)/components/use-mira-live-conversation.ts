@@ -27,8 +27,9 @@ export function useMiraLiveConversation({
   const queue = useRef(Promise.resolve());
   const failed = useRef(new Set<string>());
   const { mutateAsync } = useMutation({
-    mutationFn: (payload: Parameters<typeof saveLiveConversation>[0]) =>
-      saveLiveConversation(payload),
+    mutationFn: (
+      payload: Parameters<typeof saveLiveConversation>[0]
+    ): Promise<{ id: string }> => saveLiveConversation(payload),
     retry: 2,
   });
   const callbacks = useRef({
@@ -96,12 +97,15 @@ export function useMiraLiveConversation({
         }
         if (batch.length) batches.push(batch);
         for (const batch of batches) {
-          await callbacks.current.mutateAsync({ chatId, messages: batch });
+          const persisted = await callbacks.current.mutateAsync({
+            chatId,
+            messages: batch,
+          });
           batch.forEach((message) => {
             saved.current.set(message.id, JSON.stringify(message));
           });
           if (callbacks.current.chatId === chatId)
-            callbacks.current.onSaved(chatId);
+            callbacks.current.onSaved(persisted.id);
         }
         failed.current.delete(chatId);
       }

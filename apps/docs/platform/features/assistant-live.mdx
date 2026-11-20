@@ -180,8 +180,11 @@ appear in that timeline and share the workspace artifacts. Close Live or press
 Escape to stop media capture and continue typing.
 
 Finalized Live turns are saved to the same chat through the owner-checked
-`/api/ai/chat/live-messages` endpoint. Stable message IDs make retries idempotent;
-ordered parts keep text and tools interleaved after refresh. Complete transcript
+`/api/ai/chat/live-messages` endpoint. The server assigns new live chats an ID
+scoped to the signed-in user. Message IDs are scoped to the conversation so
+retries update the same turns. Ordered parts keep text and tools interleaved
+after refresh. The legacy workspace usage card excludes temporary native chat
+shadow records. Complete transcript
 text lives in canonical parts metadata; the separate search/fallback content field
 is capped at 10,000 Unicode characters to satisfy its database limits of
 10,000 characters and 40,000 bytes. Pending saves finish

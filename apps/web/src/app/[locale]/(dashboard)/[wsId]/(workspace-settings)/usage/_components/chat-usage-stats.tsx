@@ -47,7 +47,10 @@ export async function ChatUsageStats({ wsId }: { wsId: string }) {
       count: 'exact',
       head: true,
     })
-    .eq('ai_chats.creator_id', user.id);
+    .eq('ai_chats.creator_id', user.id)
+    .or('summary.is.null,summary.not.like.native-chat-shadow:*', {
+      referencedTable: 'ai_chats',
+    });
 
   return <StatisticCard title="Chat Messages" value={count || 0} />;
 }

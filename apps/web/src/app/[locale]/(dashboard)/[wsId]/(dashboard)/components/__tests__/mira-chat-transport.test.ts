@@ -188,3 +188,24 @@ describe('real SDK transport request identity', () => {
     );
   });
 });
+
+it('sends a typed turn to the canonical saved Live chat', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(new Response('data: [DONE]\n\n'));
+  const transport = new DefaultChatTransport({
+    prepareSendMessagesRequest: createMiraRequestPreparer(async () => ({})),
+    fetch: fetchMock,
+  });
+
+  await transport.sendMessages({
+    trigger: 'submit-message',
+    chatId: 'local-timeline-id',
+    messageId: undefined,
+    abortSignal: undefined,
+    messages: [],
+    body: { savedChatId: 'server-chat-id' },
+  });
+
+  const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+  expect(body).toMatchObject({ id: 'server-chat-id', messages: [] });
+  expect(body).not.toHaveProperty('savedChatId');
+});

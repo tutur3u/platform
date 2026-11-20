@@ -2,8 +2,12 @@ import { isDeepStrictEqual } from 'node:util';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
+import { v5 as uuidv5 } from 'uuid';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+
+const LIVE_CONVERSATION_NAMESPACE = 'f1155edc-4ef9-4534-8582-86c55a56df85';
+const LIVE_MESSAGE_NAMESPACE = '9295f28d-7083-44e5-bb44-661f5068b1be';
 
 const bodySchema = z.object({
   chatId: z.uuid(),
@@ -54,7 +58,8 @@ const bodySchema = z.object({
     .max(100)
     .refine(
       (messages) =>
-        new Set(messages.map((message) => message.id)).size === messages.length,
+        new Set(messages.map((message) => message.id.toLowerCase())).size ===
+        messages.length,
       'Message IDs must be unique'
     ),
 });
@@ -75,24 +80,27 @@ export const POST = withSessionAuth(
     }
     if (!parsed.success)
       return NextResponse.json({ message: 'Invalid body' }, { status: 400 });
-    const { chatId, messages } = parsed.data as z.infer<typeof bodySchema>;
+    const { chatId: clientChatId, messages } = parsed.data;
     const admin = await createAdminClient({ noCookie: true });
+    const mappedChatId = uuidv5(
+      JSON.stringify([user.id, clientChatId.toLowerCase()]),
+      LIVE_CONVERSATION_NAMESPACE
+    );
     const { data: existing, error: lookupError } = await admin
       .from('ai_chats')
-      .select('id, creator_id')
-      .eq('id', chatId)
-      .maybeSingle();
+      .select('id')
+      .eq('creator_id', user.id)
+      .in('id', [clientChatId, mappedChatId]);
     if (lookupError)
       return NextResponse.json(
         { message: 'Could not read conversation' },
         { status: 500 }
       );
-    if (existing && existing.creator_id !== user.id)
-      return NextResponse.json(
-        { message: 'Conversation not found' },
-        { status: 404 }
-      );
-    if (!existing) {
+
+    const chatId =
+      existing?.find((chat) => chat.id === clientChatId.toLowerCase())?.id ??
+      mappedChatId;
+    if (!existing?.some((chat) => chat.id === chatId)) {
       const title =
         messages
           .flatMap((message) =>
@@ -104,32 +112,81 @@ export const POST = withSessionAuth(
           .slice(0, 100) || 'Mira';
       const { error } = await admin
         .from('ai_chats')
-        .insert({ id: chatId, title, creator_id: user.id });
+        .upsert(
+          { id: chatId, title, creator_id: user.id },
+          { onConflict: 'id', ignoreDuplicates: true }
+        );
       if (error)
         return NextResponse.json(
           { message: 'Could not create conversation' },
           { status: 500 }
         );
     }
-    // Ownership is established before accessing protected message rows.
-    const { data: previous, error: messageError } = await admin
-      .from('ai_chat_messages')
-      .select('id, chat_id, creator_id, metadata')
-      .in(
-        'id',
-        messages.map((message) => message.id)
+    const { data: ownedChat, error: ownershipError } = await admin
+      .from('ai_chats')
+      .select('id')
+      .eq('id', chatId)
+      .eq('creator_id', user.id)
+      .maybeSingle();
+    if (ownershipError || !ownedChat)
+      return NextResponse.json(
+        { message: 'Could not read conversation' },
+        { status: 500 }
       );
-    if (messageError)
+
+    const keyedMessages = messages.map((message) => ({
+      message,
+      clientMessageId: message.id.toLowerCase(),
+      scopedId: uuidv5(
+        JSON.stringify([user.id, chatId, message.id.toLowerCase()]),
+        LIVE_MESSAGE_NAMESPACE
+      ),
+    }));
+    const readOwnedMessageKeys = (ids: string[]) =>
+      admin
+        .from('ai_chat_messages')
+        .select(
+          'id, channel:metadata->>channel, client_message_id:metadata->>liveMessageId'
+        )
+        .eq('chat_id', chatId)
+        .eq('creator_id', user.id)
+        .in('id', ids);
+
+    // Older transcripts used the caller's ID as the row ID. Resolve those
+    // rows only inside the owned conversation so retries preserve them.
+    const [scoped, legacy] = await Promise.all([
+      readOwnedMessageKeys(keyedMessages.map(({ scopedId }) => scopedId)),
+      readOwnedMessageKeys(
+        keyedMessages.map(({ clientMessageId }) => clientMessageId)
+      ),
+    ]);
+    if (scoped.error || legacy.error)
       return NextResponse.json(
         { message: 'Could not read messages' },
         { status: 500 }
       );
+    const previous = new Map(
+      [...(scoped.data ?? []), ...(legacy.data ?? [])].map((row) => [
+        row.id,
+        row,
+      ])
+    );
+    const targets = keyedMessages.map(
+      ({ message, clientMessageId, scopedId }) => ({
+        message,
+        clientMessageId,
+        id: scopedId,
+        existing: previous.get(scopedId) ?? previous.get(clientMessageId),
+      })
+    );
     if (
-      previous?.some(
-        (message) =>
-          message.chat_id !== chatId ||
-          message.creator_id !== user.id ||
-          (message.metadata as { channel?: string } | null)?.channel !== 'live'
+      targets.some(
+        ({ clientMessageId, existing }) =>
+          existing &&
+          (existing.channel !== 'live' ||
+            (existing.id !== clientMessageId &&
+              existing.client_message_id != null &&
+              existing.client_message_id !== clientMessageId))
       )
     ) {
       return NextResponse.json(
@@ -154,7 +211,10 @@ export const POST = withSessionAuth(
       latest ? Date.parse(latest.created_at) + 1 : 0
     );
     const inserted = new Map<string, { content: string; metadata: Json }>();
-    for (const [index, message] of messages.entries()) {
+    for (const [
+      index,
+      { message, clientMessageId, id, existing },
+    ] of targets.entries()) {
       const values = {
         content: Array.from(
           message.parts
@@ -166,21 +226,22 @@ export const POST = withSessionAuth(
         metadata: {
           source: 'Mira',
           channel: 'live',
+          liveMessageId: existing?.client_message_id ?? clientMessageId,
           ai: { parts: message.parts },
         } as Json,
       };
-      const known = previous?.some((item) => item.id === message.id);
-      const { error } = known
+      const { error } = existing
         ? await admin
             .from('ai_chat_messages')
             .update(values)
-            .eq('id', message.id)
+            .eq('id', existing.id)
             .eq('chat_id', chatId)
             .eq('creator_id', user.id)
+            .eq('metadata->>channel', 'live')
         : await admin.from('ai_chat_messages').upsert(
             {
               ...values,
-              id: message.id,
+              id,
               chat_id: chatId,
               creator_id: user.id,
               role: message.role === 'user' ? 'USER' : 'ASSISTANT',
@@ -195,12 +256,14 @@ export const POST = withSessionAuth(
           { message: 'Could not save messages' },
           { status: 500 }
         );
-      if (!known) inserted.set(message.id, values);
+      if (!existing) inserted.set(id, values);
     }
     if (inserted.size) {
       const { data: persisted, error: verifyError } = await admin
         .from('ai_chat_messages')
-        .select('id, chat_id, creator_id, metadata, content')
+        .select('id, metadata, content')
+        .eq('chat_id', chatId)
+        .eq('creator_id', user.id)
         .in('id', [...inserted.keys()]);
       if (
         verifyError ||
@@ -210,8 +273,6 @@ export const POST = withSessionAuth(
           const expected = inserted.get(row.id);
           return (
             !expected ||
-            row.chat_id !== chatId ||
-            row.creator_id !== user.id ||
             !isDeepStrictEqual(row.metadata, expected.metadata) ||
             row.content !== expected.content
           );

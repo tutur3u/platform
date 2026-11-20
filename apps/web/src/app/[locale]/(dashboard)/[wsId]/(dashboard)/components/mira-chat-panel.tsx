@@ -1,5 +1,6 @@
 'use client';
 
+import type { AIChat } from '@tuturuuu/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
@@ -203,7 +204,19 @@ export default function MiraChatPanel({
     });
   }, [chat?.model, setModel]);
 
-  const stableChatId = chat?.id ?? fallbackChatId;
+  const liveChatIdentity = useRef<
+    | {
+        wsId: string;
+        localId: string;
+        savedId: string;
+      }
+    | undefined
+  >(undefined);
+  const savedLiveChat = liveChatIdentity.current;
+  const stableChatId =
+    savedLiveChat?.wsId === wsId && savedLiveChat.savedId === chat?.id
+      ? savedLiveChat.localId
+      : (chat?.id ?? fallbackChatId);
 
   const {
     id: chatId,
@@ -252,9 +265,23 @@ export default function MiraChatPanel({
       chatId: stableChatId,
       setMessages,
       onStarted: (id) =>
-        setChat((current) => current ?? { id, is_public: false }),
+        setChat(
+          (current: Partial<AIChat> | undefined) =>
+            current ?? { id, is_public: false }
+        ),
       onSaved: (id) => {
-        setChat((current) => current ?? { id, is_public: false });
+        if (id !== stableChatId) {
+          liveChatIdentity.current = {
+            wsId,
+            localId: stableChatId,
+            savedId: id,
+          };
+        }
+        setChat((current: Partial<AIChat> | undefined) => ({
+          is_public: false,
+          ...current,
+          id,
+        }));
         localStorage.setItem(`${STORAGE_KEY_PREFIX}${wsId}`, id);
       },
     });
@@ -275,10 +302,24 @@ export default function MiraChatPanel({
         return false;
       }
       if (isCurrent && !isCurrent()) return false;
-      await sendMessage(message, { body: chatRequestBody });
+      const identity = liveChatIdentity.current;
+      const savedChatId =
+        identity && identity.localId === stableChatId && identity.wsId === wsId
+          ? identity.savedId
+          : undefined;
+      await sendMessage(message, {
+        body: { ...chatRequestBody, ...(savedChatId && { savedChatId }) },
+      });
       return true;
     },
-    [model.disabled, chatRequestBody, sendMessage, flushLiveConversation]
+    [
+      model.disabled,
+      chatRequestBody,
+      sendMessage,
+      flushLiveConversation,
+      stableChatId,
+      wsId,
+    ]
   );
   sendMessageRef.current = sendMessageWithCurrentConfig;
 
@@ -354,7 +395,7 @@ export default function MiraChatPanel({
       setPendingPrompt,
       setStoredChatId,
       setWorkspaceContextId,
-      stableChatId,
+      stableChatId: chat?.id ?? stableChatId,
       status,
       t,
       thinkingMode,
