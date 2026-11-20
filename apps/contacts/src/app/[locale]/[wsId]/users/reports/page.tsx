@@ -1,18 +1,13 @@
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{ wsId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function LegacyPeriodicReportsPage(props: Props) {
-  return (
-    <Suspense fallback={null}>
-      <LegacyPeriodicReportsRedirect {...props} />
-    </Suspense>
-  );
+export default async function LegacyPeriodicReportsPage(props: Props) {
+  return LegacyPeriodicReportsRedirect(props);
 }
 
 async function LegacyPeriodicReportsRedirect({ params, searchParams }: Props) {

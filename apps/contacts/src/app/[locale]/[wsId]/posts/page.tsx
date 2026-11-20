@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { Suspense } from 'react';
 import type { RawPostsSearchParams } from './types';
 
 interface Props {
@@ -8,12 +7,8 @@ interface Props {
   searchParams: Promise<RawPostsSearchParams>;
 }
 
-export default function LegacyPostsPage(props: Props) {
-  return (
-    <Suspense fallback={null}>
-      <LegacyPostsRedirect {...props} />
-    </Suspense>
-  );
+export default async function LegacyPostsPage(props: Props) {
+  return LegacyPostsRedirect(props);
 }
 
 export async function LegacyPostsRedirect({ params, searchParams }: Props) {
