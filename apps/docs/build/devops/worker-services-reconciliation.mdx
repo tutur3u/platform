@@ -1,13 +1,13 @@
 ---
 title: "Worker services configuration reconciliation"
-description: "Reconciled inventory of the 13 Worker services: Cloudflare Worker configs, routes, bindings, DO/queue/cron, build commands, deploy workflows, and owner verification."
+description: "Reconciled inventory of the 14 Worker services: Cloudflare Worker configs, routes, bindings, DO/queue/cron, build commands, deploy workflows, and owner verification."
 updatedAt: '2026-11-09'
 audience: developers
 ---
 
 ## Scope and purpose
 
-This reconciliation audits the 13 services categorized under Worker services
+This reconciliation audits the 14 services categorized under Worker services
 during the D74 Cloudflare migration program:
 
 1. `abuse-guard`
@@ -23,6 +23,7 @@ during the D74 Cloudflare migration program:
 11. `hive-realtime`
 12. `supermemory`
 13. `storage-unzip-proxy`
+14. `mastermind-store`
 
 For each service, the repository configuration (`wrangler.jsonc`, `wrangler.publish.jsonc`,
 or `cloudflare.config.ts`), package build scripts, GitHub Actions deploy workflows,
@@ -52,6 +53,7 @@ Per D74 security and operational policies:
 | `hive-realtime` | *N/A (Docker)* | Reverse proxy: `hive.tuturuuu.com/realtime` -> port 7815 | *N/A (Docker / Bun process env: `PORT=7815`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `HIVE_REALTIME_TOKEN_SECRET`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `bun src/index.ts` / `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/e2e-tests.yaml`) | ⚠️ **FLAG: NOT A WORKER.** Bun WebSocket Docker service. Partial code ownership (`/apps/hive-realtime/src/token.ts` by `@vhpx`). |
 | `supermemory` | *N/A (Docker)* | Internal service: `http://supermemory:8787` | *N/A (Docker container env: `DATABASE_URL`, `SUPERMEMORY_API_KEY`)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** PostgreSQL pgvector memory support service in Docker. |
 | `storage-unzip-proxy` | *N/A (Docker)* | Internal service: `http://storage-unzip-proxy:8788/extract` | *N/A (Docker container env: `PORT=8788`, `DRIVE_UNZIP_PROXY_SHARED_TOKEN`, limits)* | **DO:** None<br/>**Queue:** None<br/>**Cron:** None | `docker build` (`Dockerfile`) | Docker Compose (`.github/workflows/docker-setup-check.yaml`) | ⚠️ **FLAG: NOT A WORKER & NO CODE OWNER.** Self-hosted ZIP extraction support service in Docker. |
+| `mastermind-store` | `tuturuuu-mastermind-store` | None (`workersDev: false`, `previewUrls: false`; custom domain attached at publication) | `MASTERMIND_STORE_DAILY_WRITE_BUDGET`, `MASTERMIND_STORE_TOKENS`, `MASTERMIND_STORE_OPERATOR_TOKEN`, `MASTERMIND_STORE_METRICS`, `MASTERMIND_STORE` | **DO:** `MastermindStore` (SQLite)<br/>**Queue:** None<br/>**Cron:** None | `vp build` | `mastermind-store-cloudflare.yaml` (build-only artifact; not yet published) | **Owned:** `@vhpx` covers `/apps/mastermind-store/`. |
 
 ---
 
@@ -235,6 +237,17 @@ See the [Chat realtime runbook](/build/devops/chat-realtime-runbook).
 - **Build & Test**: `docker build`, `vitest run`.
 - **Workflow**: `docker-compose.web.prod.yml`, `.github/workflows/docker-setup-check.yaml`.
 - **Owner**: ⚠️ **Unowned in `.github/CODEOWNERS`**.
+
+### 14. `mastermind-store`
+- **Architecture**: Authenticated RPC over one SQLite Durable Object holding the Mastermind fleet snapshot, owner answers and push-event claims for `apps/web`. Not yet publicly routed.
+- **Config file**: `apps/mastermind-store/cloudflare.config.ts` (`cf/config` `defineConfig`).
+- **Worker Name**: `tuturuuu-mastermind-store`.
+- **Routes**: `workersDev: false`, `previewUrls: false`. Custom domain attached at publication.
+- **Bindings**: `MASTERMIND_STORE_DAILY_WRITE_BUDGET` (text, `50000`), `MASTERMIND_STORE_TOKENS` (secret), `MASTERMIND_STORE_OPERATOR_TOKEN` (secret), `MASTERMIND_STORE_METRICS` (Analytics Engine dataset), `MASTERMIND_STORE` (Durable Object).
+- **Durable Objects**: `MastermindStore` (SQLite storage). No alarms, queues or crons.
+- **Build & Test**: `vp build`, `vp test`, `cf workers types && tsc`.
+- **Workflow**: `.github/workflows/mastermind-store-cloudflare.yaml` (build-only, digest-pinned artifact). Runbook: [Mastermind store Worker](/build/devops/mastermind-store).
+- **Owner**: `@vhpx` (`/apps/mastermind-store/`, `/packages/utils/src/mastermind-store/`).
 
 ---
 

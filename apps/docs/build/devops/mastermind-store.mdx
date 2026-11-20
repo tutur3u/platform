@@ -1,0 +1,108 @@
+---
+title: Mastermind store Worker
+description: The Cloudflare Durable Object that holds the live fleet snapshot, owner answers and Mastermind push-event claims, with its billing bounds, stop fence and deployment steps.
+updatedAt: "2026-11-20"
+---
+
+`apps/mastermind-store` is a Cloudflare Worker in front of one SQLite Durable
+Object (`MastermindStore`). Web's Mastermind routes use it as their only
+state store: the [fleet sync](/platform/features/mobile-mastermind#fleet-sync)
+snapshot, owner answers and pickups, publisher nonces, and the
+`/api/v1/mastermind/push-events` replay and coalescing claims.
+
+## Why these Cloudflare services
+
+| Service | Use | Reason |
+| --- | --- | --- |
+| Durable Object (SQLite) | All state | One writer with strong consistency: compare-and-set answer revisions, once-only nonces and claims, TTLs. |
+| Cache API | The polled snapshot read | A `get` with `cacheMs` (at most 5 s) is answered from the per-colo cache, so several polling clients cost one object read per colo per window. |
+| Analytics Engine | Health metrics | One data point per request (route, op kinds, status, latency); never keys or values. Optional binding. |
+| Bearer service token | Web to Worker | One caller; constant-time comparison against a rotation list. Cloudflare Access would add an application and a header pair without a gain for a single caller. |
+
+Not used yet: Queues (the publisher re-sends every 30 s, answers are pulled
+and acknowledged, and push delivery stays in Web), R2 (nothing references
+large artifacts from fleet state yet) and KV (the Cache API covers read
+fan-out without KV's eventual consistency or per-write cost).
+
+## Protocol
+
+`packages/utils/src/mastermind-store/protocol.ts` defines `POST /v1/ops` with
+1 to 8 ops per request: `get` (optional `cacheMs`), `mget` (up to 64 keys),
+`set` (`always` or `nx`), `cas` (compare-and-set; `expect: null` means
+absent), `cad` (compare-and-delete) and `del`. A request runs in one
+transaction: every op or none. `client.ts` is the typed client (one attempt,
+four-second timeout, no redirects) and an in-memory reference store with the
+same semantics for tests.
+
+Operator routes use a separate token: `GET /v1/status` (fence, today's
+writes, budget, live rows) and `POST /v1/fence` with `{"stopped": true}` or
+`false`. Any other path answers 404.
+
+## Billing bounds and stop fence
+
+- No alarms, crons, queues, self-scheduling or retries inside the Worker.
+- At most 8 ops per request, a 320 KiB body, 300 KiB per value and 160
+  characters per key; at most 5,000 live rows (a write that would add one
+  more fails the batch with `full`, 507).
+- Writes per UTC day are charged durably in the object before they run and
+  refused past `MASTERMIND_STORE_DAILY_WRITE_BUDGET` (default 50,000) with
+  `budget` (429). A refused batch charges nothing. Reads are not charged.
+- Expired rows are deleted at most 20 per write batch, never in a sweep.
+- The stop fence is stored in the object, survives restarts and refuses every
+  op with `stopped` (503) until the operator clears it. Service tokens cannot
+  change it.
+
+Cost envelope at normal load: the publisher writes once on change and at
+least every two minutes (at most 2,880 state writes plus one nonce write
+each, about 6,000 rows a day), owner answers add a handful, and push events
+add four to six writes per delivered event. Snapshot polls (one owner, every
+15 s while a screen is open) are mostly Cache API hits. The daily budget caps
+the failure case at 50,000 row writes, well inside the Workers Paid
+allowance. Billed usage is verified from the account after publication.
+
+Regressions: `apps/mastermind-store/src/engine.test.ts` (budget charging and
+rollover, refused batches charge nothing, the row cap rolls the batch back,
+bounded cleanup, the fence) and `src/worker.test.ts` (the emitted Worker in
+workerd: auth and rotation, oversize and bad ops, the budget, the fence across
+a restart, cached reads).
+
+## Web configuration
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `MASTERMIND_STORE_URL` | Web | HTTPS origin of the Worker's custom hostname. |
+| `MASTERMIND_STORE_TOKEN` | Web | One of the Worker's service tokens (at least 32 characters). |
+| `MASTERMIND_STORE_TOKENS` | Worker secret | Comma-separated service tokens; two during rotation. |
+| `MASTERMIND_STORE_OPERATOR_TOKEN` | Worker secret | Fence and status only. |
+| `MASTERMIND_STORE_DAILY_WRITE_BUDGET` | Worker text | Daily write cap; invalid values make every call answer 503. |
+
+Without `MASTERMIND_STORE_URL` and `MASTERMIND_STORE_TOKEN`, Web falls back to
+a legacy Upstash REST client when one is configured, and otherwise answers 503
+on the fleet and push-event routes. The resolution lives in
+`apps/web/src/lib/mastermind/store.ts`.
+
+## Publication
+
+The `Mastermind Store Cloudflare Artifact` workflow runs on `main` changes to
+the Worker or its protocol: tests, type check, lint, format, `vp build`, a
+publication-shape assertion (`workersDev` and preview URLs off, SQLite
+export, both tokens as secrets) and a reproducible tar of
+`.cloudflare/output/v0` with its SHA-256 digest. It deploys nothing.
+
+To publish:
+
+1. Download the artifact for the exact commit and verify its digest.
+2. Create the Analytics Engine dataset binding target if the account lacks it.
+3. Set `MASTERMIND_STORE_TOKENS` and `MASTERMIND_STORE_OPERATOR_TOKEN` as
+   Worker secrets (generated, never printed), then `cf deploy --prebuilt`.
+4. Attach the custom hostname; keep `workers.dev` and previews off.
+5. Smoke: `GET /v1/status` with the operator token answers `ok: true`, an
+   unauthenticated `POST /v1/ops` answers 401, then set and clear the fence
+   once.
+6. Set `MASTERMIND_STORE_URL` and `MASTERMIND_STORE_TOKEN` on Web production
+   and deploy Web; the fleet publisher's next run should log `published`.
+
+Rollback: remove `MASTERMIND_STORE_URL` from Web (the routes answer 503
+again) or set the fence. Deleting the Worker loses the snapshot and pending
+answers; the publisher re-sends the snapshot within two minutes, and answers
+not yet picked up must be given again.

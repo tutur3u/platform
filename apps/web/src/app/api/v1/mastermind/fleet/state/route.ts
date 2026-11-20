@@ -11,7 +11,7 @@ import {
   authorizeFleetPublisher,
   FLEET_NO_STORE,
   fleetError,
-  fleetRedis,
+  fleetStore,
 } from '@/lib/mastermind/fleet/http';
 import {
   readFleetAnswers,
@@ -34,20 +34,21 @@ function answerSummary(answer: FleetAnswerRecord) {
 export const GET = withSessionAuth(
   async (request, { user }) => {
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
-    const redis = await fleetRedis();
-    if (!redis) return fleetError('unavailable', 503);
+    const store = await fleetStore();
+    if (!store) return fleetError('unavailable', 503);
 
     let stored: Awaited<ReturnType<typeof readFleetState>>;
     let answers: Record<string, FleetAnswerRecord>;
     try {
-      [stored, answers] = await Promise.all([
-        readFleetState(redis),
-        readFleetAnswers(redis),
-      ]);
+      stored = await readFleetState(store, { cached: true });
+      if (!stored) return fleetError('not_published', 404);
+      answers = await readFleetAnswers(
+        store,
+        stored.state.decisions.map((decision) => decision.id)
+      );
     } catch {
       return fleetError('unavailable', 503);
     }
-    if (!stored) return fleetError('not_published', 404);
 
     const openIds = new Set(stored.state.decisions.map((d) => d.id));
     const receipts = Object.fromEntries(
@@ -92,7 +93,7 @@ export async function PUT(request: Request) {
   if (!parsed.success) return fleetError('invalid_state', 422);
 
   try {
-    const stored = await writeFleetState(auth.redis, parsed.data);
+    const stored = await writeFleetState(auth.store, parsed.data);
     return NextResponse.json(
       { accepted: true, etag: stored.etag, receivedAt: stored.receivedAt },
       { headers: FLEET_NO_STORE }

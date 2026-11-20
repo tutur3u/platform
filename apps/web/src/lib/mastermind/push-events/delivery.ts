@@ -162,7 +162,7 @@ export async function deliverMastermindPushEvent({
   admin: MastermindPushAdminClient;
   event: MastermindPushEvent;
   ownerIds: string[];
-  redis: UpstashRestRedisClient;
+  redis: Pick<UpstashRestRedisClient, 'get' | 'set' | 'eval'>;
   locale?: MastermindPushLocale;
   nowMs?: number;
 }): Promise<MastermindPushDeliveryResult> {

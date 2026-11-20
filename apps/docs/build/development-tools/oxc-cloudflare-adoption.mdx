@@ -371,6 +371,13 @@ history retention runbook
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
+The Mastermind store Worker (`apps/mastermind-store`) has no alarms, crons,
+queues or in-Worker retries. It caps ops per request, value size and live
+rows, charges a durable daily write budget before running a batch, deletes at
+most 20 expired rows per write, and holds a durable operator stop fence. Its
+cost envelope and regressions are in the
+[Mastermind store runbook](/build/devops/mastermind-store).
+
 The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and
 stop-fence evidence in the [abuse-guard store runbook](/build/devops/abuse-guard-store).
 It carries a few accounting limits:

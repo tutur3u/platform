@@ -1,0 +1,77 @@
+name: Mastermind Store Cloudflare Artifact
+
+# Build-only: verifies the mastermind-store Worker at the exact commit and uploads
+# its cf Build Output (`.cloudflare/output/v0`) with a SHA-256 digest, so a
+# publication can pin the run id and re-verify the digest before
+# `cf deploy --prebuilt`. No deploy, no secrets, no provider writes.
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/mastermind-store/**
+      - packages/utils/src/mastermind-store/**
+      - bun.lock
+      - .github/workflows/mastermind-store-cloudflare.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd apps/mastermind-store test
+      - run: bun run --cwd apps/mastermind-store type-check
+      - run: bun run --cwd apps/mastermind-store lint
+      - run: bun run --cwd apps/mastermind-store format:check
+      - run: bun run --cwd apps/mastermind-store build
+      - name: Assert the publication shape
+        working-directory: apps/mastermind-store/.cloudflare/output/v0
+        run: |
+          jq -e '.name == "tuturuuu-mastermind-store"
+            and .workersDev == false
+            and .previewUrls == false
+            and .exports.MastermindStore.storage == "sqlite"
+            and .env.MASTERMIND_STORE_TOKENS.type == "secret"
+            and .env.MASTERMIND_STORE_OPERATOR_TOKEN.type == "secret"' \
+            workers/default/worker.config.json
+          jq -e '.buildContext.isPreview == false' config.json
+      - name: Package with a digest
+        id: package
+        working-directory: apps/mastermind-store/.cloudflare
+        run: |
+          tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
+            -cf mastermind-store-output.tar output
+          digest="$(sha256sum mastermind-store-output.tar | cut -d' ' -f1)"
+          echo "$digest  mastermind-store-output.tar" > mastermind-store-output.tar.sha256
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          {
+            echo "### mastermind-store artifact"
+            echo "- commit: \`$GITHUB_SHA\`"
+            echo "- run: \`$GITHUB_RUN_ID\` attempt \`$GITHUB_RUN_ATTEMPT\`"
+            echo "- sha256: \`$digest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mastermind-store-output-${{ github.sha }}
+          path: |
+            apps/mastermind-store/.cloudflare/mastermind-store-output.tar
+            apps/mastermind-store/.cloudflare/mastermind-store-output.tar.sha256
+          if-no-files-found: error
+          retention-days: 30

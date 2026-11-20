@@ -96,6 +96,8 @@
 # Abuse-protection store (Durable Object Worker and its clients)
 /apps/abuse-guard/                 @vhpx
 /packages/utils/src/abuse-guard/   @vhpx
+/apps/mastermind-store/            @vhpx
+/packages/utils/src/mastermind-store/ @vhpx
 
 # Payments
 /packages/payment/                 @vhpx

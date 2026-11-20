@@ -9,6 +9,7 @@ import {
   acknowledgeFleetAnswers,
   pendingFleetAnswers,
   readFleetAnswers,
+  readFleetState,
 } from '@/lib/mastermind/fleet/store';
 
 /** Orchestrator pull: owner answers not yet acknowledged at their revision. */
@@ -16,7 +17,14 @@ export async function GET(request: Request) {
   const auth = await authorizeFleetPublisher(request, 0);
   if (!auth.ok) return auth.response;
   try {
-    const answers = pendingFleetAnswers(await readFleetAnswers(auth.redis));
+    // Answers are keyed by decision; only decisions still open are pulled.
+    const stored = await readFleetState(auth.store);
+    const answers = pendingFleetAnswers(
+      await readFleetAnswers(
+        auth.store,
+        stored?.state.decisions.map((decision) => decision.id) ?? []
+      )
+    );
     return NextResponse.json(
       {
         answers: answers.map((answer) => ({
@@ -49,7 +57,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return fleetError('invalid_ack', 422);
   try {
     const acknowledged = await acknowledgeFleetAnswers(
-      auth.redis,
+      auth.store,
       parsed.data.acks
     );
     return NextResponse.json({ acknowledged }, { headers: FLEET_NO_STORE });

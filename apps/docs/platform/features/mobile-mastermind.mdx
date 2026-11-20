@@ -35,7 +35,8 @@ product rules of the shell entry and every tab.
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record; a retry with the same
   key returns the same record, and a new answer to the same decision becomes
-  the next revision. The publisher pulls unacknowledged answers, writes each to
+  the next revision. The publisher pulls unacknowledged answers to decisions
+  that are still open, writes each to
   `~/.local/share/fleet-sync/decisions/answers/<id>.r<revision>.json` (mode
   0600) and acknowledges it. The phone shows "Waiting for Iris" until the
   acknowledgement, then "Received by Iris". Nothing messages a fleet thread;
@@ -53,8 +54,12 @@ product rules of the shell entry and every tab.
   (URLs, emails, paths, IPs, UUIDs, token and key shapes, long opaque runs and
   invisible characters are removed) and length-capped; lane and machine labels
   fall back to a neutral label, and a decision whose title scrubs to nothing is
-  refused. The phone never receives reply text back. Snapshot and answers live
-  in Upstash Redis for 14 days.
+  refused. The phone never receives reply text back. Snapshot, answers and
+  pickups live in the [Mastermind store Worker](/build/devops/mastermind-store)
+  for 14 days; snapshot reads may lag a publish by up to five seconds.
+- **Storage failure:** without a configured store (or with the store stopped,
+  over budget or unreachable) every fleet route answers 503 and the phone
+  keeps its last snapshot with the Couldn't refresh warning.
 - **Freshness:** the publisher sends on change and at least every two minutes.
   The phone polls every 15 seconds while a fleet tab is in the foreground and
   on pull-to-refresh, shows "Updated <age>" from the receive time, and warns
@@ -78,8 +83,10 @@ product rules of the shell entry and every tab.
   these tabs.
 - **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
   `apps/web/src/lib/mastermind/fleet/contract.test.ts`,
-  `apps/web/src/lib/mastermind/fleet/store.redis.test.ts` (answer and ack
-  scripts on a real redis-server), `scripts/mastermind-fleet/*.test.mjs` and
+  `apps/web/src/lib/mastermind/fleet/store.test.ts` (revisions, retries,
+  pickups and racing answers), `apps/web/src/lib/mastermind/store.test.ts`
+  (store resolution and push-event claims),
+  `apps/mastermind-store/src/*.test.ts`, `scripts/mastermind-fleet/*.test.mjs` and
   `apps/mobile/test/features/mastermind/fleet/`.
 
 ## Native Worker live admission

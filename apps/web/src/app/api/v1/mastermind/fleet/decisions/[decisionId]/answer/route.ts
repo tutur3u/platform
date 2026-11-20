@@ -5,7 +5,7 @@ import { fleetAnswerInputSchema } from '@/lib/mastermind/fleet/contract';
 import {
   FLEET_NO_STORE,
   fleetError,
-  fleetRedis,
+  fleetStore,
   readCappedText,
 } from '@/lib/mastermind/fleet/http';
 import {
@@ -44,10 +44,10 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     if (!IDEMPOTENCY_KEY.test(idempotencyKey))
       return fleetError('idempotency_key_required', 400);
 
-    const redis = await fleetRedis();
-    if (!redis) return fleetError('unavailable', 503);
+    const store = await fleetStore();
+    if (!store) return fleetError('unavailable', 503);
     try {
-      const stored = await readFleetState(redis);
+      const stored = await readFleetState(store);
       const decision = stored?.state.decisions.find((d) => d.id === decisionId);
       if (!decision) return fleetError('decision_closed', 409);
       if (
@@ -57,7 +57,7 @@ export const POST = withSessionAuth<{ decisionId: string }>(
         return fleetError('unknown_option', 422);
 
       const answer = await recordFleetAnswer(
-        redis,
+        store,
         decisionId,
         parsed.data,
         idempotencyKey

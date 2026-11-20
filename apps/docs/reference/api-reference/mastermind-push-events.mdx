@@ -68,11 +68,13 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   `MASTERMIND_PUSH_HMAC_SECRET_NEXT` refuses the whole configuration (503).
 - `X-MM-Timestamp` is unix seconds; more than 5 minutes of skew in either
   direction is rejected.
-- Events are deduplicated on `(type, item_id, seq)` in Upstash Redis with a
+- Events are deduplicated on `(type, item_id, seq)` in the
+  [Mastermind store Worker](/build/devops/mastermind-store) (or, when it is not
+  configured, a legacy Upstash REST client) with a
   two-state claim. The route writes `pending:<random UUID>` with `SET NX` and a
   2-minute TTL, then atomically changes its own token to `done` with a 24-hour
   TTL after successful delivery. Failure atomically deletes only the matching
-  token. Both transitions use Redis Lua compare-and-set/delete, so an expired
+  token. Both transitions are atomic compare-and-set/delete, so an expired
   request cannot overwrite or release its successor. A duplicate that finds
   a pending token gets 503 and should be retried; one that finds `done` gets 409. A
   claim abandoned by a crashed request expires after 2 minutes. If the replay
@@ -169,7 +171,7 @@ characters after trimming, shared with the hub), `MASTERMIND_PUSH_OWNER_IDS`
 and optionally `MASTERMIND_PUSH_LOCALE` on the web deployment.
 `MASTERMIND_PUSH_HMAC_SECRET_NEXT` is set only during a rotation. Until the secret is set the
 route answers 503 and sends nothing. The route also needs the existing Firebase
-Admin and Upstash Redis variables.
+Admin variables and `MASTERMIND_STORE_URL` with `MASTERMIND_STORE_TOKEN`.
 
 ## Regression coverage
 

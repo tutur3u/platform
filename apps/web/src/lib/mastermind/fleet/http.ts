@@ -1,8 +1,9 @@
 import 'server-only';
 
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import type { MastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { NextResponse } from 'next/server';
-import { claimFleetNonce, type FleetRedis } from './store';
+import { getMastermindStore } from '../store';
+import { claimFleetNonce } from './store';
 import { verifyFleetPublisher, FLEET_SIGNATURE_HEADER } from './auth';
 
 export const FLEET_NO_STORE = { 'cache-control': 'private, no-store' };
@@ -13,9 +14,10 @@ export function fleetError(error: string, status: number) {
   return NextResponse.json({ error }, { status, headers: FLEET_NO_STORE });
 }
 
-export async function fleetRedis(): Promise<FleetRedis | null> {
+/** The Mastermind store (Cloudflare Worker, or legacy Upstash), or null. */
+export async function fleetStore(): Promise<MastermindStore | null> {
   try {
-    return await getUpstashRestRedisClient();
+    return await getMastermindStore();
   } catch {
     return null;
   }
@@ -54,7 +56,7 @@ export async function authorizeFleetPublisher(
   request: Request,
   maxBytes: number
 ): Promise<
-  | { ok: true; body: string; redis: FleetRedis }
+  | { ok: true; body: string; store: MastermindStore }
   | { ok: false; response: Response }
 > {
   const body = await readCappedText(request, maxBytes);
@@ -65,14 +67,14 @@ export async function authorizeFleetPublisher(
     return { ok: false, response: fleetError('unconfigured', 503) };
   if (verdict !== 'ok')
     return { ok: false, response: fleetError('unauthorized', 401) };
-  const redis = await fleetRedis();
-  if (!redis) return { ok: false, response: fleetError('unavailable', 503) };
+  const store = await fleetStore();
+  if (!store) return { ok: false, response: fleetError('unavailable', 503) };
   const signature = request.headers.get(FLEET_SIGNATURE_HEADER)?.trim() ?? '';
   try {
-    if (!(await claimFleetNonce(redis, signature)))
+    if (!(await claimFleetNonce(store, signature)))
       return { ok: false, response: fleetError('replayed', 409) };
   } catch {
     return { ok: false, response: fleetError('unavailable', 503) };
   }
-  return { ok: true, body, redis };
+  return { ok: true, body, store };
 }

@@ -1,19 +1,21 @@
 import { createHash } from 'node:crypto';
-import type { UpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import type { MastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import type {
   FleetAnswerInput,
   FleetAnswerRecord,
   FleetState,
 } from './contract';
 
-export type FleetRedis = Pick<UpstashRestRedisClient, 'eval' | 'get' | 'set'>;
-
 export const FLEET_STATE_KEY = 'mastermind:fleet:v1:state';
-export const FLEET_ANSWERS_KEY = 'mastermind:fleet:v1:answers';
+const ANSWER_PREFIX = 'mastermind:fleet:v1:answer:';
+const ACK_PREFIX = 'mastermind:fleet:v1:ack:';
 const NONCE_PREFIX = 'mastermind:fleet:v1:nonce:';
-const STATE_TTL_SECONDS = 14 * 24 * 60 * 60;
-const NONCE_TTL_SECONDS = 15 * 60;
-const MAX_ANSWERS = 200;
+const STATE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const NONCE_TTL_MS = 15 * 60 * 1000;
+/** The phone polls every 15 s; one store read per colo per 5 s serves them all. */
+export const FLEET_READ_CACHE_MS = 5000;
+const CAS_ATTEMPTS = 3;
+const MGET_CHUNK = 64;
 
 export interface StoredFleetState {
   state: FleetState;
@@ -21,10 +23,11 @@ export interface StoredFleetState {
   receivedAt: string;
 }
 
-function parseJson<T>(value: unknown): T | null {
-  if (value == null) return null;
-  if (typeof value === 'object') return value as T;
-  if (typeof value !== 'string') return null;
+type StoredAnswer = Omit<FleetAnswerRecord, 'pickedUpRevision' | 'pickedUpAt'>;
+type StoredAck = { revision: number; at: string };
+
+function parseJson<T>(value: string | null): T | null {
+  if (value === null) return null;
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -39,12 +42,20 @@ export function fleetEtag(state: FleetState) {
   return `"${createHash('sha256').update(JSON.stringify(content)).digest('hex').slice(0, 32)}"`;
 }
 
-export async function readFleetState(redis: FleetRedis) {
-  return parseJson<StoredFleetState>(await redis.get(FLEET_STATE_KEY));
+export async function readFleetState(
+  store: MastermindStore,
+  options: { cached?: boolean } = {}
+) {
+  return parseJson<StoredFleetState>(
+    await store.get(
+      FLEET_STATE_KEY,
+      options.cached ? { cacheMs: FLEET_READ_CACHE_MS } : undefined
+    )
+  );
 }
 
 export async function writeFleetState(
-  redis: FleetRedis,
+  store: MastermindStore,
   state: FleetState,
   now = new Date()
 ): Promise<StoredFleetState> {
@@ -53,118 +64,131 @@ export async function writeFleetState(
     etag: fleetEtag(state),
     receivedAt: now.toISOString(),
   };
-  await redis.set(FLEET_STATE_KEY, JSON.stringify(stored), {
-    ex: STATE_TTL_SECONDS,
+  await store.set(FLEET_STATE_KEY, JSON.stringify(stored), {
+    ttlMs: STATE_TTL_MS,
   });
   return stored;
 }
 
 /** Claims a publisher signature once; a replay inside the window is refused. */
-export async function claimFleetNonce(redis: FleetRedis, signature: string) {
-  const result = await redis.set(`${NONCE_PREFIX}${signature}`, '1', {
+export function claimFleetNonce(store: MastermindStore, signature: string) {
+  return store.set(`${NONCE_PREFIX}${signature}`, '1', {
+    ttlMs: NONCE_TTL_MS,
     nx: true,
-    ex: NONCE_TTL_SECONDS,
   });
-  return result === 'OK';
 }
 
-export async function readFleetAnswers(redis: FleetRedis) {
-  return (
-    parseJson<Record<string, FleetAnswerRecord>>(
-      await redis.get(FLEET_ANSWERS_KEY)
-    ) ?? {}
-  );
+function merge(answer: StoredAnswer, ack: StoredAck | null): FleetAnswerRecord {
+  const picked = ack && ack.revision <= answer.revision ? ack : null;
+  return {
+    ...answer,
+    pickedUpRevision: picked?.revision ?? 0,
+    ...(picked ? { pickedUpAt: picked.at } : {}),
+  };
 }
 
-// Atomic read-modify-write of the answers map. A retried request with the same
-// Idempotency-Key returns the stored record unchanged; a new key on the same
-// decision becomes the next revision, which the orchestrator picks up again.
-const ANSWER_SCRIPT = `
-local raw = redis.call('GET', KEYS[1])
-local map = {}
-if raw then map = cjson.decode(raw) end
-local input = cjson.decode(ARGV[1])
-local current = map[input.decisionId]
-if current and current.idempotencyKey == input.idempotencyKey then
-  return cjson.encode(current)
-end
-local revision = 1
-local picked = 0
-if current then
-  revision = current.revision + 1
-  picked = current.pickedUpRevision
-end
-input.revision = revision
-input.pickedUpRevision = picked
-map[input.decisionId] = input
-local count = 0
-local oldestKey = nil
-local oldestAt = nil
-for key, value in pairs(map) do
-  count = count + 1
-  if oldestAt == nil or value.answeredAt < oldestAt then
-    oldestAt = value.answeredAt
-    oldestKey = key
-  end
-end
-if count > tonumber(ARGV[2]) and oldestKey then map[oldestKey] = nil end
-redis.call('SET', KEYS[1], cjson.encode(map), 'EX', ARGV[3])
-return cjson.encode(input)`;
+async function mgetAll(store: MastermindStore, keys: string[]) {
+  const values: (string | null)[] = [];
+  for (let i = 0; i < keys.length; i += MGET_CHUNK)
+    values.push(...(await store.mget(keys.slice(i, i + MGET_CHUNK))));
+  return values;
+}
 
+/** Latest answer and pickup per decision, for the given decision ids. */
+export async function readFleetAnswers(
+  store: MastermindStore,
+  decisionIds: string[]
+): Promise<Record<string, FleetAnswerRecord>> {
+  if (decisionIds.length === 0) return {};
+  const values = await mgetAll(store, [
+    ...decisionIds.map((id) => `${ANSWER_PREFIX}${id}`),
+    ...decisionIds.map((id) => `${ACK_PREFIX}${id}`),
+  ]);
+  const result: Record<string, FleetAnswerRecord> = {};
+  decisionIds.forEach((id, index) => {
+    const answer = parseJson<StoredAnswer>(values[index] ?? null);
+    if (!answer) return;
+    result[id] = merge(
+      answer,
+      parseJson<StoredAck>(values[decisionIds.length + index] ?? null)
+    );
+  });
+  return result;
+}
+
+/**
+ * Records an owner answer. A retry with the same Idempotency-Key returns the
+ * stored record unchanged; a new key becomes the next revision, which the
+ * orchestrator picks up again. Compare-and-set keeps revisions monotonic.
+ */
 export async function recordFleetAnswer(
-  redis: FleetRedis,
+  store: MastermindStore,
   decisionId: string,
   input: FleetAnswerInput,
   idempotencyKey: string,
   now = new Date()
 ): Promise<FleetAnswerRecord> {
-  const record = {
-    decisionId,
-    action: input.action,
-    ...(input.optionId ? { optionId: input.optionId } : {}),
-    ...(input.text ? { text: input.text } : {}),
-    idempotencyKey,
-    answeredAt: now.toISOString(),
-  };
-  const result = await redis.eval(
-    ANSWER_SCRIPT,
-    [FLEET_ANSWERS_KEY],
-    [JSON.stringify(record), MAX_ANSWERS, STATE_TTL_SECONDS]
-  );
-  const stored = parseJson<FleetAnswerRecord>(result);
-  if (!stored) throw new Error('answer not stored');
-  return stored;
+  const key = `${ANSWER_PREFIX}${decisionId}`;
+  for (let attempt = 0; attempt < CAS_ATTEMPTS; attempt++) {
+    const [raw, ackRaw] = await store.mget([key, `${ACK_PREFIX}${decisionId}`]);
+    const current = parseJson<StoredAnswer>(raw ?? null);
+    const ack = parseJson<StoredAck>(ackRaw ?? null);
+    if (current?.idempotencyKey === idempotencyKey) return merge(current, ack);
+    const next: StoredAnswer = {
+      decisionId,
+      revision: (current?.revision ?? 0) + 1,
+      action: input.action,
+      ...(input.optionId ? { optionId: input.optionId } : {}),
+      ...(input.text ? { text: input.text } : {}),
+      idempotencyKey,
+      answeredAt: now.toISOString(),
+    };
+    if (
+      await store.compareAndSet(
+        key,
+        raw ?? null,
+        JSON.stringify(next),
+        STATE_TTL_MS
+      )
+    )
+      return merge(next, ack);
+  }
+  throw new Error('answer contention');
 }
 
-const ACK_SCRIPT = `
-local raw = redis.call('GET', KEYS[1])
-if not raw then return 0 end
-local map = cjson.decode(raw)
-local acks = cjson.decode(ARGV[1])
-local changed = 0
-for _, ack in ipairs(acks) do
-  local current = map[ack.decisionId]
-  if current and ack.revision <= current.revision and ack.revision > current.pickedUpRevision then
-    current.pickedUpRevision = ack.revision
-    current.pickedUpAt = ARGV[2]
-    changed = changed + 1
-  end
-end
-if changed > 0 then redis.call('SET', KEYS[1], cjson.encode(map), 'KEEPTTL') end
-return changed`;
-
+/** Marks answers picked up; stale or repeated acks change nothing. */
 export async function acknowledgeFleetAnswers(
-  redis: FleetRedis,
+  store: MastermindStore,
   acks: { decisionId: string; revision: number }[],
   now = new Date()
 ) {
-  if (acks.length === 0) return 0;
-  const changed = await redis.eval(
-    ACK_SCRIPT,
-    [FLEET_ANSWERS_KEY],
-    [JSON.stringify(acks), now.toISOString()]
-  );
-  return Number(changed) || 0;
+  let changed = 0;
+  for (const { decisionId, revision } of acks) {
+    const ackKey = `${ACK_PREFIX}${decisionId}`;
+    const [answerRaw, ackRaw] = await store.mget([
+      `${ANSWER_PREFIX}${decisionId}`,
+      ackKey,
+    ]);
+    const answer = parseJson<StoredAnswer>(answerRaw ?? null);
+    const ack = parseJson<StoredAck>(ackRaw ?? null);
+    if (
+      !answer ||
+      revision > answer.revision ||
+      revision <= (ack?.revision ?? 0)
+    )
+      continue;
+    const next: StoredAck = { revision, at: now.toISOString() };
+    if (
+      await store.compareAndSet(
+        ackKey,
+        ackRaw ?? null,
+        JSON.stringify(next),
+        STATE_TTL_MS
+      )
+    )
+      changed++;
+  }
+  return changed;
 }
 
 /** Answers the orchestrator has not acknowledged at their current revision. */

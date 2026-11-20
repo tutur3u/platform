@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 813,
+    "total": 816,
     "categories": {
-      "api": 616,
+      "api": 618,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 166,
+      "page": 167,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 801 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 804 }
   },
   "routes": [
     {
@@ -834,6 +834,14 @@
       "disposition": "native-Start",
       "cronOwner": null,
       "nativeSource": "apps/web/cloudflare/start/legal-page.tsx"
+    },
+    {
+      "pattern": "/[locale]/contact-link",
+      "source": "apps/web/src/app/[locale]/(marketing)/contact-link/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
     },
     {
       "pattern": "/[locale]/contact",
@@ -2029,6 +2037,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/assistant/live/eligibility",
+      "source": "apps/web/src/app/api/v1/assistant/live/eligibility/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/assistant/live/token",
       "source": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
       "category": "api",
@@ -2711,6 +2727,14 @@
     {
       "pattern": "/api/v1/link-shortener/shorten",
       "source": "apps/web/src/app/api/v1/link-shortener/shorten/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/live/eligibility",
+      "source": "apps/web/src/app/api/v1/live/eligibility/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

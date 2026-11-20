@@ -1,10 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextResponse } from 'next/server';
 import {
   completeMastermindPushClaim,
   releaseMastermindPushClaim,
 } from '@/lib/mastermind/push-events/claims';
+import { getMastermindPushRedis } from '@/lib/mastermind/store';
 import {
   deliverMastermindPushEvent,
   type MastermindPushAdminClient,
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
     );
   const event = parsed.data;
 
-  const redis = await getUpstashRestRedisClient().catch(() => null);
+  const redis = await getMastermindPushRedis().catch(() => null);
   if (!redis) return reject('unavailable', 503);
 
   // Only this token may complete or release this pending claim.

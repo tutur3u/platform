@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FleetAnswerRecord } from '@/lib/mastermind/fleet/contract';
+import { createMemoryMastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { sampleFleetState } from '@/lib/mastermind/fleet/sample-state.fixture';
 import { fleetSignedPayload } from '@/lib/mastermind/fleet/signing';
 import { signMastermindPushEvent } from '@/lib/mastermind/push-events/signature';
@@ -14,8 +14,7 @@ const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
 const mocks = vi.hoisted(() => ({
   user: { id: '' },
   granted: [] as string[],
-  kv: new Map<string, string>(),
-  answers: {} as Record<string, FleetAnswerRecord>,
+  store: null as unknown,
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -32,65 +31,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
     containsPermission: (p: string) => mocks.granted.includes(p),
   }),
 }));
-vi.mock('@tuturuuu/utils/upstash-rest', () => ({
-  getUpstashRestRedisClient: async () => ({
-    get: async (key: string) => mocks.kv.get(key) ?? null,
-    set: async (key: string, value: string, options?: { nx?: boolean }) => {
-      if (options?.nx && mocks.kv.has(key)) return null;
-      mocks.kv.set(key, value);
-      return 'OK';
-    },
-    eval: async () => {
-      throw new Error('eval is covered by store.redis.test.ts');
-    },
-  }),
+// The in-memory reference store has the Worker's semantics; the Worker itself
+// is covered by apps/mastermind-store/src/worker.test.ts.
+vi.mock('@/lib/mastermind/store', () => ({
+  getMastermindStore: async () => mocks.store,
 }));
-// The Lua scripts run on real redis in store.redis.test.ts; here a JS model.
-vi.mock('@/lib/mastermind/fleet/store', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@/lib/mastermind/fleet/store')>();
-  return {
-    ...actual,
-    readFleetAnswers: async () => mocks.answers,
-    recordFleetAnswer: async (
-      _redis: unknown,
-      decisionId: string,
-      input: {
-        action: 'approve' | 'hold' | 'reply';
-        optionId?: string;
-        text?: string;
-      },
-      idempotencyKey: string
-    ) => {
-      const current = mocks.answers[decisionId];
-      if (current?.idempotencyKey === idempotencyKey) return current;
-      const record: FleetAnswerRecord = {
-        decisionId,
-        ...input,
-        idempotencyKey,
-        answeredAt: '2026-11-20T03:01:00.000Z',
-        revision: (current?.revision ?? 0) + 1,
-        pickedUpRevision: current?.pickedUpRevision ?? 0,
-      };
-      mocks.answers[decisionId] = record;
-      return record;
-    },
-    acknowledgeFleetAnswers: async (
-      _redis: unknown,
-      acks: { decisionId: string; revision: number }[]
-    ) => {
-      let changed = 0;
-      for (const ack of acks) {
-        const current = mocks.answers[ack.decisionId];
-        if (current && ack.revision > current.pickedUpRevision) {
-          current.pickedUpRevision = ack.revision;
-          changed++;
-        }
-      }
-      return changed;
-    },
-  };
-});
 
 function signed(method: string, path: string, body = '', secret = SECRET) {
   const timestamp = String(Math.floor(Date.now() / 1000));
@@ -144,8 +89,7 @@ async function answer(
 // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 describe('Mastermind fleet sync routes', () => {
   beforeEach(() => {
-    mocks.kv.clear();
-    mocks.answers = {};
+    mocks.store = createMemoryMastermindStore();
     mocks.user = { id: OWNER };
     mocks.granted = ['view_infrastructure'];
     vi.stubEnv('MASTERMIND_FLEET_PUBLISHER_SECRET', SECRET);
@@ -208,6 +152,11 @@ describe('Mastermind fleet sync routes', () => {
   });
 
   describe('GET state (owner)', () => {
+    it('answers 503 when no store is configured', async () => {
+      mocks.store = null;
+      expect((await ownerRead()).status).toBe(503);
+    });
+
     it('is 404 before the first publish', async () => {
       expect((await ownerRead()).status).toBe(404);
     });
@@ -236,7 +185,7 @@ describe('Mastermind fleet sync routes', () => {
       expect(body.answers['ship-fleet-sync']).toEqual({
         action: 'reply',
         revision: 1,
-        answeredAt: '2026-11-20T03:01:00.000Z',
+        answeredAt: expect.any(String),
         pickedUp: false,
       });
       expect(JSON.stringify(body)).not.toContain('private words');
