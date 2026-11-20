@@ -1,7 +1,7 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  canReadPublishedAsset,
+  readPublishedAssetDigest,
   isPublishedAsset,
   loadPublishedAssetManifests,
   assetPublicationProofId,
@@ -25,7 +25,9 @@ const staged = {
   updated_at: '2026-11-20T10:00:01Z',
 };
 
-function database(assetRevisions?: Record<string, string>) {
+function database(
+  assetRevisions?: Record<string, { revision: string; sha256: string }>
+) {
   const proof = {
     id: assetPublicationProofId('workspace', 'project', entry),
     entry_id: entry.id,
@@ -63,7 +65,9 @@ describe('workspace asset publication', () => {
       [{ id: 'block', entry_id: entry.id, updated_at }]
     );
     expect(manifest).toEqual({ used: updated_at });
-    const { admin: fake } = database(manifest);
+    const { admin: fake } = database({
+      used: { revision: manifest.used!, sha256: 'a'.repeat(64) },
+    });
     const records = await loadPublishedAssetManifests(
       fake,
       'workspace',
@@ -94,7 +98,9 @@ describe('workspace asset publication', () => {
   });
 
   it('keeps a new upload private on the direct asset path for a published parent', async () => {
-    const { admin: fake } = database({ used: updated_at });
+    const { admin: fake } = database({
+      used: { revision: updated_at, sha256: 'a'.repeat(64) },
+    });
     const parent = {
       published_at,
       status: 'published',
@@ -106,22 +112,28 @@ describe('workspace asset publication', () => {
       },
     };
     expect(
-      await canReadPublishedAsset(fake, 'workspace', 'project', used, parent)
-    ).toBe(true);
+      await readPublishedAssetDigest(fake, 'workspace', 'project', used, parent)
+    ).toBe('a'.repeat(64));
     expect(
-      await canReadPublishedAsset(fake, 'workspace', 'project', used, {
+      await readPublishedAssetDigest(fake, 'workspace', 'project', used, {
         ...parent,
         updated_at: '2026-11-20T10:30:00Z',
       })
-    ).toBe(false);
+    ).toBeNull();
     expect(
-      await canReadPublishedAsset(fake, 'workspace', 'project', staged, parent)
-    ).toBe(false);
+      await readPublishedAssetDigest(
+        fake,
+        'workspace',
+        'project',
+        staged,
+        parent
+      )
+    ).toBeNull();
     expect(
-      await canReadPublishedAsset(fake, 'workspace', 'project', used, {
+      await readPublishedAssetDigest(fake, 'workspace', 'project', used, {
         ...parent,
         status: 'draft',
       })
-    ).toBe(false);
+    ).toBeNull();
   });
 });

@@ -82,6 +82,7 @@ describe('app token exchange route', () => {
         scopes: ['app-token:refresh'],
         targetApp: 'yoola',
         userId: victimUserId,
+        workspaceId,
       },
       { secret: 'test-secret' }
     );
@@ -142,6 +143,31 @@ describe('app token exchange route', () => {
         nx: true,
       })
     );
+  });
+
+  it('requires a signed workspace for legacy refresh into manage scope', async () => {
+    mockRegisteredApp(['external-projects:manage']);
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        targetApp: 'yoola',
+        userId: victimUserId,
+        scopes: ['app-token:refresh'],
+      },
+      { secret: 'test-secret' }
+    );
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:manage'],
+        refreshToken,
+        workspaceId,
+      })
+    );
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Workspace-bound sign-in required',
+    });
   });
 
   it('cannot rotate a refresh bearer into another authorized workspace', async () => {

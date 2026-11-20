@@ -420,6 +420,19 @@ async function exchangeAppToken(request: NextRequest) {
     const refreshClaims = refreshResult.claims;
     refreshFamily = refreshResult.family;
     refreshWorkspaceId = refreshClaims.workspace_id;
+    if (
+      !refreshWorkspaceId &&
+      resolvedTarget.scopes.some(
+        (scope) =>
+          scope === 'external-projects:manage' ||
+          scope === 'external-projects:*'
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Workspace-bound sign-in required' },
+        { status: 401 }
+      );
+    }
     workspaceId ??= refreshWorkspaceId;
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;

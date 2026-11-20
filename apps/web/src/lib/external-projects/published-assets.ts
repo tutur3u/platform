@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  assetBytesDigest,
+  readExternalProjectAssetBytes,
+} from './asset-publication-bytes';
 import { assetPublicationProofs } from './asset-publication-store';
 import {
   parseWebglPackageArtifactMetadata,
@@ -105,6 +109,69 @@ export function publishedAssetManifest(
   );
 }
 
+export type AssetPublicationManifest = Record<
+  string,
+  { revision: string; sha256: string }
+>;
+
+function webglInventoryDigest(asset: AttachedAsset) {
+  const artifact = parseWebglPackageArtifactMetadata(asset.metadata);
+  if (
+    !artifact ||
+    artifact.version !== WEBGL_PACKAGE_METADATA_VERSION ||
+    artifact.rootPath !== asset.storage_path
+  )
+    return null;
+  return assetBytesDigest(
+    Buffer.from(
+      JSON.stringify([
+        artifact.provider,
+        artifact.rootPath,
+        artifact.entryRelativePath,
+        artifact.files,
+        artifact.assetUrls,
+      ])
+    )
+  );
+}
+
+export async function captureAssetProofs({
+  workspaceId,
+  entry,
+  assets,
+  blocks,
+}: {
+  workspaceId: string;
+  entry: Entry;
+  assets: AttachedAsset[];
+  blocks: Block[];
+}): Promise<AssetPublicationManifest> {
+  const references = publishedAssetManifest(entry, assets, blocks);
+  const selected = assets
+    .filter((asset) => Object.hasOwn(references, asset.id))
+    .slice(0, 24);
+  const manifest: AssetPublicationManifest = {};
+  for (let start = 0; start < selected.length; start += 2) {
+    await Promise.all(
+      selected.slice(start, start + 2).map(async (asset) => {
+        const object =
+          asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE
+            ? null
+            : await readExternalProjectAssetBytes(
+                workspaceId,
+                asset.storage_path ?? null
+              );
+        const sha256 =
+          asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE
+            ? webglInventoryDigest(asset)
+            : object && assetBytesDigest(object.buffer);
+        if (sha256) manifest[asset.id] = { revision: asset.updated_at, sha256 };
+      })
+    );
+  }
+  return manifest;
+}
+
 function beforePublication(updated: string, published: string | null) {
   if (published === null) return false;
   const millis = Date.parse(updated) - Date.parse(published);
@@ -156,22 +223,29 @@ export async function loadPublishedAssetManifests(
   return manifests;
 }
 
+export function publishedAssetDigest(
+  manifests: Map<string, Record<string, unknown>>,
+  asset: AttachedAsset
+) {
+  const manifest = asset.entry_id && manifests.get(asset.entry_id);
+  if (!manifest || !Object.hasOwn(manifest, asset.id)) return null;
+  const proof = record(manifest[asset.id]);
+  if (
+    proof.revision !== asset.updated_at ||
+    typeof proof.sha256 !== 'string' ||
+    !/^[0-9a-f]{64}$/.test(proof.sha256)
+  )
+    return null;
+  if (asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE)
+    return webglInventoryDigest(asset) === proof.sha256 ? proof.sha256 : null;
+  return proof.sha256;
+}
+
 export function isPublishedAsset(
   manifests: Map<string, Record<string, unknown>>,
   asset: AttachedAsset
 ) {
-  if (
-    asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE &&
-    !isEntryWebglPackage(asset)
-  )
-    return false;
-  if (!asset.entry_id) return false;
-  const manifest = manifests.get(asset.entry_id);
-  return (
-    manifest !== undefined &&
-    Object.hasOwn(manifest, asset.id) &&
-    manifest[asset.id] === asset.updated_at
-  );
+  return publishedAssetDigest(manifests, asset) !== null;
 }
 
 export function privateExternalProjectCollection(collection: {
@@ -184,11 +258,11 @@ export function privateExternalProjectCollection(collection: {
   );
 }
 
-export async function canReadPublishedAsset(
+export async function readPublishedAssetDigest(
   admin: TypedSupabaseClient,
   workspaceId: string,
   canonicalProjectId: string,
-  asset: Asset,
+  asset: AttachedAsset,
   parent: {
     published_at: string | null;
     updated_at: string;
@@ -210,7 +284,7 @@ export async function canReadPublishedAsset(
     record(parent.metadata).privateDelivery === true ||
     !beforePublication(asset.updated_at, parent.published_at)
   )
-    return false;
+    return null;
 
   try {
     const manifests = await loadPublishedAssetManifests(
@@ -226,8 +300,8 @@ export async function canReadPublishedAsset(
         },
       ]
     );
-    return isPublishedAsset(manifests, asset);
+    return publishedAssetDigest(manifests, asset);
   } catch {
-    return false;
+    return null;
   }
 }

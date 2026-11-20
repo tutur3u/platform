@@ -153,30 +153,6 @@ function errorJson(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-function getExternalProjectStorageAssetPathFilter({
-  kind,
-  prefix,
-  relativePath,
-}: {
-  kind: z.infer<typeof storageEntryKindSchema>;
-  prefix: string;
-  relativePath: string;
-}) {
-  const scopedPath = toScopedPath(prefix, relativePath);
-  const scopedFolderPath = `${scopedPath}/`;
-
-  return (asset: ExternalProjectAssetPathRow) => {
-    const storagePath = asset.storage_path;
-    if (!storagePath) {
-      return false;
-    }
-
-    return kind === 'folder'
-      ? storagePath === scopedPath || storagePath.startsWith(scopedFolderPath)
-      : storagePath === scopedPath;
-  };
-}
-
 async function getExternalProjectStorageAssetRows({
   access,
   kind,
@@ -212,8 +188,10 @@ async function getExternalProjectStorageAssetRows({
     throw new Error(error.message);
   }
 
-  return ((data ?? []) as ExternalProjectAssetPathRow[]).filter(
-    getExternalProjectStorageAssetPathFilter({ kind, prefix, relativePath })
+  const scopedPath = toScopedPath(prefix, relativePath);
+  return (data ?? []).filter(
+    ({ storage_path }) =>
+      storage_path === scopedPath || storage_path?.startsWith(`${scopedPath}/`)
   );
 }
 
@@ -363,6 +341,23 @@ async function handleUpload({
 
   const scopedPath = toScopedPath(prefix, sanitizedPath);
   const storagePath = posix.join(scopedPath, sanitizedFilename);
+  const upsert = formData.get('upsert') === 'true';
+  if (
+    upsert &&
+    (
+      await getExternalProjectStorageAssetRows({
+        access,
+        kind: 'file',
+        prefix,
+        relativePath: posix.join(sanitizedPath, sanitizedFilename),
+      })
+    ).length > 0
+  ) {
+    return errorJson(
+      'An attached object cannot be overwritten. Upload a new file.',
+      409
+    );
+  }
   const buffer = new Uint8Array(await file.arrayBuffer());
   const data = await uploadWorkspaceStorageFileDirect(
     access.normalizedWorkspaceId,
@@ -370,7 +365,7 @@ async function handleUpload({
     buffer,
     {
       contentType: uploadValidation.contentType || 'application/octet-stream',
-      upsert: formData.get('upsert') === 'true',
+      upsert,
     }
   );
 

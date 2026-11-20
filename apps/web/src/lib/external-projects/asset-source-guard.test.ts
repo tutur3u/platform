@@ -30,7 +30,7 @@ it('preserves public sources and refuses cross-workspace signed sources', () => 
     'https://storage.example.test/storage/v1/object/public/avatars/a.png';
   expect(guardExternalProjectAssetSourceUrl(publicUrl, 'ws-1')).toBe(publicUrl);
   expect(safeExternalProjectDeliverySourceUrl(publicUrl, '/api/asset')).toBe(
-    publicUrl
+    '/api/asset'
   );
   expect(() =>
     guardExternalProjectAssetSourceUrl(
@@ -57,7 +57,7 @@ it('removes direct Supabase source links from public delivery JSON', () => {
       'https://cdn.example.test/a',
       '/api/asset'
     )
-  ).toBe('https://cdn.example.test/a');
+  ).toBe('/api/asset');
 });
 
 it('removes nested Supabase provenance links from public asset metadata', async () => {
@@ -75,16 +75,19 @@ it('removes nested Supabase provenance links from public asset metadata', async 
         },
         caption: 'a caption',
         external: 'https://cdn.example.test/a',
+        publicBucket:
+          'https://storage.example.test/storage/v1/object/public/avatars/a.png',
       },
       '/api/asset'
     )
   ).toEqual({
     import: {
-      sourceUrl: '/api/asset',
-      finalSourceUrl: '/api/asset',
+      sourceUrl: null,
+      finalSourceUrl: null,
       checksumSha256: 'checksum',
     },
     caption: 'a caption',
-    external: 'https://cdn.example.test/a',
+    external: null,
+    publicBucket: null,
   });
 });

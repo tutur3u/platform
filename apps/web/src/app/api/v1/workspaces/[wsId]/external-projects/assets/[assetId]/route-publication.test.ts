@@ -34,9 +34,13 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   WorkspaceStorageError: Error,
   createWorkspaceStorageSignedReadUrl:
     mocks.createWorkspaceStorageSignedReadUrl,
-  resolveWorkspaceStorageProvider: async () => ({ provider: 'supabase' }),
+  resolveWorkspaceStorageProvider: async () => ({ provider: 'r2' }),
 }));
 
+import {
+  assetBytesDigest,
+  PUBLIC_ASSET_MAX_BYTES,
+} from '@/lib/external-projects/asset-publication-bytes';
 import { assetPublicationProofId } from '@/lib/external-projects/published-assets';
 afterEach(() => vi.unstubAllGlobals());
 
@@ -59,6 +63,8 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
     storage_path: 'external-projects/custom/games/index.png',
     workspace_external_project_entries: parent,
   };
+  const content = 'published bytes';
+  const fixtureDigest = assetBytesDigest(new TextEncoder().encode(content));
   const proofQuery = {
     select: () => proofQuery,
     eq: () => proofQuery,
@@ -73,7 +79,9 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
           entry_id: asset.entry_id,
           published_at,
           entry_updated_at: published_at,
-          asset_revisions: { [asset.id]: updated_at },
+          asset_revisions: {
+            [asset.id]: { revision: updated_at, sha256: fixtureDigest },
+          },
         },
       ],
     }),
@@ -98,6 +106,15 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
       new Request(`${url}?entry=${entry}&v=${version}`, { method: 'HEAD' }),
       params
     );
+  const signedUrl = 'https://storage.example.test/revision';
+  mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(signedUrl);
+  const upstream = vi.fn(
+    async () =>
+      new Response(content, {
+        headers: { 'content-type': 'image/png' },
+      })
+  );
+  vi.stubGlobal('fetch', upstream);
   const allowed = await probe();
   expect(allowed.status).toBe(204);
   expect(allowed.headers.get('x-tuturuuu-published-asset-revision')).toBe(
@@ -106,23 +123,13 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   expect(allowed.headers.get('vercel-cdn-cache-control')).toBe('no-store');
   expect((await probe('other-entry')).status).toBe(404);
   expect((await probe(asset.entry_id, 'old')).status).toBe(404);
-  expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
-
-  const signedUrl = 'https://storage.example.test/revision';
-  mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(signedUrl);
-  const upstream = vi.fn(async () =>
-    Response.json('published bytes', {
-      headers: { 'content-type': 'image/png' },
-    })
-  );
-  vi.stubGlobal('fetch', upstream);
   const media = () => GET(new Request(`${url}?v=${revision}`), params);
   const response = await media();
   expect(response.status).toBe(200);
   expect(response.headers.get('location')).toBeNull();
   expect(response.headers.get('cache-control')).toContain('no-store');
   expect(response.headers.get('content-type')).toBe('image/png');
-  expect(await response.json()).toBe('published bytes');
+  expect(await response.text()).toBe(content);
   expect(upstream).toHaveBeenCalledWith(
     signedUrl,
     expect.objectContaining({
@@ -134,15 +141,9 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
     'ws-1',
     asset.storage_path,
-    expect.objectContaining({ expiresIn: 15 })
+    expect.objectContaining({ expiresIn: 15, provider: 'r2' })
   );
 
-  upstream.mockResolvedValueOnce(
-    new Response('published', {
-      status: 206,
-      headers: { 'Content-Type': 'video/mp4', 'Content-Range': 'bytes 0-8/15' },
-    })
-  );
   const partial = await GET(
     new Request(`${url}?v=${revision}`, {
       headers: { Range: 'bytes=0-8' },
@@ -151,16 +152,30 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   );
   expect(partial.status).toBe(206);
   expect(partial.headers.get('content-range')).toBe('bytes 0-8/15');
-  expect(upstream).toHaveBeenLastCalledWith(
-    signedUrl,
-    expect.objectContaining({
-      headers: { Range: 'bytes=0-8' },
-    })
+  expect(await partial.text()).toBe('published');
+
+  upstream.mockResolvedValueOnce(new Response('changed bytes'));
+  expect((await media()).status).toBe(404);
+  upstream.mockResolvedValueOnce(new Response('changed bytes'));
+  expect((await probe()).status).toBe(404);
+
+  const cancel = vi.fn();
+  upstream.mockResolvedValueOnce(
+    new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(PUBLIC_ASSET_MAX_BYTES + 1));
+        },
+        cancel,
+      })
+    )
   );
+  expect((await media()).status).toBe(404);
+  expect(cancel).toHaveBeenCalled();
 
   upstream.mockImplementationOnce(async () => {
     parent.status = 'draft';
-    return new Response('withdrawn fixture bytes');
+    return new Response(content);
   });
   expect((await media()).status).toBe(404);
   expect((await probe()).status).toBe(404);

@@ -1,6 +1,9 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto';
-import { assetPublicationProofId } from '@/lib/external-projects/published-assets';
+import {
+  assetPublicationProofId,
+  captureAssetProofs,
+} from '@/lib/external-projects/published-assets';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -85,7 +88,8 @@ const webglSandboxCsp =
 
 function createAdminWithAsset(
   status: 'draft' | 'published',
-  immutable = status === 'published'
+  immutable = status === 'published',
+  statusRef?: { status: 'published' | 'draft' }
 ) {
   const metadata = immutable
     ? { ...artifactMetadata, version: 2, revision, rootPath: revisionRoot }
@@ -95,7 +99,7 @@ function createAdminWithAsset(
   const proofQuery = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    in: vi.fn().mockResolvedValue({
+    in: vi.fn().mockImplementation(async () => ({
       data: [
         {
           id: assetPublicationProofId(
@@ -110,17 +114,36 @@ function createAdminWithAsset(
           entry_id: 'entry-1',
           published_at: publishedAt,
           entry_updated_at: publishedAt,
-          asset_revisions: { 'asset-1': updatedAt },
+          asset_revisions: await captureAssetProofs({
+            workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+            entry: {
+              id: 'entry-1',
+              updated_at: publishedAt,
+              published_at: publishedAt,
+              profile_data: {},
+            },
+            assets: [
+              {
+                id: 'asset-1',
+                entry_id: 'entry-1',
+                asset_type: 'webgl-package',
+                updated_at: updatedAt,
+                metadata,
+                storage_path: metadata.rootPath,
+              },
+            ],
+            blocks: [],
+          }),
         },
       ],
-    }),
+    })),
   };
   return {
     schema: () => ({ from: () => proofQuery }),
     from: vi.fn(() => ({
       eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({
+      single: vi.fn().mockImplementation(async () => ({
         data: {
           asset_type: 'webgl-package',
           id: 'asset-1',
@@ -129,7 +152,7 @@ function createAdminWithAsset(
           metadata,
           storage_path: metadata.rootPath,
           workspace_external_project_entries: {
-            status,
+            status: statusRef?.status ?? status,
             updated_at: publishedAt,
             published_at: publishedAt,
             metadata: {},
@@ -141,7 +164,7 @@ function createAdminWithAsset(
           ws_id: '123e4567-e89b-12d3-a456-426614174000',
         },
         error: null,
-      }),
+      })),
     })),
   };
 }
@@ -289,6 +312,20 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-security-policy')).toBe(
       webglSandboxCsp
     );
+  });
+
+  it('denies a previously published package if it is withdrawn while downloading', async () => {
+    const state: { status: 'draft' | 'published' } = { status: 'published' };
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminWithAsset('published', true, state)
+    );
+    mocks.downloadWorkspaceStorageObjectForProvider.mockImplementationOnce(
+      async () => {
+        state.status = 'draft';
+        return { buffer: new TextEncoder().encode(publishedHtml) };
+      }
+    );
+    expect((await callRoute(['index.html'])).status).toBe(404);
   });
 
   it('only downloads inventoried published files and rejects bytes changed in storage', async () => {

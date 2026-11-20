@@ -25,7 +25,7 @@ export async function recordEntryPublication(
     readPayload: () => Promise<ExternalProjectDeliveryPayload>;
     readManifest: (
       entry: ExternalProjectEntry
-    ) => Promise<Record<string, string>>;
+    ) => Promise<AssetPublicationManifest>;
   }
 ) {
   const {
@@ -46,7 +46,7 @@ export async function recordEntryPublication(
   if (readError) throw new Error(readError.message);
 
   let entry = current;
-  let manifest: Record<string, string> | null = null;
+  let manifest: AssetPublicationManifest | null = null;
   if (
     eventKind === 'publish' ||
     (eventKind === 'unpublish' && current.status !== 'draft')

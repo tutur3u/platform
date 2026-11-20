@@ -21,6 +21,7 @@ function refreshToken(userId = victimUserId) {
       scopes: ['app-token:refresh'],
       targetApp: 'yoola',
       userId,
+      workspaceId,
     },
     { secret: 'test-secret' }
   ).token;

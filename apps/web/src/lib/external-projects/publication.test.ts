@@ -187,7 +187,12 @@ describe('CMS publication settlement', () => {
     expect(proofs).toMatchObject([
       {
         published_at: entry?.published_at,
-        asset_revisions: { [webgl.id]: webgl.updated_at },
+        asset_revisions: {
+          [webgl.id]: {
+            revision: webgl.updated_at,
+            sha256: expect.stringMatching(/^[a-f0-9]{64}$/),
+          },
+        },
       },
     ]);
     expect(events[0]?.payload).not.toHaveProperty('publishedAssetManifest');

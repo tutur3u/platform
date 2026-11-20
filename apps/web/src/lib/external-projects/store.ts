@@ -69,7 +69,7 @@ import {
   isPublishedAsset,
   loadPublishedAssetManifests,
   privateExternalProjectCollection,
-  publishedAssetManifest,
+  captureAssetProofs,
 } from './published-assets';
 
 type AdminDb = TypedSupabaseClient;
@@ -2475,7 +2475,7 @@ export async function publishWorkspaceExternalProjectEntry(
           admin
         ),
       ]);
-      return publishedAssetManifest(entry, assets, blocks);
+      return captureAssetProofs({ workspaceId, entry, assets, blocks });
     },
   });
 }

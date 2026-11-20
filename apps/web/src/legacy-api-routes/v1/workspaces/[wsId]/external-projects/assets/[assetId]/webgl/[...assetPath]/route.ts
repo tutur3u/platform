@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
+import { readPublishedAssetDigest } from '@/lib/external-projects/published-assets';
 import { posix } from 'node:path';
 import {
   downloadWorkspaceStorageObjectForProvider,
@@ -405,15 +405,17 @@ export async function GET(
       );
     }
 
-    const { data: asset, error } = await admin
-      .from('workspace_external_project_assets')
-      .select(
-        'id, ws_id, entry_id, updated_at, asset_type, metadata, storage_path, workspace_external_project_entries!inner(status,published_at,updated_at,metadata,workspace_external_project_collections!inner(slug,config))'
-      )
-      .eq('id', assetId)
-      .eq('ws_id', resolvedWsId)
-      .eq('asset_type', WEBGL_PACKAGE_ASSET_TYPE)
-      .single();
+    const loadAsset = () =>
+      admin
+        .from('workspace_external_project_assets')
+        .select(
+          'id, ws_id, entry_id, updated_at, asset_type, metadata, storage_path, workspace_external_project_entries!inner(status,published_at,updated_at,metadata,workspace_external_project_collections!inner(slug,config))'
+        )
+        .eq('id', assetId)
+        .eq('ws_id', resolvedWsId)
+        .eq('asset_type', WEBGL_PACKAGE_ASSET_TYPE)
+        .single();
+    const { data: asset, error } = await loadAsset();
 
     if (error || !asset) {
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
@@ -424,16 +426,16 @@ export async function GET(
       return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
     }
 
-    const isPublic =
+    const publicDigest =
       metadata.version === WEBGL_PACKAGE_METADATA_VERSION &&
-      (await canReadPublishedAsset(
+      (await readPublishedAssetDigest(
         admin,
         resolvedWsId,
         binding.canonical_project.id,
         asset,
         asset.workspace_external_project_entries
       ));
-    if (!isPublic) {
+    if (!publicDigest) {
       const access = await requireWorkspaceExternalProjectAccess({
         mode: 'read',
         request,
@@ -520,6 +522,27 @@ export async function GET(
         )
       : downloaded.buffer.slice();
     headers.set('Content-Length', String(responseBody.byteLength));
+
+    if (publicDigest) {
+      const [{ data: current }, currentBinding] = await Promise.all([
+        loadAsset(),
+        resolveWorkspaceExternalProjectBinding(resolvedWsId, admin),
+      ]);
+      if (
+        !current ||
+        !currentBinding.enabled ||
+        currentBinding.canonical_project?.id !== binding.canonical_project.id ||
+        (await readPublishedAssetDigest(
+          admin,
+          resolvedWsId,
+          binding.canonical_project.id,
+          current,
+          current.workspace_external_project_entries
+        )) !== publicDigest
+      ) {
+        return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
+      }
+    }
 
     return new Response(responseBody.buffer as ArrayBuffer, {
       headers,

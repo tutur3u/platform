@@ -76,7 +76,14 @@ media field, an eligible content block, or a finalized entry-level WebGL
 package. Single and bulk publication capture the same revision proof.
 Only the server writes media publication proofs. Older event logs do not
 establish a media revision. Re-publish older entries or edited entries to
-record the verified media references for their current revision. Private collections and entries never deliver media anonymously.
+record the verified media references for their current revision. Publication verifies
+the SHA-256 digest of each private asset before recording its proof. A public
+asset or revision check verifies the stored bytes before serving or
+authorizing reuse of cached media. Public media without a private stored
+object stays out of withdrawable delivery. Upload a new file to replace
+an attached object. Ordinary public asset reads cap originals at 10 MiB.
+The publication step checks up to 24 referenced assets per entry.
+ Private collections and entries never deliver media anonymously.
 
 Every WebGL finalization extracts into its own storage directory. The
 extraction service records the files and their SHA-256 digests after upload.
@@ -90,7 +97,7 @@ sites that cache resized media may use an anonymous HEAD request to
 `/api/v1/workspaces/{wsId}/external-projects/assets/{assetId}?entry={entryId}&v={assetRevision}`
 to check current publication. Use the bytes only when the API returns 204
 with the matching `X-Tuturuuu-Published-Asset-Revision` and no-store.
-Public asset requests stream bytes through the Platform after checking the
+Public asset requests return verified bytes through the Platform after checking the
 current publication. Storage URLs stay server-side. A URL issued by an
 earlier deployment can remain usable until its original expiry.
 

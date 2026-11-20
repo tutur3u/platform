@@ -48,30 +48,7 @@ export function safeExternalProjectDeliverySourceUrl(
   assetUrl: string
 ) {
   if (!source) return null;
-  try {
-    const url = new URL(source);
-    const configured = [
-      process.env.SUPABASE_SERVER_URL,
-      process.env[`${'NEXT_PUBLIC'}_SUPABASE_URL`],
-    ];
-    if (
-      !configured.some(
-        (origin) => origin && new URL(origin).origin === url.origin
-      )
-    )
-      return source;
-    if (
-      /^\/storage\/v1\/(?:object|render\/image)\/public\//u.test(url.pathname)
-    )
-      return source;
-    return /^\/storage\/v1\/(?:object|render\/image)\/sign\/workspaces\//u.test(
-      url.pathname
-    )
-      ? assetUrl
-      : null;
-  } catch {
-    return null;
-  }
+  return assetUrl;
 }
 
 export function safeExternalProjectDeliveryMetadata(
@@ -79,12 +56,10 @@ export function safeExternalProjectDeliveryMetadata(
   assetUrl: string
 ): Json {
   if (typeof value === 'string') {
-    try {
-      new URL(value);
-    } catch {
-      return value;
-    }
-    return safeExternalProjectDeliverySourceUrl(value, assetUrl);
+    const normalized = value.trim().replaceAll('\\', '/');
+    if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|\/?storage\/v1\/)/i.test(normalized))
+      return null;
+    return value;
   }
   if (Array.isArray(value))
     return value.map((item) =>

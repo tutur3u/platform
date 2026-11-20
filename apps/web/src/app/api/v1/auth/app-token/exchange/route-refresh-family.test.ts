@@ -30,6 +30,7 @@ function refreshTokenFor(scopes: string[]) {
       scopes,
       targetApp: 'yoola',
       userId: victimUserId,
+      workspaceId,
     },
     { secret: 'test-secret' }
   ).token;
@@ -168,7 +169,7 @@ describe('external app refresh lifetimes and families', () => {
     expect(mocks.redisSet).not.toHaveBeenCalled();
   });
 
-  it('revokes a legacy token family when the legacy token is reused', async () => {
+  it('revokes a derived family when a token without a family claim is reused', async () => {
     optIn(900);
     const legacy = refreshTokenFor(['app-token:refresh']);
     const legacyClaims = verifyAppCoordinationToken(legacy, {

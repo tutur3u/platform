@@ -62,3 +62,48 @@ test('publication proof migration keeps proof writes and reads behind the servic
     await db.close();
   }
 });
+
+test('users cannot preserve an asset revision across deletion and replacement', async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(`
+      create schema private;
+      create role anon;
+      create role authenticated;
+      create table public.workspace_external_project_assets(id int primary key, updated_at timestamptz);
+      create function public.tick() returns trigger language plpgsql as
+        $$ begin new.updated_at := now(); return new; end; $$;
+      create trigger workspace_external_project_assets_updated_at
+        before update on public.workspace_external_project_assets for each row execute function public.tick();
+      grant select, insert, update, delete on public.workspace_external_project_assets to authenticated;
+    `);
+    await db.exec(
+      await readFile(
+        new URL(
+          '../supabase/migrations/20261120140000_stamp_external_project_asset_revisions.sql',
+          import.meta.url
+        ),
+        'utf8'
+      )
+    );
+    await db.exec('set role authenticated');
+    const first = await db.query(
+      "insert into public.workspace_external_project_assets values (1, '2000-01-01') returning updated_at::text as revision"
+    );
+    await db.exec(
+      'delete from public.workspace_external_project_assets where id = 1'
+    );
+    const next = await db.query(
+      'insert into public.workspace_external_project_assets values (1, $1) returning updated_at::text as revision',
+      [first.rows[0].revision]
+    );
+    assert.notEqual(first.rows[0].revision, next.rows[0].revision);
+    const updated = await db.query(
+      'update public.workspace_external_project_assets set updated_at = $1 returning updated_at::text as revision',
+      [first.rows[0].revision]
+    );
+    assert.notEqual(first.rows[0].revision, updated.rows[0].revision);
+  } finally {
+    await db.close();
+  }
+});

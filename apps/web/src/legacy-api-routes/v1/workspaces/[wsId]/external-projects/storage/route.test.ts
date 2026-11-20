@@ -265,6 +265,37 @@ describe('external project storage route', () => {
     );
   });
 
+  it('refuses to overwrite storage objects attached to entries', async () => {
+    const { POST } = await importRoute();
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue(
+      createAccess(
+        createAdminMock({
+          selectRows: [
+            {
+              id: 'attached',
+              storage_path: 'external-projects/yashie/gallery/cover.png',
+            },
+          ],
+        })
+      )
+    );
+    const body = new FormData();
+    body.set(
+      'file',
+      new File(['replacement'], 'cover.png', { type: 'image/png' })
+    );
+    body.set('path', 'gallery');
+    body.set('upsert', 'true');
+    const response = await POST(
+      new Request('http://localhost/storage', { method: 'POST', body }),
+      {
+        params: Promise.resolve({ wsId: 'workspace-1' }),
+      }
+    );
+    expect(response.status).toBe(409);
+    expect(mocks.uploadWorkspaceStorageFileDirect).not.toHaveBeenCalled();
+  });
+
   it('renames files and updates linked asset paths', async () => {
     const admin = createAdminMock({
       selectRows: [
