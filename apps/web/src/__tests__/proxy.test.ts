@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { registerAnonymousApiProxyCases } from './proxy-anonymous-api-cases';
 import { PUBLIC_MARKETING_ALIAS_CASES } from './public-marketing-alias-cases';
 import { AUTH_COOKIE_HEADER } from './required-mfa-proxy-fixture';
 import { createAuthenticatedSupabaseClient } from './staff-session-proxy-fixture';
@@ -617,75 +618,7 @@ describe('web proxy api handling', () => {
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });
 
-  it('blocks malformed authorization headers before the proxy guard', async () => {
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
-        method: 'GET',
-        headers: {
-          Authorization: 'Basic totally-wrong',
-          'user-agent': 'curl/8.0',
-        },
-      })
-    );
-
-    expect(response.status).toBe(401);
-    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'malformed-auth-header'
-    );
-    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
-      '203.0.113.10'
-    );
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-  });
-
-  it('keeps forged bearer tokens inside suspicious anonymous API checks', async () => {
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
-        method: 'GET',
-        headers: {
-          Authorization: 'Bearer aaa.bbb.ccc',
-        },
-      })
-    );
-
-    expect(response.status).toBe(400);
-    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'suspicious-anonymous-request'
-    );
-    expect(mocks.recordSuspiciousApiRequestEdge).toHaveBeenCalledWith(
-      '203.0.113.10'
-    );
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-  });
-
-  it('escalates repeated suspicious anonymous API traffic into an IP block', async () => {
-    const now = new Date(Date.now());
-
-    mocks.recordSuspiciousApiRequestEdge.mockResolvedValue({
-      id: 'block-2',
-      blockLevel: 1,
-      reason: 'api_abuse',
-      blockedAt: now,
-      expiresAt: new Date(Date.now() + 300_000),
-    });
-
-    const { proxy } = await import('../proxy');
-    const response = await proxy(
-      new NextRequest('http://localhost/api/v1/users/me/configs/demo', {
-        method: 'GET',
-      })
-    );
-
-    expect(response.status).toBe(429);
-    expect(response.headers.get('X-Proxy-Block-Reason')).toBe(
-      'ip-already-blocked'
-    );
-    expect(response.headers.get('X-RateLimit-Client-IP')).toBe('203.0.113.10');
-    expect(response.headers.get('Retry-After')).not.toBeNull();
-    expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
-  });
+  registerAnonymousApiProxyCases(mocks);
 
   it('keeps trusted bypass API routes out of the suspicious-anonymous gate', async () => {
     mocks.isTrustedProxyBypassRequest.mockReturnValue(true);

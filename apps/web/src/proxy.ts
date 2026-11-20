@@ -1051,9 +1051,9 @@ async function webProxy(req: NextRequest): Promise<NextResponse> {
     if (!versionedAsset) {
       const malformed = await blockMalformedApiAuthCookieRequest(req);
       if (malformed) return malformed;
-      const suspicious = await blockSuspiciousAnonymousApiRequest(req);
-      if (suspicious) return suspicious;
     }
+    const suspicious = await blockSuspiciousAnonymousApiRequest(req);
+    if (suspicious) return suspicious;
     const costResponse = await guardApiCostAndCsrf(req, WEB_APP_URL);
     if (costResponse) return costResponse;
     if (versionedAsset) return NextResponse.next();
