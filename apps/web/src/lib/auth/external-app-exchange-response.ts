@@ -99,6 +99,7 @@ export function createExchangeTokenBody({
     scopes,
     targetApp,
     userId,
+    workspaceId: normalizedWorkspaceId ?? undefined,
   });
   const refreshToken = createAppCoordinationToken({
     ...assuranceClaims,
@@ -109,6 +110,7 @@ export function createExchangeTokenBody({
     scopes: refreshTokenScopes(refreshFamily),
     targetApp,
     userId,
+    workspaceId: normalizedWorkspaceId ?? undefined,
   });
 
   return {

@@ -24,47 +24,36 @@ const staged = {
   updated_at: '2026-11-20T10:00:01Z',
 };
 
-type Event = { id?: string; entry_id: string; payload: unknown };
-
-function database(events: Event[]) {
-  const from = vi.fn(() => {
-    let entryId: string | undefined;
-    return {
-      select() {
-        return this;
-      },
-      eq(key: string, value: string) {
-        if (key === 'entry_id') entryId = value;
-        return this;
-      },
-      async in(_key: string, ids: string[]) {
-        return {
-          data: events
-            .filter((event) => event.id && ids.includes(event.id))
-            .map(({ id, entry_id, payload }) => ({
-              id,
-              entry_id,
-              ...(payload as object),
-            })),
-        };
-      },
-      order() {
-        return this;
-      },
-      async limit(size: number) {
-        return {
-          data: events
-            .filter((event) => event.entry_id === entryId)
-            .slice(0, size),
-        };
-      },
-    };
-  });
-  return { from } as unknown as TypedSupabaseClient;
+function database(assetRevisions?: Record<string, string>) {
+  const proof = {
+    id: publicationEventId(
+      'workspace',
+      'project',
+      entry.id,
+      'publish',
+      published_at
+    ),
+    entry_id: entry.id,
+    published_at,
+    asset_revisions: assetRevisions,
+  };
+  const query = {
+    select: () => query,
+    eq: () => query,
+    in: async (_column: string, ids: string[]) => ({
+      data: assetRevisions && ids.includes(proof.id) ? [proof] : [],
+    }),
+  };
+  const auditTable = vi.fn();
+  const from = vi.fn(() => query);
+  const schema = vi.fn(() => ({ from }));
+  return {
+    admin: { schema, from: auditTable } as unknown as TypedSupabaseClient,
+    schema,
+    from,
+    auditTable,
+  };
 }
-
-const fixture = (payload: unknown) =>
-  database([{ entry_id: entry.id, payload }]);
 
 describe('workspace asset publication', () => {
   it('admits referenced assets only at the revision captured by publish', async () => {
@@ -78,10 +67,7 @@ describe('workspace asset publication', () => {
       [{ id: 'block', entry_id: entry.id, updated_at }]
     );
     expect(manifest).toEqual({ used: updated_at });
-    const fake = fixture({
-      assetPublicationAt: published_at,
-      publishedAssetManifest: manifest,
-    });
+    const { admin: fake } = database(manifest);
     const records = await loadPublishedAssetManifests(
       fake,
       'workspace',
@@ -95,46 +81,24 @@ describe('workspace asset publication', () => {
     expect(isPublishedAsset(records, staged)).toBe(false);
   });
 
-  it('finds the exact current proof without a shared event-history budget', async () => {
-    const quiet = { ...entry, id: 'quiet' };
-    const noisy = { ...entry, id: 'noisy' };
-    const revision = {
-      assetPublicationAt: published_at,
-      publishedAssetManifest: { used: updated_at },
-    };
-    const fake = database([
-      ...Array.from({ length: 110 }, () => ({
-        entry_id: noisy.id,
-        payload: {},
-      })),
-      { entry_id: quiet.id, payload: revision },
-      {
-        id: publicationEventId(
-          'workspace',
-          'project',
-          noisy.id,
-          'publish',
-          published_at
-        ),
-        entry_id: noisy.id,
-        payload: revision,
-      },
-    ]);
+  it('requires service-owned proof even when an entry has legacy attachment references', async () => {
+    const { admin, schema, from, auditTable } = database();
     const records = await loadPublishedAssetManifests(
-      fake,
+      admin,
       'workspace',
       'project',
-      [noisy, quiet]
+      [entry]
     );
-    expect(records.get(noisy.id)).toEqual({ used: updated_at });
-    expect(records.get(quiet.id)).toEqual({ used: updated_at });
+    expect(isPublishedAsset(records, used)).toBe(false);
+    expect(schema).toHaveBeenCalledWith('private');
+    expect(from).toHaveBeenCalledWith(
+      'external_project_asset_publication_proofs'
+    );
+    expect(auditTable).not.toHaveBeenCalled();
   });
 
   it('keeps a new upload private on the direct asset path for a published parent', async () => {
-    const fake = fixture({
-      assetPublicationAt: published_at,
-      publishedAssetManifest: { used: updated_at },
-    });
+    const { admin: fake } = database({ used: updated_at });
     const parent = {
       published_at,
       status: 'published',

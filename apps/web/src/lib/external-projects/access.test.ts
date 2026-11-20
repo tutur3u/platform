@@ -290,6 +290,7 @@ describe('external project access auth dispatch', () => {
       claims: {
         ...externalAppTokenClaims,
         scopes: ['external-projects:manage'],
+        workspace_id: workspaceId,
       },
       ok: true,
     });
@@ -307,17 +308,33 @@ describe('external project access auth dispatch', () => {
           wsId
         )
     );
-    const allowed = await requireWorkspaceExternalProjectManageDecision(
-      request,
-      workspaceId
-    );
-    expect(allowed).toMatchObject({
+    expect(
+      await requireWorkspaceExternalProjectManageDecision(request, workspaceId)
+    ).toMatchObject({
       ok: true,
       decision: {
         actorId: externalAppTokenClaims.sub,
         workspaceId,
         scopes: ['external-projects:manage'],
       },
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValueOnce({
+      claims: {
+        ...externalAppTokenClaims,
+        scopes: ['external-projects:manage'],
+      },
+      ok: true,
+    });
+    expect(
+      await requireWorkspaceExternalProjectManageDecision(request, workspaceId)
+    ).toMatchObject({ ok: false, response: { status: 401 } });
+    const wrongWorkspace = await requireWorkspaceExternalProjectManageDecision(
+      request,
+      '77777777-7777-4777-8777-777777777777'
+    );
+    expect(wrongWorkspace).toMatchObject({
+      ok: false,
+      response: { status: 403 },
     });
     manage = false;
     const denied = await requireWorkspaceExternalProjectManageDecision(

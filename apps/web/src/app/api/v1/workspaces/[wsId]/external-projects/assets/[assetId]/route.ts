@@ -24,6 +24,7 @@ import { getExternalProjectAssetRevision } from '@/lib/external-projects/asset-d
 import { resolveAllowedAssetRedirectUrl } from '@/lib/external-projects/asset-redirect-policy';
 import { guardExternalProjectAssetSourceUrl } from '@/lib/external-projects/asset-source-guard';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
+import { publicExternalProjectAssetResponse } from '@/lib/external-projects/public-asset-response';
 import { canReadPublishedAsset } from '@/lib/external-projects/published-assets';
 import {
   EXTERNAL_PROJECTS_STORAGE_PREFIX,
@@ -112,7 +113,7 @@ const privateHeaders = {
   'Cache-Control': EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL,
   'Vercel-CDN-Cache-Control': 'no-store',
 };
-const PUBLIC_ASSET_SIGNED_URL_SECONDS = 60;
+const PUBLIC_ASSET_UPSTREAM_URL_SECONDS = 15;
 
 async function readAsset(
   admin: TypedSupabaseClient,
@@ -227,15 +228,43 @@ export async function GET(request: Request, { params }: AssetParams) {
       }
     }
 
+    const respondFromStorage = async (url: string) => {
+      if (!isPublic) return redirect(url);
+      const originalRevision = getExternalProjectAssetRevision(
+        asset.updated_at
+      );
+      return publicExternalProjectAssetResponse(
+        url,
+        async () => {
+          const current = await readAsset(
+            admin,
+            resolvedWsId,
+            assetId,
+            originalRevision
+          );
+          return (
+            current?.isPublic === true &&
+            current.asset.updated_at === asset.updated_at &&
+            current.asset.entry_id === asset.entry_id &&
+            current.asset.storage_path === asset.storage_path &&
+            current.asset.source_url === asset.source_url
+          );
+        },
+        privateHeaders,
+        request.headers.get('range')
+      );
+    };
+
     // A refused source falls through to the stored object, if there is one.
     const sourceUrl = asset.source_url
       ? resolveAllowedAssetRedirectUrl(asset.source_url)
       : null;
     if (sourceUrl) {
       try {
-        return redirect(
+        const response = await respondFromStorage(
           guardExternalProjectAssetSourceUrl(sourceUrl.toString(), resolvedWsId)
         );
+        return response ?? privateJson({ error: 'Asset not available' }, 404);
       } catch (error) {
         if (error instanceof StorageDownloadError && error.status === 503)
           return privateJson(
@@ -268,7 +297,7 @@ export async function GET(request: Request, { params }: AssetParams) {
           asset.storage_path,
           {
             expiresIn: isPublic
-              ? PUBLIC_ASSET_SIGNED_URL_SECONDS
+              ? PUBLIC_ASSET_UPSTREAM_URL_SECONDS
               : 7 * 24 * 60 * 60,
             provider,
             requireExists: true,
@@ -279,7 +308,10 @@ export async function GET(request: Request, { params }: AssetParams) {
           }
         );
 
-        return redirect(signedUrl);
+        return (
+          (await respondFromStorage(signedUrl)) ??
+          privateJson({ error: 'Asset not available' }, 404)
+        );
       } catch (error) {
         if (error instanceof WorkspaceStorageError && error.status === 404) {
           continue;

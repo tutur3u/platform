@@ -339,8 +339,9 @@ async function exchangeAppToken(request: NextRequest) {
     requestedScopes = [],
     targetApp,
     token,
-    workspaceId,
+    workspaceId: requestedWorkspaceId,
   } = parsed.data;
+  let workspaceId = requestedWorkspaceId;
 
   if (Boolean(token) === Boolean(refreshToken)) {
     return NextResponse.json(
@@ -385,6 +386,7 @@ async function exchangeAppToken(request: NextRequest) {
   // Only server-signed claims; never request or caller-writable session data.
   let assurance: SessionAssurance | null = null;
   let refreshFamily: string | undefined;
+  let refreshWorkspaceId: string | undefined;
 
   if (refreshToken) {
     const refreshResult = await verifyExternalAppRefreshToken({
@@ -417,6 +419,8 @@ async function exchangeAppToken(request: NextRequest) {
 
     const refreshClaims = refreshResult.claims;
     refreshFamily = refreshResult.family;
+    refreshWorkspaceId = refreshClaims.workspace_id;
+    workspaceId ??= refreshWorkspaceId;
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;
     assurance = sessionAssuranceFromAppCoordinationClaims(refreshClaims);
@@ -596,6 +600,16 @@ async function exchangeAppToken(request: NextRequest) {
     );
   }
 
+  const normalizedWorkspaceId =
+    exchangeAuthorization.normalizedWorkspaceId ??
+    workspaceSessionAuthorization?.normalizedWorkspaceId;
+  if (refreshWorkspaceId && normalizedWorkspaceId !== refreshWorkspaceId) {
+    return NextResponse.json(
+      { error: 'Refresh workspace does not match' },
+      { status: 403 }
+    );
+  }
+
   const userProfile = await getExchangeUserProfile({
     authIdentity,
     sbAdmin,
@@ -608,9 +622,7 @@ async function exchangeAppToken(request: NextRequest) {
     assurance,
     mfa,
     email: authIdentity.email,
-    normalizedWorkspaceId:
-      exchangeAuthorization.normalizedWorkspaceId ??
-      workspaceSessionAuthorization?.normalizedWorkspaceId,
+    normalizedWorkspaceId,
     policy,
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -37,7 +37,10 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   resolveWorkspaceStorageProvider: async () => ({ provider: 'supabase' }),
 }));
 
-it('proves only the current public asset revision and signs public storage for one minute', async () => {
+import { publicationEventId } from '@/lib/external-projects/published-assets';
+afterEach(() => vi.unstubAllGlobals());
+
+it('proxies only eligible bytes and closes a withdrawal during the storage handoff', async () => {
   const { GET, HEAD } = await import('./route');
   const updated_at = '2026-11-20T09:00:00Z';
   const published_at = '2026-11-20T10:00:00Z';
@@ -55,34 +58,34 @@ it('proves only the current public asset revision and signs public storage for o
     storage_path: 'external-projects/custom/games/index.png',
     workspace_external_project_entries: parent,
   };
-  mocks.createAdminClient.mockResolvedValue({
-    from: (table: string) => ({
-      select() {
-        return this;
-      },
-      eq() {
-        return this;
-      },
-      order() {
-        return this;
-      },
-      in: async () => ({ data: [] }),
-      single: async () => ({ data: asset }),
-      limit: async () => ({
-        data:
-          table === 'workspace_external_project_publish_events'
-            ? [
-                {
-                  entry_id: asset.entry_id,
-                  payload: {
-                    assetPublicationAt: published_at,
-                    publishedAssetManifest: { [asset.id]: updated_at },
-                  },
-                },
-              ]
-            : [],
-      }),
+  const proofQuery = {
+    select: () => proofQuery,
+    eq: () => proofQuery,
+    in: async () => ({
+      data: [
+        {
+          id: publicationEventId(
+            'ws-1',
+            'canonical-1',
+            asset.entry_id,
+            'publish',
+            published_at
+          ),
+          entry_id: asset.entry_id,
+          published_at,
+          asset_revisions: { [asset.id]: updated_at },
+        },
+      ],
     }),
+  };
+  const assetQuery = {
+    select: () => assetQuery,
+    eq: () => assetQuery,
+    single: async () => ({ data: asset }),
+  };
+  mocks.createAdminClient.mockResolvedValue({
+    from: () => assetQuery,
+    schema: () => ({ from: () => proofQuery }),
   });
   const params = {
     params: Promise.resolve({ wsId: 'ws-1', assetId: asset.id }),
@@ -105,21 +108,61 @@ it('proves only the current public asset revision and signs public storage for o
   expect((await probe(asset.entry_id, 'old')).status).toBe(404);
   expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
 
-  mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValueOnce(
-    'https://storage.example.test/revision'
+  const signedUrl = 'https://storage.example.test/revision';
+  mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(signedUrl);
+  const upstream = vi.fn(async () =>
+    Response.json('published bytes', {
+      headers: { 'content-type': 'image/png' },
+    })
   );
-  const response = await GET(new Request(`${url}?v=${revision}`), params);
-  expect(response.status).toBe(307);
-  expect(response.headers.has('x-tuturuuu-published-asset-revision')).toBe(
-    false
+  vi.stubGlobal('fetch', upstream);
+  const media = () => GET(new Request(`${url}?v=${revision}`), params);
+  const response = await media();
+  expect(response.status).toBe(200);
+  expect(response.headers.get('location')).toBeNull();
+  expect(response.headers.get('cache-control')).toContain('no-store');
+  expect(response.headers.get('content-type')).toBe('image/png');
+  expect(await response.json()).toBe('published bytes');
+  expect(upstream).toHaveBeenCalledWith(
+    signedUrl,
+    expect.objectContaining({
+      redirect: 'error',
+      credentials: 'omit',
+      cache: 'no-store',
+    })
   );
   expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
     'ws-1',
     asset.storage_path,
-    expect.objectContaining({ expiresIn: 60 })
+    expect.objectContaining({ expiresIn: 15 })
   );
 
-  parent.status = 'draft';
+  upstream.mockResolvedValueOnce(
+    new Response('published', {
+      status: 206,
+      headers: { 'Content-Type': 'video/mp4', 'Content-Range': 'bytes 0-8/15' },
+    })
+  );
+  const partial = await GET(
+    new Request(`${url}?v=${revision}`, {
+      headers: { Range: 'bytes=0-8' },
+    }),
+    params
+  );
+  expect(partial.status).toBe(206);
+  expect(partial.headers.get('content-range')).toBe('bytes 0-8/15');
+  expect(upstream).toHaveBeenLastCalledWith(
+    signedUrl,
+    expect.objectContaining({
+      headers: { Range: 'bytes=0-8' },
+    })
+  );
+
+  upstream.mockImplementationOnce(async () => {
+    parent.status = 'draft';
+    return new Response('withdrawn fixture bytes');
+  });
+  expect((await media()).status).toBe(404);
   expect((await probe()).status).toBe(404);
   expect(mocks.requireWorkspaceExternalProjectAccess).not.toHaveBeenCalled();
 });

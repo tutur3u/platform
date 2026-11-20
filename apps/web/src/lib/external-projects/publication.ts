@@ -4,6 +4,7 @@ import type {
   ExternalProjectEntry,
   Json,
 } from '@tuturuuu/types';
+import { assetPublicationProofs } from './asset-publication-store';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import { publicationEventId } from './published-assets';
 
@@ -111,15 +112,7 @@ export async function recordEntryPublication(
       canonical_external_project_id: canonicalProjectId,
       entry_id: entry.id,
       event_kind: eventKind,
-      payload: {
-        ...payload,
-        ...(manifest
-          ? {
-              assetPublicationAt: entry.published_at,
-              publishedAssetManifest: manifest,
-            }
-          : {}),
-      } as NonNullable<Json>,
+      payload: payload as unknown as NonNullable<Json>,
       profile_data: payload.profileData as NonNullable<Json>,
       triggered_by: actorId,
       visibility_scope: visibilityScope,
@@ -129,6 +122,21 @@ export async function recordEntryPublication(
       ? events().upsert(event, { ignoreDuplicates: true, onConflict: 'id' })
       : events().insert(event));
     if (error) throw new Error(error.message);
+
+    if (manifest && id && entry.published_at && visibilityScope === 'public') {
+      const { error: proofError } = await assetPublicationProofs(admin).upsert(
+        {
+          id,
+          ws_id: workspaceId,
+          canonical_external_project_id: canonicalProjectId,
+          entry_id: entry.id,
+          published_at: entry.published_at,
+          asset_revisions: manifest,
+        },
+        { ignoreDuplicates: true, onConflict: 'id' }
+      );
+      if (proofError) throw new Error(proofError.message);
+    }
     return entry;
   } finally {
     if (eventKind !== 'preview')

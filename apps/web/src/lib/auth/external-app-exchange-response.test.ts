@@ -101,6 +101,17 @@ describe('external app bearer lifetime', () => {
     );
   });
 
+  it('signs the issuance workspace into both access and refresh bearers', () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
+    const body = issue({ normalizedWorkspaceId: workspaceId });
+    for (const token of [body.accessToken, body.refreshToken]) {
+      expect(verifyAppCoordinationToken(token)).toMatchObject({
+        ok: true,
+        claims: { workspace_id: workspaceId },
+      });
+    }
+  });
+
   it('starts a refresh family or carries the presented one', () => {
     const family = '0b9f3c62-1d4e-4a8b-9c3f-5e6d7a8b9c0d';
     const read = (token: string) => {

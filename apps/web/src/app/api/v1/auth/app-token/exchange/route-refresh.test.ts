@@ -144,6 +144,32 @@ describe('app token exchange route', () => {
     );
   });
 
+  it('cannot rotate a refresh bearer into another authorized workspace', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    const { token: refreshToken } = createAppCoordinationToken(
+      {
+        targetApp: 'yoola',
+        userId: victimUserId,
+        scopes: ['app-token:refresh'],
+        workspaceId: '77777777-7777-4777-8777-777777777777',
+      },
+      { secret: 'test-secret' }
+    );
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        refreshToken,
+        workspaceId,
+      })
+    );
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Refresh workspace does not match',
+    });
+  });
+
   it('rejects replayed registered app refresh tokens after the replay grace window', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));

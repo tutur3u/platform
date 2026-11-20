@@ -540,6 +540,10 @@ export async function requireWorkspaceExternalProjectAccessWithAppToken({
     return deny('Unauthorized', 401);
   }
 
+  const tokenWorkspace = verification.claims.workspace_id;
+  if (exactManage && !tokenWorkspace) return deny('Unauthorized', 401);
+  if (exactManage && tokenWorkspace !== wsId) return deny('Forbidden', 403);
+
   if (
     exactManage
       ? !verification.claims.scopes.includes('external-projects:manage')
@@ -559,6 +563,8 @@ export async function requireWorkspaceExternalProjectAccessWithAppToken({
     userId: verification.claims.sub,
     wsId,
   });
+  if (tokenWorkspace && tokenWorkspace !== normalizedWorkspaceId)
+    return deny('Forbidden', 403);
   const [workspacePermissions, rootPermissions] = await Promise.all([
     getPermissionsForUserId({
       admin,

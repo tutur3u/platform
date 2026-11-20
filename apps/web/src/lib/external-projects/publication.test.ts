@@ -87,6 +87,9 @@ function database() {
     ['workspace_external_project_assets', [webgl, staged]],
   ]);
   const events: Row[] = [];
+  const proofs: Row[] = [];
+  const proofTable = 'external_project_asset_publication_proofs';
+  tableRows.set(proofTable, proofs);
   tableRows.set('workspace_external_project_publish_events', events);
   const writeEvent = vi.fn(async (event: Row) => {
     if (!events.some(({ id }) => id === event.id)) events.push(event);
@@ -95,13 +98,11 @@ function database() {
   const from = vi.fn((table: string) => {
     const rows = tableRows.get(table) ?? [];
     const conditions: ((row: Row) => boolean)[] = [];
-    let projection: string | undefined;
     let patch: Row | undefined;
     const matches = () =>
       rows.filter((row) => conditions.every((test) => test(row)));
     return {
-      select(columns: string) {
-        projection = columns;
+      select() {
         return this;
       },
       order() {
@@ -136,20 +137,20 @@ function database() {
         return { data: matches().slice(0, size), error: null };
       },
       then(resolve: (result: { data: Row[]; error: null }) => void) {
-        const data = projection?.includes(':payload->')
-          ? matches().map(({ id, entry_id, payload }) => ({
-              id,
-              entry_id,
-              ...(payload as Row),
-            }))
-          : matches();
-        resolve({ data, error: null });
+        resolve({ data: matches(), error: null });
       },
-      upsert: writeEvent,
+      upsert:
+        table === proofTable
+          ? async (proof: Row) => {
+              proofs.push(proof);
+              return { error: null };
+            }
+          : writeEvent,
     };
   });
   return {
-    admin: { from } as unknown as TypedSupabaseClient,
+    admin: { from, schema: () => ({ from }) } as unknown as TypedSupabaseClient,
+    proofs,
     entry,
     events,
     writeEvent,
@@ -162,7 +163,7 @@ describe('CMS publication settlement', () => {
   beforeEach(() => invalidate.mockReset().mockResolvedValue(undefined));
 
   it('publishes an entry-level finalized WebGL package through bulk set-status', async () => {
-    const { admin, events, webgl, staged } = database();
+    const { admin, events, proofs, webgl, staged } = database();
     const [entry] = await bulkUpdateWorkspaceExternalProjectEntries(
       {
         actorId: 'editor',
@@ -182,11 +183,14 @@ describe('CMS publication settlement', () => {
     expect(events[0]).toMatchObject({
       event_kind: 'publish',
       visibility_scope: 'public',
-      payload: {
-        assetPublicationAt: entry?.published_at,
-        publishedAssetManifest: { [webgl.id]: webgl.updated_at },
-      },
     });
+    expect(proofs).toMatchObject([
+      {
+        published_at: entry?.published_at,
+        asset_revisions: { [webgl.id]: webgl.updated_at },
+      },
+    ]);
+    expect(events[0]?.payload).not.toHaveProperty('publishedAssetManifest');
     const manifests = await loadPublishedAssetManifests(
       admin,
       workspaceId,

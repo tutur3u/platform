@@ -30,6 +30,7 @@ export type AppCoordinationTokenClaims = {
   sub: string;
   target_app: string;
   typ: 'app_coordination';
+  workspace_id?: string;
 };
 
 /**
@@ -63,6 +64,7 @@ export type AppCoordinationTokenPayload = {
   scopes?: string[];
   targetApp: string;
   userId: string;
+  workspaceId?: string;
 };
 
 export type AppCoordinationTokenVerification =
@@ -277,6 +279,13 @@ function safeJsonParse(value: string): unknown {
   }
 }
 
+function isTokenWorkspaceId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/.test(value)
+  );
+}
+
 function isClaims(value: unknown, typ: TokenType): value is TokenClaims {
   if (!value || typeof value !== 'object') {
     return false;
@@ -298,7 +307,9 @@ function isClaims(value: unknown, typ: TokenType): value is TokenClaims {
     typeof claims.iat === 'number' &&
     typeof claims.exp === 'number' &&
     typeof claims.jti === 'string' &&
-    Array.isArray(claims.scopes)
+    Array.isArray(claims.scopes) &&
+    (claims.workspace_id === undefined ||
+      isTokenWorkspaceId(claims.workspace_id))
   );
 }
 
@@ -356,6 +367,11 @@ function signToken(
   ) {
     throw new Error('Invalid session assurance');
   }
+  if (
+    payload.workspaceId !== undefined &&
+    !isTokenWorkspaceId(payload.workspaceId)
+  )
+    throw new Error('Invalid token workspace ID');
   const secret = getSigningSecret(options.secret);
   const nowSeconds = Math.floor((options.now ?? new Date()).getTime() / 1000);
   const expiresInSeconds =
@@ -379,6 +395,7 @@ function signToken(
     sub: payload.userId,
     target_app: payload.targetApp,
     typ,
+    ...(payload.workspaceId ? { workspace_id: payload.workspaceId } : {}),
   } as TokenClaims;
   const unsigned = `${encodeBase64Url(JSON.stringify(header))}.${encodeBase64Url(
     JSON.stringify(claims)

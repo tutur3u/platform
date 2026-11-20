@@ -74,8 +74,9 @@ Uploads are available to workspace editors while staged. Public delivery
 includes only media linked to the published entry revision through an entry
 media field, an eligible content block, or a finalized entry-level WebGL
 package. Single and bulk publication capture the same revision proof.
-Re-publish an older entry if its media cannot be matched to a recorded
-publication. Private collections and entries never deliver media anonymously.
+Only the server writes media publication proofs. Older event logs do not
+establish a media revision. Re-publish older entries to record their
+verified media references. Private collections and entries never deliver media anonymously.
 
 Every WebGL finalization extracts into its own storage directory. The
 extraction service records the files and their SHA-256 digests after upload.
@@ -89,8 +90,9 @@ sites that cache resized media may use an anonymous HEAD request to
 `/api/v1/workspaces/{wsId}/external-projects/assets/{assetId}?entry={entryId}&v={assetRevision}`
 to check current publication. Use the bytes only when the API returns 204
 with the matching `X-Tuturuuu-Published-Asset-Revision` and no-store.
-Anonymous signed storage redirects expire after one minute. A previously
-issued storage URL can remain usable until its original expiry.
+Public asset requests stream bytes through the Platform after checking the
+current publication. Storage URLs stay server-side. A URL issued by an
+earlier deployment can remain usable until its original expiry.
 
 Retry a failed unpublish through the same publish endpoint. It keeps an
 already-withdrawn entry in draft and retries the publication event and

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { assetPublicationProofs } from './asset-publication-store';
 import {
   parseWebglPackageArtifactMetadata,
   WEBGL_PACKAGE_ASSET_TYPE,
@@ -94,61 +95,6 @@ function beforePublication(updated: string, published: string | null) {
   return subMillisecond(updated) <= subMillisecond(published);
 }
 
-function eventManifest(
-  payload: unknown,
-  entry: Entry
-): Record<string, unknown> | null {
-  const body = record(payload);
-  if (body.assetPublicationAt === entry.published_at) {
-    return Object.fromEntries(
-      Object.entries(record(body.publishedAssetManifest)).filter(
-        ([, updated]) =>
-          typeof updated === 'string' &&
-          beforePublication(updated, entry.published_at)
-      )
-    );
-  }
-
-  // Legacy records identify the published revision in the delivery snapshot.
-  if (!Array.isArray(body.collections)) return null;
-  for (const collection of body.collections) {
-    const rows = record(collection).entries;
-    if (!Array.isArray(rows)) continue;
-    for (const candidate of rows) {
-      const published = record(candidate);
-      if (
-        published.id !== entry.id ||
-        published.published_at !== entry.published_at ||
-        published.status !== 'published' ||
-        !Array.isArray(published.assets)
-      )
-        continue;
-      const attached = published.assets
-        .map(record)
-        .filter(
-          (asset) =>
-            asset.entry_id === entry.id &&
-            typeof asset.id === 'string' &&
-            typeof asset.updated_at === 'string' &&
-            beforePublication(asset.updated_at, entry.published_at)
-        );
-      const profile = record(published.profile_data);
-      if (profile.schema !== 'fysh/1') {
-        return Object.fromEntries(
-          attached.map((asset) => [asset.id, asset.updated_at])
-        );
-      }
-      const media = Object.values(record(profile.media));
-      return Object.fromEntries(
-        attached
-          .filter((asset) => media.includes(asset.id))
-          .map((asset) => [asset.id, asset.updated_at])
-      );
-    }
-  }
-  return null;
-}
-
 export async function loadPublishedAssetManifests(
   admin: TypedSupabaseClient,
   workspaceId: string,
@@ -171,51 +117,28 @@ export async function loadPublishedAssetManifests(
     );
   }
 
-  const publicEvents = <Columns extends string>(columns: Columns) =>
-    admin
-      .from('workspace_external_project_publish_events')
-      .select(columns)
-      .eq('ws_id', workspaceId)
-      .eq('canonical_external_project_id', canonicalProjectId)
-      .eq('event_kind', 'publish')
-      .eq('visibility_scope', 'public');
-
   const ids = [...revisions.keys()];
   for (let start = 0; start < ids.length; start += 50) {
-    const { data, error } = await publicEvents(
-      'id,entry_id,assetPublicationAt:payload->>assetPublicationAt,publishedAssetManifest:payload->publishedAssetManifest'
-    ).in('id', ids.slice(start, start + 50));
+    const { data, error } = await assetPublicationProofs(admin)
+      .select('id,entry_id,published_at,asset_revisions')
+      .eq('ws_id', workspaceId)
+      .eq('canonical_external_project_id', canonicalProjectId)
+      .in('id', ids.slice(start, start + 50));
+    // Delivery can serve text while the proof migration rolls out.
+    if (error?.code === '42P01' || error?.code === 'PGRST205') return new Map();
     if (error) throw new Error('Could not verify published media');
-    for (const event of data ?? []) {
-      const entry = revisions.get(event.id);
-      if (!entry || entry.id !== event.entry_id) continue;
-      const manifest = eventManifest(event, entry);
-      if (manifest) manifests.set(entry.id, manifest);
+    for (const proof of data ?? []) {
+      const entry = revisions.get(proof.id);
+      if (
+        !entry ||
+        entry.id !== proof.entry_id ||
+        entry.published_at !== proof.published_at
+      )
+        continue;
+      manifests.set(entry.id, record(proof.asset_revisions));
     }
   }
 
-  // Legacy revisions have random event IDs. Give each entry its own lookup budget.
-  const legacy = [...revisions.values()].filter(
-    (entry) => !manifests.has(entry.id)
-  );
-  for (let start = 0; start < legacy.length; start += 8) {
-    await Promise.all(
-      legacy.slice(start, start + 8).map(async (entry) => {
-        const { data, error } = await publicEvents('entry_id,payload')
-          .eq('entry_id', entry.id)
-          .order('created_at', { ascending: false })
-          .limit(16);
-        if (error) throw new Error('Could not verify published media');
-        for (const event of data ?? []) {
-          if (event.entry_id !== entry.id) continue;
-          const manifest = eventManifest(event.payload, entry);
-          if (!manifest) continue;
-          manifests.set(entry.id, manifest);
-          break;
-        }
-      })
-    );
-  }
   return manifests;
 }
 

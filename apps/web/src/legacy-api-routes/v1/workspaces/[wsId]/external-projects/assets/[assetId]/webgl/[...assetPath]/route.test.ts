@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto';
+import { publicationEventId } from '@/lib/external-projects/published-assets';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -91,25 +92,29 @@ function createAdminWithAsset(
     : artifactMetadata;
   const updatedAt = '2026-11-20T09:00:00Z';
   const publishedAt = '2026-11-20T10:00:00Z';
+  const proofQuery = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: publicationEventId(
+            '123e4567-e89b-12d3-a456-426614174000',
+            'project-1',
+            'entry-1',
+            'publish',
+            publishedAt
+          ),
+          entry_id: 'entry-1',
+          published_at: publishedAt,
+          asset_revisions: { 'asset-1': updatedAt },
+        },
+      ],
+    }),
+  };
   return {
-    from: vi.fn((table: string) => ({
-      in: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockResolvedValue(
-        table === 'workspace_external_project_publish_events'
-          ? {
-              data: [
-                {
-                  entry_id: 'entry-1',
-                  payload: {
-                    assetPublicationAt: publishedAt,
-                    publishedAssetManifest: { 'asset-1': updatedAt },
-                  },
-                },
-              ],
-            }
-          : { data: [] }
-      ),
+    schema: () => ({ from: () => proofQuery }),
+    from: vi.fn(() => ({
       eq: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({
