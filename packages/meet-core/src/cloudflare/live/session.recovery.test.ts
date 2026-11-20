@@ -26,6 +26,8 @@ vi.mock('./finalize-billing', () => ({
 const origin = 'https://meet.example.test';
 const env = {
   MEET_AI_DISABLED: 'false',
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+  MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
   MEET_REALTIME_TOKEN_SECRET: 'synthetic-test-secret',
   NEXT_PUBLIC_APP_URL: origin,
 } as LiveEnvironment;
@@ -57,7 +59,7 @@ function fixture(): SavedSession {
       expiresAt: now + 3600_000,
     },
     identity: {
-      workspaceId: 'synthetic-workspace',
+      workspaceId: '00000000-0000-4000-8000-000000000004',
     } as SavedSession['identity'],
     timezone: 'UTC',
     sharedContext: '',
@@ -250,5 +252,53 @@ describe('durable disconnected recovery', () => {
     sockets[0]!.disconnect(1000);
     await h.drain();
     expect(h.saved().ended).toBe(true);
+  });
+
+  it('stops an active session on its next turn and tick once the workspace is denylisted', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    expect(mocks.connect).toHaveBeenCalledTimes(1);
+    const workspaceId = h.saved().identity.workspaceId!;
+    const gate = env as unknown as Record<string, string | undefined>;
+    gate.MEET_AI_DISABLED_WORKSPACE_IDS = workspaceId;
+    try {
+      sockets[0]!.dispatchEvent(
+        Object.assign(new Event('message'), {
+          data: JSON.stringify({ type: 'text', text: 'Synthetic turn' }),
+        })
+      );
+      await vi.waitFor(() => expect(h.saved().ended).toBe(true));
+      await h.drain();
+      expect(mocks.finalize).toHaveBeenCalled();
+      expect(sockets[0]!.send).toHaveBeenCalledWith(
+        expect.stringContaining('workspace_not_enabled')
+      );
+    } finally {
+      delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
+    }
+  });
+
+  it('ends on the next tick when the reviewed opt-in is withdrawn mid-session', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    const gate = env as unknown as Record<string, string | undefined>;
+    const optIn = gate.MEET_AI_ALL_WORKSPACES;
+    delete gate.MEET_AI_ALL_WORKSPACES;
+    try {
+      now += 20_000;
+      await object.alarm();
+      await h.drain();
+      expect(h.saved().ended).toBe(true);
+      expect(mocks.finalize).toHaveBeenCalled();
+      expect(mocks.connect).toHaveBeenCalledTimes(1);
+    } finally {
+      gate.MEET_AI_ALL_WORKSPACES = optIn;
+    }
   });
 });

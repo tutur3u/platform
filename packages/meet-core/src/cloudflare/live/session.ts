@@ -376,10 +376,11 @@ export class MeetLiveDurableObject {
     if (!parsed.success || !this.saved || this.saved.ended || this.stopping)
       return;
     const message = parsed.data;
-    if (message.type === 'stop') {
-      await this.stop();
-      return;
-    }
+    // Every client turn rechecks the full workspace gate; stop settles billing.
+    if (message.type === 'stop' || !this.allowed())
+      return this.stop(
+        message.type === 'stop' ? undefined : 'workspace_not_enabled'
+      );
     if (message.type === 'decision') {
       await this.decide(message.id, message.approved, message.text);
       return;

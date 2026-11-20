@@ -56,7 +56,11 @@ const selected = { filePath: 'solution.py', original: 'print(1)' };
 const sendToolResponse = vi.fn();
 const context = {
   saved,
-  env: { MEET_AI_DISABLED: 'false' } as LiveEnvironment,
+  env: {
+    MEET_AI_DISABLED: 'false',
+    MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+    MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
+  } as LiveEnvironment,
   provider: { sendToolResponse } as unknown as Session,
   archive: {} as LiveTurnArchive,
   emit: vi.fn(),

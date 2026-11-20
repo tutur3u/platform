@@ -1,4 +1,14 @@
-import type { MeetAiGateEnv } from '@tuturuuu/realtime/meet';
+import {
+  isMeetAiEnabledForWorkspace,
+  type MeetAiGateEnv,
+} from '@tuturuuu/realtime/meet';
+
+/**
+ * Private Live eligibility for a saved session: the kill switch, the full Meet
+ * AI workspace gate (protected ids, denylist, reviewed opt-in or allowlist) and
+ * the signed private grant. The session rechecks it on every client turn and
+ * every 20-second tick, and stops (settling billing) when it fails.
+ */
 
 export function liveWorkspaceAllowed(
   env: MeetAiGateEnv,
@@ -19,6 +29,7 @@ export function liveWorkspaceAllowed(
   const disabled = Reflect.get(env, 'MEET_AI_DISABLED');
   return (
     (disabled === 'false' || disabled === '0') &&
+    isMeetAiEnabledForWorkspace(session.identity.workspaceId, env) &&
     session.claims.mode === 'personal' &&
     session.claims.inputSource === 'private-microphone' &&
     !!session.identity.workspaceId &&

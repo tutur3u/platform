@@ -26,6 +26,8 @@ const claims = liveSessionClaimsSchema.parse({
 const identity = { isHost: true, workspaceId: id, displayName: 'Host' };
 const env = {
   MEET_AI_DISABLED: 'false',
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+  MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
   MEET_REALTIME_TOKEN_SECRET: 'synthetic-test-token-secret',
   MEET_REALTIME_URL: 'wss://fake-realtime.test',
 } as unknown as Parameters<typeof proposeQuizArenaAction>[0];
