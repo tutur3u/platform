@@ -3362,6 +3362,16 @@
       },
       "digest": "d7e9568a52ee88a7168bc7179839796832c1be85fa9a0a0b72ecea9e1ccb380b"
     },
+    "scripts/ci/release-relevant-ci.test.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/10f48a50c2999ea04be9314766b68eba44bd3c4b",
+        "reason": "The release-relevant CI classifier test uses a node_modules Wrangler package path as dependency-path data. It invokes no CLI and publishes nothing."
+      },
+      "digest": "c6fb6962a6bbd41ce2005019e3d93acb71535ea651bce7b2266082b9aabc8859"
+    },
     "scripts/ci/replay-parley-worker.py": {
       "lines": 16,
       "uses": 23,
