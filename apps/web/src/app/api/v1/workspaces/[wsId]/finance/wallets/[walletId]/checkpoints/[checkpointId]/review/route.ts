@@ -60,7 +60,7 @@ export async function PUT(request: Request, { params }: Context) {
     }
     if (error.code === 'PGRST202' || error.code === '42883') {
       return Response.json(
-        { message: 'Checkpoint reviews unavailable' },
+        { message: 'Checkpoint reviews are temporarily unavailable' },
         { status: 503 }
       );
     }

@@ -19,10 +19,14 @@ import {
 } from '@/lib/documents/payload';
 import {
   attachDocumentOwner,
-  documentColumns,
   type DocumentOwner,
   type WorkspaceDocumentRow,
 } from '@/lib/documents/present';
+import {
+  insertDocumentWithSchemaFallback,
+  restoreDocumentMetadata,
+  selectDocumentsWithSchemaFallback,
+} from '@/lib/documents/schema-fallback';
 
 interface Params {
   params: Promise<{
@@ -85,18 +89,21 @@ export async function GET(req: Request, { params }: Params) {
     : 50;
   const offset = Number.isFinite(parsedOffset) ? Math.max(parsedOffset, 0) : 0;
 
-  let query = sbAdmin
-    .from('workspace_documents')
-    .select(documentColumns(hierarchyEnabled), { count: 'exact' })
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  const {
+    result: { data, error, count },
+    legacy,
+  } = await selectDocumentsWithSchemaFallback(hierarchyEnabled, (columns) => {
+    let query = sbAdmin
+      .from('workspace_documents')
+      .select(columns, { count: 'exact' })
+      .eq('ws_id', wsId)
+      .order('created_at', { ascending: false });
 
-  if (search) {
-    query = query.ilike('name', `%${search}%`);
-  }
-
-  const { data, error, count } = await query;
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+    return query.range(offset, offset + limit - 1);
+  });
 
   if (error) {
     console.error('Error listing documents:', error.message);
@@ -107,7 +114,9 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   // documentColumns() is not a select literal, so the client types the rows as a parser error.
-  const rows = (data ?? []) as unknown as WorkspaceDocumentRow[];
+  const rows = ((data ?? []) as unknown as WorkspaceDocumentRow[]).map((row) =>
+    restoreDocumentMetadata(row, legacy)
+  );
   const ownerIds: string[] = [];
   const seenOwners = new Set<string>();
   for (const row of rows) {
@@ -206,15 +215,11 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data: doc, error } = await sbAdmin
-    .from('workspace_documents')
-    .insert({
-      ...data,
-      ws_id: wsId,
-      owner_id: user.id,
-    })
-    .select('id')
-    .single();
+  const { data: doc, error } = await insertDocumentWithSchemaFallback(
+    sbAdmin,
+    { ...data, ws_id: wsId },
+    user.id
+  );
 
   if (error) {
     console.error('Error creating document:', error.message);

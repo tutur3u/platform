@@ -16,9 +16,12 @@ export interface WorkspaceDocumentRow {
   position?: number | null;
 }
 
-export function documentColumns(hierarchyEnabled: boolean) {
-  const columns =
-    'id, name, content, is_public, created_at, updated_at, owner_id';
+export function documentColumns(
+  hierarchyEnabled: boolean,
+  includeMetadata = true
+) {
+  const base = 'id, name, content, is_public, created_at';
+  const columns = includeMetadata ? `${base}, updated_at, owner_id` : base;
   return hierarchyEnabled ? `${columns}, parent_id, position` : columns;
 }
 

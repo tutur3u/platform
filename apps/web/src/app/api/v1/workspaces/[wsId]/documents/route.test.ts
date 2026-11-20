@@ -265,3 +265,142 @@ describe('workspace document API boundary', () => {
     }
   );
 });
+
+describe('workspace document schema compatibility', () => {
+  const readRequest = new Request(
+    'https://example.test?search=road&limit=5&offset=10'
+  );
+  const createdAt = '2026-11-20T00:00:00Z';
+  const row = { id: 'document', name: 'Roadmap', created_at: createdAt };
+  const missingOwner = {
+    code: 'PGRST204',
+    message:
+      "Could not find the 'owner_id' column of 'workspace_documents' in the schema cache",
+  };
+
+  it.each([
+    { handler: GET, query: 'range', list: true, errorStatus: 500 },
+    { handler: detail, query: 'maybeSingle', list: false, errorStatus: 400 },
+  ] as const)(
+    'handles schema differences for $query',
+    async ({ handler, query, list, errorStatus }) => {
+      const terminal = mocks.query[query];
+      const current = {
+        ...row,
+        updated_at: '2026-11-21T00:00:00Z',
+        owner_id: 'actor',
+      };
+      const result = (document: typeof row) => ({
+        data: list ? [document] : document,
+        count: 37,
+        error: null,
+      });
+      terminal.mockResolvedValueOnce(result(current));
+      const currentResponse = await handler(readRequest, params);
+      const currentBody = await currentResponse.json();
+      expect(currentResponse.status).toBe(200);
+      expect(list ? currentBody.data[0] : currentBody.data).toMatchObject({
+        updated_at: current.updated_at,
+        owner_id: 'actor',
+        owner_is_viewer: true,
+      });
+      expect(terminal).toHaveBeenCalledTimes(1);
+      terminal.mockClear();
+
+      for (const error of [
+        { ...missingOwner, code: '42501' },
+        {
+          code: '42703',
+          message: 'column workspace_documents.parent_id does not exist',
+        },
+        {
+          code: 'PGRST200',
+          message: 'Could not find a relationship in the schema cache',
+        },
+      ]) {
+        terminal.mockResolvedValueOnce({ data: null, error });
+        expect((await handler(readRequest, params)).status).toBe(errorStatus);
+        expect(terminal).toHaveBeenCalledTimes(1);
+        terminal.mockClear();
+      }
+
+      mocks.enabled = true;
+      mocks.query.select.mockClear();
+      terminal
+        .mockResolvedValueOnce({
+          data: null,
+          error: {
+            code: list ? '42703' : 'PGRST200',
+            message: 'column workspace_documents.updated_at does not exist',
+          },
+        })
+        .mockResolvedValueOnce(result(row));
+      const legacyResponse = await handler(readRequest, params);
+      const legacyBody = await legacyResponse.json();
+      expect(legacyResponse.status).toBe(200);
+      expect(list ? legacyBody.data[0] : legacyBody.data).toMatchObject({
+        updated_at: createdAt,
+        owner_id: null,
+        owner: null,
+        owner_is_viewer: false,
+      });
+      expect(terminal).toHaveBeenCalledTimes(2);
+      const legacyProjection =
+        'id, name, content, is_public, created_at, parent_id, position';
+      if (list) {
+        expect(mocks.query.select).toHaveBeenLastCalledWith(legacyProjection, {
+          count: 'exact',
+        });
+        expect(mocks.query.range).toHaveBeenLastCalledWith(10, 14);
+        expect(mocks.query.ilike).toHaveBeenLastCalledWith('name', '%road%');
+        expect(legacyBody.pagination).toEqual({
+          limit: 5,
+          offset: 10,
+          filteredTotal: 37,
+        });
+      } else {
+        expect(mocks.query.select).toHaveBeenLastCalledWith(legacyProjection);
+      }
+    }
+  );
+
+  it('retries create once only for a missing owner column', async () => {
+    const create = () => POST(request({ name: 'Page' }, 'POST'), params);
+    expect((await create()).status).toBe(200);
+    expect(mocks.query.insert).toHaveBeenCalledExactlyOnceWith({
+      name: 'Page',
+      ws_id: 'workspace',
+      owner_id: 'actor',
+    });
+    mocks.query.insert.mockClear();
+
+    for (const error of [
+      { ...missingOwner, code: '42501' },
+      {
+        code: '42703',
+        message: 'column workspace_documents.updated_at does not exist',
+      },
+    ]) {
+      mocks.query.single.mockResolvedValueOnce({ data: null, error });
+      expect((await create()).status).toBe(500);
+      expect(mocks.query.insert).toHaveBeenCalledTimes(1);
+      mocks.query.insert.mockClear();
+    }
+
+    mocks.query.single.mockResolvedValueOnce({
+      data: null,
+      error: missingOwner,
+    });
+    const response = await create();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      id: 'document',
+      message: 'success',
+    });
+    expect(mocks.query.insert).toHaveBeenCalledTimes(2);
+    expect(mocks.query.insert).toHaveBeenLastCalledWith({
+      name: 'Page',
+      ws_id: 'workspace',
+    });
+  });
+});

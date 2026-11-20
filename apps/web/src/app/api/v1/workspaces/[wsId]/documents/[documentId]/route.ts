@@ -19,10 +19,13 @@ import {
 } from '@/lib/documents/payload';
 import {
   attachDocumentOwner,
-  documentColumns,
   type DocumentOwner,
   type WorkspaceDocumentRow,
 } from '@/lib/documents/present';
+import {
+  restoreDocumentMetadata,
+  selectDocumentsWithSchemaFallback,
+} from '@/lib/documents/schema-fallback';
 
 interface Params {
   params: Promise<{
@@ -139,12 +142,17 @@ export async function GET(request: Request, { params }: Params) {
     auth.wsId,
     'ENABLE_DOCUMENT_HIERARCHY'
   );
-  const { data, error } = await sbAdmin
-    .from('workspace_documents')
-    .select(documentColumns(hierarchyEnabled))
-    .eq('id', documentId)
-    .eq('ws_id', auth.wsId)
-    .maybeSingle();
+  const {
+    result: { data, error },
+    legacy,
+  } = await selectDocumentsWithSchemaFallback(hierarchyEnabled, (columns) =>
+    sbAdmin
+      .from('workspace_documents')
+      .select(columns)
+      .eq('id', documentId)
+      .eq('ws_id', auth.wsId)
+      .maybeSingle()
+  );
 
   if (error) {
     console.error('Error loading document:', error.message);
@@ -152,11 +160,12 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   // documentColumns() is not a select literal, so the client types the row as a parser error.
-  const document = data as unknown as WorkspaceDocumentRow | null;
-  if (!document) {
+  const row = data as unknown as WorkspaceDocumentRow | null;
+  if (!row) {
     return NextResponse.json({ error: 'Document not found' }, { status: 404 });
   }
 
+  const document = restoreDocumentMetadata(row, legacy);
   const owners = await loadViewerDocumentOwner(
     auth.supabase,
     document.owner_id
