@@ -1,45 +1,89 @@
 ---
-title: "Contacts cutover state"
-description: "What exists for Contacts on Start + Void, what does not, and the Vercel rollback that stays in force."
-updatedAt: "2026-11-09"
+title: "Contacts Start Worker qualification"
+description: "Build, verify and hand off the Contacts Worker for controlled Cloudflare cutover."
+updatedAt: "2026-11-20"
 audience: developers
 ---
 
-Contacts (`apps/contacts`) hosts tutoring workspaces that a customer uses daily.
-Vercel remains its production runtime. This page records the state so that nobody
-mistakes the candidate for a cutover-ready app.
+Vercel is the Contacts production origin while publication is held in
+`tuturuuu.ci.ts`. The Contacts native workflow qualifies a route-free production
+artifact for `tuturuuu-contacts`. It has no provider credentials or publish job.
+The hold also freezes new Vercel Contacts deployments.
 
-## State
+## Routes and ownership
 
-| Item | State |
+The [staging candidate census](/build/devops/contacts-start-candidate) from
+[run 43805055297](https://github.com/tutur3u/platform/actions/runs/43805055297)
+records 40 App Router pages, 87 API routes, two Web rewrites, a Web API fallback,
+a workspace redirect, a static asset and the candidate probe. The native
+registries cover the app's current pages and route handlers and are checked
+against the source tree in CI.
+
+Contacts serves tutoring, student and group reports, periodic reports, and local
+feedback and auth handlers on both the subdomain and the `/contacts` mount. Web
+owns workspace invitations, permission settings, workspace billing, and the
+contact billing API at `/api/v1/workspaces/[wsId]/users/[userId]/billing`. The
+Contacts router retains the method-specific topic announcement split in its
+proxy. Contact billing and account-link APIs follow their existing Web release
+process.
+
+The apex mount consumes the central session with request-local authorization.
+The bridge limits mounted cookies to the locale and shared access identity,
+strips provider refresh tokens, and scopes locale writes to `/contacts`. App
+session mint and refresh endpoints return 409 on the mount. The native runtime
+keeps build identity behind the existing Contacts API guard.
+
+## Build and artifact
+
+The `Contacts Cloudflare Source` workflow stamps and builds the exact checkout
+with the production public Supabase URL and publishable key. It checks the
+route registries, app tests, native types and formatting, validates the emitted
+configuration, and executes the same dual-host workerd suite on the build and
+a fresh restore. Take `contacts-native-<40-character SHA>` only from a run whose
+restore job passed. Verify the archive digest and the config and file hashes
+against its sealed receipt before handing it to the routing owner.
+
+The emitted config owns the worker-first `ASSETS` binding. Both public preview
+host types are disabled. At runtime, configure `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the same project as the build and
+supply `SUPABASE_SECRET_KEY` and `TUTURUUU_APP_COORDINATION_SECRET` through the
+Worker secret store. Verify they match the intended tier and coordinate the
+app-session signing key with the issuer. Provide the existing proxy rate-limit
+store through `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+The route table and central API
+origin come from the sealed production profile. The Worker has no scheduled
+triggers, queues, storage bindings or app-origin retry loop.
+
+## Signed-in acceptance plan
+
+Use the fleet's disposable Contacts identity and an isolated workspace with
+tutoring, reports and billing read access. Run the checks against an admitted
+native staging target before cutover and repeat them immediately after the
+flip on the subdomain and apex mount. Use a second member without the relevant
+workspace permissions as a negative control. Capture the source SHA and
+`x-tuturuuu-runtime: native` from the admitted deployment.
+
+| Surface | Check |
 | --- | --- |
-| Native source | None for customer pages. `cloudflare/` holds the default-off [staging candidate](/build/devops/contacts-start-candidate): a fail-closed Worker whose only native route is the inert `/__contacts1` probe. Every page, route handler and asset is forwarded to a Next staging origin |
-| Conversion | The [codemod](/build/devops/start-bridge-codemod) reports 40 of 40 pages on the generic adapter. It conflicts with the candidate's hand-written `vite.config.mts` and `cloudflare/worker.ts` (`--adopt` replaces them), so conversion is a separate change that retires the candidate and its CI |
-| Production | Vercel, no Worker, no route, no DNS change. Last verified deployment source: `e970` (8 Nov), READY, anonymous homepage and login `200`. Customer record behavior is not verified |
-| Reports | `/users/reports` stays on the Next build and must keep working through any future cutover |
+| Session | Sign in through Web, reload a deep link, check session refresh and the required MFA path. On the apex, reuse the Web session and inspect responses for app-session or Supabase cookie writes. Read the exact SHA from the guarded `/api/build-info`. |
+| Locale | Open each primary page in EN and VI, reload it, and verify titles, navigation and browser hydration. Explicit locale paths retain the query on the canonical redirect. |
+| Tutoring | Open `/[wsId]/users/tutoring`, load the seeded sessions, open the fixture session and verify permission-gated controls. Confirm a member without tutoring access cannot read the same workspace data. |
+| Billing | Open the fixture contact's Billing & Growth tab in `/[wsId]/users/database/[userId]`. Check the Web-owned read through both ingress paths and the redirect from `/[wsId]/billing` to the Web billing page. |
+| Reports | Open `/[wsId]/users/reports`, a seeded report detail and `/[wsId]/reports`. Compare the report, status and preview with the fixture baseline. Verify that unauthorized reads fail. |
 
-## Cutover packet (not ready)
-
-Do not attach a route for Contacts from the candidate. The candidate Worker answers
-`503` unless `CONTACTS_START_CANDIDATE=staging` on the exact staging origin, and
-forwards to Next, so it would add a hop in front of Vercel with no cost saving.
-A real cutover needs the native conversion, the sealed artifact, signed-in staging
-acceptance of tutoring, feedback, billing and `/users/reports`, and a production
-profile (Worker name, host, bindings and secret names, as in
-[Finance](/build/devops/finance-start-void)).
+Use seeded reads and previews during cutover smoke. Keep credentials, raw
+cookies and customer identifiers out of the evidence. Record host, locale,
+source, route, request status and outcome in the private release receipt signed
+by the fleet operator. Feature writes with external effects require a separate
+disposable acceptance run.
 
 ## Rollback
 
-Nothing has been switched, so the production rollback is unchanged: the immutable
-Vercel deployment already serving `contacts` stays in place. Any future cutover
-captures the current Vercel deployment id, source SHA and DNS record before the
-flip and rolls back by removing only the Contacts Worker route.
-
-## Smoke (current Vercel production)
-
-```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://contacts.tuturuuu.com/        # 200
-curl -s -o /dev/null -w '%{http_code}\n' https://contacts.tuturuuu.com/login   # 200
-```
-
-Signed-in checks of `/users/reports` use a disposable workspace, never customer data.
+Before routing changes, record the live Vercel deployment ID and source SHA,
+the exact subdomain route and DNS/TLS settings, and the current Gateway mount
+mapping. Confirm the retained Vercel target still answers. Prepare one
+operator action to restore that captured routing and verify that it restores
+both ingress paths to their pre-cutover owners. Keep the prior deployment through
+one release cycle. During the 30–60 minute watch, roll back immediately on a
+failed smoke check, authentication loop, or regression in errors or latency.
+See the [native migration runbook](/build/devops/native-start-migration#rollback).

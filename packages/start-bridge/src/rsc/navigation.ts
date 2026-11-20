@@ -1,4 +1,8 @@
-import { notFound as startNotFound } from '@tanstack/router-core';
+import {
+  isNotFound,
+  isRedirect,
+  notFound as startNotFound,
+} from '@tanstack/router-core';
 import { bridgeRedirect } from '../start/absolute-redirect';
 
 /**
@@ -16,6 +20,15 @@ export function permanentRedirect(href: string): never {
 }
 export function notFound(): never {
   throw startNotFound();
+}
+// Route handlers can catch ordinary failures without swallowing router control flow.
+export function unstable_rethrow(error: unknown): void {
+  const seen = new Set();
+  while (error && typeof error === 'object' && !seen.has(error)) {
+    if (isRedirect(error) || isNotFound(error)) throw error;
+    seen.add(error);
+    error = error instanceof Error ? error.cause : undefined;
+  }
 }
 function clientOnly(name: string) {
   return () => {

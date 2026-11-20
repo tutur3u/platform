@@ -13,9 +13,10 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true
   },
+  "exclude": ["cloudflare/worker.ts", "cloudflare/native-profile.ts"],
   "include": [
     "cloudflare",
-    "vite.config.mts",
+    "vite.candidate.config.mts",
     "e2e-staging",
     "playwright.staging.config.ts"
   ]

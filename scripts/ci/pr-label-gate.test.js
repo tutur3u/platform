@@ -49,6 +49,7 @@ const PROTECTED_TRIGGERS = {
   'codeql.yml': '18bb4fc8f0bc2cef',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
+  'contacts-cloudflare.yaml': 'b03cea743647b52d',
   'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',
   'coordination-cloudflare.yaml': 'a1db663f5d528748',
   'creator-identity-contract.yaml': '0a3cc2c97958f5cd',

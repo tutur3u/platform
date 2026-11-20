@@ -159,6 +159,7 @@ export const ci = {
   'teach-cloudflare.yaml': true,
   'marketing-cloudflare.yaml': true,
   'workspace-cloudflare.yaml': true,
+  'contacts-cloudflare.yaml': true,
 };
 
 // Production planner deny-list, keyed by app id. A listed app resolves
@@ -257,4 +258,5 @@ export const productionPublicationPolicy = {
     surfaces: ['frontend'],
   },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },
+  contacts: { state: 'held', reason: 'held for wave-2 cutover' },
 } satisfies ProductionPublicationPolicy;

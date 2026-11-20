@@ -10,7 +10,7 @@ export default defineConfig({
   },
   cloudflare: {
     name: 'tuturuuu-contacts-start-candidate',
-    main: './worker.ts',
+    main: './candidate-worker.ts',
     compatibility_date: '2026-10-19',
     compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     workers_dev: false,

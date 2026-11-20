@@ -741,7 +741,7 @@ test('Cloudflare Source, docs, Test and Type Check coalesce main pushes without 
     .sort();
   assert.ok(files.includes('finance-cloudflare.yaml'));
   assert.ok(files.includes('nova-cloudflare.yaml'));
-  assert.equal(files.length, 23);
+  assert.equal(files.length, 24);
   files.push('docs-seo-check.yaml', 'turbo-unit-tests.yaml', 'type-check.yaml');
   for (const file of files) {
     // The active main run always finishes; a newer push replaces only the

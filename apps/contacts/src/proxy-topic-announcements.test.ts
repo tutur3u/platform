@@ -5,12 +5,13 @@ const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
   guard: vi.fn(),
   propagate: vi.fn(),
+  hasWebSession: vi.fn(),
 }));
 vi.mock('@tuturuuu/auth/app-session', () => ({
   clearSupabaseAuthCookies: (_request: unknown, response: unknown) => response,
   getAppSessionClaimsFromRequest: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
-  hasWebAppSessionTokenFromRequest: vi.fn(),
+  hasWebAppSessionTokenFromRequest: mocks.hasWebSession,
 }));
 vi.mock('@tuturuuu/auth/proxy', () => ({
   appSessionFailureResponse: () =>
@@ -122,5 +123,46 @@ describe('topic read ownership preserves the mutation fallback', () => {
     );
     expect(result.status).toBe(429);
     expect(result.headers.get('x-middleware-rewrite')).toBeNull();
+  });
+});
+
+describe('workspace redirects stay on Web', () => {
+  it.each([
+    ['https://contacts.tuturuuu.com', ''],
+    ['https://tuturuuu.com', '/contacts'],
+  ])('rejects an ambiguous leading path on %s', async (origin, basePath) => {
+    mocks.hasWebSession.mockReturnValue(true);
+    mocks.refresh.mockResolvedValue({
+      ok: true,
+      claims: { sub: 'fixture' },
+      response: NextResponse.next(),
+    });
+    const result = await proxy(
+      new NextRequest(`${origin}${basePath}//foreign-host/workspace/billing`, {
+        nextConfig: { basePath },
+      })
+    );
+    expect(result.status).toBe(400);
+    expect(result.headers.get('location')).toBeNull();
+  });
+
+  it('preserves a Web-owned workspace path and query from the apex mount', async () => {
+    mocks.hasWebSession.mockReturnValue(true);
+    mocks.refresh.mockResolvedValue({
+      ok: true,
+      claims: { sub: 'fixture' },
+      response: NextResponse.next(),
+    });
+    const result = await proxy(
+      new NextRequest(
+        'https://tuturuuu.com/contacts/workspace/billing?tab=history',
+        { nextConfig: { basePath: '/contacts' } }
+      )
+    );
+    expect(result.status).toBe(307);
+    const target = new URL(result.headers.get('location') ?? '');
+    expect(target.pathname + target.search).toBe(
+      '/workspace/billing?tab=history'
+    );
   });
 });

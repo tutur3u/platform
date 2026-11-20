@@ -16,6 +16,10 @@ import {
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import {
+  OUTSIDE_APP_LOCATION_HEADER,
+  prefixBase,
+} from '@tuturuuu/start-bridge/base-path';
+import {
   guardApiProxyRequest,
   hasAuthenticatedBearerToken,
 } from '@tuturuuu/utils/api-proxy-guard';
@@ -143,13 +147,23 @@ function getNonMigratedWorkspaceRedirect(request: NextRequest) {
   const subSegments = segments.slice(1);
   if (isContactsOwnedWorkspaceRoute(subSegments)) return null;
 
-  return NextResponse.redirect(
-    new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, WEB_APP_URL)
+  return redirectToWeb(
+    request,
+    `/${segments.join('/')}${request.nextUrl.search}`
   );
 }
 
-function getLoginPath() {
-  return '/login';
+function redirectToWeb(request: NextRequest, path: string) {
+  const web = new URL(WEB_APP_URL);
+  const url = new URL(path, web);
+  if (url.origin !== web.origin) {
+    return new NextResponse('Invalid workspace path', { status: 400 });
+  }
+  const response = NextResponse.redirect(url);
+  if (request.nextUrl.basePath && url.origin === request.nextUrl.origin) {
+    response.headers.set(OUTSIDE_APP_LOCATION_HEADER, url.href);
+  }
+  return response;
 }
 
 function getNextValue(request: NextRequest) {
@@ -180,7 +194,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   if (!pathLocale) return null;
 
   const url = new URL(request.url);
-  url.pathname = stripLocale(request.nextUrl.pathname);
+  url.pathname = prefixBase(
+    stripLocale(request.nextUrl.pathname),
+    request.nextUrl.basePath
+  );
 
   const response = NextResponse.redirect(url);
   setLocaleCookie(response, request, pathLocale);
@@ -191,9 +208,7 @@ function getSharedUserProfileRedirect(request: NextRequest) {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   if (!unlocalizedPath.startsWith('/shared/user-profile/')) return null;
 
-  return NextResponse.redirect(
-    new URL(`${unlocalizedPath}${request.nextUrl.search}`, WEB_APP_URL)
-  );
+  return redirectToWeb(request, `${unlocalizedPath}${request.nextUrl.search}`);
 }
 
 function shouldForwardTopicAnnouncementRequest(
@@ -210,6 +225,10 @@ function shouldForwardTopicAnnouncementRequest(
 }
 
 async function handleProxy(request: NextRequest): Promise<NextResponse> {
+  if (request.nextUrl.pathname.startsWith('//')) {
+    return new NextResponse('Invalid workspace path', { status: 400 });
+  }
+
   if (request.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -329,7 +348,10 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
 
     if (!hasSatelliteSession) {
-      const url = new URL(getLoginPath(), request.url);
+      const url = new URL(
+        prefixBase('/login', request.nextUrl.basePath),
+        request.url
+      );
       const next = getNextValue(request);
 
       if (next) url.searchParams.set('next', next);

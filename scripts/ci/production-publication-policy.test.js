@@ -30,6 +30,7 @@ const apps = [
   'git',
   'shortener',
   'mastermind',
+  'contacts',
 ];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [

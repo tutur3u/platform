@@ -25,6 +25,7 @@ const protectedSurfaces = {
   git: ['frontend'],
   // Wave 2: held until a reviewed Start + Void cutover admits it.
   shortener: ['frontend'],
+  contacts: ['frontend'],
 } as const;
 
 type ProtectedApp = keyof typeof protectedSurfaces;

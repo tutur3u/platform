@@ -25,6 +25,7 @@ const scopedCallers = {
     jobs: ['validate', 'restored-artifact'],
   },
   'web-start-candidate.yaml': { app: 'web', jobs: ['candidate'] },
+  'contacts-cloudflare.yaml': { app: 'contacts', jobs: ['native'] },
   'contacts-start-candidate.yaml': { app: 'contacts', jobs: ['candidate'] },
 };
 

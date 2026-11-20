@@ -44,6 +44,7 @@ const HEAVY_PR_WORKFLOWS = [
   'codeql.yml',
   'colab-cloudflare.yaml',
   'connected-mail-accounts-contract.yaml',
+  'contacts-cloudflare.yaml',
   'contacts-start-candidate.yaml',
   'coordination-cloudflare.yaml',
   'creator-identity-contract.yaml',
