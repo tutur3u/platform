@@ -28,6 +28,13 @@ export const CHAT_CONVERSATION_TYPE_FILTERS = [
   'ai',
 ] as const satisfies ChatConversationType[];
 
+const POSTGRES_UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+export function isPostgresUuid(value: string | null): value is string {
+  return Boolean(value && POSTGRES_UUID_PATTERN.test(value));
+}
+
 export type PendingChatSendRequest = {
   fingerprint: string;
   requestId: string;
@@ -42,6 +49,7 @@ export function resolvePendingChatSendRequest(
       sizeBytes?: number | null;
     }>;
     content: string;
+    replyToMessageId?: string;
   },
   createRequestId: () => string
 ): PendingChatSendRequest {
@@ -52,6 +60,7 @@ export function resolvePendingChatSendRequest(
       sizeBytes: attachment.sizeBytes,
     })),
     content: payload.content,
+    replyToMessageId: payload.replyToMessageId,
   });
 
   return previous?.fingerprint === fingerprint

@@ -19,16 +19,16 @@ import {
   sendWorkspaceChatMessageStream,
   toggleWorkspaceChatReaction,
 } from '@tuturuuu/internal-api';
+import { type ChatMessagesPage, patchCachedMessages } from './message-cache';
 import { chatQueryKeys } from './query-keys';
 
 const DEFAULT_CHAT_MESSAGES_LIMIT = 80;
 
-export interface ChatMessagesPage {
-  hasMore: boolean;
-  limit: number;
-  messages: ChatMessage[];
-  nextBefore: string | null;
-}
+export {
+  type ChatMessagesPage,
+  flattenChatMessagePages,
+  patchCachedMessages,
+} from './message-cache';
 
 export function useChatMessages({
   conversationId,
@@ -67,8 +67,12 @@ export function useInfiniteChatMessages({
     string | null
   >({
     enabled: Boolean(conversationId),
-    getNextPageParam: (lastPage) =>
-      lastPage.hasMore ? (lastPage.nextBefore ?? undefined) : undefined,
+    getNextPageParam: (lastPage, _pages, _lastPageParam, pageParams) => {
+      const nextBefore = lastPage.nextBefore;
+      return lastPage.hasMore && nextBefore && !pageParams.includes(nextBefore)
+        ? nextBefore
+        : undefined;
+    },
     initialPageParam: null as string | null,
     queryFn: async ({ pageParam }) => {
       const messages = await listWorkspaceChatConversationMessages(
@@ -89,10 +93,6 @@ export function useInfiniteChatMessages({
     ),
     staleTime: 5_000,
   });
-}
-
-export function flattenChatMessagePages(data?: InfiniteData<ChatMessagesPage>) {
-  return [...(data?.pages ?? [])].reverse().flatMap((page) => page.messages);
 }
 
 export function useSendChatMessage({
@@ -351,44 +351,6 @@ function patchCachedMessage(
 ) {
   patchCachedMessages(queryClient, wsId, message.conversationId, (current) =>
     current.map((item) => (item.id === message.id ? message : item))
-  );
-}
-
-export function patchCachedMessages(
-  queryClient: QueryClient,
-  wsId: string,
-  conversationId: string,
-  updater: (messages: ChatMessage[]) => ChatMessage[]
-) {
-  queryClient.setQueriesData<ChatMessage[]>(
-    {
-      queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
-    },
-    (current = []) => updater(current)
-  );
-  queryClient.setQueriesData<InfiniteData<ChatMessagesPage>>(
-    {
-      queryKey: [
-        ...chatQueryKeys.all(wsId),
-        'messages-infinite',
-        conversationId,
-      ],
-    },
-    (current) => {
-      if (!current) return current;
-
-      const limit = current.pages[0]?.limit ?? DEFAULT_CHAT_MESSAGES_LIMIT;
-      return {
-        ...current,
-        pageParams: [null],
-        pages: [
-          createChatMessagesPage(
-            updater(flattenChatMessagePages(current)),
-            limit
-          ),
-        ],
-      };
-    }
   );
 }
 

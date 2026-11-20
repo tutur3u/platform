@@ -1,7 +1,7 @@
 'use client';
 
-import { LoaderCircle, Paperclip, Send } from '@tuturuuu/icons';
-import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
+import { LoaderCircle, Paperclip, Send, X } from '@tuturuuu/icons';
+import type { ChatAttachmentDraft, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
@@ -9,6 +9,7 @@ import {
   type DragEvent,
   type FormEvent,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -16,6 +17,7 @@ import { Button } from '../button';
 import { toast } from '../sonner';
 import { Textarea } from '../textarea';
 import { ComposerAttachmentChip } from './composer-attachment-chip';
+import { MessageReplyPreview } from './message-reply-quote';
 import { formatFileSize } from './utils';
 
 const MAX_COMPOSER_ATTACHMENTS = 20;
@@ -23,16 +25,21 @@ const MAX_COMPOSER_ATTACHMENTS = 20;
 // finds out before the upload instead of after it.
 const MAX_ATTACHMENT_BYTES = 100 * 1024 * 1024;
 
+export interface ChatMessageDraft {
+  attachments: ChatAttachmentDraft[];
+  content: string;
+  replyToMessageId?: string;
+}
+
 interface MessageComposerProps {
   allowAttachments?: boolean;
   disabled?: boolean;
   isSending?: boolean;
   isUploading?: boolean;
-  onSend: (payload: {
-    attachments: ChatAttachmentDraft[];
-    content: string;
-  }) => Promise<void> | void;
+  onCancelReply: () => void;
+  onSend: (payload: ChatMessageDraft) => Promise<void> | void;
   onUploadFile: (file: File) => Promise<ChatAttachmentDraft>;
+  replyTo?: { id: string; message?: ChatMessage };
 }
 
 export function MessageComposer({
@@ -40,11 +47,19 @@ export function MessageComposer({
   disabled,
   isSending,
   isUploading,
+  onCancelReply,
   onSend,
   onUploadFile,
+  replyTo,
 }: MessageComposerProps) {
   const t = useTranslations('chat');
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const replyToMessageId = replyTo?.id;
+
+  useLayoutEffect(() => {
+    if (replyToMessageId) textareaRef.current?.focus();
+  }, [replyToMessageId]);
   const [content, setContent] = useState('');
   const [attachments, setAttachments] = useState<ChatAttachmentDraft[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
@@ -76,7 +91,10 @@ export function MessageComposer({
   }
 
   const busy = disabled || isSending || isUploading || uploadingCount > 0;
-  const canSend = content.trim().length > 0 || attachments.length > 0;
+  const replyUnavailable =
+    replyTo && (!replyTo.message || replyTo.message.deletedAt);
+  const canSend =
+    !replyUnavailable && (content.trim().length > 0 || attachments.length > 0);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -93,6 +111,7 @@ export function MessageComposer({
       await onSend({
         attachments: draftAttachments,
         content: draftContent,
+        ...(replyToMessageId ? { replyToMessageId } : {}),
       });
     } catch {
       setContent(draftContent);
@@ -227,6 +246,26 @@ export function MessageComposer({
           {t('drop_files_here')}
         </div>
       )}
+      {replyTo && (
+        <div className="mb-2 flex items-center justify-between gap-2 rounded-sm border-s-2 bg-muted/40 px-2 py-1 text-xs">
+          <div aria-live="polite" className="min-w-0">
+            <MessageReplyPreview draft message={replyTo.message} />
+          </div>
+          <Button
+            aria-label={t('cancel_reply')}
+            className="size-7 shrink-0"
+            onClick={() => {
+              onCancelReply();
+              textareaRef.current?.focus();
+            }}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
+        </div>
+      )}
       {attachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2">
           {attachments.map((attachment) => (
@@ -287,6 +326,7 @@ export function MessageComposer({
           }}
           onPaste={handlePaste}
           placeholder={t('message_placeholder')}
+          ref={textareaRef}
           value={content}
         />
         <Button

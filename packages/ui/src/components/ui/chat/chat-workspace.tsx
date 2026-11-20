@@ -3,19 +3,18 @@
 import { Plus } from '@tuturuuu/icons';
 import type {
   ChatAttachment,
-  ChatAttachmentDraft,
   ChatConversation,
   ChatMessage,
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge } from '../badge';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../button';
 import { toast } from '../sonner';
 import { ChatAgentDetailsSidebar } from './chat-agent-details-sidebar';
 import { ChatAiDetailsSidebar } from './chat-ai-details-sidebar';
+import { ChatConversationThread } from './chat-conversation-thread';
 import { ChatExternalContextSidebar } from './chat-external-context-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
@@ -34,13 +33,10 @@ import {
   useInfiniteChatMessages,
   useMarkChatConversationRead,
   useOpenChatAttachment,
-  useSendChatMessage,
   useToggleChatReaction,
   useUpdateChatConversation,
   useUploadChatAttachment,
 } from './hooks';
-import { MessageComposer } from './message-composer';
-import { MessageList } from './message-list';
 import { type ChatDetailsTarget, replaceChatSelection } from './selection';
 import {
   CHAT_CONVERSATION_TYPE_FILTERS,
@@ -52,11 +48,10 @@ import {
   getChatSelectionStorageKey,
   getChatSourceGroupStorageKey,
   getConversationTitle,
+  isPostgresUuid,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
-  type PendingChatSendRequest,
   resolveChatConversationSelection,
-  resolvePendingChatSendRequest,
 } from './utils';
 
 interface ChatWorkspaceProps {
@@ -98,7 +93,6 @@ export function ChatWorkspace({
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
-  const pendingSendRequest = useRef<PendingChatSendRequest | null>(null);
   const requestedScope = searchParams.get('scope');
   const conversationScope =
     enforcedConversationScope ??
@@ -201,12 +195,6 @@ export function ChatWorkspace({
         fetchedMessages,
         selectedConversation?.latestMessage
       );
-  const sendMessage = useSendChatMessage({
-    conversationId: activeConversationId,
-    currentUserId,
-    streamAssistant: selectedAiConversation,
-    wsId,
-  });
   const deleteConversation = useDeleteChatConversation(wsId);
   const updateConversation = useUpdateChatConversation(wsId);
   const generateConversationTitle = useGenerateChatConversationTitle(wsId);
@@ -329,35 +317,6 @@ export function ChatWorkspace({
         group: t('group_chat'),
       })
     : t('title');
-
-  async function handleSend(payload: {
-    attachments: ChatAttachmentDraft[];
-    content: string;
-  }) {
-    pendingSendRequest.current = resolvePendingChatSendRequest(
-      pendingSendRequest.current,
-      payload,
-      () => crypto.randomUUID()
-    );
-    const requestId = pendingSendRequest.current.requestId;
-    try {
-      const result = await sendMessage.mutateAsync({
-        attachments: payload.attachments,
-        clientRequestId: requestId,
-        content: payload.content,
-      });
-      if (pendingSendRequest.current?.requestId === requestId) {
-        pendingSendRequest.current = null;
-      }
-
-      if (result.assistantError) {
-        toast.error(t('assistant_response_failed'));
-      }
-    } catch (error) {
-      toast.error(t('message_send_failed'));
-      throw error;
-    }
-  }
 
   async function handleOpenAttachment(attachment: ChatAttachment) {
     try {
@@ -582,58 +541,31 @@ export function ChatWorkspace({
         />
 
         {selectedConversation ? (
-          <>
-            <MessageList
-              currentUserId={currentUserId}
-              hasMoreMessages={messagesQuery.hasNextPage}
-              isLoading={messagesQuery.isLoading}
-              isLoadingMoreMessages={messagesQuery.isFetchingNextPage}
-              isAgentTyping={
-                (selectedAiConversation && sendMessage.isPending) ||
-                Boolean(
-                  selectedExternalConversation &&
-                  activeConversationId &&
-                  realtime.typingConversationIds.has(activeConversationId)
-                )
-              }
-              messages={messages}
-              onDeleteMessage={handleDeleteMessage}
-              onLoadMoreMessages={() => messagesQuery.fetchNextPage()}
-              onOpenAttachment={handleOpenAttachment}
-              onToggleReaction={
-                selectedReadOnly || selectedAiConversation
-                  ? undefined
-                  : (messageId, emoji) =>
-                      toggleReaction.mutate({ emoji, messageId })
-              }
-              readOnly={selectedReadOnly}
-              typingLabel={
-                selectedExternalConversation
-                  ? t('external_visitor_typing')
-                  : undefined
-              }
-              wsId={wsId}
-            />
-            {selectedReadOnly ? (
-              <div className="flex items-center justify-between gap-3 border-t bg-muted/25 px-4 py-3 text-sm">
-                <span className="text-muted-foreground">
-                  {t('read_only_conversation')}
-                </span>
-                {selectedAgentReadOnly ? (
-                  <Badge variant="secondary">{t('agent_channel')}</Badge>
-                ) : null}
-              </div>
-            ) : (
-              <MessageComposer
-                allowAttachments
-                disabled={!activeConversationId}
-                isSending={sendMessage.isPending}
-                isUploading={uploadAttachment.isPending}
-                onSend={handleSend}
-                onUploadFile={(file) => uploadAttachment.mutateAsync(file)}
-              />
+          <ChatConversationThread
+            conversationId={selectedConversation.id}
+            currentUserId={currentUserId}
+            hasMoreMessages={messagesQuery.hasNextPage}
+            isAgentReadOnly={selectedAgentReadOnly}
+            isAiConversation={selectedAiConversation}
+            isLoading={messagesQuery.isLoading}
+            isLoadingMoreMessages={messagesQuery.isFetchingNextPage}
+            isTyping={Boolean(
+              selectedExternalConversation &&
+              realtime.typingConversationIds.has(selectedConversation.id)
             )}
-          </>
+            isUploading={uploadAttachment.isPending}
+            key={JSON.stringify([wsId, currentUserId, selectedConversation.id])}
+            messages={messages}
+            onDeleteMessage={handleDeleteMessage}
+            onLoadMoreMessages={messagesQuery.fetchNextPage}
+            onOpenAttachment={handleOpenAttachment}
+            onToggleReaction={(messageId, emoji) =>
+              toggleReaction.mutate({ emoji, messageId })
+            }
+            onUploadFile={uploadAttachment.mutateAsync}
+            readOnly={selectedReadOnly}
+            wsId={wsId}
+          />
         ) : (
           <EmptyConversationState
             onCreate={
@@ -719,11 +651,4 @@ function mergeConversationLatestMessage(
 function readChatMessageTimestamp(value: string) {
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) ? timestamp : 0;
-}
-
-const POSTGRES_UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
-
-function isPostgresUuid(value: string | null): value is string {
-  return Boolean(value && POSTGRES_UUID_PATTERN.test(value));
 }

@@ -6,19 +6,61 @@ import { getChatMessageDisplayContent } from './external-message-content';
 import { getChatMessageSenderLabel } from './utils';
 
 export function MessageReplyQuote({
+  isSearching,
   message,
   onJump,
 }: {
-  message: ChatMessage | undefined;
-  onJump: () => void;
+  isSearching?: boolean;
+  message?: ChatMessage;
+  onJump?: () => void;
+}) {
+  const t = useTranslations('chat');
+
+  if (!onJump) {
+    return (
+      <p className="border-s-2 ps-2 text-muted-foreground text-xs">
+        {t('original_message_unavailable')}
+      </p>
+    );
+  }
+
+  return (
+    <button
+      aria-busy={isSearching || undefined}
+      className="block w-fit max-w-full rounded-sm border-s-2 bg-muted/40 px-2 py-1 text-start text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
+      onClick={onJump}
+      type="button"
+    >
+      {message ? (
+        <>
+          <span className="sr-only">{t('jump_to_original_message')} </span>
+          <MessageReplyPreview message={message} />
+        </>
+      ) : (
+        <span className="text-muted-foreground">
+          {t(
+            isSearching ? 'loading_older_messages' : 'jump_to_original_message'
+          )}
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function MessageReplyPreview({
+  draft,
+  message,
+}: {
+  draft?: boolean;
+  message?: ChatMessage;
 }) {
   const t = useTranslations('chat');
 
   if (!message) {
     return (
-      <p className="border-s-2 ps-2 text-muted-foreground text-xs">
+      <span className="text-muted-foreground">
         {t('original_message_unavailable')}
-      </p>
+      </span>
     );
   }
 
@@ -33,16 +75,13 @@ export function MessageReplyQuote({
       (message.attachments.length ? t('attachment') : '');
 
   return (
-    <button
-      className="block w-fit max-w-full rounded-sm border-s-2 bg-muted/40 px-2 py-1 text-start text-xs hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"
-      onClick={onJump}
-      type="button"
-    >
-      <span className="sr-only">{t('jump_to_original_message')} </span>
-      <span className="block truncate font-medium">{sender}</span>
+    <>
+      <span className="block truncate font-medium">
+        {draft ? t('replying_to', { sender }) : sender}
+      </span>
       {preview && (
         <span className="block truncate text-muted-foreground">{preview}</span>
       )}
-    </button>
+    </>
   );
 }

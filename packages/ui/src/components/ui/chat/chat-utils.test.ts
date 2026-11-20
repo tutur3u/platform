@@ -92,6 +92,30 @@ describe('chat utils', () => {
     expect(createRequestId).toHaveBeenCalledTimes(2);
   });
 
+  it('includes the quoted message in the send retry identity', () => {
+    const createRequestId = vi
+      .fn<() => string>()
+      .mockReturnValueOnce('request-1')
+      .mockReturnValueOnce('request-2');
+    const draft = { attachments: [], content: 'Same text' };
+    const first = resolvePendingChatSendRequest(
+      null,
+      { ...draft, replyToMessageId: 'original' },
+      createRequestId
+    );
+
+    expect(
+      resolvePendingChatSendRequest(
+        first,
+        { ...draft, replyToMessageId: 'original' },
+        createRequestId
+      )
+    ).toBe(first);
+    expect(
+      resolvePendingChatSendRequest(first, draft, createRequestId).requestId
+    ).toBe('request-2');
+  });
+
   it('derives compact initials for users and labels', () => {
     expect(getChatInitials('Ada Lovelace')).toBe('AL');
     expect(

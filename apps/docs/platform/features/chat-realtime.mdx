@@ -136,11 +136,19 @@ Web (`apps/chat` and the shared `@tuturuuu/ui/chat` workspace) and mobile
 - **Thread**: day separators, grouped bursts, reply quotes with jump-to,
   reactions, mentions with autocomplete, link and integration cards, attachment
   previews, and an inline edited marker. Deleted messages show as a tombstone.
-  In the Chat satellite and the CMS inbox, a reply quote jumps to the original
-  when it is loaded in the same thread. Quotes for deleted originals show a
-  tombstone. If the original is outside the loaded history, the quote shows
-  that it is unavailable until the user loads the relevant history. The web
-  regression lives in `packages/ui/src/components/ui/chat/message-list.test.tsx`.
+  In the Chat satellite and the CMS inbox, use **Reply to message** to quote
+  a saved message from the current conversation. The composer previews the
+  quote and lets you cancel it while keeping the draft. A failed send keeps
+  the reply selected for retry. Reply composition is available in writable
+  native conversations, including connected inbox conversations. Read-only
+  threads, legacy AI threads, system events and deleted messages have no
+  reply action.
+
+  Select a sent reply's quote to scroll to and focus the original. If the
+  original is outside loaded history, Chat checks up to five older pages per
+  selection and stops at the first match or when history runs out. Existing
+  quotes for deleted originals display a tombstone. The shared web regression
+  lives in `packages/ui/src/components/ui/chat/message-list.test.tsx`.
 - **Read state**: the room broadcasts read receipts; groups show "seen by"
   avatars up to five members.
 - **Pinned messages and shared content**: a details screen shows members,

@@ -6,6 +6,7 @@ import {
   Copy,
   FileJson,
   FileText,
+  Reply,
   SmilePlus,
   Trash2,
 } from '@tuturuuu/icons';
@@ -33,6 +34,7 @@ import {
   formatChatTime,
   getChatInitials,
   getChatMessageSenderLabel,
+  isPostgresUuid,
 } from './utils';
 
 const REACTION_OPTIONS = [
@@ -49,6 +51,7 @@ export function MessageBubble({
   message,
   onDeleteMessage,
   onOpenAttachment,
+  onReplyMessage,
   onToggleReaction,
   replyQuote,
   wsId,
@@ -57,6 +60,7 @@ export function MessageBubble({
   message: ChatMessage;
   onDeleteMessage?: (messageId: string) => void;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
+  onReplyMessage?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   replyQuote?: ReactNode;
   wsId: string;
@@ -102,11 +106,27 @@ export function MessageBubble({
               isOwnMessage && 'items-end'
             )}
           >
-            <MessageMetadata
-              isOwnMessage={isOwnMessage}
-              message={message}
-              senderName={senderName}
-            />
+            <div className="flex items-center gap-1">
+              <MessageMetadata
+                isOwnMessage={isOwnMessage}
+                message={message}
+                senderName={senderName}
+              />
+              {onReplyMessage &&
+                !message.deletedAt &&
+                isPostgresUuid(message.id) && (
+                  <Button
+                    aria-label={t('reply_to_message')}
+                    className="size-6"
+                    onClick={() => onReplyMessage(message.id)}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                  >
+                    <Reply aria-hidden="true" className="size-3.5" />
+                  </Button>
+                )}
+            </div>
             {replyQuote}
             <MessageContent
               isOwnMessage={isOwnMessage}

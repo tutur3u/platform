@@ -3,6 +3,7 @@ import type { ChatMessage } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
   type ChatMessagesPage,
+  flattenChatMessagePages,
   mergeCachedMessages,
   patchCachedMessages,
 } from './hooks-messages';
@@ -107,5 +108,53 @@ describe('patchCachedMessages', () => {
         }>(queryKey)
         ?.pages[0]?.messages.map(({ id }) => id)
     ).toEqual(['message-1']);
+  });
+
+  it('keeps loaded history and its exhausted cursor after realtime updates', () => {
+    const queryClient = new QueryClient();
+    const wsId = 'workspace-1';
+    const conversationId = 'conversation-1';
+    const original = createMessage({ id: 'original' });
+    const reply = createMessage({
+      createdAt: '2026-05-30T07:01:00.000Z',
+      id: 'reply',
+      replyToMessageId: original.id,
+    });
+    const data = {
+      pageParams: [null, reply.createdAt],
+      pages: [
+        {
+          hasMore: true,
+          limit: 1,
+          messages: [reply],
+          nextBefore: reply.createdAt,
+        },
+        {
+          hasMore: false,
+          limit: 1,
+          messages: [original],
+          nextBefore: original.createdAt,
+        },
+      ],
+    };
+    const queryKey = chatQueryKeys.messagesInfinite(wsId, conversationId, 1);
+    queryClient.setQueryData(queryKey, data);
+    const deletedOriginal = {
+      ...original,
+      content: '',
+      deletedAt: '2026-05-30T07:02:00.000Z',
+    };
+
+    patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+      mergeCachedMessages(current, [deletedOriginal])
+    );
+
+    const updated = queryClient.getQueryData<typeof data>(queryKey);
+    expect(updated?.pageParams).toEqual(data.pageParams);
+    expect(updated?.pages[1]).toEqual({
+      ...data.pages[1],
+      messages: [deletedOriginal],
+    });
+    expect(flattenChatMessagePages(updated)).toEqual([deletedOriginal, reply]);
   });
 });

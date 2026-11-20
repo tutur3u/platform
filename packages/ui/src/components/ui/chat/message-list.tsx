@@ -1,5 +1,6 @@
 'use client';
 
+import type { FetchNextPageOptions } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
@@ -13,14 +14,18 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
+import { toast } from '../sonner';
 import { MessageBubble } from './message-bubble';
 import { MessageReplyQuote } from './message-reply-quote';
 import { formatChatDate } from './utils';
 
-interface MessageListProps {
+const MAX_REPLY_HISTORY_PAGES = 5;
+
+export interface MessageListProps {
   currentUserId: string;
   hasMoreMessages?: boolean;
   isAgentTyping?: boolean;
@@ -28,8 +33,12 @@ interface MessageListProps {
   isLoadingMoreMessages?: boolean;
   messages: ChatMessage[];
   onDeleteMessage?: (messageId: string) => void;
-  onLoadMoreMessages?: () => Promise<unknown> | undefined;
+  onLoadMoreMessages?: (options: FetchNextPageOptions) => Promise<{
+    data?: { pages: { messages: ChatMessage[] }[] };
+    hasNextPage: boolean;
+  }>;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
+  onReplyMessage?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   readOnly?: boolean;
   typingLabel?: string;
@@ -51,6 +60,7 @@ export function MessageList({
   onDeleteMessage,
   onLoadMoreMessages,
   onOpenAttachment,
+  onReplyMessage,
   onToggleReaction,
   readOnly,
   typingLabel,
@@ -60,6 +70,14 @@ export function MessageList({
   const parentRef = useRef<HTMLDivElement | null>(null);
   const historyScrollHeightRef = useRef<number | null>(null);
   const pendingFocusRef = useRef<ChatMessage | null>(null);
+  const historySearchRef = useRef<AbortController | null>(null);
+  const [searchingOriginalId, setSearchingOriginalId] = useState<string | null>(
+    null
+  );
+  const [historyJumpTarget, setHistoryJumpTarget] = useState<{
+    conversationId: string;
+    messageId: string;
+  } | null>(null);
   const previousConversationIdRef = useRef<string | null>(null);
   const previousOldestMessageIdRef = useRef<string | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -134,19 +152,80 @@ export function MessageList({
     focusJumpTarget();
   });
 
+  useLayoutEffect(() => () => historySearchRef.current?.abort(), []);
+
   const loadOlderMessages = useCallback(() => {
     if (!(hasMoreMessages && onLoadMoreMessages)) return;
-    if (isLoadingMoreMessages) return;
+    if (isLoadingMoreMessages || historySearchRef.current) return;
 
     historyScrollHeightRef.current = parentRef.current?.scrollHeight ?? null;
-    void onLoadMoreMessages();
+    void onLoadMoreMessages({});
   }, [hasMoreMessages, isLoadingMoreMessages, onLoadMoreMessages]);
+
+  function jumpToMessage(row: { index: number; message: ChatMessage }) {
+    pendingFocusRef.current = row.message;
+    shouldStickToBottomRef.current = false;
+    virtualizer.scrollToIndex(row.index, { align: 'center' });
+    focusJumpTarget();
+  }
+
+  async function findOriginalMessage(
+    messageId: string,
+    targetConversationId: string
+  ) {
+    if (!onLoadMoreMessages || !hasMoreMessages || historySearchRef.current)
+      return;
+
+    const search = new AbortController();
+    historySearchRef.current = search;
+    setSearchingOriginalId(messageId);
+    shouldStickToBottomRef.current = false;
+
+    try {
+      for (let page = 0; page < MAX_REPLY_HISTORY_PAGES; page += 1) {
+        historyScrollHeightRef.current ??=
+          parentRef.current?.scrollHeight ?? null;
+        const result = await onLoadMoreMessages({
+          cancelRefetch: false,
+          throwOnError: true,
+        });
+        if (search.signal.aborted) return;
+
+        const found = result.data?.pages.some((page) =>
+          page.messages.some(
+            (message) =>
+              message.id === messageId &&
+              message.conversationId === targetConversationId
+          )
+        );
+        if (found) {
+          setHistoryJumpTarget({
+            conversationId: targetConversationId,
+            messageId,
+          });
+          return;
+        }
+        if (!result.hasNextPage) break;
+      }
+      toast.info(t('original_message_unavailable'));
+    } catch {
+      if (!search.signal.aborted)
+        toast.error(t('original_message_load_failed'));
+    } finally {
+      if (!search.signal.aborted) {
+        historySearchRef.current = null;
+        setSearchingOriginalId(null);
+      }
+    }
+  }
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     const target = event.currentTarget;
     const distanceToBottom =
       target.scrollHeight - target.scrollTop - target.clientHeight;
-    shouldStickToBottomRef.current = distanceToBottom < 180;
+    if (!historySearchRef.current) {
+      shouldStickToBottomRef.current = distanceToBottom < 180;
+    }
 
     if (target.scrollTop < 160) {
       loadOlderMessages();
@@ -192,6 +271,23 @@ export function MessageList({
     return () => cancelAnimationFrame(frame);
   }, [conversationId, items.length, virtualizer]);
 
+  useLayoutEffect(() => {
+    if (!isLoadingMoreMessages && !searchingOriginalId) {
+      historyScrollHeightRef.current = null;
+    }
+  }, [isLoadingMoreMessages, searchingOriginalId]);
+
+  useLayoutEffect(() => {
+    if (!historyJumpTarget) return;
+
+    const row = messageRowsById.get(historyJumpTarget.messageId);
+    if (row?.message.conversationId !== historyJumpTarget.conversationId)
+      return;
+
+    jumpToMessage(row);
+    setHistoryJumpTarget(null);
+  });
+
   if (isLoading) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground text-sm">
@@ -228,15 +324,22 @@ export function MessageList({
         {virtualItems.map((virtualItem) => {
           const item = items[virtualItem.index];
           if (!item) return null;
-          const replyTo =
-            item.type === 'message' && item.message.replyToMessageId
-              ? messageRowsById.get(item.message.replyToMessageId)
-              : undefined;
+          const replyToMessageId =
+            item.type === 'message' ? item.message.replyToMessageId : null;
+          const replyTo = replyToMessageId
+            ? messageRowsById.get(replyToMessageId)
+            : undefined;
           const original =
             item.type === 'message' &&
             replyTo?.message.conversationId === item.message.conversationId
               ? replyTo
               : undefined;
+          const isSearching = Boolean(
+            replyToMessageId && searchingOriginalId === replyToMessageId
+          );
+          const canJump =
+            original ||
+            (onLoadMoreMessages && (hasMoreMessages || isSearching));
 
           return (
             <div
@@ -277,20 +380,26 @@ export function MessageList({
                   message={item.message}
                   onDeleteMessage={readOnly ? undefined : onDeleteMessage}
                   onOpenAttachment={onOpenAttachment}
+                  onReplyMessage={readOnly ? undefined : onReplyMessage}
                   onToggleReaction={readOnly ? undefined : onToggleReaction}
                   replyQuote={
-                    item.message.replyToMessageId && !item.message.deletedAt ? (
+                    replyToMessageId && !item.message.deletedAt ? (
                       <MessageReplyQuote
+                        isSearching={isSearching}
                         message={original?.message}
-                        onJump={() => {
-                          if (!original) return;
-                          pendingFocusRef.current = original.message;
-                          shouldStickToBottomRef.current = false;
-                          virtualizer.scrollToIndex(original.index, {
-                            align: 'center',
-                          });
-                          focusJumpTarget();
-                        }}
+                        onJump={
+                          canJump
+                            ? () => {
+                                if (historySearchRef.current) return;
+                                if (original) jumpToMessage(original);
+                                else
+                                  void findOriginalMessage(
+                                    replyToMessageId,
+                                    item.message.conversationId
+                                  );
+                              }
+                            : undefined
+                        }
                       />
                     ) : null
                   }
@@ -311,6 +420,7 @@ function MessageRow({
   message,
   onDeleteMessage,
   onOpenAttachment,
+  onReplyMessage,
   onToggleReaction,
   replyQuote,
   showDate,
@@ -320,6 +430,7 @@ function MessageRow({
   message: ChatMessage;
   onDeleteMessage?: (messageId: string) => void;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
+  onReplyMessage?: (messageId: string) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   replyQuote: ReactNode;
   showDate: boolean;
@@ -340,6 +451,7 @@ function MessageRow({
           message={message}
           onDeleteMessage={onDeleteMessage}
           onOpenAttachment={onOpenAttachment}
+          onReplyMessage={onReplyMessage}
           onToggleReaction={onToggleReaction}
           replyQuote={replyQuote}
           wsId={wsId}
