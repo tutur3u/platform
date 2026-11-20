@@ -30,6 +30,51 @@ repository, run and current-policy checks still apply, so a policy change can
 deny a historical rerun. Source jobs use hosted runners and read-only permissions;
 this does not establish complete runtime-token isolation.
 
+## Release bot sign-off for definer records
+
+Ask for sign-off when an integration commit adds or rebinds records in
+`scripts/ci/security-definer-verified-findings.json`. Review the exact commit's
+ledger and migration changes. Use a single-commit integration push for this
+workflow so the target's first parent is the base used by **Security Checks**.
+GitHub must already be able to resolve the target commit. If it exists only
+locally, dispatch after the authorized push and rerun the **Definer execution
+policy** job on the original push run after sign-off.
+
+From a checkout containing the integration commit, compute the required
+description with the admission helper. Set `head` to the full integration SHA.
+
+```bash
+ledger=scripts/ci/security-definer-verified-findings.json
+description=$(node scripts/ci/security-definer-admission.js digest \
+  <(git show "${head}^1:$ledger") <(git show "$head:$ledger") | jq -er '.description')
+gh workflow run release-bot-signoff.yaml --repo tutur3u/platform --ref main \
+  -f sha="$head" -f context=security/definer-record-admission \
+  -f description="$description"
+```
+
+Open the **Release bot sign-off** run in GitHub Actions. `vhpx` checks the
+displayed SHA against the reviewed integration commit, selects **Review
+deployments**, checks **release-bot-signoff**, and selects **Approve and deploy**.
+The job recomputes the description from the two commit trees using the trusted
+admission helper. The status links back to the approved workflow run.
+Wait for the workflow to succeed before rerunning the original definer check.
+The guard authenticates the workflow path and main dispatch, checks GitHub's
+record of `vhpx` approving the protected environment, and verifies the immutable
+run artifact that binds the status ID and ledger digest to the exact commit.
+A copied run URL alone cannot satisfy admission.
+
+If the integration SHA changes, recompute the description and dispatch again.
+For a failed submission or expired receipt, check the status and workflow run
+before starting a fresh dispatch and approval. Sign-off is limited to the
+first attempt of each dispatch so that its approval history is unambiguous.
+
+In repository settings, restrict the `release-bot-signoff` environment to the
+`main` branch with `vhpx` as required reviewer and administrator bypass disabled.
+The sign-off job uses its short-lived GitHub Actions token with read access
+to contents and write access to commit statuses. No environment secret is
+required. If the environment is recreated, update the pinned environment ID
+in the admission verifier through the security review process.
+
 ## Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows require the `ready-for-ci` label. Non-draft pull requests from the same repository are eligible on `opened` and `ready_for_review`; forks are excluded from automatic admission. Independent review and green exact-head CI remain separate merge requirements. Run focused pre-push checks on an admitted development machine to reduce avoidable first-run failures. Skipped checks are not executed verification.

@@ -2,7 +2,7 @@
 // Post-bootstrap admission of NEW security-definer verified records.
 //
 // CI runs this module from the trusted base commit (security-checks.yaml), so
-// the pinned attester identity, canonicalization and hash below can only be
+// the sign-off provenance checks, canonicalization and hash can only be
 // changed through a reviewed merge, never by the pull request being checked.
 // Base records stay append-only and byte-identical; an addition must bind a
 // finding that the trusted guard recomputes and bind either a new migration
@@ -14,16 +14,16 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const {
+  ATTESTATION_CONTEXT,
+  ATTESTER,
+  REPOSITORY,
+  verifySignoff,
+} = require('./security-definer-signoff-proof');
 const { verifiedFindingMatches } = require('./security-definer-blocks');
 
 const LEDGER = 'security-definer-verified-findings.json';
 const MIGRATIONS = 'apps/database/supabase/migrations/';
-const REPOSITORY = 'tutur3u/platform';
-const ATTESTATION_CONTEXT = 'security/definer-record-admission';
-const ATTESTER = Object.freeze({
-  login: 'tuturuuu-release-bot',
-  id: 348951514,
-});
 const RISK_ACCEPTANCES = '.github/security/risk-acceptances.json';
 const MIGRATION_PATH =
   /^apps\/database\/supabase\/migrations\/(\d{14})_[\w-]+\.sql$/;
@@ -37,7 +37,6 @@ const RECORD_KEYS = [
 ];
 const sha256 = (source) =>
   crypto.createHash('sha256').update(source).digest('hex');
-const STATUS_PAGES = 10;
 const SHA = /^[0-9a-f]{40}$/;
 
 function canonicalJson(value) {
@@ -323,69 +322,14 @@ function bindAdditions(additions, findings, added, proveFixForward) {
   );
 }
 
-// D3: the newest status for the context on the exact head SHA must be a
-// success from the pinned attester whose description carries the digest.
-async function verifyAttestation({
-  additions,
-  rebinds = [],
-  head,
-  token,
-  fetch,
-}) {
-  if (!token)
-    throw new Error(
-      'Definer record attestation needs GITHUB_TOKEN (statuses: read).'
-    );
-  if (typeof fetch !== 'function')
-    throw new Error('Definer record attestation needs fetch.');
-  const expected = attestationDescription(additions, rebinds);
-  for (let page = 1; page <= STATUS_PAGES; page += 1) {
-    let statuses;
-    try {
-      const response = await fetch(
-        `https://api.github.com/repos/${REPOSITORY}/commits/${head}/statuses?per_page=100&page=${page}`,
-        {
-          headers: {
-            Accept: 'application/vnd.github+json',
-            Authorization: `Bearer ${token}`,
-            'X-GitHub-Api-Version': '2022-11-28',
-          },
-        }
-      );
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      statuses = await response.json();
-    } catch (error) {
-      throw new Error(
-        `Definer record attestation lookup failed: ${error.message}`
-      );
-    }
-    if (!Array.isArray(statuses))
-      throw new Error(
-        'Definer record attestation lookup returned no status list.'
-      );
-    const status = statuses.find(
-      (entry) => entry?.context === ATTESTATION_CONTEXT
-    );
-    if (status) {
-      if (
-        status.state !== 'success' ||
-        status.creator?.login !== ATTESTER.login ||
-        status.creator?.id !== ATTESTER.id
-      )
-        throw new Error(
-          `Definer record attestation on ${head} is not a success from ${ATTESTER.login}.`
-        );
-      if (status.description !== expected)
-        throw new Error(
-          `Definer record attestation does not cover exactly the new records (expected "${expected}").`
-        );
-      return expected;
-    }
-    if (statuses.length < 100) break;
-  }
-  throw new Error(
-    `Missing ${ATTESTATION_CONTEXT} status on ${head}; expected "${expected}".`
-  );
+// D3: require the exact ledger digest and approved workflow provenance.
+function verifyAttestation({ additions, rebinds = [], head, token, fetch }) {
+  return verifySignoff({
+    head,
+    expected: attestationDescription(additions, rebinds),
+    token,
+    fetch,
+  });
 }
 
 function readRiskAcceptances(root, env) {

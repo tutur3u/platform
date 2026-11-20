@@ -12,6 +12,13 @@ const {
   attestationDescription,
 } = require('./security-definer-admission');
 const {
+  REPOSITORY_ID,
+  SIGNOFF_ENVIRONMENT,
+  SIGNOFF_REVIEWER,
+  SIGNOFF_WORKFLOW,
+  signoffArtifactName,
+} = require('./security-definer-signoff-proof');
+const {
   checkRepository,
   verifyRemediation,
 } = require('./security-definer-guard');
@@ -94,6 +101,8 @@ function recordFor(root, file) {
 
 function status(records, overrides = {}) {
   return {
+    id: 42,
+    target_url: 'https://github.com/tutur3u/platform/actions/runs/123',
     context: ATTESTATION_CONTEXT,
     state: 'success',
     description: attestationDescription(records),
@@ -102,12 +111,57 @@ function status(records, overrides = {}) {
   };
 }
 
-// Serves statuses per commit SHA, newest first, like the GitHub REST API.
-function api(bySha, calls = []) {
+// Serves status lists and the successful approval and receipt for a fixture run.
+function api(bySha, calls = [], proof = {}) {
   return async (url, init) => {
     calls.push({ url, init });
     const sha = url.match(/commits\/([0-9a-f]{40})\/statuses/)?.[1];
-    return { ok: true, status: 200, json: async () => bySha[sha] ?? [] };
+    let body;
+    if (sha) {
+      body = bySha[sha] ?? [];
+    } else if (url.endsWith('/actions/runs/123/attempts/1')) {
+      body = {
+        id: 123,
+        run_attempt: 1,
+        event: 'workflow_dispatch',
+        head_branch: 'main',
+        head_sha: 'b'.repeat(40),
+        path: SIGNOFF_WORKFLOW,
+        repository: { id: REPOSITORY_ID },
+        head_repository: { id: REPOSITORY_ID },
+        status: 'completed',
+        conclusion: 'success',
+        ...proof.run,
+      };
+    } else if (url.endsWith('/actions/runs/123/approvals')) {
+      body = proof.reviews ?? [
+        {
+          state: 'approved',
+          user: SIGNOFF_REVIEWER,
+          environments: [SIGNOFF_ENVIRONMENT],
+        },
+      ];
+    } else {
+      assert.match(url, /\/actions\/runs\/123\/artifacts\?name=/);
+      const [[head, [attested]]] = Object.entries(bySha);
+      body = proof.artifacts ?? {
+        total_count: 1,
+        artifacts: [
+          {
+            name: signoffArtifactName(attested.id, head, attested.description),
+            expired: false,
+            workflow_run: {
+              id: 123,
+              head_sha: 'b'.repeat(40),
+              head_branch: 'main',
+              repository_id: REPOSITORY_ID,
+              head_repository_id: REPOSITORY_ID,
+            },
+          },
+        ],
+      };
+    }
+    return { ok: true, status: 200, json: async () => body };
   };
 }
 

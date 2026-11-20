@@ -1014,8 +1014,9 @@ remediation migration reopens the finding.
 A change may rebind a base record by changing only its `sourceDigest` for a
 migration it modifies. Every added or rebound record must match a finding the
 trusted guard recomputes over the head bytes.
-A `security/definer-record-admission` success from `tuturuuu-release-bot` on
-the exact head SHA must carry the digest printed by
+A [protected workflow sign-off](/build/devops/github-actions-runbook#release-bot-sign-off-for-definer-records)
+with `vhpx` approval must publish a `security/definer-record-admission` success
+status on the exact head SHA carrying the digest printed by
 `node scripts/ci/security-definer-admission.js digest <base-ledger> <head-ledger>`.
 Additions alone use `definer-records sha256:…`; any rebind switches to
 `definer-rebinds sha256:…` over both lists. Admitted rebinds join the trusted
@@ -1031,7 +1032,7 @@ path and digest. It carries no `advisory`, so it never changes a dependency find
 `security-findings-register.test.js` checks that every covered record exists in
 the definer ledger. The definer guard stops accepting those records at
 `expiresAt`. To keep the findings closed, add only the proof fields to each
-scoped record and obtain the pinned release bot's `definer-rebinds` attestation
+scoped record and obtain an approved workflow's `definer-rebinds` attestation
 on the exact head. For that conversion, the trusted acceptance must already
 name the remediating migration. Keep the acceptance row until every covered
 record has been converted.
@@ -1046,7 +1047,7 @@ depends on which record pins it.
    Use the attested `sourceDigest` rebind described above. Keep the record
    identical apart from `sourceDigest`, regenerate the digest with
    `node scripts/ci/security-definer-admission.js digest <base-ledger> <head-ledger>`,
-   and get a release-bot `security/definer-record-admission` status whose
+   and get an approved `security/definer-record-admission` status whose
    description is `definer-rebinds sha256:…` on the exact head SHA. Never use a
    rebind for a migration that has already been applied in production: those
    bytes are history and must not change. Add a new migration instead.

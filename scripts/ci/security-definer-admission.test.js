@@ -31,7 +31,7 @@ test('positive: attested record for an added migration admits only its finding',
     [OLD],
     'the unrelated pre-existing finding stays enforced'
   );
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 4);
   assert.match(
     calls[0].url,
     new RegExp(`repos/tutur3u/platform/commits/${f.head}/statuses`)

@@ -9,6 +9,7 @@ const {
   attestationDescription,
   canonicalJson,
   recordsDigest,
+  verifyAttestation,
 } = require('./security-definer-admission');
 const {
   MIGRATIONS,
@@ -39,7 +40,7 @@ test('attestation missing, foreign, failed, wrong SHA or wrong hash fails closed
       {
         [f.head]: [status([record], { creator: { login: 'someone', id: 1 } })],
       },
-      /not a success from tuturuuu-release-bot/,
+      /not a success from github-actions/,
     ],
     [
       {
@@ -141,6 +142,68 @@ test('API failure, missing token and a substituted head SHA fail closed', async 
   }
 });
 
+test('the Actions bot cannot borrow approval or a receipt from another status', async () => {
+  const head = 'a'.repeat(40);
+  const additions = [{ file: 'migration.sql' }];
+  const good = status(additions);
+  for (const [overrides, proof, error] of [
+    [
+      {
+        target_url:
+          'https://github.com/tutur3u/platform/actions/runs/123/attempts/2',
+      },
+      {},
+      /exact sign-off run URL/,
+    ],
+    [
+      {},
+      { run: { path: '.github/workflows/other.yaml' } },
+      /trusted main sign-off workflow/,
+    ],
+    [{}, { run: { run_attempt: 2 } }, /trusted main/],
+    [{}, { run: { head_branch: 'topic' } }, /trusted main/],
+    [{}, { run: { head_repository: { id: 1 } } }, /trusted main/],
+    [{}, { run: { event: 'push' } }, /trusted main/],
+    [{}, { run: { conclusion: 'failure' } }, /successful trusted/],
+    [{}, { reviews: [] }, /vhpx approval/],
+    [
+      {},
+      { reviews: [{ user: { login: 'vhpx', id: 1 }, state: 'approved' }] },
+      /vhpx approval/,
+    ],
+    [
+      {},
+      {
+        reviews: [
+          {
+            user: { login: 'vhpx', id: 81307469 },
+            state: 'approved',
+            environments: [{ name: 'release-bot-signoff', id: 1 }],
+          },
+        ],
+      },
+      /vhpx approval/,
+    ],
+    [{}, { artifacts: { total_count: 0, artifacts: [] } }, /active receipt/],
+    [{ id: 43 }, { replay: true }, /active receipt/],
+  ]) {
+    const original = api({ [head]: [good] }, [], proof);
+    const request = api({ [head]: [{ ...good, ...overrides }] }, [], proof);
+    await assert.rejects(
+      verifyAttestation({
+        head,
+        additions,
+        token: 'fixture',
+        fetch: (url, init) =>
+          proof.replay && url.includes('/artifacts?')
+            ? original(url, init)
+            : request(url, init),
+      }),
+      error
+    );
+  }
+});
+
 test('canonical digest sorts keys and records and is the pinned description', () => {
   const a = { b: 1, a: [2, { d: 1, c: 2 }] };
   assert.equal(canonicalJson(a), '{"a":[2,{"c":2,"d":1}],"b":1}');
@@ -153,7 +216,7 @@ test('canonical digest sorts keys and records and is the pinned description', ()
     attestationDescription([a]),
     /^definer-records sha256:[0-9a-f]{64}$/
   );
-  assert.deepEqual(ATTESTER, { login: 'tuturuuu-release-bot', id: 348951514 });
+  assert.deepEqual(ATTESTER, { login: 'github-actions[bot]', id: 41898282 });
 });
 
 test('trusted guard CLI fails closed on additions without an attestation token', (t) => {

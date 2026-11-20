@@ -1,0 +1,86 @@
+name: Release bot sign-off
+run-name: Release bot sign-off for ${{ inputs.sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full commit SHA to attest
+        type: string
+        required: true
+      context:
+        description: Commit status context
+        type: choice
+        options:
+          - security/definer-record-admission
+        required: true
+      description:
+        description: Exact admission description computed for the ledger delta
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  signoff:
+    if: >-
+      github.repository == 'tutur3u/platform' &&
+      github.ref == 'refs/heads/main' &&
+      github.run_attempt == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: release-bot-signoff
+    permissions:
+      contents: read
+      statuses: write
+    concurrency:
+      group: release-bot-signoff-${{ inputs.sha }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out trusted main scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+
+      - name: Validate exact commit and recompute description
+        id: validate
+        env:
+          SIGNOFF_SHA: ${{ inputs.sha }}
+          SIGNOFF_CONTEXT: ${{ inputs.context }}
+          SIGNOFF_DESCRIPTION: ${{ inputs.description }}
+        shell: bash
+        run: |
+          description=$(node scripts/ci/release-bot-signoff.js)
+          printf 'description=%s\n' "$description" >> "$GITHUB_OUTPUT"
+
+      - name: Post verified status
+        id: post
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          SIGNOFF_SHA: ${{ inputs.sha }}
+          SIGNOFF_DESCRIPTION: ${{ steps.validate.outputs.description }}
+        with:
+          github-token: ${{ github.token }}
+          retries: 0
+          script: |
+            const { writeFileSync } = require('node:fs');
+            const { join } = require('node:path');
+            const { publishSignoff } = require('./scripts/ci/release-bot-signoff');
+            const { name, receipt } = await publishSignoff(github, {
+              sha: process.env.SIGNOFF_SHA,
+              description: process.env.SIGNOFF_DESCRIPTION,
+              runId: process.env.GITHUB_RUN_ID,
+            });
+            writeFileSync(join(process.env.RUNNER_TEMP, 'definer-signoff.json'), JSON.stringify(receipt));
+            core.setOutput('artifact', name);
+
+      - name: Bind status to the producing run
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.post.outputs.artifact }}
+          path: ${{ runner.temp }}/definer-signoff.json
+          if-no-files-found: error
+          retention-days: 90
