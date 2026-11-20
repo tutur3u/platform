@@ -15,7 +15,9 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
-class CrmRepository {
+part 'crm_repository_groups.dart';
+
+class CrmRepository with _CrmGroupMembershipRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,
@@ -23,7 +25,9 @@ class CrmRepository {
   }) : _api = apiClient ?? ApiClient(expectedUserId: expectedUserId),
        _http = httpClient ?? http.Client();
 
+  @override
   final String? expectedUserId;
+  @override
   final ApiClient _api;
   final http.Client _http;
   int groupDirectoryCount = 0;

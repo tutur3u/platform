@@ -73,19 +73,26 @@ class CrmAttendanceMark extends Equatable {
 }
 
 class CrmGroupMember extends Equatable {
-  const CrmGroupMember({required this.id, this.displayName, this.fullName});
+  const CrmGroupMember({
+    required this.id,
+    this.displayName,
+    this.fullName,
+    this.role,
+  });
 
   factory CrmGroupMember.fromJson(Map<String, dynamic> json) {
     return CrmGroupMember(
       id: crmAsString(json['id']) ?? '',
       displayName: crmAsString(json['display_name']),
       fullName: crmAsString(json['full_name']),
+      role: crmAsString(json['role']),
     );
   }
 
   final String id;
   final String? displayName;
   final String? fullName;
+  final String? role;
 
   String get label {
     final display = displayName?.trim();
@@ -96,7 +103,7 @@ class CrmGroupMember extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, displayName, fullName];
+  List<Object?> get props => [id, displayName, fullName, role];
 }
 
 class CrmGroup extends Equatable {

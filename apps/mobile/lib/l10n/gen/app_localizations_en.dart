@@ -2760,6 +2760,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmGenderUnset => 'Not specified';
 
   @override
+  String get crmAddGroupMember => 'Add';
+
+  @override
+  String get crmFindGroupMember => 'Find a contact to add';
+
+  @override
+  String get crmGroupMemberRole => 'Group role';
+
+  @override
+  String get crmGroupMembers => 'Group members';
+
+  @override
+  String get crmGroupMembersEmpty => 'No members yet';
+
+  @override
+  String get crmNoGroupCandidates => 'No matching contacts to add';
+
+  @override
+  String get crmGroupMembershipUnconfirmed => 'The change could not be confirmed. Refresh the group before trying again.';
+
+  @override
+  String get crmGroupStudent => 'Student';
+
+  @override
+  String get crmGroupTeacher => 'Teacher';
+
+  @override
+  String get crmRemoveGroupMember => 'Remove';
+
+  @override
+  String crmRemoveGroupMemberConfirm(String contact) {
+    return 'Remove $contact from this group?';
+  }
+
+  @override
   String get crmGuestUser => 'Guest user';
 
   @override

@@ -29,6 +29,7 @@ import 'package:mobile/features/crm/utils/crm_failure_policy.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 import 'package:mobile/features/crm/view/contact_attendance_sheet.dart';
 import 'package:mobile/features/crm/view/contact_group_editor.dart';
+import 'package:mobile/features/crm/view/contact_group_members.dart';
 import 'package:mobile/features/crm/view/contact_list_row.dart';
 import 'package:mobile/features/crm/view/contact_merge_sheet.dart';
 import 'package:mobile/features/crm/view/contact_section_list.dart';

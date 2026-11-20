@@ -2746,6 +2746,41 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmGenderUnset => 'Chưa xác định';
 
   @override
+  String get crmAddGroupMember => 'Thêm';
+
+  @override
+  String get crmFindGroupMember => 'Tìm liên hệ để thêm';
+
+  @override
+  String get crmGroupMemberRole => 'Vai trò trong nhóm';
+
+  @override
+  String get crmGroupMembers => 'Thành viên nhóm';
+
+  @override
+  String get crmGroupMembersEmpty => 'Chưa có thành viên';
+
+  @override
+  String get crmNoGroupCandidates => 'Không có liên hệ phù hợp để thêm';
+
+  @override
+  String get crmGroupMembershipUnconfirmed => 'Chưa xác nhận được thay đổi. Hãy tải lại nhóm trước khi thử lại.';
+
+  @override
+  String get crmGroupStudent => 'Học viên';
+
+  @override
+  String get crmGroupTeacher => 'Giáo viên';
+
+  @override
+  String get crmRemoveGroupMember => 'Xóa';
+
+  @override
+  String crmRemoveGroupMemberConfirm(String contact) {
+    return 'Xóa $contact khỏi nhóm này?';
+  }
+
+  @override
   String get crmGuestUser => 'Người dùng khách';
 
   @override

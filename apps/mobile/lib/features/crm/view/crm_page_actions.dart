@@ -464,6 +464,11 @@ extension _CrmPageActions on _CrmPageState {
             value: 'people',
             icon: LucideIcons.contact,
           ),
+          AppSheetAction(
+            label: l10n.crmGroupMembers,
+            value: 'members',
+            icon: LucideIcons.users,
+          ),
           if (_canUpdateGroups)
             AppSheetAction(
               label: l10n.commonEdit,
@@ -484,6 +489,37 @@ extension _CrmPageActions on _CrmPageState {
     switch (action) {
       case 'people':
         _filterByGroups([group.id]);
+      case 'members':
+        await _showOwnedSheet<void>(
+          context: context,
+          builder: (context) => ContactGroupMembers(
+            workspaceId: widget.workspaceId,
+            group: group,
+            repository: _repository,
+            canManage: _canUpdateGroups,
+            canSearch: _canViewUsers,
+            confirmRemoval: (member) async {
+              final confirmed = await _showOwnedDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AppDialog(
+                  title: l10n.crmRemoveGroupMember,
+                  content: Text(l10n.crmRemoveGroupMemberConfirm(member.label)),
+                  actions: [
+                    AppButton.ghost(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text(l10n.commonCancel),
+                    ),
+                    AppButton.destructive(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      child: Text(l10n.crmRemoveGroupMember),
+                    ),
+                  ],
+                ),
+              );
+              return confirmed ?? false;
+            },
+          ),
+        );
       case 'edit':
         await _showGroupEditor(group: group);
       case 'delete':

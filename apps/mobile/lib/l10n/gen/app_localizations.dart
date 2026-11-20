@@ -5359,6 +5359,72 @@ abstract class AppLocalizations {
   /// **'Not specified'**
   String get crmGenderUnset;
 
+  /// No description provided for @crmAddGroupMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get crmAddGroupMember;
+
+  /// No description provided for @crmFindGroupMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a contact to add'**
+  String get crmFindGroupMember;
+
+  /// No description provided for @crmGroupMemberRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Group role'**
+  String get crmGroupMemberRole;
+
+  /// No description provided for @crmGroupMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Group members'**
+  String get crmGroupMembers;
+
+  /// No description provided for @crmGroupMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet'**
+  String get crmGroupMembersEmpty;
+
+  /// No description provided for @crmNoGroupCandidates.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching contacts to add'**
+  String get crmNoGroupCandidates;
+
+  /// No description provided for @crmGroupMembershipUnconfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'The change could not be confirmed. Refresh the group before trying again.'**
+  String get crmGroupMembershipUnconfirmed;
+
+  /// No description provided for @crmGroupStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get crmGroupStudent;
+
+  /// No description provided for @crmGroupTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get crmGroupTeacher;
+
+  /// No description provided for @crmRemoveGroupMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get crmRemoveGroupMember;
+
+  /// No description provided for @crmRemoveGroupMemberConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {contact} from this group?'**
+  String crmRemoveGroupMemberConfirm(String contact);
+
   /// No description provided for @crmGuestUser.
   ///
   /// In en, this message translates to:
