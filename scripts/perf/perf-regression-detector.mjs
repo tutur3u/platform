@@ -34,6 +34,11 @@ import {
   versionSummary,
 } from './perf-regression-rules.mjs';
 
+import {
+  deploymentFailureRecords,
+  fetchProductionFailures,
+} from './perf-deploy-failures.mjs';
+
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const APPS_PATH = resolve(HERE, 'perf-apps.json');
 const SELF = 'scripts/perf/perf-regression-detector.mjs';
@@ -47,6 +52,7 @@ export function parseArgs(argv) {
     args: mode === argv[0] ? argv.slice(1) : argv,
     options: {
       apps: { type: 'string' },
+      'production-failures': { type: 'boolean' },
       'window-minutes': { type: 'string', default: '15' },
       'baseline-hours': { type: 'string', default: '24' },
       'evaluate-windows': { type: 'string', default: '8' },
@@ -74,6 +80,7 @@ export function parseArgs(argv) {
   }
   return {
     mode,
+    productionFailures: values['production-failures'] ?? false,
     apps: values.apps?.split(',').filter(Boolean) ?? null,
     windowMinutes: positive('window-minutes', 60),
     baselineHours: positive('baseline-hours', 168),
@@ -230,15 +237,38 @@ export async function detect(
       options: resolved,
       detectedAt: now,
     });
+    const { current } = splitWindows(series.windows, resolved);
+    const latest = current.at(-1);
     checked.push({
       app: app.name,
       windows: series.windows.length,
       regressions: records.length,
+      latest: latest
+        ? {
+            start: latest.start,
+            requests: latest.requests,
+            p95TtfbMs: latest.p95Ms,
+            errorRate:
+              latest.requests > 0 ? latest.errors / latest.requests : null,
+          }
+        : null,
     });
     regressions.push(...records);
   }
+  const range = {
+    since: new Date(
+      Date.parse(now) - options.evaluateWindows * options.windowMinutes * 60_000
+    ).toISOString(),
+    until: now,
+  };
+  const productionFailures = options.productionFailures
+    ? fixture
+      ? deploymentFailureRecords(fixture.productionRuns ?? [], range)
+      : fetchProductionFailures(range)
+    : [];
   return {
     generatedAt: now,
+    productionFailures,
     source: fixture ? 'fixture' : 'cloudflare',
     checked,
     regressions,

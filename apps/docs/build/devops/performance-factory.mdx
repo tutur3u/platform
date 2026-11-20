@@ -37,16 +37,20 @@ annotations), a per-version summary, and **reproducible queries**: the GraphQL
 text and variables, plus a `rerun` command. Records never hold raw rows.
 
 ```bash
-node scripts/perf/perf-regression-detector.mjs --apps forms,tools \
+scripts/perf/run-detector-local.sh --production-failures \
   --out tmp/perf-factory/detections/latest.json
-node scripts/perf/perf-regression-detector.mjs rerun \
+scripts/perf/run-detector-local.sh rerun \
   --record tmp/perf-factory/detections/latest.json --query worker-versions
 ```
 
 It needs `CLOUDFLARE_API_TOKEN` (Analytics and Workers read),
 `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_ZONE_ID` in the environment and never
 prints them. Exit code 2 means configuration or API failure. `--fixture`
-replays a recorded series for backtests.
+replays a recorded series for backtests. On the M4, the wrapper loads the
+three values from the login Keychain under account `fleet` and services
+`com.tuturuuu.perf-factory.cloudflare`, `com.tuturuuu.perf-factory.cloudflare-account`,
+and `com.tuturuuu.perf-factory.cloudflare-zone`. Fixture runs skip Keychain.
+Production failure intake uses the local authenticated GitHub CLI.
 
 ## Workflow
 
@@ -77,6 +81,12 @@ fleet threads and opens `tooling:` fix tasks on the same board.
 
 The detector watches Cloudflare-served apps. Vercel-hosted `apps/web`, the
 Supabase query side and Flutter startup are covered by the investigation
-procedure, not by automatic detection. Deploy-time rejections, such as the
-Vercel routing-rule limit, need their own intake from failed production deploy
-runs.
+procedure. With `--production-failures`, the detector reports failed
+production planner and standalone platform deployment workflow runs under
+`productionFailures`. Each record links to the exact run and commit. The
+job logs distinguish planner failures from deployment rejections.
+
+The Web Vercel route-budget check records the route count and available
+headroom in the build summary for each commit it checks. It warns at 1,900
+rules and fails above the existing 1,948-rule budget. Compare the summaries
+across commits to track growth toward Vercel's 2,048-rule limit.

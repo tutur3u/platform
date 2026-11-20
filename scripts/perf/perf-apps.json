@@ -13,6 +13,14 @@
     "roadmap": {
       "prefixes": ["/roadmap"],
       "worker": "tuturuuu-roadmap"
+    },
+    "teach": {
+      "prefixes": ["/teach"],
+      "worker": "tuturuuu-teach"
+    },
+    "rewise": {
+      "prefixes": ["/rewise"],
+      "worker": "tuturuuu-rewise"
     }
   }
 }

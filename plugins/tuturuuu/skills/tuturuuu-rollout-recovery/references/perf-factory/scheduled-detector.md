@@ -21,7 +21,7 @@ Setup:
   mirror as the store for this tick and record the failure in the run log.
 
 1. Detect. Run
-   `node scripts/perf/perf-regression-detector.mjs --out tmp/perf-factory/detections/<UTC stamp>.json`.
+   `scripts/perf/run-detector-local.sh --production-failures --out tmp/perf-factory/detections/<UTC stamp>.json`.
    Exit 2 means a configuration or API problem: append one line to
    `tmp/perf-factory/dispatcher.log` and continue to step 3 (do not notify; the
    daily agent-log review picks up repeats). Never print or store
@@ -31,6 +31,10 @@ Setup:
    new record to its `history`; otherwise create a task in **Queued** with the
    record as `regression`, `stage: "investigate"`, empty `hypotheses`,
    `evidence`, `reviews`, and move it to **Live Today**.
+   For each `productionFailures` record, use its stable run ID to deduplicate
+   a `perf: production deploy <run ID>` task, including closed tasks. Add the
+   workflow, SHA and run URL to the task and place it in **Needs User / Review**
+   for deployment triage. Dispatch only tasks with a ready workflow stage.
 3. Dispatch. For every open `perf:` task whose stage is ready (no unmet
    `subscription`), start exactly one agent with `delegate_task`, passing the
    stage prompt file, the task key and the current record:
