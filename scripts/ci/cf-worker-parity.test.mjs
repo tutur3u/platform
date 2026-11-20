@@ -365,6 +365,15 @@ for (const fixture of readdirSync(FIXTURES).filter((f) =>
       assert.deepEqual(normalizeWranglerRaw(raw), baseline.identity);
       return;
     }
+    // cloudflare.config.ts cannot express source maps: @cloudflare/vite-plugin
+    // emits them by default, so the emitted Build Output only matches a
+    // baseline without `sourceMaps` when the Worker build opts out.
+    if (!baseline.identity.sourceMaps)
+      assert.match(
+        readFileSync(join(appDir, 'vite.config.ts'), 'utf8'),
+        /sourcemap:\s*false/,
+        `${app} vite.config.ts must disable Worker source maps`
+      );
     const { default: config } = await import(pathToFileURL(cfConfig).href);
     const resolved =
       typeof config === 'function'

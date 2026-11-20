@@ -10,4 +10,5 @@ export default defineConfig({
       experimental: { newConfig: { cfBuildOutput: true } },
     }),
   ],
+  environments: { worker: { build: { sourcemap: false } } },
 });

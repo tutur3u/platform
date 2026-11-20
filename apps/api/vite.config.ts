@@ -16,5 +16,7 @@ export default defineConfig({
       experimental: { newConfig: { cfBuildOutput: true } },
     }),
   ],
-  environments: { worker: { build: { outDir: 'dist/worker' } } },
+  environments: {
+    worker: { build: { outDir: 'dist/worker', sourcemap: false } },
+  },
 });
