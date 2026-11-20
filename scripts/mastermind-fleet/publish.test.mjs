@@ -64,6 +64,22 @@ test('refuses a group-readable or short secret', () => {
   assert.throws(() => readSecret(paths.secretFile), /secret_too_short/);
 });
 
+test('reads the secret through the descriptor it checked', (t) => {
+  const paths = sandbox();
+  const impostor = path.join(paths.root, 'impostor');
+  fs.writeFileSync(impostor, 'x'.repeat(40), { mode: 0o644 });
+  // Swap the path right after the permission check, whichever stat runs it.
+  for (const name of ['statSync', 'lstatSync', 'fstatSync']) {
+    const original = fs[name];
+    t.mock.method(fs, name, (...args) => {
+      const stat = original(...args);
+      if (fs.existsSync(impostor)) fs.renameSync(impostor, paths.secretFile);
+      return stat;
+    });
+  }
+  assert.equal(readSecret(paths.secretFile), SECRET);
+});
+
 test('parses decision files and drops unusable ones', () => {
   assert.equal(
     parseDecision({ id: 'Bad Id', title: 'x', createdAt: NOW.toISOString() }),

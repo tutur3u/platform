@@ -54,13 +54,22 @@ export function signRequest(
   return { 'x-mm-timestamp': timestamp, 'x-mm-signature': signature };
 }
 
-/** Reads a mode-0600 secret file; refuses anything group/world readable. */
+/**
+ * Reads a mode-0600 secret file; refuses anything group/world readable. The
+ * mode check and the read share one descriptor, so a file swapped in after
+ * the check is never read.
+ */
 export function readSecret(file) {
-  const stat = fs.statSync(file);
-  if ((stat.mode & 0o077) !== 0) throw new Error('secret_file_permissions');
-  const secret = fs.readFileSync(file, 'utf8').trim();
-  if (secret.length < 32) throw new Error('secret_too_short');
-  return secret;
+  const fd = fs.openSync(file, 'r');
+  try {
+    const stat = fs.fstatSync(fd);
+    if ((stat.mode & 0o077) !== 0) throw new Error('secret_file_permissions');
+    const secret = fs.readFileSync(fd, 'utf8').trim();
+    if (secret.length < 32) throw new Error('secret_too_short');
+    return secret;
+  } finally {
+    fs.closeSync(fd);
+  }
 }
 
 function optionalIso(value) {
