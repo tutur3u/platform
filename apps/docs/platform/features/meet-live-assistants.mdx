@@ -28,8 +28,12 @@ defaults never satisfy it.
 | Audience (18+) | The meeting workspace needs a stored 18+ audience attestation, set by a workspace settings manager. Exception: verified staff using Private Mira in their own Personal workspace (`personal = true`, `creator_id` = account). Room Mira has no exception, because other participants are present. |
 | Billing | Staff requests drain the Tuturuuu root workspace. Paid accounts pay with their own credits: Private Mira charges the requester's Personal workspace and room Mira charges the meeting workspace. Reservation is atomic, as before. A selected tool workspace never changes the payer. |
 
-The Live Durable Object rechecks the account, audience and payer before code
-tools run, reading the paid tier and attestation over its server-only REST
+An active Private Live session rechecks the kill switch and the full workspace
+gate (protected ids, denylist, reviewed opt-in or allowlist) on every client
+turn and on its 20-second tick. A closed gate ends the session with
+`workspace_not_enabled`; ending stays ungated, so billing settles and cleanup
+runs. The Live Durable Object rechecks the account, audience and payer before
+code tools run, reading the paid tier and attestation over its server-only REST
 client. A saved session whose billing workspace no longer matches the payer
 (for example, a staff session after the account loses staff status) is denied.
 
@@ -106,7 +110,18 @@ everyone; a mention then shows that Mira answers after everyone chooses
 Continue. The context sent to the provider contains only messages written by
 accounts with a current Continue, plus Mira's own replies; messages from people
 who left without choosing never leave the room. Choices are cleared when an
-ended room is restored. The server checks the fence again before any credit
+ended room is restored.
+
+Each reserved request records its source accounts (the requester and every
+author whose messages it carries) with their exact consent revision. Sending
+that saved context to the provider again (`ai.review.claim`), the server's
+check immediately before dispatch (`mira.room.verify`), saving a private review
+and every publication (a reply posted by `ai.finish`, `ai.review.share`) require
+the all-participant fence and every source unchanged. A source who pauses and
+leaves, or returns with a new Continue (a new revision), makes the request and
+its saved review stale; the requester can still discard it, and incurred cost
+settles without posting a reply. Requests reserved without recorded sources are
+stale. The server checks the fence again before any credit
 work. Generation uses the Meet Worker's own provider key; the room
 transcription provider binding stays closed.
 
@@ -153,7 +168,10 @@ consenting authors only), `server/room-mira-authority.test.ts`,
 and `mira-audience-settings.test.tsx`, `ai-workspace-gate.test.ts` (reviewed
 opt-in), `check-meet-ai-containment.test.js`, `private-notice.test.tsx`,
 `room-mira-private.test.ts`, `route.gate.test.ts`, `route.billing.test.ts`
-(staff root billing), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
+(staff root billing), `room-mira-sources.test.ts` (pause then leave, rejoin
+with a new revision, stale saved reviews), `workspace-gate.test.ts` and
+`session.recovery.test.ts` (denylist and opt-in withdrawal end an active Live
+session with billing finalization), `personal-assistant.test.ts`, `phase-a-denial.test.ts`,
 and `token.test.ts`. Synthetic checks do not establish production key identity,
 hosted credit settlement on the root workspace or successful live invitations.
 
