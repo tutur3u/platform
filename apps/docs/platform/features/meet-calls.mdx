@@ -37,6 +37,85 @@ bandwidth counters are diagnostic, not billing evidence. Monthly workspace media
 aggregation and provider invoice reconciliation remain prerequisites for selling
 meeting overages. Internal or sponsored workspaces do not bypass these ceilings.
 
+### Large-room rehearsal
+
+The 20 November 2026 preflight exercised admission and class controls in local
+protocol fixtures. Hosted rehearsal status is **blocked at test identity
+provisioning**. No room was opened and no hosted load was generated. The
+[signed-in fleet smoke provisioner](/build/devops/cutover-smoke-harness#signed-in-fleet-smoke)
+supports one active identity per environment, retires that identity on rotation,
+and limits reservations to five per 24 hours. Its identities are outside the staff
+domain. The [local E2E accounts](/build/development-tools/local-e2e#test-accounts)
+are seeded into a local project. A hosted run needs a dedicated staff account
+with a verified Plus or Pro entitlement and a cohort of 40 separate signed-in
+test participants.
+
+In the local admission probe, one host and 40 participants exercised these
+room policies:
+
+| Room policy and admission path | Admitted, including host | Publisher slots | Viewer slots | Still waiting |
+| --- | ---: | ---: | ---: | ---: |
+| Default limits, all speakers, Admit All | 8 | 8 | 0 | 33 |
+| Default limits, 33 signed viewers, Admit All | 8 | 8 | 0 | 33 |
+| Default limits, 33 signed viewers, open admission | 41 | 8 | 33 | 0 |
+| Plus/Pro fixture with 50 speaker slots, all speakers, Admit All | 41 | 41 | 0 | 0 |
+
+The ordinary call token issuer gives non-hosts the speaker role. Camera and
+microphone settings do not affect slot accounting. Lobby approval checks speaker
+capacity and creates speaker presence even for a viewer token. A class viewer
+path needs both role issuance and role-preserving single and bulk lobby
+approval. Cover capacity, auto-admit, rejoin and publish permissions together
+when qualifying that path. The local `classroom-capacity.test.ts`,
+`room-budget.test.ts` and `room-controls.test.ts` suites cover admission limits,
+overflow, room closure and moderator controls. Poll, class timer, Quiz Arena,
+command executor, token issuance, guest rate limit and reconnect suites also
+passed in this preflight.
+
+For a hosted rehearsal of the current call flow:
+
+1. Create one private room for the run. Confirm the host entitlement and actual
+   signed speaker and participant limits before adding load. Use 41 clients
+   including the host, with eight fake camera and microphone publishers and
+   33 muted speakers. Keep recording and AI generation off. Use one isolated
+   Chromium context per test identity and fake device media.
+2. Use a single coordinator to allocate clients. Cap the total at 50 including
+   the host and count elapsed room time across all attempts against one
+   20-minute budget. Admit a small first wave, then ramp in bounded waves.
+   Start a 30-second clock at each attempted client launch to reach the lobby
+   or, for auto-admit, admitted readiness. Start another 30-second clock at
+   approval for held clients to become ready. Include two publishers in the
+   first wave. After readiness, give each publisher 30 seconds to show outbound
+   RTP and each participant 30 seconds to decode a frame from another
+   publisher. Those clocks run even if a publisher stalls. Count failures
+   once per attempt. Stop as soon as failures exceed 10%. Before the next wave,
+   wait for every attempt to finish or time out and apply the gate again.
+   Retain error codes and attempt counts. Keep anonymous guests out of the run.
+3. Prove the stop command at small scale before the ramp. Stop new joins and
+   retries first. Use the open host connection to end the room, verify the
+   persisted ended state, then terminate every browser process owned by the run.
+   Give each runner an independent cutoff at least five minutes before the
+   overall deadline so the room can expire when empty if the host disappears.
+   After a successful drill, the original host signs in through a fresh
+   browser context, opens the ended room and chooses **Restore**. Resume only
+   after the restored room and local cutoffs are verified. Keep the original
+   usage budget and deadlines. If restore fails, end the rehearsal.
+4. Observe waiting-room entry and Admit All, then verify auto-admit with a
+   fresh participant. Toggle microphone, camera and screen-share locks and
+   observe their effects on a participant. Run a poll, a class timer and a
+   manual Quiz Arena round. Send a chat message and verify intentional leave
+   and rejoin.
+5. Measure join p50 and p95 from join action to admitted readiness and report
+   lobby wait separately. Measure first remote frame from readiness to the
+   first decoded remote frame. Record SFU failures, per-host client CPU and
+   memory, and per-client bitrate and packet loss from intervals between
+   `getStats()` samples. Compare camera-on and muted cohorts, match server error
+   counts to run windows, and report the room's participant-minutes and media
+   usage. Muted speakers still consume publisher slots and may receive all
+   visible streams. Browser traffic and room estimates are diagnostic.
+
+Hosted join and frame times, SFU failures, CPU, memory, bitrate, loss, server
+errors, room usage and teardown under load remain unmeasured.
+
 ## Empty rooms and owner restoration
 
 Meet and Parley calls end automatically after five consecutive minutes with no
