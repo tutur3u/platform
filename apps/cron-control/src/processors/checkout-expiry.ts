@@ -112,23 +112,17 @@ async function revalidate(
     let confirmed: string[] = [];
     try {
       const response = await withinDeadline(context, () =>
-        context.fetch(
-          new URL(
-            '/api/cron/inventory/checkout-expiry',
-            context.env.INVENTORY_ORIGIN
-          ),
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${context.env.CRON_SECRET_INVENTORY}`,
-              'Content-Type': 'application/json',
-              'User-Agent': context.userAgent,
-            },
-            body: JSON.stringify({ revalidateWorkspaceIds: chunk }),
-            redirect: 'manual',
-            signal: requestSignal(context, timeoutMs),
-          }
-        )
+        context.fetch(context.target.url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${context.target.secret}`,
+            'Content-Type': 'application/json',
+            'User-Agent': context.userAgent,
+          },
+          body: JSON.stringify({ revalidateWorkspaceIds: chunk }),
+          redirect: 'manual',
+          signal: requestSignal(context, timeoutMs),
+        })
       );
       if (!response.ok) {
         void response.body?.cancel().catch(() => undefined);

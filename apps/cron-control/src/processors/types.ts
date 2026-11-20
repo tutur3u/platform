@@ -3,8 +3,6 @@ import type { RunOutcome } from '../ledger';
 export interface ProcessorEnv {
   /** Exactly 'off', 'dry-run' or 'delete'; any other value (including unset) means off. */
   AI_STUDIO_RETENTION_MODE?: string;
-  CRON_SECRET_INVENTORY: string;
-  INVENTORY_ORIGIN: string;
   SUPABASE_SECRET_KEY: string;
   SUPABASE_URL: string;
 }
@@ -28,6 +26,7 @@ export interface ProcessorContext {
     quarantined: () => Promise<string[]>;
     settle: (items: string[]) => Promise<void>;
   };
+  target: { secret: string; url: URL };
   userAgent: string;
 }
 

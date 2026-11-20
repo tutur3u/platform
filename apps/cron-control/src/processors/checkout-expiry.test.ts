@@ -7,8 +7,6 @@ import {
 } from './checkout-expiry';
 
 const env = {
-  CRON_SECRET_INVENTORY: 'inventory-cron-secret',
-  INVENTORY_ORIGIN: 'https://inventory.example.test',
   SUPABASE_SECRET_KEY: 'service-key',
   SUPABASE_URL: 'https://db.example.test',
 };
@@ -73,6 +71,12 @@ function harness(
       fail: async (items: string[]) => core.failPendingWork(job, items),
       quarantined: async () => core.quarantinedWork(job),
       settle: async (items: string[]) => core.settlePendingWork(job, items),
+    },
+    target: {
+      secret: 'inventory-cron-secret',
+      url: new URL(
+        'https://inventory.example.test/api/cron/inventory/checkout-expiry'
+      ),
     },
     userAgent: 'Tuturuuu-Cron-Control/1.0',
   };

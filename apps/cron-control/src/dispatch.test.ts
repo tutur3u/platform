@@ -198,15 +198,27 @@ it('posts an empty JSON body to POST processors', async () => {
 it('reports a missing secret or insecure origin without claiming', async () => {
   const h = harness(() => Response.json({}));
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
-  for (const broken of [
-    { CRON_SECRET_TASKS: '' },
-    { TASKS_ORIGIN: 'http://tasks.example.test' },
-    { TASKS_ORIGIN: 'not a url' },
-  ]) {
-    const [report] = await dispatchScheduledJobs(
+  for (const [schedule, job, broken] of [
+    [DAILY, 'tasks-cleanup-media', { CRON_SECRET_TASKS: '' }],
+    [
       DAILY,
+      'tasks-cleanup-media',
+      { TASKS_ORIGIN: 'http://tasks.example.test' },
+    ],
+    [DAILY, 'tasks-cleanup-media', { TASKS_ORIGIN: 'not a url' }],
+    [
+      '*/5 * * * *',
+      'inventory-checkout-expiry',
+      {
+        CRON_CONTROL_INVENTORY_MOUNTED_CALLBACK: '1',
+        INVENTORY_ORIGIN: 'https://inventory.example.test/inventory?preview=1',
+      },
+    ],
+  ] as const) {
+    const [report] = await dispatchScheduledJobs(
+      schedule,
       T0,
-      { ...env, ...broken, CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media' },
+      { ...env, ...broken, CRON_CONTROL_ENABLED_JOBS: job },
       h.deps
     );
     expect(report.outcome).toBe('misconfigured');
@@ -518,6 +530,55 @@ it('runs the checkout-expiry Worker port only when separately selected', async (
     '/rest/v1/rpc/expire_inventory_checkout_sessions',
   ]);
 });
+
+const mountedInventoryFixture = {
+  ...env,
+  CRON_CONTROL_ENABLED_JOBS: 'inventory-checkout-expiry',
+  INVENTORY_ORIGIN: 'https://inventory.example.test/inventory/',
+  SUPABASE_SECRET_KEY: 'fixture-service-key',
+  SUPABASE_URL: 'https://db.example.test',
+};
+
+it.each([undefined, '0', '1'])(
+  'keeps Inventory GET and POST aligned for opt-in %s',
+  async (mounted) => {
+    const wsId = '00000000-0000-4000-8000-000000000001';
+    const h = harness((url) =>
+      url.hostname === 'db.example.test'
+        ? Response.json([{ checkout_id: 'checkout-1', ws_id: wsId }])
+        : Response.json({ ok: true, results: [{ wsId, ok: true }] })
+    );
+    const inventoryEnv = {
+      ...mountedInventoryFixture,
+      CRON_CONTROL_INVENTORY_MOUNTED_CALLBACK: mounted,
+    };
+    const schedule = '*/5 * * * *';
+    const legacy = await dispatchScheduledJobs(
+      schedule,
+      T0,
+      inventoryEnv,
+      h.deps
+    );
+    const worker = await dispatchScheduledJobs(
+      schedule,
+      T0 + 300_000,
+      {
+        ...inventoryEnv,
+        CRON_CONTROL_WORKER_PROCESSORS: 'inventory-checkout-expiry',
+      },
+      h.deps
+    );
+    expect([legacy[0]?.outcome, worker[0]?.outcome]).toEqual(['ok', 'ok']);
+    const expected = `${mounted === '1' ? '/inventory' : ''}/api/cron/inventory/checkout-expiry`;
+    expect(
+      h.calls.map(({ init, url }) => [init?.method, url.pathname])
+    ).toEqual([
+      ['GET', expected],
+      ['POST', '/rest/v1/rpc/expire_inventory_checkout_sessions'],
+      ['POST', expected],
+    ]);
+  }
+);
 
 it('a Worker deadline retains unconfirmed work and reconciles it on the next slot', async () => {
   // Worst case: every request hangs until its own timeout.

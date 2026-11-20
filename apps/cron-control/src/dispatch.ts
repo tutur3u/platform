@@ -20,6 +20,7 @@ import { isWebJob } from './web-gate';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
+  CRON_CONTROL_INVENTORY_MOUNTED_CALLBACK?: string;
   CRON_CONTROL_WORKER_PROCESSORS?: string;
   CRON_CONTROL_WEB_MODE?: string;
 };
@@ -74,6 +75,23 @@ function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
   let url: URL;
   try {
     url = new URL(cronJob.path, origin);
+    if (
+      cronJob.target === 'inventory' &&
+      env.CRON_CONTROL_INVENTORY_MOUNTED_CALLBACK === '1'
+    ) {
+      const mount = new URL(origin);
+      if (
+        mount.username ||
+        mount.password ||
+        mount.search ||
+        mount.hash ||
+        !/^\/(?:[a-z0-9][a-z0-9-]*\/)*[a-z0-9][a-z0-9-]*\/?$/u.test(
+          mount.pathname
+        )
+      )
+        return { problem: 'INVENTORY_ORIGIN must include a valid mount path' };
+      url.pathname = mount.pathname.replace(/\/$/u, '') + url.pathname;
+    }
   } catch {
     return { problem: `${TARGET_ORIGIN_VARS[cronJob.target]} invalid` };
   }
@@ -290,6 +308,7 @@ async function runJob(
                 slot,
               }),
           },
+          target,
           userAgent: USER_AGENT,
         })
       );

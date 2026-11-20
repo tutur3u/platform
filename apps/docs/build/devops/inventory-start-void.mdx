@@ -56,6 +56,13 @@ the Worker processor. The legacy HTTP `GET` processor shares the database
 claim, while Cron Control's durable stop fence covers its own dispatch.
 Switch owners between slots and drain the former owner before starting the next.
 
+To use the mounted Inventory callback, set
+`CRON_CONTROL_INVENTORY_MOUNTED_CALLBACK=1` and
+`INVENTORY_ORIGIN=https://tuturuuu.com/inventory`. Both processor modes then
+target `/inventory/api/cron/inventory/checkout-expiry`. The option is off by
+default. Verify the authenticated mounted `POST` and storefront freshness
+before retiring the subdomain callback.
+
 1. Capture the current Vercel deployment, schedule state, and last checkout-expiry
    run. Capture the Cron Control deployment, trigger, selector, and ledger state.
    Confirm the Worker has `CRON_SECRET_INVENTORY` and the target Inventory host
