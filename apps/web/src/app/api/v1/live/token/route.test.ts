@@ -32,6 +32,8 @@ vi.mock('@/lib/live/eligibility', async () => {
   );
   return {
     ...actual,
+    resolveStrictWorkspaceTier: async (wsId: string) =>
+      (await mocks.getWorkspaceTier(wsId, { useAdmin: true })) as string,
     resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>

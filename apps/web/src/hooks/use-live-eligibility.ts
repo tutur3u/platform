@@ -6,18 +6,27 @@ import {
   type LiveCreditSource,
   type LiveEligibilityResponse,
 } from '@tuturuuu/internal-api';
-import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import {
+  ACTOR_SCOPED_QUERY_ROOTS,
+  useMiraSoulScope,
+} from '@/components/mira-soul-scope';
 
-export const LIVE_ELIGIBILITY_QUERY_KEY = 'live-eligibility';
+export const LIVE_ELIGIBILITY_QUERY_KEY: (typeof ACTOR_SCOPED_QUERY_ROOTS)[number] =
+  'live-eligibility';
 
-/** Billing details are per actor, so the cache is scoped by actor too. */
+/**
+ * Billing details are per actor, so the cache is keyed by the server-verified
+ * session (actor and sign-in revision), never by a cached profile.
+ */
 export function liveEligibilityQueryKey({
   actorId,
+  sessionRevision = null,
   creditSource,
   creditWsId,
   wsId,
 }: {
   actorId: string | null;
+  sessionRevision?: string | null;
   creditSource: LiveCreditSource;
   creditWsId?: string;
   wsId: string;
@@ -25,6 +34,7 @@ export function liveEligibilityQueryKey({
   return [
     LIVE_ELIGIBILITY_QUERY_KEY,
     actorId,
+    sessionRevision,
     wsId,
     creditSource,
     creditWsId ?? null,
@@ -72,24 +82,36 @@ export function useLiveEligibility({
   creditWsId?: string;
   wsId: string;
 }) {
-  const profile = useCurrentUserProfile();
-  const actorId = profile.data?.id ?? null;
+  const lease = useMiraSoulScope();
+  const actorId = lease?.actorId ?? null;
   const query = useQuery({
     queryKey: liveEligibilityQueryKey({
       actorId,
+      sessionRevision: lease?.sessionRevision ?? null,
       creditSource,
       creditWsId,
       wsId,
     }),
-    queryFn: () => getLiveEligibility({ creditSource, creditWsId, wsId }),
+    queryFn: async () => {
+      if (!lease) throw new Error('Live eligibility needs a session scope');
+      const epoch = lease.epoch;
+      const result = await getLiveEligibility({
+        creditSource,
+        creditWsId,
+        wsId,
+      });
+      // A session change during the request discards its result.
+      lease.check(epoch);
+      return result;
+    },
     enabled: Boolean(wsId && actorId),
     staleTime: 30_000,
     retry: 1,
     refetchOnWindowFocus: true,
   });
 
-  // Without a known actor the check cannot be scoped; the token route decides.
-  if (!actorId && !profile.isPending) return { status: 'unknown' } as const;
+  // Without a verified actor the check cannot be scoped; the token route decides.
+  if (!actorId) return { status: 'unknown' } as const;
   return toLiveEntryState({ data: query.data, isError: query.isError });
 }
 

@@ -33,6 +33,8 @@ vi.mock('@/lib/live/eligibility', async () => {
   const mintCap = await import('@/lib/live/mint-cap');
   return {
     ...actual,
+    resolveStrictWorkspaceTier: async (wsId: string) =>
+      (await helper.getWorkspaceTier(wsId, { useAdmin: true })) as string,
     resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>

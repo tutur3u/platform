@@ -33,6 +33,8 @@ vi.mock('@/lib/live/eligibility', async () => {
   );
   return {
     ...actual,
+    resolveStrictWorkspaceTier: async (wsId: string) =>
+      (await mocks.getWorkspaceTier(wsId, { useAdmin: true })) as string,
     resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>
@@ -189,6 +191,20 @@ describe('mobile Live token shared-allowance admission', () => {
       paidKillSwitch: false,
       actorMaxConcurrent: 1,
     };
+
+    it('fails closed when the access-workspace tier cannot be read', async () => {
+      mocks.getWorkspaceTier.mockRejectedValue(new Error('tier unavailable'));
+      const response = await POST(request());
+      expect(response.status).toBe(503);
+      expect(await response.json()).toMatchObject({
+        code: 'LIVE_BLOCKED',
+        eligible: false,
+        reason: 'paused',
+      });
+      expect(mocks.reserveLiveMint).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+      expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+    });
 
     it('checks membership before any admin tier read', async () => {
       mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });

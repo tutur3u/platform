@@ -8,7 +8,6 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import {
-  getWorkspaceTier,
   normalizeWorkspaceId,
   resolveWorkspaceIdForPrincipal,
   verifyWorkspaceMembershipType,
@@ -36,7 +35,9 @@ import {
   type LiveEligibility,
   liveBlockedResponse,
   liveLimitResponse,
+  liveUnavailableResponse,
   resolveLiveEligibility,
+  resolveStrictWorkspaceTier,
 } from '@/lib/live/eligibility';
 import { resolveMobileLiveBillingWorkspace } from '@/lib/live/mobile-billing';
 import { buildLiveMiraPrompt } from '@/lib/live/mira-prompt';
@@ -189,10 +190,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const currentTier = await getWorkspaceTier(normalizedWsId, {
-      useAdmin: true,
-    });
-    if (!isFeatureAvailable('voice_assistant', currentTier)) {
+    let currentTier: string;
+    try {
+      currentTier = await resolveStrictWorkspaceTier(normalizedWsId);
+    } catch {
+      console.error('live_access_tier_lookup_failed');
+      return liveUnavailableResponse();
+    }
+    if (
+      !isFeatureAvailable(
+        'voice_assistant',
+        currentTier as Parameters<typeof isFeatureAvailable>[1]
+      )
+    ) {
       return Response.json(
         { error: 'Live voice is unavailable for this workspace' },
         { status: 403 }

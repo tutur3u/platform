@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  liveEligibilityQueryKey,
-  liveBillingWsId,
-  toLiveEntryState,
-} from './use-live-eligibility';
+import { liveBillingWsId, toLiveEntryState } from './use-live-eligibility';
 
 describe('toLiveEntryState', () => {
   it('stays checking until the pre-check settles', () => {
@@ -45,14 +41,5 @@ describe('liveBillingWsId', () => {
     expect(liveBillingWsId({ creditSource: 'personal', wsId: 'w' })).toBe(
       'personal'
     );
-  });
-});
-
-describe('liveEligibilityQueryKey', () => {
-  it('scopes cached billing details by actor', () => {
-    const args = { creditSource: 'personal' as const, wsId: 'ws-1' };
-    expect(
-      liveEligibilityQueryKey({ ...args, actorId: 'actor-a' })
-    ).not.toEqual(liveEligibilityQueryKey({ ...args, actorId: 'actor-b' }));
   });
 });

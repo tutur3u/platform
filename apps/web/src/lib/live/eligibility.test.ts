@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const supabase = vi.hoisted(() => ({ createAdminClient: vi.fn() }));
 vi.mock('server-only', () => ({}));
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(),
-}));
+vi.mock('@tuturuuu/supabase/next/server', () => supabase);
 
 import {
+  defaultLiveEligibilityDeps,
   type LiveEligibilityDeps,
   liveBlockedResponse,
+  liveCreditPeriodStart,
   resolveLiveEligibility,
 } from './eligibility';
 import { readLiveMintConfig } from './mint-cap';
@@ -46,7 +47,9 @@ describe('resolveLiveEligibility', () => {
       billing: { wsId: personalWs, name: 'Personal', personal: true },
     });
     expect(d.getTier).toHaveBeenCalledWith(personalWs);
-    expect(d.getCredits).toHaveBeenCalledWith(personalWs);
+    expect(d.getCredits).toHaveBeenCalledWith(personalWs, {
+      kind: 'workspace',
+    });
   });
 
   it.each(['PLUS', 'ENTERPRISE'])('admits %s plans', async (tier) => {
@@ -162,5 +165,130 @@ describe('resolveLiveEligibility', () => {
       billing: { name: 'Personal', personal: true },
       params: { plans: ['PLUS', 'PRO', 'ENTERPRISE'] },
     });
+  });
+
+  it('reads the actor balance for a FREE subscription with a paid pack', async () => {
+    const d = deps({
+      getTier: async () => 'FREE',
+      getCredits: vi.fn(async () => ({
+        packCredits: 300,
+        includedRemaining: 250 as number | null,
+      })),
+    });
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      d
+    );
+    expect(d.getCredits).toHaveBeenCalledWith(personalWs, {
+      kind: 'user',
+      userId,
+    });
+    // 250 actor credits + 300 pack credits clear the 500 minimum.
+    expect(result).toMatchObject({ eligible: true, isFree: false });
+  });
+});
+
+describe('default credit lookup', () => {
+  type Call = [string, ...unknown[]];
+  function fakeClient(rows: {
+    balances: Record<string, unknown>[];
+    packs: Record<string, unknown>[];
+  }) {
+    const calls: Record<string, Call[]> = {};
+    const builder = (table: string) => {
+      const log: Call[] = (calls[table] = []);
+      const filtered = () =>
+        table === 'workspace_ai_credit_balances'
+          ? rows.balances.filter((row) =>
+              log.every(([op, column, value]) =>
+                op === 'eq'
+                  ? row[column as string] === value
+                  : op === 'is'
+                    ? row[column as string] === value
+                    : true
+              )
+            )
+          : rows.packs;
+      const query: Record<string, unknown> = {};
+      for (const op of ['select', 'eq', 'is', 'in', 'gt']) {
+        query[op] = (...args: unknown[]) => {
+          log.push([op, ...args]);
+          return query;
+        };
+      }
+      query.maybeSingle = async () => ({
+        data: filtered()[0] ?? null,
+        error: null,
+      });
+      query.then = (resolve: (value: unknown) => void) =>
+        resolve({ data: filtered(), error: null });
+      return query;
+    };
+    return { client: { from: builder }, calls };
+  }
+
+  it('uses the actor row after a mid-period downgrade, not the stale workspace row', async () => {
+    const period = liveCreditPeriodStart();
+    const { client, calls } = fakeClient({
+      balances: [
+        // Workspace row left over from the paid part of the month.
+        {
+          ws_id: personalWs,
+          user_id: null,
+          period_start: period,
+          total_allocated: 0,
+          total_used: 0,
+          bonus_credits: 0,
+        },
+        // The actor's own FREE-track row, which the reservation uses.
+        {
+          ws_id: null,
+          user_id: userId,
+          period_start: period,
+          total_allocated: 400,
+          total_used: 100,
+          bonus_credits: 0,
+        },
+      ],
+      packs: [{ tokens_remaining: 300 }],
+    });
+    supabase.createAdminClient.mockResolvedValue(client);
+    const credits = await defaultLiveEligibilityDeps.getCredits(personalWs, {
+      kind: 'user',
+      userId,
+    });
+    expect(credits).toEqual({ packCredits: 300, includedRemaining: 300 });
+    expect(calls.workspace_ai_credit_balances).toEqual(
+      expect.arrayContaining([
+        ['eq', 'period_start', period],
+        ['eq', 'user_id', userId],
+        ['is', 'ws_id', null],
+      ])
+    );
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      {
+        ...defaultLiveEligibilityDeps,
+        getTier: async () => 'FREE',
+        getWorkspace: async () => ({ name: null, personal: true }),
+        readConfig: productionConfig,
+      }
+    );
+    // 300 actor + 300 pack: eligible, never a false credits_exhausted.
+    expect(result).toMatchObject({ eligible: true, isFree: false });
+  });
+
+  it('uses the workspace row on a paid tier', async () => {
+    const { client, calls } = fakeClient({ balances: [], packs: [] });
+    supabase.createAdminClient.mockResolvedValue(client);
+    await defaultLiveEligibilityDeps.getCredits(personalWs, {
+      kind: 'workspace',
+    });
+    expect(calls.workspace_ai_credit_balances).toEqual(
+      expect.arrayContaining([
+        ['eq', 'ws_id', personalWs],
+        ['is', 'user_id', null],
+      ])
+    );
   });
 });

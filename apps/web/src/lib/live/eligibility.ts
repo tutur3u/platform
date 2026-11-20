@@ -50,11 +50,39 @@ export interface LiveCreditSnapshot {
   includedRemaining: number | null;
 }
 
+/**
+ * The balance row `get_or_create_credit_balance` (and so the Live
+ * reservation) uses: the actor's own row on a FREE subscription tier, else
+ * the workspace row. Paid packs do not change the scope.
+ */
+export type LiveCreditScope =
+  | { kind: 'user'; userId: string }
+  | { kind: 'workspace' };
+
+export function liveCreditScope(
+  subscriptionTier: string,
+  userId: string
+): LiveCreditScope {
+  return subscriptionTier === 'FREE'
+    ? { kind: 'user', userId }
+    : { kind: 'workspace' };
+}
+
+/** `date_trunc('month', now())` in UTC, the balance period key. */
+export function liveCreditPeriodStart(now = new Date()) {
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+  ).toISOString();
+}
+
 export interface LiveEligibilityDeps {
   /** Authoritative tier; throws when it cannot be determined. */
   getTier: (wsId: string) => Promise<string>;
   /** Throws when the credit view cannot be read. */
-  getCredits: (wsId: string) => Promise<LiveCreditSnapshot>;
+  getCredits: (
+    wsId: string,
+    scope: LiveCreditScope
+  ) => Promise<LiveCreditSnapshot>;
   getWorkspace: (
     wsId: string
   ) => Promise<{ name: string | null; personal: boolean } | null>;
@@ -74,7 +102,7 @@ class LiveEligibilityLookupError extends Error {
   }
 }
 
-const defaultDeps: LiveEligibilityDeps = {
+export const defaultLiveEligibilityDeps: LiveEligibilityDeps = {
   /**
    * Mirrors `_resolve_workspace_tier`: the newest `active` subscription's
    * product tier, else FREE. Unlike `getWorkspaceTier`, a failed read throws
@@ -104,24 +132,25 @@ const defaultDeps: LiveEligibilityDeps = {
     }
     return tier;
   },
-  async getCredits(wsId) {
+  async getCredits(wsId, scope) {
     const client = await admin();
-    const now = new Date().toISOString();
+    const now = new Date();
+    const balanceQuery = client
+      .from('workspace_ai_credit_balances')
+      .select('total_allocated, total_used, bonus_credits')
+      .eq('period_start', liveCreditPeriodStart(now));
+    const scopedBalance =
+      scope.kind === 'user'
+        ? balanceQuery.eq('user_id', scope.userId).is('ws_id', null)
+        : balanceQuery.eq('ws_id', wsId).is('user_id', null);
     const [packs, balance] = await Promise.all([
       client
         .from('workspace_credit_pack_purchases')
         .select('tokens_remaining')
         .eq('ws_id', wsId)
         .in('status', ['active', 'canceled'])
-        .gt('expires_at', now),
-      client
-        .from('workspace_ai_credit_balances')
-        .select('total_allocated, total_used, bonus_credits')
-        .eq('ws_id', wsId)
-        .lte('period_start', now)
-        .gt('period_end', now)
-        .order('period_start', { ascending: false })
-        .limit(1),
+        .gt('expires_at', now.toISOString()),
+      scopedBalance.maybeSingle(),
     ]);
     if (packs.error) throw new LiveEligibilityLookupError('credit packs');
     if (balance.error) throw new LiveEligibilityLookupError('credit balance');
@@ -129,7 +158,7 @@ const defaultDeps: LiveEligibilityDeps = {
       (sum, row) => sum + Number(row.tokens_remaining ?? 0),
       0
     );
-    const row = balance.data?.[0];
+    const row = balance.data;
     return {
       packCredits,
       includedRemaining: row
@@ -165,17 +194,19 @@ export function isLivePaidTier(tier: string | null | undefined) {
  */
 export async function resolveLiveEligibility(
   { userId, billingWsId }: { userId: string; billingWsId: string },
-  deps: LiveEligibilityDeps = defaultDeps
+  deps: LiveEligibilityDeps = defaultLiveEligibilityDeps
 ): Promise<LiveEligibility> {
   const config = deps.readConfig();
   let tier: string;
   let workspace: { name: string | null; personal: boolean } | null;
   let credits: LiveCreditSnapshot;
   try {
-    [tier, workspace, credits] = await Promise.all([
-      deps.getTier(billingWsId),
-      deps.getWorkspace(billingWsId).catch(() => null),
-      deps.getCredits(billingWsId),
+    const workspaceLookup = deps.getWorkspace(billingWsId).catch(() => null);
+    tier = await deps.getTier(billingWsId);
+    // The balance scope follows the subscription tier, as the reservation's.
+    [workspace, credits] = await Promise.all([
+      workspaceLookup,
+      deps.getCredits(billingWsId, liveCreditScope(tier, userId)),
     ]);
   } catch {
     // An indeterminate tier or balance never admits a mint.
@@ -284,5 +315,25 @@ export function liveLimitResponse({
       params: { plans: LIVE_PAID_TIERS, resetAt },
     },
     { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } }
+  );
+}
+
+/** Strict tier for any workspace; throws instead of assuming FREE. */
+export function resolveStrictWorkspaceTier(wsId: string) {
+  return defaultLiveEligibilityDeps.getTier(wsId);
+}
+
+/** An indeterminate lookup: "temporarily unavailable", never an admit. */
+export function liveUnavailableResponse() {
+  return Response.json(
+    {
+      code: 'LIVE_BLOCKED',
+      eligible: false,
+      reason: 'paused' satisfies LiveBlockReason,
+      tier: null,
+      billing: null,
+      params: { plans: LIVE_PAID_TIERS },
+    },
+    { status: 503 }
   );
 }

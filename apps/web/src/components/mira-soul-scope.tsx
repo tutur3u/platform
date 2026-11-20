@@ -10,6 +10,12 @@ import {
   useMemo,
 } from 'react';
 
+/**
+ * Query roots whose data belongs to the session actor. They are cancelled
+ * and removed whenever the authenticated actor changes or the scope unmounts.
+ */
+export const ACTOR_SCOPED_QUERY_ROOTS = ['live-eligibility'] as const;
+
 export const miraSoulKeys = {
   detail: (actorId: string | null) => ['mira-soul', 'detail', actorId] as const,
 };
@@ -71,6 +77,7 @@ export function MiraSoulScopeProvider({
           queryKey: miraSoulKeys.detail(actorId),
           exact: true,
         });
+        dropActorScopedQueries(client);
       }
     });
     return () => {
@@ -84,12 +91,20 @@ export function MiraSoulScopeProvider({
         queryKey: miraSoulKeys.detail(actorId),
         exact: true,
       });
+      dropActorScopedQueries(client);
     };
   }, [actorId, client, lease]);
   return (
     <MiraSoulScope.Provider value={lease}>{children}</MiraSoulScope.Provider>
   );
 }
+function dropActorScopedQueries(client: ReturnType<typeof useQueryClient>) {
+  for (const root of ACTOR_SCOPED_QUERY_ROOTS) {
+    void client.cancelQueries({ queryKey: [root] });
+    client.removeQueries({ queryKey: [root] });
+  }
+}
+
 export function useMiraSoulScope() {
   return useContext(MiraSoulScope);
 }
