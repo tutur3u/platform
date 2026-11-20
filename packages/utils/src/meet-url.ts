@@ -19,9 +19,17 @@ export function meetPathForRequest(path: string, requestUrl: string | URL) {
 }
 
 export function meetBrowserPath(path: string) {
-  return typeof location === 'undefined'
-    ? path
-    : meetPathForRequest(path, location.href);
+  const browserLocation: unknown = Reflect.get(globalThis, 'location');
+  if (
+    !browserLocation ||
+    typeof browserLocation !== 'object' ||
+    !('href' in browserLocation) ||
+    typeof browserLocation.href !== 'string'
+  ) {
+    return path;
+  }
+
+  return meetPathForRequest(path, browserLocation.href);
 }
 
 /** Build a public Meet link from an app-relative pathname, query or fragment. */
