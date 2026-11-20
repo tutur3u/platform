@@ -37,8 +37,7 @@ vi.mock('@/lib/live/eligibility', async () => {
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>
           (await mocks.getWorkspaceTier(wsId, { useAdmin: true })) as string,
-        hasPaidCredits: async () => false,
-        getRemainingCredits: async () => 10_000,
+        getCredits: async () => ({ packCredits: 0, includedRemaining: 10_000 }),
         getWorkspace: async () => ({ name: 'Personal', personal: true }),
         readConfig: () => mocks.readLiveMintConfig(),
       }),
@@ -190,6 +189,14 @@ describe('mobile Live token shared-allowance admission', () => {
       paidKillSwitch: false,
       actorMaxConcurrent: 1,
     };
+
+    it('checks membership before any admin tier read', async () => {
+      mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
+      const response = await POST(request());
+      expect(response.status).toBe(403);
+      expect(mocks.getWorkspaceTier).not.toHaveBeenCalled();
+      expect(mocks.reserveLiveMint).not.toHaveBeenCalled();
+    });
 
     it('mints for a Pro personal workspace billed as paid', async () => {
       mocks.readLiveMintConfig.mockReturnValue(productionDefaults);

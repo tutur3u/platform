@@ -161,15 +161,13 @@ export async function POST(request: Request) {
         { status: 403 }
       );
     }
-    const [membership, currentTier] = await timing.measure('access', () =>
-      Promise.all([
-        verifyWorkspaceMembershipType({
-          wsId: normalizedWsId,
-          userId: user.id,
-          supabase,
-        }),
-        getWorkspaceTier(normalizedWsId, { useAdmin: true }),
-      ])
+    // Membership gates every admin-backed read for this workspace.
+    const membership = await timing.measure('access', () =>
+      verifyWorkspaceMembershipType({
+        wsId: normalizedWsId,
+        userId: user.id,
+        supabase,
+      })
     );
 
     if (membership.error === 'membership_lookup_failed') {
@@ -191,6 +189,9 @@ export async function POST(request: Request) {
       );
     }
 
+    const currentTier = await getWorkspaceTier(normalizedWsId, {
+      useAdmin: true,
+    });
     if (!isFeatureAvailable('voice_assistant', currentTier)) {
       return Response.json(
         { error: 'Live voice is unavailable for this workspace' },

@@ -37,8 +37,7 @@ vi.mock('@/lib/live/eligibility', async () => {
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>
           (await helper.getWorkspaceTier(wsId, { useAdmin: true })) as string,
-        hasPaidCredits: async () => false,
-        getRemainingCredits: async () => 10_000,
+        getCredits: async () => ({ packCredits: 0, includedRemaining: 10_000 }),
         getWorkspace: async () => ({ name: 'Personal', personal: true }),
         readConfig: () => mintCap.readLiveMintConfig(),
       }),
@@ -430,11 +429,12 @@ describe('assistant live token routes', () => {
       })
     );
     await flush();
-    // Both access gates start together; nothing past them runs yet.
+    // Membership gates every admin-backed read, so the tier waits for it.
     expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledOnce();
-    expect(mocks.getWorkspaceTier).toHaveBeenCalledOnce();
+    expect(mocks.getWorkspaceTier).not.toHaveBeenCalled();
     membership.resolve({ ok: true });
     await flush();
+    expect(mocks.getWorkspaceTier).toHaveBeenCalled();
     expect(mocks.ensureAssistantLiveChat).not.toHaveBeenCalled();
     expect(mocks.buildLiveMiraPrompt).not.toHaveBeenCalled();
 

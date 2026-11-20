@@ -7,8 +7,7 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
   resolveMobileLiveBillingWorkspace: vi.fn(),
   getTier: vi.fn(),
-  hasPaidCredits: vi.fn(),
-  getRemainingCredits: vi.fn(),
+  getCredits: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -19,9 +18,7 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => mocks);
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
   verifyWorkspaceMembershipType: mocks.verifyWorkspaceMembershipType,
-  getWorkspaceTier: vi.fn(),
 }));
-vi.mock('@tuturuuu/payment-core', () => ({ getAiCreditsStatus: vi.fn() }));
 vi.mock('@/lib/live/mobile-billing', () => ({
   resolveMobileLiveBillingWorkspace: mocks.resolveMobileLiveBillingWorkspace,
 }));
@@ -37,8 +34,7 @@ vi.mock('@/lib/live/eligibility', async () => {
     resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
       actual.resolveLiveEligibility(args, {
         getTier: mocks.getTier,
-        hasPaidCredits: mocks.hasPaidCredits,
-        getRemainingCredits: mocks.getRemainingCredits,
+        getCredits: mocks.getCredits,
         getWorkspace: async () => ({ name: null, personal: true }),
         // Production defaults: no kill-switch variables set.
         readConfig: () => readLiveMintConfig({}),
@@ -70,15 +66,18 @@ describe('mobile Live eligibility pre-check', () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(accessWs);
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.resolveMobileLiveBillingWorkspace.mockResolvedValue(personalWs);
-    mocks.hasPaidCredits.mockResolvedValue(false);
-    mocks.getRemainingCredits.mockResolvedValue(9000);
+    mocks.getCredits.mockResolvedValue({
+      packCredits: 0,
+      includedRemaining: 9000,
+    });
   });
 
   it('admits a Pro personal workspace, billed to the personal pool', async () => {
     mocks.getTier.mockResolvedValue('PRO');
     const response = await post({ wsId: accessWs });
     expect(response.status).toBe(200);
-    expect(response.headers.get('Cache-Control')).toBe('private, max-age=30');
+    // Billing details are per actor: never cached across sessions.
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
     expect(await response.json()).toEqual({
       eligible: true,
       reason: null,

@@ -364,8 +364,18 @@ Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
   `begin_ai_live_session` minimum.
 - Pre-check: `GET /api/v1/live/eligibility` (Web) and
   `POST /api/v1/assistant/live/eligibility` (mobile) run the same decision
-  without reserving a mint, credits or provider token, cached privately for 30 s.
-  The token routes re-decide on every start.
+  without reserving a mint, credits or provider token. Responses are
+  `no-store` because they name the billed workspace; clients cache them in
+  memory only, keyed by actor and workspace. The token routes re-decide on
+  every start.
+- Fail closed: the tier is read strictly (an `active` subscription's product
+  tier, else FREE) and credits from read-only balance and credit-pack rows. A
+  failed tier or credit read refuses with `paused` ("temporarily unavailable")
+  instead of assuming FREE or admitting. Before the period's balance row
+  exists, `begin_ai_live_session` decides credits at mint.
+- The staff-only `/api/v1/mira/token` route is retired: after its auth,
+  membership and staff gates it answers 410 `LIVE_ROUTE_RETIRED` and never
+  mints.
 - Wire shape: `{ eligible, reason, tier, billing: { name, personal }, params:
   { plans, balance?, minimumCredits?, resetAt? } }`. Reasons are
   `plan_required` (403), `credits_exhausted` (402), `limit_reached` (429, from

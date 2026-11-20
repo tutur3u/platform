@@ -1,7 +1,5 @@
-import { getAiCreditsStatus } from '@tuturuuu/payment-core';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
 import { type LiveMintConfig, readLiveMintConfig } from './mint-cap';
 
 /** Plans that include Live voice. */
@@ -44,10 +42,19 @@ export interface LiveEligibility {
   params: LiveEligibilityParams;
 }
 
+/** Read-only credit view of the billed workspace. */
+export interface LiveCreditSnapshot {
+  /** Unexpired paid credit-pack balance. */
+  packCredits: number;
+  /** Current-period included balance; null before the period row exists. */
+  includedRemaining: number | null;
+}
+
 export interface LiveEligibilityDeps {
-  getTier: (wsId: string) => Promise<string | null>;
-  hasPaidCredits: (wsId: string) => Promise<boolean>;
-  getRemainingCredits: (wsId: string, userId: string) => Promise<number>;
+  /** Authoritative tier; throws when it cannot be determined. */
+  getTier: (wsId: string) => Promise<string>;
+  /** Throws when the credit view cannot be read. */
+  getCredits: (wsId: string) => Promise<LiveCreditSnapshot>;
   getWorkspace: (
     wsId: string
   ) => Promise<{ name: string | null; personal: boolean } | null>;
@@ -60,29 +67,77 @@ async function admin(): Promise<TypedSupabaseClient> {
   })) as unknown as TypedSupabaseClient;
 }
 
+class LiveEligibilityLookupError extends Error {
+  constructor(what: string) {
+    super(`Live eligibility lookup failed: ${what}`);
+    this.name = 'LiveEligibilityLookupError';
+  }
+}
+
 const defaultDeps: LiveEligibilityDeps = {
-  getTier: (wsId) => getWorkspaceTier(wsId, { useAdmin: true }),
-  async hasPaidCredits(wsId) {
-    const { data, error } = await (
-      await admin()
-    )
-      .from('workspace_credit_pack_purchases')
-      .select('id')
+  /**
+   * Mirrors `_resolve_workspace_tier`: the newest `active` subscription's
+   * product tier, else FREE. Unlike `getWorkspaceTier`, a failed read throws
+   * instead of falling back to FREE.
+   */
+  async getTier(wsId) {
+    const client = await admin();
+    const { data: subscriptions, error } = await client
+      .from('workspace_subscriptions')
+      .select('product_id, created_at')
       .eq('ws_id', wsId)
-      .in('status', ['active', 'canceled'])
-      .gt('expires_at', new Date().toISOString())
-      .gt('tokens_remaining', 0)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
       .limit(1);
-    if (error) throw new Error('Failed to read paid credit packs');
-    return (data ?? []).length > 0;
+    if (error) throw new LiveEligibilityLookupError('subscriptions');
+    const productId = subscriptions?.[0]?.product_id;
+    if (!productId) return 'FREE';
+    const { data: product, error: productError } = await client
+      .schema('private' as never)
+      .from('workspace_subscription_products' as never)
+      .select('tier')
+      .eq('id', productId)
+      .maybeSingle();
+    const tier = (product as { tier?: string | null } | null)?.tier;
+    if (productError || !tier) {
+      throw new LiveEligibilityLookupError('subscription product');
+    }
+    return tier;
   },
-  async getRemainingCredits(wsId, userId) {
-    const status = await getAiCreditsStatus({
-      accessClient: await admin(),
-      userId,
-      wsId,
-    });
-    return Number(status.remaining ?? 0);
+  async getCredits(wsId) {
+    const client = await admin();
+    const now = new Date().toISOString();
+    const [packs, balance] = await Promise.all([
+      client
+        .from('workspace_credit_pack_purchases')
+        .select('tokens_remaining')
+        .eq('ws_id', wsId)
+        .in('status', ['active', 'canceled'])
+        .gt('expires_at', now),
+      client
+        .from('workspace_ai_credit_balances')
+        .select('total_allocated, total_used, bonus_credits')
+        .eq('ws_id', wsId)
+        .lte('period_start', now)
+        .gt('period_end', now)
+        .order('period_start', { ascending: false })
+        .limit(1),
+    ]);
+    if (packs.error) throw new LiveEligibilityLookupError('credit packs');
+    if (balance.error) throw new LiveEligibilityLookupError('credit balance');
+    const packCredits = (packs.data ?? []).reduce(
+      (sum, row) => sum + Number(row.tokens_remaining ?? 0),
+      0
+    );
+    const row = balance.data?.[0];
+    return {
+      packCredits,
+      includedRemaining: row
+        ? Number(row.total_allocated ?? 0) +
+          Number(row.bonus_credits ?? 0) -
+          Number(row.total_used ?? 0)
+        : null,
+    };
   },
   async getWorkspace(wsId) {
     const { data, error } = await (
@@ -92,7 +147,7 @@ const defaultDeps: LiveEligibilityDeps = {
       .select('name, personal')
       .eq('id', wsId)
       .maybeSingle();
-    if (error) throw new Error('Failed to read billing workspace');
+    if (error) throw new LiveEligibilityLookupError('billing workspace');
     return data ? { name: data.name ?? null, personal: !!data.personal } : null;
   },
   readConfig: () => readLiveMintConfig(),
@@ -113,15 +168,31 @@ export async function resolveLiveEligibility(
   deps: LiveEligibilityDeps = defaultDeps
 ): Promise<LiveEligibility> {
   const config = deps.readConfig();
-  const [tier, workspace] = await Promise.all([
-    deps.getTier(billingWsId),
-    deps.getWorkspace(billingWsId),
-  ]);
-  const paidPlan = isLivePaidTier(tier);
-  const paid = paidPlan || (await deps.hasPaidCredits(billingWsId));
+  let tier: string;
+  let workspace: { name: string | null; personal: boolean } | null;
+  let credits: LiveCreditSnapshot;
+  try {
+    [tier, workspace, credits] = await Promise.all([
+      deps.getTier(billingWsId),
+      deps.getWorkspace(billingWsId).catch(() => null),
+      deps.getCredits(billingWsId),
+    ]);
+  } catch {
+    // An indeterminate tier or balance never admits a mint.
+    console.error('live_eligibility_lookup_failed');
+    return {
+      eligible: false,
+      reason: 'paused',
+      isFree: true,
+      tier: 'UNKNOWN',
+      billing: { wsId: billingWsId, name: null, personal: false },
+      params: { plans: LIVE_PAID_TIERS },
+    };
+  }
+  const paid = isLivePaidTier(tier) || credits.packCredits > 0;
   const base = {
     isFree: !paid,
-    tier: tier ?? 'FREE',
+    tier,
     billing: {
       wsId: billingWsId,
       name: workspace?.name ?? null,
@@ -143,12 +214,15 @@ export async function resolveLiveEligibility(
     return paid ? blocked('paused') : blocked('plan_required');
   }
 
-  const balance = await deps.getRemainingCredits(billingWsId, userId);
-  if (balance < LIVE_MIN_CREDITS) {
-    return blocked('credits_exhausted', {
-      balance: Math.max(0, Math.floor(balance)),
-      minimumCredits: LIVE_MIN_CREDITS,
-    });
+  // Before the period's balance row exists the reservation itself decides.
+  if (credits.includedRemaining !== null) {
+    const balance = credits.includedRemaining + credits.packCredits;
+    if (balance < LIVE_MIN_CREDITS) {
+      return blocked('credits_exhausted', {
+        balance: Math.max(0, Math.floor(balance)),
+        minimumCredits: LIVE_MIN_CREDITS,
+      });
+    }
   }
 
   return { ...base, eligible: true, reason: null };

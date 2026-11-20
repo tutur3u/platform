@@ -13,8 +13,8 @@ import {
   serializeLiveEligibility,
 } from '@/lib/live/eligibility';
 
-/** Eligibility may be reused briefly; the token route re-decides on start. */
-const CACHE_HEADERS = { 'Cache-Control': 'private, max-age=30' };
+/** Billing details are per actor; no shared or browser cache may reuse them. */
+const CACHE_HEADERS = { 'Cache-Control': 'no-store' };
 
 /**
  * Shared pre-check for the Live start control. It runs the same decision as

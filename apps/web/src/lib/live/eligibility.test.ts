@@ -4,10 +4,6 @@ vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(),
 }));
-vi.mock('@tuturuuu/payment-core', () => ({ getAiCreditsStatus: vi.fn() }));
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getWorkspaceTier: vi.fn(),
-}));
 
 import {
   type LiveEligibilityDeps,
@@ -25,8 +21,10 @@ const productionConfig = () => readLiveMintConfig({});
 function deps(overrides: Partial<LiveEligibilityDeps> = {}) {
   return {
     getTier: vi.fn(async () => 'PRO'),
-    hasPaidCredits: vi.fn(async () => false),
-    getRemainingCredits: vi.fn(async () => 20_000),
+    getCredits: vi.fn(async () => ({
+      packCredits: 0,
+      includedRemaining: 20_000 as number | null,
+    })),
     getWorkspace: vi.fn(async () => ({ name: 'Personal', personal: true })),
     readConfig: productionConfig,
     ...overrides,
@@ -48,7 +46,7 @@ describe('resolveLiveEligibility', () => {
       billing: { wsId: personalWs, name: 'Personal', personal: true },
     });
     expect(d.getTier).toHaveBeenCalledWith(personalWs);
-    expect(d.getRemainingCredits).toHaveBeenCalledWith(personalWs, userId);
+    expect(d.getCredits).toHaveBeenCalledWith(personalWs);
   });
 
   it.each(['PLUS', 'ENTERPRISE'])('admits %s plans', async (tier) => {
@@ -71,13 +69,15 @@ describe('resolveLiveEligibility', () => {
       isFree: true,
       params: { plans: ['PLUS', 'PRO', 'ENTERPRISE'] },
     });
-    expect(d.getRemainingCredits).not.toHaveBeenCalled();
   });
 
   it('treats paid credit packs on a free workspace as paid', async () => {
     const result = await resolveLiveEligibility(
       { userId, billingWsId: personalWs },
-      deps({ getTier: async () => 'FREE', hasPaidCredits: async () => true })
+      deps({
+        getTier: async () => 'FREE',
+        getCredits: async () => ({ packCredits: 800, includedRemaining: 0 }),
+      })
     );
     expect(result).toMatchObject({ eligible: true, isFree: false });
   });
@@ -85,7 +85,9 @@ describe('resolveLiveEligibility', () => {
   it('reports the balance when credits are below the Live minimum', async () => {
     const result = await resolveLiveEligibility(
       { userId, billingWsId: personalWs },
-      deps({ getRemainingCredits: async () => 120.7 })
+      deps({
+        getCredits: async () => ({ packCredits: 20, includedRemaining: 100.7 }),
+      })
     );
     expect(result).toMatchObject({
       eligible: false,
@@ -114,6 +116,34 @@ describe('resolveLiveEligibility', () => {
       })
     );
     expect(result).toMatchObject({ eligible: true, isFree: true });
+  });
+
+  it.each([
+    ['tier', { getTier: async () => Promise.reject(new Error('down')) }],
+    ['credits', { getCredits: async () => Promise.reject(new Error('down')) }],
+  ] as const)(
+    'fails closed when the %s lookup is indeterminate',
+    async (_name, override) => {
+      const result = await resolveLiveEligibility(
+        { userId, billingWsId: personalWs },
+        deps(override as Partial<LiveEligibilityDeps>)
+      );
+      expect(result).toMatchObject({
+        eligible: false,
+        reason: 'paused',
+        tier: 'UNKNOWN',
+      });
+    }
+  );
+
+  it('leaves credits to the reservation before the period row exists', async () => {
+    const result = await resolveLiveEligibility(
+      { userId, billingWsId: personalWs },
+      deps({
+        getCredits: async () => ({ packCredits: 0, includedRemaining: null }),
+      })
+    );
+    expect(result.eligible).toBe(true);
   });
 
   it('serializes a block without the workspace id or server text', async () => {

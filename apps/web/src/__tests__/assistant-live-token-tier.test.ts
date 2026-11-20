@@ -32,8 +32,7 @@ vi.mock('@/lib/live/eligibility', async () => {
       actual.resolveLiveEligibility(args, {
         getTier: async (wsId) =>
           (await helper.getWorkspaceTier(wsId, { useAdmin: true })) as string,
-        hasPaidCredits: async () => false,
-        getRemainingCredits: async () => 10_000,
+        getCredits: async () => ({ packCredits: 0, includedRemaining: 10_000 }),
         getWorkspace: async () => ({ name: 'Personal', personal: true }),
         readConfig: () => mintCap.readLiveMintConfig(),
       }),

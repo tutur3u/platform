@@ -75,19 +75,21 @@ describe('exact @tuturuuu.com staff gates', () => {
     expect(f.sessions).not.toHaveBeenCalled();
   });
 
-  it('issues a Mira token to a verified exact-domain account', async () => {
+  it('never mints from the retired Mira token route, even for staff', async () => {
     f.resolve.mockResolvedValue({
       user: user('staff@tuturuuu.com'),
       authError: null,
     });
-    f.token.mockResolvedValue({ name: 'token' });
     const response = await miraToken(
       new Request('https://app.test/api/v1/mira/token', {
         method: 'POST',
         body: JSON.stringify({ wsId: 'workspace' }),
       })
     );
-    expect(response.status).not.toBe(403);
-    expect(f.token).toHaveBeenCalledOnce();
+    expect(response.status).toBe(410);
+    expect(await response.json()).toMatchObject({
+      code: 'LIVE_ROUTE_RETIRED',
+    });
+    expect(f.token).not.toHaveBeenCalled();
   });
 });

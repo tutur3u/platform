@@ -6,20 +6,25 @@ import {
   type LiveCreditSource,
   type LiveEligibilityResponse,
 } from '@tuturuuu/internal-api';
+import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
 
 export const LIVE_ELIGIBILITY_QUERY_KEY = 'live-eligibility';
 
+/** Billing details are per actor, so the cache is scoped by actor too. */
 export function liveEligibilityQueryKey({
+  actorId,
   creditSource,
   creditWsId,
   wsId,
 }: {
+  actorId: string | null;
   creditSource: LiveCreditSource;
   creditWsId?: string;
   wsId: string;
 }) {
   return [
     LIVE_ELIGIBILITY_QUERY_KEY,
+    actorId,
     wsId,
     creditSource,
     creditWsId ?? null,
@@ -67,15 +72,24 @@ export function useLiveEligibility({
   creditWsId?: string;
   wsId: string;
 }) {
+  const profile = useCurrentUserProfile();
+  const actorId = profile.data?.id ?? null;
   const query = useQuery({
-    queryKey: liveEligibilityQueryKey({ creditSource, creditWsId, wsId }),
+    queryKey: liveEligibilityQueryKey({
+      actorId,
+      creditSource,
+      creditWsId,
+      wsId,
+    }),
     queryFn: () => getLiveEligibility({ creditSource, creditWsId, wsId }),
-    enabled: Boolean(wsId),
+    enabled: Boolean(wsId && actorId),
     staleTime: 30_000,
     retry: 1,
     refetchOnWindowFocus: true,
   });
 
+  // Without a known actor the check cannot be scoped; the token route decides.
+  if (!actorId && !profile.isPending) return { status: 'unknown' } as const;
   return toLiveEntryState({ data: query.data, isError: query.isError });
 }
 
