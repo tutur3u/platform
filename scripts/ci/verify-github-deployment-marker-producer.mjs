@@ -57,7 +57,11 @@ const PRODUCTION_PLATFORM = {
   contracts: [
     [
       '.github/workflows/vercel-production.yaml',
-      ['76197c03e41dca432e53619bc384cfdd1c879576'],
+      [
+        '76197c03e41dca432e53619bc384cfdd1c879576',
+        // The Tasks job calls its native publisher. Platform proof is unchanged.
+        '45d2697d42ff3a645b2d5b8722342d5c64dd08ef',
+      ],
     ],
     [
       '.github/workflows/vercel-production-platform.yaml',
