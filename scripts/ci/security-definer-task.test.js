@@ -17,7 +17,12 @@ function repository(t, later) {
     definition('probe', 'integer') + definition('other', 'uuid')
   );
   fs.writeFileSync(path.join(root, 'b.sql'), later);
-  return checkRepository({ root, files: ['b.sql', 'a.sql'], baseline: [] });
+  return checkRepository({
+    root,
+    files: ['b.sql', 'a.sql'],
+    baseline: [],
+    verifiedFindings: [],
+  });
 }
 
 for (const target of [

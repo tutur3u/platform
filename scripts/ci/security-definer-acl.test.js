@@ -20,7 +20,12 @@ function fixture(t, sql, earlier = definer()) {
   return {
     root,
     check: (baseline = []) =>
-      checkRepository({ root, files: ['b.sql', 'a.sql'], baseline }),
+      checkRepository({
+        root,
+        files: ['b.sql', 'a.sql'],
+        baseline,
+        verifiedFindings: [],
+      }),
   };
 }
 const later = (check) => check().filter((finding) => finding.file === 'b.sql');

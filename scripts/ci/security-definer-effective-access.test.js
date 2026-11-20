@@ -19,6 +19,7 @@ function fixture(t, files) {
       checkRepository({
         root,
         files: Object.keys(contents).reverse(),
+        verifiedFindings: [],
         baseline,
       }),
   };
@@ -106,6 +107,7 @@ test('reviewed dynamic exceptions bind the exact path and raw block content', (t
     checkRepository({
       root,
       files: ['a.sql', 'b.sql'],
+      verifiedFindings: [],
       baseline: [],
       reviewedBlocks,
     });
@@ -147,7 +149,12 @@ test('both guards use the shared frozen entry and require surviving inherited re
   );
   fs.writeFileSync(path.join(root, file), definition);
   const check = () =>
-    checkRepository({ root, files: [file, prior], baseline: [] });
+    checkRepository({
+      root,
+      files: [file, prior],
+      baseline: [],
+      verifiedFindings: [],
+    });
   assert.deepEqual(check(), []);
   fs.appendFileSync(
     path.join(root, file),

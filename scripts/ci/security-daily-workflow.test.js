@@ -58,7 +58,11 @@ test('daily secret scan ignores checkout suppressions and emits a sanitized arti
 });
 test('PR guard trusts base source and baseline, never PR baseline additions', () => {
   const job = checks.jobs['definer-guard'];
-  assert.deepEqual(job.permissions, { contents: 'read', statuses: 'read' });
+  assert.deepEqual(job.permissions, {
+    contents: 'read',
+    statuses: 'read',
+    actions: 'read',
+  });
   assert.match(job.if, /pull_request/);
   const step = job.steps.find(
     (s) => s.name === 'Load trusted definer guard and baseline'

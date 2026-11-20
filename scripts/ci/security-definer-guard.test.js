@@ -163,7 +163,8 @@ test('historical exceptions bind path, overload, source and ACL bytes', (t) => {
     digest: f.digest,
     rules: [f.rule],
   }));
-  const check = () => checkRepository({ root, files: [file], baseline });
+  const check = () =>
+    checkRepository({ root, files: [file], baseline, verifiedFindings: [] });
   assert.deepEqual(check(), []);
   fs.writeFileSync(
     path.join(root, file),
@@ -180,6 +181,7 @@ test('historical exceptions bind path, overload, source and ACL bytes', (t) => {
     checkRepository({
       root,
       files: [file],
+      verifiedFindings: [],
       baseline: baseline.map((b) => ({ ...b, file: 'other.sql' })),
     }).length,
     1
@@ -227,12 +229,19 @@ test('bare-name ACL changes invalidate historical exceptions too', (t) => {
     rules: [f.rule],
   }));
   fs.writeFileSync(path.join(root, file), original);
-  assert.deepEqual(checkRepository({ root, files: [file], baseline }), []);
+  assert.deepEqual(
+    checkRepository({ root, files: [file], baseline, verifiedFindings: [] }),
+    []
+  );
   fs.writeFileSync(
     path.join(root, file),
     `${original}\ngrant execute on function public.probe to anon;`
   );
-  assert.equal(checkRepository({ root, files: [file], baseline }).length, 1);
+  assert.equal(
+    checkRepository({ root, files: [file], baseline, verifiedFindings: [] })
+      .length,
+    1
+  );
 });
 
 for (const role of ['anon', 'PUBLIC']) {
@@ -256,7 +265,12 @@ function grantFixture(t, sql) {
   return {
     root,
     check: (baseline = []) =>
-      checkRepository({ root, files: ['b.sql', 'a.sql'], baseline }),
+      checkRepository({
+        root,
+        files: ['b.sql', 'a.sql'],
+        baseline,
+        verifiedFindings: [],
+      }),
   };
 }
 test('a later grant exception binds grant bytes and earlier definition', (t) => {
@@ -297,7 +311,12 @@ test('does not resolve grants against future definitions', (t) => {
   );
   fs.renameSync(path.join(root, 'a.sql'), path.join(root, 'c.sql'));
   assert.deepEqual(
-    checkRepository({ root, files: ['b.sql', 'c.sql'], baseline: [] }),
+    checkRepository({
+      root,
+      files: ['b.sql', 'c.sql'],
+      baseline: [],
+      verifiedFindings: [],
+    }),
     []
   );
 });

@@ -50,6 +50,7 @@ test('historical acceptance binds path and raw block digest', (t) => {
     checkRepository({
       root,
       files: [file],
+      verifiedFindings: [],
       baseline: [],
       reviewedBlocks: [],
       historicalBlocks,
@@ -83,6 +84,7 @@ for (const record of reviewed.filter(
       checkRepository({
         root,
         files: [file],
+        verifiedFindings: [],
         baseline: [],
         reviewedBlocks: records,
         historicalBlocks: [],
