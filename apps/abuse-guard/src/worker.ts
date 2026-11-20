@@ -115,10 +115,12 @@ export async function executeRpc(
       }, 0),
     0
   );
-  const requiresFairness = rpc.family === 'replay' || rpc.family === 'password';
+  const requiresPrincipal =
+    rpc.family === 'replay' || rpc.family === 'integrity';
+  const requiresFairness = requiresPrincipal || rpc.family === 'password';
   if (
     requiresFairness &&
-    (!rpc.fairness || (rpc.family === 'replay' && !rpc.fairness.principal))
+    (!rpc.fairness || (requiresPrincipal && !rpc.fairness.principal))
   ) {
     return failure(400, 'bad_request');
   }

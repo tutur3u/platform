@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
@@ -25,7 +25,14 @@ export const FAMILY_PROBES = {
     { path: '/docs', status: 307 },
     { path: '/ui', status: 301 },
   ],
-  'api-identity': [{ path: '/api/v1/users/me/profile', status: 401 }],
+  'api-identity': [
+    { path: '/api/v1/users/me/profile', status: 401 },
+    {
+      path: '/api/v1/users/calendar-settings',
+      headers: { 'x-tuturuuu-offline-download': '1' },
+      status: 503,
+    },
+  ],
 };
 
 export function deploymentId(family, sha) {
@@ -79,7 +86,7 @@ export function judge({ family, sha, buildInfo, probes, emitted }) {
   return problems;
 }
 
-function call(origin, path) {
+function call(origin, path, headers = {}) {
   return new Promise((resolvePromise, reject) => {
     const target = new URL(origin);
     // node:http keeps the explicit Host header; fetch() would overwrite it.
@@ -100,6 +107,7 @@ function call(origin, path) {
           // The gateway passes the client IP through; TRUSTED_PROXY=cloudflare
           // requires it. TEST-NET-3 address.
           'cf-connecting-ip': '203.0.113.10',
+          ...headers,
         },
       },
       (response) => {
@@ -137,6 +145,22 @@ export function emittedDeploymentIds(
     }));
 }
 
+export function assertIdentityBundleOmitsRedis(openNextDir) {
+  const redisPackage =
+    /(?:@upstash[\\/]+redis(?:[\\/"'`]|$)|\bUpstash(?:JSONParse)?Error\b)/u;
+  const files = readdirSync(openNextDir, { recursive: true }).filter((file) =>
+    /\.[cm]?js$/u.test(file)
+  );
+  assert.ok(files.includes('worker.js'), 'The identity Worker is missing');
+  for (const file of files) {
+    assert.doesNotMatch(file, redisPackage, `Redis package in ${file}`);
+    assert.ok(
+      !redisPackage.test(readFileSync(join(openNextDir, file), 'utf8')),
+      `Redis package or implementation in ${file}`
+    );
+  }
+}
+
 function stripJsonComments(text) {
   return text
     .replace(
@@ -163,6 +187,7 @@ export async function runSmoke(
     stripJsonComments(readFileSync(configPath, 'utf8'))
   );
   if (family === 'api-identity') {
+    assertIdentityBundleOmitsRedis(join(appDir, '.open-next'));
     assert.deepEqual(
       config.services.filter(({ binding }) => binding === 'ABUSE_GUARD'),
       [
@@ -198,6 +223,12 @@ export async function runSmoke(
       value: '00000000-0000-0000-0000-000000000000',
     },
   };
+  if (family === 'api-identity') {
+    bindings.OFFLINE_DOWNLOAD_PROTECTION_ENABLED = {
+      type: 'plain_text',
+      value: 'true',
+    };
+  }
   for (const name of config.secrets?.required ?? []) {
     bindings[name] = {
       type: 'secret_text',
@@ -262,7 +293,10 @@ export async function runSmoke(
     const buildInfo = await call(origin, '/api/build-info');
     const probes = [];
     for (const probe of FAMILY_PROBES[family]) {
-      probes.push({ ...probe, response: await call(origin, probe.path) });
+      probes.push({
+        ...probe,
+        response: await call(origin, probe.path, probe.headers),
+      });
     }
     const describe = (path, response) =>
       `GET ${path} -> ${response.status}${response.location ? ` (${response.location})` : ''} deployment=${response.deploymentId}${response.status >= 400 ? ` body=${response.body.slice(0, 300)}` : ''}`;

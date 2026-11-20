@@ -41,7 +41,7 @@ export const integrityKeyCounts: Record<IntegrityCommand['action'], number> = {
   capability: 2,
   'mark-play': 1,
   revoke: 3,
-  'reserve-provider': 4,
+  'reserve-provider': 3,
 };
 
 export const integrityProviderReservationSchema = z.object({

@@ -19,7 +19,7 @@ const reservationSchema = z.tuple([
   z.union([z.literal(0), z.literal(1)]),
 ]);
 export type NativeIntegrityProviderReserve = (
-  keys: string[],
+  keys: [stop: string, day: string, actor: string, warning: string],
   limits: [number, number, number, number]
 ) => Promise<unknown>;
 function budgetValue(

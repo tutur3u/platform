@@ -183,6 +183,10 @@ describe('OpenNext family manifest', () => {
     expect(openNextFamilyNextConfig(env).deploymentId).toBe(
       'web-api-identity-cccccccccccc'
     );
+    expect(openNextFamilyNextConfig(env).turbopack?.resolveAlias).toEqual({
+      '@upstash/redis': './cloudflare/opennext/redis-unavailable.ts',
+    });
+    expect(openNextFamilyNextConfig({}).turbopack).toBeUndefined();
     expect(() => planPrune('api-workspace', DEFAULT_APP_DIR, env)).toThrow(
       /held/u
     );

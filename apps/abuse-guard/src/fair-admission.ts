@@ -19,6 +19,10 @@ export function fairIdentityKeys(
   family: AbuseGuardFamily,
   identity: FairIdentity
 ) {
+  if (family === 'integrity')
+    return identity.principal
+      ? [`integrity:principal:${identity.principal}`]
+      : [];
   return [
     `${family}:source:${identity.source}`,
     ...(identity.principal
@@ -50,6 +54,8 @@ export function admitFairCommands(input: {
 }): FairAdmission {
   const { sql, state, family, identity, ops, budget, now } = input;
   if (!familyOpen(state, family)) return { kind: 'stopped' };
+  if (family === 'integrity' && (budget === 0 || !identity.principal))
+    return { kind: 'stopped' };
   const resetAt = (Math.floor(now / FAIR_DAY_MS) + 1) * FAIR_DAY_MS;
   const limit = Math.floor(budget / FAIR_SHARE_DIVISOR);
   const rows = fairIdentityKeys(family, identity).map((key) => {

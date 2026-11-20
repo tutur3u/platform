@@ -161,10 +161,72 @@ it('serializes native-integrity consumption in Workerd and obeys the durable sto
     expect(
       await guard.nativeIntegrity(['minute', 'hour', 'pending'], issue)
     ).toBe(true);
+    const providerKeys = ['provider-day', 'provider-actor', 'provider-alert'];
+    const reserve = {
+      action: 'reserve-provider',
+      limit: 3,
+      actorLimit: 3,
+      warningAt: 2,
+      ttlSeconds: 86_460,
+    } as const;
+    await expect(
+      guard.nativeIntegrity(providerKeys, reserve)
+    ).resolves.toMatchObject({
+      reserved: true,
+      used: 1,
+    });
     expect((await control(mf, 'stop', 'POST')).status).toBe(200);
     await expect(
       guard.nativeIntegrity(['pending'], { action: 'consume' })
     ).rejects.toMatchObject({ code: 'guard_stopped' });
+    await expect(
+      guard.nativeIntegrity(providerKeys, reserve)
+    ).rejects.toMatchObject({
+      code: 'guard_stopped',
+    });
+    expect((await control(mf, 'resume', 'POST')).status).toBe(200);
+    await expect(
+      guard.nativeIntegrity(providerKeys, reserve)
+    ).resolves.toMatchObject({
+      reserved: true,
+      used: 2,
+    });
+  } finally {
+    await mf.dispose();
+  }
+});
+
+it('denies integrity RPCs with the default zero budget before recording work', async () => {
+  const mf = createRuntime();
+  try {
+    const guard = await bindingClient(mf, 'integrity');
+    await expect(
+      guard.nativeIntegrity(['key'], { action: 'read-key' })
+    ).rejects.toMatchObject({ code: 'guard_stopped' });
+    const state = await control(mf, 'state');
+    expect(state.body.families).not.toHaveProperty('integrity');
+  } finally {
+    await mf.dispose();
+  }
+});
+
+it('isolates integrity principal quotas even when requests share a source', async () => {
+  const mf = createRuntime({ familyBudgets: 'proxy=19200,integrity=800' });
+  try {
+    const guard = await bindingClient(mf, 'integrity');
+    const first = guard.withFairness({ source: 'web', principal: 'actor-a' });
+    const second = guard.withFairness({ source: 'web', principal: 'actor-b' });
+    const read = (client: AbuseGuardClient) =>
+      client.nativeIntegrity(['key'], { action: 'read-key' });
+    for (let request = 0; request < 5; request += 1)
+      await expect(read(first)).resolves.toBeNull();
+    await expect(read(first)).rejects.toMatchObject({ code: 'guard_limited' });
+    await expect(read(second)).resolves.toBeNull();
+    await expect(
+      read(guard.withFairness({ source: 'web' }))
+    ).rejects.toMatchObject({
+      code: 'bad_request',
+    });
   } finally {
     await mf.dispose();
   }

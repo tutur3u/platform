@@ -126,19 +126,14 @@ export function applyNativeIntegrity(
       return revoked;
     }
     case 'reserve-provider': {
-      const day = key(1);
-      const actorDay = key(2);
-      const alert = key(3);
-      const used = count(day);
+      const actorDay = key(1);
+      const alert = key(2);
+      const used = count(first);
       const actor = count(actorDay);
-      if (
-        read(first)?.v === '1' ||
-        used >= command.limit ||
-        actor >= command.actorLimit
-      )
+      if (used >= command.limit || actor >= command.actorLimit)
         return { reserved: false, used, actor, warning: false };
       const ttlMs = command.ttlSeconds * 1000;
-      write(day, String(used + 1), ttlMs);
+      write(first, String(used + 1), ttlMs);
       write(actorDay, String(actor + 1), ttlMs);
       const warn = used + 1 >= command.warningAt && !read(alert);
       if (warn) write(alert, '1', ttlMs);

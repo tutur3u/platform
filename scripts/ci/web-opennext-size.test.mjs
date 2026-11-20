@@ -1,5 +1,11 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -8,7 +14,11 @@ import {
   measureUpload,
   wranglerGzipKiB,
 } from './web-opennext-size.mjs';
-import { deploymentId, judge } from './web-opennext-smoke.mjs';
+import {
+  assertIdentityBundleOmitsRedis,
+  deploymentId,
+  judge,
+} from './web-opennext-smoke.mjs';
 
 test('measures every module except source maps and gates on the largest estimate', () => {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), 'web-opennext-size-')));
@@ -28,6 +38,18 @@ test('measures every module except source maps and gates on the largest estimate
   assert.equal(withLog.gatedMiB, 10);
   assert.ok(withLog.gatedMiB > BUDGET_MIB);
   assert.equal(wranglerGzipKiB('no figure'), null);
+});
+
+test('identity smoke rejects both external and embedded Redis clients', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'web-opennext-no-redis-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const worker = join(dir, 'worker.js');
+  writeFileSync(worker, 'export default {};');
+  assert.doesNotThrow(() => assertIdentityBundleOmitsRedis(dir));
+  writeFileSync(worker, 'import("@upstash/redis/cloudflare");');
+  assert.throws(() => assertIdentityBundleOmitsRedis(dir), /worker\.js/u);
+  writeFileSync(worker, 'class e extends Error {name="UpstashError"}');
+  assert.throws(() => assertIdentityBundleOmitsRedis(dir), /worker\.js/u);
 });
 
 test('smoke requires the commit and the family deployment id', () => {

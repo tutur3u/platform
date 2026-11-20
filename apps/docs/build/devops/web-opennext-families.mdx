@@ -133,19 +133,52 @@ exact commit for a size check, original Worker smoke and restored Worker
 smoke. The family stays held for routing. Before enabling it, verify hosted
 guard health and state continuity for active IP blocks and trust writers.
 
+The API identity build replaces the legacy Redis client with a module that
+rejects initialization. The original and restored bundle checks reject imports
+and embedded code from the real Redis client. Password login, OTP enrollment
+and verification, and MFA setup and recovery routes remain with the auth
+family. The shared proxy's required MFA check still verifies provider
+credentials and account assurance through Supabase, returning 403 for
+required MFA and 503 if assurance cannot be checked. Marked offline reads of
+Calendar settings return 503 while the offline guard is unassigned. The
+emitted smoke checks that response with offline protection enabled. Qualify
+the offline guard before routing marked reads to this Worker if that client
+flow is required.
+
 Calendar settings, native-integrity challenge issuance and enrollment use the
-same store. The integrity budget is zero by default. An operator allocates an
-explicit share within the existing service cap before a hosted rehearsal.
-The service checks its durable stop fence before entering a subject. One
-SQLite subject commits issuance, single-use consumption, key ownership,
-counter updates, revocation and global provider reservations atomically.
-The provider budget also caps each actor and emits at most one daily warning.
-The SQLite parity suite exercises expiry, ownership, counter conflicts and
-provider stops in `apps/abuse-guard/src/native-integrity.test.ts`.
+same store. The integrity budget is zero by default, and the Worker refuses
+valid integrity calls at zero before subject access. Rehearsal requires an
+explicit share within the service cap. Each verified principal can spend up
+to 5% of the family share per UTC day.
+
+A single SQLite subject commits issuance, consumption, key ownership, counters,
+revocation and provider reservations. During the first rehearsal, cap the
+allocation at 8,000 weighted commands per UTC day. Each subject call costs at
+least eight units, so this caps admitted subject calls at 1,000 per day. Use a
+staged burst test to choose a peak rate with headroom for both the subject and
+the shared control object. Track latency, overloads, and SQLite growth across
+the 90-day enrollment retention window before raising the allocation. The
+platform's per-object ceiling is 10 GB on Workers Paid and its request rate
+soft limit is 1,000 per second. Consider sharding actor-scoped records if
+measurements show a bottleneck, while preserving atomic global key ownership
+and provider accounting.
+[Cloudflare Durable Object limits](https://developers.cloudflare.com/durable-objects/platform/limits/) and
+[architecture guidance](https://developers.cloudflare.com/durable-objects/best-practices/architecture-guidance/).
+
+The provider budget also caps each actor and emits one daily warning at most.
+The persistent operator stop is authenticated `POST /control/stop` on the
+abuse-guard Worker. It closes every family, including integrity and new
+provider reservations, until `POST /control/resume`. Requests admitted
+before the stop can finish. For a provider-only configuration stop, set
+`NATIVE_INTEGRITY_PROVIDER_ENABLED=false` on the Web service. SQLite parity
+tests cover expiry, ownership and counter conflicts. Worker tests cover the
+zero budget, per-principal quota, and operator stop and resume.
 
 Move the three route groups together. Reconcile existing enrollments and
 provider budget and stop state before the switch, and let outstanding legacy
-challenges expire. A split issuer/verifier rollout can reject valid proofs.
+challenges expire. Map an active legacy provider stop onto the Web provider
+switch or the operator stop. A split issuer/verifier rollout can reject valid
+proofs.
 
 ## Rollback
 

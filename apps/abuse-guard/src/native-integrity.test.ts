@@ -107,8 +107,8 @@ describe('SQLite native integrity atomic operations', () => {
     ).toBe(true);
   });
 
-  it('enforces global and per-actor provider limits, alerts once, and honors a persistent stop', () => {
-    const { apply, run } = setup();
+  it('enforces global and per-actor provider limits and alerts once', () => {
+    const { apply } = setup();
     const reserve = {
       action: 'reserve-provider',
       limit: 3,
@@ -116,7 +116,7 @@ describe('SQLite native integrity atomic operations', () => {
       warningAt: 2,
       ttlSeconds: 86_460,
     } as const;
-    const keys = ['stop', 'day', 'actor-a', 'warning'];
+    const keys = ['day', 'actor-a', 'warning'];
     expect(apply(reserve, keys)).toEqual({
       reserved: true,
       used: 1,
@@ -135,27 +135,20 @@ describe('SQLite native integrity atomic operations', () => {
       actor: 2,
       warning: false,
     });
-    expect(apply(reserve, ['stop', 'day', 'actor-b', 'warning'])).toEqual({
+    expect(apply(reserve, ['day', 'actor-b', 'warning'])).toEqual({
       reserved: true,
       used: 3,
       actor: 1,
       warning: false,
     });
-    expect(apply(reserve, ['stop', 'day', 'actor-b', 'warning'])).toEqual({
+    expect(apply(reserve, ['day', 'actor-b', 'warning'])).toEqual({
       reserved: false,
       used: 3,
       actor: 1,
       warning: false,
     });
-    run(2000, {
-      op: 'kv.set',
-      k: 'stop',
-      v: '1',
-      mode: 'always',
-      ttlMs: 2 * day,
-    });
     expect(
-      apply(reserve, ['stop', 'new-day', 'new-actor', 'new-warning'], day)
-    ).toEqual({ reserved: false, used: 0, actor: 0, warning: false });
+      apply(reserve, ['new-day', 'new-actor', 'new-warning'], day)
+    ).toEqual({ reserved: true, used: 1, actor: 1, warning: false });
   });
 });

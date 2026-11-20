@@ -1,3 +1,4 @@
+import type { NextConfig } from 'next';
 import { canBuildOpenNextFamily } from './build-admission';
 import families from './families.json';
 
@@ -7,6 +8,7 @@ export interface OpenNextFamilyNextConfig {
   deploymentId?: string;
   generateBuildId?: () => Promise<string>;
   assetPrefix?: string;
+  turbopack?: NextConfig['turbopack'];
 }
 
 const SHA_PATTERN = /^[0-9a-f]{40}$/u;
@@ -40,5 +42,14 @@ export function openNextFamilyNextConfig(
     deploymentId: `web-${family.id}-${sha.slice(0, 12)}`,
     generateBuildId: async () => sha,
     ...(family.assetPrefix ? { assetPrefix: family.assetPrefix } : {}),
+    ...(family.id === 'api-identity'
+      ? {
+          turbopack: {
+            resolveAlias: {
+              '@upstash/redis': './cloudflare/opennext/redis-unavailable.ts',
+            },
+          },
+        }
+      : {}),
   };
 }

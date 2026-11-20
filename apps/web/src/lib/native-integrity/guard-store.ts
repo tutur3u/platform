@@ -89,11 +89,11 @@ export function createNativeIntegrityGuardStore(
     },
   };
   const reserve: NativeIntegrityProviderReserve = async (
-    keys,
+    [, day, actorDay, warning],
     [limit, ttlSeconds, actorLimit, warningAt]
   ) => {
     const result = integrityProviderReservationSchema.parse(
-      await run(keys, {
+      await run([day, actorDay, warning], {
         action: 'reserve-provider',
         limit,
         ttlSeconds,
