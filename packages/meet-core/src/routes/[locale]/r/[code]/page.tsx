@@ -1,6 +1,7 @@
 import { CallEnded } from '@tuturuuu/meet-core/features/call/components/call-ended';
 import { MeetGuestJoin } from '@tuturuuu/meet-core/features/call/components/guest-join';
 import { CallShell } from '@tuturuuu/meet-core/features/call/components/device-session-gate';
+import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
 import { MeetingPublicInvite } from '@tuturuuu/meet-core/features/call/components/meeting-public-invite';
 import { ParticipantNameForm } from '@tuturuuu/meet-core/features/call/components/participant-name-form';
 import {
@@ -159,6 +160,8 @@ export default async function RoomPage({
   return (
     <WorkspaceVisibilityProvider actorId={user.id}>
       <CallShell
+        formsEnabled={isMeetFormsEnabled()}
+        formsTurnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim()}
         accountId={user.id}
         defaultDisplayName={displayName}
         defaultAvatarUrl={avatarUrl}

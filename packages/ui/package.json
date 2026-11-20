@@ -235,6 +235,14 @@
       "types": "./src/components/ui/tooltip.tsx",
       "import": "./src/components/ui/tooltip.tsx"
     },
+    "./forms/respondent-choice": {
+      "types": "./src/components/ui/forms/respondent-choice.tsx",
+      "import": "./src/components/ui/forms/respondent-choice.tsx"
+    },
+    "./forms/respondent-ranking": {
+      "types": "./src/components/ui/forms/respondent-ranking.tsx",
+      "import": "./src/components/ui/forms/respondent-ranking.tsx"
+    },
     "./form": {
       "types": "./src/components/ui/form.tsx",
       "import": "./src/components/ui/form.tsx"

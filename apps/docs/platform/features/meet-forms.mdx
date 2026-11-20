@@ -1,0 +1,47 @@
+---
+title: Forms in Meet
+description: Run a Tuturuuu Form during a Meet call.
+---
+
+When Forms is enabled, signed-in participants can open **Forms** in the
+call controls. On a phone, Forms opens as a bottom sheet. A host with
+permission to manage Forms can launch an existing form from the workspace,
+create a short form in the call, or review and launch a draft from Mira.
+Participants respond to the version pinned when the host launched it.
+
+## Respond in the call
+
+Choose **Use my details** to fill eligible blank fields on a named form.
+You can edit suggested values and review the details before submitting.
+Signed-in attendees outside the workspace can choose a display name for
+the form. Anonymous forms skip identity prefill. When a form requires a
+Cloudflare Turnstile challenge, complete it before submitting.
+
+## See results
+
+A host with Forms analytics permission can see response counts, question
+breakdowns, and an aggregate CSV. Results count finalized responses for
+the current launch and pinned version.
+
+## Activation
+
+`MEET_FORMS_ENABLED` and `MEET_FORMS_EXTENDED_ENABLED` default to off in
+Meet and the Meet realtime Worker. The extended API also requires the
+core flag. Enable the same flags in both deployments after verification.
+
+Before enabling core Forms, verify the Forms transaction migrations and
+coordinate the public Forms writer cutover. Both submission paths must
+use the atomic response transaction to enforce shared response limits.
+Configure the Turnstile site key, secret, and exact requesting hostname.
+Verify a launch and submission with signed-in host and attendee accounts.
+Inline creation also requires the `meet_form_creation` RPC. Verify it
+exists on the target and exercise a host creating a form before activation.
+
+Before enabling the extended API, verify the published-version and upload
+lifecycle migrations, private storage, and scheduled attachment cleanup.
+The standard call drawer uses the core launch list. Published-version
+discovery and extended uploads need a call UI integration before they
+are available there.
+
+Regression suites cover disabled routes, participant prefill, the call
+renderer, launch-scoped results, and published data isolation across rooms.

@@ -26,6 +26,7 @@ import {
   encodeRoomCode,
 } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
+import { isMeetFormsEnabled } from '@tuturuuu/meet-core/features/call/server/forms/enabled';
 import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
   getSatelliteAppSessionUser,
@@ -182,6 +183,8 @@ async function roomModel(code: string, locale: string, url: URL) {
   ]);
   return {
     kind: 'room' as const,
+    formsEnabled: !access.guest && isMeetFormsEnabled(),
+    formsTurnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim(),
     meta: roomMeta(info),
     access: {
       ...access,

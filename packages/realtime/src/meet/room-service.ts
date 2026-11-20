@@ -21,6 +21,7 @@ import {
 import { roomBudgetSummary } from './room-budget';
 import { retainRoomChat } from './room-chat';
 import { applyRoomDocuments, type RoomDocumentsState } from './room-documents';
+import { applyRoomForms, type MeetRoomFormsEnv } from './room-forms';
 import { applyRoomRestore } from './room-lifecycle';
 import { applyRoomLive, type RoomLiveState } from './room-live';
 import { applyLiveSharing } from './room-live-sharing';
@@ -145,7 +146,8 @@ export function roomService(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
-  features = meetClassFeatures()
+  features = meetClassFeatures(),
+  formsEnv: MeetRoomFormsEnv = {}
 ): {
   state: RoomServiceState;
   body: unknown;
@@ -169,6 +171,8 @@ export function roomService(
       body: isGuestRemovalBlocked(snapshot, guestId, Date.now()),
     };
   }
+  const forms = applyRoomForms(snapshot, token, input, formsEnv);
+  if (forms) return forms;
   const privateMira = applyPrivateMira(snapshot, token, input);
   if (privateMira) return privateMira;
   const restored = applyRoomRestore(

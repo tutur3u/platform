@@ -26,6 +26,7 @@ import {
   expireEmptyRoom,
   observeRoomConnections,
 } from '../../../packages/realtime/src/meet/room-lifecycle';
+import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import {
   expireRoomLive,
   liveRoomAnnouncements,
@@ -53,7 +54,7 @@ import { privateRoomStorage } from './private-room-storage';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
-export interface MeetRoomEnv extends TurnEnv {
+export interface MeetRoomEnv extends TurnEnv, MeetRoomFormsEnv {
   CLOUDFLARE_REALTIME_API_BASE_URL?: string;
   CLOUDFLARE_REALTIME_APP_ID: string;
   CLOUDFLARE_REALTIME_APP_SECRET: string;
@@ -269,7 +270,8 @@ export class MeetRoomDurableObject implements DurableObject {
         this.snapshot,
         token,
         body,
-        meetClassFeatures(this.env)
+        meetClassFeatures(this.env),
+        this.env
       );
       const changed = this.snapshot !== result.state;
       this.snapshot = result.state;

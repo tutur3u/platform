@@ -30,6 +30,12 @@ export function endMeetRoom(
         }
       : undefined,
     ended: true,
+    ...(state.publishedFormLaunches && {
+      publishedFormLaunches: state.publishedFormLaunches.map((launch) => ({
+        ...launch,
+        closed: true as const,
+      })),
+    }),
     transcription: state.transcription
       ? { ...state.transcription, active: false }
       : undefined,

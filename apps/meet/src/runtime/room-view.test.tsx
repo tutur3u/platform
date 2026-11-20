@@ -4,6 +4,7 @@ import { beforeEach, expect, test, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   section: vi.fn(() => null),
   ended: vi.fn(() => null),
+  shell: vi.fn(() => null),
 }));
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
@@ -13,7 +14,7 @@ vi.mock('@tuturuuu/meet-core/features/call/components/call-ended', () => ({
 }));
 vi.mock(
   '@tuturuuu/meet-core/features/call/components/device-session-gate',
-  () => ({ CallShell: () => null })
+  () => ({ CallShell: mocks.shell })
 );
 vi.mock(
   '@tuturuuu/meet-core/features/call/components/participant-name-form',
@@ -41,9 +42,14 @@ function findByType(node: ReactNode, type: unknown): ReactElement[] {
 }
 
 const meetingId = '10000000-0000-4000-8000-000000000001';
-function model(policy: Record<string, unknown>, isHost = false) {
+function model(
+  policy: Record<string, unknown>,
+  isHost = false,
+  formsEnabled = false
+) {
   return {
     kind: 'room',
+    formsEnabled,
     access: {
       meeting: { id: meetingId, name: 'Weekly sync', ws_id: 'ws-1' },
       user: { id: 'viewer-id' },
@@ -57,6 +63,17 @@ function model(policy: Record<string, unknown>, isHost = false) {
 }
 
 beforeEach(() => vi.clearAllMocks());
+
+test.each([false, true])(
+  'passes the server Forms flag (%s) to the live call',
+  (formsEnabled) => {
+    const [shell] = findByType(
+      RoomView({ model: model({ ended: false }, false, formsEnabled) }),
+      mocks.shell
+    );
+    expect(shell?.props).toMatchObject({ formsEnabled });
+  }
+);
 
 test('the in-room ended screen opens the notes and transcript tabs', () => {
   const policy = { ended: true, canReadNotes: true };

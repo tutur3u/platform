@@ -1,14 +1,26 @@
 'use client';
 
+import { ClipboardList } from '@tuturuuu/icons';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useCallPolls } from '../lib/polls-client';
 import { useCallQuizArena } from '../lib/quiz-arena-client';
 import { AccountRequiredState } from './account-required-state';
+import { ControlButton } from './control-bar';
 import { PollsControl, PollsPanel } from './polls-panel';
 import { QuizArenaControl, QuizArenaPanel } from './quiz-arena-panel';
 import { ResizableCallPanel } from './resizable-call-panel';
 
-export type ActivityDrawer = 'polls' | 'quiz-arena';
+const MeetFormsActivity = dynamic(
+  () =>
+    import('./forms/meet-forms-activity').then(
+      (module) => module.MeetFormsActivity
+    ),
+  { ssr: false }
+);
+
+export type ActivityDrawer = 'polls' | 'quiz-arena' | 'forms';
 
 /** Classroom activities share one drawer slot and one control group. */
 export function useCallActivities<D extends string | null>({
@@ -16,6 +28,9 @@ export function useCallActivities<D extends string | null>({
   accountId,
   enabled,
   showTools = true,
+  formsEnabled,
+  formsTurnstileSiteKey,
+  formsAccess,
   drawer,
   onDrawer,
   requiresAccount = false,
@@ -24,12 +39,18 @@ export function useCallActivities<D extends string | null>({
   accountId: string;
   enabled: boolean;
   showTools?: boolean;
+  formsEnabled: boolean;
+  formsTurnstileSiteKey?: string;
+  formsAccess: { canManage: boolean; canReadWorkspace: boolean };
   drawer: D;
   onDrawer: (next: ActivityDrawer | null) => void;
   /** Anonymous guests may vote in polls only; Quiz Arena needs an account. */
   requiresAccount?: boolean;
 }) {
   const t = useTranslations('meet.call.quizArena');
+  const formsT = useTranslations('meet.call');
+  const [hasOpenedForms, setHasOpenedForms] = useState(false);
+  const canUseForms = enabled && formsEnabled && !requiresAccount;
   const polls = useCallPolls(meetingId, accountId, enabled, drawer === 'polls');
   const arena = useCallQuizArena(
     meetingId,
@@ -37,8 +58,10 @@ export function useCallActivities<D extends string | null>({
     enabled,
     drawer === 'quiz-arena'
   );
-  const toggle = (next: ActivityDrawer) =>
+  const toggle = (next: ActivityDrawer) => {
+    if (next === 'forms') setHasOpenedForms(true);
     onDrawer(drawer === next ? null : next);
+  };
   const close = () => onDrawer(null);
   const activePoll = polls.data?.polls.some((poll) => poll.status === 'active');
   const activeArena =
@@ -79,29 +102,51 @@ export function useCallActivities<D extends string | null>({
             onClick={() => toggle('quiz-arena')}
           />
         )}
+        {canUseForms && (
+          <ControlButton
+            active={drawer === 'forms'}
+            icon={ClipboardList}
+            label={formsT('forms.title')}
+            onClick={() => toggle('forms')}
+          />
+        )}
       </>
     ),
-    panel:
-      drawer === 'polls' && showPolls ? (
-        <PollsPanel
-          accountId={accountId}
-          meetingId={meetingId}
-          query={polls}
-          onClose={close}
-        />
-      ) : drawer === 'quiz-arena' && showArena ? (
-        requiresAccount ? (
-          <ResizableCallPanel label={t('title')}>
-            <AccountRequiredState />
-          </ResizableCallPanel>
-        ) : (
-          <QuizArenaPanel
+    panel: (
+      <>
+        {canUseForms && hasOpenedForms && (
+          <MeetFormsActivity
+            key={JSON.stringify([meetingId, accountId])}
             accountId={accountId}
             meetingId={meetingId}
-            query={arena}
+            {...formsAccess}
+            turnstileSiteKey={formsTurnstileSiteKey}
+            open={drawer === 'forms'}
             onClose={close}
           />
-        )
-      ) : null,
+        )}
+        {drawer === 'polls' && showPolls ? (
+          <PollsPanel
+            accountId={accountId}
+            meetingId={meetingId}
+            query={polls}
+            onClose={close}
+          />
+        ) : drawer === 'quiz-arena' && showArena ? (
+          requiresAccount ? (
+            <ResizableCallPanel label={t('title')}>
+              <AccountRequiredState />
+            </ResizableCallPanel>
+          ) : (
+            <QuizArenaPanel
+              accountId={accountId}
+              meetingId={meetingId}
+              query={arena}
+              onClose={close}
+            />
+          )
+        ) : null}
+      </>
+    ),
   };
 }

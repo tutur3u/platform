@@ -144,6 +144,7 @@
               "platform/features/education-inline-assistant",
               "platform/features/account-benefits",
               "platform/features/meet-followups",
+              "platform/features/meet-forms",
               "platform/features/meet-live-assistants",
               "platform/features/meet-solo-mode",
               "platform/features/meet-together",

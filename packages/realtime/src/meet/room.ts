@@ -6,6 +6,7 @@ import type { ClassTimer } from './class-timer';
 import { type MeetClassFeatures, meetClassFeatures } from './class-features';
 import { canMeetRealtimeManageParticipants } from './permissions';
 import type { RoomBudget } from './room-budget';
+import type { RoomFormsState } from './room-forms';
 import type { MeetApprovedParticipant, MeetRoomSettings } from './room-options';
 import { outcome } from './room-outcome';
 import {
@@ -38,7 +39,8 @@ export const MEET_PRESENCE_TTL_MS = 30_000;
 // Historical boundary retained for regression tests; open sockets no longer expire.
 export const MEET_CONNECTED_PRESENCE_TTL_MS = 10 * 60_000;
 
-export interface MeetRoomSnapshot extends TranscriptionRoomState {
+export interface MeetRoomSnapshot
+  extends TranscriptionRoomState, RoomFormsState {
   lifecycle?: import('./room-lifecycle').MeetRoomLifecycle;
   liveAssistant?: import('./room-live').RoomLiveState;
   budget?: RoomBudget;

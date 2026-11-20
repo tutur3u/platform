@@ -124,6 +124,16 @@ const allowedSatelliteLocalApiRoutes = new Set([
   // short-lived server credential. The browser socket cannot run them.
   'apps/meet/src/app/api/meet-call/[meetingId]/class-timer/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/responses/[responseId]/files/[uploadId]/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/submit/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/uploads/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/prefill/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/submit/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/catalog/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/published/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/results/route.ts',
+  'apps/meet/src/app/api/meet-call/[meetingId]/forms/route.ts',
   // Collaboration requires Meet room admission; preview assets use scoped capabilities.
   'apps/meet/src/app/api/meet-call/[meetingId]/document/route.ts',
   // Polls and Quiz Arena authorize the Meet satellite session and use signed

@@ -1,6 +1,12 @@
 import { isAnswerableQuestionType } from './block-utils';
 import { normalizeMarkdownForComparison } from './content';
-import type { FormDefinition, FormDefinitionSection } from './types';
+import type { PublishedFormDefinition } from './published-schema';
+import type { FormDefinition } from './types';
+
+type BranchingForm = Pick<
+  FormDefinition | PublishedFormDefinition,
+  'sections' | 'logicRules'
+>;
 
 export function normalizeAnswer(value: unknown): string[] {
   if (typeof value === 'string') {
@@ -47,18 +53,18 @@ export function matchesRule(
   }
 }
 
-export function getOrderedSections(
-  form: FormDefinition
-): FormDefinitionSection[] {
+export function getOrderedSections<
+  Sections extends BranchingForm['sections'],
+>(form: { sections: Sections }): Sections {
   return form.sections;
 }
 
 function ruleMatches(
-  rule: FormDefinition['logicRules'][number],
+  rule: BranchingForm['logicRules'][number],
   answers: Record<string, unknown>,
   questionMap: Map<
     string,
-    FormDefinition['sections'][number]['questions'][number]
+    BranchingForm['sections'][number]['questions'][number]
   >
 ): boolean {
   const sourceQuestionId = rule.sourceQuestionId ?? null;
@@ -93,7 +99,7 @@ function ruleMatches(
 }
 
 export function getNextSectionTarget(
-  form: FormDefinition,
+  form: BranchingForm,
   currentSectionId: string,
   answers: Record<string, unknown>
 ): { type: 'next' | 'section' | 'submit'; targetSectionId?: string } {
@@ -167,7 +173,7 @@ export function getNextSectionTarget(
 }
 
 export function getReachableSectionIds(
-  form: FormDefinition,
+  form: BranchingForm,
   answers: Record<string, unknown>
 ): string[] {
   const sections = getOrderedSections(form);
@@ -200,7 +206,7 @@ export function getReachableSectionIds(
 }
 
 export function getReachableQuestionIds(
-  form: FormDefinition,
+  form: BranchingForm,
   answers: Record<string, unknown>
 ): string[] {
   const reachableSections = new Set(getReachableSectionIds(form, answers));
@@ -209,13 +215,18 @@ export function getReachableQuestionIds(
     .filter((section) => reachableSections.has(section.id))
     .flatMap((section) =>
       section.questions
-        .filter((question) => isAnswerableQuestionType(question.type))
+        .filter(
+          ({ type }) =>
+            type === 'matrix' ||
+            type === 'file_upload' ||
+            isAnswerableQuestionType(type)
+        )
         .map((question) => question.id)
     );
 }
 
 export function getPlannedSectionIds(
-  form: FormDefinition,
+  form: BranchingForm,
   currentSectionId: string,
   answers: Record<string, unknown>,
   visitedSectionIds: string[]

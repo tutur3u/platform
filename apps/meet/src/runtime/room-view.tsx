@@ -84,6 +84,8 @@ export function RoomView({
         leaveHref={leaveHref}
         canReadWorkspace={canReadWorkspace}
         requiresAccount={requiresAccount}
+        formsEnabled={model.formsEnabled}
+        formsTurnstileSiteKey={model.formsTurnstileSiteKey}
         meetingId={meeting.id}
         meetingName={meetingName}
         wsId={meeting.ws_id}

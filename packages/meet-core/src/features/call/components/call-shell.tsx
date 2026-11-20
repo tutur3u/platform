@@ -62,13 +62,14 @@ import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
-/** Compose the active meeting, including protected audio and compact room controls. */
 function CallShellContent({
   accountId,
   defaultDisplayName,
   defaultAvatarUrl,
   canReadWorkspace = true,
   requiresAccount = false,
+  formsEnabled = false,
+  formsTurnstileSiteKey,
   leaveHref,
   meetingId,
   meetingName,
@@ -81,8 +82,9 @@ function CallShellContent({
   defaultDisplayName: string;
   defaultAvatarUrl?: string;
   canReadWorkspace?: boolean;
-  /** Anonymous guests without a Tuturuuu session. */
   requiresAccount?: boolean;
+  formsEnabled?: boolean;
+  formsTurnstileSiteKey?: string;
   leaveHref: string;
   meetingId: string;
   meetingName: string;
@@ -296,6 +298,9 @@ function CallShellContent({
     accountId,
     enabled: MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
     showTools: roomTools.canUse,
+    formsEnabled,
+    formsTurnstileSiteKey,
+    formsAccess: { canManage, canReadWorkspace },
     drawer,
     onDrawer: setDrawer,
   });

@@ -7001,6 +7001,48 @@ export type Database = {
           },
         ];
       };
+      form_published_versions: {
+        Row: {
+          answer_reveal: string;
+          definition: NonNullable<Json>;
+          form_id: string;
+          id: string;
+          published_at: string;
+          quiz_keys: NonNullable<Json>;
+          score_reveal: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          answer_reveal?: string;
+          definition: NonNullable<Json>;
+          form_id: string;
+          id?: string;
+          published_at?: string;
+          quiz_keys?: NonNullable<Json>;
+          score_reveal?: string;
+          ws_id: string;
+        };
+        Update: {
+          answer_reveal?: string;
+          definition?: NonNullable<Json>;
+          form_id?: string;
+          id?: string;
+          published_at?: string;
+          quiz_keys?: NonNullable<Json>;
+          score_reveal?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_published_versions_form_id_ws_id_fkey';
+            columns: ['form_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id', 'ws_id'];
+          },
+        ];
+      };
       form_question_options: {
         Row: {
           id: string;
@@ -7092,6 +7134,102 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'form_sections';
             referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_quiz_releases: {
+        Row: {
+          form_id: string;
+          launch_id: string;
+          released_at: string;
+          version_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          form_id: string;
+          launch_id: string;
+          released_at?: string;
+          version_id: string;
+          ws_id: string;
+        };
+        Update: {
+          form_id?: string;
+          launch_id?: string;
+          released_at?: string;
+          version_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_quiz_releases_version_id_form_id_ws_id_fkey';
+            columns: ['version_id', 'form_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_published_versions';
+            referencedColumns: ['id', 'form_id', 'ws_id'];
+          },
+        ];
+      };
+      form_respondent_uploads: {
+        Row: {
+          actor_scope: string;
+          cleanup_started_at: string | null;
+          content_type: string;
+          created_at: string;
+          expires_at: string;
+          form_id: string;
+          id: string;
+          launch_id: string;
+          question_id: string;
+          ready_at: string | null;
+          session_slot: number;
+          size_bytes: number;
+          slot: number;
+          version_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_scope: string;
+          cleanup_started_at?: string | null;
+          content_type: string;
+          created_at?: string;
+          expires_at?: string;
+          form_id: string;
+          id?: string;
+          launch_id: string;
+          question_id: string;
+          ready_at?: string | null;
+          session_slot?: number;
+          size_bytes: number;
+          slot: number;
+          version_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_scope?: string;
+          cleanup_started_at?: string | null;
+          content_type?: string;
+          created_at?: string;
+          expires_at?: string;
+          form_id?: string;
+          id?: string;
+          launch_id?: string;
+          question_id?: string;
+          ready_at?: string | null;
+          session_slot?: number;
+          size_bytes?: number;
+          slot?: number;
+          version_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_respondent_uploads_version_id_form_id_ws_id_fkey';
+            columns: ['version_id', 'form_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_published_versions';
+            referencedColumns: ['id', 'form_id', 'ws_id'];
           },
         ];
       };
@@ -23467,6 +23605,16 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      claim_expired_form_respondent_uploads: {
+        Args: { p_actor_scope?: string; p_form_id?: string };
+        Returns: {
+          id: string;
+          launch_id: string;
+          question_id: string;
+          version_id: string;
+          ws_id: string;
+        }[];
       };
       claim_next_devbox_run: {
         Args: { p_runner_id: string };

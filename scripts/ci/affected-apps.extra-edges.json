@@ -61,6 +61,12 @@
     "apps/infrastructure"
   ],
   "packages/meet-core/src/features/call/components/": ["packages/ui"],
+  "packages/meet-core/src/features/call/server/forms-extended/": ["apps/forms"],
+  "packages/meet-core/src/features/call/server/forms-results/": ["apps/forms"],
+  "packages/meet-core/src/features/call/server/forms/": [
+    "apps/forms",
+    "packages/cloudflare"
+  ],
   "packages/mind-ui/src/components/mind/": ["packages/ui"],
   "packages/realtime/src/": ["apps/chat-realtime"],
   "packages/satellite/src/": ["packages/users-core"],

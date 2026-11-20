@@ -2,6 +2,7 @@ import {
   type MeetClassFeatures,
   meetClassFeatures,
 } from '../../../packages/realtime/src/meet/class-features';
+import type { MeetRoomFormsEnv } from '../../../packages/realtime/src/meet/room-forms';
 import type { MeetRealtimeTokenPayload } from '../../../packages/realtime/src/meet/primitives';
 import { MIRA_ROOM_DENIED } from '../../../packages/realtime/src/meet/room-mira-private';
 import {
@@ -13,7 +14,8 @@ export function roomService(
   state: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
-  features: MeetClassFeatures = meetClassFeatures()
+  features: MeetClassFeatures = meetClassFeatures(),
+  formsEnv: MeetRoomFormsEnv = {}
 ) {
   if (
     input &&
@@ -30,5 +32,5 @@ export function roomService(
     ].includes(String(input.action))
   )
     return { state, body: { error: MIRA_ROOM_DENIED }, status: 403 };
-  return applyRoomService(state, token, input, features);
+  return applyRoomService(state, token, input, features, formsEnv);
 }

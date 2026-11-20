@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/dist/server/web/spec-extension/request';
+import { formsEndpoints } from './forms-registry';
 import {
   matchRoute,
   type RouteParams,
@@ -53,12 +54,13 @@ type Handler = (
   request: NextRequest,
   params: RouteParams
 ) => Response | Promise<Response>;
-interface Endpoint {
+export interface Endpoint {
   pattern: string;
   methods: Partial<Record<string, Handler>>;
 }
 
 export const meetEndpoints: Endpoint[] = [
+  ...formsEndpoints,
   {
     pattern: '/api/auth/logout',
     methods: {
