@@ -10,15 +10,21 @@ const {
   identity,
   definitions,
 } = require('./security-sql');
-
 const {
   assertShrinkingBlocks,
   readReviewedFile,
   verifiedFindingMatches,
   reviewedBlockMatches,
+  verifyRemediation: verifyStaticRemediation,
 } = require('./security-definer-blocks');
-
 const { admitVerifiedFindings } = require('./security-definer-admission');
+const verifyRemediation = (sql, entry) =>
+  verifyStaticRemediation(sql, entry, {
+    catalogEntry,
+    lintMigration,
+    parseAcl,
+    targetMatches,
+  });
 const MIGRATIONS = 'apps/database/supabase/migrations/';
 const BASELINE = 'scripts/ci/security-definer-baseline.json';
 const { inheritedFindings } = require('./security-definer-roles');
@@ -39,8 +45,7 @@ function unsafeGuards(body) {
     / :: (?:[\w]+ \. )?[\w]+(?: \[ \])?/g,
     ''
   );
-  // A NULL check elsewhere in the function cannot protect this comparison.
-  // Accept only a whole rejecting condition starting with the NULL disjunct.
+  // Require the NULL check in the same rejecting condition.
   const conditions = [
     ...code.matchAll(/\b(?:if|elsif)\s+([\s\S]*?)\s+then\b/g),
   ];
@@ -231,7 +236,6 @@ function parseAcl(ts) {
     );
   });
   if (direction < 0) throw new Error('Missing ACL recipients');
-  // Revoking the option to delegate does not revoke EXECUTE itself.
   if (action === 'revoke' && ts[1]?.value === 'grant') return null;
   const roles = recipients(ts.slice(direction + 1));
   if (kind === 'all') {
@@ -257,7 +261,6 @@ function targetMatches(target, fn, action) {
       : target.base !== known.base
   )
     return false;
-  // An unqualified REVOKE may resolve to a different schema via search_path.
   if (action === 'revoke' && !target.qualified) return false;
   if (target.args === null) return action === 'grant';
   if (target.args.length !== known.args.length) return false;
@@ -527,9 +530,7 @@ function checkRepository({
       .trim()
       .split('\n')
       .filter(Boolean);
-  // Definers the SQL grant guard already accepts: frozen inherited ACLs and
-  // its source-bound reviewed exceptions (one mechanism per finding; never
-  // duplicate those entries in security-definer-verified-findings.json).
+  // Keep one review record per finding across both SQL guards.
   const inherited = new Set();
   if (
     paths.some(
@@ -654,11 +655,10 @@ if (require.main === module) {
         __dirname,
         'security-definer-reviewed-blocks.json'
       );
-      // Base verified records are append-only; additions need source binding
-      // and an attestation (security-definer-admission.js) before they apply.
       const findings = await admitVerifiedFindings({
         root,
         trustedDirectory: __dirname,
+        verifyRemediation,
         scan: (verifiedFindings) =>
           checkRepository({
             root,
@@ -696,4 +696,5 @@ module.exports = {
   lintMigration,
   checkRepository,
   unsafeGuards,
+  verifyRemediation,
 };

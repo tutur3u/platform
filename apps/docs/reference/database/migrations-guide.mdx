@@ -998,10 +998,16 @@ hardening migration. Coverage: `sql-grant-guard-verified-findings.test.js`.
 
 The definer guard's verified records (`scripts/ci/security-definer-verified-findings.json`)
 are admitted by `scripts/ci/security-definer-admission.js`, which CI loads from
-the base commit. Base records are append-only. A pull request may add a record
-only for a migration it adds. It may rebind a base record only by changing its
-`sourceDigest`, and only for a migration it modifies. Every added or rebound
-record must match a finding the trusted guard recomputes over the head bytes.
+the base commit. Base records are append-only. A change can add a record for
+a migration it adds. For an unchanged, earlier migration, the record must set
+`remediationMigration` to the repo-relative path of a later migration added in
+the same change. The guard checks the new migration at the attested head for a
+complete replacement of the exact routine, a pinned `pg_catalog, pg_temp`
+search path, and explicit revocation from `PUBLIC`, `anon`, and
+`authenticated`. Keep the proof static so the guard can verify it.
+A change may rebind a base record by changing only its `sourceDigest` for a
+migration it modifies. Every added or rebound record must match a finding the
+trusted guard recomputes over the head bytes.
 A `security/definer-record-admission` success from `tuturuuu-release-bot` on
 the exact head SHA must carry the digest printed by
 `node scripts/ci/security-definer-admission.js digest <base-ledger> <head-ledger>`.

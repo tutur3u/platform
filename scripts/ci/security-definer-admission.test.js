@@ -114,7 +114,7 @@ test('a record for a renamed migration is rejected', async (t) => {
   const record = recordFor(f.root, moved);
   await assert.rejects(
     admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
-    /must target a migration added by this change: .*_moved\.sql/
+    /must target a migration added by this change or prove a fix-forward: .*_moved\.sql/
   );
 });
 
@@ -157,4 +157,90 @@ test('a record for an added migration without any finding is rejected', async (t
     admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
     /matches no recomputed finding/
   );
+});
+
+const fixedDefiner = `CREATE OR REPLACE FUNCTION public.stale()
+  RETURNS void LANGUAGE plpgsql SECURITY DEFINER
+  SET search_path = pg_catalog, pg_temp AS $$ BEGIN RETURN; END; $$;
+REVOKE ALL ON FUNCTION public.stale() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.stale() TO service_role;
+`;
+
+test('attested historical finding binds the new hardened definition', async (t) => {
+  const f = fixture(t, (root) => write(root, NEW, fixedDefiner));
+  const record = { ...recordFor(f.root, OLD), remediationMigration: NEW };
+  assert.deepEqual(
+    await admit(f, [record], {
+      fetch: api({ [f.head]: [status([record])] }),
+    }),
+    []
+  );
+  await assert.rejects(
+    admit(f, [record], {
+      fetch: api({ [f.head]: [status([recordFor(f.root, OLD)])] }),
+    }),
+    /does not cover exactly/
+  );
+});
+
+for (const [name, change] of [
+  ['quoted PUBLIC role', (sql) => sql.replace('FROM PUBLIC', 'FROM "public"')],
+  ['no replacement', (sql) => sql.replace('CREATE OR REPLACE', 'CREATE')],
+  ['wrong routine', (sql) => sql.replaceAll('public.stale', 'public.other')],
+  [
+    'unsafe path',
+    (sql) => sql.replace('pg_catalog, pg_temp', 'public, pg_temp'),
+  ],
+  [
+    'missing authenticated revocation',
+    (sql) => sql.replace(', authenticated', ''),
+  ],
+  ['client grant', (sql) => sql.replace('TO service_role', 'TO authenticated')],
+  [
+    'later alter',
+    (sql) => sql + 'ALTER FUNCTION public.stale() RESET search_path;',
+  ],
+]) {
+  test(`fix-forward rejects ${name}`, async (t) => {
+    const f = fixture(t, (root) => write(root, NEW, change(fixedDefiner)));
+    const record = { ...recordFor(f.root, OLD), remediationMigration: NEW };
+    const calls = [];
+    await assert.rejects(
+      admit(f, [record], { fetch: api({}, calls) }),
+      /must target a migration added by this change or prove a fix-forward/
+    );
+    assert.deepEqual(calls, []);
+  });
+}
+
+test('an altered historical migration cannot use fix-forward admission', async (t) => {
+  const f = fixture(t, (root) => {
+    write(root, NEW, fixedDefiner);
+    fs.appendFileSync(
+      path.join(root, OLD),
+      '\n-- modified historical migration\n'
+    );
+  });
+  const record = { ...recordFor(f.root, OLD), remediationMigration: NEW };
+  await assert.rejects(
+    admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
+    /must target a migration added by this change or prove a fix-forward/
+  );
+});
+
+test('the Meet erasure ACL migration proves both historical routine repairs', () => {
+  const { verifyRemediation } = require('./security-definer-guard');
+  const records = require('./security-definer-verified-findings.json');
+  const migration = '20261120102500_meet_attendance_erasure_acl.sql';
+  const sql = fs.readFileSync(
+    path.join(__dirname, '../..', MIGRATIONS, migration),
+    'utf8'
+  );
+  const repaired = records.filter(({ file }) =>
+    file.endsWith('20261120095800_meet_attendance_erasure_hardening.sql')
+  );
+  assert.equal(repaired.length, 2);
+  for (const record of repaired) {
+    assert.equal(verifyRemediation(sql, record), true, record.signature);
+  }
 });

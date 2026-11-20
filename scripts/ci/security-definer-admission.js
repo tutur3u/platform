@@ -5,8 +5,9 @@
 // the pinned attester identity, canonicalization and hash below can only be
 // changed through a reviewed merge, never by the pull request being checked.
 // Base records stay append-only and byte-identical; an addition must bind a
-// finding that the trusted guard recomputes over a migration ADDED by the pull
-// request, and must be covered by an independent attestation status that the
+// finding that the trusted guard recomputes and bind either a new migration
+// or an unchanged historical migration with a new verified remediation. Each
+// addition must be covered by an independent attestation status that the
 // release bot posted on the exact head SHA. Every failure, including API
 // errors, rejects the run.
 const crypto = require('node:crypto');
@@ -246,15 +247,15 @@ function applyRebinds(trusted, rebinds) {
 
 // D2: each addition must match a finding the trusted guard recomputed over the
 // pull request's bytes (path, line, rule, signature, digest, sourceDigest).
-function bindAdditions(additions, findings, added) {
+function bindAdditions(additions, findings, added, proveFixForward) {
   for (const entry of additions) {
     if (
       typeof entry.file !== 'string' ||
       !entry.file.startsWith(MIGRATIONS) ||
-      !added.has(entry.file)
+      (!added.has(entry.file) && !proveFixForward?.(entry))
     )
       throw new Error(
-        `Verified finding addition must target a migration added by this change: ${entry.file}`
+        `Verified finding addition must target a migration added by this change or prove a fix-forward: ${entry.file}`
       );
     if (
       !findings.some((finding) =>
@@ -355,6 +356,7 @@ async function admitVerifiedFindings({
   root,
   trustedDirectory,
   scan,
+  verifyRemediation,
   env = process.env,
   fetch = globalThis.fetch,
 }) {
@@ -371,7 +373,33 @@ async function admitVerifiedFindings({
   if (rebinds.length)
     bindRebinds(rebinds, findings, modifiedMigrations(root, base, head));
   const added = addedMigrations(root, base, head);
-  const remaining = bindAdditions(additions, findings, added);
+  const proveFixForward = (entry) => {
+    const remediation = entry.remediationMigration;
+    const migrationVersion =
+      /^apps\/database\/supabase\/migrations\/(\d{14})_[\w-]+\.sql$/;
+    const originalVersion = migrationVersion.exec(entry.file)?.[1];
+    const remediationVersion = migrationVersion.exec(remediation)?.[1];
+    if (
+      !verifyRemediation ||
+      !originalVersion ||
+      !remediationVersion ||
+      remediationVersion <= originalVersion ||
+      !added.has(remediation)
+    )
+      return false;
+    const original = git(root, ['show', `${base}:${entry.file}`]);
+    if (
+      original !== git(root, ['show', `${head}:${entry.file}`]) ||
+      crypto.createHash('sha256').update(original).digest('hex') !==
+        entry.sourceDigest
+    )
+      return false;
+    return verifyRemediation(
+      git(root, ['show', `${head}:${remediation}`]),
+      entry
+    );
+  };
+  const remaining = bindAdditions(additions, findings, added, proveFixForward);
   const description = await verifyAttestation({
     additions,
     rebinds,
@@ -385,7 +413,12 @@ async function admitVerifiedFindings({
   // Attested rebinds join the trusted set the guard scans with, so they
   // suppress exactly like base records; additions still filter afterwards.
   if (!rebinds.length) return remaining;
-  return bindAdditions(additions, scan(applyRebinds(trusted, rebinds)), added);
+  return bindAdditions(
+    additions,
+    scan(applyRebinds(trusted, rebinds)),
+    added,
+    proveFixForward
+  );
 }
 
 module.exports = {

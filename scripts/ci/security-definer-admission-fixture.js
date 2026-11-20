@@ -11,7 +11,10 @@ const {
   admitVerifiedFindings,
   attestationDescription,
 } = require('./security-definer-admission');
-const { checkRepository } = require('./security-definer-guard');
+const {
+  checkRepository,
+  verifyRemediation,
+} = require('./security-definer-guard');
 
 const MIGRATIONS = 'apps/database/supabase/migrations';
 const OLD = `${MIGRATIONS}/20260101000000_old.sql`;
@@ -109,6 +112,7 @@ function admit(f, records, { fetch, env = {} } = {}) {
     root: f.root,
     trustedDirectory: f.trusted,
     scan: scanner(f.root),
+    verifyRemediation,
     env: {
       BASE_SHA: f.base,
       HEAD_SHA: f.head,
