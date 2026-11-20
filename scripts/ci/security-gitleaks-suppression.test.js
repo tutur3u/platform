@@ -573,9 +573,12 @@ test('the #6990 discord-client-id fingerprint is suppressed while new findings f
 
 test('Mastermind fleet signing fixtures have exact ignore fingerprints', () => {
   const revision = '11517227eb76d7cdce50f8749c4f580e762955ad';
-  const lines = fs
-    .readFileSync(path.resolve(__dirname, '../../.gitleaksignore'), 'utf8')
-    .split('\n');
+  // The scan job deletes the checkout copy before this suite runs, so read
+  // the committed list rather than the working tree.
+  const lines = execFileSync('git', ['show', 'HEAD:.gitleaksignore'], {
+    cwd: path.resolve(__dirname, '../..'),
+    encoding: 'utf8',
+  }).split('\n');
   const fingerprints = lines.filter((line) => line.startsWith(`${revision}:`));
   assert.deepEqual(fingerprints, [
     `${revision}:scripts/mastermind-fleet/publish.test.mjs:generic-api-key:10`,
