@@ -7635,5 +7635,9 @@
   "financeWalletRoleRevokeTitle": "Thu hồi {role}?",
   "financeWalletRoleRevokeBody": "Thành viên chỉ có vai trò này sẽ không còn thấy ví.",
   "financeWalletRoleSaved": "Đã lưu quyền vai trò",
-  "financeWalletRoleRevoked": "Đã thu hồi quyền vai trò"
+  "financeWalletRoleRevoked": "Đã thu hồi quyền vai trò",
+  "financeInterestPendingDeposits": "Chờ tính lãi",
+  "financeInterestDepositedOn": "Nạp {date}",
+  "financeInterestStartsIn": "{count, plural, =0{Tính lãi từ hôm nay} =1{Tính lãi từ ngày mai} other{Tính lãi sau {count} ngày}}",
+  "financeInterestProjectionChart": "Lãi dự kiến"
 }

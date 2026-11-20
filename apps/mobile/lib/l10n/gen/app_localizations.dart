@@ -33126,6 +33126,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Role access revoked'**
   String get financeWalletRoleRevoked;
+
+  /// No description provided for @financeInterestPendingDeposits.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to earn interest'**
+  String get financeInterestPendingDeposits;
+
+  /// No description provided for @financeInterestDepositedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Deposited {date}'**
+  String financeInterestDepositedOn(String date);
+
+  /// No description provided for @financeInterestStartsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{Earns from today} =1{Earns from tomorrow} other{Earns in {count} days}}'**
+  String financeInterestStartsIn(int count);
+
+  /// No description provided for @financeInterestProjectionChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Projected interest'**
+  String get financeInterestProjectionChart;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

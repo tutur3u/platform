@@ -23,7 +23,12 @@ class WalletInterest {
           .cast<Map<String, dynamic>>()
           .map(WalletInterestRate.fromJson)
           .toList(growable: false),
-      _projections = json['projections'] as Map<String, dynamic>?;
+      _projections = json['projections'] as Map<String, dynamic>?,
+      pendingDeposits = (json['pendingDeposits'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(WalletInterestPendingDeposit.fromJson)
+          .where((deposit) => deposit.depositDate != null)
+          .toList(growable: false);
 
   final WalletInterestConfig? config;
   final num? currentRate;
@@ -34,11 +39,41 @@ class WalletInterest {
   final List<WalletInterestRate> rates;
   final Map<String, dynamic>? _projections;
 
+  /// Deposits that start earning interest on a later business day.
+  final List<WalletInterestPendingDeposit> pendingDeposits;
+
+  /// Projected cumulative interest per day of [period].
+  List<(DateTime, num)> projectionSeries(
+    WalletInterestProjectionPeriod period,
+  ) => [
+    for (final row
+        in (_projections?[period.name] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>())
+      if ((_date(row['date']), row['projectedCumulativeInterest']) case (
+        final DateTime date,
+        final num value,
+      ))
+        (date, value),
+  ];
+
   num? projection(WalletInterestProjectionPeriod period) {
     final values = _projections?[period.name] as List<dynamic>?;
     final last = values?.lastOrNull as Map<String, dynamic>?;
     return last?['projectedCumulativeInterest'] as num?;
   }
+}
+
+class WalletInterestPendingDeposit {
+  WalletInterestPendingDeposit.fromJson(Map<String, dynamic> json)
+    : depositDate = _date(json['depositDate']),
+      interestStartDate = _date(json['interestStartDate']),
+      amount = json['amount'] as num? ?? 0,
+      daysUntilInterest = (json['daysUntilInterest'] as num?)?.toInt() ?? 0;
+
+  final DateTime? depositDate;
+  final DateTime? interestStartDate;
+  final num amount;
+  final int daysUntilInterest;
 }
 
 class WalletInterestConfig {

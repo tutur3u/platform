@@ -8779,5 +8779,23 @@
   },
   "financeWalletRoleRevokeBody": "Members with only this role stop seeing the wallet.",
   "financeWalletRoleSaved": "Role access saved",
-  "financeWalletRoleRevoked": "Role access revoked"
+  "financeWalletRoleRevoked": "Role access revoked",
+  "financeInterestPendingDeposits": "Waiting to earn interest",
+  "financeInterestDepositedOn": "Deposited {date}",
+  "@financeInterestDepositedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "financeInterestStartsIn": "{count, plural, =0{Earns from today} =1{Earns from tomorrow} other{Earns in {count} days}}",
+  "@financeInterestStartsIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeInterestProjectionChart": "Projected interest"
 }

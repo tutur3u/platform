@@ -19,6 +19,7 @@ navigation keeps a slot for its "Split bills" entry.
 | Transfers and multi-currency | `view/transaction_create_*`, `widgets/currency_picker_dialog.dart`, exchange-rate conversion |
 | Confidential fields and attachments | `data/models/finance/transaction.dart`, `view/transaction_detail_sheet_attachment_widgets.dart` |
 | Imports and exports | `view/transaction_import_sheet.dart`, `view/transaction_export_sheet.dart`, `utils/finance_invoice_spreadsheet.dart` |
+| Wallet interest | `view/wallet_interest_sheet.dart` with rate history, projection chart and pending deposits (`widgets/wallet_interest_extras.dart`); web's image-based provider hint is covered by setup |
 | Credit wallets and wallet images | `view/wallet_credit_sheet.dart`, `widgets/wallet_image_picker_sheet.dart` |
 | Checkpoints and reconciliation | `view/finance_checkpoints_page.dart`, `view/wallet_reconciliation_panel.dart`, plus mobile-only wallet archiving |
 | Invoice history and restore | `view/finance_invoice_history_sheet.dart` |
@@ -38,20 +39,17 @@ Every remaining gap uses existing endpoints.
 
 ### P1
 
-1. **Wallet interest history** (weaker). Rate history, interest chart,
-   auto-detect banner and pending deposits (`interest/rates`,
-   `interest/detect`).
-2. **Category merge and tag usage** (weaker). Migrate one category into
+1. **Category merge and tag usage** (weaker). Migrate one category into
    another (`transactions/categories/migrate`) and tag usage stats
    (`tags/stats`).
 
 ### P2
 
-3. **Subscription invoices** (weaker). Attendance-based billing, prepaid
+2. **Subscription invoices** (weaker). Attendance-based billing, prepaid
    controls and subscription analytics.
-4. **Fee locks** (weaker). Batch lock, template preview, suggestions and
+3. **Fee locks** (weaker). Batch lock, template preview, suggestions and
    export.
-5. **Inventory reconciliation** (missing). Reconciliation panel and wallet
+4. **Inventory reconciliation** (missing). Reconciliation panel and wallet
    inventory contribution.
-6. **Admin and navigation tools** (missing). Wallet and transaction
+5. **Admin and navigation tools** (missing). Wallet and transaction
     migration, all-wallet checkpoint history and a cross-entity quick search.

@@ -93,6 +93,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('ZaloPay'), findsOneWidget);
       expect(find.text('24.000 ₫'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('wallet-interest-projection-chart')),
+        findsOneWidget,
+      );
+      await tester.scrollUntilVisible(
+        find.text('Earns from tomorrow'),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('Waiting to earn interest'), findsOneWidget);
       await DesignRender.capture(tester, 'wallet-interest-${brightness.name}');
       tester.state<NavigatorState>(find.byType(Navigator).first).pop();
       await tester.pumpAndSettle();
@@ -146,9 +156,21 @@ class _WalletToolsRepository extends FinanceSceneRepository {
     'totalEarnedInterest': 200000,
     'projections': {
       'month': [
-        {'projectedCumulativeInterest': 24000},
+        for (var day = 1; day <= 30; day++)
+          {
+            'date': '2026-11-${day.toString().padLeft(2, '0')}',
+            'projectedCumulativeInterest': 800 * day,
+          },
       ],
     },
+    'pendingDeposits': [
+      {
+        'depositDate': '2026-11-18',
+        'amount': 500000,
+        'interestStartDate': '2026-11-19',
+        'daysUntilInterest': 1,
+      },
+    ],
     'rateHistory': [
       {'annual_rate': 4.8, 'effective_from': '2026-11-01'},
     ],

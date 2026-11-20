@@ -17745,4 +17745,27 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeWalletRoleRevoked => 'Đã thu hồi quyền vai trò';
+
+  @override
+  String get financeInterestPendingDeposits => 'Chờ tính lãi';
+
+  @override
+  String financeInterestDepositedOn(String date) {
+    return 'Nạp $date';
+  }
+
+  @override
+  String financeInterestStartsIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Tính lãi sau $count ngày',
+      one: 'Tính lãi từ ngày mai',
+      zero: 'Tính lãi từ hôm nay',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeInterestProjectionChart => 'Lãi dự kiến';
 }

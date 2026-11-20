@@ -10,6 +10,7 @@ import 'package:mobile/features/finance/view/transaction_custom_range_sheet.dart
 import 'package:mobile/features/finance/view/wallet_interest_form.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
+import 'package:mobile/features/finance/widgets/wallet_interest_extras.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 Future<void> showWalletInterest(
@@ -310,7 +311,13 @@ class _WalletInterestSheetState extends State<_WalletInterestSheet> {
             },
           ),
           moneyRow(l10n.financeInterestProjection, projected),
+          WalletInterestProjectionChart(series: data.projectionSeries(_period)),
         ],
+        if (config.enabled)
+          WalletInterestPendingDeposits(
+            deposits: data.pendingDeposits,
+            currency: widget.currency,
+          ),
         if (config.enabled)
           AppRichRow(
             title: l10n.financeInterestHistorical,

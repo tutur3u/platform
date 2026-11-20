@@ -17959,4 +17959,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeWalletRoleRevoked => 'Role access revoked';
+
+  @override
+  String get financeInterestPendingDeposits => 'Waiting to earn interest';
+
+  @override
+  String financeInterestDepositedOn(String date) {
+    return 'Deposited $date';
+  }
+
+  @override
+  String financeInterestStartsIn(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Earns in $count days',
+      one: 'Earns from tomorrow',
+      zero: 'Earns from today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeInterestProjectionChart => 'Projected interest';
 }
