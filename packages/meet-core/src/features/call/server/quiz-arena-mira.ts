@@ -7,6 +7,7 @@ import { answerMeetChat } from '@tuturuuu/ai/meetings/chat';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
 import { readMiraDemoAuthority } from '../../live-assistant/server/demo-authority';
+import { privateMiraBillingWorkspace } from '../../live-assistant/server/mira-billing';
 import { requirePrivateMiraChoice } from '../../live-assistant/server/private-consent';
 import {
   type getMeetCallAccess,
@@ -16,7 +17,6 @@ import { boardFromGenerated } from '../lib/quiz-arena-boards';
 import type { MiraBoardRequest } from '../lib/quiz-arena-options';
 import { billMeetChat } from './chat-billing';
 import { getMeetChatModel } from './chat-model';
-import { personalWorkspace } from './room-service';
 
 type Access = Awaited<ReturnType<typeof getMeetCallAccess>>;
 
@@ -51,7 +51,7 @@ async function generateArenaJson(access: Access, prompt: string) {
       if (current.revision !== consent.revision)
         throw new MeetCallAccessError(403, 'Private Mira choice changed');
     };
-    const wsId = await personalWorkspace(userId);
+    const wsId = await privateMiraBillingWorkspace(authority.payer, userId);
     const model = await getMeetChatModel(wsId);
     const inputBudget =
       3 * (new TextEncoder().encode(prompt).byteLength + 6000);

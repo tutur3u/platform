@@ -226,3 +226,26 @@ it('returns a paid answer when only optional step recording is unavailable', asy
     warning.mockRestore();
   }
 });
+it('drains the root workspace for a staff payer and the Personal workspace otherwise', async () => {
+  const provider = { apiKey: 'synthetic', checkConsent: async () => {} };
+  await answerPersonalMeetChat('requester', input, {
+    ...provider,
+    payer: 'tuturuuu',
+  });
+  expect(f.check.mock.calls[0]?.[0]).toBe(
+    '00000000-0000-0000-0000-000000000000'
+  );
+  expect(f.begin).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      actorId: 'requester',
+      workspaceId: '00000000-0000-0000-0000-000000000000',
+    })
+  );
+  await answerPersonalMeetChat('requester', input, {
+    ...provider,
+    payer: 'account',
+  });
+  expect(f.begin).toHaveBeenLastCalledWith(
+    expect.objectContaining({ workspaceId: 'requester-workspace' })
+  );
+});

@@ -30,6 +30,7 @@ describe('Mira server admission', () => {
       expect(miraDemoAdmission(request)).toEqual({
         allowed: true,
         authority: 'verified-personal',
+        payer: 'tuturuuu',
       });
     }
   );
@@ -94,7 +95,11 @@ describe('Mira server admission', () => {
     const request = input();
     request.actor!.email = 'demo@example.com';
     request.personalWorkspace = false;
-    expect(miraDemoAdmission(request).allowed).toBe(false);
+    request.paidAccount = true;
+    expect(miraDemoAdmission(request)).toEqual({
+      allowed: false,
+      reason: 'workspace',
+    });
     request.attestation = {
       workspaceId: request.workspaceId,
       actorId: 'admin',
@@ -104,6 +109,7 @@ describe('Mira server admission', () => {
     expect(miraDemoAdmission(request)).toEqual({
       allowed: true,
       authority: 'workspace-admin',
+      payer: 'account',
     });
     expect(
       miraDemoAdmission({
@@ -111,5 +117,57 @@ describe('Mira server admission', () => {
         attestation: { ...request.attestation, workspaceId: 'other' },
       }).allowed
     ).toBe(false);
+  });
+
+  it('admits paid Personal tiers to pay with their own credits, never free accounts', () => {
+    const request = input();
+    request.actor!.email = 'paid@example.com';
+    request.attestation = {
+      workspaceId: request.workspaceId,
+      actorId: 'actor',
+      attestedAt: 1000,
+      audience: 'adults-only',
+    };
+    for (const paidAccount of [false, undefined, 'true', 1, null])
+      expect(miraDemoAdmission({ ...request, paidAccount })).toEqual({
+        allowed: false,
+        reason: 'account',
+      });
+    expect(miraDemoAdmission({ ...request, paidAccount: true })).toEqual({
+      allowed: true,
+      authority: 'workspace-admin',
+      payer: 'account',
+    });
+    // A paid account's own Personal workspace still needs its 18+ attestation.
+    expect(
+      miraDemoAdmission({ ...request, paidAccount: true, attestation: null })
+    ).toEqual({ allowed: false, reason: 'workspace' });
+    expect(
+      miraDemoAdmission({
+        ...request,
+        paidAccount: true,
+        actor: { ...request.actor!, email_confirmed_at: null },
+      })
+    ).toEqual({ allowed: false, reason: 'account' });
+  });
+
+  it('bills staff to the root workspace even in an attested team workspace', () => {
+    const request = input();
+    request.personalWorkspace = false;
+    request.attestation = {
+      workspaceId: request.workspaceId,
+      actorId: 'admin',
+      attestedAt: 1000,
+      audience: 'adults-only',
+    };
+    expect(miraDemoAdmission(request)).toEqual({
+      allowed: true,
+      authority: 'workspace-admin',
+      payer: 'tuturuuu',
+    });
+    expect(miraDemoAdmission({ ...request, attestation: null })).toEqual({
+      allowed: false,
+      reason: 'workspace',
+    });
   });
 });

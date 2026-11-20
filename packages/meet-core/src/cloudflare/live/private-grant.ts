@@ -3,6 +3,13 @@ import {
   miraDemoAdmission,
   readMiraAdultAttestation,
 } from '../../features/live-assistant/demo-admission';
+import {
+  isMiraPaidTier,
+  isMiraPaidTierEnabled,
+  miraPayerMatchesBilling,
+  newestActiveSubscriptionTier,
+} from '../../features/live-assistant/mira-entitlement';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { liveRoomCommand } from './room';
 import type { SavedSession } from './session-state';
 import { liveAuthUser, liveDatabase, type LiveEnvironment } from './storage';
@@ -62,6 +69,60 @@ const workspaceResult = z
   )
   .length(1);
 const membershipResult = z.array(z.object({ type: z.string() })).length(1);
+const personalResult = z.array(z.object({ id: z.uuid() })).max(1);
+const subscriptionResult = z.array(
+  z.object({
+    created_at: z.string(),
+    status: z.string().nullable(),
+    product_id: z.string().nullable(),
+  })
+);
+const productResult = z.array(
+  z.object({ id: z.string(), tier: z.string().nullable() })
+);
+
+/** Hosting's paid-tier rule, read over the Worker's server-only REST client. */
+export async function readLivePaidAccount(
+  env: LiveEnvironment,
+  ownerId: string
+) {
+  if (!isMiraPaidTierEnabled(env.MEET_PAID_TIER_HOSTING_ENABLED)) return false;
+  const [personal] = personalResult.parse(
+    await liveDatabase<unknown>(
+      env,
+      `workspaces?creator_id=eq.${ownerId}&personal=eq.true&or=(deleted.is.null,deleted.eq.false)&select=id&limit=1`
+    )
+  );
+  if (!personal) return false;
+  const subscriptions = subscriptionResult.parse(
+    await liveDatabase<unknown>(
+      env,
+      `workspace_subscriptions?ws_id=eq.${personal.id}&status=eq.active&select=created_at,status,product_id`
+    )
+  );
+  const ids = [
+    ...new Set(
+      subscriptions
+        .map((subscription) => subscription.product_id)
+        .filter((id): id is string => !!id)
+    ),
+  ];
+  if (!ids.length) return false;
+  if (ids.some((id) => !z.uuid().safeParse(id).success)) return false;
+  const products = productResult.parse(
+    await liveDatabase<unknown>(
+      env,
+      `workspace_subscription_products?id=in.(${ids.join(',')})&select=id,tier`,
+      { schema: 'private' }
+    )
+  );
+  return isMiraPaidTier(
+    newestActiveSubscriptionTier(
+      subscriptions,
+      new Map(products.map((product) => [product.id, product.tier]))
+    )
+  );
+}
 
 /** The signed session records the grant at admission. Code tools need current authority. */
 export async function requireCurrentLiveDemoAuthority(
@@ -96,6 +157,9 @@ export async function requireCurrentLiveDemoAuthority(
   )
     throw new Error('Private Mira demo authority is unavailable');
 
+  const paidAccount = isVerifiedTuturuuuStaffSession(actor)
+    ? false
+    : await readLivePaidAccount(env, ownerId);
   const authority = miraDemoAdmission({
     actor,
     workspaceId,
@@ -107,10 +171,12 @@ export async function requireCurrentLiveDemoAuthority(
     personalWorkspace: workspace.personal === true,
     workspaceOwnerId: workspace.creator_id,
     attestation,
+    paidAccount,
   });
   if (
     !authority.allowed ||
-    authority.authority !== saved.claims.workspaceAuthority
+    authority.authority !== saved.claims.workspaceAuthority ||
+    !miraPayerMatchesBilling(authority.payer, saved.claims.billingWorkspaceId)
   )
     throw new Error('Private Mira demo authority is unavailable');
 }

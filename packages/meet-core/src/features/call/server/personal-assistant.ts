@@ -8,7 +8,8 @@ import { meetingProviderTransport } from '../../meeting-ai/server/provider-trans
 import { MeetCallAccessError } from '../lib/call-access';
 import { billMeetChat } from './chat-billing';
 import { getMeetChatModel } from './chat-model';
-import { personalWorkspace } from './room-service';
+import { privateMiraBillingWorkspace } from '../../live-assistant/server/mira-billing';
+import type { MiraPayer } from '../../live-assistant/mira-entitlement';
 
 /** No room-service call or shared history: output is returned only to this requester. */
 export async function answerPersonalMeetChat(
@@ -18,7 +19,11 @@ export async function answerPersonalMeetChat(
     timezone: string;
     history: Array<{ body: string; assistant: boolean }>;
   },
-  privateProvider?: { apiKey: string; checkConsent: () => Promise<void> }
+  privateProvider?: {
+    apiKey: string;
+    checkConsent: () => Promise<void>;
+    payer?: MiraPayer;
+  }
 ) {
   const contextBytes = new TextEncoder().encode(
     JSON.stringify({
@@ -33,7 +38,10 @@ export async function answerPersonalMeetChat(
   // for every short question. Output and tool-result headroom remain bounded.
   const estimatedContextTokens = contextBytes;
   const inputBudget = 3 * (estimatedContextTokens + 6000) + 8192;
-  const wsId = await personalWorkspace(userId);
+  const wsId = await privateMiraBillingWorkspace(
+    privateProvider?.payer,
+    userId
+  );
   const model = await getMeetChatModel(wsId);
   const allowance = await checkAiCredits(wsId, model.id, 'chat', {
     userId,

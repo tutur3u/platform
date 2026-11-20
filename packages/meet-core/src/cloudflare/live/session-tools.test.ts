@@ -37,6 +37,8 @@ const saved = {
     workspaceAuthority: 'verified-personal',
     consentVersion: 'private-v1',
     consentRevision: 1,
+    // Verified staff are funded by the Tuturuuu root workspace.
+    billingWorkspaceId: '00000000-0000-0000-0000-000000000000',
   },
   identity: { workspaceId },
   billing: {},
@@ -112,4 +114,18 @@ it('returns selected code while authority and consent remain current', async () 
   expect(
     sendToolResponse.mock.calls[0]?.[0].functionResponses[0].response
   ).toEqual(selected);
+});
+
+it('withholds selected code when the saved payer no longer matches billing', async () => {
+  const personalBilled = {
+    ...context,
+    saved: {
+      ...saved,
+      claims: { ...saved.claims, billingWorkspaceId: workspaceId },
+    } as SavedSession,
+  };
+  await executeLiveTool(personalBilled, 'call', 'read_selected_code', {});
+  expect(
+    sendToolResponse.mock.calls[0]?.[0].functionResponses[0].response
+  ).toHaveProperty('error');
 });

@@ -4,6 +4,10 @@ const f = vi.hoisted(() => ({
   identity: vi.fn(),
   workspace: vi.fn(),
   membership: vi.fn(),
+  host: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/meet-hosting', () => ({
+  canVerifiedAccountHostMeeting: f.host,
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -49,14 +53,18 @@ beforeEach(() => {
   f.identity.mockResolvedValue({ data: { user: actor }, error: null });
   f.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
   f.workspace.mockResolvedValue({ data: workspace, error: null });
+  f.host.mockResolvedValue(false);
 });
 
 it('uses current server Auth and actual creator_id for the staff Personal exception', async () => {
   expect(await readMiraDemoAuthority(request)).toEqual({
     allowed: true,
     authority: 'verified-personal',
+    payer: 'tuturuuu',
   });
   expect(f.identity).toHaveBeenCalledWith(actor.id);
+  // Staff never need the paid-subscription lookup.
+  expect(f.host).not.toHaveBeenCalled();
   f.workspace.mockResolvedValue({
     data: { ...workspace, creator_id: 'other' },
     error: null,
@@ -108,4 +116,27 @@ it('rejects a stale membership assertion after the member is removed', async () 
     allowed: false,
     reason: 'membership',
   });
+});
+
+it('uses the Meet hosting rule for non-staff accounts and fails closed when it throws', async () => {
+  const paid = { ...actor, email: 'synthetic@example.com' };
+  f.identity.mockResolvedValue({ data: { user: paid }, error: null });
+  expect(await readMiraDemoAuthority(request)).toEqual({
+    allowed: false,
+    reason: 'account',
+  });
+  expect(f.host).toHaveBeenCalledWith(actor.id, paid);
+  f.host.mockResolvedValue(true);
+  // Paid, but the Personal workspace has no stored 18+ attestation yet.
+  expect(await readMiraDemoAuthority(request)).toEqual({
+    allowed: false,
+    reason: 'workspace',
+  });
+  f.host.mockRejectedValue(new Error('Synthetic entitlement outage'));
+  expect((await readMiraDemoAuthority(request)).allowed).toBe(false);
+  f.host.mockResolvedValue(true);
+  expect(
+    (await readMiraDemoAuthority({ ...request, disabledBinding: 'true' }))
+      .allowed
+  ).toBe(false);
 });

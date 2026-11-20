@@ -94,6 +94,7 @@ export async function POST(
     const answer = await requestPersonalMeetChat(access, payload.data, {
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
       checkConsent,
+      payer: authority.payer,
     });
     await checkConsent();
     return answer;

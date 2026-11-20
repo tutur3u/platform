@@ -23,6 +23,8 @@ export interface LiveEnvironment {
   MEET_AI_DISABLED?: string;
   MEET_AI_DISABLED_WORKSPACE_IDS?: string;
   MEET_AI_PROTECTED_WORKSPACE_IDS?: string;
+  /** Shared with Meet hosting: only `true` admits paid Personal tiers to Mira. */
+  MEET_PAID_TIER_HOSTING_ENABLED?: string;
 }
 export class LiveDatabaseError extends Error {
   constructor(readonly status: number) {

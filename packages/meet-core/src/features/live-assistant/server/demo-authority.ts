@@ -1,5 +1,7 @@
 import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { miraDemoAdmission, readMiraAdultAttestation } from '../demo-admission';
 
@@ -41,8 +43,15 @@ export async function readMiraDemoAuthority(input: {
       return { allowed: false as const, reason: 'identity' as const };
     const enabled =
       input.disabledBinding === 'false' || input.disabledBinding === '0';
+    const actor = identity.data.user!;
+    // Same rule as Meet hosting, read from current Auth and the account's own
+    // Personal subscription. Staff never need the subscription lookup.
+    const paidAccount =
+      enabled && !isVerifiedTuturuuuStaffSession(actor)
+        ? await canVerifiedAccountHostMeeting(input.accountId, actor)
+        : false;
     return miraDemoAdmission({
-      actor: identity.data.user!,
+      actor,
       workspaceId: input.workspaceId,
       meetingId: input.meetingId,
       workspaceMember: membership?.ok === true,
@@ -52,6 +61,7 @@ export async function readMiraDemoAuthority(input: {
       personalWorkspace: workspace.data.personal === true,
       workspaceOwnerId: workspace.data.creator_id,
       attestation,
+      paidAccount,
     });
   } catch {
     return { allowed: false as const, reason: 'identity' as const };

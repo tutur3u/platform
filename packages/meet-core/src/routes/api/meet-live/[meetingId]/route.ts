@@ -3,7 +3,6 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import {
   callRoomService,
-  personalWorkspace,
   roomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
 import {
@@ -20,6 +19,7 @@ import {
   MIRA_ROOM_DENIED,
 } from '@tuturuuu/realtime/meet';
 import { readMiraDemoAuthority } from '../../../../features/live-assistant/server/demo-authority';
+import { privateMiraBillingWorkspace } from '../../../../features/live-assistant/server/mira-billing';
 import {
   readPrivateMiraChoice,
   requirePrivateMiraChoice,
@@ -210,9 +210,13 @@ export async function POST(
         ownerId: claims.ownerId,
       };
     }
-    // Personal "Talk to Mira" stays on the actor's personal credits; only the
-    // room assistant (meeting transcription/notes) bills the meeting workspace.
-    const billingWorkspaceId = await personalWorkspace(access.user.id);
+    // Personal "Talk to Mira" stays on the actor's own Personal credits, or on
+    // the Tuturuuu root workspace for verified staff. A selected tool
+    // workspace never changes the payer.
+    const billingWorkspaceId = await privateMiraBillingWorkspace(
+      authority!.allowed ? authority!.payer : undefined,
+      access.user.id
+    );
     const claims: LiveSessionClaims = {
       audioPolicy: command.audioPolicy,
       inputSource: 'private-microphone',

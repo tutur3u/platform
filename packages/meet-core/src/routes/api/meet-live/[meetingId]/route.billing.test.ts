@@ -55,3 +55,18 @@ it('does not seed private Mira with any room context, other authors or workspace
     f.callRoom.mock.calls.some(([, input]) => input.action === 'live.context')
   ).toBe(false);
 });
+
+it('drains the Tuturuuu root workspace for a verified staff requester', async () => {
+  f.payer = 'tuturuuu';
+  const response = await call(live, {
+    action: 'start',
+    mode: 'personal',
+    timezone: 'UTC',
+    workspaceId: '00000000-0000-4000-8000-000000000099',
+  });
+  expect(response.status).toBe(200);
+  expect(f.claims).toMatchObject({
+    ownerId: actorId,
+    billingWorkspaceId: '00000000-0000-0000-0000-000000000000',
+  });
+});

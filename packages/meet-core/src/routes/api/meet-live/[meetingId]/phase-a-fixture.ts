@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   sign: vi.fn(),
   authorized: true,
   member: true,
+  payer: 'account' as 'account' | 'tuturuuu',
   choice: null as null | {
     choice: string;
     accountId: string;
@@ -74,7 +75,7 @@ export const phaseAModules = {
       mocks.authorized &&
       input.workspaceMember &&
       input.disabledBinding === 'false'
-        ? { allowed: true, authority: 'verified-personal' }
+        ? { allowed: true, authority: 'verified-personal', payer: mocks.payer }
         : { allowed: false, reason: 'workspace' },
   }),
   token: () => ({
@@ -118,6 +119,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.authorized = true;
   mocks.member = true;
+  mocks.payer = 'account';
   mocks.sessions = [];
   mocks.order = [];
   mocks.choice = {

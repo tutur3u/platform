@@ -98,6 +98,7 @@ export async function POST(
       apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
       checkConsent,
       consentRevision: consent.revision,
+      payer: authority.payer,
     });
   });
 }

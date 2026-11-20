@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { hideMiraInDocument, showMiraInDocument } from './document-mira';
 import { readMeetingDocuments } from './documents';
+import type { MiraPayer } from '../../live-assistant/mira-entitlement';
 import { requestPersonalMeetChat } from './personal-chat-request';
 import { callRoomService, type SignedInMeetCallAccess } from './room-service';
 
@@ -83,6 +84,7 @@ export async function assistMeetingDocument(
     apiKey: string;
     checkConsent: () => Promise<void>;
     consentRevision: number;
+    payer?: MiraPayer;
   }
 ) {
   const documents = await readMeetingDocuments(access);
@@ -127,7 +129,11 @@ export async function assistMeetingDocument(
         timezone: input.timezone,
         history: [],
       },
-      { apiKey: provider.apiKey, checkConsent: provider.checkConsent }
+      {
+        apiKey: provider.apiKey,
+        checkConsent: provider.checkConsent,
+        payer: provider.payer,
+      }
     );
     text = answer.text.trim();
     if (!text) throw new MeetCallAccessError(503, 'Mira returned no text');

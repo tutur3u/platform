@@ -84,6 +84,7 @@ async function programmingMiraProvider(access: Access) {
         'Private Mira is unavailable',
         'MIRA_ACCOUNT_UNAVAILABLE'
       );
+    return authority;
   };
   return { apiKey: env?.GOOGLE_GENERATIVE_AI_API_KEY, requireAuthority };
 }
@@ -176,7 +177,7 @@ export async function changeMeetingProgrammingMira(
 
   const consent = await requirePrivateMiraChoice(access);
   const { apiKey, requireAuthority } = await programmingMiraProvider(access);
-  await requireAuthority();
+  const { payer } = await requireAuthority();
   if (data.source === 'chat' && !apiKey)
     throw new MeetCallAccessError(
       503,
@@ -263,7 +264,7 @@ export async function changeMeetingProgrammingMira(
           }),
         ].join('\n'),
       },
-      { apiKey: apiKey!, checkConsent }
+      { apiKey: apiKey!, checkConsent, payer }
     );
     const answer = programmingMiraAnswerSchema.parse(
       JSON.parse(result.text.trim().replace(/^```(?:json)?\s*|\s*```$/gi, ''))
