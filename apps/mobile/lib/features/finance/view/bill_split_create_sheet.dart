@@ -43,9 +43,7 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
   final String _id = newBillSplitId();
   final _people = <_Person>[];
   final _excluded = <String>{};
-  late final Future<String> _currency = FinanceRepository(
-    apiClient: widget.api,
-  ).getWorkspaceDefaultCurrency(widget.workspaceId);
+  late final Future<String> _currency = _loadCurrency();
   String? _payer;
   Map<String, dynamic>? _preview;
   var _busy = false;
@@ -53,6 +51,11 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
 
   String get _workspacePath =>
       '/api/v1/workspaces/${Uri.encodeComponent(widget.workspaceId)}';
+
+  Future<String> _loadCurrency() {
+    final repository = FinanceRepository(apiClient: widget.api);
+    return repository.getWorkspaceDefaultCurrency(widget.workspaceId);
+  }
 
   @override
   void dispose() {
@@ -188,6 +191,8 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
       future: _currency,
       builder: (context, snapshot) {
         final currency = snapshot.data;
+        final currencyFormat = NumberFormat.simpleCurrency(name: currency);
+        final multiplier = pow(10, currencyFormat.decimalDigits ?? 2);
         return AppSheetScaffold(
           title: l10n.financeBillSplitNew,
           actions: [
@@ -272,14 +277,7 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
                             )
                             .name,
                         trailing: FinanceAmountText(
-                          (row['amountMinor'] as num) /
-                              pow(
-                                10,
-                                NumberFormat.simpleCurrency(
-                                      name: currency,
-                                    ).decimalDigits ??
-                                    2,
-                              ),
+                          (row['amountMinor'] as num) / multiplier,
                           currency ?? '',
                         ),
                       ),
