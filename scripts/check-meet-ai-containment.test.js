@@ -18,6 +18,16 @@ for (const vars of [
   { MEET_AI_DISABLED: 'false', MEET_AI_ENABLED_WORKSPACE_IDS: '' },
   { MEET_AI_DISABLED: true, MEET_AI_ENABLED_WORKSPACE_IDS: '' },
   { MEET_AI_DISABLED: 'true', MEET_AI_ENABLED_WORKSPACE_IDS: '*' },
+  {
+    MEET_AI_DISABLED: 'true',
+    MEET_AI_ENABLED_WORKSPACE_IDS: '',
+    MEET_AI_ALL_WORKSPACES: 'reviewed-allow-all-2026-11-20',
+  },
+  {
+    MEET_AI_DISABLED: 'true',
+    MEET_AI_ENABLED_WORKSPACE_IDS: '',
+    MEET_AI_ALL_WORKSPACES: '',
+  },
 ]) {
   test(`rejects containment regression ${JSON.stringify(vars)}`, () => {
     assert.ok(

@@ -23,6 +23,9 @@ function containmentErrors(source, file) {
       errors.push('MEET_AI_DISABLED must be "true"');
     if (vars?.MEET_AI_ENABLED_WORKSPACE_IDS !== '')
       errors.push('MEET_AI_ENABLED_WORKSPACE_IDS must be empty');
+    // The reviewed allow-all opt-in is a release-time override, never source.
+    if (vars && Object.hasOwn(vars, 'MEET_AI_ALL_WORKSPACES'))
+      errors.push('MEET_AI_ALL_WORKSPACES must not be set in source config');
     for (const name of [
       'MEET_AI_DISABLED_WORKSPACE_IDS',
       'MEET_AI_PROTECTED_WORKSPACE_IDS',
