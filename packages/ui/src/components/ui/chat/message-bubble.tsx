@@ -12,7 +12,7 @@ import {
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
 import {
@@ -50,6 +50,7 @@ export function MessageBubble({
   onDeleteMessage,
   onOpenAttachment,
   onToggleReaction,
+  replyQuote,
   wsId,
 }: {
   currentUserId: string;
@@ -57,6 +58,7 @@ export function MessageBubble({
   onDeleteMessage?: (messageId: string) => void;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  replyQuote?: ReactNode;
   wsId: string;
 }) {
   const t = useTranslations('chat');
@@ -105,6 +107,7 @@ export function MessageBubble({
               message={message}
               senderName={senderName}
             />
+            {replyQuote}
             <MessageContent
               isOwnMessage={isOwnMessage}
               message={message}

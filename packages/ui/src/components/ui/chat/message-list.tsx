@@ -3,9 +3,11 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
+import { cn } from '@tuturuuu/utils/format';
 import { resolveUserDisplayName } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import {
+  type ReactNode,
   type UIEvent,
   useCallback,
   useLayoutEffect,
@@ -15,6 +17,7 @@ import {
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { MessageBubble } from './message-bubble';
+import { MessageReplyQuote } from './message-reply-quote';
 import { formatChatDate } from './utils';
 
 interface MessageListProps {
@@ -56,6 +59,7 @@ export function MessageList({
   const t = useTranslations('chat');
   const parentRef = useRef<HTMLDivElement | null>(null);
   const historyScrollHeightRef = useRef<number | null>(null);
+  const pendingFocusRef = useRef<ChatMessage | null>(null);
   const previousConversationIdRef = useRef<string | null>(null);
   const previousOldestMessageIdRef = useRef<string | null>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -81,6 +85,15 @@ export function MessageList({
     if (isAgentTyping) next.push({ key: 'typing', type: 'typing' });
     return next;
   }, [hasMoreMessages, isAgentTyping, messages]);
+  const messageRowsById = useMemo(() => {
+    const rows = new Map<string, { index: number; message: ChatMessage }>();
+    items.forEach((item, index) => {
+      if (item.type === 'message') {
+        rows.set(item.message.id, { index, message: item.message });
+      }
+    });
+    return rows;
+  }, [items]);
   const virtualizer = useVirtualizer({
     count: items.length,
     estimateSize: (index) => {
@@ -94,6 +107,32 @@ export function MessageList({
     overscan: 8,
   });
   const virtualItems = virtualizer.getVirtualItems();
+
+  function focusJumpTarget() {
+    const pending = pendingFocusRef.current;
+    if (!pending) return;
+    if (pending.conversationId !== conversationId) {
+      pendingFocusRef.current = null;
+      return;
+    }
+
+    const row = messageRowsById.get(pending.id);
+    if (!row) {
+      pendingFocusRef.current = null;
+      return;
+    }
+    const element = parentRef.current?.querySelector<HTMLDivElement>(
+      `[data-chat-message][data-index="${row.index}"]`
+    );
+    if (!element) return;
+
+    pendingFocusRef.current = null;
+    element.focus({ preventScroll: true });
+  }
+
+  useLayoutEffect(() => {
+    focusJumpTarget();
+  });
 
   const loadOlderMessages = useCallback(() => {
     if (!(hasMoreMessages && onLoadMoreMessages)) return;
@@ -145,9 +184,12 @@ export function MessageList({
     if (historyScrollHeightRef.current !== null) return;
     if (!(conversationChanged || shouldStickToBottomRef.current)) return;
 
-    requestAnimationFrame(() => {
-      virtualizer.scrollToIndex(items.length - 1, { align: 'end' });
+    const frame = requestAnimationFrame(() => {
+      if (shouldStickToBottomRef.current) {
+        virtualizer.scrollToIndex(items.length - 1, { align: 'end' });
+      }
     });
+    return () => cancelAnimationFrame(frame);
   }, [conversationId, items.length, virtualizer]);
 
   if (isLoading) {
@@ -186,14 +228,29 @@ export function MessageList({
         {virtualItems.map((virtualItem) => {
           const item = items[virtualItem.index];
           if (!item) return null;
+          const replyTo =
+            item.type === 'message' && item.message.replyToMessageId
+              ? messageRowsById.get(item.message.replyToMessageId)
+              : undefined;
+          const original =
+            item.type === 'message' &&
+            replyTo?.message.conversationId === item.message.conversationId
+              ? replyTo
+              : undefined;
 
           return (
             <div
-              className="absolute inset-x-0 top-0 px-4 py-2"
+              className={cn(
+                'absolute inset-x-0 top-0 px-4 py-2',
+                item.type === 'message' &&
+                  'focus:bg-accent/40 focus:outline-2 focus:-outline-offset-2 focus:outline-ring'
+              )}
+              data-chat-message={item.type === 'message' ? '' : undefined}
               data-index={virtualItem.index}
               key={virtualItem.key}
               ref={virtualizer.measureElement}
               style={{ transform: `translateY(${virtualItem.start}px)` }}
+              tabIndex={item.type === 'message' ? -1 : undefined}
             >
               {item.type === 'history' ? (
                 <div className="flex justify-center">
@@ -221,6 +278,22 @@ export function MessageList({
                   onDeleteMessage={readOnly ? undefined : onDeleteMessage}
                   onOpenAttachment={onOpenAttachment}
                   onToggleReaction={readOnly ? undefined : onToggleReaction}
+                  replyQuote={
+                    item.message.replyToMessageId && !item.message.deletedAt ? (
+                      <MessageReplyQuote
+                        message={original?.message}
+                        onJump={() => {
+                          if (!original) return;
+                          pendingFocusRef.current = original.message;
+                          shouldStickToBottomRef.current = false;
+                          virtualizer.scrollToIndex(original.index, {
+                            align: 'center',
+                          });
+                          focusJumpTarget();
+                        }}
+                      />
+                    ) : null
+                  }
                   showDate={item.showDate}
                   wsId={wsId}
                 />
@@ -239,6 +312,7 @@ function MessageRow({
   onDeleteMessage,
   onOpenAttachment,
   onToggleReaction,
+  replyQuote,
   showDate,
   wsId,
 }: {
@@ -247,6 +321,7 @@ function MessageRow({
   onDeleteMessage?: (messageId: string) => void;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  replyQuote: ReactNode;
   showDate: boolean;
   wsId: string;
 }) {
@@ -266,6 +341,7 @@ function MessageRow({
           onDeleteMessage={onDeleteMessage}
           onOpenAttachment={onOpenAttachment}
           onToggleReaction={onToggleReaction}
+          replyQuote={replyQuote}
           wsId={wsId}
         />
       )}

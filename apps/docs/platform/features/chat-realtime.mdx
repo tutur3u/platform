@@ -136,6 +136,11 @@ Web (`apps/chat` and the shared `@tuturuuu/ui/chat` workspace) and mobile
 - **Thread**: day separators, grouped bursts, reply quotes with jump-to,
   reactions, mentions with autocomplete, link and integration cards, attachment
   previews, and an inline edited marker. Deleted messages show as a tombstone.
+  In the Chat satellite and the CMS inbox, a reply quote jumps to the original
+  when it is loaded in the same thread. Quotes for deleted originals show a
+  tombstone. If the original is outside the loaded history, the quote shows
+  that it is unavailable until the user loads the relevant history. The web
+  regression lives in `packages/ui/src/components/ui/chat/message-list.test.tsx`.
 - **Read state**: the room broadcasts read receipts; groups show "seen by"
   avatars up to five members.
 - **Pinned messages and shared content**: a details screen shows members,
