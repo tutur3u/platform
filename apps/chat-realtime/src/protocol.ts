@@ -1,5 +1,8 @@
 import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
-import { canReceiveChatRealtimeEvent } from '@tuturuuu/realtime/chat';
+import {
+  canReceiveChatRealtimeEvent,
+  CHAT_REALTIME_EVENT_WINDOW_MS,
+} from '@tuturuuu/realtime/chat';
 import { z } from 'zod';
 
 /** Hard bounds on every billable path. See the chat realtime docs page. */
@@ -16,7 +19,7 @@ export const LIMITS = {
   inboxOnlineSnapshot: 500,
   publishBodyBytes: 64 * 1024,
   logFrames: 200,
-  logMaxAgeMs: 15 * 60_000,
+  logMaxAgeMs: CHAT_REALTIME_EVENT_WINDOW_MS,
 } as const;
 
 export const CLOSE = {

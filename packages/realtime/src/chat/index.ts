@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const CHAT_REALTIME_EVENT_WINDOW_MS = 15 * 60_000;
+
 const chatRealtimeUuidSchema = z.string().uuid();
 
 export const chatRealtimeTokenPayloadSchema = z.object({

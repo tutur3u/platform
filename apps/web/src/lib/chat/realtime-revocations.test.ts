@@ -21,6 +21,7 @@ import {
 } from './realtime-revocations';
 
 const actor = 'a6742000-0000-4000-8000-000000000001';
+const otherMember = 'a6742000-0000-4000-8000-000000000002';
 const workspace = 'a6742000-0000-4000-8000-000000000011';
 const alias = 'a6742000-0000-4000-8000-000000000012';
 const conversation = 'a6742000-0000-4000-8000-000000000021';
@@ -120,6 +121,57 @@ it('reads and publishes nothing when the Worker is stopped', async () => {
     skipped: true,
   });
   expect(mocks.admin).not.toHaveBeenCalled();
+  expect(mocks.publish).not.toHaveBeenCalled();
+});
+
+it('recovers the archive for inbox users archived in the same transaction', async () => {
+  const query = stubAuditRows([
+    { ...rows[0], metadata: { mode: 'archived', type: 'channel' } },
+  ]);
+  const membership = {
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    range: vi.fn().mockReturnThis(),
+    abortSignal: vi.fn().mockResolvedValue({
+      data: [{ user_id: actor }, { user_id: otherMember }],
+      error: null,
+    }),
+  };
+  query.from.mockImplementation((table) =>
+    table === 'chat_conversation_members' ? membership : query
+  );
+
+  await expect(
+    retryChatRealtimeRevocations(now, signal)
+  ).resolves.toMatchObject({
+    delivered: 1,
+    failed: 0,
+  });
+  expect(membership.eq).toHaveBeenCalledWith('conversation_id', conversation);
+  expect(membership.eq).toHaveBeenCalledWith('archived_at', createdAt);
+  expect(membership.range).toHaveBeenCalledExactlyOnceWith(0, 999);
+  expect(mocks.publish).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({
+      audience: { scope: 'users', userIds: [actor, otherMember] },
+      conversationId: conversation,
+      id: auditId,
+      sentAt: createdAt,
+      type: 'conversation.deleted',
+    }),
+    signal
+  );
+});
+
+it('leaves enough event freshness for a recovery started late in the slot', async () => {
+  const query = stubAuditRows([]);
+  await expect(
+    retryChatRealtimeRevocations(Date.parse('2026-11-20T05:39:59.000Z'), signal)
+  ).resolves.toMatchObject({ delivered: 0, failed: 0 });
+  expect(query.gte).toHaveBeenCalledWith(
+    'created_at',
+    '2026-11-20T05:25:51.000Z'
+  );
   expect(mocks.publish).not.toHaveBeenCalled();
 });
 

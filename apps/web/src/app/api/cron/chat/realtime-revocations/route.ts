@@ -1,8 +1,10 @@
 import { timingSafeEqual } from 'node:crypto';
 import { connection, NextResponse } from 'next/server';
-import { retryChatRealtimeRevocations } from '@/lib/chat/realtime-revocations';
+import {
+  CHAT_REALTIME_RECOVERY_DEADLINE_MS,
+  retryChatRealtimeRevocations,
+} from '@/lib/chat/realtime-revocations';
 
-const DEADLINE_MS = 20_000;
 const privateHeaders = { 'Cache-Control': 'private, no-store' };
 
 function authorized(request: Request) {
@@ -26,7 +28,10 @@ export async function POST(request: Request) {
   try {
     const result = await retryChatRealtimeRevocations(
       Date.now(),
-      AbortSignal.any([request.signal, AbortSignal.timeout(DEADLINE_MS)])
+      AbortSignal.any([
+        request.signal,
+        AbortSignal.timeout(CHAT_REALTIME_RECOVERY_DEADLINE_MS),
+      ])
     );
     const ok = result.failed === 0 && !result.capped;
     return NextResponse.json(

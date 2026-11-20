@@ -28,6 +28,12 @@ type ChatRealtimeEventInput = ChatRealtimeEvent extends infer Event
   : never;
 
 function getChatRealtimeTokenSecret() {
+  if (
+    isChatRealtimeWorkerConfigured() ||
+    process.env.NODE_ENV === 'production'
+  ) {
+    return null;
+  }
   const secret =
     process.env.CHAT_REALTIME_TOKEN_SECRET ||
     process.env.SUPABASE_SECRET_KEY ||
@@ -53,6 +59,9 @@ function signChatRealtimeAccess(input: {
   userId: string;
   wsId: string;
 }) {
+  const secret = getChatRealtimeTokenSecret();
+  if (!secret) return null;
+
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
   const token = signChatRealtimeToken(
     {
@@ -61,7 +70,7 @@ function signChatRealtimeAccess(input: {
       userId: input.userId,
       wsId: input.wsId,
     },
-    getChatRealtimeTokenSecret()
+    secret
   );
 
   return { expiresAt, token };
@@ -112,6 +121,7 @@ export function getChatRealtimeSubscribeUrl(input: {
     userId: input.userId,
     wsId: input.wsId,
   });
+  if (!signed) return null;
   const url = new URL(`${baseUrl}/realtime`);
   url.searchParams.set('token', signed.token);
   return { expiresAt: signed.expiresAt, url };
@@ -155,6 +165,7 @@ export async function publishChatRealtimeEvent(
       userId: parsed.actorUserId ?? '00000000-0000-0000-0000-000000000000',
       wsId: parsed.wsId,
     });
+    if (!signed) return [];
     const response = await fetch(`${baseUrl}/publish`, {
       body: JSON.stringify(parsed),
       cache: 'no-store',

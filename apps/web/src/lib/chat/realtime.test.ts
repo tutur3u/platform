@@ -65,3 +65,15 @@ it('uses the legacy upstream only in local development', () => {
   vi.stubEnv('NODE_ENV', 'production');
   expect(getChatRealtimeSubscribeUrl({ userId: id, wsId: id })).toBeNull();
 });
+
+it('refuses to use the legacy service-key signer in production', () => {
+  vi.clearAllMocks();
+  vi.stubEnv('NODE_ENV', 'production');
+  vi.stubEnv('CHAT_REALTIME_INTERNAL_URL', 'https://realtime.example.test');
+  vi.stubEnv('CHAT_REALTIME_URL', undefined);
+  vi.stubEnv('CHAT_REALTIME_TOKEN_SECRET', undefined);
+  vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', 'synthetic-legacy-service-key');
+
+  expect(getChatRealtimeSubscribeUrl({ userId: id, wsId: id })).toBeNull();
+  expect(signChatRealtimeToken).not.toHaveBeenCalled();
+});

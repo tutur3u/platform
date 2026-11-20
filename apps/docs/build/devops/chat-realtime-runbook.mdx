@@ -90,10 +90,19 @@ The `chat-realtime-revocations` job uses Cron Control’s existing five-minute
 schedule and stays off until named in `CRON_CONTROL_ENABLED_JOBS`. It calls the
 Web recovery endpoint with the Web cron credential. Recovery checks Worker
 health before reading Postgres. One invocation scans the last two complete
-five-minute slots, sends at most 32 records with at most four concurrent
-publishes, and reports overflow or failed delivery. Cron Control allows two
-attempts per slot. The Worker deduplicates by audit ID during replay retention.
+five-minute slots within the Worker’s 15-minute event window. The cutoff leaves
+52 seconds for request processing, delivery and clock skew. It sends at most 32 records
+with at most four concurrent publishes and reports overflow or failed delivery.
+Archive recovery uses at most two membership reads per archive to notify up to
+1,500 members archived in the audit transaction, plus the actor. Cron Control
+allows two attempts per slot. The Worker deduplicates by audit ID during replay
+retention.
 The Web API keeps the audit record when delivery fails.
+
+Workspace membership and `view_chat` changes take effect when Web checks the
+next ticket request. An existing ticket can still admit its holder until it
+expires, up to five minutes for an inbox and 15 minutes for a conversation.
+Rooms check expiry before they deliver further frames.
 
 Before enabling the job, verify the read query plan against staging data and
 exercise a publish failure followed by recovery with disposable actors. Check
