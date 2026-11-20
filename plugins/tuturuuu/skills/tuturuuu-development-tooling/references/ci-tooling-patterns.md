@@ -712,6 +712,15 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   run: resolve affected apps once in the planner, then call selected per-app
   workflows through static `workflow_call` jobs. Reserve `workflow_dispatch`
   for manual recovery so commit CI remains traceable by SHA.
+- Check the queued automatic revision against the live `production` ref inside
+  the planner's non-cancelling workflow lock, before checkout and target
+  resolution. Only a proven descendant supersedes the candidate. Emit an empty
+  target list and no deployment marker. Keep manual dispatch and exact-SHA
+  package recovery admission, marker-based target selection and migration
+  proof intact. Update the reviewed planner blob in
+  `verify-github-deployment-marker-producer.mjs` when changing its workflow.
+  Run the planner admission and marker producer tests to verify the workflow
+  shell, output wiring and exact blob admission.
 - Give every reusable production app workflow a static per-app concurrency
   prefix plus the Git ref. Reusable workflows inherit caller context, so a
   shared caller-derived key can cancel sibling deploys and turn intended skips

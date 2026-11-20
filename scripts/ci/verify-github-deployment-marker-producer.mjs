@@ -44,7 +44,10 @@ const LEGACY_VERCEL_PLANNER_CONTRACTS = Object.freeze([
   '0d1e108c5cce714a6628816b40cb506c87769ace',
 ]);
 // This planner omits retired Vercel jobs and retains the platform producer.
-const CURRENT_PLANNER_CONTRACT = '8c90988f9299c5c28d9f49049077a0b93b225b3d';
+const POST_RETIREMENT_PLANNER_CONTRACT =
+  '8c90988f9299c5c28d9f49049077a0b93b225b3d';
+// This planner also skips superseded pushes before selecting targets.
+const CURRENT_PLANNER_CONTRACT = '821f197ff27852c19c422fcaabcbbe7c37e8fe5e';
 
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
@@ -65,7 +68,11 @@ const PRODUCTION_PLATFORM = {
   contracts: [
     [
       '.github/workflows/vercel-production.yaml',
-      [...LEGACY_VERCEL_PLANNER_CONTRACTS, CURRENT_PLANNER_CONTRACT],
+      [
+        ...LEGACY_VERCEL_PLANNER_CONTRACTS,
+        POST_RETIREMENT_PLANNER_CONTRACT,
+        CURRENT_PLANNER_CONTRACT,
+      ],
     ],
     [
       '.github/workflows/vercel-production-platform.yaml',

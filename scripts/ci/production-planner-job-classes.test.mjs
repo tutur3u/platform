@@ -74,6 +74,11 @@ const rejected = [
   ],
   ['plan failed', 'failure', jobs({ plan: 'failure' })],
   [
+    'superseded planner completed successfully without a platform deploy',
+    'success',
+    jobs({ 'deploy-platform / Deploy-Production': 'skipped' }),
+  ],
+  [
     'platform cancelled',
     'failure',
     jobs({ 'deploy-platform / Deploy-Production': 'cancelled' }),

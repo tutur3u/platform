@@ -34,21 +34,65 @@ jobs:
   plan:
     if: github.ref == 'refs/heads/production' && (inputs.expected_sha == '' || inputs.expected_sha == github.sha)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: read
     outputs:
-      workflows_json: ${{ steps.plan.outputs.workflows_json }}
+      workflows_json: ${{ steps.admission.outputs.superseded == 'true' && '[]' || steps.plan.outputs.workflows_json }}
     steps:
+      - name: Admit queued production revision
+        id: admission
+        timeout-minutes: 2
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          [ "$GITHUB_REF" = refs/heads/production ]
+          [ "${#GITHUB_SHA}" -eq 40 ]
+          case "$GITHUB_SHA" in
+            *[!0123456789abcdef]*) exit 1 ;;
+          esac
+          case "$GITHUB_EVENT_NAME" in
+            push)
+              comparison=$(gh api "repos/$GITHUB_REPOSITORY/compare/refs/heads/production...$GITHUB_SHA?per_page=1" --jq .status)
+              case "$comparison" in
+                identical) ;;
+                behind)
+                  echo 'superseded=true' >> "$GITHUB_OUTPUT"
+                  echo "Skipped $GITHUB_SHA because a newer authorized revision reached production while this run waited." >> "$GITHUB_STEP_SUMMARY"
+                  exit 0
+                  ;;
+                *)
+                  echo '::error::Cannot establish that the queued revision is on the production branch.'
+                  exit 1
+                  ;;
+              esac
+              ;;
+            workflow_dispatch)
+              if [ -n "$EXPECTED_SHA" ]; then
+                [ "$EXPECTED_SHA" = "$GITHUB_SHA" ]
+              fi
+              ;;
+            *) exit 1 ;;
+          esac
+          echo 'superseded=false' >> "$GITHUB_OUTPUT"
+
       - name: Check out code
+        if: steps.admission.outputs.superseded == 'false'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 24
+        if: steps.admission.outputs.superseded == 'false'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
 
       - name: Resolve affected production apps
+        if: steps.admission.outputs.superseded == 'false'
         id: plan
         env:
           GITHUB_TOKEN: ${{ github.token }}

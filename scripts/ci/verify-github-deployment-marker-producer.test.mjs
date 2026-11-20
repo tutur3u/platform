@@ -30,6 +30,23 @@ const calleeWorkflow = {
   name: profile.calleeWorkflowDisplayName,
 };
 
+test('the checked-in production planner is an admitted marker producer contract', () => {
+  const bytes = readFileSync(
+    new URL(`../../${profile.callerWorkflowPath}`, import.meta.url)
+  );
+  const sha = createHash('sha1')
+    .update(`blob ${bytes.length}\0`)
+    .update(bytes)
+    .digest('hex');
+  const [, allowed] = profile.contracts.find(
+    ([path]) => path === profile.callerWorkflowPath
+  );
+  assert.ok(
+    allowed.includes(sha),
+    `Production planner blob ${sha} needs review and admission`
+  );
+});
+
 test('legitimate production marker payload passes contract checks', () => {
   const runUrl = `${server}/${repo}/actions/runs/301`;
   const deployment = {

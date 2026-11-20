@@ -189,10 +189,16 @@ No package version, dependency resolution or published changelog is rewritten.
 - Chat, CMS, Drive, Forms, Teach, Tools and Track publish production builds on
   Cloudflare. Their existing Vercel deployments are retained for rollback. See
   [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project).
-- Each production app uses a workflow-and-branch concurrency group whose
-  `cancel-in-progress` predicate matches only `production` push events, so the
-  newest production SHA remains deployable without letting `main` commits or
-  manual recovery runs cancel it.
+- The production planner serializes runs without cancelling active work. When
+  an automatic push run reaches the front of the queue, the planner compares
+  its source to the current `production` ref. If a newer authorized revision
+  has reached `production`, the old run records a skip and starts no builds or
+  deploys. A `main` push alone does not supersede an authorized production
+  revision. Manual and exact-SHA package recovery dispatches keep their
+  existing admission rules.
+- Supersession produces no deployment marker. Production migrations still
+  require proof tied to the exact target, including its successful platform
+  deployment and staging migration proof.
 - Production deploy jobs are bound to `vercel-production-<app>` GitHub
   Environments and reject manual dispatches unless the selected branch is
   `production`.
