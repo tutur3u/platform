@@ -49,7 +49,8 @@ values
 
 insert into auth.users (id) values ('7a9e0000-0000-4000-8000-0000000000b1') on conflict do nothing;
 insert into public.users (id) values ('7a9e0000-0000-4000-8000-0000000000b1') on conflict do nothing;
-insert into public.workspaces (id, name, personal) values ('00000000-0000-0000-0000-000000000000', 'Root', false)
+insert into public.workspaces (id, name, personal, creator_id)
+values ('00000000-0000-0000-0000-000000000000', 'Root', false, '7a9e0000-0000-4000-8000-0000000000a1')
 on conflict do nothing;
 insert into public.workspace_members (ws_id, user_id, type) values ('00000000-0000-0000-0000-000000000000', '7a9e0000-0000-4000-8000-0000000000b1', 'MEMBER')
 on conflict do nothing;
