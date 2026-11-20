@@ -33,6 +33,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/[locale]/[wsId]/changelog/new` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/changelog/new/page.tsx) |
 | `/[locale]/[wsId]/changelog` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/changelog/page.tsx) |
 | `/[locale]/[wsId]/cron/whitelist/domains` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/cron/whitelist/domains/page.tsx) |
+| `/[locale]/[wsId]/deployments` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/deployments/page.tsx) |
 | `/[locale]/[wsId]/desktop-deployment` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/desktop-deployment/page.tsx) |
 | `/[locale]/[wsId]/devboxes` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/devboxes/page.tsx) |
 | `/[locale]/[wsId]/email-audit` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/email-audit/page.tsx) |
@@ -148,6 +149,9 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/coupons` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/coupons/route.ts) |
 | `/api/v1/infrastructure/cron/whitelist/domain/[domain]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domain/%5Bdomain%5D/route.ts) |
 | `/api/v1/infrastructure/cron/whitelist/domains` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/cron/whitelist/domains/route.ts) |
+| `/api/v1/infrastructure/deployments/[project]/[environment]` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/deployments/%5Bproject%5D/%5Benvironment%5D/route.ts) |
+| `/api/v1/infrastructure/deployments/[project]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/deployments/%5Bproject%5D/route.ts) |
+| `/api/v1/infrastructure/deployments` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/deployments/route.ts) |
 | `/api/v1/infrastructure/devboxes` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts) |
 | `/api/v1/infrastructure/devboxes/runners/[runnerId]/drain` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/drain/route.ts) |
 | `/api/v1/infrastructure/devboxes/runners/[runnerId]/features` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/features/route.ts) |
@@ -190,9 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/migrate/finance-invoice-user-groups` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoice-user-groups/route.ts) |
 | `/api/v1/infrastructure/migrate/finance-invoices` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/finance-invoices/route.ts) |
 | `/api/v1/infrastructure/migrate/grouped-score-names` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/grouped-score-names/route.ts) |
-| `/api/v1/infrastructure/migrate/inventory-batch-products` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-batch-products/route.ts) |
-| `/api/v1/infrastructure/migrate/inventory-batches` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-batches/route.ts) |
-| `/api/v1/infrastructure/migrate/inventory-manufacturers` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-manufacturers/route.ts) |
-| `/api/v1/infrastructure/migrate/inventory-products` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-products/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

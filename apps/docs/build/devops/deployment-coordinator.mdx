@@ -22,7 +22,7 @@ coordinator issues them fenced grants.
 | This design | Accepted |
 | Worker, Durable Object state machine, API | Source, unit and workerd tests; not published. `deploy-coordinator-cloudflare.yaml` runs its type check, lint, format check, unit suites, the client tests and the workerd harness |
 | GitHub Actions begin/check/finish steps | `.github/actions/deploy-coordinator`, piloted on the Colab production deploy; `DEPLOY_COORDINATOR_MODE` unset, so off |
-| Infrastructure **Deployments** page | Planned |
+| Infrastructure **Deployments** page | Built under **Delivery → Deployments**; shows the unconfigured state until the origin and operator token are set |
 | Executor workflow for promotion and rollback markers | Not built; markers are resolved by operators |
 | Hostname, secrets and Worker publication | Release-authority steps |
 
@@ -292,14 +292,28 @@ separate reviewed change.
 
 ## Dashboard
 
-The Infrastructure app's **Deployments** page lists catalog projects, and for
-the selected project each environment's lanes, current deployment, queue,
-statuses and GitHub run links. Viewing requires `view_infrastructure`.
-Promote, rollback, cancel, resolve, hold release and stop/resume go through
-Infrastructure API routes that require the root-workspace operator permission
-(`manage_workspace_roles`, via `authorizeInfrastructureOperator`). Without
-`DEPLOY_COORDINATOR_ORIGIN` and the operator token the page shows an
-unconfigured state.
+The Infrastructure app's **Deployments** page (`/[wsId]/deployments`, under
+**Delivery**) lists catalog projects, and for the selected project each
+environment's lanes, current deployment, queue, statuses and GitHub run links.
+Viewing requires `view_infrastructure`. Promote, rollback, cancel, resolve,
+hold release and stop/resume go through Infrastructure API routes that require
+the root-workspace operator permission (`manage_workspace_roles`, via
+`authorizeInfrastructureOperator`); the page hides those controls from viewers.
+Without `DEPLOY_COORDINATOR_ORIGIN` and `DEPLOY_COORDINATOR_OPERATOR_TOKEN` the
+page shows an unconfigured state and the routes make no outbound call.
+
+| Route | Permission | Coordinator calls |
+| ----- | ---------- | ----------------- |
+| `GET /api/v1/infrastructure/deployments` | viewer | `GET /v1/projects` |
+| `GET /api/v1/infrastructure/deployments/:project` | viewer | catalog, then the three environment snapshots |
+| `POST /api/v1/infrastructure/deployments/:project/:environment` | operator | the one action in the body |
+
+The server client (`apps/infrastructure/src/lib/infrastructure/deploy-coordinator.ts`)
+sends the operator token and the signed-in user id as `X-Deploy-Actor`, and maps
+records to the dashboard shapes in `@tuturuuu/internal-api/infrastructure`
+without grant attempt ids or idempotency material. Environment reads are exempt
+from the coordinator's daily budget, so the page reads on demand (open, focus,
+refresh and after an action) and never polls.
 
 ## Cost and stop-fence analysis
 

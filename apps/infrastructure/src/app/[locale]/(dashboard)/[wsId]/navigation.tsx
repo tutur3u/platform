@@ -169,6 +169,11 @@ function getTopLevelNavigation({
       title: t('infrastructure-navigation.groups.delivery.title'),
       children: [
         {
+          href: href(wsId, '/deployments'),
+          icon: icon(GitBranch),
+          title: t('infrastructure-tabs.deployments'),
+        },
+        {
           href: href(wsId, '/desktop-deployment'),
           icon: icon(Monitor),
           title: t('infrastructure-tabs.desktop_deployment'),

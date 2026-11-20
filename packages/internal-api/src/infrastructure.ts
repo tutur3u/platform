@@ -5,6 +5,7 @@ export * from './infrastructure/apps';
 export * from './infrastructure/auth-recovery';
 export * from './infrastructure/blocked-ips';
 export * from './infrastructure/cron';
+export * from './infrastructure/deployments';
 export * from './infrastructure/desktop';
 export * from './infrastructure/employee-address-migration';
 export * from './infrastructure/employee-cli-outcome';

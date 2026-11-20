@@ -9287,7 +9287,8 @@
     "timezones": "Timezones",
     "translations": "Translations",
     "users": "Users",
-    "workspaces": "Workspaces"
+    "workspaces": "Workspaces",
+    "deployments": "Deployments"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -24320,5 +24321,99 @@
     "unnamed_wallet": "Unnamed Wallet",
     "wallet": "Payment Method",
     "wallet_deleted": "Wallet deleted successfully"
+  },
+  "deployments": {
+    "title": "Deployments",
+    "project": "Project",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "load_error": "Deployments could not be loaded.",
+    "no_projects": "The coordinator catalog has no projects.",
+    "no_deployments": "No deployments yet.",
+    "environment_error": "This environment could not be read ({code}).",
+    "action_success": "Recorded.",
+    "action_failed": "The coordinator refused the action ({code}).",
+    "current": "Current",
+    "held": "Held",
+    "stopped": "Stopped",
+    "stop_reason": "Reason",
+    "resolve_outcome": "Outcome",
+    "resolve_url": "Deployment URL",
+    "open_run": "Open the GitHub run",
+    "open_deployment": "Open the deployment",
+    "unconfigured": {
+      "title": "The deployment coordinator is not connected",
+      "description": "Set DEPLOY_COORDINATOR_ORIGIN and DEPLOY_COORDINATOR_OPERATOR_TOKEN for this app to show deployments."
+    },
+    "providers": {
+      "cloudflare": "Cloudflare Workers",
+      "vercel": "Vercel"
+    },
+    "environments": {
+      "production": "Production",
+      "staging": "Staging",
+      "preview": "Preview"
+    },
+    "columns": {
+      "status": "Status",
+      "commit": "Commit",
+      "actor": "Actor",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "kinds": {
+      "deploy": "Deploy",
+      "promotion": "Promotion",
+      "rollback": "Rollback"
+    },
+    "statuses": {
+      "queued": "Queued",
+      "publishing": "Publishing",
+      "succeeded": "Succeeded",
+      "failed": "Failed",
+      "superseded": "Superseded",
+      "cancelled": "Cancelled",
+      "unknown": "Unknown"
+    },
+    "actions": {
+      "promote": "Promote",
+      "rollback": "Roll back",
+      "cancel": "Cancel deployment",
+      "resolve": "Resolve",
+      "release-hold": "Release hold",
+      "stop": "Stop",
+      "resume": "Resume"
+    },
+    "confirm": {
+      "promote": {
+        "title": "Promote {subject} to production?",
+        "description": "Queues a production promotion marker for this commit. Production builds its own artifacts; perform the release with the owning tooling, then resolve the marker."
+      },
+      "rollback": {
+        "title": "Roll back to {subject}?",
+        "description": "Queues a rollback marker, supersedes queued deploys and holds the lane so the next merge does not overwrite it."
+      },
+      "cancel": {
+        "title": "Cancel {subject}?",
+        "description": "The queued deployment will not publish. Cancelling a rollback also releases its hold."
+      },
+      "resolve": {
+        "title": "Resolve {subject}",
+        "description": "Record the outcome of the release you performed for this marker."
+      },
+      "release-hold": {
+        "title": "Release the hold on {subject}?",
+        "description": "Automatic deploys resume with the next run. Skipped deploys are not replayed."
+      },
+      "stop": {
+        "title": "Stop {subject}?",
+        "description": "New publishes wait until resumed. A publish in progress may still finish."
+      },
+      "resume": {
+        "title": "Resume {subject}?",
+        "description": "Queued deployments may claim the lane again."
+      }
+    }
   }
 }

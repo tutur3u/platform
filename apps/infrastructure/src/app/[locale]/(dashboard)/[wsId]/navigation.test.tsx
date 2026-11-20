@@ -89,6 +89,7 @@ describe('Infrastructure navigation', () => {
         '/internal/users',
         '/internal/workspaces',
         '/internal/external-apps',
+        '/internal/deployments',
         '/internal/mobile-deployment',
         '/internal/desktop-deployment',
         '/internal/app-coordination',

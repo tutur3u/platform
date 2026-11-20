@@ -9287,7 +9287,8 @@
     "timezones": "Múi giờ",
     "translations": "Bản dịch",
     "users": "Người dùng",
-    "workspaces": "Không gian làm việc"
+    "workspaces": "Không gian làm việc",
+    "deployments": "Triển khai"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
@@ -24320,5 +24321,99 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "deployments": {
+    "title": "Triển khai",
+    "project": "Dự án",
+    "refresh": "Làm mới",
+    "retry": "Thử lại",
+    "cancel": "Hủy",
+    "load_error": "Không thể tải danh sách triển khai.",
+    "no_projects": "Danh mục của bộ điều phối chưa có dự án nào.",
+    "no_deployments": "Chưa có lượt triển khai nào.",
+    "environment_error": "Không thể đọc môi trường này ({code}).",
+    "action_success": "Đã ghi nhận.",
+    "action_failed": "Bộ điều phối đã từ chối thao tác ({code}).",
+    "current": "Hiện tại",
+    "held": "Đang giữ",
+    "stopped": "Đã dừng",
+    "stop_reason": "Lý do",
+    "resolve_outcome": "Kết quả",
+    "resolve_url": "URL triển khai",
+    "open_run": "Mở lượt chạy GitHub",
+    "open_deployment": "Mở bản triển khai",
+    "unconfigured": {
+      "title": "Chưa kết nối bộ điều phối triển khai",
+      "description": "Đặt DEPLOY_COORDINATOR_ORIGIN và DEPLOY_COORDINATOR_OPERATOR_TOKEN cho ứng dụng này để hiển thị các lượt triển khai."
+    },
+    "providers": {
+      "cloudflare": "Cloudflare Workers",
+      "vercel": "Vercel"
+    },
+    "environments": {
+      "production": "Production",
+      "staging": "Staging",
+      "preview": "Preview"
+    },
+    "columns": {
+      "status": "Trạng thái",
+      "commit": "Commit",
+      "actor": "Người thực hiện",
+      "created": "Tạo lúc",
+      "actions": "Thao tác"
+    },
+    "kinds": {
+      "deploy": "Triển khai",
+      "promotion": "Nâng cấp",
+      "rollback": "Khôi phục"
+    },
+    "statuses": {
+      "queued": "Đang chờ",
+      "publishing": "Đang phát hành",
+      "succeeded": "Thành công",
+      "failed": "Thất bại",
+      "superseded": "Đã bị thay thế",
+      "cancelled": "Đã hủy",
+      "unknown": "Không xác định"
+    },
+    "actions": {
+      "promote": "Nâng lên production",
+      "rollback": "Khôi phục",
+      "cancel": "Hủy lượt triển khai",
+      "resolve": "Ghi nhận kết quả",
+      "release-hold": "Bỏ giữ",
+      "stop": "Dừng",
+      "resume": "Tiếp tục"
+    },
+    "confirm": {
+      "promote": {
+        "title": "Nâng {subject} lên production?",
+        "description": "Đưa một mốc nâng cấp production vào hàng đợi cho commit này. Production tự build artifact riêng; hãy phát hành bằng công cụ phụ trách rồi ghi nhận kết quả cho mốc này."
+      },
+      "rollback": {
+        "title": "Khôi phục về {subject}?",
+        "description": "Đưa một mốc khôi phục vào hàng đợi, thay thế các lượt triển khai đang chờ và giữ làn để lần merge tiếp theo không ghi đè."
+      },
+      "cancel": {
+        "title": "Hủy {subject}?",
+        "description": "Lượt triển khai đang chờ sẽ không được phát hành. Hủy một lượt khôi phục cũng bỏ giữ làn của nó."
+      },
+      "resolve": {
+        "title": "Ghi nhận kết quả cho {subject}",
+        "description": "Ghi lại kết quả của lần phát hành bạn đã thực hiện cho mốc này."
+      },
+      "release-hold": {
+        "title": "Bỏ giữ {subject}?",
+        "description": "Triển khai tự động sẽ tiếp tục từ lượt chạy kế tiếp. Các lượt đã bỏ qua không được chạy lại."
+      },
+      "stop": {
+        "title": "Dừng {subject}?",
+        "description": "Các lượt phát hành mới sẽ chờ cho đến khi tiếp tục. Lượt đang phát hành vẫn có thể hoàn tất."
+      },
+      "resume": {
+        "title": "Tiếp tục {subject}?",
+        "description": "Các lượt triển khai đang chờ có thể nhận làn trở lại."
+      }
+    }
   }
 }
