@@ -61,8 +61,9 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   (`tasks-cutover-artifact`) and `track-cloudflare.yaml` (`track-cutover-artifact`) jobs
   already rewrite the emitted config to the production Worker names `tuturuuu-tasks` and
   `tuturuuu-track` (route-free, `workers_dev` and `preview_urls` off) and upload the
-  artifact for an operator `wrangler deploy`. They need no environment and have no
-  production publisher job.
+  artifact for an operator cf publication ([D74 runbook](/build/devops/d74-cutover-runbooks),
+  step 4). Tasks now has a production publisher (`tasks-cloudflare.yaml`); Track
+  has none and needs no environment.
 - Rollback: Vercel can no longer redeploy `calendar`, `mail` or `apps` from `main`. Their build
   command now emits a native Worker and Vercel fails with `NEXT_OUTPUT_DIR_MISSING`, so the
   rollback target is the retained READY deployment below, restored by moving the alias.

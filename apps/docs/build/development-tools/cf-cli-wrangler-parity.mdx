@@ -103,7 +103,9 @@ The existing native profiles qualify only their declared configuration fields.
 | Versions | `wrangler versions list` | `cf workers versions list --worker-id <name>` | Parity |
 | Deployments | `wrangler deployments list` | `cf workers deployments list --worker <name>` | Parity |
 | Rollback | `wrangler rollback <version>` | `cf workers deployments create --worker <name> --strategy percentage --versions '[{"version_id":"<id>","percentage":100}]'` | Parity |
-| Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create` | Parity; M4 gateway rehearses version-only upload via `scripts/ci/gateway-cf-publication.mjs` while Wrangler remains the live publisher until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
+| Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create --body` | Parity; the gateway deploys traffic with cf and keeps its Wrangler upload until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
+| Non-versioned settings sync after a version deployment | `versions deploy` PATCHes `script-settings` (observability, logpush, tail consumers) | No cf command | Direct Workers API PATCH (`gateway-cf-traffic.mjs`) |
+| Keep dashboard vars on a version upload | `versions upload --keep-vars` | No flag; versions inherit secrets only | Carry the latest version's plain-text vars into the Build Output (`tasks-cf-upload.mjs`) |
 | Settings preflight readback | none (no bounded snapshot in legacy deploy jobs) | `scripts/ci/cf-worker-settings.mjs` (28 bounded GETs on the Workers API) | switched; receipt `settings-readback` |
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
 | Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | One-way per Worker: see [Durable Object lifecycle](#durable-object-lifecycle). Versioned cf uploads cannot apply a pending tag migration (API `10211`) |
@@ -343,10 +345,25 @@ CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
 and fails if that commit is unavailable.
 
+### Publish-call ratchet
+
+New Wrangler publication is not admissible. `publishCalls` in the allowlist
+counts, per file, every non-dry-run Wrangler invocation that writes to
+Cloudflare (`deploy`, `publish`, `rollback`, `versions upload`/`deploy`,
+version and Worker secret writes, `triggers deploy`, and D1, R2 and KV writes
+without `--local`) plus `opennextjs-cloudflare deploy`/`upload`. The detector
+reads shell lines, `\` continuations and multi-line argv arrays; flags apply
+only to their own invocation. The counts may only fall: unlike the token
+allowlist, no `admitted` record can raise them, so a new publish path must use
+cf (the [Void publisher](#void-framework-app-publisher), `cf deploy --prebuilt`
+or `cf workers deployments create`). Lower the count in the change that removes
+a call. Tests and `fixtures/` quote commands as data and stay on the token
+allowlist only.
+
 Current gaps: `cf-config-internals` (installed cf API names),
 `deployment-source-compatibility` (historical Worker snapshot provenance),
 `paused-runtime` (retained paused runtimes), `opennext-adapter`,
-`void-wave1-publication`, `void-emitted-binding-types`, `pending-migration` (services awaiting their parity PR),
+`void-wave1-publication`, `void-emitted-binding-types`, `void-emitted-config-name` (cf publishers naming Void's emitted config file), `pending-migration` (services awaiting their parity PR),
 `shared-toolchain` (root CLI provider, live `wrangler tail` until cf streams, trusted-dependency and policy files),
 `parity-tooling` (the migration parity checker, which reads former Wrangler configs),
 `do-publication-rehearsal` (Wrangler publication of existing DO migration tags),
@@ -439,26 +456,92 @@ cache rules and rolled back and forward.
 
 ## Service inventory
 
-| Service | Current publisher | Status | Gap |
-| --- | --- | --- | --- |
-| Cron Control | cf | Switched | — |
-| Devbox Control, Coordination | cf `deploy --prebuilt` | Switched | `pending-migration` only for remaining binding history |
-| API, Status API, Gateway (qualification) | cf Build Output + dry-run | Switched | — |
-| Gateway (M4 production) | `cf workers versions create --prebuilt` when `GATEWAY_CF_VERSION_UPLOAD_LIVE`; Wrangler upload+deploy fallback when unset; rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Landed; live flip owner-gated | `opennext-adapter` until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
-| Wave 1 Start+Void apps | cf Build Output (`wave1-cf-publisher.mjs`) | Switched | `void-emitted-binding-types` for sealed runtime harness only |
-| Calendar (wave-1) | cf Build Output (`calendar-cf-publisher.mjs`) | Switched | — |
-| Meet frontend | cf Build Output via the [Void publisher](#void-framework-app-publisher) | Switched | Paired restore and secret-name checks keep their admitted Wrangler commands |
+Per-app publication status: every Cloudflare publication path in CI, by app. "cf" means the step that
+writes to Cloudflare runs the cf CLI; the [publish-call ratchet](#publish-call-ratchet)
+keeps every remaining Wrangler write from growing. Qualification-only workflows
+publish nothing; their production publication stays held in `tuturuuu.ci.ts`.
+
+| App or service | Upload | Traffic | Status | Remaining Wrangler or gap |
+| --- | --- | --- | --- | --- |
+| Cron Control | `cf deploy --prebuilt` | same | cf | — |
+| Devbox Control, Coordination | `cf deploy --prebuilt` | same | cf | — |
+| Apps, Calendar, Mail (Wave 1) | `wave1-cf-publisher.mjs` (`cf deploy --prebuilt` or `cf workers versions create --prebuilt`) | same | cf | `void-emitted-binding-types` (runtime harness only) |
+| Meet frontend | [Void publisher](#void-framework-app-publisher) | `void-cf-publisher.mjs assign` | cf | Secret-name checks and the paired restore helper |
+| Tasks | [Void publisher](#void-framework-app-publisher) through `tasks-cf-upload.mjs` | `tasks-native-publish.mjs` (Workers API, 0% preview then 100%) | cf | `void-emitted-config-name` (emitted config path only) |
+| Gateway (tuturuuu.com) | `wrangler versions upload` of the merged config; `cf workers versions create --prebuilt` when `GATEWAY_CF_VERSION_UPLOAD_LIVE` | `cf workers deployments create` (`gateway-cf-traffic.mjs`) | Traffic cf; upload flag owner-gated | Default upload until the flag flips |
+| API, Status API, Abuse Guard, Chat Realtime, Mastermind Store | none (cf Build Output and `cf deploy --prebuilt --dry-run`) | — | Qualification only | — |
+| LMS, Roadmap, Ops Hub, Turbo Cache, Mastermind, Drive | none (sealed artifact or build qualification) | — | Qualification only | — |
+| Native Start apps (AI, Chat, CMS, Contacts, External, Finance, Forms, Git, Hive, Infrastructure, Inventory, Learn, Marketing, Mind, Nova, Pay, Playground, Rewise, Shortener, Storefront, Teach, Tools, Track, Workspace) | Operator cutover of the sealed artifact; see [cutover runbooks](/build/devops/d74-cutover-runbooks) | same | Held in CI; cutover uses cf | Qualification still runs `wrangler deploy --dry-run` and `wrangler types` on the emitted config (`void-wave1-publication`) |
+| Meet realtime | `wrangler deploy --no-bundle` | same | Wrangler (Meet cutover lane) | Tag-migrated SQLite DOs; the Void publisher supports them without `exports` |
+| Colab | `wrangler deploy` (bundles from source) | same | Wrangler; prepared below | `pending-migration` |
+| Web OpenNext families | `wrangler deploy -c cloudflare/opennext/wrangler.<family>.jsonc` | same | Wrangler; prepared below | `opennext-web-families` |
+| Lettin, Parley | `opennextjs-cloudflare deploy` (invokes Wrangler); Lettin remote D1 migrations | same | Wrangler; prepared below | `opennext-adapter` |
+| Backend, TanStack Web | Paused | — | Excluded | `paused-runtime` |
 
 Wave-1 Start and Void publishers run the cf binary from Calendar's pinned
 installation, which also supplies the Build Output emitter dependencies. The
 app directory remains the working directory for cf to find its prebuilt output.
 Dry-run failures include a bounded, redacted CLI error headline from the
 captured output, including launcher errors without a Cloudflare API code.
-| Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
-| Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
-| Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
-| Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
-| Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
+
+### Tasks publication
+
+`tasks-cf-upload.mjs` converts the restored, sealed `dist/server` config with
+`void-cf-output.mjs` and uploads it with `cf workers versions create --prebuilt`
+(strict readback). Versioned cf uploads carry only declared bindings, so the
+plain-text vars of the latest version that the sealed config does not set are
+carried forward from that version: the same source `--keep-vars` and secret
+inheritance use. Config values win; JSON vars stop the release. The candidate
+must be the next version number after that source; otherwise another upload or
+secret change raced it, and the release stops before the zero-percent preview
+and deletes the never-deployed candidate. Each release also starts by checking
+its source: a latest version that is neither serving nor in any deployment was
+never verified, so a leftover release candidate (its message is a source SHA)
+is deleted first, and any other never-deployed version stops the release until
+an operator deploys or deletes it.
+Every emitted module must be ESM, and every `dist/server` file the no_bundle
+module rules would upload must be emitted. The artifact job dry-runs the same
+conversion without credentials.
+
+### Gateway traffic
+
+`gateway-cf-traffic.mjs` moves gateway traffic with `cf workers deployments
+create --body`: strategy `percentage`, the single version at 100%, the
+`workers/message` annotation and the default
+`code_update_strategy` (`deferred`, 300 s), the request a messaged version
+deployment sends. It then waits for the serving version to settle on the target
+and PATCHes the committed `observability` to the Worker's `script-settings`, as
+a version deployment syncs it; cf has no command for that endpoint. Only a
+`100146` rejection (version not yet deployable, nothing written) exits 75 and is
+retried after `assert-current`; any other failure waits for a settled readback
+and never resends. The rollback target is the validated settings snapshot.
+
+The owner-gated cf upload injects the merged live vars and service bindings
+(origins, mounts, flagged families) into a disposable copy of the Build Output,
+because the emitted `cloudflare.config.ts` env holds only committed text vars,
+then verifies the uploaded version against them and every serving secret. Keep
+`GATEWAY_CF_VERSION_UPLOAD_LIVE` unset until a rehearsal has run with the merged
+bindings.
+
+### Preparing the remaining Wrangler publishers
+
+The Void publisher accepts a sealed, `no_bundle` emitted Worker config. Each
+remaining publisher needs one, with no traffic change, before it can switch:
+
+- **Colab** deploys with `wrangler deploy`, which bundles `src/` itself. Emit the
+  Worker with the Cloudflare Vite plugin (the local preview config already
+  reads the service configuration) and seal `dist/<worker>/wrangler.json`.
+  The converter must add the Workers AI binding, which it refuses today. The
+  SQLite Durable Object keeps its tag migrations: never add `exports`, and keep
+  any new migration on a non-versioned deployment. Then publish with
+  `void-cf-publisher.mjs publish --strict` and `assign`.
+- **Web OpenNext families** and **Lettin, Parley** build with
+  `@opennextjs/cloudflare`, whose Worker entry Wrangler bundles at deploy time.
+  `wrangler deploy --dry-run --outdir` already produces the bundled modules in
+  CI without publishing; seal that output with a `no_bundle` config and convert
+  it, so cf publishes the exact bytes. Until then, OpenNext deploys stay on the
+  ratchet. Lettin's remote D1 migrations need `cf d1 migrations apply` with the
+  database UUID and migration-table parity first.
 
 ### Colab local Worker preview
 
@@ -624,11 +707,10 @@ For each service, the orchestrator verifies before promotion:
    may change; once live already matches the target, settings must stay unchanged.
    Storage classes are verified on the artifact, not read back live. Remove the
    transition in a follow-up change after production matches the target.
-4. Production publication for Devbox Control and Coordination remains Wrangler
-   with their applied `v1` migration metadata. A separate reviewed change must
-   carry the rehearsal receipt before enabling cf publication. For these Workers, rehearse the first cf deploy on a disposable Worker created
-   with the same Wrangler migration history and data, and confirm object data survives the
-   switch to `exports`. Do not promote until that rehearsal passes.
+4. Devbox Control and Coordination publish with `cf deploy --prebuilt` and keep
+   their applied `v1` tag-migration history. Never add `exports` to them (see
+   [Durable Object lifecycle](#durable-object-lifecycle)); a new Durable Object
+   class needs a reviewed, rehearsed non-versioned deployment.
 5. Health checks pass on the canonical host, and the deployment marker records the SHA.
 6. If a check fails, roll back with `cf workers deployments create` to the captured
    version, then reconcile before retrying.
