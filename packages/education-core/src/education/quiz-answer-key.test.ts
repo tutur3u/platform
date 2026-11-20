@@ -116,20 +116,21 @@ describe('projectLearnerQuizPrompt', () => {
     });
   });
 
-  it('keeps a stored prompt as stored', () => {
-    const stored = splitQuizAuthoring({
-      answer: { order },
-      quizId: 'quiz-2',
+  it('reshuffles a marked ordering so an authored order cannot pass through', () => {
+    const marked = projectLearnerQuizPrompt({
+      content: { items: order, shuffled: true },
+      id: 'quiz-2',
       type: 'ordering',
-    }).content;
+    });
 
+    expect(marked).toEqual({ items: shuffleForPrompt('quiz-2', order) });
     expect(
       projectLearnerQuizPrompt({
-        content: stored,
+        content: marked,
         id: 'quiz-2',
         type: 'ordering',
       })
-    ).toEqual({ items: (stored as { items: string[] }).items });
+    ).toEqual(marked);
   });
 
   it('shuffles legacy ordering content independent of the authored order', () => {

@@ -115,6 +115,7 @@ export const POST = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -163,7 +164,7 @@ export const POST = withSessionAuth(
       }
     }
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quiz_sets')
       .insert({
         ...payload,
@@ -188,7 +189,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { error: linkError } = await context.supabase
+      const { error: linkError } = await access.sbAdmin
         .from('course_module_quiz_sets')
         .insert({
           module_id: moduleId,

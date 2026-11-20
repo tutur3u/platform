@@ -11,10 +11,8 @@
 -- Unpublished modules, other quiz types and foreign quiz sets no longer
 -- grade or complete modules.
 --
--- Submit now locks the learner link, the course and the enrollment row
--- FOR SHARE, in that order, before grading. A concurrent unlink, archive,
--- unpublish or roster removal either waits for the attempt to commit or
--- makes the attempt fail.
+-- Submit locks workspace membership, the learner link, the course and
+-- enrollment before returning a replay or grading a new attempt.
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
@@ -198,22 +196,18 @@ begin
     pg_catalog.hashtextextended(p_ws_id::text || ':' || p_user_id::text, 0)
   );
 
-  select attempt.id, attempt.course_id
-  into v_existing_id, v_existing_course
-  from private.education_learner_quiz_attempts as attempt
-  where attempt.ws_id = p_ws_id
-    and attempt.user_id = p_user_id
-    and attempt.idempotency_key = p_idempotency_key;
+  perform 1
+  from public.workspace_members as member
+  where member.ws_id = p_ws_id
+    and member.user_id = p_user_id
+  for share;
 
-  if v_existing_id is not null then
-    if v_existing_course is distinct from p_course_id then
-      raise exception 'idempotency key was already used'
-        using errcode = '23514';
-    end if;
-    return private.education_learner_attempt_payload(v_existing_id, true);
+  if not found then
+    raise exception 'learner is not enrolled in this course'
+      using errcode = '42501';
   end if;
 
-  -- Lock order: learner link, course, enrollment.
+  -- Continue in learner link, course, enrollment order.
   select link.virtual_user_id
   into v_virtual_user
   from public.workspace_user_linked_users as link
@@ -249,6 +243,21 @@ begin
   if not found then
     raise exception 'learner is not enrolled in this course'
       using errcode = '42501';
+  end if;
+
+  select attempt.id, attempt.course_id
+  into v_existing_id, v_existing_course
+  from private.education_learner_quiz_attempts as attempt
+  where attempt.ws_id = p_ws_id
+    and attempt.user_id = p_user_id
+    and attempt.idempotency_key = p_idempotency_key;
+
+  if v_existing_id is not null then
+    if v_existing_course is distinct from p_course_id then
+      raise exception 'idempotency key was already used'
+        using errcode = '23514';
+    end if;
+    return private.education_learner_attempt_payload(v_existing_id, true);
   end if;
 
   select count(*)::integer

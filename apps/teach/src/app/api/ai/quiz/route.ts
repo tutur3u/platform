@@ -97,7 +97,7 @@ export const POST = withSessionAuth(
       // Require teach workspace access
       const access = await requireTeachWorkspaceAccess({
         context,
-        permission: ['update_user_groups', 'view_user_groups'],
+        permission: 'update_user_groups',
         wsId,
       });
       if (access instanceof NextResponse) return access;

@@ -176,27 +176,25 @@ export function projectLearnerQuizPrompt(quiz: QuizPromptSource): Json {
     return options.length > 0 ? { options } : {};
   }
 
+  // Choices and items are always reshuffled. The shuffle depends only on
+  // the values, so a stored prompt keeps its order and a sequence that
+  // arrives in authored order, marked or not, never passes through.
   if (quiz.type === 'matching') {
     const lefts = promptLefts(content);
     const storedChoices = getStringItems(content, 'choices').filter(Boolean);
-    // Stored prompts are already shuffled. Legacy authored pairs are not.
     const choices =
       storedChoices.length > 0
         ? storedChoices
-        : shuffleForPrompt(
-            quiz.id,
-            getMatchingPairs(content).map((pair) => pair.right)
-          );
-    return { choices, pairs: lefts.map((left) => ({ left })) };
+        : getMatchingPairs(content).map((pair) => pair.right);
+    return {
+      choices: shuffleForPrompt(quiz.id, choices),
+      pairs: lefts.map((left) => ({ left })),
+    };
   }
 
   if (quiz.type === 'ordering') {
     const items = getStringItems(content, 'items').filter(Boolean);
-    return {
-      items: isAuthoredOrderingContent(content)
-        ? shuffleForPrompt(quiz.id, items)
-        : items,
-    };
+    return { items: shuffleForPrompt(quiz.id, items) };
   }
 
   return {};

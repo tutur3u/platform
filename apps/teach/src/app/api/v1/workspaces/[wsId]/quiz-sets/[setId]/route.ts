@@ -30,6 +30,7 @@ export const PUT = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -52,7 +53,7 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quiz_sets')
       .update({ name: parsedBody.data.name })
       .eq('id', parsedParams.data.setId)
@@ -98,11 +99,12 @@ export const DELETE = withSessionAuth(
 
     const access = await requireEducationWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quiz_sets')
       .delete()
       .eq('id', parsedParams.data.setId)

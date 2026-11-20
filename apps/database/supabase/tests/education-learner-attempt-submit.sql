@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(18);
+select plan(20);
 
 insert into auth.users (
   id, aud, role, email, email_confirmed_at, created_at, updated_at
@@ -383,6 +383,37 @@ select is(
     ) -> 'attempt' ->> 'id'
   ),
   'a replay during the limit still returns the original attempt'
+);
+
+reset role;
+delete from public.workspace_user_groups_users
+where group_id = 'c1900000-0000-4000-8000-000000000020'
+  and user_id = (
+    select virtual_user_id from public.workspace_user_linked_users
+    where platform_user_id = 'c1900000-0000-4000-8000-000000000001'
+      and ws_id = 'c1900000-0000-4000-8000-000000000010'
+  );
+
+set local role service_role;
+select throws_ok(
+  $$select private.submit_education_learner_attempt(
+    'c1900000-0000-4000-8000-000000000010',
+    'c1900000-0000-4000-8000-000000000001',
+    'c1900000-0000-4000-8000-000000000020',
+    'key-1',
+    null,
+    '[{"quiz_id":"c1900000-0000-4000-8000-000000000041","selected_option_id":"c1900000-0000-4000-8000-000000000051"}]'
+  )$$,
+  '42501',
+  'learner is not enrolled in this course',
+  'a removed learner cannot replay a saved attempt'
+);
+reset role;
+select is(
+  (select count(*)::integer from private.education_learner_quiz_attempts
+    where user_id = 'c1900000-0000-4000-8000-000000000001'),
+  10,
+  'the denied replay leaves saved attempts unchanged'
 );
 
 select finish();
