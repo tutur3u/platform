@@ -148,7 +148,13 @@ attached to their owning rows. Regression evidence: `inventory_items_page_test.d
 `inventory_items_states_test.dart`, `inventory_scan_test.dart`, and the
 compact/fractional stock widget tests.
 
-Native Overview analytics describe the loaded sample, not workspace-wide totals.
+Overview groups low-stock products by their location and shows the quantity next
+to its minimum. Catalog managers can open an adjustment from a low-stock row.
+The editor puts stock first and saves through the existing product workflow.
+The dashboard refreshes after a save in the same workspace. Fractional quantities
+remain visible at full precision.
+
+Receipt analytics describe the loaded sample, not workspace-wide totals.
 Receipt activity groups unique dated receipts by device-local day for the selected
 7- or 30-day view and reports records without dates separately. Loaded revenue
 keeps currencies separate, excludes pending receipts and duplicate IDs, and

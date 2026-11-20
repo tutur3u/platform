@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
-import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
@@ -23,7 +22,6 @@ import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'inventory_editor_fields.dart';
 part 'inventory_editor_operations.dart';
@@ -34,10 +32,14 @@ part 'inventory_product_stock_rows.dart';
 Future<T?> showInventoryProductEditorPage<T>(
   BuildContext context, {
   String? productId,
+  bool stockFirst = false,
 }) {
   return showFinanceFullscreenModal<T>(
     context: context,
-    builder: (context) => InventoryProductEditorPage(productId: productId),
+    builder: (context) => InventoryProductEditorPage(
+      productId: productId,
+      stockFirst: stockFirst,
+    ),
   );
 }
 
@@ -46,6 +48,7 @@ class InventoryProductEditorPage extends StatefulWidget {
     super.key,
     this.embedded = false,
     this.productId,
+    this.stockFirst = false,
     this.inventoryRepository,
     this.financeRepository,
     this.settingsRepository,
@@ -53,6 +56,7 @@ class InventoryProductEditorPage extends StatefulWidget {
 
   final bool embedded;
   final String? productId;
+  final bool stockFirst;
   final InventoryRepository? inventoryRepository;
   final FinanceRepository? financeRepository;
   final SettingsRepository? settingsRepository;

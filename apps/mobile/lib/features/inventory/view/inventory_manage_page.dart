@@ -1,12 +1,13 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/finance/category.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/inventory/inventory_permissions.dart';
 import 'package:mobile/features/inventory/view/inventory_catalog_hub.dart';
 import 'package:mobile/features/inventory/widgets/inventory_read_warning.dart';
@@ -28,7 +28,6 @@ import 'package:mobile/widgets/app_dialog_scaffold.dart';
 import 'package:mobile/widgets/fab/extended_fab.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 part 'inventory_manage_item_actions.dart';
 part 'inventory_manage_item_widgets.dart';
@@ -332,105 +331,99 @@ class _InventoryManagePageState extends State<InventoryManagePage>
           previous.status != current.status ||
           previous.user?.id != current.user?.id,
       listener: (context, state) => unawaited(_reload()),
-      child: shad.Scaffold(
-        child: BlocListener<WorkspaceCubit, WorkspaceState>(
-          listenWhen: (previous, current) =>
-              previous.currentWorkspace?.id != current.currentWorkspace?.id,
-          listener: (context, state) => unawaited(_reload()),
-          child: FutureBuilder<_InventoryManageData>(
-            key: ValueKey(scope),
-            future: _futureScope == scope ? _future : null,
-            builder: (context, snapshot) {
-              if (scope.$1 == null || scope.$2 == null) {
-                return const SizedBox.shrink();
-              }
-              final data =
-                  snapshot.data ?? (_futureScope == scope ? _cachedData : null);
-              if (data == null &&
-                  snapshot.connectionState != ConnectionState.done) {
-                return const InventoryOverviewSkeleton();
-              }
+      child: BlocListener<WorkspaceCubit, WorkspaceState>(
+        listenWhen: (previous, current) =>
+            previous.currentWorkspace?.id != current.currentWorkspace?.id,
+        listener: (context, state) => unawaited(_reload()),
+        child: FutureBuilder<_InventoryManageData>(
+          key: ValueKey(scope),
+          future: _futureScope == scope ? _future : null,
+          builder: (context, snapshot) {
+            if (scope.$1 == null || scope.$2 == null) {
+              return const SizedBox.shrink();
+            }
+            final data =
+                snapshot.data ?? (_futureScope == scope ? _cachedData : null);
+            if (data == null &&
+                snapshot.connectionState != ConnectionState.done) {
+              return const InventoryOverviewSkeleton();
+            }
 
-              if (data == null) {
-                return NovaRefreshIndicator.state(
-                  onRefresh: () => _reload(forceRefresh: true),
-                  child: AppPageBody(
-                    child: Center(
-                      child: FinanceEmptyState(
-                        icon: Icons.error_outline,
-                        title: l10n.commonSomethingWentWrong,
-                        body:
-                            snapshot.error?.toString() ??
-                            l10n.inventoryManageLabel,
-                        action: shad.SecondaryButton(
-                          onPressed: () =>
-                              unawaited(_reload(forceRefresh: true)),
-                          child: Text(l10n.commonRetry),
-                        ),
-                      ),
+            if (data == null) {
+              return NovaRefreshIndicator.state(
+                onRefresh: () => _reload(forceRefresh: true),
+                child: AppPageBody(
+                  child: Center(
+                    child: AppStateMessage(
+                      icon: LucideIcons.circleAlert,
+                      title: l10n.commonSomethingWentWrong,
+                      message:
+                          snapshot.error?.toString() ??
+                          l10n.inventoryManageLabel,
+                      actionLabel: l10n.commonRetry,
+                      onAction: () => _reload(forceRefresh: true),
                     ),
                   ),
-                );
-              }
-
-              return Stack(
-                children: [
-                  InventorySearchChrome(
-                    location: Routes.inventoryCatalogPath(widget.section!.name),
-                    controller: _searchController,
-                    onChanged: (_) => setState(() {}),
-                  ),
-                  NovaRefreshIndicator(
-                    onRefresh: () => _reload(forceRefresh: true),
-                    child: AppPageListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      children: [
-                        if (snapshot.hasError || _limitedData)
-                          InventoryReadWarning(
-                            onRetry: () =>
-                                unawaited(_reload(forceRefresh: true)),
-                          ),
-                        _ChipWrap(
-                          workspaceId: _wsId ?? '',
-                          feature:
-                              widget.section ==
-                                  InventoryCatalogSection.financeCategories
-                              ? 'finance'
-                              : 'inventory',
-                          items: _sectionItems(data)
-                              .where(
-                                (item) => item.$2.toLowerCase().contains(
-                                  _searchController.text.trim().toLowerCase(),
-                                ),
-                              )
-                              .toList(),
-                          onEdit: data.canManageSetup && _setupKind != null
-                              ? (id, name) =>
-                                    _editSetupItem(_setupKind!, id, name)
-                              : null,
-                          onDelete: data.canManageSetup && _setupKind != null
-                              ? (id, name) =>
-                                    _deleteSetupItem(_setupKind!, id, name)
-                              : null,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (data.canManageSetup && _setupKind != null)
-                    ExtendedFab(
-                      icon: Icons.add,
-                      label: _createLabel,
-                      includeBottomSafeArea: false,
-                      onPressed: () => _showCreateDialog(
-                        title: _createLabel,
-                        confirmLabel: _createLabel,
-                        onConfirm: _createSection,
-                      ),
-                    ),
-                ],
+                ),
               );
-            },
-          ),
+            }
+
+            return Stack(
+              children: [
+                InventorySearchChrome(
+                  location: Routes.inventoryCatalogPath(widget.section!.name),
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                ),
+                NovaRefreshIndicator(
+                  onRefresh: () => _reload(forceRefresh: true),
+                  child: AppPageListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      if (snapshot.hasError || _limitedData)
+                        InventoryReadWarning(
+                          onRetry: () => unawaited(_reload(forceRefresh: true)),
+                        ),
+                      _InventorySetupRows(
+                        workspaceId: _wsId ?? '',
+                        feature:
+                            widget.section ==
+                                InventoryCatalogSection.financeCategories
+                            ? 'finance'
+                            : 'inventory',
+                        items: _sectionItems(data)
+                            .where(
+                              (item) => item.$2.toLowerCase().contains(
+                                _searchController.text.trim().toLowerCase(),
+                              ),
+                            )
+                            .toList(),
+                        onEdit: data.canManageSetup && _setupKind != null
+                            ? (id, name) =>
+                                  _editSetupItem(_setupKind!, id, name)
+                            : null,
+                        onDelete: data.canManageSetup && _setupKind != null
+                            ? (id, name) =>
+                                  _deleteSetupItem(_setupKind!, id, name)
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
+                if (data.canManageSetup && _setupKind != null)
+                  ExtendedFab(
+                    icon: Icons.add,
+                    label: _createLabel,
+                    includeBottomSafeArea: false,
+                    onPressed: () => _showCreateDialog(
+                      title: _createLabel,
+                      confirmLabel: _createLabel,
+                      onConfirm: _createSection,
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );

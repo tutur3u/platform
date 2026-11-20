@@ -128,7 +128,7 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
 
   Future<void> _showDeleteDialog(InventorySaleDetail sale) async {
     final sheetNavigator = Navigator.of(context);
-    final deleted = await shad.showDialog<bool>(
+    final deleted = await showAppDialog<bool>(
       context: context,
       builder: (_) => AsyncDeleteConfirmationDialog(
         toastContext: context,
@@ -179,11 +179,11 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
             title: l10n.commonSomethingWentWrong,
             icon: Icons.error_outline,
             actions: [
-              shad.OutlineButton(
+              AppButton.outline(
                 onPressed: () => Navigator.of(context).pop(false),
                 child: Text(l10n.commonCancel),
               ),
-              shad.PrimaryButton(
+              AppButton.primary(
                 onPressed: _reload,
                 child: Text(l10n.commonRetry),
               ),
@@ -207,17 +207,17 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
           icon: Icons.receipt_long_outlined,
           maxWidth: 720,
           actions: [
-            shad.OutlineButton(
+            AppButton.outline(
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(l10n.commonCancel),
             ),
             if (widget.canUpdateSales)
-              shad.SecondaryButton(
+              AppButton.secondary(
                 onPressed: () => _showEditDialog(sale),
                 child: Text(l10n.inventorySalesEdit),
               ),
             if (widget.canDeleteSales)
-              shad.DestructiveButton(
+              AppButton.destructive(
                 onPressed: () => _showDeleteDialog(sale),
                 child: Text(l10n.inventorySalesDelete),
               ),
@@ -231,43 +231,36 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
                 pendingCreate
                     ? l10n.offlineEditQueued
                     : formatCurrency(sale.paidAmount, widget.currency),
-                style: shad.Theme.of(
+                style: AppTokens.of(
                   context,
                 ).typography.h2.copyWith(fontWeight: FontWeight.w900),
               ),
-              const shad.Gap(8),
+              const AppGap(AppSpacing.sm),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
                 children: [
                   if (sale.creatorName?.trim().isNotEmpty ?? false)
-                    _SaleBadge(
-                      label: l10n.inventorySalesCreatorBadge(
-                        sale.creatorName!.trim(),
+                    AppChip(
+                      label: Text(
+                        l10n.inventorySalesCreatorBadge(
+                          sale.creatorName!.trim(),
+                        ),
                       ),
-                      color: FinancePalette.of(context).accent,
                     ),
                   ...sale.owners
                       .where((owner) => owner.trim().isNotEmpty)
-                      .map(
-                        (owner) => _SaleBadge(
-                          label: owner,
-                          color: FinancePalette.of(context).positive,
-                        ),
-                      ),
+                      .map((owner) => AppChip(label: Text(owner))),
                   if (sale.customerName?.trim().isNotEmpty ?? false)
-                    _SaleBadge(
-                      label: sale.customerName!.trim(),
-                      color: shad.Theme.of(context).colorScheme.mutedForeground,
-                    ),
+                    AppChip(label: Text(sale.customerName!.trim())),
                 ],
               ),
-              const shad.Gap(16),
+              const AppGap(AppSpacing.lg),
               _DetailInfoGrid(currency: widget.currency, sale: sale),
               if (sale.lines.isNotEmpty) ...[
-                const shad.Gap(18),
-                FinanceSectionHeader(title: l10n.inventorySalesLineItems),
-                const shad.Gap(12),
+                const AppGap(AppSpacing.lg),
+                AppSectionHeader(title: l10n.inventorySalesLineItems),
+                const AppGap(AppSpacing.md),
                 ...sale.lines.map((line) {
                   final quantityText = line.quantity.toStringAsFixed(
                     line.quantity % 1 == 0 ? 0 : 1,
@@ -275,8 +268,7 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
-                    child: FinancePanel(
-                      radius: 18,
+                    child: AppCard(
                       padding: const EdgeInsets.all(14),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,7 +278,7 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
                               Expanded(
                                 child: Text(
                                   line.productName,
-                                  style: shad.Theme.of(context).typography.small
+                                  style: AppTokens.of(context).typography.small
                                       .copyWith(fontWeight: FontWeight.w800),
                                 ),
                               ),
@@ -295,43 +287,34 @@ class InventorySaleDetailDialogState extends State<InventorySaleDetailDialog> {
                                   line.price * line.quantity,
                                   widget.currency,
                                 ),
-                                style: shad.Theme.of(context).typography.small
+                                style: AppTokens.of(context).typography.small
                                     .copyWith(fontWeight: FontWeight.w800),
                               ),
                             ],
                           ),
-                          const shad.Gap(6),
+                          const AppGap(AppSpacing.xs),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
                               if (line.ownerName?.trim().isNotEmpty ?? false)
-                                _SaleBadge(
-                                  label: line.ownerName!.trim(),
-                                  color: FinancePalette.of(context).positive,
-                                ),
+                                AppChip(label: Text(line.ownerName!.trim())),
                               if (line.warehouseName?.trim().isNotEmpty ??
                                   false)
-                                _SaleBadge(
-                                  label: line.warehouseName!.trim(),
-                                  color: shad.Theme.of(
-                                    context,
-                                  ).colorScheme.mutedForeground,
+                                AppChip(
+                                  label: Text(line.warehouseName!.trim()),
                                 ),
                               if (line.unitName?.trim().isNotEmpty ?? false)
-                                _SaleBadge(
-                                  label: line.unitName!.trim(),
-                                  color: FinancePalette.of(context).accent,
-                                ),
+                                AppChip(label: Text(line.unitName!.trim())),
                             ],
                           ),
-                          const shad.Gap(8),
+                          const AppGap(AppSpacing.sm),
                           Text(
                             '${formatCurrency(line.price, widget.currency)} '
                             '× $quantityText',
-                            style: shad.Theme.of(context).typography.textSmall
+                            style: AppTokens.of(context).typography.small
                                 .copyWith(
-                                  color: shad.Theme.of(
+                                  color: AppTokens.of(
                                     context,
                                   ).colorScheme.mutedForeground,
                                 ),
@@ -414,22 +397,21 @@ class _DetailStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final child = FinancePanel(
-      radius: 18,
+    final child = AppCard(
       padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: shad.Theme.of(context).typography.xSmall.copyWith(
-              color: shad.Theme.of(context).colorScheme.mutedForeground,
+            style: AppTokens.of(context).typography.xSmall.copyWith(
+              color: AppTokens.of(context).colorScheme.mutedForeground,
             ),
           ),
-          const shad.Gap(4),
+          const AppGap(AppSpacing.xs),
           Text(
             value,
-            style: shad.Theme.of(
+            style: AppTokens.of(
               context,
             ).typography.small.copyWith(fontWeight: FontWeight.w700),
           ),

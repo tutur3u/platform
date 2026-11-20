@@ -3,9 +3,43 @@ part of 'inventory_product_editor_page.dart';
 extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
   Widget _buildEditor(BuildContext context) {
     final l10n = context.l10n;
+    final stockSection = _InventorySectionCard(
+      title: l10n.inventoryProductInventory,
+      action: AppButton.outline(
+        size: AppButtonSize.small,
+        onPressed: _addRow,
+        child: Text(l10n.inventoryProductAddInventoryRow),
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < _rows.length; index++) ...[
+            _InventoryStockRowCard(
+              index: index,
+              row: _rows[index],
+              units: _units,
+              warehouses: _warehouses,
+              onPickUnit: () => _pickRowUnit(_rows[index]),
+              onPickWarehouse: () => _pickRowWarehouse(_rows[index]),
+              onChanged: () => _update(() => _formError = null),
+              onDelete: _rows.length == 1
+                  ? null
+                  : () {
+                      _update(() {
+                        _rows.removeAt(index).dispose();
+                        _formError = null;
+                      });
+                    },
+            ),
+            if (index != _rows.length - 1) const AppGap(AppSpacing.md),
+          ],
+        ],
+      ),
+    );
     return InventoryFormScaffold(
       embedded: widget.embedded,
-      title: widget.productId == null
+      title: widget.stockFirst
+          ? l10n.inventoryAdjustStock
+          : widget.productId == null
           ? l10n.inventoryCreateProduct
           : l10n.inventoryEditProduct,
       primaryActionLabel: widget.productId == null
@@ -24,7 +58,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                   Center(
                     child: InventoryProductImage(product: product, size: 160),
                   ),
-                  const shad.Gap(12),
+                  const AppGap(AppSpacing.md),
                 ],
                 if (_refreshing)
                   const Padding(
@@ -39,15 +73,19 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                     actionLabel: l10n.commonRetry,
                     onAction: _load,
                   ),
-                  const shad.Gap(12),
+                  const AppGap(AppSpacing.md),
                 ],
                 if (_formError?.trim().isNotEmpty ?? false) ...[
                   _InventoryInlineAlertCard(
                     message: _formError!,
-                    color: shad.Theme.of(context).colorScheme.destructive,
+                    color: AppTokens.of(context).colorScheme.destructive,
                     icon: Icons.error_outline_rounded,
                   ),
-                  const shad.Gap(12),
+                  const AppGap(AppSpacing.md),
+                ],
+                if (widget.stockFirst) ...[
+                  stockSection,
+                  const AppGap(AppSpacing.md),
                 ],
                 _InventorySectionCard(
                   title: l10n.inventoryProductDetailsTitle,
@@ -71,7 +109,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                           }
                         },
                       ),
-                      const shad.Gap(12),
+                      const AppGap(AppSpacing.md),
                       _InventorySelectorCard(
                         label: l10n.inventoryProductOwner,
                         title: _selectedOwner?.name,
@@ -80,7 +118,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                         errorText: _ownerError,
                         onTap: _owners.isEmpty ? null : _pickOwner,
                       ),
-                      const shad.Gap(12),
+                      const AppGap(AppSpacing.md),
                       _InventorySelectorCard(
                         label: l10n.inventoryProductCategory,
                         title: _selectedCategory?.name,
@@ -89,7 +127,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                         errorText: _categoryError,
                         onTap: _categories.isEmpty ? null : _pickCategory,
                       ),
-                      const shad.Gap(12),
+                      const AppGap(AppSpacing.md),
                       _InventorySelectorCard(
                         label: l10n.inventoryProductFinanceCategory,
                         title: _selectedFinanceCategory?.name,
@@ -97,7 +135,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                         icon: Icons.account_balance_wallet_outlined,
                         onTap: _pickFinanceCategory,
                       ),
-                      const shad.Gap(12),
+                      const AppGap(AppSpacing.md),
                       _InventorySelectorCard(
                         label: l10n.inventoryProductManufacturer,
                         title: _selectedManufacturer?.name,
@@ -108,7 +146,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                     ],
                   ),
                 ),
-                const shad.Gap(12),
+                const AppGap(AppSpacing.md),
                 _InventorySectionCard(
                   title: l10n.inventoryProductDescription,
                   child: Column(
@@ -120,7 +158,7 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                         placeholder: l10n.inventoryProductDescription,
                         onChanged: (_) => _update(() {}),
                       ),
-                      const shad.Gap(12),
+                      const AppGap(AppSpacing.md),
                       _InventoryTextAreaCard(
                         label: l10n.inventoryProductUsage,
                         controller: _usageController,
@@ -130,40 +168,8 @@ extension _InventoryEditorPresentation on _InventoryProductEditorPageState {
                     ],
                   ),
                 ),
-                const shad.Gap(12),
-                _InventorySectionCard(
-                  title: l10n.inventoryProductInventory,
-                  action: shad.OutlineButton(
-                    density: shad.ButtonDensity.compact,
-                    onPressed: _addRow,
-                    child: Text(l10n.inventoryProductAddInventoryRow),
-                  ),
-                  child: Column(
-                    children: [
-                      for (var index = 0; index < _rows.length; index++) ...[
-                        _InventoryStockRowCard(
-                          index: index,
-                          row: _rows[index],
-                          units: _units,
-                          warehouses: _warehouses,
-                          onPickUnit: () => _pickRowUnit(_rows[index]),
-                          onPickWarehouse: () =>
-                              _pickRowWarehouse(_rows[index]),
-                          onChanged: () => _update(() => _formError = null),
-                          onDelete: _rows.length == 1
-                              ? null
-                              : () {
-                                  _update(() {
-                                    _rows.removeAt(index).dispose();
-                                    _formError = null;
-                                  });
-                                },
-                        ),
-                        if (index != _rows.length - 1) const shad.Gap(12),
-                      ],
-                    ],
-                  ),
-                ),
+                const AppGap(AppSpacing.md),
+                if (!widget.stockFirst) stockSection,
               ],
             ),
     );

@@ -2,11 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/sources/api_client.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class InventoryStockHealthPanel extends StatelessWidget {
   const InventoryStockHealthPanel({
@@ -21,8 +21,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return FinancePanel(
-      padding: const EdgeInsets.all(14),
+    return AppPanel(
       child: FutureBuilder<InventoryStockHealth>(
         future: future,
         builder: (context, snapshot) {
@@ -39,7 +38,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
                   Expanded(
                     child: Text(
                       l10n.inventoryStockHealthTitle,
-                      style: shad.Theme.of(context).typography.h4,
+                      style: AppTokens.of(context).typography.large,
                     ),
                   ),
                   Tooltip(
@@ -55,7 +54,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSpacing.sm),
               if (snapshot.hasError)
                 Text(
                   denied
@@ -76,7 +75,7 @@ class InventoryStockHealthPanel extends StatelessWidget {
                 if (!data.isComplete) Text(l10n.inventoryStockHealthIncomplete),
                 if (snapshot.connectionState == ConnectionState.waiting)
                   Text(l10n.inventoryStockHealthLoading),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.sm),
                 _CountRow(
                   label: l10n.inventoryStockHealthActive,
                   count: data.activeProducts,
@@ -158,14 +157,14 @@ class _CountRow extends StatelessWidget {
               ],
             ),
             if (maximum != null && count != null) ...[
-              const SizedBox(height: 5),
+              const SizedBox(height: AppSpacing.xs),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
                   value: maximum == 0 ? 0 : count! / maximum!,
                   minHeight: 5,
-                  color: shad.Theme.of(context).colorScheme.primary,
-                  backgroundColor: shad.Theme.of(context).colorScheme.muted,
+                  color: AppTokens.of(context).colorScheme.primary,
+                  backgroundColor: AppTokens.of(context).colorScheme.muted,
                 ),
               ),
             ],

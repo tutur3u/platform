@@ -3102,6 +3102,7 @@
   "inventoryAddOwner": "Add owner",
   "inventoryAddUnit": "Add unit",
   "inventoryAddWarehouse": "Add warehouse",
+  "inventoryAdjustStock": "Adjust stock",
   "inventoryAuditActorLabel": "Actor",
   "inventoryAuditAfter": "After",
   "inventoryAuditBefore": "Before",

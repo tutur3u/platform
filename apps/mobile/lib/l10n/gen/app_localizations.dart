@@ -9829,6 +9829,12 @@ abstract class AppLocalizations {
   /// **'Add warehouse'**
   String get inventoryAddWarehouse;
 
+  /// No description provided for @inventoryAdjustStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust stock'**
+  String get inventoryAdjustStock;
+
   /// No description provided for @inventoryAuditActorLabel.
   ///
   /// In en, this message translates to:

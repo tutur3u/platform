@@ -28,19 +28,19 @@ class _InventoryInlineAlertCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, size: 18, color: color),
-          const shad.Gap(10),
+          const AppGap(AppSpacing.sm),
           Expanded(
             child: Text(
               message,
-              style: shad.Theme.of(context).typography.textSmall.copyWith(
+              style: AppTokens.of(context).typography.small.copyWith(
                 color: color,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
           if (actionLabel != null && onAction != null) ...[
-            const shad.Gap(8),
-            shad.GhostButton(onPressed: onAction, child: Text(actionLabel!)),
+            const AppGap(AppSpacing.sm),
+            AppButton.ghost(onPressed: onAction, child: Text(actionLabel!)),
           ],
         ],
       ),
@@ -61,10 +61,10 @@ class _InventorySectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FinancePanel(
+    return AppCard(
       padding: const EdgeInsets.all(14),
-      radius: 22,
-      backgroundColor: FinancePalette.of(context).elevatedPanel,
+
+      fillColor: AppTokens.of(context).colorScheme.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -73,15 +73,15 @@ class _InventorySectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: shad.Theme.of(
+                  style: AppTokens.of(
                     context,
                   ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
-              if (action != null) ...[const shad.Gap(12), action!],
+              if (action != null) ...[const AppGap(AppSpacing.md), action!],
             ],
           ),
-          const shad.Gap(10),
+          const AppGap(AppSpacing.sm),
           child,
         ],
       ),
@@ -108,7 +108,7 @@ class _InventorySelectorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final palette = FinancePalette.of(context);
     final hasValue = title?.trim().isNotEmpty ?? false;
 
@@ -135,7 +135,7 @@ class _InventorySelectorCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const shad.Gap(10),
+              const AppGap(AppSpacing.sm),
               Icon(Icons.expand_more_rounded, size: 18, color: palette.accent),
             ],
           ),

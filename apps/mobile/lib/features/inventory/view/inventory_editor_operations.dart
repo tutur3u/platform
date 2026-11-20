@@ -289,7 +289,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         title: title,
         child: ListView.separated(
           itemCount: items.length,
-          separatorBuilder: (_, index) => const shad.Gap(8),
+          separatorBuilder: (_, index) => const AppGap(AppSpacing.sm),
           itemBuilder: (context, index) {
             final item = items[index];
             return FinancePickerTile(
@@ -319,12 +319,12 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
               isSelected: currentId == null,
               onTap: () => Navigator.of(context).pop('__none__'),
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             FinancePickerTile(
               title: context.l10n.inventoryAddManufacturer,
               onTap: () => Navigator.of(context).pop('__create__'),
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             ...items.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
@@ -362,8 +362,8 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
               onSubmitted: (_) =>
                   Navigator.of(context).pop(controller.text.trim()),
             ),
-            const shad.Gap(16),
-            shad.PrimaryButton(
+            const AppGap(AppSpacing.lg),
+            AppButton.primary(
               onPressed: () =>
                   Navigator.of(context).pop(controller.text.trim()),
               child: Text(confirmLabel),
@@ -387,7 +387,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
         title: title,
         child: ListView.separated(
           itemCount: items.length,
-          separatorBuilder: (_, index) => const shad.Gap(8),
+          separatorBuilder: (_, index) => const AppGap(AppSpacing.sm),
           itemBuilder: (context, index) {
             final item = items[index];
             return FinancePickerTile(
@@ -417,7 +417,7 @@ extension _InventoryEditorOperations on _InventoryProductEditorPageState {
               isSelected: currentId == null,
               onTap: () => Navigator.of(context).pop(),
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             ...items.map(
               (item) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),

@@ -25,13 +25,13 @@ class _InventoryTextInputCard extends StatelessWidget {
       label,
       icon: Icons.edit_note_rounded,
       errorText: errorText,
-      child: shad.TextField(
+      child: AppTextField(
         selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
         key: fieldKey,
         controller: controller,
         keyboardType: keyboardType,
-        placeholder: Text(placeholder),
+        placeholder: placeholder,
         onChanged: onChanged,
       ),
     );
@@ -56,14 +56,13 @@ class _InventoryTextAreaCard extends StatelessWidget {
     return _InventorySurface(
       label,
       icon: Icons.notes_rounded,
-      child: shad.TextArea(
+      child: AppTextField(
         selectionControls: platformTextSelectionControls(),
         contextMenuBuilder: platformTextContextMenuBuilder(),
         controller: controller,
-        placeholder: Text(placeholder),
-        initialHeight: 96,
-        minHeight: 96,
-        maxHeight: 156,
+        placeholder: placeholder,
+        minLines: 3,
+        maxLines: 5,
         onChanged: onChanged,
       ),
     );
@@ -87,7 +86,7 @@ class _InventorySurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = shad.Theme.of(context);
+    final theme = AppTokens.of(context);
     final palette = FinancePalette.of(context);
     final panelChild = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -101,7 +100,7 @@ class _InventorySurface extends StatelessWidget {
                   ? palette.accent
                   : theme.colorScheme.destructive,
             ),
-            const shad.Gap(8),
+            const AppGap(AppSpacing.sm),
             Expanded(
               child: Text(
                 label,
@@ -116,7 +115,7 @@ class _InventorySurface extends StatelessWidget {
             ),
           ],
         ),
-        const shad.Gap(10),
+        const AppGap(AppSpacing.sm),
         child,
       ],
     );
@@ -153,7 +152,7 @@ class _InventorySurface extends StatelessWidget {
       children: [
         wrapped,
         if (errorText != null) ...[
-          const shad.Gap(6),
+          const AppGap(AppSpacing.xs),
           _InventoryFieldErrorText(message: errorText!),
         ],
       ],
@@ -170,8 +169,8 @@ class _InventoryFieldErrorText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       message,
-      style: shad.Theme.of(context).typography.xSmall.copyWith(
-        color: shad.Theme.of(context).colorScheme.destructive,
+      style: AppTokens.of(context).typography.xSmall.copyWith(
+        color: AppTokens.of(context).colorScheme.destructive,
         fontWeight: FontWeight.w700,
       ),
     );

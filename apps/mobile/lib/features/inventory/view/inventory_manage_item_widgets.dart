@@ -42,11 +42,11 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
       maxWidth: 420,
       maxHeightFactor: 0.5,
       actions: [
-        shad.OutlineButton(
+        AppButton.outline(
           onPressed: _saving ? null : () => Navigator.of(context).pop(false),
           child: Text(context.l10n.commonCancel),
         ),
-        shad.PrimaryButton(
+        AppButton.primary(
           onPressed: _saving ? null : _handleConfirm,
           child: _saving
               ? const SizedBox.square(
@@ -56,10 +56,8 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
               : Text(widget.confirmLabel),
         ),
       ],
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: context.l10n.inputPlaceholderInventoryName,
-        ),
+      child: AppTextField(
+        placeholder: context.l10n.inputPlaceholderInventoryName,
         controller: _controller,
         autofocus: true,
         onSubmitted: (_) => unawaited(_handleConfirm()),
@@ -108,8 +106,8 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
   }
 }
 
-class _ChipWrap extends StatelessWidget {
-  const _ChipWrap({
+class _InventorySetupRows extends StatelessWidget {
+  const _InventorySetupRows({
     required this.workspaceId,
     required this.items,
     this.feature = 'inventory',
@@ -129,40 +127,36 @@ class _ChipWrap extends StatelessWidget {
       return Text(context.l10n.inventoryManageEmpty);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: items
-          .map(
-            (item) => PendingSyncFrame(
-              workspaceId: workspaceId,
-              entityId: item.$1,
-              feature: feature,
-              child: Row(
+    return AppGroupedCard(
+      children: [
+        for (final item in items)
+          PendingSyncFrame(
+            key: ValueKey(item.$1),
+            workspaceId: workspaceId,
+            entityId: item.$1,
+            feature: feature,
+            child: AppGroupedRow(
+              title: Text(item.$2),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Text(
-                      item.$2,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
                   if (onEdit != null)
-                    IconButton(
+                    AppIconButton(
                       tooltip: context.l10n.commonEdit,
                       onPressed: () => unawaited(onEdit!(item.$1, item.$2)),
-                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      icon: const Icon(LucideIcons.pencil),
                     ),
                   if (onDelete != null)
-                    IconButton(
+                    AppIconButton(
                       tooltip: context.l10n.commonDelete,
                       onPressed: () => unawaited(onDelete!(item.$1, item.$2)),
-                      icon: const Icon(Icons.delete_outline_rounded, size: 18),
+                      icon: const Icon(LucideIcons.trash),
                     ),
                 ],
               ),
             ),
-          )
-          .toList(growable: false),
+          ),
+      ],
     );
   }
 }

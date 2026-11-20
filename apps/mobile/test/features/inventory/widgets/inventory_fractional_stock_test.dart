@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/mobile_shad_theme.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
@@ -20,6 +21,8 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
+
+import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/helpers.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
@@ -27,10 +30,15 @@ class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 class _Workspace extends MockCubit<WorkspaceState> implements WorkspaceCubit {}
 
 class _FractionalOverview extends InventoryRepository {
-  _FractionalOverview({this.amount = 2.5, this.minimum = 2.5});
+  _FractionalOverview({
+    this.amount = 2.5,
+    this.minimum = 2.5,
+    this.sales = const [],
+  });
 
   final double amount;
   final double minimum;
+  final List<InventoryRecentSale> sales;
   @override
   Future<InventoryStockHealth> getStockHealth(String wsId) async =>
       InventoryStockHealth.fromJson({
@@ -76,7 +84,7 @@ class _FractionalOverview extends InventoryRepository {
         unitName: 'Bag',
       ),
     ],
-    recentSales: const [],
+    recentSales: sales,
     ownerBreakdown: const [],
     categoryBreakdown: const [],
   );
@@ -156,6 +164,73 @@ void main() {
       ..addFont(rootBundle.load('fonts/MaterialIcons-Regular.otf'));
     await icons.load();
   });
+  setUpAll(DesignRender.loadFonts);
+  for (final brightness in Brightness.values) {
+    testWidgets('inventory overview renders in ${brightness.name}', (
+      tester,
+    ) async {
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      final workspace = _Workspace();
+      final auth = _Auth();
+      addTearDown(workspace.close);
+      addTearDown(auth.close);
+      whenListen(
+        workspace,
+        const Stream<WorkspaceState>.empty(),
+        initialState: const WorkspaceState(
+          status: WorkspaceStatus.loaded,
+          currentWorkspace: Workspace(id: 'synthetic-workspace'),
+        ),
+      );
+      whenListen(
+        auth,
+        const Stream<AuthState>.empty(),
+        initialState: const AuthState.authenticated(
+          User(
+            id: 'synthetic-actor',
+            appMetadata: {},
+            userMetadata: {},
+            aud: 'authenticated',
+            createdAt: '',
+          ),
+        ),
+      );
+      final repository = _FractionalOverview(
+        sales: [
+          InventoryRecentSale(
+            id: 'fixture-receipt',
+            paidAmount: 2500,
+            itemsCount: 3,
+            owners: const ['Main store'],
+            createdAt: DateTime.now(),
+          ),
+        ],
+      );
+      addTearDown(repository.dispose);
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider<AuthCubit>.value(value: auth),
+          ],
+          child: DesignRenderApp(
+            settings: const AppearanceSettings(),
+            brightness: brightness,
+            child: InventoryPage(repository: repository),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Stock health'), findsOneWidget);
+      expect(find.text('Fractional beans'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(
+        tester,
+        'inventory-overview-${brightness.name}',
+      );
+    });
+  }
+
   testWidgets(
     'actual Overview keeps fractional minimum alongside fractional amount',
     (tester) async {

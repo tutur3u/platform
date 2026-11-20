@@ -37,11 +37,11 @@ extension _InventoryManageItemActions on _InventoryManagePageState {
         icon: Icons.delete_outline_rounded,
         maxWidth: 420,
         actions: [
-          shad.OutlineButton(
+          AppButton.outline(
             onPressed: () => Navigator.of(sheetContext).pop(false),
             child: Text(context.l10n.commonCancel),
           ),
-          shad.DestructiveButton(
+          AppButton.destructive(
             onPressed: () => Navigator.of(sheetContext).pop(true),
             child: Text(context.l10n.commonDelete),
           ),

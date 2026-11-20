@@ -38,9 +38,9 @@ class _InventoryStockRowCard extends StatelessWidget {
         selectedWarehouse!.name,
     ];
 
-    return FinancePanel(
+    return AppCard(
       padding: const EdgeInsets.all(14),
-      radius: 20,
+
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -49,7 +49,7 @@ class _InventoryStockRowCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${context.l10n.inventoryProductInventory} ${index + 1}',
-                  style: shad.Theme.of(
+                  style: AppTokens.of(
                     context,
                   ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
@@ -59,30 +59,30 @@ class _InventoryStockRowCard extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8),
                   child: Text(
                     formatCurrency(price, 'VND'),
-                    style: shad.Theme.of(context).typography.small.copyWith(
+                    style: AppTokens.of(context).typography.small.copyWith(
                       fontWeight: FontWeight.w800,
                       color: FinancePalette.of(context).accent,
                     ),
                   ),
                 ),
               if (onDelete != null)
-                shad.GhostButton(
-                  density: shad.ButtonDensity.compact,
+                AppButton.ghost(
+                  size: AppButtonSize.small,
                   onPressed: onDelete,
                   child: const Icon(Icons.delete_outline_rounded, size: 18),
                 ),
             ],
           ),
           if (previewBits.isNotEmpty) ...[
-            const shad.Gap(6),
+            const AppGap(AppSpacing.xs),
             Text(
               previewBits.join(' • '),
-              style: shad.Theme.of(context).typography.xSmall.copyWith(
-                color: shad.Theme.of(context).colorScheme.mutedForeground,
+              style: AppTokens.of(context).typography.xSmall.copyWith(
+                color: AppTokens.of(context).colorScheme.mutedForeground,
               ),
             ),
           ],
-          const shad.Gap(12),
+          const AppGap(AppSpacing.md),
           _InventorySelectorCard(
             label: context.l10n.inventoryProductUnit,
             title: selectedUnit?.name,
@@ -91,7 +91,7 @@ class _InventoryStockRowCard extends StatelessWidget {
             errorText: row.unitError,
             onTap: onPickUnit,
           ),
-          const shad.Gap(12),
+          const AppGap(AppSpacing.md),
           _InventorySelectorCard(
             label: context.l10n.inventoryProductWarehouse,
             title: selectedWarehouse?.name,
@@ -100,7 +100,7 @@ class _InventoryStockRowCard extends StatelessWidget {
             errorText: row.warehouseError,
             onTap: onPickWarehouse,
           ),
-          const shad.Gap(12),
+          const AppGap(AppSpacing.md),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -120,7 +120,7 @@ class _InventoryStockRowCard extends StatelessWidget {
                   },
                 ),
               ),
-              const shad.Gap(12),
+              const AppGap(AppSpacing.md),
               Expanded(
                 child: _InventoryTextInputCard(
                   label: context.l10n.inventoryProductMinAmount,
@@ -138,12 +138,12 @@ class _InventoryStockRowCard extends StatelessWidget {
               ),
             ],
           ),
-          const shad.Gap(6),
+          const AppGap(AppSpacing.xs),
           Text(
             context.l10n.inventoryStockUnlimitedHint,
-            style: shad.Theme.of(context).typography.xSmall,
+            style: AppTokens.of(context).typography.xSmall,
           ),
-          const shad.Gap(12),
+          const AppGap(AppSpacing.md),
           _InventoryTextInputCard(
             label: context.l10n.inventoryProductPrice,
             fieldKey: ValueKey('inventory-stock-price-$index'),

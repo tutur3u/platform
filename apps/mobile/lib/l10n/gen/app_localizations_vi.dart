@@ -5132,6 +5132,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAddWarehouse => 'Thêm kho';
 
   @override
+  String get inventoryAdjustStock => 'Điều chỉnh tồn kho';
+
+  @override
   String get inventoryAuditActorLabel => 'Người thực hiện';
 
   @override

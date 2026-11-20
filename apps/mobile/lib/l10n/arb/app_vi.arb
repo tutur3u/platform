@@ -2965,6 +2965,7 @@
   "inventoryAddOwner": "Thêm chủ sở hữu",
   "inventoryAddUnit": "Thêm đơn vị",
   "inventoryAddWarehouse": "Thêm kho",
+  "inventoryAdjustStock": "Điều chỉnh tồn kho",
   "inventoryAuditActorLabel": "Người thực hiện",
   "inventoryAuditAfter": "Sau",
   "inventoryAuditBefore": "Trước",

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -9,28 +9,31 @@ import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/offline_sync_refresh.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
 import 'package:mobile/data/models/inventory/inventory_stock_health.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
+import 'package:mobile/features/inventory/inventory_permissions.dart';
+import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/widgets/inventory_low_stock_card.dart';
 import 'package:mobile/features/inventory/widgets/inventory_read_warning.dart';
 import 'package:mobile/features/inventory/widgets/inventory_receipt_activity.dart';
 import 'package:mobile/features/inventory/widgets/inventory_stock_health_panel.dart';
-import 'package:mobile/features/inventory/widgets/inventory_ui.dart';
 import 'package:mobile/features/settings/view/offline_changes_sheet.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 class InventoryPage extends StatefulWidget {
-  const InventoryPage({this.repository, super.key});
+  const InventoryPage({this.repository, this.permissionsRepository, super.key});
 
   final InventoryRepository? repository;
+  final WorkspacePermissionsRepository? permissionsRepository;
 
   @override
   State<InventoryPage> createState() => _InventoryPageState();
@@ -46,6 +49,9 @@ class _InventoryPageState extends State<InventoryPage>
   InventoryOverview? _snapshot;
   InventoryStockHealth? _healthSnapshot;
   (String?, String?)? _loadedScope;
+  WorkspacePermissionsRepository? _permissionsRepository;
+  bool _canAdjustStock = false;
+  int _permissionsRequest = 0;
 
   String? get _actorId => context.read<AuthCubit>().state.user?.id;
 
@@ -60,12 +66,14 @@ class _InventoryPageState extends State<InventoryPage>
   }
 
   Future<void> _reload({bool forceRefresh = false}) async {
-    final wsId = _wsId;
     if (!mounted) return;
+    final wsId = _wsId;
+    final permissionsRequest = ++_permissionsRequest;
     if (wsId == null || _actorId == null) {
       setState(() {
         _future = null;
         _stockHealth = null;
+        _canAdjustStock = false;
       });
       return;
     }
@@ -73,8 +81,10 @@ class _InventoryPageState extends State<InventoryPage>
     if (_loadedScope != scope) {
       _snapshot = _repository.peekOverview(wsId);
       _healthSnapshot = null;
+      _canAdjustStock = false;
     }
     _loadedScope = scope;
+    unawaited(_refreshStockPermissions(wsId, scope.$1, permissionsRequest));
     final future = CacheStore.readWithRevalidation(
       () => _repository.getOverview(wsId, forceRefresh: forceRefresh),
       onSnapshot: (value) {
@@ -101,6 +111,40 @@ class _InventoryPageState extends State<InventoryPage>
     }
   }
 
+  Future<void> _refreshStockPermissions(
+    String wsId,
+    String? actorId,
+    int request,
+  ) async {
+    var allowed = false;
+    try {
+      final repository = _permissionsRepository ??=
+          widget.permissionsRepository ?? WorkspacePermissionsRepository();
+      final permissions = await repository.getPermissions(wsId: wsId);
+      allowed = canManageInventoryCatalog(permissions);
+    } on Object {
+      // The editor action requires a verified grant for this scope.
+    }
+    if (mounted &&
+        request == _permissionsRequest &&
+        (_actorId, _wsId) == (actorId, wsId)) {
+      setState(() => _canAdjustStock = allowed);
+    }
+  }
+
+  Future<void> _adjustStock(String productId) async {
+    if (!_canAdjustStock || _loadedScope != (_actorId, _wsId)) return;
+    final scope = (_actorId, _wsId);
+    final saved = await showInventoryProductEditorPage<bool>(
+      context,
+      productId: productId,
+      stockFirst: true,
+    );
+    if (saved == true && mounted && (_actorId, _wsId) == scope) {
+      await _reload(forceRefresh: true);
+    }
+  }
+
   @override
   void dispose() {
     if (widget.repository == null) _repository.dispose();
@@ -109,166 +153,171 @@ class _InventoryPageState extends State<InventoryPage>
 
   @override
   Widget build(BuildContext context) {
-    return shad.Scaffold(
-      child: MultiBlocListener(
-        listeners: [
-          BlocListener<WorkspaceCubit, WorkspaceState>(
-            listenWhen: (previous, current) =>
-                previous.currentWorkspace?.id != current.currentWorkspace?.id,
-            listener: (context, state) => unawaited(_reload()),
-          ),
-          BlocListener<AuthCubit, AuthState>(
-            listenWhen: (previous, current) =>
-                previous.user?.id != current.user?.id,
-            listener: (context, state) =>
-                unawaited(_reload(forceRefresh: true)),
-          ),
-        ],
-        child: FutureBuilder<InventoryOverview>(
-          key: ValueKey((_actorId, _wsId)),
-          initialData: _wsId == null || _actorId == null
-              ? null
-              : _repository.peekOverview(_wsId!),
-          future: _future,
-          builder: (context, snapshot) {
-            if (_wsId == null || _actorId == null) {
-              return const SizedBox.shrink();
-            }
-
-            if (!snapshot.hasData &&
-                snapshot.connectionState != ConnectionState.done) {
-              return const InventoryOverviewSkeleton();
-            }
-
-            final retained =
-                snapshot.data ??
-                (_loadedScope == (_actorId, _wsId) ? _snapshot : null);
-            final overview = retained;
-            final l10n = context.l10n;
-
-            return NovaRefreshIndicator(
-              onRefresh: () => _reload(forceRefresh: true),
-              child: AppPageListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  if (snapshot.hasError)
-                    InventoryReadWarning(
-                      onRetry: () => unawaited(_reload(forceRefresh: true)),
-                    ),
-                  InventoryStockHealthPanel(
-                    key: ValueKey(('stock-health', _actorId, _wsId)),
-                    future: _stockHealth,
-                    retained: _healthSnapshot,
-                  ),
-                  const shad.Gap(16),
-                  ValueListenableBuilder(
-                    valueListenable: OfflineMutationQueue.instance.pending,
-                    builder: (context, pending, _) {
-                      final count = pending
-                          .where(
-                            (m) =>
-                                m.userId == _actorId &&
-                                m.workspaceId == _wsId &&
-                                m.feature == 'inventory',
-                          )
-                          .length;
-                      return count == 0
-                          ? const SizedBox.shrink()
-                          : ListTile(
-                              leading: const Icon(Icons.sync_outlined),
-                              title: Text(
-                                l10n.inventoryRedesignPendingCount(count),
-                              ),
-                              onTap: () => showOfflineChangesSheet(context),
-                            );
-                    },
-                  ),
-                  if (overview != null) ...[
-                    InventoryReceiptActivity(sales: overview.recentSales),
-                    const shad.Gap(16),
-                    FinanceSectionHeader(title: l10n.inventoryOverviewLowStock),
-                    const shad.Gap(12),
-                    if (overview.lowStockProducts.isEmpty)
-                      InventoryEmptyPanel(
-                        body: l10n.inventoryNoLowStockProducts,
-                      )
-                    else
-                      ...overview.lowStockProducts
-                          .take(5)
-                          .map(
-                            (product) => Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppLayout.itemGap,
-                              ),
-                              child: InventoryLowStockCard(product: product),
-                            ),
-                          ),
-                    const shad.Gap(16),
-                    FinanceSectionHeader(
-                      title: l10n.inventoryOverviewRecentSales,
-                      action: shad.GhostButton(
-                        onPressed: () => context.go(Routes.inventorySales),
-                        child: Text(l10n.financeViewAll),
-                      ),
-                    ),
-                    const shad.Gap(12),
-                    if (overview.recentSales.isEmpty)
-                      InventoryEmptyPanel(body: l10n.inventorySalesEmpty)
-                    else
-                      ...overview.recentSales
-                          .take(5)
-                          .map(
-                            (sale) => Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppLayout.itemGap,
-                              ),
-                              child: FinancePanel(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: Text(
-                                            sale.owners.join(', '),
-                                            style: shad.Theme.of(context)
-                                                .typography
-                                                .large
-                                                .copyWith(
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const shad.Gap(6),
-                                    Text(
-                                      [
-                                        if (sale.walletName?.isNotEmpty ??
-                                            false)
-                                          sale.walletName!,
-                                        if (sale.categoryName?.isNotEmpty ??
-                                            false)
-                                          sale.categoryName!,
-                                        if (sale.createdAt != null)
-                                          DateFormat.yMMMd().add_jm().format(
-                                            sale.createdAt!.toLocal(),
-                                          ),
-                                      ].join(' • '),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                    const shad.Gap(16),
-                  ],
-                ],
-              ),
-            );
-          },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<WorkspaceCubit, WorkspaceState>(
+          listenWhen: (previous, current) =>
+              previous.currentWorkspace?.id != current.currentWorkspace?.id,
+          listener: (context, state) => unawaited(_reload()),
         ),
+        BlocListener<AuthCubit, AuthState>(
+          listenWhen: (previous, current) =>
+              previous.user?.id != current.user?.id,
+          listener: (context, state) => unawaited(_reload(forceRefresh: true)),
+        ),
+      ],
+      child: FutureBuilder<InventoryOverview>(
+        key: ValueKey((_actorId, _wsId)),
+        initialData: _wsId == null || _actorId == null
+            ? null
+            : _repository.peekOverview(_wsId!),
+        future: _future,
+        builder: (context, snapshot) {
+          if (_wsId == null || _actorId == null) {
+            return const SizedBox.shrink();
+          }
+
+          if (!snapshot.hasData &&
+              snapshot.connectionState != ConnectionState.done) {
+            return const AppPageListView(
+              children: [
+                AppGroupedCard(children: [AppSkeletonRows(count: 6)]),
+              ],
+            );
+          }
+
+          final retained =
+              snapshot.data ??
+              (_loadedScope == (_actorId, _wsId) ? _snapshot : null);
+          final overview = retained;
+          final l10n = context.l10n;
+
+          return NovaRefreshIndicator(
+            onRefresh: () => _reload(forceRefresh: true),
+            child: AppPageListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                if (snapshot.hasError)
+                  InventoryReadWarning(
+                    onRetry: () => unawaited(_reload(forceRefresh: true)),
+                  ),
+                InventoryStockHealthPanel(
+                  key: ValueKey(('stock-health', _actorId, _wsId)),
+                  future: _stockHealth,
+                  retained: _healthSnapshot,
+                ),
+                const AppGap(AppSpacing.lg),
+                ValueListenableBuilder(
+                  valueListenable: OfflineMutationQueue.instance.pending,
+                  builder: (context, pending, _) {
+                    final count = pending
+                        .where(
+                          (m) =>
+                              m.userId == _actorId &&
+                              m.workspaceId == _wsId &&
+                              m.feature == 'inventory',
+                        )
+                        .length;
+                    return count == 0
+                        ? const SizedBox.shrink()
+                        : AppGroupedCard(
+                            children: [
+                              AppGroupedRow(
+                                leading: const AppIconTile(
+                                  icon: LucideIcons.refreshCw,
+                                ),
+                                title: Text(
+                                  l10n.inventoryRedesignPendingCount(count),
+                                ),
+                                showChevron: true,
+                                onTap: () => showOfflineChangesSheet(context),
+                              ),
+                            ],
+                          );
+                  },
+                ),
+                if (overview != null) ...[
+                  const AppGap(AppSpacing.lg),
+                  AppSectionHeader(
+                    title: l10n.inventoryOverviewLowStock,
+                    onAction: () => context.go(Routes.inventoryProducts),
+                    actionLabel: l10n.financeViewAll,
+                  ),
+                  AppGroupedCard(
+                    children: [
+                      if (overview.lowStockProducts.isEmpty)
+                        AppStateMessage.inline(
+                          icon: LucideIcons.packageCheck,
+                          title: l10n.inventoryNoLowStockProducts,
+                        )
+                      else
+                        for (final product in overview.lowStockProducts.take(5))
+                          InventoryLowStockCard(
+                            product: product,
+                            onAdjustStock: switch (product.productId) {
+                              final id? when _canAdjustStock => () => unawaited(
+                                _adjustStock(id),
+                              ),
+                              _ => null,
+                            },
+                          ),
+                    ],
+                  ),
+                  const AppGap(AppSpacing.lg),
+                  InventoryReceiptActivity(sales: overview.recentSales),
+                  const AppGap(AppSpacing.lg),
+                  AppSectionHeader(
+                    title: l10n.inventoryOverviewRecentSales,
+                    actionLabel: l10n.financeViewAll,
+                    onAction: () => context.go(Routes.inventorySales),
+                  ),
+                  AppGroupedCard(
+                    children: [
+                      if (overview.recentSales.isEmpty)
+                        AppStateMessage.inline(
+                          icon: LucideIcons.receipt,
+                          title: l10n.inventorySalesEmpty,
+                        )
+                      else
+                        for (final sale in overview.recentSales.take(5))
+                          _RecentReceiptRow(sale: sale),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _RecentReceiptRow extends StatelessWidget {
+  const _RecentReceiptRow({required this.sale});
+
+  final InventoryRecentSale sale;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final created = sale.createdAt?.toLocal();
+    final metadata = [
+      if (created != null)
+        DateFormat.MMMd(l10n.localeName).add_jm().format(created),
+      if (sale.itemsCount > 0) l10n.inventorySalesItemsCount(sale.itemsCount),
+    ].join(' · ');
+    final customer = sale.customerName;
+    return AppGroupedRow(
+      leading: const AppIconTile(icon: LucideIcons.receipt, tone: AppTone.info),
+      title: Text(
+        customer != null && customer.isNotEmpty
+            ? customer
+            : sale.owners.isNotEmpty
+            ? sale.owners.join(', ')
+            : l10n.inventorySalesItemsCount(sale.itemsCount),
+      ),
+      subtitle: metadata.isEmpty ? null : Text(metadata),
     );
   }
 }

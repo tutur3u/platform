@@ -2,8 +2,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/models/inventory/inventory_models.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Receipt counts from the bounded recent-sales response, never period revenue.
@@ -48,7 +49,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
     final entries = counts.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     final maximum = counts.values.fold<int>(0, math.max);
-    return FinancePanel(
+    return AppPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -57,7 +58,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
               Expanded(
                 child: Text(
                   l10n.inventoryRedesignReceiptActivity,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: AppTokens.of(context).typography.large,
                 ),
               ),
               Tooltip(
@@ -75,15 +76,14 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
             spacing: 8,
             children: [
               for (final days in [7, 30])
-                ChoiceChip(
+                AppChip(
                   label: Text(l10n.inventoryRedesignDays(days)),
                   selected: _days == days,
-                  materialTapTargetSize: MaterialTapTargetSize.padded,
                   onSelected: (_) => setState(() => _days = days),
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(l10n.inventoryRedesignRecentSample(widget.sales.length)),
           if (unknownDates > 0)
             Text(l10n.inventoryRedesignUnknownDates(unknownDates)),
@@ -94,7 +94,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
             ),
           for (final entry in entries)
             Padding(
-              padding: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.only(top: AppSpacing.md),
               child: Semantics(
                 label:
                     '${DateFormat.yMMMd().format(entry.key)}: ${entry.value}',
@@ -109,7 +109,7 @@ class _InventoryReceiptActivityState extends State<InventoryReceiptActivity> {
                         Text('${entry.value}'),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: AppSpacing.xs),
                     LinearProgressIndicator(
                       value: entry.value / maximum,
                       minHeight: 6,

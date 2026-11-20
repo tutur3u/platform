@@ -5171,6 +5171,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAddWarehouse => 'Add warehouse';
 
   @override
+  String get inventoryAdjustStock => 'Adjust stock';
+
+  @override
   String get inventoryAuditActorLabel => 'Actor';
 
   @override
