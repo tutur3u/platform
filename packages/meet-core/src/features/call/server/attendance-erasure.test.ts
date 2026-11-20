@@ -2,10 +2,11 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { commitFencedUpsert } from './attendance-scope';
 import {
   ATTENDANCE_ERASURE_FANOUT,
-  commitAttendanceErasure,
   eraseMeetAttendanceForMeeting,
   eraseMeetAttendanceForWorkspace,
   eraseMeetAttendanceSubject,
+  releaseAttendanceErasure,
+  settleAttendanceErasure,
   withWorkspaceAttendanceErasure,
   type AttendanceErasureDeps,
   type AttendanceErasurePlan,
@@ -73,6 +74,9 @@ function harness(patch: Partial<AttendanceErasureDeps> = {}) {
     },
     forgetRooms: async () => {
       calls.push('forget');
+    },
+    reviseRooms: async () => {
+      calls.push('revise');
     },
     deleteSql: async () => {
       calls.push('sql');
@@ -189,13 +193,15 @@ it('reuses one generation for both subject posts and for a retry', async () => {
   expect(stored?.rooms[0]?.generation).toBe(1);
   const fences = calls.filter((call) => call === 'fence').length;
   fail = false;
-  await commitAttendanceErasure(structuredClone(stored), deps);
+  await settleAttendanceErasure(structuredClone(stored!), deps);
   expect(calls.filter((call) => call === 'fence').length).toBe(fences);
   expect(posted).toEqual([
     { erase: 'subject', userId: 'user-1', generation: 1 },
     { erase: 'subject', guestId: 'user-1', generation: 1 },
   ]);
   expect(calls).toContain('sql');
+  expect(calls).toContain('revise');
+  expect(calls).not.toContain('forget');
 });
 
 it('assigns the next generation when the same meeting is erased again', async () => {
@@ -264,10 +270,9 @@ it('fences an in-flight sync with the generation stored for the room', async () 
         commitFencedUpsert({
           epoch: 0,
           readGeneration: async () => extra.generation ?? 0,
-          write: async () => {
+          commit: async () => {
             throw new Error('wrote');
           },
-          compensate: async () => undefined,
         })
       ).rejects.toThrow('fenced');
     },
@@ -277,11 +282,8 @@ it('fences an in-flight sync with the generation stored for the room', async () 
   await commitFencedUpsert({
     epoch: generation,
     readGeneration: async () => generation,
-    write: async () => {
+    commit: async () => {
       wrote = true;
-    },
-    compensate: async () => {
-      wrote = false;
     },
   });
   expect(wrote).toBe(true);
@@ -358,4 +360,75 @@ it('does not erase a workspace when the delete is denied', async () => {
     deps
   );
   expect(calls).toContain('sql');
+});
+
+it('pages room posts past 128 and keeps the plan until every room is acknowledged', async () => {
+  const posted: string[] = [];
+  const { calls, deps, pending } = harness({
+    listMeetings: async () =>
+      Array.from({ length: 129 }, (_, index) => `meeting-${index}`),
+    listSessionsByWorkspace: async () => [],
+    directoryRoomIds: async () => [],
+    postRoom: async (roomId) => {
+      posted.push(roomId);
+    },
+    queueRooms: async (plan) => {
+      calls.push(`queue:${plan.rooms.length}`);
+    },
+  });
+  await eraseMeetAttendanceForWorkspace('ws', deps);
+  expect(posted).toHaveLength(129);
+  expect(calls).toContain('queue:128');
+  expect(calls).toContain('queue:1');
+  expect(calls.filter((call) => call === 'sql')).toHaveLength(1);
+  expect(pending.size).toBe(0);
+});
+
+it('does not finish a confirmed plan while a room is still unacknowledged', async () => {
+  const { deps, pending } = harness({
+    postRoom: async () => {
+      throw new Error('timeout');
+    },
+  });
+  await expect(
+    settleAttendanceErasure(
+      {
+        rooms: [
+          {
+            roomId: 'ws:meeting',
+            wsId: 'ws',
+            meetingId: 'meeting',
+            generation: 1,
+          },
+        ],
+        sql: { op: 'meeting', meetingId: 'meeting' },
+        phase: 'confirmed',
+        attempts: 0,
+      },
+      deps
+    )
+  ).rejects.toThrow('timeout');
+  const stored = pending.get('meeting:meeting');
+  expect(stored?.phase).toBe('confirmed');
+  expect(stored?.sqlDone).not.toBe(true);
+  expect(pending.has('meeting:meeting')).toBe(true);
+});
+
+it('keeps a confirmed intent when the delete result is lost', async () => {
+  const { deps, pending } = harness();
+  const sql = { op: 'workspace' as const, wsId: 'ws' };
+  pending.set('workspace:ws', {
+    rooms: [],
+    sql,
+    phase: 'confirmed',
+    sqlDone: true,
+  });
+  await releaseAttendanceErasure(
+    {
+      plan: { rooms: [], sql, phase: 'planned' },
+      preexisting: false,
+    },
+    deps
+  );
+  expect(pending.has('workspace:ws')).toBe(true);
 });

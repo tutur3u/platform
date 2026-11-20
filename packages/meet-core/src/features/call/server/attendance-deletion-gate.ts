@@ -1,6 +1,6 @@
 import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
 
-type WorkspaceRowDelete = () => Promise<{ error: unknown }>;
+type WorkspaceRowDelete = (plan?: unknown) => Promise<{ error: unknown }>;
 
 /**
  * Deletes one workspace row.
@@ -28,11 +28,11 @@ export async function resumeWorkspaceAttendanceErasure(
   wsId: string
 ): Promise<void> {
   if (!meetClassAttendanceEnabled()) return;
-  const { commitAttendanceErasure, readPendingAttendanceErasure } =
+  const { readPendingAttendanceErasure, settleAttendanceErasure } =
     await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
   const plan = await readPendingAttendanceErasure({
     op: 'workspace',
     wsId,
   });
-  if (plan) await commitAttendanceErasure(plan);
+  if (plan) await settleAttendanceErasure(plan);
 }

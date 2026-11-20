@@ -8,6 +8,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 
 const DeleteAccountSchema = z.object({
   email: z.string().email(),
@@ -224,7 +225,14 @@ export const POST = withSessionAuth(
         .filter((ws) => !ws.wsPersonal)
         .map(async (ws) => {
           try {
-            await deleteWorkspaceRowWithAttendance(ws.wsId, async () => {
+            await deleteWorkspaceRowWithAttendance(ws.wsId, async (plan) => {
+              if (plan !== undefined) {
+                return deleteWorkspaceWithAttendanceIntent(
+                  sbAdmin,
+                  ws.wsId,
+                  plan
+                );
+              }
               const removed = await sbAdmin
                 .from('workspaces')
                 .delete()
@@ -260,21 +268,21 @@ export const POST = withSessionAuth(
         return NextResponse.json({ message: 'Account deleted successfully' });
       }
 
-      // Save the plan first. Commit it only after the account delete succeeds,
-      // so a refused delete does not remove attendance for a live account.
-      const {
-        openSubjectAttendanceErasure,
-        commitAttendanceErasure,
-        releaseAttendanceErasure,
-      } =
+      // Record the intent before the auth delete. Auth cannot share that
+      // transaction. Unknown results stay pending. A live account cancels the
+      // intent only after a definitive refusal.
+      const erasure =
         await import('@tuturuuu/meet-core/features/call/server/attendance-erasure');
-      let subjectErasure: Awaited<
-        ReturnType<typeof openSubjectAttendanceErasure>
+      const accountErasure =
+        await import('@tuturuuu/meet-core/features/call/server/account-erasure');
+      let plan: Awaited<
+        ReturnType<typeof erasure.prepareSubjectAttendanceErasure>
       >;
       try {
-        subjectErasure = await openSubjectAttendanceErasure({
+        plan = await erasure.prepareSubjectAttendanceErasure({
           userId: user.id,
         });
+        await erasure.recordAttendanceErasure(plan);
       } catch (error) {
         console.error('Meet attendance subject erasure failed', {
           name: error instanceof Error ? error.name : 'unknown',
@@ -292,38 +300,71 @@ export const POST = withSessionAuth(
       const { error: deleteError } = await sbAdmin.auth.admin.deleteUser(
         user.id
       );
+      if (deleteError) console.error('Error deleting user:', deleteError);
 
-      if (deleteError) {
-        console.error('Error deleting user:', deleteError);
+      const outcome = accountErasure.classifyAccountDelete(
+        deleteError &&
+          typeof deleteError === 'object' &&
+          'status' in deleteError &&
+          typeof deleteError.status === 'number'
+          ? { status: deleteError.status }
+          : deleteError
+            ? {}
+            : null
+      );
+      let presence: 'absent' | 'present' | 'unknown' = 'unknown';
+      try {
+        const lookedUp = await sbAdmin.auth.admin.getUserById(user.id);
+        const lookupError = lookedUp.error;
+        if (!lookupError && lookedUp.data.user) presence = 'present';
+        else if (
+          lookupError?.status === 404 ||
+          (!lookupError && !lookedUp.data.user)
+        )
+          presence = 'absent';
+      } catch (lookupError) {
+        console.error('Meet attendance subject erasure failed', {
+          name: lookupError instanceof Error ? lookupError.name : 'unknown',
+        });
+      }
+
+      const decision = accountErasure.reconcileAccountErasure(
+        presence,
+        outcome
+      );
+      if (decision === 'confirm') {
         try {
-          await releaseAttendanceErasure(subjectErasure);
+          await erasure.settleAttendanceErasure(plan);
+        } catch (error) {
+          console.error('Meet attendance subject erasure failed', {
+            name: error instanceof Error ? error.name : 'unknown',
+          });
+          try {
+            await erasure.settleAttendanceErasure(plan);
+          } catch (retryError) {
+            console.error('Meet attendance subject erasure failed', {
+              name: retryError instanceof Error ? retryError.name : 'unknown',
+            });
+          }
+        }
+        return NextResponse.json({ message: 'Account deleted successfully' });
+      }
+      if (decision === 'cancel') {
+        try {
+          await erasure.releaseAttendanceErasure({
+            plan,
+            preexisting: false,
+          });
         } catch (releaseError) {
           console.error('Meet attendance subject erasure failed', {
             name: releaseError instanceof Error ? releaseError.name : 'unknown',
           });
         }
-        return NextResponse.json(
-          { message: 'Failed to delete account' },
-          { status: 500 }
-        );
       }
-
-      try {
-        await commitAttendanceErasure(subjectErasure.plan);
-      } catch (error) {
-        console.error('Meet attendance subject erasure failed', {
-          name: error instanceof Error ? error.name : 'unknown',
-        });
-        try {
-          await commitAttendanceErasure(subjectErasure.plan);
-        } catch (retryError) {
-          console.error('Meet attendance subject erasure failed', {
-            name: retryError instanceof Error ? retryError.name : 'unknown',
-          });
-        }
-      }
-
-      return NextResponse.json({ message: 'Account deleted successfully' });
+      return NextResponse.json(
+        { message: 'Failed to delete account' },
+        { status: 500 }
+      );
     } catch (error) {
       if (error instanceof z.ZodError) {
         return NextResponse.json(

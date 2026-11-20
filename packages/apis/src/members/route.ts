@@ -27,7 +27,9 @@ export interface MembersRouteAuthContext {
   };
 }
 
-export type WorkspaceRowDelete = () => Promise<{ error: unknown }>;
+export type WorkspaceRowDelete = (
+  plan?: unknown
+) => Promise<{ error: unknown }>;
 
 export interface OrphanedWorkspaceCleanup {
   /** Called when the workspace row is already gone. */
@@ -400,6 +402,38 @@ export async function revokeDirectBoardGuestAccess({
  * If orphaned (and not personal/system), cancels any active Polar subscription
  * and deletes the workspace. Returns true if the workspace was deleted.
  */
+async function deleteWorkspaceWithAttendanceIntent(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  plan: unknown
+): Promise<{ error: unknown }> {
+  const removed = await (
+    sbAdmin as unknown as {
+      schema(name: 'private'): {
+        rpc(
+          fn: 'delete_workspace_with_attendance_intent',
+          args: { p_ws_id: string; p_plan: unknown }
+        ): Promise<{ data: unknown; error: unknown }>;
+      };
+    }
+  )
+    .schema('private')
+    .rpc('delete_workspace_with_attendance_intent', {
+      p_ws_id: wsId,
+      p_plan: plan,
+    });
+  if (removed.error) return { error: removed.error };
+  if (removed.data !== 'deleted' && removed.data !== 'not_deleted') {
+    return { error: new Error('Meet attendance workspace delete failed') };
+  }
+  if (removed.data === 'deleted' && plan && typeof plan === 'object') {
+    const record = plan as { phase?: string; sqlDone?: boolean };
+    record.phase = 'confirmed';
+    record.sqlDone = true;
+  }
+  return { error: null };
+}
+
 async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
   if (wsId === ROOT_WORKSPACE_ID) return false;
 
@@ -467,8 +501,12 @@ async function cleanupOrphanedWorkspace(wsId: string): Promise<boolean> {
     }
 
     // Delete the workspace. Related rows cascade with it.
+    // A supplied plan is stored in that same delete.
     try {
-      await orphanedWorkspaceCleanup.deleteWorkspace(wsId, async () => {
+      await orphanedWorkspaceCleanup.deleteWorkspace(wsId, async (plan) => {
+        if (plan !== undefined) {
+          return deleteWorkspaceWithAttendanceIntent(sbAdmin, wsId, plan);
+        }
         const removed = await sbAdmin
           .from('workspaces')
           .delete()

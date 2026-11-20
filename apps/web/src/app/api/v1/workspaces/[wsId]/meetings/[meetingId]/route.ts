@@ -1,4 +1,5 @@
 import { meetClassAttendanceEnabled } from '@tuturuuu/realtime/meet';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -272,55 +273,52 @@ export async function DELETE(
           throw erasureError;
         }
       );
-    // Read former room names before the delete cascades those rows away.
-    const begun = await erasure
-      .openMeetingAttendanceErasure(wsId, meetingId)
+    const plan = await erasure
+      .prepareMeetingAttendanceErasure(wsId, meetingId)
       .catch((erasureError: unknown) => {
         console.error('Meet attendance erasure failed', {
           name: erasureError instanceof Error ? erasureError.name : 'unknown',
         });
         throw erasureError;
       });
-    const { data: deleted, error } = await supabase
-      .from('workspace_meetings')
-      .delete()
-      .eq('id', meetingId)
-      .eq('ws_id', wsId)
-      .select('id');
-
-    if (error?.code === '42501' || (!error && !deleted?.length)) {
-      if (!(begun.preexisting && begun.plan.phase === 'confirmed'))
-        await erasure.releaseAttendanceErasure(begun);
-      else {
-        try {
-          await erasure.commitAttendanceErasure(begun.plan);
-          return NextResponse.json({ success: true });
-        } catch (erasureError) {
-          console.error('Meet attendance erasure failed', {
-            name: erasureError instanceof Error ? erasureError.name : 'unknown',
-          });
-          return NextResponse.json(
-            { error: 'Failed to delete meeting' },
-            { status: 500 }
-          );
-        }
+    const admin = await createAdminClient({ noCookie: true });
+    const removed = await (
+      admin as unknown as {
+        schema(name: 'private'): {
+          rpc(
+            fn: 'delete_meeting_with_attendance_intent',
+            args: {
+              p_ws_id: string;
+              p_meeting_id: string;
+              p_plan: unknown;
+            }
+          ): Promise<{ data: unknown; error: { message?: string } | null }>;
+        };
       }
-      return NextResponse.json(
-        { error: 'You no longer have permission to delete this meeting' },
-        { status: 403 }
-      );
-    }
-    if (error) {
-      console.error('Error deleting meeting:', error);
-      if (begun.plan.phase !== 'confirmed')
-        await erasure.releaseAttendanceErasure(begun);
+    )
+      .schema('private')
+      .rpc('delete_meeting_with_attendance_intent', {
+        p_ws_id: wsId,
+        p_meeting_id: meetingId,
+        p_plan: plan,
+      });
+    if (removed.error) {
+      console.error('Error deleting meeting:', removed.error);
       return NextResponse.json(
         { error: 'Failed to delete meeting' },
         { status: 500 }
       );
     }
+    if (removed.data !== 'deleted') {
+      return NextResponse.json(
+        { error: 'You no longer have permission to delete this meeting' },
+        { status: 403 }
+      );
+    }
+    plan.phase = 'confirmed';
+    plan.sqlDone = true;
     try {
-      await erasure.commitAttendanceErasure(begun.plan);
+      await erasure.enqueueAttendanceErasure(plan);
     } catch (erasureError) {
       console.error('Meet attendance erasure failed', {
         name: erasureError instanceof Error ? erasureError.name : 'unknown',

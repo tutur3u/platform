@@ -18,6 +18,7 @@ import type {
   UseCase,
   WhitelistStatus,
 } from './types';
+import { deleteWorkspaceWithAttendanceIntent } from '@/lib/meet/workspace-attendance-intent';
 import { FLOW_TYPES, getFlowSteps, ONBOARDING_STEPS } from './types';
 
 /**
@@ -284,7 +285,14 @@ export async function createWorkspaceFromOnboarding(
       console.error('Error adding user as workspace member:', memberError);
       // Try to clean up the workspace if adding member failed
       try {
-        await deleteWorkspaceRowWithAttendance(workspace.id, async () => {
+        await deleteWorkspaceRowWithAttendance(workspace.id, async (plan) => {
+          if (plan !== undefined) {
+            return deleteWorkspaceWithAttendanceIntent(
+              sbAdmin,
+              workspace.id,
+              plan
+            );
+          }
           const removed = await sbAdmin
             .from('workspaces')
             .delete()

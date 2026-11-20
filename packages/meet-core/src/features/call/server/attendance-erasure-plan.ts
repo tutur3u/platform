@@ -21,7 +21,11 @@ export type AttendanceErasurePlan = {
   /** Planned work is cancelled when the delete is denied. Confirmed work is finished. */
   phase?: 'planned' | 'confirmed';
   attempts?: number;
+  /** Session rows are already gone. Room copies may still be outstanding. */
+  sqlDone?: boolean;
 };
+
+export const ATTENDANCE_ERASURE_ROOM_PAGE = 128;
 
 export function attendanceErasureKey(sql: AttendanceErasureSql) {
   if (sql.op === 'meeting')
@@ -117,4 +121,82 @@ export function subjectEraseClaims(
   }
   if (sql.guestId) add({ guestId: sql.guestId });
   return claims;
+}
+
+export function attendanceClaimKeys(plan: AttendanceErasurePlan) {
+  if (plan.sql.op !== 'subject') return ['meeting'];
+  return subjectEraseClaims(plan.sql).map((claim) => eraseClaimKey(claim));
+}
+
+export function attendanceRoomAcknowledged(
+  plan: AttendanceErasurePlan,
+  room: AttendanceRoomTarget
+) {
+  const posted = new Set(room.posted ?? []);
+  return attendanceClaimKeys(plan).every((key) => posted.has(key));
+}
+
+export function unackedAttendanceRooms(plan: AttendanceErasurePlan) {
+  return plan.rooms.filter((room) => !attendanceRoomAcknowledged(plan, room));
+}
+
+/** A lower generation is a stale copy and does not count as this room's ack. */
+export function acknowledgeAttendanceRoom(
+  plan: AttendanceErasurePlan,
+  roomId: string,
+  generation: number,
+  claimKey: string
+): AttendanceErasurePlan {
+  return {
+    ...plan,
+    rooms: plan.rooms.map((room) => {
+      if (room.roomId !== roomId || room.generation !== generation) return room;
+      if (room.posted?.includes(claimKey)) return room;
+      return { ...room, posted: [...(room.posted ?? []), claimKey] };
+    }),
+  };
+}
+
+export function attendanceErasureSettled(plan: AttendanceErasurePlan) {
+  return plan.sqlDone === true && unackedAttendanceRooms(plan).length === 0;
+}
+
+/** A confirmed intent stays confirmed. A stale planned copy does not replace it. */
+export function mergeAttendanceIntent(
+  existing: AttendanceErasurePlan | null,
+  incoming: AttendanceErasurePlan
+): AttendanceErasurePlan | null {
+  if (!existing) return incoming;
+  if (existing.phase === 'confirmed' && incoming.phase !== 'confirmed')
+    return null;
+  if (existing.phase !== 'confirmed' || incoming.phase !== 'confirmed')
+    return incoming;
+  const rooms = new Map(
+    existing.rooms.map((room) => [room.roomId, { ...room }])
+  );
+  for (const room of incoming.rooms) {
+    const prior = rooms.get(room.roomId);
+    if (!prior) {
+      rooms.set(room.roomId, { ...room });
+      continue;
+    }
+    const generation = Math.max(prior.generation ?? -1, room.generation ?? -1);
+    const posted = [
+      ...new Set([...(prior.posted ?? []), ...(room.posted ?? [])]),
+    ];
+    rooms.set(room.roomId, {
+      roomId: room.roomId,
+      wsId: room.wsId || prior.wsId,
+      meetingId: room.meetingId || prior.meetingId,
+      ...(generation >= 0 ? { generation } : {}),
+      ...(posted.length ? { posted } : {}),
+    });
+  }
+  return {
+    ...incoming,
+    phase: 'confirmed',
+    attempts: Math.max(existing.attempts ?? 0, incoming.attempts ?? 0),
+    sqlDone: existing.sqlDone || incoming.sqlDone ? true : undefined,
+    rooms: [...rooms.values()],
+  };
 }

@@ -149,8 +149,22 @@ it('bounds the directory and still lists overflow rooms', () => {
     users: [],
     guests: [GUEST],
   });
-  expect(blocked.result).toEqual({ ok: false, error: 'directory_full' });
-  expect(blocked.directory).toBe(full);
+  expect(blocked.result).toEqual({ ok: true });
+  expect(blocked.directory.rooms['ws-b:too-many']).toBeUndefined();
+  expect(blocked.directory.spill).toContain('ws-b:too-many');
+  const listed: string[] = [];
+  let cursor = 0;
+  for (;;) {
+    const page = pageAttendanceDirectory(
+      blocked.directory,
+      { guestId: GUEST },
+      cursor
+    );
+    listed.push(...page.roomIds);
+    if (page.cursor === null) break;
+    cursor = page.cursor;
+  }
+  expect(listed).toContain('ws-b:too-many');
 });
 
 it('keeps erase attempts for one generation and stops when the budget is spent', () => {
@@ -222,4 +236,65 @@ it('does not republish an unchanged or stopped attendance index', () => {
   const stopped = noteAttendanceIndexPublish(failed, signature, 99_000);
   expect(stopped.publish).toBe(false);
   expect(stopped.state).toBe(failed);
+});
+
+it('ignores a stale generation and revises membership without dropping the room', () => {
+  const roomId = 'ws-a:meeting';
+  const current = rememberAttendanceRoom(
+    emptyAttendanceDirectory(),
+    roomId,
+    'meeting',
+    [
+      guestInterval(),
+      {
+        ...guestInterval(USER),
+        kind: 'member',
+        userId: USER,
+        guestId: undefined,
+      },
+    ],
+    4
+  );
+  const stale = rememberAttendanceRoom(
+    current,
+    roomId,
+    'meeting',
+    [guestInterval('other-guest')],
+    3
+  );
+  expect(stale).toBe(current);
+  const revised = applyAttendanceDirectory(current, {
+    op: 'revise-membership',
+    roomIds: [roomId],
+    guestId: GUEST,
+  });
+  expect(revised.directory.rooms[roomId]?.guests).toEqual([]);
+  expect(revised.directory.rooms[roomId]?.users).toEqual([USER]);
+});
+
+it('keeps erase rooms past the pending cap on a durable backlog', () => {
+  const rooms = Array.from({ length: 129 }, (_, index) => ({
+    roomId: `ws-a:meeting-${index}`,
+    generation: 2,
+    claims: [{ erase: 'meeting' as const }],
+  }));
+  const queued = applyAttendanceDirectory(emptyAttendanceDirectory(), {
+    op: 'queue-erase',
+    rooms,
+  });
+  expect(queued.result).toEqual({ ok: true, accepted: 128, backlog: 1 });
+  expect(Object.keys(queued.directory.pending ?? {})).toHaveLength(128);
+  const extra = rooms[128]!.roomId;
+  expect(queued.directory.eraseBacklog?.map((item) => item.roomId)).toEqual([
+    extra,
+  ]);
+  const freed = applyAttendanceDirectory(queued.directory, {
+    op: 'erase-done',
+    roomId: rooms[0]!.roomId,
+    generation: 2,
+  });
+  const drained = planAttendanceEraseDrain(freed.directory, 1_000);
+  expect(drained.directory.pending?.[extra]?.generation).toBe(2);
+  expect(drained.directory.eraseBacklog ?? []).toEqual([]);
+  expect(drained.directory.pending?.[extra]?.attempts).toBe(0);
 });

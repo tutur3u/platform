@@ -36,19 +36,15 @@ export function attendanceWriteSignature(row: {
   ].join('\u0000');
 }
 
+/** Rejects a stale epoch before the write. The SQL upsert holds the fence lock. */
 export async function commitFencedUpsert(input: {
   epoch: number;
   readGeneration: () => Promise<number>;
-  write: () => Promise<void>;
-  compensate: () => Promise<void>;
+  commit: () => Promise<void>;
 }) {
   if ((await input.readGeneration()) > input.epoch)
     throw new Error('Meet attendance sync was fenced');
-  await input.write();
-  if ((await input.readGeneration()) > input.epoch) {
-    await input.compensate();
-    throw new Error('Meet attendance sync was fenced');
-  }
+  await input.commit();
 }
 
 /** Inserts use the caller's workspace. An existing row keeps the workspace that collected it. */

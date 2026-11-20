@@ -15,12 +15,7 @@ import {
   getMeetRealtimeTokenSecret,
   getMeetRealtimeUrl,
 } from '../lib/call-session';
-import {
-  commitFencedUpsert,
-  planAttendanceUpsert,
-  readAttendancePages,
-  type AttendanceStoredRow,
-} from './attendance-scope';
+import { readAttendancePages } from './attendance-scope';
 
 type SessionRow = {
   source_key: string;
@@ -93,9 +88,15 @@ interface PrivateAttendanceDb {
     from(
       name: 'meet_attendance_sessions'
     ): AttendanceQuery<SessionRow[] | null>;
-    from(
-      name: 'meet_attendance_fences'
-    ): AttendanceQuery<Array<{ generation?: number }> | null>;
+    rpc(
+      fn: 'commit_meet_attendance_upsert',
+      args: {
+        p_meeting_id: string;
+        p_ws_id: string;
+        p_epoch: number;
+        p_rows: unknown[];
+      }
+    ): Promise<{ data: null; error: QueryError }>;
   };
 }
 
@@ -103,21 +104,22 @@ function attendanceTable(db: PrivateAttendanceDb) {
   return db.schema('private').from('meet_attendance_sessions');
 }
 
-function fenceTable(db: PrivateAttendanceDb) {
-  return db.schema('private').from('meet_attendance_fences');
+function isFenced(error: QueryError) {
+  return (
+    error?.code === '40001' ||
+    (error?.message ?? '').includes('Meet attendance sync was fenced')
+  );
 }
 
-function rowPayload(meetingId: string, wsId: string, row: AttendanceInterval) {
+function upsertPayload(row: AttendanceInterval) {
   return {
-    meeting_id: meetingId,
-    ws_id: wsId,
-    source_key: row.sourceKey,
-    participant_kind: row.kind,
-    user_id: row.kind === 'member' ? (row.userId ?? null) : null,
-    guest_id: row.kind === 'guest' ? (row.guestId ?? null) : null,
-    display_name: row.displayName,
-    joined_at: row.joinedAt,
-    left_at: row.leftAt ?? null,
+    sourceKey: row.sourceKey,
+    kind: row.kind,
+    userId: row.kind === 'member' ? (row.userId ?? null) : null,
+    guestId: row.kind === 'guest' ? (row.guestId ?? null) : null,
+    displayName: row.displayName,
+    joinedAt: row.joinedAt,
+    leftAt: row.leftAt ?? null,
   };
 }
 
@@ -125,85 +127,20 @@ export async function createAttendanceStore(): Promise<AttendanceStore> {
   const db = await createAdminClient({ noCookie: true });
   const typed = db as unknown as PrivateAttendanceDb;
   const table = () => attendanceTable(typed);
-  const fence = () => fenceTable(typed);
   return {
     async upsert(meetingId, wsId, rows, epoch = 0) {
       if (!rows.length) return;
-      await commitFencedUpsert({
-        epoch,
-        readGeneration: async () => {
-          const current = await fence()
-            .select('generation')
-            .eq('meeting_id', meetingId)
-            .eq('ws_id', wsId);
-          if (current.error) throw current.error;
-          const generation = current.data?.[0]?.generation;
-          return typeof generation === 'number' ? generation : 0;
-        },
-        compensate: async () => {
-          for (const row of rows) {
-            const removed = await table()
-              .delete()
-              .eq('meeting_id', meetingId)
-              .eq('ws_id', wsId)
-              .eq('source_key', row.sourceKey);
-            if (removed.error) throw removed.error;
-          }
-        },
-        write: async () => {
-          const existing: AttendanceStoredRow[] = [];
-          for (let index = 0; index < rows.length; index += 100) {
-            const keys = rows
-              .slice(index, index + 100)
-              .map((row) => row.sourceKey);
-            existing.push(
-              ...(await readAttendancePages(async (from, to) => {
-                const { data, error } = await table()
-                  .select(
-                    'source_key, ws_id, participant_kind, user_id, guest_id, display_name, joined_at, left_at'
-                  )
-                  .eq('meeting_id', meetingId)
-                  .in('source_key', keys)
-                  .order('source_key')
-                  .range(from, to);
-                if (error) throw error;
-                return (data ?? []).map((row): AttendanceStoredRow => ({
-                  sourceKey: row.source_key,
-                  wsId: row.ws_id ?? '',
-                  kind: row.participant_kind,
-                  userId: row.user_id,
-                  guestId: row.guest_id,
-                  displayName: row.display_name,
-                  joinedAt: row.joined_at,
-                  leftAt: row.left_at,
-                }));
-              }))
-            );
-          }
-          const plan = planAttendanceUpsert(existing, rows, wsId);
-          if (plan.insert.length) {
-            const { error } = await table().insert(
-              plan.insert.map((row) => rowPayload(meetingId, wsId, row))
-            );
-            if (error) throw error;
-          }
-          for (const row of plan.update) {
-            const { error } = await table()
-              .update({
-                participant_kind: row.kind,
-                user_id: row.kind === 'member' ? (row.userId ?? null) : null,
-                guest_id: row.kind === 'guest' ? (row.guestId ?? null) : null,
-                display_name: row.displayName,
-                joined_at: row.joinedAt,
-                left_at: row.leftAt ?? null,
-              })
-              .eq('meeting_id', meetingId)
-              .eq('ws_id', wsId)
-              .eq('source_key', row.sourceKey);
-            if (error) throw error;
-          }
-        },
-      });
+      const written = await typed
+        .schema('private')
+        .rpc('commit_meet_attendance_upsert', {
+          p_meeting_id: meetingId,
+          p_ws_id: wsId,
+          p_epoch: epoch,
+          p_rows: rows.map(upsertPayload),
+        });
+      if (isFenced(written.error))
+        throw new Error('Meet attendance sync was fenced');
+      if (written.error) throw written.error;
     },
     async list(meetingId, wsId, now) {
       const cutoff = new Date(

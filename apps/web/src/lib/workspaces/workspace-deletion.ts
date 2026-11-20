@@ -127,52 +127,75 @@ export async function deleteWorkspaceForActor(
         throw error;
       }
     );
-  // Read former room names before the delete cascades those rows away.
-  const begun = await erasure
-    .openWorkspaceAttendanceErasure(workspaceId)
+  const plan = await erasure
+    .prepareWorkspaceAttendanceErasure(workspaceId)
     .catch((error: unknown) => {
       erasureFailure(error);
       throw error;
     });
 
   const admin = await createAdminClient({ noCookie: true });
-  const { data, error } = await admin.rpc('delete_owned_workspace', args);
+  const { data, error } = await (
+    admin as unknown as {
+      schema(name: 'private'): {
+        rpc(
+          fn: 'delete_owned_workspace_with_attendance_intent',
+          args: {
+            p_ws_id: string;
+            p_actor_id: string;
+            p_confirmation: string;
+            p_plan: unknown;
+          }
+        ): Promise<{ data: unknown; error: { code?: string } | null }>;
+      };
+    }
+  )
+    .schema('private')
+    .rpc('delete_owned_workspace_with_attendance_intent', {
+      ...args,
+      p_plan: plan,
+    });
   if (error) {
     console.error('Workspace deletion failed', { code: error.code });
-    if (begun.preexisting && begun.plan.phase === 'confirmed') {
-      try {
-        await erasure.commitAttendanceErasure(begun.plan);
-        return audit('deleted');
-      } catch (commitError) {
-        erasureFailure(commitError);
-        return audit('failed');
-      }
-    }
-    await erasure.releaseAttendanceErasure(begun);
     return audit('failed');
   }
 
   const result: unknown = data;
-  const confirmed =
-    result === 'deleted' || (result === 'not_found' && begun.preexisting);
-  if (!confirmed) {
-    if (
-      result === 'forbidden' ||
-      result === 'not_found' ||
-      result === 'confirmation_mismatch' ||
-      result === 'subscription_active'
-    ) {
-      await erasure.releaseAttendanceErasure(begun);
-      return audit(result);
+  if (result === 'deleted') {
+    plan.phase = 'confirmed';
+    plan.sqlDone = true;
+    try {
+      await erasure.enqueueAttendanceErasure(plan);
+    } catch (enqueueError) {
+      erasureFailure(enqueueError);
+      return audit('failed');
     }
-    await erasure.releaseAttendanceErasure(begun);
-    return audit('failed');
+    return audit('deleted');
   }
-  try {
-    await erasure.commitAttendanceErasure(begun.plan);
-  } catch (error) {
-    erasureFailure(error);
-    return audit('failed');
+  if (result === 'not_found') {
+    const pending = await erasure
+      .readPendingAttendanceErasure({ op: 'workspace', wsId: workspaceId })
+      .catch((pendingError: unknown) => {
+        erasureFailure(pendingError);
+        return null;
+      });
+    if (pending?.phase === 'confirmed') {
+      try {
+        await erasure.enqueueAttendanceErasure(pending);
+        return audit('deleted');
+      } catch (enqueueError) {
+        erasureFailure(enqueueError);
+        return audit('failed');
+      }
+    }
+    return audit('not_found');
   }
-  return audit('deleted');
+  if (
+    result === 'forbidden' ||
+    result === 'confirmation_mismatch' ||
+    result === 'subscription_active'
+  ) {
+    return audit(result);
+  }
+  return audit('failed');
 }

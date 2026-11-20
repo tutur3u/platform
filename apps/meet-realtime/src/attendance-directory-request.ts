@@ -1,4 +1,5 @@
 import {
+  admitAttendanceEraseBacklog,
   applyAttendanceDirectory,
   ATTENDANCE_DIRECTORY_ROOM,
   ATTENDANCE_INDEX_RETRY_MS,
@@ -222,10 +223,17 @@ export async function drainAttendanceDirectoryAlarm(input: {
     });
     directory = done.directory;
   }
+  const admitted = admitAttendanceEraseBacklog(directory);
+  if (admitted !== directory) directory = admitted;
   if (directory !== planned.directory)
     await input.storage.put(DIRECTORY_KEY, directory);
-  if (planned.rescheduleAt !== null && directory.pending)
-    await input.storage.setAlarm?.(planned.rescheduleAt);
+  if (
+    (directory.pending || directory.eraseBacklog?.length) &&
+    input.storage.setAlarm
+  ) {
+    const at = planned.rescheduleAt ?? input.nowMs + ATTENDANCE_INDEX_RETRY_MS;
+    await input.storage.setAlarm(at);
+  }
   return true;
 }
 

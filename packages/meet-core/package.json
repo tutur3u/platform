@@ -191,6 +191,8 @@
     "./features/call/server/attendance.ts": "./src/features/call/server/attendance.ts",
     "./features/call/server/attendance-erasure": "./src/features/call/server/attendance-erasure.ts",
     "./features/call/server/attendance-erasure.ts": "./src/features/call/server/attendance-erasure.ts",
+    "./features/call/server/account-erasure": "./src/features/call/server/account-erasure.ts",
+    "./features/call/server/account-erasure.ts": "./src/features/call/server/account-erasure.ts",
     "./features/call/server/attendance-deletion-gate": "./src/features/call/server/attendance-deletion-gate.ts",
     "./features/call/server/attendance-deletion-gate.ts": "./src/features/call/server/attendance-deletion-gate.ts",
     "./features/call/server/class-role": "./src/features/call/server/class-role.ts",

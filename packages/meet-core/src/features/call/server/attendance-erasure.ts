@@ -14,6 +14,7 @@ import { readAttendancePages } from './attendance-scope';
 import {
   attendanceErasureKey,
   eraseClaimKey,
+  mergeAttendanceIntent,
   planMeetingAttendanceRooms,
   planSubjectAttendanceRooms,
   planWorkspaceAttendanceRooms,
@@ -21,11 +22,15 @@ import {
   type AttendanceErasurePlan,
   type AttendanceErasureSql,
 } from './attendance-erasure-plan';
+import {
+  ATTENDANCE_ERASURE_ATTEMPTS,
+  ATTENDANCE_ERASURE_FANOUT,
+  enqueueAttendanceErasure as enqueueAttendanceErasureDrive,
+  settleAttendanceErasure as settleAttendanceErasureDrive,
+} from './attendance-erasure-drive';
 
 export type { AttendanceErasurePlan };
-
-export const ATTENDANCE_ERASURE_FANOUT = 4;
-export const ATTENDANCE_ERASURE_ATTEMPTS = 8;
+export { ATTENDANCE_ERASURE_ATTEMPTS, ATTENDANCE_ERASURE_FANOUT };
 
 type Subject =
   | { userId: string; guestId?: never }
@@ -117,6 +122,10 @@ export type AttendanceErasureDeps = {
   ) => Promise<void>;
   queueRooms: (plan: AttendanceErasurePlan) => Promise<void>;
   forgetRooms: (roomIds: string[]) => Promise<void>;
+  reviseRooms: (
+    roomIds: string[],
+    sql: Extract<AttendanceErasureSql, { op: 'subject' }>
+  ) => Promise<void>;
   deleteSql: (sql: AttendanceErasureSql) => Promise<void>;
   readPending: (
     sql: AttendanceErasureSql
@@ -246,6 +255,13 @@ async function readPending(sql: AttendanceErasureSql) {
 }
 
 async function savePending(plan: AttendanceErasurePlan) {
+  const existing = await readPending(plan.sql);
+  const merged = mergeAttendanceIntent(existing, plan);
+  if (!merged) return;
+  plan.phase = merged.phase;
+  plan.rooms = merged.rooms;
+  plan.attempts = merged.attempts;
+  plan.sqlDone = merged.sqlDone;
   const key = attendanceErasureKey(plan.sql);
   await throwIfError(
     (
@@ -327,7 +343,6 @@ async function queueRooms(plan: AttendanceErasurePlan) {
     roomId: string;
   }> = [];
   for (const room of plan.rooms) {
-    if (rooms.length >= 128) break;
     if (room.generation == null) continue;
     rooms.push({
       roomId: room.roomId,
@@ -341,6 +356,20 @@ async function queueRooms(plan: AttendanceErasurePlan) {
     serviceClaims('attendance-index', ATTENDANCE_DIRECTORY_ROOM),
     { op: 'queue-erase', rooms }
   );
+}
+
+export async function enqueueAttendanceErasure(
+  plan: AttendanceErasurePlan | null,
+  deps: AttendanceErasureDeps = defaultDeps()
+) {
+  await enqueueAttendanceErasureDrive(plan, deps);
+}
+
+export async function settleAttendanceErasure(
+  plan: AttendanceErasurePlan | null,
+  deps: AttendanceErasureDeps = defaultDeps()
+) {
+  await settleAttendanceErasureDrive(plan, deps);
 }
 
 function defaultDeps(): AttendanceErasureDeps {
@@ -385,40 +414,25 @@ function defaultDeps(): AttendanceErasureDeps {
         { op: 'forget', roomIds }
       );
     },
+    async reviseRooms(roomIds, sql) {
+      if (!roomIds.length) return;
+      await postJson(
+        '/attendance-index',
+        serviceClaims('attendance-index', ATTENDANCE_DIRECTORY_ROOM),
+        {
+          op: 'revise-membership',
+          roomIds,
+          ...(sql.userId ? { userId: sql.userId } : {}),
+          ...(sql.guestId ? { guestId: sql.guestId } : {}),
+        }
+      );
+    },
     deleteSql,
     readPending,
     savePending,
     finishPending,
     listConfirmedPending,
   };
-}
-
-async function mapBounded<T>(
-  items: readonly T[],
-  limit: number,
-  run: (item: T) => Promise<void>
-) {
-  const queue = [...items];
-  let first: unknown;
-  let stop = false;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      for (;;) {
-        if (stop) return;
-        const item = queue.shift();
-        if (!item) return;
-        try {
-          await run(item);
-        } catch (error) {
-          first ??= error;
-          stop = true;
-        }
-      }
-    }
-  );
-  await Promise.all(workers);
-  if (first) throw first;
 }
 
 async function resumeConfirmed(
@@ -432,7 +446,7 @@ async function resumeConfirmed(
       continue;
     if ((plan.attempts ?? 0) >= ATTENDANCE_ERASURE_ATTEMPTS) continue;
     try {
-      await commitAttendanceErasure(plan, deps);
+      await settleAttendanceErasure(plan, deps);
     } catch (error) {
       console.error('Meet attendance erasure failed', {
         name: error instanceof Error ? error.name : 'unknown',
@@ -450,7 +464,6 @@ async function openPlan(
   const existing = await deps.readPending(sql);
   if (existing) return { plan: existing, preexisting: true };
   const plan = await prepare();
-  await deps.savePending(plan);
   return { plan, preexisting: false };
 }
 
@@ -558,53 +571,34 @@ export async function releaseAttendanceErasure(
   deps: AttendanceErasureDeps = defaultDeps()
 ) {
   if (begun.plan.phase === 'confirmed') return;
+  const stored = await deps.readPending(begun.plan.sql);
+  if (stored?.phase === 'confirmed') return;
   await deps.finishPending(begun.plan.sql);
+}
+
+export async function recordAttendanceErasure(
+  plan: AttendanceErasurePlan,
+  deps: AttendanceErasureDeps = defaultDeps()
+) {
+  await deps.savePending(plan);
 }
 
 export async function commitAttendanceErasure(
   plan: AttendanceErasurePlan | null,
   deps: AttendanceErasureDeps = defaultDeps()
 ) {
-  if (!plan) return;
-  if ((plan.attempts ?? 0) >= ATTENDANCE_ERASURE_ATTEMPTS) return;
-  plan.phase = 'confirmed';
-  plan.attempts = (plan.attempts ?? 0) + 1;
-  await deps.savePending(plan);
-  for (const room of plan.rooms)
-    if (room.generation == null)
-      room.generation = await deps.bumpFence(room.wsId, room.meetingId);
-  await deps.savePending(plan);
-  await deps.queueRooms(plan);
-  try {
-    await mapBounded(plan.rooms, ATTENDANCE_ERASURE_FANOUT, async (room) => {
-      for (const claim of claimsFor(plan)) {
-        if (room.posted?.includes(claim.key)) continue;
-        const { key, ...extra } = claim;
-        await deps.postRoom(room.roomId, {
-          ...extra,
-          generation: room.generation,
-        });
-        room.posted = [...(room.posted ?? []), key];
-      }
-    });
-  } catch (error) {
-    await deps.savePending(plan);
-    throw error;
-  }
-  await deps.forgetRooms(plan.rooms.map((room) => room.roomId));
-  await deps.deleteSql(plan.sql);
-  await deps.finishPending(plan.sql);
+  await enqueueAttendanceErasure(plan, deps);
 }
 
 export async function withWorkspaceAttendanceErasure(
   wsId: string,
-  remove: () => Promise<{ error: unknown }>,
+  remove: (plan?: AttendanceErasurePlan) => Promise<{ error: unknown }>,
   deps: AttendanceErasureDeps = defaultDeps()
 ) {
   const begun = await openWorkspaceAttendanceErasure(wsId, deps);
   let removed: { error: unknown };
   try {
-    removed = await remove();
+    removed = await remove(begun.plan);
   } catch (error) {
     await releaseAttendanceErasure(begun, deps);
     throw error;
@@ -613,7 +607,7 @@ export async function withWorkspaceAttendanceErasure(
     await releaseAttendanceErasure(begun, deps);
     throw removed.error;
   }
-  await commitAttendanceErasure(begun.plan, deps);
+  await settleAttendanceErasure(begun.plan, deps);
 }
 
 export async function eraseMeetAttendanceForMeeting(
@@ -623,7 +617,7 @@ export async function eraseMeetAttendanceForMeeting(
 ) {
   const resolved = deps ?? defaultDeps();
   const begun = await openMeetingAttendanceErasure(wsId, meetingId, resolved);
-  await commitAttendanceErasure(begun.plan, resolved);
+  await settleAttendanceErasure(begun.plan, resolved);
 }
 
 export async function eraseMeetAttendanceForWorkspace(
@@ -632,7 +626,7 @@ export async function eraseMeetAttendanceForWorkspace(
 ) {
   const resolved = deps ?? defaultDeps();
   const begun = await openWorkspaceAttendanceErasure(wsId, resolved);
-  await commitAttendanceErasure(begun.plan, resolved);
+  await settleAttendanceErasure(begun.plan, resolved);
 }
 
 export async function eraseMeetAttendanceSubject(
@@ -641,5 +635,5 @@ export async function eraseMeetAttendanceSubject(
 ) {
   const resolved = deps ?? defaultDeps();
   const begun = await openSubjectAttendanceErasure(subject, resolved);
-  await commitAttendanceErasure(begun.plan, resolved);
+  await settleAttendanceErasure(begun.plan, resolved);
 }

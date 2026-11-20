@@ -3,18 +3,18 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const {
   flags,
-  openMock,
+  prepareMock,
   readPendingMock,
-  releaseMock,
-  commitMock,
+  enqueueMock,
+  rpcMock,
   deleteMock,
   meetingMock,
 } = vi.hoisted(() => ({
   flags: { attendance: true },
-  openMock: vi.fn(),
+  prepareMock: vi.fn(),
   readPendingMock: vi.fn(),
-  releaseMock: vi.fn(),
-  commitMock: vi.fn(),
+  enqueueMock: vi.fn(),
+  rpcMock: vi.fn(),
   deleteMock: vi.fn(),
   meetingMock: vi.fn(),
 }));
@@ -50,12 +50,16 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('./_lib/recording-access', () => ({
   canManageLegacyRecording: async () => true,
 }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    schema: () => ({ rpc: rpcMock }),
+  }),
+}));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
-  openMeetingAttendanceErasure: (...args: unknown[]) => openMock(...args),
+  prepareMeetingAttendanceErasure: (...args: unknown[]) => prepareMock(...args),
   readPendingAttendanceErasure: (...args: unknown[]) =>
     readPendingMock(...args),
-  releaseAttendanceErasure: (...args: unknown[]) => releaseMock(...args),
-  commitAttendanceErasure: (...args: unknown[]) => commitMock(...args),
+  enqueueAttendanceErasure: (...args: unknown[]) => enqueueMock(...args),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => flags.attendance,
@@ -75,17 +79,14 @@ beforeEach(() => {
       creator_id: '9b5c036d-d38d-4c12-b8e8-2e0b2b4a2691',
     },
   });
-  openMock.mockResolvedValue({
-    plan: {
-      rooms: [{ roomId: `${WS}:${MEETING}`, wsId: WS, meetingId: MEETING }],
-      sql: { op: 'meeting', meetingId: MEETING },
-      phase: 'planned',
-    },
-    preexisting: false,
+  prepareMock.mockResolvedValue({
+    rooms: [{ roomId: `${WS}:${MEETING}`, wsId: WS, meetingId: MEETING }],
+    sql: { op: 'meeting', meetingId: MEETING },
+    phase: 'planned',
   });
   readPendingMock.mockResolvedValue(null);
-  releaseMock.mockResolvedValue(undefined);
-  commitMock.mockResolvedValue(undefined);
+  enqueueMock.mockResolvedValue(undefined);
+  rpcMock.mockResolvedValue({ data: 'deleted', error: null });
   deleteMock.mockResolvedValue({ data: [{ id: MEETING }], error: null });
 });
 
@@ -103,55 +104,56 @@ function call() {
 
 it('erases the room copy only after the meeting row is deleted', async () => {
   const order: string[] = [];
-  openMock.mockImplementation(async () => {
-    order.push('open');
+  prepareMock.mockImplementation(async () => {
+    order.push('prepare');
     return {
-      plan: {
-        rooms: [],
-        sql: { op: 'meeting', meetingId: MEETING },
-        phase: 'planned',
-      },
-      preexisting: false,
+      rooms: [],
+      sql: { op: 'meeting', meetingId: MEETING },
+      phase: 'planned',
     };
   });
-  deleteMock.mockImplementation(async () => {
+  rpcMock.mockImplementation(async () => {
     order.push('delete');
-    return { data: [{ id: MEETING }], error: null };
+    return { data: 'deleted', error: null };
   });
-  commitMock.mockImplementation(async () => {
-    order.push('commit');
+  enqueueMock.mockImplementation(async () => {
+    order.push('enqueue');
   });
   const response = await call();
   expect(response.status).toBe(200);
-  expect(order).toEqual(['open', 'delete', 'commit']);
+  expect(order).toEqual(['prepare', 'delete', 'enqueue']);
+  expect(deleteMock).not.toHaveBeenCalled();
 
   order.length = 0;
-  deleteMock.mockImplementation(async () => {
+  rpcMock.mockImplementation(async () => {
     order.push('delete');
-    return { data: [], error: null };
+    return { data: 'not_deleted', error: null };
   });
   const denied = await call();
   expect(denied.status).toBe(403);
-  expect(order).toEqual(['open', 'delete']);
-  expect(releaseMock).toHaveBeenCalledTimes(1);
+  expect(order).toEqual(['prepare', 'delete']);
+  expect(readPendingMock).not.toHaveBeenCalled();
+  expect(enqueueMock).toHaveBeenCalledTimes(1);
 });
 
 it('does not delete the meeting when planning erasure fails', async () => {
-  openMock.mockRejectedValue(new Error('timeout'));
+  prepareMock.mockRejectedValue(new Error('timeout'));
   const response = await call();
   expect(response.status).toBe(500);
   expect(deleteMock).not.toHaveBeenCalled();
+  expect(rpcMock).not.toHaveBeenCalled();
 });
 
 it('deletes the meeting while attendance is off without calling erasure', async () => {
   flags.attendance = false;
-  openMock.mockRejectedValue(new Error('missing migration'));
+  prepareMock.mockRejectedValue(new Error('missing migration'));
   const response = await call();
   expect(response.status).toBe(200);
   expect(deleteMock).toHaveBeenCalledOnce();
-  expect(openMock).not.toHaveBeenCalled();
+  expect(prepareMock).not.toHaveBeenCalled();
   expect(readPendingMock).not.toHaveBeenCalled();
-  expect(commitMock).not.toHaveBeenCalled();
+  expect(enqueueMock).not.toHaveBeenCalled();
+  expect(rpcMock).not.toHaveBeenCalled();
 });
 
 it('does not resume an erasure for a meeting outside this workspace', async () => {
@@ -167,9 +169,10 @@ it('does not resume an erasure for a meeting outside this workspace', async () =
   const response = await call();
   expect(response.status).toBe(404);
   expect(readPendingMock).not.toHaveBeenCalled();
-  expect(commitMock).not.toHaveBeenCalled();
+  expect(enqueueMock).not.toHaveBeenCalled();
   expect(deleteMock).not.toHaveBeenCalled();
-  expect(openMock).not.toHaveBeenCalled();
+  expect(prepareMock).not.toHaveBeenCalled();
+  expect(rpcMock).not.toHaveBeenCalled();
 });
 
 it('treats a meeting lookup error as a failure instead of a missing meeting', async () => {
@@ -188,6 +191,7 @@ it('treats a meeting lookup error as a failure instead of a missing meeting', as
   const response = await call();
   expect(response.status).toBe(500);
   expect(readPendingMock).not.toHaveBeenCalled();
-  expect(commitMock).not.toHaveBeenCalled();
+  expect(enqueueMock).not.toHaveBeenCalled();
   expect(deleteMock).not.toHaveBeenCalled();
+  expect(rpcMock).not.toHaveBeenCalled();
 });

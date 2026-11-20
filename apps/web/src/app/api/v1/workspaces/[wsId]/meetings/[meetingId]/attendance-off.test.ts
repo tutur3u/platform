@@ -38,6 +38,11 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 vi.mock('./_lib/recording-access', () => ({
   canManageLegacyRecording: async () => true,
 }));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: () => {
+    throw new Error('admin client');
+  },
+}));
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => false,
 }));

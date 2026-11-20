@@ -6,7 +6,9 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   rpc: vi.fn(),
+  privateRpc: vi.fn(),
   deleteUser: vi.fn(),
+  getUserById: vi.fn(),
   deleteWorkspace: vi.fn(),
   revoke: vi.fn(),
   revokeSeat: vi.fn(),
@@ -27,7 +29,7 @@ vi.mock('@tuturuuu/payment-core/polar-seat-helper', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => ({
     rpc: f.rpc,
-    auth: { admin: { deleteUser: f.deleteUser } },
+    auth: { admin: { deleteUser: f.deleteUser, getUserById: f.getUserById } },
     from: () => ({
       delete: () => ({ eq: f.deleteWorkspace }),
       select: () => ({
@@ -45,6 +47,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
       }),
     }),
     schema: () => ({
+      rpc: f.privateRpc,
       from: () => ({
         select: () => ({
           eq: () => ({
@@ -60,8 +63,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 const erasure = vi.hoisted(() => ({
   withWorkspace: vi.fn(),
-  openSubject: vi.fn(),
-  commit: vi.fn(),
+  prepareSubject: vi.fn(),
+  record: vi.fn(),
+  settle: vi.fn(),
   release: vi.fn(),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
@@ -70,9 +74,10 @@ vi.mock('@tuturuuu/realtime/meet', () => ({
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
   withWorkspaceAttendanceErasure: (...args: unknown[]) =>
     erasure.withWorkspace(...args),
-  openSubjectAttendanceErasure: (...args: unknown[]) =>
-    erasure.openSubject(...args),
-  commitAttendanceErasure: (...args: unknown[]) => erasure.commit(...args),
+  prepareSubjectAttendanceErasure: (...args: unknown[]) =>
+    erasure.prepareSubject(...args),
+  recordAttendanceErasure: (...args: unknown[]) => erasure.record(...args),
+  settleAttendanceErasure: (...args: unknown[]) => erasure.settle(...args),
   releaseAttendanceErasure: (...args: unknown[]) => erasure.release(...args),
 }));
 vi.mock('@/lib/api-auth', () => ({
@@ -117,7 +122,12 @@ beforeEach(() => {
   vi.resetAllMocks();
   f.rpc.mockResolvedValue({ data: [row], error: null });
   f.deleteUser.mockResolvedValue({ error: null });
+  f.getUserById.mockResolvedValue({
+    data: { user: null },
+    error: { status: 404, message: 'not found' },
+  });
   f.deleteWorkspace.mockResolvedValue({ error: null });
+  f.privateRpc.mockResolvedValue({ data: 'deleted', error: null });
   f.revoke.mockResolvedValue({});
   f.revokeSeat.mockResolvedValue(undefined);
   erasure.withWorkspace.mockImplementation(
@@ -126,15 +136,13 @@ beforeEach(() => {
       if (removed?.error) throw removed.error;
     }
   );
-  erasure.openSubject.mockResolvedValue({
-    plan: {
-      rooms: [],
-      sql: { op: 'subject', userId: 'user' },
-      phase: 'planned',
-    },
-    preexisting: false,
+  erasure.prepareSubject.mockResolvedValue({
+    rooms: [],
+    sql: { op: 'subject', userId: 'user' },
+    phase: 'planned',
   });
-  erasure.commit.mockResolvedValue(undefined);
+  erasure.record.mockResolvedValue(undefined);
+  erasure.settle.mockResolvedValue(undefined);
   erasure.release.mockResolvedValue(undefined);
 });
 
@@ -255,47 +263,103 @@ it.each(['missing customer', 'revoked seat', '5xx', 'network', 'timeout'])(
   }
 );
 
-it('commits subject erasure only after the account delete succeeds', async () => {
+it('settles subject erasure only after the account is absent', async () => {
   const order: string[] = [];
   erasure.withWorkspace.mockImplementation(async (_wsId, remove) => {
     order.push('workspace');
     const removed = await (remove as () => Promise<{ error?: unknown }>)();
     if (removed?.error) throw removed.error;
   });
-  erasure.openSubject.mockImplementation(async () => {
-    order.push('open');
-    return {
-      plan: { rooms: [], sql: { op: 'subject', userId: 'user' } },
-      preexisting: false,
-    };
+  erasure.prepareSubject.mockImplementation(async () => {
+    order.push('prepare');
+    return { rooms: [], sql: { op: 'subject', userId: 'user' } };
+  });
+  erasure.record.mockImplementation(async () => {
+    order.push('record');
   });
   f.deleteUser.mockImplementation(async () => {
     order.push('deleteUser');
     return { error: null };
   });
-  erasure.commit.mockImplementation(async () => {
-    order.push('commit');
+  f.getUserById.mockImplementation(async () => {
+    order.push('lookup');
+    return {
+      data: { user: null },
+      error: { status: 404, message: 'not found' },
+    };
+  });
+  erasure.settle.mockImplementation(async () => {
+    order.push('settle');
   });
   const response = await POST(request() as never);
   expect(response.status).toBe(200);
-  expect(order).toEqual(['workspace', 'open', 'deleteUser', 'commit']);
+  expect(order).toEqual([
+    'workspace',
+    'prepare',
+    'record',
+    'deleteUser',
+    'lookup',
+    'settle',
+  ]);
 
   order.length = 0;
   f.deleteUser.mockResolvedValue({ error: new Error('denied') });
+  f.getUserById.mockResolvedValue({
+    data: { user: { id: 'user' } },
+    error: null,
+  });
   const log = vi.spyOn(console, 'error').mockImplementation(() => {});
   const denied = await POST(request() as never);
   expect(denied.status).toBe(500);
-  expect(erasure.release).toHaveBeenCalled();
-  expect(order).not.toContain('commit');
+  expect(erasure.release).not.toHaveBeenCalled();
+  expect(erasure.settle).toHaveBeenCalledTimes(1);
+  expect(order).not.toContain('settle');
   log.mockRestore();
 });
 
-it('returns success when the account is gone and erasure commit fails', async () => {
-  erasure.commit.mockRejectedValue(new Error('timeout'));
+it('cancels the intent only when the live account is refused', async () => {
+  f.deleteUser.mockResolvedValue({
+    error: { status: 422, message: 'refused' },
+  });
+  f.getUserById.mockResolvedValue({
+    data: { user: { id: 'user' } },
+    error: null,
+  });
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const denied = await POST(request() as never);
+  expect(denied.status).toBe(500);
+  expect(erasure.release).toHaveBeenCalledOnce();
+  expect(erasure.settle).not.toHaveBeenCalled();
+  log.mockRestore();
+});
+
+it('stores a workspace intent when the delete receives a plan', async () => {
+  erasure.withWorkspace.mockImplementation(async (_wsId, remove) => {
+    const removed = await (
+      remove as (plan?: unknown) => Promise<{ error?: unknown }>
+    )({
+      phase: 'planned',
+      rooms: [],
+      sql: { op: 'workspace', wsId: 'workspace' },
+    });
+    if (removed?.error) throw removed.error;
+  });
+  const response = await POST(request() as never);
+  expect(response.status).toBe(200);
+  expect(f.privateRpc).toHaveBeenCalledWith(
+    'delete_workspace_with_attendance_intent',
+    expect.objectContaining({ p_ws_id: 'workspace' })
+  );
+  expect(f.deleteWorkspace).not.toHaveBeenCalled();
+});
+
+it('returns success when the account is gone and erasure settle fails', async () => {
+  erasure.settle.mockRejectedValue(new Error('timeout'));
   const log = vi.spyOn(console, 'error').mockImplementation(() => {});
   const response = await POST(request() as never);
   expect(response.status).toBe(200);
   expect(f.deleteUser).toHaveBeenCalledOnce();
-  expect(erasure.commit).toHaveBeenCalled();
+  expect(f.getUserById).toHaveBeenCalledOnce();
+  expect(erasure.settle).toHaveBeenCalledTimes(2);
   log.mockRestore();
 });

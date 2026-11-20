@@ -402,3 +402,277 @@ test('attendance generation rollback drops the pending record and keeps expiry',
   );
   assert.equal(Number(purged.rows[0].removed), 1);
 });
+
+async function applyAttendanceChain(db) {
+  await db.exec(fixture);
+  await apply(
+    db,
+    'supabase/migrations/20261119170000_meet_class_attendance.sql'
+  );
+  await apply(
+    db,
+    'supabase/migrations/20261120015000_meet_attendance_workspace_retention.sql'
+  );
+  await apply(
+    db,
+    'supabase/migrations/20261120025200_meet_attendance_meeting_fence.sql'
+  );
+  await apply(
+    db,
+    'supabase/migrations/20261120033500_meet_attendance_fence_generation.sql'
+  );
+}
+
+test('attendance generation rollback drains confirmed plans and keeps planned sessions', async () => {
+  const db = new PGlite();
+  await applyAttendanceChain(db);
+  const ws = '11111111-1111-4111-8111-111111111111';
+  const confirmedMeeting = '33333333-3333-4333-8333-333333333333';
+  const plannedMeeting = '55555555-5555-4555-8555-555555555555';
+  const user = '44444444-4444-4444-8444-444444444444';
+  await db.exec(`
+    insert into public.workspaces (id) values ('${ws}');
+    insert into public.workspace_meetings (id, ws_id, creator_id)
+      values
+        ('${confirmedMeeting}', '${ws}', '${user}'),
+        ('${plannedMeeting}', '${ws}', '${user}');
+    insert into private.meet_attendance_sessions (
+      meeting_id, ws_id, source_key, participant_kind, user_id, display_name, joined_at
+    ) values
+      (
+        '${confirmedMeeting}', '${ws}', 'confirmed-copy', 'member', '${user}', 'Ada',
+        timestamptz '2026-07-31T12:00:00Z'
+      ),
+      (
+        '${plannedMeeting}', '${ws}', 'planned-copy', 'member', '${user}', 'Ada',
+        timestamptz '2026-07-31T12:00:00Z'
+      );
+    insert into private.meet_attendance_pending_erasures (kind, subject_key, plan)
+      values
+        (
+          'meeting',
+          '${confirmedMeeting}',
+          '{"phase":"confirmed","sql":{"op":"meeting","meetingId":"${confirmedMeeting}"},"rooms":[]}'::jsonb
+        ),
+        (
+          'meeting',
+          '${plannedMeeting}',
+          '{"phase":"planned","sql":{"op":"meeting","meetingId":"${plannedMeeting}"},"rooms":[]}'::jsonb
+        );
+  `);
+  await apply(
+    db,
+    'rollbacks/20261120033500_meet_attendance_fence_generation.rollback.sql'
+  );
+  const left = await db.query(`
+    select source_key
+    from private.meet_attendance_sessions
+    order by source_key
+  `);
+  assert.deepEqual(
+    left.rows.map((row) => row.source_key),
+    ['planned-copy']
+  );
+  const pending = await db.query(
+    `select to_regclass('private.meet_attendance_pending_erasures') as name`
+  );
+  assert.equal(pending.rows[0].name, null);
+});
+
+test('attendance erasure intent is stored with the delete and a fenced upsert does not delete', async () => {
+  const db = new PGlite();
+  await applyAttendanceChain(db);
+  await apply(
+    db,
+    'supabase/migrations/20261120071510_meet_attendance_erasure_intent.sql'
+  );
+  const ws = '11111111-1111-4111-8111-111111111111';
+  const other = '22222222-2222-4222-8222-222222222222';
+  const meeting = '33333333-3333-4333-8333-333333333333';
+  const user = '44444444-4444-4444-8444-444444444444';
+  const row = JSON.stringify([
+    {
+      sourceKey: 'device:2026-07-31T12:00:00.000Z',
+      kind: 'member',
+      userId: user,
+      displayName: 'Ada',
+      joinedAt: '2026-07-31T12:00:00.000Z',
+      leftAt: null,
+    },
+  ]);
+  await db.exec(`
+    insert into public.workspaces (id) values ('${ws}'), ('${other}');
+    insert into public.workspace_meetings (id, ws_id, creator_id)
+      values ('${meeting}', '${ws}', '${user}');
+  `);
+  await db.query(
+    `select private.commit_meet_attendance_upsert($1::uuid, $2::uuid, 0, $3::jsonb)`,
+    [meeting, ws, row]
+  );
+  await db.query(
+    `select private.bump_meet_attendance_fence($1::uuid, $2::uuid)`,
+    [meeting, ws]
+  );
+  const renamed = JSON.stringify([
+    {
+      sourceKey: 'device:2026-07-31T12:00:00.000Z',
+      kind: 'member',
+      userId: user,
+      displayName: 'Changed',
+      joinedAt: '2026-07-31T12:00:00.000Z',
+      leftAt: null,
+    },
+  ]);
+  await assert.rejects(
+    db.query(
+      `select private.commit_meet_attendance_upsert($1::uuid, $2::uuid, 0, $3::jsonb)`,
+      [meeting, ws, renamed]
+    ),
+    /Meet attendance sync was fenced/
+  );
+  const kept = await db.query(
+    `select display_name from private.meet_attendance_sessions where source_key = 'device:2026-07-31T12:00:00.000Z'`
+  );
+  assert.equal(kept.rows[0].display_name, 'Ada');
+  await db.query(
+    `select private.commit_meet_attendance_upsert($1::uuid, $2::uuid, 1, $3::jsonb)`,
+    [meeting, ws, renamed]
+  );
+  const updated = await db.query(
+    `select display_name, ws_id::text as ws_id from private.meet_attendance_sessions`
+  );
+  assert.equal(updated.rows[0].display_name, 'Changed');
+  assert.equal(updated.rows[0].ws_id, ws);
+  await db.query(
+    `select private.commit_meet_attendance_upsert($1::uuid, $2::uuid, 1, $3::jsonb)`,
+    [
+      meeting,
+      other,
+      JSON.stringify([
+        {
+          sourceKey: 'device:2026-07-31T12:00:00.000Z',
+          kind: 'member',
+          userId: user,
+          displayName: 'Moved',
+          joinedAt: '2026-07-31T12:00:00.000Z',
+          leftAt: null,
+        },
+      ]),
+    ]
+  );
+  const unmoved = await db.query(
+    `select display_name, ws_id::text as ws_id from private.meet_attendance_sessions`
+  );
+  assert.equal(unmoved.rows[0].display_name, 'Changed');
+  assert.equal(unmoved.rows[0].ws_id, ws);
+
+  const missed = await db.query(
+    `select private.delete_meeting_with_attendance_intent($1::uuid, $2::uuid, '{"rooms":[]}'::jsonb) as result`,
+    [ws, '99999999-9999-4999-8999-999999999999']
+  );
+  assert.equal(missed.rows[0].result, 'not_deleted');
+  const none = await db.query(
+    `select count(*)::int as count from private.meet_attendance_pending_erasures`
+  );
+  assert.equal(none.rows[0].count, 0);
+
+  const deleted = await db.query(
+    `select private.delete_meeting_with_attendance_intent($1::uuid, $2::uuid, $3::jsonb) as result`,
+    [
+      ws,
+      meeting,
+      JSON.stringify({
+        rooms: [
+          {
+            roomId: `${other}:${meeting}`,
+            wsId: other,
+            meetingId: meeting,
+          },
+        ],
+        sql: { op: 'meeting', meetingId: meeting },
+      }),
+    ]
+  );
+  assert.equal(deleted.rows[0].result, 'deleted');
+  const intent = await db.query(
+    `select plan from private.meet_attendance_pending_erasures where kind = 'meeting'`
+  );
+  assert.equal(intent.rows.length, 1);
+  assert.equal(intent.rows[0].plan.phase, 'confirmed');
+  assert.equal(intent.rows[0].plan.sqlDone, true);
+  const roomIds = intent.rows[0].plan.rooms.map((room) => room.roomId).sort();
+  assert.deepEqual(roomIds, [`${ws}:${meeting}`, `${other}:${meeting}`]);
+  const again = await db.query(
+    `select private.delete_meeting_with_attendance_intent($1::uuid, $2::uuid, '{"rooms":[]}'::jsonb) as result`,
+    [ws, meeting]
+  );
+  assert.equal(again.rows[0].result, 'not_deleted');
+  const still = await db.query(
+    `select count(*)::int as count from private.meet_attendance_pending_erasures`
+  );
+  assert.equal(still.rows[0].count, 1);
+
+  await db.exec(`
+    create or replace function public.delete_owned_workspace(
+      p_ws_id uuid,
+      p_actor_id uuid,
+      p_confirmation text
+    ) returns text
+    language plpgsql
+    as $$
+    begin
+      if p_confirmation = 'no' then
+        return 'subscription_active';
+      end if;
+      delete from private.meet_attendance_sessions where ws_id = p_ws_id;
+      delete from public.workspaces where id = p_ws_id;
+      return 'deleted';
+    end;
+    $$;
+    insert into public.workspace_meetings (id, ws_id, creator_id)
+      values ('${meeting}', '${other}', '${user}');
+    insert into private.meet_attendance_sessions (
+      meeting_id, ws_id, source_key, participant_kind, user_id, display_name, joined_at
+    ) values (
+      '${meeting}', '${other}', 'owned-copy', 'member', '${user}', 'Ada',
+      timestamptz '2026-07-31T12:00:00Z'
+    );
+  `);
+  const denied = await db.query(
+    `select private.delete_owned_workspace_with_attendance_intent($1::uuid, $2::uuid, 'no', '{"rooms":[]}'::jsonb) as result`,
+    [other, user]
+  );
+  assert.equal(denied.rows[0].result, 'subscription_active');
+  const deniedRows = await db.query(
+    `select count(*)::int as count from private.meet_attendance_pending_erasures where subject_key = '${other}'`
+  );
+  assert.equal(deniedRows.rows[0].count, 0);
+  const owned = await db.query(
+    `select private.delete_owned_workspace_with_attendance_intent($1::uuid, $2::uuid, 'yes', '{"rooms":[{"roomId":"directory:only","wsId":"${other}","meetingId":"only"}]}'::jsonb) as result`,
+    [other, user]
+  );
+  assert.equal(owned.rows[0].result, 'deleted');
+  const ownedPlan = await db.query(
+    `select plan from private.meet_attendance_pending_erasures where kind = 'workspace' and subject_key = '${other}'`
+  );
+  assert.equal(ownedPlan.rows[0].plan.sqlDone, true);
+  assert.deepEqual(
+    ownedPlan.rows[0].plan.rooms.map((room) => room.roomId).sort(),
+    [`${other}:${meeting}`, 'directory:only']
+  );
+
+  await apply(
+    db,
+    'rollbacks/20261120071510_meet_attendance_erasure_intent.rollback.sql'
+  );
+  const preserved = await db.query(
+    `select count(*)::int as count from private.meet_attendance_pending_erasures`
+  );
+  assert.equal(preserved.rows[0].count, 2);
+  const dropped = await db.query(`
+    select to_regprocedure(
+      'private.delete_meeting_with_attendance_intent(uuid, uuid, jsonb)'
+    ) as fn
+  `);
+  assert.equal(dropped.rows[0].fn, null);
+});

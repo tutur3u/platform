@@ -90,36 +90,25 @@ it('treats +00:00 and Z as the same timestamp', () => {
   );
 });
 
-it('removes a write when erasure fences the sync', async () => {
-  let generation = 0;
+it('does not write when erasure has already fenced the sync', async () => {
   let wrote = false;
-  let compensated = false;
   await expect(
     commitFencedUpsert({
       epoch: 0,
-      readGeneration: async () => generation,
-      write: async () => {
-        wrote = true;
-        generation = 1;
-      },
-      compensate: async () => {
-        compensated = true;
-      },
-    })
-  ).rejects.toThrow('Meet attendance sync was fenced');
-  expect(wrote).toBe(true);
-  expect(compensated).toBe(true);
-
-  wrote = false;
-  await expect(
-    commitFencedUpsert({
-      epoch: 0,
-      readGeneration: async () => 2,
-      write: async () => {
+      readGeneration: async () => 1,
+      commit: async () => {
         wrote = true;
       },
-      compensate: async () => {},
     })
   ).rejects.toThrow('Meet attendance sync was fenced');
   expect(wrote).toBe(false);
+
+  await commitFencedUpsert({
+    epoch: 1,
+    readGeneration: async () => 1,
+    commit: async () => {
+      wrote = true;
+    },
+  });
+  expect(wrote).toBe(true);
 });

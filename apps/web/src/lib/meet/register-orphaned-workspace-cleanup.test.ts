@@ -31,6 +31,7 @@ vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => {
     readPendingAttendanceErasure: (...args: unknown[]) =>
       state.readPending(...args),
     commitAttendanceErasure: (...args: unknown[]) => state.commit(...args),
+    settleAttendanceErasure: (...args: unknown[]) => state.commit(...args),
   };
 });
 

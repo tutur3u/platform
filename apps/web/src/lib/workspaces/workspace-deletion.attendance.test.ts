@@ -3,16 +3,16 @@ import { beforeEach, expect, it, vi } from 'vitest';
 const {
   flags,
   createAdminClientMock,
-  openMock,
-  releaseMock,
-  commitMock,
+  prepareMock,
+  readPendingMock,
+  enqueueMock,
   rpcMock,
 } = vi.hoisted(() => ({
   flags: { attendance: true },
   createAdminClientMock: vi.fn(),
-  openMock: vi.fn(),
-  releaseMock: vi.fn(),
-  commitMock: vi.fn(),
+  prepareMock: vi.fn(),
+  readPendingMock: vi.fn(),
+  enqueueMock: vi.fn(),
   rpcMock: vi.fn(),
 }));
 
@@ -20,9 +20,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: unknown[]) => createAdminClientMock(...args),
 }));
 vi.mock('@tuturuuu/meet-core/features/call/server/attendance-erasure', () => ({
-  openWorkspaceAttendanceErasure: (...args: unknown[]) => openMock(...args),
-  releaseAttendanceErasure: (...args: unknown[]) => releaseMock(...args),
-  commitAttendanceErasure: (...args: unknown[]) => commitMock(...args),
+  prepareWorkspaceAttendanceErasure: (...args: unknown[]) =>
+    prepareMock(...args),
+  readPendingAttendanceErasure: (...args: unknown[]) =>
+    readPendingMock(...args),
+  enqueueAttendanceErasure: (...args: unknown[]) => enqueueMock(...args),
 }));
 vi.mock('@tuturuuu/realtime/meet', () => ({
   meetClassAttendanceEnabled: () => flags.attendance,
@@ -54,24 +56,24 @@ const supabase = {
 beforeEach(() => {
   vi.clearAllMocks();
   flags.attendance = true;
-  openMock.mockResolvedValue({
-    plan: {
-      rooms: [
-        {
-          roomId: `${WORKSPACE}:meeting`,
-          wsId: WORKSPACE,
-          meetingId: 'meeting',
-        },
-      ],
-      sql: { op: 'workspace', wsId: WORKSPACE },
-      phase: 'planned',
-    },
-    preexisting: false,
+  prepareMock.mockResolvedValue({
+    rooms: [
+      {
+        roomId: `${WORKSPACE}:meeting`,
+        wsId: WORKSPACE,
+        meetingId: 'meeting',
+      },
+    ],
+    sql: { op: 'workspace', wsId: WORKSPACE },
+    phase: 'planned',
   });
-  releaseMock.mockResolvedValue(undefined);
-  commitMock.mockResolvedValue(undefined);
+  readPendingMock.mockResolvedValue(null);
+  enqueueMock.mockResolvedValue(undefined);
   rpcMock.mockResolvedValue({ data: 'deleted', error: null });
-  createAdminClientMock.mockResolvedValue({ rpc: rpcMock });
+  createAdminClientMock.mockResolvedValue({
+    rpc: rpcMock,
+    schema: () => ({ rpc: rpcMock }),
+  });
 });
 
 function actor() {
@@ -84,35 +86,36 @@ function actor() {
 
 it('deletes the workspace while attendance is off without loading erasure', async () => {
   flags.attendance = false;
-  openMock.mockRejectedValue(new Error('missing migration'));
+  prepareMock.mockRejectedValue(new Error('missing migration'));
   const deleted = await deleteWorkspaceForActor(actor(), 'Class');
   expect(deleted.status).toBe(200);
   expect(deleted.body.code).toBe('deleted');
-  expect(rpcMock).toHaveBeenCalledOnce();
-  expect(openMock).not.toHaveBeenCalled();
-  expect(commitMock).not.toHaveBeenCalled();
-  expect(releaseMock).not.toHaveBeenCalled();
+  expect(rpcMock).toHaveBeenCalledExactlyOnceWith('delete_owned_workspace', {
+    p_ws_id: WORKSPACE,
+    p_actor_id: ACTOR,
+    p_confirmation: 'Class',
+  });
+  expect(prepareMock).not.toHaveBeenCalled();
+  expect(enqueueMock).not.toHaveBeenCalled();
+  expect(readPendingMock).not.toHaveBeenCalled();
 });
 
 it('erases attendance only after the database confirms deletion', async () => {
   const order: string[] = [];
-  openMock.mockImplementation(async () => {
-    order.push('open');
-    return {
-      plan: { rooms: [], sql: { op: 'workspace', wsId: WORKSPACE } },
-      preexisting: false,
-    };
+  prepareMock.mockImplementation(async () => {
+    order.push('prepare');
+    return { rooms: [], sql: { op: 'workspace', wsId: WORKSPACE } };
   });
   rpcMock.mockImplementation(async () => {
     order.push('delete');
     return { data: 'deleted', error: null };
   });
-  commitMock.mockImplementation(async () => {
-    order.push('commit');
+  enqueueMock.mockImplementation(async () => {
+    order.push('enqueue');
   });
   const deleted = await deleteWorkspaceForActor(actor(), 'Class');
   expect(deleted.status).toBe(200);
-  expect(order).toEqual(['open', 'delete', 'commit']);
+  expect(order).toEqual(['prepare', 'delete', 'enqueue']);
 
   order.length = 0;
   rpcMock.mockImplementation(async () => {
@@ -121,13 +124,27 @@ it('erases attendance only after the database confirms deletion', async () => {
   });
   const denied = await deleteWorkspaceForActor(actor(), 'Class');
   expect(denied.status).toBe(409);
-  expect(order).toEqual(['open', 'delete']);
-  expect(commitMock).toHaveBeenCalledTimes(1);
-  expect(releaseMock).toHaveBeenCalledTimes(1);
+  expect(order).toEqual(['prepare', 'delete']);
+  expect(enqueueMock).toHaveBeenCalledTimes(1);
+  expect(readPendingMock).not.toHaveBeenCalled();
+});
+
+it('enqueues a confirmed intent when the workspace is already gone', async () => {
+  rpcMock.mockResolvedValue({ data: 'not_found', error: null });
+  readPendingMock.mockResolvedValue({
+    rooms: [],
+    sql: { op: 'workspace', wsId: WORKSPACE },
+    phase: 'confirmed',
+    sqlDone: true,
+  });
+  const deleted = await deleteWorkspaceForActor(actor(), 'Class');
+  expect(deleted.status).toBe(200);
+  expect(deleted.body.code).toBe('deleted');
+  expect(enqueueMock).toHaveBeenCalledOnce();
 });
 
 it('does not delete the workspace when planning fails', async () => {
-  openMock.mockRejectedValue(new Error('timeout'));
+  prepareMock.mockRejectedValue(new Error('timeout'));
   await expect(deleteWorkspaceForActor(actor(), 'Class')).rejects.toThrow(
     'timeout'
   );
@@ -135,7 +152,7 @@ it('does not delete the workspace when planning fails', async () => {
 });
 
 it('reports failure when confirmed erasure fails while attendance is on', async () => {
-  commitMock.mockRejectedValue(new Error('timeout'));
+  enqueueMock.mockRejectedValue(new Error('timeout'));
   const failed = await deleteWorkspaceForActor(actor(), 'Class');
   expect(failed.status).toBe(500);
   expect(failed.body.code).toBe('failed');
