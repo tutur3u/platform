@@ -44,12 +44,8 @@ const serialized = [
   'vercel-production-ai.yaml',
   'vercel-production-apps.yaml',
   'vercel-production-calendar.yaml',
-  'vercel-production-chat.yaml',
-  'vercel-production-cms.yaml',
   'vercel-production-contacts.yaml',
-  'vercel-production-drive.yaml',
   'vercel-production-finance.yaml',
-  'vercel-production-forms.yaml',
   'vercel-production-git.yaml',
   'vercel-production-infrastructure.yaml',
   'vercel-production-inventory.yaml',
@@ -65,9 +61,6 @@ const serialized = [
   'vercel-production-storefront.yaml',
   'vercel-production-tanstack-web.yaml',
   'vercel-production-tasks.yaml',
-  'vercel-production-teach.yaml',
-  'vercel-production-tools.yaml',
-  'vercel-production-track.yaml',
   'vercel-production.yaml',
 ];
 // Exceptions retain environment locks, bounded sandbox cleanup, or paused runtimes.

@@ -62,6 +62,11 @@ const testPaths = [
 ];
 const workspaceManifests = [
   { name: '@tuturuuu/tools', path: 'apps/tools', dependencies: [] },
+  {
+    name: '@tuturuuu/web',
+    path: 'apps/web',
+    dependencies: ['@tuturuuu/tools'],
+  },
 ];
 function decision(input = {}) {
   return JSON.parse(
@@ -72,7 +77,7 @@ function decision(input = {}) {
         `
     import { getWorkflowDecision } from './tuturuuu.ts';
     console.log(JSON.stringify(getWorkflowDecision(${JSON.stringify({
-      workflowName: 'vercel-production-tools.yaml',
+      workflowName: 'vercel-production-platform.yaml',
       eventName: 'push',
       workspaceManifests,
       ...input,
@@ -121,7 +126,7 @@ test('manual dispatch remains open and disabled targets remain disabled', () => 
   assert.equal(
     decision({
       changedFiles: testPaths,
-      ciConfig: { 'vercel-production-tools.yaml': false },
+      ciConfig: { 'vercel-production-platform.yaml': false },
     }).shouldRun,
     false
   );
@@ -151,7 +156,7 @@ test('mixed runtime, unverified tests and build inputs still deploy', () => {
     'bun.lock',
     'package.json',
     'turbo.json',
-    '.github/workflows/vercel-production-tools.yaml',
+    '.github/workflows/vercel-production-platform.yaml',
   ]) {
     const result = decision({ changedFiles: [...testPaths, filePath] });
     assert.equal(result.shouldRun, true, filePath);

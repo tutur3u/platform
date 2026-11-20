@@ -150,32 +150,12 @@
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
-    "vercel-production-chat.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-cms.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
     "vercel-production-contacts.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
-    "vercel-production-drive.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
     "vercel-production-finance.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-forms.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
@@ -261,21 +241,6 @@
   ],
   [
     "vercel-production-tasks.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-teach.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-tools.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-track.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],

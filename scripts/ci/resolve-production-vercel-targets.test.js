@@ -385,7 +385,6 @@ const slotExclusions = [
   ['lettin', 'lettin-cloudflare.yaml', 'apps/lettin/src/app/page.tsx'],
   ['parley', 'parley-cloudflare.yaml', 'apps/parley/src/app/page.tsx'],
   ['colab', 'colab-cloudflare.yaml', 'apps/colab/src/app/page.tsx'],
-  ['track', 'vercel-production-track.yaml', 'apps/track/src/app/page.tsx'],
   ['mind', 'vercel-production-mind.yaml', 'apps/mind/src/app/page.tsx'],
 ];
 
@@ -717,18 +716,13 @@ test('pending platform migrations do not bypass the Contacts publication hold', 
   assert.equal(decisions[1].migrationChangeResult, undefined);
 });
 
-const toolsTarget = [
-  {
-    app: 'tools',
-    appPath: 'apps/tools',
-    packageName: '@tuturuuu/tools',
-    previewWorkflow: 'vercel-preview-tools.yaml',
-    productionWorkflow: 'vercel-production-tools.yaml',
-  },
+const toolsDependency = { additionalWebDependencies: ['@tuturuuu/tools'] };
+const platformTarget = [
+  { productionWorkflow: 'vercel-production-platform.yaml' },
 ];
 
 test('production planner skips verified tests since the deployment marker', () => {
-  const rootDir = createFixtureRoot();
+  const rootDir = createFixtureRoot(toolsDependency);
   const baseSha = initializeGitRepo(rootDir);
   const headSha = commitFile(
     rootDir,
@@ -740,15 +734,15 @@ test('production planner skips verified tests since the deployment marker', () =
     baseSha,
     headSha,
     rootDir,
-    targets: toolsTarget,
+    targets: platformTarget,
   });
   assert.deepEqual(decisions, [
-    { shouldRun: false, workflowName: 'vercel-production-tools.yaml' },
+    { shouldRun: false, workflowName: 'vercel-production-platform.yaml' },
   ]);
 });
 
 test('test-only head does not hide earlier undeployed runtime changes', () => {
-  const rootDir = createFixtureRoot();
+  const rootDir = createFixtureRoot(toolsDependency);
   const baseSha = initializeGitRepo(rootDir);
   commitFile(
     rootDir,
@@ -766,15 +760,15 @@ test('test-only head does not hide earlier undeployed runtime changes', () => {
     baseSha,
     headSha,
     rootDir,
-    targets: toolsTarget,
+    targets: platformTarget,
   });
   assert.deepEqual(decisions, [
-    { shouldRun: true, workflowName: 'vercel-production-tools.yaml' },
+    { shouldRun: true, workflowName: 'vercel-production-platform.yaml' },
   ]);
 });
 
 test('test-only changes cannot close a missing production baseline', () => {
-  const rootDir = createFixtureRoot();
+  const rootDir = createFixtureRoot(toolsDependency);
   initializeGitRepo(rootDir);
   const headSha = commitFile(
     rootDir,
@@ -786,10 +780,10 @@ test('test-only changes cannot close a missing production baseline', () => {
     baseSha: '',
     headSha,
     rootDir,
-    targets: toolsTarget,
+    targets: platformTarget,
   });
   assert.deepEqual(decisions, [
-    { shouldRun: true, workflowName: 'vercel-production-tools.yaml' },
+    { shouldRun: true, workflowName: 'vercel-production-platform.yaml' },
   ]);
 });
 
@@ -875,10 +869,10 @@ test('every other production app retains switchboard dispatch behavior', () => {
     [
       '--eval',
       `
-    import { cloudflareProductionTargets, vercelWorkflowTargets, getWorkflowDecision } from './tuturuuu.ts';
+    import { cloudflareProductionTargets, vercelProductionWorkflowTargets, getWorkflowDecision } from './tuturuuu.ts';
     import { productionPublicationHold } from './scripts/ci/production-publication-policy.ts';
     import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
-    const targets = [...vercelWorkflowTargets, ...cloudflareProductionTargets];
+    const targets = [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets];
     const decisions = await resolveProductionVercelTargets({ rootDir: ${JSON.stringify(rootDir)},
       targets, eventName: 'workflow_dispatch', refName: 'production' });
     for (const d of decisions) {

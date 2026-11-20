@@ -45,23 +45,12 @@ the Tools origin through `apps/web/src/lib/tools-app-url.ts`.
 
 ## CI/CD
 
-The QR generator ships with the Tools app. Preview and production deployments
-use the Tools Vercel workflows:
+The QR generator ships with the Cloudflare Tools Worker. Use the
+[Tools cutover packet](/build/devops/tools-cutover-packet) for qualification
+and rollback.
 
-- `.github/workflows/vercel-preview-tools.yaml`
-- `.github/workflows/vercel-production-tools.yaml`
-
-Both workflows are registered in `tuturuuu.ts` and use the shared
-`ci-check.yml` switchboard with affected-path gating. They require
-environment-scoped Vercel credentials:
-
-- preview environment: `vercel-preview-tools`
-- production environment: `vercel-production-tools`
-- project secret: `VERCEL_TOOLS_PROJECT_ID`
-- shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
-
-The app-specific project secret should live in those GitHub Environments, not in
-workflow-level `env`.
+The manual Vercel preview workflow uses the `vercel-preview-tools` GitHub
+Environment with `VERCEL_TOOLS_PROJECT_ID`, `VERCEL_TOKEN` and `VERCEL_ORG_ID`.
 
 ## Validation
 

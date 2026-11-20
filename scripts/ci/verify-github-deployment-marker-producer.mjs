@@ -38,6 +38,14 @@ const TRUSTED_DEPLOYMENT_MARKER_CREATOR = Object.freeze({
   type: 'Bot',
 });
 
+const LEGACY_VERCEL_PLANNER_CONTRACTS = Object.freeze([
+  '76197c03e41dca432e53619bc384cfdd1c879576',
+  '45d2697d42ff3a645b2d5b8722342d5c64dd08ef',
+  '0d1e108c5cce714a6628816b40cb506c87769ace',
+]);
+// This planner omits retired Vercel jobs and retains the platform producer.
+const CURRENT_PLANNER_CONTRACT = '8c90988f9299c5c28d9f49049077a0b93b225b3d';
+
 const PRODUCTION_PLATFORM = {
   environment: 'vercel-production-platform',
   markerWorkflowName: 'vercel-production-platform.yaml',
@@ -57,13 +65,7 @@ const PRODUCTION_PLATFORM = {
   contracts: [
     [
       '.github/workflows/vercel-production.yaml',
-      [
-        '76197c03e41dca432e53619bc384cfdd1c879576',
-        // The Tasks job calls its native publisher. Platform proof is unchanged.
-        '45d2697d42ff3a645b2d5b8722342d5c64dd08ef',
-        // The Tasks job forwards secrets to its publisher. Platform proof is unchanged.
-        '0d1e108c5cce714a6628816b40cb506c87769ace',
-      ],
+      [...LEGACY_VERCEL_PLANNER_CONTRACTS, CURRENT_PLANNER_CONTRACT],
     ],
     [
       '.github/workflows/vercel-production-platform.yaml',
@@ -432,7 +434,7 @@ export async function verifyMarker({
   async function checkContracts(producerHead) {
     if (sourceContracts.has(producerHead))
       return sourceContracts.get(producerHead);
-    let producerWorkflow;
+    let producerPlanner;
     for (const [path, allowed] of profile.contracts) {
       const unique = new Set();
       for (const revision of new Set([source, producerHead])) {
@@ -446,8 +448,8 @@ export async function verifyMarker({
           'unknown-producer-contract'
         );
         unique.add(entry.sha);
-        if (path === profile.calleeWorkflowPath && revision === producerHead)
-          producerWorkflow = entry.sha;
+        if (path === profile.callerWorkflowPath && revision === producerHead)
+          producerPlanner = entry.sha;
       }
       for (const expected of unique) {
         const { data: blob } = await get(`${base}/git/blobs/${expected}`);
@@ -472,10 +474,10 @@ export async function verifyMarker({
         assert(digest === expected, 'contract-blob-hash');
       }
     }
-    sourceContracts.set(producerHead, producerWorkflow);
-    return producerWorkflow;
+    sourceContracts.set(producerHead, producerPlanner);
+    return producerPlanner;
   }
-  await checkContracts(callerRun.head_sha);
+  const producerPlanner = await checkContracts(callerRun.head_sha);
   setPhase(PHASE.JOBS);
   const callerJobs = await inventory(
     `${base}/actions/runs/${p.runId}/attempts/${p.runAttempt}/jobs`,
@@ -498,7 +500,10 @@ export async function verifyMarker({
       ),
     'planner-attempt-binding'
   );
-  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion);
+  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion, {
+    historicalPlanner:
+      LEGACY_VERCEL_PLANNER_CONTRACTS.includes(producerPlanner),
+  });
   assert(classification.ok, `planner-jobs-${classification.reason}`);
   if (callerRun.conclusion === 'failure') {
     const recovery = checkProductionMigrationRecovery({

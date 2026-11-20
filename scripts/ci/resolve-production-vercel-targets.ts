@@ -2,7 +2,7 @@ import { appendFileSync } from 'node:fs';
 import {
   cloudflareProductionTargets,
   getWorkflowDecision,
-  vercelWorkflowTargets,
+  vercelProductionWorkflowTargets,
   type WorkspaceManifest,
 } from '../../tuturuuu.ts';
 import { productionPublicationHold } from './production-publication-policy.ts';
@@ -90,7 +90,10 @@ export async function resolveProductionVercelTargets({
   packageResume = false,
   expectedSha,
   rootDir,
-  targets = [...vercelWorkflowTargets, ...cloudflareProductionTargets],
+  targets = [
+    ...vercelProductionWorkflowTargets,
+    ...cloudflareProductionTargets,
+  ],
   workspaceManifests = readWorkspaceManifests(rootDir),
 }: ResolveProductionTargetsInput): Promise<ProductionTargetDecision[]> {
   // Only exact-production package recovery keeps commit-driven selection.

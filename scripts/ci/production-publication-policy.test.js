@@ -32,6 +32,48 @@ const apps = [
   'mastermind',
   'contacts',
 ];
+test('preview-only apps remain scoped and are absent from the production plan', async () => {
+  const {
+    getWorkflowDecision,
+    vercelProductionWorkflowTargets,
+    vercelWorkflowTargets,
+  } = await import('../../tuturuuu.ts');
+  const previewOnly = vercelWorkflowTargets.filter(
+    ({ productionWorkflow }) => productionWorkflow === null
+  );
+  assert.ok(previewOnly.length > 0);
+  const { productionPublicationHold } =
+    await import('./production-publication-policy.ts');
+  const planner = readWorkflow('vercel-production.yaml');
+  for (const { app, appPath, packageName, previewWorkflow } of previewOnly) {
+    assert.ok(
+      !vercelProductionWorkflowTargets.some((target) => target.app === app)
+    );
+    assert.ok(!Object.hasOwn(planner.jobs, `deploy-${app}`));
+    assert.match(
+      productionPublicationHold(`vercel-production-${app}.yaml`),
+      /publisher retired/
+    );
+    assert.ok(
+      !existsSync(
+        join(repoRoot, '.github/workflows', `vercel-production-${app}.yaml`)
+      )
+    );
+    assert.ok(existsSync(join(repoRoot, '.github/workflows', previewWorkflow)));
+    const decide = (file) =>
+      getWorkflowDecision({
+        changedFiles: [file],
+        eventName: 'push',
+        workflowName: previewWorkflow,
+        workspaceManifests: [
+          { name: packageName, path: appPath, dependencies: [] },
+        ],
+      }).shouldRun;
+    assert.equal(decide(`${appPath}/src/app/page.tsx`), true, previewWorkflow);
+    assert.equal(decide('apps/web/src/unrelated.ts'), false, previewWorkflow);
+  }
+});
+
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -214,11 +256,15 @@ for (const app of apps.filter((name) => name !== 'mind')) {
         assert.equal(decisions[index].shouldRun, false);
         assert.equal(decisions[index].held, true);
         assert.equal(decisions[index].changeResult.source, 'publication-hold');
-        assert.match(decisions[index].reason, heldReason);
+        const expectedReason =
+          workflow === 'vercel-production-forms.yaml'
+            ? /publisher retired/
+            : heldReason;
+        assert.match(decisions[index].reason, expectedReason);
         const result = runPolicy(root, workflow);
         assert.equal(result.output, 'allowed=false\n');
-        assert.match(result.stdout, heldReason);
-        assert.match(result.summary, heldReason);
+        assert.match(result.stdout, expectedReason);
+        assert.match(result.summary, expectedReason);
       }
     });
   }
@@ -288,6 +334,7 @@ for (const app of apps.filter((name) => name !== 'mind')) {
       'calendar',
       'mail',
       'apps',
+      'forms',
       'workspace',
       'lms',
     ].includes(app)
@@ -430,9 +477,11 @@ test('Git admission opens its route-free upload and adds no Cloudflare publisher
 
 const publishers = [
   ...apps
-    // LMS and Workspace have no Vercel publisher.
+    // Some protected apps publish only on Cloudflare.
     // Git's Vercel publisher predates the policy gate and stays outside it.
-    .filter((app) => !['lms', 'mastermind', 'workspace', 'git'].includes(app))
+    .filter(
+      (app) => !['forms', 'git', 'lms', 'mastermind', 'workspace'].includes(app)
+    )
     .map((app) => ({
       workflow: `vercel-production-${app}.yaml`,
       job: 'Deploy-Production',
@@ -497,8 +546,8 @@ test('all unrelated real production targets retain planner selection with invali
     [
       '--eval',
       `
-    import { cloudflareProductionTargets, vercelWorkflowTargets } from './tuturuuu.ts';
-    console.log(JSON.stringify([...vercelWorkflowTargets, ...cloudflareProductionTargets]
+    import { cloudflareProductionTargets, vercelProductionWorkflowTargets } from './tuturuuu.ts';
+    console.log(JSON.stringify([...vercelProductionWorkflowTargets, ...cloudflareProductionTargets]
       .filter(({app}) => !${JSON.stringify(apps)}.includes(app))
       .map(({productionWorkflow}) => productionWorkflow)));
   `,

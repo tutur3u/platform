@@ -34,14 +34,10 @@ and public-discovery expectations.
 
 ## Staging
 
-The TanStack Start + Void candidate (`build:cloudflare`) is staging-only. Staging runs on Cloudflare
-alone, at `tools.tutur3u.com` (the staging counterpart of
-`tools.tuturuuu.com`); it does not use Vercel previews or `*.workers.dev`.
-The Worker serves `tools.tuturuuu.com`, `tools.tutur3u.com` and the
-`tuturuuu.com/tools` mount, and answers every other host with 404
-(`mounts.unknownHost: 'reject'` in `start-bridge.config.ts`, from which the
-codemod derives `workers_dev: false`). Production hosts and the Vercel
-production deploy are unchanged until a reviewed cutover PR.
+The production Worker serves `tools.tuturuuu.com` and the
+`tuturuuu.com/tools` mount. The staging profile accepts `tools.tutur3u.com`
+when the staging route is attached. The Worker rejects unlisted hosts and
+keeps `workers_dev` disabled.
 
 Links to other Tuturuuu apps come from the build-time `NEXT_PUBLIC_*_APP_URL`
 and internal-domain inputs, never from hard-coded production hosts, so a

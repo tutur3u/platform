@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-10-31"
+updatedAt: "2026-11-20"
 audience: developers
 ---
 
@@ -186,8 +186,9 @@ No package version, dependency resolution or published changelog is rewritten.
 - Hosted `apps/web` production deploys run through
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.
-- `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
-- `apps/tools` (which serves the public QR generator at `/qr`) production deploys are handled by `vercel-production-tools.yaml`.
+- Chat, CMS, Drive, Forms, Teach, Tools and Track publish production builds on
+  Cloudflare. Their existing Vercel deployments are retained for rollback. See
+  [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project).
 - Each production app uses a workflow-and-branch concurrency group whose
   `cancel-in-progress` predicate matches only `production` push events, so the
   newest production SHA remains deployable without letting `main` commits or

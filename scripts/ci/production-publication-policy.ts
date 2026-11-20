@@ -6,6 +6,7 @@ import {
 } from '../../tuturuuu.ci.ts';
 import {
   cloudflareProductionTargets,
+  vercelProductionWorkflowTargets,
   vercelWorkflowTargets,
 } from '../../tuturuuu.ts';
 
@@ -43,8 +44,13 @@ for (const app of Object.keys(protectedSurfaces)) {
   protectedWorkflows.set(`vercel-production-${app}.yaml`, app);
   protectedWorkflows.set(`${app}-cloudflare.yaml`, app);
 }
+const retiredVercelWorkflows = new Set(
+  vercelWorkflowTargets
+    .filter(({ productionWorkflow }) => productionWorkflow === null)
+    .map(({ app }) => `vercel-production-${app}.yaml`)
+);
 const knownWorkflows = new Set<string>(
-  [...vercelWorkflowTargets, ...cloudflareProductionTargets].map(
+  [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets].map(
     ({ productionWorkflow }) => productionWorkflow
   )
 );
@@ -110,7 +116,7 @@ function switchboardHold(workflowName: string): string | undefined {
 
 function exclusionHold(workflowName: string): string | undefined {
   const app =
-    [...vercelWorkflowTargets, ...cloudflareProductionTargets].find(
+    [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets].find(
       (entry) => entry.productionWorkflow === workflowName
     )?.app ?? protectedWorkflows.get(workflowName);
   if (!app || !Object.hasOwn(productionAppExclusions, app)) return undefined;
@@ -124,6 +130,8 @@ function exclusionHold(workflowName: string): string | undefined {
 export function productionPublicationHold(
   workflowName: string
 ): string | undefined {
+  if (retiredVercelWorkflows.has(workflowName))
+    return 'held: Vercel production publisher retired';
   // The app-id deny-list wins over admission, markers, and dispatch.
   const excluded = exclusionHold(workflowName);
   if (excluded) return excluded;

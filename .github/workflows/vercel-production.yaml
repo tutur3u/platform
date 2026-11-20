@@ -146,26 +146,6 @@ jobs:
     uses: ./.github/workflows/vercel-production-calendar.yaml
     secrets: inherit
 
-  deploy-chat:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-chat.yaml')
-    uses: ./.github/workflows/vercel-production-chat.yaml
-    secrets: inherit
-
-  deploy-cms:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-cms.yaml')
-    uses: ./.github/workflows/vercel-production-cms.yaml
-    secrets: inherit
-
   deploy-contacts:
     needs: [plan, deploy-platform]
     if: >-
@@ -176,16 +156,6 @@ jobs:
     uses: ./.github/workflows/vercel-production-contacts.yaml
     secrets: inherit
 
-  deploy-forms:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-forms.yaml')
-    uses: ./.github/workflows/vercel-production-forms.yaml
-    secrets: inherit
-
   deploy-git:
     needs: [plan, deploy-platform]
     if: >-
@@ -194,16 +164,6 @@ jobs:
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
       contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-git.yaml')
     uses: ./.github/workflows/vercel-production-git.yaml
-    secrets: inherit
-
-  deploy-drive:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-drive.yaml')
-    uses: ./.github/workflows/vercel-production-drive.yaml
     secrets: inherit
 
   deploy-finance:
@@ -353,34 +313,4 @@ jobs:
     # Reusable workflows only resolve tasks-production environment secrets
     # (TASKS_CLOUDFLARE_API_TOKEN) when the caller forwards secrets; every
     # secret reference inside tasks-cloudflare.yaml stays production-gated.
-    secrets: inherit
-
-  deploy-teach:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-teach.yaml')
-    uses: ./.github/workflows/vercel-production-teach.yaml
-    secrets: inherit
-
-  deploy-tools:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tools.yaml')
-    uses: ./.github/workflows/vercel-production-tools.yaml
-    secrets: inherit
-
-  deploy-track:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-track.yaml')
-    uses: ./.github/workflows/vercel-production-track.yaml
     secrets: inherit

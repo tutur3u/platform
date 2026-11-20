@@ -35,38 +35,24 @@ const targetApps = [
   ['learn', '@tuturuuu/learn'],
 ];
 
-const vercelWorkflows = [
-  'ai',
-  'apps',
-  'calendar',
+const previewOnlyVercelApps = new Set([
   'chat',
   'cms',
-  'contacts',
   'drive',
-  'finance',
   'forms',
-  'git',
-  'inventory',
-  'infrastructure',
-  'storefront',
-  'mail',
-  'meet',
-  'mind',
-  'nova',
-  'pay',
-  'platform',
-  'tanstack-web',
-  'tools',
-  'rewise',
-  'shortener',
-  'tasks',
   'teach',
+  'tools',
   'track',
-  'learn',
-].flatMap((app) => [
-  `vercel-preview-${app}.yaml`,
-  `vercel-production-${app}.yaml`,
 ]);
+
+const vercelWorkflows = ['platform', ...targetApps.map(([app]) => app)].flatMap(
+  (app) => [
+    `vercel-preview-${app}.yaml`,
+    ...(previewOnlyVercelApps.has(app)
+      ? []
+      : [`vercel-production-${app}.yaml`]),
+  ]
+);
 
 function writePackageJson(rootDir, workspacePath, packageJson) {
   const packageDir = path.join(rootDir, workspacePath);
@@ -87,13 +73,14 @@ function workspaceDependencies(names) {
   return Object.fromEntries(names.map((name) => [name, 'workspace:*']));
 }
 
-function createFixtureRoot() {
+function createFixtureRoot({ additionalWebDependencies = [] } = {}) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), 'workflow-config-'));
 
   writePackageJson(rootDir, 'apps/web', {
     dependencies: workspaceDependencies([
       '@tuturuuu/internal-api',
       '@tuturuuu/ui',
+      ...additionalWebDependencies,
     ]),
     name: '@tuturuuu/web',
   });

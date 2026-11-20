@@ -1,7 +1,7 @@
 ---
 title: "Native Start migration runbook"
 description: "How each web app except apps/web moves to TanStack Start + Void + Vite+ on Cloudflare Workers: ownership, the bridge, basePath readiness, acceptance gates, held publication, direct cutover with an instant rollback, and the post-deploy watch."
-updatedAt: '2026-10-25'
+updatedAt: '2026-11-20'
 audience: developers
 ---
 
@@ -264,6 +264,27 @@ the gates above pass. There are no staged canaries or traffic percentages.
 Rolling back an app restores the captured routing to the immutable prior
 deployment in one step. Never delete the prior deployment or its routing record until the native
 runtime has served all traffic through a full release cycle.
+
+### Retiring an app's Vercel project
+
+Verify all production subdomains, custom domains, legacy redirects and active
+gateway mounts against the Cloudflare route table and Vercel project domains.
+Check the first response from each host and the app's build-info endpoint.
+`cf-ray` identifies Cloudflare's edge. A response with `x-vercel-id` still
+depends on Vercel. Confirm replacement ownership for every scheduled job.
+
+1. Remove the app's `vercel-production-<app>.yaml`, its planner job in
+   `vercel-production.yaml` and its switchboard line. Set the app's
+   `productionWorkflow` to `null` in `vercelWorkflowTargets` to retain the
+   preview and its affected-path checks.
+2. Verify that the production ref contains the change and Git-triggered Vercel
+   deployments are disabled. Active apps set `git.deploymentEnabled: false` in
+   their `vercel.json`. Keep the immutable Vercel deployment serving as the
+   rollback target and record the provider deployment ID and routing snapshot.
+3. Keep the Vercel project and its fallback for 14 consecutive stable days
+   after retirement begins. Restart the window after a material regression.
+   Obtain approval before deleting the project and retiring its preview
+   workflow and environment secrets.
 
 ### Rewise anonymous smoke diagnostics
 

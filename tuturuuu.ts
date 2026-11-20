@@ -2,7 +2,6 @@ import { getMobileBuildDecision } from './scripts/ci/mobile-build-selection.ts';
 import { isVerifiedProductionTestPath } from './scripts/ci/production-test-only-paths.ts';
 import { buildWorkspaceDependencyClosure } from './scripts/ci/workspace-dependency-closure.ts';
 import { ci } from './tuturuuu.ci.ts';
-
 export { ci } from './tuturuuu.ci.ts';
 
 export type WorkflowDecision = {
@@ -28,24 +27,21 @@ export type WorkflowDecisionInput = {
   workspaceManifests?: readonly WorkspaceManifest[];
 };
 
-type VercelWorkflowTargetBase = {
+export type VercelWorkflowTarget = {
   app: string;
   appPath: string;
   packageName: string;
   previewWorkflow: string;
-  productionWorkflow: string;
-};
-
-export type VercelWorkflowTarget = VercelWorkflowTargetBase &
-  (
-    | {
-        buildInfoApp: string;
-        framework: 'next';
-      }
-    | {
-        framework: 'tanstack-start';
-      }
-  );
+  productionWorkflow: string | null;
+} & (
+  | {
+      buildInfoApp: string;
+      framework: 'next';
+    }
+  | {
+      framework: 'tanstack-start';
+    }
+);
 
 export const vercelWorkflowTargets = [
   {
@@ -82,7 +78,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/chat',
     previewWorkflow: 'vercel-preview-chat.yaml',
-    productionWorkflow: 'vercel-production-chat.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'cms',
@@ -91,7 +87,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/cms',
     previewWorkflow: 'vercel-preview-cms.yaml',
-    productionWorkflow: 'vercel-production-cms.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'drive',
@@ -100,7 +96,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/drive',
     previewWorkflow: 'vercel-preview-drive.yaml',
-    productionWorkflow: 'vercel-production-drive.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'finance',
@@ -198,7 +194,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/tools',
     previewWorkflow: 'vercel-preview-tools.yaml',
-    productionWorkflow: 'vercel-production-tools.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'rewise',
@@ -233,7 +229,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/teach',
     previewWorkflow: 'vercel-preview-teach.yaml',
-    productionWorkflow: 'vercel-production-teach.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'track',
@@ -242,7 +238,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/track',
     previewWorkflow: 'vercel-preview-track.yaml',
-    productionWorkflow: 'vercel-production-track.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'learn',
@@ -278,7 +274,7 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/forms',
     previewWorkflow: 'vercel-preview-forms.yaml',
-    productionWorkflow: 'vercel-production-forms.yaml',
+    productionWorkflow: null,
   },
   {
     app: 'git',
@@ -412,11 +408,15 @@ const scopedVercelAffectingPaths = [
   },
 ] as const;
 
+export const vercelProductionWorkflowTargets = vercelWorkflowTargets.filter(
+  (target) => target.productionWorkflow !== null
+);
 const vercelTargetsByWorkflow = new Map(
-  vercelWorkflowTargets.flatMap((target) => [
-    [target.previewWorkflow, target],
-    [target.productionWorkflow, target],
-  ])
+  vercelWorkflowTargets.flatMap((target) =>
+    [target.previewWorkflow, target.productionWorkflow]
+      .filter((workflow) => workflow !== null)
+      .map((workflow) => [workflow, target] as const)
+  )
 );
 const cloudflareTargetsByWorkflow = new Map(
   cloudflareProductionTargets.map((target) => [

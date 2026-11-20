@@ -9,8 +9,8 @@ Teach (`apps/teach`) runs as a native TanStack Start app on Vite+ and Void throu
 [`@tuturuuu/start-bridge`](/build/devops/start-bridge), produced by the
 [conversion codemod](/build/devops/start-bridge-codemod). All 44 App Router pages
 render unchanged through the generic RSC adapter and every route handler is served
-by the bridge API registry. `next build` (package `build`) remains the Vercel path;
-production publication stays held in `tuturuuu.ci.ts` until a cutover PR.
+by the bridge API registry. The production Worker serves both Teach URLs.
+The last Vercel deployment is retained as the rollback target.
 
 ## Cutover packet
 

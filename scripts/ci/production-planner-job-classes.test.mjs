@@ -207,6 +207,19 @@ test('caller ids parse bare skipped and nested job names', () => {
   assert.equal(plannerCaller('deploy-ai /'), null);
 });
 
+test('retired callers remain classified only for historical producers', () => {
+  const historical = jobs({ 'deploy-tools / Deploy-Production': 'failure' });
+  assert.equal(classifyPlannerJobs(historical, 'failure').ok, false);
+  const result = classifyPlannerJobs(historical, 'failure', {
+    historicalPlanner: true,
+  });
+  assert.equal(result.ok, true);
+  assert.deepEqual(
+    result.held.map(({ app }) => app),
+    ['deploy-tools']
+  );
+});
+
 test('class table lists exactly the planner caller jobs', () => {
   const callers = [...plannerSource.matchAll(/^ {2}([a-z0-9-]+):$/gm)]
     .map((match) => match[1])

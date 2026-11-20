@@ -45,7 +45,6 @@ const vercelInstallCommand =
 
 test('all 27 active Vercel projects preserve their exact Turbo build recipes', () => {
   assert.equal(Object.keys(activeVercelProjects).length, 27);
-  assert.equal(vercelWorkflows.length, 54);
 
   for (const [project, workspace] of Object.entries(activeVercelProjects)) {
     const appDirectory = project === 'platform' ? 'web' : project;
@@ -93,11 +92,12 @@ test('all 27 active Vercel projects preserve their exact Turbo build recipes', (
       `${project} must preserve the dependency refresh override inside Vercel`
     );
 
-    for (const target of ['preview', 'production']) {
-      const workflowName = `vercel-${target}-${project}.yaml`;
+    const previewWorkflow = `vercel-preview-${project}.yaml`;
+    assert.ok(vercelWorkflows.includes(previewWorkflow));
+    for (const workflowName of vercelWorkflows.filter((name) =>
+      name.endsWith(`-${project}.yaml`)
+    )) {
       const workflow = readWorkflow(workflowName);
-
-      assert.ok(vercelWorkflows.includes(workflowName));
       assert.match(
         workflow,
         /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/u

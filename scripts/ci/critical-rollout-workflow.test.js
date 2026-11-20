@@ -1,15 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
+const { vercelWorkflows } = require('./workflow-config-test-helpers.js');
 const expression = (value) => `$${'{'}{ ${value} }}`;
-const critical = [
-  'platform',
-  'finance',
-  'inventory',
-  'contacts',
-  'cms',
-  'tasks',
-];
+const critical = ['platform', 'finance', 'inventory', 'contacts', 'tasks'];
 for (const app of critical) {
   test(`${app} stages and verifies source/API behavior before domains or deployment markers`, () => {
     const workflow = readWorkflow(`vercel-production-${app}.yaml`);
@@ -60,7 +54,17 @@ test('all satellite job conditions block on failed, canceled or unpromoted selec
       job.uses?.startsWith('./.github/workflows/vercel-production-') &&
       !job.uses.endsWith('platform.yaml')
   );
-  assert.ok(satellites.length >= 25);
+  assert.deepEqual(
+    satellites.map(({ uses }) => uses.split('/').pop()).sort(),
+    vercelWorkflows
+      .filter(
+        (name) =>
+          name.startsWith('vercel-production-') &&
+          name !== 'vercel-production-platform.yaml' &&
+          name !== 'vercel-production-tasks.yaml'
+      )
+      .sort()
+  );
   for (const job of satellites) {
     assert.deepEqual(job.needs, ['plan', 'deploy-platform']);
     const evaluate = new Function(

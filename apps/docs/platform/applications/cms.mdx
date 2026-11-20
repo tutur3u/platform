@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
 description: 'Dedicated Tuturuuu CMS app for site editing, preview, publishing, media, and team access.'
-updatedAt: '2026-08-10'
+updatedAt: '2026-11-20'
 audience: users
 ---
 
@@ -144,7 +144,7 @@ actions.
 - CMS asset delivery must respect the workspace Drive provider. Supabase assets may use signed image transforms, while R2-backed assets should resolve through the workspace storage provider signed-read path and ignore Supabase-only transform parameters.
 - CMS asset rows may only store workspace storage paths under `external-projects/`; asset delivery and cleanup must not operate on paths from other workspace modules such as Drive or finance.
 - `GET /api/v1/workspaces/{wsId}/external-projects/assets/{assetId}` redirects to an asset's `source_url` only when it is an `https` URL on the exact platform storage origin (`SUPABASE_SERVER_URL` or the public Supabase URL; no userinfo, no other port), its path starts with `/storage/v1/object/` or `/storage/v1/render/image/`, its path has no encoded `/` or `\` (`%2F`, `%5C`), and its query has no signed-URL `token` parameter in any letter case. Any other `source_url` (another host or path, `http`, `javascript:`, `data:`, protocol-relative or `user@host` forms, signed URLs) is never a redirect target, also for authorized reads of unpublished assets: the route serves the asset's stored object instead, and returns `404` only when there is none. Sites that link third-party media read `source_url` from the delivery payload, or import the file into workspace storage. Coverage: `apps/web/src/lib/external-projects/asset-redirect-policy.test.ts` and the route's `route-source-redirect.test.ts`.
-- CMS does not register the shared offline service worker or emit the shared web app manifest. It is a Vercel-hosted satellite whose unmatched, Web-owned protected API families fall back to `apps/web`, so PWA routes owned by `apps/web` must not be advertised from `cms.tuturuuu.com`.
+- CMS does not register the shared offline service worker or emit the shared web app manifest. Its unmatched, Web-owned protected API families fall back to `apps/web`, so PWA routes owned by `apps/web` must not be advertised from `cms.tuturuuu.com`.
 - Library taxonomy edits should stay lightweight: category/tag assignment, creation, and removal can happen directly from the library dialog, while deeper editorial changes still live in the entry sidebar taxonomy card.
 
 ## Local Development
@@ -154,9 +154,9 @@ actions.
 
 ## CI/CD
 
-- Preview deployments run through `.github/workflows/vercel-preview-cms.yaml`.
-- Production deployments run through `.github/workflows/vercel-production-cms.yaml`.
-- Both workflows are gated through `ci-check.yml` and the `tuturuuu.ts` workflow allowlist.
+- Production runs on the CMS Cloudflare Worker; Vercel receives no production deploys.
+- Manual preview deployments run through `.github/workflows/vercel-preview-cms.yaml`
+  until the Vercel project is decommissioned.
 - The Vercel project must be configured through the `VERCEL_CMS_PROJECT_ID` repository secret.
 
 ## Native Start candidate
