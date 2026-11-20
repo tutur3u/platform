@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'bun:test';
 import {
   createProgrammingDocument,
   Y,
 } from '../../../packages/realtime/src/collaboration';
+import { REALTIME_SERVICE_USER_AGENT } from '../../../packages/realtime/src/core/service-request';
 import { CollaborationRoomDurableObject } from './collaboration-room-do';
 
+const checkpointOverride = 'https://checkpoint.example.invalid';
 const metadata = {
   ownerId: 'owner',
   resourceId: 'project',
@@ -15,7 +17,7 @@ const metadata = {
   checkpointHash: null,
   fileHashes: {},
 };
-function fixture() {
+function fixture(platformOrigin: string | null = checkpointOverride) {
   const doc = createProgrammingDocument(
     [{ path: 'main.ts', content: 'retained' }],
     'bun main.ts'
@@ -26,6 +28,7 @@ function fixture() {
   ]);
   doc.destroy();
   const operations = { reads: 0, writes: 0, alarms: 0, provider: 0 };
+  const requests: { url: string; init: RequestInit }[] = [];
   let failReservation = false;
   let failDocument = false;
   let now = 1_800_000_000_000;
@@ -60,8 +63,9 @@ function fixture() {
   const originalFetch = globalThis.fetch;
   Date.now = () => now;
   let succeeds = false;
-  globalThis.fetch = (async () => {
+  globalThis.fetch = (async (url: URL | string, init: RequestInit) => {
     operations.provider++;
+    requests.push({ url: String(url), init });
     now += providerDelay;
     if (disconnectOnProvider) sockets.splice(0);
     if (connectOnProvider)
@@ -79,11 +83,14 @@ function fixture() {
   return {
     values,
     operations,
+    requests,
     room: () =>
       new CollaborationRoomDurableObject(state, {
         COLLABORATION_ROOM: {} as DurableObjectNamespace,
         MEET_REALTIME_TOKEN_SECRET: 'disposable-fixture-secret',
-        PLATFORM_API_BASE_URL: 'https://checkpoint.example.invalid',
+        ...(platformOrigin === null
+          ? {}
+          : { PLATFORM_API_BASE_URL: platformOrigin }),
       }),
     advance: (ms: number) => {
       now += ms;
@@ -119,6 +126,35 @@ function fixture() {
     },
   };
 }
+
+for (const [origin, expected] of [
+  [null, 'https://tuturuuu.com'],
+  [checkpointOverride, checkpointOverride],
+] as const) {
+  test(`Drive checkpoints use ${origin ? 'the configured origin' : 'the public platform by default'}`, async () => {
+    const f = fixture(origin);
+    try {
+      f.succeed();
+      await f.room().alarm();
+      assert.equal(f.requests.length, 1);
+      const request = f.requests[0]!;
+      assert.equal(
+        request.url,
+        `${expected}/api/v1/realtime/programming/checkpoint`
+      );
+      const headers = new Headers(request.init.headers);
+      assert.equal(headers.get('user-agent'), REALTIME_SERVICE_USER_AGENT);
+      assert.match(headers.get('authorization') ?? '', /^Bearer \S+\.\S+$/);
+      assert.equal(headers.get('content-type'), 'application/json');
+      assert.equal(request.init.method, 'POST');
+      assert.equal(request.init.redirect, 'manual');
+      assert.equal((f.values.get('metadata') as typeof metadata).revision, 1);
+    } finally {
+      f.restore();
+    }
+  });
+}
+
 test('offline retries stop after three durable reservations across restarts and duplicates', async () => {
   const f = fixture();
   try {

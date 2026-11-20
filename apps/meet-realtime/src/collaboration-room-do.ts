@@ -538,6 +538,10 @@ export class CollaborationRoomDurableObject implements DurableObject {
           : Math.max(Date.now() + 1, retry.nextAt)
       );
   }
+  /** Unset bindings use the public platform origin, matching document checkpoints. */
+  private platformApiBaseUrl() {
+    return this.env.PLATFORM_API_BASE_URL ?? 'https://tuturuuu.com';
+  }
   private checkpoint() {
     this.checkpointing ??= this.doCheckpoint().finally(() => {
       this.checkpointing = null;
@@ -566,8 +570,6 @@ export class CollaborationRoomDurableObject implements DurableObject {
       this.dirty = false;
       return;
     }
-    if (!this.env.PLATFORM_API_BASE_URL)
-      throw new Error('Drive checkpoint endpoint missing');
     const snapshot = programmingDocumentSnapshot(this.doc);
     const digest = Buffer.from(
       await crypto.subtle.digest(
@@ -612,8 +614,6 @@ export class CollaborationRoomDurableObject implements DurableObject {
     runId?: string,
     runnerId?: string
   ) {
-    if (!this.env.PLATFORM_API_BASE_URL)
-      throw new Error('Checkpoint endpoint missing');
     const hashes = await this.fileHashes(snapshot.files);
     const token = signRealtimePayload(
       {
@@ -633,7 +633,7 @@ export class CollaborationRoomDurableObject implements DurableObject {
       },
       this.env.MEET_REALTIME_TOKEN_SECRET
     );
-    const base = new URL(this.env.PLATFORM_API_BASE_URL);
+    const base = new URL(this.platformApiBaseUrl());
     if (
       base.protocol !== 'https:' &&
       !['localhost', '127.0.0.1'].includes(base.hostname)

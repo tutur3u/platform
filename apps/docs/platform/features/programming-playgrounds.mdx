@@ -117,8 +117,14 @@ the retry budget. Viewer requests cannot recover or overwrite it. Active signed
 connections retain their existing checkpoint and ticket-expiry behavior; this
 offline bound is not a platform spending cap.
 
+Programming checkpoints post to `PLATFORM_API_BASE_URL`. When that binding is
+unset they use `https://tuturuuu.com`, the same public origin as meeting
+document checkpoints. Local Workers pass an explicit loopback origin instead.
+
 Regression coverage: `collaboration-retry-budget.test.ts` counts provider/storage
 operations through failures, duplicates, restarts, deadlines and owner recovery.
+It also checks the public origin default, an explicit origin, and the service
+User-Agent on the Drive request.
 The isolated Worker/SQLite fixture reconstructs handlers against real persistence
 and invokes alarm logic explicitly; hosted alarm delivery and Drive remain separate
 acceptance evidence.
