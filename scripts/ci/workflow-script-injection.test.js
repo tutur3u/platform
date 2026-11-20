@@ -46,7 +46,7 @@ const acceptedOutputInterpolations = {
     'steps.stage_deployment.outputs.url',
   ],
 };
-for (const app of ['cms', 'contacts', 'finance', 'inventory', 'tasks']) {
+for (const app of ['contacts', 'finance', 'inventory', 'tasks']) {
   acceptedOutputInterpolations[`vercel-production-${app}.yaml`] = [
     'steps.stage_deployment.outputs.url',
   ];
