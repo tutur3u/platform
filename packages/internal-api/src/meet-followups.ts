@@ -28,6 +28,7 @@ export type MeetFollowupInput = {
   requestId: string;
   startedAt: number;
   kind: 'task' | 'event';
+  source?: 'manual';
   title: string;
   description: string;
   workspaceId: string;

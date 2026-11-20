@@ -12,6 +12,12 @@ review a suggested follow-up meeting as a calendar event, or choose **Reserve ti
 for this** to schedule work on a task. The original owner and scheduling wording
 remain visible. Nothing is created when notes are generated or opened.
 
+A Meet host can also choose **Create a follow-up task** on meeting details.
+The review starts with a blank title and description and uses the same workspace,
+board, list, assignee and deadline controls. The task includes a link to the
+source meeting. Manual tasks are available when AI notes are disabled or absent.
+The host must still have permission to create tasks in the chosen destination.
+
 Calendar suggestions are included in newly generated notes. Older saved notes still
 work and expose their existing action items. Dates resolve against the saved meeting start and supplied timezone. Unspecified dates, times, durations and owners
 stay unspecified; incomplete transcripts remain visibly marked.
@@ -73,8 +79,8 @@ fail after a successful write, so the server never automatically retries creatio
 
 ## Verification
 
-Run the Meet meeting-ai tests, shared AI meeting-generation tests, internal API build,
-`bun validate`, and the actual Meet build. Use `NODE_ENV=test` for tests when the shell
+Run the focused Meet and Meet Core follow-up tests and `bun check:changed`.
+The applicable Meet and internal API build checks run in exact-commit CI. Use `NODE_ENV=test` for tests when the shell
 inherits production mode. Verify authenticated task assignment, destination and
 calendar timestamps in a dedicated test workspace before claiming production
 end-to-end coverage. These changes require no database migration.

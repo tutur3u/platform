@@ -4031,6 +4031,7 @@
       "input_tokens": "Input tokens",
       "join_notice": "Live transcription is active. Audio shared in this call is sent to Gemini and the transcript is saved for meeting notes.",
       "loading": "Loading meeting AI…",
+      "manual_task": "Create a follow-up task",
       "missing": "[Missing audio segment]",
       "model": "Model",
       "not_configured": "Gemini has not been configured for this deployment.",

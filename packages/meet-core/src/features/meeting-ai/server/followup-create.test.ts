@@ -101,7 +101,8 @@ it('uses the verified actor and reviewed destination, then stores a private rece
       listId,
       assignee_ids: [userId],
       end_date: '2026-09-15T02:00:00.000Z',
-    })
+    }),
+    undefined
   );
   expect(result.url).toContain(`tasks.tuturuuu.com/${wsId}/tasks/`);
   expect(mock.receipt).toHaveBeenCalledWith(
@@ -249,4 +250,33 @@ it('prepares the reviewed UTC event for the primary calendar and saves it only a
   );
   expect(mock.execute).not.toHaveBeenCalled();
   expect(result.url).toBe(`https://calendar.tuturuuu.com/${wsId}`);
+});
+
+it('lets the Meet host create a manual task outside the notes pilot with a canonical backlink', async () => {
+  mock.gate.mockResolvedValue(false);
+  const access = await mock.access();
+  mock.access.mockResolvedValue({ ...access, canManage: true });
+  await createFollowup(request({ ...input, source: 'manual' }), params);
+  expect(mock.gate).not.toHaveBeenCalled();
+  expect(mock.prepareTask).toHaveBeenCalledWith(
+    expect.objectContaining({ canManage: true }),
+    boardId,
+    expect.objectContaining({ end_date: '2026-09-15T02:00:00.000Z' }),
+    `https://meet.tuturuuu.com/${wsId}/meetings/${meetingId}`
+  );
+});
+it('denies manual tasks from readers and denies manual Calendar writes', async () => {
+  await expect(
+    createFollowup(request({ ...input, source: 'manual' }), params)
+  ).rejects.toMatchObject({ status: 403 });
+  const access = await mock.access();
+  mock.access.mockResolvedValue({ ...access, canManage: true });
+  await expect(
+    createFollowup(
+      request({ ...input, source: 'manual', kind: 'event' }),
+      params
+    )
+  ).rejects.toMatchObject({ status: 403 });
+  expect(mock.prepareTask).not.toHaveBeenCalled();
+  expect(mock.prepareEvent).not.toHaveBeenCalled();
 });

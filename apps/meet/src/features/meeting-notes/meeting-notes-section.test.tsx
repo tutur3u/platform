@@ -201,3 +201,17 @@ it('only names the host as a reason, because non-host policies carry no share se
   expect(notesAccess({ isHost: true })).toBe('host');
   expect(notesAccess({ isHost: false })).toBe('reader');
 });
+
+it('shows manual task creation to the host while notes are loading', () => {
+  renderSection({ ended: false, canReadNotes: true }, { isHost: true });
+  expect(
+    screen.getByRole('button', { name: messages.meet.ai.manual_task })
+  ).toBeTruthy();
+});
+
+it('hides manual task creation from readers with shared notes', () => {
+  renderSection({ ended: false, canReadNotes: true });
+  expect(
+    screen.queryByRole('button', { name: messages.meet.ai.manual_task })
+  ).toBeNull();
+});

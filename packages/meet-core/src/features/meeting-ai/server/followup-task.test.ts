@@ -108,3 +108,28 @@ it('keeps post-handler failures uncertain because a task may already exist', asy
   expect(result).toHaveProperty('error');
   expect(result).not.toHaveProperty('created');
 });
+
+it('persists a clickable meeting backlink for a task with no description', async () => {
+  const sourceUrl = 'https://meet.tuturuuu.com/workspace/meetings/meeting';
+  const { access } = fixture();
+  const save = await prepareTaskFollowup(
+    access as never,
+    'board',
+    { ...payload, description: '' },
+    sourceUrl
+  );
+  await save();
+  const body = await handler.mock.calls[0]![0].json();
+  expect(JSON.parse(body.description).content).toEqual([
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: sourceUrl,
+          marks: [{ type: 'link', attrs: { href: sourceUrl } }],
+        },
+      ],
+    },
+  ]);
+});

@@ -3,6 +3,7 @@ import { createMeetWorkspaceTools } from '@tuturuuu/ai/meetings/workspace-tools'
 import { getMeetCallAccess } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { readPersonalChatBody } from '@tuturuuu/meet-core/features/call/server/personal-chat-body';
 import { callRoomService } from '@tuturuuu/meet-core/features/call/server/room-service';
+import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { buildFollowupPayload } from '../followup-save';
@@ -16,6 +17,7 @@ export const followupInputSchema = z.object({
   requestId: z.uuid(),
   startedAt: z.number().int(),
   kind: z.enum(['task', 'event']),
+  source: z.literal('manual').optional(),
   title: z.string().trim().min(1).max(255),
   description: z.string().max(10000),
   workspaceId: z.uuid(),
@@ -75,8 +77,16 @@ async function createFollowupAttempt(
     throw new MeetAiError(400, 'Invalid follow-up');
   }
   const access = await followupAccess(request, params, input.workspaceId);
-  // Creating follow-ups from Meet AI notes is a Meet AI write.
-  if (!(await meetAiAvailable(access.wsId)))
+  const manual = input.source === 'manual';
+  if (
+    manual &&
+    (MEETING_APP !== 'meet' || input.kind !== 'task' || !access.canManage)
+  )
+    throw new MeetAiError(
+      403,
+      'Only the meeting host can create a manual task'
+    );
+  if (!manual && !(await meetAiAvailable(access.wsId)))
     throw new MeetAiError(
       403,
       'Meet AI is temporarily unavailable',
@@ -110,10 +120,17 @@ async function createFollowupAttempt(
   );
   if (!allowed[name])
     throw new MeetAiError(403, 'Destination permission denied');
-  const args = { ...payload, ...(task ? { boardId: input.boardId } : {}) };
+  const sourceUrl = manual
+    ? `https://meet.tuturuuu.com/${encodeURIComponent(access.wsId)}/meetings/${encodeURIComponent(access.meetingId)}`
+    : undefined;
+  const args = {
+    ...payload,
+    ...(task ? { boardId: input.boardId } : {}),
+    sourceUrl,
+  };
   const save =
     payload.listId !== undefined
-      ? await prepareTaskFollowup(access, input.boardId, payload)
+      ? await prepareTaskFollowup(access, input.boardId, payload, sourceUrl)
       : await prepareCalendarFollowup(access.db, access.workspaceId, payload);
   const room = await getMeetCallAccess(access.meetingId, 'Participant');
   if (room.user.id !== access.user.id)

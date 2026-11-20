@@ -9,7 +9,8 @@ import type { followupAccess } from './followup-context';
 export async function prepareTaskFollowup(
   access: Awaited<ReturnType<typeof followupAccess>>,
   boardId: string,
-  payload: Extract<ReturnType<typeof buildFollowupPayload>, { listId: string }>
+  payload: Extract<ReturnType<typeof buildFollowupPayload>, { listId: string }>,
+  sourceUrl?: string
 ) {
   const [board, list, members] = await Promise.all([
     access.db
@@ -39,17 +40,39 @@ export async function prepareTaskFollowup(
     throw new MeetAiError(503, 'Task destination unavailable');
   if (!board.data || !list.data)
     throw new MeetAiError(400, 'Choose an active board and list');
-  const eligible = new Set(members.data.map((member) => member.user_id));
+  const eligible = new Set(
+    members.data.map((member: { user_id: string }) => member.user_id)
+  );
   if (payload.assignee_ids.some((id) => !eligible.has(id)))
     throw new MeetAiError(400, 'Assignee is no longer a workspace member');
+  const paragraphs = payload.description
+    .split('\n')
+    .filter(
+      (text, index, lines) => text !== '' || lines.length > 1 || !sourceUrl
+    )
+    .map((text) => ({
+      type: 'paragraph',
+      ...(text ? { content: [{ type: 'text', text }] } : {}),
+    }));
+  const source = sourceUrl
+    ? [
+        {
+          type: 'paragraph',
+          content: [
+            {
+              type: 'text',
+              text: sourceUrl,
+              marks: [{ type: 'link', attrs: { href: sourceUrl } }],
+            },
+          ],
+        },
+      ]
+    : [];
   const body = {
     ...payload,
     description: JSON.stringify({
       type: 'doc',
-      content: payload.description.split('\n').map((text) => ({
-        type: 'paragraph',
-        ...(text ? { content: [{ type: 'text', text }] } : {}),
-      })),
+      content: [...paragraphs, ...source],
     }),
   };
   return async () => {

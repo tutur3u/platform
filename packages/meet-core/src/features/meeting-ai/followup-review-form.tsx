@@ -39,7 +39,7 @@ export function FollowupReviewForm({
   context,
 }: {
   suggestion: MeetingFollowup;
-  sourceUrl: string;
+  sourceUrl?: string;
   wsId: string;
   meetingId: string;
   onClose: () => void;
@@ -80,13 +80,16 @@ export function FollowupReviewForm({
       ? workspaces.data?.find((workspace) => workspace.personal)?.id
       : destination;
   const mutation = useMutation({
-    mutationFn: (input: FollowupSaveInput) =>
-      createMeetFollowup(wsId, meetingId, {
+    mutationFn: async (input: FollowupSaveInput): Promise<string> => {
+      const result = await createMeetFollowup(wsId, meetingId, {
         ...input,
         boardId,
+        source: suggestion.source,
         requestId: crypto.randomUUID(),
         startedAt: Date.now(),
-      }).then((result) => result.url),
+      });
+      return result.url;
+    },
     retry: false,
   });
   const user = profile.data;
@@ -99,7 +102,7 @@ export function FollowupReviewForm({
     const input = {
       kind: suggestion.kind,
       title,
-      description: `${description}\n\n${sourceUrl}`,
+      description: sourceUrl ? `${description}\n\n${sourceUrl}` : description,
       workspaceId,
       userId: user.id,
       listId,
@@ -148,6 +151,9 @@ export function FollowupReviewForm({
     } catch (error) {
       if (
         error instanceof InternalApiError &&
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
         error.code === 'FOLLOWUP_NOT_SAVED'
       ) {
         try {
@@ -175,9 +181,11 @@ export function FollowupReviewForm({
           </DialogTitle>
           <DialogDescription>{t('followup_review_hint')}</DialogDescription>
         </DialogHeader>
-        <p className="whitespace-pre-wrap rounded-md border p-3 text-sm">
-          {suggestion.evidence}
-        </p>
+        {suggestion.evidence && (
+          <p className="whitespace-pre-wrap rounded-md border p-3 text-sm">
+            {suggestion.evidence}
+          </p>
+        )}
         {(suggestion.owner || suggestion.timeText) && (
           <p className="text-muted-foreground text-sm">
             {[suggestion.owner, suggestion.timeText]

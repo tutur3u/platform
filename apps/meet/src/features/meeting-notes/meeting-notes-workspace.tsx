@@ -3,6 +3,7 @@
 import { showMeetingAiFailure } from '@tuturuuu/meet-core/features/meeting-ai/failure-toast.ts';
 import { useTranslations } from 'next-intl';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
+import { ManualMeetingTask } from './manual-meeting-task';
 import { MeetingNotesView } from './meeting-notes-view';
 import type { NotesAccess } from './notes-access';
 import { NotesHostActions } from './notes-host-actions';
@@ -40,17 +41,22 @@ export function MeetingNotesWorkspace({
       isLoading={ai.isLoading}
       error={ai.error}
       hostActions={
-        canManage && ai.data ? (
-          <NotesHostActions
-            sessions={ai.data.sessions}
-            busy={ai.busy}
-            onFinish={(sessionId) =>
-              void ai
-                .finish(sessionId)
-                .catch((error: unknown) => showMeetingAiFailure(t, error))
-            }
-          />
-        ) : null
+        <div className="flex flex-wrap items-center gap-2">
+          {access === 'host' && (
+            <ManualMeetingTask wsId={wsId} meetingId={meetingId} />
+          )}
+          {canManage && ai.data && (
+            <NotesHostActions
+              sessions={ai.data.sessions}
+              busy={ai.busy}
+              onFinish={(sessionId) =>
+                void ai
+                  .finish(sessionId)
+                  .catch((error: unknown) => showMeetingAiFailure(t, error))
+              }
+            />
+          )}
+        </div>
       }
       visibility={
         <NotesVisibility

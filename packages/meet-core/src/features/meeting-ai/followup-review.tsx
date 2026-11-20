@@ -19,7 +19,7 @@ export function FollowupReview({
   onClose,
 }: {
   suggestion: MeetingFollowup;
-  sourceUrl: string;
+  sourceUrl?: string;
   wsId: string;
   meetingId: string;
   onClose: () => void;

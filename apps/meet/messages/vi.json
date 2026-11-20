@@ -4031,6 +4031,7 @@
       "input_tokens": "Token đầu vào",
       "join_notice": "Chép lời trực tiếp đang hoạt động. Âm thanh bạn chia sẻ trong cuộc gọi được gửi đến Gemini và bản chép lời được lưu để tạo ghi chú cuộc họp.",
       "loading": "Đang tải AI cuộc họp…",
+      "manual_task": "Tạo công việc sau cuộc họp",
       "missing": "[Thiếu đoạn âm thanh]",
       "model": "Mô hình",
       "not_configured": "Gemini chưa được cấu hình cho bản triển khai này.",

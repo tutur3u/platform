@@ -1,6 +1,7 @@
 export type MeetingFollowup = {
   key: string;
   kind: 'task' | 'event';
+  source?: 'manual';
   title: string;
   evidence: string;
   owner: string | null;
