@@ -120,15 +120,15 @@ test('cron-control records a reviewed transition from the live identity', () => 
   const { CRON_CONTROL_WEB_MODE: webMode, ...liveVars } = plan.target.vars;
   assert.equal(webMode, 'off');
   assert.deepEqual(plan.previous, { ...plan.target, vars: liveVars });
-  assert.equal(plan.target.crons.length, 9);
+  assert.equal(plan.target.crons.length, 10);
   assert.deepEqual(plan.target.durableObjectClasses, { CronLedger: 'sqlite' });
   assert.equal(
     plan.target.vars.CRON_CONTROL_ENABLED_JOBS,
-    'database-cron-history-retention'
+    'database-cron-history-retention,ai-studio-retention'
   );
   assert.equal(
     plan.previous.vars.CRON_CONTROL_ENABLED_JOBS,
-    'database-cron-history-retention'
+    'database-cron-history-retention,ai-studio-retention'
   );
   assert.equal(plan.target.vars.CRON_CONTROL_WORKER_PROCESSORS, '');
   assert.equal(plan.previous.vars.CRON_CONTROL_WORKER_PROCESSORS, '');
@@ -390,7 +390,7 @@ for (const [label, binding, error] of [
   [
     'unreviewed binding type',
     { name: 'CACHE', type: 'kv_namespace', namespace_id: 'kv' },
-    /unreviewed kv_namespace binding <undeclared binding #14>$/,
+    /unreviewed kv_namespace binding <undeclared binding #15>$/,
   ],
   [
     'foreign Durable Object environment',
@@ -472,8 +472,8 @@ test('server-provided binding identifiers never reach output', async () => {
       }
     );
   assert.deepEqual(messages, [
-    'unreviewed <unknown type> binding <undeclared binding #14>',
-    'undeclared plain_text binding <undeclared binding #14>',
+    'unreviewed <unknown type> binding <undeclared binding #15>',
+    'undeclared plain_text binding <undeclared binding #15>',
     'unreviewed <unknown attribute> on plain_text binding WEB_ORIGIN',
     'Durable Object bindings differ',
   ]);
@@ -513,7 +513,7 @@ test('identifier-shaped credentials used as binding names are never printed', as
   assert.equal(outputs.length, 8);
   assert.ok(
     outputs.every((message) =>
-      /<undeclared binding #14>|<unknown attribute>/.test(message)
+      /<undeclared binding #15>|<unknown attribute>/.test(message)
     )
   );
 });
@@ -550,12 +550,12 @@ test('prototype-shaped binding names cannot bypass verification', async () => {
       );
     }
   assert.deepEqual(messages, [
-    'undeclared plain_text binding <undeclared binding #14>',
-    'undeclared durable_object_namespace binding <undeclared binding #14>',
-    'undeclared plain_text binding <undeclared binding #14>',
-    'undeclared durable_object_namespace binding <undeclared binding #14>',
-    'undeclared plain_text binding <undeclared binding #14>',
-    'undeclared durable_object_namespace binding <undeclared binding #14>',
+    'undeclared plain_text binding <undeclared binding #15>',
+    'undeclared durable_object_namespace binding <undeclared binding #15>',
+    'undeclared plain_text binding <undeclared binding #15>',
+    'undeclared durable_object_namespace binding <undeclared binding #15>',
+    'undeclared plain_text binding <undeclared binding #15>',
+    'undeclared durable_object_namespace binding <undeclared binding #15>',
   ]);
 });
 
@@ -594,11 +594,11 @@ test('same-version dashboard preflight passes with exact fixture settings', asyn
   assert.deepEqual(before.schedules, [...LIVE.crons].sort());
   assert.equal(
     LIVE.vars.CRON_CONTROL_ENABLED_JOBS,
-    'database-cron-history-retention'
+    'database-cron-history-retention,ai-studio-retention'
   );
   assert.ok(!Object.hasOwn(LIVE.vars, 'CRON_CONTROL_WEB_MODE'));
   assert.ok(!Object.hasOwn(BASELINE.identity.vars, 'CRON_CONTROL_WEB_MODE'));
-  assert.equal(BASELINE.identity.vars.AI_STUDIO_RETENTION_MODE, 'dry-run');
+  assert.equal(LIVE.vars.AI_STUDIO_RETENTION_MODE, 'dry-run');
   assert.deepEqual(LIVE.observability.traces, {
     enabled: false,
     headSamplingRate: 0.05,

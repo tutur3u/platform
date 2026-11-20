@@ -16,9 +16,11 @@ const LIVE_ORDER = [
   '17 3 * * *',
   '*/30 * * * *',
   '*/5 * * * *',
+  // AI-PURGE-SCHEDULE-1 (02:43 GMT+7), live since the 4b837f09e1 publication.
+  '43 19 * * *',
 ];
-// AI-PURGE-SCHEDULE-1 adds one daily trigger (02:43 GMT+7) to the live set.
-const TARGET_ORDER = [...LIVE_ORDER, '43 19 * * *', '17 18 * * *'];
+// MEET-ATTENDANCE-RETENTION-1 adds one daily trigger (01:17 GMT+7).
+const TARGET_ORDER = [...LIVE_ORDER, '17 18 * * *'];
 const app = new URL('../../apps/cron-control/', import.meta.url);
 const cfPackage = pathToFileURL(
   realpathSync(new URL('node_modules/cf/package.json', app))
@@ -71,7 +73,7 @@ test('Cron Control passes cf schema and emits the exact reviewed cron set and co
   assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assertCronSet(baseline.previousIdentity.crons, LIVE_ORDER);
-  assert.deepEqual(baseline.transition.fields, ['crons', 'vars']);
+  assert.deepEqual(baseline.transition.fields, ['crons']);
   assert.equal(validated.worker.env.CRON_LEDGER.worker, validated.worker.name);
   assert.deepEqual(emitted.durable_objects.bindings, [
     { name: 'CRON_LEDGER', class_name: 'CronLedger' },
