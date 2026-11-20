@@ -17670,4 +17670,79 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeInvoiceSurcharge => 'Điều chỉnh';
+
+  @override
+  String get financeWalletRoleAccess => 'Quyền vai trò';
+
+  @override
+  String get financeWalletRoleGrant => 'Cấp quyền vai trò';
+
+  @override
+  String get financeWalletRoleEmpty => 'Chưa có vai trò nào được truy cập';
+
+  @override
+  String get financeWalletRoleEmptyBody => 'Thành viên xem ví này qua các vai trò được cấp tại đây.';
+
+  @override
+  String get financeWalletRoleAllGranted => 'Mọi vai trò đều đã có quyền';
+
+  @override
+  String get financeWalletRoleWindow => 'Khoảng lịch sử';
+
+  @override
+  String get financeWalletRoleWindow1Day => '1 ngày gần nhất';
+
+  @override
+  String get financeWalletRoleWindow3Days => '3 ngày gần nhất';
+
+  @override
+  String get financeWalletRoleWindow7Days => '7 ngày gần nhất';
+
+  @override
+  String get financeWalletRoleWindow2Weeks => '2 tuần gần nhất';
+
+  @override
+  String get financeWalletRoleWindow1Month => '1 tháng gần nhất';
+
+  @override
+  String get financeWalletRoleWindow1Quarter => '1 quý gần nhất';
+
+  @override
+  String get financeWalletRoleWindow1Year => '1 năm gần nhất';
+
+  @override
+  String get financeWalletRoleWindowCustom => 'Tùy chỉnh';
+
+  @override
+  String financeWalletRoleWindowDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày gần nhất',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletRoleCustomDays => 'Số ngày lịch sử';
+
+  @override
+  String get financeWalletRoleCustomDaysInvalid => 'Nhập từ 1 đến 365 ngày';
+
+  @override
+  String get financeWalletRoleRevoke => 'Thu hồi quyền';
+
+  @override
+  String financeWalletRoleRevokeTitle(String role) {
+    return 'Thu hồi $role?';
+  }
+
+  @override
+  String get financeWalletRoleRevokeBody => 'Thành viên chỉ có vai trò này sẽ không còn thấy ví.';
+
+  @override
+  String get financeWalletRoleSaved => 'Đã lưu quyền vai trò';
+
+  @override
+  String get financeWalletRoleRevoked => 'Đã thu hồi quyền vai trò';
 }

@@ -20,6 +20,7 @@ import 'package:mobile/features/finance/view/wallet_detail_body.dart';
 import 'package:mobile/features/finance/view/wallet_detail_widgets.dart';
 import 'package:mobile/features/finance/view/wallet_interest_sheet.dart';
 import 'package:mobile/features/finance/view/wallet_reconciliation_panel.dart';
+import 'package:mobile/features/finance/view/wallet_role_access_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_modal_scaffold.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
@@ -252,6 +253,12 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
     unawaited(_load());
   }
 
+  Future<void> _openRoleAccess(Wallet wallet) async {
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
+    if (wsId == null) return;
+    await showWalletRoleAccess(context, workspaceId: wsId, walletId: wallet.id);
+  }
+
   Future<void> _openCredit(Wallet wallet) async {
     final workspace = _wsId;
     final action = await showWalletCredit(
@@ -379,6 +386,14 @@ class _WalletDetailViewState extends State<_WalletDetailView> {
                           .toUpperCase(),
                     ),
                   ),
+                ),
+              if (wallet != null &&
+                  canManageFinance(context, 'manage_workspace_roles'))
+                ShellActionSpec(
+                  id: 'finance-wallet-role-access',
+                  icon: LucideIcons.shieldCheck,
+                  tooltip: l10n.financeWalletRoleAccess,
+                  onPressed: () => unawaited(_openRoleAccess(wallet)),
                 ),
               if (canManageFinance(context, 'create_transactions'))
                 financeCreateAction(

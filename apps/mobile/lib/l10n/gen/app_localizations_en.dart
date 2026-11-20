@@ -17883,4 +17883,80 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeInvoiceSurcharge => 'Adjustment';
+
+  @override
+  String get financeWalletRoleAccess => 'Role access';
+
+  @override
+  String get financeWalletRoleGrant => 'Grant role';
+
+  @override
+  String get financeWalletRoleEmpty => 'No roles have access';
+
+  @override
+  String get financeWalletRoleEmptyBody => 'Members see this wallet through the roles granted here.';
+
+  @override
+  String get financeWalletRoleAllGranted => 'Every role already has access';
+
+  @override
+  String get financeWalletRoleWindow => 'History window';
+
+  @override
+  String get financeWalletRoleWindow1Day => 'Last day';
+
+  @override
+  String get financeWalletRoleWindow3Days => 'Last 3 days';
+
+  @override
+  String get financeWalletRoleWindow7Days => 'Last 7 days';
+
+  @override
+  String get financeWalletRoleWindow2Weeks => 'Last 2 weeks';
+
+  @override
+  String get financeWalletRoleWindow1Month => 'Last month';
+
+  @override
+  String get financeWalletRoleWindow1Quarter => 'Last quarter';
+
+  @override
+  String get financeWalletRoleWindow1Year => 'Last year';
+
+  @override
+  String get financeWalletRoleWindowCustom => 'Custom';
+
+  @override
+  String financeWalletRoleWindowDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Last $count days',
+      one: 'Last day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get financeWalletRoleCustomDays => 'Days of history';
+
+  @override
+  String get financeWalletRoleCustomDaysInvalid => 'Enter 1 to 365 days';
+
+  @override
+  String get financeWalletRoleRevoke => 'Revoke access';
+
+  @override
+  String financeWalletRoleRevokeTitle(String role) {
+    return 'Revoke $role?';
+  }
+
+  @override
+  String get financeWalletRoleRevokeBody => 'Members with only this role stop seeing the wallet.';
+
+  @override
+  String get financeWalletRoleSaved => 'Role access saved';
+
+  @override
+  String get financeWalletRoleRevoked => 'Role access revoked';
 }

@@ -70,6 +70,15 @@ be too narrow. A daily in/out chart (monthly for a year) appears once every
 row of the period is loaded. Transactions follow, grouped by day with each
 day's net.
 
+## Wallet role access
+
+People with `manage_workspace_roles` open Role access from a wallet's top bar.
+It lists each workspace role that sees the wallet with its history window
+(last day to last year, or a custom 1 to 365 days). They grant a role that
+has no access yet, change a window by tapping its row, and revoke after
+confirming. Writes need a connection; the list reads through the offline
+cache. Coverage: `wallet_role_access_test.dart`.
+
 ## Wallet reconciliation
 
 Enter the observed balance to preview the signed variance against the wallet
@@ -300,6 +309,7 @@ Compare the native mini app with the standalone web Finance dashboard in
 | Exports and imports | Transaction export, Money Lover import and invoice spreadsheet exports | Transaction CSV export, Money Lover import, and CSV or Excel exports for created and pending invoices |
 | Debts and loans | List, summary, create, edit, status and delete | Same, with the net position hero and overdue-first ordering |
 | Promotions | Create, edit, delete and apply to invoices | Same, with usage meters |
+| Wallet role access | Grant, change window and revoke per wallet | Same, from the wallet top bar |
 | Inventory reconciliation | Dedicated web workflow | Open |
 
 Mobile requests use the Finance repository and its bearer-authenticated endpoint

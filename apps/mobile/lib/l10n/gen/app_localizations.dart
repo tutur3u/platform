@@ -32994,6 +32994,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Adjustment'**
   String get financeInvoiceSurcharge;
+
+  /// No description provided for @financeWalletRoleAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Role access'**
+  String get financeWalletRoleAccess;
+
+  /// No description provided for @financeWalletRoleGrant.
+  ///
+  /// In en, this message translates to:
+  /// **'Grant role'**
+  String get financeWalletRoleGrant;
+
+  /// No description provided for @financeWalletRoleEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No roles have access'**
+  String get financeWalletRoleEmpty;
+
+  /// No description provided for @financeWalletRoleEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Members see this wallet through the roles granted here.'**
+  String get financeWalletRoleEmptyBody;
+
+  /// No description provided for @financeWalletRoleAllGranted.
+  ///
+  /// In en, this message translates to:
+  /// **'Every role already has access'**
+  String get financeWalletRoleAllGranted;
+
+  /// No description provided for @financeWalletRoleWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'History window'**
+  String get financeWalletRoleWindow;
+
+  /// No description provided for @financeWalletRoleWindow1Day.
+  ///
+  /// In en, this message translates to:
+  /// **'Last day'**
+  String get financeWalletRoleWindow1Day;
+
+  /// No description provided for @financeWalletRoleWindow3Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 3 days'**
+  String get financeWalletRoleWindow3Days;
+
+  /// No description provided for @financeWalletRoleWindow7Days.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 7 days'**
+  String get financeWalletRoleWindow7Days;
+
+  /// No description provided for @financeWalletRoleWindow2Weeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 2 weeks'**
+  String get financeWalletRoleWindow2Weeks;
+
+  /// No description provided for @financeWalletRoleWindow1Month.
+  ///
+  /// In en, this message translates to:
+  /// **'Last month'**
+  String get financeWalletRoleWindow1Month;
+
+  /// No description provided for @financeWalletRoleWindow1Quarter.
+  ///
+  /// In en, this message translates to:
+  /// **'Last quarter'**
+  String get financeWalletRoleWindow1Quarter;
+
+  /// No description provided for @financeWalletRoleWindow1Year.
+  ///
+  /// In en, this message translates to:
+  /// **'Last year'**
+  String get financeWalletRoleWindow1Year;
+
+  /// No description provided for @financeWalletRoleWindowCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get financeWalletRoleWindowCustom;
+
+  /// No description provided for @financeWalletRoleWindowDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Last day} other{Last {count} days}}'**
+  String financeWalletRoleWindowDays(int count);
+
+  /// No description provided for @financeWalletRoleCustomDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days of history'**
+  String get financeWalletRoleCustomDays;
+
+  /// No description provided for @financeWalletRoleCustomDaysInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 1 to 365 days'**
+  String get financeWalletRoleCustomDaysInvalid;
+
+  /// No description provided for @financeWalletRoleRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke access'**
+  String get financeWalletRoleRevoke;
+
+  /// No description provided for @financeWalletRoleRevokeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke {role}?'**
+  String financeWalletRoleRevokeTitle(String role);
+
+  /// No description provided for @financeWalletRoleRevokeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Members with only this role stop seeing the wallet.'**
+  String get financeWalletRoleRevokeBody;
+
+  /// No description provided for @financeWalletRoleSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Role access saved'**
+  String get financeWalletRoleSaved;
+
+  /// No description provided for @financeWalletRoleRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Role access revoked'**
+  String get financeWalletRoleRevoked;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
