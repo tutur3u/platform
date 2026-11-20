@@ -1,6 +1,7 @@
 import { stripVTControlCharacters } from 'node:util';
 
 const signals = new Set(['SIGINT', 'SIGTERM', 'SIGKILL']);
+const launchErrors = new Set(['EACCES', 'ENOENT', 'ENOBUFS', 'ETIMEDOUT']);
 const diagnosticLineLimit = 4096;
 const tokenSeparator =
   '[\\s\\p{C}\\p{M}│┃|]*(?:\\[code:[ \t]{0,16}[0-9]{1,9}\\][\\s\\p{C}\\p{M}│┃|]*){0,64}';
@@ -98,7 +99,7 @@ function sanitize(message, secrets) {
 
 /** Keep bounded, sanitized diagnostics; never retain child output or causes. */
 export class NativeUploadError extends Error {
-  constructor(error, secrets = []) {
+  constructor(error, secrets = [], { dryRun = false } = {}) {
     super(
       'Native publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
     );
@@ -166,11 +167,15 @@ export class NativeUploadError extends Error {
       }
     }
     for (const entry of cfErrors) codes.add(entry.code);
-    const rawHeadline = lines.find((line) => line.includes('[ERROR]'));
+    const providerHeadline = lines.find((line) => line.includes('[ERROR]'));
     const headline =
-      rawHeadline === undefined
-        ? undefined
-        : stripVTControlCharacters(rawHeadline);
+      providerHeadline?.slice(providerHeadline.indexOf('[ERROR]')) ??
+      (dryRun
+        ? (lines.find((line) => /^\s*error:/iu.test(line))?.trim() ??
+          (launchErrors.has(error?.code)
+            ? `cf subprocess error: ${error.code}`
+            : 'cf subprocess returned no recognized error message'))
+        : undefined);
     this.uploadFailure = Object.freeze({
       exitCode:
         Number.isInteger(error?.status) &&
@@ -183,12 +188,7 @@ export class NativeUploadError extends Error {
       ...(cfErrors.length
         ? { cfErrors }
         : headline
-          ? {
-              headline: sanitize(
-                headline.slice(headline.indexOf('[ERROR]')),
-                secrets
-              ),
-            }
+          ? { headline: sanitize(headline, secrets) }
           : {}),
     });
   }

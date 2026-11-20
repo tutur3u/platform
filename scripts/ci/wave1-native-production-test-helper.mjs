@@ -230,14 +230,8 @@ export function setup(t, { admitted = true, oversized = false } = {}) {
     return Response.json({ success: true, result });
   };
   const exec = (command, args, options) => {
-    assert.equal(command, 'bun');
-    assert.deepEqual(args.slice(0, 5), [
-      'x',
-      '--no-install',
-      'cf',
-      'deploy',
-      '--prebuilt',
-    ]);
+    assert.ok(command.endsWith('/bin/cf'), command);
+    assert.deepEqual(args.slice(0, 2), ['deploy', '--prebuilt']);
     assert.equal(options.cwd, appRoot);
     assert.equal(options.env.GITHUB_TOKEN, undefined);
     assertRouteFree(

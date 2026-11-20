@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import {
   lstatSync,
   mkdirSync,
@@ -13,7 +12,6 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
 import { emitWave1Output } from './wave1-cf-output.mjs';
 import { prepare } from './wave1-native-artifact.mjs';
 import { rehearseWave1Publication } from './wave1-cf-publisher.mjs';
@@ -21,18 +19,6 @@ import { rehearseWave1Publication } from './wave1-cf-publisher.mjs';
 const require = createRequire(import.meta.url);
 const { fixture } = require('./wave1-native-test-fixture.cjs');
 const sha = 'd'.repeat(40);
-const repoRoot = fileURLToPath(new URL('../..', import.meta.url));
-const requireCalendar = createRequire(
-  join(repoRoot, 'apps/calendar/package.json')
-);
-const cfCli = join(requireCalendar.resolve('cf/package.json'), '../bin/cf');
-
-function execCfFromRepo(command, args, options) {
-  if (command === 'bun' && args[0] === 'x' && args[2] === 'cf') {
-    return execFileSync(cfCli, args.slice(3), options);
-  }
-  return execFileSync(command, args, options);
-}
 
 test('multi-chunk Wave-1 emit passes cf Build Output inspection', async (t) => {
   const appRoot = fixture(t, 'mail');
@@ -128,10 +114,11 @@ test('multi-chunk sealed output passes cf deploy prebuilt dry-run', async (t) =>
   );
   prepare(appRoot, 'mail', 'staging', 'cf-dry-run-fixture', sha);
   const env = {
-    ...process.env,
+    PATH: process.env.PATH,
     RUNNER_TEMP: mkdtempSync(join(tmpdir(), 'wave1-cf-runner-')),
   };
   t.after(() => rmSync(env.RUNNER_TEMP, { recursive: true, force: true }));
+  env.HOME = env.RUNNER_TEMP;
   await rehearseWave1Publication({
     appRoot,
     app: 'mail',
@@ -139,7 +126,6 @@ test('multi-chunk sealed output passes cf deploy prebuilt dry-run', async (t) =>
     sha,
     configPath: join(appRoot, 'dist/wave1/wrangler.json'),
     env,
-    exec: execCfFromRepo,
   });
 });
 
@@ -178,10 +164,11 @@ test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) =>
   );
   prepare(appRoot, 'apps', 'production', 'tuturuuu-e89', sha);
   const env = {
-    ...process.env,
+    PATH: process.env.PATH,
     RUNNER_TEMP: mkdtempSync(join(tmpdir(), 'wave1-cf-apps-entry-')),
   };
   t.after(() => rmSync(env.RUNNER_TEMP, { recursive: true, force: true }));
+  env.HOME = env.RUNNER_TEMP;
   const parent = realpathSync(
     mkdtempSync(join(tmpdir(), 'wave1-cf-apps-emit-'))
   );
@@ -215,6 +202,5 @@ test('hashed assets entry modules pass cf deploy prebuilt dry-run', async (t) =>
     sha,
     configPath: join(appRoot, 'dist/wave1/wrangler.json'),
     env,
-    exec: execCfFromRepo,
   });
 });

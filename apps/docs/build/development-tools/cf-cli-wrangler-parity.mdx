@@ -363,6 +363,12 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Gateway (M4 production) | `cf workers versions create --prebuilt` when `GATEWAY_CF_VERSION_UPLOAD_LIVE`; Wrangler upload+deploy fallback when unset; rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Landed; live flip owner-gated | `opennext-adapter` until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
 | Wave 1 Start+Void apps | cf Build Output (`wave1-cf-publisher.mjs`) | Switched | `void-emitted-binding-types` for sealed runtime harness only |
 | Calendar (wave-1) | cf Build Output (`calendar-cf-publisher.mjs`) | Switched | — |
+
+Wave-1 Start and Void publishers run the cf binary from Calendar's pinned
+installation, which also supplies the Build Output emitter dependencies. The
+app directory remains the working directory for cf to find its prebuilt output.
+Dry-run failures include a bounded, redacted CLI error headline from the
+captured output, including launcher errors without a Cloudflare API code.
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |

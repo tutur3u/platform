@@ -64,7 +64,7 @@ export async function rehearseCalendarPublication({
       workerName: publicationConfig.name,
     });
   } catch (error) {
-    throw new NativeUploadError(error, []);
+    throw new NativeUploadError(error, [], { dryRun: true });
   } finally {
     teardownStagedOutput(appRoot);
   }

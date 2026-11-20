@@ -6,7 +6,7 @@ import {
   realpathSync,
   writeFileSync,
 } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import {
   assertMeasuredLimits,
   assertUploadNameParity,
@@ -18,11 +18,19 @@ import {
   teardownStagedOutput,
   VERSION_ID,
 } from './cf-build-output-publisher.mjs';
-import { emitWave1Output } from './wave1-cf-output.mjs';
+import { emitWave1Output, wave1CfPackagePath } from './wave1-cf-output.mjs';
 import { NativeUploadError } from './wave1-native-upload-error.mjs';
 import { assertUploadLimits } from './wave1-native-upload-limits.mjs';
 
 /** @typedef {import('./cf-build-output-publisher.mjs').CfPublicationTraffic} CfPublicationTraffic */
+
+function runWave1CfPrebuilt(options) {
+  // The app owns the Build Output cwd. The emitter's toolchain owns the CLI.
+  return runCfPrebuilt({
+    ...options,
+    cfCli: join(dirname(wave1CfPackagePath()), 'bin/cf'),
+  });
+}
 
 function fixtureBuildOutput(buildRoot, moduleBytes) {
   const bundle = join(
@@ -51,7 +59,7 @@ export async function rehearseWave1Publication({
     stageBuildOutput(appRoot, buildRoot);
     if (!env.WAVE1_PUBLICATION_TEST_SKIP_CF_DRY_RUN) {
       try {
-        runCfPrebuilt({
+        runWave1CfPrebuilt({
           env,
           appRoot,
           exec,
@@ -62,7 +70,7 @@ export async function rehearseWave1Publication({
           workerName: JSON.parse(readFileSync(configPath, 'utf8')).name,
         });
       } catch (error) {
-        throw new NativeUploadError(error, []);
+        throw new NativeUploadError(error, [], { dryRun: true });
       } finally {
         teardownStagedOutput(appRoot);
       }
@@ -89,7 +97,7 @@ export async function rehearseWave1Publication({
   stageBuildOutput(appRoot, buildRoot);
   const config = JSON.parse(readFileSync(configPath, 'utf8'));
   try {
-    runCfPrebuilt({
+    runWave1CfPrebuilt({
       env,
       appRoot,
       exec,
@@ -100,7 +108,7 @@ export async function rehearseWave1Publication({
       workerName: config.name,
     });
   } catch (error) {
-    throw new NativeUploadError(error, []);
+    throw new NativeUploadError(error, [], { dryRun: true });
   } finally {
     teardownStagedOutput(appRoot);
   }
@@ -157,7 +165,7 @@ export async function publishWave1Artifact({
   let stdout = '';
   let stderr = '';
   try {
-    stdout = runCfPrebuilt({
+    stdout = runWave1CfPrebuilt({
       env,
       appRoot,
       exec,

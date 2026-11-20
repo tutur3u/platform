@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import {
   cpSync,
   lstatSync,
@@ -393,7 +394,8 @@ export function cfPrebuiltArgs({
 export function runCfPrebuilt({
   env,
   appRoot,
-  exec,
+  cfCli,
+  exec = execFileSync,
   traffic,
   dryRun,
   sha,
@@ -414,7 +416,7 @@ export function runCfPrebuilt({
   const stdio = dryRun ? ['ignore', 'pipe', 'pipe'] : 'pipe';
   const encoding = dryRun ? undefined : 'utf8';
   try {
-    const result = exec('bun', args, {
+    const result = exec(cfCli ?? 'bun', cfCli ? args.slice(3) : args, {
       cwd,
       env: cfChildEnv(env, { cfToken, accountId, dryRun }),
       stdio,

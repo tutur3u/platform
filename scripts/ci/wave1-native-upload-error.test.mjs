@@ -155,3 +155,24 @@ test('unrecognized fields and conflicting numeric codes are not retained', () =>
     false
   );
 });
+
+test('credential-free dry-run reports a plain launcher error without a provider code', () => {
+  const stderr =
+    "error: Could not find an existing 'cf' binary to run. Stopping because --no-install was passed.";
+  const error = new NativeUploadError(
+    { status: 1, stderr: Buffer.from(`\x1b[31m${stderr}\x1b[0m\n`) },
+    [],
+    { dryRun: true }
+  );
+  assert.deepEqual(error.uploadFailure, {
+    exitCode: 1,
+    signal: null,
+    cfCode: null,
+    headline: stderr,
+  });
+});
+
+test('credential-free dry-run reports a missing executable when stderr is empty', () => {
+  const error = new NativeUploadError({ code: 'ENOENT' }, [], { dryRun: true });
+  assert.equal(error.uploadFailure.headline, 'cf subprocess error: ENOENT');
+});

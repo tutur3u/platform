@@ -189,18 +189,17 @@ async function publisher(t, app = 'apps', { preFetch } = {}) {
     throw new Error(`Unexpected test transport ${url}`);
   };
   const exec = (command, args, options) => {
+    assert.ok(command.endsWith('/bin/cf'), command);
     if (args.includes('--dry-run')) {
       assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
       assert.equal(options.timeout, 120000);
-      assert.equal(args[2], 'cf');
+      assert.equal(args[0], 'deploy');
       return '';
     }
     if (args.includes('versions') && args.includes('create'))
       return `Worker Version ID: ${newId}\n`;
     state.writes++;
-    assert.equal(command, 'bun');
-    assert.equal(args[0], 'x');
-    assert.equal(args[2], 'cf');
+    assert.deepEqual(args.slice(0, 2), ['deploy', '--prebuilt']);
     assert.equal(
       options.env.CLOUDFLARE_API_TOKEN,
       env.CLOUDFLARE_STAGING_API_TOKEN

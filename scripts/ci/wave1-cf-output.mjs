@@ -50,9 +50,12 @@ const CALENDAR_PKG = resolve(
   fileURLToPath(new URL('../../apps/calendar/package.json', import.meta.url))
 );
 
+export function wave1CfPackagePath() {
+  return createRequire(CALENDAR_PKG).resolve('cf/package.json');
+}
+
 async function suppliers() {
-  const require = createRequire(CALENDAR_PKG);
-  const cfPath = require.resolve('cf/package.json');
+  const cfPath = wave1CfPackagePath();
   const cf = JSON.parse(readFileSync(cfPath));
   const api = {};
   const versions = { cf: cf.version };
