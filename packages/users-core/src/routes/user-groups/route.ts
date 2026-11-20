@@ -13,6 +13,9 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+const userGroupListFields =
+  'id, ws_id, name, description, created_at, creator_id, starting_date, ending_date, archived, is_guest, notes, cert_template, is_course_published';
+
 const CreateUserGroupSchema = z
   .object({
     id: z.string().max(MAX_NAME_LENGTH).optional(),
@@ -62,7 +65,7 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups')
-    .select('*')
+    .select(userGroupListFields)
     .eq('ws_id', normalizedWsId);
 
   if (error) {
