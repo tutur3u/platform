@@ -597,8 +597,8 @@ export class MeetRoomDurableObject implements DurableObject {
       this.broadcast(expiredBudget.broadcast);
       this.delivery.disconnect(expiredBudget.disconnect);
     }
-    this.snapshot = await cleanupRoomPublications({
-      snapshot: this.snapshot,
+    await cleanupRoomPublications({
+      readSnapshot: () => this.snapshot,
       now,
       closeTracks: (input) => this.sfuClient().closeTracks(input),
       getSession: (sessionId) => this.sfuClient().getSession(sessionId),

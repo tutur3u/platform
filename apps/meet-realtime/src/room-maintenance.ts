@@ -72,42 +72,39 @@ export function retainRoomAttendance(
 }
 
 export async function cleanupRoomPublications(input: {
-  snapshot: MeetRoomSnapshot;
+  readSnapshot: () => MeetRoomSnapshot;
   now: number;
   closeTracks: Parameters<typeof closeBudgetPublications>[1];
   getSession: Parameters<typeof closeBudgetPublications>[3];
   persist: (snapshot: MeetRoomSnapshot) => Promise<void>;
 }) {
-  let snapshot = input.snapshot;
+  const started = input.readSnapshot();
   if (
-    !snapshot.budget?.pendingPublications?.length ||
-    input.now < (snapshot.budget.nextCleanupAt ?? 0)
+    !started.budget?.pendingPublications?.length ||
+    input.now < (started.budget.nextCleanupAt ?? 0)
   )
-    return snapshot;
-  const cleanupStarted = snapshot;
+    return;
+  // Provider awaits can interleave with room commands and lifecycle changes.
+  const persistProgress = (progress: MeetRoomSnapshot) =>
+    input.persist(
+      mergePublicationCleanup(input.readSnapshot(), started, progress)
+    );
   try {
     const closed = await closeBudgetPublications(
-      cleanupStarted,
+      started,
       input.closeTracks,
-      async (progress) => {
-        snapshot = mergePublicationCleanup(snapshot, cleanupStarted, progress);
-        await input.persist(snapshot);
-      },
+      persistProgress,
       input.getSession
     );
-    snapshot = mergePublicationCleanup(snapshot, cleanupStarted, closed);
-    await input.persist(snapshot);
+    await persistProgress(closed);
   } catch {
-    snapshot = {
-      ...snapshot,
-      budget: deferBudgetCleanup(snapshot, Date.now(), cleanupStarted).budget,
-    };
-    await input.persist(snapshot);
+    await input.persist(
+      deferBudgetCleanup(input.readSnapshot(), Date.now(), started)
+    );
     console.error(
       'Meeting media cleanup deferred; provider confirmation is still pending'
     );
   }
-  return snapshot;
 }
 
 export async function scheduleRoomFollowUps(input: {
