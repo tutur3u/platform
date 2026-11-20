@@ -117,15 +117,20 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun turbo:local run build --filter='@tuturuuu/web^...' --concurrency=2
+      - name: Build API identity dependencies
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter='@tuturuuu/web^...' --concurrency=2
       - name: Verify guard behavior without Redis
-        working-directory: packages/utils
-        run: >
-          bun run test src/abuse-protection/__tests__/edge-do-store.test.ts
-          src/__tests__/api-proxy-guard-store.test.ts
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: >
+            bun run --cwd packages/utils test src/abuse-protection/__tests__/edge-do-store.test.ts
+            src/__tests__/api-proxy-guard-store.test.ts
       - name: Verify the atomic native-integrity store
-        working-directory: apps/abuse-guard
-        run: bun run test src/native-integrity.test.ts src/fence.test.ts src/worker.test.ts
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun run --cwd apps/abuse-guard test src/native-integrity.test.ts src/fence.test.ts src/worker.test.ts
       - name: Generate exact build metadata
         env:
           PLATFORM_BUILD_ENVIRONMENT: production

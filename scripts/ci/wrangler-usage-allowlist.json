@@ -465,13 +465,13 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 18,
-      "uses": 20,
-      "digest": "56204f0159424fb472deaff511e5928224bd4c598a620f55d7c6dcf0a1114690",
+      "lines": 21,
+      "uses": 23,
+      "digest": "dd2c691b820bb9a41594ecdcf2bb5936c452c9fda43154a1d918d68dd5c71bee",
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/e27a2d9fc22d59f2d962fa8b48d344d53877ea47",
-        "reason": "Gateway production slice adds owner-gated cf rehearsal and live upload steps while Wrangler remains the default publisher and traffic deploy path."
+        "decision": "https://github.com/tutur3u/platform/commit/08e84193d69a67f1086722569303cacf47eaf617",
+        "reason": "The held API identity seal measures the emitted OpenNext upload with a credential-free dry run and archives its exact config for restore acceptance."
       }
     },
     ".github/workflows/web-start-candidate.yaml": {
@@ -2065,10 +2065,10 @@
       "uses": 2,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/6332cb1392460bd50d7924723126f6e6b464555f",
-        "reason": "The route-free Web family configuration pins the account and disables the Supabase key fallback for app coordination tokens."
+        "decision": "https://github.com/tutur3u/platform/commit/08e84193d69a67f1086722569303cacf47eaf617",
+        "reason": "The route-free API identity config declares the abuse-guard service binding, key pepper, and family selectors for Redis-free admission."
       },
-      "digest": "14f94116b035959c43d4c850bdb9702c239730ce9a1fbe48bcb2ae52f8be0005",
+      "digest": "2aac24bec043e7d34a40de522d732dac4fcba599fccec91f702641bfd58dcc4a",
       "kind": "config"
     },
     "apps/web/cloudflare/opennext/wrangler.public-docs.jsonc": {
