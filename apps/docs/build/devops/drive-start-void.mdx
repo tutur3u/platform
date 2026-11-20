@@ -99,3 +99,12 @@ storage request bodies, ranges and response status.
 - **Data:** a route rollback changes no stored files or metadata.
 - **Stability:** keep the Vercel project and domain for 14 consecutive stable
   days before decommissioning, which is a separate approval.
+
+## Latency qualification
+
+Compare cold starts and warmed requests separately for the same route mix.
+The Worker serves fingerprinted Vite assets with immutable caching. HTML,
+auth redirects and signed-in API responses keep their private cache policy.
+The Drive page and layout share a workspace read and its actor resolution
+within the Start request. Include the dashboard, workspace permissions and
+signed-in storage in the hosted watch.

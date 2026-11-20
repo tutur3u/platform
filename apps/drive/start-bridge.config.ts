@@ -7,6 +7,9 @@ const decorate = createRootResponsePolicy({
   seo: 'noindex, nofollow, nosnippet',
 });
 
+const FINGERPRINTED_ASSET =
+  /^\/assets\/.+-[\w-]{8}\.(?:css|js|mjs|woff2?|wasm|png|svg|webp)$/u;
+
 const production = process.env.VITE_DRIVE_NATIVE_PROFILE === 'production';
 
 export default defineBridgeAppConfig({
@@ -18,6 +21,29 @@ export default defineBridgeAppConfig({
   },
   worker: { workersDev: false },
   csp: defaultContentSecurityPolicy,
-  wrapResponse: (response, context) =>
-    scopeStagingCookies(context.request, decorate(response, context)),
+  wrapResponse(response, context) {
+    const secured = scopeStagingCookies(
+      context.request,
+      decorate(response, context)
+    );
+    const { request } = context;
+    const url = new URL(request.url);
+    const path =
+      url.hostname === 'tuturuuu.com'
+        ? url.pathname.slice('/drive'.length)
+        : url.pathname;
+    if (
+      (request.method === 'GET' || request.method === 'HEAD') &&
+      secured.status === 200 &&
+      FINGERPRINTED_ASSET.test(path) &&
+      secured.headers.get('Cache-Control')?.startsWith('public,') &&
+      !secured.headers.has('Set-Cookie')
+    ) {
+      secured.headers.set(
+        'Cache-Control',
+        'public, max-age=31536000, immutable'
+      );
+    }
+    return secured;
+  },
 });

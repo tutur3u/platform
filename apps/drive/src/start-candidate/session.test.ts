@@ -3,6 +3,10 @@ import {
   createAppSessionTokenPair,
   getAppSessionClaimsFromRequest,
 } from '@tuturuuu/auth/app-session-core';
+import {
+  headers,
+  withBridgeRequest,
+} from '@tuturuuu/start-bridge/request-context';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({
@@ -34,6 +38,41 @@ describe('Drive session actor fencing', () => {
     expect(auth.user).toHaveBeenNthCalledWith(2, 'drive');
     expect(auth.workspace).not.toHaveBeenCalled();
     expect(auth.permissions).not.toHaveBeenCalled();
+  });
+
+  it('shares one workspace and actor lookup per request and isolates concurrent requests', async () => {
+    auth.user.mockImplementation(async () => ({
+      id: (await headers()).get('x-fixture-actor'),
+    }));
+    auth.workspace.mockImplementation(async (id, { user }) => ({
+      id,
+      actor: user.id,
+    }));
+    auth.permissions.mockImplementation(async ({ user }) => ({
+      actor: user.id,
+    }));
+
+    const render = (actor: string) =>
+      withBridgeRequest(
+        new Request('https://tuturuuu.com/drive/personal', {
+          headers: { 'x-fixture-actor': actor },
+        }),
+        async () => {
+          const [layout, page, permissions] = await Promise.all([
+            getDriveWorkspace('personal'),
+            getDriveWorkspace('personal'),
+            getDriveWorkspacePermissions('personal'),
+          ]);
+          expect(layout).toEqual({ id: 'personal', actor });
+          expect(page).toBe(layout);
+          expect(permissions).toEqual({ actor });
+        }
+      );
+
+    await Promise.all([render('first'), render('second')]);
+    expect(auth.user).toHaveBeenCalledTimes(2);
+    expect(auth.workspace).toHaveBeenCalledTimes(2);
+    expect(auth.permissions).toHaveBeenCalledTimes(2);
   });
 
   it('passes the Drive actor to workspace and permission lookups', async () => {

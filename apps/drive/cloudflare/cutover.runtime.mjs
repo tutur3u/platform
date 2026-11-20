@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { readdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -119,6 +119,23 @@ test(
         assert.match(response.headers['cache-control'] ?? '', /\bno-store\b/u);
         assert.equal(response.headers['set-cookie'], undefined);
       }
+      const asset = (
+        await readdir(
+          resolve(dirname(configPath), config.assets.directory, 'assets')
+        )
+      ).find((name) => /^layout-[\w-]{8}\.css$/u.test(name));
+      assert.ok(asset, 'The emitted app has a fingerprinted stylesheet');
+      const css = await call(`${base}/assets/${asset}`, host);
+      assert.equal(css.status, 200);
+      assert.match(css.headers['content-type'], /^text\/css/u);
+      assert.equal(
+        css.headers['cache-control'],
+        'public, max-age=31536000, immutable'
+      );
+      assert.equal(css.headers['set-cookie'], undefined);
+      const robots = await call(`${base}/robots.txt`, host);
+      assert.equal(robots.status, 200);
+      assert.doesNotMatch(robots.headers['cache-control'] ?? '', /immutable/u);
       const build = await call(`${base}/api/build-info`, host);
       assert.equal(build.status, 200, host);
       const info = JSON.parse(build.body);

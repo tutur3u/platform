@@ -1,4 +1,3 @@
-import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import NotificationPopover from '@tuturuuu/satellite/notification-popover';
 import {
   getPendingWorkspaceInvitation,
@@ -12,12 +11,12 @@ import {
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { type ReactNode, Suspense } from 'react';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { getDriveUser, getDriveWorkspace } from '@/lib/workspace';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -35,10 +34,10 @@ export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
   const requestHeaders = await headers();
 
-  const user = await getSatelliteAppSessionUser('drive');
+  const user = await getDriveUser();
   if (!user?.id) redirect('/login');
 
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
+  const workspace = await getDriveWorkspace(id);
 
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, requestHeaders);
