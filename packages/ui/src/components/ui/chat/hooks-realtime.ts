@@ -143,9 +143,11 @@ export function useChatRealtime(
         }
       },
     });
-    const stopWatching = watchForeground(
-      (visible) => visible && connection.retry()
-    );
+    const stopWatching = watchForeground((visible) => {
+      if (!visible) return;
+      connection.retry();
+      refetchActiveChat(queryClient, wsId);
+    });
     return () => {
       stopWatching();
       connection.close();
@@ -207,7 +209,10 @@ export function useChatRealtime(
     });
     const stopWatching = watchForeground((visible) => {
       reportPresence();
-      if (visible) connection?.retry();
+      if (!visible) return;
+      connection?.retry();
+      invalidateConversationMessages(queryClient, wsId, conversationId);
+      invalidateConversationList(queryClient, wsId);
     });
     return () => {
       stopWatching();

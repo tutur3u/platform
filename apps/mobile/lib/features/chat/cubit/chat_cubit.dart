@@ -54,7 +54,8 @@ class ChatCubit extends Cubit<ChatState> {
   StreamSubscription<ChatRealtimeEvent>? _realtimeSubscription;
   StreamSubscription<ChatRealtimeEvent>? _roomSubscription;
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
-  Timer? _realtimeFallback;
+  Timer? _inboxFallback;
+  Timer? _roomFallback;
   String? _roomConversationId;
   static final RegExp _roomIdPattern = RegExp(
     r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
@@ -101,8 +102,10 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     final token = ++_loadToken;
-    _realtimeFallback?.cancel();
-    _realtimeFallback = null;
+    _inboxFallback?.cancel();
+    _inboxFallback = null;
+    _roomFallback?.cancel();
+    _roomFallback = null;
     await _realtimeSubscription?.cancel();
     _realtimeSubscription = null;
     await _roomSubscription?.cancel();
@@ -148,7 +151,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
   }
 
-  Future<void> refresh({bool quietly = false}) async {
+  Future<void> refresh({bool quietly = false, bool fresh = false}) async {
     final wsId = state.wsId;
     if (wsId == null) return;
     final token = quietly ? _loadToken : ++_loadToken;
@@ -167,6 +170,7 @@ class ChatCubit extends Cubit<ChatState> {
       final page = await _repository.listConversations(
         wsId,
         archived: archived,
+        forceRefresh: fresh,
       );
       if (!_scopeActive ||
           token != _loadToken ||
@@ -190,6 +194,7 @@ class ChatCubit extends Cubit<ChatState> {
         await selectConversation(
           selectedId,
           forceRefresh: true,
+          fresh: fresh,
           quietly: quietly,
         );
       } else {
@@ -245,6 +250,7 @@ class ChatCubit extends Cubit<ChatState> {
   Future<void> selectConversation(
     String conversationId, {
     bool forceRefresh = false,
+    bool fresh = false,
     bool quietly = false,
   }) async {
     final wsId = state.wsId;
@@ -254,7 +260,7 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     try {
-      await _selectConversation(conversationId, quietly: quietly);
+      await _selectConversation(conversationId, fresh: fresh, quietly: quietly);
     } finally {
       _syncConversationRoom();
     }
@@ -262,6 +268,7 @@ class ChatCubit extends Cubit<ChatState> {
 
   Future<void> _selectConversation(
     String conversationId, {
+    required bool fresh,
     required bool quietly,
   }) async {
     final wsId = state.wsId;
@@ -308,7 +315,11 @@ class ChatCubit extends Cubit<ChatState> {
     }
 
     try {
-      final messages = await _repository.listMessages(wsId, conversationId);
+      final messages = await _repository.listMessages(
+        wsId,
+        conversationId,
+        forceRefresh: fresh,
+      );
       if (!_scopeActive ||
           wsId != state.wsId ||
           token != _loadToken ||
@@ -346,7 +357,7 @@ class ChatCubit extends Cubit<ChatState> {
   void _startRealtime(String wsId) {
     _realtimeSubscription = _realtimeClient.connect(wsId).listen((event) {
       if (!_scopeActive || state.wsId != wsId) return;
-      _handleRealtimeEvent(event);
+      _handleRealtimeEvent(event, room: false);
     });
   }
 
@@ -354,13 +365,13 @@ class ChatCubit extends Cubit<ChatState> {
     if (!_scopeActive || _refreshingFallback || state.isSending) return;
     _refreshingFallback = true;
     try {
-      await refresh(quietly: true);
+      await refresh(fresh: true, quietly: true);
     } finally {
       _refreshingFallback = false;
     }
   }
 
-  void _handleRealtimeEvent(ChatRealtimeEvent event) {
+  void _handleRealtimeEvent(ChatRealtimeEvent event, {required bool room}) {
     switch (event) {
       case ChatRealtimeConversationEvent(:final conversation):
         _upsertConversation(conversation);
@@ -381,14 +392,25 @@ class ChatCubit extends Cubit<ChatState> {
         isTyping ? next.add(actorUserId) : next.remove(actorUserId);
         emit(state.copyWith(typingUserIds: next));
       case ChatRealtimeErrorEvent():
-        if (_realtimeFallback != null) return;
+        final current = room ? _roomFallback : _inboxFallback;
+        if (current != null) return;
         unawaited(_refetchWhenRealtimeUnavailable());
-        _realtimeFallback = Timer.periodic(const Duration(seconds: 30), (_) {
+        final timer = Timer.periodic(const Duration(seconds: 30), (_) {
           unawaited(_refetchWhenRealtimeUnavailable());
         });
+        if (room) {
+          _roomFallback = timer;
+        } else {
+          _inboxFallback = timer;
+        }
       case ChatRealtimeReadyEvent():
-        _realtimeFallback?.cancel();
-        _realtimeFallback = null;
+        if (room) {
+          _roomFallback?.cancel();
+          _roomFallback = null;
+        } else {
+          _inboxFallback?.cancel();
+          _inboxFallback = null;
+        }
       case ChatRealtimeResyncEvent():
         unawaited(_refetchWhenRealtimeUnavailable());
     }
@@ -418,7 +440,7 @@ class ChatCubit extends Cubit<ChatState> {
               state.selectedConversationId != next) {
             return;
           }
-          _handleRealtimeEvent(event);
+          _handleRealtimeEvent(event, room: true);
         });
   }
 
@@ -556,8 +578,10 @@ class ChatCubit extends Cubit<ChatState> {
     ++_loadToken;
     ++_searchRequestVersion;
     await _sendSubscription?.cancel();
-    _realtimeFallback?.cancel();
-    _realtimeFallback = null;
+    _inboxFallback?.cancel();
+    _inboxFallback = null;
+    _roomFallback?.cancel();
+    _roomFallback = null;
     await _realtimeSubscription?.cancel();
     final room = _roomSubscription;
     _roomSubscription = null;

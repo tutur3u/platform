@@ -54,8 +54,9 @@ bun --conditions=react-server apps/chat-realtime/scripts/probe-ticket-publish.mj
 
 Run it through resource admission. The script writes a temporary project
 `chatrtprobe20` with API port 18521, database port 18522, and the rest of that
-block through 18529. It symlinks this repo's migrations, seeds one fixture,
-and starts workerd with a disposable HMAC secret. The ticket and publish calls
+block through 18529. It copies this repo's migrations, templates, and
+seed into that project, seeds one fixture, and starts workerd with a
+disposable HMAC secret. The ticket and publish calls
 are `createChatRealtimeSubscribeTicket` and `publishChatRealtimeWorkerEvent`.
 Membership is the same `private.chat_get_conversation` RPC the ticket route
 uses. The probe does not boot Next, so session authentication stays on the

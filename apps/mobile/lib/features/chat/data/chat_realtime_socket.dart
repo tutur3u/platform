@@ -4,6 +4,7 @@ const chatRealtimeSubprotocol = 'tuturuuu.chat.v1';
 const _ticketPrefix = 'ticket.';
 const chatRealtimeCloseExpired = 4001;
 const chatRealtimeCloseRemoved = 4003;
+const chatRealtimeCloseStopped = 4503;
 const _maxFailures = 5;
 
 /// Full jitter in the upper half of a delay that doubles from 1 s to 30 s.
@@ -22,11 +23,13 @@ class ChatRealtimeLiveSocket {
     required this.messages,
     required this.close,
     this.closeCode,
+    this.send,
   });
 
   final Stream<dynamic> messages;
   final Future<void> Function() close;
   final int? Function()? closeCode;
+  final void Function(String data)? send;
 }
 
 Future<ChatRealtimeLiveSocket> _defaultOpenSocket(
@@ -40,6 +43,7 @@ Future<ChatRealtimeLiveSocket> _defaultOpenSocket(
     // ignore: unnecessary_lambdas
     close: () => socket.close(),
     closeCode: () => socket.closeCode,
+    send: socket.add,
   );
 }
 
@@ -92,6 +96,19 @@ class _ChatRealtimeRun {
 
   void retry() {
     _releaseRetry();
+  }
+
+  /// Tells the Worker this socket is not the open thread. An attached socket
+  /// starts as foreground and would suppress push while the app is away.
+  void reportPresence(bool foreground) {
+    final send = _socket?.send;
+    if (send == null) return;
+    send(
+      jsonEncode({
+        'state': foreground ? 'foreground' : 'background',
+        't': 'presence',
+      }),
+    );
   }
 
   void _releaseRetry() {
@@ -151,7 +168,13 @@ class _ChatRealtimeRun {
         _emit(const ChatRealtimeResyncEvent());
         return;
       }
-      if (end.code == chatRealtimeCloseExpired && end.opened) continue;
+      if (end.code == chatRealtimeCloseStopped) {
+        // Poll until foreground or online retry, including the first close.
+        failures = await _fail(_maxFailures - 1);
+        continue;
+      }
+      // Expiry can arrive before ready. Refresh the ticket with no backoff.
+      if (end.code == chatRealtimeCloseExpired) continue;
       failures = await _fail(failures);
     }
   }
@@ -203,12 +226,13 @@ class _ChatRealtimeRun {
             opened = true;
             final seq = _seq(frame['seq']);
             final current = cursor;
+            final behind = seq != null && current != null && seq < current;
             if (seq != null && (current == null || seq < current)) {
               cursor = seq;
             }
             selfId = frame['userId']?.toString();
             _emit(const ChatRealtimeReadyEvent());
-            if (first) _emit(const ChatRealtimeResyncEvent());
+            if (first || behind) _emit(const ChatRealtimeResyncEvent());
           case 'event':
             final seq = _seq(frame['seq']);
             if (seq != null) cursor = max(cursor ?? 0, seq);

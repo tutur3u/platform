@@ -156,7 +156,9 @@ describe('createChatRealtimeConnection', () => {
     await h.flush();
     expect(h.sockets[1]?.url).toContain('since=40');
     h.sockets[1]?.frame(ready(2));
+    expect(h.onResync).toHaveBeenCalledTimes(2);
     h.sockets[1]?.frame({ t: 'resync' });
+    expect(h.onResync).toHaveBeenCalledTimes(3);
     h.sockets[1]?.frame({
       event: { type: 'typing.updated' } as never,
       seq: 3,
@@ -165,6 +167,30 @@ describe('createChatRealtimeConnection', () => {
     h.sockets[1]?.serverClose(CHAT_REALTIME_CLOSE.expired);
     await h.flush();
     expect(h.sockets[2]?.url).toContain('since=3');
+  });
+
+  it('refreshes an expired ticket before ready without backing off', async () => {
+    const h = harness();
+    await h.flush();
+    expect(h.connection.status).toBe('connecting');
+    h.sockets[0]?.serverClose(CHAT_REALTIME_CLOSE.expired);
+    await h.flush();
+    expect(h.timers).toHaveLength(0);
+    expect(h.getTicket).toHaveBeenCalledTimes(2);
+    expect(h.sockets).toHaveLength(2);
+  });
+
+  it('polls after the worker stops instead of reconnecting', async () => {
+    const h = harness();
+    await h.flush();
+    h.sockets[0]?.frame(ready());
+    h.sockets[0]?.serverClose(CHAT_REALTIME_CLOSE.stopped);
+    expect(h.connection.status).toBe('polling');
+    expect(h.timers).toHaveLength(0);
+    expect(h.sockets).toHaveLength(1);
+    h.connection.retry();
+    await h.flush();
+    expect(h.sockets).toHaveLength(2);
   });
 
   it('backs off from 1 s to 30 s and polls after five failures', async () => {

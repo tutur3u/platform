@@ -203,6 +203,25 @@ describe('useChatRealtime', () => {
     expect(inbox().retry).toHaveBeenCalled();
   });
 
+  it('keeps a hidden inbox resync and refetches when the page returns', () => {
+    const { invalidate, queryClient } = setup();
+    const refetch = vi.spyOn(queryClient, 'refetchQueries');
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    act(() => inbox().handlers.onResync());
+    expect(invalidate).toHaveBeenCalled();
+    expect(refetch).not.toHaveBeenCalled();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(refetch).toHaveBeenCalled();
+  });
+
   it('uses the local stream when the Worker is not configured', () => {
     const sources: { close: ReturnType<typeof vi.fn>; url: string }[] = [];
     vi.stubGlobal(

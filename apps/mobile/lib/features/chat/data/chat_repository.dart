@@ -49,9 +49,11 @@ class ChatRepository {
   Future<Map<String, dynamic>> _read(
     String wsId,
     String namespace,
-    String path,
-  ) => readThroughJson(
+    String path, {
+    bool forceRefresh = false,
+  }) => readThroughJson(
     api: _apiClient,
+    forceRefresh: forceRefresh,
     namespace: 'chat.$namespace',
     workspaceId: wsId,
     path: path,
@@ -62,6 +64,7 @@ class ChatRepository {
     ChatArchivedFilter archived = ChatArchivedFilter.active,
     int limit = 40,
     int offset = 0,
+    bool forceRefresh = false,
   }) async {
     final query = Uri(
       queryParameters: {
@@ -71,7 +74,12 @@ class ChatRepository {
       },
     ).query;
     final base = '/api/v1/workspaces/$wsId/chat/conversations';
-    final response = await _read(wsId, 'conversations', '$base?$query');
+    final response = await _read(
+      wsId,
+      'conversations',
+      '$base?$query',
+      forceRefresh: forceRefresh,
+    );
     final rows = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'chat',
@@ -237,6 +245,7 @@ class ChatRepository {
     String conversationId, {
     String? before,
     int limit = 60,
+    bool forceRefresh = false,
   }) async {
     final query = Uri(
       queryParameters: {
@@ -245,7 +254,12 @@ class ChatRepository {
       },
     ).query;
     final path = '${_conversationPath(wsId, conversationId)}/messages';
-    final response = await _read(wsId, 'messages', '$path?$query');
+    final response = await _read(
+      wsId,
+      'messages',
+      '$path?$query',
+      forceRefresh: forceRefresh,
+    );
     final rows = overlayPendingCollection(
       workspaceId: wsId,
       feature: 'chat',

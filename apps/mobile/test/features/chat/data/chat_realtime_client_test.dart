@@ -144,6 +144,51 @@ void main() {
       'message-2',
     );
 
+    sockets[1].code = chatRealtimeCloseStopped;
+    await sockets[1].finish();
+    await _until(() => events.whereType<ChatRealtimeErrorEvent>().isNotEmpty);
+    expect(sockets, hasLength(2));
+
+    final beforeRetry = sockets.length;
+    client.retry();
+    await _until(() => sockets.length == beforeRetry + 1);
+    final beforeReady = events.whereType<ChatRealtimeResyncEvent>().length;
+    sockets.last.add({'t': 'ready', 'seq': 0, 'userId': 'self'});
+    await _until(
+      () => events.whereType<ChatRealtimeResyncEvent>().length > beforeReady,
+    );
+
+    await subscription.cancel();
+    client.dispose();
+  });
+
+  test('expiry before ready refreshes the ticket without backoff', () async {
+    final sockets = <_ScriptedSocket>[];
+    final waits = <Completer<void>>[];
+    final client = _client(
+      ticket: (_, {conversationId}) async => {
+        'enabled': true,
+        'ticket': 'tok',
+        'url': 'ws://127.0.0.1:9/v1/connect',
+      },
+      openSocket: (url, protocols) async {
+        final socket = _ScriptedSocket(url, protocols);
+        sockets.add(socket);
+        return socket.live;
+      },
+      wait: (_) {
+        final gate = Completer<void>();
+        waits.add(gate);
+        return gate.future;
+      },
+    );
+    final subscription = client.connect('workspace').listen((_) {});
+    await _until(() => sockets.length == 1);
+    sockets.single.code = chatRealtimeCloseExpired;
+    await sockets.single.finish();
+    await _until(() => sockets.length == 2);
+    expect(waits, isEmpty);
+
     await subscription.cancel();
     client.dispose();
   });

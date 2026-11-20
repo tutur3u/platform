@@ -54,7 +54,6 @@ const ID = {
 const repoRoot = fileURLToPath(new URL('../../..', import.meta.url));
 const databaseDir = path.join(repoRoot, 'apps/database/supabase');
 const workerRoot = path.join(repoRoot, 'apps/chat-realtime');
-const results = [];
 
 function sqlFailure(stderr) {
   const line =
@@ -63,28 +62,16 @@ function sqlFailure(stderr) {
 }
 
 function pass(name) {
-  results.push(name);
   console.log(`PASS ${name}`);
 }
 
 function fail(name, reason) {
-  console.error(`FAIL ${name}: ${reason}`);
+  // The reason stays off the log. CLI text can carry keys and URLs.
+  void reason;
+  console.error(`FAIL ${name}`);
   const error = new Error(name);
   error.safe = true;
   throw error;
-}
-
-function redact(text) {
-  return text
-    .replace(
-      /eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}/g,
-      '[redacted]'
-    )
-    .replace(
-      /(KEY|SECRET|PASSWORD|TOKEN|DATABASE_URL|DB_URL)=("[^"]*"|'[^']*'|\S+)/gi,
-      '$1=[redacted]'
-    )
-    .replace(/postgres(?:ql)?:\/\/[^\s'"]+/gi, '[redacted-db]');
 }
 
 function supabaseBin() {
@@ -148,7 +135,7 @@ function writeConfig(root) {
     if (trimmed.startsWith('#')) return false;
     return (
       trimmed === 'project_id = "tuturuuu"' ||
-      /^(?:port|shadow_port) = 800[0-9]$/.test(trimmed)
+      /^[A-Za-z0-9_]*port\s*=\s*800[0-9]\b/.test(trimmed)
     );
   });
   if (sharedPort) {
@@ -288,6 +275,10 @@ function startNodeWorker(secret) {
         origin,
         close: () =>
           new Promise((done) => {
+            if (child.exitCode !== null || child.signalCode !== null) {
+              done();
+              return;
+            }
             const kill = setTimeout(() => child.kill('SIGKILL'), 10_000);
             child.once('exit', () => {
               clearTimeout(kill);
@@ -301,11 +292,8 @@ function startNodeWorker(secret) {
       stderr = (stderr + chunk.toString()).slice(-4_000);
     });
     child.once('exit', (code) => {
-      const line = stderr
-        .split('\n')
-        .map((item) => item.trim())
-        .find((item) => item && !/secret|token|key=/i.test(item));
-      fail((line || `worker exited ${code ?? 'signal'}`).slice(0, 180));
+      void stderr;
+      fail(`worker exited ${code ?? 'signal'}`);
     });
     child.once('error', () => fail('worker did not start'));
   });
@@ -354,7 +342,6 @@ async function main() {
       { cwd: root }
     );
     if (started.code !== 0) {
-      console.error(redact(started.output).split('\n').slice(-20).join('\n'));
       fail('isolated database', `start exited ${started.code}`);
     }
     pass('isolated database');
@@ -435,27 +422,40 @@ async function main() {
       ['stop', '--no-backup', '--workdir', root, '--yes'],
       { cwd: root }
     ).catch(() => ({ code: 1, output: '' }));
-    if (stopped.code !== 0) {
-      await run('docker', ['ps', '-aq', '--filter', `name=${PROJECT_ID}`]).then(
-        async (listed) => {
-          const ids = listed.output
-            .split('\n')
-            .map((line) => line.trim())
-            .filter(Boolean);
-          if (ids.length) await run('docker', ['rm', '-f', ...ids]);
-        }
-      );
-    }
+    if (stopped.code !== 0) await removeOwnedContainers();
     await rm(root, { force: true, recursive: true });
   }
-  console.log(`probe passed: ${results.length} checks`);
+}
+
+function ownedContainerIds(output) {
+  const owned = new RegExp(`(?:^|_)${PROJECT_ID}$`);
+  return output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) => {
+      const tab = line.indexOf('\t');
+      if (tab < 0) return [];
+      const id = line.slice(0, tab).trim();
+      const name = line.slice(tab + 1).trim();
+      return id && owned.test(name) ? [id] : [];
+    });
+}
+
+async function removeOwnedContainers() {
+  const listed = await run('docker', [
+    'ps',
+    '-a',
+    '--filter',
+    `name=${PROJECT_ID}`,
+    '--format',
+    '{{.ID}}\t{{.Names}}',
+  ]);
+  const ids = ownedContainerIds(listed.output);
+  if (ids.length) await run('docker', ['rm', '-f', ...ids]);
 }
 
 main().catch((error) => {
-  if (!error?.safe) {
-    const message = String(error?.message ?? 'Error');
-    const safe = !/eyJ|postgres|token|secret|\/\/|key=/i.test(message);
-    console.error(`probe failed: ${safe ? message : (error?.name ?? 'Error')}`);
-  }
+  if (!error?.safe) console.error('FAIL probe');
   process.exitCode = 1;
 });

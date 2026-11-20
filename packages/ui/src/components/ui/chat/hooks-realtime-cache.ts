@@ -46,8 +46,18 @@ export function updateConversationSet(
 }
 
 export function refetchActiveChat(queryClient: QueryClient, wsId: string) {
-  if (typeof document !== 'undefined' && document.visibilityState === 'hidden')
+  if (
+    typeof document !== 'undefined' &&
+    document.visibilityState === 'hidden'
+  ) {
+    // Keep the missed resync. A hidden tab must not fetch, and it must not
+    // drop the signal: the queries refetch when the page is visible again.
+    void queryClient.invalidateQueries({
+      queryKey: chatQueryKeys.all(wsId),
+      refetchType: 'none',
+    });
     return;
+  }
   void queryClient.refetchQueries(
     { queryKey: chatQueryKeys.all(wsId), type: 'active' },
     { cancelRefetch: false }

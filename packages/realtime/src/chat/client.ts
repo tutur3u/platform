@@ -214,15 +214,16 @@ export function createChatRealtimeConnection(
     switch (frame.t) {
       case 'ready': {
         const firstOpen = since === null;
+        const seq = typeof frame.seq === 'number' ? frame.seq : null;
+        // A room sequence behind the cursor means the room lost its log.
+        // Refetch now, so a dropped resync frame cannot skip recovery.
+        const behind = seq !== null && since !== null && seq < since;
         failures = 0;
-        roomSeq = typeof frame.seq === 'number' ? frame.seq : null;
-        // A room sequence behind the cursor means the room lost its log;
-        // the resync that follows restarts the cursor from the room.
-        if (roomSeq !== null && (since === null || roomSeq < since))
-          since = roomSeq;
+        roomSeq = seq;
+        if (seq !== null && (since === null || seq < since)) since = seq;
         setStatus('open');
         options.onReady?.(frame);
-        if (firstOpen) options.onResync();
+        if (firstOpen || behind) options.onResync();
         return;
       }
       case 'resync':
@@ -251,9 +252,15 @@ export function createChatRealtimeConnection(
       options.onResync();
       return;
     }
-    if (code === CHAT_REALTIME_CLOSE.expired && status === 'open') {
-      // An expired ticket on a live socket is routine: reconnect with a
-      // fresh ticket and the replay cursor instead of backing off.
+    if (code === CHAT_REALTIME_CLOSE.stopped) {
+      // The stop fence returns the client to polling. The next socket waits
+      // for foreground or online, so a closed Worker is not a reconnect loop.
+      setStatus('polling');
+      return;
+    }
+    if (code === CHAT_REALTIME_CLOSE.expired) {
+      // Expiry can arrive before ready. Refresh the ticket immediately and
+      // keep the replay cursor; this is not a failed attempt.
       setStatus('connecting');
       void connect();
       return;

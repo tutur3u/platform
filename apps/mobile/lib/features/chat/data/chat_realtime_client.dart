@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -115,6 +116,7 @@ class ChatRealtimeClient {
   final List<_ChatRealtimeRun> _runs = [];
   bool _disposed = false;
   AppLifecycleListener? _lifecycle;
+  StreamSubscription<List<ConnectivityResult>>? _connectivity;
 
   /// Inbox socket, or one conversation room when [conversationId] is set.
   Stream<ChatRealtimeEvent> connect(String wsId, {String? conversationId}) {
@@ -151,7 +153,27 @@ class ChatRealtimeClient {
     } on Object {
       return;
     }
-    _lifecycle = AppLifecycleListener(onResume: retry);
+    _lifecycle = AppLifecycleListener(
+      onResume: () {
+        _reportPresence(true);
+        retry();
+      },
+      onPause: () => _reportPresence(false),
+      onInactive: () => _reportPresence(false),
+      onHide: () => _reportPresence(false),
+    );
+    _connectivity ??= Connectivity().onConnectivityChanged.listen((results) {
+      if (_disposed) return;
+      if (results.any((value) => value != ConnectivityResult.none)) {
+        retry();
+      }
+    }, onError: (Object _) {});
+  }
+
+  void _reportPresence(bool foreground) {
+    for (final run in _runs) {
+      run.reportPresence(foreground);
+    }
   }
 
   Future<Map<String, dynamic>> _ticket(String wsId, {String? conversationId}) {
@@ -279,6 +301,8 @@ class ChatRealtimeClient {
     _disposed = true;
     _lifecycle?.dispose();
     _lifecycle = null;
+    unawaited(_connectivity?.cancel());
+    _connectivity = null;
     for (final run in [..._runs]) {
       run.stop();
     }

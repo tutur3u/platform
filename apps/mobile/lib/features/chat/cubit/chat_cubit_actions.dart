@@ -12,6 +12,9 @@ extension ChatCubitActions on ChatCubit {
         aiObservability: null,
       ),
     );
+    // Leaving the thread closes its room socket. An open socket is foreground
+    // and would suppress push for a conversation the user is not reading.
+    _syncConversationRoom();
   }
 
   void setScope(ChatScope scope) {

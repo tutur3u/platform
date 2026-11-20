@@ -89,20 +89,15 @@ export function createReporter(write = (line) => console.log(line)) {
   return {
     results,
     async step(name, run) {
-      const started = Date.now();
       try {
         await run();
         results.push({ name, ok: true });
-        write(`PASS ${name} (${Date.now() - started} ms)`);
+        write(`PASS ${name}`);
       } catch (error) {
         results.push({ name, ok: false });
-        // Our own assertions carry safe text; anything else is reduced to
-        // its type so provider responses cannot leak identifiers.
-        const reason =
-          error instanceof QualificationError
-            ? error.message
-            : (error?.name ?? 'Error');
-        write(`FAIL ${name}: ${reason}`);
+        // Failure text can contain a workspace id or a request path. The log
+        // keeps the check name and nothing else.
+        write(`FAIL ${name}`);
         throw error;
       }
     },

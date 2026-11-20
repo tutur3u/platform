@@ -38,10 +38,7 @@ export function createWebClient(config) {
 
   async function json(session, path, init) {
     const response = await request(session, path, init);
-    check(
-      response.ok,
-      `${init?.method ?? 'GET'} ${label(path)} returned ${response.status}`
-    );
+    check(response.ok, `${init?.method ?? 'GET'} returned ${response.status}`);
     return response.json();
   }
 
@@ -98,12 +95,4 @@ export function createWebClient(config) {
       });
     },
   };
-}
-
-/** Path shape without identifiers, for failure messages. */
-function label(path) {
-  return path.replace(
-    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/giu,
-    ':id'
-  );
 }
