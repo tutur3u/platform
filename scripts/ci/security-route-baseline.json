@@ -3144,6 +3144,10 @@
     "digest": "8eac9e3377c70b7d45ac1b77db6cabd2d53d4af9d2e631d1ac98e0a4253d8508"
   },
   {
+    "file": "apps/meet/src/app/api/meet-call/[meetingId]/classroom-tools/route.ts",
+    "digest": "3843ba4d8556d032be60a59010ce484528dbce11597369d218beb6e57de935f7"
+  },
+  {
     "file": "apps/meet/src/app/api/meet-call/[meetingId]/costs/route.ts",
     "digest": "a9d46fec559e346f47db72f15ac49a61490a50e14f9c581fa69e17272c4ec6ed"
   },

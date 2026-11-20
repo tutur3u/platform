@@ -42,7 +42,8 @@ export async function resolveMeetCallRouteAccess(
 
 export async function callRoomService<T>(
   access: MeetCallRouteAccess,
-  command: unknown
+  command: unknown,
+  options?: { classroomTools: true }
 ): Promise<T> {
   const anonymousGuest = 'guest' in access && access.guest === true;
   const session = await getMeetCallSession({
@@ -58,6 +59,7 @@ export async function callRoomService<T>(
     admission: access.admission,
     avatarUrl: 'avatarUrl' in access ? access.avatarUrl : undefined,
     service: true,
+    ...(options?.classroomTools ? { classroomTools: true } : {}),
     workspaceMember: access.canReadWorkspace,
   });
   const url = new URL(session.realtimeUrl);
@@ -93,7 +95,7 @@ export async function personalWorkspace(userId: string) {
     throw new MeetCallAccessError(503, 'Personal workspace is unavailable');
   return data.id;
 }
-async function meetCallRoomRoute(
+export async function meetCallRoomRoute(
   request: Request,
   meetingId: string,
   allowGuest: boolean,

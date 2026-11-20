@@ -45,11 +45,13 @@ const meetingId = '10000000-0000-4000-8000-000000000001';
 function model(
   policy: Record<string, unknown>,
   isHost = false,
-  formsEnabled = false
+  formsEnabled = false,
+  classroomToolsEnabled = false
 ) {
   return {
     kind: 'room',
     formsEnabled,
+    classroomToolsEnabled,
     access: {
       meeting: { id: meetingId, name: 'Weekly sync', ws_id: 'ws-1' },
       user: { id: 'viewer-id' },
@@ -64,14 +66,26 @@ function model(
 
 beforeEach(() => vi.clearAllMocks());
 
-test.each([false, true])(
-  'passes the server Forms flag (%s) to the live call',
-  (formsEnabled) => {
+test.each([
+  [false, false],
+  [true, false],
+  [false, true],
+  [true, true],
+])(
+  'passes independent Forms (%s) and classroom (%s) server flags to the live call',
+  (formsEnabled, classroomToolsEnabled) => {
     const [shell] = findByType(
-      RoomView({ model: model({ ended: false }, false, formsEnabled) }),
+      RoomView({
+        model: model(
+          { ended: false },
+          false,
+          formsEnabled,
+          classroomToolsEnabled
+        ),
+      }),
       mocks.shell
     );
-    expect(shell?.props).toMatchObject({ formsEnabled });
+    expect(shell?.props).toMatchObject({ formsEnabled, classroomToolsEnabled });
   }
 );
 

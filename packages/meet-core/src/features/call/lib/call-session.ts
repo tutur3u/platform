@@ -7,6 +7,7 @@ import {
   type MeetRealtimeRole,
   meetRealtimeTokenPayloadSchema,
 } from '@tuturuuu/realtime/meet';
+import { MEET_CLASSROOM_TOOLS_SCOPE } from '@tuturuuu/realtime/meet/classroom-tools-schema';
 import { signMeetRealtimeToken } from '@tuturuuu/realtime/meet/token';
 
 const TOKEN_TTL_MS = 10 * 60_000;
@@ -42,6 +43,7 @@ export async function getMeetCallSession({
   displayName,
   deviceId,
   service = false,
+  classroomTools = false,
   maxRoomDurationSeconds = 7200,
   workspaceMember = false,
   avatarUrl,
@@ -58,6 +60,7 @@ export async function getMeetCallSession({
   displayName: string;
   deviceId?: string;
   service?: boolean;
+  classroomTools?: boolean;
   maxRoomDurationSeconds?: number;
   workspaceMember?: boolean;
   avatarUrl?: string;
@@ -103,6 +106,7 @@ export async function getMeetCallSession({
     scopes: [
       ...getMeetRealtimeScopesForRole(role),
       ...(coHost && role !== 'host' ? ['class:cohost'] : []),
+      ...(service && classroomTools ? [MEET_CLASSROOM_TOOLS_SCOPE] : []),
       ...(service
         ? ['meet:server', ...(workspaceMember ? ['meet:workspace-member'] : [])]
         : []),

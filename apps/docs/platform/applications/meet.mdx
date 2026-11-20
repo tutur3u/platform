@@ -470,6 +470,36 @@ Regression coverage: `packages/realtime/src/meet/room-documents.test.ts`,
 `packages/meet-core/src/routes/api/meet-call/[meetingId]/document/route.test.ts`
 and `packages/meet-core/src/features/call/components/document-workspace.test.tsx`.
 
+## Whiteboard and breakout groups
+
+Both classroom tools are off by default. Enable the Meet Worker binding
+`MEET_EDUCATION_ENABLED` with the exact value `true`, then opt the meeting's
+workspace in with `ENABLE_EDUCATION`. Reload the call to discover the tools in
+the call activities menu. The API checks both flags on each read and write.
+Workspace opt-in governs the meeting, so admitted guests can participate.
+
+The whiteboard shares completed freehand strokes, rectangles, text and sticky
+notes. Each participant has their own drawing tools and can undo their own
+edits. The host can undo the most recent edit or clear the board. Open panels
+refresh every three seconds and reuse drawing data while the revision is
+unchanged. The room stores up to 200 items or 256 KiB. Each author can store
+up to 32 items or 32 KiB.
+
+The host can create timed breakout groups with automatic placement, manual
+assignment or participant choice. The host can move participants, send a
+message to all groups, extend the deadline or close the session. Group members
+can request help. Audio and video continue in the main call during grouping.
+
+Deploy the compatible Meet and Meet realtime Workers before enabling the
+binding. Use one opted-in workspace to verify both panels with two admitted
+participants, then verify that another workspace stays off. Both tools use the
+existing meeting room snapshot and follow its lifecycle. Removing either flag
+disables access.
+
+Regression coverage lives in
+`packages/realtime/src/meet/room-classroom-tools.test.ts` and
+`apps/meet/src/app/api/meet-call/[meetingId]/classroom-tools/route.test.ts`.
+
 ## Meet AI kill switch
 
 The shared realtime workspace gate disables Meet AI when `MEET_AI_DISABLED` is

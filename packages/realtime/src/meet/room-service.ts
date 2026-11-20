@@ -18,6 +18,8 @@ import {
   personalChatReceipt,
   personalChatReceiptCommand,
 } from './personal-chat-receipts';
+import type { RoomBreakouts } from './room-breakouts';
+import type { RoomWhiteboard } from './room-whiteboard';
 import { roomBudgetSummary } from './room-budget';
 import { retainRoomChat } from './room-chat';
 import { applyRoomDocuments, type RoomDocumentsState } from './room-documents';
@@ -69,6 +71,8 @@ export type RoomServiceState = MeetRoomSnapshot & {
   documents?: RoomDocumentsState;
   polls?: RoomPoll[];
   quizArena?: RoomQuizArenaState;
+  whiteboard?: RoomWhiteboard;
+  breakouts?: RoomBreakouts;
   miraPrivate?: MiraPrivateState;
   programmingMira?: RoomProgrammingMira;
   personalChatReceipts?: PersonalChatReceipts;
@@ -142,18 +146,20 @@ const command = z.union([
   })),
   roomCommand.transform((message) => ({ service: 'room' as const, message })),
 ]);
+export type RoomServiceResult = {
+  state: RoomServiceState;
+  body: unknown;
+  status?: number;
+  messages?: MeetRealtimeServerMessage[];
+};
+
 export function roomService(
   snapshot: RoomServiceState,
   token: MeetRealtimeTokenPayload,
   input: unknown,
   features = meetClassFeatures(),
   formsEnv: MeetRoomFormsEnv = {}
-): {
-  state: RoomServiceState;
-  body: unknown;
-  status?: number;
-  messages?: MeetRealtimeServerMessage[];
-} {
+): RoomServiceResult {
   const fail = (error: string, status = 403) => ({
     state: snapshot,
     body: { error },

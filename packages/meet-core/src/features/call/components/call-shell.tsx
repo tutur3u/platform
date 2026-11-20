@@ -67,6 +67,7 @@ function CallShellContent({
   defaultDisplayName,
   defaultAvatarUrl,
   canReadWorkspace = true,
+  classroomToolsEnabled,
   requiresAccount = false,
   formsEnabled = false,
   formsTurnstileSiteKey,
@@ -82,6 +83,7 @@ function CallShellContent({
   defaultDisplayName: string;
   defaultAvatarUrl?: string;
   canReadWorkspace?: boolean;
+  classroomToolsEnabled?: boolean;
   requiresAccount?: boolean;
   formsEnabled?: boolean;
   formsTurnstileSiteKey?: string;
@@ -114,12 +116,8 @@ function CallShellContent({
   const [drawer, setDrawer] = useState<
     CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer
   >(null);
-  const panel =
-    drawer === 'participants'
-      ? drawer
-      : drawer === 'chat' || drawer === 'feedback'
-        ? 'chat'
-        : null;
+  const chatOpen = drawer === 'chat' || drawer === 'feedback';
+  const panel = chatOpen ? 'chat' : drawer === 'participants' ? drawer : null;
   const privateT = useTranslations('meet.call.private_tools');
   const [outputDeviceId, setOutputDeviceId] = useState('');
   const [mentionRequest, setMentionRequest] = useState(0);
@@ -301,6 +299,7 @@ function CallShellContent({
     formsEnabled,
     formsTurnstileSiteKey,
     formsAccess: { canManage, canReadWorkspace },
+    classroomToolsEnabled,
     drawer,
     onDrawer: setDrawer,
   });

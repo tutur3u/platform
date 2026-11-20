@@ -4,6 +4,9 @@ import { ClipboardList } from '@tuturuuu/icons';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { ClassroomControls } from '../../classroom-tools/classroom-controls';
+import type { ClassroomTool } from '../../classroom-tools/classroom-client';
+import { ClassroomPanel } from '../../classroom-tools/classroom-panel';
 import { useCallPolls } from '../lib/polls-client';
 import { useCallQuizArena } from '../lib/quiz-arena-client';
 import { AccountRequiredState } from './account-required-state';
@@ -20,13 +23,14 @@ const MeetFormsActivity = dynamic(
   { ssr: false }
 );
 
-export type ActivityDrawer = 'polls' | 'quiz-arena' | 'forms';
+export type ActivityDrawer = 'polls' | 'quiz-arena' | 'forms' | ClassroomTool;
 
 /** Classroom activities share one drawer slot and one control group. */
 export function useCallActivities<D extends string | null>({
   meetingId,
   accountId,
   enabled,
+  classroomToolsEnabled = false,
   showTools = true,
   formsEnabled,
   formsTurnstileSiteKey,
@@ -38,6 +42,7 @@ export function useCallActivities<D extends string | null>({
   meetingId: string;
   accountId: string;
   enabled: boolean;
+  classroomToolsEnabled?: boolean;
   showTools?: boolean;
   formsEnabled: boolean;
   formsTurnstileSiteKey?: string;
@@ -51,6 +56,7 @@ export function useCallActivities<D extends string | null>({
   const formsT = useTranslations('meet.call');
   const [hasOpenedForms, setHasOpenedForms] = useState(false);
   const canUseForms = enabled && formsEnabled && !requiresAccount;
+  const classroomAvailable = enabled && classroomToolsEnabled;
   const polls = useCallPolls(meetingId, accountId, enabled, drawer === 'polls');
   const arena = useCallQuizArena(
     meetingId,
@@ -95,6 +101,9 @@ export function useCallActivities<D extends string | null>({
             onClick={() => toggle('polls')}
           />
         )}
+        {classroomAvailable && (
+          <ClassroomControls active={drawer} toggle={toggle} />
+        )}
         {showArena && (
           <QuizArenaControl
             query={arena}
@@ -125,6 +134,16 @@ export function useCallActivities<D extends string | null>({
             onClose={close}
           />
         )}
+        {classroomAvailable &&
+          (drawer === 'whiteboard' || drawer === 'breakouts') && (
+            <ClassroomPanel
+              key={drawer}
+              tool={drawer}
+              accountId={accountId}
+              meetingId={meetingId}
+              close={close}
+            />
+          )}
         {drawer === 'polls' && showPolls ? (
           <PollsPanel
             accountId={accountId}

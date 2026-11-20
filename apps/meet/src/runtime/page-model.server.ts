@@ -1,3 +1,4 @@
+import { isMeetClassroomEnabled } from '@/features/classroom-tools/access.server';
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
 import {
@@ -170,7 +171,7 @@ async function roomModel(code: string, locale: string, url: URL) {
     const { info, ...invite } = access;
     return { kind: 'public-invite' as const, ...invite, meta: roomMeta(info) };
   }
-  const [info, policy] = await Promise.all([
+  const [info, policy, classroomToolsEnabled] = await Promise.all([
     infoPromise,
     access.isHost
       ? sources.hostPolicy(access.meeting)
@@ -180,6 +181,7 @@ async function roomModel(code: string, locale: string, url: URL) {
           userId: access.user.id,
           isHost: access.isHost,
         }),
+    isMeetClassroomEnabled(access.meeting.ws_id),
   ]);
   return {
     kind: 'room' as const,
@@ -196,6 +198,7 @@ async function roomModel(code: string, locale: string, url: URL) {
       },
     },
     policy,
+    classroomToolsEnabled,
     initialShowNotes: url.searchParams.get('notes') === '1',
   };
 }

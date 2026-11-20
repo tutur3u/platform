@@ -123,6 +123,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   // Class timer commands recheck the current host or co-host, then forward a
   // short-lived server credential. The browser socket cannot run them.
   'apps/meet/src/app/api/meet-call/[meetingId]/class-timer/route.ts',
+  // Classroom tools require workspace opt-in and a scoped, admitted room service.
+  'apps/meet/src/app/api/meet-call/[meetingId]/classroom-tools/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/files/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/responses/[responseId]/files/[uploadId]/route.ts',
   'apps/meet/src/app/api/meet-call/[meetingId]/forms/[launchId]/extended/route.ts',
