@@ -361,6 +361,26 @@ describe('LMS cutover', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps legacy API reads on their existing mount during cutover', async () => {
+    const { handle } = handler();
+    const { env, fetch } = mountEnv('/learn,/learn/*,/lms,/lms/*');
+    const lms = vi.fn(async () => new Response('lms'));
+    const request = new Request(
+      'https://tuturuuu.com/learn/api/build-info?x=1&x=2'
+    );
+
+    const response = await handle(request, {
+      ...env,
+      GATEWAY_LMS_REDIRECTS: '1',
+      MOUNT_LMS: { fetch: lms },
+    } as unknown as Env);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(fetch).toHaveBeenCalledExactlyOnceWith(request);
+    expect(lms).not.toHaveBeenCalled();
+  });
+
   it('redirects all legacy hosts only once the canonical mount is enabled', async () => {
     const { handle } = handler();
     const { env, fetch } = mountEnv('/learn,/learn/*,/lms,/lms/*');

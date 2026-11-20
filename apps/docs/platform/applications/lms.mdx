@@ -300,8 +300,9 @@ locale before continuing to the unprefixed path.
 | `https://lms.tuturuuu.com/{path}` | `https://tuturuuu.com/lms/{path}` |
 
 Navigation redirects use HTTP 301 and preserve encoded paths and the query
-string, including repeated parameters. Exercise non-GET API clients against
-their existing origins before retiring compatibility routes. Public LMS
+string, including repeated parameters. API calls, server functions, static
+assets, and requests made by browser fetch stay on their existing routes.
+The gateway's LMS redirect and mount tests cover this behavior. Public LMS
 documents declare their apex canonical URL. Private pages, authentication
 pages, and staging hosts carry `noindex`.
 

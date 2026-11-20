@@ -51,4 +51,33 @@ describe('LMS legacy routes', () => {
       )
     ).toBeNull();
   });
+
+  it.each([
+    'teach.tuturuuu.com/api/v1/workspaces/w/teach',
+    'learn.tuturuuu.com/api',
+    'tuturuuu.com/learn/api/build-info',
+    'tuturuuu.com/teach/_serverFn/attendance',
+    'tuturuuu.com/learn/assets/chunk.js',
+    'teach.tuturuuu.com/_next/static/chunk.js',
+    'teach.tuturuuu.com/robots.txt',
+    'tuturuuu.com/learn/sitemap.xml',
+    'lms.tuturuuu.com/lms/learn/api/build-info',
+  ])('keeps GET and HEAD service requests at %s', (from) => {
+    for (const method of ['GET', 'HEAD']) {
+      expect(
+        lmsRedirectDestination(new Request(`https://${from}`, { method }))
+      ).toBeNull();
+    }
+  });
+
+  it('keeps a browser fetch on the legacy route while redirecting navigation', () => {
+    const url = 'https://teach.tuturuuu.com/apiary/courses';
+    const request = (mode: string) =>
+      new Request(url, { headers: { 'Sec-Fetch-Mode': mode } });
+
+    expect(lmsRedirectDestination(request('cors'))).toBeNull();
+    expect(lmsRedirectDestination(request('navigate'))?.href).toBe(
+      'https://tuturuuu.com/lms/teach/apiary/courses'
+    );
+  });
 });
