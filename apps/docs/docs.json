@@ -133,6 +133,7 @@
               "platform/features/external-project-studio",
               "platform/features/forms-embedding-and-seo",
               "platform/features/forms-studio-layouts",
+              "platform/features/chat-realtime",
               "platform/features/meet-calls",
               "platform/features/native-calendar-recurrence",
               "platform/features/native-calendar-preferences",

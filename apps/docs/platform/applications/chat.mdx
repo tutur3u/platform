@@ -1,7 +1,7 @@
 ---
 title: Chat
 description: Private-schema workspace messaging for direct messages, groups, channels, AI conversations, and Drive-backed attachments.
-updatedAt: "2026-10-22"
+updatedAt: "2026-11-20"
 audience: users
 ---
 
@@ -13,6 +13,10 @@ Chat is implemented in two hosts:
   `https://chat.tuturuuu.com`, with local Portless origin
   `https://chat.tuturuuu.localhost` and direct fallback
   `http://localhost:7821`.
+
+Live delivery, the shared web and mobile experience, and integrations with
+Tasks, Calendar, Meet, Mail and Drive are specified in
+[Chat realtime and integrations](/platform/features/chat-realtime).
 
 Both hosts render the same shared UI from `@tuturuuu/ui/chat/chat-workspace`
 and call the same `@tuturuuu/internal-api` chat client. Do not add direct
