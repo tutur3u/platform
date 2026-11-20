@@ -26,10 +26,10 @@ export function RoomHostControls({
 }) {
   const t = useTranslations('meet.call');
   return (
-    <section className="space-y-5 border-t p-4">
+    <section className="space-y-4 border-t p-4">
       <div>
         <h3 className="mb-3 font-semibold text-sm">{t('host_controls')}</h3>
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start justify-between gap-4 rounded-md border p-3">
           <div className="space-y-1">
             <Label htmlFor="meet-share-notes">{t('share_notes')}</Label>
             <p className="text-muted-foreground text-xs">
@@ -59,7 +59,10 @@ export function RoomHostControls({
             {approved.length ? (
               <ul className="mt-3 space-y-2">
                 {approved.map((person) => (
-                  <li key={person.userId} className="flex items-center gap-2">
+                  <li
+                    key={person.userId}
+                    className="flex min-h-11 items-center gap-3"
+                  >
                     <Avatar className="size-7">
                       <AvatarImage src={person.avatarUrl} alt="" />
                       <AvatarFallback>
@@ -72,7 +75,7 @@ export function RoomHostControls({
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-8"
+                      className="size-8 shrink-0 pointer-coarse:size-11"
                       aria-label={`${t('forget_approval')}: ${person.displayName}`}
                       title={t('forget_approval')}
                       onClick={() => onForget(person.userId)}

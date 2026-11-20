@@ -93,3 +93,36 @@ it('defaults to room chat and keeps an explicitly chosen conversation private wh
   expect(ask).toHaveBeenCalledOnce();
   client.clear();
 });
+
+it('takes explicit Showcase feedback to room chat without sending a message', () => {
+  const client = new QueryClient();
+  const onSendChat = vi.fn(async () => ({ id: 'shared' }));
+  const content = (roomFeedback: boolean) => (
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <ConversationPanel
+          roomFeedback={roomFeedback}
+          solo={false}
+          chat={[]}
+          meetingId="meeting"
+          accountId="synthetic-account"
+          selfUserId="me"
+          onSendChat={onSendChat}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+  const { rerender } = render(content(false));
+  fireEvent.mouseDown(screen.getByRole('tab', { name: 'Private Mira Tutor' }), {
+    button: 0,
+    ctrlKey: false,
+  });
+  rerender(content(true));
+  expect(
+    screen
+      .getByRole('tab', { name: messages.meet.call.miraEverywhere.roomTab })
+      .getAttribute('aria-selected')
+  ).toBe('true');
+  expect(onSendChat).not.toHaveBeenCalled();
+  client.clear();
+});

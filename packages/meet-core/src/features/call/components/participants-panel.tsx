@@ -1,13 +1,5 @@
 'use client';
-import {
-  Check,
-  Hand,
-  MicOff,
-  UserMinus,
-  UserRoundPlus,
-  Users,
-  X,
-} from '@tuturuuu/icons';
+import { Check, Hand, MicOff, UserRoundPlus, Users, X } from '@tuturuuu/icons';
 import type {
   MeetApprovedParticipant,
   MeetRealtimePresence,
@@ -22,15 +14,17 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
+import { Input } from '@tuturuuu/ui/input';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { SettingsField } from '../../../../../ui/src/components/ui/custom/settings-field';
 import { Switch } from '@tuturuuu/ui/switch';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useLargeRoomLabels } from '../lib/large-room-labels';
 import { MiraAudioStatus } from './mira-audio-status';
 import { MiraAvatar } from './mira-profile';
+import { ParticipantActions } from './participant-actions';
 import { RoomHostControls } from './room-host-controls';
 export function ParticipantsPanel({
   approved,
@@ -82,26 +76,22 @@ export function ParticipantsPanel({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
+  const [search, setSearch] = useState('');
+  const query = participants.length > 8 ? search.trim().toLowerCase() : '';
   const raised = new Set(raisedHandUserIds);
-  const ordered = [...participants].sort(
-    (a, b) => Number(raised.has(b.userId)) - Number(raised.has(a.userId))
-  );
+  const ordered = participants
+    .filter((person) => person.displayName.toLowerCase().includes(query))
+    .sort(
+      (a, b) => Number(raised.has(b.userId)) - Number(raised.has(a.userId))
+    );
 
   return (
     <ScrollArea className="min-h-0 flex-1">
-      {canManage && (onSettingsChange || onCamerasLockedChange) && (
-        <RoomPermissionToggles
-          settings={settings}
-          isHost={isHost}
-          onSettingsChange={onSettingsChange}
-          onCamerasLockedChange={onCamerasLockedChange}
-        />
-      )}
       {canManage && waiting.length ? (
         <Accordion
           type="multiple"
           defaultValue={['requests']}
-          className="border-b px-3"
+          className="border-b px-4"
         >
           <AccordionItem value="requests" className="border-0">
             <AccordionTrigger className="gap-2 text-sm">
@@ -136,10 +126,10 @@ export function ParticipantsPanel({
               <ul className="space-y-2">
                 {waiting.map((entry) => (
                   <li
-                    className="grid grid-cols-[1.75rem_minmax(0,1fr)_2rem_2rem] items-center gap-2 rounded-lg border bg-muted/30 p-2"
+                    className="grid grid-cols-[2rem_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg border bg-muted/30 px-3 py-2"
                     key={entry.userId}
                   >
-                    <Avatar className="size-7">
+                    <Avatar className="size-8 pointer-coarse:size-11">
                       <AvatarImage src={entry.avatarUrl} alt="" />
                       <AvatarFallback>
                         {entry.displayName.slice(0, 1)}
@@ -155,7 +145,7 @@ export function ParticipantsPanel({
                     </span>
                     <Button
                       aria-label={`${t('admit')}: ${entry.displayName}`}
-                      className="size-8 shrink-0"
+                      className="size-8 shrink-0 pointer-coarse:size-11"
                       onClick={() => onDecideAdmission(entry.userId, true)}
                       size="icon"
                       type="button"
@@ -164,7 +154,7 @@ export function ParticipantsPanel({
                     </Button>
                     <Button
                       aria-label={`${t('deny')}: ${entry.displayName}`}
-                      className="size-8 shrink-0"
+                      className="size-8 shrink-0 pointer-coarse:size-11"
                       onClick={() => onDecideAdmission(entry.userId, false)}
                       size="icon"
                       type="button"
@@ -180,15 +170,27 @@ export function ParticipantsPanel({
         </Accordion>
       ) : null}
 
-      <div className="flex items-center gap-2 px-4 pt-4 pb-2 font-medium text-sm">
-        <Users className="size-4" />
-        <span className="flex-1">{t('in_call')}</span>
-        <Badge variant="outline">
-          {participants.length + (miraActive ? 1 : 0)}
-        </Badge>
+      <div className="sticky top-0 z-10 grid gap-2 border-b bg-background/95 px-4 py-2 backdrop-blur">
+        <div className="flex items-center gap-2 font-medium text-sm">
+          <Users className="size-4" aria-hidden="true" />
+          <span className="flex-1">{t('in_call')}</span>
+          <Badge variant="outline">
+            {participants.length + (miraActive ? 1 : 0)}
+          </Badge>
+        </div>
+        {participants.length > 8 && (
+          <Input
+            type="search"
+            aria-label={t('room_tools.search')}
+            placeholder={t('room_tools.search')}
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="h-8"
+          />
+        )}
       </div>
       <ul className="divide-y">
-        {miraActive && (
+        {miraActive && 'mira'.includes(query) && (
           <li className="flex items-center gap-2 bg-primary/5 px-4 py-3">
             <MiraAvatar size={32} />
             <span className="flex-1 text-sm">Mira</span>
@@ -199,8 +201,8 @@ export function ParticipantsPanel({
           const isSelf = participant.userId === selfUserId;
           return (
             <li key={participant.userId}>
-              <div className="group flex items-center gap-2 px-4 py-2.5">
-                <Avatar className="size-8">
+              <div className="group flex min-h-12 items-center gap-3 px-4 py-2">
+                <Avatar className="size-8 shrink-0">
                   <AvatarImage src={participant.avatarUrl} alt="" />
                   <AvatarFallback>
                     {participant.displayName.slice(0, 1)}
@@ -232,82 +234,42 @@ export function ParticipantsPanel({
                     <span className="sr-only">{t('microphone_muted')}</span>
                   </span>
                 )}
-                {canManage && !isSelf ? (
-                  <span className="flex gap-1">
-                    {participant.media.audioEnabled ? (
-                      <Button
-                        aria-label={t('mute_participant', {
-                          name: participant.displayName,
-                        })}
-                        className="size-7"
-                        onClick={() => onMute(participant.userId)}
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                      >
-                        <MicOff className="size-3.5" />
-                      </Button>
-                    ) : null}
-                    <Button
-                      aria-label={`${t('remove_participant')}: ${participant.displayName}`}
-                      className="size-7 text-dynamic-red"
-                      onClick={() => onRemove(participant.userId)}
-                      size="icon"
-                      type="button"
-                      variant="ghost"
-                    >
-                      <UserMinus className="size-3.5" />
-                    </Button>
-                  </span>
-                ) : null}
-              </div>
-              {canManage &&
-                onMediaOverride &&
-                !isSelf &&
-                participant.role !== 'host' &&
-                !participant.canManageParticipants && (
-                  <details
-                    className="px-4 pb-2 text-sm"
-                    open={raised.has(participant.userId) || undefined}
-                  >
-                    <summary className="cursor-pointer text-muted-foreground">
-                      {labels('media_overrides', {
-                        name: participant.displayName,
-                      })}
-                    </summary>
-                    <div className="mt-2 flex flex-wrap gap-3">
-                      {(['mic', 'camera', 'screen'] as const).map((kind) => {
-                        const override =
-                          settings?.mediaOverrides?.[participant.userId] ?? {};
-                        const inherited = participant.accountId
-                          ? settings?.mediaOverrides?.[participant.accountId]?.[
-                              kind
-                            ]
-                          : undefined;
-                        return (
-                          <label
-                            className="flex items-center gap-2 text-xs"
-                            key={kind}
-                          >
-                            <Checkbox
-                              checked={override[kind] ?? inherited ?? false}
-                              onCheckedChange={(value) =>
-                                onMediaOverride(participant.userId, {
-                                  [kind]: value === true,
-                                })
-                              }
-                            />
-                            {labels(`allow_${kind}`)}
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </details>
+                {canManage && !isSelf && (
+                  <ParticipantActions
+                    person={participant}
+                    settings={settings}
+                    onMute={onMute}
+                    onRemove={onRemove}
+                    onMediaOverride={onMediaOverride}
+                  />
                 )}
+              </div>
             </li>
           );
         })}
       </ul>
+      {query && !ordered.length && !(miraActive && 'mira'.includes(query)) && (
+        <p role="status" className="px-4 py-3 text-muted-foreground text-sm">
+          {t('room_tools.no_matches')}
+        </p>
+      )}
+      {canManage && (onSettingsChange || onCamerasLockedChange) && (
+        <Accordion type="single" collapsible className="border-t px-4">
+          <AccordionItem value="room-permissions" className="border-0">
+            <AccordionTrigger className="gap-2 text-sm">
+              {labels('settings_permissions')}
+            </AccordionTrigger>
+            <AccordionContent className="space-y-2">
+              <RoomPermissionToggles
+                settings={settings}
+                isHost={isHost}
+                onSettingsChange={onSettingsChange}
+                onCamerasLockedChange={onCamerasLockedChange}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      )}
       {isHost && (
         <RoomHostControls
           approved={approved}

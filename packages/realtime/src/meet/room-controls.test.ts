@@ -51,6 +51,38 @@ function admitted() {
 }
 
 describe('persistent room controls', () => {
+  it('limits activity visibility changes to admitted room managers', () => {
+    const state = admitted();
+    const patch = {
+      type: 'room.settings.update',
+      settings: { advancedTools: 'showcase' },
+    } satisfies MeetRealtimeClientMessage;
+    const cohost = {
+      ...guest,
+      scopes: [...guest.scopes, 'participants:manage'],
+    };
+    expect(
+      run(state, patch, guest).state.settings?.advancedTools
+    ).toBeUndefined();
+    expect(run(state, patch, host).state.settings?.advancedTools).toBe(
+      'showcase'
+    );
+    expect(run(state, patch, cohost).state.settings?.advancedTools).toBe(
+      'showcase'
+    );
+    expect(
+      run(createMeetRoomSnapshot(), patch, cohost).state.settings?.advancedTools
+    ).toBeUndefined();
+    const mixed = run(
+      state,
+      {
+        ...patch,
+        settings: { ...patch.settings, saveChat: true },
+      },
+      cohost
+    );
+    expect(mixed.state.settings?.saveChat).toBeUndefined();
+  });
   it('remembers an admitted identity across leaving and permits host revocation', () => {
     const state = admitted();
     expect(state.approved?.[guestId]).toMatchObject({

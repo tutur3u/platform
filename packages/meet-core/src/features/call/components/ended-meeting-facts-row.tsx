@@ -81,7 +81,10 @@ export function EndedMeetingFactsRow({
     });
   if (!chips.length) return null;
   return (
-    <ul className="flex flex-wrap gap-1.5" data-testid="ended-meeting-facts">
+    <ul
+      className="flex flex-wrap justify-center gap-1.5"
+      data-testid="ended-meeting-facts"
+    >
       {chips.map((chip) => (
         <li
           key={chip.key}

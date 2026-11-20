@@ -1,14 +1,18 @@
 'use client';
 import { LayoutGrid, Smile, Sparkles } from '@tuturuuu/icons';
 import type { MeetReaction } from '@tuturuuu/realtime/meet';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 import type { CameraFilter, CameraLook } from '../lib/camera-effects';
 import type { CallLayout } from './call-stage';
-import { MeetingActionHint } from './meeting-action-hint';
 export const REACTION_GLYPHS: Record<MeetReaction, string> = {
   like: '👍',
   heart: '❤️',
@@ -27,63 +31,54 @@ export function CallExtras({
   layout: CallLayout;
   setLayout: (layout: CallLayout) => void;
   look: CameraLook;
-  setLook: (look: CameraLook) => void;
+  setLook: (look: CameraLook) => Promise<void>;
   react: (reaction: MeetReaction) => void;
 }) {
   const t = useTranslations('meet.call');
-  const [reactionsOpen, setReactionsOpen] = useState(false);
+  const updateLook = (next: CameraLook) => {
+    void setLook(next).catch((error: unknown) => {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        toast.error(t('effects_failed'));
+      }
+    });
+  };
   return (
-    <>
-      <Popover open={reactionsOpen} onOpenChange={setReactionsOpen}>
-        <MeetingActionHint label={t('reactions')}>
-          <PopoverTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-11 rounded-full"
-              aria-label={t('reactions')}
-              title={t('reactions')}
-            >
-              <Smile className="size-5" />
-            </Button>
-          </PopoverTrigger>
-        </MeetingActionHint>
-        <PopoverContent className="flex w-auto gap-1" side="top">
-          {(Object.keys(REACTION_GLYPHS) as MeetReaction[]).map((reaction) => (
-            <Button
-              key={reaction}
-              variant="ghost"
-              size="icon"
-              className="text-2xl"
-              aria-label={t(`reaction_${reaction}`)}
-              onClick={() => {
-                react(reaction);
-                setReactionsOpen(false);
-              }}
-            >
-              {REACTION_GLYPHS[reaction]}
-            </Button>
-          ))}
-        </PopoverContent>
-      </Popover>
-      <Popover>
-        <MeetingActionHint label={t('layout')}>
-          <PopoverTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-11 rounded-full"
-              aria-label={t('layout')}
-              title={t('layout')}
-            >
-              <LayoutGrid className="size-5" />
-            </Button>
-          </PopoverTrigger>
-        </MeetingActionHint>
-        <PopoverContent className="w-64 space-y-3" side="top">
-          <p className="font-medium text-sm">{t('layout')}</p>
+    <Accordion type="single" collapsible className="border-t px-3">
+      <AccordionItem value="reactions">
+        <AccordionTrigger className="justify-start gap-3 py-2">
+          <span aria-hidden="true">
+            <Smile className="size-5" />
+          </span>
+          <span className="flex-1 text-left">{t('reactions')}</span>
+        </AccordionTrigger>
+        <AccordionContent>
+          <div className="grid grid-cols-3 gap-1">
+            {(Object.keys(REACTION_GLYPHS) as MeetReaction[]).map(
+              (reaction) => (
+                <Button
+                  key={reaction}
+                  variant="ghost"
+                  className="min-h-11 text-xl"
+                  aria-label={t(`reaction_${reaction}`)}
+                  onClick={() => react(reaction)}
+                >
+                  {REACTION_GLYPHS[reaction]}
+                </Button>
+              )
+            )}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="layout">
+        <AccordionTrigger className="justify-start gap-3 py-2">
+          <span aria-hidden="true">
+            <LayoutGrid className="size-5" />
+          </span>
+          <span className="flex-1 text-left">{t('layout')}</span>
+        </AccordionTrigger>
+        <AccordionContent>
           <div className="grid grid-cols-2 gap-2">
-            {(['auto', 'grid', 'spotlight', 'sidebar'] as CallLayout[]).map(
+            {(['auto', 'grid', 'spotlight', 'sidebar'] as const).map(
               (value) => (
                 <Button
                   key={value}
@@ -96,37 +91,25 @@ export function CallExtras({
               )
             )}
           </div>
-        </PopoverContent>
-      </Popover>
-      <Popover>
-        <MeetingActionHint label={t('camera_effects')}>
-          <PopoverTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-11 rounded-full"
-              aria-label={t('camera_effects')}
-              title={t('camera_effects')}
-            >
-              <Sparkles className="size-5" />
-            </Button>
-          </PopoverTrigger>
-        </MeetingActionHint>
-        <PopoverContent className="w-72 space-y-4" side="top">
-          <div>
-            <p className="font-medium text-sm">{t('camera_effects')}</p>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {t('effects_hint')}
-            </p>
-          </div>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="effects">
+        <AccordionTrigger className="justify-start gap-3 py-2">
+          <span aria-hidden="true">
+            <Sparkles className="size-5" />
+          </span>
+          <span className="flex-1 text-left">{t('camera_effects')}</span>
+        </AccordionTrigger>
+        <AccordionContent className="space-y-3">
+          <p className="text-muted-foreground text-xs">{t('effects_hint')}</p>
           <div className="grid grid-cols-2 gap-2">
-            {(['none', 'warm', 'cool', 'mono'] as CameraFilter[]).map(
+            {(['none', 'warm', 'cool', 'mono'] satisfies CameraFilter[]).map(
               (filter) => (
                 <Button
                   key={filter}
                   variant={look.filter === filter ? 'secondary' : 'outline'}
                   aria-pressed={look.filter === filter}
-                  onClick={() => setLook({ ...look, filter })}
+                  onClick={() => updateLook({ ...look, filter })}
                 >
                   {t(`filter_${filter}`)}
                 </Button>
@@ -144,12 +127,15 @@ export function CallExtras({
               step="10"
               value={Math.round(look.softness * 100)}
               onChange={(event) =>
-                setLook({ ...look, softness: Number(event.target.value) / 100 })
+                updateLook({
+                  ...look,
+                  softness: Number(event.target.value) / 100,
+                })
               }
             />
           </div>
-        </PopoverContent>
-      </Popover>
-    </>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }

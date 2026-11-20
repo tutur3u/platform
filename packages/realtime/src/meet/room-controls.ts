@@ -129,11 +129,16 @@ export function applyRoomControl(
           'mediaOverrides',
         ].includes(key)
       ));
+  const managesAdvancedTools =
+    message.type === 'room.settings.update' &&
+    Object.keys(message.settings).length === 1 &&
+    message.settings.advancedTools !== undefined;
+  const requiresParticipantManagement = managesMedia || managesAdvancedTools;
   if (
-    (managesMedia &&
+    (requiresParticipantManagement &&
       (!state.presence[token.userId] ||
         !canMeetRealtimeManageParticipants(token))) ||
-    (!managesMedia && token.role !== 'host')
+    (!requiresParticipantManagement && token.role !== 'host')
   )
     return denied(
       state,

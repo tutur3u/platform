@@ -5,6 +5,7 @@ import {
   readMeetCallRating,
   updateMeetCallRating,
 } from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -49,17 +50,21 @@ export function EndedMeetingRating({
   if (!rating.data) return null;
   const current = rating.data.rating;
   return (
-    <fieldset className="space-y-2">
-      <legend className="font-medium text-sm">{t('rating_title')}</legend>
+    <fieldset className="grid justify-items-center gap-1">
+      <legend className="mx-auto text-muted-foreground text-sm">
+        {t('rating_title')}
+      </legend>
       <div
         role="radiogroup"
         aria-label={t('rating_title')}
-        className="flex gap-1.5"
+        className="flex justify-center gap-1"
       >
         {VALUES.map((value) => {
           const filled = current !== null && value <= current;
           return (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               key={value}
               type="button"
               role="radio"
@@ -68,12 +73,12 @@ export function EndedMeetingRating({
               disabled={save.isPending}
               onClick={() => save.mutate(value)}
               className={cn(
-                'grid size-9 place-items-center rounded-md border bg-background text-muted-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60',
-                filled && 'border-foreground/40 text-foreground'
+                'size-11 rounded-md text-muted-foreground',
+                filled && 'text-foreground'
               )}
             >
               <Star className={cn('size-4', filled && 'fill-current')} />
-            </button>
+            </Button>
           );
         })}
       </div>

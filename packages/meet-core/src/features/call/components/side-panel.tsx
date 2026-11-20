@@ -18,6 +18,7 @@ import { ParticipantsPanel } from './participants-panel';
 import { ResizableCallPanel } from './resizable-call-panel';
 
 export function SidePanel({
+  roomFeedback,
   mentionRequest,
   onMentionHandled,
   meetingId,
@@ -44,6 +45,7 @@ export function SidePanel({
   wsId,
   waiting,
 }: {
+  roomFeedback?: boolean;
   mentionRequest?: number;
   onMentionHandled?: () => void;
   meetingId: string;
@@ -87,7 +89,7 @@ export function SidePanel({
           : t('participants', { count: participants.length })
       }
     >
-      <header className="flex items-center justify-between border-b px-4 py-3">
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
         <h2 className="font-medium text-sm">
           {panel === 'chat'
             ? t('chat')
@@ -95,7 +97,7 @@ export function SidePanel({
         </h2>
         <Button
           aria-label={t('close_panel')}
-          className="size-7"
+          className="size-8 shrink-0 pointer-coarse:size-11"
           onClick={onClose}
           size="icon"
           type="button"
@@ -107,6 +109,7 @@ export function SidePanel({
 
       {panel === 'chat' ? (
         <ConversationPanel
+          roomFeedback={roomFeedback}
           mentionRequest={mentionRequest}
           onMentionHandled={onMentionHandled}
           solo={participants.length === 1}

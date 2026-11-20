@@ -24,9 +24,11 @@ const mediaSettings = {
     .refine((entries) => Object.keys(entries).length <= 256)
     .optional(),
 };
+const advancedTools = z.enum(['hosts', 'showcase', 'everyone']).optional();
 export const meetRoomSettingsPatchSchema = z.object({
   maxParticipants: z.number().int().min(1).max(100).optional(),
   ...mediaSettings,
+  advancedTools,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),
@@ -42,6 +44,7 @@ export const meetRoomSettingsSchema = z.object({
   programming: meetingProgrammingSchema.nullable().optional(),
   maxParticipants: z.number().int().min(1).max(100).optional(),
   ...mediaSettings,
+  advancedTools,
   skipLobby: z.boolean().optional(),
   /** Paid hosts only: people without an account join after a Turnstile check. */
   allowAnonymousGuests: z.boolean().optional(),

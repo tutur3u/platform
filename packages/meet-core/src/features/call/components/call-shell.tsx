@@ -1,13 +1,6 @@
 'use client';
 import { useQuery } from '@tanstack/react-query';
-import {
-  CalendarDays,
-  Circle,
-  Code2,
-  FileText,
-  Leaf,
-  Users,
-} from '@tuturuuu/icons';
+import { Circle, Leaf, Users } from '@tuturuuu/icons';
 import { MeetLivePanel } from '@tuturuuu/meet-core/features/live-assistant/live-panel';
 import { RoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import { meetingAudioSources } from '@tuturuuu/meet-core/features/meeting-ai/audio-sources';
@@ -38,6 +31,7 @@ import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { encodeRoomCode } from '../lib/room-code';
 import { type ActivityDrawer, useCallActivities } from './call-activities';
 import { CallEnded } from './call-ended';
+import { CallRoomTools, useRoomTools } from './call-room-tools';
 import { CallExtras } from './call-extras';
 import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
@@ -45,7 +39,7 @@ import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
 import { CallTopBarConnection, CallTopBarMore } from './call-top-bar';
 import { CollaborationStageLayout } from './collaboration-stage-layout';
-import { type CallPanel, ControlBar, ControlButton } from './control-bar';
+import { type CallPanel, ControlBar } from './control-bar';
 import {
   AccountGatedNotesDrawer,
   AccountGatedPersonalDrawer,
@@ -68,7 +62,6 @@ import { SharedAudioControl } from './shared-audio-control';
 import { SidePanel } from './side-panel';
 
 type Device = 'microphone' | 'camera' | 'screen';
-
 /** Compose the active meeting, including protected audio and compact room controls. */
 function CallShellContent({
   accountId,
@@ -108,18 +101,23 @@ function CallShellContent({
   const [leaveDialog, setLeaveDialog] = useState(false);
   const [ending, setEnding] = useState(false);
   const programmingT = useTranslations('programmingPlayground');
-  const [showProgramming, setShowProgramming] = useState(false);
+  const collaborationT = useTranslations('meet.collaboration');
+  const [programmingOpen, setShowProgramming] = useState(false);
   const programming = useProgrammingOpener(
     meetingId,
     programmingT('playground'),
     accountId
   );
-  const [showDocument, setShowDocument] = useState(false);
-  const collaborationT = useTranslations('meet.collaboration');
+  const [documentOpen, setShowDocument] = useState(false);
   const [drawer, setDrawer] = useState<
-    CallPanel | 'notes' | 'personal' | ActivityDrawer
+    CallPanel | 'notes' | 'personal' | 'feedback' | ActivityDrawer
   >(null);
-  const panel = drawer === 'chat' || drawer === 'participants' ? drawer : null;
+  const panel =
+    drawer === 'participants'
+      ? drawer
+      : drawer === 'chat' || drawer === 'feedback'
+        ? 'chat'
+        : null;
   const privateT = useTranslations('meet.call.private_tools');
   const [outputDeviceId, setOutputDeviceId] = useState('');
   const [mentionRequest, setMentionRequest] = useState(0);
@@ -155,6 +153,13 @@ function CallShellContent({
     sharedAudio.shared
   );
   const canManage = state.role === 'host';
+  const toolMode = state.settings.advancedTools;
+  const roomTools = useRoomTools(
+    toolMode,
+    state.canManageParticipants ?? canManage
+  );
+  const showProgramming = roomTools.canUse && programmingOpen;
+  const showDocument = roomTools.canUse && documentOpen;
   const canReadNotes = canManage || state.settings.shareNotes;
   const audioStreams = useMemo(
     () => [
@@ -284,13 +289,13 @@ function CallShellContent({
   useEffect(() => {
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
-
   const lifecycle = selectCallLifecycle(state, joined);
   const activities = useCallActivities({
     requiresAccount,
     meetingId,
     accountId,
     enabled: MEETING_APP === 'meet' && lifecycle === 'live' && inCall,
+    showTools: roomTools.canUse,
     drawer,
     onDrawer: setDrawer,
   });
@@ -372,10 +377,13 @@ function CallShellContent({
           </MeetingActionHint>
         )}
         {state.recording.state === 'recording' && (
-          <span className="flex items-center gap-1.5 rounded-full bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-xs">
+          <output
+            aria-live="polite"
+            className="flex items-center gap-1.5 rounded-full bg-destructive/10 px-2 py-1 text-destructive text-xs"
+          >
             <Circle className="size-2 fill-current motion-safe:animate-pulse" />
             {t('recording')}
-          </span>
+          </output>
         )}
         <CallTopBarConnection
           status={room.connectionStatus}
@@ -521,7 +529,7 @@ function CallShellContent({
         </main>
         {activities.panel}
         <AccountGatedPersonalDrawer
-          open={drawer === 'personal'}
+          open={roomTools.canUse && drawer === 'personal'}
           requiresAccount={requiresAccount}
           accountId={accountId}
           label={privateT('title')}
@@ -542,6 +550,7 @@ function CallShellContent({
           <SidePanel
             wsId={wsId}
             accountId={accountId}
+            roomFeedback={drawer === 'feedback'}
             mentionRequest={mentionRequest}
             onMentionHandled={onMentionHandled}
             meetingId={meetingId}
@@ -567,6 +576,7 @@ function CallShellContent({
       </div>
       <ControlBar
         activePanel={panel}
+        liveActivity={activities.liveControl}
         cameraOn={room.media.videoEnabled}
         micOn={!sharedAudio.microphonePaused && room.media.audioEnabled}
         screenOn={room.media.screenEnabled}
@@ -609,41 +619,38 @@ function CallShellContent({
         }
         extraControls={
           <>
-            {MEETING_APP === 'meet' && (
-              <>
-                {activities.controls}
-                <ControlButton
-                  active={drawer === 'personal'}
-                  icon={CalendarDays}
-                  label={privateT('title')}
-                  onClick={() =>
-                    setDrawer(drawer === 'personal' ? null : 'personal')
-                  }
-                />
-                <ControlButton
-                  active={showProgramming}
-                  icon={Code2}
-                  label={programmingT('coding')}
-                  onClick={() => {
+            <CallRoomTools
+              mode={toolMode}
+              policy={roomTools}
+              onMode={(advancedTools) => room.updateSettings({ advancedTools })}
+              activities={activities.controls}
+              actions={{
+                personal: {
+                  active: drawer === 'personal',
+                  toggle: () =>
+                    setDrawer(drawer === 'personal' ? null : 'personal'),
+                },
+                programming: {
+                  active: showProgramming,
+                  toggle: () => {
                     setShowDocument(false);
-                    setShowProgramming((value) => !value);
+                    setShowProgramming(!showProgramming);
                     if (!showProgramming && canManage)
                       void programming
                         .prepare()
                         .catch(() => toast.error(programmingT('accessError')));
-                  }}
-                />
-                <ControlButton
-                  active={showDocument}
-                  icon={FileText}
-                  label={collaborationT('document')}
-                  onClick={() => {
+                  },
+                },
+                document: {
+                  active: showDocument,
+                  toggle: () => {
                     setShowProgramming(false);
-                    setShowDocument((value) => !value);
-                  }}
-                />
-              </>
-            )}
+                    setShowDocument(!showDocument);
+                  },
+                },
+                feedback: () => setDrawer('feedback'),
+              }}
+            />
             <CallExtras
               layout={layout}
               setLayout={(next) => {
@@ -651,17 +658,7 @@ function CallShellContent({
                 setFocus(null);
               }}
               look={room.cameraLook}
-              setLook={(look) => {
-                void room.setCameraLook(look).catch((error) => {
-                  if (
-                    !(
-                      error instanceof DOMException &&
-                      error.name === 'AbortError'
-                    )
-                  )
-                    toast.error(t('effects_failed'));
-                });
-              }}
+              setLook={room.setCameraLook}
               react={room.react}
             />
           </>

@@ -183,9 +183,12 @@ it('shows a left screen with Rejoin and Back, never the connection error, after 
 
 it('offers New meeting only to viewers allowed to start one', () => {
   renderEnded({ canStartMeeting: true });
+  expect(screen.queryByRole('button', { name: 'New meeting' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
   expect(screen.getByRole('button', { name: 'New meeting' })).toBeTruthy();
   cleanup();
   renderEnded();
+  fireEvent.click(screen.getByRole('button', { name: 'More actions' }));
   expect(screen.queryByRole('button', { name: 'New meeting' })).toBeNull();
 });
 

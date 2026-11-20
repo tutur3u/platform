@@ -44,3 +44,20 @@ test('retains independent sharing settings when changing public link visibility'
     shareRecordings: false,
   });
 });
+
+test('validates each activity visibility option without changing media permissions', () => {
+  for (const advancedTools of ['hosts', 'showcase', 'everyone']) {
+    const parsed = parseMeetRoomSettingsPatch(
+      { advancedTools },
+      { shareNotes: false, screensLocked: true }
+    );
+    expect(parsed.success && parsed.data).toEqual({
+      advancedTools,
+      shareNotes: false,
+      screensLocked: true,
+    });
+  }
+  expect(parseMeetRoomSettingsPatch({ advancedTools: 'public' }).success).toBe(
+    false
+  );
+});

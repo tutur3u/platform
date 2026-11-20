@@ -840,6 +840,31 @@ Deployment checks required Worker secret names before rollout, then runs the
 signed-token realtime/SFU integration check against the canonical endpoint.
 
 
+## In-call actions and room activities
+
+The bottom bar keeps audio, video, people, chat and leaving visible. Screen
+sharing stays on the bar at desktop widths. More contains the remaining call
+actions, personal view controls and room activities. Live polls and Quiz Arena
+rounds stay reachable even with the participant activity menu hidden. The
+recording indicator stays visible in the call header.
+
+The host or an admitted co-host with participant management can change
+**Activity visibility** in More. **Hosts and co-hosts** is the default menu
+view. **Showcase** lists the activities and directs people to room chat for
+feedback without offering tool launch actions. **Everyone in the call**
+shows the existing tool actions to admitted participants. Visibility does
+not grant host privileges or change existing document, programming, quiz,
+poll, or recording access checks. This setting applies to Meet's activity
+menu. Parley keeps its existing activity availability.
+
+People keeps join requests and the participant list ahead of optional room
+settings. Moderators use a per-person menu for mute, media permissions and
+removal. Removing someone requires confirmation.
+
+After the call, Meet centers the summary, primary action and rating. More
+actions contains meeting settings and the restore and sharing controls for
+eligible hosts.
+
 ## Gemini transcript and post-call notes
 
 Meet's own Cloudflare frontend Worker serves `/api/meet-ai/:wsId/:meetingId` and

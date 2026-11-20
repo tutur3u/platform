@@ -3,7 +3,14 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, FileText, Loader2, PhoneOff } from '@tuturuuu/icons';
 import { MeetingAiOverview } from '@tuturuuu/meet-core/features/meeting-ai/meeting-ai-overview';
 import { NotesSharingControl } from '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
+import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -107,27 +114,38 @@ export function CallEnded({
     backLink(true)
   );
   return (
-    <main className="flex min-h-dvh flex-col items-center bg-background px-4 py-10 sm:justify-center">
-      <div
-        className={cn(
-          'w-full space-y-6',
-          showNotes && canSeeNotes ? 'max-w-3xl' : 'max-w-xl'
-        )}
-      >
-        <section className="space-y-5">
-          <div className="space-y-3">
-            <p className="flex min-w-0 items-center gap-2 text-muted-foreground text-sm">
-              <PhoneOff className="size-4 shrink-0" />
-              <span className="truncate font-medium">{meetingName}</span>
+    <main
+      className={cn(
+        'flex min-h-dvh flex-col items-center gap-6 bg-background px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))]',
+        !(showNotes && canSeeNotes) && 'justify-center'
+      )}
+    >
+      <Card className="w-full max-w-md gap-5 rounded-2xl px-5 py-6 text-center sm:px-8 sm:py-8">
+        <section className="grid gap-4" aria-labelledby="meet-ended-title">
+          <div className="grid justify-items-center gap-2">
+            <span className="grid size-11 place-items-center rounded-full bg-muted text-muted-foreground">
+              <PhoneOff aria-hidden="true" className="size-5" />
+            </span>
+            <p className="max-w-full break-words font-medium text-muted-foreground text-sm">
+              {meetingName}
             </p>
-            <div className="space-y-1.5">
-              <h1 className="text-balance font-semibold text-2xl tracking-tight">
-                {t(ended ? 'call_ended_title' : 'call_left_title')}
-              </h1>
-              <p className="text-pretty text-muted-foreground text-sm">
-                {t(ended ? 'ended_hint' : 'call_left_hint')}
-              </p>
-            </div>
+            <h1
+              id="meet-ended-title"
+              className="text-balance font-semibold text-2xl tracking-tight"
+            >
+              {t(ended ? 'call_ended_title' : 'call_left_title')}
+            </h1>
+            <p className="text-pretty text-muted-foreground text-sm">
+              {t(
+                ended
+                  ? canManage
+                    ? 'ended_hint_host'
+                    : canSeeNotes
+                      ? 'ended_hint_reader'
+                      : 'ended_hint'
+                  : 'call_left_hint'
+              )}
+            </p>
             <EndedMeetingFactsRow
               wsId={wsId}
               meetingId={meetingId}
@@ -135,57 +153,68 @@ export function CallEnded({
             />
           </div>
           {saving && (
-            <p role="status" className="flex items-center gap-2 text-sm">
-              <Loader2 className="size-4 animate-spin" />
+            <p
+              role="status"
+              className="flex items-center justify-center gap-2 text-sm"
+            >
+              <Loader2 className="size-4 animate-spin motion-reduce:animate-none" />
               {t('saving_notes')}
             </p>
           )}
-          <div className="space-y-2">
+          <div className="grid justify-items-center gap-1">
             {primary}
-            <div className="flex flex-wrap items-center gap-1">
-              {ended && canManage && (
-                <RestoreRoomButton
-                  accountId={accountId}
-                  meetingId={meetingId}
-                  disabled={saving}
-                  variant="ghost"
-                  size="sm"
-                />
-              )}
-              {rejoinable && canSeeNotes && notesButton(false)}
-              {canStartMeeting && (
-                <NewMeetingButton
-                  wsId={wsId}
-                  disabled={saving}
-                  variant="ghost"
-                />
-              )}
-              <EndedMeetingSettings
-                wsId={wsId}
-                meetingId={meetingId}
-                canManage={canManage}
-                variant="ghost"
-                size="sm"
-              />
-              {(rejoinable || canSeeNotes) && backLink(false)}
-            </div>
+            {(rejoinable || canSeeNotes) && backLink(false)}
           </div>
           <EndedMeetingRating accountId={accountId} meetingId={meetingId} />
         </section>
-        {canManage && (
-          <div className="border-t pt-6">
-            <NotesSharingControl
-              variant="row"
-              wsId={wsId}
-              meetingId={meetingId}
-              initialEnabled={shareNotesAfterMeeting}
-            />
-          </div>
-        )}
-        {showNotes &&
-          canSeeNotes &&
-          (notes ?? <MeetingAiOverview wsId={wsId} meetingId={meetingId} />)}
-      </div>
+        <Accordion type="single" collapsible className="border-t">
+          <AccordionItem value="actions" className="border-0">
+            <AccordionTrigger className="justify-center gap-2 pt-3 pb-0 text-muted-foreground">
+              {t('more_actions')}
+            </AccordionTrigger>
+            <AccordionContent className="space-y-3 pt-3 pb-0">
+              <div className="flex flex-wrap items-center justify-center gap-1">
+                {ended && canManage && (
+                  <RestoreRoomButton
+                    accountId={accountId}
+                    meetingId={meetingId}
+                    disabled={saving}
+                    variant="ghost"
+                    size="sm"
+                  />
+                )}
+                {rejoinable && canSeeNotes && notesButton(false)}
+                {canStartMeeting && (
+                  <NewMeetingButton
+                    wsId={wsId}
+                    disabled={saving}
+                    variant="ghost"
+                  />
+                )}
+                <EndedMeetingSettings
+                  wsId={wsId}
+                  meetingId={meetingId}
+                  canManage={canManage}
+                  variant="ghost"
+                  size="sm"
+                />
+              </div>
+              {canManage && (
+                <NotesSharingControl
+                  wsId={wsId}
+                  meetingId={meetingId}
+                  initialEnabled={shareNotesAfterMeeting}
+                />
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </Card>
+      {showNotes && canSeeNotes && (
+        <div className="w-full max-w-3xl">
+          {notes ?? <MeetingAiOverview wsId={wsId} meetingId={meetingId} />}
+        </div>
+      )}
     </main>
   );
 }

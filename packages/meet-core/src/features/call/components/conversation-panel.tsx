@@ -11,9 +11,11 @@ export function ConversationPanel({
   solo: _solo,
   wsId,
   referenceForAnswer,
+  roomFeedback,
   ...props
 }: ComponentProps<typeof ChatPanel> & {
   solo: boolean;
+  roomFeedback?: boolean;
   wsId?: string;
   referenceForAnswer?: ComponentProps<
     typeof PersonalChat
@@ -25,8 +27,8 @@ export function ConversationPanel({
   const [mode, setMode] = useState('room');
   const privateTab = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    if (props.mentionRequest) setMode('room');
-  }, [props.mentionRequest]);
+    if (roomFeedback || props.mentionRequest) setMode('room');
+  }, [props.mentionRequest, roomFeedback]);
   return (
     <Tabs
       value={mode}
