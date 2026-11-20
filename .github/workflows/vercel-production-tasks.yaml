@@ -1,7 +1,6 @@
 name: Vercel Tasks Production Deployment
 on:
   workflow_call:
-  workflow_dispatch:
 
 concurrency:
   group: vercel-production-tasks-${{ github.ref }}
@@ -13,7 +12,8 @@ permissions:
 
 jobs:
   Deploy-Production:
-    if: github.ref == 'refs/heads/production'
+    # Native Tasks serves the production hostname. Retain the legacy caller stub.
+    if: github.ref == 'refs/heads/production' && false
     environment: vercel-production-tasks
     runs-on: ubuntu-latest
     permissions:

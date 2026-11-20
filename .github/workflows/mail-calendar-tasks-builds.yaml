@@ -62,6 +62,14 @@ on:
       - 'tuturuuu.ci.ts'
       - '.github/workflows/mail-calendar-tasks-builds.yaml'
   workflow_dispatch:
+  workflow_call:
+    outputs:
+      tasks-archive-sha256:
+        value: ${{ jobs.tasks-cutover-artifact.outputs.archive-sha256 }}
+    inputs:
+      production-tasks-only:
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -69,7 +77,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (inputs.production-tasks-only != true && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     permissions:
       contents: read
       deployments: read
@@ -563,14 +571,22 @@ jobs:
   # Produce a sealed production-profile archive; publication needs an admitted executor.
   tasks-cutover-artifact:
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: >-
+      (!cancelled() &&
+      ((inputs.production-tasks-only == true && github.ref == 'refs/heads/production' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')) ||
+      (inputs.production-tasks-only != true && needs.check-ci.result == 'success' &&
+      needs.check-ci.outputs.should_run == 'true' && toJSON(fromJSON(needs.check-ci.outputs.affected_jobs || '{}').tasks) != 'false'))) &&
+      (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      archive-sha256: ${{ steps.digest.outputs.sha256 }}
     permissions:
       contents: read
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+      TRUSTED: ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://tasks-ci.supabase.invalid' }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_tasks_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://tasks.tuturuuu.com
@@ -608,6 +624,11 @@ jobs:
           command: cd apps/tasks && bun run build:cloudflare
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
+      - name: Require the production public inputs on trusted builds
+        if: env.TRUSTED == 'true'
+        run: |
+          [[ "$NEXT_PUBLIC_SUPABASE_URL" == https://* && "$NEXT_PUBLIC_SUPABASE_URL" != *.invalid ]]
+          [[ -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" && "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" != sb_publishable_tasks_ci_placeholder ]]
       - name: Refuse server-only APIs in the client bundle
         run: node scripts/ci/client-bundle-guard.mjs apps/tasks/dist/client
       - name: Record bounded emitted config receipt
@@ -666,6 +687,11 @@ jobs:
           cmp "$RUNNER_TEMP/tasks-production-artifact.json" "$restored/tasks-production-artifact.json"
           python3 scripts/ci/tasks-native-artifact.py --profile production verify "$restored" --receipt "$restored/tasks-production-artifact.json"
           python3 scripts/ci/tasks-native-artifact.py --profile production verify apps/tasks --receipt "$RUNNER_TEMP/tasks-production-artifact.json"
+      - name: Record the Tasks archive SHA-256
+        id: digest
+        run: |
+          digest="$(sha256sum "$RUNNER_TEMP/tasks-production-artifact.tar.gz")"
+          printf 'sha256=%s\n' "${digest%% *}" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: tasks-cutover-${{ env.TRUSTED == 'true' && 'production' || 'fixture' }}-${{ env.SOURCE_SHA }}

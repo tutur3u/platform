@@ -304,11 +304,19 @@ export const cloudflareProductionTargets = [
     packageName: '@tuturuuu/external',
     productionWorkflow: 'external-cloudflare.yaml',
   },
-  ...(['calendar', 'mail', 'apps'] as const).map((app) => ({
+  ...(['calendar', 'mail', 'apps', 'tasks'] as const).map((app) => ({
     app,
     appPath: `apps/${app}`,
     packageName: `@tuturuuu/${app}`,
-    additionalPaths: ['scripts/ci/wave1-', '.github/workflows/wave1-'],
+    additionalPaths:
+      app === 'tasks'
+        ? [
+            '.github/workflows/mail-calendar-tasks-builds.yaml',
+            'scripts/ci/apps-native-artifact.py',
+            'scripts/ci/tasks-native-',
+            'scripts/native-cutover/smoke-checks.mjs',
+          ]
+        : ['scripts/ci/wave1-', '.github/workflows/wave1-'],
     productionWorkflow: `${app}-cloudflare.yaml`,
   })),
   {

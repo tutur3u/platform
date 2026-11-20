@@ -69,7 +69,7 @@ const PROTECTED_TRIGGERS = {
   'inventory-cloudflare.yaml': '56aef454e313add1',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
-  'mail-calendar-tasks-builds.yaml': '25ba8eefde41880f',
+  'mail-calendar-tasks-builds.yaml': '456e0c09daa44fe7',
   'mail-cloudflare.yaml': 'dd965acde3d1fd0a',
   'mail-profile-runtime-contract.yaml': '44136fa355b3678a',
   'mastermind-cloudflare.yaml': 'd1f8275025d3586a',

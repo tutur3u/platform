@@ -279,7 +279,7 @@ test('unrelated package changes do not deploy apps that do not consume them', ()
 
 test('bun.lock-only changes run enabled Vercel app deploys', () => {
   const rootDir = createFixtureRoot();
-  const held = /-production-(tanstack-web|meet|calendar|mail|apps)\.yaml$/;
+  const held = /production-(apps|calendar|mail|meet|tanstack-web|tasks)\./;
   for (const workflowName of vercelWorkflows) {
     assertWorkflowDecision(
       {

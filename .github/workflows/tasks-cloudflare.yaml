@@ -1,0 +1,110 @@
+name: Tasks Cloudflare Production
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  production-policy:
+    if: github.ref == 'refs/heads/production' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      allowed: ${{ steps.policy.outputs.allowed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Admit this Tasks production source
+        id: policy
+        run: node scripts/ci/production-publication-policy.ts tasks-cloudflare.yaml "$GITHUB_STEP_SUMMARY"
+
+  artifact:
+    needs: production-policy
+    if: needs.production-policy.outputs.allowed == 'true'
+    permissions:
+      contents: read
+      deployments: read
+    uses: ./.github/workflows/mail-calendar-tasks-builds.yaml
+    with:
+      production-tasks-only: true
+
+  publish:
+    needs: [production-policy, artifact]
+    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: tasks-cloudflare-production-deploy
+      cancel-in-progress: false
+      queue: max
+    environment:
+      name: tasks-production
+      deployment: false
+    timeout-minutes: 35
+    permissions:
+      actions: read
+      contents: read
+      deployments: write
+    env:
+      TASKS_SOURCE_SHA: ${{ github.sha }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: tasks-cutover-production-${{ github.sha }}
+          path: ${{ runner.temp }}/tasks-archive
+      - name: Restore the exact same-run archive and verify its seal
+        env:
+          TASKS_ARCHIVE_SHA256: ${{ needs.artifact.outputs.tasks-archive-sha256 }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$TASKS_SOURCE_SHA"
+          [[ "$TASKS_ARCHIVE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          archive="$RUNNER_TEMP/tasks-archive/tasks-production-artifact.tar.gz"
+          printf '%s  %s\n' "$TASKS_ARCHIVE_SHA256" "$archive" | sha256sum --check --strict
+          python3 scripts/ci/tasks-native-artifact.py --profile production restore apps/tasks --archive "$archive" --receipt apps/tasks/tasks-production-artifact.json
+          python3 scripts/ci/tasks-native-artifact.py --profile production verify apps/tasks --receipt apps/tasks/tasks-production-artifact.json
+      - name: Verify the release still belongs to the production ref
+        run: test "$(git ls-remote origin refs/heads/production | cut -f1)" = "$TASKS_SOURCE_SHA"
+      - name: Upload, smoke at zero traffic, then publish and observe
+        id: release
+        timeout-minutes: 22
+        env:
+          TASKS_PUBLICATION_DIR: ${{ runner.temp }}/tasks-publication
+          CLOUDFLARE_API_TOKEN: ${{ secrets.TASKS_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/tasks-native-publish.mjs publish
+      - name: Reconcile rollback after a failed or cancelled release
+        if: (failure() || cancelled()) && (steps.release.outcome == 'failure' || steps.release.outcome == 'cancelled')
+        timeout-minutes: 2
+        env:
+          TASKS_PUBLICATION_DIR: ${{ runner.temp }}/tasks-publication
+          CLOUDFLARE_API_TOKEN: ${{ secrets.TASKS_CLOUDFLARE_API_TOKEN }}
+        run: node scripts/ci/tasks-native-publish.mjs rollback
+      - name: Retain release and rollback evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tasks-publication-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tasks-publication/receipt.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Record verified Tasks deployment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: tasks-cloudflare.yaml
+        run: node scripts/ci/record-deployment-marker.ts

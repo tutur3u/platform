@@ -144,6 +144,9 @@ export async function resolveProductionVercelTargets({
         commitDriven &&
         !packageResume &&
         cloudflareProductionWorkflows.has(productionWorkflow) &&
+        // Tasks already serves on its Worker. Its publisher captures and
+        // verifies the current deployment before bootstrapping the first marker.
+        productionWorkflow !== 'tasks-cloudflare.yaml' &&
         changeResult.source === 'deployment-marker-unavailable'
       ) {
         return {

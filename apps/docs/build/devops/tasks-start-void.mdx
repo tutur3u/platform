@@ -1,46 +1,79 @@
 ---
-title: "Tasks cutover packet"
-description: "Worker, route, bindings, build, smoke and Vercel rollback for the native Tasks app."
-updatedAt: "2026-11-09"
+title: "Tasks Worker production runbook"
+description: "Publish and verify the sealed native Tasks Worker and restore its previous version when needed."
+updatedAt: "2026-11-20"
 audience: developers
 ---
 
-The native Tasks source and its design are described in
-[Tasks native Start on Vite+ and Cloudflare](/build/devops/tasks-viteplus-cloudflare).
-This page holds the values the release owner needs for the cutover.
-
-## Cutover packet
+[Tasks native Start on Vite+ and Cloudflare](/build/devops/tasks-viteplus-cloudflare)
+describes the runtime and artifact format.
 
 | Item | Value |
 | --- | --- |
-| Worker | The staging identity is what `void.config.ts` emits. Deploy the production artifact under `tuturuuu-tasks` with the deploy-time name override; the config declares no routes and `workers_dev` is off |
-| Host | `tasks.tuturuuu.com` (root mode). `TUTURUUU_STAGING_HOSTS` may add `*.workers.dev` or `*.tuturuuu.com` staging hosts. The apex and every other host get `404`. The `tuturuuu.com/tasks` mount is not part of this cutover |
-| Bindings | `ASSETS` (worker-first, `html_handling: none`, so `/offline.html` is read directly) |
-| Vars (names) | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (read by the server at runtime), `TUTURUUU_STAGING_HOSTS` (staging only) |
-| Secrets (names) | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` (required: `503` without them). Optional integrations keep the names in `apps/tasks/env.example` |
-| Build | `bun turbo:local run build --filter=@tuturuuu/tasks^...`, then `bun run --cwd apps/tasks build:cloudflare` (`vp build --configLoader runner`). Output: `dist/server/wrangler.json`, `dist/client` |
-| Routing | Attach only `tasks.tuturuuu.com/*` |
-| Known gap | `serwist/[path]` (the offline service worker) stays on the Next build; the native shell does not register a service worker |
-| Prior Vercel deployment | Not recorded in the repository. The release owner captures the production deployment id and DNS record before the flip |
+| Worker | `tuturuuu-tasks` |
+| Canonical route | `tasks.tuturuuu.com/*`, root mode |
+| Assets | `ASSETS` with worker-first routing and `html_handling: none` |
+| Runtime public inputs | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` |
+| Required secrets | `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`. Optional bindings are listed in `apps/tasks/env.example`. |
+| Offline behavior | The native shell does not register the legacy Next.js service worker. |
 
-## Rollback
+## Publish from production
 
-Remove only the `tasks.tuturuuu.com/*` Worker route, or restore the captured DNS
-record, so the hostname returns to the captured immutable Vercel deployment.
-Do not rebuild and do not promote the Vercel project. The Worker holds no state.
+The Production Deployment Planner selects `tasks-cloudflare.yaml` for Tasks.
+The publisher calls the `tasks-cutover-artifact` producer in
+`mail-calendar-tasks-builds.yaml` for the planner's production SHA and downloads
+`tasks-cutover-production-<sha>` from the same run. The producer keeps its regular
+push, dispatch and PR build paths. The legacy Vercel Tasks publisher is disabled.
 
-## Smoke
+Trusted main and production builds require the configured production Supabase
+URL and publishable key. Placeholder public inputs belong to fixture builds.
+
+The publish job compares the downloaded archive's SHA-256 with the producer job
+output, then verifies the production profile, source SHA and sealed file
+hashes. The production-only `tasks-production` environment supplies
+`TASKS_CLOUDFLARE_API_TOKEN`. Use an Individual Workers Editor grant scoped to
+`tuturuuu-tasks`.
+The job uses the pinned Wrangler upload adapter for the sealed Void output.
+The `cf` upload path can replace it after qualification against the same
+Tasks server modules, static assets and existing bindings.
+
+The publisher captures the active deployment and its 100% rollback version,
+uploads the sealed output without bundling, and registers the candidate at
+0% traffic. A version override runs the smoke on the canonical hostname with
+the candidate's assets and verifies the exact SHA. The publisher checks the
+production ref again immediately before shifting traffic to the candidate.
+The publisher then verifies public build identity and runs the smoke once per
+minute for ten minutes. It rolls back when a route check fails or when probes
+exceed the greater of 2 seconds and three times baseline latency in consecutive
+samples. The sanitized release receipt contains both version IDs and the smoke
+results. The explicit `tasks-cloudflare` deployment marker records success only
+after verification.
+
+The live edge can return `X-Frame-Options: SAMEORIGIN` even though the Worker
+sets `DENY`. The standalone smoke reports the discrepancy. The publisher
+accepts it only on routes where the previous version also returned
+`SAMEORIGIN` and the enforcing CSP still returns `frame-ancestors 'none'`.
+Review the retained per-route results during release verification.
+
+The publisher accepts only the same-run production artifact
+`tasks-cutover-production-<sha>`. Its digest, source ref and production profile
+must all match the release.
+
+## Smoke and rollback
 
 ```bash
 node scripts/native-cutover/smoke.mjs --origin https://tasks.tuturuuu.com --app tasks --expect native
-curl -sI https://tasks.tuturuuu.com/api/build-info    # 200, x-tuturuuu-runtime: native
-curl -sI https://tasks.tuturuuu.com/                  # redirect to the central login verify-token URL
+curl --fail --silent --show-error -H 'Cache-Control: no-cache' \
+  "https://tasks.tuturuuu.com/api/build-info?check=$(date +%s)"
 ```
 
-The smoke runner checks the build-info route, a static file, the unauthenticated
-redirect, an API route without a session, the server-function base and the
-runtime header. The rollback smoke uses `--expect legacy`. `no 5xx` is part of
-every check.
+Check the full `commitHash`. The smoke covers robots, central login and path
+preservation, the signed-out boards API, the server-function guard, crawler
+rendering, a built asset and frame protection.
 
-Qualification and the sealed-artifact gate are described on the design page above
-(`bun run --cwd apps/tasks test:runtime`, `scripts/ci/tasks-native-artifact.py`).
+Use the `previousVersion` from the publication receipt for rollback. The
+publisher checks that its deployment still owns traffic before restoring that
+version. After an interrupted run, reconcile the current Cloudflare deployment
+and the receipt before any further write. If the failed release is still active,
+restore the prior version to 100% in Cloudflare and confirm the canonical
+build-info returns `previousSha`. Keep the Worker route attached.

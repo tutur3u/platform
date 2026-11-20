@@ -106,6 +106,7 @@ export async function runSmoke(options, fetchImpl = fetch) {
     const failures = [];
     let status;
     let ttfbMs;
+    let frameOptions;
     try {
       const response = await fetchImpl(`${options.origin}${check.path}`, {
         method: check.method ?? 'GET',
@@ -124,7 +125,8 @@ export async function runSmoke(options, fetchImpl = fetch) {
         failures.push(`x-tuturuuu-runtime ${runtime}, expected native`);
       if (!native && runtime === 'native')
         failures.push('served by the native Worker, expected legacy');
-      if (headers.get('x-frame-options') !== 'DENY')
+      frameOptions = headers.get('x-frame-options');
+      if (frameOptions !== 'DENY')
         failures.push('missing X-Frame-Options: DENY');
       if (
         !/frame-ancestors 'none'/u.test(
@@ -172,8 +174,25 @@ export async function runSmoke(options, fetchImpl = fetch) {
       ok: failures.length === 0,
       status,
       ttfbMs,
+      frameOptions,
       failures,
     });
   }
   return { ok: results.every((result) => result.ok), results };
+}
+
+export function matchesTasksPublicationSmoke(report, baseline) {
+  return report.results.every((result, index) => {
+    if (result.ok) return true;
+    // Cloudflare can replace this legacy header on every version. Allow
+    // the same edge value only when the enforced CSP check still passes.
+    const before = baseline.results[index];
+    return (
+      before?.name === result.name &&
+      before.frameOptions === 'SAMEORIGIN' &&
+      result.frameOptions === before.frameOptions &&
+      result.failures.length === 1 &&
+      result.failures[0] === 'missing X-Frame-Options: DENY'
+    );
+  });
 }

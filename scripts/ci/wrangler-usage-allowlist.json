@@ -3452,6 +3452,16 @@
       },
       "digest": "4631db45929dc1645af9ca37d74fb366606d1bf9d9447528077f513622452644"
     },
+    "scripts/ci/tasks-native-publish.mjs": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/4e152efa6d01894e4b5502a0a3abe742f881f83a",
+        "reason": "Ship the sealed Tasks production profile using the admitted Void fallback until cf qualifies the same server modules, assets, and production bindings."
+      },
+      "digest": "42290c87d561f3865ae829b612baa036a394a2b3d2babd7269c8d17762cae75e"
+    },
     "scripts/ci/turbo-cache-config.test.js": {
       "lines": 2,
       "uses": 2,

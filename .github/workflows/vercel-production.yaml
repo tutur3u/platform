@@ -348,9 +348,8 @@ jobs:
       always() && needs.plan.result == 'success' &&
       (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
       (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tasks.yaml')
-    uses: ./.github/workflows/vercel-production-tasks.yaml
-    secrets: inherit
+      contains(fromJSON(needs.plan.outputs.workflows_json), 'tasks-cloudflare.yaml')
+    uses: ./.github/workflows/tasks-cloudflare.yaml
 
   deploy-teach:
     needs: [plan, deploy-platform]

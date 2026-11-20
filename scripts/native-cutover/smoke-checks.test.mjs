@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { runSmoke, smokePlan } from './smoke-checks.mjs';
+import {
+  matchesTasksPublicationSmoke,
+  runSmoke,
+  smokePlan,
+} from './smoke-checks.mjs';
 
 const origin = 'https://tasks.tuturuuu.com';
 const base = { origin, app: 'tasks', expectRuntime: 'native' };
@@ -98,6 +102,33 @@ test('a server error and missing framing headers fail', async () => {
   assert.equal(robots.ok, false);
   assert.match(robots.failures.join(), /server error 500/u);
   assert.match(robots.failures.join(), /X-Frame-Options/u);
+});
+
+test('Tasks release permits only the inherited edge framing header with enforced CSP', async () => {
+  const robots = (value, policy = "frame-ancestors 'none'") =>
+    nativeFetch({
+      '/robots.txt': (headers) =>
+        new Response('ok', {
+          headers: {
+            ...headers,
+            'content-security-policy': policy,
+            'x-frame-options': value,
+          },
+        }),
+    });
+  const baseline = await runSmoke(base, robots('SAMEORIGIN'));
+  const strict = await runSmoke(base, nativeFetch());
+  assert.equal(baseline.ok, false);
+  assert.equal(matchesTasksPublicationSmoke(baseline, baseline), true);
+  assert.equal(matchesTasksPublicationSmoke(strict, baseline), true);
+  assert.equal(matchesTasksPublicationSmoke(baseline, strict), false);
+  const openFrame = await runSmoke(
+    base,
+    robots('SAMEORIGIN', 'frame-ancestors *')
+  );
+  assert.equal(matchesTasksPublicationSmoke(openFrame, baseline), false);
+  const differentHeader = await runSmoke(base, robots('ALLOWALL'));
+  assert.equal(matchesTasksPublicationSmoke(differentHeader, baseline), false);
 });
 
 test('legacy mode expects the guarded build-info and skips the server-function probe', () => {

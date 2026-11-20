@@ -10,6 +10,7 @@ const publishers = [
   'vercel-production-apps.yaml',
   'meet-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
+  'tasks-cloudflare.yaml',
   'apps-cloudflare.yaml',
   'wave1-native-production.yaml',
 ];
