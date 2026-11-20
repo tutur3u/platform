@@ -127,13 +127,20 @@ model-backed web search, holds a dispatch lease in the meeting room. The room
 admits it (`mira.room.dispatch`) only while the fence and every source revision
 are current, serialized with consent changes, and the release
 (`mira.room.release`) reports whether consent stayed unchanged until the
-answer arrived. A Pause recorded after admission is ordered after that request:
-its answer is discarded and every later request is refused, so no output
-produced across a withdrawal is used or published. The provider key and
-destination stay in the Meet Worker; the room records only admission. An
-admitted request's bytes may already have left when a Pause lands; fully
-serializing transport with consent would require the room to hold dispatch
-for the request's duration.
+answer arrived. The provider key and destination stay in the Meet Worker; the
+room records only admission.
+
+A Pause is deferred while already-admitted requests carry the participant's
+words. From the click, the participant no longer counts as Continue, so no new
+provider request, reservation, resume or publication can start; the admitted
+requests finish under their bounded leases, and their answers are discarded
+(their usage still settles). The Pause becomes the effective choice, with a new
+revision, when the last lease covering the participant releases or expires (at
+most two minutes); overlapping requests from several requesters all have to
+settle. Meanwhile the notice shows **Pausing…** without choice buttons and
+refreshes every two seconds. Choosing Continue before then cancels the Pause
+with a new revision, so requests reserved earlier stay stale. A Pause with no
+admitted request covering the participant takes effect immediately.
 
 Settlement carries what was received: usage measured from every provider
 answer (including a discarded one) bills both the AI Studio run and the room
@@ -197,7 +204,10 @@ step and the search use the guarded fetch), the Meet `assistant/route.test.ts`
 (a mid-generation withdrawal, a consent change during flight, both
 settlements), `room-mira-provider-fetch.test.ts` (real room reducer with a
 Pause before admission, between admission and transport, and in flight),
-`chat-billing.test.ts` (observed, unpriced and empty partial settlement), `workspace-gate.test.ts` and
+`chat-billing.test.ts` (observed, unpriced and empty partial settlement),
+`room-mira-withdrawal.test.ts` (Pause before and after admission, overlapping
+requests, release, expiry, cancel, pending to effective) and
+`room-mira-notice.test.tsx` (the Pausing… state), `workspace-gate.test.ts` and
 `session.recovery.test.ts` and `provider-drain.test.ts` (a revoked turn, client
 stop or abnormal close sends no input upstream and never arms recovery, a
 disconnected revoked session ends, billing finalizes with pending usage marked
