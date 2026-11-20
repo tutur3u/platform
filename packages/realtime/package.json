@@ -18,6 +18,7 @@
   "exports": {
     "./chat": "./src/chat/index.ts",
     "./chat/token": "./src/chat/token.ts",
+    "./chat/ticket": "./src/chat/ticket.ts",
     ".": "./src/index.ts",
     "./hive": "./src/hive/index.ts",
     "./hive/yjs": "./src/hive/yjs.ts",

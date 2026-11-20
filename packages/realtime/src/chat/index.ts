@@ -69,6 +69,16 @@ export const chatRealtimeEventSchema = z.discriminatedUnion('type', [
     isOnline: z.boolean(),
     type: z.literal('presence.updated'),
   }),
+  chatRealtimeBaseEventSchema.extend({
+    lastReadAt: z.string(),
+    messageId: chatRealtimeUuidSchema.nullable().optional(),
+    type: z.literal('read.updated'),
+    userId: chatRealtimeUuidSchema,
+  }),
+  chatRealtimeBaseEventSchema.extend({
+    type: z.literal('member.removed'),
+    userId: chatRealtimeUuidSchema,
+  }),
 ]);
 
 export type ChatRealtimeEvent = z.infer<typeof chatRealtimeEventSchema>;
