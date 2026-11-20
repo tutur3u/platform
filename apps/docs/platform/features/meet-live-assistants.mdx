@@ -132,8 +132,8 @@ are current, serialized with consent changes, and the release
 answer arrived. The provider key and destination stay in the Meet Worker; the
 room records only admission. Admission returns the lease lifetime, and the
 Meet Worker measures its deadline from before the admission call so it never
-outlasts the room's: nothing is sent once the caller's signal is aborted or
-the lease has expired, transport aborts at the deadline, and usage observation
+outlasts the room's: nothing is sent once the caller's signal (or the
+`Request` input's own signal) is aborted or the lease has expired, transport aborts at the deadline, and usage observation
 stops there too. An expired request is refused (`MIRA_ROOM_LEASE_EXPIRED`) along
 with every later request, and a send interrupted after it started counts as
 unpriced.

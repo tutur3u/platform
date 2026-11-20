@@ -119,15 +119,28 @@ export function roomMiraProviderFetch(
     if (typeof lifetime !== 'number' || !(lifetime > 0)) return expire();
     const deadline = requestedAt + lifetime;
     const remaining = () => deadline - Date.now();
-    if (init?.signal?.aborted) {
+    // The caller's cancellation: init.signal when supplied, otherwise the
+    // Request input's own signal, so a cancelled Request never reaches transport.
+    const callerSignal =
+      init?.signal ?? (input instanceof Request ? input.signal : undefined);
+    if (callerSignal?.aborted) {
       await release();
-      throw init.signal.reason ?? new Error('Provider request aborted');
+      throw callerSignal.reason ?? new Error('Provider request aborted');
     }
-    if (remaining() <= 0) return expire();
-    const timeout = AbortSignal.timeout(remaining());
-    const signal = init?.signal
-      ? AbortSignal.any([init.signal, timeout])
-      : timeout;
+    // Remaining lease time, computed once right before the timeout exists.
+    const budgetMs = Math.floor(remaining());
+    if (!Number.isSafeInteger(budgetMs) || budgetMs <= 0) return expire();
+    let timeout: AbortSignal;
+    let signal: AbortSignal;
+    try {
+      timeout = AbortSignal.timeout(budgetMs);
+      signal = callerSignal
+        ? AbortSignal.any([callerSignal, timeout])
+        : timeout;
+    } catch (error) {
+      await release();
+      throw error;
+    }
     let response: Response;
     try {
       response = await upstream(input, { ...init, signal });
