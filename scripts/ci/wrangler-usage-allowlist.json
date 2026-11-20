@@ -2762,6 +2762,16 @@
       },
       "digest": "23c7d480f98c6d765ed9923b09ffc1ea465f257688893e1d22e5221d0ef3d2c7"
     },
+    "scripts/ci/contacts-native-artifact.test.py": {
+      "lines": 5,
+      "uses": 5,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/commit/058b0e8080b9d7c6aac4ba2081c26d22ac3a1a76",
+        "reason": "The Contacts source-only seal and restore test models Void-emitted configuration and its deploy pointer. It invokes no deployment tool and this entry covers only the reviewed fixture literals."
+      },
+      "digest": "5b947b5d703e9a9635980bf241c5b60c68a59a112863be4e58881023e7828c95"
+    },
     "scripts/ci/finance-cutover-smoke.mjs": {
       "lines": 1,
       "uses": 1,

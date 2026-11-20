@@ -74,7 +74,7 @@ class ShortenerArtifactTest(unittest.TestCase):
 
     def test_staging_seal_rejects_public_ingress(self):
         app, config = self.fixture()
-        emitted = app / "dist/native/wrangler.json"
+        emitted = artifact.validate_output(app)["config"]
         for changes, error in (
             ({"workers_dev": True}, "contract drift: workers_dev"),
             ({"preview_urls": True}, "contract drift: preview_urls"),
