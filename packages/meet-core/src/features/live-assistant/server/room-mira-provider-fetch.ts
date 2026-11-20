@@ -141,6 +141,15 @@ export function roomMiraProviderFetch(
       await release();
       throw error;
     }
+    // Signal construction can itself take time: recheck the absolute deadline
+    // and the combined signal synchronously, with no yield before transport.
+    if (signal.aborted || remaining() <= 0) {
+      if (callerSignal?.aborted) {
+        await release();
+        throw callerSignal.reason ?? new Error('Provider request aborted');
+      }
+      return expire();
+    }
     let response: Response;
     try {
       response = await upstream(input, { ...init, signal });

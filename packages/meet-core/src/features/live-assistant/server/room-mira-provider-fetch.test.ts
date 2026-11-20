@@ -355,6 +355,62 @@ describe('deterministic lease deadline boundary', () => {
     expect(leases()).toEqual({});
   });
 
+  it('refuses transport when the deadline passes while the timeout is built', async () => {
+    const real = AbortSignal.timeout.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'timeout').mockImplementation((ms) => {
+      clock += 2; // One millisecond remained; construction took two.
+      return real(ms);
+    });
+    admissionAdvance = () => {
+      clock += 99;
+    };
+    const upstream = vi.fn(async () => answer());
+    const provider = roomMiraProviderFetch(access, mention, model, upstream);
+    await expect(provider.fetch(url)).rejects.toMatchObject(expired);
+    expect(upstream).not.toHaveBeenCalled();
+    expect(provider.sent()).toBe(false);
+    expect(provider.observed()).toBeNull();
+    expect(leases()).toEqual({});
+  });
+
+  it('refuses transport when the deadline passes while the combined signal is built', async () => {
+    const real = AbortSignal.any.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'any').mockImplementation((signals) => {
+      clock += 50;
+      return real(signals);
+    });
+    admissionAdvance = () => {
+      clock += 60;
+    };
+    const upstream = vi.fn(async () => answer());
+    const provider = roomMiraProviderFetch(access, mention, model, upstream);
+    await expect(
+      provider.fetch(url, { signal: new AbortController().signal })
+    ).rejects.toMatchObject(expired);
+    expect(upstream).not.toHaveBeenCalled();
+    expect(provider.observed()).toBeNull();
+    expect(leases()).toEqual({});
+  });
+
+  it('refuses transport when the caller cancels while the signal is built', async () => {
+    const controller = new AbortController();
+    const real = AbortSignal.any.bind(AbortSignal);
+    vi.spyOn(AbortSignal, 'any').mockImplementation((signals) => {
+      controller.abort(new Error('synthetic cancel during setup'));
+      return real(signals);
+    });
+    const upstream = vi.fn(async () => answer());
+    const provider = roomMiraProviderFetch(access, mention, model, upstream);
+    await expect(
+      provider.fetch(url, { signal: controller.signal })
+    ).rejects.toThrow('synthetic cancel during setup');
+    expect(upstream).not.toHaveBeenCalled();
+    expect(provider.observed()).toBeNull();
+    // A caller cancel is not a lease expiry: later requests may proceed.
+    expect(provider.withdrawn()).toBeUndefined();
+    expect(leases()).toEqual({});
+  });
+
   it('releases the lease when the transport timeout cannot be created', async () => {
     vi.spyOn(AbortSignal, 'timeout').mockImplementation(() => {
       throw new Error('synthetic timer failure');
