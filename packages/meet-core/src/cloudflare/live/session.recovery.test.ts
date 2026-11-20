@@ -348,4 +348,92 @@ describe('durable disconnected recovery', () => {
       gate.MEET_AI_ALL_WORKSPACES = optIn;
     }
   });
+
+  async function revokedAttached() {
+    const saved = {
+      ...fixture(),
+      billing: {
+        id: 'synthetic-billing',
+        sequence: 1,
+        usage: {},
+        costUsd: 0.01,
+        previousCostUsd: 0,
+        openedAt: now,
+        incomplete: false,
+      },
+      pendingUsage: true,
+    } as unknown as SavedSession;
+    const h = harness(saved);
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    const provider = await mocks.connect.mock.results[0]!.value;
+    expect(provider).toBeDefined();
+    const gate = env as unknown as Record<string, string | undefined>;
+    gate.MEET_AI_DISABLED_WORKSPACE_IDS = h.saved().identity.workspaceId!;
+    return { h, provider, gate };
+  }
+  function expectRevokedSettlement(
+    h: ReturnType<typeof harness>,
+    provider: { sendRealtimeInput: ReturnType<typeof vi.fn> }
+  ) {
+    expect(h.saved().ended).toBe(true);
+    // Attached provider receives no audio and no end-of-stream signal.
+    expect(provider.sendRealtimeInput).not.toHaveBeenCalled();
+    expect(mocks.drain).toHaveBeenCalledWith(provider, false);
+    // Usage already received still settles; pending usage is incomplete.
+    expect(mocks.finalize).toHaveBeenCalled();
+    expect(h.saved().billing?.incomplete).toBe(true);
+    expect(h.saved().coverageGap).toBe(true);
+    expect(h.storage.setAlarm).not.toHaveBeenCalledWith(
+      h.saved().disconnectedRecoveryDeadline
+    );
+  }
+
+  it('applies a gate denial before a client stop', async () => {
+    const { h, provider, gate } = await revokedAttached();
+    try {
+      sockets[0]!.dispatchEvent(
+        Object.assign(new Event('message'), {
+          data: JSON.stringify({ type: 'stop' }),
+        })
+      );
+      await vi.waitFor(() => expect(h.saved().ended).toBe(true));
+      await h.drain();
+      expectRevokedSettlement(h, provider);
+    } finally {
+      delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
+    }
+  });
+
+  it('applies a gate denial before abnormal-close recovery', async () => {
+    const { h, provider, gate } = await revokedAttached();
+    try {
+      sockets[0]!.disconnect(1006);
+      await h.drain();
+      await vi.waitFor(() => expect(h.saved().ended).toBe(true));
+      await h.drain();
+      expectRevokedSettlement(h, provider);
+      expect(h.saved().disconnectedRecoveryDeadline).toBeUndefined();
+    } finally {
+      delete gate.MEET_AI_DISABLED_WORKSPACE_IDS;
+    }
+  });
+
+  it('still pauses and signals the end of input on an eligible abnormal close', async () => {
+    const h = harness();
+    const object = await h.construct();
+    mocks.room.mockResolvedValue({ choice: continueChoice(h.saved()) });
+    expect((await reconnect(object, h.saved())).status).toBe(101);
+    await h.drain();
+    const provider = await mocks.connect.mock.results[0]!.value;
+    sockets[0]!.disconnect(1006);
+    await h.drain();
+    expect(provider.sendRealtimeInput).toHaveBeenCalledWith({
+      audioStreamEnd: true,
+    });
+    expect(h.saved().ended).not.toBe(true);
+    expect(h.saved().disconnectedRecoveryDeadline).toBe(now + 30_000);
+  });
 });

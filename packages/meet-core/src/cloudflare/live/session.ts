@@ -242,10 +242,11 @@ export class MeetLiveDurableObject {
     server.addEventListener('close', (event) => {
       if (server !== this.socket) return;
       this.socket = undefined;
-      if (event.code === 1000) {
-        this.state.waitUntil(this.stop());
-        return;
-      }
+      const denied = !this.allowed();
+      if (denied || event.code === 1000)
+        return this.state.waitUntil(
+          this.stop(denied ? 'workspace_not_enabled' : undefined)
+        );
       this.paused = true;
       this.provider?.sendRealtimeInput({ audioStreamEnd: true });
       this.state.waitUntil(sessions.armLiveRecovery(saved, this.state.storage));
@@ -376,11 +377,11 @@ export class MeetLiveDurableObject {
     if (!parsed.success || !this.saved || this.saved.ended || this.stopping)
       return;
     const message = parsed.data;
-    // Every client turn rechecks the full workspace gate; stop settles billing.
-    if (message.type === 'stop' || !this.allowed())
-      return this.stop(
-        message.type === 'stop' ? undefined : 'workspace_not_enabled'
-      );
+    // The gate is checked first on every client turn, including stop: a
+    // denial stops without further provider input and still settles billing.
+    const denied = !this.allowed();
+    if (denied || message.type === 'stop')
+      return this.stop(denied ? 'workspace_not_enabled' : undefined);
     if (message.type === 'decision') {
       await this.decide(message.id, message.approved, message.text);
       return;
@@ -592,8 +593,7 @@ export class MeetLiveDurableObject {
       await this.finalizeBilling();
       return;
     }
-    // Revoked or never eligible: end the session before any recovery or
-    // reconnect. Stopping stays ungated so billing settles and cleanup runs.
+    // Revoked: end before any recovery or reconnect; stop settles billing.
     if (!this.allowed()) {
       await this.stop('workspace_not_enabled');
       return;
