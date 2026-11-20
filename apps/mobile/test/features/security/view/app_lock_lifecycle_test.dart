@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,20 @@ class _Store extends Mock implements AppLockSettingsStore {}
 class _LocalAuth extends Mock implements LocalAuthService {}
 
 const _snapshot = MethodChannel('mobile/app_snapshot_privacy');
+
+void _reportRaster(WidgetTester tester, int frameNumber) {
+  tester.binding.platformDispatcher.onReportTimings!.call([
+    FrameTiming(
+      vsyncStart: 100,
+      buildStart: 101,
+      buildFinish: 102,
+      rasterStart: 103,
+      rasterFinish: 104,
+      rasterFinishWallTime: 105,
+      frameNumber: frameNumber,
+    ),
+  ]);
+}
 
 void main() {
   testWidgets('feature and app refresh wait for a successful resume unlock', (
@@ -154,6 +169,7 @@ void main() {
     addTearDown(account.dispose);
     final prepared = <bool>[];
     final acknowledged = <String>[];
+    final failedPreparation = Completer<String>();
     final stale = Completer<String>();
     final release = Completer<String>();
     var oldAccountVisibleAtRelease = false;
@@ -162,7 +178,7 @@ void main() {
         if (call.method == 'preparePrivacyFrame') {
           prepared.add(call.arguments as bool);
           return switch (prepared.length) {
-            1 => throw PlatformException(code: 'bridge'),
+            1 => failedPreparation.future,
             2 => 'old-secure',
             3 => stale.future,
             _ => release.future,
@@ -209,7 +225,9 @@ void main() {
     expect(find.text('Account old'), findsNothing);
     expect(acknowledged, isEmpty);
 
-    await tester.pump(const Duration(milliseconds: 100));
+    failedPreparation.completeError(PlatformException(code: 'bridge'));
+    await tester.idle();
+    await tester.pump();
     await tester.pump();
     expect(prepared, [true, true]);
     expect(acknowledged, ['old-secure']);
@@ -236,7 +254,7 @@ void main() {
     expect(find.text('Account signed out'), findsOneWidget);
   });
 
-  testWidgets('a failed iOS frame acknowledgment retries in place', (
+  testWidgets('iOS waits for raster and retries failed acknowledgments', (
     tester,
   ) async {
     final store = _Store();
@@ -249,11 +267,12 @@ void main() {
     await lock.load();
     addTearDown(lock.close);
     final reveals = <int>[];
+    var frame = 40;
     final messenger = tester.binding.defaultBinaryMessenger
       ..setMockMethodCallHandler(_snapshot, (call) async {
         if (call.method == 'snapshotActivation') return 7;
         reveals.add(call.arguments as int);
-        if (reveals.length == 1) throw PlatformException(code: 'bridge');
+        if (reveals.length <= 4) throw PlatformException(code: 'bridge');
         return true;
       });
     addTearDown(() => messenger.setMockMethodCallHandler(_snapshot, null));
@@ -262,17 +281,35 @@ void main() {
       lock: lock,
       accountIdentity: () => 'test-account',
       snapshotPlatform: TargetPlatform.iOS,
+      readFrameNumber: () => frame,
       onSuspend: (_) {},
       refresh: () {},
     );
     addTearDown(lifecycle.dispose);
     await tester.pump();
     await tester.pump();
-    expect(reveals, [7]);
-    await tester.pump(const Duration(milliseconds: 150));
+    _reportRaster(tester, frame - 1);
+    await tester.idle();
+    expect(reveals, isEmpty);
+
+    // A lost timing report cannot make the cover open. It requests a new frame.
+    frame++;
+    await tester.pump(const Duration(seconds: 2));
     await tester.pump();
-    await tester.pump();
-    expect(reveals, [7, 7]);
+    _reportRaster(tester, frame - 1);
+    await tester.idle();
+    expect(reveals, isEmpty);
+
+    for (var attempt = 1; attempt <= 5; attempt++) {
+      _reportRaster(tester, frame);
+      await tester.idle();
+      expect(reveals, List.filled(attempt, 7));
+      if (attempt < 5) {
+        frame++;
+        await tester.pump();
+        await tester.pump();
+      }
+    }
   });
 
   testWidgets('already resumed startup submits only the current activation', (
@@ -290,6 +327,7 @@ void main() {
     final stale = Completer<int>();
     final reveals = <int>[];
     var activations = 0;
+    var frame = 50;
     final messenger = tester.binding.defaultBinaryMessenger
       ..setMockMethodCallHandler(_snapshot, (call) async {
         if (call.method == 'snapshotActivation') {
@@ -305,12 +343,15 @@ void main() {
       lock: lock,
       accountIdentity: () => 'test-account',
       snapshotPlatform: TargetPlatform.iOS,
+      readFrameNumber: () => frame,
       onSuspend: (_) {},
       refresh: () {},
     );
     addTearDown(lifecycle.dispose);
     await tester.pump();
     await tester.pump();
+    _reportRaster(tester, frame);
+    await tester.idle();
     expect(reveals, [1]);
 
     await tester.setAppLifecycle(AppLifecycleState.inactive);
@@ -320,8 +361,11 @@ void main() {
     await tester.setAppLifecycle(AppLifecycleState.inactive);
     await tester.setAppLifecycle(AppLifecycleState.resumed);
     stale.complete(2);
+    frame++;
     await tester.pump();
     await tester.pump();
+    _reportRaster(tester, frame);
+    await tester.idle();
     expect(reveals, [1, 3]);
   });
 }

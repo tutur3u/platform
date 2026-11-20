@@ -177,7 +177,10 @@ void main() {
           loginContext,
           const Text('Private workspace toast'),
         );
-        showAppToast(loginContext, message: 'Private account notice');
+        final accountNotice = showAppToast(
+          loginContext,
+          message: 'Private account notice',
+        );
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.text('Private workspace toast'), findsOneWidget);
         expect(find.text('Private account notice'), findsOneWidget);
@@ -190,17 +193,19 @@ void main() {
         expect(find.byType(LoginPage), findsOneWidget);
         expect(find.text('Private workspace toast'), findsNothing);
         expect(find.text('Private account notice'), findsNothing);
+        expect(accountNotice.isOpen, isFalse);
         tester.showLegacyToast(
           tester.element(find.byType(LoginPage)),
           const Text('Late workspace toast'),
         );
-        showAppToast(
+        final lateNotice = showAppToast(
           tester.element(find.byType(LoginPage)),
           message: 'Late account notice',
         );
         await tester.pump(const Duration(milliseconds: 300));
         expect(find.text('Late workspace toast'), findsNothing);
         expect(find.text('Late account notice'), findsNothing);
+        expect(lateNotice.isOpen, isFalse);
 
         final destination = cancel ? Routes.home : Routes.apps;
         if (cancel) {

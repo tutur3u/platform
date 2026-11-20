@@ -51,16 +51,19 @@ is visible on the first resumed Flutter frame. App-owned foreground refreshes
 wait for the gate to clear.
 
 The Flutter boundary hides protected routes during lifecycle transitions.
-App Lock hides account toasts even on Add Account. Lock and account changes
-discard queued toasts from the former UI session. On iOS the window cover attaches when the scene starts to deactivate.
-The app submits a safe frame for the current activation, then the native cover
-stays in place through the next display interval. Android 13 and later suppress
+App Lock dismisses account toasts even on Add Account. Lock and account
+changes discard toasts from the former UI session. On iOS the window cover
+attaches when the scene starts to deactivate.
+Flutter reports rasterization of the safe frame for the current activation.
+After acknowledgment, the native cover waits through at least three display
+refreshes and 50 milliseconds. Android 13 and later suppress
 the Overview thumbnail. Android 12 and earlier keep the entire window secure
 while App Lock is enabled and an account is signed in. A policy or account
 change requires its own Flutter frame acknowledgment and a native display
-interval before Android clears the secure flag. Both bridges retry transient
-failures within the current transition. If retries fail, privacy stays in
-place and the next activation starts a fresh handshake.
+interval before Android clears the secure flag. Both bridges retry failures
+at most once per Flutter frame while resumed and keep privacy in place until
+the current handshake succeeds. On iOS, a missing raster report causes a new
+frame to be submitted after a two-second timeout.
 
 The mobile lifecycle tests exercise first-frame privacy, deferred refresh and
 stale prompts. The registered destinations tests drive Add Account cancellation
@@ -77,6 +80,7 @@ recording frame by frame. Repeat with light and dark appearance.
 1. **iOS.** Open the app switcher directly from the protected page. Check that its
    preview contains no test text. Reopen the app, cancel authentication, and
    confirm that the first frame after the native cover is the lock screen.
+   Record how long the cover remains visible after returning to the app.
    Rapidly repeat the switch twice and return to the app. Confirm that neither
    a stale page nor a stuck cover appears. Unlock using Face ID or Touch ID, then
    repeat using the device passcode. Repeat after terminating the app from the
@@ -98,7 +102,10 @@ recording frame by frame. Repeat with light and dark appearance.
    new unlock works and the stale prompt cannot disable App Lock.
 4. **Both.** Leave Mail open when backgrounding. Return and cancel the unlock.
    Confirm the mailbox fetch logs show zero resume refreshes. Unlock and
-   confirm the refresh fires after authentication.
+   confirm the refresh fires after authentication. Repeat by opening a Mail
+   notification while App Lock is engaged. Leave Mastermind Fleet open,
+   background it, and return. Wait at least 30 seconds before unlocking.
+   Verify Fleet does not fetch while locked and refreshes once on unlock.
 
 ## Web CSRF and forwarded workspace requests
 

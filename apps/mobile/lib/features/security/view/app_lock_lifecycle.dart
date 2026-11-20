@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/startup/foreground_refresh.dart';
@@ -15,11 +16,13 @@ class AppLockLifecycle with WidgetsBindingObserver {
     required VoidCallback refresh,
     DateTime Function()? now,
     TargetPlatform? snapshotPlatform,
+    int Function()? readFrameNumber,
   }) : _lock = lock,
        _accountIdentity = accountIdentity,
        _onSuspend = onSuspend,
        _refresh = refresh,
        _now = now ?? DateTime.now,
+       _readFrameNumber = readFrameNumber ?? _currentFrameNumber,
        _snapshotPlatform =
            snapshotPlatform ??
            (Platform.isAndroid
@@ -43,13 +46,21 @@ class AppLockLifecycle with WidgetsBindingObserver {
   final ValueChanged<AppLifecycleState> _onSuspend;
   final VoidCallback _refresh;
   final DateTime Function() _now;
+  final int Function() _readFrameNumber;
+
+  static int _currentFrameNumber() =>
+      SchedulerBinding.instance.platformDispatcher.frameData.frameNumber;
+
   late final StreamSubscription<AppLockState> _subscription;
   late final VoidCallback _unbindRefresh;
   final _featureWork = <Object, VoidCallback>{};
   final nativePrivacyReady = ValueNotifier<bool>(true);
   ({String? account, bool required})? _androidPolicy;
   int _snapshotRevision = 0;
-  Timer? _snapshotRetry;
+  int? _retryFrame;
+  TimingsCallback? _rasterCallback;
+  Timer? _rasterTimeout;
+  bool _loggedSnapshotError = false;
   DateTime? _backgroundedAt;
   bool _frameScheduled = false;
   bool _refreshPending = false;
@@ -112,8 +123,9 @@ class AppLockLifecycle with WidgetsBindingObserver {
 
   void _invalidateSnapshot() {
     _snapshotRevision++;
-    _snapshotRetry?.cancel();
-    _snapshotRetry = null;
+    _retryFrame = null;
+    _loggedSnapshotError = false;
+    _clearRasterWait();
   }
 
   bool _snapshotIsCurrent(int revision) =>
@@ -125,11 +137,11 @@ class AppLockLifecycle with WidgetsBindingObserver {
   void _beginSnapshotHandshake() {
     _invalidateSnapshot();
     if (_snapshotPlatform != null && _resumed) {
-      unawaited(_prepareSnapshot(_snapshotRevision, attempt: 0));
+      unawaited(_prepareSnapshot(_snapshotRevision));
     }
   }
 
-  Future<void> _prepareSnapshot(int revision, {required int attempt}) async {
+  Future<void> _prepareSnapshot(int revision) async {
     final policy = _androidPolicy;
     try {
       final token = policy == null
@@ -140,7 +152,7 @@ class AppLockLifecycle with WidgetsBindingObserver {
             );
       if (!_snapshotIsCurrent(revision)) return;
       if (token == null) {
-        _retrySnapshot(revision, attempt);
+        _retrySnapshot(revision);
         return;
       }
 
@@ -149,43 +161,86 @@ class AppLockLifecycle with WidgetsBindingObserver {
       if (policy != null) nativePrivacyReady.value = true;
       WidgetsBinding.instance
         ..addPostFrameCallback((_) {
-          if (_snapshotIsCurrent(revision)) {
-            unawaited(_submitSafeFrame(token, revision, attempt));
+          if (!_snapshotIsCurrent(revision)) return;
+          if (_snapshotPlatform == TargetPlatform.iOS) {
+            _waitForRaster(token, revision);
+          } else {
+            unawaited(_submitSafeFrame(token, revision));
           }
         })
         ..ensureVisualUpdate();
       scheduleRefresh();
     } on PlatformException catch (error) {
-      debugPrint('App Lock snapshot preparation failed: ${error.code}');
-      _retrySnapshot(revision, attempt);
+      _logSnapshotError('preparing the frame: ${error.code}');
+      _retrySnapshot(revision);
     } on MissingPluginException {
-      _retrySnapshot(revision, attempt);
+      _retrySnapshot(revision);
     }
   }
 
-  Future<void> _submitSafeFrame(Object token, int revision, int attempt) async {
+  void _waitForRaster(Object token, int revision) {
+    final scheduler = SchedulerBinding.instance;
+    final frameNumber = _readFrameNumber();
+    if (frameNumber < 0) {
+      _retrySnapshot(revision);
+      return;
+    }
+    void onTimings(List<FrameTiming> timings) {
+      if (!timings.any((timing) => timing.frameNumber == frameNumber)) return;
+      _clearRasterWait();
+      if (_snapshotIsCurrent(revision)) {
+        unawaited(_submitSafeFrame(token, revision));
+      }
+    }
+
+    _rasterCallback = onTimings;
+    scheduler.addTimingsCallback(onTimings);
+    // Frame timings arrive in batches in release builds. A dropped frame
+    // cannot acknowledge the cover, so submit a new one after the deadline.
+    _rasterTimeout = Timer(const Duration(seconds: 2), () {
+      _clearRasterWait();
+      _retrySnapshot(revision);
+    });
+  }
+
+  void _clearRasterWait() {
+    final callback = _rasterCallback;
+    if (callback != null) {
+      SchedulerBinding.instance.removeTimingsCallback(callback);
+      _rasterCallback = null;
+    }
+    _rasterTimeout?.cancel();
+    _rasterTimeout = null;
+  }
+
+  void _logSnapshotError(String reason) {
+    if (_loggedSnapshotError) return;
+    _loggedSnapshotError = true;
+    debugPrint('App Lock snapshot bridge failed while $reason');
+  }
+
+  Future<void> _submitSafeFrame(Object token, int revision) async {
     try {
       final accepted = await _snapshot.invokeMethod<bool>(
         'foregroundFrameReady',
         token,
       );
-      if (accepted != true) _retrySnapshot(revision, attempt);
+      if (accepted != true) _retrySnapshot(revision);
     } on PlatformException catch (error) {
-      debugPrint('App Lock snapshot acknowledgment failed: ${error.code}');
-      _retrySnapshot(revision, attempt);
+      _logSnapshotError('acknowledging the frame: ${error.code}');
+      _retrySnapshot(revision);
     } on MissingPluginException {
-      _retrySnapshot(revision, attempt);
+      _retrySnapshot(revision);
     }
   }
 
-  void _retrySnapshot(int revision, int attempt) {
-    if (!_snapshotIsCurrent(revision) || attempt >= 2) return;
-    _snapshotRetry?.cancel();
-    _snapshotRetry = Timer(Duration(milliseconds: 100 << attempt), () {
-      _snapshotRetry = null;
-      if (_snapshotIsCurrent(revision)) {
-        unawaited(_prepareSnapshot(revision, attempt: attempt + 1));
-      }
+  void _retrySnapshot(int revision) {
+    if (!_snapshotIsCurrent(revision) || _retryFrame == revision) return;
+    _retryFrame = revision;
+    SchedulerBinding.instance.scheduleFrameCallback((_) {
+      if (!_snapshotIsCurrent(revision)) return;
+      _retryFrame = null;
+      unawaited(_prepareSnapshot(revision));
     });
   }
 

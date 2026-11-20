@@ -19,6 +19,7 @@ import UserNotifications
   private var snapshotActivation = 0
   private var snapshotPresentationLink: CADisplayLink?
   private var snapshotPresentationTicks = 0
+  private var snapshotAcknowledgedAt: CFTimeInterval = 0
 
   deinit {
     snapshotPresentationLink?.invalidate()
@@ -75,6 +76,7 @@ import UserNotifications
     }) else { return false }
     snapshotPresentationLink?.invalidate()
     snapshotPresentationTicks = 0
+    snapshotAcknowledgedAt = CACurrentMediaTime()
     let link = CADisplayLink(target: self, selector: #selector(snapshotPresentationTick(_:)))
     snapshotPresentationLink = link
     link.add(to: .main, forMode: .common)
@@ -84,8 +86,9 @@ import UserNotifications
   @objc private func snapshotPresentationTick(_ link: CADisplayLink) {
     guard link === snapshotPresentationLink else { return }
     snapshotPresentationTicks += 1
-    // Keep the cover through the first display interval after Flutter submits the frame.
-    guard snapshotPresentationTicks >= 2 else { return }
+    guard snapshotPresentationTicks >= 3,
+          CACurrentMediaTime() - snapshotAcknowledgedAt >= 0.05
+    else { return }
     link.invalidate()
     snapshotPresentationLink = nil
     revealForegroundScenes()

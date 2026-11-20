@@ -60,38 +60,31 @@ AppToastHandle showAppToast(
       math.max(clearance, bottomClearance ?? clearance) + AppSpacing.md;
   late final AppToastHandle handle;
   final entry = OverlayEntry(
-    builder: (overlayContext) {
-      final scope = AccountOverlayScope.maybeOf(overlayContext);
-      final hidden = scope?.allowed == false || scope?.epoch != epoch;
-      return Positioned(
-        left: AppSpacing.lg,
-        right: AppSpacing.lg,
-        bottom: bottom,
-        child: Offstage(
-          offstage: hidden,
-          child: ExcludeFocus(
-            excluding: hidden,
-            child: SafeArea(
-              top: false,
-              child: _AppToast(
-                message: message,
-                title: title,
-                variant: variant,
-                actionLabel: actionLabel,
-                onAction: onAction == null
-                    ? null
-                    : () {
-                        handle.close();
-                        onAction();
-                      },
-                onDismiss: () => handle.close(),
-                onDispose: handle._onDisposed,
-              ),
-            ),
+    builder: (_) => Positioned(
+      left: AppSpacing.lg,
+      right: AppSpacing.lg,
+      bottom: bottom,
+      child: _AppToastEntry(
+        epoch: epoch,
+        handle: handle,
+        child: SafeArea(
+          top: false,
+          child: _AppToast(
+            message: message,
+            title: title,
+            variant: variant,
+            actionLabel: actionLabel,
+            onAction: onAction == null
+                ? null
+                : () {
+                    handle.close();
+                    onAction();
+                  },
+            onDismiss: () => handle.close(),
           ),
         ),
-      );
-    },
+      ),
+    ),
   );
   handle = AppToastHandle._(entry);
   overlay.insert(entry);
@@ -100,12 +93,50 @@ AppToastHandle showAppToast(
   return handle;
 }
 
-class _AppToast extends StatefulWidget {
+class _AppToastEntry extends StatefulWidget {
+  const _AppToastEntry({
+    required this.epoch,
+    required this.handle,
+    required this.child,
+  });
+
+  final Object? epoch;
+  final AppToastHandle handle;
+  final Widget child;
+
+  @override
+  State<_AppToastEntry> createState() => _AppToastEntryState();
+}
+
+class _AppToastEntryState extends State<_AppToastEntry> {
+  bool _dismissed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = AccountOverlayScope.maybeOf(context);
+    if (!_dismissed &&
+        (scope?.allowed == false || scope?.epoch != widget.epoch)) {
+      _dismissed = true;
+      // The overlay is building, so remove its entry once this frame ends.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.handle.close();
+      });
+    }
+    return _dismissed ? const SizedBox.shrink() : widget.child;
+  }
+
+  @override
+  void dispose() {
+    widget.handle._onDisposed();
+    super.dispose();
+  }
+}
+
+class _AppToast extends StatelessWidget {
   const _AppToast({
     required this.message,
     required this.variant,
     required this.onDismiss,
-    required this.onDispose,
     this.title,
     this.actionLabel,
     this.onAction,
@@ -117,18 +148,6 @@ class _AppToast extends StatefulWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final VoidCallback onDismiss;
-  final VoidCallback onDispose;
-
-  @override
-  State<_AppToast> createState() => _AppToastState();
-}
-
-class _AppToastState extends State<_AppToast> {
-  @override
-  void dispose() {
-    widget.onDispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +157,7 @@ class _AppToastState extends State<_AppToast> {
         constraints: const BoxConstraints(maxWidth: 480),
         child: Dismissible(
           key: const ValueKey('app-toast'),
-          onDismissed: (_) => widget.onDismiss(),
+          onDismissed: (_) => onDismiss(),
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -147,14 +166,14 @@ class _AppToastState extends State<_AppToast> {
             child: Material(
               type: MaterialType.transparency,
               child: AppAlert(
-                variant: widget.variant,
-                title: widget.title == null ? null : Text(widget.title!),
-                content: Text(widget.message),
-                trailing: widget.actionLabel == null
+                variant: variant,
+                title: title == null ? null : Text(title!),
+                content: Text(message),
+                trailing: actionLabel == null
                     ? null
                     : AppButton.ghost(
-                        onPressed: widget.onAction,
-                        child: Text(widget.actionLabel!),
+                        onPressed: onAction,
+                        child: Text(actionLabel!),
                       ),
               ),
             ),
