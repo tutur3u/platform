@@ -5,7 +5,7 @@ vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: async () => {},
 }));
-vi.mock('@/lib/external-projects/access', () => ({
+vi.mock('@/lib/external-projects/manage-decision', () => ({
   requireWorkspaceExternalProjectManageDecision: decide,
 }));
 
@@ -34,7 +34,10 @@ describe('external project manage decision', () => {
       },
     });
     expect(await (await request()).json()).toMatchObject({ decision: 'allow' });
-    decide.mockResolvedValueOnce({ ok: false, response: new Response(null, { status: 403 }) });
+    decide.mockResolvedValueOnce({
+      ok: false,
+      response: new Response(null, { status: 403 }),
+    });
     const denied = await request();
     expect(denied.status).toBe(403);
     expect(denied.headers.get('cache-control')).toBe('private, no-store');

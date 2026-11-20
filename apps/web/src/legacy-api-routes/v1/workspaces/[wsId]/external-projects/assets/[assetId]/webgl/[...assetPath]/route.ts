@@ -418,7 +418,10 @@ export async function GET(
     }
 
     const isPublic = await canReadPublishedAsset(
-      admin, resolvedWsId, binding.canonical_project.id, asset,
+      admin,
+      resolvedWsId,
+      binding.canonical_project.id,
+      asset,
       asset.workspace_external_project_entries
     );
     if (!isPublic) {

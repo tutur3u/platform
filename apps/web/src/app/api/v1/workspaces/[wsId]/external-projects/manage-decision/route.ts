@@ -1,5 +1,5 @@
 import { connection, NextResponse } from 'next/server';
-import { requireWorkspaceExternalProjectManageDecision } from '@/lib/external-projects/access';
+import { requireWorkspaceExternalProjectManageDecision } from '@/lib/external-projects/manage-decision';
 
 const headers = { 'Cache-Control': 'private, no-store' };
 
@@ -10,7 +10,10 @@ export async function GET(
   await connection();
   const { wsId } = await params;
   const unavailable = () =>
-    NextResponse.json({ error: 'Authorization unavailable' }, { status: 503, headers });
+    NextResponse.json(
+      { error: 'Authorization unavailable' },
+      { status: 503, headers }
+    );
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   try {

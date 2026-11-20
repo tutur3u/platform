@@ -109,10 +109,10 @@ function createAccessRequest(token = 'ttr_app_test') {
 
 import {
   requireWorkspaceExternalProjectAccess,
-  requireWorkspaceExternalProjectManageDecision,
   requireWorkspaceExternalProjectMemberBootstrapAccess,
   requireWorkspaceExternalProjectSetupAccess,
 } from './access';
+import { requireWorkspaceExternalProjectManageDecision } from './manage-decision';
 
 type CanonicalProjectFixture = {
   adapter: string;

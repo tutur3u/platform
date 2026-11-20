@@ -57,3 +57,28 @@ export function appTokenHasRequiredScope(
     acceptedScopes.some((scope) => claims.scopes.includes(scope))
   );
 }
+
+export function getExternalProjectModeForScopes(
+  scopes: string[]
+): WorkspaceExternalProjectMode | null {
+  if (!scopes.some((scope) => scope.startsWith('external-projects:'))) {
+    return null;
+  }
+
+  if (
+    scopes.includes('external-projects:*') ||
+    scopes.includes('external-projects:manage')
+  ) {
+    return 'manage';
+  }
+
+  if (scopes.includes('external-projects:publish')) {
+    return 'publish';
+  }
+
+  if (scopes.includes('external-projects:read')) {
+    return 'read';
+  }
+
+  return 'manage';
+}

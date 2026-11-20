@@ -1,3 +1,7 @@
+import type {
+  ExternalProjectAsset,
+  ExternalProjectDeliveryAsset,
+} from './external-project-assets';
 import type { User as PrimitiveUser } from './primitives/User';
 import type { Database, Json, Tables } from './supabase';
 import type { TaskProjectRelationRow } from './task-project-ticket';
@@ -6,6 +10,10 @@ import type { InternalApiWorkspaceSummary } from './workspace-summary';
 
 export type * from './db-desktop-deployment';
 export type * from './db-task-actor';
+export type {
+  ExternalProjectAsset,
+  ExternalProjectDeliveryAsset,
+} from './external-project-assets';
 export type { Database, Json } from './supabase';
 export type { TaskProjectRelationRow } from './task-project-ticket';
 
@@ -736,7 +744,6 @@ export type ExternalProjectCollection =
   Tables<'workspace_external_project_collections'>;
 export type ExternalProjectEntry = Tables<'workspace_external_project_entries'>;
 export type ExternalProjectBlock = Tables<'workspace_external_project_blocks'>;
-export type ExternalProjectAsset = Tables<'workspace_external_project_assets'>;
 export type ExternalProjectFieldDefinition =
   Tables<'workspace_external_project_field_definitions'>;
 export type ExternalProjectTaxonomy =
@@ -807,24 +814,6 @@ export type ExternalProjectWorkspaceBindingSummary =
 export type ExternalProjectStudioAsset = ExternalProjectAsset & {
   asset_url: string | null;
   preview_url: string | null;
-};
-
-export type ExternalProjectDeliveryAsset = Pick<
-  ExternalProjectAsset,
-  | 'id'
-  | 'entry_id'
-  | 'block_id'
-  | 'asset_type'
-  | 'storage_path'
-  | 'source_url'
-  | 'alt_text'
-  | 'sort_order'
-  | 'updated_at'
-> & {
-  metadata: Json;
-  assetUrl: string | null;
-  assetRevision: string;
-  published?: boolean;
 };
 
 export type ExternalProjectDeliveryRelation = Pick<
