@@ -39,70 +39,78 @@ Widget _app(
 void main() {
   final l10n = AppLocalizationsEn();
 
-  for (final reason in AssistantLiveBlockReason.values) {
-    testWidgets('${reason.code}: title, body, billed-to and one primary', (
-      tester,
-    ) async {
-      var closed = 0;
-      var upsold = 0;
-      final eligibility = _blocked(reason);
-      await tester.pumpWidget(
-        _app(
-          AssistantLiveBlockedSheet(
-            eligibility: eligibility,
-            now: DateTime(2026, 11, 20, 9),
-            onClose: () => closed++,
-            onUpgrade: () async => upsold++,
-            onTopUp: () async => upsold++,
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    for (final reason in AssistantLiveBlockReason.values) {
+      testWidgets('${reason.code} on ${platform.name}: copy and one primary', (
+        tester,
+      ) async {
+        var closed = 0;
+        var opened = 0;
+        final eligibility = _blocked(reason);
+        await tester.pumpWidget(
+          _app(
+            AssistantLiveBlockedSheet(
+              eligibility: eligibility,
+              platform: platform,
+              now: DateTime(2026, 11, 20, 9),
+              onClose: () => closed++,
+              onOpenBilling: () async => opened++,
+            ),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text(eligibility.title(l10n)), findsOneWidget);
-      expect(
-        find.text(eligibility.body(l10n, now: DateTime(2026, 11, 20, 9))),
-        findsOneWidget,
-      );
-      expect(
-        find.text(l10n.assistantLiveBlockedBilledTo('Phuc personal')),
-        findsOneWidget,
-      );
-      final upsell = switch (reason) {
-        AssistantLiveBlockReason.planRequired => 'live-blocked-upgrade',
-        AssistantLiveBlockReason.creditsExhausted => 'live-blocked-top-up',
-        _ => null,
-      };
-      if (upsell != null) {
-        expect(find.byKey(const ValueKey('live-blocked-not-now')), findsOne);
-        await tester.tap(find.byKey(ValueKey(upsell)));
+        );
         await tester.pumpAndSettle();
-        expect(upsold, 1);
-        expect(closed, 1);
-      } else {
-        // Limits, roles and the global pause never upsell.
-        expect(find.text(l10n.assistantLiveBlockedUpgrade), findsNothing);
-        expect(find.text(l10n.assistantLiveBlockedTopUp), findsNothing);
+        expect(find.text(eligibility.title(l10n)), findsOneWidget);
+        expect(
+          find.text(eligibility.body(l10n, now: DateTime(2026, 11, 20, 9))),
+          findsOneWidget,
+        );
+        expect(
+          find.text(l10n.assistantLiveBlockedBilledTo('Phuc personal')),
+          findsOneWidget,
+        );
+        final billing =
+            reason == AssistantLiveBlockReason.planRequired ||
+            reason == AssistantLiveBlockReason.creditsExhausted;
+        if (billing && platform == TargetPlatform.android) {
+          expect(find.byKey(const ValueKey('live-blocked-not-now')), findsOne);
+          await tester.tap(
+            find.byKey(const ValueKey('live-blocked-open-billing')),
+          );
+          await tester.pumpAndSettle();
+          expect(opened, 1);
+          expect(closed, 1);
+          return;
+        }
+        // iOS never offers purchase; limits, roles and pauses never upsell.
+        expect(
+          find.byKey(const ValueKey('live-blocked-open-billing')),
+          findsNothing,
+        );
+        expect(
+          find.text(l10n.assistantLiveBlockedManageOnWeb),
+          billing ? findsOneWidget : findsNothing,
+        );
+        // The web hint is plain text, never a link.
+        expect(
+          find.ancestor(
+            of: find.text(l10n.assistantLiveBlockedManageOnWeb),
+            matching: find.byType(InkWell),
+          ),
+          findsNothing,
+        );
         await tester.tap(find.byKey(const ValueKey('live-blocked-got-it')));
         expect(closed, 1);
-      }
-      expect(tester.takeException(), isNull);
-    });
+        expect(opened, 0);
+        expect(tester.takeException(), isNull);
+      });
+    }
   }
 
-  testWidgets('without a store purchase flow, plan_required only dismisses', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _app(
-        AssistantLiveBlockedSheet(
-          eligibility: _blocked(AssistantLiveBlockReason.planRequired),
-          onClose: () {},
-        ),
-      ),
+  test('Android billing opens the billed workspace on the pay app', () {
+    expect(
+      assistantLiveBillingUri('ws 1').toString(),
+      'https://pay.tuturuuu.com/ws%201/billing',
     );
-    await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('live-blocked-upgrade')), findsNothing);
-    expect(find.byKey(const ValueKey('live-blocked-got-it')), findsOneWidget);
   });
 
   testWidgets('Vietnamese copy renders without overflow', (tester) async {
@@ -110,15 +118,18 @@ void main() {
       _app(
         AssistantLiveBlockedSheet(
           eligibility: _blocked(AssistantLiveBlockReason.creditsExhausted),
+          platform: TargetPlatform.iOS,
           onClose: () {},
-          onTopUp: () async {},
         ),
         locale: const Locale('vi'),
       ),
     );
     await tester.pumpAndSettle();
     expect(find.text('Nạp thêm để dùng Live'), findsOneWidget);
-    expect(find.text('Để sau'), findsOneWidget);
+    expect(
+      find.text('Quản lý gói của bạn trên web tại tuturuuu.com.'),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -144,8 +155,7 @@ void main() {
                       eligibility: _blocked(reason),
                       now: DateTime(2026, 11, 20, 9),
                       onClose: () {},
-                      onUpgrade: () async {},
-                      onTopUp: () async {},
+                      platform: TargetPlatform.iOS,
                     ),
                   ),
                 ),

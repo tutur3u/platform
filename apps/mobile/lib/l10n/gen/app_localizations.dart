@@ -32911,17 +32911,17 @@ abstract class AppLocalizations {
   /// **'Personal workspace'**
   String get assistantLiveBlockedPersonalWorkspace;
 
-  /// No description provided for @assistantLiveBlockedUpgrade.
+  /// No description provided for @assistantLiveBlockedOpenBilling.
   ///
   /// In en, this message translates to:
-  /// **'Upgrade'**
-  String get assistantLiveBlockedUpgrade;
+  /// **'Open billing'**
+  String get assistantLiveBlockedOpenBilling;
 
-  /// No description provided for @assistantLiveBlockedTopUp.
+  /// No description provided for @assistantLiveBlockedManageOnWeb.
   ///
   /// In en, this message translates to:
-  /// **'Top up'**
-  String get assistantLiveBlockedTopUp;
+  /// **'Manage your plan on the web at tuturuuu.com.'**
+  String get assistantLiveBlockedManageOnWeb;
 
   /// No description provided for @assistantLiveBlockedGotIt.
   ///

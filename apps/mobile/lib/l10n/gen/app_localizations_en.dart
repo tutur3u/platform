@@ -17839,10 +17839,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantLiveBlockedPersonalWorkspace => 'Personal workspace';
 
   @override
-  String get assistantLiveBlockedUpgrade => 'Upgrade';
+  String get assistantLiveBlockedOpenBilling => 'Open billing';
 
   @override
-  String get assistantLiveBlockedTopUp => 'Top up';
+  String get assistantLiveBlockedManageOnWeb => 'Manage your plan on the web at tuturuuu.com.';
 
   @override
   String get assistantLiveBlockedGotIt => 'Got it';

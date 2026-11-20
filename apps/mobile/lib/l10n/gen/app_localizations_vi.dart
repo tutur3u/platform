@@ -17626,10 +17626,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantLiveBlockedPersonalWorkspace => 'Không gian cá nhân';
 
   @override
-  String get assistantLiveBlockedUpgrade => 'Nâng cấp';
+  String get assistantLiveBlockedOpenBilling => 'Mở trang thanh toán';
 
   @override
-  String get assistantLiveBlockedTopUp => 'Nạp thêm';
+  String get assistantLiveBlockedManageOnWeb => 'Quản lý gói của bạn trên web tại tuturuuu.com.';
 
   @override
   String get assistantLiveBlockedGotIt => 'Đã hiểu';

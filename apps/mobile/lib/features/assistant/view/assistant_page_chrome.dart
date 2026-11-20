@@ -218,7 +218,11 @@ extension _AssistantPageChrome on _AssistantPageState {
       wsId: wsId,
     );
     if (!mounted || eligibility == null || !eligibility.blocked) return true;
-    await showAssistantLiveBlockedSheet(context, eligibility: eligibility);
+    await showAssistantLiveBlockedSheet(
+      context,
+      eligibility: eligibility,
+      billingWsId: _personalWorkspaceId(),
+    );
     return false;
   }
 
@@ -279,3 +283,13 @@ const Set<String> _liveRefusalTokens = {
   AssistantLiveFailure.credits,
   AssistantLiveFailure.notAllowed,
 };
+
+extension _AssistantLiveBillingWorkspace on _AssistantPageState {
+  /// Mobile Live always bills the actor's personal workspace.
+  String? _personalWorkspaceId() {
+    for (final workspace in context.read<WorkspaceCubit>().state.workspaces) {
+      if (workspace.personal) return workspace.id;
+    }
+    return null;
+  }
+}

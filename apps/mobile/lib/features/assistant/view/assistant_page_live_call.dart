@@ -95,7 +95,11 @@ extension _AssistantPageLiveCall on _AssistantPageState {
       onShowBlocked: () async {
         final blocked = _liveBlock(wsId);
         if (blocked == null) return;
-        await showAssistantLiveBlockedSheet(context, eligibility: blocked);
+        await showAssistantLiveBlockedSheet(
+          context,
+          eligibility: blocked,
+          billingWsId: _personalWorkspaceId(),
+        );
       },
     );
   }

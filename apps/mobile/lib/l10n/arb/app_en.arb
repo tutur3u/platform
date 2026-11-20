@@ -8710,8 +8710,8 @@
     }
   },
   "assistantLiveBlockedPersonalWorkspace": "Personal workspace",
-  "assistantLiveBlockedUpgrade": "Upgrade",
-  "assistantLiveBlockedTopUp": "Top up",
+  "assistantLiveBlockedOpenBilling": "Open billing",
+  "assistantLiveBlockedManageOnWeb": "Manage your plan on the web at tuturuuu.com.",
   "assistantLiveBlockedGotIt": "Got it",
   "assistantLiveBlockedNotNow": "Not now",
   "assistantLiveBlockedSeeWhy": "See why",
