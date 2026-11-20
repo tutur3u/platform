@@ -60,7 +60,7 @@ const bodySchema = z.object({
 });
 
 export const POST = withSessionAuth(
-  async (request, { supabase, user }) => {
+  async (request, { user }) => {
     const text = await request.text();
     if (text.length > 1000000)
       return NextResponse.json(
@@ -76,7 +76,8 @@ export const POST = withSessionAuth(
     if (!parsed.success)
       return NextResponse.json({ message: 'Invalid body' }, { status: 400 });
     const { chatId, messages } = parsed.data as z.infer<typeof bodySchema>;
-    const { data: existing, error: lookupError } = await supabase
+    const admin = await createAdminClient({ noCookie: true });
+    const { data: existing, error: lookupError } = await admin
       .from('ai_chats')
       .select('id, creator_id')
       .eq('id', chatId)
@@ -101,7 +102,7 @@ export const POST = withSessionAuth(
           )
           .join(' ')
           .slice(0, 100) || 'Mira';
-      const { error } = await supabase
+      const { error } = await admin
         .from('ai_chats')
         .insert({ id: chatId, title, creator_id: user.id });
       if (error)
@@ -111,7 +112,6 @@ export const POST = withSessionAuth(
         );
     }
     // Ownership is established before accessing protected message rows.
-    const admin = await createAdminClient();
     const { data: previous, error: messageError } = await admin
       .from('ai_chat_messages')
       .select('id, chat_id, creator_id, metadata')

@@ -458,7 +458,7 @@ export function createPOST(
         insertChatMessage: async (args) => {
           if (messageInsertMode === 'direct' || persistenceRequestId) {
             if (!persistenceRequestId) {
-              const { error } = await supabase.from('ai_chat_messages').insert({
+              const { error } = await sbAdmin.from('ai_chat_messages').insert({
                 chat_id: chatId,
                 content: args.message,
                 creator_id: user.id,

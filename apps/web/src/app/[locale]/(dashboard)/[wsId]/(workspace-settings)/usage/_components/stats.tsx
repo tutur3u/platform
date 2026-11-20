@@ -453,35 +453,7 @@ export async function AIExecutionsStats({ wsId }: { wsId: string }) {
   return <StatisticCard title="AI Executions" value={count || 0} />;
 }
 
-export async function ChatUsageStats({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
-
-  if (!containsPermission('ai_chat')) {
-    return (
-      <StatisticCard title="Chat Messages" value="***" className="opacity-50" />
-    );
-  }
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user?.id) {
-    return (
-      <StatisticCard title="Chat Messages" value="***" className="opacity-50" />
-    );
-  }
-
-  const { count } = await supabase
-    .from('ai_chat_messages')
-    .select('id, ai_chats!chat_id!inner(creator_id)', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('ai_chats.creator_id', user.id);
-
-  return <StatisticCard title="Chat Messages" value={count || 0} />;
-}
+export { ChatUsageStats } from './chat-usage-stats';
 
 export async function ModelsUsageStats({ wsId }: { wsId: string }) {
   const supabase = await createClient();

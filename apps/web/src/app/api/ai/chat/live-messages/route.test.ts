@@ -7,10 +7,12 @@ const state = vi.hoisted(() => ({
   ] as Record<string, unknown>[],
   messages: [] as Record<string, unknown>[],
   adminCalls: 0,
+  messageReads: 0,
 }));
 function client() {
   return {
     from(table: string) {
+      if (table === 'ai_chat_messages') state.messageReads++;
       const rows = table === 'ai_chats' ? state.chats : state.messages;
       const filters: ((row: Record<string, unknown>) => boolean)[] = [];
       let action = 'select';
@@ -143,6 +145,7 @@ beforeEach(() => {
   state.chats = [{ id: chatId, creator_id: 'owner' }];
   state.messages = [];
   state.adminCalls = 0;
+  state.messageReads = 0;
 });
 it('persists ordered parts and stable message timestamps on retries', async () => {
   expect((await POST(request())).status).toBe(200);
@@ -161,7 +164,8 @@ it('persists ordered parts and stable message timestamps on retries', async () =
 it('rejects another owner before opening the admin client', async () => {
   state.chats[0]!.creator_id = 'someone-else';
   expect((await POST(request())).status).toBe(404);
-  expect(state.adminCalls).toBe(0);
+  expect(state.adminCalls).toBe(1);
+  expect(state.messageReads).toBe(0);
   expect(state.messages).toEqual([]);
 });
 it('does not overwrite a normal chat message or a message in another conversation', async () => {

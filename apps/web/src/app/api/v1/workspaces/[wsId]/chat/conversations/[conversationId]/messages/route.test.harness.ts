@@ -250,10 +250,23 @@ export function createAdminClientMock(settingsError: unknown = null) {
     },
     from: vi.fn((table: string) => {
       const deleteQuery = {
-        eq: vi.fn(async () => ({ error: null })),
+        eq: vi.fn(() => deleteQuery),
+      };
+      const ownedChatQuery = {
+        eq: vi.fn(() => ownedChatQuery),
+        maybeSingle: vi.fn(
+          async (): Promise<{
+            data: { id: string } | null;
+            error: unknown;
+          }> => ({
+            data: { id: userMessage.id },
+            error: null,
+          })
+        ),
       };
       const tableQuery = {
         delete: vi.fn(() => deleteQuery),
+        select: vi.fn(() => ownedChatQuery),
         upsert: vi.fn(async () => ({ error: null })),
       };
       // Receipt reads share the admin `from` entry point; the cast keeps the
@@ -269,10 +282,18 @@ export function createAdminClientMock(settingsError: unknown = null) {
 }
 
 function createAiMessageReceiptQuery() {
+  let requestId: string | undefined;
   const query = {
-    eq: vi.fn(() => query),
+    eq: vi.fn((column: string, value: string) => {
+      if (column === 'metadata->>requestId') requestId = value;
+      return query;
+    }),
     limit: vi.fn(async () => ({
-      data: mocks.aiRouteBodies.length > 0 ? [assistantAiRow] : [],
+      data:
+        mocks.aiRouteBodies.length > 0 &&
+        assistantAiRow.metadata.requestId === requestId
+          ? [assistantAiRow]
+          : [],
       error: null,
     })),
     order: vi.fn(() => query),

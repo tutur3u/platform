@@ -459,6 +459,18 @@ describe('native AI chat message route', () => {
       }),
     });
 
+    expect(shadowQuery.select).toHaveBeenCalledWith(
+      expect.stringContaining('ai_chats!chat_id!inner(creator_id)')
+    );
+    expect(shadowQuery.eq).toHaveBeenCalledWith(
+      'ai_chats.creator_id',
+      mocks.auth.user.id
+    );
+    expect(shadowQuery.eq).toHaveBeenCalledWith(
+      'metadata->>requestId',
+      userMessage.id
+    );
+    expect(shadowQuery.limit).toHaveBeenCalledWith(1);
     expect(response.status).toBe(200);
     expect(mocks.createAiChatPost).not.toHaveBeenCalled();
     expect(mocks.deleteWorkspaceStorageFolderByPath).toHaveBeenCalledOnce();

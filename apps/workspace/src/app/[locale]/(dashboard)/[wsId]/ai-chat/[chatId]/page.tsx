@@ -1,6 +1,9 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { AIChat } from '@tuturuuu/types';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   verifyHasSecrets,
@@ -8,7 +11,7 @@ import {
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import Chat from '../chat';
-import { getChats } from '../helper';
+import { listOwnedChats } from '../helper';
 
 export const metadata: Metadata = {
   title: 'Chat Details',
@@ -38,10 +41,20 @@ export default async function AIPage({ params, searchParams }: Props) {
   if (!chatId) notFound();
 
   const { lang: locale } = await searchParams;
-  const messages = await getMessages(chatId);
+  const { user } = await resolveAuthenticatedSessionUser(await createClient());
+  if (!user) notFound();
 
-  const chat = await getChat(chatId);
-  const { data: chats, count } = await getChats();
+  const admin = await createAdminClient({ noCookie: true });
+  const { data: chat, error } = await admin
+    .from('ai_chats')
+    .select('*')
+    .eq('id', chatId)
+    .eq('creator_id', user.id)
+    .maybeSingle();
+  if (error || !chat) notFound();
+
+  const messages = await getMessages(admin, chatId, user.id);
+  const { data: chats, count } = await listOwnedChats(user.id);
 
   const hasKeys = {
     openAI: hasKey('OPENAI_API_KEY'),
@@ -67,13 +80,16 @@ const hasKey = (key: string) => {
   return !!keyEnv && keyEnv.length > 0;
 };
 
-const getMessages = async (chatId: string) => {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
+const getMessages = async (
+  admin: Awaited<ReturnType<typeof createAdminClient>>,
+  chatId: string,
+  userId: string
+) => {
+  const { data, error } = await admin
     .from('ai_chat_messages')
-    .select('*')
+    .select('id, role, content, metadata, ai_chats!chat_id!inner(creator_id)')
     .eq('chat_id', chatId)
+    .eq('ai_chats.creator_id', userId)
     .order('created_at');
 
   if (error) {
@@ -81,26 +97,10 @@ const getMessages = async (chatId: string) => {
     return [];
   }
 
-  return data.map(({ role, ...rest }) => ({
-    ...rest,
+  return data.map(({ id, role, content, metadata }) => ({
+    id,
+    metadata,
     role: role.toLowerCase(),
-    parts: [{ type: 'text', text: rest.content || '' }],
+    parts: [{ type: 'text', text: content || '' }],
   })) as UIMessage[];
-};
-
-const getChat = async (chatId: string) => {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('ai_chats')
-    .select('*')
-    .eq('id', chatId)
-    .single();
-
-  if (error) {
-    console.error(error);
-    notFound();
-  }
-
-  return data as AIChat;
 };

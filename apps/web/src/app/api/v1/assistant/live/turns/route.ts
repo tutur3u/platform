@@ -103,7 +103,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { data: chat, error: chatError } = await supabase
+    const admin = await createAdminClient({ noCookie: true });
+    const { data: chat, error: chatError } = await admin
       .from('ai_chats')
       .select('id')
       .eq('id', chatId)
@@ -123,7 +124,6 @@ export async function POST(request: Request) {
 
     // Message rows are server-only. Obtain privileged access only after the
     // authenticated caller's workspace, tier and chat ownership are checked.
-    const admin = await createAdminClient();
     const { data: existingRows, error: existingError } = await admin
       .from('ai_chat_messages')
       .select('id')

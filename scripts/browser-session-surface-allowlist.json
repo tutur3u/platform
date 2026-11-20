@@ -18,7 +18,6 @@
     "apps/mind/src/lib/api-auth.ts",
     "apps/nova/src/lib/storage-helper.ts",
     "apps/pay/src/app/api/payment/migrations/subscriptions/unexisted-workspaces/route.ts",
-    "apps/rewise/src/app/[locale]/(dashboard)/[wsId]/chat-link.tsx",
     "apps/rewise/src/lib/storage-helper.ts",
     "apps/tasks/src/app/api/v1/users/task-settings/route.ts",
     "apps/tasks/src/app/api/v1/workspaces/[wsId]/notes/_lib.ts",

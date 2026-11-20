@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
@@ -65,7 +66,8 @@ export function createPATCH(
         });
       }
 
-      const { data: ownedChat, error: chatAccessError } = await supabase
+      const admin = await createAdminClient({ noCookie: true });
+      const { data: ownedChat, error: chatAccessError } = await admin
         .from('ai_chats')
         .select('id')
         .eq('id', id)
@@ -76,10 +78,11 @@ export function createPATCH(
         return new Response(chatAccessError.message, { status: 500 });
       if (!ownedChat) return new Response('Chat not found', { status: 404 });
 
-      const { data: rawMessages, error: messagesError } = await supabase
+      const { data: rawMessages, error: messagesError } = await admin
         .from('ai_chat_messages')
-        .select('id, content, role')
+        .select('id, content, role, ai_chats!chat_id!inner(creator_id)')
         .eq('chat_id', id)
+        .eq('ai_chats.creator_id', auth.user.id)
         .order('created_at', { ascending: true });
 
       if (messagesError)
@@ -148,7 +151,7 @@ export function createPATCH(
       if (!messages[messages.length - 1]?.id)
         return new Response('Internal Server Error', { status: 500 });
 
-      const { data: updatedChat, error } = await supabase
+      const { data: updatedChat, error } = await admin
         .from('ai_chats')
         .update({
           latest_summarized_message_id: messages[messages.length - 1]?.id,

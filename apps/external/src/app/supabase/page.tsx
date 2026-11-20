@@ -1,9 +1,21 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 
 export default async function Supabase() {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.from('ai_chats').select('*').limit(1);
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  if (!user) return null;
+
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await admin
+    .from('ai_chats')
+    .select('id, model, is_public, created_at, summary')
+    .eq('creator_id', user.id)
+    .limit(1);
 
   if (error) {
     console.error('Error fetching AIChat instance:', error);

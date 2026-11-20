@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   canAccessFinanceTransactionStoragePath,
   getFinanceTransactionIdFromStoragePath,
@@ -63,7 +64,9 @@ export async function authorizeAttachmentSource({
       throw new Error('Attachment source access denied');
   } else if (normalizedPath.startsWith('chats/ai/resources/')) {
     const chatId = normalizedPath.split('/')[3];
-    const { data, error } = await auth.supabase
+    const { data, error } = await (
+      await createAdminClient({ noCookie: true })
+    )
       .from('ai_chats')
       .select('id')
       .eq('id', chatId ?? '')

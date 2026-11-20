@@ -2,6 +2,11 @@ import 'server-only';
 
 import { createHash } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  filterNativeChatShadowRows,
+  getUserPersonalWorkspaceId,
+} from './ai-chat-discovery-access';
+export { isUserPersonalChatWorkspace } from './ai-chat-discovery-access';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { listAiAgents } from '@/lib/ai-agents/registry';
 import type { SessionAuthContext } from '@/lib/api-auth';
@@ -210,7 +215,8 @@ export async function listAiChatConversations({
     return [];
   }
 
-  let query = supabase
+  const admin = await createAdminClient({ noCookie: true });
+  let query = admin
     .from('ai_chats')
     .select(
       'id,title,created_at,creator_id,is_public,model,pinned,summary,archived_at'
@@ -232,9 +238,12 @@ export async function listAiChatConversations({
 
   const chatRows = await filterNativeChatShadowRows(chats as AiChatRow[]);
   if (chatRows.length === 0) return [];
-  const { data: latestMessages } = await supabase
+  const { data: latestMessages } = await admin
     .from('ai_chat_messages')
-    .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
+    .select(
+      'id,chat_id,content,created_at,creator_id,metadata,model,role,type,ai_chats!chat_id!inner(creator_id)'
+    )
+    .eq('ai_chats.creator_id', user.id)
     .in(
       'chat_id',
       chatRows.map((chat) => chat.id)
@@ -290,7 +299,6 @@ export async function listAiChatConversations({
 
 export async function archiveAiChatConversation({
   conversationId,
-  supabase,
   userId,
 }: {
   conversationId: string;
@@ -300,7 +308,8 @@ export async function archiveAiChatConversation({
   const chatId = getAiChatId(conversationId);
   if (!chatId) return null;
 
-  const { data, error } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await admin
     .from('ai_chats')
     .update({ archived_at: new Date().toISOString() })
     .eq('id', chatId)
@@ -342,7 +351,8 @@ export async function updateAiChatConversationTitle({
     return null;
   }
 
-  const { data: chat, error } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data: chat, error } = await admin
     .from('ai_chats')
     .update({ title })
     .eq('id', chatId)
@@ -357,9 +367,12 @@ export async function updateAiChatConversationTitle({
   const [chatRow] = await filterNativeChatShadowRows([chat as AiChatRow]);
   if (!chatRow) return null;
 
-  const { data: latestMessages } = await supabase
+  const { data: latestMessages } = await admin
     .from('ai_chat_messages')
-    .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
+    .select(
+      'id,chat_id,content,created_at,creator_id,metadata,model,role,type,ai_chats!chat_id!inner(creator_id)'
+    )
+    .eq('ai_chats.creator_id', user.id)
     .eq('chat_id', chatRow.id)
     .order('created_at', { ascending: false })
     .limit(1);
@@ -418,7 +431,8 @@ export async function listAiChatMessages({
   const chatId = getAiChatId(conversationId);
   if (!chatId) return null;
 
-  const { data: chat, error: chatError } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data: chat, error: chatError } = await admin
     .from('ai_chats')
     .select('id')
     .eq('id', chatId)
@@ -427,9 +441,12 @@ export async function listAiChatMessages({
 
   if (chatError || !chat) return null;
 
-  const messagesQuery = supabase
+  const messagesQuery = admin
     .from('ai_chat_messages')
-    .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
+    .select(
+      'id,chat_id,content,created_at,creator_id,metadata,model,role,type,ai_chats!chat_id!inner(creator_id)'
+    )
+    .eq('ai_chats.creator_id', user.id)
     .eq('chat_id', chatId)
     .order('created_at', { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 100));
@@ -506,7 +523,6 @@ export async function listAiChatSharedContent({
 export async function deleteAiChatMessage({
   conversationId,
   messageId,
-  supabase,
   user,
 }: {
   conversationId: string;
@@ -517,7 +533,8 @@ export async function deleteAiChatMessage({
   const chatId = getAiChatId(conversationId);
   if (!chatId) return null;
 
-  const { data: chat, error: chatError } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data: chat, error: chatError } = await admin
     .from('ai_chats')
     .select('id')
     .eq('id', chatId)
@@ -526,8 +543,7 @@ export async function deleteAiChatMessage({
 
   if (chatError || !chat) return null;
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: deleted, error } = await sbAdmin
+  const { data: deleted, error } = await admin
     .from('ai_chat_messages')
     .delete()
     .eq('id', messageId)
@@ -554,7 +570,6 @@ export async function deleteAiChatMessage({
 
 export async function canAccessAiChatConversation({
   conversationId,
-  supabase,
   userId,
 }: {
   conversationId: string;
@@ -564,7 +579,8 @@ export async function canAccessAiChatConversation({
   const chatId = getAiChatId(conversationId);
   if (!chatId) return false;
 
-  const { data, error } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await admin
     .from('ai_chats')
     .select('id')
     .eq('id', chatId)
@@ -630,47 +646,6 @@ function toAiChatMessage({
     senderId: isUserMessage ? (message.creator_id ?? userId) : null,
     updatedAt: null,
   };
-}
-
-async function getUserPersonalWorkspaceId({
-  supabase,
-  userId,
-}: {
-  supabase: SessionAuthContext['supabase'];
-  userId: string;
-}) {
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('id')
-    .eq('creator_id', userId)
-    .eq('personal', true)
-    .eq('deleted', false)
-    .maybeSingle();
-
-  if (error) return null;
-  return typeof data?.id === 'string' ? data.id : null;
-}
-
-async function filterNativeChatShadowRows(chatRows: AiChatRow[]) {
-  if (chatRows.length === 0) return chatRows;
-
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = (await sbAdmin
-    .schema('private')
-    .from('chat_conversations')
-    .select('id')
-    .in(
-      'id',
-      chatRows.map((chat) => chat.id)
-    )) as {
-    data: { id: string }[] | null;
-    error: { message?: string } | null;
-  };
-
-  if (error || !data?.length) return chatRows;
-
-  const nativeConversationIds = new Set(data.map((row) => row.id));
-  return chatRows.filter((chat) => !nativeConversationIds.has(chat.id));
 }
 
 function getAiChatMessageKind(role: string): ChatMessage['kind'] {

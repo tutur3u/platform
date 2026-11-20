@@ -6,6 +6,7 @@ const WORKSPACE_B = '22222222-2222-4222-8222-222222222222';
 const mocks = vi.hoisted(() => ({
   authorizeAiWorkspace: vi.fn(),
   convertToModelMessages: vi.fn(),
+  createAdminClient: vi.fn(),
   generateText: vi.fn(),
   google: vi.fn(),
   resolveAiMemoryWorkspaceIdForUser: vi.fn(),
@@ -15,6 +16,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
 vi.mock('ai', () => ({
@@ -61,7 +66,8 @@ function createSupabase() {
     ],
     error: null,
   });
-  const messageEq = vi.fn(() => ({ order: messageOrder }));
+  const messageOwnerEq = vi.fn(() => ({ order: messageOrder }));
+  const messageEq = vi.fn(() => ({ eq: messageOwnerEq }));
   const messageSelect = vi.fn(() => ({ eq: messageEq }));
   const updateMaybeSingle = vi.fn().mockResolvedValue({
     data: { id: 'chat-1' },
@@ -77,13 +83,14 @@ function createSupabase() {
       : { select: chatSelect, update }
   );
 
-  return {
+  const admin = {
     chatCreatorEq,
     chatMaybeSingle,
     chatSelect,
     from,
     messageEq,
     messageOrder,
+    messageOwnerEq,
     messageSelect,
     update,
     updateCreatorEq,
@@ -91,6 +98,8 @@ function createSupabase() {
     updateMaybeSingle,
     updateSelect,
   };
+  mocks.createAdminClient.mockResolvedValue(admin);
+  return admin;
 }
 
 function request(body: unknown) {
@@ -219,6 +228,11 @@ describe('chat google summary route workspace authorization', () => {
     })(request({ id: 'other-user-chat', wsId: WORKSPACE_A }));
 
     expect(response.status).toBe(404);
+    expect(supabase.from.mock.calls).toEqual([['ai_chats']]);
+    expect(supabase.chatCreatorEq).toHaveBeenCalledWith(
+      'creator_id',
+      'rewise-user'
+    );
     expect(supabase.messageSelect).not.toHaveBeenCalled();
     expect(mocks.generateText).not.toHaveBeenCalled();
   });

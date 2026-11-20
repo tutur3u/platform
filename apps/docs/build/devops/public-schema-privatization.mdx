@@ -336,6 +336,11 @@ Tables: `ai_chat*`, `ai_model_favorites`, `workspace_ai_models`,
 `hive_*`, `aurora_*`, `crawled_*`, `notes`, `workspace_documents`,
 `workspace_whiteboards`, `workspace_dataset*`, `workspace_chat_*`.
 
+- Legacy AI chats authorize the actor before accessing chat tables with the
+  admin client. Private chat lookups filter on `ai_chats.creator_id`. Shared
+  links keep their explicit public visibility check. The legacy chat message
+  usage count appears only in the actor's personal workspace because the chat
+  tables have no workspace ID.
 - Memory tables keep provenance, consent and deletion fences; the move changes
   location only.
 - 15 tables have no application caller (`hive_*` runtime tables, legacy

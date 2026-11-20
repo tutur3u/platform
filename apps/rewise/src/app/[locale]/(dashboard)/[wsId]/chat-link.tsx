@@ -1,5 +1,4 @@
 import { Star, StarOff } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button, buttonVariants } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -9,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import type { NavLink } from '@/components/navigation';
+import { setRewiseChatPinned } from './chat-actions';
 
 export default function ChatLink({
   single,
@@ -32,7 +32,6 @@ export default function ChatLink({
 }) {
   const router = useRouter();
   const t = useTranslations();
-  const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
 
@@ -42,18 +41,13 @@ export default function ChatLink({
 
     setLoading(true);
 
-    const { error } = await supabase
-      .from('ai_chats')
-      .update({ pinned: !link.pinned })
-      .eq('id', chatId);
-
-    if (error) {
-      console.error('Error pinning chat:', error);
-    } else {
-      router.refresh();
+    try {
+      if (await setRewiseChatPinned(chatId, !link.pinned)) {
+        router.refresh();
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   if (!isCollapsed)

@@ -222,6 +222,7 @@ export async function sendNativeAiConversationMessages({
   }
 
   let assistantResponse = await getLatestAiAssistantMessage({
+    actorUserId: auth.user.id,
     chatId: shadowChatId,
     requestId: userMessage.id,
   });
@@ -302,6 +303,7 @@ export async function sendNativeAiConversationMessages({
     for (const delayMs of [0, 150, 350, 700]) {
       if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
       assistantResponse = await getLatestAiAssistantMessage({
+        actorUserId: auth.user.id,
         chatId: shadowChatId,
         requestId: userMessage.id,
       });
@@ -343,6 +345,7 @@ export async function sendNativeAiConversationMessages({
 
   try {
     await cleanupNativeAiShadowChat({
+      actorUserId: auth.user.id,
       shadowChatId,
       wsId: context.normalizedWsId,
     });
@@ -430,16 +433,17 @@ async function ensureNativeAiShadowChat({
   model: string;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
+  const marker = `native-chat-shadow:${conversation.id}`;
   const { error } = await sbAdmin.from('ai_chats').upsert(
     {
       id: shadowChatId,
       creator_id: auth.user.id,
       is_public: false,
       model,
-      summary: `native-chat-shadow:${conversation.id}`,
+      summary: marker,
       title: conversation.title ?? 'Mira',
     },
-    { onConflict: 'id' }
+    { onConflict: 'id', ignoreDuplicates: true }
   );
 
   if (error) {
@@ -447,7 +451,14 @@ async function ensureNativeAiShadowChat({
     return { ok: false };
   }
 
-  return { ok: true };
+  const { data, error: ownershipError } = await sbAdmin
+    .from('ai_chats')
+    .select('id')
+    .eq('id', shadowChatId)
+    .eq('creator_id', auth.user.id)
+    .eq('summary', marker)
+    .maybeSingle();
+  return { ok: !ownershipError && Boolean(data) };
 }
 
 // The shadow chat id is server-derived from the actor's own persisted user
@@ -456,37 +467,41 @@ async function ensureNativeAiShadowChat({
 // on `ai_chat_messages` (public-schema privatization), which previously made a
 // saved, billed reply look unsaved and surfaced as a failed send on mobile.
 async function getLatestAiAssistantMessage({
+  actorUserId,
   chatId,
   requestId,
 }: {
+  actorUserId: string;
   chatId: string;
   requestId: string;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const { data, error } = await sbAdmin
     .from('ai_chat_messages')
-    .select('id, content, metadata, model, prompt_tokens, completion_tokens')
+    .select(
+      'id, content, metadata, model, prompt_tokens, completion_tokens, ai_chats!chat_id!inner(creator_id)'
+    )
     .eq('chat_id', chatId)
     .eq('role', 'ASSISTANT')
+    .eq('ai_chats.creator_id', actorUserId)
+    .eq('metadata->>requestId', requestId)
     .order('created_at', { ascending: false })
-    .limit(10);
+    .limit(1);
 
   if (error) {
     console.error('Failed to load native Chat AI assistant response', error);
     return null;
   }
 
-  return (
-    ((data as AiAssistantMessageRow[] | null) ?? []).find(
-      (message) => readRecord(message.metadata)?.requestId === requestId
-    ) ?? null
-  );
+  return data?.[0] ?? null;
 }
 
 async function cleanupNativeAiShadowChat({
+  actorUserId,
   shadowChatId,
   wsId,
 }: {
+  actorUserId: string;
   shadowChatId: string;
   wsId: string;
 }) {
@@ -495,7 +510,8 @@ async function cleanupNativeAiShadowChat({
   const { error } = await sbAdmin
     .from('ai_chats')
     .delete()
-    .eq('id', shadowChatId);
+    .eq('id', shadowChatId)
+    .eq('creator_id', actorUserId);
   if (error) {
     console.warn('Failed to clean up native Chat AI shadow chat', {
       error,

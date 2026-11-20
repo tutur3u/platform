@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -16,7 +17,7 @@ const bodySchema = z.object({
     .refine((value) => !value.includes('\0')),
 });
 
-export const POST = withSessionAuth(async (request, { user, supabase }) => {
+export const POST = withSessionAuth(async (request, { user }) => {
   if (!chatGPTEnabled())
     return NextResponse.json({ error: 'Unavailable' }, { status: 404 });
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -29,7 +30,9 @@ export const POST = withSessionAuth(async (request, { user, supabase }) => {
     const title = Array.from(parsed.data.message.replace(/\s+/g, ' '))
       .slice(0, 80)
       .join('');
-    const { data, error } = await supabase
+    const { data, error } = await (
+      await createAdminClient({ noCookie: true })
+    )
       .from('ai_chats')
       .insert({
         id: parsed.data.id,

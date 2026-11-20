@@ -4,6 +4,7 @@ import {
   assistantAiRow,
   assistantMessage,
   conversation,
+  createAdminClientMock,
   createRequest,
   mocks,
   resetMessageRouteMocks,
@@ -40,6 +41,36 @@ describe('native AI interrupted stream persistence', () => {
       }),
     });
   }
+
+  it('preserves a colliding shadow chat owned by another actor', async () => {
+    prepare();
+    const admin = createAdminClientMock();
+    const table = admin.from('ai_chats');
+    table
+      .select()
+      .maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    table.select.mockClear();
+    admin.from.mockReturnValue(table);
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const result = await (await send()).text();
+
+    expect(result).toContain('"type":"error"');
+    expect(table.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: userMessage.id,
+        creator_id: mocks.auth.user.id,
+      }),
+      { onConflict: 'id', ignoreDuplicates: true }
+    );
+    expect(table.select().eq).toHaveBeenCalledWith(
+      'creator_id',
+      mocks.auth.user.id
+    );
+    expect(admin.from).not.toHaveBeenCalledWith('ai_chat_messages');
+    expect(mocks.createAiChatPost).not.toHaveBeenCalled();
+    expect(table.delete).not.toHaveBeenCalled();
+  });
 
   it.each([true, false])(
     'SSE error with saved shadow=%s uses durable readback',

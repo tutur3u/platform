@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   authorizeAiWorkspace: vi.fn(),
   cascadeBackendRateLimitToProxyBan: vi.fn(),
   createClient: vi.fn(),
+  createAdminClient: vi.fn(),
   extractIPFromHeaders: vi.fn(),
   generateText: vi.fn(),
   google: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('ai', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
 }));
@@ -75,6 +77,9 @@ import { createPOST } from './route';
 describe('chat google new route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.createAdminClient.mockImplementation(() =>
+      mocks.createClient.getMockImplementation()?.()
+    );
     mocks.extractIPFromHeaders.mockReturnValue('203.0.113.10');
     mocks.cascadeBackendRateLimitToProxyBan.mockResolvedValue({
       id: 'block-1',
@@ -299,7 +304,8 @@ describe('chat google new route', () => {
       }
       return { insert: chatInsert };
     });
-    const supabase = { from };
+    const supabase = { from: vi.fn() };
+    mocks.createAdminClient.mockResolvedValue({ from });
 
     const response = await createPOST({
       requireWorkspaceId: true,

@@ -1,6 +1,12 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -28,10 +34,21 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const { data, error } = await supabase
+  const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
+    supabase,
+    userId: user.id,
+    wsId: permissions.wsId,
+  });
+  if (!membership.ok) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await admin
     .from('ai_model_favorites')
     .select('model_id')
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .eq('user_id', user.id);
 
   if (error) {
@@ -62,6 +79,16 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'ANY',
+    supabase,
+    userId: user.id,
+    wsId: permissions.wsId,
+  });
+  if (!membership.ok) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const parsed = toggleFavoriteSchema.safeParse(await request.json());
   if (!parsed.success) {
     return NextResponse.json(
@@ -71,12 +98,13 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const { modelId, isFavorited } = parsed.data;
+  const admin = await createAdminClient({ noCookie: true });
 
   if (isFavorited) {
-    const { error } = await supabase
+    const { error } = await admin
       .from('ai_model_favorites')
       .delete()
-      .eq('ws_id', wsId)
+      .eq('ws_id', permissions.wsId)
       .eq('user_id', user.id)
       .eq('model_id', modelId);
 
@@ -88,8 +116,8 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
   } else {
-    const { error } = await supabase.from('ai_model_favorites').insert({
-      ws_id: wsId,
+    const { error } = await admin.from('ai_model_favorites').insert({
+      ws_id: permissions.wsId,
       user_id: user.id,
       model_id: modelId,
     });

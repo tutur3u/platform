@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
@@ -217,7 +220,8 @@ export function createPOST(options: CreatePostOptions = {}) {
           ).toLowerCase()
         : DEFAULT_CHAT_MODEL;
 
-      const { data: chat, error: chatError } = await supabase
+      const admin = await createAdminClient({ noCookie: true });
+      const { data: chat, error: chatError } = await admin
         .from('ai_chats')
         .insert({
           id,
@@ -242,7 +246,7 @@ export function createPOST(options: CreatePostOptions = {}) {
       const source = isMiraMode ? 'Mira' : 'Rewise';
       const { error: msgError } =
         messageInsertMode === 'direct'
-          ? await supabase.from('ai_chat_messages').insert({
+          ? await admin.from('ai_chat_messages').insert({
               chat_id: chat.id,
               content: message,
               creator_id: user.id,

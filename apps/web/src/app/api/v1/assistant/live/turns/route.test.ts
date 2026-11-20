@@ -54,7 +54,8 @@ describe('mobile Live turn persistence', () => {
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
     mocks.getWorkspaceTier.mockResolvedValue('PRO');
     mocks.isFeatureAvailable.mockReturnValue(true);
-    mocks.createClient.mockResolvedValue({
+    mocks.createClient.mockResolvedValue({ from: vi.fn() });
+    mocks.createAdminClient.mockResolvedValue({
       from: vi
         .fn()
         .mockReturnValue(query({ data: { id: chatId }, error: null })),
@@ -69,7 +70,7 @@ describe('mobile Live turn persistence', () => {
       if (status === 403)
         mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
       if (status >= 404)
-        mocks.createClient.mockResolvedValue({
+        mocks.createAdminClient.mockResolvedValue({
           from: vi.fn().mockReturnValue(
             query({
               data: null,
@@ -78,7 +79,12 @@ describe('mobile Live turn persistence', () => {
           ),
         });
       expect((await POST(request())).status).toBe(status);
-      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      if (status < 404) {
+        expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      } else {
+        const admin = await mocks.createAdminClient.mock.results[0]?.value;
+        expect(admin.from.mock.calls).toEqual([['ai_chats']]);
+      }
     }
   );
 
@@ -93,17 +99,16 @@ describe('mobile Live turn persistence', () => {
 
   it('saves owned messages using the server client and protects turn metadata', async () => {
     const ownership = query({ data: { id: chatId }, error: null });
-    const from = vi.fn().mockReturnValue(ownership);
-    mocks.createClient.mockResolvedValue({ from });
     const messages = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       contains: vi.fn().mockResolvedValue({ data: [], error: null }),
       insert: vi.fn().mockResolvedValue({ error: null }),
     };
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(messages),
-    });
+    const from = vi.fn((table: string) =>
+      table === 'ai_chats' ? ownership : messages
+    );
+    mocks.createAdminClient.mockResolvedValue({ from });
     const response = await POST(
       request({
         ...body,
@@ -117,7 +122,11 @@ describe('mobile Live turn persistence', () => {
       })
     );
     expect(response.status).toBe(200);
-    expect(from).toHaveBeenCalledExactlyOnceWith('ai_chats');
+    expect(from.mock.calls).toEqual([
+      ['ai_chats'],
+      ['ai_chat_messages'],
+      ['ai_chat_messages'],
+    ]);
     expect(ownership.eq).toHaveBeenCalledWith('creator_id', 'caller');
     expect(messages.eq).toHaveBeenCalledWith('creator_id', 'caller');
     expect(messages.insert).toHaveBeenCalledWith([
@@ -132,19 +141,22 @@ describe('mobile Live turn persistence', () => {
   it('deduplicates a retry without inserting again', async () => {
     const insert = vi.fn();
     mocks.createAdminClient.mockResolvedValue({
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            eq: () => ({
-              contains: async () => ({
-                data: [{ id: 'message' }],
-                error: null,
+      from: (table: string) =>
+        table === 'ai_chats'
+          ? query({ data: { id: chatId }, error: null })
+          : {
+              select: () => ({
+                eq: () => ({
+                  eq: () => ({
+                    contains: async () => ({
+                      data: [{ id: 'message' }],
+                      error: null,
+                    }),
+                  }),
+                }),
               }),
-            }),
-          }),
-        }),
-        insert,
-      }),
+              insert,
+            },
     });
     expect(await (await POST(request())).json()).toEqual({
       success: true,

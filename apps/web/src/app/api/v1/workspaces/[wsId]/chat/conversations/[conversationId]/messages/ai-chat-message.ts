@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { randomUUID } from 'node:crypto';
 import { type NextRequest, NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
@@ -75,7 +76,9 @@ export async function sendAiChatMessage({
     );
   }
 
-  const { data: chat, error } = await auth.supabase
+  const { data: chat, error } = await (
+    await createAdminClient({ noCookie: true })
+  )
     .from('ai_chats')
     .select('id,model,title')
     .eq('id', chatId)
@@ -296,7 +299,7 @@ async function runSavedAiChatSideEffects({
       currentTitle,
       firstMessageContent,
       previousMessages,
-      supabase: auth.supabase,
+      userId: auth.user.id,
     });
   } catch (error) {
     console.warn('Saved AI chat reply but could not update title', {

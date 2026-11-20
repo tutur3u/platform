@@ -1,10 +1,13 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 
 export const GET = withSessionAuth(
-  async (_request, { supabase, user }) => {
+  async (_request, { user }) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (
+        await createAdminClient({ noCookie: true })
+      )
         .from('ai_chats')
         .select('id, title, created_at, pinned, is_public, model')
         .eq('creator_id', user.id)

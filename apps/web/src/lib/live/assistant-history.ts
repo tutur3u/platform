@@ -105,7 +105,6 @@ export function buildLiveSeedHistory(
 }
 
 export async function ensureAssistantLiveChat({
-  supabase,
   userId,
   chatId,
   model,
@@ -115,8 +114,9 @@ export async function ensureAssistantLiveChat({
   chatId?: string;
   model: string;
 }): Promise<OwnedAssistantLiveChat> {
+  const admin = await createAdminClient({ noCookie: true });
   if (chatId != null) {
-    const { data: existingChat, error } = await supabase
+    const { data: existingChat, error } = await admin
       .from('ai_chats')
       .select('id, title, model, is_public, created_at')
       .eq('id', chatId)
@@ -132,7 +132,7 @@ export async function ensureAssistantLiveChat({
     }
   }
 
-  const { data: createdChat, error: createError } = await supabase
+  const { data: createdChat, error: createError } = await admin
     .from('ai_chats')
     .insert({
       ...(chatId == null ? {} : { id: chatId }),

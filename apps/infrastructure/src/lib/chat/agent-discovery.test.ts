@@ -1,6 +1,10 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  deleteAiChatMessage,
+  listAiChatConversations,
+  listAiChatMessages,
+  updateAiChatConversationTitle,
   listRootAiAgentDiscoveryConversations,
   toVirtualAiAgentConversationId,
 } from './agent-discovery';
@@ -8,8 +12,13 @@ import {
 vi.mock('server-only', () => ({}));
 
 const mocks = {
+  createAdminClient: vi.fn(),
   listAiAgents: vi.fn(),
 };
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
+}));
 
 vi.mock('@/lib/ai-agents/registry', () => ({
   listAiAgents: (...args: Parameters<typeof mocks.listAiAgents>) =>
@@ -116,3 +125,66 @@ describe('AI agent chat discovery', () => {
     );
   });
 });
+
+it.each(['list', 'read', 'rename', 'delete'] as const)(
+  "does not expose another actor's messages through the %s operation",
+  async (operation) => {
+    const actor = 'user-1';
+    const wsId = 'personal-workspace';
+    const foreignChat = { id: 'chat-1', creator_id: 'user-2' };
+    let owner: string | undefined;
+    const chatQuery = {
+      eq: vi.fn((column: string, value: string) => {
+        if (column === 'creator_id') owner = value;
+        return chatQuery;
+      }),
+      is: vi.fn(() => chatQuery),
+      limit: vi.fn(() => chatQuery),
+      order: vi.fn(() => chatQuery),
+      select: vi.fn(() => chatQuery),
+      update: vi.fn(() => chatQuery),
+      maybeSingle: vi.fn(async () => ({
+        data: owner === foreignChat.creator_id ? foreignChat : null,
+        error: null,
+      })),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve(
+          resolve({
+            data: owner === foreignChat.creator_id ? [foreignChat] : [],
+            error: null,
+          })
+        ),
+    };
+    const workspaceQuery = {
+      eq: vi.fn(() => workspaceQuery),
+      maybeSingle: vi.fn(async () => ({ data: { id: wsId }, error: null })),
+      select: vi.fn(() => workspaceQuery),
+    };
+    const adminFrom = vi.fn((table: string) => {
+      if (table !== 'ai_chats') throw new Error('Unauthorized message query');
+      return chatQuery;
+    });
+    mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
+
+    const input = {
+      conversationId: 'ai-chat-chat-1',
+      messageId: 'foreign-message',
+      supabase: { from: vi.fn(() => workspaceQuery) } as never,
+      title: 'Other title',
+      user: { id: actor } as never,
+      wsId,
+    };
+    const actions = {
+      list: () => listAiChatConversations(input),
+      read: () => listAiChatMessages(input),
+      rename: () => updateAiChatConversationTitle(input),
+      delete: () => deleteAiChatMessage(input),
+    };
+
+    await expect(actions[operation]()).resolves.toEqual(
+      operation === 'list' ? [] : null
+    );
+    expect(chatQuery.eq).toHaveBeenCalledWith('creator_id', actor);
+    expect(adminFrom.mock.calls).toEqual([['ai_chats']]);
+  }
+);

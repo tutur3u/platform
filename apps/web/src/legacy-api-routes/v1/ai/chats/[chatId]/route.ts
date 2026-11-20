@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -9,7 +10,7 @@ const updateChatSchema = z.object({
 });
 
 export const PATCH = withSessionAuth<{ chatId: string }>(
-  async (request, { supabase, user }, { chatId }) => {
+  async (request, { user }, { chatId }) => {
     try {
       const parsed = updateChatSchema.safeParse(await request.json());
 
@@ -20,7 +21,9 @@ export const PATCH = withSessionAuth<{ chatId: string }>(
         );
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (
+        await createAdminClient({ noCookie: true })
+      )
         .from('ai_chats')
         .update(parsed.data)
         .eq('id', chatId)

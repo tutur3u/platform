@@ -1,3 +1,4 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createHash, randomUUID } from 'node:crypto';
 import { restoreAssistantMessageContent } from '@tuturuuu/ai/chat/assistant-message-content';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
@@ -287,13 +288,13 @@ export async function maybeAutoRenameAiChat({
   currentTitle,
   firstMessageContent,
   previousMessages,
-  supabase,
+  userId,
 }: {
   chatId: string;
   currentTitle: string | null;
   firstMessageContent: string;
   previousMessages: ChatMessage[];
-  supabase: SessionAuthContext['supabase'];
+  userId: string;
 }) {
   if (previousMessages.some((message) => message.kind === 'user')) return;
   if (!shouldAutoRenameAiTitle(currentTitle)) return;
@@ -301,10 +302,12 @@ export async function maybeAutoRenameAiChat({
   const title = deriveAiChatTitle(firstMessageContent);
   if (!title) return;
 
-  const { error } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { error } = await admin
     .from('ai_chats')
     .update({ title })
-    .eq('id', chatId);
+    .eq('id', chatId)
+    .eq('creator_id', userId);
 
   if (error) {
     console.error('Failed to auto-rename AI chat', { chatId, error });

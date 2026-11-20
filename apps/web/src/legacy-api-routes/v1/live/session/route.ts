@@ -1,5 +1,8 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   normalizeWorkspaceId,
@@ -53,18 +56,17 @@ async function verifyWorkspaceAccess({
 
 async function verifyLiveSessionScope({
   scope,
-  supabase,
   userId,
 }: {
   scope: Extract<LiveSessionScopeValidation, { valid: true }>;
-  supabase: TypedSupabaseClient;
   userId: string;
 }) {
   if (scope.kind === 'fixed') {
     return null;
   }
 
-  const { data, error } = await supabase
+  const admin = await createAdminClient({ noCookie: true });
+  const { data, error } = await admin
     .from('ai_chats')
     .select('id')
     .eq('id', scope.chatId)
@@ -136,7 +138,6 @@ export async function GET(req: Request) {
 
     const scopeError = await verifyLiveSessionScope({
       scope,
-      supabase,
       userId: user.id,
     });
     if (scopeError != null) {
@@ -225,7 +226,6 @@ export async function POST(req: Request) {
 
     const scopeError = await verifyLiveSessionScope({
       scope,
-      supabase,
       userId: user.id,
     });
     if (scopeError != null) {
@@ -318,7 +318,6 @@ export async function DELETE(req: Request) {
 
     const scopeError = await verifyLiveSessionScope({
       scope,
-      supabase,
       userId: user.id,
     });
     if (scopeError != null) {

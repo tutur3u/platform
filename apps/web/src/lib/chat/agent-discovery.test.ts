@@ -1,6 +1,9 @@
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  deleteAiChatMessage,
+  listAiChatConversations,
+  updateAiChatConversationTitle,
   listAiChatMessages,
   listRootAiAgentDiscoveryConversations,
   toVirtualAiAgentConversationId,
@@ -156,7 +159,9 @@ describe('AI agent chat discovery', () => {
         table === 'ai_chats' ? chatQuery : messagesQuery
       ),
     };
-    const adminFrom = vi.fn(() => messagesQuery);
+    const adminFrom = vi.fn((table: string) =>
+      table === 'ai_chats' ? chatQuery : messagesQuery
+    );
     mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
 
     await listAiChatMessages({
@@ -175,34 +180,73 @@ describe('AI agent chat discovery', () => {
     expect(contains).toHaveBeenCalledWith('metadata', {
       requestId: '11111111-1111-4111-8111-111111111111',
     });
-    expect(supabase.from).toHaveBeenCalledTimes(1);
-    expect(supabase.from).toHaveBeenCalledWith('ai_chats');
+    expect(supabase.from).not.toHaveBeenCalled();
+    expect(adminFrom).toHaveBeenCalledWith('ai_chats');
     expect(chatQuery.eq).toHaveBeenCalledWith('creator_id', 'user-1');
     expect(adminFrom).toHaveBeenCalledWith('ai_chat_messages');
     expect(messagesQuery.eq).toHaveBeenCalledWith('chat_id', 'chat-1');
   });
-
-  it.each([null, { message: 'authorization unavailable' }])(
-    'never opens the admin client when ownership is absent or fails: %j',
-    async (error) => {
-      const query = {
-        eq: vi.fn(() => query),
-        select: vi.fn(() => query),
-        maybeSingle: vi.fn(async () => ({ data: null, error })),
-      };
-      const result = listAiChatMessages({
-        conversationId: 'ai-chat-chat-1',
-        supabase: { from: vi.fn(() => query) } as never,
-        user: { id: 'user-1' } as never,
-        wsId: 'workspace-1',
-      });
-      if (error) {
-        await expect(result).rejects.toThrow(error.message);
-      } else {
-        await expect(result).resolves.toBeNull();
-      }
-      expect(mocks.createAdminClient).not.toHaveBeenCalled();
-      expect(mocks.listAiChatAttachmentsByMessage).not.toHaveBeenCalled();
-    }
-  );
 });
+
+it.each(['list', 'read', 'rename', 'delete'] as const)(
+  "does not expose another actor's messages through the %s operation",
+  async (operation) => {
+    const actor = 'user-1';
+    const wsId = 'personal-workspace';
+    const foreignChat = { id: 'chat-1', creator_id: 'user-2' };
+    let owner: string | undefined;
+    const chatQuery = {
+      eq: vi.fn((column: string, value: string) => {
+        if (column === 'creator_id') owner = value;
+        return chatQuery;
+      }),
+      is: vi.fn(() => chatQuery),
+      limit: vi.fn(() => chatQuery),
+      order: vi.fn(() => chatQuery),
+      select: vi.fn(() => chatQuery),
+      update: vi.fn(() => chatQuery),
+      maybeSingle: vi.fn(async () => ({
+        data: owner === foreignChat.creator_id ? foreignChat : null,
+        error: null,
+      })),
+      then: (resolve: (value: unknown) => unknown) =>
+        Promise.resolve(
+          resolve({
+            data: owner === foreignChat.creator_id ? [foreignChat] : [],
+            error: null,
+          })
+        ),
+    };
+    const workspaceQuery = {
+      eq: vi.fn(() => workspaceQuery),
+      maybeSingle: vi.fn(async () => ({ data: { id: wsId }, error: null })),
+      select: vi.fn(() => workspaceQuery),
+    };
+    const adminFrom = vi.fn((table: string) => {
+      if (table !== 'ai_chats') throw new Error('Unauthorized message query');
+      return chatQuery;
+    });
+    mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
+
+    const input = {
+      conversationId: 'ai-chat-chat-1',
+      messageId: 'foreign-message',
+      supabase: { from: vi.fn(() => workspaceQuery) } as never,
+      title: 'Other title',
+      user: { id: actor } as never,
+      wsId,
+    };
+    const actions = {
+      list: () => listAiChatConversations(input),
+      read: () => listAiChatMessages(input),
+      rename: () => updateAiChatConversationTitle(input),
+      delete: () => deleteAiChatMessage(input),
+    };
+
+    await expect(actions[operation]()).resolves.toEqual(
+      operation === 'list' ? [] : null
+    );
+    expect(chatQuery.eq).toHaveBeenCalledWith('creator_id', actor);
+    expect(adminFrom.mock.calls).toEqual([['ai_chats']]);
+  }
+);
