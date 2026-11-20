@@ -10,6 +10,7 @@ const {
   OLD,
   admit,
   api,
+  definer,
   fixture,
   recordFor,
   status,
@@ -301,6 +302,56 @@ test('a sibling rename can credit a replacement of the renamed routine', async (
   assert.deepEqual(
     await admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
     []
+  );
+});
+
+test('a rolled-back sibling rename cannot move the routine proof', async (t) => {
+  const f = fixture(t, (root) => {
+    write(
+      root,
+      `${MIGRATIONS}/20260101500000_rename.sql`,
+      'BEGIN; ALTER FUNCTION public.stale() RENAME TO moved; ROLLBACK;'
+    );
+    write(root, NEW, fixedDefiner.replaceAll('public.stale', 'public.moved'));
+  });
+  const record = withRemediation(f);
+  await assert.rejects(
+    admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
+    /prove a fix-forward/
+  );
+});
+
+test('a renamed qualified input type cannot credit an overload using the reused type name', async (t) => {
+  const f = fixture(
+    t,
+    (root) => {
+      write(
+        root,
+        `${MIGRATIONS}/20260101500000_rename_type.sql`,
+        "ALTER TYPE public.input RENAME TO old_input; CREATE TYPE public.input AS ENUM ('new');"
+      );
+      write(
+        root,
+        NEW,
+        fixedDefiner.replaceAll('public.stale()', 'public.stale(public.input)')
+      );
+    },
+    (root) =>
+      write(
+        root,
+        OLD,
+        "CREATE TYPE public.input AS ENUM ('old');\n" +
+          definer('stale').replaceAll(
+            'public.stale()',
+            'public.stale(public.input)'
+          )
+      )
+  );
+  const record = withRemediation(f);
+  assert.match(record.signature, /public \. input/);
+  await assert.rejects(
+    admit(f, [record], { fetch: api({ [f.head]: [status([record])] }) }),
+    /prove a fix-forward/
   );
 });
 

@@ -1007,7 +1007,9 @@ at the attested head for a
 complete replacement of the exact routine, a pinned `pg_catalog, pg_temp`
 search path, and explicit revocation from `PUBLIC`, `anon`, and
 `authenticated`. Keep the proof static so the guard can verify it. The proof
-is checked again whenever the trusted record is used. Removing or changing the
+is checked again whenever the trusted record is used. A proof is rejected if
+the intervening history uses rollback or savepoints, or could change the type
+identity of a custom input. Removing or changing the
 remediation migration reopens the finding.
 A change may rebind a base record by changing only its `sourceDigest` for a
 migration it modifies. Every added or rebound record must match a finding the

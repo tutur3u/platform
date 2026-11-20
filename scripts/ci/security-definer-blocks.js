@@ -148,12 +148,33 @@ function originalTarget(sql, entry, routineTarget) {
   return matches.length === 1 ? matches[0] : null;
 }
 
+function rollbackControl(ts) {
+  return ['rollback', 'abort', 'savepoint', 'release'].some((verb) =>
+    keyword(ts[0], verb)
+  );
+}
+
 function replayRoutineIdentity(target, migrations, routineTarget) {
+  const hasCustomInput = target.args.some(({ key }) =>
+    key.startsWith('qualified:')
+  );
   for (const sql of migrations) {
     for (const ts of statements(sql)) {
       const alter = keyword(ts[0], 'alter');
       const drop = keyword(ts[0], 'drop');
-      if (['do', 'call', 'execute'].some((verb) => keyword(ts[0], verb)))
+      if (
+        rollbackControl(ts) ||
+        ['do', 'call', 'execute'].some((verb) => keyword(ts[0], verb))
+      )
+        return null;
+      // Table and view DDL can drop or move composite input types.
+      const typeKinds = hasCustomInput
+        ? ['type', 'domain', 'table', 'view', 'foreign', 'materialized']
+        : ['type', 'domain'];
+      if (
+        ['create', 'alter', 'drop'].some((verb) => keyword(ts[0], verb)) &&
+        typeKinds.some((kind) => keyword(ts[1], kind))
+      )
         return null;
       if (!alter && !drop) continue;
       if (
@@ -207,6 +228,7 @@ function verifyRemediation(
   { original, entry, intervening },
   { catalogEntry, lintMigration, parseAcl, routineTarget, targetMatches }
 ) {
+  if (statements(original).some(rollbackControl)) return false;
   const source = originalTarget(original, entry, routineTarget);
   if (!source) return false;
   const target = replayRoutineIdentity(
