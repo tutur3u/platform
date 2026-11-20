@@ -3992,6 +3992,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeBillSplitPreview => 'Preview split';
 
   @override
+  String get financeBillSplitComment => 'Add comment';
+
+  @override
+  String get financeBillSplitPaid => 'I paid';
+
+  @override
+  String get financeBillSplitConfirm => 'Confirm';
+
+  @override
+  String get financeBillSplitActivity => 'Activity';
+
+  @override
+  String get financeBillSplitPending => 'Awaiting confirmation';
+
+  @override
+  String get financeBillSplitConfirmed => 'Confirmed';
+
+  @override
   String get financeBillSplits => 'Bill splits';
 
   @override

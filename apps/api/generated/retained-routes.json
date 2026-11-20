@@ -2100,6 +2100,16 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/public/bill-splits/settlement",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/public/bill-splits/settlement/route.ts",
+    "sourceSha256": "df0f50e3312a3e71395b9bf42514272f626c5e59a26521e5f12619d917f3afc9",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/public/pricing",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -2114,7 +2124,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/public/user-profile-links/[code]/avatar/route.ts",
-    "sourceSha256": "849d598b8458249c366316d4e446cb6da059ae2d1ea8aad49cbbdc38c52c819c",
+    "sourceSha256": "3564908a49eabbc9aa5ed05a171495377ae2db4ac7f5c437dcd80ae46643b377",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -2144,7 +2154,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/realtime/channels/route.ts",
-    "sourceSha256": "fc690426aec51799b17cef1cc6b473ba2cb5bada4e167dfec1bdc8934dd729d1",
+    "sourceSha256": "b75b8b9e03555caf0b406deab94a2b47245e3260867132ee3506f9bb0e99bb95",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -3980,6 +3990,66 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits/{splitId}/activity/{reportId}/proof",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity/[reportId]/proof/route.ts",
+    "sourceSha256": "88e57470e4891b95f164c106ada10c7b02702de2d04c613afdc8caa960e35b10",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits/{splitId}/activity",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity/route.ts",
+    "sourceSha256": "3ba20ef8212737ee00a1e5a47c8403cfae7ddc74ceee37add6348382107d9c00",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits/{splitId}/reminders",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/reminders/route.ts",
+    "sourceSha256": "ccaf2f7138b36eb32fd894f6daf7260332d74e8f62f769d2f9e7006b894a923b",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits/{splitId}/status-links",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/status-links/route.ts",
+    "sourceSha256": "cda9ef47c86773121af7da7beac1b74a0dbb356b952c49df5d3b0d83fe899e6b",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits/contact-bank/{contactId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/contact-bank/[contactId]/route.ts",
+    "sourceSha256": "1d4fc95e788af11ede7f8378d8a44eaed367df86c9a98edaa833ce8f648a3503",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/finance/bill-splits",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/route.ts",
+    "sourceSha256": "5a1eb066533d7fb66529a73ce136f6b970de666023fd7824d3c0538af4e27cc4",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/workspaces/{wsId}/finance/wallets/{walletId}/checkpoints/{checkpointId}/review",
     "sideEffects": "unknown",
     "shadow": "never",
@@ -4414,7 +4484,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people/route.ts",
-    "sourceSha256": "dd1549cf8dbacc26a6e368c2c2743c21b816952ba57b88d6966ce0dfe37b3013",
+    "sourceSha256": "cb40fc45f051ae277abf536310376c8956dd7ecf8785ea8485c81af4f4d34331",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

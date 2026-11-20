@@ -1,9 +1,10 @@
-import 'dart:math' as math;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/core/realtime/cloudflare_channel.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -11,8 +12,9 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
+import 'package:mobile/features/finance/view/bill_split_activity_panel.dart';
 import 'package:mobile/features/finance/view/bill_split_create_sheet.dart';
-import 'package:mobile/features/finance/widgets/finance_money.dart';
+import 'package:mobile/features/finance/view/bill_split_settlement_view.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -95,19 +97,53 @@ class _BillSplitContent extends StatefulWidget {
 class _BillSplitContentState extends State<_BillSplitContent> {
   final _api = ApiClient();
   late Future<Map<String, dynamic>> _response = _load();
+  CloudflareChannel? _channel;
+  Timer? _invalidation;
+
+  String get _splitPath =>
+      '/api/v1/workspaces/${Uri.encodeComponent(widget.workspace)}/finance/bill-splits';
+
+  @override
+  void initState() {
+    super.initState();
+    final split = widget.splitId;
+    if (split == null ||
+        !const bool.fromEnvironment('ENABLE_FINANCE_BILL_SPLIT_REALTIME')) {
+      return;
+    }
+    final channel = CloudflareChannel(
+      resolveTicket: () => _api.postJson('/api/v1/realtime/channels', {
+        'topic': 'finance-bill-split:${widget.workspace}:$split',
+      }),
+      onMessage: (event) {
+        if (event['type'] != 'broadcast' || event['event'] != 'activity') {
+          return;
+        }
+        _invalidation ??= Timer(const Duration(milliseconds: 250), () {
+          _invalidation = null;
+          _reload();
+        });
+      },
+    );
+    _channel = channel;
+    unawaited(channel.connect(retryOnFailure: false).catchError((Object _) {}));
+  }
+
+  void _reload() {
+    if (mounted) setState(() => _response = _load());
+  }
 
   Future<Map<String, dynamic>> _load() {
     final query = widget.splitId == null
         ? ''
         : '?id=${Uri.encodeQueryComponent(widget.splitId!)}';
-    return _api.getJson(
-      '/api/v1/workspaces/${Uri.encodeComponent(widget.workspace)}'
-      '/finance/bill-splits$query',
-    );
+    return _api.getJson('$_splitPath$query');
   }
 
   @override
   void dispose() {
+    _invalidation?.cancel();
+    unawaited(_channel?.close());
     _api.dispose();
     super.dispose();
   }
@@ -119,16 +155,22 @@ class _BillSplitContentState extends State<_BillSplitContent> {
       future: _response,
       builder: (context, snapshot) {
         final data = snapshot.data?['data'];
-        final children = switch (snapshot.connectionState) {
-          ConnectionState.done when data is List<Object?> => _list(
-            context,
-            data,
-          ),
-          ConnectionState.done when data is Map<String, dynamic> => _detail(
-            context,
-            data,
-          ),
-          ConnectionState.done => <Widget>[
+        final children = switch (data) {
+          List<Object?>() => _list(context, data),
+          Map<String, dynamic>() => <Widget>[
+            BillSplitSettlementView(
+              split: data,
+              participantId: widget.participantId,
+            ),
+            if (widget.splitId case final id? when widget.participantId == null)
+              BillSplitActivityPanel(
+                api: _api,
+                path: '$_splitPath/${Uri.encodeComponent(id)}/activity',
+                split: data,
+                onUpdate: _reload,
+              ),
+          ],
+          _ when snapshot.connectionState == ConnectionState.done => <Widget>[
             AppStateMessage(
               icon: LucideIcons.circleAlert,
               title: l10n.financeBillSplitsUnavailable,
@@ -190,76 +232,4 @@ class _BillSplitContentState extends State<_BillSplitContent> {
       ).toString(),
     );
   }
-
-  List<Widget> _detail(BuildContext context, Map<String, dynamic> split) {
-    final l10n = context.l10n;
-    final participants = {
-      for (final person in _objects(split['participants']))
-        person['id'] as String: person['displayName'] as String,
-    };
-    final participant = widget.participantId;
-    if (participant != null && !participants.containsKey(participant)) {
-      return [
-        AppStateMessage(
-          icon: LucideIcons.circleAlert,
-          title: l10n.financeBillSplitsUnavailable,
-        ),
-      ];
-    }
-
-    final currency = split['currency'] as Map<String, dynamic>;
-    final code = currency['code'] as String;
-    final divisor = math.pow(10, currency['minorDigits'] as int);
-    final ledger = split['ledger'] as Map<String, dynamic>;
-    final plan = ledger['settlement'] as Map<String, dynamic>;
-    final transfers = _objects(plan['transfers']).where(
-      (row) =>
-          participant == null ||
-          row['from'] == participant ||
-          row['to'] == participant,
-    );
-    return [
-      Text(
-        split['title'] as String,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      AppGroupedSection.spaced(
-        caption: l10n.financeBillSplitBalances,
-        children: [
-          for (final row in _objects(ledger['balances']))
-            if (participant == null || row['participantId'] == participant)
-              AppRichRow(
-                title: participants[row['participantId']] ?? '',
-                trailing: FinanceAmountText(
-                  (row['amountMinor'] as num) / divisor,
-                  code,
-                ),
-              ),
-        ],
-      ),
-      AppGroupedSection.spaced(
-        caption: plan['optimal'] == true
-            ? l10n.financeBillSplitSettlement
-            : l10n.financeBillSplitSuggested,
-        children: [
-          if (transfers.isEmpty)
-            AppRichRow(title: l10n.financeBillSplitNoTransfers),
-          for (final row in transfers)
-            AppRichRow(
-              title: l10n.financeBillSplitPays(
-                participants[row['from']] ?? '',
-                participants[row['to']] ?? '',
-              ),
-              trailing: FinanceAmountText(
-                (row['amountMinor'] as num) / divisor,
-                code,
-              ),
-            ),
-        ],
-      ),
-    ];
-  }
-
-  Iterable<Map<String, dynamic>> _objects(Object? value) =>
-      (value as List<Object?>).whereType<Map<String, dynamic>>();
 }

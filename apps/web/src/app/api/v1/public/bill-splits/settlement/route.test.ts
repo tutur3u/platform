@@ -61,12 +61,10 @@ describe('anonymous settlement status', () => {
     vi.stubEnv('FINANCE_BILL_SPLIT_STATUS_ORIGIN', origin);
     server.rpc.mockReset();
     server.subject.mockReset().mockResolvedValue(true);
-    server.quota
-      .mockReset()
-      .mockResolvedValue({
-        kind: 'admitted',
-        admitVerifiedSubject: server.subject,
-      });
+    server.quota.mockReset().mockResolvedValue({
+      kind: 'admitted',
+      admitVerifiedSubject: server.subject,
+    });
     server.tier.mockReset().mockResolvedValue('PLUS');
   });
   afterEach(() => vi.unstubAllEnvs());

@@ -7615,6 +7615,42 @@ abstract class AppLocalizations {
   /// **'Preview split'**
   String get financeBillSplitPreview;
 
+  /// No description provided for @financeBillSplitComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add comment'**
+  String get financeBillSplitComment;
+
+  /// No description provided for @financeBillSplitPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'I paid'**
+  String get financeBillSplitPaid;
+
+  /// No description provided for @financeBillSplitConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get financeBillSplitConfirm;
+
+  /// No description provided for @financeBillSplitActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get financeBillSplitActivity;
+
+  /// No description provided for @financeBillSplitPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting confirmation'**
+  String get financeBillSplitPending;
+
+  /// No description provided for @financeBillSplitConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get financeBillSplitConfirmed;
+
   /// No description provided for @financeBillSplits.
   ///
   /// In en, this message translates to:

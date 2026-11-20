@@ -40,11 +40,12 @@ class BillSplitCreateSheet extends StatefulWidget {
 class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
   final _title = TextEditingController();
   final _amount = TextEditingController();
-  final _id = newBillSplitId();
+  final String _id = newBillSplitId();
   final _people = <_Person>[];
   final _excluded = <String>{};
-  late final _currency = FinanceRepository(apiClient: widget.api)
-      .getWorkspaceDefaultCurrency(widget.workspaceId);
+  late final Future<String> _currency = FinanceRepository(
+    apiClient: widget.api,
+  ).getWorkspaceDefaultCurrency(widget.workspaceId);
   String? _payer;
   Map<String, dynamic>? _preview;
   var _busy = false;
@@ -74,8 +75,9 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
         title: labels.financeBillSplitAddPerson,
         empty: labels.financeBillSplitPeopleEmpty,
         fetch: (query, page) async {
-          if (query.length < 2 || page != 1)
+          if (query.length < 2 || page != 1) {
             return (items: <_Person>[], count: 0);
+          }
           final rows = await widget.api.getJsonList(
             '$_workspacePath/people?q=${Uri.encodeQueryComponent(query)}&limit=12',
           );
@@ -273,8 +275,9 @@ class _BillSplitCreateSheetState extends State<BillSplitCreateSheet> {
                           (row['amountMinor'] as num) /
                               pow(
                                 10,
-                                NumberFormat.simpleCurrency(name: currency)
-                                        .decimalDigits ??
+                                NumberFormat.simpleCurrency(
+                                      name: currency,
+                                    ).decimalDigits ??
                                     2,
                               ),
                           currency ?? '',

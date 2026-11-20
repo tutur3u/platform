@@ -6339,6 +6339,496 @@ export type Database = {
         };
         Relationships: [];
       };
+      finance_bill_split_activity: {
+        Row: {
+          actor_id: string | null;
+          amount_minor: number | null;
+          comment_text: string | null;
+          created_at: string;
+          from_id: string | null;
+          id: string;
+          kind: string;
+          report_id: string | null;
+          split_id: string;
+          to_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id?: string | null;
+          amount_minor?: number | null;
+          comment_text?: string | null;
+          created_at?: string;
+          from_id?: string | null;
+          id: string;
+          kind: string;
+          report_id?: string | null;
+          split_id: string;
+          to_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          amount_minor?: number | null;
+          comment_text?: string | null;
+          created_at?: string;
+          from_id?: string | null;
+          id?: string;
+          kind?: string;
+          report_id?: string | null;
+          split_id?: string;
+          to_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_activity_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_activity_ws_id_split_id_fkey';
+            columns: ['ws_id', 'split_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_splits';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_activity_ws_id_split_id_from_id_fkey';
+            columns: ['ws_id', 'split_id', 'from_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_participants';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_activity_ws_id_split_id_report_id_fkey';
+            columns: ['ws_id', 'split_id', 'report_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_activity';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_activity_ws_id_split_id_to_id_fkey';
+            columns: ['ws_id', 'split_id', 'to_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_participants';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_split_participants: {
+        Row: {
+          contact_id: string | null;
+          display_name: string;
+          id: string;
+          member_id: string | null;
+          split_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          contact_id?: string | null;
+          display_name: string;
+          id: string;
+          member_id?: string | null;
+          split_id: string;
+          ws_id: string;
+        };
+        Update: {
+          contact_id?: string | null;
+          display_name?: string;
+          id?: string;
+          member_id?: string | null;
+          split_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_participants_ws_id_split_id_fkey';
+            columns: ['ws_id', 'split_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_splits';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_split_proof: {
+        Row: {
+          content_type: string;
+          contents: string;
+          report_id: string;
+          split_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          content_type: string;
+          contents: string;
+          report_id: string;
+          split_id: string;
+          ws_id: string;
+        };
+        Update: {
+          content_type?: string;
+          contents?: string;
+          report_id?: string;
+          split_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_proof_ws_id_split_id_report_id_fkey';
+            columns: ['ws_id', 'split_id', 'report_id'];
+            isOneToOne: true;
+            referencedRelation: 'finance_bill_split_activity';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_split_reminders: {
+        Row: {
+          actor_id: string;
+          completed_at: string | null;
+          created_at: string;
+          due_at: string;
+          id: string;
+          participant_id: string;
+          payment_fence: number;
+          recipient_id: string;
+          split_id: string;
+          state: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          completed_at?: string | null;
+          created_at?: string;
+          due_at: string;
+          id?: string;
+          participant_id: string;
+          payment_fence: number;
+          recipient_id: string;
+          split_id: string;
+          state?: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          due_at?: string;
+          id?: string;
+          participant_id?: string;
+          payment_fence?: number;
+          recipient_id?: string;
+          split_id?: string;
+          state?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_reminders_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_reminders_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_reminders_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_reminders_recipient_id_fkey';
+            columns: ['recipient_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_reminders_ws_id_split_id_participant_id_fkey';
+            columns: ['ws_id', 'split_id', 'participant_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_participants';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_split_revisions: {
+        Row: {
+          author_id: string | null;
+          created_at: string;
+          finalized: boolean;
+          input: NonNullable<Json>;
+          ledger: NonNullable<Json>;
+          revision: number;
+          split_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          author_id?: string | null;
+          created_at?: string;
+          finalized?: boolean;
+          input: NonNullable<Json>;
+          ledger: NonNullable<Json>;
+          revision: number;
+          split_id: string;
+          ws_id: string;
+        };
+        Update: {
+          author_id?: string | null;
+          created_at?: string;
+          finalized?: boolean;
+          input?: NonNullable<Json>;
+          ledger?: NonNullable<Json>;
+          revision?: number;
+          split_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_revisions_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_revisions_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_revisions_ws_id_split_id_fkey';
+            columns: ['ws_id', 'split_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_splits';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_split_status_links: {
+        Row: {
+          created_at: string;
+          digest: string;
+          expires_at: string;
+          id: string;
+          participant_id: string | null;
+          public_name: string | null;
+          receiving_participant_id: string | null;
+          revoked_at: string | null;
+          split_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          digest: string;
+          expires_at: string;
+          id?: string;
+          participant_id?: string | null;
+          public_name?: string | null;
+          receiving_participant_id?: string | null;
+          revoked_at?: string | null;
+          split_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          digest?: string;
+          expires_at?: string;
+          id?: string;
+          participant_id?: string | null;
+          public_name?: string | null;
+          receiving_participant_id?: string | null;
+          revoked_at?: string | null;
+          split_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_split_status_lin_ws_id_split_id_participant_i_fkey';
+            columns: ['ws_id', 'split_id', 'participant_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_participants';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_status_lin_ws_id_split_id_receiving_par_fkey';
+            columns: ['ws_id', 'split_id', 'receiving_participant_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_split_participants';
+            referencedColumns: ['ws_id', 'split_id', 'id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_split_status_links_ws_id_split_id_fkey';
+            columns: ['ws_id', 'split_id'];
+            isOneToOne: false;
+            referencedRelation: 'finance_bill_splits';
+            referencedColumns: ['ws_id', 'id'];
+          },
+        ];
+      };
+      finance_bill_splits: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          id: string;
+          minor_digits: number;
+          title: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          currency: string;
+          id?: string;
+          minor_digits: number;
+          title: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          id?: string;
+          minor_digits?: number;
+          title?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_bill_splits_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_bill_splits_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      finance_contact_bank_accounts: {
+        Row: {
+          bank_bin: string;
+          bank_name: string;
+          consent_actor_id: string;
+          consented_at: string;
+          contact_id: string;
+          encrypted_details: string;
+          last_four: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bank_bin: string;
+          bank_name: string;
+          consent_actor_id: string;
+          consented_at?: string;
+          contact_id: string;
+          encrypted_details: string;
+          last_four: string;
+          ws_id: string;
+        };
+        Update: {
+          bank_bin?: string;
+          bank_name?: string;
+          consent_actor_id?: string;
+          consented_at?: string;
+          contact_id?: string;
+          encrypted_details?: string;
+          last_four?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_contact_bank_accounts_consent_actor_id_fkey';
+            columns: ['consent_actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_contact_bank_accounts_consent_actor_id_fkey';
+            columns: ['consent_actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      finance_contact_bank_audit: {
+        Row: {
+          action: string;
+          actor_id: string | null;
+          contact_id: string | null;
+          created_at: string;
+          id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor_id?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          id?: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_id?: string | null;
+          contact_id?: string | null;
+          created_at?: string;
+          id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'finance_contact_bank_audit_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'finance_contact_bank_audit_actor_id_fkey';
+            columns: ['actor_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       finance_invoice_recovery: {
         Row: {
           deleted_at: string;
@@ -23111,6 +23601,21 @@ export type Database = {
         };
         Returns: string;
       };
+      create_finance_bill_split: {
+        Args: {
+          p_actor_id: string;
+          p_currency: string;
+          p_finalized: boolean;
+          p_id: string;
+          p_input: Json;
+          p_ledger: Json;
+          p_minor_digits: number;
+          p_participants: Json;
+          p_title: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       create_inventory_checkout_session: {
         Args: { p_now?: string; p_payload: Json; p_storefront_slug: string };
         Returns: Json;
@@ -23424,6 +23929,10 @@ export type Database = {
       discard_uninitialized_playground: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
+      };
+      dispatch_finance_bill_split_reminders: {
+        Args: { p_limit?: number };
+        Returns: Json;
       };
       edit_inventory_priced_product: {
         Args: {
@@ -24073,6 +24582,32 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: boolean;
+      };
+      finance_bill_split_confirmed_payments: {
+        Args: { p_actor_id: string; p_split_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      finance_bill_split_participant_actor: {
+        Args: {
+          p_actor_id: string;
+          p_participant_id: string;
+          p_split_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
+      finance_contact_bank_command: {
+        Args: {
+          p_action: string;
+          p_actor_id: string;
+          p_bank_bin?: string;
+          p_bank_name?: string;
+          p_contact_id: string;
+          p_encrypted_details?: string;
+          p_last_four?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
@@ -25259,6 +25794,10 @@ export type Database = {
           domain: string;
         }[];
       };
+      list_finance_bill_split_links: {
+        Args: { p_actor_id: string; p_split_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       list_inventory_bundles: {
         Args: {
           p_limit?: number;
@@ -25571,6 +26110,10 @@ export type Database = {
         Args: { p_actor_id: string; p_email: string; p_user_id: string };
         Returns: Json;
       };
+      lookup_finance_bill_split_link: {
+        Args: { p_digest: string };
+        Returns: Json;
+      };
       mail_inbound_push_message_allowed: {
         Args: { p_message_id: string };
         Returns: boolean;
@@ -25582,6 +26125,20 @@ export type Database = {
       mail_thread_push_allowed: {
         Args: { p_message_id: string; p_user_id: string };
         Returns: boolean;
+      };
+      manage_finance_bill_split_link: {
+        Args: {
+          p_actor_id: string;
+          p_digest?: string;
+          p_hours?: number;
+          p_participant_id?: string;
+          p_public_name?: string;
+          p_receiving_participant_id?: string;
+          p_revoke_id?: string;
+          p_split_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       manage_tutoring_absence_credit: {
         Args: {
@@ -25945,6 +26502,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      read_finance_bill_split_activity: {
+        Args: { p_actor_id: string; p_split_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      read_finance_bill_split_proof: {
+        Args: {
+          p_actor_id: string;
+          p_report_id: string;
+          p_split_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      read_finance_bill_splits: {
+        Args: { p_actor_id: string; p_id?: string; p_ws_id: string };
+        Returns: Json;
+      };
       read_learn_playground_run: {
         Args: { p_actor_id: string; p_id: string; p_run_id: string };
         Returns: Json;
@@ -26202,6 +26776,20 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      report_finance_bill_split_with_proof: {
+        Args: {
+          p_actor_id: string;
+          p_amount_minor: number;
+          p_content_type: string;
+          p_event_id: string;
+          p_from_id: string;
+          p_proof_base64: string;
+          p_split_id: string;
+          p_to_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       report_review_delivery_ready: {
         Args: { p_report_id: string };
         Returns: boolean;
@@ -26296,6 +26884,15 @@ export type Database = {
           p_ws: string;
         };
         Returns: Json;
+      };
+      schedule_finance_bill_split_reminder: {
+        Args: {
+          p_actor_id: string;
+          p_participant_id: string;
+          p_split_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       search_ai_studio_policy_workspaces: {
         Args: { p_limit?: number; p_offset?: number; p_query?: string };
@@ -27125,6 +27722,21 @@ export type Database = {
               isSetofReturn: true;
             };
           };
+      write_finance_bill_split_activity: {
+        Args: {
+          p_actor_id: string;
+          p_amount_minor?: number;
+          p_comment?: string;
+          p_event_id: string;
+          p_from_id?: string;
+          p_kind: string;
+          p_report_id?: string;
+          p_split_id: string;
+          p_to_id?: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       write_personal_journal: {
         Args: {
           p_actor_id: string;

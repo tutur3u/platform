@@ -43,18 +43,18 @@
     }
   ],
   "summary": {
-    "total": 822,
+    "total": 830,
     "categories": {
-      "api": 624,
+      "api": 631,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 167,
+      "page": 168,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 810 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 818 }
   },
   "routes": [
     {
@@ -1238,6 +1238,14 @@
     {
       "pattern": "/[locale]/share/[type]/[resourceId]",
       "source": "apps/web/src/app/[locale]/(marketing)/share/[type]/[resourceId]/page.tsx",
+      "category": "page",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/share/bill-splits",
+      "source": "apps/web/src/app/[locale]/(marketing)/share/bill-splits/page.tsx",
       "category": "page",
       "owner": "web-next",
       "disposition": "Next-fallback",
@@ -3141,6 +3149,14 @@
       "cronOwner": null
     },
     {
+      "pattern": "/api/v1/public/bill-splits/settlement",
+      "source": "apps/web/src/app/api/v1/public/bill-splits/settlement/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
       "pattern": "/api/v1/public/pricing",
       "source": "apps/web/src/app/api/v1/public/pricing/route.ts",
       "category": "api",
@@ -4639,6 +4655,54 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/webgl-packages/upload/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity/[reportId]/proof",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity/[reportId]/proof/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/activity/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/reminders",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/reminders/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/status-links",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/[splitId]/status-links/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits/contact-bank/[contactId]",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/contact-bank/[contactId]/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/finance/bill-splits",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/finance/bill-splits/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -4,6 +4,7 @@ import type { BridgePage } from '@tuturuuu/start-bridge/pages';
 export const pages = [
   { pattern: "/verify-token", file: "src/app/[locale]/(auth)/verify-token/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/analytics", file: "src/app/[locale]/(dashboard)/[wsId]/analytics/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/bill-splits/[[...target]]", file: "src/app/[locale]/(dashboard)/[wsId]/bill-splits/[[...target]]/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/budgets", file: "src/app/[locale]/(dashboard)/[wsId]/budgets/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/categories", file: "src/app/[locale]/(dashboard)/[wsId]/categories/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/debts/[debtId]", file: "src/app/[locale]/(dashboard)/[wsId]/debts/[debtId]/page.tsx", defaults: { "locale": "en" } },

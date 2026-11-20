@@ -3977,6 +3977,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeBillSplitPreview => 'Xem trước';
 
   @override
+  String get financeBillSplitComment => 'Thêm bình luận';
+
+  @override
+  String get financeBillSplitPaid => 'Tôi đã trả';
+
+  @override
+  String get financeBillSplitConfirm => 'Xác nhận';
+
+  @override
+  String get financeBillSplitActivity => 'Hoạt động';
+
+  @override
+  String get financeBillSplitPending => 'Đang chờ xác nhận';
+
+  @override
+  String get financeBillSplitConfirmed => 'Đã xác nhận';
+
+  @override
   String get financeBillSplits => 'Chia hóa đơn';
 
   @override

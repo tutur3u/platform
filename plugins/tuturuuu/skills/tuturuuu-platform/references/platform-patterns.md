@@ -1542,7 +1542,14 @@ Retain reservations for interrupted or skipped work; never defer accounting to a
 isolate-local flush. Verify the budget across isolate replacement in workerd.
 This limits subject commands, while the request-cost activation hold remains.
 
-### Staff identity checks before permission reads
+#Public capability endpoints can share `admitPublicRequest` from
+`@tuturuuu/utils/abuse-guard/public-admission`. Charge the trusted source before
+database access and pass a stable digest to the subject gate only after verifying
+the resource. Keep rate-limited and absent resource responses equivalent for
+capability reads. Finance settlement uses this sequence with a Turnstile
+challenge, tier verification and an allowlisted no-store projection.
+
+## Staff identity checks before permission reads
 
 For staff-only routes, reject unverified, foreign-tenant and disallowed-domain
 identities before calling workspace permission readers: those readers query data.

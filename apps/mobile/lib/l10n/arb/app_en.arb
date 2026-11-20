@@ -2799,6 +2799,12 @@
       }
     }
   },
+  "financeBillSplitComment": "Add comment",
+  "financeBillSplitPaid": "I paid",
+  "financeBillSplitConfirm": "Confirm",
+  "financeBillSplitActivity": "Activity",
+  "financeBillSplitPending": "Awaiting confirmation",
+  "financeBillSplitConfirmed": "Confirmed",
   "financeBillSplits": "Bill splits",
   "financeBillSplitsEmpty": "No bill splits yet",
   "financeBillSplitsUnavailable": "Bill splits are unavailable",
