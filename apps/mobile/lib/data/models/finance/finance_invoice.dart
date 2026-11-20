@@ -255,3 +255,115 @@ class FinanceFeeLine {
     };
   }
 }
+
+double _detailNumber(Object? value) => switch (value) {
+  final num number => number.toDouble(),
+  final String text => double.tryParse(text) ?? 0,
+  _ => 0,
+};
+
+/// One product line of an invoice.
+class FinanceInvoiceDetailLine {
+  const FinanceInvoiceDetailLine({
+    required this.name,
+    required this.quantity,
+    required this.price,
+    this.unit,
+    this.warehouse,
+  });
+
+  factory FinanceInvoiceDetailLine.fromJson(Map<String, dynamic> json) =>
+      FinanceInvoiceDetailLine(
+        name: json['product_name'] as String? ?? '',
+        quantity: _detailNumber(json['amount']),
+        price: _detailNumber(json['price']),
+        unit: json['product_unit'] as String?,
+        warehouse: json['warehouse'] as String?,
+      );
+
+  final String name;
+  final double quantity;
+  final double price;
+  final String? unit;
+  final String? warehouse;
+
+  double get total => quantity * price;
+}
+
+/// A promotion as applied to an invoice when it was created.
+class FinanceInvoiceDetailPromotion {
+  const FinanceInvoiceDetailPromotion({
+    required this.code,
+    required this.value,
+    required this.useRatio,
+    this.name,
+  });
+
+  factory FinanceInvoiceDetailPromotion.fromJson(Map<String, dynamic> json) =>
+      FinanceInvoiceDetailPromotion(
+        code: json['code'] as String? ?? '',
+        name: json['name'] as String?,
+        value: _detailNumber(json['value']),
+        useRatio: json['use_ratio'] as bool? ?? true,
+      );
+
+  final String code;
+  final String? name;
+  final double value;
+  final bool useRatio;
+}
+
+/// An invoice with its lines and promotions, as the invoice detail
+/// endpoint returns it. [subtotal] is the price before adjustments and
+/// [adjustment] the signed difference (negative for a discount).
+class FinanceInvoiceDetail {
+  const FinanceInvoiceDetail({
+    required this.id,
+    required this.subtotal,
+    required this.adjustment,
+    this.customerName,
+    this.walletName,
+    this.currency,
+    this.createdAt,
+    this.notice,
+    this.lines = const [],
+    this.promotions = const [],
+  });
+
+  factory FinanceInvoiceDetail.fromJson(Map<String, dynamic> json) =>
+      FinanceInvoiceDetail(
+        id: json['id'] as String,
+        subtotal: _detailNumber(json['price']),
+        adjustment: _detailNumber(json['total_diff']),
+        customerName: json['customer_name'] as String?,
+        walletName: json['wallet_name'] as String?,
+        currency: json['wallet_currency'] as String?,
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? ''),
+        notice: json['notice'] as String?,
+        lines: [
+          for (final row
+              in (json['products'] as List<dynamic>? ?? const [])
+                  .whereType<Map<String, dynamic>>())
+            FinanceInvoiceDetailLine.fromJson(row),
+        ],
+        promotions: [
+          for (final row
+              in (json['promotions'] as List<dynamic>? ?? const [])
+                  .whereType<Map<String, dynamic>>())
+            FinanceInvoiceDetailPromotion.fromJson(row),
+        ],
+      );
+
+  final String id;
+  final double subtotal;
+  final double adjustment;
+  final String? customerName;
+  final String? walletName;
+  final String? currency;
+  final DateTime? createdAt;
+  final String? notice;
+  final List<FinanceInvoiceDetailLine> lines;
+  final List<FinanceInvoiceDetailPromotion> promotions;
+
+  double get total => subtotal + adjustment;
+}

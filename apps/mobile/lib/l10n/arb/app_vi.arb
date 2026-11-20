@@ -7605,5 +7605,13 @@
   "assistantLiveBlockedGotIt": "Đã hiểu",
   "assistantLiveBlockedNotNow": "Để sau",
   "assistantLiveBlockedSeeWhy": "Xem lý do",
-  "assistantLiveBlockedLockedLabel": "Live đang bị khóa. {reason}"
+  "assistantLiveBlockedLockedLabel": "Live đang bị khóa. {reason}",
+  "financeInvoiceItems": "Sản phẩm",
+  "financeInvoiceSubtotal": "Tạm tính",
+  "financeInvoiceAdjustment": "Giảm giá",
+  "financeInvoiceTotal": "Tổng cộng",
+  "financeInvoiceShare": "Chia sẻ hóa đơn",
+  "financeInvoiceLineDetail": "{quantity} {unit} × {price}",
+  "financeInvoiceLinesUnavailable": "Không tải được danh sách sản phẩm",
+  "financeInvoiceSurcharge": "Điều chỉnh"
 }

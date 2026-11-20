@@ -16,6 +16,7 @@ import 'package:mobile/features/finance/view/finance_invoice_history_sheet.dart'
 import 'package:mobile/features/finance/view/finance_invoice_report_sheet.dart';
 import 'package:mobile/features/finance/view/finance_invoice_subscription_sheet.dart';
 import 'package:mobile/features/finance/widgets/finance_directory_sheet.dart';
+import 'package:mobile/features/finance/widgets/finance_invoice_receipt.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_workspace_sheet.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -438,6 +439,18 @@ class _FinanceInvoiceDetailsState extends State<_FinanceInvoiceDetails> {
             subtitle: invoice.wallet,
             leading: const AppIconTile(icon: LucideIcons.receipt),
             trailing: widget.amount,
+          ),
+          FinanceInvoiceReceiptLoader(
+            load: () => widget.repository.getInvoiceDetail(
+              workspace: widget.session.workspaceId,
+              id: invoice.id,
+            ),
+            fallbackCurrency:
+                widget.wallets
+                    .where((wallet) => wallet.id == invoice.walletId)
+                    .firstOrNull
+                    ?.currency ??
+                '',
           ),
           if (canEdit &&
               widget.session.allows('change_finance_wallets') &&

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
+  loadInvoiceDetail: vi.fn(),
   existingInvoiceMaybeSingle: vi.fn(),
   getFinanceRouteContext: vi.fn(),
   getPermissions: vi.fn(),
@@ -25,6 +26,11 @@ const mocks = {
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
+}));
+
+vi.mock('./detail', () => ({
+  loadInvoiceDetail: (...args: Parameters<typeof mocks.loadInvoiceDetail>) =>
+    mocks.loadInvoiceDetail(...args),
 }));
 
 vi.mock('@tuturuuu/apis/finance/request-access', () => ({
@@ -156,5 +162,31 @@ describe('invoice detail route', () => {
     expect((await other.json()).message).toBe(
       'Invoice has linked records that must be reviewed before deletion'
     );
+  });
+
+  it('returns invoice detail to people who can view invoices', async () => {
+    const { GET } = await import('./route');
+    const url =
+      'http://localhost/api/v1/workspaces/ws-1/finance/invoices/invoice-1';
+    const params = {
+      params: Promise.resolve({ invoiceId: 'invoice-1', wsId: 'ws-1' }),
+    };
+
+    mocks.getPermissions.mockResolvedValue(withPermissions(['view_invoices']));
+    mocks.loadInvoiceDetail.mockResolvedValueOnce({ id: 'invoice-1' });
+    const found = await GET(new Request(url), params);
+    expect(found.status).toBe(200);
+    await expect(found.json()).resolves.toEqual({ id: 'invoice-1' });
+    expect(mocks.loadInvoiceDetail).toHaveBeenCalledWith(
+      mocks.adminSupabase,
+      'ws-1',
+      'invoice-1'
+    );
+
+    mocks.loadInvoiceDetail.mockResolvedValueOnce(null);
+    expect((await GET(new Request(url), params)).status).toBe(404);
+
+    mocks.getPermissions.mockResolvedValue(withPermissions([]));
+    expect((await GET(new Request(url), params)).status).toBe(403);
   });
 });

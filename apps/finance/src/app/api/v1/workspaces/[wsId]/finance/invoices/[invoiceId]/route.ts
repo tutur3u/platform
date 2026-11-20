@@ -4,6 +4,7 @@ import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { feeLockLinkedInvoiceResponse } from '../subscription/fee-lock-delete-block';
+import { loadInvoiceDetail } from './detail';
 
 interface Params {
   params: Promise<{
@@ -17,6 +18,47 @@ const UpdateInvoiceSchema = z.object({
   note: z.string().nullable().optional(),
   wallet_id: z.guid().nullable().optional(),
 });
+
+export async function GET(req: Request, { params }: Params) {
+  const { invoiceId, wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (permissions.withoutPermission('view_invoices')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const invoice = await loadInvoiceDetail(sbAdmin, wsId, invoiceId);
+    if (!invoice) {
+      return NextResponse.json(
+        { message: 'Invoice not found' },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(invoice, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (error) {
+    console.error('Failed to load invoice detail', { error, invoiceId, wsId });
+    return NextResponse.json(
+      { message: 'Error fetching invoice' },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PUT(req: Request, { params }: Params) {
   const { invoiceId, wsId: rawWsId } = await params;

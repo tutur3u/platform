@@ -17644,4 +17644,30 @@ class AppLocalizationsVi extends AppLocalizations {
   String assistantLiveBlockedLockedLabel(String reason) {
     return 'Live đang bị khóa. $reason';
   }
+
+  @override
+  String get financeInvoiceItems => 'Sản phẩm';
+
+  @override
+  String get financeInvoiceSubtotal => 'Tạm tính';
+
+  @override
+  String get financeInvoiceAdjustment => 'Giảm giá';
+
+  @override
+  String get financeInvoiceTotal => 'Tổng cộng';
+
+  @override
+  String get financeInvoiceShare => 'Chia sẻ hóa đơn';
+
+  @override
+  String financeInvoiceLineDetail(String quantity, String unit, String price) {
+    return '$quantity $unit × $price';
+  }
+
+  @override
+  String get financeInvoiceLinesUnavailable => 'Không tải được danh sách sản phẩm';
+
+  @override
+  String get financeInvoiceSurcharge => 'Điều chỉnh';
 }

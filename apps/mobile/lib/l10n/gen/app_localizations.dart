@@ -32946,6 +32946,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Live is locked. {reason}'**
   String assistantLiveBlockedLockedLabel(String reason);
+
+  /// No description provided for @financeInvoiceItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get financeInvoiceItems;
+
+  /// No description provided for @financeInvoiceSubtotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Subtotal'**
+  String get financeInvoiceSubtotal;
+
+  /// No description provided for @financeInvoiceAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Discount'**
+  String get financeInvoiceAdjustment;
+
+  /// No description provided for @financeInvoiceTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get financeInvoiceTotal;
+
+  /// No description provided for @financeInvoiceShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share invoice'**
+  String get financeInvoiceShare;
+
+  /// No description provided for @financeInvoiceLineDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'{quantity} {unit} × {price}'**
+  String financeInvoiceLineDetail(String quantity, String unit, String price);
+
+  /// No description provided for @financeInvoiceLinesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load the invoice items'**
+  String get financeInvoiceLinesUnavailable;
+
+  /// No description provided for @financeInvoiceSurcharge.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjustment'**
+  String get financeInvoiceSurcharge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

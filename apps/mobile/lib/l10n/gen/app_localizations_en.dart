@@ -17857,4 +17857,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String assistantLiveBlockedLockedLabel(String reason) {
     return 'Live is locked. $reason';
   }
+
+  @override
+  String get financeInvoiceItems => 'Items';
+
+  @override
+  String get financeInvoiceSubtotal => 'Subtotal';
+
+  @override
+  String get financeInvoiceAdjustment => 'Discount';
+
+  @override
+  String get financeInvoiceTotal => 'Total';
+
+  @override
+  String get financeInvoiceShare => 'Share invoice';
+
+  @override
+  String financeInvoiceLineDetail(String quantity, String unit, String price) {
+    return '$quantity $unit × $price';
+  }
+
+  @override
+  String get financeInvoiceLinesUnavailable => 'Could not load the invoice items';
+
+  @override
+  String get financeInvoiceSurcharge => 'Adjustment';
 }

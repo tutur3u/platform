@@ -200,6 +200,20 @@ mixin FinanceRepositoryInvoices {
     return result['invoice_id'] as String;
   }
 
+  /// One invoice with its lines and applied promotions.
+  Future<FinanceInvoiceDetail> getInvoiceDetail({
+    required String workspace,
+    required String id,
+  }) async {
+    final user = _cacheUserId();
+    return FinanceInvoiceDetail.fromJson(
+      await _invoiceRequest(
+        user,
+        () => _api.getJson('${_invoicePath(workspace)}/$id'),
+      ),
+    );
+  }
+
   Future<void> updateInvoice({
     required String workspace,
     required String id,

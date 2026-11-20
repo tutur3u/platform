@@ -231,6 +231,14 @@ tab, then select the wallet and add invoice lines. Invoice editors with wallet
 reassignment permission can change the linked wallet. A currency change
 requires confirmation because the invoice retains its numeric amount.
 
+An opened invoice shows a receipt: customer, date, wallet and content, each
+line with its quantity, unit and price, the subtotal, the signed adjustment
+(Discount with the applied promotion codes when negative) and the total.
+Share invoice sends that receipt as a PNG, as web exports one. The receipt
+comes from `GET /api/v1/workspaces/{id}/finance/invoices/{invoiceId}`, which
+needs `view_invoices`. Coverage: `finance_invoice_receipt_test.dart` and the
+Finance route's `detail.test.ts`.
+
 Invoice history requires workspace audit permission. Recovery uses the stored
 snapshot and requires the same create and delete permissions on web and mobile.
 Fee locks support drafting from configured tuition lines, editing quantities,

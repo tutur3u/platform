@@ -8661,18 +8661,54 @@
   "assistantLiveBlockedRoleTitle": "You don't have Live access here",
   "assistantLiveBlockedPausedTitle": "Live is temporarily unavailable",
   "assistantLiveBlockedPlanBody": "Upgrade to {plans} to talk with Mira by voice.",
-  "@assistantLiveBlockedPlanBody": {"placeholders": {"plans": {"type": "String"}}},
+  "@assistantLiveBlockedPlanBody": {
+    "placeholders": {
+      "plans": {
+        "type": "String"
+      }
+    }
+  },
   "assistantLiveBlockedCreditsBody": "You have {balance} credits. Live needs at least {minimum}.",
-  "@assistantLiveBlockedCreditsBody": {"placeholders": {"balance": {"type": "String"}, "minimum": {"type": "String"}}},
+  "@assistantLiveBlockedCreditsBody": {
+    "placeholders": {
+      "balance": {
+        "type": "String"
+      },
+      "minimum": {
+        "type": "String"
+      }
+    }
+  },
   "assistantLiveBlockedLimitBodyToday": "You can start again at {time}.",
-  "@assistantLiveBlockedLimitBodyToday": {"placeholders": {"time": {"type": "String"}}},
+  "@assistantLiveBlockedLimitBodyToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "assistantLiveBlockedLimitBodyOn": "You can start again on {date} at {time}.",
-  "@assistantLiveBlockedLimitBodyOn": {"placeholders": {"date": {"type": "String"}, "time": {"type": "String"}}},
+  "@assistantLiveBlockedLimitBodyOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "assistantLiveBlockedLimitBodyLater": "Try again a little later.",
   "assistantLiveBlockedRoleBody": "A workspace owner or admin can give you access.",
   "assistantLiveBlockedPausedBody": "We're on it. Text chat with Mira still works.",
   "assistantLiveBlockedBilledTo": "Billed to: {workspace}",
-  "@assistantLiveBlockedBilledTo": {"placeholders": {"workspace": {"type": "String"}}},
+  "@assistantLiveBlockedBilledTo": {
+    "placeholders": {
+      "workspace": {
+        "type": "String"
+      }
+    }
+  },
   "assistantLiveBlockedPersonalWorkspace": "Personal workspace",
   "assistantLiveBlockedUpgrade": "Upgrade",
   "assistantLiveBlockedTopUp": "Top up",
@@ -8680,5 +8716,32 @@
   "assistantLiveBlockedNotNow": "Not now",
   "assistantLiveBlockedSeeWhy": "See why",
   "assistantLiveBlockedLockedLabel": "Live is locked. {reason}",
-  "@assistantLiveBlockedLockedLabel": {"placeholders": {"reason": {"type": "String"}}}
+  "@assistantLiveBlockedLockedLabel": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "financeInvoiceItems": "Items",
+  "financeInvoiceSubtotal": "Subtotal",
+  "financeInvoiceAdjustment": "Discount",
+  "financeInvoiceTotal": "Total",
+  "financeInvoiceShare": "Share invoice",
+  "financeInvoiceLineDetail": "{quantity} {unit} × {price}",
+  "@financeInvoiceLineDetail": {
+    "placeholders": {
+      "quantity": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "financeInvoiceLinesUnavailable": "Could not load the invoice items",
+  "financeInvoiceSurcharge": "Adjustment"
 }
