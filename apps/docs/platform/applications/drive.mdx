@@ -24,6 +24,15 @@ and permission-gated actions. Search temporarily occupies the shared search
 surface rather than adding a second search field to the directory body. Closing
 search clears its query and reloads the current directory.
 
+Drive opens in a compact list. Use the view action to switch to a grid. Inside a
+folder, the navbar shows the folder name and the folder-path action opens a
+picker with each ancestor. The floating Back control goes up one folder.
+
+Long-press a file or folder to start selection, then tap other entries to add
+them. Done clears the selection. Workspace members with `manage_drive` can
+delete selected entries and open Storage usage to see workspace file count,
+used space, and the limit when one is available.
+
 Directories retain their visible entries during refresh. Additional pages load
 when the viewport is within 400 logical pixels of the end, including directories
 that initially do not fill the viewport; the explicit load-more action remains

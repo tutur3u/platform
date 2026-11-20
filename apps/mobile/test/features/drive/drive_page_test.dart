@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:ui' show CheckedState;
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/theme/appearance/appearance_settings.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/core/widgets/shadcn_localizations_fallback.dart';
 import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/drive/drive_models.dart';
@@ -15,7 +16,6 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
-import 'package:mobile/features/finance/widgets/finance_ui.dart';
 import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/cubit/shell_title_override_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
@@ -24,6 +24,8 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 import 'package:supabase_flutter/supabase_flutter.dart' show User;
+
+import '../../helpers/design_render_harness.dart';
 
 class _Auth extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -45,6 +47,7 @@ class _Permissions extends Fake implements WorkspacePermissionsRepository {
 
 class _Drive extends Fake implements DriveRepository {
   final requests = <({String wsId, int offset, String search})>[];
+  final paths = <String?>[];
   Future<DriveListResult> Function(String, int, String)? load;
   @override
   Future<DriveListResult> listDirectory(
@@ -57,6 +60,7 @@ class _Drive extends Fake implements DriveRepository {
     String sortOrder = 'asc',
   }) async {
     requests.add((wsId: wsId, offset: offset, search: search ?? ''));
+    paths.add(path);
     return await (load?.call(wsId, offset, search ?? '') ??
         Future.value(result(['Synthetic folder'], offset: offset)));
   }
@@ -88,6 +92,7 @@ Future<void> pump(WidgetTester tester) async {
 }
 
 void main() {
+  setUpAll(DesignRender.loadFonts);
   late _Auth auth;
   late _Workspace workspace;
   late _Drive repository;
@@ -156,9 +161,85 @@ void main() {
     await pump(tester);
   }
 
+  for (final brightness in Brightness.values) {
+    testWidgets('Drive renders in ${brightness.name}', (tester) async {
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      repository.load = (ws, offset, query) async => const DriveListResult(
+        entries: [
+          DriveEntry(name: 'Design assets', isFolder: true),
+          DriveEntry(name: 'Team documents', isFolder: true),
+          DriveEntry(
+            name: 'Launch checklist.pdf',
+            isFolder: false,
+            size: 29400,
+          ),
+          DriveEntry(name: 'Workspace map.png', isFolder: false, size: 432100),
+        ],
+        limit: 100,
+        offset: 0,
+        total: 4,
+      );
+      await tester.pumpWidget(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<AuthCubit>.value(value: auth),
+            BlocProvider<WorkspaceCubit>.value(value: workspace),
+            BlocProvider.value(value: actions),
+          ],
+          child: DesignRenderApp(
+            settings: const AppearanceSettings(),
+            brightness: brightness,
+            child: DrivePage(
+              repository: repository,
+              permissionsRepository: _Permissions(),
+            ),
+          ),
+        ),
+      );
+      await pump(tester);
+      expect(find.text('Launch checklist.pdf'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'drive-list-${brightness.name}');
+      actions.state
+          .resolveForLocation(Routes.drive)
+          .singleWhere((action) => action.id == 'drive-view')
+          .onPressed!();
+      await pump(tester);
+      expect(find.byType(AppCard), findsNWidgets(4));
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'drive-grid-${brightness.name}');
+    });
+  }
+
   ShellActionSpec search() => actions.state
       .resolveForLocation(Routes.drive)
       .firstWhere((action) => action.id == 'drive-search');
+  testWidgets('shell Back clears selection before navigating to the parent', (
+    tester,
+  ) async {
+    await mount(tester);
+    final folder = find.text('Synthetic folder');
+    await tester.tap(folder);
+    await pump(tester);
+    expect(repository.paths.last, 'Synthetic folder');
+    expect(
+      actions.state
+          .resolveForLocation(Routes.drive)
+          .where((action) => action.id == 'drive-breadcrumbs'),
+      hasLength(1),
+    );
+    await tester.longPress(folder);
+    await pump(tester);
+    await actions.state.backForLocation(Routes.drive)!();
+    await pump(tester);
+    expect(find.byType(AppCheckbox), findsNothing);
+    expect(repository.paths.last, 'Synthetic folder');
+    await actions.state.backForLocation(Routes.drive)!();
+    await pump(tester);
+    expect(repository.paths.last, '');
+    expect(actions.state.backForLocation(Routes.drive), isNull);
+  });
+
   testWidgets('phones keep View in the single dock slot ahead of Search', (
     tester,
   ) async {
@@ -195,71 +276,37 @@ void main() {
                   .onPressed!();
               await pump(tester);
             }
-            final first = find.bySemanticsLabel('First folder');
-            final second = find.bySemanticsLabel('Second folder');
-            expect(first, findsOneWidget);
-            expect(second, findsOneWidget);
-            expect(find.byType(Checkbox), findsNWidgets(2));
-            expect(
-              tester
-                  .getSemantics(first)
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isChecked,
-              CheckedState.isFalse,
-            );
-            expect(
-              tester
-                  .getSemantics(second)
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isChecked,
-              CheckedState.isFalse,
-            );
-            await tester.tap(second);
+            final first = find.text('First folder');
+            final second = find.text('Second folder');
+            final boxes = find.byType(AppCheckbox);
+            expect(boxes, findsNothing);
+            await tester.longPress(second);
             await pump(tester);
-            expect(
-              tester
-                  .getSemantics(first)
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isChecked,
-              CheckedState.isFalse,
-            );
-            expect(
-              tester
-                  .getSemantics(second)
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isChecked,
-              CheckedState.isTrue,
-            );
+            expect(boxes, findsNWidgets(2));
+            expect(tester.widget<AppCheckbox>(boxes.first).value, isFalse);
+            expect(tester.widget<AppCheckbox>(boxes.last).value, isTrue);
+            await tester.tap(first);
+            await pump(tester);
+            expect(tester.widget<AppCheckbox>(boxes.first).value, isTrue);
             final deletes = actions.state
                 .resolveForLocation(Routes.drive)
                 .where((action) => action.id == 'drive-delete-selected');
             if (canManageDrive) {
-              expect(deletes.single.tooltip, 'Delete selected (1)');
+              expect(deletes.single.tooltip, 'Delete selected (2)');
               expect(deletes.single.enabled, isTrue);
             } else {
               expect(deletes, isEmpty);
             }
+            await tester.tap(first);
             await tester.tap(second);
             await pump(tester);
+            expect(boxes, findsNothing);
             expect(
-              tester
-                  .getSemantics(second)
-                  .getSemanticsData()
-                  .flagsCollection
-                  .isChecked,
-              CheckedState.isFalse,
-            );
-            if (canManageDrive) {
-              final clearSelection = actions.state
+              actions.state
                   .resolveForLocation(Routes.drive)
-                  .firstWhere((action) => action.id == 'drive-delete-selected');
-              expect(clearSelection.tooltip, 'Delete selected (0)');
-              expect(clearSelection.enabled, isFalse);
-            }
+                  .where((action) => action.id == 'drive-delete-selected'),
+              isEmpty,
+            );
             expect(tester.takeException(), isNull);
           } finally {
             semantics.dispose();
@@ -304,44 +351,18 @@ void main() {
             );
             await pump(tester);
             expect(tester.takeException(), isNull);
-            final boxes = find.byType(Checkbox);
-            expect(boxes, findsNWidgets(2));
-            final first = tester.getTopLeft(boxes.first);
-            final second = tester.getTopLeft(boxes.last);
-            expect(second.dy >= first.dy, isTrue);
+            final cards = find.byType(AppCard);
+            expect(cards, findsNWidgets(2));
             if (width == 1280) {
+              final first = tester.getTopLeft(cards.first);
+              final second = tester.getTopLeft(cards.last);
               expect(second.dy, first.dy);
               expect(second.dx, greaterThan(first.dx));
             }
-            await tester.ensureVisible(boxes.first);
-            await tester.tap(boxes.first);
-            await pump(tester);
-            expect(tester.widget<Checkbox>(boxes.first).value, isTrue);
-            expect(tester.widget<Checkbox>(boxes.last).value, isFalse);
-            final l10n = AppLocalizations.of(tester.element(boxes.first));
-            expect(find.text(l10n.driveDeleteSelected(1)), findsOneWidget);
+            final menu = find.byType(AppIconButton).first;
+            final l10n = AppLocalizations.of(tester.element(menu));
             expect(find.text('1.5 KB'), findsOneWidget);
-            expect(find.text(l10n.driveFolderLabel), findsOneWidget);
-            final label = tester.getRect(
-              find.text(l10n.driveDeleteSelected(1)),
-            );
-            expect(label.left, greaterThanOrEqualTo(0));
-            expect(label.right, lessThanOrEqualTo(width));
-            expect(tester.takeException(), isNull);
-            final menu = find.byType(PopupMenuButton<String>).first;
-            await tester.ensureVisible(menu);
-            final card = tester.getRect(
-              find
-                  .ancestor(of: menu, matching: find.byType(FinancePanel))
-                  .first,
-            );
-            for (final control in [boxes.first, menu]) {
-              final rect = tester.getRect(control);
-              expect(rect.left, greaterThanOrEqualTo(card.left));
-              expect(rect.right, lessThanOrEqualTo(card.right));
-              expect(rect.top, greaterThanOrEqualTo(card.top));
-              expect(rect.bottom, lessThanOrEqualTo(card.bottom));
-            }
+            expect(find.byType(AppCheckbox), findsNothing);
             await tester.tap(menu);
             await pump(tester);
             expect(
@@ -366,7 +387,7 @@ void main() {
     );
     await mount(tester, size: const Size(1194, 834));
     // Expanded `detail` box: 720dp including the 32dp gutters.
-    expect(tester.getSize(named('_DriveListTile').first).width, 720 - 2 * 32);
+    expect(tester.getSize(named('_DriveEntryTile').first).width, 720 - 2 * 32);
 
     actions.state
         .resolveForLocation(Routes.drive)

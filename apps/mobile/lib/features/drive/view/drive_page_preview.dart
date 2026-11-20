@@ -9,11 +9,7 @@ extension _DrivePagePreview on _DrivePageState {
     final token = _requestToken;
     if (wsId == null) return;
     if (entry.isFolder) {
-      _update(() {
-        _path = _path.isEmpty ? entry.name : '$_path/${entry.name}';
-        _selectedNames.clear();
-      });
-      await _reload();
+      _navigateTo(_path.isEmpty ? entry.name : '$_path/${entry.name}');
       return;
     }
 

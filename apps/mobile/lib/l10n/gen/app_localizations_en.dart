@@ -3232,6 +3232,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get driveFolderName => 'Folder name';
 
   @override
+  String get driveFolderPath => 'Folder path';
+
+  @override
   String get driveGoUp => 'Up';
 
   @override
@@ -3275,6 +3278,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get driveSortUpdated => 'Recently updated';
+
+  @override
+  String get driveStorageUsage => 'Storage usage';
 
   @override
   String get driveTitle => 'Drive';

@@ -6271,6 +6271,12 @@ abstract class AppLocalizations {
   /// **'Folder name'**
   String get driveFolderName;
 
+  /// No description provided for @driveFolderPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Folder path'**
+  String get driveFolderPath;
+
   /// No description provided for @driveGoUp.
   ///
   /// In en, this message translates to:
@@ -6360,6 +6366,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recently updated'**
   String get driveSortUpdated;
+
+  /// No description provided for @driveStorageUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Storage usage'**
+  String get driveStorageUsage;
 
   /// No description provided for @driveTitle.
   ///

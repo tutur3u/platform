@@ -3218,6 +3218,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get driveFolderName => 'Tên thư mục';
 
   @override
+  String get driveFolderPath => 'Đường dẫn thư mục';
+
+  @override
   String get driveGoUp => 'Lên trên';
 
   @override
@@ -3261,6 +3264,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get driveSortUpdated => 'Mới cập nhật';
+
+  @override
+  String get driveStorageUsage => 'Dung lượng lưu trữ';
 
   @override
   String get driveTitle => 'Drive';
