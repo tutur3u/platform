@@ -362,7 +362,10 @@ web education routes; there is no learner-facing exception.
   a course needs `create_user_groups`, editing needs `update_user_groups`,
   deleting needs `delete_user_groups` or `update_user_groups`, and roster
   changes need `update_user_groups`. Roster changes in the apps go through the
-  audited service-role RPCs.
+  audited service-role RPCs. Module release and quiz-set or quiz-link updates
+  also require `update_user_groups`. Practice attempts check and lock
+  membership, the learner link, the course and enrollment in the same
+  transaction, including when returning an existing result on retry.
 - Client roles have no access to `course_test_attempts`,
   `course_test_attempt_answers` or `course_module_quiz_submissions`. The test
   submit response and attempt reads show a score only after

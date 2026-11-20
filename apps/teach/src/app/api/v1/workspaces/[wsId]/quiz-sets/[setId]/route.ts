@@ -53,7 +53,7 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const { data, error } = await access.sbAdmin
+    const { data, error } = await context.supabase
       .from('workspace_quiz_sets')
       .update({ name: parsedBody.data.name })
       .eq('id', parsedParams.data.setId)
@@ -104,7 +104,7 @@ export const DELETE = withSessionAuth(
     });
     if (access instanceof NextResponse) return access;
 
-    const { data, error } = await access.sbAdmin
+    const { data, error } = await context.supabase
       .from('workspace_quiz_sets')
       .delete()
       .eq('id', parsedParams.data.setId)

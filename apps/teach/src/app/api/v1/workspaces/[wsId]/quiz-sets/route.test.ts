@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const WS_ID = '00000000-0000-0000-0000-000000000001';
@@ -8,6 +8,8 @@ const SET_ID = '00000000-0000-0000-0000-0000000000b1';
 type RouteMocks = ReturnType<typeof createRouteMocks>;
 
 let mocks: RouteMocks;
+
+const requireAccess = vi.hoisted(() => vi.fn());
 
 function createRouteMocks() {
   const moduleLookup: Record<string, any> = {};
@@ -64,10 +66,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 vi.mock('@tuturuuu/education-core/education/access', () => ({
-  requireEducationWorkspaceAccess: async () => ({
-    normalizedWsId: WS_ID,
-    sbAdmin: mocks.sbAdmin,
-  }),
+  requireEducationWorkspaceAccess: requireAccess,
 }));
 
 async function postQuizSet(body: Record<string, unknown>) {
@@ -86,11 +85,34 @@ describe('workspace quiz sets route POST module link', () => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     mocks = createRouteMocks();
+    requireAccess.mockResolvedValue({
+      normalizedWsId: WS_ID,
+      sbAdmin: mocks.sbAdmin,
+    });
     mocks.quizSetsTable.insert().single.mockResolvedValue({
       data: { id: SET_ID, ws_id: WS_ID },
       error: null,
     });
     mocks.quizSetsTable.insert.mockClear();
+  });
+
+  it('requires course management permission before looking up or writing a set', async () => {
+    requireAccess.mockResolvedValue(
+      NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      )
+    );
+
+    const response = await postQuizSet({ moduleId: MODULE_ID, name: 'Set' });
+
+    expect(response.status).toBe(403);
+    expect(requireAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ permission: 'update_user_groups' })
+    );
+    expect(mocks.moduleLookup.select).not.toHaveBeenCalled();
+    expect(mocks.quizSetsTable.insert).not.toHaveBeenCalled();
+    expect(mocks.linkTable.insert).not.toHaveBeenCalled();
   });
 
   it('returns 404 and writes nothing for a module outside the workspace', async () => {

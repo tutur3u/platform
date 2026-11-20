@@ -230,15 +230,20 @@ select ok(
         'private.submit_education_learner_attempt(uuid,uuid,uuid,text,integer,jsonb)'::regprocedure
       )) as src
     )
-    select position('from public.workspace_user_linked_users' in src) > 0
+    select position('from public.workspace_members as member' in src) > 0
+      and position('from public.workspace_members as member' in src)
+        < position('from public.workspace_user_linked_users' in src)
+      and position('from public.workspace_user_linked_users' in src) > 0
       and position('from public.workspace_user_linked_users' in src)
         < position('from public.workspace_user_groups as course' in src)
       and position('from public.workspace_user_groups as course' in src)
         < position('from public.workspace_user_groups_users as enrollment' in src)
-      and (length(src) - length(replace(src, 'for share', ''))) / length('for share') = 3
+      and position('from public.workspace_user_groups_users as enrollment' in src)
+        < position('from private.education_learner_quiz_attempts as attempt' in src)
+      and (length(src) - length(replace(src, 'for share', ''))) / length('for share') = 4
     from body
   ),
-  'submit locks the link, course and enrollment rows in order'
+  'submit locks membership, link, course and enrollment in order before reading a saved attempt'
 );
 
 update public.workspace_user_groups

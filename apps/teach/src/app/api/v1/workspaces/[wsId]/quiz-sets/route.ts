@@ -164,7 +164,7 @@ export const POST = withSessionAuth(
       }
     }
 
-    const { data, error } = await access.sbAdmin
+    const { data, error } = await context.supabase
       .from('workspace_quiz_sets')
       .insert({
         ...payload,
@@ -189,7 +189,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { error: linkError } = await access.sbAdmin
+      const { error: linkError } = await context.supabase
         .from('course_module_quiz_sets')
         .insert({
           module_id: moduleId,

@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(17);
+select plan(21);
 
 insert into auth.users (
   id, aud, role, email, email_confirmed_at, created_at, updated_at
@@ -62,6 +62,22 @@ insert into public.workspace_user_groups (id, ws_id, name, is_course_published)
 values
   ('c1940000-0000-4000-8000-000000000020', 'c1940000-0000-4000-8000-000000000010', 'Enrolled course', true),
   ('c1940000-0000-4000-8000-000000000021', 'c1940000-0000-4000-8000-000000000010', 'Paid course', true);
+
+insert into public.workspace_course_module_groups (id, group_id, sort_key, title)
+values (
+  'c1940000-0000-4000-8000-000000000030',
+  'c1940000-0000-4000-8000-000000000020',
+  1,
+  'Modules'
+);
+insert into public.workspace_course_modules (id, group_id, module_group_id, sort_key, name)
+values (
+  'c1940000-0000-4000-8000-000000000031',
+  'c1940000-0000-4000-8000-000000000020',
+  'c1940000-0000-4000-8000-000000000030',
+  1,
+  'Unreleased module'
+);
 
 create temp table roster_people on commit drop as
 select
@@ -149,6 +165,24 @@ select lives_ok(
     where id = 'c1940000-0000-4000-8000-000000000021'$$,
   'a learner course delete runs'
 );
+with updated as (
+  update public.workspace_course_modules
+  set is_quiz_score_published = true
+  where id = 'c1940000-0000-4000-8000-000000000031'
+  returning id
+)
+select is(
+  (select count(*)::integer from updated),
+  0,
+  'a learner cannot release module grades'
+);
+select throws_ok(
+  $$insert into public.workspace_quiz_sets (ws_id, name)
+    values ('c1940000-0000-4000-8000-000000000010', 'Learner quiz set')$$,
+  '42501',
+  'new row violates row-level security policy for table "workspace_quiz_sets"',
+  'a learner cannot create a quiz set'
+);
 
 reset role;
 select is(
@@ -211,6 +245,22 @@ select lives_ok(
     set name = 'Renamed course'
     where id = 'c1940000-0000-4000-8000-000000000020'$$,
   'an update_user_groups member edits a course'
+);
+with updated as (
+  update public.workspace_course_modules
+  set is_quiz_score_published = true
+  where id = 'c1940000-0000-4000-8000-000000000031'
+  returning id
+)
+select is(
+  (select count(*)::integer from updated),
+  1,
+  'an update_user_groups member releases module grades'
+);
+select lives_ok(
+  $$insert into public.workspace_quiz_sets (ws_id, name)
+    values ('c1940000-0000-4000-8000-000000000010', 'Teacher quiz set')$$,
+  'an update_user_groups member creates a quiz set'
 );
 
 reset role;
