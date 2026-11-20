@@ -465,11 +465,7 @@ function CallShellContent({
       <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <main
-          className={
-            showDocument
-              ? 'relative min-h-0 min-w-0 flex-1'
-              : 'relative min-h-0 min-w-0 flex-1 p-2 sm:p-3'
-          }
+          className={`relative min-h-0 min-w-0 flex-1 ${showDocument ? '' : 'p-2 sm:p-3'}`}
         >
           {room.screenStream && (
             <div className="absolute top-3 left-3 z-20">
@@ -490,7 +486,13 @@ function CallShellContent({
                 canManage,
                 selection: state.settings.programming ?? null,
               },
-              { meetingId, accountId }
+              {
+                meetingId,
+                accountId,
+                admitted: state.admission === 'admitted',
+                onRequestAccess: () =>
+                  room.sendChat(collaborationT('document_access_message')),
+              }
             )}
             stage={
               !stageHasFeeds && selfFloating ? null : (

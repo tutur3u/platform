@@ -476,6 +476,10 @@ narrow screens.
 
 Grid lets you choose automatic, large or compact tiles. Spotlight and Sidebar
 expose a divider between the featured camera or shared screen and the filmstrip.
+An active screen share stays in the primary stage while you page through cameras.
+The camera filmstrip scrolls horizontally, or sits at the side in the desktop
+Sidebar layout. A presenter can keep their own camera in a floating preview.
+
 With a shared document or programming workbench open, drag the divider between
 the collaboration surface and the video feeds. The floating self-view snaps
 to any corner and has three sizes.
@@ -1743,6 +1747,14 @@ endless delay. Regression coverage:
 status mapping in the Durable Object), `realtime-service-ticket.test.ts` (proxy
 exemption bounds) and
 `apps/web/src/app/api/v1/realtime/documents/checkpoint/route.test.ts`.
+
+The web document panel waits for room admission before loading its tab list and
+editor ticket. Temporary join failures retry twice. The panel explains access,
+sign-in, removed-tab and service failures and offers a manual Retry. For a room
+access denial, Request access sends a message in meeting chat asking the host for
+help. Admission and document permissions still come from the room. A denial from
+the service-role document store is reported as a service outage. Component
+coverage lives in `document-load.test.tsx`.
 
 The shared document surface is the panel itself: padding lives on the editable
 area, the writing surface fills the panel height so a click below the last line

@@ -10,7 +10,10 @@ import {
   roomDocumentTabIdSchema,
   roomDocumentTitleSchema,
 } from '@tuturuuu/realtime/meet';
-import { accountPrivateRpc } from '@tuturuuu/utils/account-benefits-server';
+import {
+  AccountServiceError,
+  accountPrivateRpc,
+} from '@tuturuuu/utils/account-benefits-server';
 import { z } from 'zod';
 import { MeetCallAccessError } from '../lib/call-access';
 import { callRoomService, type SignedInMeetCallAccess } from './room-service';
@@ -54,7 +57,15 @@ export async function meetingDocumentChannel(access: Access, tabId: string) {
       documentId: string;
       revision: number;
       state: number[];
-    }>('read_meeting_document', { p_meeting_id: access.meeting.id });
+    }>('read_meeting_document', { p_meeting_id: access.meeting.id }).catch(
+      (error: unknown) => {
+        // The service-role database check is separate from the participant's
+        // room authorization. Its denial is a document-service failure.
+        if (error instanceof AccountServiceError && error.status === 403)
+          throw new MeetCallAccessError(503, 'Document storage is unavailable');
+        throw error;
+      }
+    );
     return {
       ...document,
       topic: meetingDocumentTopic(access.meeting.id, tabId),

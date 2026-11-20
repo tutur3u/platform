@@ -34,7 +34,7 @@ export function MiraParticipant({
   state?: MiraParticipantState;
   caption?: string;
   where?: ComponentProps<typeof MiraWhereStrip>;
-  onFocus: () => void;
+  onFocus?: () => void;
   onChat: () => void;
 }) {
   const t = useTranslations('meet.live');
@@ -133,16 +133,18 @@ export function MiraParticipant({
             {t(`tile_${mode}_status`)}
           </Badge>
         </div>
-        <Button
-          className="absolute end-1.5 top-1.5 size-7 motion-reduce:transition-none"
-          size="icon"
-          variant="ghost"
-          aria-label={t('pin_mira')}
-          aria-pressed={focused}
-          onClick={onFocus}
-        >
-          <Pin aria-hidden className="size-4" />
-        </Button>
+        {onFocus && (
+          <Button
+            className="absolute end-1.5 top-1.5 size-7 motion-reduce:transition-none"
+            size="icon"
+            variant="ghost"
+            aria-label={t('pin_mira')}
+            aria-pressed={focused}
+            onClick={onFocus}
+          >
+            <Pin aria-hidden className="size-4" />
+          </Button>
+        )}
         {!compact && (
           <div className="relative mx-auto my-auto grid shrink-0 place-items-center rounded-2xl border border-dynamic-purple/40 bg-dynamic-purple/10 p-1.5 ring-2 ring-dynamic-purple/20">
             {mode === 'speaking' && (

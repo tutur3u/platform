@@ -75,6 +75,7 @@ export function CallStage({
   const [density, setDensity] = useState<GridDensity>('auto');
   const [filmstripWidth, setFilmstripWidth] = useState(25);
   const [spotlightHeight, setSpotlightHeight] = useState(70);
+  const [shareHeight, setShareHeight] = useState(78);
   const [requestedPage, setPage] = useState(0);
   const [blockedAudio, setBlockedAudio] = useState<Set<string>>(
     () => new Set()
@@ -137,7 +138,7 @@ export function CallStage({
             ? room.localStream
             : streamFor(key, [remote?.audio, remote?.video]),
         });
-      if (participant.media.screenEnabled) {
+      if (participant.media.screenEnabled || (self && room.screenStream)) {
         const screenKey = `${participant.userId}:screen`;
         result.push({
           key: screenKey,
@@ -162,6 +163,9 @@ export function CallStage({
     room.screenStream,
     hideSelfCamera,
   ]);
+  const share =
+    tiles.find((tile) => tile.kind === 'screen' && tile.key === focus) ??
+    tiles.find((tile) => tile.kind === 'screen');
   const mira = room.state.liveAssistant;
   const renderMira = (className: string, compact = false) =>
     mira ? (
@@ -169,13 +173,18 @@ export function CallStage({
         sessionId={mira.sessionId}
         compact={compact}
         className={compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className}
-        focused={focus === 'mira'}
-        onFocus={() => onFocus(focus === 'mira' ? null : 'mira')}
+        focused={!share && focus === 'mira'}
+        onFocus={
+          share ? undefined : () => onFocus(focus === 'mira' ? null : 'mira')
+        }
         onChat={onChat}
       />
     ) : null;
-  const size = compact || mobile ? 9 : 12;
-  const pageCount = Math.max(1, Math.ceil(tiles.length / size));
+  const pageSize = (compact || mobile ? 9 : 12) - Number(!!share);
+  const pageCount = Math.max(
+    1,
+    Math.ceil((tiles.length - Number(!!share)) / pageSize)
+  );
   const page = Math.min(requestedPage, pageCount - 1);
   const ordered =
     pageCount > 1
@@ -184,20 +193,22 @@ export function CallStage({
           ...(room.state.recentSpeakerIds ?? []),
         ])
       : tiles;
-  const visible = ordered.slice(page * size, (page + 1) * size);
+  const others = ordered.filter((tile) => tile.key !== share?.key);
+  const pageTiles = others.slice(page * pageSize, (page + 1) * pageSize);
+  const visible = share ? [share, ...pageTiles] : pageTiles;
   const paged = pageCount > 1;
   const explicitFocus = visible.find((tile) => tile.key === focus);
   const focused =
+    share ??
     explicitFocus ??
-    visible.find((tile) => tile.kind === 'screen') ??
     visible.find((tile) => tile.participant.userId !== room.state.selfUserId) ??
     visible[0];
   const spotlight =
+    !!share ||
     (layout === 'spotlight' &&
       (!focus || !!explicitFocus || (focus === 'mira' && !!mira))) ||
     layout === 'sidebar' ||
-    (layout === 'auto' &&
-      (explicitFocus || visible.some((tile) => tile.kind === 'screen')));
+    (layout === 'auto' && !!explicitFocus);
   const cameraIds = [
     ...visible
       .filter((tile) => tile.kind === 'camera')
@@ -231,7 +242,10 @@ export function CallStage({
       silenced={silenced.has(tile.key)}
       onSilence={toggleSilence}
       key={tile.key}
-      className={compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className}
+      className={cn(
+        compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className,
+        share && tile.kind === 'camera' && '[&_video]:object-cover'
+      )}
       kind={tile.kind}
       participant={tile.participant}
       stream={tile.stream}
@@ -240,9 +254,9 @@ export function CallStage({
         tile.participant.userId
       )}
       resumePlaybackLabel={t('resume_audio')}
-      focused={focus === tile.key}
+      focused={(!share || tile.kind === 'screen') && focus === tile.key}
       focusKey={tile.key}
-      onFocus={focusTile}
+      onFocus={share && tile.kind === 'camera' ? undefined : focusTile}
       onRetry={room.reconnectReceivingMedia}
       onMute={
         (room.state.canManageParticipants ?? room.state.role === 'host')
@@ -251,21 +265,28 @@ export function CallStage({
       }
     />
   );
-  const focusedKey = focus === 'mira' && mira ? 'mira' : focused?.key;
+  const focusedKey =
+    share?.key ?? (focus === 'mira' && mira ? 'mira' : focused?.key);
   const count = visible.length + (mira ? 1 : 0);
   const split = !compact && spotlight && !!focusedKey && count > 1;
   const sidebar = split && layout === 'sidebar' && !mobile;
+  const horizontalStrip = split && !!share && !sidebar;
+  const featuredHeight = share ? shareHeight : spotlightHeight;
   const tileClass = (key: string) => {
     if (compact) return 'aspect-video w-40 shrink-0 lg:w-full';
     if (!spotlight) return density === 'compact' ? 'min-h-24' : 'min-h-32';
     if (key === focusedKey)
       return sidebar
         ? 'order-[-2] col-start-1 row-span-full min-h-0'
-        : 'order-[-2] col-span-full min-h-0';
-    return sidebar ? 'col-start-3 min-h-0' : 'min-h-0';
+        : cn(
+            'order-[-2] col-span-full min-h-0',
+            horizontalStrip && 'sticky left-1 z-10 w-[calc(100cqw-0.5rem)]'
+          );
+    if (sidebar) return 'col-start-3 min-h-0';
+    return horizontalStrip ? 'row-start-3 min-h-0' : 'min-h-0';
   };
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col [container-type:size]">
       {!compact && !spotlight && count > 1 && (
         <div className="flex shrink-0 justify-end p-1">
           <Select
@@ -365,7 +386,7 @@ export function CallStage({
           {
             '--stage-rows': Math.max(1, count - 1),
             '--stage-rail': `${filmstripWidth}%`,
-            '--stage-primary': `${spotlightHeight}%`,
+            '--stage-primary': `${featuredHeight}%`,
           } as CSSProperties
         }
         className={cn(
@@ -375,12 +396,14 @@ export function CallStage({
             spotlight &&
             (sidebar
               ? 'grid-cols-[minmax(0,1fr)_0.5rem_var(--stage-rail)] grid-rows-[repeat(var(--stage-rows),minmax(5rem,1fr))] gap-2'
-              : cn(
-                  'auto-rows-[8rem] grid-cols-2',
-                  split
-                    ? 'grid-rows-[minmax(0,var(--stage-primary))_0.5rem] gap-2'
-                    : 'grid-rows-[minmax(0,1fr)]'
-                )),
+              : horizontalStrip
+                ? 'grid-cols-[repeat(var(--stage-rows),minmax(9rem,1fr))] grid-rows-[minmax(0,min(var(--stage-primary),calc(100%-5rem)))_0.5rem_minmax(4.5rem,1fr)] gap-2'
+                : cn(
+                    'auto-rows-[8rem] grid-cols-2',
+                    split
+                      ? 'grid-rows-[minmax(0,var(--stage-primary))_0.5rem] gap-2'
+                      : 'grid-rows-[minmax(0,1fr)]'
+                  )),
           !compact &&
             !spotlight &&
             (density === 'auto'
@@ -395,16 +418,23 @@ export function CallStage({
             label={t('resize_filmstrip')}
             controls={stageId}
             axis={sidebar ? 'x' : 'y'}
-            size={sidebar ? filmstripWidth : spotlightHeight}
-            min={sidebar ? 15 : 30}
+            size={sidebar ? filmstripWidth : featuredHeight}
+            min={sidebar ? 15 : share ? 45 : 30}
             max={sidebar ? 45 : 80}
-            initial={sidebar ? 25 : 70}
-            onResize={sidebar ? setFilmstripWidth : setSpotlightHeight}
+            initial={sidebar ? 25 : share ? 78 : 70}
+            onResize={
+              sidebar
+                ? setFilmstripWidth
+                : share
+                  ? setShareHeight
+                  : setSpotlightHeight
+            }
             reverse={sidebar}
             percent
             className={cn(
               'relative order-[-1]',
-              sidebar ? 'col-start-2 row-span-full' : 'col-span-full'
+              sidebar ? 'col-start-2 row-span-full' : 'col-span-full',
+              horizontalStrip && 'sticky left-1 w-[calc(100cqw-0.5rem)]'
             )}
           />
         )}

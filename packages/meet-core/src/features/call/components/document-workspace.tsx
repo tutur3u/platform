@@ -31,9 +31,13 @@ function untruncated(value: string) {
 export function DocumentWorkspace({
   meetingId,
   accountId,
+  admitted = true,
+  onRequestAccess,
 }: {
   meetingId: string;
   accountId: string;
+  admitted?: boolean;
+  onRequestAccess?: () => Promise<unknown>;
 }) {
   const t = useTranslations('meet.collaboration');
   const title = useDocumentTabTitle();
@@ -42,6 +46,7 @@ export function DocumentWorkspace({
   const documents = useQuery({
     queryKey: key,
     queryFn: () => listMeetDocuments(meetingId),
+    enabled: admitted,
     // Room messages carry no tab state, so the list follows a bounded poll
     // only while this panel is mounted and the page is visible.
     refetchInterval: 10_000,
@@ -56,7 +61,7 @@ export function DocumentWorkspace({
     ? selected
     : PRIMARY;
   const store = (next: MeetingDocuments) => client.setQueryData(key, next);
-  const update = useMutation({
+  const update = useMutation<MeetingDocuments, Error, MeetingDocumentCommand>({
     mutationFn: (command: MeetingDocumentCommand) =>
       updateMeetDocuments(meetingId, command),
     onSuccess: (next, command) => {
@@ -145,6 +150,8 @@ export function DocumentWorkspace({
           meetingId={meetingId}
           accountId={accountId}
           tabId={activeTabId}
+          admitted={admitted}
+          onRequestAccess={onRequestAccess}
           editorRef={editorRef}
           toolbarExtras={
             documents.data

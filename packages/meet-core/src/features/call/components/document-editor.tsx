@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { DocumentLoadState, retryDocumentLoad } from './document-load-state';
 import { MIRA_CARET_SURFACE_CLASS_NAME } from './document-mira-presence';
 import { DocumentPresence } from './document-presence';
 import { DocumentStatus } from './document-status';
@@ -39,26 +40,33 @@ export function DocumentTab({
   meetingId,
   accountId,
   tabId,
+  admitted = true,
+  onRequestAccess,
   editorRef,
   toolbarExtras,
 }: {
   meetingId: string;
   accountId: string;
   tabId: string;
+  admitted?: boolean;
+  onRequestAccess?: () => Promise<unknown>;
   editorRef?: DocumentEditorRef;
   toolbarExtras?: (awareness: Awareness) => ReactNode;
 }) {
-  const t = useTranslations('meet.collaboration');
   const query = useQuery({
     queryKey: ['meeting-document', meetingId, accountId, tabId],
     queryFn: () => getMeetDocument(meetingId, undefined, tabId),
-    retry: false,
+    enabled: admitted,
+    retry: retryDocumentLoad,
   });
   if (!query.data)
     return (
-      <div className="p-4 text-muted-foreground text-sm">
-        {query.isError ? t('unavailable') : t('connecting')}
-      </div>
+      <DocumentLoadState
+        error={admitted ? query.error : null}
+        isFetching={query.isFetching}
+        onRetry={() => void query.refetch()}
+        onRequestAccess={onRequestAccess}
+      />
     );
   return (
     <DocumentEditor

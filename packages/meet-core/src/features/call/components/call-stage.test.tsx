@@ -8,9 +8,13 @@ import type { MeetRoomController } from '../lib/room-controller';
 import { CallStage } from './call-stage';
 
 vi.mock('./participant-tile', () => ({
-  ParticipantTile: ({ focusKey }: { focusKey: string }) => (
-    <div data-testid={focusKey} />
-  ),
+  ParticipantTile: ({
+    focusKey,
+    className,
+  }: {
+    focusKey: string;
+    className: string;
+  }) => <div data-testid={focusKey} className={className} />,
 }));
 
 afterEach(() => {
@@ -76,18 +80,20 @@ it('puts pinned, sharing and speaking tiles first and keeps off-page audio mount
       />
     </NextIntlClientProvider>
   );
-  expect(screen.getByText('Page 1 of 6')).toBeDefined();
+  expect(screen.getByText('Page 1 of 7')).toBeDefined();
   expect(screen.getAllByTestId(/^(p\d+):(camera|screen)$/)).toHaveLength(9);
   expect(
     screen
       .getAllByTestId(/^(p\d+):(camera|screen)$/)
       .slice(0, 3)
       .map((tile) => tile.dataset.testid)
-  ).toEqual(['p50:camera', 'p49:screen', 'p48:camera']);
+  ).toEqual(['p49:screen', 'p50:camera', 'p48:camera']);
   const audio = [...container.querySelectorAll('audio[data-stage-audio]')];
   expect(audio).toHaveLength(51);
+  const share = screen.getByTestId('p49:screen');
   fireEvent.click(screen.getByRole('button', { name: 'Next page' }));
-  expect(screen.getByText('Page 2 of 6')).toBeDefined();
+  expect(screen.getByTestId('p49:screen')).toBe(share);
+  expect(screen.getByText('Page 2 of 7')).toBeDefined();
   expect(screen.queryByTestId('p50:camera')).toBeNull();
   expect([...container.querySelectorAll('audio[data-stage-audio]')]).toEqual(
     audio
@@ -115,7 +121,7 @@ it('resizes and resets the shared-screen split without replacing its tile', () =
     <NextIntlClientProvider locale="en" messages={messages}>
       <CallStage
         room={room}
-        layout="auto"
+        layout="grid"
         focus={null}
         onFocus={vi.fn()}
         onChat={vi.fn()}
@@ -126,10 +132,47 @@ it('resizes and resets the shared-screen split without replacing its tile', () =
   const separator = screen.getByRole('separator', {
     name: 'Resize spotlight and filmstrip',
   });
+  expect(tile.className).toContain('col-span-full');
+  expect(screen.getByTestId('presenter:camera').className).toContain(
+    'row-start-3'
+  );
   expect(separator.getAttribute('aria-orientation')).toBe('horizontal');
   fireEvent.keyDown(separator, { key: 'ArrowUp' });
-  expect(separator.getAttribute('aria-valuenow')).toBe('65');
+  expect(separator.getAttribute('aria-valuenow')).toBe('73');
   fireEvent.doubleClick(separator);
-  expect(separator.getAttribute('aria-valuenow')).toBe('70');
+  expect(separator.getAttribute('aria-valuenow')).toBe('78');
   expect(screen.getByTestId('presenter:screen')).toBe(tile);
+});
+
+it('shows the local share while the room presence update is still in flight', () => {
+  const self = {
+    userId: 'presenter',
+    displayName: 'Presenter',
+    media: { audioEnabled: false, videoEnabled: true, screenEnabled: false },
+  };
+  const room = {
+    remoteMedia: {},
+    screenStream: {},
+    state: {
+      ...INITIAL_CALL_STATE,
+      selfUserId: self.userId,
+      participants: { presenter: self },
+    },
+  } as unknown as MeetRoomController;
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <CallStage
+        room={room}
+        layout="auto"
+        focus={null}
+        onFocus={vi.fn()}
+        onChat={vi.fn()}
+        hideSelfCamera
+      />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByTestId('presenter:screen').className).toContain(
+    'col-span-full'
+  );
+  expect(screen.queryByTestId('presenter:camera')).toBeNull();
 });

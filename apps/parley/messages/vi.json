@@ -4535,12 +4535,21 @@
       "checkpoint_deferred": "Bản lưu tại không gian làm việc đang bị chậm. Nội dung cộng tác vẫn được giữ trong phòng trong khi hệ thống thử lưu lại.",
       "connecting": "Đang kết nối tài liệu chung…",
       "document": "Tài liệu chung",
+      "document_access_message": "Chủ trì có thể giúp tôi truy cập tài liệu chung được không?",
       "document_presence": "{count} người trong tài liệu này",
+      "document_request_failed": "Không gửi được yêu cầu. Hãy thử lại.",
+      "document_request_sent": "Đã gửi yêu cầu trong cuộc trò chuyện của cuộc họp.",
       "live": "Trực tiếp · đồng bộ tự động",
       "placeholder": "Cùng nhau viết…",
       "reconnecting": "Đang kết nối lại…",
+      "request_document_access": "Yêu cầu quyền truy cập",
+      "retry_document": "Thử lại",
       "tools": "Công cụ",
-      "unavailable": "Tài liệu chung hiện không khả dụng."
+      "unavailable": "Tài liệu chung hiện không khả dụng.",
+      "unavailable_connection": "Meet không thể kết nối với tài liệu chung. Hãy thử lại.",
+      "unavailable_missing": "Tài liệu này không còn trong cuộc họp. Hãy chọn thẻ khác hoặc thử lại.",
+      "unavailable_permission": "Tài khoản của bạn chưa có quyền truy cập. Bạn có thể hỏi chủ trì trong cuộc trò chuyện của cuộc họp.",
+      "unavailable_sign_in": "Phiên đăng nhập của bạn đã hết hạn. Hãy đăng nhập lại rồi thử lại."
     },
     "details": {
       "back": "Quay lại danh sách cuộc họp",

@@ -17,7 +17,7 @@ export function accountGatedCollaboration(
   showProgramming: boolean,
   showDocument: boolean,
   programming: ProgrammingProps | null,
-  document: { meetingId: string; accountId: string } | null
+  document: ComponentProps<typeof DocumentPanel> | null
 ) {
   if (showProgramming)
     return requiresAccount ? (

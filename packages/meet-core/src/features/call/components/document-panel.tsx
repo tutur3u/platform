@@ -8,12 +8,4 @@ export {
   DocumentTab,
 } from './document-editor';
 
-export function DocumentPanel({
-  meetingId,
-  accountId,
-}: {
-  meetingId: string;
-  accountId: string;
-}) {
-  return <DocumentWorkspace meetingId={meetingId} accountId={accountId} />;
-}
+export const DocumentPanel = DocumentWorkspace;
