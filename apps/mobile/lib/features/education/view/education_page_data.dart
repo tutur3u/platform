@@ -162,40 +162,68 @@ extension _EducationPageData on _EducationPageState {
     });
 
     try {
-      final result = await _repository.getAttempts(
-        wsId,
-        page: nextPage,
-        status: _attemptStatus,
-        setId: _attemptSetId,
-      );
+      final compatible = _mergesLearnerAttempts(_attemptStatus, _attemptSetId);
+      final progress = compatible && !append
+          ? await _readLearnerProgress()
+          : null;
       if (!mounted || requestToken != _requestToken) return;
-      if (!append && _mergesLearnerAttempts(_attemptStatus, _attemptSetId)) {
-        final progress = await _readLearnerProgress();
-        if (!mounted || requestToken != _requestToken) return;
-        if (progress != null) _rememberProgress(progress);
-      }
-      _updateState(() {
-        final include =
-            !append &&
-            _includeLearnerAttempts &&
-            _mergesLearnerAttempts(_attemptStatus, _attemptSetId);
-        final merged = include
-            ? _combineAttempts(_learnerAttempts, result.attempts)
-            : append
-            ? _mergeEducation(_attempts, result.attempts, (row) => row.id)
-            : result.attempts;
-        if (!append) {
-          final extra = merged.length - result.attempts.length;
-          _learnerListExtra = extra < 0 ? 0 : extra;
+
+      final learnerPage = append && compatible && _hasMoreLearnerAttempts
+          ? await _repository.getLearnerProgressPage(
+              wsId,
+              _learnerAttemptOffset,
+            )
+          : progress;
+      if (!mounted || requestToken != _requestToken) return;
+
+      EducationAttemptListResult? result;
+      if (!append || _hasMoreTeachAttempts) {
+        try {
+          result = await _repository.getAttempts(
+            wsId,
+            page: nextPage,
+            status: _attemptStatus,
+            setId: _attemptSetId,
+          );
+        } on ApiException catch (error) {
+          if (error.statusCode != 403 || progress == null) rethrow;
         }
-        _attempts = merged;
-        _attemptsPage = nextPage;
-        _attemptsCount = append && result.attempts.isEmpty
-            ? _attempts.length
-            : result.count + _learnerListExtra;
+      }
+      if (!mounted || requestToken != _requestToken) return;
+      _updateState(() {
+        if (!append) {
+          _learnerAttemptOffset = 0;
+          _hasMoreLearnerAttempts = false;
+          _hasMoreTeachAttempts = false;
+          _teachAttemptCount = 0;
+          _attemptSets = const [];
+          if (progress != null) _rememberProgress(progress);
+        }
+        final learnerRows = learnerPage?.attempts ?? const [];
+        if (learnerPage != null) {
+          _learnerAttemptCount = learnerPage.attemptCount;
+          _learnerAttemptOffset += learnerRows.length;
+          _hasMoreLearnerAttempts =
+              learnerRows.isNotEmpty &&
+              _learnerAttemptOffset < learnerPage.attemptCount;
+        }
+        final teachRows = result?.attempts ?? const [];
+        if (result != null) {
+          _attemptsPage = nextPage;
+          _teachAttemptCount = result.count;
+          _hasMoreTeachAttempts =
+              teachRows.isNotEmpty && nextPage * result.pageSize < result.count;
+          _attemptSets = result.sets;
+        }
+        _attempts = _combineAttempts([
+          if (append) ..._attempts,
+          ...learnerRows,
+        ], teachRows);
         _attemptSummaryCount =
-            result.count + (_includeLearnerAttempts ? _learnerAttemptCount : 0);
-        _attemptSets = result.sets;
+            _teachAttemptCount +
+            (compatible && _learnerAttemptOffset > 0
+                ? _learnerAttemptCount
+                : 0);
         _paintCourses();
       });
     } on Object catch (error) {
@@ -293,7 +321,7 @@ extension _EducationPageData on _EducationPageState {
           () => _loadLibrary(append: true),
         );
       case _EducationTab.attempts:
-        if (_attempts.length >= _attemptsCount) return;
+        if (!_hasMoreAttempts) return;
         return await CacheStore.awaitRevalidation(
           () => _loadAttempts(append: true),
         );

@@ -177,8 +177,12 @@ class _EducationQuizPracticeState extends State<EducationQuizPractice> {
               position: l10n.educationQuizScore(_index + 1, quizzes.length),
               selectedId: _selectedId,
               checked: _checked,
+              showFeedback: widget.submitAttempt == null,
               onSelect: (id) => setState(() => _selectedId = id),
-              onCheck: () => _check(quizzes[_index]),
+              onCheck: () {
+                _check(quizzes[_index]);
+                if (widget.submitAttempt != null) _advance();
+              },
               onNext: _advance,
             ),
     );
@@ -191,6 +195,7 @@ class _Question extends StatelessWidget {
     required this.position,
     required this.selectedId,
     required this.checked,
+    required this.showFeedback,
     required this.onSelect,
     required this.onCheck,
     required this.onNext,
@@ -200,6 +205,7 @@ class _Question extends StatelessWidget {
   final String position;
   final String? selectedId;
   final bool checked;
+  final bool showFeedback;
   final ValueChanged<String> onSelect;
   final VoidCallback onCheck;
   final VoidCallback onNext;
@@ -222,7 +228,7 @@ class _Question extends StatelessWidget {
         for (final option in quiz.options) ...[
           AppOptionTile(
             title: option.value,
-            subtitle: !checked
+            subtitle: !checked || !showFeedback
                 ? null
                 : option.isCorrect
                 ? l10n.educationQuizCorrect
@@ -238,7 +244,9 @@ class _Question extends StatelessWidget {
         if (!checked)
           AppButton.primary(
             onPressed: selectedId == null ? null : onCheck,
-            child: Text(l10n.educationQuizCheck),
+            child: Text(
+              showFeedback ? l10n.educationQuizCheck : l10n.commonNext,
+            ),
           )
         else
           AppButton.primary(onPressed: onNext, child: Text(l10n.commonNext)),

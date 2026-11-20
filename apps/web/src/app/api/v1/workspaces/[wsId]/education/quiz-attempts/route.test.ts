@@ -88,7 +88,7 @@ vi.mock('next/server', async (original) => ({
 }));
 
 import { GET } from '../learner-progress/route';
-import { POST } from './route';
+import { GET as getPractice, POST } from './route';
 
 const params = { params: Promise.resolve({ wsId: 'workspace' }) };
 const savedAttempt = {
@@ -240,6 +240,66 @@ describe('learner quiz attempts', () => {
       headers: {},
       sbAdmin: { from, schema: () => ({ from, rpc: mocks.rpc }) },
     });
+  });
+
+  it('deduplicates direct and quiz-set questions for an enrolled course', async () => {
+    const quiz = {
+      id: 'question',
+      question: 'Question?',
+      quiz_options: [
+        { id: 'a', value: 'First option' },
+        { id: 'b', value: 'Second option' },
+      ],
+    };
+    const entries = tables();
+    entries.workspace_user_groups = query({
+      id: savedAttempt.course_id,
+      modules: [
+        {
+          direct: [
+            {
+              quiz: {
+                ...quiz,
+                answer: 'First option',
+                quiz_options: quiz.quiz_options.map((option) => ({
+                  ...option,
+                  is_correct: option.id === 'a',
+                })),
+              },
+            },
+            { quiz: null },
+          ],
+          sets: [{ set: { items: [{ quiz }] } }],
+        },
+      ],
+    });
+    const from = vi.fn((name: keyof typeof entries) => entries[name]);
+    mocks.requireLearnerWorkspace.mockResolvedValue({
+      sbAdmin: { from },
+      userId: 'learner',
+      wsId: 'workspace',
+    });
+    const request = new NextRequest(
+      `https://example.test/quiz-attempts?courseId=${savedAttempt.course_id}`
+    );
+    const response = requireResponse(await getPractice(request, params));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ data: [quiz] });
+    expect(
+      (entries.workspace_user_groups as { filters: QueryFilter[] }).filters
+    ).toContainEqual({
+      op: 'not',
+      column: 'is_guest',
+      operator: 'is',
+      value: true,
+    });
+
+    entries.workspace_user_groups_users = query(null);
+    from.mockClear();
+    expect(requireResponse(await getPractice(request, params)).status).toBe(
+      403
+    );
+    expect(from).not.toHaveBeenCalledWith('workspace_user_groups');
   });
 
   it('returns the server grade for a new attempt', async () => {

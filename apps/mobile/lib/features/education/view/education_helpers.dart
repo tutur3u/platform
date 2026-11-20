@@ -102,7 +102,7 @@ extension _EducationFailures on _EducationPageState {
         _flashcardSummaryCount = 0;
         _attemptPreview = const [];
         _attempts = const [];
-        _attemptsCount = 0;
+        _hasMoreTeachAttempts = false;
         _attemptSummaryCount = 0;
         _attemptSets = const [];
         _clearLearnerProgress();

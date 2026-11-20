@@ -116,7 +116,8 @@ class Repository extends Mock implements EducationRepository {
   Future<EducationQuizSubmission> submitQuizAttempt(
     String wsId, {
     required List<EducationQuizAnswer> answers,
-    String? courseId,
+    required String courseId,
+    required String idempotencyKey,
     int? durationSeconds,
   }) async {
     submitCalls++;

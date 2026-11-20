@@ -469,15 +469,39 @@ class EducationRepository {
     return EducationAttemptDetail.fromJson(response);
   }
 
-  Future<EducationLearnerProgress> getLearnerProgress(String wsId) async {
+  Future<EducationLearnerProgress> getLearnerProgress(String wsId) =>
+      getLearnerProgressPage(wsId, 0);
+
+  Future<EducationLearnerProgress> getLearnerProgressPage(
+    String wsId,
+    int attemptOffset,
+  ) async {
     final actor = _actor;
+    final query = attemptOffset == 0 ? '' : '?attemptOffset=$attemptOffset';
     final response = await _read(
       wsId,
       'learner-progress',
-      '/api/v1/workspaces/$wsId/education/learner-progress',
+      '/api/v1/workspaces/$wsId/education/learner-progress$query',
       actor,
     );
     return EducationLearnerProgress.fromJson(response);
+  }
+
+  Future<List<EducationQuiz>> getCoursePractice(
+    String wsId,
+    String courseId,
+  ) async {
+    final actor = _actor;
+    _checkActor(actor);
+    final response = await _api.getJson(
+      '/api/v1/workspaces/$wsId/education/quiz-attempts'
+      '?courseId=${Uri.encodeQueryComponent(courseId)}',
+    );
+    _checkActor(actor);
+    return (response['data'] as List<dynamic>? ?? const [])
+        .whereType<Map<String, dynamic>>()
+        .map(EducationQuiz.fromJson)
+        .toList(growable: false);
   }
 
   /// Posts the attempt directly. A queued write cannot be shown as a server
@@ -485,7 +509,8 @@ class EducationRepository {
   Future<EducationQuizSubmission> submitQuizAttempt(
     String wsId, {
     required List<EducationQuizAnswer> answers,
-    String? courseId,
+    required String courseId,
+    required String idempotencyKey,
     int? durationSeconds,
   }) async {
     final actor = _actor;
@@ -499,7 +524,8 @@ class EducationRepository {
     final response = await _api.postJson(
       '/api/v1/workspaces/$wsId/education/quiz-attempts',
       {
-        if (courseId != null && courseId.isNotEmpty) 'course_id': courseId,
+        'course_id': courseId,
+        'idempotency_key': idempotencyKey,
         if (durationSeconds != null) 'duration_seconds': durationSeconds,
         'answers': [
           for (final answer in answers)

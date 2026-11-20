@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
@@ -117,7 +118,11 @@ class _EducationPageState extends State<EducationWorkspace> {
   int _attemptSummaryCount = 0;
   List<EducationAttemptSummary> _attempts = const <EducationAttemptSummary>[];
   int _attemptsPage = 1;
-  int _attemptsCount = 0;
+  bool _hasMoreTeachAttempts = false;
+  bool _hasMoreLearnerAttempts = false;
+  int _learnerAttemptOffset = 0;
+
+  bool get _hasMoreAttempts => _hasMoreTeachAttempts || _hasMoreLearnerAttempts;
   List<EducationAttemptFilterSet> _attemptSets =
       const <EducationAttemptFilterSet>[];
   String _attemptStatus = 'all';
@@ -130,7 +135,6 @@ class _EducationPageState extends State<EducationWorkspace> {
   List<EducationAttemptSummary> _teachAttemptPreview =
       const <EducationAttemptSummary>[];
   int _teachAttemptCount = 0;
-  int _learnerListExtra = 0;
 
   String get _wsId => widget.workspaceId;
 
@@ -266,7 +270,8 @@ class _EducationPageState extends State<EducationWorkspace> {
     _learnerAttemptCount = 0;
     _teachAttemptPreview = const [];
     _teachAttemptCount = 0;
-    _learnerListExtra = 0;
+    _learnerAttemptOffset = 0;
+    _hasMoreLearnerAttempts = false;
   }
 
   @override

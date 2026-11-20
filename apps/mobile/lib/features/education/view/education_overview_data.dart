@@ -103,7 +103,7 @@ extension _EducationOverviewData on _EducationPageState {
         () {
           _attemptPreview = const [];
           _attempts = const [];
-          _attemptsCount = 0;
+          _hasMoreTeachAttempts = false;
           _attemptSummaryCount = 0;
           _attemptSets = const [];
           _clearLearnerProgress();

@@ -139,8 +139,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Five'));
     await tester.pump();
-    await tester.tap(find.text('Check'));
-    await tester.pump();
+    expect(find.text('Check'), findsNothing);
     await tester.tap(find.text('Next'));
     await tester.pumpAndSettle();
     expect(find.text('0 of 1'), findsOneWidget);

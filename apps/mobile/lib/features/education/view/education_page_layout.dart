@@ -119,7 +119,7 @@ extension _EducationPageLayout on _EducationPageState {
             _flashcards.length < _flashcardsCount,
         };
       case _EducationTab.attempts:
-        return _attempts.length < _attemptsCount;
+        return _hasMoreAttempts;
     }
   }
 
@@ -154,33 +154,41 @@ extension _EducationPageLayout on _EducationPageState {
         context: context,
         builder: (sheetContext) => EducationCourseDetail(
           course: course,
-          onPractice: () {
-            Navigator.of(sheetContext).pop();
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              _openQuizPractice(courseId: course.id);
-            });
-          },
+          onPractice: !(_courseCompletion?.containsKey(course.id) ?? false)
+              ? null
+              : () {
+                  Navigator.of(sheetContext).pop();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    _openQuizPractice(courseId: course.id);
+                  });
+                },
         ),
       ),
     );
   }
 
   void _openQuizPractice({String? courseId}) {
+    final wsId = _wsId;
+    final attemptKey = newLocalMutationId();
     unawaited(
       showAppSheet<void>(
         context: context,
         size: AppSheetSize.large,
         builder: (_) => EducationQuizPractice(
           loadQuizzes: () async {
+            if (courseId != null) {
+              return await _repository.getCoursePractice(wsId, courseId);
+            }
             if (_quizPreview.isNotEmpty) return _quizPreview;
             final page = await _repository.getQuizzes(_wsId);
             return page.items;
           },
-          submitAttempt: _learnerRecording
+          submitAttempt: courseId != null
               ? (answers, durationSeconds) => _repository.submitQuizAttempt(
-                  _wsId,
+                  wsId,
                   courseId: courseId,
+                  idempotencyKey: attemptKey,
                   durationSeconds: durationSeconds,
                   answers: answers,
                 )

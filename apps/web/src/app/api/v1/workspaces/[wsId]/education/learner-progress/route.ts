@@ -82,6 +82,13 @@ export async function GET(
   const access = await requireLearnerWorkspace(request, wsIdParam);
   if ('error' in access) return access.error;
   const { sbAdmin, userId, wsId, headers } = access;
+  const requestedOffset = Number(
+    request.nextUrl.searchParams.get('attemptOffset')
+  );
+  const attemptOffset =
+    Number.isSafeInteger(requestedOffset) && requestedOffset >= 0
+      ? Math.min(requestedOffset, 2_147_483_647 - ATTEMPT_LIMIT)
+      : 0;
   const learnerRows = sbAdmin.schema('private');
 
   const linkResult = await sbAdmin
@@ -143,7 +150,8 @@ export async function GET(
         .eq('ws_id', wsId)
         .eq('user_id', userId)
         .order('submitted_at', { ascending: false })
-        .limit(ATTEMPT_LIMIT),
+        .order('id', { ascending: false })
+        .range(attemptOffset, attemptOffset + ATTEMPT_LIMIT - 1),
       sbAdmin
         .from('user_private_details')
         .select('full_name, email')

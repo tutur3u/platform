@@ -70,6 +70,25 @@ no access means absent from Home and the customization sheet),
 onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
 and the Home order case in `dashboard_layout_cubit_test.dart`.
 
+## Documents and Education
+
+The mobile document editor shows the owner and the last edit time from the
+document it opened. Returning to the list reloads the active workspace, and
+an autosave that finishes after navigation refreshes it again. The Web list
+API orders by edit time across pages, with creation time as the fallback when
+the metadata migration is pending.
+
+Course Practice is available for enrolled learners when learner progress is
+enabled. It draws up to 20 multiple-choice questions from published modules
+and their linked quiz sets. The server grades the completed session and
+records the attempt. Retrying a submission reuses its session key. The
+workspace quiz library supports local practice. The Attempts tab loads
+additional learner attempts alongside any Teach results the actor can access.
+
+The Web document route and learner quiz-attempt route tests cover the
+ordering fallback and enrolled-course question selection. The mobile
+Documents and Education widget suites cover their screen behavior.
+
 ## Offline rollout flags
 
 Mobile rollout flags default to false and are cached per account and workspace.
