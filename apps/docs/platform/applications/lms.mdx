@@ -119,6 +119,53 @@ read-only for active workspaces and exercise writes in a controlled workspace.
 The existing Contacts attendance, report scope, and Finance
 pending-tuition and subscription-context regressions anchor these checks.
 
+## Mobile JSON API
+
+Use the platform `/api/v1/workspaces/{wsId}/education` prefix. Mobile and web
+must preserve the same membership, resource, and release rules. Treat
+authorization and the selected learner as part of local cache identity.
+Return stable error codes alongside messages. Paginate collections and bound
+each request. Delta feeds require a server-owned `updated_at` and a way to
+reconcile deleted rows and permission changes. Preserve older API paths and
+response fields while clients adopt the new contracts.
+
+### Class catalog
+
+`GET /api/v1/workspaces/{wsId}/education/classes` is a read-only catalog.
+It shares the learner API availability gate and returns 404 while that gate is
+held. Use the platform session or a verified app session scoped to the
+requested view.
+
+| Query | Behavior |
+| --- | --- |
+| `view=learning` | Default. A learner sees published classes where their Contacts record has a student membership. An approved linked guardian sees the selected learner's same catalog. Use `student_id` for explicit guardian selection. Learn app sessions are accepted. |
+| `view=staff` | A workspace member with group view permission can request the staff catalog. Group managers see active non-guest class groups, including drafts. Other staff see only groups where their Contacts record is a teacher. Teach app sessions are accepted. |
+| `after` | Opaque continuation value from the last response. Keep the same workspace, view, and selected learner when replaying it. |
+| `limit` | Optional integer from 1 to 50. Defaults to 20. |
+
+The response includes `role` (`student`, `guardian`, `teacher`, or
+`administrator`), `read_only`, `data`, and `next_cursor`. The role identifies
+the projection and grants no mutation permissions. `read_only` is true for
+guardians and the staff catalog. Rows have `id`, `name`, `description`,
+`is_course_published`, and `updated_at`. The ID is the existing Contacts group
+ID. The current group schema has no reliable modification timestamp, so
+`updated_at` is null. Read the catalog from the start to reconcile membership,
+unpublishing, and removals. A non-null `next_cursor` continues the UUID-ordered
+catalog. The API provides neither a total count nor a grade projection.
+
+Errors use `{ code, message }`. Handle `LMS_INVALID_QUERY` (400),
+`LMS_UNAUTHENTICATED` (401), `LMS_FORBIDDEN` (403),
+`LMS_NOT_AVAILABLE` (404), and `LMS_UNAVAILABLE` (500).
+All responses are private and uncached. Existing application APIs keep their
+original contracts.
+
+Mobile integration still requires separate versioned contracts for class roster
+and management, lesson materials and completion, assessment delivery and grades,
+assignment submissions, notifications, and rewards. Learner and teacher screens
+use only their own projections. Forward links can continue opening the authorized
+Contacts, Finance, Calendar, Meet, Drive, Mail, and Tasks surfaces as their
+specific JSON contracts land.
+
 ## Routes and canonical URLs
 
 | Canonical path | Purpose |
