@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   fence: vi.fn(),
   verify: vi.fn(),
+  release: vi.fn(),
   upstream: vi.fn(),
   model: vi.fn(),
   personal: vi.fn(),
@@ -120,12 +121,26 @@ beforeEach(() => {
   mocks.authority.mockResolvedValue(room('account'));
   mocks.fence.mockResolvedValue(undefined);
   mocks.verify.mockResolvedValue({ ok: true });
-  mocks.upstream.mockResolvedValue(new Response('{}'));
+  mocks.release.mockResolvedValue({ current: true });
+  // Each provider answer reports 100 input and 20 output tokens.
+  mocks.upstream.mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [{}],
+          usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 20 },
+        })
+      )
+  );
   vi.stubGlobal('fetch', mocks.upstream);
   mocks.personal.mockResolvedValue('tagger-personal-workspace');
   mocks.model.mockResolvedValue({
     id: 'google/gemini-3.5-flash-lite',
     providerModelId: 'gemini-3.5-flash-lite',
+    inputPricePerToken: 0.3 / 1_000_000,
+    outputPricePerToken: 2.5 / 1_000_000,
+    cacheReadPricePerToken: null,
+    tieredPricing: false,
   });
   mocks.check.mockResolvedValue({
     allowed: true,
@@ -143,9 +158,11 @@ beforeEach(() => {
   mocks.service.mockImplementation(async (_access, command) =>
     command.action === 'ai.reserve'
       ? context
-      : command.action === 'mira.room.verify'
+      : command.action === 'mira.room.dispatch'
         ? mocks.verify(command)
-        : { ok: true }
+        : command.action === 'mira.room.release'
+          ? mocks.release(command)
+          : { ok: true }
   );
   // Each provider request (three model steps and one search) uses the
   // provider fetch handed to the chat generator.
@@ -289,12 +306,19 @@ it('stops the next provider request when consent is withdrawn mid-generation', a
   });
   // Two steps reached the provider; the third and the search never left.
   expect(mocks.upstream).toHaveBeenCalledTimes(2);
-  // Usage from the steps that ran is unknown, never settled as zero.
-  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
-    action: 'ai.finish',
-    messageId: 'message',
-    costUsd: null,
-  });
+  // Both settlements carry the two answers' measured usage, never zero.
+  const finish = mocks.service.mock.calls.at(-1)![1];
+  expect(finish).toMatchObject({ action: 'ai.finish', messageId: 'message' });
+  expect(finish.costUsd).toBeCloseTo(2 * (100 * 0.3e-6 + 20 * 2.5e-6), 9);
+  expect(mocks.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 'failed',
+      actualCredits: 10,
+      inputTokens: 200,
+      outputTokens: 40,
+      metadata: expect.objectContaining({ usage_source: 'observed_partial' }),
+    })
+  );
   expect(mocks.service).not.toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({ body: expect.anything() })
@@ -315,4 +339,31 @@ it('sends nothing and settles zero cost when consent is stale before the first r
     messageId: 'message',
     costUsd: 0,
   });
+  expect(mocks.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      actualCredits: 0,
+      metadata: expect.objectContaining({ usage_source: 'unavailable' }),
+    })
+  );
+});
+
+it('discards an answer whose consent changed while it was in flight and settles its usage', async () => {
+  mocks.release.mockResolvedValue({ current: false });
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 409,
+    code: 'MIRA_ROOM_CONSENT_REQUIRED',
+  });
+  expect(mocks.upstream).toHaveBeenCalledTimes(1);
+  expect(mocks.service.mock.calls.at(-1)![1].costUsd).toBeGreaterThan(0);
+  expect(mocks.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      inputTokens: 100,
+      outputTokens: 20,
+      metadata: expect.objectContaining({ usage_source: 'observed_partial' }),
+    })
+  );
+  expect(mocks.service).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ body: expect.anything() })
+  );
 });

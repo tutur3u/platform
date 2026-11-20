@@ -67,6 +67,17 @@ const review = {
   workspaceName: 'Synthetic',
   timezone: 'UTC',
 };
+const LEASE = '00000000-0000-4000-8000-00000000ee01';
+const dispatch = (leaseId = LEASE) => ({
+  action: 'mira.room.dispatch',
+  messageId: mention,
+  leaseId,
+});
+const release = (leaseId = LEASE) => ({
+  action: 'mira.room.release',
+  messageId: mention,
+  leaseId,
+});
 const blocked = { status: 409, body: { code: 'MIRA_ROOM_CONSENT_REQUIRED' } };
 
 let reserved: RoomServiceState;
@@ -99,18 +110,16 @@ describe('room Mira source binding', () => {
       [alice]: 1,
       [bob]: 1,
     });
-    expect(
-      service(reserved, alice, {
-        action: 'mira.room.verify',
-        messageId: mention,
-      }).body
-    ).toEqual({ ok: true });
+    expect(service(reserved, alice, dispatch()).body).toEqual({
+      ok: true,
+      leaseId: LEASE,
+    });
   });
 
   it('never dispatches or publishes after a source author pauses and then leaves', () => {
     const state = leave(choose(reserved, bob, 'mute'), bob);
     for (const input of [
-      { action: 'mira.room.verify', messageId: mention },
+      dispatch(),
       { action: 'ai.finish', messageId: mention, body: 'Answer', costUsd: 0 },
       {
         action: 'ai.review.save',
@@ -135,9 +144,7 @@ describe('room Mira source binding', () => {
     state = admitOrHold(state, token(bob), '2026-11-20T00:01:00Z').state;
     state = choose(state, bob, 'continue');
     expect(state.miraRoom?.choices[bob]?.revision).toBe(3);
-    expect(
-      service(state, alice, { action: 'mira.room.verify', messageId: mention })
-    ).toMatchObject(blocked);
+    expect(service(state, alice, dispatch())).toMatchObject(blocked);
     expect(
       service(state, alice, {
         action: 'ai.finish',
@@ -190,12 +197,8 @@ describe('room Mira source binding', () => {
         },
       },
     };
-    expect(
-      service(legacy, alice, { action: 'mira.room.verify', messageId: mention })
-    ).toMatchObject(blocked);
-    expect(
-      service(legacy, bob, { action: 'mira.room.verify', messageId: mention })
-    ).toMatchObject(blocked);
+    expect(service(legacy, alice, dispatch())).toMatchObject(blocked);
+    expect(service(legacy, bob, dispatch())).toMatchObject(blocked);
   });
 
   it('never re-sends an earlier Mira reply that quotes an author who withdrew', () => {
@@ -227,6 +230,75 @@ describe('room Mira source binding', () => {
     expect(chat.map((m) => m.body)).not.toContain('Something only Bob said');
     expect(result.state.aiRequests?.['mention-2']?.miraRoomSources).toEqual({
       [alice]: 1,
+    });
+  });
+
+  describe('dispatch admission leases', () => {
+    const admitted = () => service(reserved, alice, dispatch()).state;
+
+    it('reports an unchanged lease as current and clears it', () => {
+      const state = admitted();
+      expect(state.aiRequests?.[mention]?.miraDispatches).toHaveProperty(LEASE);
+      const done = service(state, alice, release());
+      expect(done.body).toEqual({ current: true });
+      expect(done.state.aiRequests?.[mention]?.miraDispatches).toEqual({});
+    });
+
+    it('serializes a Pause after an admitted request and reports it stale on release', () => {
+      // Admission happens first; the Pause lands while the request is in
+      // flight and is ordered after it, so the response must be discarded.
+      const paused = choose(admitted(), bob, 'mute');
+      expect(service(paused, alice, release()).body).toEqual({
+        current: false,
+      });
+      expect(
+        service(paused, alice, dispatch('00000000-0000-4000-8000-00000000ee02'))
+      ).toMatchObject(blocked);
+    });
+
+    it('reports a Pause and new Continue during the lease as stale', () => {
+      const flipped = choose(choose(admitted(), bob, 'mute'), bob, 'continue');
+      expect(service(flipped, alice, release()).body).toEqual({
+        current: false,
+      });
+    });
+
+    it('refuses admission once consent is withdrawn before the request starts', () => {
+      expect(
+        service(choose(reserved, bob, 'mute'), alice, dispatch())
+      ).toMatchObject(blocked);
+    });
+
+    it('treats unknown or expired leases as stale and bounds active leases', () => {
+      expect(service(reserved, alice, release()).body).toEqual({
+        current: false,
+      });
+      const state = admitted();
+      const expired = {
+        ...state,
+        aiRequests: {
+          ...state.aiRequests,
+          [mention]: {
+            ...state.aiRequests![mention]!,
+            miraDispatches: { [LEASE]: Date.now() - 121_000 },
+          },
+        },
+      };
+      expect(service(expired, alice, release()).body).toEqual({
+        current: false,
+      });
+      let many = reserved;
+      for (let index = 0; index < 8; index++)
+        many = service(
+          many,
+          alice,
+          dispatch(`00000000-0000-4000-8000-0000000001${index}0`)
+        ).state;
+      expect(
+        service(many, alice, dispatch('00000000-0000-4000-8000-000000000999'))
+      ).toMatchObject(blocked);
+      // Only the requester can admit or release its request's dispatches.
+      expect(service(reserved, bob, dispatch())).toMatchObject(blocked);
     });
   });
 });

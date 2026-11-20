@@ -96,6 +96,8 @@ export type RoomServiceState = MeetRoomSnapshot & {
       costUsd?: number | null;
       /** Room Mira source accounts and their consent revisions at reserve. */
       miraRoomSources?: Record<string, number>;
+      /** Active room Mira provider requests: lease id -> admitted at. */
+      miraDispatches?: Record<string, number>;
     }
   >;
 };

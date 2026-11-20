@@ -37,9 +37,22 @@ const command = z.discriminatedUnion('action', [
     choice: z.enum(['continue', 'mute']),
     version: z.literal(MIRA_ROOM_NOTICE_VERSION),
   }),
-  // Checked immediately before the provider receives room content.
-  z.object({ action: z.literal('mira.room.verify'), messageId: z.string() }),
+  // Brackets every provider request that carries room-derived content.
+  z.object({
+    action: z.literal('mira.room.dispatch'),
+    messageId: z.string().max(200),
+    leaseId: z.uuid(),
+  }),
+  z.object({
+    action: z.literal('mira.room.release'),
+    messageId: z.string().max(200),
+    leaseId: z.uuid(),
+  }),
 ]);
+
+/** Active provider requests per room Mira request, and their lifetime. */
+const MAX_DISPATCHES = 8;
+const DISPATCH_TTL_MS = 120_000;
 
 const accountOf = (person: { accountId?: string; userId: string }) =>
   person.accountId ?? person.userId;
@@ -134,14 +147,11 @@ export function applyMiraRoomConsent(
   });
   if (parsed.data.action === 'mira.room.read')
     return { state, body: view(state) };
-  if (parsed.data.action === 'mira.room.verify') {
-    const request = state.aiRequests?.[parsed.data.messageId];
-    return request?.userId === accountId &&
-      request.status === 'pending' &&
-      miraRoomRequestReady(state, token.meetingId, parsed.data.messageId)
-      ? { state, body: { ok: true } }
-      : consentRequired(state);
-  }
+  if (
+    parsed.data.action === 'mira.room.dispatch' ||
+    parsed.data.action === 'mira.room.release'
+  )
+    return miraRoomDispatch(state, token, accountId, parsed.data, now);
   if (
     own?.choice === parsed.data.choice &&
     own.version === MIRA_ROOM_NOTICE_VERSION &&
@@ -234,6 +244,58 @@ export function miraRoomRequestReady(
       state.aiRequests?.[messageId]?.miraRoomSources
     )
   );
+}
+
+/**
+ * Dispatch admission for one provider request, serialized in the room with
+ * every consent change. `mira.room.dispatch` admits only while the fence and
+ * every source are current and records a lease; `mira.room.release` ends the
+ * lease and reports whether consent stayed unchanged for its whole duration.
+ * A choice recorded during the lease is ordered after the admission, so the
+ * caller discards that response and every later request is refused.
+ */
+function miraRoomDispatch(
+  state: RoomServiceState,
+  token: MeetRealtimeTokenPayload,
+  accountId: string,
+  input: { action: string; messageId: string; leaseId: string },
+  now: number
+): { state: RoomServiceState; body: unknown; status?: number } {
+  const request = state.aiRequests?.[input.messageId];
+  if (request?.userId !== accountId || request.status !== 'pending')
+    return consentRequired(state);
+  const leases = Object.fromEntries(
+    Object.entries(request.miraDispatches ?? {}).filter(
+      ([id, admittedAt]) =>
+        id !== input.leaseId && now - admittedAt < DISPATCH_TTL_MS
+    )
+  );
+  const current = miraRoomRequestReady(state, token.meetingId, input.messageId);
+  const admitting = input.action === 'mira.room.dispatch';
+  const held = request.miraDispatches?.[input.leaseId];
+  if (admitting && (!current || Object.keys(leases).length >= MAX_DISPATCHES))
+    return consentRequired(state);
+  const next: RoomServiceState = {
+    ...state,
+    aiRequests: {
+      ...state.aiRequests,
+      [input.messageId]: {
+        ...request,
+        miraDispatches: admitting
+          ? { ...leases, [input.leaseId]: now }
+          : leases,
+      },
+    },
+  };
+  return admitting
+    ? { state: next, body: { ok: true, leaseId: input.leaseId } }
+    : {
+        state: next,
+        body: {
+          current:
+            current && held !== undefined && now - held < DISPATCH_TTL_MS,
+        },
+      };
 }
 
 /** Steps that send saved room content to the provider or publish from it. */
