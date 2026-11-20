@@ -50,8 +50,10 @@ test('release-artifact builds only the exact main commit and never publishes', (
   assert.doesNotMatch(workflow, /mail-cloudflare\.yaml/);
   const sha = 'a'.repeat(40);
   const needs = {
-    'production-policy': { outputs: { allowed: 'true' } },
+    'production-policy': { result: 'success', outputs: { allowed: 'true' } },
     'release-admission': { result: 'success' },
+    qualify: { result: 'success' },
+    restored: { result: 'success' },
   };
   const mainRelease = {
     inputs: {
@@ -102,11 +104,32 @@ test('release-artifact builds only the exact main commit and never publishes', (
   const skippedAdmission = {
     ...productionPublish,
     needs: {
-      'production-policy': { outputs: { allowed: 'true' } },
+      ...productionPublish.needs,
       'release-admission': { result: 'skipped' },
     },
   };
   assert.equal(evaluate(jobIf('qualify'), skippedAdmission), true);
+  assert.equal(evaluate(jobIf('publish'), skippedAdmission), true);
+  for (const prerequisite of ['production-policy', 'qualify', 'restored']) {
+    for (const result of ['failure', 'cancelled', 'skipped']) {
+      const blocked = {
+        ...skippedAdmission,
+        needs: {
+          ...skippedAdmission.needs,
+          [prerequisite]: { ...skippedAdmission.needs[prerequisite], result },
+        },
+      };
+      assert.equal(
+        evaluate(jobIf('publish'), blocked),
+        false,
+        `publish must block when ${prerequisite} is ${result}`
+      );
+    }
+  }
+  assert.equal(
+    evaluate(jobIf('publish'), { ...skippedAdmission, cancelled: () => true }),
+    false
+  );
   productionPublish.needs['production-policy'].outputs.allowed = 'false';
   assert.equal(evaluate(jobIf('qualify'), productionPublish), false);
   assert.equal(evaluate(jobIf('publish'), productionPublish), false);
@@ -131,12 +154,10 @@ test('restored follows qualify and publish keeps its production gate', () => {
     "${{ github.ref == 'refs/heads/production' && inputs['release-artifact'] != true }}";
   const qualifyIf =
     "${{ !cancelled() && ((inputs['release-artifact'] == true && github.ref == 'refs/heads/main' && needs.release-admission.result == 'success') || (github.ref == 'refs/heads/production' && inputs['release-artifact'] != true && needs.production-policy.outputs.allowed == 'true')) }}";
-  const publishIf =
-    "${{ inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true' }}";
   const restoredIf = "${{ !cancelled() && needs.qualify.result == 'success' }}";
   assert.equal(jobIf('production-policy'), policyIf);
   assert.equal(jobIf('qualify'), qualifyIf);
-  assert.equal(jobIf('publish'), publishIf);
+  assert.match(jobIf('publish'), /^\$\{\{ !cancelled\(\) && /);
   assert.equal(
     jobField('qualify', 'needs'),
     '[production-policy, release-admission]'
@@ -147,7 +168,6 @@ test('restored follows qualify and publish keeps its production gate', () => {
   );
   assert.equal(jobIf('restored'), restoredIf);
   assert.equal(jobField('restored', 'needs'), 'qualify');
-  assert.doesNotMatch(publishIf, /\b(?:success|failure|cancelled|always)\s*\(/);
   const restoredJob = jobSlice('restored');
   assert.equal(restoredJob.includes('\n    environment:'), false);
   assert.equal(restoredJob.includes('secrets.'), false);
@@ -246,6 +266,7 @@ test('restored follows qualify and publish keeps its production gate', () => {
         },
         'release-admission': { result: 'skipped' },
         qualify: { result: 'success' },
+        restored: { result: 'success' },
       },
     })
   );

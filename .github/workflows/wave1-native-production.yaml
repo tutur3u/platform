@@ -235,7 +235,8 @@ jobs:
   publish:
     name: publish-${{ inputs.app }}
     needs: [production-policy, qualify, restored]
-    if: ${{ inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true' }}
+    # Bypass implicit success() because production skips release-admission upstream.
+    if: ${{ !cancelled() && inputs['release-artifact'] != true && github.ref == 'refs/heads/production' && needs.production-policy.result == 'success' && needs.production-policy.outputs.allowed == 'true' && needs.qualify.result == 'success' && needs.restored.result == 'success' }}
     runs-on: ubuntu-latest
     environment: wave1-${{ inputs.app }}-production
     timeout-minutes: 15

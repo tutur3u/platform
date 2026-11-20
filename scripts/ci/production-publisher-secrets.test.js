@@ -33,6 +33,8 @@ function context(ref, allowed = 'false', event = 'workflow_dispatch') {
     needs: {
       'affected-gate': { result: 'success', outputs: { run: 'true' } },
       'production-policy': { result: 'success', outputs: { allowed } },
+      qualify: { result: 'success' },
+      restored: { result: 'success' },
       'check-ci': {
         result: 'success',
         outputs: { should_run: 'true', run_checks: 'true' },
