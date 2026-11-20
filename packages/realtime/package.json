@@ -21,6 +21,7 @@
     "./chat/ticket": "./src/chat/ticket.ts",
     "./chat/publish": "./src/chat/publish.ts",
     "./chat/revocation": "./src/chat/revocation.ts",
+    "./chat/client": "./src/chat/client.ts",
     ".": "./src/index.ts",
     "./hive": "./src/hive/index.ts",
     "./hive/yjs": "./src/hive/yjs.ts",

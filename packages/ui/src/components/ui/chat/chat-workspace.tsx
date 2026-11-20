@@ -1,11 +1,7 @@
 'use client';
 
 import { Plus } from '@tuturuuu/icons';
-import type {
-  ChatAttachment,
-  ChatConversation,
-  ChatMessage,
-} from '@tuturuuu/internal-api';
+import type { ChatAttachment, ChatConversation } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -19,6 +15,7 @@ import { ChatExternalContextSidebar } from './chat-external-context-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
 import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
+import { mergeConversationLatestMessage } from './chat-workspace-messages';
 import { CreateConversationDialog } from './create-conversation-dialog';
 import { FriendRequestsButton } from './friend-requests-button';
 import {
@@ -244,7 +241,10 @@ export function ChatWorkspace({
       : sharedContentOpen || agentDetailsOpen) && activeConversationId
   );
 
-  const realtime = useChatRealtime(wsId);
+  const realtime = useChatRealtime(wsId, {
+    activeConversationId,
+    conversations: allConversations,
+  });
 
   useEffect(() => {
     setStoredSelectionLoaded(false);
@@ -628,27 +628,4 @@ export function ChatWorkspace({
       />
     </section>
   );
-}
-
-function mergeConversationLatestMessage(
-  messages: ChatMessage[],
-  latestMessage?: ChatMessage | null
-) {
-  if (
-    !latestMessage ||
-    messages.some((message) => message.id === latestMessage.id)
-  ) {
-    return messages;
-  }
-
-  return [...messages, latestMessage].sort(
-    (left, right) =>
-      readChatMessageTimestamp(left.createdAt) -
-      readChatMessageTimestamp(right.createdAt)
-  );
-}
-
-function readChatMessageTimestamp(value: string) {
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? timestamp : 0;
 }
