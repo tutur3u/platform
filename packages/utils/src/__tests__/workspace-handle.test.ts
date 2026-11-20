@@ -9,6 +9,7 @@ describe('reserved workspace handles', () => {
   it('reserves the workspace routes and every mounted app path', () => {
     for (const handle of [
       'personal',
+      'admin',
       'login',
       'tasks',
       'calendar',

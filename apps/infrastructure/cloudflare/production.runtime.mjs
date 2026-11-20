@@ -114,6 +114,26 @@ test(
         'max-age=63072000'
       );
     }
+    const mountedRoot = await get('/admin?filter=recent', 'tuturuuu.com');
+    assert.equal(mountedRoot.status, 307);
+    const mountedLogin = new URL(mountedRoot.headers.location);
+    assert.equal(mountedLogin.origin, 'https://tuturuuu.com');
+    assert.equal(mountedLogin.pathname, '/admin/login');
+    assert.equal(mountedLogin.searchParams.get('next'), '/?filter=recent');
+    const outsideMount = await get('/admin-team', 'tuturuuu.com');
+    assert.equal(outsideMount.status, 404);
+    const mountLogin = await get(
+      '/admin/login?next=%2Finternal',
+      'tuturuuu.com'
+    );
+    assert.equal(mountLogin.status, 307);
+    const centralLogin = new URL(mountLogin.headers.location);
+    const callback = new URL(centralLogin.searchParams.get('returnUrl'));
+    assert.equal(centralLogin.pathname, '/login');
+    assert.equal(callback.origin, 'https://tuturuuu.com');
+    assert.equal(callback.pathname, '/admin/verify-token');
+    assert.equal(callback.searchParams.get('nextUrl'), '/internal');
+
     const asset = (await readdir(join(app, 'dist/client/assets'))).find(
       (name) => name.endsWith('.js')
     );
@@ -131,6 +151,9 @@ test(
       response.body,
       await readFile(join(app, 'dist/client/assets', asset))
     );
+    const mountedAsset = await get(`/admin/assets/${asset}`, 'tuturuuu.com');
+    assert.equal(mountedAsset.status, 200);
+    assert.deepEqual(mountedAsset.body, response.body);
     const refused = await get(
       '/__native-smoke-missing__',
       'unknown-host.invalid'

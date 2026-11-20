@@ -32,6 +32,7 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
   drive: '/drive',
   finance: '/finance',
   forms: '/forms',
+  infra: '/admin',
   inventory: '/inventory',
   learn: '/learn',
   mail: '/mail',

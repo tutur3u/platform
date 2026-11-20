@@ -23,6 +23,26 @@ describe('app mount registry', () => {
     expect(getAppBasePath('constructor')).toBeNull();
   });
 
+  it('keeps the existing infra app identity under the Admin mount', () => {
+    const legacy = 'https://infrastructure.tuturuuu.com';
+    expect(getAppProductionBaseUrl('infra', legacy, NONE)).toBe(legacy);
+    expect(getAppProductionBaseUrl('infra', legacy, mounts('infra'))).toBe(
+      'https://tuturuuu.com/admin'
+    );
+    expect(
+      resolveMountedAppFromUrl(
+        'https://tuturuuu.com/admin/vi/root',
+        mounts('infra')
+      )
+    ).toEqual({ app: 'infra', basePath: '/admin', appPath: '/vi/root' });
+    expect(
+      resolveMountedAppFromUrl(
+        'https://tuturuuu.com/admin-team',
+        mounts('infra')
+      )
+    ).toBeNull();
+  });
+
   it('uses single-segment base paths without a trailing slash', () => {
     for (const basePath of Object.values(ONE_ORIGIN_APP_BASE_PATHS)) {
       expect(basePath).toMatch(/^\/[a-z]+$/u);

@@ -32,6 +32,31 @@ describe('getMountedAppVerifyTokenMatch', () => {
     }
   );
 
+  it('maps the active Admin verifier to the existing infra audience', () => {
+    const url = 'https://tuturuuu.com/admin/vi/verify-token?nextUrl=%2Froot';
+    expect(
+      getMountedAppVerifyTokenMatch(url, new Set(['infra']))
+    ).toMatchObject({
+      basePath: '/admin',
+      name: 'infra',
+      nextUrl: '/root',
+      origin: 'https://tuturuuu.com',
+    });
+    expect(getMountedAppVerifyTokenMatch(url, new Set(['admin']))).toBeNull();
+    expect(
+      getMountedAppVerifyTokenMatch(
+        'https://tuturuuu.com/infra/verify-token',
+        new Set(['infra'])
+      )
+    ).toBeNull();
+    expect(
+      getMountedAppVerifyTokenMatch(
+        'https://tuturuuu.com.evil.test/admin/verify-token',
+        new Set(['infra'])
+      )
+    ).toBeNull();
+  });
+
   it('accepts a locale segment before verify-token', () => {
     expect(
       getMountedAppVerifyTokenMatch(

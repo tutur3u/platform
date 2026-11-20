@@ -53,6 +53,23 @@ and decides the origin per request:
 Per-app zone routes that are more specific than `tuturuuu.com/*` reach the app
 Worker without passing through the gateway.
 
+## Admin mounting
+
+The Infrastructure Worker can serve its existing origin and the public
+`/admin` mount from the same artifact. The app retains the `infra` session
+audience and the existing root-workspace checks. The active mount flag uses
+`infra`, and the gateway binds `MOUNT_ADMIN` for both `/admin` and
+`/admin/*`. The login handoff uses `/admin/verify-token` on the apex and
+preserves the requested path and query.
+
+Before enabling the public mount, verify that no existing workspace uses
+`admin` as its handle. Run the signed-out, authorized staff, insufficient
+permission, and challenged MFA flows on the exact Worker candidate. Verify
+local API requests, styles, and direct links under the mount. Keep a rollback
+for both route entries and leave the legacy origin available until signed-in
+acceptance passes. The app implementation and the gateway activation each
+have their own release evidence.
+
 ## Current state
 
 ### Hosting

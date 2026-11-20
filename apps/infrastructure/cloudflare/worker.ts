@@ -35,11 +35,10 @@ const seoPolicy = {
   publicPatterns: [],
 };
 
-// Root-only: served at infrastructure.tuturuuu.com; no apex mount, and unknown hosts are rejected.
+// Keep the legacy origin and admit only the Admin path on the platform apex.
 const mounts = {
   app: 'infrastructure',
   rootHosts: ['infrastructure.tuturuuu.com'],
-  mountHosts: [],
   unknownHost: 'reject' as const,
   ...appConfig.mounts,
 };

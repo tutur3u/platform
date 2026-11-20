@@ -1,3 +1,4 @@
+import { getAppBasePath, resolveMountedAppFromUrl } from './app-mounts';
 import {
   type AppDomainUrlMatch,
   getAppDomainByUrl,
@@ -48,7 +49,13 @@ export function getMountedAppVerifyTokenMatch(
     return null;
 
   const url = new URL(platform.canonicalUrl);
-  const [app, ...rest] = url.pathname.replace(/\/$/, '').slice(1).split('/');
+  const [segment, ...rest] = url.pathname
+    .replace(/\/$/, '')
+    .slice(1)
+    .split('/');
+  const resolvedMount = resolveMountedAppFromUrl(url, activeMounts);
+  const app = resolvedMount?.app ?? segment;
+  const basePath = resolvedMount?.basePath ?? `/${segment}`;
   const tail =
     rest.length === 2 && LOCALE_SEGMENTS.has(rest[0] ?? '')
       ? rest.slice(1)
@@ -56,6 +63,7 @@ export function getMountedAppVerifyTokenMatch(
   if (
     !app ||
     app === 'platform' ||
+    (app === 'infra' && basePath !== getAppBasePath(app)) ||
     !activeMounts.has(app) ||
     tail.join('/') !== 'verify-token'
   )
@@ -69,7 +77,7 @@ export function getMountedAppVerifyTokenMatch(
   return {
     ...domain,
     canonicalUrl: url.toString(),
-    basePath: `/${app}`,
+    basePath,
     origin: url.origin,
     nextUrl: url.searchParams.get('nextUrl'),
   };

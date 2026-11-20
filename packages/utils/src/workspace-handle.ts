@@ -27,6 +27,7 @@ export const RESERVED_WORKSPACE_HANDLES: readonly string[] = [
   'onboarding',
   'personal',
   // Apps mounted, or planned to mount, at tuturuuu.com/<path>.
+  'admin',
   'ai',
   'apps',
   'calendar',

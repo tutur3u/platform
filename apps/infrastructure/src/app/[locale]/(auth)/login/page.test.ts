@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  runtimeAppBase: vi.fn(),
   getSatelliteAppSession: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
@@ -24,6 +25,10 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSession: mocks.getSatelliteAppSession,
 }));
 
+vi.mock('@tuturuuu/start-bridge/app-url', () => ({
+  runtimeAppBase: mocks.runtimeAppBase,
+}));
+
 vi.mock('next/headers', () => ({
   headers: mocks.headers,
 }));
@@ -40,6 +45,7 @@ vi.mock('@/constants/common', () => ({
 describe('Infrastructure login page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.runtimeAppBase.mockReturnValue('');
     mocks.getSatelliteAppSession.mockResolvedValue(null);
     mocks.headers.mockResolvedValue(new Headers());
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
@@ -71,6 +77,22 @@ describe('Infrastructure login page', () => {
     const returnUrl = new URL(redirectUrl.searchParams.get('returnUrl') ?? '');
     expect(returnUrl.origin).toBe('https://infrastructure.tuturuuu.com');
     expect(returnUrl.pathname).toBe('/verify-token');
+    expect(returnUrl.searchParams.get('nextUrl')).toBe('/internal');
+  });
+
+  it('starts central login with the Admin verifier under the apex mount', async () => {
+    mocks.runtimeAppBase.mockReturnValue('/admin');
+    const LoginPage = (await import('./page')).default;
+    await expect(
+      LoginPage({ searchParams: Promise.resolve({}) })
+    ).rejects.toThrow(/^redirect:https:\/\/tuturuuu\.com\/login\?/u);
+    const redirectTo = mocks.redirect.mock.calls[0]?.[0];
+    if (!redirectTo) throw new Error('Missing redirect URL');
+    const returnUrl = new URL(
+      new URL(redirectTo).searchParams.get('returnUrl') ?? ''
+    );
+    expect(returnUrl.origin).toBe('https://tuturuuu.com');
+    expect(returnUrl.pathname).toBe('/admin/verify-token');
     expect(returnUrl.searchParams.get('nextUrl')).toBe('/internal');
   });
 

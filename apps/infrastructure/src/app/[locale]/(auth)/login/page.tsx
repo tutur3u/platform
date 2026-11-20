@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
   INTERNAL_WORKSPACE_SLUG,
   PERSONAL_WORKSPACE_SLUG,
@@ -62,7 +63,11 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL('/verify-token', BASE_URL);
+  const basePath = runtimeAppBase();
+  const returnUrl =
+    basePath === '/admin'
+      ? new URL('/admin/verify-token', TTR_URL)
+      : new URL('/verify-token', BASE_URL);
   returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', TTR_URL);

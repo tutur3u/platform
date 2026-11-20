@@ -13,6 +13,7 @@ import {
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
+  withRequestBasePath,
 } from '@tuturuuu/auth/proxy';
 import {
   guardApiProxyRequest,
@@ -83,7 +84,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   }
 
   const url = new URL(
-    `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
+    withRequestBasePath(
+      request,
+      `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`
+    ),
     request.url
   );
   const response = NextResponse.redirect(url);
@@ -218,7 +222,7 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     );
 
     if (!hasSatelliteSession) {
-      const url = new URL('/login', request.url);
+      const url = new URL(withRequestBasePath(request, '/login'), request.url);
       url.searchParams.set('next', getNextValue(request));
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
