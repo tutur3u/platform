@@ -522,6 +522,7 @@ export default function MiraChatPanel({
             <MiraChatBottomBar
               liveControls={live.content}
               liveInputOpen={live.inputOpen}
+              liveEntry={live.entry}
               composerRef={composerRef}
               assistantName={assistantName}
               attachedFiles={attachedFiles}

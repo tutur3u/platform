@@ -25,6 +25,25 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => mocks);
 vi.mock('@tuturuuu/utils/workspace-helper', () => mocks);
 vi.mock('@/lib/live/assistant-history', () => mocks);
 vi.mock('@/lib/live/mira-prompt', () => mocks);
+// Route tests run the real eligibility decision over the mocked tier and
+// mint configuration; credits and workspace naming are fixed fixtures.
+vi.mock('@/lib/live/eligibility', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/live/eligibility')>(
+    '@/lib/live/eligibility'
+  );
+  return {
+    ...actual,
+    resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
+      actual.resolveLiveEligibility(args, {
+        getTier: async (wsId) =>
+          (await mocks.getWorkspaceTier(wsId, { useAdmin: true })) as string,
+        hasPaidCredits: async () => false,
+        getRemainingCredits: async () => 10_000,
+        getWorkspace: async () => ({ name: 'Personal', personal: true }),
+        readConfig: () => mocks.readLiveMintConfig(),
+      }),
+  };
+});
 vi.mock('@/lib/live/mint-cap', () => ({
   readLiveMintConfig: mocks.readLiveMintConfig,
   reserveLiveMint: mocks.reserveLiveMint,
@@ -160,6 +179,71 @@ describe('mobile Live token shared-allowance admission', () => {
       );
     }
   );
+
+  describe('paid-only production defaults (no kill-switch variables set)', () => {
+    const productionDefaults = {
+      freeSessionSeconds: 180,
+      actorDailyMints: 10,
+      dailyBudgetMicroUsd: 50_000_000,
+      usdPerMinuteMicroUsd: 36_800,
+      killSwitch: true,
+      paidKillSwitch: false,
+      actorMaxConcurrent: 1,
+    };
+
+    it('mints for a Pro personal workspace billed as paid', async () => {
+      mocks.readLiveMintConfig.mockReturnValue(productionDefaults);
+      mocks.getWorkspaceTier.mockResolvedValue('PRO');
+      const response = await POST(request());
+      expect(response.status).toBe(200);
+      expect(mocks.getWorkspaceTier).toHaveBeenCalledWith(billingWs, {
+        useAdmin: true,
+      });
+      expect(mocks.reserveLiveMint).toHaveBeenCalledWith(
+        expect.objectContaining({ actorId: actor, isFree: false })
+      );
+      expect(mocks.createConstrainedLiveToken).toHaveBeenCalledWith(
+        expect.objectContaining({ allowResumption: true })
+      );
+    });
+
+    it('refuses a free personal workspace with plan_required before minting', async () => {
+      mocks.readLiveMintConfig.mockReturnValue(productionDefaults);
+      mocks.getWorkspaceTier.mockImplementation(async (wsId: string) =>
+        wsId === billingWs ? 'FREE' : 'PRO'
+      );
+      const response = await POST(request());
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual({
+        code: 'LIVE_BLOCKED',
+        eligible: false,
+        reason: 'plan_required',
+        tier: 'FREE',
+        billing: { name: 'Personal', personal: true },
+        params: { plans: ['PLUS', 'PRO', 'ENTERPRISE'] },
+      });
+      expect(mocks.reserveLiveMint).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+      expect(mocks.createConstrainedLiveToken).not.toHaveBeenCalled();
+    });
+
+    it('returns limit_reached with a reset time for the actor cap', async () => {
+      mocks.readLiveMintConfig.mockReturnValue(productionDefaults);
+      mocks.getWorkspaceTier.mockResolvedValue('PRO');
+      mocks.reserveLiveMint.mockRejectedValue(
+        new LiveMintCapError(429, 'LIVE_MINT_ACTOR_LIMIT', 3600)
+      );
+      const response = await POST(request());
+      expect(response.status).toBe(429);
+      const body = await response.json();
+      expect(body).toMatchObject({
+        code: 'LIVE_MINT_ACTOR_LIMIT',
+        reason: 'limit_reached',
+        billing: { name: 'Personal', personal: true },
+      });
+      expect(Date.parse(body.params.resetAt)).toBeGreaterThan(Date.now());
+    });
+  });
 
   it('admits FREE through the real server policy before minting a token', async () => {
     const response = await POST(request());

@@ -24,6 +24,25 @@ vi.mock('@/lib/live/billing', () => ({
   LiveBillingError: class extends Error {},
 }));
 vi.mock('@/lib/live/token-builder', () => mocks);
+// Route tests run the real eligibility decision over the mocked tier and
+// mint configuration; credits and workspace naming are fixed fixtures.
+vi.mock('@/lib/live/eligibility', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/live/eligibility')>(
+    '@/lib/live/eligibility'
+  );
+  return {
+    ...actual,
+    resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
+      actual.resolveLiveEligibility(args, {
+        getTier: async (wsId) =>
+          (await mocks.getWorkspaceTier(wsId, { useAdmin: true })) as string,
+        hasPaidCredits: async () => false,
+        getRemainingCredits: async () => 10_000,
+        getWorkspace: async () => ({ name: 'Personal', personal: true }),
+        readConfig: () => mocks.readLiveMintConfig(),
+      }),
+  };
+});
 vi.mock('@/lib/live/mint-cap', () => ({
   ...mocks,
   LiveMintCapError: class extends Error {

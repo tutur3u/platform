@@ -10,23 +10,8 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
     final shellState = _shellCubit.state;
     if (shellState.workspace?.id != wsId) return;
-    final chatState = _chatCubit.state;
-    final liveState = _liveCubit.state;
-    if (!_hasLiveAccess(shellState)) {
-      final blockedState = deriveAssistantLiveUiState(
-        shellState: shellState,
-        liveState: liveState,
-        isEligible: false,
-        isVisibleLiveSession: _isVisibleLiveSession(chatState, liveState),
-        showBlockedReason: true,
-      );
-      await _showLiveInfoSheet(
-        context,
-        liveUiState: blockedState,
-        liveState: liveState,
-      );
-      return;
-    }
+    if (!await _admitLiveStart(wsId) || !mounted) return;
+    if (_shellCubit.state.workspace?.id != wsId) return;
 
     _dismissKeyboard();
     context.read<AssistantChromeCubit>().enterLiveMode();
@@ -68,6 +53,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
     if (attempt == null) return;
     try {
       if (!await guard.run(() => _workspaceDisconnect) || !mounted) return;
+      if (!await _admitLiveStart(wsId) || !mounted) return;
       await _liveCubit.prepareSession(
         wsId: wsId,
         chatId: chatState.chat?.id ?? chatState.storedChatId,
@@ -114,6 +100,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
       _dismissKeyboard();
       context.read<AssistantChromeCubit>().enterLiveMode();
       if (!autoStartMicrophone) return;
+      if (!await _admitLiveStart(wsId) || !mounted) return;
 
       final liveState = _liveCubit.state;
       final isVisibleLiveSession = _isVisibleLiveSession(
@@ -143,6 +130,7 @@ extension _AssistantPageLiveActions on _AssistantPageState {
             context.read<AssistantChromeCubit>().state.isLiveMode &&
             _loadedWorkspaceId == wsId,
       );
+      _refreshLiveEligibilityAfter(wsId);
     } finally {
       startSettled.complete();
       _liveStartGate.finish(attempt);

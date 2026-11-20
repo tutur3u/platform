@@ -9,8 +9,12 @@ class _LiveCallStage extends StatelessWidget {
     required this.onRetry,
     required this.onStart,
     required this.compact,
+    this.blocked,
+    this.onShowBlocked,
     super.key,
   });
+  final AssistantLiveEligibility? blocked;
+  final Future<void> Function()? onShowBlocked;
   final AssistantLiveState liveState;
   final AssistantLiveUiState liveUiState;
   final String assistantName;
@@ -35,7 +39,9 @@ class _LiveCallStage extends StatelessWidget {
       _ => false,
     };
     final speaking = connected && liveState.isAssistantSpeaking;
-    final canStart = idle && !recovery && liveUiState.isEligible;
+    final blocked = idle && !recovery ? this.blocked : null;
+    final canStart =
+        idle && !recovery && blocked == null && liveUiState.isEligible;
     // One status line: what is happening now. The navbar already names the
     // assistant and the Start button says what to do, so idle needs none.
     final status = recovery
@@ -142,6 +148,39 @@ class _LiveCallStage extends StatelessWidget {
               child: Text(l10n.assistantLiveRetryAction),
             ),
           ),
+        if (blocked != null) ...[
+          Semantics(
+            label: l10n.assistantLiveBlockedLockedLabel(
+              blocked.shortReason(l10n),
+            ),
+            excludeSemantics: true,
+            child: Row(
+              key: const ValueKey('live-stage-locked'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.lock, size: 16, color: c.mutedForeground),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    blocked.shortReason(l10n),
+                    textAlign: TextAlign.center,
+                    style: tokens.typography.small.copyWith(
+                      color: c.mutedForeground,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (onShowBlocked case final onShowBlocked?) ...[
+            const SizedBox(height: AppSpacing.lg),
+            AppButton.outline(
+              key: const ValueKey('live-stage-see-why'),
+              onPressed: () => unawaited(onShowBlocked()),
+              child: Text(l10n.assistantLiveBlockedSeeWhy),
+            ),
+          ],
+        ],
         if (canStart) ...[
           if (status != null) const SizedBox(height: AppSpacing.lg),
           AppButton.primary(

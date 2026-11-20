@@ -32796,6 +32796,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update the app to read the latest fleet data'**
   String get mastermindFleetUnreadableTitle;
+
+  /// No description provided for @assistantLiveBlockedPlanShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Included with paid plans'**
+  String get assistantLiveBlockedPlanShort;
+
+  /// No description provided for @assistantLiveBlockedCreditsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough AI credits'**
+  String get assistantLiveBlockedCreditsShort;
+
+  /// No description provided for @assistantLiveBlockedLimitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Live limit reached'**
+  String get assistantLiveBlockedLimitShort;
+
+  /// No description provided for @assistantLiveBlockedRoleShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask an admin for access'**
+  String get assistantLiveBlockedRoleShort;
+
+  /// No description provided for @assistantLiveBlockedPausedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Temporarily unavailable'**
+  String get assistantLiveBlockedPausedShort;
+
+  /// No description provided for @assistantLiveBlockedPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live is included with paid plans'**
+  String get assistantLiveBlockedPlanTitle;
+
+  /// No description provided for @assistantLiveBlockedCreditsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Top up to use Live'**
+  String get assistantLiveBlockedCreditsTitle;
+
+  /// No description provided for @assistantLiveBlockedLimitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached the Live limit'**
+  String get assistantLiveBlockedLimitTitle;
+
+  /// No description provided for @assistantLiveBlockedRoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have Live access here'**
+  String get assistantLiveBlockedRoleTitle;
+
+  /// No description provided for @assistantLiveBlockedPausedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live is temporarily unavailable'**
+  String get assistantLiveBlockedPausedTitle;
+
+  /// No description provided for @assistantLiveBlockedPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to {plans} to talk with Mira by voice.'**
+  String assistantLiveBlockedPlanBody(String plans);
+
+  /// No description provided for @assistantLiveBlockedCreditsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have {balance} credits. Live needs at least {minimum}.'**
+  String assistantLiveBlockedCreditsBody(String balance, String minimum);
+
+  /// No description provided for @assistantLiveBlockedLimitBodyToday.
+  ///
+  /// In en, this message translates to:
+  /// **'You can start again at {time}.'**
+  String assistantLiveBlockedLimitBodyToday(String time);
+
+  /// No description provided for @assistantLiveBlockedLimitBodyOn.
+  ///
+  /// In en, this message translates to:
+  /// **'You can start again on {date} at {time}.'**
+  String assistantLiveBlockedLimitBodyOn(String date, String time);
+
+  /// No description provided for @assistantLiveBlockedLimitBodyLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again a little later.'**
+  String get assistantLiveBlockedLimitBodyLater;
+
+  /// No description provided for @assistantLiveBlockedRoleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A workspace owner or admin can give you access.'**
+  String get assistantLiveBlockedRoleBody;
+
+  /// No description provided for @assistantLiveBlockedPausedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'re on it. Text chat with Mira still works.'**
+  String get assistantLiveBlockedPausedBody;
+
+  /// No description provided for @assistantLiveBlockedBilledTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed to: {workspace}'**
+  String assistantLiveBlockedBilledTo(String workspace);
+
+  /// No description provided for @assistantLiveBlockedPersonalWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal workspace'**
+  String get assistantLiveBlockedPersonalWorkspace;
+
+  /// No description provided for @assistantLiveBlockedUpgrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade'**
+  String get assistantLiveBlockedUpgrade;
+
+  /// No description provided for @assistantLiveBlockedTopUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Top up'**
+  String get assistantLiveBlockedTopUp;
+
+  /// No description provided for @assistantLiveBlockedGotIt.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get assistantLiveBlockedGotIt;
+
+  /// No description provided for @assistantLiveBlockedNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get assistantLiveBlockedNotNow;
+
+  /// No description provided for @assistantLiveBlockedSeeWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'See why'**
+  String get assistantLiveBlockedSeeWhy;
+
+  /// No description provided for @assistantLiveBlockedLockedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Live is locked. {reason}'**
+  String assistantLiveBlockedLockedLabel(String reason);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

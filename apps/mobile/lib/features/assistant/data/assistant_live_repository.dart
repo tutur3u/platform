@@ -2,6 +2,7 @@ import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
+import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 
 class AssistantLiveRepository {
@@ -25,6 +26,18 @@ class AssistantLiveRepository {
     } on Object {
       return null;
     }
+  }
+
+  /// The server's Live start decision for [wsId], billed to the actor's
+  /// personal workspace. It reserves nothing.
+  Future<AssistantLiveEligibility> fetchLiveEligibility({
+    required String wsId,
+  }) async {
+    final response = await _apiClient.postJson(
+      '/api/v1/assistant/live/eligibility',
+      {'wsId': wsId},
+    );
+    return AssistantLiveEligibility.fromJson(response);
   }
 
   Future<AssistantLiveTokenEnvelope> fetchLiveToken({

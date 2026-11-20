@@ -35,6 +35,11 @@ extension _AssistantPageWorkspace on _AssistantPageState {
       await _liveCubit.disconnect();
     }();
     unawaited(_shellCubit.loadWorkspace(workspace));
+    if (actor != null) {
+      unawaited(
+        _liveEligibilityCubit.ensure(actorId: actor, wsId: workspace.id),
+      );
+    }
     _shellCubit.setImmersiveMode(false);
     unawaited(_chatCubit.loadWorkspace(workspace.id));
   }

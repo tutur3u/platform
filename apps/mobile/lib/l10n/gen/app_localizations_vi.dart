@@ -17557,4 +17557,91 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetUnreadableTitle => 'Hãy cập nhật ứng dụng để đọc dữ liệu đội mới nhất';
+
+  @override
+  String get assistantLiveBlockedPlanShort => 'Có trong các gói trả phí';
+
+  @override
+  String get assistantLiveBlockedCreditsShort => 'Không đủ tín dụng AI';
+
+  @override
+  String get assistantLiveBlockedLimitShort => 'Đã đạt giới hạn Live';
+
+  @override
+  String get assistantLiveBlockedRoleShort => 'Hãy nhờ quản trị viên cấp quyền';
+
+  @override
+  String get assistantLiveBlockedPausedShort => 'Tạm thời không khả dụng';
+
+  @override
+  String get assistantLiveBlockedPlanTitle => 'Live có trong các gói trả phí';
+
+  @override
+  String get assistantLiveBlockedCreditsTitle => 'Nạp thêm để dùng Live';
+
+  @override
+  String get assistantLiveBlockedLimitTitle => 'Bạn đã đạt giới hạn Live';
+
+  @override
+  String get assistantLiveBlockedRoleTitle => 'Bạn chưa có quyền dùng Live ở đây';
+
+  @override
+  String get assistantLiveBlockedPausedTitle => 'Live tạm thời không khả dụng';
+
+  @override
+  String assistantLiveBlockedPlanBody(String plans) {
+    return 'Nâng cấp lên $plans để trò chuyện bằng giọng nói với Mira.';
+  }
+
+  @override
+  String assistantLiveBlockedCreditsBody(String balance, String minimum) {
+    return 'Bạn còn $balance tín dụng. Live cần ít nhất $minimum.';
+  }
+
+  @override
+  String assistantLiveBlockedLimitBodyToday(String time) {
+    return 'Bạn có thể dùng lại lúc $time.';
+  }
+
+  @override
+  String assistantLiveBlockedLimitBodyOn(String date, String time) {
+    return 'Bạn có thể dùng lại vào $date lúc $time.';
+  }
+
+  @override
+  String get assistantLiveBlockedLimitBodyLater => 'Hãy thử lại sau ít phút.';
+
+  @override
+  String get assistantLiveBlockedRoleBody => 'Chủ sở hữu hoặc quản trị viên của không gian làm việc có thể cấp quyền cho bạn.';
+
+  @override
+  String get assistantLiveBlockedPausedBody => 'Chúng tôi đang khắc phục. Bạn vẫn có thể nhắn tin với Mira.';
+
+  @override
+  String assistantLiveBlockedBilledTo(String workspace) {
+    return 'Tính phí cho: $workspace';
+  }
+
+  @override
+  String get assistantLiveBlockedPersonalWorkspace => 'Không gian cá nhân';
+
+  @override
+  String get assistantLiveBlockedUpgrade => 'Nâng cấp';
+
+  @override
+  String get assistantLiveBlockedTopUp => 'Nạp thêm';
+
+  @override
+  String get assistantLiveBlockedGotIt => 'Đã hiểu';
+
+  @override
+  String get assistantLiveBlockedNotNow => 'Để sau';
+
+  @override
+  String get assistantLiveBlockedSeeWhy => 'Xem lý do';
+
+  @override
+  String assistantLiveBlockedLockedLabel(String reason) {
+    return 'Live đang bị khóa. $reason';
+  }
 }

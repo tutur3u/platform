@@ -30,55 +30,19 @@ void main() {
     });
   }
 
-  test('Live eligibility follows workspace tier, not personal credits', () {
-    const shell = AssistantShellState(
-      workspaceCredits: AssistantCredits(tier: 'PRO'),
-      creditSource: AssistantCreditSource.personal,
-    );
-    expect(hasAssistantLiveWorkspaceAccess(shell.workspaceCredits), isTrue);
-    expect(hasAssistantLiveWorkspaceAccess(shell.activeCredits), isFalse);
-  });
-
-  test('Live needs PLUS or higher; feature grants alone do not count', () {
-    expect(
-      hasAssistantLiveWorkspaceAccess(const AssistantCredits(tier: 'PLUS')),
-      isTrue,
-    );
-    for (final feature in ['voice_assistant', 'live_assistant']) {
-      expect(
-        hasAssistantLiveWorkspaceAccess(
-          AssistantCredits(allowedFeatures: [feature]),
-        ),
-        isFalse,
-      );
-    }
-  });
-
   test('workspace plan remains Pro while credits are unavailable', () {
     const shell = AssistantShellState(
       workspace: Workspace(id: 'pro-workspace', tier: 'PRO'),
     );
-    final eligible = hasAssistantLiveWorkspaceAccess(
-      shell.workspaceCredits,
-      workspaceTier: shell.workspace?.tier,
-    );
-    expect(eligible, isTrue);
     final state = deriveAssistantLiveUiState(
       shellState: shell,
       liveState: const AssistantLiveState(),
-      isEligible: eligible,
+      isEligible: true,
       isVisibleLiveSession: false,
       showBlockedReason: false,
     );
     expect(state.workspaceTier, 'PRO');
     expect(state.kind, AssistantLiveUiKind.available);
-    expect(
-      hasAssistantLiveWorkspaceAccess(
-        const AssistantCredits(tier: 'PRO'),
-        workspaceTier: 'FREE',
-      ),
-      isFalse,
-    );
   });
 
   group('deriveAssistantLiveUiState', () {

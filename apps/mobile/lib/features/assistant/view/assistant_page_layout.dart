@@ -8,6 +8,7 @@ extension _AssistantPageLayout on _AssistantPageState {
         BlocProvider.value(value: _chatCubit),
         BlocProvider.value(value: _localCubit),
         BlocProvider.value(value: _liveCubit),
+        BlocProvider.value(value: _liveEligibilityCubit),
       ],
       child: BlocBuilder<WorkspaceCubit, WorkspaceState>(
         key: const ValueKey('assistant-workspace-content'),
@@ -202,6 +203,7 @@ extension _AssistantPageLayout on _AssistantPageState {
 
                         final keyboardVisible =
                             MediaQuery.viewInsetsOf(context).bottom > 0;
+                        context.watch<AssistantLiveEligibilityCubit>();
                         final hasLiveAccess =
                             !localLane && _hasLiveAccess(shellState);
                         final isPersonalWorkspace = currentWorkspace.personal;

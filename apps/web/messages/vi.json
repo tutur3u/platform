@@ -6724,6 +6724,48 @@
       "initializing": "Đang thiết lập micrô và phiên của bạn.",
       "insufficient_credits": "Bạn cần ít nhất 500 tín dụng AI để bắt đầu chế độ Trực tiếp.",
       "listening": "Đang nghe bạn",
+      "live_blocked": {
+        "billed_to": "Tính phí vào: {name}",
+        "checking": "Đang kiểm tra quyền dùng chế độ Trực tiếp",
+        "credits_exhausted": {
+          "body": "Chế độ Trực tiếp cần ít nhất {minimum} tín dụng để bắt đầu. Bạn còn {balance}.",
+          "title": "Không đủ tín dụng cho chế độ Trực tiếp"
+        },
+        "limit_reached": {
+          "body": "Bạn có thể bắt đầu lại chế độ Trực tiếp lúc {time}.",
+          "body_later": "Bạn có thể bắt đầu lại chế độ Trực tiếp sau.",
+          "title": "Đã đạt giới hạn chế độ Trực tiếp"
+        },
+        "locked_label": "Chế độ Trực tiếp không khả dụng: {reason}",
+        "not_now": "Để sau",
+        "ok": "Đã hiểu",
+        "paused": {
+          "body": "Vui lòng thử lại sau ít phút.",
+          "title": "Chế độ Trực tiếp tạm thời không khả dụng"
+        },
+        "personal_workspace": "Không gian làm việc cá nhân",
+        "plan_enterprise": "Enterprise",
+        "plan_plus": "Plus",
+        "plan_pro": "Pro",
+        "plan_required": {
+          "body": "Nâng cấp để trò chuyện trực tiếp với Mira.",
+          "title": "Chế độ Trực tiếp có trong các gói trả phí"
+        },
+        "plans_label": "Các gói có chế độ Trực tiếp",
+        "role_not_allowed": {
+          "body": "Vai trò của bạn tại đây chưa thể bắt đầu chế độ Trực tiếp.",
+          "title": "Hãy nhờ quản trị viên cấp quyền cho bạn"
+        },
+        "short": {
+          "credits_exhausted": "Không đủ tín dụng",
+          "limit_reached": "Đã đạt giới hạn",
+          "paused": "Tạm thời không khả dụng",
+          "plan_required": "Chỉ dành cho gói trả phí",
+          "role_not_allowed": "Cần được cấp quyền"
+        },
+        "top_up": "Nạp thêm",
+        "upgrade": "Nâng cấp"
+      },
       "live_mode": "Trực tiếp",
       "live_session_ready": "Mira Trực tiếp đã sẵn sàng",
       "live_stage_label": "Mira Trực tiếp",

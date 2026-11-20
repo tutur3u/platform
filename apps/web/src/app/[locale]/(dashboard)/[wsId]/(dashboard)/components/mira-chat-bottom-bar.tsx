@@ -1,13 +1,11 @@
 'use client';
 
-import { AudioLines } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
-import { Button } from '@tuturuuu/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
+import type { LiveEntryState } from '@/hooks/use-live-eligibility';
+import { LiveStartControl } from '../assistant/live-eligibility/live-start-control';
 import ChatInputBar from './chat-input-bar';
 import type { ChatFile } from './file-preview-chips';
 import type { CreditSource, ThinkingMode } from './mira-chat-constants';
@@ -16,6 +14,7 @@ import MiraChatInputToolbar from './mira-chat-input-toolbar';
 interface MiraChatBottomBarProps {
   liveControls?: ReactNode;
   liveInputOpen?: boolean;
+  liveEntry?: LiveEntryState;
   composerRef?: RefObject<HTMLDivElement | null>;
   assistantName: string;
   attachedFiles: ChatFile[];
@@ -56,6 +55,7 @@ interface MiraChatBottomBarProps {
 export function MiraChatBottomBar({
   liveControls,
   liveInputOpen,
+  liveEntry,
   composerRef,
   assistantName,
   attachedFiles,
@@ -87,7 +87,6 @@ export function MiraChatBottomBar({
   wsId,
   hotkeyLabels,
 }: MiraChatBottomBarProps) {
-  const voiceT = useTranslations('dashboard.voice_assistant');
   const reducedMotion = useReducedMotion();
   const toolbarShown = bottomBarVisible || !!input || attachedFiles.length > 0;
   const inputVisible = !voiceActive || !!liveInputOpen;
@@ -130,20 +129,7 @@ export function MiraChatBottomBar({
                 />
               </div>
               {onVoiceToggle && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-9 shrink-0 rounded-xl"
-                      aria-label={voiceT('live_mode')}
-                      onClick={onVoiceToggle}
-                    >
-                      <AudioLines aria-hidden className="size-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{voiceT('live_mode')}</TooltipContent>
-                </Tooltip>
+                <LiveStartControl entry={liveEntry} onStart={onVoiceToggle} />
               )}
             </div>
           )}

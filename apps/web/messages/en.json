@@ -6724,6 +6724,48 @@
       "initializing": "Setting up your microphone and session.",
       "insufficient_credits": "You need at least 500 AI credits to start Live mode.",
       "listening": "Hearing you",
+      "live_blocked": {
+        "billed_to": "Billed to: {name}",
+        "checking": "Checking Live access",
+        "credits_exhausted": {
+          "body": "Live needs at least {minimum} credits to start. You have {balance}.",
+          "title": "Not enough credits for Live"
+        },
+        "limit_reached": {
+          "body": "You can start Live again at {time}.",
+          "body_later": "You can start Live again later.",
+          "title": "Live limit reached"
+        },
+        "locked_label": "Live unavailable: {reason}",
+        "not_now": "Not now",
+        "ok": "OK",
+        "paused": {
+          "body": "Try again in a little while.",
+          "title": "Live is temporarily unavailable"
+        },
+        "personal_workspace": "Personal workspace",
+        "plan_enterprise": "Enterprise",
+        "plan_plus": "Plus",
+        "plan_pro": "Pro",
+        "plan_required": {
+          "body": "Upgrade to talk with Mira in real time.",
+          "title": "Live is included with paid plans"
+        },
+        "plans_label": "Plans that include Live",
+        "role_not_allowed": {
+          "body": "Your role here can't start Live yet.",
+          "title": "Ask a workspace admin to give you access"
+        },
+        "short": {
+          "credits_exhausted": "Not enough credits",
+          "limit_reached": "Limit reached",
+          "paused": "Temporarily unavailable",
+          "plan_required": "Paid plans only",
+          "role_not_allowed": "Access needed"
+        },
+        "top_up": "Top up",
+        "upgrade": "Upgrade"
+      },
       "live_mode": "Live",
       "live_session_ready": "Mira Live is ready",
       "live_stage_label": "Mira Live",

@@ -164,7 +164,7 @@ describe('Durable Object store failures fail closed for every tier', () => {
   it('kill switch refuses before the guard is selected', async () => {
     const guard = createLiveMintGuard();
     await expect(
-      guard({ actorId, isFree: false, config: { ...config, killSwitch: true } })
+      guard({ actorId, isFree: true, config: { ...config, killSwitch: true } })
     ).rejects.toMatchObject({ status: 503, code: 'LIVE_MINT_DISABLED' });
     expect(selectAbuseGuard).not.toHaveBeenCalled();
   });

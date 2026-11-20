@@ -1,4 +1,7 @@
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import { parseLiveTokenError } from './live-eligibility';
+
+export * from './live-eligibility';
 
 export interface ExecuteLiveToolPayload {
   args: Record<string, unknown>;
@@ -83,12 +86,15 @@ export async function createLiveSession(
   options: InternalApiClientOptions = {}
 ) {
   const client = getInternalApiClient(options);
-  return client.json<CreateLiveSessionResponse>('/api/v1/live/token', {
+  const response = await client.fetch('/api/v1/live/token', {
     body: JSON.stringify(payload),
     cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     method: 'POST',
   });
+  // Blocked starts carry a stable reason the client maps to its own copy.
+  if (!response.ok) throw await parseLiveTokenError(response);
+  return (await response.json()) as CreateLiveSessionResponse;
 }
 
 export async function reportLiveUsage(

@@ -17,6 +17,7 @@ import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chrome_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_live_eligibility_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_voice_capture_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_live_audio_player.dart';
@@ -37,6 +38,8 @@ import 'package:mobile/features/assistant/local/assistant_remote_chat_actions.da
 import 'package:mobile/features/assistant/local/assistant_remote_scope_guard.dart';
 import 'package:mobile/features/assistant/models/assistant_chat_identity.dart';
 import 'package:mobile/features/assistant/models/assistant_live_dispatch.dart';
+import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
+import 'package:mobile/features/assistant/models/assistant_live_failure.dart';
 import 'package:mobile/features/assistant/models/assistant_live_history_confirmation.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_start_gate.dart';
@@ -61,6 +64,7 @@ import 'package:mobile/features/assistant/widgets/assistant_creation_hold_banner
 import 'package:mobile/features/assistant/widgets/assistant_credit_source_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_empty_hero.dart';
 import 'package:mobile/features/assistant/widgets/assistant_header_geometry.dart';
+import 'package:mobile/features/assistant/widgets/assistant_live_blocked_sheet.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_call_controls.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_haptic_feedback.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_info_sheet_body.dart';
@@ -276,6 +280,11 @@ class _AssistantPageState extends State<AssistantPage>
 
   late final _localCubit = AssistantLocalChatCubit(currentScope: _localScope);
 
+  /// The server's Live start decision, cached briefly per actor/workspace.
+  late final _liveEligibilityCubit = AssistantLiveEligibilityCubit(
+    fetch: (wsId) => _liveRepository.fetchLiveEligibility(wsId: wsId),
+  );
+
   String? _loadedWorkspaceId;
   String? _lastEmptyStateResetKey;
   bool _wasAssistantEmptyLayout = false;
@@ -402,6 +411,7 @@ class _AssistantPageState extends State<AssistantPage>
     _scrollController.dispose();
     unawaited(_voiceCapture.close());
     unawaited(_liveCubit.close());
+    unawaited(_liveEligibilityCubit.close());
     unawaited(_shellCubit.close());
     unawaited(_chatCubit.close());
     unawaited(_localCubit.close().catchError((Object _) {}));

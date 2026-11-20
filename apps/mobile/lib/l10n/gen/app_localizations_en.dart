@@ -17770,4 +17770,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetUnreadableTitle => 'Update the app to read the latest fleet data';
+
+  @override
+  String get assistantLiveBlockedPlanShort => 'Included with paid plans';
+
+  @override
+  String get assistantLiveBlockedCreditsShort => 'Not enough AI credits';
+
+  @override
+  String get assistantLiveBlockedLimitShort => 'Live limit reached';
+
+  @override
+  String get assistantLiveBlockedRoleShort => 'Ask an admin for access';
+
+  @override
+  String get assistantLiveBlockedPausedShort => 'Temporarily unavailable';
+
+  @override
+  String get assistantLiveBlockedPlanTitle => 'Live is included with paid plans';
+
+  @override
+  String get assistantLiveBlockedCreditsTitle => 'Top up to use Live';
+
+  @override
+  String get assistantLiveBlockedLimitTitle => 'You\'ve reached the Live limit';
+
+  @override
+  String get assistantLiveBlockedRoleTitle => 'You don\'t have Live access here';
+
+  @override
+  String get assistantLiveBlockedPausedTitle => 'Live is temporarily unavailable';
+
+  @override
+  String assistantLiveBlockedPlanBody(String plans) {
+    return 'Upgrade to $plans to talk with Mira by voice.';
+  }
+
+  @override
+  String assistantLiveBlockedCreditsBody(String balance, String minimum) {
+    return 'You have $balance credits. Live needs at least $minimum.';
+  }
+
+  @override
+  String assistantLiveBlockedLimitBodyToday(String time) {
+    return 'You can start again at $time.';
+  }
+
+  @override
+  String assistantLiveBlockedLimitBodyOn(String date, String time) {
+    return 'You can start again on $date at $time.';
+  }
+
+  @override
+  String get assistantLiveBlockedLimitBodyLater => 'Try again a little later.';
+
+  @override
+  String get assistantLiveBlockedRoleBody => 'A workspace owner or admin can give you access.';
+
+  @override
+  String get assistantLiveBlockedPausedBody => 'We\'re on it. Text chat with Mira still works.';
+
+  @override
+  String assistantLiveBlockedBilledTo(String workspace) {
+    return 'Billed to: $workspace';
+  }
+
+  @override
+  String get assistantLiveBlockedPersonalWorkspace => 'Personal workspace';
+
+  @override
+  String get assistantLiveBlockedUpgrade => 'Upgrade';
+
+  @override
+  String get assistantLiveBlockedTopUp => 'Top up';
+
+  @override
+  String get assistantLiveBlockedGotIt => 'Got it';
+
+  @override
+  String get assistantLiveBlockedNotNow => 'Not now';
+
+  @override
+  String get assistantLiveBlockedSeeWhy => 'See why';
+
+  @override
+  String assistantLiveBlockedLockedLabel(String reason) {
+    return 'Live is locked. $reason';
+  }
 }

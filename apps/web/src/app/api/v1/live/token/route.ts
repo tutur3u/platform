@@ -1,12 +1,8 @@
 import { Behavior, Modality } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
-  getWorkspaceTier,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -28,6 +24,14 @@ import {
   reserveLiveMint,
 } from '@/lib/live/mint-cap';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
+import { resolveBillingWorkspace } from '@/lib/live/web-billing';
+import {
+  type LiveEligibility,
+  liveBlockedResponse,
+  liveLimitResponse,
+  resolveLiveEligibility,
+} from '@/lib/live/eligibility';
+import { LIVE_LIMIT_CODES } from '@/lib/live/eligibility-codes';
 
 const RequestSchema = z.object({
   timezone: z.string().trim().min(1).max(100).optional(),
@@ -36,48 +40,6 @@ const RequestSchema = z.object({
   creditWsId: z.string().trim().min(1).max(128).optional(),
   wsId: z.string().trim().min(1).max(128),
 });
-
-async function resolveBillingWorkspace({
-  accessWsId,
-  creditSource,
-  creditWsId,
-  userId,
-}: {
-  accessWsId: string;
-  creditSource: 'personal' | 'workspace';
-  creditWsId?: string;
-  userId: string;
-}) {
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  if (creditSource === 'personal') {
-    const { data, error } = await sbAdmin
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
-      .eq('creator_id', userId)
-      .eq('personal', true)
-      .eq('workspace_members.user_id', userId)
-      .eq('workspace_members.type', 'MEMBER')
-      .maybeSingle();
-    if (error) throw new Error('Failed to resolve personal workspace');
-    if (!data?.id || (creditWsId && creditWsId !== data.id)) {
-      throw new LiveBillingError(
-        'Invalid personal credit source.',
-        'INVALID_CREDIT_SOURCE',
-        403
-      );
-    }
-    return data.id;
-  }
-
-  if (creditWsId && creditWsId !== accessWsId) {
-    throw new LiveBillingError(
-      'Invalid workspace credit source.',
-      'INVALID_CREDIT_SOURCE',
-      403
-    );
-  }
-  return accessWsId;
-}
 
 export async function POST(request: NextRequest) {
   let body: unknown;
@@ -94,6 +56,7 @@ export async function POST(request: NextRequest) {
 
   let liveSessionId: string | null = null;
   let userId: string | null = null;
+  let eligibility: LiveEligibility | null = null;
   try {
     const supabase = await createClient(request);
     const { user } = await resolveAuthenticatedSessionUser(supabase);
@@ -120,7 +83,12 @@ export async function POST(request: NextRequest) {
     }
     if (!membership.ok) {
       return Response.json(
-        { error: 'You are not a member of this workspace' },
+        {
+          code: 'LIVE_BLOCKED',
+          eligible: false,
+          reason: 'role_not_allowed',
+          error: 'You are not a member of this workspace',
+        },
         { status: 403 }
       );
     }
@@ -134,8 +102,12 @@ export async function POST(request: NextRequest) {
       creditWsId: normalizedCreditWsId,
       userId: user.id,
     });
-    const billingTier = await getWorkspaceTier(billingWsId, { useAdmin: true });
-    const isFree = !['PLUS', 'PRO', 'ENTERPRISE'].includes(billingTier ?? '');
+    eligibility = await resolveLiveEligibility({
+      userId: user.id,
+      billingWsId,
+    });
+    if (!eligibility.eligible) return liveBlockedResponse(eligibility);
+    const isFree = eligibility.isFree;
     const model = LIVE_MODELS[parsed.data.mode];
     if (isFree && model !== LIVE_MODELS.flash) {
       return Response.json(
@@ -202,6 +174,18 @@ export async function POST(request: NextRequest) {
           );
         }
       );
+    }
+    if (
+      error instanceof LiveMintCapError &&
+      eligibility &&
+      LIVE_LIMIT_CODES.has(error.code)
+    ) {
+      return liveLimitResponse({
+        billing: eligibility.billing,
+        code: error.code,
+        retryAfterSeconds: error.retryAfter,
+        tier: eligibility.tier,
+      });
     }
     if (error instanceof LiveMintCapError) {
       return Response.json(

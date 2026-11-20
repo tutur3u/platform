@@ -5,6 +5,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MiraVoiceModeSwitcher } from './mira-voice-mode-switcher';
 
 const disconnect = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const liveEntry = vi.hoisted(() => ({
+  current: {
+    status: 'eligible',
+  } as import('@/hooks/use-live-eligibility').LiveEntryState,
+}));
+
+vi.mock('@/hooks/use-live-eligibility', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/hooks/use-live-eligibility')>()),
+  useLiveEligibility: () => liveEntry.current,
+}));
+
+vi.mock('../assistant/live-eligibility/live-blocked-dialog', () => ({
+  LiveBlockedDialog: ({
+    billingWsId,
+    eligibility,
+    open,
+  }: {
+    billingWsId: string;
+    eligibility: { reason: string };
+    open: boolean;
+  }) =>
+    open ? (
+      <div role="dialog" data-billing={billingWsId}>
+        {eligibility.reason}
+      </div>
+    ) : null,
+}));
 
 vi.mock('../assistant/assistant-client', () => ({
   default: ({
@@ -100,6 +127,7 @@ describe('MiraVoiceModeSwitcher', () => {
     )
   );
   afterEach(() => {
+    liveEntry.current = { status: 'eligible' };
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -255,4 +283,47 @@ it('waits for the text stream to stop before starting Live', async () => {
   ).not.toBeInTheDocument();
   finish();
   expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+});
+
+describe('Live eligibility gate', () => {
+  afterEach(() => {
+    liveEntry.current = { status: 'eligible' };
+  });
+
+  it('opens the blocked dialog instead of requesting a token', () => {
+    liveEntry.current = {
+      status: 'blocked',
+      eligibility: {
+        eligible: false,
+        reason: 'plan_required',
+        tier: 'FREE',
+        billing: { name: null, personal: true },
+        params: { plans: ['PLUS', 'PRO', 'ENTERPRISE'] },
+      },
+    };
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('plan_required');
+    expect(screen.getByRole('dialog')).toHaveAttribute(
+      'data-billing',
+      'personal-workspace'
+    );
+    // The Live client (which mints the token) never mounts.
+    expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
+  });
+
+  it('does not start while eligibility is still loading', () => {
+    liveEntry.current = { status: 'checking' };
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(screen.queryByTestId('voice-canvas')).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('starts normally when the pre-check could not be read', async () => {
+    liveEntry.current = { status: 'unknown' };
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Start voice' }));
+    expect(await screen.findByTestId('voice-canvas')).toBeVisible();
+  });
 });

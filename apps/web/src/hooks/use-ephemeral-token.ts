@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createLiveSession,
   InternalApiError,
+  LiveBlockedError,
   type LiveCreditSource,
   type LiveMode,
 } from '@tuturuuu/internal-api';
@@ -11,6 +12,7 @@ import { useCallback } from 'react';
 import { LiveClientError } from '@/lib/live/errors';
 
 export type LiveInitializationErrorCode =
+  | 'LIVE_BLOCKED'
   | 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED'
   | 'INSUFFICIENT_CREDITS'
   | 'AUTHORIZATION_EXPIRED'
@@ -26,6 +28,8 @@ export function classifyLiveInitializationError(
   if (error instanceof LiveClientError) {
     return 'CONNECTION_FAILED';
   }
+
+  if (error instanceof LiveBlockedError) return 'LIVE_BLOCKED';
 
   if (error instanceof InternalApiError) {
     if (error.code === 'FREE_LIVE_DAILY_BUDGET_EXHAUSTED') {
@@ -115,6 +119,8 @@ export function useEphemeralToken({
   }, [queryClient, queryKey, refetch]);
 
   return {
+    /** A stable server refusal, shown with the same UI as the pre-check. */
+    blocked: error instanceof LiveBlockedError ? error.eligibility : null,
     error: error as Error | null,
     errorCode: classifyLiveInitializationError(error),
     expiresAt: data?.expiresAt ?? null,

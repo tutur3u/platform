@@ -32,6 +32,12 @@ import {
   beginLiveBillingSession,
   LiveBillingError,
 } from '@/lib/live/billing';
+import {
+  type LiveEligibility,
+  liveBlockedResponse,
+  liveLimitResponse,
+  resolveLiveEligibility,
+} from '@/lib/live/eligibility';
 import { resolveMobileLiveBillingWorkspace } from '@/lib/live/mobile-billing';
 import { buildLiveMiraPrompt } from '@/lib/live/mira-prompt';
 import {
@@ -39,6 +45,7 @@ import {
   readLiveMintConfig,
   reserveLiveMint,
 } from '@/lib/live/mint-cap';
+import { LIVE_LIMIT_CODES } from '@/lib/live/eligibility-codes';
 import { LIVE_MODELS } from '@/lib/live/models';
 import { createServerTiming } from '@/lib/live/server-timing';
 import { assistantChatScopeKey } from '@/lib/live/session-scope';
@@ -89,6 +96,7 @@ export async function POST(request: Request) {
   let liveSessionId: string | null = null;
   let authenticatedUserId: string | null = null;
   let tokenMintStarted = false;
+  let eligibility: LiveEligibility | null = null;
   try {
     const body: unknown = await request.json().catch(() => null);
     const parsed = requestSchema.safeParse(body);
@@ -173,7 +181,12 @@ export async function POST(request: Request) {
 
     if (!membership.ok) {
       return Response.json(
-        { error: 'You are not a member of this workspace' },
+        {
+          code: 'LIVE_BLOCKED',
+          eligible: false,
+          reason: 'role_not_allowed',
+          error: 'You are not a member of this workspace',
+        },
         { status: 403 }
       );
     }
@@ -186,8 +199,11 @@ export async function POST(request: Request) {
     }
 
     const billingWsId = await resolveMobileLiveBillingWorkspace(user.id);
-    const billingTier = await getWorkspaceTier(billingWsId, { useAdmin: true });
-    const isFree = !['PLUS', 'PRO', 'ENTERPRISE'].includes(billingTier ?? '');
+    eligibility = await timing.measure('eligibility', () =>
+      resolveLiveEligibility({ userId: actor.id, billingWsId })
+    );
+    if (!eligibility.eligible) return liveBlockedResponse(eligibility);
+    const isFree = eligibility.isFree;
     const resolvedModel = model ?? LIVE_MODELS.flash;
     const allowedModels = new Set<string>(
       isFree ? [LIVE_MODELS.flash] : Object.values(LIVE_MODELS)
@@ -342,6 +358,18 @@ export async function POST(request: Request) {
         userId: authenticatedUserId,
       }).catch(() => {
         console.error('Mobile Live reservation release failed');
+      });
+    }
+    if (
+      error instanceof LiveMintCapError &&
+      eligibility &&
+      LIVE_LIMIT_CODES.has(error.code)
+    ) {
+      return liveLimitResponse({
+        billing: eligibility.billing,
+        code: error.code,
+        retryAfterSeconds: error.retryAfter,
+        tier: eligibility.tier,
       });
     }
     if (error instanceof LiveMintCapError) {

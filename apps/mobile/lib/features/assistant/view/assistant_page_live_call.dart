@@ -91,6 +91,12 @@ extension _AssistantPageLiveCall on _AssistantPageState {
           _liveCubit.disconnect(clearSession: true, finishTurn: true),
       onOpenTextEntry: _openChatComposerFromLiveMode,
       onReturnToCall: () => _presentLiveCall(wsId),
+      blocked: _liveBlock(wsId),
+      onShowBlocked: () async {
+        final blocked = _liveBlock(wsId);
+        if (blocked == null) return;
+        await showAssistantLiveBlockedSheet(context, eligibility: blocked);
+      },
     );
   }
 

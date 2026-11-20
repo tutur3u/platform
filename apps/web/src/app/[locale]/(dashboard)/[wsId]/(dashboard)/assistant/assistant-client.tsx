@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import type { LiveMode } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
@@ -11,10 +12,15 @@ import {
   useEphemeralToken,
 } from '@/hooks/use-ephemeral-token';
 import { LiveAPIProvider } from '@/hooks/use-live-api';
+import {
+  LIVE_ELIGIBILITY_QUERY_KEY,
+  liveBillingWsId,
+} from '@/hooks/use-live-eligibility';
 import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import type { LiveComposer } from '../components/mira-voice-mode-switcher';
 import { VoiceErrorState, VoiceLoadingState } from './assistant-live-state';
 import { AssistantVoiceSession } from './assistant-voice-session';
+import { LiveBlockedDialog } from './live-eligibility/live-blocked-dialog';
 
 export interface AssistantClientProps {
   mode?: LiveMode;
@@ -50,9 +56,11 @@ export default function AssistantClient({
   wsId,
 }: AssistantClientProps) {
   const t = useTranslations('dashboard.voice_assistant');
+  const queryClient = useQueryClient();
   const [sessionError, setSessionError] = useState<Error | null>(null);
   const [isRestarting, setIsRestarting] = useState(false);
   const {
+    blocked,
     token,
     scopeKey,
     isLoading,
@@ -69,10 +77,10 @@ export default function AssistantClient({
   }, [isLoading, isRestarting, onInitializingChange]);
 
   useEffect(() => {
-    if (error) {
+    if (error && !blocked) {
       console.error('[Voice Assistant] Failed to initialize:', error);
     }
-  }, [error]);
+  }, [blocked, error]);
 
   const restartSession = useCallback(async () => {
     setSessionError(null);
@@ -119,7 +127,24 @@ export default function AssistantClient({
             ? t('session_expired_title')
             : t('unable_to_connect');
 
-  if (isLoading || isRestarting) {
+  if (blocked && !sessionError && !isRestarting) {
+    // Eligibility changed after the pre-check: explain it, then return to chat
+    // with a refreshed pre-check so the start control shows the lock.
+    content = (
+      <LiveBlockedDialog
+        billingWsId={liveBillingWsId({ creditSource, creditWsId, wsId })}
+        eligibility={blocked}
+        open
+        onOpenChange={(open) => {
+          if (open) return;
+          void queryClient.invalidateQueries({
+            queryKey: [LIVE_ELIGIBILITY_QUERY_KEY],
+          });
+          onReturnToChat();
+        }}
+      />
+    );
+  } else if (isLoading || isRestarting) {
     content = (
       <VoiceLoadingState
         compact={!!onConversationChange}

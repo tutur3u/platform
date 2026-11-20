@@ -7,6 +7,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
 import 'package:mobile/features/assistant/cubit/assistant_live_cubit.dart';
+import 'package:mobile/features/assistant/models/assistant_live_eligibility.dart';
 import 'package:mobile/features/assistant/models/assistant_live_models.dart';
 import 'package:mobile/features/assistant/models/assistant_live_ui_state.dart';
 import 'package:mobile/features/assistant/widgets/assistant_live_playback_blob.dart';
@@ -31,6 +32,8 @@ class AssistantLiveModeView extends StatelessWidget {
     required this.onOpenTextEntry,
     this.onReturnToCall,
     this.cameraController,
+    this.blocked,
+    this.onShowBlocked,
     super.key,
   });
 
@@ -48,6 +51,10 @@ class AssistantLiveModeView extends StatelessWidget {
   /// Reopens the full-screen call while a call is connecting or connected.
   final Future<void> Function()? onReturnToCall;
   final CameraController? cameraController;
+
+  /// The server refused Live for the billed workspace; Start is locked.
+  final AssistantLiveEligibility? blocked;
+  final Future<void> Function()? onShowBlocked;
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +76,8 @@ class AssistantLiveModeView extends StatelessWidget {
           cameraController: cameraController,
           onRetry: onRetry,
           onStart: onToggleMicrophone,
+          blocked: blocked,
+          onShowBlocked: onShowBlocked,
           compact: constraints.maxHeight < 500 || hasTranscript,
         );
         return SingleChildScrollView(

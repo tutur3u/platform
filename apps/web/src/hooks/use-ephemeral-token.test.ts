@@ -1,9 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { InternalApiError } from '@tuturuuu/internal-api';
+import { InternalApiError, LiveBlockedError } from '@tuturuuu/internal-api';
 import { LiveClientError } from '@/lib/live/errors';
 import { classifyLiveInitializationError } from './use-ephemeral-token';
 
 describe('classifyLiveInitializationError', () => {
+  it('routes a stable Live block to the blocked dialog, even on 402', () => {
+    expect(
+      classifyLiveInitializationError(
+        new LiveBlockedError(
+          {
+            eligible: false,
+            reason: 'credits_exhausted',
+            tier: 'PLUS',
+            billing: null,
+            params: { plans: [] },
+          },
+          402,
+          'LIVE_BLOCKED'
+        )
+      )
+    ).toBe('LIVE_BLOCKED');
+  });
   it('keeps the shared FREE budget error distinct for localized display', () => {
     expect(
       classifyLiveInitializationError(

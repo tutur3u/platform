@@ -18,6 +18,27 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
+// Run the real eligibility decision over the mocked tier and mint config;
+// credits and workspace naming are fixed fixtures.
+vi.mock('@/lib/live/eligibility', async () => {
+  const actual = await vi.importActual<typeof import('@/lib/live/eligibility')>(
+    '@/lib/live/eligibility'
+  );
+  const helper = await import('@tuturuuu/utils/workspace-helper');
+  const mintCap = await import('@/lib/live/mint-cap');
+  return {
+    ...actual,
+    resolveLiveEligibility: (args: { userId: string; billingWsId: string }) =>
+      actual.resolveLiveEligibility(args, {
+        getTier: async (wsId) =>
+          (await helper.getWorkspaceTier(wsId, { useAdmin: true })) as string,
+        hasPaidCredits: async () => false,
+        getRemainingCredits: async () => 10_000,
+        getWorkspace: async () => ({ name: 'Personal', personal: true }),
+        readConfig: () => mintCap.readLiveMintConfig(),
+      }),
+  };
+});
 vi.mock('@/lib/live/mint-cap', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/live/mint-cap')>()),
   readLiveMintConfig: () => ({

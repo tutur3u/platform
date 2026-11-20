@@ -348,6 +348,45 @@ stayed ready for at least 60 seconds (for example, before a routine provider
 `GoAway`) starts a fresh budget, and so does any start or Retry the user makes.
 Regression coverage: `assistant_live_reconnect_backoff_test.dart`.
 
+### Paid-only Live and eligibility
+
+Scope: Mira Live voice on Web (`/api/v1/live/token`) and mobile
+(`/api/v1/assistant/live/token`). Default: Live is for paid plans only.
+
+- One server decision, `resolveLiveEligibility`
+  (`apps/web/src/lib/live/eligibility.ts`), decides for the **billed**
+  workspace, never the workspace on screen. Mobile always bills the actor's
+  personal workspace; Web bills the dashboard credit source. A workspace on
+  Plus, Pro or Enterprise (an `active` subscription whose product tier is paid,
+  the same rule as `_resolve_workspace_tier`) or with an unexpired paid credit
+  pack may start Live. The free tier is refused while `LIVE_MINT_KILL_SWITCH`
+  is on, which is its default. Live also needs at least 500 credits, the
+  `begin_ai_live_session` minimum.
+- Pre-check: `GET /api/v1/live/eligibility` (Web) and
+  `POST /api/v1/assistant/live/eligibility` (mobile) run the same decision
+  without reserving a mint, credits or provider token, cached privately for 30 s.
+  The token routes re-decide on every start.
+- Wire shape: `{ eligible, reason, tier, billing: { name, personal }, params:
+  { plans, balance?, minimumCredits?, resetAt? } }`. Reasons are
+  `plan_required` (403), `credits_exhausted` (402), `limit_reached` (429, from
+  the mint cap, with `resetAt` from Retry-After), `role_not_allowed` (403) and
+  `paused` (503, the paid stop). Clients map reasons to copy; server text is
+  never shown. There is no region or device reason.
+- Clients: the Live entry is locked with a short reason before Start, and a
+  blocked sheet explains the reason with one primary action and "Not now",
+  plus "Billed to: <workspace>". Limit, role and pause refusals never upsell.
+  Mobile omits Upgrade and Top up until a store-compliant purchase channel
+  exists (App Store guideline 3.1.1), and shows Got it instead. A failed
+  pre-check leaves Start open and the token route decides.
+
+Regression coverage: `eligibility.test.ts` (Pro personal fixture, plans,
+paid credit packs, credits floor, paid stop, wire shape),
+`assistant/live/token/route.test.ts` (production defaults mint for Pro and
+refuse Free with `plan_required`, limit reset), `assistant/live/eligibility/route.test.ts`,
+mobile `assistant_live_eligibility_test.dart`, `assistant_live_blocked_sheet_test.dart`
+(one test per reason, EN/VI, light/dark renders) and
+`assistant_live_locked_entry_test.dart`.
+
 ### Live voice admission cap
 
 Every Live token mint (Web `/api/v1/live/token` and mobile
@@ -361,8 +400,11 @@ token is issued. Scope and defaults:
   once per threshold per day at 80% and 100%.
 - Every tier keeps a per-actor cap of 10 mints per rolling 24 h and one
   concurrent lease. Paid tiers skip the FREE budget only.
-- `LIVE_MINT_KILL_SWITCH` is on unless explicitly `false`. It refuses all tiers
-  with 503 before any store call. Rollback is setting it back to `true`.
+- `LIVE_MINT_KILL_SWITCH` is on unless explicitly `false`. It refuses free-tier
+  mints before any store call; paid mints are unaffected. Rollback is setting it
+  back to `true`.
+- `LIVE_PAID_KILL_SWITCH` is off unless explicitly `true`. It is the emergency
+  stop for paid mints and answers 503 before any store call.
 - The store is the `live` family of the `tuturuuu-abuse-guard` Worker: one
   SQLite Durable Object partition holds the budget and every actor row, so a
   mint is checked and charged atomically. Web reaches it over signed HTTPS

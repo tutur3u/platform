@@ -8,6 +8,12 @@ import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import type { ReactNode, RefObject } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type LiveEntryState,
+  liveBillingWsId,
+  useLiveEligibility,
+} from '@/hooks/use-live-eligibility';
+import { LiveBlockedDialog } from '../assistant/live-eligibility/live-blocked-dialog';
 import type { LiveConversationChange } from '../assistant/use-live-conversation';
 import { MiraLiveModeControl } from './mira-live-mode-control';
 
@@ -69,6 +75,8 @@ export function MiraVoiceModeSwitcher({
       composer: LiveComposer | null;
       inputOpen: boolean;
       toggleInput: () => void;
+      /** Pre-check for the start control; a blocked start opens a dialog. */
+      entry: LiveEntryState;
     }
   ) => ReactNode;
   creditSource: 'personal' | 'workspace';
@@ -88,6 +96,8 @@ export function MiraVoiceModeSwitcher({
   const voiceActiveRef = useRef(false);
   const focusFrameRef = useRef<number | null>(null);
   const focusTimeoutRef = useRef<number | null>(null);
+  const liveEntry = useLiveEligibility({ creditSource, creditWsId, wsId });
+  const [blockedOpen, setBlockedOpen] = useState(false);
 
   const cancelPendingFocus = useCallback(() => {
     if (focusFrameRef.current !== null) {
@@ -114,6 +124,12 @@ export function MiraVoiceModeSwitcher({
   }, [cancelPendingFocus, inputRef]);
 
   const enterVoice = useCallback(async () => {
+    // An ineligible account never reaches the token request.
+    if (liveEntry.status === 'checking') return;
+    if (liveEntry.status === 'blocked') {
+      setBlockedOpen(true);
+      return;
+    }
     if (!historyReady) {
       toast.info(t('history_not_ready'));
       return;
@@ -126,6 +142,7 @@ export function MiraVoiceModeSwitcher({
     setLiveMode(initialLiveMode);
     setMode('live');
   }, [
+    liveEntry.status,
     cancelPendingFocus,
     onBeforeVoiceStart,
     historyReady,
@@ -196,8 +213,17 @@ export function MiraVoiceModeSwitcher({
           composer: liveComposer,
           inputOpen,
           toggleInput: () => setInputOpen((open) => !open),
+          entry: liveEntry,
         })}
       </div>
+      {liveEntry.status === 'blocked' ? (
+        <LiveBlockedDialog
+          billingWsId={liveBillingWsId({ creditSource, creditWsId, wsId })}
+          eligibility={liveEntry.eligibility}
+          open={blockedOpen}
+          onOpenChange={setBlockedOpen}
+        />
+      ) : null}
     </div>
   );
 }

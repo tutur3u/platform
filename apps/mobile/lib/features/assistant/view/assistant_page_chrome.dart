@@ -195,10 +195,40 @@ extension _AssistantPageChrome on _AssistantPageState {
     }
   }
 
-  bool _hasLiveAccess(AssistantShellState shellState) {
-    return hasAssistantLiveWorkspaceAccess(
-      shellState.workspaceCredits,
-      workspaceTier: shellState.workspace?.tier,
+  /// Live access is the server's decision for the billed workspace; the
+  /// current workspace's tier says nothing about it. Unknown stays open and
+  /// the token route decides on start.
+  bool _hasLiveAccess(AssistantShellState shellState) =>
+      _liveBlock(shellState.workspace?.id) == null;
+
+  AssistantLiveEligibility? _liveBlock(String? wsId) {
+    final actor = _currentActor();
+    if (actor == null || wsId == null) return null;
+    final state = _liveEligibilityCubit.state;
+    return state.blockedFor('$actor:$wsId') ? state.eligibility : null;
+  }
+
+  /// Checks eligibility before a start. Returns false after explaining a
+  /// refusal, so ineligible accounts never see a failing connect attempt.
+  Future<bool> _admitLiveStart(String wsId) async {
+    final actor = _currentActor();
+    if (actor == null) return true;
+    final eligibility = await _liveEligibilityCubit.ensure(
+      actorId: actor,
+      wsId: wsId,
+    );
+    if (!mounted || eligibility == null || !eligibility.blocked) return true;
+    await showAssistantLiveBlockedSheet(context, eligibility: eligibility);
+    return false;
+  }
+
+  /// A token refusal after a stale pre-check updates the lock.
+  void _refreshLiveEligibilityAfter(String wsId) {
+    final actor = _currentActor();
+    final error = _liveCubit.state.error;
+    if (actor == null || !_liveRefusalTokens.contains(error)) return;
+    unawaited(
+      _liveEligibilityCubit.ensure(actorId: actor, wsId: wsId, force: true),
     );
   }
 
@@ -242,3 +272,10 @@ extension _AssistantPageChrome on _AssistantPageState {
     return chatState.messages.isNotEmpty || liveState.hasDraft;
   }
 }
+
+const Set<String> _liveRefusalTokens = {
+  AssistantLiveFailure.paused,
+  AssistantLiveFailure.dailyLimit,
+  AssistantLiveFailure.credits,
+  AssistantLiveFailure.notAllowed,
+};

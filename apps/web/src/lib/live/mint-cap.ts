@@ -16,7 +16,10 @@ export interface LiveMintConfig {
   actorDailyMints: number;
   dailyBudgetMicroUsd: number;
   usdPerMinuteMicroUsd: number;
+  /** Refuses free-tier mints. On unless `LIVE_MINT_KILL_SWITCH=false`. */
   killSwitch: boolean;
+  /** Emergency stop for paid mints. Off unless `LIVE_PAID_KILL_SWITCH=true`. */
+  paidKillSwitch: boolean;
   actorMaxConcurrent: number;
 }
 export class LiveMintCapError extends Error {
@@ -35,6 +38,7 @@ const configSchema = z.object({
   dailyBudgetMicroUsd: z.number().int().min(1).max(1_000_000_000_000),
   usdPerMinuteMicroUsd: z.number().int().min(1).max(1_000_000_000),
   killSwitch: z.boolean(),
+  paidKillSwitch: z.boolean(),
   actorMaxConcurrent: z.number().int().min(1).max(100),
 });
 function integer(value: string | undefined, fallback: number): number {
@@ -62,12 +66,16 @@ export function readLiveMintConfig(
   const kill = env.LIVE_MINT_KILL_SWITCH;
   if (kill !== undefined && kill !== 'true' && kill !== 'false')
     throw new LiveMintCapError(503, 'LIVE_MINT_CONFIG_INVALID');
+  const paidKill = env.LIVE_PAID_KILL_SWITCH;
+  if (paidKill !== undefined && paidKill !== 'true' && paidKill !== 'false')
+    throw new LiveMintCapError(503, 'LIVE_MINT_CONFIG_INVALID');
   const parsed = configSchema.safeParse({
     freeSessionSeconds: integer(env.LIVE_FREE_SESSION_SECONDS, 180),
     actorDailyMints: integer(env.LIVE_ACTOR_DAILY_MINTS, 10),
     dailyBudgetMicroUsd: microUsd(env.LIVE_FREE_DAILY_USD_BUDGET ?? '50'),
     usdPerMinuteMicroUsd: microUsd(env.LIVE_FREE_USD_PER_MINUTE ?? '0.0368'),
     killSwitch: kill !== 'false',
+    paidKillSwitch: paidKill === 'true',
     actorMaxConcurrent: integer(env.LIVE_ACTOR_MAX_CONCURRENT, 1),
   });
   if (!parsed.success)
@@ -132,7 +140,7 @@ export function createLiveMintGuard({
     ) {
       throw new LiveMintCapError(503, 'LIVE_MINT_CONFIG_INVALID');
     }
-    if (config.killSwitch)
+    if (isFree ? config.killSwitch : config.paidKillSwitch)
       throw new LiveMintCapError(503, 'LIVE_MINT_DISABLED');
     const mintId = randomUUID();
     let response: unknown;

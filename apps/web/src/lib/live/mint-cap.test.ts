@@ -19,6 +19,15 @@ describe('Live mint configuration', () => {
       readLiveMintConfig({ LIVE_MINT_KILL_SWITCH: 'false' }).killSwitch
     ).toBe(false);
   });
+  it('keeps paid minting on unless the paid stop is explicitly set', () => {
+    expect(readLiveMintConfig({}).paidKillSwitch).toBe(false);
+    expect(
+      readLiveMintConfig({ LIVE_PAID_KILL_SWITCH: 'true' }).paidKillSwitch
+    ).toBe(true);
+    expect(() => readLiveMintConfig({ LIVE_PAID_KILL_SWITCH: 'yes' })).toThrow(
+      LiveMintCapError
+    );
+  });
   it('uses D310a integer USD defaults and configurable values', () => {
     expect(config).toEqual({
       freeSessionSeconds: 180,
@@ -26,6 +35,7 @@ describe('Live mint configuration', () => {
       dailyBudgetMicroUsd: 50_000_000,
       usdPerMinuteMicroUsd: 36_800,
       killSwitch: false,
+      paidKillSwitch: false,
       actorMaxConcurrent: 1,
     });
     expect(
@@ -59,6 +69,26 @@ describe('Live mint configuration', () => {
   });
 });
 describe('Live mint adapter, store boundary mocked; not Lua atomic proof', () => {
+  it('free kill switch leaves paid mints to the store', async () => {
+    const getStore = vi.fn(async () => null);
+    const guard = createLiveMintGuard({ getStore });
+    await expect(
+      guard({ actorId, isFree: false, config: { ...config, killSwitch: true } })
+    ).rejects.toMatchObject({ code: 'LIVE_MINT_STORE_UNAVAILABLE' });
+    expect(getStore).toHaveBeenCalledOnce();
+  });
+  it('paid kill switch refuses paid mints before the store', async () => {
+    const getStore = vi.fn();
+    const guard = createLiveMintGuard({ getStore });
+    await expect(
+      guard({
+        actorId,
+        isFree: false,
+        config: { ...config, paidKillSwitch: true },
+      })
+    ).rejects.toMatchObject({ status: 503, code: 'LIVE_MINT_DISABLED' });
+    expect(getStore).not.toHaveBeenCalled();
+  });
   it('kill switch refuses before the store or provider can be called', async () => {
     const getStore = vi.fn();
     const guard = createLiveMintGuard({ getStore });
