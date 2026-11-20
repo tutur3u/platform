@@ -11,6 +11,16 @@ export const ATTENDANCE_ERASE_DRAIN_LIMIT = 8;
 export const ATTENDANCE_ERASE_ATTEMPT_LIMIT = 3;
 export const ATTENDANCE_INDEX_RETRY_MS = 60_000;
 export const ATTENDANCE_INDEX_ATTEMPT_LIMIT = 3;
+/** Storage key prefix for one spilled room id. */
+export const ATTENDANCE_SPILL_PREFIX = 'attendance-spill:';
+/** Cursor prefix for the spilled-id phase of a directory listing. */
+export const ATTENDANCE_SPILL_CURSOR = 'spill:';
+
+/** Storage changes for spilled ids that the request handler applies. */
+export type AttendanceDirectoryEffects = {
+  spillPut?: string[];
+  spillDelete?: string[];
+};
 
 export type AttendanceDirectoryRoom = {
   meetingId: string;
@@ -39,7 +49,11 @@ export type AttendanceDirectory = {
   rooms: Record<string, AttendanceDirectoryRoom>;
   /** Room ids that did not fit in the subject map. Erasure still visits them. */
   overflow?: string[];
-  /** Ids past the overflow cap. Discovery still pages them. */
+  /**
+   * Ids past the overflow cap held in this value. The request handler stores
+   * spilled ids as separate keys and moves any ids found here into them, so
+   * this value stays bounded.
+   */
   spill?: string[];
   pending?: Record<string, AttendancePendingErase>;
   eraseBacklog?: AttendanceEraseBacklogItem[];
@@ -172,7 +186,7 @@ export function applyAttendanceDirectory(
     guestId?: string;
     wsId?: string;
     meetingFilter?: string;
-    cursor?: number;
+    cursor?: number | string;
     generation?: number;
     rooms?: Array<{
       roomId?: string;
@@ -190,7 +204,7 @@ export function applyAttendanceDirectory(
         wsId: command?.wsId,
         meetingId: command?.meetingId,
       },
-      command?.cursor ?? 0
+      typeof command?.cursor === 'number' ? command.cursor : 0
     );
     return { directory, result: page };
   }
@@ -203,14 +217,22 @@ export function applyAttendanceDirectory(
       command.guests ?? [],
       command.generation
     );
+    const spilled = !!next.spill?.includes(command.roomId);
     const kept =
       !!next.rooms[command.roomId] ||
       !!next.overflow?.includes(command.roomId) ||
-      !!next.spill?.includes(command.roomId) ||
+      spilled ||
       (!(command.users ?? []).length && !(command.guests ?? []).length);
     if (!kept)
       return { directory, result: { ok: false, error: 'directory_full' } };
-    return { directory: next, result: { ok: true } };
+    const effects: AttendanceDirectoryEffects = spilled
+      ? { spillPut: [command.roomId] }
+      : { spillDelete: [command.roomId] };
+    return {
+      directory: spilled ? withoutSpill(next, command.roomId) : next,
+      result: { ok: true },
+      effects,
+    };
   }
   if (command.op === 'queue-erase' && Array.isArray(command.rooms)) {
     return queueAttendanceErases(directory, command.rooms);
@@ -229,6 +251,7 @@ export function applyAttendanceDirectory(
     return {
       directory: forgetAttendanceRooms(directory, command.roomIds ?? []),
       result: { ok: true },
+      effects: { spillDelete: [...(command.roomIds ?? [])] },
     };
   }
   if (command.op === 'revise-membership' && command.roomIds?.length) {
@@ -243,6 +266,15 @@ export function applyAttendanceDirectory(
     return { directory: next, result: { ok: true } };
   }
   return { directory, result: { ok: false } };
+}
+
+function withoutSpill(
+  directory: AttendanceDirectory,
+  roomId: string
+): AttendanceDirectory {
+  const spill = withoutId(directory.spill, roomId);
+  const { spill: _previous, ...rest } = directory;
+  return spill ? { ...rest, spill } : rest;
 }
 
 export function rememberAttendanceRoom(

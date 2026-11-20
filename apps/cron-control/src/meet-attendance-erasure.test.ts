@@ -6,6 +6,8 @@ import {
   MEET_ATTENDANCE_ACK_RPC,
   MEET_ATTENDANCE_ADVANCE_RPC,
   MEET_ATTENDANCE_CLAIM_RPC,
+  MEET_ATTENDANCE_PROBE_ROOM,
+  MEET_ATTENDANCE_READY_RPC,
   MEET_ATTENDANCE_ROOM_PAGE,
   MEET_ATTENDANCE_ROOM_PAGES,
   type MeetAttendanceErasureDeps,
@@ -57,12 +59,18 @@ function harness(options: {
       }
       if (rpc === MEET_ATTENDANCE_ACK_RPC)
         return { kind: 'ok', value: options.ackValue ?? 'acked' };
+      if (rpc === MEET_ATTENDANCE_READY_RPC)
+        return {
+          kind: 'ok',
+          value: body.p_binding_erased === true ? 'ready' : 'binding',
+        };
       throw new Error(`unexpected ${rpc}`);
     },
     erase:
       options.erase === undefined
         ? async (input) => {
-            erased.push(input.roomId);
+            if (input.roomId !== MEET_ATTENDANCE_PROBE_ROOM)
+              erased.push(input.roomId);
             return { acked: input.keys };
           }
         : options.erase,
@@ -99,6 +107,7 @@ it('works more than 128 rooms in bounded pages and acknowledges each', async () 
       confirmed: 0,
       cancelled: 0,
       waiting: 0,
+      ready: 1,
     },
   });
   expect(new Set(erased).size).toBe(300);
@@ -108,7 +117,10 @@ it('works more than 128 rooms in bounded pages and acknowledges each', async () 
     MEET_ATTENDANCE_ROOM_PAGE,
     MEET_ATTENDANCE_ROOM_PAGE,
   ]);
-  expect(calls.at(-1)?.rpc).toBe(MEET_ATTENDANCE_ADVANCE_RPC);
+  expect(calls.slice(-2).map((call) => call.rpc)).toEqual([
+    MEET_ATTENDANCE_ADVANCE_RPC,
+    MEET_ATTENDANCE_READY_RPC,
+  ]);
   const ack = calls.find((call) => call.rpc === MEET_ATTENDANCE_ACK_RPC);
   expect(ack?.body).toEqual({
     p_kind: 'workspace',
@@ -204,4 +216,32 @@ it('treats an unreadable claim page as an unknown outcome', async () => {
         };
   expect((await runMeetAttendanceErasure(deps)).outcome).toBe('unknown');
   expect(erased).toEqual([]);
+});
+
+it('records readiness only after the binding erased the probe room', async () => {
+  const ok = harness({ rooms: [] });
+  expect((await runMeetAttendanceErasure(ok.deps)).detail.ready).toBe(1);
+  expect(
+    ok.calls.find((call) => call.rpc === MEET_ATTENDANCE_READY_RPC)?.body
+  ).toEqual({ p_binding_erased: true });
+
+  for (const erase of [
+    async () => {
+      throw new Error('binding missing entrypoint');
+    },
+    async () => ({ acked: [] as string[] }),
+  ]) {
+    const broken = harness({ rooms: [], erase });
+    const result = await runMeetAttendanceErasure(broken.deps);
+    expect(result.detail.ready).toBe(0);
+    expect(
+      broken.calls.find((call) => call.rpc === MEET_ATTENDANCE_READY_RPC)?.body
+    ).toEqual({ p_binding_erased: false });
+  }
+
+  const fenced = harness({ rooms: [], claimState: 'fenced' });
+  await runMeetAttendanceErasure(fenced.deps);
+  expect(
+    fenced.calls.some((call) => call.rpc === MEET_ATTENDANCE_READY_RPC)
+  ).toBe(false);
 });

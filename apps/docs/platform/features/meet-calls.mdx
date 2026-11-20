@@ -146,7 +146,15 @@ enables both jobs and binds `MEET_ATTENDANCE_ERASURE` to the
 `tuturuuu-meet-realtime` `AttendanceErasure` entrypoint. The
 `meet-attendance-retention-job` CI test refuses a production attendance flag
 before then, and the server also requires `MEET_ATTENDANCE_RETENTION_VERIFIED`
-to name both jobs.
+to name both jobs. Those checks are static, so the database also requires
+runtime proof before it stores any attendance. Each erasure run erases a probe
+room that no meeting can have through the deployed binding. After its claim
+and advance calls succeed as `service_role`, it calls
+`private.record_meet_attendance_erasure_ready`. That function records the time
+only while the stop fence is open and the erasure functions have the required
+privileges and run as their owner. `private.commit_meet_attendance_upsert`
+refuses to store rows unless that proof is less than two days old, the fence
+is still open, and the privileges still hold.
 
 Opening the panel also deletes expired rows for that meeting and workspace and
 pages the rest in stable `joined_at`, `source_key` order past the 1,000-row
@@ -184,8 +192,11 @@ A failure while planning the erasure stops the delete only while the switch is
 on. Restoring a
 room clears its end time, so attendance after the restore is not capped at
 the old end. The attendance directory stores a room name so a cold alarm can
-still publish and forget, writes only when the room's subjects change, and
-keeps a bounded set of rooms.
+still publish and forget, and writes only when the room's subjects change. Its
+stored value holds at most 512 rooms with subjects and 64 overflow ids. Further
+rooms are kept as one storage key each and listed a page at a time with a key
+cursor, so neither the value nor a listing request grows with the number of
+rooms.
 
 Each erasure intent is stored in the same transaction as the delete it
 follows. Meeting and workspace deletes store a confirmed intent in the

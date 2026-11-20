@@ -1,11 +1,15 @@
 import {
   admitAttendanceEraseBacklog,
   applyAttendanceDirectory,
+  ATTENDANCE_DIRECTORY_PAGE,
   ATTENDANCE_DIRECTORY_ROOM,
   ATTENDANCE_INDEX_RETRY_MS,
+  ATTENDANCE_SPILL_CURSOR,
+  ATTENDANCE_SPILL_PREFIX,
   attendanceSubjects,
   emptyAttendanceDirectory,
   noteAttendanceIndexPublish,
+  parseAttendanceRoomId,
   planAttendanceEraseDrain,
   recordAttendanceIndexResult,
   type AttendanceDirectory,
@@ -26,7 +30,66 @@ type DirectoryStorage = {
   put(key: string, value: unknown): Promise<unknown>;
   getAlarm?: () => Promise<number | null>;
   setAlarm?: (scheduledTime: number) => Promise<void>;
+  /** Present on Durable Object storage; spilled ids then live in their own keys. */
+  list?: (options: {
+    prefix: string;
+    startAfter?: string;
+    limit: number;
+  }) => Promise<Map<string, unknown>>;
+  delete?: (keys: string[]) => Promise<unknown>;
 };
+
+// Durable Object storage writes and deletes at most 128 keys per call.
+const KEY_BATCH = 128;
+
+function keyed(storage: DirectoryStorage) {
+  return !!storage.list && !!storage.delete;
+}
+
+async function putSpill(storage: DirectoryStorage, roomIds: string[]) {
+  for (const roomId of roomIds)
+    await storage.put(`${ATTENDANCE_SPILL_PREFIX}${roomId}`, true);
+}
+
+async function deleteSpill(storage: DirectoryStorage, roomIds: string[]) {
+  for (let start = 0; start < roomIds.length; start += KEY_BATCH)
+    await storage.delete?.(
+      roomIds
+        .slice(start, start + KEY_BATCH)
+        .map((roomId) => `${ATTENDANCE_SPILL_PREFIX}${roomId}`)
+    );
+}
+
+/** One page of spilled ids, scanning at most one page of keys. */
+async function listSpill(
+  storage: DirectoryStorage,
+  after: string,
+  query: { wsId?: string; meetingId?: string }
+) {
+  const entries = await storage.list!({
+    prefix: ATTENDANCE_SPILL_PREFIX,
+    ...(after ? { startAfter: `${ATTENDANCE_SPILL_PREFIX}${after}` } : {}),
+    limit: ATTENDANCE_DIRECTORY_PAGE,
+  });
+  const scanned = [...entries.keys()].map((key) =>
+    key.slice(ATTENDANCE_SPILL_PREFIX.length)
+  );
+  const roomIds = scanned.filter((roomId) => {
+    const parsed = parseAttendanceRoomId(roomId);
+    if (!parsed) return false;
+    if (query.wsId && parsed.wsId !== query.wsId) return false;
+    if (query.meetingId && parsed.meetingId !== query.meetingId) return false;
+    return true;
+  });
+  const last = scanned.at(-1);
+  return {
+    roomIds,
+    cursor:
+      scanned.length === ATTENDANCE_DIRECTORY_PAGE && last
+        ? `${ATTENDANCE_SPILL_CURSOR}${last}`
+        : null,
+  };
+}
 
 export async function handleAttendanceDirectoryRequest(input: {
   storage: DirectoryStorage;
@@ -52,13 +115,66 @@ export async function handleAttendanceDirectoryRequest(input: {
   const stored =
     (await input.storage.get<AttendanceDirectory>(DIRECTORY_KEY)) ??
     emptyAttendanceDirectory();
+  const cursor = command?.cursor;
+  if (
+    (!command || command.op === 'list') &&
+    keyed(input.storage) &&
+    typeof cursor === 'string' &&
+    cursor.startsWith(ATTENDANCE_SPILL_CURSOR)
+  )
+    return Response.json(
+      await listSpill(
+        input.storage,
+        cursor.slice(ATTENDANCE_SPILL_CURSOR.length),
+        { wsId: command?.wsId, meetingId: command?.meetingId }
+      ),
+      { headers: { 'Cache-Control': 'private, no-store' } }
+    );
   const applied = applyAttendanceDirectory(stored, command);
-  if (applied.directory !== stored)
-    await input.storage.put(DIRECTORY_KEY, applied.directory);
+  let directory = applied.directory;
+  const effects = 'effects' in applied ? applied.effects : undefined;
+  if (keyed(input.storage)) {
+    if (effects?.spillPut?.length)
+      await putSpill(input.storage, effects.spillPut);
+    if (effects?.spillDelete?.length)
+      await deleteSpill(input.storage, effects.spillDelete);
+    // Move ids held in the stored value into keys, one bounded chunk per
+    // write request. A listing never mutates, so its index cursor stays valid.
+    if (command && command.op !== 'list' && directory.spill?.length) {
+      const moving = directory.spill.slice(0, KEY_BATCH);
+      await putSpill(input.storage, moving);
+      const rest = directory.spill.slice(moving.length);
+      const { spill: _moved, ...withoutSpill } = directory;
+      directory = rest.length ? { ...withoutSpill, spill: rest } : withoutSpill;
+    }
+  } else if (effects?.spillPut?.length) {
+    directory = {
+      ...directory,
+      spill: [
+        ...new Set([...(directory.spill ?? []), ...effects.spillPut]),
+      ].sort(),
+    };
+  }
+  if (directory !== stored) await input.storage.put(DIRECTORY_KEY, directory);
+  if (
+    (!command || command.op === 'list') &&
+    keyed(input.storage) &&
+    (applied.result as { cursor?: unknown }).cursor === null
+  ) {
+    const spilled = await input.storage.list!({
+      prefix: ATTENDANCE_SPILL_PREFIX,
+      limit: 1,
+    });
+    if (spilled.size)
+      return Response.json(
+        { ...applied.result, cursor: ATTENDANCE_SPILL_CURSOR },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      );
+  }
   if (
     command?.op === 'queue-erase' &&
-    applied.directory !== stored &&
-    applied.directory.pending &&
+    directory !== stored &&
+    directory.pending &&
     input.storage.setAlarm
   ) {
     const at = (input.nowMs ?? Date.now()) + ATTENDANCE_INDEX_RETRY_MS;

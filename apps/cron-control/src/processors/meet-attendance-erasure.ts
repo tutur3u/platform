@@ -13,6 +13,12 @@ export const MEET_ATTENDANCE_ADVANCE_RPC =
   'advance_meet_attendance_erasure_intents';
 export const MEET_ATTENDANCE_CLAIM_RPC = 'claim_meet_attendance_erasure_rooms';
 export const MEET_ATTENDANCE_ACK_RPC = 'ack_meet_attendance_erasure_room';
+export const MEET_ATTENDANCE_READY_RPC = 'record_meet_attendance_erasure_ready';
+// A room id no meeting can have. Erasing it proves the deployed binding, its
+// realtime secret, and the room namespace end to end; an absent room is not
+// written.
+export const MEET_ATTENDANCE_PROBE_ROOM =
+  '00000000-0000-4000-8000-000000000000:00000000-0000-4000-8000-000000000000';
 export const MEET_ATTENDANCE_INTENT_PAGE = 32;
 export const MEET_ATTENDANCE_ROOM_PAGE = 128;
 export const MEET_ATTENDANCE_ROOM_PAGES = 4;
@@ -232,7 +238,34 @@ export async function runMeetAttendanceErasure(
   }
   if (state === 'failed' || state === 'unknown')
     return { detail, outcome: state };
+  if (state === 'open') detail.ready = await recordReadiness(deps, deps.erase);
   return { detail, outcome: detail.failed ? 'failed' : 'ok' };
+}
+
+/**
+ * The claim and advance calls of this run already ran as service_role. Probe
+ * the binding, then let the database record readiness; it refuses while the
+ * stop fence is closed or the function privileges are wrong.
+ */
+async function recordReadiness(
+  deps: MeetAttendanceErasureDeps,
+  erase: MeetAttendanceErasureBinding['erase']
+) {
+  let erased = false;
+  try {
+    const probe = await erase({
+      roomId: MEET_ATTENDANCE_PROBE_ROOM,
+      generation: 1,
+      keys: ['meeting'],
+    });
+    erased = Array.isArray(probe?.acked) && probe.acked.includes('meeting');
+  } catch {
+    erased = false;
+  }
+  const recorded = await deps
+    .call(MEET_ATTENDANCE_READY_RPC, { p_binding_erased: erased })
+    .catch(() => null);
+  return recorded?.kind === 'ok' && recorded.value === 'ready' ? 1 : 0;
 }
 
 /** Cron Control adapter. The service key calls the private functions. */

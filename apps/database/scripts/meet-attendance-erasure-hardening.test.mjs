@@ -15,6 +15,8 @@ const before = [
 ];
 const hardening =
   'supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql';
+const readiness =
+  'supabase/migrations/20261120101500_meet_attendance_erasure_readiness.sql';
 
 const ws = '11111111-1111-4111-8111-111111111111';
 const meeting = '33333333-3333-4333-8333-333333333333';
@@ -77,7 +79,7 @@ async function apply(db, path) {
   await db.exec(await readFile(new URL(path, root), 'utf8'));
 }
 
-async function freshDb(paths = [...before, hardening]) {
+async function freshDb(paths = [...before, hardening, readiness]) {
   const db = new PGlite();
   await db.exec(fixture);
   for (const path of paths) await apply(db, path);
@@ -346,4 +348,86 @@ test('the rooms rollback fences writers before it copies progress', async () => 
   const lock = sql.search(/lock table[\s\S]*?in access exclusive mode/);
   const copy = sql.search(/update private\.meet_attendance_pending_erasures/);
   assert.ok(lock > 0 && lock < copy);
+});
+
+test('attendance rows are stored only after the erasure job proves readiness', async () => {
+  const db = await freshDb();
+  const rows = JSON.stringify([
+    {
+      sourceKey: 'device:1',
+      kind: 'member',
+      userId: user,
+      displayName: 'Ada',
+      joinedAt: '2026-11-20T00:00:00.000Z',
+      leftAt: null,
+    },
+  ]);
+  const commit = () =>
+    asService(
+      db,
+      'select private.commit_meet_attendance_upsert($1, $2, 0, $3)',
+      [meeting, ws, rows]
+    );
+  const record = (erased) =>
+    asService(
+      db,
+      'select private.record_meet_attendance_erasure_ready($1) as value',
+      [erased]
+    );
+  const sessions = async () =>
+    (
+      await db.query(
+        'select count(*)::int as n from private.meet_attendance_sessions'
+      )
+    ).rows[0].n;
+
+  await assert.rejects(commit(), /not verified/);
+  assert.equal(await record(false), 'binding');
+  await assert.rejects(commit(), /not verified/);
+
+  await db.exec(
+    'update private.meet_attendance_retention_control set stopped = true'
+  );
+  assert.equal(await record(true), 'fenced');
+  await db.exec(
+    'update private.meet_attendance_retention_control set stopped = false'
+  );
+
+  assert.equal(await record(true), 'ready');
+  await commit();
+  assert.equal(await sessions(), 1);
+
+  // Closing the stop fence, a stale proof, or a missing privilege each
+  // withdraw readiness.
+  await db.exec(
+    'update private.meet_attendance_retention_control set stopped = true'
+  );
+  await assert.rejects(commit(), /not verified/);
+  await db.exec(
+    'update private.meet_attendance_retention_control set stopped = false'
+  );
+  await db.exec(
+    "update private.meet_attendance_erasure_readiness set verified_at = clock_timestamp() - interval '3 days'"
+  );
+  await assert.rejects(commit(), /not verified/);
+  assert.equal(await record(true), 'ready');
+  await db.exec(
+    'revoke execute on function private.finish_meet_attendance_intent(text, text) from service_role'
+  );
+  await assert.rejects(commit(), /not verified/);
+  assert.equal(await record(true), 'grants');
+});
+
+test('client roles cannot record readiness or read it', async () => {
+  const db = await freshDb();
+  for (const role of ['anon', 'authenticated']) {
+    await db.exec(`set role ${role}`);
+    await assert.rejects(
+      db.query('select private.record_meet_attendance_erasure_ready(true)')
+    );
+    await assert.rejects(
+      db.query('select * from private.meet_attendance_erasure_readiness')
+    );
+    await db.exec('reset role');
+  }
 });

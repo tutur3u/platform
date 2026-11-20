@@ -225,12 +225,14 @@ async function directoryRoomIds(query: {
   wsId?: string;
 }) {
   const ids: string[] = [];
-  for (let cursor = 0; ;) {
+  // The cursor is opaque: an index into the directory, then a key cursor
+  // over spilled room ids.
+  for (let cursor: number | string = 0; ;) {
     const page = (await postJson(
       '/attendance-index',
       serviceClaims('attendance-index', ATTENDANCE_DIRECTORY_ROOM),
       { op: 'list', ...query, cursor }
-    )) as { roomIds?: unknown; cursor?: number | null } | null;
+    )) as { roomIds?: unknown; cursor?: number | string | null } | null;
     if (!page || !Array.isArray(page.roomIds))
       throw new Error('Meet attendance directory was not listed');
     ids.push(...page.roomIds.filter((id) => typeof id === 'string'));
