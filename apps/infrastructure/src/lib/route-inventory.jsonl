@@ -17,6 +17,7 @@
 {"file":"[locale]/(dashboard)/[wsId]/changelog/new/page.tsx","path":"/[wsId]/changelog/new","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/changelog/page.tsx","path":"/[wsId]/changelog","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/cron/whitelist/domains/page.tsx","path":"/[wsId]/cron/whitelist/domains","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"[locale]/(dashboard)/[wsId]/deployments/page.tsx","path":"/[wsId]/deployments","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/desktop-deployment/page.tsx","path":"/[wsId]/desktop-deployment","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/devboxes/page.tsx","path":"/[wsId]/devboxes","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"[locale]/(dashboard)/[wsId]/email-audit/page.tsx","path":"/[wsId]/email-audit","methods":[{"method":"GET","classification":"ADMIN"}]}
@@ -132,6 +133,9 @@
 {"file":"api/v1/infrastructure/coupons/route.ts","path":"/api/v1/infrastructure/coupons","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/cron/whitelist/domain/[domain]/route.ts","path":"/api/v1/infrastructure/cron/whitelist/domain/[domain]","methods":[{"method":"PUT","classification":"ADMIN"},{"method":"DELETE","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/cron/whitelist/domains/route.ts","path":"/api/v1/infrastructure/cron/whitelist/domains","methods":[{"method":"GET","classification":"ADMIN"},{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/deployments/[project]/[environment]/route.ts","path":"/api/v1/infrastructure/deployments/[project]/[environment]","methods":[{"method":"POST","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/deployments/[project]/route.ts","path":"/api/v1/infrastructure/deployments/[project]","methods":[{"method":"GET","classification":"ADMIN"}]}
+{"file":"api/v1/infrastructure/deployments/route.ts","path":"/api/v1/infrastructure/deployments","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/devboxes/route.ts","path":"/api/v1/infrastructure/devboxes","methods":[{"method":"GET","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/devboxes/runners/[runnerId]/drain/route.ts","path":"/api/v1/infrastructure/devboxes/runners/[runnerId]/drain","methods":[{"method":"POST","classification":"ADMIN"}]}
 {"file":"api/v1/infrastructure/devboxes/runners/[runnerId]/features/route.ts","path":"/api/v1/infrastructure/devboxes/runners/[runnerId]/features","methods":[{"method":"POST","classification":"ADMIN"}]}
