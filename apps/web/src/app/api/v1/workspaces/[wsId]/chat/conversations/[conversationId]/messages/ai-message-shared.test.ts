@@ -7,6 +7,7 @@ vi.mock('@tuturuuu/ai/chat/google/route', () => ({
 
 const mocks = vi.hoisted(() => ({
   createAiChatPost: vi.fn(),
+  createAdminClient: vi.fn(),
   membership: vi.fn(),
   permissions: vi.fn(),
   finance: vi.fn(),
@@ -14,6 +15,10 @@ const mocks = vi.hoisted(() => ({
   download: vi.fn(),
   resolveProvider: vi.fn(),
   upload: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -193,9 +198,11 @@ describe('AI chat attachment resources', () => {
         .fn()
         .mockResolvedValue({ data: { id: 'source-chat' }, error: null }),
     };
+    const adminFrom = vi.fn(() => query);
+    mocks.createAdminClient.mockResolvedValue({ from: adminFrom });
     const resourceAuth = {
       user: { id: 'actor-a' },
-      supabase: { from: vi.fn(() => query) },
+      supabase: {},
     } as never;
     const input = {
       auth: resourceAuth,
@@ -210,6 +217,7 @@ describe('AI chat attachment resources', () => {
       wsId: 'workspace-1',
     };
     await copyAiChatAttachmentInputsToResources(input);
+    expect(adminFrom).toHaveBeenCalledWith('ai_chats');
     expect(query.eq).toHaveBeenCalledWith('creator_id', 'actor-a');
     mocks.download.mockClear();
     mocks.membership.mockResolvedValue({ ok: false });

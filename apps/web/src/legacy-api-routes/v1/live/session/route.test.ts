@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  createAdminClient: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   serverLoggerError: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
 }));
@@ -100,10 +102,6 @@ describe('live session route', () => {
 
     const supabase = {
       from: vi.fn((table: string) => {
-        if (table === 'ai_chats') {
-          return aiChatsBuilder;
-        }
-
         if (table === 'live_api_sessions') {
           return liveSessionsBuilder;
         }
@@ -113,6 +111,12 @@ describe('live session route', () => {
     };
 
     mocks.createClient.mockResolvedValue(supabase);
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        if (table !== 'ai_chats') throw new Error(`Unexpected table: ${table}`);
+        return aiChatsBuilder;
+      }),
+    });
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       authError: null,
       user: { id: USER_ID },

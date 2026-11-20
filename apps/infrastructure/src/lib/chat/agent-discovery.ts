@@ -6,7 +6,6 @@ import {
   filterNativeChatShadowRows,
   getUserPersonalWorkspaceId,
 } from './ai-chat-discovery-access';
-export { isUserPersonalChatWorkspace } from './ai-chat-discovery-access';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { listAiAgents } from '@/lib/ai-agents/registry';
 import type { SessionAuthContext } from '@/lib/api-auth';
