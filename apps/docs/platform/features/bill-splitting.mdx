@@ -157,7 +157,8 @@ server-only `FINANCE_CONTACT_BANK_ENCRYPTION_KEY` for the AES-256-GCM envelope.
 Consent must come from the workspace member linked to the contact. Withdraw
 consent to remove the account, and require fresh consent for a replacement.
 The authenticated holder can withdraw consent and revoke their QR links even
-if their Finance role changes or bill splitting is switched off.
+if their Finance role changes or bill splitting is switched off. Withdrawal
+requests are limited to 20 per account per minute across workspaces.
 Withdrawal or replacement revokes existing links that share that account’s QR.
 The holder must select the replacement account again to create a QR link.
 The dialog shows the masked account and the server rejects a selection if its

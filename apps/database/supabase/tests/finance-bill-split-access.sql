@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(46);
+select plan(47);
 
 select is(
   (select count(*) from pg_catalog.pg_class c
@@ -391,9 +391,12 @@ select ok(not public.has_workspace_permission(pg_temp.fixture('10'), pg_temp.fix
   and not public.has_workspace_permission(pg_temp.fixture('10'), pg_temp.fixture('02'), 'create_transactions'),
   'The holder lost both Finance permissions');
 
+set local role service_role;
 select private.withdraw_finance_contact_bank_account(
-  pg_temp.fixture('10'), pg_temp.fixture('03'), pg_temp.fixture('56')
+  '97049000-0000-4000-8000-000000000010', '97049000-0000-4000-8000-000000000003',
+  '97049000-0000-4000-8000-000000000056'
 );
+reset role;
 select isnt(private.lookup_finance_bill_split_link(repeat('e',64)), null::jsonb,
   'A different actor cannot withdraw the holder’s consent');
 
@@ -409,6 +412,22 @@ select ok(not exists (
   select 1 from private.finance_contact_bank_accounts where ws_id = pg_temp.fixture('10')
     and contact_id = pg_temp.fixture('56')
 ), 'Withdrawal removes the encrypted account');
+
+insert into private.rate_limit_counters (bucket, window_seconds, window_started_at, current_count)
+select 'finance-bank-withdrawal:' || pg_temp.fixture('03')::text, 60,
+  date_trunc('minute', clock_timestamp()) + offset_minutes * interval '1 minute', 20
+from generate_series(0, 1) as offset_minutes
+on conflict (bucket, window_seconds, window_started_at) do update
+set current_count = excluded.current_count;
+
+set local role service_role;
+select throws_ok($$
+  select private.withdraw_finance_contact_bank_account(
+    '97049000-0000-4000-8000-000000000011', '97049000-0000-4000-8000-000000000003',
+    '97049000-0000-4000-8000-000000000057'
+  )
+$$, 'PT429', 'Too many bank consent withdrawals', 'Withdrawal quota follows the actor across workspaces');
+reset role;
 
 select * from finish();
 

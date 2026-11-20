@@ -23538,6 +23538,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      consume_finance_bank_withdrawal_quota: {
+        Args: { p_actor_id: string };
+        Returns: boolean;
+      };
       consume_inventory_checkout_stock: {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: number;

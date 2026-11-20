@@ -221,6 +221,21 @@ describe('Finance bill splits API', () => {
     );
   });
 
+  it('hides malformed bank requests while flags are off and maps the withdrawal quota', async () => {
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS', '');
+    const context = { params: { wsId: 'personal', contactId: id } };
+    const malformed = await contactBank(request('POST', '{'), context);
+    expect(malformed.status).toBe(404);
+    expect(state.admin).not.toHaveBeenCalled();
+
+    state.rpc.mockResolvedValue({ data: null, error: { code: 'PT429' } });
+    const limited = await contactBank(
+      request('POST', JSON.stringify({ kind: 'revoke' })),
+      context
+    );
+    expect(limited.status).toBe(429);
+  });
+
   it('stores a server-calculated ledger under the authorized actor and workspace', async () => {
     state.rpc.mockResolvedValue({ data: id, error: null });
     const response = await POST(request('POST', JSON.stringify(valid)), params);

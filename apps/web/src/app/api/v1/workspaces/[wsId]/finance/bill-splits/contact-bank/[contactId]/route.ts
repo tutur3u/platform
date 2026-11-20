@@ -45,14 +45,18 @@ const maskedResult = z.object({
 
 export const POST = withSessionAuth<Params>(
   async (request, context, params) => {
+    const enabled =
+      process.env.ENABLE_FINANCE_BILL_SPLITS === 'true' &&
+      process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS === 'true';
+    const invalid = (message: string) =>
+      enabled ? responseError(message, 400) : responseError('Not found', 404);
     const contact = billSplitId.safeParse(params.contactId);
-    if (!contact.success) return responseError('Invalid contact', 400);
+    if (!contact.success) return invalid('Invalid contact');
     if (await guardApiProxyBody(request, 4096))
-      return responseError('Invalid bank account request', 400);
+      return invalid('Invalid bank account request');
 
     const input = command.safeParse(await request.json().catch(() => null));
-    if (!input.success)
-      return responseError('Invalid bank account request', 400);
+    if (!input.success) return invalid('Invalid bank account request');
     const action = input.data.kind;
     if (action === 'revoke') {
       const actorId = context.user.id;
@@ -72,11 +76,13 @@ export const POST = withSessionAuth<Params>(
           p_contact_id: contact.data,
         }
       );
+      if (error?.code === 'PT429')
+        return responseError('Too many requests', 429);
       if (error) return storeError(error.code);
       return NextResponse.json({ ok: true }, { headers });
     }
 
-    if (process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS !== 'true') {
+    if (!enabled) {
       return responseError('Not found', 404);
     }
     const access = await authorize(
