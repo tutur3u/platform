@@ -5251,6 +5251,12 @@ abstract class AppLocalizations {
   /// **'{before} to {after}'**
   String crmAuditValueChange(String before, String after);
 
+  /// No description provided for @crmBillingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice access is unavailable'**
+  String get crmBillingUnavailable;
+
   /// No description provided for @crmBirthday.
   ///
   /// In en, this message translates to:
@@ -5568,6 +5574,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You do not have permission to access this Contacts view.'**
   String get crmPermissionDenied;
+
+  /// No description provided for @crmOutstandingSubscriptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Outstanding subscriptions'**
+  String get crmOutstandingSubscriptions;
 
   /// No description provided for @crmPhone.
   ///

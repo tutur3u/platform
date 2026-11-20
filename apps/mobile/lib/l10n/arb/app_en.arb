@@ -2293,6 +2293,7 @@
       }
     }
   },
+  "crmBillingUnavailable": "Invoice access is unavailable",
   "crmBirthday": "Birthday",
   "crmBulkMerge": "Merge reviewed pairs",
   "crmBulkMergeConfirm": "Merge {count} duplicate pairs into the selected surviving contacts?",
@@ -2350,6 +2351,7 @@
   "crmNationalIdPlaceholder": "Enter national ID",
   "crmNote": "Note",
   "crmPermissionDenied": "You do not have permission to access this Contacts view.",
+  "crmOutstandingSubscriptions": "Outstanding subscriptions",
   "crmPhone": "Phone",
   "crmRequireAttention": "Require attention",
   "crmSearchAuditHint": "Search audit actor or affected user",

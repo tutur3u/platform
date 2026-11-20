@@ -2702,6 +2702,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get crmBillingUnavailable => 'Invoice access is unavailable';
+
+  @override
   String get crmBirthday => 'Birthday';
 
   @override
@@ -2875,6 +2878,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get crmPermissionDenied => 'You do not have permission to access this Contacts view.';
+
+  @override
+  String get crmOutstandingSubscriptions => 'Outstanding subscriptions';
 
   @override
   String get crmPhone => 'Phone';

@@ -6,11 +6,13 @@ class _CrmUserDetail extends StatelessWidget {
     required this.user,
     required this.privateInfo,
     required this.publicInfo,
+    this.billing,
   });
 
   final CrmUser user;
   final bool privateInfo;
   final bool publicInfo;
+  final Widget? billing;
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +110,10 @@ class _CrmUserDetail extends StatelessWidget {
               ],
             ),
           ),
+        ],
+        if (privateInfo && billing != null) ...[
+          const SizedBox(height: AppLayout.sectionGap),
+          billing!,
         ],
       ],
     );

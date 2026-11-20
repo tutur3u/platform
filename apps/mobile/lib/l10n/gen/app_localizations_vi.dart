@@ -2688,6 +2688,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get crmBillingUnavailable => 'Không thể truy cập hóa đơn';
+
+  @override
   String get crmBirthday => 'Ngày sinh';
 
   @override
@@ -2861,6 +2864,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get crmPermissionDenied => 'Bạn không có quyền truy cập giao diện Danh bạ này.';
+
+  @override
+  String get crmOutstandingSubscriptions => 'Phí đăng ký còn phải trả';
 
   @override
   String get crmPhone => 'Số điện thoại';

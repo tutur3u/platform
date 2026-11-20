@@ -11,13 +11,15 @@ import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/crm/crm_models.dart';
+import 'package:mobile/data/models/finance/finance_invoice.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/crm/utils/contact_sections.dart';
 import 'package:mobile/features/crm/utils/crm_visibility.dart';
 
+part 'crm_repository_billing.dart';
 part 'crm_repository_groups.dart';
 
-class CrmRepository with _CrmGroupMembershipRepository {
+class CrmRepository with _CrmGroupMembershipRepository, _CrmBillingRepository {
   CrmRepository({
     ApiClient? apiClient,
     http.Client? httpClient,

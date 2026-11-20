@@ -164,6 +164,14 @@ extension _CrmPageLayout on _CrmPageState {
           else if (selected != null)
             _CrmUserDetail(
               user: selected,
+              billing: _workspacePermissions.containsPermission('view_invoices')
+                  ? ContactBilling(
+                      key: ValueKey((widget.workspaceId, selected.id)),
+                      workspaceId: widget.workspaceId,
+                      contactId: selected.id,
+                      repository: _repository,
+                    )
+                  : null,
               privateInfo: _userPermissions?.hasPrivateInfo ?? false,
               publicInfo: _userPermissions?.hasPublicInfo ?? false,
             )
