@@ -92,10 +92,13 @@ Before enabling it, configure the Cron Control Worker’s `CHAT_REALTIME_URL` an
 dedicated `CHAT_REALTIME_TOKEN_SECRET`. It reads the existing private PostgREST
 tables using Cron Control’s database binding, and publishes body-bound tickets
 to the Chat Worker. Recovery checks the durable job fence and Worker health
-before reading Postgres. One invocation scans the last two complete
-five-minute slots within the Worker’s 15-minute event window. The cutoff leaves
-52 seconds for request processing, delivery and clock skew. It sends at most 32 records
-with at most four concurrent publishes and reports overflow or failed delivery.
+before reading Postgres. One invocation scans completed slots within the
+Worker's 15-minute event window and leaves time for processing and clock skew.
+It takes up to 32 undelivered records newest first, with at most four concurrent
+publishes. The job ledger retains up to 96 confirmed audit IDs until they age
+out, so later slots can reach older rows and retry failed deliveries. Overflow
+is degraded and does not charge the failure budget. Sustained overflow can
+outlast the event window.
 Archive recovery uses at most two membership reads per archive to notify up to
 1,500 members archived in the audit transaction, plus the actor. Cron Control
 dispatches this processor once per slot. The Worker deduplicates by audit ID during replay

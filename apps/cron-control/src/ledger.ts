@@ -5,7 +5,13 @@
 
 export type RunOutcome = 'degraded' | 'failed' | 'ok' | 'stopped' | 'unknown';
 
+export interface DeliveredAuditEvent {
+  id: string;
+  createdAt: string;
+}
+
 export interface JobState {
+  chatDeliveredCursor?: DeliveredAuditEvent[];
   consecutiveFailures: number;
   generation: number;
   lastCompletedAt: number | null;
@@ -25,7 +31,11 @@ export interface JobState {
 }
 
 export type ClaimResult =
-  | { granted: true; generation: number }
+  | {
+      granted: true;
+      generation: number;
+      chatDeliveredCursor?: DeliveredAuditEvent[];
+    }
   | { granted: false; reason: 'busy' | 'duplicate' | 'stopped' };
 
 export interface ClaimInput {
@@ -38,6 +48,7 @@ export interface ClaimInput {
 }
 
 export interface CompleteInput {
+  chatDeliveredCursor?: DeliveredAuditEvent[];
   generation: number;
   jobId: string;
   maxConsecutiveFailures: number;
@@ -133,7 +144,13 @@ export class LedgerCore {
       leaseUntil: now + leaseMs,
       runs: state.runs + 1,
     });
-    return { granted: true, generation: state.generation };
+    return {
+      granted: true,
+      generation: state.generation,
+      ...(state.chatDeliveredCursor
+        ? { chatDeliveredCursor: state.chatDeliveredCursor }
+        : {}),
+    };
   }
 
   checkFence(jobId: string, generation: number) {
@@ -144,6 +161,7 @@ export class LedgerCore {
   // Persistent failure exhausts a durable budget: the job stops until an
   // operator resumes it, and restarts do not reset the counter.
   complete({
+    chatDeliveredCursor,
     generation,
     jobId,
     maxConsecutiveFailures,
@@ -160,6 +178,7 @@ export class LedgerCore {
       return state;
     const next: JobState = {
       ...this.#charge(state, outcome, maxConsecutiveFailures),
+      ...(chatDeliveredCursor ? { chatDeliveredCursor } : {}),
       lastCompletedAt: outcome === 'ok' ? now : state.lastCompletedAt,
     };
     this.store.write(jobId, next);

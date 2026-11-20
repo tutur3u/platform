@@ -1,4 +1,4 @@
-import type { RunOutcome } from '../ledger';
+import type { DeliveredAuditEvent, RunOutcome } from '../ledger';
 import type { MeetAttendanceErasureBinding } from './meet-attendance-erasure';
 
 export interface ProcessorEnv {
@@ -11,6 +11,7 @@ export interface ProcessorEnv {
 }
 
 export interface ProcessorContext {
+  chatDeliveredCursor?: DeliveredAuditEvent[];
   /** Epoch ms bounding the whole run, including ledger RPCs (inside the lease). */
   deadline: number;
   env: ProcessorEnv;
@@ -34,6 +35,7 @@ export interface ProcessorContext {
 }
 
 export interface ProcessorResult {
+  chatDeliveredCursor?: DeliveredAuditEvent[];
   detail: Record<string, number>;
   outcome: RunOutcome;
 }

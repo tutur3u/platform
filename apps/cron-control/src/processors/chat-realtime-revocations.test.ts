@@ -32,26 +32,32 @@ function harness(
   respond: (url: URL, init?: RequestInit) => Response | Promise<Response>
 ) {
   const { store } = memoryLedgerStore();
-  const ledger = localLedger(new LedgerCore(store));
+  let ledger = localLedger(new LedgerCore(store));
+  let runAt = now;
   const fetch = vi.fn((url: URL, init?: RequestInit) =>
     Promise.resolve(respond(url, init))
   );
   const deps = {
     fetch: fetch as unknown as typeof globalThis.fetch,
     ledger: vi.fn(() => ledger),
-    now: () => now,
+    now: () => runAt,
     sleep: async () => undefined,
   };
   return {
     deps,
     fetch,
-    run: (enabled = job) =>
-      dispatchScheduledJobs(
+    restart: () => {
+      ledger = localLedger(new LedgerCore(store));
+    },
+    run: (enabled = job, slotOffset = 0) => {
+      runAt = now + slotOffset * 5 * 60_000;
+      return dispatchScheduledJobs(
         '*/5 * * * *',
-        now,
+        runAt,
         { ...env, CRON_CONTROL_ENABLED_JOBS: enabled },
         deps
-      ),
+      );
+    },
   };
 }
 
@@ -141,14 +147,8 @@ it('attempts at most 32 records and leaves failed delivery to a later slot', asy
   const h = harness((url) => {
     if (url.pathname === '/health')
       return Response.json({ ok: true, stopped: false });
-    if (url.pathname === '/rest/v1/chat_audit_events') {
-      return Response.json(
-        Array.from({ length: 33 }, () => ({
-          ...row,
-          metadata: { mode: 'left', type: 'group' },
-        }))
-      );
-    }
+    if (url.pathname === '/rest/v1/chat_audit_events')
+      return Response.json(auditRows(33));
     expect(url.pathname).toBe('/v1/publish');
     published += 1;
     if (published === 1) return new Response(null, { status: 503 });
@@ -164,3 +164,64 @@ it('attempts at most 32 records and leaves failed delivery to a later slot', asy
   ]);
   expect(published).toBe(32);
 });
+
+function auditRows(count: number) {
+  return Array.from({ length: count }, (_, index) => ({
+    ...row,
+    id: `a6742000-0000-4000-8000-${String(count - index).padStart(12, '0')}`,
+    created_at: '2026-11-20T05:34:00.000Z',
+    metadata: { mode: 'left', type: 'group' },
+  }));
+}
+
+it.each([false, true])(
+  'carries undelivered overflow across a ledger restart (partial failure: %j)',
+  async (partialFailure) => {
+    const rows = auditRows(34);
+    const published: string[] = [];
+    const oldest = rows.at(-1)?.id;
+    const newest = rows[0]?.id;
+    let failedOnce = false;
+    const h = harness((url, init) => {
+      if (url.pathname === '/health')
+        return Response.json({ ok: true, stopped: false });
+      if (url.pathname === '/rest/v1/chat_audit_events') {
+        expect(url.searchParams.get('order')).toBe('created_at.desc,id.desc');
+        const delivered =
+          url.searchParams.get('id')?.slice(8, -1).split(',') ?? [];
+        const remaining = rows.filter(({ id }) => !delivered.includes(id));
+        return Response.json(remaining.slice(0, 33));
+      }
+      const { id } = JSON.parse(String(init?.body));
+      published.push(id);
+      if (partialFailure && id === newest && !failedOnce) {
+        failedOnce = true;
+        return new Response(null, { status: 503 });
+      }
+      return Response.json({ ok: true });
+    });
+    expect(await h.run()).toMatchObject([
+      {
+        outcome: partialFailure ? 'failed' : 'degraded',
+        detail: { capped: 1, delivered: partialFailure ? 31 : 32 },
+      },
+    ]);
+    const status = (await h.deps.ledger().status())[job];
+    expect(status.consecutiveFailures).toBe(partialFailure ? 1 : 0);
+    expect(published).toContain(newest);
+    expect(published).not.toContain(oldest);
+    h.restart();
+    expect(await h.run(job, 1)).toMatchObject([
+      {
+        outcome: 'ok',
+        detail: { capped: 0, delivered: partialFailure ? 3 : 2 },
+      },
+    ]);
+    expect(published.slice(32).sort()).toEqual(
+      (partialFailure
+        ? [newest, rows[32].id, oldest]
+        : [rows[32].id, oldest]
+      ).sort()
+    );
+  }
+);

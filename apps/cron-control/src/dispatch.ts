@@ -310,6 +310,7 @@ async function runJob(
       const result = await withinDeadline(clock, () =>
         processor({
           ...clock,
+          chatDeliveredCursor: claim.chatDeliveredCursor,
           env: env as unknown as ProcessorEnv,
           fetch: deps.fetch,
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
@@ -341,6 +342,7 @@ async function runJob(
           maxConsecutiveFailures: MAX_CONSECUTIVE_FAILURES,
           now: deps.now(),
           outcome: result.outcome,
+          chatDeliveredCursor: result.chatDeliveredCursor,
           slot,
         })
       );

@@ -14,6 +14,8 @@ import type { ProcessorContext, ProcessorResult } from './types';
 
 const SLOT_MS = 5 * 60_000;
 const BATCH_SIZE = 32;
+const MAX_DELIVERED_CURSOR =
+  BATCH_SIZE * Math.ceil(CHAT_REALTIME_EVENT_WINDOW_MS / SLOT_MS);
 const CONCURRENCY = 4;
 const RECOVERY_DEADLINE_MS = 20_000;
 const DELIVERY_MARGIN_MS =
@@ -145,23 +147,28 @@ export async function recoverChatRevocations(
   }
   const slot = Math.floor(now / SLOT_MS) * SLOT_MS;
   const lowerBound = new Date(
-    Math.max(
-      slot - 2 * SLOT_MS,
-      now -
-        CHAT_REALTIME_EVENT_WINDOW_MS +
-        RECOVERY_DEADLINE_MS +
-        DELIVERY_MARGIN_MS
-    )
+    now -
+      CHAT_REALTIME_EVENT_WINDOW_MS +
+      RECOVERY_DEADLINE_MS +
+      DELIVERY_MARGIN_MS
   ).toISOString();
+  const cursor = (context.chatDeliveredCursor ?? []).filter(
+    ({ createdAt }) => Date.parse(createdAt) >= Date.parse(lowerBound)
+  );
   const audit = new URL('/rest/v1/chat_audit_events', database);
   audit.search = new URLSearchParams([
     ['select', CHAT_REVOCATION_AUDIT_COLUMNS],
     ['event_type', 'eq.conversation.deleted'],
     ['created_at', `gte.${lowerBound}`],
     ['created_at', `lt.${new Date(slot).toISOString()}`],
-    ['order', 'created_at.asc,id.asc'],
+    ['order', 'created_at.desc,id.desc'],
     ['limit', String(BATCH_SIZE + 1)],
   ]).toString();
+  if (cursor.length)
+    audit.searchParams.set(
+      'id',
+      `not.in.(${cursor.map(({ id }) => id).join(',')})`
+    );
   const rows = chatRevocationAuditRows.parse(
     await requestJson(
       context,
@@ -170,14 +177,24 @@ export async function recoverChatRevocations(
       3_000
     )
   );
+  if (rows.length > BATCH_SIZE + 1) return { detail, outcome: 'unknown' };
   detail.capped = Number(rows.length > BATCH_SIZE);
+  const finish = (outcome: ProcessorResult['outcome']): ProcessorResult => ({
+    detail,
+    outcome,
+    chatDeliveredCursor: cursor.slice(-MAX_DELIVERED_CURSOR),
+  });
 
   for (
     let start = 0;
     start < Math.min(rows.length, BATCH_SIZE);
     start += CONCURRENCY
   ) {
-    if (!(await fence())) return { detail, outcome: 'stopped' };
+    try {
+      if (!(await fence())) return finish('stopped');
+    } catch {
+      return finish('unknown');
+    }
     const results = await Promise.allSettled(
       rows
         .slice(start, Math.min(start + CONCURRENCY, BATCH_SIZE))
@@ -212,16 +229,18 @@ export async function recoverChatRevocations(
             response.ok !== true
           )
             throw new Error('Chat recovery publish unconfirmed');
-          return true;
+          return { id: row.id, createdAt: row.created_at };
         })
     );
     let stopped = false;
     for (const result of results) {
       if (result.status === 'rejected') detail.failed += 1;
-      else if (result.value) detail.delivered += 1;
-      else stopped = true;
+      else if (result.value) {
+        detail.delivered += 1;
+        cursor.push(result.value);
+      } else stopped = true;
     }
-    if (stopped) return { detail, outcome: 'stopped' };
+    if (stopped) return finish('stopped');
   }
-  return { detail, outcome: detail.failed || detail.capped ? 'failed' : 'ok' };
+  return finish(detail.failed ? 'failed' : detail.capped ? 'degraded' : 'ok');
 }
