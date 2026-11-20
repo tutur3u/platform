@@ -25041,6 +25041,8 @@
     "manage_payroll_description": "Allows members to create, approve, and finalize payroll runs.",
     "manage_projects": "Manage Projects",
     "manage_projects_description": "Allows members to view, create, edit, and delete projects in the workspace.",
+    "manage_qa_test_users": "Manage QA test users",
+    "manage_qa_test_users_description": "Allows root workspace members to create, sign in as and delete disposable QA test accounts for automated testing.",
     "manage_sso_clients": "Manage outbound SSO applications",
     "manage_sso_clients_description": "Configure workspace SAML applications and assign members who may sign in.",
     "manage_subscription": "Manage subscription",

@@ -239,6 +239,17 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     'claim-fenced',
     { timeoutMs: LONG_TIMEOUT_MS }
   ),
+  // Deletes expired QA test accounts, at most 25 per slot. The ledger lease
+  // and the database stop fence (private.qa_test_user_control) make repeated
+  // or overlapping slots converge; unknown Auth outcomes stay leased.
+  job(
+    'web-qa-test-user-cleanup',
+    '*/15 * * * *',
+    'web',
+    '/api/cron/qa/test-user-cleanup',
+    'claim-fenced',
+    { method: 'POST', timeoutMs: 90_000 }
+  ),
   job(
     'web-post-email-queue',
     '*/30 * * * *',

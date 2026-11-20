@@ -241,6 +241,30 @@ ttr calendar calendars reset --yes
 Guard destructive calendar resets behind `--yes`; without confirmation, the CLI
 should fail before making the request.
 
+## QA Test Users
+
+Use `ttr qa users` when automation needs real signed-in accounts in a deployed
+environment. Accounts are disposable, carry an immutable `app_metadata.qa_test`
+marker and a reserved `qa+<run>-<n>@` address, and are deleted at the run's
+expiry (15 minutes to 72 hours). The operator needs `manage_qa_test_users` in the
+root workspace (root admins hold it) and a verified staff `ttr login` session.
+
+```bash
+ttr qa users create --count 1 --staff --tier pro --purpose meet-rehearsal --ttl 24h --workspace
+ttr qa users create --count 40 --run <run>
+ttr qa users list --run <run> --json
+ttr qa users session <userId> --origin https://meet.tuturuuu.com
+ttr qa users cleanup --run <run>
+```
+
+Create the host first: the first account owns the run workspace. Passwords go
+to the macOS Keychain (service `tuturuuu-qa`) or a `0600` file; sessions go to
+`~/.tuturuuu/qa/<run>/<userId>.storage-state.json` for Playwright. Never print,
+paste or commit these files; pass their paths. Clean up the run when the QA pass
+ends instead of waiting for expiry. QA accounts never pass staff checks; only
+Meet hosting admits an unexpired `--staff` host, so give hosts `--tier pro`. See
+`apps/docs/build/development-tools/qa-test-users.mdx`.
+
 ## Monorepo Behavior
 
 The Tuturuuu monorepo contains a workspace package named `tuturuuu` under

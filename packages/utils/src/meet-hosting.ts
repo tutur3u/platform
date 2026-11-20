@@ -1,6 +1,7 @@
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import 'server-only';
 import { getHostMeetingTier } from './meet-duration';
+import { isActiveQaStaffHost } from './qa-test-account';
 
 const PAID_HOSTING_TIERS = ['PLUS', 'PRO', 'ENTERPRISE'];
 
@@ -25,6 +26,8 @@ export async function canVerifiedAccountHostMeeting(
 ) {
   if (!identity?.email_confirmed_at || !identity.email) return false;
   if (isVerifiedTuturuuuStaffSession(identity)) return true;
+  // Disposable `ttr qa users --staff` hosts, until their run expires.
+  if (isActiveQaStaffHost(identity)) return true;
   if (!isMeetPaidTierHostingEnabled()) return false;
   return PAID_HOSTING_TIERS.includes(await getHostMeetingTier(accountId));
 }

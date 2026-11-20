@@ -54,6 +54,8 @@ export async function DELETE() {
         .from('workspace_subscriptions')
         .select('*')
         .eq('status', 'active')
+        // QA test entitlements have no provider subscription.
+        .not('polar_subscription_id', 'like', 'qa_test_%')
         .range(from, to)
   );
 

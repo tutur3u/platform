@@ -24468,6 +24468,8 @@
     "manage_infrastructure_stress_tests_description": "Cho phép thành viên không gian làm việc gốc bắt đầu và dừng các stress test hạ tầng có kiểm soát.",
     "manage_internal_accounts": "Quản lý bảo mật tài khoản",
     "manage_internal_accounts_description": "Cho phép thành viên không gian làm việc gốc đặt lại mật khẩu cho mọi tài khoản và quản lý truy cập cho các tài khoản chính xác thuộc @tuturuuu.com.",
+    "manage_qa_test_users": "Quản lý người dùng kiểm thử QA",
+    "manage_qa_test_users_description": "Cho phép thành viên không gian làm việc gốc tạo, đăng nhập và xóa các tài khoản kiểm thử QA dùng một lần cho kiểm thử tự động.",
     "manage_inventory": "Quản lý kho",
     "manage_inventory_catalog": "Quản lý danh mục kho",
     "manage_inventory_catalog_description": "Cho phép thành viên tạo, chỉnh sửa và xóa mặt hàng trong danh mục kho.",

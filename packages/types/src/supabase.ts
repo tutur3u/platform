@@ -17135,6 +17135,186 @@ export type Database = {
           },
         ];
       };
+      qa_test_runs: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          operator_user_id: string;
+          purpose: string;
+          workspace_deleted_at: string | null;
+          workspace_id: string | null;
+          workspace_requested: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id: string;
+          operator_user_id: string;
+          purpose: string;
+          workspace_deleted_at?: string | null;
+          workspace_id?: string | null;
+          workspace_requested?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          operator_user_id?: string;
+          purpose?: string;
+          workspace_deleted_at?: string | null;
+          workspace_id?: string | null;
+          workspace_requested?: boolean;
+        };
+        Relationships: [];
+      };
+      qa_test_subscriptions: {
+        Row: {
+          canceled_at: string | null;
+          created_at: string;
+          run_id: string;
+          subscription_id: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          canceled_at?: string | null;
+          created_at?: string;
+          run_id: string;
+          subscription_id: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          canceled_at?: string | null;
+          created_at?: string;
+          run_id?: string;
+          subscription_id?: string;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'qa_test_subscriptions_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'qa_test_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      qa_test_user_control: {
+        Row: {
+          cleanup_enabled: boolean;
+          provisioning_enabled: boolean;
+          singleton: boolean;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cleanup_enabled?: boolean;
+          provisioning_enabled?: boolean;
+          singleton?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          cleanup_enabled?: boolean;
+          provisioning_enabled?: boolean;
+          singleton?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      qa_test_user_events: {
+        Row: {
+          action: string;
+          actor: string;
+          actor_user_id: string | null;
+          detail: NonNullable<Json>;
+          id: number;
+          occurred_at: string;
+          run_id: string;
+          user_id: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          actor: string;
+          actor_user_id?: string | null;
+          detail?: NonNullable<Json>;
+          id?: never;
+          occurred_at?: string;
+          run_id: string;
+          user_id?: string | null;
+        };
+        Update: {
+          action?: string;
+          actor?: string;
+          actor_user_id?: string | null;
+          detail?: NonNullable<Json>;
+          id?: never;
+          occurred_at?: string;
+          run_id?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      qa_test_users: {
+        Row: {
+          activated_at: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          email: string;
+          lease_until: string | null;
+          ordinal: number;
+          run_id: string;
+          staff: boolean;
+          state: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          activated_at?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email: string;
+          lease_until?: string | null;
+          ordinal: number;
+          run_id: string;
+          staff: boolean;
+          state?: string;
+          tier: Database['public']['Enums']['workspace_product_tier'];
+          user_id: string;
+        };
+        Update: {
+          activated_at?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          email?: string;
+          lease_until?: string | null;
+          ordinal?: number;
+          run_id?: string;
+          staff?: boolean;
+          state?: string;
+          tier?: Database['public']['Enums']['workspace_product_tier'];
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'qa_test_users_run_id_fkey';
+            columns: ['run_id'];
+            isOneToOne: false;
+            referencedRelation: 'qa_test_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       rate_limit_counters: {
         Row: {
           bucket: string;
@@ -25746,6 +25926,7 @@ export type Database = {
         Args: { _team_id: string; _user_id: string };
         Returns: boolean;
       };
+      is_qa_test_address: { Args: { p_email: string }; Returns: boolean };
       is_verified_tuturuuu_staff: {
         Args: { p_allow_xwf?: boolean; p_user_id?: string };
         Returns: boolean;
@@ -26506,6 +26687,58 @@ export type Database = {
       purge_meet_transcripts_batch: {
         Args: { p_limit?: number; p_run_id: string };
         Returns: Json;
+      };
+      qa_test_activate_user: {
+        Args: { p_actor: string; p_user_id: string };
+        Returns: Json;
+      };
+      qa_test_begin_delete: {
+        Args: { p_actor: string; p_actor_user: string; p_user_id: string };
+        Returns: Json;
+      };
+      qa_test_finish_delete: {
+        Args: { p_actor: string; p_actor_user: string; p_user_id: string };
+        Returns: Json;
+      };
+      qa_test_finish_workspace_delete: {
+        Args: { p_actor: string; p_actor_user: string; p_run_id: string };
+        Returns: boolean;
+      };
+      qa_test_grant_tier: {
+        Args: {
+          p_run_id: string;
+          p_tier: Database['public']['Enums']['workspace_product_tier'];
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      qa_test_list_expired: { Args: { p_limit: number }; Returns: Json };
+      qa_test_list_users: {
+        Args: { p_include_deleted: boolean; p_run_id: string };
+        Returns: Json;
+      };
+      qa_test_marker: { Args: { p_meta: Json }; Returns: Json };
+      qa_test_record_session: {
+        Args: { p_actor: string; p_user_id: string };
+        Returns: Json;
+      };
+      qa_test_reserve_users: {
+        Args: {
+          p_count: number;
+          p_operator: string;
+          p_purpose: string;
+          p_run_id: string;
+          p_staff: boolean;
+          p_tier: string;
+          p_ttl_seconds: number;
+          p_workspace: boolean;
+        };
+        Returns: Json;
+      };
+      qa_test_tier_rank: {
+        Args: { p_tier: Database['public']['Enums']['workspace_product_tier'] };
+        Returns: number;
       };
       raise_rate_limit_exceeded: {
         Args: { p_retry_after: number };
@@ -58585,7 +58818,8 @@ export type Database = {
         | 'manage_mastermind'
         | 'edit_external_projects'
         | 'view_workspace_domains'
-        | 'manage_workspace_domains';
+        | 'manage_workspace_domains'
+        | 'manage_qa_test_users';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -61423,6 +61657,7 @@ export const Constants = {
         'edit_external_projects',
         'view_workspace_domains',
         'manage_workspace_domains',
+        'manage_qa_test_users',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

@@ -172,6 +172,8 @@ export async function POST() {
               .from('workspace_subscriptions')
               .select('id, ws_id, polar_subscription_id, created_at')
               .eq('status', 'active')
+              // QA test entitlements have no provider subscription.
+              .not('polar_subscription_id', 'like', 'qa_test_%')
               .order('created_at', { ascending: false })
               .range(from, to)
         );

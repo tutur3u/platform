@@ -1,9 +1,11 @@
 import type { User } from '@supabase/supabase-js';
+import { isQaTestAccount } from '../qa-test-account';
 import { isValidTuturuuuEmail } from './client';
 
 type StaffSessionUser = {
   email?: string | null;
   email_confirmed_at?: string | null;
+  app_metadata?: Record<string, unknown> | null;
   identities?: readonly Pick<
     NonNullable<User['identities']>[number],
     'provider' | 'identity_data'
@@ -28,7 +30,7 @@ export type StaffSessionDomainPolicy = {
 
 /**
  * Only pass a current, subject-bound Auth user, never a profile or JWT projection.
- * Defaults to the exact @tuturuuu.com domain.
+ * Defaults to the exact @tuturuuu.com domain. QA test accounts never qualify.
  */
 export function isVerifiedTuturuuuStaffSession(
   user: StaffSessionUser | null | undefined,
@@ -36,6 +38,7 @@ export function isVerifiedTuturuuuStaffSession(
 ): boolean {
   if (
     !user?.email_confirmed_at ||
+    isQaTestAccount(user) ||
     !(allowXwf
       ? isValidTuturuuuEmail(user.email)
       : typeof user.email === 'string' && EXACT_STAFF_EMAIL.test(user.email)) ||

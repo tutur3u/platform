@@ -138,6 +138,16 @@ approved definer owners can still execute the RPCs. If the committed base types
 lag the applied schema, reconcile a generated base/candidate delta automatically
 and exclude unrelated baseline drift; never hand-edit generated declarations.
 
+## Auth user triggers
+
+GoTrue's admin `createUser` inserts the `auth.users` row with an empty `role`
+and provider-only `raw_app_meta_data`, then writes the requested `app_metadata`
+and `role` in a later UPDATE in the same transaction. A guard trigger on
+`auth.users` must accept that insert shape and validate the metadata on the
+follow-up update, or every admin create fails with "Database error creating new
+user". pgTAP inserts do not reproduce this ordering; verify such triggers once
+through the local Auth admin API (`private.guard_qa_test_auth` is the example).
+
 ## Workspace-Scoped Writes
 
 ### Free-only app invitation acceptance

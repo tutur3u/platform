@@ -3,10 +3,8 @@ import {
   encodePathSegment,
   type InternalApiClientOptions,
 } from '@tuturuuu/internal-api/client';
-import {
-  ExternalProjectsUserClient,
-  type TuturuuuUserClient,
-} from './platform';
+import type { TuturuuuUserClient } from './platform';
+import { ExternalProjectsUserClient } from './platform-external-projects';
 
 export class ExternalClient {
   readonly projects: ExternalProjectsUserClient;

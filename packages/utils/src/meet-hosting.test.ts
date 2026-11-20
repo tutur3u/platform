@@ -160,3 +160,45 @@ it('does not grant company hosting to xwf accounts', async () => {
     })
   ).toBe(false);
 });
+
+describe('QA test hosts', () => {
+  const qaHost = {
+    email: 'qa+abcdefgh-1@tuturuuu.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+    app_metadata: {
+      qa_test: true,
+      qa_staff: true,
+      qa_expires_at: new Date(Date.now() + 60_000).toISOString(),
+    },
+  };
+
+  it('admits an active QA staff host without paid-tier hosting', async () => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'false');
+    await expect(canVerifiedAccountHostMeeting('qa', qaHost)).resolves.toBe(
+      true
+    );
+  });
+
+  it('refuses an expired QA host and QA participants', async () => {
+    vi.stubEnv('MEET_PAID_TIER_HOSTING_ENABLED', 'false');
+    const expired = {
+      ...qaHost,
+      app_metadata: {
+        ...qaHost.app_metadata,
+        qa_expires_at: new Date(Date.now() - 1).toISOString(),
+      },
+    };
+    const participant = {
+      ...qaHost,
+      email: 'qa+abcdefgh-2@tutur3u.com',
+      app_metadata: { ...qaHost.app_metadata, qa_staff: false },
+    };
+    await expect(canVerifiedAccountHostMeeting('qa', expired)).resolves.toBe(
+      false
+    );
+    await expect(
+      canVerifiedAccountHostMeeting('qa', participant)
+    ).resolves.toBe(false);
+  });
+});

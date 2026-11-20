@@ -55,6 +55,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/cron/process-post-email-queue` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/cron/process-post-email-queue/route.ts) |
 | `/api/cron/process-report-automation` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/cron/process-report-automation/route.ts) |
 | `/api/cron/process-topic-announcement-queue` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/cron/process-topic-announcement-queue/route.ts) |
+| `/api/cron/qa/test-user-cleanup` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/cron/qa/test-user-cleanup/route.ts) |
 | `/api/cron/tasks/deadline-reminders` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/cron/tasks/deadline-reminders/route.ts) |
 | `/api/email/unsubscribe` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/email/unsubscribe/route.ts) |
 | `/api/health` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/health/route.ts) |
@@ -74,6 +75,10 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/admin/external-project-bindings` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/external-project-bindings/route.ts) |
 | `/api/v1/admin/external-projects/[canonicalId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/external-projects/%5BcanonicalId%5D/route.ts) |
 | `/api/v1/admin/external-projects` | GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/external-projects/route.ts) |
+| `/api/v1/admin/qa/test-users/[userId]` | DELETE | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/qa/test-users/%5BuserId%5D/route.ts) |
+| `/api/v1/admin/qa/test-users/[userId]/session` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/qa/test-users/%5BuserId%5D/session/route.ts) |
+| `/api/v1/admin/qa/test-users/cleanup` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/qa/test-users/cleanup/route.ts) |
+| `/api/v1/admin/qa/test-users` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/admin/qa/test-users/route.ts) |
 | `/api/v1/ai/chats/[chatId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/ai/chats/%5BchatId%5D/route.ts) |
 | `/api/v1/ai/chats` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/ai/chats/route.ts) |
 | `/api/v1/ai/whitelist/me` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/ai/whitelist/me/route.ts) |
@@ -189,10 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/mira/focus/start` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/focus/start/route.ts) |
 | `/api/v1/mira/memories` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/memories/route.ts) |
 | `/api/v1/mira/pet/feed` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/feed/route.ts) |
-| `/api/v1/mira/pet` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/pet/route.ts) |
-| `/api/v1/mira/soul` | GET, HEAD, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/soul/route.ts) |
-| `/api/v1/mira/token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/token/route.ts) |
-| `/api/v1/mira/xp` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mira/xp/route.ts) |
-| `/api/v1/mobile/feature-flags` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mobile/feature-flags/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

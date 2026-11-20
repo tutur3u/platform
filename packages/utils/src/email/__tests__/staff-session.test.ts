@@ -22,6 +22,18 @@ describe('verified staff session', () => {
     ],
     ['no linked identities', { ...staff, identities: [] }, undefined, false],
     [
+      'unmarked reserved QA address',
+      { ...staff, email: 'qa+abcdefgh-1@tuturuuu.com' },
+      undefined,
+      false,
+    ],
+    [
+      'QA test account on the staff domain',
+      { ...staff, app_metadata: { qa_test: true, qa_staff: true } },
+      undefined,
+      false,
+    ],
+    [
       'unconfirmed',
       { ...staff, email_confirmed_at: undefined },
       'approved',

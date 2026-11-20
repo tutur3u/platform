@@ -25,7 +25,8 @@ clients, `packages/internal-api/src/` for shared APIs, and
 `apps/web/src/app/api/cli/auth/` for browser exchange. Inspect only the affected
 boundary. Update command help and the SDK docs with changed behavior.
 
-Task operations use `$tuturuuu-cli-tasks`; finance operations use
+QA test accounts for agent-driven QA use `ttr qa users` (QA Test Users in
+`references/cli-workflows.md`). Task operations use `$tuturuuu-cli-tasks`; finance operations use
 `$tuturuuu-cli-finance`; local validation admission uses `$tuturuuu-cli-resources`.
 These operations do not require installation, login, or a CLI code-validation pass
 when the existing CLI/session already works.

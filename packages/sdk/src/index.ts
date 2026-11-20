@@ -89,6 +89,19 @@ export { DevboxFleetClient } from './platform-devbox-fleet';
 export type { ExternalAppConfiguration } from './platform-external-admin';
 export { ExternalAdminClient, ExternalClient } from './platform-external-admin';
 export type {
+  CreatedQaUser,
+  CreateQaUsersPayload,
+  CreateQaUsersResult,
+  QaCleanupResult,
+  QaDeleteOutcome,
+  QaSessionCookie,
+  QaSessionResult,
+  QaUser,
+  QaUserState,
+  QaUserTier,
+} from './platform-qa-users';
+export { QaClient, QaUsersAdminClient } from './platform-qa-users';
+export type {
   FinanceBudgetUpsertPayload,
   FinanceTagPayload,
   ListTransactionsQuery,

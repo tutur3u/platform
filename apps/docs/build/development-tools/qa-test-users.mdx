@@ -1,0 +1,150 @@
+---
+title: "QA test users"
+description: "Provision disposable signed-in test accounts for agent-driven QA with ttr qa users, mint automation sessions, and rely on automatic expiry cleanup."
+updatedAt: "2026-11-20"
+---
+
+`ttr qa users` gives agents real, signed-in accounts in a deployed environment
+(for example a Meet rehearsal with one staff host and 40 participants) without
+touching real users. Every account is disposable: it carries an immutable test
+marker, a reserved address, a run expiry, and is deleted automatically.
+
+## Accounts
+
+| Property | Value |
+| --- | --- |
+| Address | `qa+<run>-<n>@tutur3u.com` (participants) or `qa+<run>-<n>@tuturuuu.com` (`--staff` hosts) |
+| Marker | `app_metadata.qa_test = true`, plus `qa_run`, `qa_owner`, `qa_purpose`, `qa_expires_at`, `qa_staff` |
+| Run | 8-character ID; one operator, one purpose, one expiry (15 minutes to 72 hours) |
+| Limits | 50 accounts per call, 200 per run, 5 staff hosts per run, 300 live and 600 created per 24 hours overall |
+| Onboarding | Completed at creation, so automation lands on the app |
+
+The database (`private.qa_test_users` and the `guard_qa_test_auth` trigger)
+refuses any `qa_*` marker change, any address change, any signup that claims a
+reserved address, and any attempt to add the marker to an existing account.
+Deletion re-checks the marker and the reserved address before anything is
+removed, so the QA path cannot delete a real account. The migration refuses to
+apply while any existing account already uses a reserved address or marker.
+
+QA accounts never verify as staff, including `--staff` hosts on the staff
+domain: `isVerifiedTuturuuuStaffSession` and `private.staff_identity_verified`
+return false for any marked account, so staff-only surfaces (support inbox,
+short links, staff workspace secrets, domain entitlements, Mira and mail
+tools) stay closed. Meet hosting is the one explicit exception:
+`canVerifiedAccountHostMeeting` admits a `--staff` QA host until its run
+expires. Give hosts `--tier pro` so meetings get paid-tier capacity. A QA
+account can never join the root workspace, hold a platform role or allowance,
+change its Auth role, or operate this API.
+
+### Test tiers
+
+`--tier plus|pro` grants the tier through the normal entitlement row
+(`public.workspace_subscriptions`, status `active`) on the account's personal
+workspace and on the run workspace. The row's provider ID uses the reserved
+`qa_test_` prefix and is registered in `private.qa_test_subscriptions`; no
+billing provider object exists, so checkout, invoices, seat billing and revenue
+reporting never include it. Billing tools that reconcile with the provider skip
+`qa_test_` rows. Deleting the account cancels its test subscriptions.
+
+### Run workspace
+
+`--workspace` creates one shared workspace for the run, named
+`[QA] <purpose> <run>`. The first activated account owns it, so create the host
+first, then append participants with `--run`. Every account in the run joins it.
+It is deleted with the run's last account. Personal workspaces cannot be
+deleted; they keep the same retained state as an ordinary account deletion.
+
+## Operators
+
+The API under `/api/v1/admin/qa/test-users` admits verified staff sessions that
+hold `manage_qa_test_users` in the root workspace. Root administrators hold it
+implicitly; grant it to a dedicated QA-operator role for anyone else. The CLI
+uses the `ttr login` session.
+
+## Commands
+
+```bash
+# Staff host with a Pro test tier and a shared run workspace (24 hours).
+ttr qa users create --count 1 --staff --tier pro --purpose meet-rehearsal --ttl 24h --workspace
+
+# 40 participants in the same run.
+ttr qa users create --count 40 --run <run>
+
+ttr qa users list [--run <run>] [--include-deleted] [--json]
+
+# Playwright storage state (default) or raw tokens, written 0600.
+ttr qa users session <userId> [--origin https://meet.tuturuuu.com] [--format storage-state|tokens] [--out <path>]
+
+ttr qa users delete <userId>
+ttr qa users cleanup --run <run>
+ttr qa users cleanup --expired
+```
+
+Passwords, cookies and tokens are never printed or returned in `--json`
+output. Passwords go to the macOS Keychain (service `tuturuuu-qa`, account =
+address) or, elsewhere or with `--password-store file`, to
+`~/.tuturuuu/qa/<run>/credentials.json`. Sessions go to
+`~/.tuturuuu/qa/<run>/<userId>.storage-state.json` (or `.tokens.json`).
+Directories are `0700`, files `0600`, and symlinked targets are refused.
+`TUTURUUU_QA_HOME` overrides the root for tests. Delete and cleanup remove the
+local files and Keychain items of deleted accounts.
+
+### Sessions
+
+`session` mints a fresh session without the password: the server generates a
+magic-link token (no email is sent), verifies it, and returns the Supabase
+session cookies for the requested origin. The origin must share the
+deployment's session cookie scope (for example any `https://*.tuturuuu.com` app
+when called on `tuturuuu.com`); this sets cookie attributes only, because the
+session tokens work from any client. The request must be JSON. Every mint is
+audited. A session lives until the run expires, when cleanup bans the account
+(so refresh stops even if the delete has to be retried) and then deletes it;
+delete the account earlier to revoke sooner.
+
+```ts
+// Playwright
+const context = await browser.newContext({
+  storageState: `${process.env.HOME}/.tuturuuu/qa/<run>/<userId>.storage-state.json`,
+});
+```
+
+## Expiry cleanup
+
+Cron Control job `web-qa-test-user-cleanup` runs every 15 minutes and calls
+`POST /api/cron/qa/test-user-cleanup` on web. Each slot deletes at most 25
+expired accounts inside a 60-second budget. The ledger leases each deletion for
+10 minutes and settles it only after Auth confirms the account is absent;
+unknown outcomes stay leased and are re-verified by a later slot, never replayed
+blindly. Unsettled deletions report the slot as failed, so repeated failures
+trip Cron Control's consecutive-failure stop.
+
+| Stop | How |
+| --- | --- |
+| Pause cleanup | `update private.qa_test_user_control set cleanup_enabled = false` |
+| Pause provisioning | `update private.qa_test_user_control set provisioning_enabled = false` |
+| Stop the schedule | Cron Control operator `stop` for `web-qa-test-user-cleanup`, or remove it from `CRON_CONTROL_ENABLED_JOBS` |
+
+The job is off until `web-qa-test-user-cleanup` is listed in
+`CRON_CONTROL_ENABLED_JOBS`. Until then, run `ttr qa users cleanup --expired`
+after each run: Auth does not expire the accounts by itself.
+
+## Audit
+
+`private.qa_test_user_events` records `create`, `session`, `delete`,
+`workspace_create` and `workspace_delete` with the actor (`operator` with user
+ID, or `cron`), run and account. It holds IDs, tier, purpose and timestamps
+only.
+
+## Regression coverage
+
+- `apps/database/supabase/tests/qa-test-users.sql`: reserved addresses, marker
+  immutability, the Auth insert-then-update ordering, staff exclusion, root and
+  platform-role confinement, tier grants, leased deletion, stop fence.
+- Auth admin ordering is verified once against the local Auth server: reserve,
+  `auth/v1/admin/users` create, activate, magic-link verify, ban (refresh
+  refused), workspace and account delete, settle.
+- `apps/web/src/lib/qa-test-users/*.test.ts` and the route tests under
+  `apps/web/src/app/api/v1/admin/qa/test-users/` and
+  `apps/web/src/app/api/cron/qa/test-user-cleanup/`.
+- `apps/cron-control/src/qa-test-user-cleanup.test.ts`.
+- `packages/sdk/src/cli/qa-users.test.ts`: secret handling and file modes.

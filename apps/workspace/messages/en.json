@@ -24461,6 +24461,8 @@
     "manage_infrastructure_stress_tests_description": "Allows root workspace members to start and abort controlled infrastructure stress tests.",
     "manage_internal_accounts": "Manage account security",
     "manage_internal_accounts_description": "Allows root workspace members to reset any account password and manage access for exact @tuturuuu.com accounts.",
+    "manage_qa_test_users": "Manage QA test users",
+    "manage_qa_test_users_description": "Allows root workspace members to create, sign in as and delete disposable QA test accounts for automated testing.",
     "manage_inventory": "Manage Inventory",
     "manage_inventory_catalog": "Manage Inventory Catalog",
     "manage_inventory_catalog_description": "Allows members to create, edit, and remove inventory catalog items.",

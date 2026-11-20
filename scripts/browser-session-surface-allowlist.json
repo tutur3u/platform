@@ -289,6 +289,10 @@
     {
       "file": "packages/sdk/src/cli/auth.ts",
       "reason": "CLI client that stores its own bearer pair"
+    },
+    {
+      "file": "packages/sdk/src/platform-qa-users.ts",
+      "reason": "Operator CLI client for disposable QA test account sessions minted by the root-permission-gated /api/v1/admin/qa/test-users API; the CLI writes them only to 0600 files for automation and never prints them"
     }
   ]
 }
