@@ -158,11 +158,23 @@ describe('room Mira all-participant fence', () => {
     const reserved = fenceMiraRoomRequest(
       state,
       token(alice),
-      { action: 'ai.reserve' },
-      () => ({ state, body: { chat: history, prompt: '@mira hi' } })
+      { action: 'ai.reserve', messageId: 'mention' },
+      () => ({
+        state: {
+          ...state,
+          aiRequests: {
+            mention: { userId: alice, status: 'pending' as const },
+          },
+        } as RoomServiceState,
+        body: { chat: history, prompt: '@mira hi' },
+      })
     );
     expect(
       (reserved.body as { chat: RoomChatMessage[] }).chat.map((m) => m.body)
     ).toEqual(['from alice', 'from mira']);
+    // The author who left without choosing is not a source of the request.
+    expect(reserved.state.aiRequests?.mention?.miraRoomSources).toEqual({
+      [alice]: 1,
+    });
   });
 });

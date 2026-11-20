@@ -36,6 +36,8 @@ const command = z.discriminatedUnion('action', [
     choice: z.enum(['continue', 'mute']),
     version: z.literal(MIRA_ROOM_NOTICE_VERSION),
   }),
+  // Checked immediately before the provider receives room content.
+  z.object({ action: z.literal('mira.room.verify'), messageId: z.string() }),
 ]);
 
 const accountOf = (person: { accountId?: string; userId: string }) =>
@@ -129,6 +131,14 @@ export function applyMiraRoomConsent(
   });
   if (parsed.data.action === 'mira.room.read')
     return { state, body: view(state) };
+  if (parsed.data.action === 'mira.room.verify') {
+    const request = state.aiRequests?.[parsed.data.messageId];
+    return request?.userId === accountId &&
+      request.status === 'pending' &&
+      miraRoomRequestReady(state, token.meetingId, parsed.data.messageId)
+      ? { state, body: { ok: true } }
+      : consentRequired(state);
+  }
   if (
     own?.choice === parsed.data.choice &&
     own.version === MIRA_ROOM_NOTICE_VERSION &&
@@ -154,13 +164,91 @@ export function applyMiraRoomConsent(
   return { state: next, body: view(next) };
 }
 
-const fenced = new Set(['ai.reserve', 'ai.review.claim']);
+/** Accounts whose words a request carries, bound to their consent revision. */
+export type MiraRoomSources = Record<string, number>;
+
+const consentRequired = (state: RoomServiceState) => ({
+  state,
+  body: {
+    error: MIRA_ROOM_CONSENT_REQUIRED,
+    code: 'MIRA_ROOM_CONSENT_REQUIRED',
+  },
+  status: 409,
+});
 
 /**
- * Room chat generation fence. `ai.reserve` and `ai.review.claim` proceed only
- * while every admitted account has a current Continue, checked atomically with
- * the room state the reservation reads; the reserved chat is then limited to
- * consenting authors. Other actions pass through unchanged.
+ * True while every source account still holds the exact Continue revision
+ * the request was reserved with. A Pause, a later Continue (new revision),
+ * leaving after a Pause or a request reserved without sources all fail, so
+ * saved context is never sent or published once its authors changed choice.
+ */
+export function miraRoomSourcesCurrent(
+  state: RoomServiceState,
+  meetingId: string | undefined,
+  sources: MiraRoomSources | undefined
+) {
+  if (!sources) return false;
+  const entries = Object.entries(sources);
+  return (
+    entries.length > 0 &&
+    entries.every(
+      ([accountId, revision]) =>
+        isCurrentMiraRoomContinue(state, meetingId, accountId) &&
+        state.miraRoom?.choices[accountId]?.revision === revision
+    )
+  );
+}
+
+function miraRoomSources(
+  state: RoomServiceState,
+  meetingId: string | undefined,
+  requesterId: string,
+  chat: readonly RoomChatMessage[]
+): MiraRoomSources {
+  const accounts = new Set([requesterId]);
+  for (const message of chat)
+    if (message.assistant !== true)
+      accounts.add(message.accountId ?? message.userId);
+  return Object.fromEntries(
+    [...accounts].map((accountId) => [
+      accountId,
+      state.miraRoom?.choices[accountId]?.revision ?? 0,
+    ])
+  );
+}
+
+/** The fence plus unchanged sources for one reserved room Mira request. */
+export function miraRoomRequestReady(
+  state: RoomServiceState,
+  meetingId: string | undefined,
+  messageId: string
+) {
+  return (
+    miraRoomFence(state, meetingId).ready &&
+    miraRoomSourcesCurrent(
+      state,
+      meetingId,
+      state.aiRequests?.[messageId]?.miraRoomSources
+    )
+  );
+}
+
+/** Steps that send saved room content to the provider or publish from it. */
+const sourceBound = new Set([
+  'ai.review.claim',
+  'ai.review.save',
+  'ai.review.share',
+]);
+
+/**
+ * Room chat generation fence, checked atomically with the room state:
+ * - `ai.reserve` needs every admitted account's current Continue; the
+ *   released chat is limited to consenting authors and the request records
+ *   each source account with its exact consent revision.
+ * - `ai.review.claim` (resend to the provider), `ai.review.save`,
+ *   `ai.review.share` and an `ai.finish` that posts a reply additionally need
+ *   every recorded source unchanged.
+ * Cost-only `ai.finish`, discard and reads pass through so requests settle.
  */
 export function fenceMiraRoomRequest<
   R extends { state: RoomServiceState; body: unknown; status?: number },
@@ -170,20 +258,22 @@ export function fenceMiraRoomRequest<
   input: unknown,
   next: () => R
 ): R | { state: RoomServiceState; body: unknown; status: number } {
-  const action =
-    input && typeof input === 'object' && 'action' in input
-      ? String(input.action)
-      : '';
-  if (!fenced.has(action)) return next();
-  if (!miraRoomFence(state, token.meetingId).ready)
-    return {
-      state,
-      body: {
-        error: MIRA_ROOM_CONSENT_REQUIRED,
-        code: 'MIRA_ROOM_CONSENT_REQUIRED',
-      },
-      status: 409,
-    };
+  const record =
+    input && typeof input === 'object'
+      ? (input as { action?: unknown; messageId?: unknown; body?: unknown })
+      : {};
+  const action = String(record.action ?? '');
+  const messageId =
+    typeof record.messageId === 'string' ? record.messageId : '';
+  const publishes =
+    sourceBound.has(action) || (action === 'ai.finish' && !!record.body);
+  if (action !== 'ai.reserve' && !publishes) return next();
+  if (
+    action === 'ai.reserve'
+      ? !miraRoomFence(state, token.meetingId).ready
+      : !miraRoomRequestReady(state, token.meetingId, messageId)
+  )
+    return consentRequired(state);
   const result = next();
   if (
     action !== 'ai.reserve' ||
@@ -194,15 +284,30 @@ export function fenceMiraRoomRequest<
     !Array.isArray(result.body.chat)
   )
     return result;
+  const chat = consentedMiraRoomChat(
+    state,
+    token.meetingId,
+    result.body.chat as RoomChatMessage[]
+  );
+  const request = result.state.aiRequests?.[messageId];
+  if (!request) return consentRequired(state);
   return {
     ...result,
-    body: {
-      ...result.body,
-      chat: consentedMiraRoomChat(
-        state,
-        token.meetingId,
-        result.body.chat as RoomChatMessage[]
-      ),
+    state: {
+      ...result.state,
+      aiRequests: {
+        ...result.state.aiRequests,
+        [messageId]: {
+          ...request,
+          miraRoomSources: miraRoomSources(
+            state,
+            token.meetingId,
+            token.accountId ?? token.userId,
+            chat
+          ),
+        },
+      },
     },
+    body: { ...result.body, chat },
   };
 }

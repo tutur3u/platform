@@ -5,6 +5,7 @@ const MEETING_WS = '00000000-0000-4000-8000-0000000000a1';
 const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   fence: vi.fn(),
+  dispatch: vi.fn(),
   model: vi.fn(),
   personal: vi.fn(),
   service: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock(
   () => ({
     requireRoomMiraAuthority: mocks.authority,
     requireRoomMiraFence: mocks.fence,
+    requireRoomMiraDispatch: mocks.dispatch,
   })
 );
 vi.mock('@tuturuuu/ai/studio/metering', () => ({
@@ -115,6 +117,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.authority.mockResolvedValue(room('account'));
   mocks.fence.mockResolvedValue(undefined);
+  mocks.dispatch.mockResolvedValue(undefined);
   mocks.personal.mockResolvedValue('tagger-personal-workspace');
   mocks.model.mockResolvedValue({
     id: 'google/gemini-3.5-flash-lite',
@@ -229,5 +232,42 @@ it('never posts a blank answer and records incurred cost', async () => {
   expect(mocks.service).not.toHaveBeenCalledWith(
     expect.anything(),
     expect.objectContaining({ body: ' ' })
+  );
+});
+
+it('rechecks the fence and sources immediately before dispatch and never sends stale context', async () => {
+  mocks.dispatch.mockRejectedValue(
+    Object.assign(new Error('waiting'), {
+      status: 409,
+      code: 'MIRA_ROOM_CONSENT_REQUIRED',
+    })
+  );
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 409,
+    code: 'MIRA_ROOM_CONSENT_REQUIRED',
+  });
+  expect(mocks.dispatch).toHaveBeenCalledWith(expect.anything(), 'message');
+  expect(mocks.answer).not.toHaveBeenCalled();
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'ai.finish',
+    messageId: 'message',
+    costUsd: 0,
+  });
+  expect(mocks.service).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ body: expect.anything() })
+  );
+});
+
+it('checks dispatch after the reservation and before the provider call', async () => {
+  await post({ messageId: 'message' });
+  const reserve = mocks.service.mock.calls.findIndex(
+    ([, command]) => command.action === 'ai.reserve'
+  );
+  expect(mocks.service.mock.invocationCallOrder[reserve]).toBeLessThan(
+    mocks.dispatch.mock.invocationCallOrder[0]!
+  );
+  expect(mocks.dispatch.mock.invocationCallOrder[0]).toBeLessThan(
+    mocks.answer.mock.invocationCallOrder[0]!
   );
 });

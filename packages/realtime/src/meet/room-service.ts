@@ -94,6 +94,8 @@ export type RoomServiceState = MeetRoomSnapshot & {
       review?: AssistantReview;
       startedAt?: number;
       costUsd?: number | null;
+      /** Room Mira source accounts and their consent revisions at reserve. */
+      miraRoomSources?: Record<string, number>;
     }
   >;
 };

@@ -88,6 +88,26 @@ export async function requireRoomMiraFence(access: SignedInMeetCallAccess) {
 }
 
 /**
+ * Immediately before the provider receives room content: every admitted
+ * participant still allows room Mira and every source account of this request
+ * keeps the exact consent revision it was reserved with.
+ */
+export async function requireRoomMiraDispatch(
+  access: SignedInMeetCallAccess,
+  messageId: string
+) {
+  try {
+    await callRoomService(access, { action: 'mira.room.verify', messageId });
+  } catch {
+    throw new MeetCallAccessError(
+      409,
+      MIRA_ROOM_CONSENT_REQUIRED,
+      'MIRA_ROOM_CONSENT_REQUIRED'
+    );
+  }
+}
+
+/**
  * Whether room Mira could run in this meeting at all, independent of the
  * viewer's own plan: deployment on, workspace gate open, workspace attested
  * and a provider configured. Participants are asked to choose only then.

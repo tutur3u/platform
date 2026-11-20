@@ -32,6 +32,7 @@ vi.mock('../../call/lib/call-access', () => ({
 import {
   readRoomMiraAvailability,
   requireRoomMiraAuthority,
+  requireRoomMiraDispatch,
   requireRoomMiraFence,
 } from './room-mira-authority';
 
@@ -151,4 +152,19 @@ it('offers the notice only when the deployment, gate, attestation and provider a
     f.env.mockResolvedValueOnce(env);
     expect(await readRoomMiraAvailability(access)).toBe(false);
   }
+});
+
+it('verifies the request sources with the room before dispatch', async () => {
+  f.room.mockResolvedValue({ ok: true });
+  await expect(
+    requireRoomMiraDispatch(access, 'message')
+  ).resolves.toBeUndefined();
+  expect(f.room).toHaveBeenCalledWith(access, {
+    action: 'mira.room.verify',
+    messageId: 'message',
+  });
+  f.room.mockRejectedValue(Object.assign(new Error('x'), { status: 409 }));
+  await expect(
+    requireRoomMiraDispatch(access, 'message')
+  ).rejects.toMatchObject({ status: 409, code: 'MIRA_ROOM_CONSENT_REQUIRED' });
 });

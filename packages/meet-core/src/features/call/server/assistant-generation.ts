@@ -2,6 +2,7 @@ import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   requireRoomMiraAuthority,
+  requireRoomMiraDispatch,
   requireRoomMiraFence,
 } from '../../live-assistant/server/room-mira-authority';
 import 'server-only';
@@ -190,6 +191,7 @@ export async function generateMeetAssistant(
         allowSearch: !messages && MEETING_APP !== 'parley',
       },
       async (allowSearch) => {
+        await requireRoomMiraDispatch(access, input.messageId);
         costUsd = null;
         const generated = await answerMeetChat(
           context.chat,
