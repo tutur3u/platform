@@ -1,0 +1,82 @@
+---
+title: Performance Factory
+description: Detect latency and error-rate regressions, investigate them with agents, and verify the fix after deploy.
+---
+
+The Performance Factory turns a production regression into a tracked task that
+agents investigate, fix and verify, with a human approval before anything
+ships. It works best when the cause is clear and the fix is contained; broad
+redesigns go to an owner instead.
+
+## Pieces
+
+| Piece | Location |
+| --- | --- |
+| Detector | `scripts/perf/perf-regression-detector.mjs` (apps in `scripts/perf/perf-apps.json`) |
+| Investigation procedure | `plugins/tuturuuu/skills/tuturuuu-rollout-recovery/references/perf-forensics.md` |
+| Workflow config and stage prompts | `plugins/tuturuuu/skills/tuturuuu-rollout-recovery/references/perf-factory/` |
+| Task store | Tuturuuu Tasks **Fleet** board, mirrored to `tmp/perf-factory/tasks/` |
+| Backtests | `references/perf-factory/backtests.md` and `scripts/perf/fixtures/` |
+
+## Detector
+
+The detector reads Cloudflare GraphQL analytics for each gateway-mounted app
+(`tuturuuu.com/<app>` and its locale-prefixed paths) in rolling windows, 15
+minutes by default:
+
+- **Latency:** p95 TTFB per window against the median of the previous 24 hours.
+  A window breaches when p95 exceeds `min(1.25 x baseline, baseline + 150 ms)`;
+  a regression needs two consecutive breaching windows.
+- **Errors:** any single window with at least 5 server errors and a rate at
+  least double the baseline and 0.5 percentage points above it.
+- Windows with fewer than 50 requests are ignored.
+
+Each regression record names the app, metric, start time, baseline, trigger,
+observed values, suspect Worker deployments (with SHAs from version
+annotations), a per-version summary, and **reproducible queries**: the GraphQL
+text and variables, plus a `rerun` command. Records never hold raw rows.
+
+```bash
+node scripts/perf/perf-regression-detector.mjs --apps forms,tools \
+  --out tmp/perf-factory/detections/latest.json
+node scripts/perf/perf-regression-detector.mjs rerun \
+  --record tmp/perf-factory/detections/latest.json --query worker-versions
+```
+
+It needs `CLOUDFLARE_API_TOKEN` (Analytics and Workers read),
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_ZONE_ID` in the environment and never
+prints them. Exit code 2 means configuration or API failure. `--fixture`
+replays a recorded series for backtests.
+
+## Workflow
+
+1. **Detect:** a scheduled dispatcher runs the detector every 30 minutes and
+   opens or updates a `perf:` task on the Fleet board.
+2. **Investigate:** a builder agent follows perf forensics and stores
+   hypotheses, evidence and reproducible queries in the task record.
+3. **Review the diagnosis:** a fresh-context reviewer on a different provider
+   reruns the decisive queries, looks for gaps and tests alternative
+   explanations. It may send the task back up to twice.
+4. **Propose a fix:** the builder makes the smallest contained fix with a
+   regression test in its own worktree, without pushing.
+5. **Review the fix:** a fresh-context reviewer rejects over-complex fixes and
+   stale-cache hazards and confirms the test fails before and passes after.
+6. **Human approval:** the task waits in **Needs User / Review**.
+7. **Verify after deploy:** once the fix is live and two windows have closed,
+   a verifier reruns the stored query. It closes the task if p95 is back under
+   the original trigger, and reopens the investigation otherwise.
+
+Stages that wait on outside events (approval, deploy, closed windows) are
+subscriptions the dispatcher checks on each tick. The dispatcher notifies a
+person only when a fix is ready for approval or recovery is verified.
+
+A daily agent-log review groups recurring tool and permission failures across
+fleet threads and opens `tooling:` fix tasks on the same board.
+
+## Coverage limits
+
+The detector watches Cloudflare-served apps. Vercel-hosted `apps/web`, the
+Supabase query side and Flutter startup are covered by the investigation
+procedure, not by automatic detection. Deploy-time rejections, such as the
+Vercel routing-rule limit, need their own intake from failed production deploy
+runs.

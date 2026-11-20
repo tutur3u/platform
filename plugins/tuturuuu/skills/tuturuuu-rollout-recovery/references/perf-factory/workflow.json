@@ -1,0 +1,77 @@
+{
+  "name": "regression",
+  "description": "Performance Factory regression workflow: detector alert to verified recovery.",
+  "taskStore": {
+    "primary": "Tuturuuu Tasks Fleet board via the ttr CLI",
+    "recordFormat": "JSON task record in a fenced json block at the end of the task description",
+    "localMirror": "tmp/perf-factory/tasks/<task-key>.json"
+  },
+  "stages": [
+    {
+      "id": "investigate",
+      "prompt": "investigate.md",
+      "role": "builder",
+      "list": "Live Today",
+      "next": "adversarial-review-diagnosis"
+    },
+    {
+      "id": "adversarial-review-diagnosis",
+      "prompt": "adversarial-review-diagnosis.md",
+      "role": "reviewer",
+      "freshContext": true,
+      "list": "Live Today",
+      "next": "propose-fix",
+      "sendBack": "investigate",
+      "maxSendBacks": 2
+    },
+    {
+      "id": "propose-fix",
+      "prompt": "propose-fix.md",
+      "role": "builder",
+      "list": "Live Today",
+      "next": "adversarial-review-fix"
+    },
+    {
+      "id": "adversarial-review-fix",
+      "prompt": "adversarial-review-fix.md",
+      "role": "reviewer",
+      "freshContext": true,
+      "list": "Live Today",
+      "next": "human-approval",
+      "sendBack": "propose-fix",
+      "maxSendBacks": 2
+    },
+    {
+      "id": "human-approval",
+      "role": "human",
+      "list": "Needs User / Review",
+      "next": "verify-post-deploy",
+      "subscription": "fix commit reaches production"
+    },
+    {
+      "id": "verify-post-deploy",
+      "prompt": "verify-post-deploy.md",
+      "role": "reviewer",
+      "freshContext": true,
+      "list": "Live Today",
+      "next": "done",
+      "reopen": "investigate",
+      "subscription": "two full detector windows after the production deploy"
+    }
+  ],
+  "terminal": {
+    "done": "Done",
+    "closed": "Archived / Closed"
+  },
+  "record": {
+    "required": [
+      "taskKey",
+      "stage",
+      "regression",
+      "hypotheses",
+      "evidence",
+      "history"
+    ],
+    "optional": ["diagnosis", "fix", "reviews", "verification", "subscription"]
+  }
+}

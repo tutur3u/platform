@@ -15,6 +15,8 @@ a satellite build does not establish current production API behavior.
 
 Read [recovery evidence](references/recovery-evidence.md) for alias/source audits,
 API diagnosis, safe staging, rollback compatibility, and bounded CI retries.
+For a latency or error-rate regression, follow [perf forensics](references/perf-forensics.md);
+the Performance Factory stage prompts live in [perf-factory/](references/perf-factory/).
 Read the existing [critical rollout runbook](../../../../apps/docs/build/devops/critical-app-rollout.mdx)
 when inspecting or using the production staging gate; use its actual workflow and
 probe implementation rather than copying a second deployment recipe here.

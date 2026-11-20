@@ -1,0 +1,18 @@
+{
+  "host": "tuturuuu.com",
+  "locales": ["en", "vi"],
+  "apps": {
+    "forms": {
+      "prefixes": ["/forms"],
+      "worker": "tuturuuu-forms"
+    },
+    "tools": {
+      "prefixes": ["/tools"],
+      "worker": "tuturuuu-tools"
+    },
+    "roadmap": {
+      "prefixes": ["/roadmap"],
+      "worker": "tuturuuu-roadmap"
+    }
+  }
+}
