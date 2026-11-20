@@ -1,0 +1,75 @@
+name: Chat Realtime Staging Qualification
+
+# Manual staging check. It does not run on pull requests or main pushes.
+# Repository secrets stay in the job environment and never appear in the log.
+# A missing secret fails the job before any network call.
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Qualification phase
+        required: true
+        default: live
+        type: choice
+        options:
+          - live
+          - stopped
+          - disabled
+
+permissions:
+  contents: read
+
+concurrency:
+  group: chat-realtime-staging-qualification
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    if: github.repository == 'tutur3u/platform' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      QUALIFY_MEMBER_A_EMAIL: ${{ secrets.QUALIFY_MEMBER_A_EMAIL }}
+      QUALIFY_MEMBER_A_PASSWORD: ${{ secrets.QUALIFY_MEMBER_A_PASSWORD }}
+      QUALIFY_MEMBER_B_EMAIL: ${{ secrets.QUALIFY_MEMBER_B_EMAIL }}
+      QUALIFY_MEMBER_B_PASSWORD: ${{ secrets.QUALIFY_MEMBER_B_PASSWORD }}
+      QUALIFY_OUTSIDER_EMAIL: ${{ secrets.QUALIFY_OUTSIDER_EMAIL }}
+      QUALIFY_OUTSIDER_PASSWORD: ${{ secrets.QUALIFY_OUTSIDER_PASSWORD }}
+      QUALIFY_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.QUALIFY_SUPABASE_PUBLISHABLE_KEY }}
+      QUALIFY_SUPABASE_URL: ${{ secrets.QUALIFY_SUPABASE_URL }}
+      QUALIFY_WEB_ORIGIN: ${{ secrets.QUALIFY_WEB_ORIGIN }}
+      QUALIFY_WORKSPACE_ID: ${{ secrets.QUALIFY_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - run: bun install --frozen-lockfile
+      - name: Require qualification secrets
+        run: |
+          missing=0
+          for name in \
+            QUALIFY_WEB_ORIGIN \
+            QUALIFY_SUPABASE_URL \
+            QUALIFY_SUPABASE_PUBLISHABLE_KEY \
+            QUALIFY_WORKSPACE_ID \
+            QUALIFY_MEMBER_A_EMAIL \
+            QUALIFY_MEMBER_A_PASSWORD \
+            QUALIFY_MEMBER_B_EMAIL \
+            QUALIFY_MEMBER_B_PASSWORD \
+            QUALIFY_OUTSIDER_EMAIL \
+            QUALIFY_OUTSIDER_PASSWORD
+          do
+            if [ -z "${!name}" ]; then
+              echo "missing $name"
+              missing=1
+            fi
+          done
+          test "$missing" -eq 0
+      - name: Qualify staging
+        run: node apps/chat-realtime/scripts/qualify-chat-realtime.mjs --phase="${{ inputs.phase }}"
