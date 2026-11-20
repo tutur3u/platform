@@ -10,6 +10,7 @@ import {
   decryptBankAccount,
   encryptBankAccount,
 } from '@/lib/finance/bill-splits/contact-bank';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 import {
   authorize,
   headers,
@@ -44,6 +45,37 @@ const maskedResult = z.object({
 
 export const POST = withSessionAuth<Params>(
   async (request, context, params) => {
+    const contact = billSplitId.safeParse(params.contactId);
+    if (!contact.success) return responseError('Invalid contact', 400);
+    if (await guardApiProxyBody(request, 4096))
+      return responseError('Invalid bank account request', 400);
+
+    const input = command.safeParse(await request.json().catch(() => null));
+    if (!input.success)
+      return responseError('Invalid bank account request', 400);
+    const action = input.data.kind;
+    if (action === 'revoke') {
+      const actorId = context.user.id;
+      const wsId = await normalizeWorkspaceId(
+        params.wsId,
+        context.supabase,
+        request
+      );
+      const store = billSplitStore(
+        await createAdminClient({ noCookie: true, auditActorId: actorId })
+      );
+      const { error } = await store.rpc(
+        'withdraw_finance_contact_bank_account',
+        {
+          p_ws_id: wsId,
+          p_actor_id: actorId,
+          p_contact_id: contact.data,
+        }
+      );
+      if (error) return storeError(error.code);
+      return NextResponse.json({ ok: true }, { headers });
+    }
+
     if (process.env.ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS !== 'true') {
       return responseError('Not found', 404);
     }
@@ -54,15 +86,6 @@ export const POST = withSessionAuth<Params>(
       'view_transactions'
     );
     if (access.response) return access.response;
-    const contact = billSplitId.safeParse(params.contactId);
-    if (!contact.success) return responseError('Invalid contact', 400);
-    if (await guardApiProxyBody(request, 4096))
-      return responseError('Invalid bank account request', 400);
-
-    const input = command.safeParse(await request.json().catch(() => null));
-    if (!input.success)
-      return responseError('Invalid bank account request', 400);
-    const action = input.data.kind;
     if (
       (action === 'masked_read' || action === 'qr') &&
       !access.permissions.containsPermission('view_users_private_info')
@@ -102,7 +125,7 @@ export const POST = withSessionAuth<Params>(
     });
     if (error) return storeError(error.code);
     if (!data) return responseError('Not found', 404);
-    if (action === 'consent' || action === 'revoke')
+    if (action === 'consent')
       return NextResponse.json({ ok: true }, { headers });
 
     if (action === 'masked_read' || action === 'share_account') {

@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(42);
+select plan(46);
 
 select is(
   (select count(*) from pg_catalog.pg_class c
@@ -352,6 +352,63 @@ update private.finance_bill_split_reminders set due_at = now()
 where split_id = pg_temp.fixture('60');
 select is(private.dispatch_finance_bill_split_reminders(20), '{"canceled":1,"delivered":0}'::jsonb,
   'Delivery rechecks the recipient Finance permission');
+
+update public.workspace_default_permissions set enabled = true
+where ws_id = pg_temp.fixture('10') and permission = 'view_transactions';
+insert into public.workspace_default_permissions (ws_id, permission, enabled, member_type)
+values (pg_temp.fixture('10'), 'create_transactions', true, 'MEMBER');
+insert into public.workspace_users (id, ws_id, display_name)
+values (pg_temp.fixture('56'), pg_temp.fixture('10'), 'Second fixture contact');
+insert into public.workspace_user_linked_users (ws_id, virtual_user_id, platform_user_id)
+values (pg_temp.fixture('10'), pg_temp.fixture('56'), pg_temp.fixture('02'))
+on conflict (platform_user_id, ws_id) do update
+  set virtual_user_id = excluded.virtual_user_id;
+insert into private.contact_account_link_audit
+  (ws_id, contact_id, actor_id, invitation_id, account_id, outcome)
+values (pg_temp.fixture('10'), pg_temp.fixture('56'), pg_temp.fixture('02'),
+  pg_temp.fixture('57'), pg_temp.fixture('02'), 'linked');
+
+select private.create_finance_bill_split(
+  pg_temp.fixture('10'), pg_temp.fixture('02'), pg_temp.fixture('58'), 'Withdrawal fixture', 'VND', 0,
+  jsonb_build_array(jsonb_build_object('id', pg_temp.fixture('59'), 'contact_id', pg_temp.fixture('56'),
+    'display_name', 'Second fixture contact')), '{"direct":[]}', '{}', true
+);
+select private.finance_contact_bank_command(
+  pg_temp.fixture('10'), pg_temp.fixture('02'), pg_temp.fixture('56'), 'consent',
+  'Test bank', '123456', '1234', repeat('a', 40)
+);
+select private.manage_finance_bill_split_link(
+  pg_temp.fixture('10'), pg_temp.fixture('02'), pg_temp.fixture('58'), repeat('e',64), 1,
+  p_receiving_participant_id => pg_temp.fixture('59'),
+  p_expected_consent_revision => (private.finance_contact_bank_command(
+    pg_temp.fixture('10'), pg_temp.fixture('02'), pg_temp.fixture('56'), 'share_account'
+  )->>'consentRevision')::uuid
+);
+
+update public.workspace_default_permissions set enabled = false
+where ws_id = pg_temp.fixture('10') and permission in ('view_transactions', 'create_transactions');
+select ok(not public.has_workspace_permission(pg_temp.fixture('10'), pg_temp.fixture('02'), 'view_transactions')
+  and not public.has_workspace_permission(pg_temp.fixture('10'), pg_temp.fixture('02'), 'create_transactions'),
+  'The holder lost both Finance permissions');
+
+select private.withdraw_finance_contact_bank_account(
+  pg_temp.fixture('10'), pg_temp.fixture('03'), pg_temp.fixture('56')
+);
+select isnt(private.lookup_finance_bill_split_link(repeat('e',64)), null::jsonb,
+  'A different actor cannot withdraw the holder’s consent');
+
+set local role service_role;
+select private.withdraw_finance_contact_bank_account(
+  '97049000-0000-4000-8000-000000000010', '97049000-0000-4000-8000-000000000002',
+  '97049000-0000-4000-8000-000000000056'
+);
+reset role;
+select is(private.lookup_finance_bill_split_link(repeat('e',64)), null::jsonb,
+  'Withdrawal revokes QR links even after a Finance role change');
+select ok(not exists (
+  select 1 from private.finance_contact_bank_accounts where ws_id = pg_temp.fixture('10')
+    and contact_id = pg_temp.fixture('56')
+), 'Withdrawal removes the encrypted account');
 
 select * from finish();
 

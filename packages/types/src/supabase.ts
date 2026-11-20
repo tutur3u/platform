@@ -27736,6 +27736,10 @@ export type Database = {
               isSetofReturn: true;
             };
           };
+      withdraw_finance_contact_bank_account: {
+        Args: { p_actor_id: string; p_contact_id: string; p_ws_id: string };
+        Returns: undefined;
+      };
       write_finance_bill_split_activity: {
         Args: {
           p_actor_id: string;

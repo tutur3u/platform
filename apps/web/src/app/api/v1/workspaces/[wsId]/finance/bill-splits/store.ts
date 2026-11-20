@@ -114,6 +114,10 @@ type PrivateBillSplitRpc = {
   ): Result<Json>;
   rpc(name: 'finance_contact_bank_command', args: BankArguments): Result<Json>;
   rpc(
+    name: 'withdraw_finance_contact_bank_account',
+    args: Pick<BankArguments, 'p_ws_id' | 'p_actor_id' | 'p_contact_id'>
+  ): Result<undefined>;
+  rpc(
     name: 'manage_finance_bill_split_link',
     args: LinkArguments
   ): Result<string>;

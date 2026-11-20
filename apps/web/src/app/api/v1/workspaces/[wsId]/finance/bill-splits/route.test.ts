@@ -53,6 +53,7 @@ vi.mock('@/lib/api-auth', () => ({
 }));
 
 import { POST as issueStatusLink } from './[splitId]/status-links/route';
+import { POST as contactBank } from './contact-bank/[contactId]/route';
 import { GET, POST } from './route';
 
 const id = '9abafaf3-e1ca-4fcf-8729-f3916b0c913b';
@@ -186,6 +187,37 @@ describe('Finance bill splits API', () => {
         p_receiving_participant_id: person,
         p_expected_consent_revision: id,
       })
+    );
+  });
+
+  it('allows the recorded holder to withdraw bank consent after losing Finance access', async () => {
+    state.allowed = false;
+    const context = { params: { wsId: 'personal', contactId: id } };
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS', 'true');
+    const read = await contactBank(
+      request('POST', JSON.stringify({ kind: 'masked_read' })),
+      context
+    );
+    expect(read.status).toBe(403);
+    expect(state.admin).not.toHaveBeenCalled();
+
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLITS', '');
+    vi.stubEnv('ENABLE_FINANCE_BILL_SPLIT_CONTACT_BANKS', '');
+    state.member = false;
+    state.hitWindows.mockClear();
+    const revoke = await contactBank(
+      request('POST', JSON.stringify({ kind: 'revoke' })),
+      context
+    );
+    expect(revoke.status).toBe(200);
+    expect(state.hitWindows).not.toHaveBeenCalled();
+    expect(state.rpc).toHaveBeenCalledExactlyOnceWith(
+      'withdraw_finance_contact_bank_account',
+      {
+        p_ws_id: 'resolved-workspace',
+        p_actor_id: 'current-actor',
+        p_contact_id: id,
+      }
     );
   });
 
