@@ -6354,7 +6354,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/users/[userId]/route.ts",
-    "sourceSha256": "a2f5feb68889a7260e409801e1c3ab17bfbba05dec576aa2c0d458333b6ff903",
+    "sourceSha256": "f785299f055120045c6aba47c308de9d14ba68b0cde57b26d1223f9fb58a8681",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

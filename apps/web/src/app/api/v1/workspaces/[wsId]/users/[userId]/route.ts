@@ -76,9 +76,13 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
+  const supabase = await createClient(req);
+  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
+  if (!actorUser) {
+    return Response.json({ error: 'Not found' }, { status: 404 });
+  }
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = await getPermissions({ wsId, user: actorUser });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -127,8 +131,6 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  const supabase = await createClient(req);
-  const { user: actorUser } = await resolveAuthenticatedSessionUser(supabase);
 
   // Get current user to check status changes
   const { data: currentUser, error: fetchError } = await sbAdmin
@@ -153,7 +155,7 @@ export async function PUT(req: Request, { params }: Params) {
       p_ws_id: wsId,
       p_user_id: userId,
       p_payload: userPayload,
-      p_actor_auth_uid: actorUser?.id ?? undefined,
+      p_actor_auth_uid: actorUser.id,
     }
   );
 
@@ -188,7 +190,7 @@ export async function PUT(req: Request, { params }: Params) {
         archived: nextArchived,
         archived_until: nextArchivedUntil,
         creator_id: currentWorkspaceUser?.virtual_user_id ?? null,
-        actor_auth_uid: actorUser?.id ?? null,
+        actor_auth_uid: actorUser.id,
         source: 'live',
       });
 
@@ -222,6 +224,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   if (typeof is_guest === 'boolean') {
     const guestWarning = await syncWorkspaceUserGuestMembership({
+      actorId: actorUser.id,
       isGuest: is_guest,
       sbAdmin,
       userId,
