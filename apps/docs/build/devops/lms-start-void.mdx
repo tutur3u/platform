@@ -20,6 +20,15 @@ acceptance with the actual bound versions. Each dispatch chooses one service
 and makes one call, with no retry or background work. Clearing the LMS gateway
 paths stops ingress to the deployment.
 
+## Request latency
+
+The LMS shell renders on the compiled `/lms` router base and serves immutable,
+fingerprinted assets. Learn renders its menu from workspace bootstrap data.
+An LMS bootstrap request with a verified Learn bearer skips a second provider
+refresh in the proxy. The bootstrap handler retains its existing authorization,
+suspension and rate controls. Signed-in hosted measurements are required
+before enabling permanent redirects.
+
 ## Gateway handoff
 
 1. Record the pinned LMS, Teach, Learn and gateway version IDs, exact commit

@@ -1,8 +1,17 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BookOpenCheck, CalendarCheck, FileText, Gauge } from '@tuturuuu/icons';
+import {
+  ArrowLeft,
+  BookOpenCheck,
+  CalendarCheck,
+  FileText,
+  Gauge,
+} from '@tuturuuu/icons';
 import { listWorkspaceCourses } from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Link } from '@/i18n/navigation';
@@ -35,6 +44,7 @@ export function OperationsPageClient({
   wsId: string;
 }) {
   const t = useTranslations('teachOperations');
+  const dashboard = useTranslations('teacherWorkspace');
   const [selectedCourseId, setSelectedCourseId] = useState(
     initialCourseId ?? ''
   );
@@ -53,75 +63,79 @@ export function OperationsPageClient({
   const Icon = modeIcons[mode];
 
   return (
-    <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="rounded-lg border border-border bg-background p-6 md:p-8">
-          <Link
-            className="mb-5 inline-flex items-center rounded-lg border border-border bg-card px-3 py-1.5 font-bold text-sm"
-            href={`/${wsId}`}
-          >
+    <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-8 md:py-10">
+      <header className="space-y-3">
+        <Button asChild size="sm" variant="ghost">
+          <Link href={`/${wsId}`}>
+            <ArrowLeft aria-hidden />
             {t('backToDashboard')}
           </Link>
-          <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center border border-border bg-dynamic-cyan/15">
-              <Icon className="h-7 w-7" />
-            </span>
-            <div>
-              <h1 className="font-semibold text-3xl leading-tight md:text-4xl">
-                {t(`${mode}.title`)}
-              </h1>
-              <p className="mt-3 max-w-2xl text-muted-foreground leading-7">
-                {t(`${mode}.lead`)}
-              </p>
-            </div>
-          </div>
-        </header>
+        </Button>
+        <h1 className="flex items-center gap-3 font-semibold text-3xl tracking-tight">
+          <Icon aria-hidden className="size-6 shrink-0 text-muted-foreground" />
+          {t(`${mode}.title`)}
+        </h1>
+      </header>
 
-        {coursesQuery.isLoading ? (
-          <div className="rounded-lg border border-border bg-card p-6 font-semibold">
-            {t('loading')}
-          </div>
-        ) : courses.length ? (
-          <>
-            <CoursePicker
-              activeCourseId={activeCourseId}
-              courses={courses}
-              onChange={setSelectedCourseId}
+      {coursesQuery.isLoading ? (
+        <div aria-label={t('loading')} role="status" className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      ) : coursesQuery.isError && !coursesQuery.data ? (
+        <Card>
+          <CardContent className="flex flex-wrap items-center justify-between gap-3">
+            <p role="alert" className="text-muted-foreground text-sm">
+              {dashboard('loadError')}
+            </p>
+            <Button
+              disabled={coursesQuery.isFetching}
+              onClick={() => void coursesQuery.refetch()}
+              variant="outline"
+            >
+              {dashboard('retry')}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : activeCourse ? (
+        <>
+          <CoursePicker
+            activeCourseId={activeCourseId}
+            courses={courses}
+            onChange={setSelectedCourseId}
+          />
+          {mode === 'attendance' ? (
+            <AttendancePanel
+              course={activeCourse}
+              key={activeCourse.id}
+              wsId={wsId}
             />
-            {mode === 'attendance' && activeCourse ? (
-              <AttendancePanel
-                course={activeCourse}
-                key={activeCourse.id}
-                wsId={wsId}
-              />
-            ) : mode === 'assignments' ? (
-              <PostsPanel courseId={activeCourseId} wsId={wsId} />
-            ) : mode === 'reports' ? (
-              <ReportsPanel
-                courseId={activeCourseId}
-                courseName={activeCourse?.name ?? t('course')}
-                key={activeCourseId}
-                wsId={wsId}
-              />
-            ) : (
-              <MetricsPanel courseId={activeCourseId} wsId={wsId} />
-            )}
-          </>
-        ) : (
-          <div className="rounded-lg border border-border border-dashed bg-muted/50 p-8">
-            <p className="font-semibold text-2xl">{t('emptyCoursesTitle')}</p>
-            <p className="mt-2 text-muted-foreground">
+          ) : mode === 'assignments' ? (
+            <PostsPanel courseId={activeCourseId} wsId={wsId} />
+          ) : mode === 'reports' ? (
+            <ReportsPanel
+              courseId={activeCourseId}
+              courseName={activeCourse.name}
+              key={activeCourseId}
+              wsId={wsId}
+            />
+          ) : (
+            <MetricsPanel courseId={activeCourseId} wsId={wsId} />
+          )}
+        </>
+      ) : (
+        <Card>
+          <CardContent className="space-y-3">
+            <p className="font-medium">{t('emptyCoursesTitle')}</p>
+            <p className="text-muted-foreground text-sm">
               {t('emptyCoursesBody')}
             </p>
-            <Link
-              className="mt-5 inline-flex h-11 items-center rounded-lg border border-border bg-primary px-4 font-semibold text-primary-foreground"
-              href={`/${wsId}/courses`}
-            >
-              {t('createCourse')}
-            </Link>
-          </div>
-        )}
-      </div>
+            <Button asChild>
+              <Link href={`/${wsId}/courses`}>{t('createCourse')}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </main>
   );
 }

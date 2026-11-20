@@ -3,6 +3,7 @@ import {
   getPendingWorkspaceInvitations,
   SatelliteWorkspaceInvitationList,
 } from '@tuturuuu/satellite/workspace-invitation';
+import { runtimeAppBase } from '@tuturuuu/start-bridge/app-url';
 import { headers } from 'next/headers';
 import { NoWorkspaceState } from '@/components/learner-shell';
 import { redirect } from '@/i18n/navigation';
@@ -28,7 +29,9 @@ export default async function DashboardEntryPage({
 
   let bootstrap: Awaited<ReturnType<typeof getLearnRenderBootstrap>>;
   try {
-    bootstrap = await getLearnRenderBootstrap(true);
+    bootstrap = await getLearnRenderBootstrap(
+      runtimeAppBase() !== '/lms/learn'
+    );
   } catch (error) {
     if (isLearnBootstrapAuthFailure(error)) {
       redirect({ href: '/login?next=/dashboard&refresh=1', locale });

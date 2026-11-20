@@ -6,13 +6,17 @@ import {
   FileText,
   GraduationCap,
   Library,
+  ListChecks,
   Settings,
 } from '@tuturuuu/icons';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
-  const t = await getTranslations('teachShell.nav');
+  const [t, dashboard] = await Promise.all([
+    getTranslations('teachShell.nav'),
+    getTranslations('teacherWorkspace'),
+  ]);
   const base = `/${wsId}`;
 
   return [
@@ -57,6 +61,25 @@ export async function getNavigationLinks(wsId: string): Promise<NavLink[]> {
       title: t('education'),
       href: `${base}/education`,
       icon: <Library className="size-4" />,
+      children: [
+        {
+          title: t('education'),
+          href: `${base}/education`,
+          matchExact: true,
+          icon: <Library className="size-4" />,
+        },
+        {
+          title: dashboard('quizzes'),
+          href: `${base}/education/library/quizzes`,
+          aliases: [`${base}/education/quiz-sets`, `${base}/education/quizzes`],
+          icon: <ListChecks className="size-4" />,
+        },
+        {
+          title: dashboard('gradebook'),
+          href: `${base}/education/attempts`,
+          icon: <ClipboardList className="size-4" />,
+        },
+      ],
     },
     {
       title: t('settings'),

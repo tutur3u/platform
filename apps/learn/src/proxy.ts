@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/auth/locale-cookie';
 import {
   clearSupabaseAuthCookies,
+  verifyAppSessionRequestWithToken,
   hasSupportedSupabaseAuthCookie,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
@@ -134,8 +135,22 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
       request.headers.delete('cookie');
       request.headers.delete('authorization');
     }
+    // An LMS bootstrap render can reuse its forwarded signed bearer.
+    const bearer = request.headers
+      .get('authorization')
+      ?.match(/^Bearer (\S+)$/iu)?.[1];
+    const bootstrapSession =
+      bearer &&
+      request.nextUrl.basePath === '/lms/learn' &&
+      request.nextUrl.pathname === '/api/v1/tulearn/bootstrap' &&
+      request.method === 'GET' &&
+      verifyAppSessionRequestWithToken(request, { targetApp: 'learn' });
+    const verifiedBootstrapBearer =
+      bootstrapSession &&
+      bootstrapSession.ok &&
+      bootstrapSession.token === bearer;
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead
+      isLocalAuthApi || isBuildInfoRead || verifiedBootstrapBearer
         ? null
         : await refreshAppSessionForRequest(request, {
             sessionMode: 'supabase-first',

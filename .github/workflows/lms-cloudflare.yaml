@@ -59,6 +59,9 @@ jobs:
           bun run --cwd apps/lms test:runtime
           python3 scripts/ci/lms-native-artifact.py verify apps/lms --receipt "$RUNNER_TEMP/lms-native-artifact.json"
           python3 scripts/ci/lms-native-artifact.py pack apps/lms --receipt "$RUNNER_TEMP/lms-native-artifact.json" --archive "$RUNNER_TEMP/lms-native-artifact.tar.gz"
+          mkdir "$RUNNER_TEMP/restored-lms"
+          python3 scripts/ci/lms-native-artifact.py restore "$RUNNER_TEMP/restored-lms" --receipt "$RUNNER_TEMP/lms-restored.json" --archive "$RUNNER_TEMP/lms-native-artifact.tar.gz"
+          LMS_ARTIFACT_DIR="$RUNNER_TEMP/restored-lms" bun run --cwd apps/lms test:runtime
           cd "$RUNNER_TEMP"
           sha256sum lms-native-artifact.json lms-native-artifact.tar.gz > lms-native-artifact.sha256
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

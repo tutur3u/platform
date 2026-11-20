@@ -13,9 +13,12 @@ const mocks = vi.hoisted(() => ({
   hasWebAppSessionTokenFromRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
+  verifyAppSessionRequestWithToken: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  verifyAppSessionRequestWithToken: (...args: unknown[]) =>
+    mocks.verifyAppSessionRequestWithToken(...args),
   clearSupabaseAuthCookies: (
     ...args: Parameters<typeof mocks.clearSupabaseAuthCookies>
   ) => mocks.clearSupabaseAuthCookies(...args),
@@ -79,6 +82,32 @@ describe('Learn proxy local auth API guard', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('does not refresh a verified LMS bootstrap bearer', async () => {
+    mocks.verifyAppSessionRequestWithToken.mockReturnValue({
+      ok: true,
+      token: 'fixture',
+    });
+    const request = new NextRequest(
+      'https://tuturuuu.com/lms/learn/api/v1/tulearn/bootstrap',
+      {
+        headers: { authorization: 'Bearer fixture' },
+        nextConfig: { basePath: '/lms/learn' },
+      }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.verifyAppSessionRequestWithToken).toHaveBeenCalledWith(
+      request,
+      {
+        targetApp: 'learn',
+      }
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
   });
 
   it('consumes verify-token requests before rendering the public verifier page', async () => {

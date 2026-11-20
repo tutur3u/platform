@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { CourseBuilderClient } from './course-builder-client';
 
@@ -37,9 +38,12 @@ export default async function CourseBuilderPage({ params }: Props) {
 
   if (courseError) throw courseError;
   if (!course) notFound();
+  const t = await getTranslations('teacherWorkspace');
 
   return (
     <CourseBuilderClient
+      backHref={`/${routeWsId}/courses/${courseId}`}
+      backLabel={t('manageCourses')}
       courseId={courseId}
       courseDescription={course.description}
       courseName={course.name}

@@ -10,7 +10,9 @@ test(
   'the emitted LMS Worker serves the apex and keeps legacy hosts at ingress',
   { timeout: 60000 },
   async (t) => {
-    const app = fileURLToPath(new URL('../', import.meta.url));
+    const app =
+      process.env.LMS_ARTIFACT_DIR ??
+      fileURLToPath(new URL('../', import.meta.url));
     const { configPath, config } = readNativeRuntimeConfig(app);
     assert.equal(config.name, 'tuturuuu-lms');
     assert.equal(config.workers_dev, false);

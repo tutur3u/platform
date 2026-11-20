@@ -573,6 +573,7 @@
                   "reference/repository/routes/inventory",
                   "reference/repository/routes/learn",
                   "reference/repository/routes/lettin",
+                  "reference/repository/routes/lms",
                   "reference/repository/routes/mail",
                   "reference/repository/routes/marketing",
                   "reference/repository/routes/mastermind",
