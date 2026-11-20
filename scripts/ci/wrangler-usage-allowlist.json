@@ -395,14 +395,14 @@
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
     },
     ".github/workflows/storefront-cloudflare.yaml": {
-      "lines": 5,
-      "uses": 6,
+      "lines": 2,
+      "uses": 3,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7643",
-        "reason": "REV-7643: cutover artifact writes the emitted wrangler.json for an operator. No wrangler command is added. The void-wave1 publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/2e351e2b70b70fb06f99d024259db1d61f054715",
+        "reason": "Storefront apex qualification removes legacy configuration references. The remaining references describe the emitted artifact."
       },
-      "digest": "cb3f9de3f9f565368ee118a6600074ef472469d84e9b363fdfb666c21ad78051"
+      "digest": "f5b89a3329dc70c2bf4ea7f29759bfc6115f7fdb279652b79fc78104b6603ecb"
     },
     ".github/workflows/teach-cloudflare.yaml": {
       "lines": 6,
@@ -2613,13 +2613,13 @@
       }
     },
     "scripts/ci/cf-build-output-publisher.test.mjs": {
-      "lines": 1,
-      "uses": 1,
-      "digest": "88293e1cd3a923dacf2e42fcd1187115b5dd13c75c234c4e11345e6490b76b2b",
+      "lines": 2,
+      "uses": 2,
+      "digest": "8e5a4d224705cdb9b16ed6e30ed9f605bb1353bf6ea8e8104e261577eced9172",
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
-        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+        "decision": "https://github.com/tutur3u/platform/commit/8de76cf092f6051f4183c7de188683b04a38230a",
+        "reason": "The cf publisher regression fixture locates the emitted Void configuration under dist/server. It adds no Wrangler invocation."
       }
     },
     "scripts/ci/cf-cron-control-order.test.mjs": {
@@ -3493,13 +3493,13 @@
       "digest": "c867d467771e3cf280a1a0d98056ce09965cdabd0abd1c5a210a0b01ea39393c"
     },
     "scripts/ci/wave1-cf-output.test.mjs": {
-      "lines": 5,
-      "uses": 5,
-      "digest": "4529ef9ee2df3c26ca2a714c2082685e2c56b5573dd6a7a76cdef5a0b365d71e",
+      "lines": 8,
+      "uses": 8,
+      "digest": "c9654b033c1d9490c361e3c39f84b96802eb21ed40eef3d450f180499bb90444",
       "gap": "parity-tooling",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/e7bd48c95234839fc01ea50e09f1b234b992c496",
-        "reason": "The cf publisher and tests read or describe the sealed legacy JSON format emitted by Void to verify conversion and private publication. They invoke the cf CLI for publication."
+        "decision": "https://github.com/tutur3u/platform/commit/91ffef7436f7c6e2fcd4584612befcb35096644e",
+        "reason": "The Wave-1 fixtures exercise module output and Durable Object secret preservation using emitted Void configuration paths. They add no Wrangler invocation."
       }
     },
     "scripts/ci/wave1-native-artifact.mjs": {
