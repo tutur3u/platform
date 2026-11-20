@@ -106,7 +106,9 @@ confirmation. The link and its actor-attributed audit event commit together.
 The confirmation page and API omit contact email and platform account IDs.
 Linked account holders and workspace operators with permission to update
 contacts can unlink an account from the contact details. Unlinking preserves
-the contact and writes an attributed audit event.
+the contact and writes an attributed audit event. Workspace membership remains
+active. On the member's next visit, workspace provisioning can create a fresh
+member profile. The original contact stays unlinked.
 Direct signed-in writes to the link table are denied. Manual group linking can
 move a teaching assignment to an already linked profile. Creating a mapping
 through manual linking or member profile editing requires an invitation.

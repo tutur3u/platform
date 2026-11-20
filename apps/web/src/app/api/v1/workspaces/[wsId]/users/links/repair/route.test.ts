@@ -151,6 +151,20 @@ describe('contact account-link confirmation', () => {
     });
   });
 
+  it.each([
+    [{ data: null, error: { code: '42501' } }, 403, 'forbidden'],
+    [{ data: 'ineligible', error: null }, 409, 'ineligible'],
+  ])('maps unlink RPC result %j to HTTP %i', async (rpc, status, outcome) => {
+    deps.rpc.mockResolvedValue(rpc);
+    const response = await submit({
+      action: 'unlink',
+      workspaceUserId,
+      platformAccountId,
+    });
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ outcome });
+  });
+
   it('uses the verified account holder and returns only the outcome', async () => {
     deps.rpc.mockResolvedValue({ data: 'linked', error: null });
     const response = await submit({

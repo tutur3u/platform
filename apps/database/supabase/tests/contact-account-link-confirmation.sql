@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(15);
+select plan(21);
 
 insert into public.users (id, display_name) values
   ('07400000-0000-4000-8000-000000000001', 'Synthetic owner'),
@@ -128,5 +128,58 @@ select is((select count(*) from private.contact_account_link_audit
     and actor_id = '07400000-0000-4000-8000-000000000002'
     and account_id = '07400000-0000-4000-8000-000000000002'
     and outcome = 'unlinked'), 1::bigint, 'Unlink commits with an attributed audit event');
+select ok(not has_function_privilege(
+  'anon', 'private.unlink_contact_account_link(uuid, uuid, uuid, uuid)', 'execute'
+), 'Anon cannot execute unlink');
+select is((select count(*) from public.workspace_members
+  where ws_id = '07400000-0000-4000-8000-000000000010'
+    and user_id = '07400000-0000-4000-8000-000000000002'),
+  1::bigint, 'Unlink preserves the workspace membership');
+
+insert into public.workspace_user_linked_users (ws_id, virtual_user_id, platform_user_id)
+values ('07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000011',
+  '07400000-0000-4000-8000-000000000002');
+
+insert into public.users (id, display_name)
+values ('07400000-0000-4000-8000-000000000003', 'Synthetic member');
+insert into public.workspace_members (ws_id, user_id, type)
+values ('07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000003', 'MEMBER');
+delete from public.workspace_default_permissions where
+  ws_id = '07400000-0000-4000-8000-000000000010';
+delete from public.workspace_role_members
+where user_id = '07400000-0000-4000-8000-000000000003';
+insert into public.workspaces (id, name, creator_id, personal)
+values ('07400000-0000-4000-8000-000000000099', 'Other test workspace',
+  '07400000-0000-4000-8000-000000000001', false);
+
+select ok(not public.has_workspace_permission(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000003',
+  'update_users'
+), 'The synthetic member has no update_users permission');
+select throws_ok(
+  $$select private.unlink_contact_account_link(
+    '07400000-0000-4000-8000-000000000010',
+    '07400000-0000-4000-8000-000000000011',
+    '07400000-0000-4000-8000-000000000002',
+    '07400000-0000-4000-8000-000000000003'
+  )$$,
+  '42501', 'Insufficient permissions',
+  'A workspace member without update_users cannot unlink another account'
+);
+select is(private.unlink_contact_account_link(
+  '07400000-0000-4000-8000-000000000099',
+  '07400000-0000-4000-8000-000000000011',
+  '07400000-0000-4000-8000-000000000002',
+  '07400000-0000-4000-8000-000000000002'
+), 'ineligible', 'An unlink scoped to a different workspace is ineligible');
+select is(private.unlink_contact_account_link(
+  '07400000-0000-4000-8000-000000000010',
+  '07400000-0000-4000-8000-000000000011',
+  '07400000-0000-4000-8000-000000000002',
+  '07400000-0000-4000-8000-000000000001'
+), 'unlinked', 'A workspace administrator with update_users can unlink the account');
 select * from finish();
 rollback;
