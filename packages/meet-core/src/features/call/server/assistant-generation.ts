@@ -2,8 +2,8 @@ import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   requireRoomMiraAuthority,
-  requireRoomMiraDispatch,
   requireRoomMiraFence,
+  roomMiraProviderFetch,
 } from '../../live-assistant/server/room-mira-authority';
 import 'server-only';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
@@ -191,7 +191,9 @@ export async function generateMeetAssistant(
         allowSearch: !messages && MEETING_APP !== 'parley',
       },
       async (allowSearch) => {
-        await requireRoomMiraDispatch(access, input.messageId);
+        // Every provider request, including later steps and web search,
+        // re-verifies the fence and this request's source consent first.
+        const provider = roomMiraProviderFetch(access, input.messageId);
         costUsd = null;
         const generated = await answerMeetChat(
           context.chat,
@@ -206,7 +208,7 @@ export async function generateMeetAssistant(
           {
             messages,
             allowSearch,
-            provider: { apiKey: room.apiKey },
+            provider: { apiKey: room.apiKey, fetch: provider.fetch },
             scenarioInstructions,
             workspaceTools: createMeetWorkspaceTools(
               {
@@ -219,7 +221,13 @@ export async function generateMeetAssistant(
               permissions?.withoutPermission ?? (() => true)
             ),
           }
-        );
+        ).catch((error: unknown) => {
+          const withdrawn = provider.withdrawn();
+          if (!withdrawn) throw error;
+          // Nothing reached the provider: there is no usage to settle.
+          if (!provider.sent()) costUsd = 0;
+          throw withdrawn;
+        });
         costUsd = generated.costUsd;
         return generated;
       }

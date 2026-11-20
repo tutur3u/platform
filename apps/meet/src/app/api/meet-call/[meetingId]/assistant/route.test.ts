@@ -1,11 +1,12 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const ROOT = '00000000-0000-0000-0000-000000000000';
 const MEETING_WS = '00000000-0000-4000-8000-0000000000a1';
 const mocks = vi.hoisted(() => ({
   authority: vi.fn(),
   fence: vi.fn(),
-  dispatch: vi.fn(),
+  verify: vi.fn(),
+  upstream: vi.fn(),
   model: vi.fn(),
   personal: vi.fn(),
   service: vi.fn(),
@@ -17,10 +18,11 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock(
   '../../../../../../../../packages/meet-core/src/features/live-assistant/server/room-mira-authority',
-  () => ({
+  async (importOriginal) => ({
+    // The real guarded provider fetch; verification goes to mocks.service.
+    ...(await importOriginal<object>()),
     requireRoomMiraAuthority: mocks.authority,
     requireRoomMiraFence: mocks.fence,
-    requireRoomMiraDispatch: mocks.dispatch,
   })
 );
 vi.mock('@tuturuuu/ai/studio/metering', () => ({
@@ -117,7 +119,9 @@ beforeEach(() => {
   vi.resetAllMocks();
   mocks.authority.mockResolvedValue(room('account'));
   mocks.fence.mockResolvedValue(undefined);
-  mocks.dispatch.mockResolvedValue(undefined);
+  mocks.verify.mockResolvedValue({ ok: true });
+  mocks.upstream.mockResolvedValue(new Response('{}'));
+  vi.stubGlobal('fetch', mocks.upstream);
   mocks.personal.mockResolvedValue('tagger-personal-workspace');
   mocks.model.mockResolvedValue({
     id: 'google/gemini-3.5-flash-lite',
@@ -137,9 +141,29 @@ beforeEach(() => {
     usage: { available: true, inputTokens: 100, outputTokens: 20 },
   });
   mocks.service.mockImplementation(async (_access, command) =>
-    command.action === 'ai.reserve' ? context : { ok: true }
+    command.action === 'ai.reserve'
+      ? context
+      : command.action === 'mira.room.verify'
+        ? mocks.verify(command)
+        : { ok: true }
   );
+  // Each provider request (three model steps and one search) uses the
+  // provider fetch handed to the chat generator.
+  mocks.answer.mockImplementation(async (...args: unknown[]) => {
+    const options = args.at(-1) as { provider: { fetch: typeof fetch } };
+    for (let request = 0; request < 4; request++)
+      await options.provider.fetch(
+        'https://generativelanguage.googleapis.com/v1beta/models/x'
+      );
+    return {
+      text: 'Answer',
+      costUsd: 0.001,
+      usage: { available: true, inputTokens: 100, outputTokens: 20 },
+    };
+  });
 });
+
+afterEach(() => vi.unstubAllGlobals());
 
 const noAiWork = () => {
   for (const mock of [
@@ -201,7 +225,10 @@ it.each([
   // The provider key is the Worker's own; tools default to the requester's
   // Personal workspace, never the billing workspace.
   const options = mocks.answer.mock.calls[0]?.at(-1);
-  expect(options.provider).toEqual({ apiKey: 'synthetic-key' });
+  expect(options.provider).toEqual({
+    apiKey: 'synthetic-key',
+    fetch: expect.any(Function),
+  });
   expect(mocks.answer.mock.calls[0]?.[0]).toEqual(context.chat);
   expect(mocks.service).toHaveBeenCalledWith(expect.anything(), {
     action: 'ai.reserve',
@@ -235,23 +262,38 @@ it('never posts a blank answer and records incurred cost', async () => {
   );
 });
 
-it('rechecks the fence and sources immediately before dispatch and never sends stale context', async () => {
-  mocks.dispatch.mockRejectedValue(
-    Object.assign(new Error('waiting'), {
-      status: 409,
-      code: 'MIRA_ROOM_CONSENT_REQUIRED',
-    })
+it('verifies source consent before every provider request, including later steps and search', async () => {
+  await post({ messageId: 'message' });
+  expect(mocks.verify).toHaveBeenCalledTimes(4);
+  expect(mocks.upstream).toHaveBeenCalledTimes(4);
+  for (let request = 0; request < 4; request++)
+    expect(mocks.verify.mock.invocationCallOrder[request]).toBeLessThan(
+      mocks.upstream.mock.invocationCallOrder[request]!
+    );
+  const reserve = mocks.service.mock.calls.findIndex(
+    ([, command]) => command.action === 'ai.reserve'
   );
+  expect(mocks.service.mock.invocationCallOrder[reserve]).toBeLessThan(
+    mocks.verify.mock.invocationCallOrder[0]!
+  );
+});
+
+it('stops the next provider request when consent is withdrawn mid-generation', async () => {
+  mocks.verify
+    .mockResolvedValueOnce({ ok: true })
+    .mockResolvedValueOnce({ ok: true })
+    .mockRejectedValue(Object.assign(new Error('stale'), { status: 409 }));
   await expect(post({ messageId: 'message' })).rejects.toMatchObject({
     status: 409,
     code: 'MIRA_ROOM_CONSENT_REQUIRED',
   });
-  expect(mocks.dispatch).toHaveBeenCalledWith(expect.anything(), 'message');
-  expect(mocks.answer).not.toHaveBeenCalled();
+  // Two steps reached the provider; the third and the search never left.
+  expect(mocks.upstream).toHaveBeenCalledTimes(2);
+  // Usage from the steps that ran is unknown, never settled as zero.
   expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
     action: 'ai.finish',
     messageId: 'message',
-    costUsd: 0,
+    costUsd: null,
   });
   expect(mocks.service).not.toHaveBeenCalledWith(
     expect.anything(),
@@ -259,15 +301,18 @@ it('rechecks the fence and sources immediately before dispatch and never sends s
   );
 });
 
-it('checks dispatch after the reservation and before the provider call', async () => {
-  await post({ messageId: 'message' });
-  const reserve = mocks.service.mock.calls.findIndex(
-    ([, command]) => command.action === 'ai.reserve'
+it('sends nothing and settles zero cost when consent is stale before the first request', async () => {
+  mocks.verify.mockRejectedValue(
+    Object.assign(new Error('stale'), { status: 409 })
   );
-  expect(mocks.service.mock.invocationCallOrder[reserve]).toBeLessThan(
-    mocks.dispatch.mock.invocationCallOrder[0]!
-  );
-  expect(mocks.dispatch.mock.invocationCallOrder[0]).toBeLessThan(
-    mocks.answer.mock.invocationCallOrder[0]!
-  );
+  await expect(post({ messageId: 'message' })).rejects.toMatchObject({
+    status: 409,
+    code: 'MIRA_ROOM_CONSENT_REQUIRED',
+  });
+  expect(mocks.upstream).not.toHaveBeenCalled();
+  expect(mocks.service).toHaveBeenLastCalledWith(expect.anything(), {
+    action: 'ai.finish',
+    messageId: 'message',
+    costUsd: 0,
+  });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MEET_ASSISTANT_USER_ID } from './assistant-mentions';
 import {
   admitOrHold,
   createMeetRoomSnapshot,
@@ -143,7 +144,7 @@ describe('room Mira all-participant fence', () => {
     expect(called).toBe(1);
   });
 
-  it('sends only consenting authors and Mira replies to the provider', () => {
+  it('sends only consenting authors, never earlier Mira replies, to the provider', () => {
     const left = '00000000-0000-4000-8000-0000000000c3';
     let state = admit(createMeetRoomSnapshot(), alice);
     state = choose(state, alice, 'continue');
@@ -151,10 +152,12 @@ describe('room Mira all-participant fence', () => {
       chat(alice, 'from alice'),
       chat(left, 'from someone who left'),
       chat('mira', 'from mira', true),
+      // A forged Mira identity without the assistant flag is omitted too.
+      chat(MEET_ASSISTANT_USER_ID, 'forged mira'),
     ];
     expect(
       consentedMiraRoomChat(state, meetingId, history).map((m) => m.body)
-    ).toEqual(['from alice', 'from mira']);
+    ).toEqual(['from alice']);
     const reserved = fenceMiraRoomRequest(
       state,
       token(alice),
@@ -171,7 +174,7 @@ describe('room Mira all-participant fence', () => {
     );
     expect(
       (reserved.body as { chat: RoomChatMessage[] }).chat.map((m) => m.body)
-    ).toEqual(['from alice', 'from mira']);
+    ).toEqual(['from alice']);
     // The author who left without choosing is not a source of the request.
     expect(reserved.state.aiRequests?.mention?.miraRoomSources).toEqual({
       [alice]: 1,

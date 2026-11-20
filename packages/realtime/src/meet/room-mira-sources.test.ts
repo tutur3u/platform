@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { MEET_ASSISTANT_USER_ID } from './assistant-mentions';
 import {
   admitOrHold,
   createMeetRoomSnapshot,
@@ -195,5 +196,37 @@ describe('room Mira source binding', () => {
     expect(
       service(legacy, bob, { action: 'mira.room.verify', messageId: mention })
     ).toMatchObject(blocked);
+  });
+
+  it('never re-sends an earlier Mira reply that quotes an author who withdrew', () => {
+    let state = leave(choose(reserved, bob, 'mute'), bob);
+    // Settle the first request (cost only) so a new mention can reserve.
+    state = service(state, alice, {
+      action: 'ai.finish',
+      messageId: mention,
+      costUsd: 0,
+    }).state;
+    state = {
+      ...state,
+      chat: [
+        ...(state.chat ?? []),
+        {
+          ...message('mira-1', MEET_ASSISTANT_USER_ID, 'Bob said: secret'),
+          assistant: true,
+        },
+        message('mention-2', alice, '@mira what did we decide?'),
+      ],
+    };
+    const result = service(state, alice, {
+      action: 'ai.reserve',
+      messageId: 'mention-2',
+    });
+    expect(result.status ?? 200).toBe(200);
+    const chat = (result.body as { chat: RoomChatMessage[] }).chat;
+    expect(chat.map((m) => m.body)).not.toContain('Bob said: secret');
+    expect(chat.map((m) => m.body)).not.toContain('Something only Bob said');
+    expect(result.state.aiRequests?.['mention-2']?.miraRoomSources).toEqual({
+      [alice]: 1,
+    });
   });
 });

@@ -108,6 +108,34 @@ export async function requireRoomMiraDispatch(
 }
 
 /**
+ * Provider fetch for room Mira generation. Every outbound provider request
+ * (each model step and the model-backed web search) first re-verifies the
+ * all-participant fence and the request's exact source consent, so a
+ * withdrawal between steps stops the next request before it leaves.
+ * `withdrawn()` returns the consent error when a check refused a request;
+ * `sent()` tells whether any request reached the provider.
+ */
+export function roomMiraProviderFetch(
+  access: SignedInMeetCallAccess,
+  messageId: string,
+  upstream: typeof fetch = fetch
+) {
+  let refused: MeetCallAccessError | undefined;
+  let sent = false;
+  const guarded = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    try {
+      await requireRoomMiraDispatch(access, messageId);
+    } catch (error) {
+      refused = error as MeetCallAccessError;
+      throw error;
+    }
+    sent = true;
+    return upstream(input, init);
+  }) as typeof fetch;
+  return { fetch: guarded, withdrawn: () => refused, sent: () => sent };
+}
+
+/**
  * Whether room Mira could run in this meeting at all, independent of the
  * viewer's own plan: deployment on, workspace gate open, workspace attested
  * and a provider configured. Participants are asked to choose only then.

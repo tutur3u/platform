@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MEET_ASSISTANT_USER_ID } from './assistant-mentions';
 import type { MeetRealtimeTokenPayload } from './primitives';
 import type { RoomChatMessage, RoomServiceState } from './room-service';
 
@@ -82,7 +83,8 @@ export function miraRoomFence(
 
 /**
  * Room chat sent to the provider: only messages written by accounts with a
- * current Continue, plus Mira's own replies. Messages from people who left
+ * current Continue. Mira's own earlier replies are omitted because they can
+ * quote people who have since withdrawn; messages from people who left
  * without choosing Continue never leave the room.
  */
 export function consentedMiraRoomChat(
@@ -92,7 +94,8 @@ export function consentedMiraRoomChat(
 ) {
   return chat.filter(
     (message) =>
-      message.assistant === true ||
+      message.assistant !== true &&
+      message.userId !== MEET_ASSISTANT_USER_ID &&
       isCurrentMiraRoomContinue(
         state,
         meetingId,
