@@ -493,16 +493,19 @@ describe('satellite app-session route inventory', () => {
   });
 
   it('keeps education dashboard entry pages from redirect-looping authenticated users', () => {
-    for (const file of [
-      'apps/learn/src/app/[locale]/dashboard/page.tsx',
-      'apps/teach/src/app/[locale]/dashboard/page.tsx',
-    ]) {
+    for (const [file, bootstrap] of [
+      [
+        'apps/learn/src/app/[locale]/dashboard/page.tsx',
+        'getLearnRenderBootstrap',
+      ],
+      ['apps/teach/src/app/[locale]/dashboard/page.tsx', 'getTulearnBootstrap'],
+    ] as const) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
       const sessionIndex = source.indexOf('getSatelliteAppSession(');
       const loginRedirectIndex = source.search(
         /href:\s*['"]\/login\?next=\/dashboard['"]/u
       );
-      const bootstrapIndex = source.indexOf('getTulearnBootstrap(');
+      const bootstrapIndex = source.indexOf(`${bootstrap}(`);
 
       expect(source, file).toContain('getSatelliteAppSession');
       expect(sessionIndex, file).toBeGreaterThanOrEqual(0);
