@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import {
+  publishGatewayVersionOnly,
   rehearseGatewayCfPublication,
   writeMergedDeployConfig,
 } from './gateway-cf-publication.mjs';
@@ -46,6 +47,26 @@ test('merged deploy config preserves gateway merge parity', () => {
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('publish-version-only requires owner LIVE gate', () => {
+  assert.throws(
+    () =>
+      publishGatewayVersionOnly({
+        settingsPath: fileURLToPath(fixture),
+        env: {
+          GATEWAY_CF_VERSION_UPLOAD_LIVE: 'false',
+          CLOUDFLARE_API_TOKEN: 'token',
+          CLOUDFLARE_ACCOUNT_ID: 'account',
+          RUNNER_TEMP: mkdtempSync(join(tmpdir(), 'gw-live-')),
+        },
+        cfToken: 'token',
+        accountId: 'account',
+        sha: 'b'.repeat(40),
+        digest: 'c'.repeat(64),
+      }),
+    /GATEWAY_CF_VERSION_UPLOAD_LIVE|'false' !== 'true'/
+  );
 });
 
 test('rehearse rejects credentials and requires rehearsal flag', () => {

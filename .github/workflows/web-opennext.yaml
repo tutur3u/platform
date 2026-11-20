@@ -248,6 +248,8 @@ jobs:
         run: |
           node scripts/ci/gateway-deploy-config.mjs write \
             "$RUNNER_TEMP/gateway-settings.json" apps/gateway/wrangler.deploy.json
+      - name: Build the gateway Worker
+        run: bun run --cwd apps/gateway build
       - name: Rehearse cf gateway version-only publication (no traffic; Wrangler still live)
         if: vars.GATEWAY_CF_VERSION_UPLOAD_REHEARSAL == 'true'
         env:
@@ -256,10 +258,27 @@ jobs:
           MARKETING_ORIGIN: ${{ env.MARKETING_ORIGIN }}
           GATEWAY_WEB_FAMILIES: ${{ env.GATEWAY_WEB_FAMILIES }}
         run: |
-          bun run --cwd apps/gateway build
           node scripts/ci/gateway-cf-publication.mjs rehearse \
             "$RUNNER_TEMP/gateway-settings.json"
-      - name: Upload and deploy the gateway version
+      - name: Upload the gateway version (cf prebuilt, version-only at 0%)
+        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
+        env:
+          GATEWAY_CF_VERSION_UPLOAD_LIVE: 'true'
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          WEB_ORIGIN: ${{ env.WEB_ORIGIN }}
+          MARKETING_ORIGIN: ${{ env.MARKETING_ORIGIN }}
+          GATEWAY_WEB_FAMILIES: ${{ env.GATEWAY_WEB_FAMILIES }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::WEB_OPENNEXT_CLOUDFLARE_API_TOKEN is not set on colab-production"; exit 1; }
+          bun x --no-install wrangler deployments status --name tuturuuu-gateway | tee "$RUNNER_TEMP/gateway-before.txt"
+          version=$(node scripts/ci/gateway-cf-publication.mjs publish-version-only \
+            "$RUNNER_TEMP/gateway-settings.json" | jq -r .versionId)
+          test -n "$version" && test "$version" != null || { echo "::error::cf version-only upload returned no version id"; exit 1; }
+          echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
+          echo "Uploaded gateway version $version via cf workers versions create --prebuilt (0% traffic until deploy step)."
+      - name: Upload and deploy the gateway version (Wrangler publisher fallback)
+        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'
         working-directory: apps/gateway
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
@@ -280,6 +299,23 @@ jobs:
             sleep $((attempt * 10))
           done
           echo "Deployed gateway version $version. The previous deployment is above; roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
+      - name: Deploy gateway traffic (Wrangler; version from cf upload)
+        if: vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
+        working-directory: apps/gateway
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
+        run: |
+          version="$GATEWAY_VERSION_ID"
+          test -n "$version" || { echo "::error::missing GATEWAY_VERSION_ID from cf upload step"; exit 1; }
+          for attempt in 1 2 3 4 5 6; do
+            if bun x --no-install wrangler versions deploy "$version@100%" --name tuturuuu-gateway -y \
+              --message "gateway $GITHUB_SHA"; then
+              break
+            fi
+            test "$attempt" -lt 6 || { echo "::error::gateway version $version did not deploy"; exit 1; }
+            sleep $((attempt * 10))
+          done
+          echo "Deployed gateway version $version at 100% after cf prebuilt upload. Roll back with: wrangler rollback <previous version id> --name tuturuuu-gateway"
       - name: Verify the gateway answers
         run: |
           status=$(curl --silent --retry 5 --retry-delay 5 --max-time 30 --output /dev/null \

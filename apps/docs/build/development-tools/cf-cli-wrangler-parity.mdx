@@ -358,7 +358,7 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Cron Control | cf | Switched | — |
 | Devbox Control, Coordination | cf `deploy --prebuilt` | Switched | `pending-migration` only for remaining binding history |
 | API, Status API, Gateway (qualification) | cf Build Output + dry-run | Switched | — |
-| Gateway (M4 production) | Wrangler `versions upload` / `versions deploy` live; cf version-only rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Qualified rehearsal | `opennext-adapter` until live flip |
+| Gateway (M4 production) | `cf workers versions create --prebuilt` when `GATEWAY_CF_VERSION_UPLOAD_LIVE`; Wrangler upload+deploy fallback when unset; rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Landed; live flip owner-gated | `opennext-adapter` until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
 | Wave 1 Start+Void apps | cf Build Output (`wave1-cf-publisher.mjs`) | Switched | `void-emitted-binding-types` for sealed runtime harness only |
 | Calendar (wave-1) | cf Build Output (`calendar-cf-publisher.mjs`) | Switched | — |
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |

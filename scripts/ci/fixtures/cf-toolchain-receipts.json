@@ -181,20 +181,21 @@
       "removalConditions": []
     },
     "gateway-m4-cf-version-rehearsal": {
-      "title": "M4 gateway cf version-only publication rehearsal",
-      "status": "qualified",
+      "title": "M4 gateway cf version-only publication",
+      "status": "switched",
       "owner": "cf/Void Wrangler-exit lane",
       "implementation": "scripts/ci/gateway-cf-publication.mjs",
       "wranglerPrior": "wrangler versions upload and versions deploy@100% in web-opennext.yaml",
-      "toolchain": "cf workers versions create --prebuilt via cf-build-output-publisher; live Wrangler until GATEWAY_CF_VERSION_UPLOAD_LIVE",
+      "toolchain": "cf workers versions create --prebuilt when GATEWAY_CF_VERSION_UPLOAD_LIVE; Wrangler upload+deploy fallback when unset; Wrangler versions deploy for traffic after cf upload",
       "parityEvidence": [
         "scripts/ci/gateway-cf-publication.test.mjs",
         "scripts/ci/gateway-deploy-config.test.mjs",
-        "scripts/ci/gateway-cloudflare-workflow.test.js"
+        "scripts/ci/gateway-cloudflare-workflow.test.js",
+        "scripts/ci/web-opennext-gateway-workflow.test.js"
       ],
       "rehearsal": {
         "kind": "merge-parity-dry-run",
-        "notes": "Gateway qualification runs rehearse on every build; production job runs only when GATEWAY_CF_VERSION_UPLOAD_REHEARSAL is set. wrangler.deploy.json emission retained for merge parity."
+        "notes": "Rehearse when GATEWAY_CF_VERSION_UPLOAD_REHEARSAL is set. Production cf upload needs GATEWAY_CF_VERSION_UPLOAD_LIVE; traffic deploy stays Wrangler until owner coordinates first flip."
       },
       "productionTemplate": {
         "workflow": ".github/workflows/web-opennext.yaml",
@@ -205,12 +206,12 @@
       "allowlistDelta": {
         "files": 0,
         "uses": 0,
-        "note": "Wrangler live gateway steps unchanged; cf path is rehearsal-only until owner flip."
+        "note": "Default production path remains Wrangler; cf upload is owner-gated."
       },
       "wranglerGapsRetained": ["opennext-adapter"],
       "removalConditions": [
-        "Owner enables GATEWAY_CF_VERSION_UPLOAD_LIVE after Tools mount parity",
-        "Byte identity between cf version-only upload and wrangler.deploy.json merge"
+        "Owner enables GATEWAY_CF_VERSION_UPLOAD_LIVE after coordinated first use",
+        "Wrangler upload fallback retired when cf traffic deploy exists"
       ]
     },
     "observability-remaining-callers": {
