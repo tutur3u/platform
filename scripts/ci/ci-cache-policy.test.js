@@ -50,6 +50,7 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-empty-lifecycle.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/attendance-room-erase.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',
