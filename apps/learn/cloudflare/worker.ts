@@ -3,6 +3,10 @@
 import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
 import { createFunctionProxy } from '@tuturuuu/start-bridge/function-proxy';
+import {
+  type AppMountConfig,
+  resolveAppBase,
+} from '@tuturuuu/start-bridge/mounts';
 import { defaultProxyMatches } from '@tuturuuu/start-bridge/proxy-bridge';
 import { createProxyMatcher } from '@tuturuuu/start-bridge/proxy-matcher';
 import {
