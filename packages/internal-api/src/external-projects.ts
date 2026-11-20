@@ -6,6 +6,7 @@ import type {
   ExternalProjectCollection,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
+  ExternalProjectPublicationResult,
   ExternalProjectFieldDefinition,
   ExternalProjectFieldScope,
   ExternalProjectFieldType,
@@ -1330,8 +1331,7 @@ export async function bulkUpdateWorkspaceExternalProjectEntries(
   payload: ExternalProjectBulkUpdatePayload,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<ExternalProjectEntry[]>(
+  return getInternalApiClient(options).json<ExternalProjectPublicationResult[]>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/bulk`,
     {
       body: JSON.stringify(payload),
@@ -1364,8 +1364,7 @@ export async function publishWorkspaceExternalProjectEntry(
   eventKind: 'publish' | 'preview' | 'unpublish',
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  return client.json<ExternalProjectEntry>(
+  return getInternalApiClient(options).json<ExternalProjectPublicationResult>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/entries/${encodePathSegment(entryId)}/publish`,
     {
       body: JSON.stringify({ eventKind }),

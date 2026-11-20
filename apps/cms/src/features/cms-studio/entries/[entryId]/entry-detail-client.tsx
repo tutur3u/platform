@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useCmsPublicationToast } from '../../use-cms-publication-toast';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
@@ -1118,6 +1119,7 @@ export function EntryDetailClient({
     },
   });
 
+  const showPublication = useCmsPublicationToast(strings);
   const publishEntryMutation = useMutation({
     mutationFn: async (eventKind: 'publish' | 'unpublish') => {
       if (!activeEntry) {
@@ -1133,11 +1135,7 @@ export function EntryDetailClient({
     onSuccess: (entry) => {
       mergeEntry(entry);
       setPreviewRefreshToken((value) => value + 1);
-      toast.success(
-        entry.status === 'published'
-          ? strings.publishAction
-          : strings.unpublishAction
-      );
+      showPublication(entry);
     },
   });
 

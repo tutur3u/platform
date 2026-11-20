@@ -42,7 +42,10 @@ import {
   PUBLIC_ASSET_MAX_BYTES,
 } from '@/lib/external-projects/asset-publication-bytes';
 import { assetPublicationProofId } from '@/lib/external-projects/published-assets';
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 it('proxies only eligible bytes and closes a withdrawal during the storage handoff', async () => {
   const { GET, HEAD } = await import('./route');
@@ -154,6 +157,9 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   expect(partial.headers.get('content-range')).toBe('bytes 0-8/15');
   expect(await partial.text()).toBe('published');
 
+  expect(upstream).toHaveBeenCalledTimes(1);
+  vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 121_000);
+
   upstream.mockResolvedValueOnce(new Response('changed bytes'));
   expect((await media()).status).toBe(404);
   upstream.mockResolvedValueOnce(new Response('changed bytes'));
@@ -180,4 +186,13 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   expect((await media()).status).toBe(404);
   expect((await probe()).status).toBe(404);
   expect(mocks.requireWorkspaceExternalProjectAccess).not.toHaveBeenCalled();
+
+  parent.status = 'published';
+  expect((await media()).status).toBe(200);
+  const fetched = upstream.mock.calls.length;
+  parent.status = 'draft';
+  mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({ ok: false });
+  expect((await media()).status).toBe(404);
+  expect((await probe()).status).toBe(404);
+  expect(upstream).toHaveBeenCalledTimes(fetched);
 });

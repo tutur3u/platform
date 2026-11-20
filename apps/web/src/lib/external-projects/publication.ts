@@ -6,12 +6,14 @@ import type {
   Database,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
+  ExternalProjectPublicationResult,
   Json,
 } from '@tuturuuu/types';
 import { assetPublicationProofs } from './asset-publication-store';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
 import {
   type AssetPublicationManifest,
+  type CapturedAssetProofs,
   assetPublicationProofId,
   publicationEventId,
 } from './published-assets';
@@ -48,9 +50,7 @@ type PublicationInput = {
   readPayload: (
     pending?: PendingPublication
   ) => Promise<ExternalProjectDeliveryPayload>;
-  readManifest: (
-    entry: ExternalProjectEntry
-  ) => Promise<AssetPublicationManifest>;
+  readManifest: (entry: ExternalProjectEntry) => Promise<CapturedAssetProofs>;
 };
 
 type PublishArgs = {
@@ -159,8 +159,9 @@ async function publishAtomically(
   admin: TypedSupabaseClient,
   current: ExternalProjectEntry,
   input: PublicationInput
-) {
-  if (await hasPublicationReceipt(admin, current, input)) return current;
+): Promise<ExternalProjectPublicationResult> {
+  if (await hasPublicationReceipt(admin, current, input))
+    return { ...current, excludedAssets: [] };
 
   const { actorId, canonicalProjectId, workspaceId } = input;
   const previous = current.published_at ? Date.parse(current.published_at) : 0;
@@ -171,7 +172,7 @@ async function publishAtomically(
     published_at: publishedAt,
     updated_by: actorId,
   };
-  const manifest = await input.readManifest(entry);
+  const { manifest, excludedAssets } = await input.readManifest(entry);
   const payload = await input.readPayload({ entry, manifest });
   const rpc = admin as unknown as SupabaseClient<AtomicPublicationDatabase>;
   const result = await rpc
@@ -196,7 +197,7 @@ async function publishAtomically(
 
   if (result.error)
     throw new PublicationDatabaseError('atomic publish', result.error);
-  return result.data;
+  return { ...result.data, excludedAssets };
 }
 
 export async function recordEntryPublication(

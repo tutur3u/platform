@@ -93,11 +93,21 @@ Only the server writes media publication proofs. Older event logs do not
 establish a media revision. Re-publish older entries or edited entries to
 record the verified media references for their current revision. Publication verifies
 the SHA-256 digest of each private asset before recording its proof. A public
-asset or revision check verifies the stored bytes before serving or
+asset or revision check requires verified bytes before serving or
 authorizing reuse of cached media. Public media without a private stored
 object stays out of withdrawable delivery. Upload a new file to replace
 an attached object. Ordinary public asset reads cap originals at 10 MiB.
 Private collections and entries never deliver media anonymously.
+When a selected file exceeds 10 MiB or its private bytes cannot be verified,
+publication omits it from the proof and the CMS lists each omitted asset with
+its reason after publishing.
+
+Ordinary public asset reads reuse verified originals and image variants for
+up to two minutes in a 48 MiB cache per serving instance. Cache keys include
+the workspace, asset, asset revision and published digest. Byte ranges use the
+verified original. Each public request checks the current database publication
+proof before using cached bytes. Image transformations are limited to 60
+requests per IP per minute per serving instance.
 
 Every WebGL finalization extracts into its own storage directory. The
 extraction service records the files and their SHA-256 digests after upload.

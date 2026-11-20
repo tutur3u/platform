@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
+import { posix } from 'node:path';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { ExternalProjectPublicationExclusion } from '@tuturuuu/types';
 import {
   assetBytesDigest,
   readExternalProjectAssetBytes,
@@ -21,6 +23,7 @@ type Entry = {
 type Asset = { id: string; entry_id: string | null; updated_at: string };
 type Block = { id: string; entry_id: string; updated_at: string };
 type AttachedAsset = Asset & {
+  alt_text?: string | null;
   asset_type?: string;
   block_id?: string | null;
   metadata?: unknown;
@@ -156,6 +159,11 @@ function webglInventoryDigest(asset: AttachedAsset) {
   );
 }
 
+export type CapturedAssetProofs = {
+  manifest: AssetPublicationManifest;
+  excludedAssets: ExternalProjectPublicationExclusion[];
+};
+
 export const MAX_PUBLISHED_ENTRY_ASSETS = 24;
 
 export class PublicationAssetLimitError extends Error {
@@ -176,7 +184,7 @@ export async function captureAssetProofs({
   entry: Entry;
   assets: AttachedAsset[];
   blocks: Block[];
-}): Promise<AssetPublicationManifest> {
+}): Promise<CapturedAssetProofs> {
   const references = publishedAssetManifest(entry, assets, blocks);
   const selected = assets.filter((asset) =>
     Object.hasOwn(references, asset.id)
@@ -185,25 +193,45 @@ export async function captureAssetProofs({
     throw new PublicationAssetLimitError();
   }
   const manifest: AssetPublicationManifest = {};
+  const excludedAssets: ExternalProjectPublicationExclusion[] = [];
   for (let start = 0; start < selected.length; start += 2) {
-    await Promise.all(
+    const results = await Promise.all(
       selected.slice(start, start + 2).map(async (asset) => {
-        const object =
-          asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE
-            ? null
-            : await readExternalProjectAssetBytes(
-                workspaceId,
-                asset.storage_path ?? null
-              );
-        const sha256 =
-          asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE
-            ? webglInventoryDigest(asset)
-            : object && assetBytesDigest(object.buffer);
-        if (sha256) manifest[asset.id] = { revision: asset.updated_at, sha256 };
+        if (asset.asset_type === WEBGL_PACKAGE_ASSET_TYPE)
+          return {
+            asset,
+            sha256: webglInventoryDigest(asset),
+            tooLarge: false,
+          };
+        let tooLarge = false;
+        const object = await readExternalProjectAssetBytes(
+          workspaceId,
+          asset.storage_path ?? null,
+          () => {
+            tooLarge = true;
+          }
+        );
+        return {
+          asset,
+          sha256: object && assetBytesDigest(object.buffer),
+          tooLarge,
+        };
       })
     );
+    for (const { asset, sha256, tooLarge } of results) {
+      if (sha256) manifest[asset.id] = { revision: asset.updated_at, sha256 };
+      else
+        excludedAssets.push({
+          assetId: asset.id,
+          label:
+            asset.alt_text ||
+            posix.basename(asset.storage_path ?? '') ||
+            asset.id,
+          reason: tooLarge ? 'tooLarge' : 'unavailable',
+        });
+    }
   }
-  return manifest;
+  return { manifest, excludedAssets };
 }
 
 function beforePublication(updated: string, published: string | null) {

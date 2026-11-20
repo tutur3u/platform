@@ -1,6 +1,7 @@
 import type { ImageTransformOptions } from '@tuturuuu/types';
 import { getImageTransformer } from '../image-transform';
 import { PUBLIC_ASSET_MAX_BYTES } from './asset-publication-bytes';
+import { cachedVerifiedAsset } from './verified-asset-cache';
 
 const inlineAssetType =
   /^(?:image\/(?:avif|bmp|gif|jpeg|png|svg\+xml|webp|x-icon)|audio\/(?:aac|mpeg|ogg|wav|webm)|video\/(?:mp4|ogg|webm))$/i;
@@ -9,29 +10,38 @@ export async function publicExternalProjectAssetResponse(
   object: { buffer: Buffer; contentType: string | null },
   transform: ImageTransformOptions | undefined,
   headers: HeadersInit,
-  requestedRange: string | null
+  requestedRange: string | null,
+  cacheKey: string
 ) {
   let { buffer, contentType } = object;
   if (transform && (transform.width || transform.height)) {
-    const adapter = await getImageTransformer();
-    const image = adapter.decode(buffer, {
-      limitInputPixels: 16_000_000,
-      failOn: 'warning',
-      pages: 1,
-    });
-    try {
-      const metadata = await image.metadata();
-      if ((metadata.pages ?? 1) > 1) return null;
-      buffer = await image.webp({
-        width: transform.width ?? transform.height ?? 1200,
-        height: transform.height ?? transform.width ?? 1200,
-        quality: transform.quality ?? 82,
-        effort: 4,
-      });
-      contentType = 'image/webp';
-    } finally {
-      image.destroy();
-    }
+    const rendered = await cachedVerifiedAsset(
+      `${cacheKey}/variant/${JSON.stringify(transform)}`,
+      async () => {
+        const adapter = await getImageTransformer();
+        const image = adapter.decode(object.buffer, {
+          limitInputPixels: 16_000_000,
+          failOn: 'warning',
+          pages: 1,
+        });
+        try {
+          if (((await image.metadata()).pages ?? 1) > 1) return null;
+          const resized = await image.webp({
+            width: transform.width ?? transform.height ?? 1200,
+            height: transform.height ?? transform.width ?? 1200,
+            quality: transform.quality ?? 82,
+            effort: 4,
+          });
+          return resized.byteLength <= PUBLIC_ASSET_MAX_BYTES
+            ? { buffer: resized, contentType: 'image/webp' }
+            : null;
+        } finally {
+          image.destroy();
+        }
+      }
+    );
+    if (!rendered) return null;
+    ({ buffer, contentType } = rendered);
   }
   if (buffer.byteLength > PUBLIC_ASSET_MAX_BYTES) return null;
   const mime = contentType?.split(';', 1)[0]?.trim() ?? '';

@@ -114,26 +114,28 @@ function createAdminWithAsset(
           entry_id: 'entry-1',
           published_at: publishedAt,
           entry_updated_at: publishedAt,
-          asset_revisions: await captureAssetProofs({
-            workspaceId: '123e4567-e89b-12d3-a456-426614174000',
-            entry: {
-              id: 'entry-1',
-              updated_at: publishedAt,
-              published_at: publishedAt,
-              profile_data: {},
-            },
-            assets: [
-              {
-                id: 'asset-1',
-                entry_id: 'entry-1',
-                asset_type: 'webgl-package',
-                updated_at: updatedAt,
-                metadata,
-                storage_path: metadata.rootPath,
+          asset_revisions: (
+            await captureAssetProofs({
+              workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+              entry: {
+                id: 'entry-1',
+                updated_at: publishedAt,
+                published_at: publishedAt,
+                profile_data: {},
               },
-            ],
-            blocks: [],
-          }),
+              assets: [
+                {
+                  id: 'asset-1',
+                  entry_id: 'entry-1',
+                  asset_type: 'webgl-package',
+                  updated_at: updatedAt,
+                  metadata,
+                  storage_path: metadata.rootPath,
+                },
+              ],
+              blocks: [],
+            })
+          ).manifest,
         },
       ],
     })),

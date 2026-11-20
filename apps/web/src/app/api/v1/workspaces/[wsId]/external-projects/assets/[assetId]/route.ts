@@ -25,10 +25,8 @@ import { resolveAllowedAssetRedirectUrl } from '@/lib/external-projects/asset-re
 import { guardExternalProjectAssetSourceUrl } from '@/lib/external-projects/asset-source-guard';
 import { EXTERNAL_PROJECT_PRIVATE_CACHE_CONTROL } from '@/lib/external-projects/cache';
 import { publicExternalProjectAssetResponse } from '@/lib/external-projects/public-asset-response';
-import {
-  assetBytesDigest,
-  readExternalProjectAssetBytes,
-} from '@/lib/external-projects/asset-publication-bytes';
+import { allowPublicAssetTransform } from '@/lib/external-projects/asset-transform-limit';
+import { readVerifiedAsset } from '@/lib/external-projects/verified-asset-cache';
 import { readPublishedAssetDigest } from '@/lib/external-projects/published-assets';
 import {
   EXTERNAL_PROJECTS_STORAGE_PREFIX,
@@ -184,14 +182,16 @@ export async function HEAD(request: Request, { params }: AssetParams) {
     if (!result?.digest || result.asset.entry_id !== entryId) {
       return new NextResponse(null, { status: 404, headers: privateHeaders });
     }
-    const object = await readExternalProjectAssetBytes(
-      resolveWorkspaceId(wsId),
-      result.asset.storage_path
+    const workspaceId = resolveWorkspaceId(wsId);
+    const key = `${workspaceId}/${assetId}/${result.asset.updated_at}/${result.digest}`;
+    const object = await readVerifiedAsset(
+      key,
+      workspaceId,
+      result.asset.storage_path,
+      result.digest
     );
     const current =
-      object && assetBytesDigest(object.buffer) === result.digest
-        ? await readAsset(admin, resolveWorkspaceId(wsId), assetId, revision)
-        : null;
+      object && (await readAsset(admin, workspaceId, assetId, revision));
     if (
       !current ||
       current.digest !== result.digest ||
@@ -235,17 +235,29 @@ export async function GET(request: Request, { params }: AssetParams) {
     if (!result) return privateJson({ error: 'Asset not found' }, 404);
     const { asset, digest } = result;
     if (digest) {
-      const object = await readExternalProjectAssetBytes(
+      if (transform && !allowPublicAssetTransform(request.headers)) {
+        return NextResponse.json(
+          { error: 'Too many image transformations' },
+          {
+            status: 429,
+            headers: { ...privateHeaders, 'Retry-After': '60' },
+          }
+        );
+      }
+      const key = `${resolvedWsId}/${assetId}/${asset.updated_at}/${digest}`;
+      const object = await readVerifiedAsset(
+        key,
         resolvedWsId,
-        asset.storage_path
+        asset.storage_path,
+        digest
       );
-      if (!object || assetBytesDigest(object.buffer) !== digest)
-        return privateJson({ error: 'Asset not available' }, 404);
+      if (!object) return privateJson({ error: 'Asset not available' }, 404);
       const response = await publicExternalProjectAssetResponse(
         object,
         transform,
         privateHeaders,
-        request.headers.get('range')
+        request.headers.get('range'),
+        key
       );
       const current =
         response &&

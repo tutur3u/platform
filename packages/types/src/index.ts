@@ -41,3 +41,7 @@ export {
 } from './primitives/WalletInterest.js';
 export * from './sdk.js';
 export * from './supabase.js';
+export type {
+  ExternalProjectPublicationExclusion,
+  ExternalProjectPublicationResult,
+} from './external-project-assets';

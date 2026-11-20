@@ -19,3 +19,14 @@ export type ExternalProjectDeliveryAsset = Pick<
   assetRevision: string;
   published?: boolean;
 };
+
+export type ExternalProjectPublicationExclusion = {
+  assetId: string;
+  label: string;
+  reason: 'tooLarge' | 'unavailable';
+};
+
+export type ExternalProjectPublicationResult =
+  Tables<'workspace_external_project_entries'> & {
+    excludedAssets?: ExternalProjectPublicationExclusion[];
+  };

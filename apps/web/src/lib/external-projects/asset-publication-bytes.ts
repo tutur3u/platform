@@ -14,7 +14,8 @@ export function assetBytesDigest(bytes: Uint8Array) {
 
 export async function readExternalProjectAssetBytes(
   workspaceId: string,
-  path: string | null
+  path: string | null,
+  onTooLarge?: () => void
 ) {
   if (!isExternalProjectStoragePath(path)) return null;
   const { provider } = await resolveWorkspaceStorageProvider(workspaceId);
@@ -45,13 +46,18 @@ export async function readExternalProjectAssetBytes(
         if (
           Number(upstream.headers.get('content-length')) >
           PUBLIC_ASSET_MAX_BYTES
-        )
+        ) {
+          onTooLarge?.();
           return null;
+        }
         for (;;) {
           const chunk = await reader.read();
           if (chunk.done) break;
           size += chunk.value.byteLength;
-          if (size > PUBLIC_ASSET_MAX_BYTES) return null;
+          if (size > PUBLIC_ASSET_MAX_BYTES) {
+            onTooLarge?.();
+            return null;
+          }
           chunks.push(chunk.value);
         }
       } finally {

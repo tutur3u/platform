@@ -290,7 +290,8 @@ describe('CMS publication settlement', () => {
 
     expect(readAssetBytes).toHaveBeenCalledWith(
       workspaceId,
-      cover.storage_path
+      cover.storage_path,
+      expect.any(Function)
     );
     expect(events[0]?.payload).toMatchObject({
       collections: [
@@ -369,7 +370,8 @@ describe('CMS publication settlement', () => {
     expect(isPublishedAsset(updatedProof, original)).toBe(false);
     expect(readAssetBytes).toHaveBeenCalledExactlyOnceWith(
       workspaceId,
-      replacement.storage_path
+      replacement.storage_path,
+      expect.any(Function)
     );
   });
 

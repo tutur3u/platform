@@ -22,6 +22,7 @@ import type {
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import { useCmsPublicationToast } from './use-cms-publication-toast';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
@@ -770,6 +771,7 @@ export function CmsStudioClient({
     },
   });
 
+  const showPublication = useCmsPublicationToast(strings);
   const publishEntryMutation = useMutation({
     mutationFn: async (payload: {
       entryId?: string;
@@ -789,11 +791,7 @@ export function CmsStudioClient({
     onSuccess: (entry) => {
       mergeEntry(entry);
       setPreviewRefreshToken((value) => value + 1);
-      toast.success(
-        entry.status === 'published'
-          ? strings.publishAction
-          : strings.unpublishAction
-      );
+      showPublication(entry);
     },
   });
 
@@ -1017,6 +1015,7 @@ export function CmsStudioClient({
         status: payload.status,
       }),
     onSuccess: (updatedEntries) => {
+      showPublication(updatedEntries);
       updateStudioCache((current) => ({
         ...current,
         entries: current.entries.map(
