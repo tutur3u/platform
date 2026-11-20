@@ -38,6 +38,7 @@ lists gaps whose removal conditions are still open.
 | Simple native Workers and gateway | qualified | `scripts/ci/fixtures/cf-worker-parity/{api,status-api,gateway}.json` | baselines only | `pending-migration` |
 | Email, storage, DO and Void publishers (SQLite DO) | qualified | `.github/workflows/{coordination,devbox-control}-cloudflare.yaml` | cf `--prebuilt` production | `void-wave1-publication` |
 | Email, storage, DO and Void publisher | gap | — | — | `do-publication-rehearsal`, `void-wave1-publication`, `pending-migration` |
+| Void framework app publisher (services, R2, Images, assets, tag-migrated SQLite DO) | switched (Meet frontend) | `scripts/ci/void-cf-output.mjs`, `scripts/ci/void-cf-publisher.mjs` | `meet-cloudflare.yaml` frontend publication carries no Wrangler line | Meet realtime stays `pending-migration`; other Void apps adopt per app |
 | Observability and remaining callers | qualified | `scripts/ci/cf-worker-observability.mjs` | 0 / 0 | `shared-toolchain` (live tail only) |
 
 Cron Control is the production template for switched native publication:
@@ -56,7 +57,7 @@ allowlist in the same change when a switch retires Wrangler lines.
 | --- | --- | --- | --- |
 | Native Workers (fetch, scheduled) | Vite+ with `@cloudflare/vite-plugin` reading `cloudflare.config.ts` (`experimental.newConfig.cfBuildOutput`) | cf Build Output Specification, `.cloudflare/output/v0` | `cf deploy --prebuilt` |
 | Durable Object Workers | Vite+ with the cf config | Same emitted bundle, with retained `v1` migration metadata | Wrangler until a separate rehearsal-backed publication change |
-| Framework apps (TanStack Start on Void) | Void SDK plugin on Vite+ | Void-emitted Worker config | Wrangler until the Void publication gap closes |
+| Framework apps (TanStack Start on Void) | Void SDK plugin on Vite+ | Void-emitted Worker config, converted to cf Build Output by `void-cf-output.mjs` | [Void publisher](#void-framework-app-publisher) (Meet); other apps keep their admitted publisher until they adopt it |
 | OpenNext apps (Parley, Lettin) | OpenNext Cloudflare adapter | OpenNext Worker | Wrangler (adapter-owned) until the app moves to Start on Void |
 
 The Void SDK is not applied to native Workers. Void's supported app types are
@@ -105,7 +106,7 @@ The existing native profiles qualify only their declared configuration fields.
 | Gradual rollout | `wrangler versions upload` / `versions deploy` | `cf workers versions create --prebuilt`, then `cf workers deployments create` | Parity; M4 gateway rehearses version-only upload via `scripts/ci/gateway-cf-publication.mjs` while Wrangler remains the live publisher until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
 | Settings preflight readback | none (no bounded snapshot in legacy deploy jobs) | `scripts/ci/cf-worker-settings.mjs` (28 bounded GETs on the Workers API) | switched; receipt `settings-readback` |
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
-| Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | Manual conversion; needs a disposable rehearsal before production |
+| Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | One-way per Worker: see [Durable Object lifecycle](#durable-object-lifecycle). Versioned cf uploads cannot apply a pending tag migration (API `10211`) |
 | D1 migrations | `wrangler d1 migrations apply` | `cf d1 migrations apply <database-id> --dir <directory>`; remote unless `--local` | Requires UUID, migration directory/table and local-persistence parity; binding names are rejected |
 | Installed cf config conversion and drift helpers | `convertToWranglerConfig`, `wranglerConfig` names inside cf | Pinned cf exposes only these internal names | `cf-config-internals`: admit compatibility references until equivalent cf APIs replace them; no Wrangler CLI invocation |
 | Deployment-source snapshots | API value `last_deployed_from: wrangler` | `cf` and `cf_cli` are also accepted; `cf_cli` is what the API reports for cf CLI deploys; historical provenance values remain distinct | `deployment-source-compatibility`: retain recognition until supported snapshots stop reporting the legacy value; no Wrangler CLI invocation |
@@ -353,6 +354,78 @@ and `producer-inventory` (native-check declaration-producer detection and its
 data-only fixture; no CLI invocation). The latter recognizes both legacy and
 `cf types` producers and is removed when legacy recognition is no longer needed.
 
+## Void framework app publisher
+
+`scripts/ci/void-cf-output.mjs` converts a sealed Void artifact (the emitted
+deploy config, `dist/server` modules and `dist/client` assets) into
+`.cloudflare/output/v0` without rebuilding. `scripts/ci/void-cf-publisher.mjs`
+then uploads it with `cf workers versions create --prebuilt` (no traffic), reads
+the version back and moves traffic with `cf workers deployments create` only
+while the captured serving version is still serving.
+
+```sh
+node scripts/ci/void-cf-output.mjs --config "$EMITTED_CONFIG" --out "$OUT" \
+  --sha "$SOURCE_SHA" --var TTR_ONE_ORIGIN_MEET=shadow
+node scripts/ci/void-cf-publisher.mjs publish --build "$OUT" \
+  --worker "$WORKER" --message "$SOURCE_SHA" [--strict] > publish.json
+node scripts/ci/void-cf-publisher.mjs assign --worker "$WORKER" \
+  --version "$(jq -er .versionId publish.json)" \
+  --expect-current "$(jq -er .previousVersionId publish.json)"
+```
+
+Set `CF_BIN` to the repository's `node_modules/.bin/cf` when the output
+directory is outside the checkout. `--var` overrides or adds a text variable;
+`--strict` requires the serving version's bindings except those overrides, for
+flag-only variants of one artifact. `--name` renames the Worker and its
+self-referencing service binding for a disposable rehearsal.
+
+The converter:
+
+- maps text vars, required secrets (inherited, never uploaded), assets,
+  services (with `entrypoint`), R2, KV, D1, Analytics Engine, Images and
+  Durable Object bindings, placement, observability and asset routing;
+- uploads every module the default Workers module rules would (`.js`/`.mjs`
+  ESM, `.cjs`, `.wasm`, `.bin` data, text) plus source maps when enabled, and
+  skips dot paths such as `.dev.vars` and `.vite`;
+- copies client assets except `.assetsignore` matches (exact paths, `*` and
+  `dir/`; other gitignore syntax is refused); cf applies `_headers` as asset
+  rules, not files;
+- refuses every emitted key or field it does not reproduce (for example AI,
+  Browser, crons, custom module rules, `environment` on a service or Durable
+  Object, tail consumers or containers) unless it is emitter metadata or empty;
+- never emits `exports`, migrations or triggers. Routes and custom domains stay
+  as configured on the Worker.
+
+The publisher refuses a pending tag migration before uploading, rejects any
+uploaded binding that differs from the emitted shape, any extra binding, a
+missing or changed Durable Object namespace, a changed migration tag,
+compatibility date or flags, placement or main module, and split traffic. Its
+`publish` result names the serving version it verified against; pass that as
+`assign --expect-current`. cf also
+refuses an upload whose required secrets are missing on the target Worker.
+
+### Durable Object lifecycle
+
+A Worker created with tag `migrations` keeps them. Self-hosted classes are
+emitted as `unsafe:durable_object_namespace` bindings with `class_name` only,
+the shape the serving versions already have; cf's typed binding always adds
+`script_name`, and a first create rejects a self reference (`10061`).
+
+Do not add `exports` to a Worker whose serving or rollback versions use tag
+migrations. The first deployed version with `exports` switches the Worker to
+the exports lifecycle: every later deployment without `exports`, including a
+rollback to an earlier version, fails with `100402
+provisioned_class_missing_from_config`. Adding a Durable Object class to such
+a Worker needs a non-versioned deployment, which this publisher does not
+perform.
+
+Disposable-Worker rehearsal evidence: a tag-migrated SQLite class kept its namespace,
+migration tag, object ID and stored rows across cf versions without `exports`
+and across rollback in both directions; the exact Meet artifact uploaded with
+binding parity to the serving Meet version (only the declared variable and the
+rehearsal rename differed), served its build identity, applied `_headers`
+cache rules and rolled back and forward.
+
 ## Service inventory
 
 | Service | Current publisher | Status | Gap |
@@ -363,6 +436,7 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Gateway (M4 production) | `cf workers versions create --prebuilt` when `GATEWAY_CF_VERSION_UPLOAD_LIVE`; Wrangler upload+deploy fallback when unset; rehearsal when `GATEWAY_CF_VERSION_UPLOAD_REHEARSAL` | Landed; live flip owner-gated | `opennext-adapter` until `GATEWAY_CF_VERSION_UPLOAD_LIVE` |
 | Wave 1 Start+Void apps | cf Build Output (`wave1-cf-publisher.mjs`) | Switched | `void-emitted-binding-types` for sealed runtime harness only |
 | Calendar (wave-1) | cf Build Output (`calendar-cf-publisher.mjs`) | Switched | — |
+| Meet frontend | cf Build Output via the [Void publisher](#void-framework-app-publisher) | Switched | Paired restore and secret-name checks keep their admitted Wrangler commands |
 
 Wave-1 Start and Void publishers run the cf binary from Calendar's pinned
 installation, which also supplies the Build Output emitter dependencies. The

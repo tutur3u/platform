@@ -159,7 +159,7 @@ test('Meet qualifies the native artifact and restored runtime before publication
   assert.match(deploy[publish].run, /verify-meet-start-output\.js verify/);
   assert.match(
     deploy[publish].run,
-    /wrangler deploy --no-bundle -c "\$\{\{ steps\.meet-output\.outputs\.config \}\}" --message/
+    /void-cf-output\.mjs --config "\$\{\{ steps\.meet-output\.outputs\.config \}\}"/
   );
   assert.doesNotMatch(
     deploy[publish].run,

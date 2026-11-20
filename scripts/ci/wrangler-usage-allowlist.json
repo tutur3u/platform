@@ -264,14 +264,14 @@
       "digest": "ecd7cdb3ecc244b40fc2d16e412b82af9287148a79307beba4a0758f3e070257"
     },
     ".github/workflows/meet-cloudflare.yaml": {
-      "lines": 30,
-      "uses": 34,
+      "lines": 29,
+      "uses": 33,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
-        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+        "decision": "https://github.com/tutur3u/platform/commit/756a1e6cd3d59e6b84979c54aef912a3322ecf1f",
+        "reason": "The Meet frontend publishes through the cf Void publisher (void-cf-output.mjs and void-cf-publisher.mjs), qualified by a disposable rehearsal of bindings, the SQLite Durable Object tag and two-way rollback, and carries no Wrangler line. Realtime publication, secret-name checks and the paired restore helper keep their admitted Wrangler operations."
       },
-      "digest": "ee957b704ff8be5faa5a6934beea41f55b010f9a34c7f88ea424c275a8ce1851"
+      "digest": "d09f23a71b942ce278222d39f7c915eb03ff414a2c745fbd209dac00f84bf051"
     },
     ".github/workflows/mind-cloudflare.yaml": {
       "lines": 6,
@@ -2893,14 +2893,14 @@
       "digest": "9b8445641c679cde67292a92a4c416d996a3fa51ab5a3fc2d327039161eef2be"
     },
     "scripts/ci/meet-build-metadata.test.js": {
-      "lines": 14,
-      "uses": 17,
+      "lines": 13,
+      "uses": 16,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/7f1c24a138cdb576760fa6555a7c8eec4e3c5ecc",
-        "reason": "Qualified Meet publication retains the admitted Wrangler artifact, version capture and paired rollback operations. Shell extraction and regression assertions move existing operations into focused helpers; no cf replacement has qualified emitted-artifact and rollback parity."
+        "decision": "https://github.com/tutur3u/platform/commit/756a1e6cd3d59e6b84979c54aef912a3322ecf1f",
+        "reason": "The frontend publication assertion requires the cf Void publisher; the remaining references cover realtime, secret-name and restore operations."
       },
-      "digest": "e0717aad2e4345a397cde84e69fe0896e2ad383db78b5377ebe4095374ea51eb"
+      "digest": "50503c650a82e89a4cb73eacb1c7677491a7729984cfd833a2f10a7082bc91a6"
     },
     "scripts/ci/meet-cloudflare-render.runtime.mjs": {
       "lines": 2,

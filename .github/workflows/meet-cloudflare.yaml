@@ -386,6 +386,17 @@ jobs:
             (cd apps/meet && node ../../scripts/ci/meet-dry-run-scratch.mjs "$SOURCE_SHA")
           fi
           bun x --no-install wrangler deploy --dry-run -c apps/meet-realtime/wrangler.jsonc
+      - name: Qualify the frontend cf Build Output without credentials
+        working-directory: apps/meet
+        env:
+          CF_SEND_TELEMETRY: 'false'
+        run: |
+          out="$RUNNER_TEMP/meet-cf-output-check"
+          node ../../scripts/ci/void-cf-output.mjs --config "${{ steps.meet-output.outputs.config }}" \
+            --out "$out" --sha "$SOURCE_SHA" \
+            --var TTR_ONE_ORIGIN_MEET=off --var TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=302
+          (cd "$out" && "$GITHUB_WORKSPACE/node_modules/.bin/cf" deploy --prebuilt --mode production --dry-run --no-provision)
+          rm -rf "$out"
       - name: Verify and pack accepted exact-SHA frontend artifact
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
@@ -681,12 +692,30 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY == 'true' && secrets.MEET_DEDICATED_CLOUDFLARE_API_TOKEN) ||
             (vars.MEET_DEDICATED_PRODUCTION_ENV_READY != 'true' && (secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN)) || '' }}
+          CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+          # Shared-origin mode and redirect status are repository variables so
+          # every release carries the current cutover stage.
+          TTR_ONE_ORIGIN_MEET: ${{ vars.TTR_ONE_ORIGIN_MEET || 'off' }}
+          TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS: ${{ vars.TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS || '302' }}
         id: frontend
         working-directory: apps/meet
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           GITHUB_SHA="$SOURCE_SHA" node ../../scripts/ci/verify-meet-start-output.js verify . meet-artifact.json
-          bun x --no-install wrangler deploy --no-bundle -c "${{ steps.meet-output.outputs.config }}" --message "$GITHUB_SHA"
+          case "$TTR_ONE_ORIGIN_MEET" in off|shadow|on) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET must be off, shadow or on'; exit 1 ;; esac
+          case "$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS" in 301|302|307) ;; *) echo '::error::TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS must be 301, 302 or 307'; exit 1 ;; esac
+          export CF_BIN="$GITHUB_WORKSPACE/node_modules/.bin/cf" CF_SEND_TELEMETRY=false
+          out="$RUNNER_TEMP/meet-cf-output"
+          node ../../scripts/ci/void-cf-output.mjs --config "${{ steps.meet-output.outputs.config }}" \
+            --out "$out" --sha "$SOURCE_SHA" \
+            --var "TTR_ONE_ORIGIN_MEET=$TTR_ONE_ORIGIN_MEET" \
+            --var "TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=$TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS"
+          # Publish captures the serving version it verified against; traffic
+          # moves only while that version is still serving.
+          node ../../scripts/ci/void-cf-publisher.mjs publish --build "$out" --worker tuturuuu-meet --message "$SOURCE_SHA" > "$RUNNER_TEMP/meet-cf-publish.json"
+          version=$(jq -er .versionId "$RUNNER_TEMP/meet-cf-publish.json")
+          serving=$(jq -er .previousVersionId "$RUNNER_TEMP/meet-cf-publish.json")
+          node ../../scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-meet --version "$version" --expect-current "$serving"
       - name: Verify canonical routes
         if: steps.admission.outputs.superseded != 'true'
         timeout-minutes: 8

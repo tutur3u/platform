@@ -136,10 +136,12 @@ document traffic.
    ```
 
 3. Use credential-free, exact-source cf Build Output for each Worker version.
-   The Meet workflow seals Void output. Meet's cf publisher must qualify that
-   output with the existing Asset, service, R2, Images and SQLite Durable Object
-   bindings, original migration tag, and module inventory before using it
-   here. See [cf publication parity](/build/development-tools/cf-cli-wrangler-parity).
+   The Meet workflow seals Void output, and the
+   [Void publisher](/build/development-tools/cf-cli-wrangler-parity#void-framework-app-publisher)
+   converts that exact artifact to cf Build Output with the existing Asset,
+   service, R2, Images and SQLite Durable Object bindings, the original
+   migration tag and the full module inventory. Never add `exports` to Meet:
+   it would make every captured rollback version undeployable.
    The gateway starts from the qualified gateway output with the captured
    serving bindings merged. Preserve the other mount entries, services and
    origin settings. Stage these variants in separate artifact directories.
@@ -154,6 +156,32 @@ document traffic.
    Preserve the existing apex gateway route and Meet custom domain. The
    redirects run in Meet's existing Worker. A realtime deployment is required
    only if the separately qualified release changes that Worker.
+
+   Meet's release workflow reads the repository variables
+   `TTR_ONE_ORIGIN_MEET` (`off`, `shadow` or `on`; default `off`) and
+   `TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS` (`301`, `302` or `307`; default `302`)
+   into every published version. Set them to each stage's value with
+   `gh variable set` before or together with that stage's direct publication,
+   so a later release keeps the stage instead of reverting it. Restoring a
+   version does not change these variables: when rolling back a stage, set
+   them to the restored stage's values as part of the rollback so the next
+   release does not re-apply the withdrawn stage.
+
+   For a Meet variant, emit the restored exact-SHA artifact with the variant's
+   variables and publish it strictly:
+
+   ```sh
+   node scripts/ci/void-cf-output.mjs --config "$EMITTED_CONFIG" --out "$OUT" \
+     --sha "$SOURCE_SHA" --var TTR_ONE_ORIGIN_MEET=shadow \
+     --var TTR_ONE_ORIGIN_MEET_REDIRECT_STATUS=302
+   node scripts/ci/void-cf-publisher.mjs publish --build "$OUT" \
+     --worker tuturuuu-meet --message "$SOURCE_SHA" --strict > publish.json
+   node scripts/ci/void-cf-publisher.mjs assign --worker tuturuuu-meet \
+     --version "$(jq -er .versionId publish.json)" \
+     --expect-current "$(jq -er .previousVersionId publish.json)"
+   ```
+
+   The gateway variant uses the steps below.
 
    Run these from each approved artifact directory. Record the version ID
    returned by the upload and read back its bindings before assigning traffic.
@@ -232,7 +260,9 @@ can still resolve their original room, and Web's `/personal/meet?room=…`
 mobile entry remains available.
 
 Rollback starts by assigning 100% traffic to the captured Meet version or
-the qualified shadow version to stop new redirects. Restore the captured
+the qualified shadow version to stop new redirects, and set
+`TTR_ONE_ORIGIN_MEET` (and its redirect status) back to that version's values
+so the next release keeps the rollback. Restore the captured
 gateway version to withdraw `/meet` and `/meet/*`. Remove only `meet` from the
 Web auth and link-producer mount lists and restore their prior serving builds
 as needed. Restore realtime only if its version changed during this release.

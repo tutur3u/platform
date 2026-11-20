@@ -54,7 +54,7 @@ export function wave1CfPackagePath() {
   return createRequire(CALENDAR_PKG).resolve('cf/package.json');
 }
 
-async function suppliers() {
+export async function suppliers() {
   const cfPath = wave1CfPackagePath();
   const cf = JSON.parse(readFileSync(cfPath));
   const api = {};
