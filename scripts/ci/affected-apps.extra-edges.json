@@ -14,6 +14,7 @@
   "apps/drive/src/app/[locale]/(dashboard)/[wsId]/drive/": ["packages/ui"],
   "apps/finance/messages/": ["packages/ui"],
   "apps/finance/src/lib/mounted-auth": ["apps/web"],
+  "apps/forms/src/features/forms/": ["packages/meet-core"],
   "apps/gateway/src/": ["apps/web"],
   "apps/infrastructure/e2e/fixtures/": ["apps/database"],
   "apps/infrastructure/src/lib/mobile-calendar/": ["apps/calendar"],
