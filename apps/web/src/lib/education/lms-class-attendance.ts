@@ -67,8 +67,8 @@ export async function listLmsClassAttendance({
   }
 
   const { data, error } = await query
-    .overrideTypes<{ id: string; marks: AttendanceRow[] }[], { merge: false }>()
-    .maybeSingle();
+    .maybeSingle()
+    .overrideTypes<{ id: string; marks: AttendanceRow[] }, { merge: false }>();
   if (error) throw error;
   return data?.marks ?? null;
 }

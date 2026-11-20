@@ -52,11 +52,11 @@ export async function listLmsClassRoster({
   if (after) query.gt('roster.user_id', after);
 
   const { data, error } = await query
+    .maybeSingle()
     .overrideTypes<
-      { id: string; roster: RawRosterMember[] }[],
+      { id: string; roster: RawRosterMember[] },
       { merge: false }
-    >()
-    .maybeSingle();
+    >();
   if (error) throw error;
   if (!data) return null;
   return data.roster.map(({ user_id, role, created_at, contact }) => ({

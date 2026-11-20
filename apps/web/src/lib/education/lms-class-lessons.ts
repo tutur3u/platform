@@ -59,8 +59,8 @@ export async function listLmsClassLessons({
   }
 
   const { data, error } = await query
-    .overrideTypes<{ id: string; lessons: LessonRow[] }[], { merge: false }>()
-    .maybeSingle();
+    .maybeSingle()
+    .overrideTypes<{ id: string; lessons: LessonRow[] }, { merge: false }>();
   if (error) throw error;
   return data?.lessons ?? null;
 }

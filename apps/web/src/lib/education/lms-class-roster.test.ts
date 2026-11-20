@@ -9,8 +9,8 @@ it('binds the teacher and roster contacts to the same active workspace before pr
     order: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
-    overrideTypes: vi.fn().mockReturnThis(),
-    maybeSingle: vi.fn().mockResolvedValue({
+    maybeSingle: vi.fn().mockReturnThis(),
+    overrideTypes: vi.fn().mockResolvedValue({
       error: null,
       data: {
         id: 'class',

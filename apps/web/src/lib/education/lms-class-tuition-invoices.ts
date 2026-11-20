@@ -60,8 +60,8 @@ export async function listLmsClassTuitionInvoices({
   if (after) query.gt('links.invoice_id', after);
 
   const { data, error } = await query
-    .overrideTypes<{ id: string; links: LinkedInvoice[] }[], { merge: false }>()
-    .maybeSingle();
+    .maybeSingle()
+    .overrideTypes<{ id: string; links: LinkedInvoice[] }, { merge: false }>();
   if (error) throw error;
   return data?.links ?? null;
 }
