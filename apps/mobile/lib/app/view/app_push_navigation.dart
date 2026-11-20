@@ -87,9 +87,21 @@ extension _AppPushNavigation on _AppState {
       },
       refresh: _refreshAfterResume,
     );
+    _unbindSmartSync = SmartSyncRuntime.bind(
+      currentUserId: () => mounted ? _authCubit.state.user?.id : null,
+      currentWorkspaceId: () => _workspaceCubit.state.currentWorkspace?.id,
+      workspaceChanges: _workspaceCubit.stream.map(
+        (state) => state.currentWorkspace?.id,
+      ),
+    );
   }
 
   void _refreshAfterResume() {
+    final actor = _authCubit.state.user?.id;
+    SmartSyncRuntime.resume(
+      signedIn: () =>
+          mounted && actor != null && _authCubit.state.user?.id == actor,
+    );
     _mobileFlags.setForeground(foreground: true);
     _mastermind.irisLifecycle(AppLifecycleState.resumed);
     unawaited(_pomodoroController.reconcile());

@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
 
@@ -67,6 +68,11 @@ Future<void> _createNotificationChannelIfNeeded(
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (message.notification != null) {
+    return;
+  }
+
+  if (SmartSyncRuntime.isSilentHint(message.data)) {
+    await SmartSyncRuntime.recordSilentHint();
     return;
   }
 

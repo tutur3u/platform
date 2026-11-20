@@ -1,15 +1,18 @@
 import DeviceCheck
 import AudioToolbox
+import BackgroundTasks
 import FirebaseAnalytics
 import FirebaseCore
 import FirebaseMessaging
 import FirebaseInstallations
 import Flutter
+import Network
 import UIKit
 import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, MessagingDelegate {
+  private let smartSync = SmartSyncBackground()
   private var analyticsStartupReady = false
   private var firebaseSessionActive = false
   private var analyticsStarted = false
@@ -42,6 +45,7 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    smartSync.register()
     // Dart configures Firebase after sign-in.
     NotificationCenter.default.addObserver(
       self, selector: #selector(coverSceneForSnapshot(_:)),
@@ -162,6 +166,9 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SmartSync") {
+      smartSync.install(registrar.messenger())
+    }
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "AppSnapshotPrivacy") {
       let channel = FlutterMethodChannel(
         name: "mobile/app_snapshot_privacy", binaryMessenger: registrar.messenger()
@@ -407,5 +414,61 @@ enum FirebaseAdmissionGate {
   static func reset(defaults: UserDefaults = .standard) {
     defaults.set(false, forKey: analyticsKey)
     defaults.set(false, forKey: installationsKey)
+  }
+}
+
+private final class SmartSyncBackground {
+  private let identifier = "\(Bundle.main.bundleIdentifier ?? "com.tuturuuu.app.mobile").smart-sync"
+  private let hint = "mobile.smart-sync.refresh-hint-token"
+  private let network = NWPathMonitor()
+
+  func register() {
+    network.start(queue: DispatchQueue(label: "mobile.smart-sync.network"))
+    BGTaskScheduler.shared.register(forTaskWithIdentifier: identifier, using: .main) { [weak self] task in
+      if let self, self.backgroundAllowed {
+        UserDefaults.standard.set(UUID().uuidString, forKey: self.hint)
+      }
+      task.setTaskCompleted(success: true)
+    }
+  }
+
+  private var backgroundAllowed: Bool {
+    let path = network.currentPath
+    guard path.status == .satisfied, !path.isExpensive, !path.isConstrained,
+          !ProcessInfo.processInfo.isLowPowerModeEnabled else { return false }
+    let device = UIDevice.current
+    let monitoring = device.isBatteryMonitoringEnabled
+    device.isBatteryMonitoringEnabled = true
+    defer { device.isBatteryMonitoringEnabled = monitoring }
+    return device.batteryLevel >= 0.2
+  }
+
+  func install(_ messenger: FlutterBinaryMessenger) {
+    let channel = FlutterMethodChannel(name: "mobile/smart_sync", binaryMessenger: messenger)
+    channel.setMethodCallHandler { [weak self] call, result in
+      guard let self else { result(nil); return }
+      switch call.method {
+      case "backgroundAllowed":
+        result(self.backgroundAllowed)
+      case "peekOsHintAndSchedule":
+        let pending = UserDefaults.standard.string(forKey: self.hint)
+        let request = BGAppRefreshTaskRequest(identifier: self.identifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 60 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+        result(pending)
+      case "completeOsHint":
+        if let token = call.arguments as? String,
+           UserDefaults.standard.string(forKey: self.hint) == token {
+          UserDefaults.standard.removeObject(forKey: self.hint)
+        }
+        result(nil)
+      case "cancelOsRefresh":
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: self.identifier)
+        UserDefaults.standard.removeObject(forKey: self.hint)
+        result(nil)
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
   }
 }

@@ -18,6 +18,9 @@ import 'package:mobile/core/cache/offline_cache_inventory.dart';
 import 'package:mobile/core/cache/offline_resource_reference.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/cache/replica_entity_record.dart';
+import 'package:mobile/core/startup/foreground_refresh.dart';
+import 'package:mobile/core/sync/smart_sync.dart';
+import 'package:mobile/core/sync/sync_domain_policy.dart';
 import 'package:mobile/data/sources/device_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -107,6 +110,8 @@ class CacheStore {
     ({CacheKey key, CachePolicy policy, Future<void> Function() refresh})
   >
   _refreshTasks = {};
+  SmartSync? _smartSync;
+  String? Function()? _smartWorkspace;
   final Map<String, ({CacheKey key, List<String> tags})> _flightScopes = {};
   final Map<String, int> _keyRevisions = {};
   int _revision = 0;

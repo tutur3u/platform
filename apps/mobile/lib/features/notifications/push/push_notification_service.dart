@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/core/utils/timezone_location.dart';
@@ -384,6 +385,11 @@ class PushNotificationService {
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
+    if (message.notification == null &&
+        SmartSyncRuntime.isSilentHint(message.data)) {
+      SmartSyncRuntime.pushHint();
+      return;
+    }
     final request = requestFromPushData(message.data);
     if (request.openTarget == 'mail' &&
         (request.mailDestination == null || request.userId != _currentUserId)) {

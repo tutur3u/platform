@@ -100,6 +100,7 @@ class MainActivity : FlutterFragmentActivity(), ShellBackHost {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        SmartSyncWorker.install(this, flutterEngine.dartExecutor.binaryMessenger)
         com.tuturuuu.app.mobile.telemetry.FirebaseStartupGate.install(
             this, flutterEngine.dartExecutor.binaryMessenger,
         )

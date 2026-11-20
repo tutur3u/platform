@@ -8,6 +8,7 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
+import 'package:mobile/core/sync/smart_sync.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -68,6 +69,47 @@ void main() {
     await Hive.close();
     await directory.delete(recursive: true);
   });
+  test('OS hint stays pending through freshness and backoff', () async {
+    var now = DateTime.now();
+    var calls = 0;
+    addTearDown(
+      store.bindSmartSync(
+        SmartSync(backgroundAllowed: () async => true, now: () => now),
+        currentWorkspaceId: () => 'ws',
+      ),
+    );
+    await store.prefetch(
+      key: key,
+      policy: CachePolicies.moduleData,
+      forceRefresh: true,
+      decode: (payload) => payload,
+      fetch: () async {
+        if (++calls == 2) throw StateError('Refresh gate closed');
+        return const [
+          {'id': 'new'},
+        ];
+      },
+    );
+    final completed = <String>{};
+    Future<bool> retryHint() => store.refreshCachedResources(
+      currentUserId: () => 'user',
+      trigger: SyncTrigger.osRefresh,
+      completedOsKeys: completed,
+    );
+
+    expect(await retryHint(), isFalse);
+    expect(calls, 1);
+    now = now.add(const Duration(minutes: 4));
+    expect(await retryHint(), isFalse);
+    expect(await retryHint(), isFalse);
+    expect(calls, 2);
+    expect(completed, isEmpty);
+    now = now.add(const Duration(seconds: 30));
+    expect(await retryHint(), isTrue);
+    expect(calls, 3);
+    expect(completed, {key.value});
+  });
+
   test('clear during replica indexing cannot resurrect cleared rows', () async {
     const target = CacheKey(
       namespace: 'finance.wallets',

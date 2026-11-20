@@ -23,6 +23,7 @@ import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
+import 'package:mobile/core/sync/smart_sync_runtime.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
 import 'package:mobile/core/theme/sorbet/sorbet_scope.dart';
@@ -185,6 +186,7 @@ class _AppState extends State<App> {
   late final AppLinks _appLinks;
   late final GoRouter _router;
   late final AppLockLifecycle _appLockLifecycle;
+  late final VoidCallback _unbindSmartSync;
   StreamSubscription<Uri>? _appLinkSubscription;
   StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
   StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
@@ -484,6 +486,7 @@ class _AppState extends State<App> {
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
+    _unbindSmartSync();
     _appLockLifecycle.dispose();
     unawaited(_appLinkSubscription?.cancel());
     _router.dispose();
@@ -548,6 +551,9 @@ class _AppState extends State<App> {
                   prev.status != curr.status || prev.user?.id != curr.user?.id,
               listener: (context, state) {
                 _appLockLifecycle.accountOrLockChanged();
+                SmartSyncRuntime.accountChanged(
+                  signedIn: state.status == AuthStatus.authenticated,
+                );
                 _syncOfflinePreparationScope(resetWorkspace: true);
                 _bindAudienceMode();
                 ProfileCubit.clearMemoryCache();

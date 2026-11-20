@@ -30,18 +30,32 @@ extension CacheStoreRefresh on CacheStore {
           decode: decode,
           fetch: fetch,
           forceRefresh: true,
+          registerRefresh: false,
           checkScope: checkScope,
           tags: tags,
         );
       });
     }
+    Future<Object?> fetchWhenAdmitted() async {
+      if (_smartSync == null) return await fetch();
+      final response = await ForegroundRefresh.run(() async {
+        checkScope?.call();
+        if (_isClearing(key) || revision != _revisionFor(key)) {
+          throw StateError('Cache scope retired before refresh');
+        }
+        return (payload: await fetch());
+      });
+      if (response == null) throw StateError('Refresh gate closed');
+      return response.payload;
+    }
+
     final flightKey = '$revision:${key.value}';
     Future<Object?> refresh() => _CacheRevalidationScope.refresh(
       this,
       flightKey,
       () => _inFlight.putIfAbsent(flightKey, () {
         _flightScopes[flightKey] = (key: key, tags: tags);
-        return Future<Object?>.sync(fetch)
+        return Future<Object?>.sync(fetchWhenAdmitted)
             .then((payload) async {
               // Never resurrect data after a mutation or account logout.
               checkScope?.call();
@@ -114,25 +128,77 @@ extension CacheStoreRefresh on CacheStore {
     }
   }
 
+  VoidCallback bindSmartSync(
+    SmartSync scheduler, {
+    required String? Function() currentWorkspaceId,
+  }) {
+    _smartSync = scheduler;
+    _smartWorkspace = currentWorkspaceId;
+    return () {
+      if (!identical(_smartWorkspace, currentWorkspaceId)) return;
+      _smartSync = null;
+      _smartWorkspace = null;
+    };
+  }
+
   /// Refresh previously visited resources for the currently authenticated user.
   /// Cached snapshots and pending writes survive transport failures.
-  Future<void> refreshCachedResources({
+  Future<bool> refreshCachedResources({
     required String? Function() currentUserId,
     bool onResume = false,
+    SyncTrigger? trigger,
+    Set<String>? completedOsKeys,
   }) async {
+    final smartSync = _smartSync;
+    final currentWorkspaceId = _smartWorkspace;
     final userId = currentUserId();
-    if (userId == null) return;
+    if (userId == null) return false;
+    final workspaceId = currentWorkspaceId?.call();
+    bool isScopeCurrent() =>
+        currentUserId() == userId && currentWorkspaceId?.call() == workspaceId;
     final tasks = _refreshTasks.values
         .where(
           (task) =>
               task.key.userId == userId &&
-              (onResume
-                  ? task.policy.refreshOnResume
-                  : task.policy.refreshOnReconnect),
+              (currentWorkspaceId == null ||
+                  task.key.workspaceId == null ||
+                  task.key.workspaceId == 'personal' ||
+                  task.key.workspaceId == workspaceId) &&
+              (smartSync != null ||
+                  (onResume
+                      ? task.policy.refreshOnResume
+                      : task.policy.refreshOnReconnect)),
         )
         .toList(growable: false);
+    if (smartSync != null) {
+      final reason =
+          trigger ?? (onResume ? SyncTrigger.resume : SyncTrigger.reconnect);
+      final outcomes = await Future.wait(
+        tasks.map((task) async {
+          final key = task.key.value;
+          final policy = syncDomainPolicy(task.key.namespace, task.policy);
+          if (!policy.triggers.contains(reason)) return null;
+          if (completedOsKeys?.contains(key) ?? false) return true;
+          final outcome = await smartSync.refresh(
+            key: key,
+            policy: policy,
+            trigger: reason,
+            fetchedAt: _memory[key]?.fetchedAt,
+            isCurrent: () =>
+                isScopeCurrent() && _refreshTasks[key]?.refresh == task.refresh,
+            fetch: task.refresh,
+          );
+          if (outcome != SyncOutcome.refreshed) return false;
+          completedOsKeys?.add(key);
+          return true;
+        }),
+      );
+      return isScopeCurrent() &&
+          outcomes.contains(true) &&
+          !outcomes.contains(false);
+    }
     for (var index = 0; index < tasks.length; index += 3) {
-      if (currentUserId() != userId) return;
+      if (currentUserId() != userId) return false;
       await Future.wait(
         tasks.skip(index).take(3).map((task) async {
           if (currentUserId() != userId ||
@@ -148,5 +214,6 @@ extension CacheStoreRefresh on CacheStore {
         }),
       );
     }
+    return false;
   }
 }

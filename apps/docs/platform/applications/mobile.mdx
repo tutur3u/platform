@@ -89,6 +89,32 @@ The Web document route and learner quiz-attempt route tests cover the
 ordering fallback and enrolled-course question selection. The mobile
 Documents and Education widget suites cover their screen behavior.
 
+## Automatic cache refresh
+
+The mobile app revalidates visited, cache-backed resources for the signed-in
+account and active workspace after App Lock admits requests. Resume, restored
+connectivity, and a silent push hint can request a refresh. The encrypted cache
+keeps the last authorized response available while the request runs.
+
+Notifications, chat, mail, tasks, and calendar use freshness windows of 45
+seconds, one minute, two minutes, three minutes, and five minutes respectively.
+Other resources inherit their cache policy. Automatic requests share up to three
+slots, coalesce by cache key, and back off after failures. User-initiated
+refreshes remain available through the unlock gate. Foreground resume,
+reconnect and push refreshes can run on cellular, with battery saver or data
+saver enabled, and below 20% battery.
+
+Android WorkManager and iOS BGAppRefreshTask can record a one-shot wake hint.
+OS refresh requires an unmetered network, at least 20% battery, and system power
+and data saving off. The app processes the hint after foreground unlock, when it
+can check the active account and workspace. If a resource is still fresh or in
+backoff, the app retains the hint and retries on a later foreground resume. A data-only push with `syncHint: "1"` uses the same
+admission path and does not display a notification. Push hints revalidate
+eligible notifications, chat, and mail resources with existing read endpoints.
+
+Coverage: `smart_sync_test.dart` exercises policy, timestamps, bounded
+concurrency, deduplication, retry delays and the unlock gate.
+
 ## Offline rollout flags
 
 Mobile rollout flags default to false and are cached per account and workspace.

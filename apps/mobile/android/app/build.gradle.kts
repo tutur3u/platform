@@ -137,6 +137,7 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.4.21")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
     testImplementation("junit:junit:4.13.2")
 }
 

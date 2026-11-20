@@ -238,19 +238,19 @@ class OfflineMutationQueue with WidgetsBindingObserver {
           _now().isBefore(_serverCooldownUntil!)) {
         continue;
       }
-      await CacheStore.awaitRevalidation(() async {
-        await ApiClient.offlinePreparation(
-          () => _store.refreshCachedResources(
-            currentUserId: () => _disposed ? null : _userId(),
-            onResume: onResume,
-          ),
-          allowChallenge: false,
-          markBulk: false,
-        );
-        // Visible projections inherit the same cycle and reuse its completed
-        // requests, including when an earlier resource refresh has settled.
-        if (!_disposed) syncRevision.value++;
-      });
+      await ForegroundRefresh.run(
+        () => CacheStore.awaitRevalidation(() async {
+          await ApiClient.offlinePreparation(
+            () => _store.refreshCachedResources(
+              currentUserId: () => _disposed ? null : _userId(),
+              onResume: onResume,
+            ),
+            allowChallenge: false,
+            markBulk: false,
+          );
+          if (!_disposed) syncRevision.value++;
+        }),
+      );
     } while (!_disposed && _syncRequested);
   }
 
