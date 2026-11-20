@@ -192,8 +192,11 @@ class ChatRealtimeClient {
 
   void _applyObservedLifecycle() {
     final state = WidgetsBinding.instance.lifecycleState;
-    if (state == null || state == AppLifecycleState.resumed) return;
-    _inForeground = false;
+    // Null means Flutter has not reported a state yet. Stay background
+    // until a resumed update arrives, so the first socket cannot suppress
+    // push by inheriting the Worker default.
+    _inForeground = state == AppLifecycleState.resumed;
+    if (_inForeground) return;
     _reportPresence(false);
   }
 

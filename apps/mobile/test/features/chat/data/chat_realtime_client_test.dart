@@ -250,6 +250,37 @@ void main() {
     await subscription.cancel();
     client.dispose();
   });
+
+  test('ready before a lifecycle report sends background presence', () async {
+    final binding = TestWidgetsFlutterBinding.ensureInitialized()
+      ..resetInternalState();
+    addTearDown(
+      () => binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed),
+    );
+    final sent = <String>[];
+    final sockets = <_ScriptedSocket>[];
+    final client = ChatRealtimeClient(
+      loadTicket: (_, {conversationId}) async => {
+        'enabled': true,
+        'ticket': 'tok',
+        'url': 'ws://127.0.0.1:9/v1/connect',
+      },
+      openSocket: (url, protocols) async {
+        final socket = _ScriptedSocket(url, protocols, sent: sent);
+        sockets.add(socket);
+        return socket.live;
+      },
+      random: () => 1,
+    );
+    final subscription = client.connect('workspace').listen((_) {});
+    await _until(() => sockets.length == 1);
+    sockets.single.add({'t': 'ready', 'seq': 1, 'userId': 'self'});
+    await _until(() => sent.isNotEmpty);
+    expect(sent, ['{"state":"background","t":"presence"}']);
+
+    await subscription.cancel();
+    client.dispose();
+  });
 }
 
 ChatRealtimeClient _client({
