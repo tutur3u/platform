@@ -7,6 +7,7 @@ import {
 } from '@tuturuuu/realtime/chat';
 import { CHAT_REALTIME_TICKET_CLOCK_SKEW_SECONDS } from '@tuturuuu/realtime/chat/ticket';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/supabase';
 import { z } from 'zod';
 import {
   isChatRealtimeWorkerReady,
@@ -70,7 +71,7 @@ function toRealtimeEvent(
 }
 
 async function recoverArchiveAudience(
-  client: Awaited<ReturnType<typeof createAdminClient>>,
+  client: Awaited<ReturnType<typeof createAdminClient<Database>>>,
   row: AuditRow,
   signal: AbortSignal
 ): Promise<ChatRealtimeAudience | undefined> {
