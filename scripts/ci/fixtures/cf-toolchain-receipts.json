@@ -216,19 +216,24 @@
     },
     "observability-remaining-callers": {
       "title": "Qualified observability and remaining Wrangler callers",
-      "status": "gap",
+      "status": "qualified",
       "owner": "cf/Void Wrangler-exit lane",
-      "implementation": null,
+      "implementation": "scripts/ci/cf-worker-observability.mjs",
       "wranglerPrior": "wrangler tail and unmatched CLI operations",
-      "toolchain": "cf o11y telemetry query or retained Wrangler gap",
-      "parityEvidence": [],
-      "rehearsal": null,
+      "toolchain": "cf logs query (bounded batch)",
+      "parityEvidence": ["scripts/ci/cf-worker-observability.test.mjs"],
+      "rehearsal": "node --test scripts/ci/cf-worker-observability.test.mjs",
       "productionTemplate": null,
       "decision": null,
-      "allowlistDelta": null,
+      "allowlistDelta": {
+        "files": 0,
+        "uses": 0,
+        "note": "Batch log query only; live tail stays on shared-toolchain until cf streams."
+      },
       "wranglerGapsRetained": ["shared-toolchain"],
       "removalConditions": [
-        "Each residual caller documents an owner, test and explicit allowlist removal condition"
+        "Adopt cf streaming when qualified; retire wrangler tail from shared-toolchain",
+        "Each other residual caller documents an owner, test and explicit allowlist removal condition"
       ]
     }
   }
