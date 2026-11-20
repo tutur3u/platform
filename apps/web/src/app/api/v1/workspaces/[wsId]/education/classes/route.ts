@@ -1,12 +1,11 @@
-import {
-  resolveTulearnSubject,
-  tulearnAccessErrorResponse,
-} from '@tuturuuu/education-core/tulearn/service';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { listLmsClasses } from '@/lib/education/lms-class-catalog';
+import {
+  lmsLearningAccessFailure,
+  resolveLmsLearningAccess,
+} from '@/lib/education/lms-learning-access';
 import {
   lmsAuthFailure,
   lmsFailure,
@@ -77,25 +76,20 @@ export async function GET(
     const { wsId: routeWsId } = await params;
     const { after, limit, view, student_id } = query.data;
     if (view === 'learning') {
-      const subject = await resolveTulearnSubject({
-        requestSupabase: auth.supabase,
-        studentId: student_id,
-        user: auth.user,
-        wsId: routeWsId,
-      });
-      const db = await createAdminClient({ noCookie: true });
+      const access = await resolveLmsLearningAccess(
+        auth,
+        routeWsId,
+        student_id
+      );
+      const { db, scope, wsId, role, readOnly } = access;
       const classes = await listLmsClasses({
         after,
         db,
         limit: limit + 1,
-        scope: { kind: 'student', contactId: subject.studentWorkspaceUserId },
-        wsId: subject.wsId,
+        scope,
+        wsId,
       });
-      return classPage(classes, {
-        limit,
-        role: subject.role === 'parent' ? 'guardian' : 'student',
-        readOnly: subject.readOnly,
-      });
+      return classPage(classes, { limit, role, readOnly });
     }
 
     const staff = await resolveLmsStaffAccess(auth, routeWsId);
@@ -110,12 +104,8 @@ export async function GET(
     });
     return classPage(classes, { limit, role: scope.kind, readOnly: true });
   } catch (error) {
-    const accessError = tulearnAccessErrorResponse(error);
-    if (accessError) {
-      return accessError.status === 404
-        ? lmsNotAvailable()
-        : lmsFailure(403, 'LMS_FORBIDDEN', 'Class catalog access is denied');
-    }
+    const accessError = lmsLearningAccessFailure(error);
+    if (accessError) return accessError;
     console.error('Failed to read LMS class catalog', error);
     return lmsFailure(
       500,

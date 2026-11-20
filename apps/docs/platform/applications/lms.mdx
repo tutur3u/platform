@@ -124,6 +124,7 @@ pending-tuition and subscription-context regressions anchor these checks.
 Use the platform `/api/v1/workspaces/{wsId}/education` prefix. Mobile and web
 must preserve the same membership, resource, and release rules. Treat
 authorization and the selected learner as part of local cache identity.
+Mobile can send its signed-in Supabase access token as `Authorization: Bearer`.
 Return stable error codes alongside messages. Paginate collections and bound
 each request. Delta feeds require a server-owned `updated_at` and a way to
 reconcile deleted rows and permission changes. Preserve older API paths and
@@ -179,6 +180,30 @@ no reliable modification timestamp, so `updated_at` is null and clients
 reconcile membership removals by restarting from the first page. A missing or
 inaccessible class returns `LMS_CLASS_NOT_FOUND` (404). Other errors follow the
 class catalog contract.
+
+### Class lesson outline
+
+`GET /api/v1/workspaces/{wsId}/education/classes/{classId}/lessons` returns
+the class lesson list using the same availability gate and view permissions as
+the class catalog. `view=learning` is the default. Students and authorized
+guardians see published lesson outline rows for a published, enrolled class.
+`view=staff` includes drafts for an assigned teacher or group manager. The
+class ID is the existing Contacts group ID. Pass `student_id` to select an
+authorized guardian subject, `limit` for a page of 1–50 rows (default 20), and
+`after` to replay the previous `next_cursor` unchanged.
+
+The response contains `class_id`, `role`, `read_only`, `data`, and
+`next_cursor`. Each row contains `id`, `name`, `sort_key`, `is_published`, and
+`updated_at`. The lesson ID is the existing course module ID. Rows are ordered
+by `sort_key`, then ID. No reliable lesson modification timestamp is available,
+so `updated_at` is null. Read from the first page after reorder, access, or
+publication changes. Titles can include lessons that require prerequisites.
+Opening a lesson, downloading files, and taking assessments each require
+their respective resource permissions. The outline returns only metadata.
+
+Responses are private and uncached. An inaccessible class returns
+`LMS_CLASS_NOT_FOUND` (404). An accessible class with no visible or remaining
+lessons returns an empty `data` array. Other errors follow the catalog contract.
 
 Mobile integration still requires separate versioned contracts for class
 mutations, lesson materials and completion, assessment delivery and grades,
