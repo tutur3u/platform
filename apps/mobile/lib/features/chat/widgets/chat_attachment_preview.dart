@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/chat/cubit/chat_cubit.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -76,7 +77,7 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
                               .read<ChatCubit>()
                               .attachmentReadUrl(attachment);
                         }),
-                        icon: const Icon(Icons.refresh_rounded),
+                        icon: const Icon(LucideIcons.refreshCw),
                       )
                     : const SizedBox.square(
                         dimension: 22,
@@ -90,7 +91,7 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
                 height: double.infinity,
                 fit: BoxFit.cover,
                 errorBuilder: (_, _, _) =>
-                    const Center(child: Icon(Icons.broken_image_outlined)),
+                    const Center(child: Icon(LucideIcons.imageOff)),
               )
             : _ChatVideoFrame(url: url);
         final size = widget.compact ? 54.0 : 210.0;
@@ -121,10 +122,7 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
                         ),
                         if (_isVideo)
                           const Center(
-                            child: Icon(
-                              Icons.play_circle_fill_rounded,
-                              size: 38,
-                            ),
+                            child: Icon(LucideIcons.circlePlay, size: 38),
                           ),
                       ],
                     ),
@@ -142,7 +140,7 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
                       context,
                     ).deleteButtonTooltip,
                     onPressed: widget.onRemove,
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(LucideIcons.x),
                   ),
                 ),
             ],
@@ -154,7 +152,7 @@ class _ChatAttachmentPreviewState extends State<ChatAttachmentPreview> {
 
   Widget _fileTile(BuildContext context) => InputChip(
     visualDensity: VisualDensity.compact,
-    avatar: const Icon(Icons.attach_file_rounded, size: 16),
+    avatar: const Icon(LucideIcons.paperclip, size: 16),
     label: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 170),
       child: Text(
@@ -282,7 +280,7 @@ class _ChatMediaDialogState extends State<_ChatMediaDialog> {
                 IconButton(
                   tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(LucideIcons.x),
                 ),
                 Expanded(
                   child: Text(
