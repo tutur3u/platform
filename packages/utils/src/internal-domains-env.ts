@@ -126,7 +126,7 @@ export function resolveConfiguredInternalAppDomains(
 ): AppDomain[] {
   const configured = process.env.NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS;
 
-  if (!configured?.trim()) {
+  if (typeof configured !== 'string' || !configured.trim()) {
     return [];
   }
 

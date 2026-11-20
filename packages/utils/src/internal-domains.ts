@@ -456,7 +456,7 @@ export function getConfiguredExternalAppDomains(): AppDomain[] {
     process.env.NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS ??
     process.env.TUTURUUU_EXTERNAL_APP_DOMAINS;
 
-  if (!configured?.trim()) {
+  if (typeof configured !== 'string' || !configured.trim()) {
     return [];
   }
 

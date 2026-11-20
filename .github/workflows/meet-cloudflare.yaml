@@ -504,7 +504,7 @@ jobs:
       - name: Recheck artifact after restored runtime qualification
         run: GITHUB_SHA="$SOURCE_SHA" node scripts/ci/verify-meet-start-output.js verify apps/meet apps/meet/meet-artifact.json
   production-policy:
-    name: Report wave-1 production publication hold
+    name: Evaluate Meet production publication and exact-source CI
     permissions: { contents: read, actions: read }
     needs: affected-gate
     if: ${{ (needs.affected-gate.outputs.run == 'true' && (github.ref == 'refs/heads/production' || (github.event_name == 'workflow_dispatch' && inputs.release == true))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}

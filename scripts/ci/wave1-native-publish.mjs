@@ -586,7 +586,9 @@ if (
   main().catch((error) => {
     console.error(
       error instanceof NativeUploadError
-        ? productionFailureMessage(error)
+        ? process.argv[2] === 'dry-run'
+          ? `Credential-free cf prebuilt dry-run failed before publication; uploadFailure=${JSON.stringify(error.uploadFailure)}`
+          : productionFailureMessage(error)
         : error instanceof Error
           ? error.message
           : 'Unknown native publication failure'
