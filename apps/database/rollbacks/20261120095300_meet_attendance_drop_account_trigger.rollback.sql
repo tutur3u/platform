@@ -1,0 +1,2 @@
+-- Intentionally empty. Rolling back must not put a Meet attendance trigger
+-- back on auth.users: every account delete would depend on attendance storage.

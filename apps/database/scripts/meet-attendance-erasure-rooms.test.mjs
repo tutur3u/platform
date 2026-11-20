@@ -11,6 +11,7 @@ const migrations = [
   'supabase/migrations/20261120071510_meet_attendance_erasure_intent.sql',
   'supabase/migrations/20261120073913_meet_attendance_cloudflare_retention.sql',
   'supabase/migrations/20261120092500_meet_attendance_erasure_rooms.sql',
+  'supabase/migrations/20261120095300_meet_attendance_drop_account_trigger.sql',
 ];
 const rollback =
   'rollbacks/20261120092500_meet_attendance_erasure_rooms.rollback.sql';
@@ -297,7 +298,7 @@ test('a stale planned copy cannot reopen a confirmed intent', async () => {
   assert.deepEqual(plan.rooms[0].posted, ['meeting']);
 });
 
-test('the account delete confirms its intent and the schedule reconciles the rest', async () => {
+test('the schedule confirms intents for deleted accounts and reconciles the rest', async () => {
   const db = await freshDb();
   await db.exec(`
     insert into auth.users values ('${user}'), ('${liveUser}');
@@ -326,10 +327,11 @@ test('the account delete confirms its intent and the schedule reconciles the res
       "select plan->>'phase' as value from private.meet_attendance_pending_erasures where subject_key = $1",
       [`user:${id}`]
     );
-  assert.equal(await phase(user), 'confirmed');
+  assert.equal(await phase(user), 'planned');
 
   const reconciled = await advance(db);
-  assert.equal(reconciled.confirmed, 1);
+  assert.equal(reconciled.confirmed, 2);
+  assert.equal(await phase(user), 'confirmed');
   assert.equal(reconciled.cancelled, 1);
   assert.equal(await phase(goneUser), 'confirmed');
   assert.equal(await phase(liveUser), undefined);
