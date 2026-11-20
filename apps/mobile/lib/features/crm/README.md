@@ -43,3 +43,13 @@ Roles stay on the workspace permission set (`view_users_public_info`,
 `view_users_private_info`, `create_users`, `update_users`, `delete_users`,
 `view_user_groups`, `manage_workspace_audit_logs`). The directory does not
 invent a second role model.
+
+## Remaining web parity work
+
+| Priority | Remaining capability |
+| --- | --- |
+| 1 | Multi-select and bulk directory operations, additional private profile fields, guardian editing, profile-link management, and profile-detail requests |
+| 2 | Linked promotion management and referrals, contact balance and invoices, archive details and history, full CSV preview and field selection, and contact follow-up |
+| 3 | Full group membership management, requests, schedule and calendar editing, content/posts, attendance history, and indicator editing |
+| 4 | Report creation, editing, and detail, approval decisions, actionable guest leads, tutoring operations, organization structure, workforce contracts, and topic announcement contacts, templates, import and delivery |
+| 5 | Audit insights, export, and historical backfill controls |

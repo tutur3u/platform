@@ -218,6 +218,9 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final dateFormat = DateFormat.yMMMd(
+      Localizations.localeOf(context).toString(),
+    );
     final tokens = AppTokens.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -233,8 +236,8 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
           AppGroupedRow(
             title: Text(l10n.crmAuditRange),
             subtitle: Text(
-              '${DateFormat.yMMMd().format(_range.start)} - '
-              '${DateFormat.yMMMd().format(_range.end)}',
+              '${dateFormat.format(_range.start)} - '
+              '${dateFormat.format(_range.end)}',
             ),
             onTap: () async {
               final start = await showAppDatePicker(
@@ -251,7 +254,14 @@ class _AuditFilterSheetState extends State<_AuditFilterSheet> {
                 lastDate: DateTime.now(),
               );
               if (end == null || !context.mounted) return;
-              setState(() => _range = DateTimeRange(start: start, end: end));
+              final endOfDay = DateTime(
+                end.year,
+                end.month,
+                end.day + 1,
+              ).subtract(const Duration(milliseconds: 1));
+              setState(
+                () => _range = DateTimeRange(start: start, end: endOfDay),
+              );
             },
           ),
           _FilterChoice(

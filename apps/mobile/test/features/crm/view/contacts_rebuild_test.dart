@@ -12,6 +12,7 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../../../helpers/design_render_harness.dart';
 import '../../../helpers/pump_app.dart';
 
 class _Permissions extends Mock implements WorkspacePermissionsRepository {
@@ -26,6 +27,48 @@ class _Permissions extends Mock implements WorkspacePermissionsRepository {
 
 class _Repository extends Mock implements CrmRepository {
   final requests = <String>[];
+
+  @override
+  int get groupDirectoryCount => 0;
+
+  @override
+  int get tagDirectoryCount => 0;
+
+  @override
+  Future<CrmAuditResult> getAuditLogs(
+    String wsId, {
+    required String start,
+    required String end,
+    String? eventKind,
+    String? source,
+    String? affectedUserQuery,
+    String? actorQuery,
+    int offset = 0,
+    int limit = 100,
+  }) async => const CrmAuditResult(
+    count: 1,
+    items: [
+      CrmAuditEvent(
+        auditRecordId: 1,
+        eventKind: 'updated',
+        summary: 'Raw summary',
+        changedFields: ['display_name', 'phone'],
+        fieldChanges: [
+          CrmAuditFieldChange(
+            field: 'display_name',
+            label: 'Display name',
+            before: 'Ada',
+            after: 'Ada Lovelace',
+          ),
+          CrmAuditFieldChange(field: 'phone', label: 'Phone'),
+        ],
+        affectedUser: CrmAuditAffectedUser(id: 'contact', name: 'Ada Lovelace'),
+        actor: CrmAuditActor(name: 'Grace Hopper'),
+        occurredAt: '2026-11-20T12:00:00Z',
+        source: 'live',
+      ),
+    ],
+  );
 
   @override
   Future<List<CrmGroup>> getGroups(
@@ -79,6 +122,53 @@ class _Repository extends Mock implements CrmRepository {
 }
 
 void main() {
+  for (final theme in ['light', 'dark']) {
+    testWidgets('audit shows activity and changes in $theme mode', (
+      tester,
+    ) async {
+      final nav = ShellMiniNavCubit();
+      addTearDown(nav.close);
+      DesignRender.setSize(tester, DesignRender.sizes['phone']!);
+      await tester.runAsync(DesignRender.loadFonts);
+      final (settings, brightness) = DesignRender.themes[theme]!;
+      await tester.pumpWidget(
+        DesignRenderApp(
+          settings: settings,
+          brightness: brightness,
+          child: BlocProvider.value(
+            value: nav,
+            child: CrmWorkspace(
+              actorId: 'actor',
+              workspaceId: 'ws',
+              repository: _Repository(),
+              permissionsRepository: _Permissions()
+                ..allowed.add('manage_workspace_audit_logs'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      nav.state.resolveForLocation(Routes.contacts)!.items.last.onPressed!();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Updated · Ada Lovelace'), findsOneWidget);
+      expect(find.text('By Grace Hopper'), findsOneWidget);
+      expect(find.textContaining('Nov 20, 2026'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text && widget.semanticsLabel == 'Ada to Ada Lovelace',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Something went wrong'), findsNothing);
+      expect(find.text('Phone'), findsNothing);
+      expect(find.textContaining('2026-11-20T'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await DesignRender.capture(tester, 'contacts-audit-$theme');
+    });
+  }
+
   testWidgets('list row shows one name and does not wrap the phone', (
     tester,
   ) async {

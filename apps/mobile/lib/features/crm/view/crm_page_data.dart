@@ -78,8 +78,8 @@ extension _CrmPageData on _CrmPageState {
       final audit = tab == _CrmTab.audit && _canViewAuditLog
           ? await _repository.getAuditLogs(
               wsId,
-              start: range.start.toIso8601String(),
-              end: range.end.toIso8601String(),
+              start: range.start.toUtc().toIso8601String(),
+              end: range.end.toUtc().toIso8601String(),
               eventKind: kind == 'all' ? null : kind,
               source: source == 'all' ? null : source,
               affectedUserQuery: affected,
@@ -258,8 +258,8 @@ extension _CrmPageData on _CrmPageState {
         final result = await CacheStore.awaitRevalidation(
           () => _repository.getAuditLogs(
             wsId,
-            start: _auditRange.start.toIso8601String(),
-            end: _auditRange.end.toIso8601String(),
+            start: _auditRange.start.toUtc().toIso8601String(),
+            end: _auditRange.end.toUtc().toIso8601String(),
             eventKind: _auditEventKind == 'all' ? null : _auditEventKind,
             source: _auditSource == 'all' ? null : _auditSource,
             affectedUserQuery: _affectedUserQuery,

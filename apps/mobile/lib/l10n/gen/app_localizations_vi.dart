@@ -2628,10 +2628,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmArchivedUntil => 'Lưu trữ đến';
 
   @override
+  String crmAuditActivity(String action, String subject) {
+    return '$action · $subject';
+  }
+
+  @override
   String get crmAuditActor => 'Người thực hiện';
 
   @override
   String get crmAuditAffectedUser => 'Người dùng bị ảnh hưởng';
+
+  @override
+  String crmAuditBy(String actor) {
+    return 'Bởi $actor';
+  }
+
+  @override
+  String get crmAuditEmptyValue => 'Trống';
 
   @override
   String get crmAuditEvent => 'Sự kiện nhật ký';
@@ -2643,7 +2656,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get crmAuditSource => 'Nguồn';
 
   @override
+  String get crmAuditSystem => 'Hệ thống';
+
+  @override
   String get crmAuditTab => 'Nhật ký';
+
+  @override
+  String get crmAuditUnknownTime => 'Không rõ thời gian';
+
+  @override
+  String crmAuditValueChange(String before, String after) {
+    return 'Từ $before thành $after';
+  }
 
   @override
   String get crmBirthday => 'Ngày sinh';

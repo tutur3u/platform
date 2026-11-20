@@ -5143,6 +5143,12 @@ abstract class AppLocalizations {
   /// **'Archived until'**
   String get crmArchivedUntil;
 
+  /// No description provided for @crmAuditActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'{action} · {subject}'**
+  String crmAuditActivity(String action, String subject);
+
   /// No description provided for @crmAuditActor.
   ///
   /// In en, this message translates to:
@@ -5154,6 +5160,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Affected user'**
   String get crmAuditAffectedUser;
+
+  /// No description provided for @crmAuditBy.
+  ///
+  /// In en, this message translates to:
+  /// **'By {actor}'**
+  String crmAuditBy(String actor);
+
+  /// No description provided for @crmAuditEmptyValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Empty'**
+  String get crmAuditEmptyValue;
 
   /// No description provided for @crmAuditEvent.
   ///
@@ -5173,11 +5191,29 @@ abstract class AppLocalizations {
   /// **'Source'**
   String get crmAuditSource;
 
+  /// No description provided for @crmAuditSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get crmAuditSystem;
+
   /// No description provided for @crmAuditTab.
   ///
   /// In en, this message translates to:
   /// **'Audit log'**
   String get crmAuditTab;
+
+  /// No description provided for @crmAuditUnknownTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time unavailable'**
+  String get crmAuditUnknownTime;
+
+  /// No description provided for @crmAuditValueChange.
+  ///
+  /// In en, this message translates to:
+  /// **'{before} to {after}'**
+  String crmAuditValueChange(String before, String after);
 
   /// No description provided for @crmBirthday.
   ///

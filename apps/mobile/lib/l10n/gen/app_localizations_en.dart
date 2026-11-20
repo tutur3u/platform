@@ -2642,10 +2642,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmArchivedUntil => 'Archived until';
 
   @override
+  String crmAuditActivity(String action, String subject) {
+    return '$action · $subject';
+  }
+
+  @override
   String get crmAuditActor => 'Actor';
 
   @override
   String get crmAuditAffectedUser => 'Affected user';
+
+  @override
+  String crmAuditBy(String actor) {
+    return 'By $actor';
+  }
+
+  @override
+  String get crmAuditEmptyValue => 'Empty';
 
   @override
   String get crmAuditEvent => 'Audit event';
@@ -2657,7 +2670,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get crmAuditSource => 'Source';
 
   @override
+  String get crmAuditSystem => 'System';
+
+  @override
   String get crmAuditTab => 'Audit log';
+
+  @override
+  String get crmAuditUnknownTime => 'Time unavailable';
+
+  @override
+  String crmAuditValueChange(String before, String after) {
+    return '$before to $after';
+  }
 
   @override
   String get crmBirthday => 'Birthday';
