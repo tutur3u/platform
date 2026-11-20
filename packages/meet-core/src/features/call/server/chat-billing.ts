@@ -12,6 +12,28 @@ import { MEETING_APP } from '../../../runtime';
 import { MeetCallAccessError } from '../lib/call-access';
 
 type Answer = Awaited<ReturnType<typeof answerMeetChat>>;
+/** Usage measured from provider responses received before a failure. */
+export type ObservedMeetUsage = Pick<
+  Answer,
+  'costUsd' | 'searchCount' | 'usage'
+>;
+const OBSERVED = Symbol.for('tuturuuu.meet.observedUsage');
+
+/** Attach usage observed before `error` so settlement can bill it. */
+export function withObservedUsage(
+  error: unknown,
+  observed: ObservedMeetUsage | null | undefined
+) {
+  if (observed && error && typeof error === 'object')
+    Reflect.set(error, OBSERVED, observed);
+  return error;
+}
+
+function observedUsage(error: unknown): ObservedMeetUsage | undefined {
+  return error && typeof error === 'object'
+    ? (Reflect.get(error, OBSERVED) as ObservedMeetUsage | undefined)
+    : undefined;
+}
 /** Charge the reservation itself, never a second deduction against held credits. */
 export async function billMeetChat(
   input: {
@@ -71,12 +93,46 @@ export async function billMeetChat(
   try {
     answer = await generate(allowSearch);
   } catch (error) {
+    const observed = observedUsage(error);
+    const usage = observed?.usage;
+    // Provider answers received before the failure are billed: measured
+    // usage when every response carried it, otherwise the reserved hold,
+    // never zero. With no answer received, nothing is billed.
+    const partial =
+      usage?.available === true
+        ? await calculateAiStudioUsageCost({
+            workspaceId: input.workspaceId,
+            modelId: input.model.id,
+            inputTokens: usage.inputTokens,
+            outputTokens: usage.outputTokens,
+            searchCount: observed!.searchCount,
+          })
+        : undefined;
+    const held = Math.max(1, Math.ceil(reservedCredits));
     await settleAiStudioRun({
       runId: run.runId,
       status: 'failed',
-      actualCredits: 0,
+      actualCredits: !observed
+        ? 0
+        : partial
+          ? Math.min(partial.billedCredits, held)
+          : held,
       errorClass: 'provider_failed',
-      metadata: { ...metadata, usage_source: 'unavailable' },
+      ...(partial
+        ? {
+            providerCostUsd: partial.providerCostUsd,
+            inputTokens: usage!.inputTokens,
+            outputTokens: usage!.outputTokens,
+          }
+        : {}),
+      metadata: {
+        ...metadata,
+        usage_source: !observed
+          ? 'unavailable'
+          : partial
+            ? 'observed_partial'
+            : 'unpriced_partial',
+      },
     });
     throw error;
   }
