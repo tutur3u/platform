@@ -37,7 +37,7 @@
       "remediationDigest": "25358704a00970884844d63cb001dce0262137bd6056791be69ba1c5f577784a",
       "proposedAt": "2026-11-20T05:10:41Z",
       "expiresAt": "2026-11-27T16:59:00Z",
-      "expiresEarlierWhen": "The definer admission policy supports fix-forward attestations and the records are attested under it.",
+      "expiresEarlierWhen": "Both records have fix-forward attestations from the protected release-bot-signoff workflow with vhpx approval.",
       "status": "accepted",
       "approvedBy": "Iris (release authority, USER-delegated)",
       "approvedAt": "2026-11-20T05:10:41Z"
