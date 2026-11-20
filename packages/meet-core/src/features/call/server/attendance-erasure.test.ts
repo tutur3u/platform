@@ -94,6 +94,12 @@ function harness(patch: Partial<AttendanceErasureDeps> = {}) {
       calls.push('finish-pending');
       pending.delete(keyOf(sql));
     },
+    cancelPending: async (sql, attempt) => {
+      calls.push(`cancel-pending:${attempt}`);
+      const stored = pending.get(keyOf(sql));
+      if (stored?.phase !== 'confirmed' && stored?.attempt === attempt)
+        pending.delete(keyOf(sql));
+    },
     listConfirmedPending: async (limit) => {
       calls.push('list-confirmed');
       return [...pending.values()]
@@ -431,4 +437,39 @@ it('keeps a confirmed intent when the delete result is lost', async () => {
     deps
   );
   expect(pending.has('workspace:ws')).toBe(true);
+});
+
+it('cancels only the refused attempt and never a plan it did not record', async () => {
+  const { calls, deps, pending } = harness();
+  const sql = { op: 'workspace' as const, wsId: 'ws' };
+  pending.set('workspace:ws', {
+    rooms: [],
+    sql,
+    phase: 'planned',
+    attempt: 'other-attempt',
+  });
+  await releaseAttendanceErasure(
+    {
+      plan: { rooms: [], sql, phase: 'planned', attempt: 'other-attempt' },
+      preexisting: true,
+    },
+    deps
+  );
+  await releaseAttendanceErasure(
+    { plan: { rooms: [], sql, phase: 'planned' }, preexisting: false },
+    deps
+  );
+  expect(calls).not.toContain('finish-pending');
+  expect(calls.filter((call) => call.startsWith('cancel-pending'))).toEqual([]);
+  expect(pending.has('workspace:ws')).toBe(true);
+
+  await releaseAttendanceErasure(
+    {
+      plan: { rooms: [], sql, phase: 'planned', attempt: 'other-attempt' },
+      preexisting: false,
+    },
+    deps
+  );
+  expect(calls).toContain('cancel-pending:other-attempt');
+  expect(pending.has('workspace:ws')).toBe(false);
 });

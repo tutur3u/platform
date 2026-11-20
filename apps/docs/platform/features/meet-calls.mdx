@@ -190,11 +190,15 @@ keeps a bounded set of rooms.
 Each erasure intent is stored in the same transaction as the delete it
 follows. Meeting and workspace deletes store a confirmed intent in the
 transaction that removes the row. Account deletion stores a planned intent
-first, because the auth delete runs outside that transaction; a trigger on
-`auth.users` confirms the intent in the transaction that removes the account.
-The erasure job also reconciles any planned intent it finds: a missing
-account, meeting, or workspace confirms it, and a row that still exists a day
-later cancels it.
+first, tagged with the delete attempt. Nothing on `auth.users` reads or writes
+attendance, so an account delete never depends on attendance storage, even
+while attendance is off or its tables are locked. The erasure job reconciles
+planned intents after the fact: a missing account, meeting, or workspace
+confirms the intent. Otherwise the intent stays pending, because the delete it
+waits for may still be running or its outcome may be unknown. Only the attempt
+that recorded a planned intent can cancel it, after a definitive refusal, and
+`private.cancel_meet_attendance_intent` checks the phase and the attempt in
+the same statement as the delete. A confirmed intent is never cancelled.
 
 A confirmed intent has one `private.meet_attendance_erasure_rooms` row per
 room, so a plan of any size is worked in pages. Claiming a room assigns its
@@ -203,15 +207,24 @@ overlapping slot skips it. If a slot stops between the claim and the
 acknowledgement, the lease lapses and the room is claimed again. An
 acknowledgement counts only for the generation that was claimed. When another
 writer raises a room's generation, that room needs a new acknowledgement. A
-room that fails 16 times stops being claimed and is reported as `stuck`. The
-intent is removed only after its session rows are deleted and every room has
+room that fails 16 times stops being claimed and is reported as `stuck`. Each
+call deletes at most 1000 session rows per intent and continues from the rows
+that remain. `private.finish_meet_attendance_intent` and the erasure job remove
+an intent only after its session rows are gone and every room has
 acknowledged. Account erasure covers the member copy (user id) and the guest
 copy stored under the same id, which is how a signed-in person outside the
-workspace is recorded. Every writer stores a plan through
-`private.store_meet_attendance_intent`, which merges under a row lock. A
-confirmed intent never returns to planned, and a room keeps its highest
-generation and that generation's acknowledgements. The rollback copies room
-progress back onto each plan before it drops the table.
+workspace is recorded.
+
+Every writer stores a plan through `private.store_meet_attendance_intent`. It
+takes a transaction-scoped advisory lock on the intent key, so the first
+writers for a key serialize even before a row exists. A confirmed intent never
+returns to planned, and a room keeps its highest generation and that
+generation's acknowledgements. `service_role` can only read the room table:
+the claim, acknowledgement, advance, cancel, and finish functions run as their
+owner with a pinned `search_path` and are executable only by `service_role`.
+Rollbacks take `ACCESS EXCLUSIVE` locks before they copy room progress back
+onto plans, and the pending-plan rollback refuses to run while any erasure is
+unresolved.
 
 Row level security allows only the meeting creator to select rows, and client
 roles have no grants. Co-hosts are workspace admins. The Meet API checks that
@@ -225,6 +238,11 @@ Regression coverage lives in `class-features.test.ts`, `class-service.test.ts`,
 tests, `meet-class-attendance-acl.test.mjs`,
 `meet-attendance-erasure-rooms.test.mjs` (crash after the delete or the claim,
 concurrent writers, more than 128 rooms, rollback),
+`meet-attendance-account-delete.test.mjs` (account deletes with attendance
+storage unavailable), `meet-attendance-erasure-hardening.test.mjs` (deployed
+`service_role` grants, attempt-scoped cancellation, bounded deletes),
+`meet-attendance-erasure-race.test.mjs` (two-transaction races on a real
+Postgres, run with `MEET_ATTENDANCE_PG_URL`),
 `meet-attendance-erasure.test.ts` in Cron Control, and
 `attendance-room-erase.test.ts` in Meet realtime.
 

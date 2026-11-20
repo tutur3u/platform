@@ -24,33 +24,19 @@ revoke all on function private.purge_expired_meet_attendance(timestamptz)
 grant execute on function private.purge_expired_meet_attendance(timestamptz)
   to service_role;
 
--- Drain confirmed erasures before dropping the pending-plan table.
+-- Fence writers, then refuse to drop the pending-plan table while any
+-- erasure is unresolved. A dropped plan would leave room copies and session
+-- rows that nothing erases. Finish or explicitly resolve them first.
 lock table private.meet_attendance_pending_erasures in access exclusive mode;
 
-with confirmed as materialized (
-  select
-    case when plan->'sql'->>'op' = 'meeting'
-      and plan->'sql'->>'meetingId' ~* '^[0-9a-f-]{36}$'
-      then (plan->'sql'->>'meetingId')::uuid end as meeting_id,
-    case when plan->'sql'->>'op' = 'workspace'
-      and plan->'sql'->>'wsId' ~* '^[0-9a-f-]{36}$'
-      then (plan->'sql'->>'wsId')::uuid end as ws_id,
-    case when plan->'sql'->>'op' = 'subject'
-      and plan->'sql'->>'userId' ~* '^[0-9a-f-]{36}$'
-      then (plan->'sql'->>'userId')::uuid end as user_id,
-    case when plan->'sql'->>'op' = 'subject'
-      and plan->'sql'->>'guestId' ~* '^[0-9a-f-]{36}$'
-      then (plan->'sql'->>'guestId')::uuid end as guest_id
-  from private.meet_attendance_pending_erasures
-  where plan->>'phase' = 'confirmed'
-)
-delete from private.meet_attendance_sessions as session
-using confirmed
-where session.meeting_id = confirmed.meeting_id
-  or session.ws_id = confirmed.ws_id
-  or session.user_id = confirmed.user_id
-  or session.guest_id = confirmed.user_id
-  or session.guest_id = confirmed.guest_id;
+do $$
+begin
+  if exists (select 1 from private.meet_attendance_pending_erasures) then
+    raise exception 'Meet attendance erasures are still pending; finish them before this rollback'
+      using errcode = '55000';
+  end if;
+end;
+$$;
 
 drop table if exists private.meet_attendance_pending_erasures;
 drop function if exists private.bump_meet_attendance_fence(uuid, uuid);

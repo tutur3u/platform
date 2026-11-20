@@ -423,7 +423,7 @@ async function applyAttendanceChain(db) {
   );
 }
 
-test('attendance generation rollback drains confirmed plans and keeps planned sessions', async () => {
+test('attendance generation rollback refuses while erasures are pending and keeps them', async () => {
   const db = new PGlite();
   await applyAttendanceChain(db);
   const ws = '11111111-1111-4111-8111-111111111111';
@@ -460,10 +460,14 @@ test('attendance generation rollback drains confirmed plans and keeps planned se
           '{"phase":"planned","sql":{"op":"meeting","meetingId":"${plannedMeeting}"},"rooms":[]}'::jsonb
         );
   `);
-  await apply(
-    db,
-    'rollbacks/20261120033500_meet_attendance_fence_generation.rollback.sql'
+  await assert.rejects(
+    apply(
+      db,
+      'rollbacks/20261120033500_meet_attendance_fence_generation.rollback.sql'
+    ),
+    /still pending/
   );
+  await db.exec('rollback');
   const left = await db.query(`
     select source_key
     from private.meet_attendance_sessions
@@ -471,12 +475,12 @@ test('attendance generation rollback drains confirmed plans and keeps planned se
   `);
   assert.deepEqual(
     left.rows.map((row) => row.source_key),
-    ['planned-copy']
+    ['confirmed-copy', 'planned-copy']
   );
   const pending = await db.query(
-    `select to_regclass('private.meet_attendance_pending_erasures') as name`
+    'select count(*)::int as n from private.meet_attendance_pending_erasures'
   );
-  assert.equal(pending.rows[0].name, null);
+  assert.equal(pending.rows[0].n, 2);
 });
 
 test('attendance erasure intent is stored with the delete and a fenced upsert does not delete', async () => {

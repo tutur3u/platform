@@ -20,6 +20,8 @@ export type AttendanceErasurePlan = {
   sql: AttendanceErasureSql;
   /** Planned work is cancelled when the delete is denied. Confirmed work is finished. */
   phase?: 'planned' | 'confirmed';
+  /** Identifies the delete attempt that recorded a planned intent. */
+  attempt?: string;
   attempts?: number;
   /** Session rows are already gone. Room copies may still be outstanding. */
   sqlDone?: boolean;

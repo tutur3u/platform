@@ -80,6 +80,14 @@ interface PrivateSchema {
     args: { p_meeting_id: string; p_ws_id: string }
   ): Promise<{ data: number | string | null; error: QueryError }>;
   rpc(
+    fn: 'finish_meet_attendance_intent',
+    args: { p_kind: string; p_subject_key: string }
+  ): Promise<{ data: string | null; error: QueryError }>;
+  rpc(
+    fn: 'cancel_meet_attendance_intent',
+    args: { p_kind: string; p_subject_key: string; p_attempt: string }
+  ): Promise<{ data: string | null; error: QueryError }>;
+  rpc(
     fn: 'store_meet_attendance_intent',
     args: {
       p_kind: string;
@@ -135,6 +143,7 @@ export type AttendanceErasureDeps = {
   ) => Promise<AttendanceErasurePlan | null>;
   savePending: (plan: AttendanceErasurePlan) => Promise<void>;
   finishPending: (sql: AttendanceErasureSql) => Promise<void>;
+  cancelPending: (sql: AttendanceErasureSql, attempt: string) => Promise<void>;
   listConfirmedPending: (limit: number) => Promise<AttendanceErasurePlan[]>;
 };
 
@@ -277,14 +286,29 @@ async function savePending(plan: AttendanceErasurePlan) {
   plan.sqlDone = stored.sqlDone;
 }
 
+/** Removes the intent only if the database agrees its SQL rows and rooms are done. */
 async function finishPending(sql: AttendanceErasureSql) {
   const key = attendanceErasureKey(sql);
   await throwIfError(
     (
-      await pendingTable(await admin())
-        .delete()
-        .eq('kind', key.kind)
-        .eq('subject_key', key.subjectKey)
+      await privateSchema(await admin()).rpc('finish_meet_attendance_intent', {
+        p_kind: key.kind,
+        p_subject_key: key.subjectKey,
+      })
+    ).error
+  );
+}
+
+/** Cancels this attempt's planned intent; a confirmed or newer plan is kept. */
+async function cancelPending(sql: AttendanceErasureSql, attempt: string) {
+  const key = attendanceErasureKey(sql);
+  await throwIfError(
+    (
+      await privateSchema(await admin()).rpc('cancel_meet_attendance_intent', {
+        p_kind: key.kind,
+        p_subject_key: key.subjectKey,
+        p_attempt: attempt,
+      })
     ).error
   );
 }
@@ -435,6 +459,7 @@ function defaultDeps(): AttendanceErasureDeps {
     readPending,
     savePending,
     finishPending,
+    cancelPending,
     listConfirmedPending,
   };
 }
@@ -485,6 +510,7 @@ export async function prepareMeetingAttendanceErasure(
     }),
     sql: { op: 'meeting', meetingId },
     phase: 'planned',
+    attempt: crypto.randomUUID(),
   };
 }
 
@@ -501,6 +527,7 @@ export async function prepareWorkspaceAttendanceErasure(
     }),
     sql: { op: 'workspace', wsId },
     phase: 'planned',
+    attempt: crypto.randomUUID(),
   };
 }
 
@@ -523,6 +550,7 @@ export async function prepareSubjectAttendanceErasure(
       ? { op: 'subject', userId: subject.userId }
       : { op: 'subject', guestId: subject.guestId },
     phase: 'planned',
+    attempt: crypto.randomUUID(),
   };
 }
 
@@ -574,10 +602,12 @@ export async function releaseAttendanceErasure(
   begun: BegunAttendanceErasure,
   deps: AttendanceErasureDeps = defaultDeps()
 ) {
-  if (begun.plan.phase === 'confirmed') return;
-  const stored = await deps.readPending(begun.plan.sql);
-  if (stored?.phase === 'confirmed') return;
-  await deps.finishPending(begun.plan.sql);
+  // Another attempt's plan, a confirmed plan, or a plan without an attempt
+  // is never cancelled here. The database checks phase and attempt in the
+  // same statement as the delete.
+  if (begun.preexisting || begun.plan.phase === 'confirmed') return;
+  if (!begun.plan.attempt) return;
+  await deps.cancelPending(begun.plan.sql, begun.plan.attempt);
 }
 
 export async function recordAttendanceErasure(

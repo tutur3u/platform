@@ -19,6 +19,7 @@ const advanced = {
   finished: 0,
   confirmed: 0,
   cancelled: 0,
+  waiting: 0,
 };
 
 function roomsFor(total: number) {
@@ -97,6 +98,7 @@ it('works more than 128 rooms in bounded pages and acknowledges each', async () 
       finished: 0,
       confirmed: 0,
       cancelled: 0,
+      waiting: 0,
     },
   });
   expect(new Set(erased).size).toBe(300);

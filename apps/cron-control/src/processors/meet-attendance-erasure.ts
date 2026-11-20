@@ -98,7 +98,13 @@ async function advance(deps: MeetAttendanceErasureDeps, detail: Counts) {
   const body = result.value as Record<string, unknown>;
   if (body.state === 'fenced') return 'fenced' as const;
   if (body.state !== 'open') return 'unknown' as const;
-  for (const name of ['advanced', 'finished', 'confirmed', 'cancelled']) {
+  for (const name of [
+    'advanced',
+    'finished',
+    'confirmed',
+    'cancelled',
+    'waiting',
+  ]) {
     const value = count(body[name], MEET_ATTENDANCE_INTENT_PAGE);
     if (value === null) return 'unknown' as const;
     detail[name] = (detail[name] ?? 0) + value;

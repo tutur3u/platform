@@ -12,6 +12,7 @@ const migrations = [
   'supabase/migrations/20261120073913_meet_attendance_cloudflare_retention.sql',
   'supabase/migrations/20261120092500_meet_attendance_erasure_rooms.sql',
   'supabase/migrations/20261120095300_meet_attendance_drop_account_trigger.sql',
+  'supabase/migrations/20261120095800_meet_attendance_erasure_hardening.sql',
 ];
 const rollback =
   'rollbacks/20261120092500_meet_attendance_erasure_rooms.rollback.sql';
@@ -332,9 +333,10 @@ test('the schedule confirms intents for deleted accounts and reconciles the rest
   const reconciled = await advance(db);
   assert.equal(reconciled.confirmed, 2);
   assert.equal(await phase(user), 'confirmed');
-  assert.equal(reconciled.cancelled, 1);
+  assert.equal(reconciled.cancelled, 0);
+  assert.equal(reconciled.waiting, 1);
   assert.equal(await phase(goneUser), 'confirmed');
-  assert.equal(await phase(liveUser), undefined);
+  assert.equal(await phase(liveUser), 'planned');
 
   const left = await db.query(
     'select user_id::text as id from private.meet_attendance_sessions'

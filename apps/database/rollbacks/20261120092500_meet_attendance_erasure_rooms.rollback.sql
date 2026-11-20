@@ -2,8 +2,15 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
--- Copy room progress back onto each plan first, so the earlier functions see
--- every acknowledgement and no erasure work is lost.
+-- Fence every writer first: no claim, acknowledgement, or plan write can land
+-- between the copy below and the drop.
+lock table
+  private.meet_attendance_pending_erasures,
+  private.meet_attendance_erasure_rooms
+  in access exclusive mode;
+
+-- Copy room progress back onto each plan, so the earlier functions see every
+-- acknowledgement and no erasure work is lost.
 update private.meet_attendance_pending_erasures as pending
 set plan = pg_catalog.jsonb_set(
   pending.plan,
