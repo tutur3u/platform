@@ -7567,6 +7567,54 @@ abstract class AppLocalizations {
   /// **'No checkpoint'**
   String get financeCheckpointsNoCheckpointShort;
 
+  /// No description provided for @financeBillSplits.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill splits'**
+  String get financeBillSplits;
+
+  /// No description provided for @financeBillSplitsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No bill splits yet'**
+  String get financeBillSplitsEmpty;
+
+  /// No description provided for @financeBillSplitsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Bill splits are unavailable'**
+  String get financeBillSplitsUnavailable;
+
+  /// No description provided for @financeBillSplitBalances.
+  ///
+  /// In en, this message translates to:
+  /// **'Balances'**
+  String get financeBillSplitBalances;
+
+  /// No description provided for @financeBillSplitSettlement.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement'**
+  String get financeBillSplitSettlement;
+
+  /// No description provided for @financeBillSplitSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested settlement'**
+  String get financeBillSplitSuggested;
+
+  /// No description provided for @financeBillSplitNoTransfers.
+  ///
+  /// In en, this message translates to:
+  /// **'No transfers due'**
+  String get financeBillSplitNoTransfers;
+
+  /// No description provided for @financeBillSplitPays.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} pays {to}'**
+  String financeBillSplitPays(String from, String to);
+
   /// No description provided for @financeCheckpointsNoWallets.
   ///
   /// In en, this message translates to:

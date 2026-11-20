@@ -47,7 +47,18 @@ const financePrimaryNavItems = <MiniAppNavItem>[
   ),
 ];
 
+const financeBillSplitsEnabled = bool.fromEnvironment(
+  'ENABLE_FINANCE_BILL_SPLITS',
+);
+
 const financeExtraNavItems = <MiniAppNavItem>[
+  if (financeBillSplitsEnabled)
+    MiniAppNavItem(
+      id: 'finance_bill_splits',
+      route: Routes.financeBillSplits,
+      icon: LucideIcons.receipt,
+      labelBuilder: _billSplits,
+    ),
   MiniAppNavItem(
     id: 'finance_categories',
     route: Routes.categories,
@@ -109,12 +120,14 @@ class FinanceDockRegistration extends StatefulWidget {
     required this.location,
     required this.child,
     this.openMoreOnEntry = false,
+    this.detailBackRoute,
     super.key,
   });
 
   final String location;
   final Widget child;
   final bool openMoreOnEntry;
+  final String? detailBackRoute;
 
   @override
   State<FinanceDockRegistration> createState() =>
@@ -166,11 +179,13 @@ class _FinanceDockRegistrationState extends State<FinanceDockRegistration> {
         ShellMiniNav(
           ownerId: 'finance-dock',
           locations: {location},
-          deepLinkBackRoute: location.startsWith('${Routes.wallets}/')
-              ? Routes.wallets
-              : location == Routes.finance
-              ? Routes.apps
-              : Routes.finance,
+          deepLinkBackRoute:
+              widget.detailBackRoute ??
+              (location.startsWith('${Routes.wallets}/')
+                  ? Routes.wallets
+                  : location == Routes.finance
+                  ? Routes.apps
+                  : Routes.finance),
           items: [
             ShellMiniNavItemSpec(
               id: 'back',
@@ -216,6 +231,7 @@ String _overview(AppLocalizations l10n) => l10n.financeOverviewLabel;
 String _transactions(AppLocalizations l10n) => l10n.financeTransactions;
 String _wallets(AppLocalizations l10n) => l10n.financeWallets;
 String _budgets(AppLocalizations l10n) => l10n.financeBudgets;
+String _billSplits(AppLocalizations l10n) => l10n.financeBillSplits;
 String _categories(AppLocalizations l10n) => l10n.financeCategories;
 String _checkpoints(AppLocalizations l10n) => l10n.financeCheckpointsShortLabel;
 String _analytics(AppLocalizations l10n) => l10n.financeAnalytics;

@@ -116,6 +116,14 @@ export async function getNavigationLinks({
       icon: <HandCoins className="h-4 w-4" />,
       disabled: withoutPermission('view_transactions'),
     },
+    process.env.ENABLE_FINANCE_BILL_SPLITS === 'true'
+      ? {
+          title: t('bill-splits.title'),
+          href: `/${personalOrWsId}/bill-splits`,
+          icon: <HandCoins className="h-4 w-4" />,
+          disabled: withoutPermission('view_transactions'),
+        }
+      : null,
     null,
     createWorkspaceMembersNavLink(t),
   ];

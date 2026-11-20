@@ -3951,6 +3951,32 @@ class AppLocalizationsVi extends AppLocalizations {
   String get financeCheckpointsNoCheckpointShort => 'Chưa có điểm kiểm tra';
 
   @override
+  String get financeBillSplits => 'Chia hóa đơn';
+
+  @override
+  String get financeBillSplitsEmpty => 'Chưa có hóa đơn được chia';
+
+  @override
+  String get financeBillSplitsUnavailable => 'Không thể mở chia hóa đơn';
+
+  @override
+  String get financeBillSplitBalances => 'Số dư';
+
+  @override
+  String get financeBillSplitSettlement => 'Thanh toán';
+
+  @override
+  String get financeBillSplitSuggested => 'Gợi ý thanh toán';
+
+  @override
+  String get financeBillSplitNoTransfers => 'Không có khoản cần chuyển';
+
+  @override
+  String financeBillSplitPays(String from, String to) {
+    return '$from trả cho $to';
+  }
+
+  @override
   String get financeCheckpointsNoWallets => 'Không có ví khả dụng';
 
   @override

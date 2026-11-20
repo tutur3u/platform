@@ -166,6 +166,11 @@
       "import": "./dist/finance-exchange-rates.js",
       "require": "./dist/finance-exchange-rates.js"
     },
+    "./finance-bill-splits": {
+      "types": "./dist/finance-bill-splits.d.ts",
+      "import": "./dist/finance-bill-splits.js",
+      "require": "./dist/finance-bill-splits.js"
+    },
     "./finance-fee-lock": {
       "types": "./dist/finance-fee-lock.d.ts",
       "import": "./dist/finance-fee-lock.js",

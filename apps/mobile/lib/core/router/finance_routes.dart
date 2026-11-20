@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/finance/finance_module.dart';
+import 'package:mobile/features/finance/view/bill_splits_page.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/debts_page.dart';
 import 'package:mobile/features/finance/view/finance_analytics_page.dart';
@@ -69,6 +70,20 @@ List<RouteBase> financeRoutes() => [
   ),
   // Wallet creation lives on Wallets; old Manage links land there.
   GoRoute(path: Routes.financeManage, redirect: (_, _) => Routes.wallets),
+  GoRoute(
+    path: Routes.financeBillSplits,
+    builder: (context, state) => FinanceDockRegistration(
+      location: Routes.financeBillSplits,
+      detailBackRoute: state.uri.queryParameters.containsKey('split')
+          ? Routes.financeBillSplits
+          : null,
+      child: BillSplitsPage(
+        splitId: state.uri.queryParameters['split'],
+        participantId: state.uri.queryParameters['participant'],
+        settlement: state.uri.queryParameters['settlement'] == '1',
+      ),
+    ),
+  ),
   GoRoute(path: Routes.financeMore, builder: financeMoreFallback),
   GoRoute(path: Routes.financeReports, redirect: (_, _) => Routes.finance),
   GoRoute(

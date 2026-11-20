@@ -292,7 +292,31 @@ String _habitsLocation(List<String> segments) {
   return Routes.habits;
 }
 
-String _financeLocation(List<String> segments) {
+final _billSplitId = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  caseSensitive: false,
+);
+
+String? _financeLocation(List<String> segments) {
+  if (segments.length > 1 && segments[1] == 'bill-splits') {
+    if (segments.length == 2) return Routes.financeBillSplits;
+    final id = segments[2].toLowerCase();
+    if (!_billSplitId.hasMatch(id)) return null;
+    final query = {'split': id};
+    if (segments.length == 4 && segments[3] == 'settlement') {
+      query['settlement'] = '1';
+    } else if (segments.length == 5 &&
+        segments[3] == 'participants' &&
+        _billSplitId.hasMatch(segments[4])) {
+      query['participant'] = segments[4].toLowerCase();
+    } else if (segments.length != 3) {
+      return null;
+    }
+    return Uri(
+      path: Routes.financeBillSplits,
+      queryParameters: query,
+    ).toString();
+  }
   if (segments.length > 2 && segments[1] == 'wallets') {
     return Routes.walletDetailPath(segments[2]);
   }

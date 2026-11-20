@@ -5,6 +5,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { admitPublicRequest } from '@tuturuuu/utils/abuse-guard/public-admission';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getLinkUnavailableReason } from '@/features/user-profile-links/server';
@@ -18,8 +19,29 @@ const bodySchema = z.object({
   contentType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
 });
 
+function unavailableLink() {
+  return NextResponse.json(
+    { message: 'Link not found' },
+    {
+      status: 404,
+      headers: { 'Cache-Control': 'private, no-store' },
+    }
+  );
+}
+
 export async function POST(req: Request, { params }: Params) {
   const { code } = await params;
+  const admission =
+    process.env.ENABLE_PROFILE_LINK_PUBLIC_ADMISSION === 'true'
+      ? await admitPublicRequest(req, {
+          surface: 'profile-link-avatar',
+          windowMs: 60_000,
+          ipLimit: 20,
+          subjectLimit: 10,
+          challengeAfter: 20,
+        })
+      : undefined;
+  if (admission && admission.kind !== 'admitted') return unavailableLink();
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -39,7 +61,7 @@ export async function POST(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (!link) {
-    return NextResponse.json({ message: 'Link not found' }, { status: 404 });
+    return unavailableLink();
   }
 
   // Require login only when the link requires it (no-auth links allow anonymous
@@ -70,6 +92,12 @@ export async function POST(req: Request, { params }: Params) {
   const digest = createHash('sha256')
     .update(`profile-link:${link.ws_id}:${code}`)
     .digest('hex');
+  if (
+    admission?.kind === 'admitted' &&
+    !(await admission.admitVerifiedSubject(digest))
+  ) {
+    return unavailableLink();
+  }
   const actorId = `${digest.slice(0, 8)}-${digest.slice(8, 12)}-${digest.slice(12, 16)}-${digest.slice(16, 20)}-${digest.slice(20, 32)}`;
   try {
     if (!/^[a-zA-Z0-9_-]{1,100}$/.test(code))

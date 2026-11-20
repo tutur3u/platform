@@ -2784,6 +2784,24 @@
   "financeCheckpointsNoCheckpoint": "No checkpoint",
   "financeCheckpointsNoCheckpointDetail": "Record a checkpoint to start audited balance tracking.",
   "financeCheckpointsNoCheckpointShort": "No checkpoint",
+  "financeBillSplits": "Bill splits",
+  "financeBillSplitsEmpty": "No bill splits yet",
+  "financeBillSplitsUnavailable": "Bill splits are unavailable",
+  "financeBillSplitBalances": "Balances",
+  "financeBillSplitSettlement": "Settlement",
+  "financeBillSplitSuggested": "Suggested settlement",
+  "financeBillSplitNoTransfers": "No transfers due",
+  "financeBillSplitPays": "{from} pays {to}",
+  "@financeBillSplitPays": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
   "financeCheckpointsNoWallets": "No wallets available",
   "financeCheckpointsNoWalletsDetail": "Create wallets before recording finance checkpoints.",
   "financeCheckpointsNote": "Note",

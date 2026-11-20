@@ -3966,6 +3966,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financeCheckpointsNoCheckpointShort => 'No checkpoint';
 
   @override
+  String get financeBillSplits => 'Bill splits';
+
+  @override
+  String get financeBillSplitsEmpty => 'No bill splits yet';
+
+  @override
+  String get financeBillSplitsUnavailable => 'Bill splits are unavailable';
+
+  @override
+  String get financeBillSplitBalances => 'Balances';
+
+  @override
+  String get financeBillSplitSettlement => 'Settlement';
+
+  @override
+  String get financeBillSplitSuggested => 'Suggested settlement';
+
+  @override
+  String get financeBillSplitNoTransfers => 'No transfers due';
+
+  @override
+  String financeBillSplitPays(String from, String to) {
+    return '$from pays $to';
+  }
+
+  @override
   String get financeCheckpointsNoWallets => 'No wallets available';
 
   @override

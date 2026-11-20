@@ -139,7 +139,16 @@ export const GET = withSessionAuth<{ wsId: string }>(
   },
   {
     allowAppSessionAuth: {
-      targetApp: ['mail', 'calendar', 'tasks', 'meet', 'contacts'],
+      targetApp: [
+        'mail',
+        'calendar',
+        'tasks',
+        'meet',
+        'contacts',
+        ...(process.env.ENABLE_FINANCE_BILL_SPLITS === 'true'
+          ? ['finance' as const]
+          : []),
+      ],
     },
   }
 );

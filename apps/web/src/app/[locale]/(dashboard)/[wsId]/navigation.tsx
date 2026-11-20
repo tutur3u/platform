@@ -413,6 +413,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/tags`,
         `/${personalOrWsId}/finance/invoices`,
         `/${personalOrWsId}/finance/debts`,
+        `/${personalOrWsId}/finance/bill-splits`,
       ],
       external: true,
       children: [
@@ -471,6 +472,14 @@ export async function WorkspaceNavigationLinks({
           icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
           disabled: withoutPermission('view_transactions'),
         },
+        process.env.ENABLE_FINANCE_BILL_SPLITS === 'true'
+          ? {
+              title: t('bill-splits.title'),
+              href: `${financeAppHref}/bill-splits`,
+              icon: createDashboardNavigationIcon('HandCoins', 'h-5 w-5'),
+              disabled: withoutPermission('view_transactions'),
+            }
+          : null,
         null,
         // ── Finance: Configuration ──
         {
