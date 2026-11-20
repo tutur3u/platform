@@ -40,6 +40,7 @@ test('publication proof migration keeps proof writes and reads behind the servic
       'fixture',
       '22222222-2222-4222-8222-222222222222',
       '2026-11-20T10:00:00Z',
+      '2026-11-20T10:00:00Z',
       '{"asset":"2026-11-20T09:00:00Z"}'
     ) on conflict (id) do nothing`;
     await db.exec('set role authenticated');

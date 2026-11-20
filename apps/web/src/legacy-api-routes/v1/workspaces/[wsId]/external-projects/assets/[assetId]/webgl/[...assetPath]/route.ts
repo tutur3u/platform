@@ -408,7 +408,7 @@ export async function GET(
     const { data: asset, error } = await admin
       .from('workspace_external_project_assets')
       .select(
-        'id, ws_id, entry_id, updated_at, asset_type, metadata, storage_path, workspace_external_project_entries!inner(status,published_at,metadata,workspace_external_project_collections!inner(slug,config))'
+        'id, ws_id, entry_id, updated_at, asset_type, metadata, storage_path, workspace_external_project_entries!inner(status,published_at,updated_at,metadata,workspace_external_project_collections!inner(slug,config))'
       )
       .eq('id', assetId)
       .eq('ws_id', resolvedWsId)

@@ -4,6 +4,7 @@ create table private.external_project_asset_publication_proofs (
   canonical_external_project_id text not null references public.canonical_external_projects(id) on delete restrict,
   entry_id uuid not null references public.workspace_external_project_entries(id) on delete cascade,
   published_at timestamptz not null,
+  entry_updated_at timestamptz not null,
   asset_revisions jsonb not null check (jsonb_typeof(asset_revisions) = 'object')
 );
 

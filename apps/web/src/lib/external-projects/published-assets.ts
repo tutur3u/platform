@@ -7,7 +7,12 @@ import {
   WEBGL_PACKAGE_METADATA_VERSION,
 } from './webgl-package-artifact';
 
-type Entry = { id: string; published_at: string | null; profile_data: unknown };
+type Entry = {
+  id: string;
+  published_at: string | null;
+  updated_at: string;
+  profile_data: unknown;
+};
 type Asset = { id: string; entry_id: string | null; updated_at: string };
 type Block = { id: string; entry_id: string; updated_at: string };
 type AttachedAsset = Asset & {
@@ -39,6 +44,20 @@ export function publicationEventId(
     hex.slice(16, 20),
     hex.slice(20, 32),
   ].join('-');
+}
+
+export function assetPublicationProofId(
+  workspaceId: string,
+  canonicalProjectId: string,
+  entry: Pick<Entry, 'id' | 'published_at' | 'updated_at'>
+) {
+  return publicationEventId(
+    workspaceId,
+    canonicalProjectId,
+    entry.id,
+    'publish',
+    `${entry.published_at}/${entry.updated_at}`
+  );
 }
 
 function isEntryWebglPackage(asset: AttachedAsset) {
@@ -106,13 +125,7 @@ export async function loadPublishedAssetManifests(
   for (const entry of entries) {
     if (!entry.published_at) continue;
     revisions.set(
-      publicationEventId(
-        workspaceId,
-        canonicalProjectId,
-        entry.id,
-        'publish',
-        entry.published_at
-      ),
+      assetPublicationProofId(workspaceId, canonicalProjectId, entry),
       entry
     );
   }
@@ -120,7 +133,7 @@ export async function loadPublishedAssetManifests(
   const ids = [...revisions.keys()];
   for (let start = 0; start < ids.length; start += 50) {
     const { data, error } = await assetPublicationProofs(admin)
-      .select('id,entry_id,published_at,asset_revisions')
+      .select('id,entry_id,published_at,entry_updated_at,asset_revisions')
       .eq('ws_id', workspaceId)
       .eq('canonical_external_project_id', canonicalProjectId)
       .in('id', ids.slice(start, start + 50));
@@ -132,7 +145,8 @@ export async function loadPublishedAssetManifests(
       if (
         !entry ||
         entry.id !== proof.entry_id ||
-        entry.published_at !== proof.published_at
+        entry.published_at !== proof.published_at ||
+        entry.updated_at !== proof.entry_updated_at
       )
         continue;
       manifests.set(entry.id, record(proof.asset_revisions));
@@ -177,6 +191,7 @@ export async function canReadPublishedAsset(
   asset: Asset,
   parent: {
     published_at: string | null;
+    updated_at: string;
     status: string;
     metadata: unknown;
     workspace_external_project_collections: {
@@ -206,6 +221,7 @@ export async function canReadPublishedAsset(
         {
           id: asset.entry_id,
           published_at: parent.published_at,
+          updated_at: parent.updated_at,
           profile_data: null,
         },
       ]

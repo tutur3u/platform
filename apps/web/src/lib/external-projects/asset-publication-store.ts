@@ -10,6 +10,7 @@ type PublicationProof = {
   canonical_external_project_id: string;
   entry_id: string;
   published_at: string;
+  entry_updated_at: string;
   asset_revisions: Json;
 };
 

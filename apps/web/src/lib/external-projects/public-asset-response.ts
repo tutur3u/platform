@@ -39,6 +39,7 @@ export async function publicExternalProjectAssetResponse(
       upstream.headers.get('content-type')?.split(';', 1)[0]?.trim() ?? '';
     const responseHeaders = new Headers(headers);
     responseHeaders.set('X-Content-Type-Options', 'nosniff');
+    responseHeaders.set('Access-Control-Allow-Origin', '*');
     responseHeaders.set(
       'Content-Security-Policy',
       "sandbox; default-src 'none'"

@@ -37,7 +37,7 @@ vi.mock('@tuturuuu/storage-core/workspace-storage-provider', () => ({
   resolveWorkspaceStorageProvider: async () => ({ provider: 'supabase' }),
 }));
 
-import { publicationEventId } from '@/lib/external-projects/published-assets';
+import { assetPublicationProofId } from '@/lib/external-projects/published-assets';
 afterEach(() => vi.unstubAllGlobals());
 
 it('proxies only eligible bytes and closes a withdrawal during the storage handoff', async () => {
@@ -46,6 +46,7 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
   const published_at = '2026-11-20T10:00:00Z';
   const parent = {
     status: 'published',
+    updated_at: published_at,
     published_at,
     metadata: {},
     workspace_external_project_collections: { slug: 'games', config: {} },
@@ -64,15 +65,14 @@ it('proxies only eligible bytes and closes a withdrawal during the storage hando
     in: async () => ({
       data: [
         {
-          id: publicationEventId(
-            'ws-1',
-            'canonical-1',
-            asset.entry_id,
-            'publish',
-            published_at
-          ),
+          id: assetPublicationProofId('ws-1', 'canonical-1', {
+            id: asset.entry_id,
+            published_at,
+            updated_at: published_at,
+          }),
           entry_id: asset.entry_id,
           published_at,
+          entry_updated_at: published_at,
           asset_revisions: { [asset.id]: updated_at },
         },
       ],

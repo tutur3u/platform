@@ -4,7 +4,7 @@ import {
   canReadPublishedAsset,
   isPublishedAsset,
   loadPublishedAssetManifests,
-  publicationEventId,
+  assetPublicationProofId,
   publishedAssetManifest,
 } from './published-assets';
 
@@ -15,6 +15,7 @@ const published_at = '2026-11-20T10:00:00Z';
 const entry = {
   id: 'entry',
   published_at,
+  updated_at: published_at,
   profile_data: { schema: 'fysh/1', media: { portrait: 'used' } },
 };
 const used = { id: 'used', entry_id: entry.id, updated_at };
@@ -26,15 +27,10 @@ const staged = {
 
 function database(assetRevisions?: Record<string, string>) {
   const proof = {
-    id: publicationEventId(
-      'workspace',
-      'project',
-      entry.id,
-      'publish',
-      published_at
-    ),
+    id: assetPublicationProofId('workspace', 'project', entry),
     entry_id: entry.id,
     published_at,
+    entry_updated_at: entry.updated_at,
     asset_revisions: assetRevisions,
   };
   const query = {
@@ -102,6 +98,7 @@ describe('workspace asset publication', () => {
     const parent = {
       published_at,
       status: 'published',
+      updated_at: published_at,
       metadata: {},
       workspace_external_project_collections: {
         slug: 'characters',
@@ -111,6 +108,12 @@ describe('workspace asset publication', () => {
     expect(
       await canReadPublishedAsset(fake, 'workspace', 'project', used, parent)
     ).toBe(true);
+    expect(
+      await canReadPublishedAsset(fake, 'workspace', 'project', used, {
+        ...parent,
+        updated_at: '2026-11-20T10:30:00Z',
+      })
+    ).toBe(false);
     expect(
       await canReadPublishedAsset(fake, 'workspace', 'project', staged, parent)
     ).toBe(false);

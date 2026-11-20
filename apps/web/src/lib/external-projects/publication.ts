@@ -6,7 +6,10 @@ import type {
 } from '@tuturuuu/types';
 import { assetPublicationProofs } from './asset-publication-store';
 import { invalidateWorkspaceExternalProjectCache } from './cache';
-import { publicationEventId } from './published-assets';
+import {
+  assetPublicationProofId,
+  publicationEventId,
+} from './published-assets';
 
 type EventKind = 'publish' | 'preview' | 'unpublish';
 
@@ -126,11 +129,12 @@ export async function recordEntryPublication(
     if (manifest && id && entry.published_at && visibilityScope === 'public') {
       const { error: proofError } = await assetPublicationProofs(admin).upsert(
         {
-          id,
+          id: assetPublicationProofId(workspaceId, canonicalProjectId, entry),
           ws_id: workspaceId,
           canonical_external_project_id: canonicalProjectId,
           entry_id: entry.id,
           published_at: entry.published_at,
+          entry_updated_at: entry.updated_at,
           asset_revisions: manifest,
         },
         { ignoreDuplicates: true, onConflict: 'id' }

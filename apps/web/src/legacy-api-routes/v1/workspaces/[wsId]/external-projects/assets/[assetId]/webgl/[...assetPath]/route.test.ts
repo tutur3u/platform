@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { createHash } from 'node:crypto';
-import { publicationEventId } from '@/lib/external-projects/published-assets';
+import { assetPublicationProofId } from '@/lib/external-projects/published-assets';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -98,15 +98,18 @@ function createAdminWithAsset(
     in: vi.fn().mockResolvedValue({
       data: [
         {
-          id: publicationEventId(
+          id: assetPublicationProofId(
             '123e4567-e89b-12d3-a456-426614174000',
             'project-1',
-            'entry-1',
-            'publish',
-            publishedAt
+            {
+              id: 'entry-1',
+              published_at: publishedAt,
+              updated_at: publishedAt,
+            }
           ),
           entry_id: 'entry-1',
           published_at: publishedAt,
+          entry_updated_at: publishedAt,
           asset_revisions: { 'asset-1': updatedAt },
         },
       ],
@@ -127,6 +130,7 @@ function createAdminWithAsset(
           storage_path: metadata.rootPath,
           workspace_external_project_entries: {
             status,
+            updated_at: publishedAt,
             published_at: publishedAt,
             metadata: {},
             workspace_external_project_collections: {
