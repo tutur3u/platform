@@ -52,8 +52,14 @@ class ChatCubit extends Cubit<ChatState> {
   final ChatRepository _repository;
   final ChatRealtimeClient _realtimeClient;
   StreamSubscription<ChatRealtimeEvent>? _realtimeSubscription;
+  StreamSubscription<ChatRealtimeEvent>? _roomSubscription;
   StreamSubscription<ChatMessageStreamEvent>? _sendSubscription;
   Timer? _realtimeFallback;
+  String? _roomConversationId;
+  static final RegExp _roomIdPattern = RegExp(
+    r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+    caseSensitive: false,
+  );
   bool _refreshingFallback = false;
   int _loadToken = 0;
   int _searchRequestVersion = 0;
@@ -98,6 +104,10 @@ class ChatCubit extends Cubit<ChatState> {
     _realtimeFallback?.cancel();
     _realtimeFallback = null;
     await _realtimeSubscription?.cancel();
+    _realtimeSubscription = null;
+    await _roomSubscription?.cancel();
+    _roomSubscription = null;
+    _roomConversationId = null;
     if (!_scopeActive || token != _loadToken) return;
     emit(
       ChatState(
@@ -182,6 +192,8 @@ class ChatCubit extends Cubit<ChatState> {
           forceRefresh: true,
           quietly: quietly,
         );
+      } else {
+        _syncConversationRoom();
       }
     } on ApiException catch (error) {
       if (!quietly && _scopeActive && token == _loadToken) {
@@ -241,6 +253,19 @@ class ChatCubit extends Cubit<ChatState> {
       return;
     }
 
+    try {
+      await _selectConversation(conversationId, quietly: quietly);
+    } finally {
+      _syncConversationRoom();
+    }
+  }
+
+  Future<void> _selectConversation(
+    String conversationId, {
+    required bool quietly,
+  }) async {
+    final wsId = state.wsId;
+    if (wsId == null) return;
     final token = _loadToken;
     if (!quietly) {
       emit(
@@ -364,7 +389,37 @@ class ChatCubit extends Cubit<ChatState> {
       case ChatRealtimeReadyEvent():
         _realtimeFallback?.cancel();
         _realtimeFallback = null;
+      case ChatRealtimeResyncEvent():
+        unawaited(_refetchWhenRealtimeUnavailable());
     }
+  }
+
+  /// Opens a conversation socket only for a real room id. Local threads such
+  /// as `ai-chat-local` stay on the inbox socket.
+  void _syncConversationRoom() {
+    final wsId = state.wsId;
+    final selected = state.selectedConversationId;
+    final next = selected != null && _roomIdPattern.hasMatch(selected)
+        ? selected
+        : null;
+    final sameRoom = next == _roomConversationId;
+    final subscriptionMatches = (next == null) == (_roomSubscription == null);
+    if (sameRoom && subscriptionMatches) return;
+    _roomConversationId = next;
+    final previous = _roomSubscription;
+    _roomSubscription = null;
+    if (previous != null) unawaited(previous.cancel());
+    if (wsId == null || next == null || !_scopeActive) return;
+    _roomSubscription = _realtimeClient
+        .connect(wsId, conversationId: next)
+        .listen((event) {
+          if (!_scopeActive ||
+              state.wsId != wsId ||
+              state.selectedConversationId != next) {
+            return;
+          }
+          _handleRealtimeEvent(event);
+        });
   }
 
   void _handleMessageStreamEvent(ChatMessageStreamEvent event) {
@@ -413,6 +468,7 @@ class ChatCubit extends Cubit<ChatState> {
             : state.selectedConversationId,
       ),
     );
+    if (select) _syncConversationRoom();
   }
 
   void _removeConversation(String conversationId) {
@@ -431,6 +487,7 @@ class ChatCubit extends Cubit<ChatState> {
         selectedConversationId: selectedId,
       ),
     );
+    _syncConversationRoom();
   }
 
   void _upsertMessage(ChatMessage message) {
@@ -502,6 +559,9 @@ class ChatCubit extends Cubit<ChatState> {
     _realtimeFallback?.cancel();
     _realtimeFallback = null;
     await _realtimeSubscription?.cancel();
+    final room = _roomSubscription;
+    _roomSubscription = null;
+    if (room != null) await room.cancel();
     _repository.dispose();
     _realtimeClient.dispose();
     return await super.close();

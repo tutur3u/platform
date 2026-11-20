@@ -1,9 +1,16 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
+import 'dart:math';
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/widgets.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
+
+part 'chat_realtime_socket.dart';
+
+Future<void> _delay(Duration delay) => Future<void>.delayed(delay);
 
 sealed class ChatRealtimeEvent extends Equatable {
   const ChatRealtimeEvent();
@@ -72,19 +79,105 @@ class ChatRealtimeErrorEvent extends ChatRealtimeEvent {
   List<Object?> get props => [message];
 }
 
+/// Asks the cubit to refetch. Inbox frames carry ids, and a resync means the
+/// room could not replay the gap.
+class ChatRealtimeResyncEvent extends ChatRealtimeEvent {
+  const ChatRealtimeResyncEvent();
+}
+
+typedef ChatRealtimeTicketLoader =
+    Future<Map<String, dynamic>> Function(
+      String wsId, {
+      String? conversationId,
+    });
+
 class ChatRealtimeClient {
-  ChatRealtimeClient({ApiClient? apiClient})
-    : _apiClient = apiClient ?? ApiClient();
+  ChatRealtimeClient({
+    ApiClient? apiClient,
+    ChatRealtimeTicketLoader? loadTicket,
+    ChatRealtimeSocketOpener? openSocket,
+    Future<void> Function(Duration delay)? wait,
+    double Function()? random,
+    bool watchForeground = true,
+  }) : _apiClient = loadTicket == null ? (apiClient ?? ApiClient()) : apiClient,
+       _loadTicket = loadTicket,
+       _openSocket = openSocket ?? _defaultOpenSocket,
+       _wait = wait ?? _delay,
+       _random = random ?? Random().nextDouble,
+       _watchForeground = watchForeground;
 
-  final ApiClient _apiClient;
+  final ApiClient? _apiClient;
+  final ChatRealtimeTicketLoader? _loadTicket;
+  final ChatRealtimeSocketOpener _openSocket;
+  final Future<void> Function(Duration delay) _wait;
+  final double Function() _random;
+  final bool _watchForeground;
+  final List<_ChatRealtimeRun> _runs = [];
   bool _disposed = false;
+  AppLifecycleListener? _lifecycle;
 
-  Stream<ChatRealtimeEvent> connect(String wsId) async* {
+  /// Inbox socket, or one conversation room when [conversationId] is set.
+  Stream<ChatRealtimeEvent> connect(String wsId, {String? conversationId}) {
+    _ensureForegroundWatch();
+    final controller = StreamController<ChatRealtimeEvent>();
+    final run = _ChatRealtimeRun(
+      client: this,
+      controller: controller,
+      conversationId: conversationId,
+      wsId: wsId,
+    );
+    _runs.add(run);
+    controller.onCancel = run.stop;
+    unawaited(
+      run.start().whenComplete(() {
+        _runs.remove(run);
+        if (!controller.isClosed) unawaited(controller.close());
+      }),
+    );
+    return controller.stream;
+  }
+
+  /// Retries once after polling, when the app or network returns.
+  void retry() {
+    for (final run in _runs) {
+      run.retry();
+    }
+  }
+
+  void _ensureForegroundWatch() {
+    if (!_watchForeground || _lifecycle != null || _disposed) return;
+    try {
+      WidgetsBinding.instance;
+    } on Object {
+      return;
+    }
+    _lifecycle = AppLifecycleListener(onResume: retry);
+  }
+
+  Future<Map<String, dynamic>> _ticket(String wsId, {String? conversationId}) {
+    final loader = _loadTicket;
+    if (loader != null) {
+      return loader(wsId, conversationId: conversationId);
+    }
+    final query = conversationId == null
+        ? ''
+        : '?conversationId=${Uri.encodeQueryComponent(conversationId)}';
+    return _apiClient!.getJson(
+      '/api/v1/workspaces/$wsId/chat/realtime/ticket$query',
+    );
+  }
+
+  Stream<ChatRealtimeEvent> _legacy(String wsId) async* {
     var retryDelay = const Duration(seconds: 1);
 
     while (!_disposed) {
       try {
-        final response = await _apiClient.getStream(
+        final apiClient = _apiClient;
+        if (apiClient == null) {
+          yield const ChatRealtimeErrorEvent('Realtime disabled');
+          return;
+        }
+        final response = await apiClient.getStream(
           '/api/v1/workspaces/$wsId/chat/realtime',
           accept: 'text/event-stream',
         );
@@ -184,7 +277,12 @@ class ChatRealtimeClient {
 
   void dispose() {
     _disposed = true;
-    _apiClient.dispose();
+    _lifecycle?.dispose();
+    _lifecycle = null;
+    for (final run in [..._runs]) {
+      run.stop();
+    }
+    _apiClient?.dispose();
   }
 }
 
