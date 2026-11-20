@@ -122,3 +122,42 @@ DateTime? _parseDate(Object? value) {
   if (parsed == null) return null;
   return DateTime(parsed.year, parsed.month, parsed.day);
 }
+
+/// How far one budget has used its limit, from the server's status check.
+class FinanceBudgetStatus extends Equatable {
+  const FinanceBudgetStatus({
+    required this.budgetId,
+    required this.name,
+    required this.percentageUsed,
+    this.isOverBudget = false,
+    this.isNearThreshold = false,
+  });
+
+  factory FinanceBudgetStatus.fromJson(Map<String, dynamic> json) =>
+      FinanceBudgetStatus(
+        budgetId: json['budget_id'] as String? ?? '',
+        name: json['budget_name'] as String? ?? '',
+        percentageUsed: switch (json['percentage_used']) {
+          final num value => value.toDouble(),
+          final String value => double.tryParse(value) ?? 0,
+          _ => 0,
+        },
+        isOverBudget: json['is_over_budget'] == true,
+        isNearThreshold: json['is_near_threshold'] == true,
+      );
+
+  final String budgetId;
+  final String name;
+  final double percentageUsed;
+  final bool isOverBudget;
+  final bool isNearThreshold;
+
+  @override
+  List<Object?> get props => [
+    budgetId,
+    name,
+    percentageUsed,
+    isOverBudget,
+    isNearThreshold,
+  ];
+}

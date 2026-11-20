@@ -70,6 +70,27 @@ mixin FinanceRepositoryBudgets {
     );
   }
 
+  /// Budgets over or close to their limit, as the server evaluates them.
+  Future<List<FinanceBudgetStatus>> getBudgetStatus(
+    String wsId, {
+    bool forceRefresh = false,
+  }) async {
+    final rows = await readThroughJsonList(
+      api: _api,
+      namespace: 'finance.budgetStatus',
+      workspaceId: wsId,
+      path: '${FinanceEndpoints.budgets(wsId)}/status',
+      forceRefresh: forceRefresh,
+      cacheStore: _cacheStore,
+      cacheUserId: _cacheUserId,
+    );
+    return rows
+        .whereType<Map<String, dynamic>>()
+        .map(FinanceBudgetStatus.fromJson)
+        .where((status) => status.isOverBudget || status.isNearThreshold)
+        .toList(growable: false);
+  }
+
   Future<FinanceBudgetWrite> createBudget({
     required String wsId,
     required FinanceBudget budget,

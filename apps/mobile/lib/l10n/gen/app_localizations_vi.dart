@@ -17071,4 +17071,73 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financeDebtMarkPaid => 'Đánh dấu đã trả xong';
+
+  @override
+  String get financeAnalytics => 'Phân tích';
+
+  @override
+  String get financeAnalyticsClosing => 'Số dư cuối kỳ';
+
+  @override
+  String get financeAnalyticsOpening => 'Số dư đầu kỳ';
+
+  @override
+  String get financeAnalyticsNetChange => 'Thay đổi ròng';
+
+  @override
+  String get financeAnalyticsBalanceTrend => 'Diễn biến số dư';
+
+  @override
+  String get financeAnalyticsByCategory => 'Theo danh mục';
+
+  @override
+  String financeAnalyticsShare(String percent) {
+    return '$percent% tổng';
+  }
+
+  @override
+  String get financeAnalyticsNoCategories => 'Không có giao dịch theo danh mục trong kỳ này';
+
+  @override
+  String financeBudgetAlertOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngân sách đã vượt hạn mức',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeBudgetAlertNear(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngân sách sắp chạm hạn mức',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeBudgetAlertUsed(String name, String percent) {
+    return '$name · đã dùng $percent%';
+  }
+
+  @override
+  String get financeBudgetAlertView => 'Xem ngân sách';
+
+  @override
+  String get financeRecurringUpcoming => '30 ngày tới';
+
+  @override
+  String get financeRecurringAllRules => 'Tất cả quy tắc';
+
+  @override
+  String get financeRecurringExpectedIn => 'Dự kiến thu';
+
+  @override
+  String get financeRecurringExpectedOut => 'Dự kiến chi';
+
+  @override
+  String get financeRecurringNoneUpcoming => 'Không có khoản nào đến hạn trong 30 ngày tới';
 }

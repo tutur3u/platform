@@ -122,6 +122,7 @@ void main() {
         '/api/workspaces/ws/wallets': ApiOrigin.finance,
         '/api/workspaces/ws/transactions/infinite?page=1': ApiOrigin.finance,
         '/api/v1/workspaces/ws/finance/invoices': ApiOrigin.finance,
+        '/api/workspaces/ws/finance/charts/balance-trend': ApiOrigin.finance,
         '/api/v1/workspaces/ws/inventory/overview': ApiOrigin.inventory,
         '/api/v1/workspaces/ws/products/options': ApiOrigin.inventory,
         '/api/v1/workspaces/ws/task-boards?page=1': ApiOrigin.tasks,

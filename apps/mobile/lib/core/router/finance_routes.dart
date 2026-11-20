@@ -3,6 +3,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/finance/finance_module.dart';
 import 'package:mobile/features/finance/view/budgets_page.dart';
 import 'package:mobile/features/finance/view/debts_page.dart';
+import 'package:mobile/features/finance/view/finance_analytics_page.dart';
 import 'package:mobile/features/finance/view/finance_checkpoints_page.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
@@ -42,6 +43,13 @@ List<RouteBase> financeRoutes() => [
     builder: (context, state) => const FinanceDockRegistration(
       location: Routes.financeBudgets,
       child: BudgetsPage(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.financeAnalytics,
+    builder: (context, state) => const FinanceDockRegistration(
+      location: Routes.financeAnalytics,
+      child: FinanceAnalyticsPage(),
     ),
   ),
   GoRoute(

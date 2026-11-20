@@ -177,6 +177,7 @@ abstract final class Routes {
   static const categories = '/finance/categories';
   static const financeBudgets = '/finance/budgets';
   static const financeDebts = '/finance/debts';
+  static const financeAnalytics = '/finance/analytics';
   static const financeMore = '/finance/more';
   static const financeManage = '/finance/manage';
   static const financeReports = '/finance/reports';

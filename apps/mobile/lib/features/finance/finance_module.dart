@@ -62,6 +62,12 @@ const financeExtraNavItems = <MiniAppNavItem>[
     labelBuilder: _checkpoints,
   ),
   MiniAppNavItem(
+    id: 'finance_analytics',
+    route: Routes.financeAnalytics,
+    icon: LucideIcons.chartLine,
+    labelBuilder: _analytics,
+  ),
+  MiniAppNavItem(
     id: 'finance_debts',
     route: Routes.financeDebts,
     icon: LucideIcons.handCoins,
@@ -78,6 +84,7 @@ const _fallbackNavItems = <MiniAppNavItem>[
     aliasRoutes: [
       Routes.categories,
       Routes.financeCheckpoints,
+      Routes.financeAnalytics,
       Routes.financeDebts,
     ],
     icon: Icons.more_horiz,
@@ -204,6 +211,7 @@ String _wallets(AppLocalizations l10n) => l10n.financeWallets;
 String _budgets(AppLocalizations l10n) => l10n.financeBudgets;
 String _categories(AppLocalizations l10n) => l10n.financeCategories;
 String _checkpoints(AppLocalizations l10n) => l10n.financeCheckpointsShortLabel;
+String _analytics(AppLocalizations l10n) => l10n.financeAnalytics;
 String _debts(AppLocalizations l10n) => l10n.financeDebts;
 Widget _page(BuildContext context) => const FinanceDockRegistration(
   location: Routes.finance,

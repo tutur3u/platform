@@ -26,7 +26,7 @@ destination shown), the shell shows it as a filled top-bar button instead.
 ## Destinations
 
 The dock holds Overview, Transactions, Budgets and Wallets; More opens
-Categories, Checkpoints and Debts & loans, and reserves the next entry for
+Categories, Checkpoints, Analytics and Debts & loans, and reserves the next entry for
 the bill-splitting module's Split bills. Finance has no separate Manage page: creating a
 wallet belongs to Wallets, and old `/finance/manage` links open Wallets.
 Overview also opens All-wallet check directly.
@@ -111,6 +111,18 @@ check hide archived wallets; other wallet pickers and web Finance still list
 them. `checkpoint_wallets_test.dart` and `finance_checkpoints_page_test.dart`
 cover the filters, sorting, archive overrides and Undo.
 
+## Analytics
+
+Analytics (`/finance/analytics`) needs `view_finance_stats` and shows the
+workspace in its currency for a week, month or year (current month by
+default) from the server's chart endpoints. The hero shows the closing
+balance with the opening balance and net change. Income, expense and net
+follow with one bar pair per day (per month for a year), then the balance
+trend and expense or income totals per category with each one's share.
+Category days follow the device time zone. Hidden amounts hide the charts
+and shares. Workspace `/api/workspaces/{id}/finance/*` requests go to the
+Finance origin. Coverage: `finance_analytics_page_test.dart`.
+
 ## Debts and loans
 
 Debts & loans (`/finance/debts`) leads with the net position: what others
@@ -139,6 +151,14 @@ Overview opens recurring transactions, with each rule's frequency, wallet and
 next scheduled date. Finance managers can create, edit or delete rules. Use a
 negative amount for an expense and a positive amount for income. A rule uses
 the selected wallet's currency and can end on a date.
+
+The Recurring sheet opens with the next 30 days: active rules due from today,
+soonest first, with expected money in and out when every run shares one
+currency. All rules follow. Overview shows people with `manage_finance` one
+banner for budgets over or close to their limit, from the server's budget
+status: destructive while any is over, a warning otherwise, naming up to three
+and linking to Budgets. Coverage: `finance_budget_alerts_test.dart` and
+`recurring_transactions_test.dart`.
 
 ## Invoices and subscriptions
 

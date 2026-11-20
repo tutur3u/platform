@@ -17278,4 +17278,75 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financeDebtMarkPaid => 'Mark as paid';
+
+  @override
+  String get financeAnalytics => 'Analytics';
+
+  @override
+  String get financeAnalyticsClosing => 'Closing balance';
+
+  @override
+  String get financeAnalyticsOpening => 'Opening balance';
+
+  @override
+  String get financeAnalyticsNetChange => 'Net change';
+
+  @override
+  String get financeAnalyticsBalanceTrend => 'Balance trend';
+
+  @override
+  String get financeAnalyticsByCategory => 'By category';
+
+  @override
+  String financeAnalyticsShare(String percent) {
+    return '$percent% of total';
+  }
+
+  @override
+  String get financeAnalyticsNoCategories => 'No categorised activity in this period';
+
+  @override
+  String financeBudgetAlertOver(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count budgets are over their limit',
+      one: '1 budget is over its limit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeBudgetAlertNear(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count budgets are close to their limit',
+      one: '1 budget is close to its limit',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String financeBudgetAlertUsed(String name, String percent) {
+    return '$name · $percent% used';
+  }
+
+  @override
+  String get financeBudgetAlertView => 'View budgets';
+
+  @override
+  String get financeRecurringUpcoming => 'Next 30 days';
+
+  @override
+  String get financeRecurringAllRules => 'All rules';
+
+  @override
+  String get financeRecurringExpectedIn => 'Expected in';
+
+  @override
+  String get financeRecurringExpectedOut => 'Expected out';
+
+  @override
+  String get financeRecurringNoneUpcoming => 'Nothing due in the next 30 days';
 }

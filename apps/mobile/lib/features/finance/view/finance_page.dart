@@ -20,6 +20,7 @@ import 'package:mobile/features/finance/view/finance_overview_month.dart';
 import 'package:mobile/features/finance/view/finance_reports_sheet.dart';
 import 'package:mobile/features/finance/view/recurring_transactions_sheet.dart';
 import 'package:mobile/features/finance/view/transaction_detail_action.dart';
+import 'package:mobile/features/finance/widgets/finance_budget_alerts.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
 import 'package:mobile/features/finance/widgets/finance_shell_actions.dart';
 import 'package:mobile/features/finance/widgets/finance_states.dart';
@@ -164,10 +165,19 @@ class _FinanceView extends StatelessWidget {
     if (state.status == FinanceStatus.loading || !state.hasWorkspaceCurrency) {
       return const FinanceOverviewSkeleton();
     }
+    final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     return NovaRefreshIndicator(
       onRefresh: () => _reload(context, retainError: true),
       child: FinanceOverviewContent(
         state: state,
+        budgetAlerts:
+            wsId != null && canManageFinance(context, 'manage_finance')
+            ? FinanceBudgetAlerts(
+                workspaceId: wsId,
+                repository: context.read<FinanceRepository>(),
+                revision: state.lastUpdatedAt?.millisecondsSinceEpoch ?? 0,
+              )
+            : null,
         onTransactionTap: (transaction) =>
             _openTransaction(context, state, transaction),
         onInvoices: canManageFinance(context, 'view_invoices')
@@ -215,6 +225,7 @@ class FinanceOverviewContent extends StatelessWidget {
     this.onRecurring,
     this.onInvoices,
     this.onReports,
+    this.budgetAlerts,
     this.now,
     super.key,
   });
@@ -223,6 +234,10 @@ class FinanceOverviewContent extends StatelessWidget {
   final VoidCallback? onRecurring;
   final VoidCallback? onInvoices;
   final VoidCallback? onReports;
+
+  /// Banner for budgets over or close to their limit, when the person can
+  /// manage budgets.
+  final Widget? budgetAlerts;
   final ValueChanged<Transaction> onTransactionTap;
   final VoidCallback? onCreate;
 
@@ -278,6 +293,10 @@ class FinanceOverviewContent extends StatelessWidget {
               includeTop: false,
               sliver: SliverList.list(
                 children: [
+                  if (budgetAlerts case final alerts?) ...[
+                    const SizedBox(height: AppLayout.itemGap),
+                    alerts,
+                  ],
                   if (state.wallets.isNotEmpty ||
                       onRecurring != null ||
                       onInvoices != null) ...[

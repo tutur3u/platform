@@ -31998,6 +31998,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mark as paid'**
   String get financeDebtMarkPaid;
+
+  /// No description provided for @financeAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get financeAnalytics;
+
+  /// No description provided for @financeAnalyticsClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing balance'**
+  String get financeAnalyticsClosing;
+
+  /// No description provided for @financeAnalyticsOpening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening balance'**
+  String get financeAnalyticsOpening;
+
+  /// No description provided for @financeAnalyticsNetChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Net change'**
+  String get financeAnalyticsNetChange;
+
+  /// No description provided for @financeAnalyticsBalanceTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance trend'**
+  String get financeAnalyticsBalanceTrend;
+
+  /// No description provided for @financeAnalyticsByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get financeAnalyticsByCategory;
+
+  /// No description provided for @financeAnalyticsShare.
+  ///
+  /// In en, this message translates to:
+  /// **'{percent}% of total'**
+  String financeAnalyticsShare(String percent);
+
+  /// No description provided for @financeAnalyticsNoCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'No categorised activity in this period'**
+  String get financeAnalyticsNoCategories;
+
+  /// No description provided for @financeBudgetAlertOver.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 budget is over its limit} other{{count} budgets are over their limit}}'**
+  String financeBudgetAlertOver(int count);
+
+  /// No description provided for @financeBudgetAlertNear.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 budget is close to its limit} other{{count} budgets are close to their limit}}'**
+  String financeBudgetAlertNear(int count);
+
+  /// No description provided for @financeBudgetAlertUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} · {percent}% used'**
+  String financeBudgetAlertUsed(String name, String percent);
+
+  /// No description provided for @financeBudgetAlertView.
+  ///
+  /// In en, this message translates to:
+  /// **'View budgets'**
+  String get financeBudgetAlertView;
+
+  /// No description provided for @financeRecurringUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 30 days'**
+  String get financeRecurringUpcoming;
+
+  /// No description provided for @financeRecurringAllRules.
+  ///
+  /// In en, this message translates to:
+  /// **'All rules'**
+  String get financeRecurringAllRules;
+
+  /// No description provided for @financeRecurringExpectedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected in'**
+  String get financeRecurringExpectedIn;
+
+  /// No description provided for @financeRecurringExpectedOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected out'**
+  String get financeRecurringExpectedOut;
+
+  /// No description provided for @financeRecurringNoneUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing due in the next 30 days'**
+  String get financeRecurringNoneUpcoming;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -62,7 +62,8 @@ void main() {
     expect(saved?.name, 'Internet');
     expect(saved?.amount, -225.5);
     expect(saved?.frequency, RecurringFrequency.monthly);
-    expect(find.text('Internet'), findsOneWidget);
+    expect(find.text('Internet'), findsWidgets);
+    expect(find.text('Next 30 days'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

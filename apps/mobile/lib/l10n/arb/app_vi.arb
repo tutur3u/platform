@@ -7447,5 +7447,22 @@
   "financeDebtDeleteTitle": "Xóa {name}?",
   "financeDebtDeleteBody": "Không thể hoàn tác.",
   "financeDebtStatusChanged": "Đã cập nhật trạng thái",
-  "financeDebtMarkPaid": "Đánh dấu đã trả xong"
+  "financeDebtMarkPaid": "Đánh dấu đã trả xong",
+  "financeAnalytics": "Phân tích",
+  "financeAnalyticsClosing": "Số dư cuối kỳ",
+  "financeAnalyticsOpening": "Số dư đầu kỳ",
+  "financeAnalyticsNetChange": "Thay đổi ròng",
+  "financeAnalyticsBalanceTrend": "Diễn biến số dư",
+  "financeAnalyticsByCategory": "Theo danh mục",
+  "financeAnalyticsShare": "{percent}% tổng",
+  "financeAnalyticsNoCategories": "Không có giao dịch theo danh mục trong kỳ này",
+  "financeBudgetAlertOver": "{count, plural, other{{count} ngân sách đã vượt hạn mức}}",
+  "financeBudgetAlertNear": "{count, plural, other{{count} ngân sách sắp chạm hạn mức}}",
+  "financeBudgetAlertUsed": "{name} · đã dùng {percent}%",
+  "financeBudgetAlertView": "Xem ngân sách",
+  "financeRecurringUpcoming": "30 ngày tới",
+  "financeRecurringAllRules": "Tất cả quy tắc",
+  "financeRecurringExpectedIn": "Dự kiến thu",
+  "financeRecurringExpectedOut": "Dự kiến chi",
+  "financeRecurringNoneUpcoming": "Không có khoản nào đến hạn trong 30 ngày tới"
 }

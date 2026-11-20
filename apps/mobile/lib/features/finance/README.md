@@ -23,6 +23,8 @@ navigation keeps a slot for its "Split bills" entry.
 | Checkpoints and reconciliation | `view/finance_checkpoints_page.dart`, `view/wallet_reconciliation_panel.dart`, plus mobile-only wallet archiving |
 | Invoice history and restore | `view/finance_invoice_history_sheet.dart` |
 | Debts and loans | `view/debts_page.dart`, `view/debt_detail_sheet.dart`, `view/debt_form_sheet.dart` |
+| Budget alerts and upcoming recurring | `widgets/finance_budget_alerts.dart` on Overview, `widgets/recurring_upcoming.dart` in Recurring |
+| Analytics | `view/finance_analytics_page.dart`: closing balance, income and expense bars, balance trend, category shares. Daily spending trends are covered by the day bars |
 
 Mobile also queues finance edits offline
 (`lib/data/repositories/finance_pending_overlay.dart`).
@@ -32,39 +34,29 @@ Mobile also queues finance edits offline
 Every gap uses existing endpoints; only wallet role access needs a bearer-auth
 check on its legacy route.
 
-### P0
-
-1. **Analytics** (weaker). Balance trend, income against expense, spending
-   trends and a category breakdown chart. Endpoints:
-   `finance/charts/balance-trend`, `charts/income-expense-summary`,
-   `transactions/spending-trends`, `transactions/category-breakdown`.
-2. **Budget alerts and upcoming recurring** (weaker). A workspace-wide
-   over-budget banner (`finance/budgets/status`) and an upcoming list for
-   recurring transactions (`recurring-transactions/upcoming`).
-
 ### P1
 
-3. **Promotions** (missing). Create, edit and delete, and pick promotions in
+1. **Promotions** (missing). Create, edit and delete, and pick promotions in
    the invoice editor (`promotions`, `promotions/{id}`,
    `users/{id}/linked-promotions`).
-4. **Invoice detail and PDF share** (weaker). A read-only invoice view with a
+2. **Invoice detail and PDF share** (weaker). A read-only invoice view with a
    printable, shareable PDF rendered on the device.
-5. **Wallet role access** (missing). List, grant and revoke workspace roles
+3. **Wallet role access** (missing). List, grant and revoke workspace roles
    per wallet (`wallets/{id}/roles`, `roles/{roleId}`).
-6. **Wallet interest history** (weaker). Rate history, interest chart,
+4. **Wallet interest history** (weaker). Rate history, interest chart,
    auto-detect banner and pending deposits (`interest/rates`,
    `interest/detect`).
-7. **Category merge and tag usage** (weaker). Migrate one category into
+5. **Category merge and tag usage** (weaker). Migrate one category into
    another (`transactions/categories/migrate`) and tag usage stats
    (`tags/stats`).
 
 ### P2
 
-8. **Subscription invoices** (weaker). Attendance-based billing, prepaid
+6. **Subscription invoices** (weaker). Attendance-based billing, prepaid
    controls and subscription analytics.
-9. **Fee locks** (weaker). Batch lock, template preview, suggestions and
-    export.
-10. **Inventory reconciliation** (missing). Reconciliation panel and wallet
-    inventory contribution.
-11. **Admin and navigation tools** (missing). Wallet and transaction
+7. **Fee locks** (weaker). Batch lock, template preview, suggestions and
+   export.
+8. **Inventory reconciliation** (missing). Reconciliation panel and wallet
+   inventory contribution.
+9. **Admin and navigation tools** (missing). Wallet and transaction
     migration, all-wallet checkpoint history and a cross-entity quick search.

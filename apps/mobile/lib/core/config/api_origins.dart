@@ -122,7 +122,7 @@ class ApiOrigins {
       return ApiOrigin.mail;
     }
 
-    if (_matchesWorkspace(path, r'(?:wallets|transactions)(?:/|$)') ||
+    if (_matchesWorkspace(path, r'(?:wallets|transactions|finance)(?:/|$)') ||
         _matchesWorkspaceV1(path, r'finance(?:/|$)')) {
       return ApiOrigin.finance;
     }

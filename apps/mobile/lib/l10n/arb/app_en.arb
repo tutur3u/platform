@@ -8266,5 +8266,53 @@
   },
   "financeDebtDeleteBody": "This cannot be undone.",
   "financeDebtStatusChanged": "Status updated",
-  "financeDebtMarkPaid": "Mark as paid"
+  "financeDebtMarkPaid": "Mark as paid",
+  "financeAnalytics": "Analytics",
+  "financeAnalyticsClosing": "Closing balance",
+  "financeAnalyticsOpening": "Opening balance",
+  "financeAnalyticsNetChange": "Net change",
+  "financeAnalyticsBalanceTrend": "Balance trend",
+  "financeAnalyticsByCategory": "By category",
+  "financeAnalyticsShare": "{percent}% of total",
+  "@financeAnalyticsShare": {
+    "placeholders": {
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "financeAnalyticsNoCategories": "No categorised activity in this period",
+  "financeBudgetAlertOver": "{count, plural, =1{1 budget is over its limit} other{{count} budgets are over their limit}}",
+  "@financeBudgetAlertOver": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeBudgetAlertNear": "{count, plural, =1{1 budget is close to its limit} other{{count} budgets are close to their limit}}",
+  "@financeBudgetAlertNear": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "financeBudgetAlertUsed": "{name} · {percent}% used",
+  "@financeBudgetAlertUsed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "financeBudgetAlertView": "View budgets",
+  "financeRecurringUpcoming": "Next 30 days",
+  "financeRecurringAllRules": "All rules",
+  "financeRecurringExpectedIn": "Expected in",
+  "financeRecurringExpectedOut": "Expected out",
+  "financeRecurringNoneUpcoming": "Nothing due in the next 30 days"
 }

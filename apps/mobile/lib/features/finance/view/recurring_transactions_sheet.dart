@@ -14,6 +14,7 @@ import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/finance/finance_permissions.dart';
 import 'package:mobile/features/finance/view/recurring_transaction_form.dart';
 import 'package:mobile/features/finance/widgets/finance_money.dart';
+import 'package:mobile/features/finance/widgets/recurring_upcoming.dart';
 import 'package:mobile/features/settings/cubit/finance_preferences_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -21,6 +22,7 @@ import 'package:mobile/l10n/l10n.dart';
 Future<void> openRecurringTransactionsSheet(
   BuildContext context, {
   required String currency,
+  DateTime? now,
 }) async {
   final workspace = context.read<WorkspaceCubit>();
   final actor = context.read<AuthCubit?>();
@@ -35,6 +37,7 @@ Future<void> openRecurringTransactionsSheet(
       final content = _RecurringTransactionsSheet(
         wsId: wsId,
         currency: currency,
+        now: now,
         repository: repository,
         workspace: workspace,
         actor: actor,
@@ -57,10 +60,14 @@ class _RecurringTransactionsSheet extends StatefulWidget {
     required this.workspace,
     required this.actor,
     required this.canManage,
+    this.now,
   });
 
   final String wsId;
   final String currency;
+
+  /// Reference date for the upcoming section; defaults to now.
+  final DateTime? now;
   final FinanceRepository repository;
   final WorkspaceCubit workspace;
   final AuthCubit? actor;
@@ -312,7 +319,15 @@ class _RecurringTransactionsSheetState
               title: l10n.financeRecurringEmpty,
             ),
           )
-        else if (rules != null)
+        else if (rules != null) ...[
+          SliverToBoxAdapter(
+            child: RecurringUpcomingSection(
+              rules: rules,
+              walletById: walletById,
+              currency: widget.currency,
+              now: widget.now ?? DateTime.now(),
+            ),
+          ),
           SliverList.builder(
             itemCount: rules.length,
             itemBuilder: (context, index) {
@@ -346,6 +361,7 @@ class _RecurringTransactionsSheetState
               );
             },
           ),
+        ],
       ],
     );
   }
