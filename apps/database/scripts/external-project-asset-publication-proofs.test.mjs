@@ -26,7 +26,7 @@ test('publication proof migration keeps proof writes and reads behind the servic
     await db.exec(
       await readFile(
         new URL(
-          '../supabase/migrations/20261120133500_external_project_asset_publication_proofs.sql',
+          '../supabase/migrations/20261120141201_external_project_asset_publication_proofs.sql',
           import.meta.url
         ),
         'utf8'
@@ -80,7 +80,7 @@ test('users cannot preserve an asset revision across deletion and replacement', 
     await db.exec(
       await readFile(
         new URL(
-          '../supabase/migrations/20261120140000_stamp_external_project_asset_revisions.sql',
+          '../supabase/migrations/20261120141202_stamp_external_project_asset_revisions.sql',
           import.meta.url
         ),
         'utf8'
