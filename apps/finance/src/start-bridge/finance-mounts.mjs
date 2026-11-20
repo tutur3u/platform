@@ -17,16 +17,15 @@ export function financeBuildBasePath() {
 /**
  * Mounts for one native profile. `rootHost` is the Vite define
  * `VITE_FINANCE_NATIVE_ROOT_HOST`. An empty value admits no host.
+ * The production profile also serves the exact /finance mount on the apex.
  * Passing the apex as the root host throws: that would claim all of tuturuuu.com.
- * `mountHosts` stays empty. Playground's bridge config also rejects
- * unknown hosts and does not list tuturuuu.com. The generated Worker
- * spreads this object over its default, so the apex host is not admitted.
  * The literal return keeps `unknownHost` as `'reject'` for tsc.
  * @returns {{
  *   rootHosts: string[],
  *   mountHosts: string[],
  *   basePath: string,
- *   unknownHost: 'reject'
+ *   unknownHost: 'reject',
+ *   isolation: { ownedCookies: string[] },
  * }}
  */
 export function financeNativeMounts(rootHost) {
@@ -38,9 +37,10 @@ export function financeNativeMounts(rootHost) {
   }
   return {
     rootHosts: host ? [host] : [],
-    mountHosts: [],
+    mountHosts: host === FINANCE_PRODUCTION_ROOT_HOST ? ['tuturuuu.com'] : [],
     basePath: '/finance',
     unknownHost: 'reject',
+    isolation: { ownedCookies: ['NEXT_LOCALE'] },
   };
 }
 

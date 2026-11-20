@@ -28,7 +28,11 @@ test('queue payload derives its canonical target from reviewed config', () => {
     project: record.cf.productionWorker,
     app: 'finance',
     environment: 'production',
-    aliases: [record.cf.productionWorker, ...record.canonicalHosts].sort(),
+    aliases: [
+      record.cf.productionWorker,
+      ...record.canonicalHosts,
+      'https://tuturuuu.com',
+    ].sort(),
   });
   assert.equal(payload.jobType, 'cf-wave1');
 });

@@ -137,12 +137,17 @@ configured separately by the release operator.
 | Field | Value |
 | --- | --- |
 | Worker | `tuturuuu-finance` (production only; `finance-cloudflare.yaml` qualifies staging) |
-| Canonical host | `finance.tuturuuu.com`; the artifact answers 404 on every other host, including `tuturuuu.com/finance` |
+| Canonical host | `finance.tuturuuu.com` |
+| Admitted apex mount | `https://tuturuuu.com/finance`; the production Worker rejects other apex paths and hosts |
 | Secrets (names) | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET`; the Worker refuses to start without the last two |
 | Vars | The production entry of `apps/finance/cloudflare/native-profiles.json`: `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL` and `NEXT_PUBLIC_SUPABASE_URL`. The Supabase URL is a var, so it is not a Worker secret |
 | Compatibility | `2026-10-12`, `nodejs_compat` and `global_fetch_strictly_public`, from `apps/finance/void.config.ts` |
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=finance` from `production` (environment `wave1-finance-production`) |
 | Anonymous `/` | 307 to `https://tuturuuu.com/login`; the pre-seal doctor runs with `--expect-redirect` |
+
+Production Workerd acceptance checks the build identity on both hosts,
+including `/finance/api/build-info` on the apex, before and after restoring the
+sealed archive. The staging profile serves only its own root host.
 
 ## Meet
 

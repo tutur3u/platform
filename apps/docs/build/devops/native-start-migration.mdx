@@ -359,23 +359,18 @@ their maps, and client assets are not modified. The `serverSourceMapsRemoved`
 log line reports the removed count and bytes. Regression coverage lives in
 `scripts/ci/wave1-native-source-maps.test.mjs`.
 
-### Finance held-profile host acceptance
+### Finance host acceptance
 
-Finance's native staging and production qualification profiles admit only their
-selected subdomain root. `apps/finance/start-bridge.config.ts` overrides the
-generated Worker defaults with `mountHosts: []` and `unknownHost: 'reject'`.
-The shared mount resolver applies that override before dispatching any route.
-Consequently, `/api/build-info` on the selected root returns the real generated
-source identity, while both `tuturuuu.com/api/build-info` and
-`tuturuuu.com/finance/api/build-info` return 404. Other profiles' roots and
-unlisted hosts remain rejected. The original emitted-Worker runtime suite
-asserts this matrix in its raw Host subtest.
+Finance staging admits only its reserved subdomain. The production profile
+admits the canonical root and the exact `tuturuuu.com/finance` mount.
+Workerd checks the source identity at `/api/build-info` on the root host and
+`/finance/api/build-info` on the apex, including after archive restore. The
+apex root, sibling prefixes and unlisted hosts return 404.
 
-The basePath readiness target above does not enable a held profile's apex mount.
-A positive mounted acceptance requires an explicitly admitted mount profile and
-its session, origin and cookie-isolation evidence. A 404 on an unadmitted apex
-host is a host-fence result, not evidence that the root build-info route is
-missing. Keep production publication held until the cutover gates are met.
+Mounted Finance validates the access-token-only shared Supabase session. It
+owns only `NEXT_LOCALE`, with `Path=/finance` and no Domain attribute. Web
+owns login, refresh and logout. Gateway routing requires the private signed-in
+smoke and a captured rollback deployment.
 
 ### Finance production publication qualification
 

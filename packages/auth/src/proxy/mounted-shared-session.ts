@@ -30,6 +30,7 @@ import { peekVerifiedTotpFactor } from './verified-request-user';
  */
 export type MountedSharedSessionOptions = {
   mode: 'supabase-only';
+  nextUrlScope?: 'app-relative';
   targetApp: AppName | string;
   webAppUrl: string;
 };
@@ -115,17 +116,25 @@ export async function resolveMountedSharedSession(
 }
 
 /** A same-origin destination inside the mount, or the mount root. */
-export function mountedVerifyDestination(req: NextRequest, basePath: string) {
+export function mountedVerifyDestination(
+  req: NextRequest,
+  basePath: string,
+  scope?: MountedSharedSessionOptions['nextUrlScope']
+) {
   const raw = req.nextUrl.searchParams.get('nextUrl');
   if (!raw) return basePath;
   if (
     /[\\\u0000- ]/u.test(raw) ||
     raw.startsWith('//') ||
-    (!raw.startsWith('/') && !raw.startsWith('https://'))
+    (!raw.startsWith('/') &&
+      (scope === 'app-relative' || !raw.startsWith('https://')))
   )
     return basePath;
   try {
-    const destination = new URL(raw, req.nextUrl.origin);
+    const destination = new URL(
+      scope === 'app-relative' ? `${basePath}${raw}` : raw,
+      req.nextUrl.origin
+    );
     let pathname = destination.pathname;
     for (let depth = 0; depth < 5; depth += 1) {
       if (
@@ -180,6 +189,11 @@ export async function consumeMountedSharedSession(
       headers: NOT_FOUND_HEADERS,
     });
   const basePath = req.nextUrl.basePath;
+  const destination = mountedVerifyDestination(
+    req,
+    basePath,
+    options.nextUrlScope
+  );
   const session = await deps.refresh(req, {
     sessionMode: options.mode,
     targetApp: options.targetApp,
@@ -202,9 +216,14 @@ export async function consumeMountedSharedSession(
         headers: NOT_FOUND_HEADERS,
       });
     const callback = new URL(`${basePath}/verify-token`, req.nextUrl.origin);
+    const relative = destination.slice(basePath.length);
     callback.searchParams.set(
       'nextUrl',
-      mountedVerifyDestination(req, basePath)
+      options.nextUrlScope === 'app-relative'
+        ? relative.startsWith('/')
+          ? relative
+          : `/${relative}`
+        : destination
     );
     login.searchParams.set('returnUrl', callback.toString());
     if (session.error === 'MFA required')
@@ -213,9 +232,7 @@ export async function consumeMountedSharedSession(
     propagateAuthCookies(nonExpiringCookieCarrier(session.response), response);
     return response;
   }
-  const response = authRedirect(
-    new URL(mountedVerifyDestination(req, basePath), req.nextUrl.origin)
-  );
+  const response = authRedirect(new URL(destination, req.nextUrl.origin));
   propagateAuthCookies(session.response, response);
   return response;
 }

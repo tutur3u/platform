@@ -9,12 +9,13 @@ import {
   isFinanceApexRoot,
 } from './finance-mounts.mjs';
 
-test('a production root host stays the subdomain and does not claim the apex', () => {
+test('the production profile retains the subdomain and admits the apex only at /finance', () => {
   assert.deepEqual(financeNativeMounts('finance.tuturuuu.com'), {
     rootHosts: ['finance.tuturuuu.com'],
-    mountHosts: [],
+    mountHosts: ['tuturuuu.com'],
     basePath: '/finance',
     unknownHost: 'reject',
+    isolation: { ownedCookies: ['NEXT_LOCALE'] },
   });
 });
 
@@ -51,6 +52,7 @@ test('staging and an undefined host do not mount the apex', () => {
     mountHosts: [],
     basePath: '/finance',
     unknownHost: 'reject',
+    isolation: { ownedCookies: ['NEXT_LOCALE'] },
   });
 });
 

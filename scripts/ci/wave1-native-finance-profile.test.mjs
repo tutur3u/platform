@@ -47,6 +47,7 @@ test('the Finance wave-1 entry mirrors the reviewed native production profile', 
   const production = financeProfiles.production;
   assert.equal(finance.productionWorker, production.workerName);
   assert.equal(finance.canonicalHost, production.rootHost);
+  assert.deepEqual(finance.releaseRecipe.mountHosts, ['https://tuturuuu.com']);
   assert.deepEqual(finance.sourceVars, production.vars);
   assert.deepEqual(financeVars, production.vars);
   const voidConfig = readFileSync(

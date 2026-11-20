@@ -305,7 +305,7 @@
         "app": "finance",
         "platform": "cf-wave1",
         "canonicalHosts": ["https://finance.tuturuuu.com"],
-        "mountHosts": [],
+        "mountHosts": ["https://tuturuuu.com"],
         "requiredSecretNames": [
           "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
           "SUPABASE_SECRET_KEY",

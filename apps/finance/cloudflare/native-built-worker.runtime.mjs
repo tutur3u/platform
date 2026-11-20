@@ -23,6 +23,7 @@ import {
   fixtureWorkspaceId,
   fixtureWorkspaceName,
   signedSsrFixtureResponse,
+  syntheticMountedSessionHeaders,
   syntheticSessionHeaders,
 } from './signed-ssr-fixture.mjs';
 
@@ -49,6 +50,103 @@ const runtimeExpectations = Object.fromEntries(
       },
     ];
   })
+);
+
+test(
+  'production Finance mounts a read-only shared session with app-scoped cookies and assets',
+  { skip: profile.rootHost !== profiles.production.rootHost, timeout: 90_000 },
+  async (t) => {
+    const origin = 'https://tuturuuu.com';
+    const base = '/finance';
+    const signedCalls = [];
+    const runtime = await financeRuntime(t, {
+      financeOrigin: origin,
+      fixtureResponse: (request) => {
+        assert.doesNotMatch(
+          JSON.stringify([...request.headers]),
+          /fixture-central-provider-refresh|tuturuuu_web_app_session/u
+        );
+        return signedSsrFixtureResponse(request, signedCalls, origin, base);
+      },
+    });
+    const path = `/en/${fixtureWorkspaceId}?ref=a&ref=b`;
+    const anonymous = await runtime.fetch(`${origin}${base}${path}`);
+    assert.equal(anonymous.status, 307);
+    assert.match(anonymous.headers.get('cache-control') ?? '', /no-store/u);
+    const login = new URL(anonymous.headers.get('location'));
+    assert.equal(login.origin, origin);
+    assert.equal(login.pathname, '/login');
+    const callback = new URL(login.searchParams.get('returnUrl'));
+    assert.equal(callback.origin, origin);
+    assert.equal(callback.pathname, '/finance/verify-token');
+    assert.equal(callback.searchParams.get('nextUrl'), path);
+    await anonymous.text();
+
+    const headers = syntheticMountedSessionHeaders(runtime.secret);
+    const verified = await runtime.fetch(callback.href, { headers });
+    assert.equal(verified.status, 307);
+    assert.equal(verified.headers.get('location'), `${origin}${base}${path}`);
+    await verified.text();
+    let signedUrl = `${origin}${base}${path}`;
+    let page = await runtime.fetch(signedUrl, { headers });
+    let localeCookieSeen = false;
+    for (let hop = 0; hop < 4; hop++) {
+      for (const cookie of page.headers.getSetCookie()) {
+        assert.match(cookie, /^NEXT_LOCALE=(en|vi);/u);
+        assert.match(cookie, /;\s*Path=\/finance(?:;|$)/iu);
+        assert.doesNotMatch(cookie, /;\s*Domain=/iu);
+        localeCookieSeen = true;
+        headers.cookie = [
+          ...headers.cookie
+            .split('; ')
+            .filter((part) => !part.startsWith('NEXT_LOCALE=')),
+          cookie.split(';')[0],
+        ].join('; ');
+      }
+      if (![307, 308].includes(page.status)) break;
+      const next = new URL(page.headers.get('location'), signedUrl);
+      assert.equal(next.origin, origin);
+      assert.ok(next.pathname.startsWith(`${base}/`), next.pathname);
+      await page.text();
+      signedUrl = next.href;
+      page = await runtime.fetch(signedUrl, { headers });
+    }
+    assert.equal(page.status, 200, `Signed-in SSR at ${signedUrl}`);
+    assert.ok(
+      localeCookieSeen,
+      'A locale change must exercise the cookie scope'
+    );
+    assert.equal(page.headers.get('cache-control'), 'private, no-store');
+
+    const html = await page.text();
+    assert.ok(html.includes(fixtureWorkspaceName));
+    assert.doesNotMatch(html, /<template[^>]*data-msg=/u);
+    assert.doesNotMatch(
+      html,
+      /(?:href|src|content)=["']https:\/\/finance\.tuturuuu\.com(?=[/?"'])/iu
+    );
+    const assets = [
+      ...html.matchAll(/(?:href|src)=["']((?:\/finance)?\/assets\/[^"']+)/gu),
+    ].map(([, url]) => url);
+    assert.ok(assets.some((asset) => asset.endsWith('.js')));
+    assert.ok(assets.some((asset) => asset.endsWith('.css')));
+    assert.ok(assets.every((asset) => asset.startsWith('/finance/assets/')));
+
+    for (const route of [
+      '/api/auth/refresh-app-session',
+      '/api/auth/verify-app-token',
+    ]) {
+      const refused = await runtime.fetch(`${origin}${base}${route}`, {
+        method: 'POST',
+        headers,
+      });
+      assert.equal(refused.status, 409);
+      assert.deepEqual(refused.headers.getSetCookie(), []);
+      await refused.text();
+    }
+    assert.ok(signedCalls.includes('/auth/v1/user'));
+    assert.deepEqual(runtime.unexpected, []);
+  }
 );
 assert.deepEqual(runtimeExpectationProblems(runtimeExpectations), []);
 
@@ -369,7 +467,7 @@ async function qualifyMode(t, mode) {
   );
 
   await t.test(
-    "raw Host admits its profile root and rejects apex, other profiles' and unlisted hosts",
+    'raw Host enforces the profile host and exact production apex mount',
     async () => {
       for (const mode of modes) {
         const admitted = await runtime.rawFetch(
@@ -378,13 +476,26 @@ async function qualifyMode(t, mode) {
         assert.equal(admitted.status, 200);
         assert.equal((await admitted.json()).commitHash, runtime.source);
       }
-      for (const origin of [
-        ...foreignOrigins,
-        'https://tuturuuu.com',
-        'https://tuturuuu.com/finance',
-        'https://unknown.example.test',
-      ]) {
-        const rejected = await runtime.rawFetch(`${origin}/api/build-info`);
+      const apex = 'https://tuturuuu.com/finance/api/build-info';
+      const rejectedUrls = [
+        ...foreignOrigins.map((origin) => `${origin}/api/build-info`),
+        'https://tuturuuu.com/api/build-info',
+        'https://tuturuuu.com/finance-other/api/build-info',
+        'https://unknown.example.test/api/build-info',
+      ];
+      if (profile.rootHost === profiles.production.rootHost) {
+        const admitted = await runtime.rawFetch(apex);
+        assert.equal(admitted.status, 200);
+        assert.deepEqual(admitted.headers.getSetCookie(), []);
+        assert.equal((await admitted.json()).commitHash, runtime.source);
+        const head = await runtime.rawFetch(apex, { method: 'HEAD' });
+        assert.equal(head.status, 200);
+        assert.equal(await head.text(), '');
+      } else {
+        rejectedUrls.push(apex);
+      }
+      for (const url of rejectedUrls) {
+        const rejected = await runtime.rawFetch(url);
         assert.equal(rejected.status, 404);
         assert.equal(rejected.headers.get('x-frame-options'), 'DENY');
         assert.equal(

@@ -36,6 +36,7 @@ import {
 } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import { FINANCE_INVOICE_ROUTE_POLICY } from './lib/api-route-policies';
+import { isMountedFinance, mountedFinanceAuth } from './lib/mounted-auth';
 import { pinFinanceDeployment } from './lib/vercel-deployment-pin';
 
 // Create the centralized auth middleware
@@ -53,6 +54,7 @@ const authProxy = createCentralizedAuthProxy({
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
+  const mounted = isMountedFinance(req);
   const finish = (response: NextResponse) =>
     pinFinanceDeployment(req, response);
   const workspaceUrl = (pathname: string) => {
@@ -76,7 +78,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     }
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
+      mounted || isLocalAuthApi || isBuildInfoRead || hasBearerApiSession
         ? null
         : await refreshAppSessionForRequest(req, {
             sessionMode: 'supabase-first',
@@ -99,10 +101,12 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
       if (appSessionRefresh) {
         propagateAuthCookies(appSessionRefresh.response, guardResponse);
       }
-      return finish(preserveMfaRecoveryCookies(req, guardResponse));
+      return finish(
+        mounted ? guardResponse : preserveMfaRecoveryCookies(req, guardResponse)
+      );
     }
 
-    if (isBuildInfoRead)
+    if (mounted || isBuildInfoRead)
       return finish(NextResponse.next({ request: { headers: req.headers } }));
 
     return finish(
@@ -111,15 +115,17 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
-    locales: supportedLocales,
-  });
+  const verifyTokenResponse = mounted
+    ? null
+    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return finish(verifyTokenResponse);
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = await authProxy(req);
+  const authRes = mounted
+    ? await mountedFinanceAuth(req)
+    : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it

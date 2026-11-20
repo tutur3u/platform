@@ -1,10 +1,12 @@
 import { OfflineProvider } from '@tuturuuu/offline/provider';
+import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
+import { FINANCE_APEX_URL } from '@/start-bridge/finance-mounts.mjs';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
@@ -13,6 +15,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import type { ReactNode } from 'react';
@@ -28,6 +31,7 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const mounted = (await headers()).get(APP_BASE_HEADER) === '/finance';
   return generateCommonMetadata({
     config: {
       description: {
@@ -42,8 +46,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         'workspace finance',
       ],
       name: siteConfig.name,
-      url: siteConfig.url,
-      ogImage: siteConfig.ogImage,
+      url: mounted ? FINANCE_APEX_URL : siteConfig.url,
+      ogImage: mounted
+        ? `${FINANCE_APEX_URL}/media/logos/og-image.png`
+        : siteConfig.ogImage,
     },
     params,
   });

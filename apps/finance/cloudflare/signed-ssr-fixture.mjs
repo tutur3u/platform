@@ -10,6 +10,7 @@ const user = {
   role: 'authenticated',
   app_metadata: {},
   user_metadata: { display_name: 'Finance Native Fixture' },
+  factors: [],
   created_at: '2026-10-01T00:00:00Z',
 };
 const workspace = {
@@ -48,17 +49,64 @@ export function syntheticSessionHeaders(secret) {
   };
 }
 
-export function signedSsrFixtureResponse(request, calls, financeOrigin) {
+const centralCookieCanary = 'fixture-central-provider-refresh';
+
+export function syntheticMountedSessionHeaders(secret) {
+  const now = Math.floor(Date.now() / 1000);
+  const encode = (value) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+  const unsigned = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
+    sub: fixtureUserId,
+    email: user.email,
+    role: 'authenticated',
+    aud: 'authenticated',
+    aal: 'aal1',
+    iat: now,
+    exp: now + 3600,
+    session_id: fixtureUserId,
+  })}`;
+  const token = `${unsigned}.${createHmac('sha256', secret)
+    .update(unsigned)
+    .digest('base64url')}`;
+  const provider = encode({
+    access_token: token,
+    expires_at: now + 3600,
+    refresh_token: centralCookieCanary,
+    user,
+  });
+  return {
+    cookie: `sb-finance-fixture-auth-token=base64-${provider}; tuturuuu_web_app_session=${centralCookieCanary}; NEXT_LOCALE=vi`,
+    'accept-language': 'en',
+  };
+}
+
+export function signedSsrFixtureResponse(
+  request,
+  calls,
+  financeOrigin,
+  base = ''
+) {
   const url = new URL(request.url);
+  const providerCookie = request.headers
+    .get('cookie')
+    ?.match(/(?:^|;\s*)sb-[\w-]+-auth-token=base64-([\w-]+)(?:;|$)/u);
+  const provider = providerCookie
+    ? JSON.parse(Buffer.from(providerCookie[1], 'base64url').toString('utf8'))
+    : null;
+  const authenticated =
+    request.headers.has('authorization') ||
+    (base &&
+      provider?.user?.id === fixtureUserId &&
+      provider.refresh_token === '');
   const transactions = `/api/workspaces/${fixtureWorkspaceId}/transactions`;
   if (
     url.origin === financeOrigin &&
     request.method === 'GET' &&
-    url.pathname === transactions &&
+    url.pathname === `${base}${transactions}` &&
     url.searchParams.size === 2 &&
     url.searchParams.get('itemsPerPage') === '10' &&
     url.searchParams.get('page') === '1' &&
-    request.headers.has('authorization')
+    authenticated
   ) {
     calls.push(url.pathname);
     return Response.json([]);
@@ -66,11 +114,12 @@ export function signedSsrFixtureResponse(request, calls, financeOrigin) {
   if (
     url.origin === financeOrigin &&
     request.method === 'GET' &&
-    url.pathname === `/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
+    url.pathname ===
+      `${base}/api/workspaces/${fixtureWorkspaceId}/finance/overview` &&
     url.searchParams.size === 2 &&
     url.searchParams.get('includeConfidential') === 'true' &&
     url.searchParams.get('view') === 'date' &&
-    request.headers.has('authorization')
+    authenticated
   ) {
     calls.push(url.pathname);
     return Response.json({
@@ -115,10 +164,10 @@ export function signedSsrFixtureResponse(request, calls, financeOrigin) {
     calls.push(url.pathname);
     return Response.json({ ...user, user });
   }
-  if (
-    url.pathname === '/api/v1/users/me/profile' &&
-    request.headers.has('authorization')
-  ) {
+  if (base && url.pathname === '/auth/v1/.well-known/jwks.json') {
+    return Response.json({ keys: [] });
+  }
+  if (url.pathname === '/api/v1/users/me/profile' && authenticated) {
     calls.push(url.pathname);
     return Response.json({
       ...user,

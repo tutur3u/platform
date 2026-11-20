@@ -39,6 +39,9 @@ const returnUrlSchema = z.object({
 const ROUTE = '/api/v1/auth/cross-app-return';
 
 function decodeReturnUrl(returnUrl: string) {
+  // Decode only an encoded outer URL. Decoding a parsed URL also decodes
+  // separators inside its nextUrl parameter.
+  if (!/^https?%3a/i.test(returnUrl)) return returnUrl;
   try {
     return decodeURIComponent(returnUrl);
   } catch {
@@ -75,8 +78,7 @@ function mountedAppReturnUrl(
 function mapConfiguredUrlToApp(
   returnUrl: string
 ): ResolvedCrossAppTarget | null {
-  const decodedUrl = decodeReturnUrl(returnUrl);
-  const mounted = getMountedAppVerifyTokenMatch(decodedUrl);
+  const mounted = getMountedAppVerifyTokenMatch(returnUrl);
 
   if (mounted) {
     const nextPath = normalizeAuthRedirectPath(
@@ -100,7 +102,7 @@ function mapConfiguredUrlToApp(
   }
 
   try {
-    const appDomain = getAppDomainByUrl(decodedUrl);
+    const appDomain = getAppDomainByUrl(returnUrl);
 
     return appDomain
       ? {
@@ -140,23 +142,18 @@ async function resolveTargetApp(
     };
   }
 
-  const externalApp = await getExternalAppByReturnUrl(
-    decodeReturnUrl(returnUrl)
-  );
+  const externalApp = await getExternalAppByReturnUrl(returnUrl);
 
   if (
     !externalApp ||
-    !matchesRegisteredCallbackPath(
-      decodeReturnUrl(returnUrl),
-      externalApp.callbackPaths ?? []
-    )
+    !matchesRegisteredCallbackPath(returnUrl, externalApp.callbackPaths ?? [])
   ) {
     return null;
   }
 
   return {
     appName: externalApp.displayName,
-    canonicalReturnUrl: decodeReturnUrl(returnUrl),
+    canonicalReturnUrl: returnUrl,
     kind: 'external',
     requirePkce: externalApp.requirePkce === true,
     requiresToken: true,

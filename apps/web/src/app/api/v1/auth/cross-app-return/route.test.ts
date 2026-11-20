@@ -1,6 +1,7 @@
 import { PRODUCTION_INTERNAL_APP_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mountedFinanceAuth } from '../../../../../../../finance/src/lib/mounted-auth';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
@@ -315,6 +316,50 @@ describe('cross-app return route', () => {
     );
     expect(response.status).toBe(401);
   });
+
+  it.each([
+    ['/login', 'https://tuturuuu.com/finance'],
+    [
+      '/en/00000000-0000-4000-8000-000000000001/wallets?ref=a&ref=b',
+      'https://tuturuuu.com/finance/en/00000000-0000-4000-8000-000000000001/wallets?ref=a&ref=b',
+    ],
+  ])(
+    'returns Finance %s through Web login with one mount prefix',
+    async (path, expected) => {
+      const origin = 'https://tuturuuu.com';
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS', 'finance');
+      const request = new NextRequest(`${origin}/finance${path}`, {
+        nextConfig: { basePath: '/finance' },
+      });
+      const handoff = await mountedFinanceAuth(request);
+      expect(handoff.status).toBe(307);
+      const login = new URL(handoff.headers.get('location') ?? '');
+      expect(login.pathname).toBe('/login');
+      const returnUrl = login.searchParams.get('returnUrl') ?? '';
+      expect(new URL(returnUrl).pathname).toBe('/finance/verify-token');
+
+      const retry = await mountedFinanceAuth(
+        new NextRequest(returnUrl, {
+          nextConfig: { basePath: '/finance' },
+        })
+      );
+      expect(retry.status).toBe(307);
+      expect(
+        new URL(retry.headers.get('location') ?? '').searchParams.get(
+          'returnUrl'
+        )
+      ).toBe(returnUrl);
+
+      const final = await POST(createRequest(returnUrl, { origin }));
+      expect(final.status).toBe(200);
+      expect(await final.json()).toEqual({
+        appName: 'finance',
+        targetApp: 'finance',
+        returnUrl: expected,
+      });
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    }
+  );
 
   it.each([
     ['an unsafe nextUrl', 'https%3A%2F%2Fevil.test', '/'],

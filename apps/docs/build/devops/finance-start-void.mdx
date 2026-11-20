@@ -15,12 +15,13 @@ values the release owner needs.
 | Item | Value |
 | --- | --- |
 | Worker | Profile `production` (`VITE_FINANCE_NATIVE_PROFILE=production`): `tuturuuu-finance`. Profile `staging` (default): the staging Worker name. `workers_dev` and preview URLs are off; the config declares no routes |
-| Host | `finance.tuturuuu.com` (root mode, one host per profile; staging admits only its reserved staging host). The `tuturuuu.com/finance` mount is not part of this cutover |
+| Hosts | Production admits `finance.tuturuuu.com` and `tuturuuu.com/finance`. Staging admits its reserved subdomain only. |
 | Bindings | `ASSETS` (worker-first, no SPA fallback) |
 | Vars (production profile, names) | `INTERNAL_WEB_API_ORIGIN`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`, `FINANCE_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`; values live in `cloudflare/native-profiles.json`, never mixed with the staging profile |
 | Secrets (names) | `TUTURUUU_APP_COORDINATION_SECRET`, `SUPABASE_SECRET_KEY`. The Worker refuses to serve without them |
 | Build | `bun turbo:local run build --filter=@tuturuuu/finance^...`, then `VITE_FINANCE_NATIVE_PROFILE=production bun run --cwd apps/finance build:cloudflare`. `finance-cloudflare.yaml` builds the same profile and uploads the sealed `finance-cutover-production-<sha>` artifact; it never publishes |
-| Routing | Attach only `finance.tuturuuu.com/*`; keep the Vercel CNAME and enable its proxy |
+| Routing | Capture separate rollback targets for the canonical host and apex gateway. The gateway operator activates `/finance` and `/finance/*` only after private smoke. |
+| Web login | Add `finance` to Web's comma-separated `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` and capture the prior Web build and list. Coordinate the Web build with gateway activation so the mounted callback uses a direct same-origin return. |
 | Prior Vercel deployment | Not recorded in the repository. Capture the production deployment id, source SHA and the DNS record id, content, proxy state and TTL before the flip |
 
 ## Rollback
@@ -32,6 +33,14 @@ production sync during the flip and watch, because `vercel-production-finance.ya
 runs on `production` pushes and a new Vercel deployment would move the alias the
 rollback relies on. The Worker holds no state and the rollback touches no data.
 
+For apex rollback, restore the captured `tuturuuu-gateway` version at 100%
+traffic using the [gateway rollback procedure](/build/devops/gateway-worker#one-action-rollback-for-a-gateway-mount).
+Confirm that both `/finance` and `/finance/*` return to the captured dispatch
+and that the canonical host still serves its expected build. Restore the prior
+Web build or rebuild with `finance` removed from the active-mount list, preserving
+the other entries. Freeze unrelated gateway and Web changes during the watch
+so the captured versions remain usable.
+
 ## Smoke
 
 ```bash
@@ -39,8 +48,17 @@ node scripts/native-cutover/smoke.mjs --origin https://finance.tuturuuu.com --ap
 curl -s https://finance.tuturuuu.com/api/build-info     # commitHash equals the sealed artifact's source SHA
 curl -sI https://finance.tuturuuu.com/                  # signed out: redirect to the central login
 curl -s -o /dev/null -w '%{http_code}\n' https://finance.tuturuuu.com/api/v1/workspaces   # denied without a session, never 5xx
+curl -fsS https://tuturuuu.com/finance/api/build-info
+curl -sS -D - -o /dev/null 'https://tuturuuu.com/finance?ref=a&ref=b'
+curl -sS -D - -o /dev/null "https://tuturuuu.com/finance/en/${FINANCE_SMOKE_WORKSPACE_ID}/wallets?ref=a&ref=b"
 ```
 
 Only exact GET and HEAD `/api/build-info` are public. The rollback smoke is the
 same runner with `--expect legacy`. After the flip, watch 5xx rate, authentication
 failures and p95 latency for 30 to 60 minutes and roll back on regression.
+
+For apex smoke, compare build-info with the sealed SHA and finish login on the
+workspace URL with a signed-in staging or smoke account. Expect a single
+`/finance` prefix, both query values, and site assets served inside the mount.
+After an apex rollback, repeat the same URLs and compare with the captured
+pre-cutover responses.

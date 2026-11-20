@@ -75,6 +75,7 @@ export {
   appSessionFailureResponse,
   preserveMfaRecoveryCookies,
 } from './mfa-failure';
+export { consumeMountedSharedSession, resolveMountedSharedSession };
 export {
   normalizeAuthRedirectPath,
   withRequestBasePath,
@@ -678,7 +679,6 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
   } = mfa;
 
   return async function authProxy(req: NextRequest): Promise<NextResponse> {
-    // Global payload size check at the edge
     const contentLength = req.headers.get('content-length');
     if (contentLength) {
       const size = parseInt(contentLength, 10);

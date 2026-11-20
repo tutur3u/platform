@@ -75,7 +75,7 @@ async function runRuntimeAcceptance() {
       ? accessFixture()
       : null;
   // N8/N9: each Calendar and Mail artifact must 404 the other environment's host.
-  // The production Finance artifact admits only its own root host.
+  // The production Finance artifact rejects the staging subdomain.
   const foreignHost =
     app === 'calendar' || app === 'mail'
       ? environment === 'production'
@@ -91,7 +91,15 @@ async function runRuntimeAcceptance() {
       app === 'calendar' && environment === 'production'
         ? calendarProductionRuntimeTarget(receipt.profile)
         : null;
-    if (calendarPathTarget) hosts.unshift(calendarPathTarget.host);
+    const financePathTarget =
+      app === 'finance' && environment === 'production'
+        ? {
+            host: new URL(releaseRecipes.finance.mountHosts[0]).hostname,
+            basePath: '/finance',
+          }
+        : null;
+    const pathTarget = calendarPathTarget ?? financePathTarget;
+    if (pathTarget) hosts.unshift(pathTarget.host);
     const appsMountHost =
       app === 'apps' && environment === 'production'
         ? appsProductionMountHost(releaseRecipes.apps)
@@ -151,8 +159,7 @@ async function runRuntimeAcceptance() {
           },
         });
         await worker.ready;
-        const basePath =
-          host === calendarPathTarget?.host ? calendarPathTarget.basePath : '';
+        const basePath = host === pathTarget?.host ? pathTarget.basePath : '';
         const fetchWorker = (path, init = {}, jwt = access?.token()) =>
           worker.fetch(`https://${host}${basePath}${path}`, {
             ...init,
@@ -213,7 +220,7 @@ async function runRuntimeAcceptance() {
         if (basePath) {
           for (const path of [
             '/api/build-info',
-            '/calendar-other/api/build-info',
+            `${basePath}-other/api/build-info`,
           ]) {
             const refused = await worker.fetch(`https://${host}${path}`, {
               redirect: 'manual',
@@ -221,7 +228,7 @@ async function runRuntimeAcceptance() {
             assert.equal(refused.status, 404, `${host}${path} must 404`);
             assert.deepEqual(refused.headers.getSetCookie(), []);
           }
-          for (const probe of calendarPathTarget.functionProbes) {
+          for (const probe of calendarPathTarget?.functionProbes ?? []) {
             const refused = await fetchWorker(probe.path, {
               method: probe.method,
               headers: probe.headers,
@@ -263,6 +270,19 @@ async function runRuntimeAcceptance() {
         );
         assert.equal(info.environment, environment);
         assert.match(identity.headers.get('cache-control'), /no-store/);
+        if (host === financePathTarget?.host)
+          assert.deepEqual(identity.headers.getSetCookie(), []);
+        if (host === financePathTarget?.host) {
+          for (const path of [
+            '/api/auth/refresh-app-session',
+            '/api/auth/verify-app-token',
+          ]) {
+            const refused = await fetchWorker(path, { method: 'POST' });
+            assert.equal(refused.status, 409);
+            assert.deepEqual(refused.headers.getSetCookie(), []);
+            await refused.body?.cancel();
+          }
+        }
         const post = await fetchWorker('/api/build-info', { method: 'POST' });
         // Finance's proxy refuses every unregistered anonymous API request.
         assert.equal(
@@ -308,9 +328,8 @@ async function runRuntimeAcceptance() {
           await readFile(join(appRoot, 'dist', file))
         );
         if (app === 'mail' || app === 'calendar' || app === 'finance') {
-          const page = await fetchWorker(
-            '/en/00000000-0000-4000-8000-000000000001'
-          );
+          const workspace = '/en/00000000-0000-4000-8000-000000000001';
+          const page = await fetchWorker(workspace);
           assert.equal(
             page.status,
             307,
@@ -321,7 +340,20 @@ async function runRuntimeAcceptance() {
             target.hostname,
             environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
           );
-          if (basePath && !target.pathname.includes('login')) {
+          if (host === financePathTarget?.host) {
+            assert.equal(target.pathname, '/login');
+            assert.match(page.headers.get('cache-control') ?? '', /no-store/u);
+            assert.deepEqual(page.headers.getSetCookie(), []);
+            const returnUrl = new URL(target.searchParams.get('returnUrl'));
+            assert.equal(returnUrl.origin, 'https://tuturuuu.com');
+            assert.equal(returnUrl.pathname, '/finance/verify-token');
+            assert.equal(returnUrl.searchParams.get('nextUrl'), workspace);
+          }
+          if (
+            calendarPathTarget &&
+            basePath &&
+            !target.pathname.includes('login')
+          ) {
             assert.equal(
               target.href,
               `https://${host}${basePath}/00000000-0000-4000-8000-000000000001`,
