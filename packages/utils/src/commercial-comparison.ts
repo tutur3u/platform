@@ -40,6 +40,13 @@ const advanced: ComparisonFeature[] = [
     values: ['internal', 'internal', 'internal', 'internal'],
   },
   {
+    id: 'deployCoordinator',
+    app: 'deploy-coordinator',
+    category: 'internal',
+    detail: 'standard',
+    values: ['internal', 'internal', 'internal', 'internal'],
+  },
+  {
     id: 'mastermind',
     app: 'mastermind',
     category: 'internal',
