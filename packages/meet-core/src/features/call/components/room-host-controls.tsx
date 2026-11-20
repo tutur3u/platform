@@ -46,7 +46,9 @@ export function RoomHostControls({
       <Accordion type="multiple">
         <AccordionItem value="approved" className="border-0">
           <AccordionTrigger className="gap-2 text-sm">
-            <BadgeCheck className="size-4 shrink-0" />
+            <span aria-hidden="true" className="shrink-0">
+              <BadgeCheck className="size-4" />
+            </span>
             <span className="flex-1 text-left">{t('approved_people')}</span>
             <Badge variant="secondary">{approved.length}</Badge>
           </AccordionTrigger>

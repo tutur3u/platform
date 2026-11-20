@@ -97,3 +97,39 @@ it('puts pinned, sharing and speaking tiles first and keeps off-page audio mount
     undefined
   );
 });
+
+it('resizes and resets the shared-screen split without replacing its tile', () => {
+  const participant = {
+    userId: 'presenter',
+    displayName: 'Presenter',
+    media: { audioEnabled: false, videoEnabled: false, screenEnabled: true },
+  };
+  const room = {
+    remoteMedia: {},
+    state: {
+      ...INITIAL_CALL_STATE,
+      participants: { presenter: participant },
+    },
+  } as unknown as MeetRoomController;
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <CallStage
+        room={room}
+        layout="auto"
+        focus={null}
+        onFocus={vi.fn()}
+        onChat={vi.fn()}
+      />
+    </NextIntlClientProvider>
+  );
+  const tile = screen.getByTestId('presenter:screen');
+  const separator = screen.getByRole('separator', {
+    name: 'Resize spotlight and filmstrip',
+  });
+  expect(separator.getAttribute('aria-orientation')).toBe('horizontal');
+  fireEvent.keyDown(separator, { key: 'ArrowUp' });
+  expect(separator.getAttribute('aria-valuenow')).toBe('65');
+  fireEvent.doubleClick(separator);
+  expect(separator.getAttribute('aria-valuenow')).toBe('70');
+  expect(screen.getByTestId('presenter:screen')).toBe(tile);
+});

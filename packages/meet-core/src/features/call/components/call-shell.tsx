@@ -61,6 +61,7 @@ import {
   PlaybackVolumeProvider,
 } from './playback-volume';
 import { ReactionOverlay } from './reaction-overlay';
+import { CallPanelOwnerContext } from './resizable-call-panel';
 import { CallClock } from './call-clock';
 import { ScreenAudioStatus } from './screen-audio-status';
 import { SharedAudioControl } from './shared-audio-control';
@@ -466,8 +467,8 @@ function CallShellContent({
         <main
           className={
             showDocument
-              ? 'relative min-h-0 flex-1'
-              : 'relative min-h-0 flex-1 p-2 sm:p-3'
+              ? 'relative min-h-0 min-w-0 flex-1'
+              : 'relative min-h-0 min-w-0 flex-1 p-2 sm:p-3'
           }
         >
           {room.screenStream && (
@@ -687,7 +688,9 @@ export function ConnectedCallShell(
 ) {
   return (
     <PlaybackVolumeProvider>
-      <CallShellContent {...props} />
+      <CallPanelOwnerContext.Provider value={props.accountId}>
+        <CallShellContent {...props} />
+      </CallPanelOwnerContext.Provider>
     </PlaybackVolumeProvider>
   );
 }

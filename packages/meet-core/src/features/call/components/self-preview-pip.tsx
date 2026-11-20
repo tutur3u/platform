@@ -36,6 +36,14 @@ import {
 } from '../lib/pip-layout';
 
 const NO_INSETS: Insets = { top: 0, right: 0, bottom: 0, left: 0 };
+function getPipStorage() {
+  try {
+    return typeof window === 'undefined' ? null : window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
 const useIsomorphicLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
@@ -74,12 +82,7 @@ export function SelfPreviewPip({
   className?: string;
 }) {
   const t = useTranslations('meet.call');
-  const resolvedStorage =
-    storage === undefined
-      ? typeof window === 'undefined'
-        ? null
-        : window.localStorage
-      : storage;
+  const resolvedStorage = storage === undefined ? getPipStorage() : storage;
   const [prefs, setPrefs] = useState<PipPrefs>(() =>
     readPipPrefs(resolvedStorage)
   );

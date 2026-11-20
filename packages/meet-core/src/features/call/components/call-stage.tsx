@@ -1,12 +1,20 @@
 'use client';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
   type CSSProperties,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -17,9 +25,13 @@ import { attachMediaPlayback } from '../lib/media-playback';
 import { orderStageTiles } from '../lib/negotiation';
 import { usePlaybackVolume } from './playback-volume';
 import type { MeetRoomController } from '../lib/room-controller';
+import { CallResizeHandle } from './call-resize-handle';
 import { MiraParticipant } from './mira-participant';
 import { ParticipantTile } from './participant-tile';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
+const densities = ['auto', 'large', 'compact'] as const;
+type GridDensity = (typeof densities)[number];
+
 type Tile = {
   key: string;
   userId: string;
@@ -58,11 +70,11 @@ export function CallStage({
 }) {
   const t = useTranslations('meet.call');
   const labels = useLargeRoomLabels();
-  const mobile = useSyncExternalStore(
-    watchCompactStage,
-    isCompactStage,
-    () => false
-  );
+  const mobile = useCompactStage();
+  const stageId = useId();
+  const [density, setDensity] = useState<GridDensity>('auto');
+  const [filmstripWidth, setFilmstripWidth] = useState(25);
+  const [spotlightHeight, setSpotlightHeight] = useState(70);
   const [requestedPage, setPage] = useState(0);
   const [blockedAudio, setBlockedAudio] = useState<Set<string>>(
     () => new Set()
@@ -241,18 +253,41 @@ export function CallStage({
   );
   const focusedKey = focus === 'mira' && mira ? 'mira' : focused?.key;
   const count = visible.length + (mira ? 1 : 0);
+  const split = !compact && spotlight && !!focusedKey && count > 1;
+  const sidebar = split && layout === 'sidebar' && !mobile;
   const tileClass = (key: string) => {
     if (compact) return 'aspect-video w-40 shrink-0 lg:w-full';
-    if (!spotlight) return 'min-h-32';
-    const primary = key === focusedKey;
-    return cn(
-      primary ? 'order-first col-span-full min-h-0' : 'min-h-0',
-      layout === 'sidebar' &&
-        (primary ? 'lg:col-span-1 lg:row-span-full' : 'lg:col-start-2')
-    );
+    if (!spotlight) return density === 'compact' ? 'min-h-24' : 'min-h-32';
+    if (key === focusedKey)
+      return sidebar
+        ? 'order-[-2] col-start-1 row-span-full min-h-0'
+        : 'order-[-2] col-span-full min-h-0';
+    return sidebar ? 'col-start-3 min-h-0' : 'min-h-0';
   };
   return (
     <div className="flex h-full min-h-0 flex-col">
+      {!compact && !spotlight && count > 1 && (
+        <div className="flex shrink-0 justify-end p-1">
+          <Select
+            value={density}
+            onValueChange={(value) => setDensity(value as GridDensity)}
+          >
+            <SelectTrigger
+              aria-label={t('tile_size')}
+              className="h-7 w-auto gap-2"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              {densities.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {t(`tile_size_${option}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {paged && (
         <nav
           aria-label={labels('stage_pages')}
@@ -325,20 +360,54 @@ export function CallStage({
         </Button>
       )}
       <div
-        style={{ '--stage-rows': Math.max(1, count - 1) } as CSSProperties}
+        id={stageId}
+        style={
+          {
+            '--stage-rows': Math.max(1, count - 1),
+            '--stage-rail': `${filmstripWidth}%`,
+            '--stage-primary': `${spotlightHeight}%`,
+          } as CSSProperties
+        }
         className={cn(
-          'grid flex-1 min-h-0 gap-3 overflow-auto p-1',
-          compact
-            ? 'flex gap-2 lg:flex-col'
-            : spotlight
-              ? 'auto-rows-[8rem] grid-cols-2 grid-rows-[minmax(0,1fr)]'
-              : cn('auto-rows-[minmax(8rem,1fr)]', columns(count)),
+          'grid min-h-0 flex-1 gap-3 overflow-auto p-1',
+          compact && 'flex gap-2 lg:flex-col',
           !compact &&
             spotlight &&
-            layout === 'sidebar' &&
-            'lg:grid-cols-[minmax(0,1fr)_13rem] lg:grid-rows-[repeat(var(--stage-rows),minmax(0,1fr))]'
+            (sidebar
+              ? 'grid-cols-[minmax(0,1fr)_0.5rem_var(--stage-rail)] grid-rows-[repeat(var(--stage-rows),minmax(5rem,1fr))] gap-2'
+              : cn(
+                  'auto-rows-[8rem] grid-cols-2',
+                  split
+                    ? 'grid-rows-[minmax(0,var(--stage-primary))_0.5rem] gap-2'
+                    : 'grid-rows-[minmax(0,1fr)]'
+                )),
+          !compact &&
+            !spotlight &&
+            (density === 'auto'
+              ? cn('auto-rows-[minmax(8rem,1fr)]', columns(count))
+              : density === 'large'
+                ? 'auto-rows-[minmax(8rem,1fr)] grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))]'
+                : 'auto-rows-[minmax(6rem,1fr)] grid-cols-[repeat(auto-fit,minmax(min(100%,10rem),1fr))]')
         )}
       >
+        {split && (
+          <CallResizeHandle
+            label={t('resize_filmstrip')}
+            controls={stageId}
+            axis={sidebar ? 'x' : 'y'}
+            size={sidebar ? filmstripWidth : spotlightHeight}
+            min={sidebar ? 15 : 30}
+            max={sidebar ? 45 : 80}
+            initial={sidebar ? 25 : 70}
+            onResize={sidebar ? setFilmstripWidth : setSpotlightHeight}
+            reverse={sidebar}
+            percent
+            className={cn(
+              'relative order-[-1]',
+              sidebar ? 'col-start-2 row-span-full' : 'col-span-full'
+            )}
+          />
+        )}
         {visible.map((tile) => render(tile, tileClass(tile.key)))}
         {renderMira(tileClass('mira'), compact)}
       </div>
@@ -386,6 +455,10 @@ function StageAudio({
       void audio.setSinkId(outputDeviceId).catch(() => onBlocked(id, true));
   }, [id, onBlocked, outputDeviceId]);
   return <audio ref={ref} data-stage-audio autoPlay muted={muted} />;
+}
+
+export function useCompactStage() {
+  return useSyncExternalStore(watchCompactStage, isCompactStage, () => false);
 }
 
 function isCompactStage() {

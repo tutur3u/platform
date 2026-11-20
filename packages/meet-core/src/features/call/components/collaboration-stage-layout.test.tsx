@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../../../../apps/meet/messages/en.json';
 import type { MeetRoomController } from '../lib/room-controller';
 import { type CallLayout, CallStage } from './call-stage';
@@ -18,6 +18,16 @@ vi.mock('../lib/media-playback', () => ({
 vi.mock('../lib/video-presentation', () => ({
   observeVideoPresentation: () => undefined,
 }));
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    }
+  );
+});
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -99,30 +109,32 @@ it.each(['auto', 'grid', 'spotlight', 'sidebar'] as CallLayout[])(
     expect(audio?.muted).toBe(false);
   }
 );
-it('uses a bounded mobile filmstrip and distinct desktop pane widths for each content layout', () => {
-  const widths: string[] = [];
-  for (const layout of [
-    'auto',
-    'grid',
-    'spotlight',
-    'sidebar',
-  ] as CallLayout[]) {
-    const { container, unmount } = render(
-      <CollaborationStageLayout
-        content={<div>Doc</div>}
-        stage={<div>Peer</div>}
-        layout={layout}
-      />
+it.each([false, true])(
+  'gives collaboration a focusable splitter when compact viewport is %s',
+  (mobile) => {
+    vi.stubGlobal('matchMedia', () => ({
+      matches: mobile,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }));
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <CollaborationStageLayout
+          content={<div>Doc</div>}
+          stage={<div>Peer</div>}
+          layout="grid"
+        />
+      </NextIntlClientProvider>
     );
-    const wrapper = container.firstElementChild!;
-    expect(wrapper.className).toContain('flex-col lg:flex-row');
-    const rail = wrapper.lastElementChild!;
-    expect(rail.className).toContain('shrink-0');
-    widths.push(rail.className);
-    unmount();
+    const splitter = screen.getByRole('separator', {
+      name: 'Resize collaboration and video panes',
+    });
+    expect(splitter.getAttribute('aria-orientation')).toBe(
+      mobile ? 'horizontal' : 'vertical'
+    );
+    expect(splitter.tabIndex).toBe(0);
   }
-  expect(new Set(widths).size).toBe(3);
-});
+);
 
 it('preserves every camera/screen media node and local playback state while changing modes and focus', () => {
   const controller = room();

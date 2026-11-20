@@ -105,7 +105,9 @@ export function ParticipantsPanel({
         >
           <AccordionItem value="requests" className="border-0">
             <AccordionTrigger className="gap-2 text-sm">
-              <UserRoundPlus className="size-4 shrink-0" />
+              <span aria-hidden="true" className="shrink-0">
+                <UserRoundPlus className="size-4" />
+              </span>
               <span className="flex-1 text-left">{t('requests')}</span>
               <Badge variant="secondary">{waiting.length}</Badge>
             </AccordionTrigger>

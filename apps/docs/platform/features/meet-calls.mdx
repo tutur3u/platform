@@ -458,6 +458,25 @@ locally and affect the transmitted video; no image is sent to an AI provider
 for these effects. Soft portrait is subtle whole-frame smoothing and lighting,
 not face-aware cosmetic placement. Reactions are temporary and rate limited.
 
+In the web call, drag the divider beside Participants, Chat, Notes or another
+side panel to change the dock width. The dock starts at 360 px, and each account
+keeps its preferred width in that browser. The dock stacks below the stage on
+narrow screens.
+
+Grid lets you choose automatic, large or compact tiles. Spotlight and Sidebar
+expose a divider between the featured camera or shared screen and the filmstrip.
+With a shared document or programming workbench open, drag the divider between
+the collaboration surface and the video feeds. The floating self-view snaps
+to any corner and has three sizes.
+
+Use the arrow keys on a focused divider to resize it. Double-click a divider
+to reset it. On the dock and spotlight dividers, Home and End select the size
+limits and Enter resets the size. Layout changes affect only your view.
+
+Regression coverage lives in `resizable-call-panel.test.tsx`,
+`call-stage.test.tsx`, `collaboration-stage-layout.test.tsx`,
+`participants-panel.test.tsx` and `self-preview-pip.test.tsx`.
+
 The host's People panel contains persistent approved participants. Admission
 adds a signed-in identity to this room's approved list, so reconnects and later
 visits bypass the lobby. Forgetting approval requires admission on the next
