@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
@@ -20,9 +19,7 @@ import 'package:mobile/l10n/gen/app_localizations_en.dart';
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
-import '../../../helpers/mastermind_ship_pump.dart';
 import '../../../helpers/mastermind_view_harness.dart';
-import '../../../helpers/mastermind_work_pump.dart';
 import 'mastermind_reply_test_actions.dart';
 
 const _id = 'item-f23ae309c10a83c168e3';
@@ -189,20 +186,6 @@ void main() {
       expect(find.byType(TextField), findsOneWidget);
     });
   }
-
-  testWidgets('Home See all opens Inbox Needs you', (tester) async {
-    final json = _fixture();
-    ((json['now'] as Map)['needs_you'] as List).addAll([
-      for (var i = 200; i < 203; i++) inboxItem(i),
-    ]);
-    final router = workRouter(Routes.mastermind);
-    await pumpShip(tester, json, router: router);
-    await tester.tap(find.text('Show all 5').first);
-    await tester.pumpAndSettle();
-    expect(workUri(router).path, Routes.mastermindInbox);
-    expect(workUri(router).queryParameters['segment'], isNull);
-    expect(find.byType(MastermindInboxPage), findsOneWidget);
-  });
 
   test('duplicate ids collapse and answered asks never enter Needs you', () {
     final json = _fixture();

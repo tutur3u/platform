@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -72,111 +71,6 @@ void main() {
       expect(find.text('Open tuturuuu item'), findsNothing);
       await _segment(tester, 'Lanes');
       expect(find.text('Old running'), findsOneWidget);
-    });
-
-    testWidgets('keeps the segment in the URL, Lanes being the bare tab', (
-      tester,
-    ) async {
-      final router = workRouter(Routes.mastermindWork);
-      await pumpWork(tester, _json(), router: router);
-      String location() => workUri(router).toString();
-
-      await _segment(tester, 'Backlog');
-      expect(location(), '${Routes.mastermindWork}?segment=backlog');
-      await _segment(tester, 'Staff');
-      expect(location(), '${Routes.mastermindWork}?segment=staff');
-      await _segment(tester, 'Lanes');
-      expect(location(), Routes.mastermindWork);
-    });
-
-    testWidgets('keeps the lane filters in the URL across segments', (
-      tester,
-    ) async {
-      final router = workRouter(Routes.mastermindWork);
-      await pumpWork(tester, _json(), router: router);
-      await tester.tap(find.widgetWithText(AppChip, '1 failed'));
-      await tester.pumpAndSettle();
-      await _segment(tester, 'Staff');
-      expect(
-        workUri(router).toString(),
-        '${Routes.mastermindWork}?segment=staff&state=failed',
-      );
-      await _segment(tester, 'Lanes');
-      expect(workUri(router).queryParameters['state'], 'failed');
-      expect(find.text('Old running'), findsNothing);
-      expect(find.text('Broken lane'), findsOneWidget);
-    });
-
-    testWidgets('opens on the segment the URL names', (tester) async {
-      for (final (query, expected) in [
-        ('backlog', 'Open tuturuuu item'),
-        ('staff', 'Writer desk'),
-        ('lanes', 'Old running'),
-        ('nonsense', 'Old running'),
-      ]) {
-        final router = workRouter('${Routes.mastermindWork}?segment=$query');
-        await pumpWork(tester, _json(), router: router);
-        expect(find.text(expected), findsOneWidget, reason: query);
-      }
-    });
-
-    testWidgets('follows a new segment while the page is open', (tester) async {
-      final router = workRouter(Routes.mastermindWork);
-      await pumpWork(tester, _json(), router: router);
-      router.go('${Routes.mastermindWork}?segment=staff');
-      await tester.pumpAndSettle();
-      expect(find.text('Writer desk'), findsOneWidget);
-      router.go(Routes.mastermindWork);
-      await tester.pumpAndSettle();
-      expect(find.text('Old running'), findsOneWidget);
-    });
-
-    testWidgets('system Back after several switches leaves Work', (
-      tester,
-    ) async {
-      final router = workRouter(Routes.mastermindWork);
-      await pumpWork(tester, _json(), router: router);
-      final platformCalls = <String>[];
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async {
-          platformCalls.add(call.method);
-          return null;
-        },
-      );
-      addTearDown(
-        () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-          SystemChannels.platform,
-          null,
-        ),
-      );
-      await _segment(tester, 'Backlog');
-      await _segment(tester, 'Staff');
-      await _segment(tester, 'Lanes');
-      await _segment(tester, 'Backlog');
-
-      // A segment switch replaces the location, so Work holds no history of
-      // them: Back leaves Work (here, the app) and does not step to Lanes.
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
-      expect(platformCalls, contains('SystemNavigator.pop'));
-      expect(workUri(router).queryParameters['segment'], 'backlog');
-      expect(find.text('Old running'), findsNothing);
-    });
-
-    testWidgets('a lane pushed over the Lanes segment pops back to it', (
-      tester,
-    ) async {
-      final router = workRouter(Routes.mastermindWork);
-      await pumpWork(tester, _json(), router: router);
-      await _segment(tester, 'Backlog');
-      await _segment(tester, 'Lanes');
-      await tester.tap(find.text('Broken lane'));
-      await tester.pumpAndSettle();
-      router.pop();
-      await tester.pumpAndSettle();
-      expect(find.text('Broken lane'), findsOneWidget);
-      expect(workUri(router).path, Routes.mastermindWork);
     });
 
     test('a deep link to a segment opens the tab root', () {

@@ -43,9 +43,9 @@
     }
   ],
   "summary": {
-    "total": 811,
+    "total": 812,
     "categories": {
-      "api": 614,
+      "api": 615,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -54,7 +54,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 799 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 800 }
   },
   "routes": [
     {
@@ -5815,6 +5815,14 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/attendance",
       "source": "apps/web/src/app/api/v1/workspaces/[wsId]/users/[userId]/attendance/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/billing",
+      "source": "apps/web/src/app/api/v1/workspaces/[wsId]/users/[userId]/billing/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

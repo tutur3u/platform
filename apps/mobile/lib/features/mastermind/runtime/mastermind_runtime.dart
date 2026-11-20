@@ -13,6 +13,8 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart'
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/iris/data/http_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay_factory.dart';
@@ -42,8 +44,10 @@ final class MastermindRuntime {
     this.askDetails,
     IrisRelay? iris,
     this.irisTrust,
+    FleetCubit? fleet,
     Stream<bool>? onlineChanges,
-  }) : iris = iris ?? const UnconfiguredIrisRelay(),
+  }) : _fleet = fleet,
+       iris = iris ?? const UnconfiguredIrisRelay(),
        replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
        answered = answered ?? MastermindAnsweredElsewhereCubit(),
        _source = source,
@@ -157,6 +161,12 @@ final class MastermindRuntime {
   /// the app leaves the foreground, and its key and enrolment go with the
   /// account on logout or account switch.
   final IrisDeviceTrust? irisTrust;
+
+  /// The live fleet snapshot behind Today, Inbox and Work. Created on first
+  /// use so a runtime that never shows a fleet tab opens no API client.
+  FleetCubit get fleet => _fleet ??= FleetCubit(source: FleetRepository());
+  FleetCubit? _fleet;
+
   final MastermindSnapshotSource? _source;
   final MastermindReplyTransport? _replyTransport;
   late final StreamSubscription<MastermindAccessState> _accessSub;
@@ -165,10 +175,11 @@ final class MastermindRuntime {
 
   // Losing access erases the held snapshot, memory and disk.
   void _onAccess(MastermindAccessState state) {
-    if (state.status == MastermindAccessStatus.loaded &&
-        !state.enabled &&
-        snapshot.state is! MastermindSnapshotInitial) {
-      unawaited(snapshot.clear());
+    if (state.status == MastermindAccessStatus.loaded && !state.enabled) {
+      _fleet?.clear();
+      if (snapshot.state is! MastermindSnapshotInitial) {
+        unawaited(snapshot.clear());
+      }
     }
   }
 
@@ -200,6 +211,7 @@ final class MastermindRuntime {
     // deep link on screen is held rather than redirected during the switch.
     final synced = access.sync(wsId);
     answered.clear();
+    _fleet?.clear();
     await Future.wait([
       snapshot.clear(),
       replies.clear(),
@@ -240,6 +252,7 @@ final class MastermindRuntime {
     scheduler.dispose();
     await replies.close();
     await answered.close();
+    await _fleet?.close();
     await snapshot.close();
     await access.close();
     if (_source case final HubHttpSnapshotSource live) live.close();

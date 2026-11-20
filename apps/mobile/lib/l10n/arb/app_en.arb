@@ -2234,7 +2234,16 @@
   "contactsAttendance": "Attendance",
   "contactsAttendanceClear": "Not marked",
   "contactsAttendanceForDay": "{group} · {date}",
-  "@contactsAttendanceForDay": {"placeholders": {"group": {"type": "String"}, "date": {"type": "String"}}},
+  "@contactsAttendanceForDay": {
+    "placeholders": {
+      "group": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "contactsAttendanceSaved": "Attendance saved.",
   "contactsAttentionCaption": "In the loaded list",
   "contactsColorEnergy": "Energy",
@@ -2366,9 +2375,24 @@
   "crmCsvPromotionNames": "Linked promotion names",
   "crmCsvInvalid": "The CSV could not be read. Check the file encoding and quoted fields.",
   "crmCsvPage": "Page {page} of {total}",
-  "@crmCsvPage": {"placeholders": {"page": {"type": "int"}, "total": {"type": "int"}}},
+  "@crmCsvPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "crmCsvSkipped": "{count} invalid or duplicate rows skipped.",
-  "@crmCsvSkipped": {"placeholders": {"count": {"type": "int"}}},
+  "@crmCsvSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "crmDeleteUserConfirm": "Delete this user?",
   "crmDeleteUserSuccess": "User deleted.",
   "crmDetectDuplicates": "Detect duplicates",
@@ -8460,5 +8484,170 @@
     }
   },
   "financePromotionDeleteBody": "This cannot be undone.",
-  "financePromotionNone": "No promotion"
+  "financePromotionNone": "No promotion",
+  "mastermindFleetAgeNow": "just now",
+  "mastermindFleetAgeMinutes": "{count} min ago",
+  "@mastermindFleetAgeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetAgeHours": "{count} h ago",
+  "@mastermindFleetAgeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetAgeDays": "{count} d ago",
+  "@mastermindFleetAgeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetUpdated": "Updated {age}",
+  "@mastermindFleetUpdated": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetStale": "Last update {age}. The fleet publisher may be paused.",
+  "@mastermindFleetStale": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetRefreshFailed": "Couldn't refresh · showing {age}",
+  "@mastermindFleetRefreshFailed": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetHealthEyebrow": "Fleet health",
+  "mastermindFleetHeadlineNeedsYou": "{count, plural, =1{1 decision needs you} other{{count} decisions need you}}",
+  "@mastermindFleetHeadlineNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetHeadlineFailed": "{count, plural, =1{1 lane failed today} other{{count} lanes failed today}}",
+  "@mastermindFleetHeadlineFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetHeadlineRunning": "{count, plural, =1{1 lane running} other{{count} lanes running}}",
+  "@mastermindFleetHeadlineRunning": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetHeadlineQuiet": "The fleet is quiet",
+  "mastermindFleetMachinesOnline": "Machines online",
+  "mastermindFleetMachinesValue": "{online} of {total}",
+  "@mastermindFleetMachinesValue": {
+    "placeholders": {
+      "online": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetOrchestratorWorking": "Working",
+  "mastermindFleetOrchestratorWaiting": "Waiting",
+  "mastermindFleetOrchestratorIdle": "Idle",
+  "mastermindFleetOrchestratorOffline": "Offline",
+  "mastermindFleetStateRunning": "Running",
+  "mastermindFleetStateWaiting": "Waiting",
+  "mastermindFleetStateQueued": "Queued",
+  "mastermindFleetStateIdle": "Idle",
+  "mastermindFleetStateFailed": "Failed",
+  "mastermindFleetNeedsYouTitle": "Needs you",
+  "mastermindFleetSeeAll": "See all",
+  "mastermindFleetMachinesTitle": "Machines",
+  "mastermindFleetMachineActive": "{count, plural, =0{No active lanes} =1{1 active lane} other{{count} active lanes}}",
+  "@mastermindFleetMachineActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetMachineOnline": "Online",
+  "mastermindFleetMachineStale": "Not seen recently",
+  "mastermindFleetMachineOffline": "Offline",
+  "mastermindFleetInboxEmpty": "Nothing needs you",
+  "mastermindFleetAnsweredTitle": "Answered",
+  "mastermindFleetUrgent": "Urgent",
+  "mastermindFleetHigh": "High priority",
+  "mastermindFleetFyi": "FYI",
+  "mastermindFleetRecommended": "Recommended",
+  "mastermindFleetDue": "Due {time}",
+  "@mastermindFleetDue": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetApprove": "Approve",
+  "mastermindFleetHold": "Hold",
+  "mastermindFleetReply": "Reply",
+  "mastermindFleetReplyTitle": "Reply to {name}",
+  "@mastermindFleetReplyTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetReplyPlaceholder": "Your answer",
+  "mastermindFleetReplySend": "Send",
+  "mastermindFleetAnswerApproved": "Approved",
+  "mastermindFleetAnswerHeld": "On hold",
+  "mastermindFleetAnswerReplied": "Replied",
+  "mastermindFleetAnswerWaiting": "Waiting for {name}",
+  "@mastermindFleetAnswerWaiting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAnswerReceived": "Received by {name}",
+  "@mastermindFleetAnswerReceived": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAnswerSending": "Sending",
+  "mastermindFleetAnswerNotSent": "Not sent",
+  "mastermindFleetByMachine": "By machine",
+  "mastermindFleetByProvider": "By provider",
+  "mastermindFleetLanesEmpty": "No lanes here",
+  "mastermindFleetOtherProvider": "Other",
+  "mastermindFleetNotPublishedTitle": "The fleet hasn't synced yet",
+  "mastermindFleetUnavailableTitle": "Can't reach the fleet",
+  "mastermindFleetUnreadableTitle": "Update the app to read the latest fleet data"
 }

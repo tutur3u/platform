@@ -587,6 +587,16 @@ and the pre-`runApp` join. Completion-barrier tests live in
   rules, notice versioning and exceptions. Verify startup ordering,
   persistence, native defaults and Settings controls with the telemetry suites.
 
+## Mastermind fleet sync
+
+- Today, Inbox and Work read `FleetCubit` (`features/mastermind/fleet/`) over
+  `GET /api/v1/mastermind/fleet/state`, not the hub snapshot. Screens attach
+  through `FleetSection`, which polls every 15 s only while attached and
+  resumed. Answers go through `FleetCubit.answer`/`retry`, which keep one
+  Idempotency-Key per answer (sent in the body). Pages take a `now` clock for
+  tests; `test/helpers/mastermind_fleet_fixture.dart` holds the synthetic
+  snapshot and fake source.
+
 ## Mastermind Machines
 
 - The read-only Machines parser lives in `features/mastermind/machines/`. Keep

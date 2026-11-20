@@ -86,19 +86,15 @@ void main() {
   });
 
   group('mini-app shell', () {
-    test(
-      'has five tabs, Work or Threads sharing a slot, each with a route',
-      () {
-        expect(mastermindModule.miniAppNavItems.map((item) => item.route), [
-          Routes.mastermind,
-          Routes.mastermindInbox,
-          Routes.mastermindWork,
-          '/mastermind/threads',
-          Routes.mastermindShip,
-          Routes.mastermindInsights,
-        ]);
-      },
-    );
+    test('has five tabs, Work showing the live fleet lanes', () {
+      expect(mastermindModule.miniAppNavItems.map((item) => item.route), [
+        Routes.mastermind,
+        Routes.mastermindInbox,
+        Routes.mastermindWork,
+        Routes.mastermindShip,
+        Routes.mastermindInsights,
+      ]);
+    });
 
     test('every tab location belongs to the Mastermind root', () {
       for (final item in mastermindModule.miniAppNavItems) {

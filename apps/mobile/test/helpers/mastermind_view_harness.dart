@@ -11,6 +11,7 @@ import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.da
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
@@ -94,6 +95,7 @@ final class MastermindViewHarness {
     IrisRelay? iris,
     IrisDeviceTrust? irisTrust,
     Stream<bool>? onlineChanges,
+    FleetCubit? fleet,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
       repository: accessRepository,
@@ -118,6 +120,7 @@ final class MastermindViewHarness {
       askDetails: askDetails,
       iris: iris,
       irisTrust: irisTrust,
+      fleet: fleet,
       onlineChanges: onlineChanges,
     );
   }

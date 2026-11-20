@@ -26,10 +26,6 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     if (!DECISION_ID.test(decisionId)) return fleetError('not_found', 404);
     if (!(await isFleetOwner(user))) return fleetError('forbidden', 403);
 
-    const idempotencyKey = request.headers.get('idempotency-key')?.trim() ?? '';
-    if (!IDEMPOTENCY_KEY.test(idempotencyKey))
-      return fleetError('idempotency_key_required', 400);
-
     const body = await readCappedText(request, 8 * 1024);
     if (body === null) return fleetError('payload_too_large', 413);
     let json: unknown;
@@ -40,6 +36,13 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     }
     const parsed = fleetAnswerInputSchema.safeParse(json);
     if (!parsed.success) return fleetError('invalid_answer', 422);
+    const idempotencyKey = (
+      request.headers.get('idempotency-key') ??
+      parsed.data.idempotencyKey ??
+      ''
+    ).trim();
+    if (!IDEMPOTENCY_KEY.test(idempotencyKey))
+      return fleetError('idempotency_key_required', 400);
 
     const redis = await fleetRedis();
     if (!redis) return fleetError('unavailable', 503);

@@ -66,6 +66,16 @@ product rules of the shell entry and every tab.
   `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
   `^\[Iris\]`). Schedule `node scripts/mastermind-fleet/publish.mjs --origin
   https://tuturuuu.com` with launchd `StartInterval` 30; it logs counts only.
+- **Mobile surfaces:** Today shows a health hero (open decisions, then
+  failures, then running work), Running/Waiting/Queued/Failed/Idle tiles that
+  open Work filtered (`?state=`), up to three open decisions and every machine.
+  Inbox lists open decisions most urgent first with Approve (the selected or
+  recommended option), Hold and Reply (a sheet on the root navigator), then
+  answered ones with their pickup status; a failed send offers Retry with the
+  same key. Work groups lanes by machine or provider (`?group=provider`) and
+  filters by state. Work holds the dock slot alone; the hub Threads preview,
+  the hub Needs-you asks and the decision journal are no longer routed from
+  these tabs.
 - **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
   `apps/web/src/lib/mastermind/fleet/contract.test.ts`,
   `apps/web/src/lib/mastermind/fleet/store.redis.test.ts` (answer and ack

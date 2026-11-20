@@ -17335,4 +17335,226 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get financePromotionNone => 'Không áp dụng khuyến mãi';
+
+  @override
+  String get mastermindFleetAgeNow => 'vừa xong';
+
+  @override
+  String mastermindFleetAgeMinutes(int count) {
+    return '$count phút trước';
+  }
+
+  @override
+  String mastermindFleetAgeHours(int count) {
+    return '$count giờ trước';
+  }
+
+  @override
+  String mastermindFleetAgeDays(int count) {
+    return '$count ngày trước';
+  }
+
+  @override
+  String mastermindFleetUpdated(String age) {
+    return 'Cập nhật $age';
+  }
+
+  @override
+  String mastermindFleetStale(String age) {
+    return 'Cập nhật lần cuối $age. Trình đồng bộ có thể đã dừng.';
+  }
+
+  @override
+  String mastermindFleetRefreshFailed(String age) {
+    return 'Không thể làm mới · đang hiển thị $age';
+  }
+
+  @override
+  String get mastermindFleetHealthEyebrow => 'Tình trạng đội';
+
+  @override
+  String mastermindFleetHeadlineNeedsYou(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count quyết định cần bạn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetHeadlineFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count luồng lỗi hôm nay',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetHeadlineRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count luồng đang chạy',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetHeadlineQuiet => 'Đội đang nghỉ';
+
+  @override
+  String get mastermindFleetMachinesOnline => 'Máy trực tuyến';
+
+  @override
+  String mastermindFleetMachinesValue(String online, String total) {
+    return '$online/$total';
+  }
+
+  @override
+  String get mastermindFleetOrchestratorWorking => 'Đang làm việc';
+
+  @override
+  String get mastermindFleetOrchestratorWaiting => 'Đang chờ';
+
+  @override
+  String get mastermindFleetOrchestratorIdle => 'Rảnh';
+
+  @override
+  String get mastermindFleetOrchestratorOffline => 'Ngoại tuyến';
+
+  @override
+  String get mastermindFleetStateRunning => 'Đang chạy';
+
+  @override
+  String get mastermindFleetStateWaiting => 'Đang chờ';
+
+  @override
+  String get mastermindFleetStateQueued => 'Xếp hàng';
+
+  @override
+  String get mastermindFleetStateIdle => 'Rảnh';
+
+  @override
+  String get mastermindFleetStateFailed => 'Lỗi';
+
+  @override
+  String get mastermindFleetNeedsYouTitle => 'Cần bạn';
+
+  @override
+  String get mastermindFleetSeeAll => 'Xem tất cả';
+
+  @override
+  String get mastermindFleetMachinesTitle => 'Máy';
+
+  @override
+  String mastermindFleetMachineActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count luồng hoạt động',
+      zero: 'Không có luồng hoạt động',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetMachineOnline => 'Trực tuyến';
+
+  @override
+  String get mastermindFleetMachineStale => 'Lâu chưa thấy';
+
+  @override
+  String get mastermindFleetMachineOffline => 'Ngoại tuyến';
+
+  @override
+  String get mastermindFleetInboxEmpty => 'Không có gì cần bạn';
+
+  @override
+  String get mastermindFleetAnsweredTitle => 'Đã trả lời';
+
+  @override
+  String get mastermindFleetUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindFleetHigh => 'Ưu tiên cao';
+
+  @override
+  String get mastermindFleetFyi => 'Để biết';
+
+  @override
+  String get mastermindFleetRecommended => 'Đề xuất';
+
+  @override
+  String mastermindFleetDue(String time) {
+    return 'Hạn $time';
+  }
+
+  @override
+  String get mastermindFleetApprove => 'Duyệt';
+
+  @override
+  String get mastermindFleetHold => 'Tạm giữ';
+
+  @override
+  String get mastermindFleetReply => 'Trả lời';
+
+  @override
+  String mastermindFleetReplyTitle(String name) {
+    return 'Trả lời $name';
+  }
+
+  @override
+  String get mastermindFleetReplyPlaceholder => 'Câu trả lời của bạn';
+
+  @override
+  String get mastermindFleetReplySend => 'Gửi';
+
+  @override
+  String get mastermindFleetAnswerApproved => 'Đã duyệt';
+
+  @override
+  String get mastermindFleetAnswerHeld => 'Đang tạm giữ';
+
+  @override
+  String get mastermindFleetAnswerReplied => 'Đã trả lời';
+
+  @override
+  String mastermindFleetAnswerWaiting(String name) {
+    return 'Chờ $name nhận';
+  }
+
+  @override
+  String mastermindFleetAnswerReceived(String name) {
+    return '$name đã nhận';
+  }
+
+  @override
+  String get mastermindFleetAnswerSending => 'Đang gửi';
+
+  @override
+  String get mastermindFleetAnswerNotSent => 'Chưa gửi được';
+
+  @override
+  String get mastermindFleetByMachine => 'Theo máy';
+
+  @override
+  String get mastermindFleetByProvider => 'Theo nhà cung cấp';
+
+  @override
+  String get mastermindFleetLanesEmpty => 'Không có luồng nào';
+
+  @override
+  String get mastermindFleetOtherProvider => 'Khác';
+
+  @override
+  String get mastermindFleetNotPublishedTitle => 'Đội chưa đồng bộ';
+
+  @override
+  String get mastermindFleetUnavailableTitle => 'Không thể kết nối với đội';
+
+  @override
+  String get mastermindFleetUnreadableTitle => 'Hãy cập nhật ứng dụng để đọc dữ liệu đội mới nhất';
 }

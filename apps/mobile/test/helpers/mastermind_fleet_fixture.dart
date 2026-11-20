@@ -1,0 +1,137 @@
+import 'dart:async';
+
+import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
+
+/// Wall clock for fleet tests: two minutes after the sample was received.
+final fleetTestNow = DateTime.utc(2026, 11, 20, 3, 2);
+
+/// A synthetic fleet snapshot envelope, as `GET /fleet/state` returns it.
+Map<String, dynamic> fleetSampleJson({
+  List<Map<String, dynamic>>? decisions,
+  Map<String, dynamic> answers = const {},
+  String receivedAt = '2026-11-20T03:00:00.000Z',
+}) => {
+  'receivedAt': receivedAt,
+  'answers': answers,
+  'state': {
+    'version': 1,
+    'generatedAt': '2026-11-20T02:59:58.000Z',
+    'orchestrator': {
+      'label': 'Iris',
+      'state': 'running',
+      'lastActiveAt': '2026-11-20T02:59:00.000Z',
+    },
+    'counts': {'running': 3, 'waiting': 1, 'queued': 1, 'idle': 6, 'failed': 1},
+    'machines': [
+      {'id': 'skr-m4', 'label': 'M4', 'status': 'online'},
+      {
+        'id': 'macstudio1',
+        'label': 'MacStudio1',
+        'status': 'online',
+        'lastSeenAt': '2026-11-20T02:58:00.000Z',
+      },
+      {
+        'id': 'macbook-m3',
+        'label': 'Macbook M3',
+        'status': 'offline',
+        'lastSeenAt': '2026-11-19T17:56:00.000Z',
+      },
+    ],
+    'lanes': [
+      _lane('lane-a', 'Mobile Mastermind rebuild', 'running', 'claude'),
+      _lane('lane-b', 'Gateway apex mounts', 'running', 'codex'),
+      _lane('lane-c', 'CI green on main', 'running', 'codex'),
+      _lane('lane-d', 'Mira channel threads', 'waiting', 'codex'),
+      _lane('lane-e', 'Perf regression workflow', 'queued', 'claude'),
+      _lane('lane-f', 'Prod migration check', 'failed', 'codex'),
+      _lane('lane-g', 'Docs cleanup', 'idle', 'claude', machine: 'macstudio1'),
+      {'id': 'broken'},
+    ],
+    'decisions':
+        decisions ??
+        [
+          {
+            'id': 'ship-fleet-sync',
+            'title': 'Ship fleet sync to production?',
+            'body': 'Web endpoints and the publisher are green on main.',
+            'urgency': 'urgent',
+            'options': [
+              {'id': 'now', 'label': 'Ship now'},
+              {'id': 'tonight', 'label': 'Tonight'},
+            ],
+            'recommendedOptionId': 'now',
+            'createdAt': '2026-11-20T02:40:00.000Z',
+            'deadlineAt': '2026-11-20T10:00:00.000Z',
+          },
+          {
+            'id': 'pool-switch',
+            'title': 'Move the M4 lanes to the second pool?',
+            'urgency': 'normal',
+            'createdAt': '2026-11-20T02:50:00.000Z',
+          },
+        ],
+  },
+};
+
+Map<String, dynamic> _lane(
+  String id,
+  String title,
+  String state,
+  String provider, {
+  String machine = 'skr-m4',
+}) => {
+  'id': id,
+  'title': title,
+  'project': 'tuturuuu',
+  'provider': provider,
+  'model': provider == 'claude' ? 'claude-opus-5-5' : 'gpt-6.2',
+  'machineId': machine,
+  'state': state,
+  'updatedAt': '2026-11-20T02:55:00.000Z',
+};
+
+class FakeFleetSource implements FleetSource {
+  FakeFleetSource({Map<String, dynamic>? json})
+    : json = json ?? fleetSampleJson();
+
+  Map<String, dynamic> json;
+  Exception? fetchError;
+  Exception? answerError;
+  int fetches = 0;
+  final answers = <Map<String, Object?>>[];
+  Completer<void>? answerGate;
+
+  @override
+  Future<FleetSnapshot> fetch() async {
+    fetches++;
+    if (fetchError case final error?) throw error;
+    return FleetSnapshot.parse(json);
+  }
+
+  @override
+  Future<FleetAnswerReceipt> answer({
+    required String decisionId,
+    required FleetAnswerAction action,
+    required String idempotencyKey,
+    String? optionId,
+    String? text,
+  }) async {
+    answers.add({
+      'decisionId': decisionId,
+      'action': action,
+      'key': idempotencyKey,
+      'optionId': optionId,
+      'text': text,
+    });
+    await answerGate?.future;
+    if (answerError case final error?) throw error;
+    return FleetAnswerReceipt(
+      action: action,
+      revision: 1,
+      answeredAt: fleetTestNow,
+      pickedUp: false,
+      optionId: optionId,
+    );
+  }
+}

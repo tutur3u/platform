@@ -17544,4 +17544,230 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get financePromotionNone => 'No promotion';
+
+  @override
+  String get mastermindFleetAgeNow => 'just now';
+
+  @override
+  String mastermindFleetAgeMinutes(int count) {
+    return '$count min ago';
+  }
+
+  @override
+  String mastermindFleetAgeHours(int count) {
+    return '$count h ago';
+  }
+
+  @override
+  String mastermindFleetAgeDays(int count) {
+    return '$count d ago';
+  }
+
+  @override
+  String mastermindFleetUpdated(String age) {
+    return 'Updated $age';
+  }
+
+  @override
+  String mastermindFleetStale(String age) {
+    return 'Last update $age. The fleet publisher may be paused.';
+  }
+
+  @override
+  String mastermindFleetRefreshFailed(String age) {
+    return 'Couldn\'t refresh · showing $age';
+  }
+
+  @override
+  String get mastermindFleetHealthEyebrow => 'Fleet health';
+
+  @override
+  String mastermindFleetHeadlineNeedsYou(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count decisions need you',
+      one: '1 decision needs you',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetHeadlineFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lanes failed today',
+      one: '1 lane failed today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindFleetHeadlineRunning(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lanes running',
+      one: '1 lane running',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetHeadlineQuiet => 'The fleet is quiet';
+
+  @override
+  String get mastermindFleetMachinesOnline => 'Machines online';
+
+  @override
+  String mastermindFleetMachinesValue(String online, String total) {
+    return '$online of $total';
+  }
+
+  @override
+  String get mastermindFleetOrchestratorWorking => 'Working';
+
+  @override
+  String get mastermindFleetOrchestratorWaiting => 'Waiting';
+
+  @override
+  String get mastermindFleetOrchestratorIdle => 'Idle';
+
+  @override
+  String get mastermindFleetOrchestratorOffline => 'Offline';
+
+  @override
+  String get mastermindFleetStateRunning => 'Running';
+
+  @override
+  String get mastermindFleetStateWaiting => 'Waiting';
+
+  @override
+  String get mastermindFleetStateQueued => 'Queued';
+
+  @override
+  String get mastermindFleetStateIdle => 'Idle';
+
+  @override
+  String get mastermindFleetStateFailed => 'Failed';
+
+  @override
+  String get mastermindFleetNeedsYouTitle => 'Needs you';
+
+  @override
+  String get mastermindFleetSeeAll => 'See all';
+
+  @override
+  String get mastermindFleetMachinesTitle => 'Machines';
+
+  @override
+  String mastermindFleetMachineActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count active lanes',
+      one: '1 active lane',
+      zero: 'No active lanes',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindFleetMachineOnline => 'Online';
+
+  @override
+  String get mastermindFleetMachineStale => 'Not seen recently';
+
+  @override
+  String get mastermindFleetMachineOffline => 'Offline';
+
+  @override
+  String get mastermindFleetInboxEmpty => 'Nothing needs you';
+
+  @override
+  String get mastermindFleetAnsweredTitle => 'Answered';
+
+  @override
+  String get mastermindFleetUrgent => 'Urgent';
+
+  @override
+  String get mastermindFleetHigh => 'High priority';
+
+  @override
+  String get mastermindFleetFyi => 'FYI';
+
+  @override
+  String get mastermindFleetRecommended => 'Recommended';
+
+  @override
+  String mastermindFleetDue(String time) {
+    return 'Due $time';
+  }
+
+  @override
+  String get mastermindFleetApprove => 'Approve';
+
+  @override
+  String get mastermindFleetHold => 'Hold';
+
+  @override
+  String get mastermindFleetReply => 'Reply';
+
+  @override
+  String mastermindFleetReplyTitle(String name) {
+    return 'Reply to $name';
+  }
+
+  @override
+  String get mastermindFleetReplyPlaceholder => 'Your answer';
+
+  @override
+  String get mastermindFleetReplySend => 'Send';
+
+  @override
+  String get mastermindFleetAnswerApproved => 'Approved';
+
+  @override
+  String get mastermindFleetAnswerHeld => 'On hold';
+
+  @override
+  String get mastermindFleetAnswerReplied => 'Replied';
+
+  @override
+  String mastermindFleetAnswerWaiting(String name) {
+    return 'Waiting for $name';
+  }
+
+  @override
+  String mastermindFleetAnswerReceived(String name) {
+    return 'Received by $name';
+  }
+
+  @override
+  String get mastermindFleetAnswerSending => 'Sending';
+
+  @override
+  String get mastermindFleetAnswerNotSent => 'Not sent';
+
+  @override
+  String get mastermindFleetByMachine => 'By machine';
+
+  @override
+  String get mastermindFleetByProvider => 'By provider';
+
+  @override
+  String get mastermindFleetLanesEmpty => 'No lanes here';
+
+  @override
+  String get mastermindFleetOtherProvider => 'Other';
+
+  @override
+  String get mastermindFleetNotPublishedTitle => 'The fleet hasn\'t synced yet';
+
+  @override
+  String get mastermindFleetUnavailableTitle => 'Can\'t reach the fleet';
+
+  @override
+  String get mastermindFleetUnreadableTitle => 'Update the app to read the latest fleet data';
 }

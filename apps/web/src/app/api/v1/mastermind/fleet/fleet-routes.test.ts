@@ -279,6 +279,31 @@ describe('Mastermind fleet sync routes', () => {
       ).toBe(422);
     });
 
+    it('accepts the idempotency key in the body', async () => {
+      const key = randomUUID();
+      const first = await answer(
+        'ship-fleet-sync',
+        { action: 'hold', idempotencyKey: key },
+        null
+      );
+      expect(first.status).toBe(202);
+      const retry = await answer(
+        'ship-fleet-sync',
+        { action: 'hold', idempotencyKey: key },
+        null
+      );
+      expect(await retry.json()).toMatchObject({ revision: 1 });
+      expect(
+        (
+          await answer(
+            'ship-fleet-sync',
+            { action: 'hold', idempotencyKey: 'nope' },
+            null
+          )
+        ).status
+      ).toBe(400);
+    });
+
     it('denies a non-owner', async () => {
       mocks.user = { id: '22222222-2222-4222-8222-222222222222' };
       expect((await answer('ship-fleet-sync', { action: 'hold' })).status).toBe(

@@ -113,6 +113,8 @@ export const fleetAnswerInputSchema = z
     action: z.enum(fleetAnswerActions),
     optionId: slug.optional(),
     text: z.string().trim().max(2000).optional(),
+    /** Body fallback for clients that cannot set the Idempotency-Key header. */
+    idempotencyKey: z.string().optional(),
   })
   .refine((input) => input.action !== 'reply' || !!input.text, {
     message: 'reply needs text',

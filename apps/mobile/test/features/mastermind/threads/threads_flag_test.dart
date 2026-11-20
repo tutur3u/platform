@@ -6,13 +6,11 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_work_page.dart';
 import 'package:mobile/features/mastermind/mastermind_module.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
-import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
-import 'package:mobile/features/mastermind/view/work/work_backlog_section.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
-import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/mastermind_work_fixture.dart';
@@ -73,9 +71,7 @@ void main() {
         final router = await _pumpRouter(tester, location);
         expect(workUri(router).path, Routes.mastermindWork);
         expect(find.byType(MastermindThreadsPage), findsNothing);
-        expect(find.byType(MastermindWorkPage), findsOneWidget);
-        expect(find.text('Lanes'), findsOneWidget);
-        expect(find.text('[Atlas] Mastermind'), findsOneWidget);
+        expect(find.byType(FleetWorkPage), findsOneWidget);
       });
     }
 
@@ -104,76 +100,6 @@ void main() {
 
   group('flag on', () {
     setUp(() => debugOverrideMastermindThreads(enabled: true));
-
-    testWidgets('Threads replaces the Work tab', (tester) async {
-      final items = await _visibleItems(tester);
-      final threads = items.singleWhere(
-        (item) => item.id == 'mastermind_threads',
-      );
-      expect(items.any((item) => item.id == 'mastermind_work'), isFalse);
-      expect(threads.route, '/mastermind/threads');
-      expect(threads.label(AppLocalizationsEn()), 'Threads');
-      expect(threads.label(AppLocalizationsVi()), 'Hội thoại');
-    });
-
-    testWidgets('opening a lane from Threads keeps the Threads tab selected', (
-      tester,
-    ) async {
-      final items = await _visibleItems(tester);
-      String selected(String location) =>
-          items[miniNavSelectedIndex(location, items)].id;
-      expect(selected('/mastermind/threads'), 'mastermind_threads');
-      expect(
-        selected(Routes.mastermindWorkLanePath(laneId(1))),
-        'mastermind_threads',
-      );
-      // The other tabs are untouched.
-      expect(selected(Routes.mastermind), 'mastermind_home');
-      expect(selected(Routes.mastermindInbox), 'mastermind_inbox');
-      expect(selected(Routes.mastermindShip), 'mastermind_ship');
-      expect(selected(Routes.mastermindInsights), 'mastermind_insights');
-    });
-
-    testWidgets('a Work link opens Threads on the same segment', (
-      tester,
-    ) async {
-      final router = await _pumpRouter(
-        tester,
-        '${Routes.mastermindWork}?segment=backlog',
-      );
-      expect(workUri(router).toString(), '/mastermind/threads?segment=backlog');
-      expect(find.byType(MastermindThreadsPage), findsOneWidget);
-      expect(find.byType(WorkBacklogSection), findsOneWidget);
-    });
-
-    testWidgets('a Work link keeps its state, product and area filters', (
-      tester,
-    ) async {
-      final router = workRouter(
-        '${Routes.mastermindWork}?state=failed&product=Mastermind&area=finance',
-      );
-      await pumpWork(
-        tester,
-        workJson([
-          workLane(
-            1,
-            state: 'failed',
-            title: 'Broken',
-            product: 'Mastermind',
-            area: 'finance',
-          ),
-          workLane(2, title: 'Other', area: 'infra'),
-        ]),
-        router: router,
-      );
-      expect(workUri(router).path, '/mastermind/threads');
-      final page = tester.widget<MastermindThreadsPage>(
-        find.byType(MastermindThreadsPage),
-      );
-      expect(page.initialState?.wireName, 'failed');
-      expect(page.initialProduct?.wireName, 'Mastermind');
-      expect(page.initialArea?.wireName, 'finance');
-    });
 
     testWidgets('the lane-gone state says Back to Threads', (tester) async {
       final router = workRouter(Routes.mastermindWorkLanePath(laneId(9)));

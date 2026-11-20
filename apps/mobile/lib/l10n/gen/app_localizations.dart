@@ -32454,6 +32454,348 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No promotion'**
   String get financePromotionNone;
+
+  /// No description provided for @mastermindFleetAgeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get mastermindFleetAgeNow;
+
+  /// No description provided for @mastermindFleetAgeMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String mastermindFleetAgeMinutes(int count);
+
+  /// No description provided for @mastermindFleetAgeHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} h ago'**
+  String mastermindFleetAgeHours(int count);
+
+  /// No description provided for @mastermindFleetAgeDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} d ago'**
+  String mastermindFleetAgeDays(int count);
+
+  /// No description provided for @mastermindFleetUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {age}'**
+  String mastermindFleetUpdated(String age);
+
+  /// No description provided for @mastermindFleetStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Last update {age}. The fleet publisher may be paused.'**
+  String mastermindFleetStale(String age);
+
+  /// No description provided for @mastermindFleetRefreshFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh · showing {age}'**
+  String mastermindFleetRefreshFailed(String age);
+
+  /// No description provided for @mastermindFleetHealthEyebrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Fleet health'**
+  String get mastermindFleetHealthEyebrow;
+
+  /// No description provided for @mastermindFleetHeadlineNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 decision needs you} other{{count} decisions need you}}'**
+  String mastermindFleetHeadlineNeedsYou(int count);
+
+  /// No description provided for @mastermindFleetHeadlineFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lane failed today} other{{count} lanes failed today}}'**
+  String mastermindFleetHeadlineFailed(int count);
+
+  /// No description provided for @mastermindFleetHeadlineRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 lane running} other{{count} lanes running}}'**
+  String mastermindFleetHeadlineRunning(int count);
+
+  /// No description provided for @mastermindFleetHeadlineQuiet.
+  ///
+  /// In en, this message translates to:
+  /// **'The fleet is quiet'**
+  String get mastermindFleetHeadlineQuiet;
+
+  /// No description provided for @mastermindFleetMachinesOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines online'**
+  String get mastermindFleetMachinesOnline;
+
+  /// No description provided for @mastermindFleetMachinesValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{online} of {total}'**
+  String mastermindFleetMachinesValue(String online, String total);
+
+  /// No description provided for @mastermindFleetOrchestratorWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get mastermindFleetOrchestratorWorking;
+
+  /// No description provided for @mastermindFleetOrchestratorWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mastermindFleetOrchestratorWaiting;
+
+  /// No description provided for @mastermindFleetOrchestratorIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get mastermindFleetOrchestratorIdle;
+
+  /// No description provided for @mastermindFleetOrchestratorOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get mastermindFleetOrchestratorOffline;
+
+  /// No description provided for @mastermindFleetStateRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get mastermindFleetStateRunning;
+
+  /// No description provided for @mastermindFleetStateWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get mastermindFleetStateWaiting;
+
+  /// No description provided for @mastermindFleetStateQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get mastermindFleetStateQueued;
+
+  /// No description provided for @mastermindFleetStateIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'Idle'**
+  String get mastermindFleetStateIdle;
+
+  /// No description provided for @mastermindFleetStateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get mastermindFleetStateFailed;
+
+  /// No description provided for @mastermindFleetNeedsYouTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs you'**
+  String get mastermindFleetNeedsYouTitle;
+
+  /// No description provided for @mastermindFleetSeeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get mastermindFleetSeeAll;
+
+  /// No description provided for @mastermindFleetMachinesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines'**
+  String get mastermindFleetMachinesTitle;
+
+  /// No description provided for @mastermindFleetMachineActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No active lanes} =1{1 active lane} other{{count} active lanes}}'**
+  String mastermindFleetMachineActive(int count);
+
+  /// No description provided for @mastermindFleetMachineOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get mastermindFleetMachineOnline;
+
+  /// No description provided for @mastermindFleetMachineStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Not seen recently'**
+  String get mastermindFleetMachineStale;
+
+  /// No description provided for @mastermindFleetMachineOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get mastermindFleetMachineOffline;
+
+  /// No description provided for @mastermindFleetInboxEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs you'**
+  String get mastermindFleetInboxEmpty;
+
+  /// No description provided for @mastermindFleetAnsweredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered'**
+  String get mastermindFleetAnsweredTitle;
+
+  /// No description provided for @mastermindFleetUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindFleetUrgent;
+
+  /// No description provided for @mastermindFleetHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High priority'**
+  String get mastermindFleetHigh;
+
+  /// No description provided for @mastermindFleetFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindFleetFyi;
+
+  /// No description provided for @mastermindFleetRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended'**
+  String get mastermindFleetRecommended;
+
+  /// No description provided for @mastermindFleetDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {time}'**
+  String mastermindFleetDue(String time);
+
+  /// No description provided for @mastermindFleetApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get mastermindFleetApprove;
+
+  /// No description provided for @mastermindFleetHold.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold'**
+  String get mastermindFleetHold;
+
+  /// No description provided for @mastermindFleetReply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get mastermindFleetReply;
+
+  /// No description provided for @mastermindFleetReplyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply to {name}'**
+  String mastermindFleetReplyTitle(String name);
+
+  /// No description provided for @mastermindFleetReplyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get mastermindFleetReplyPlaceholder;
+
+  /// No description provided for @mastermindFleetReplySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mastermindFleetReplySend;
+
+  /// No description provided for @mastermindFleetAnswerApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get mastermindFleetAnswerApproved;
+
+  /// No description provided for @mastermindFleetAnswerHeld.
+  ///
+  /// In en, this message translates to:
+  /// **'On hold'**
+  String get mastermindFleetAnswerHeld;
+
+  /// No description provided for @mastermindFleetAnswerReplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Replied'**
+  String get mastermindFleetAnswerReplied;
+
+  /// No description provided for @mastermindFleetAnswerWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for {name}'**
+  String mastermindFleetAnswerWaiting(String name);
+
+  /// No description provided for @mastermindFleetAnswerReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Received by {name}'**
+  String mastermindFleetAnswerReceived(String name);
+
+  /// No description provided for @mastermindFleetAnswerSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get mastermindFleetAnswerSending;
+
+  /// No description provided for @mastermindFleetAnswerNotSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get mastermindFleetAnswerNotSent;
+
+  /// No description provided for @mastermindFleetByMachine.
+  ///
+  /// In en, this message translates to:
+  /// **'By machine'**
+  String get mastermindFleetByMachine;
+
+  /// No description provided for @mastermindFleetByProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'By provider'**
+  String get mastermindFleetByProvider;
+
+  /// No description provided for @mastermindFleetLanesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No lanes here'**
+  String get mastermindFleetLanesEmpty;
+
+  /// No description provided for @mastermindFleetOtherProvider.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get mastermindFleetOtherProvider;
+
+  /// No description provided for @mastermindFleetNotPublishedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The fleet hasn\'t synced yet'**
+  String get mastermindFleetNotPublishedTitle;
+
+  /// No description provided for @mastermindFleetUnavailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach the fleet'**
+  String get mastermindFleetUnavailableTitle;
+
+  /// No description provided for @mastermindFleetUnreadableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the app to read the latest fleet data'**
+  String get mastermindFleetUnreadableTitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
