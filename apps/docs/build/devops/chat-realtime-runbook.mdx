@@ -86,16 +86,19 @@ the membership change. Immediate publication and recovery use that entry’s ID
 and timestamp. Repeated delivery applies the same cutoff. Tickets issued after
 the removal and clock-skew allowance can reconnect after the user regains access.
 
-The `chat-realtime-revocations` job uses Cron Control’s existing five-minute
-schedule and stays off until named in `CRON_CONTROL_ENABLED_JOBS`. It calls the
-Web recovery endpoint with the Web cron credential. Recovery checks Worker
-health before reading Postgres. One invocation scans the last two complete
+The `chat-realtime-revocations` native Cron Control processor uses the existing
+five-minute schedule. It stays off until named in `CRON_CONTROL_ENABLED_JOBS`.
+Before enabling it, configure the Cron Control Worker’s `CHAT_REALTIME_URL` and
+dedicated `CHAT_REALTIME_TOKEN_SECRET`. It reads the existing private PostgREST
+tables using Cron Control’s database binding, and publishes body-bound tickets
+to the Chat Worker. Recovery checks the durable job fence and Worker health
+before reading Postgres. One invocation scans the last two complete
 five-minute slots within the Worker’s 15-minute event window. The cutoff leaves
 52 seconds for request processing, delivery and clock skew. It sends at most 32 records
 with at most four concurrent publishes and reports overflow or failed delivery.
 Archive recovery uses at most two membership reads per archive to notify up to
 1,500 members archived in the audit transaction, plus the actor. Cron Control
-allows two attempts per slot. The Worker deduplicates by audit ID during replay
+dispatches this processor once per slot. The Worker deduplicates by audit ID during replay
 retention.
 The Web API keeps the audit record when delivery fails.
 
@@ -107,7 +110,7 @@ Rooms check expiry before they deliver further frames.
 Before enabling the job, verify the read query plan against staging data and
 exercise a publish failure followed by recovery with disposable actors. Check
 both stop fences, partial delivery, overflow, and old-ticket denial in workerd.
-The Cron job and Web environment require separate deployment acceptance.
+Cron Control and the Web environment require separate deployment acceptance.
 
 ## Stop and rollback
 
@@ -118,6 +121,7 @@ The Cron job and Web environment require separate deployment acceptance.
 - Unset `CHAT_REALTIME_URL` at `apps/web` to stop Worker ticket minting and
   publishing. Confirm the ticket endpoint returns `enabled: false` and clients
   resume polling. Check that messages sent while stopped appear after refetch.
+  Stop `chat-realtime-revocations` through Cron Control to pause recovery too.
 - Roll back to the recorded Worker version if the problem is in the emitted
   artifact. Keep the Web origin unset until staging validation passes again.
   Postgres remains authoritative through every step, so rollback requires no

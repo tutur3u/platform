@@ -1,5 +1,6 @@
 import type { WorkerProcessorId } from '../jobs';
 import { purgeAiStudioRetention } from './ai-studio-retention';
+import { recoverChatRevocations } from './chat-realtime-revocations';
 import { expireCheckouts } from './checkout-expiry';
 import { pruneCronHistory } from './cron-history-retention';
 import { sweepUnauthorizedDevboxRuns } from './devbox-unauthorized-run-sweep';
@@ -15,6 +16,7 @@ export const WORKER_PROCESSORS: Record<
   (context: ProcessorContext) => Promise<ProcessorResult>
 > = {
   'ai-studio-retention': purgeAiStudioRetention,
+  'chat-realtime-revocations': recoverChatRevocations,
   'checkout-expiry': expireCheckouts,
   'cron-history-retention': pruneCronHistory,
   'devbox-unauthorized-run-sweep': sweepUnauthorizedDevboxRuns,

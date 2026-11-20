@@ -19,6 +19,7 @@ export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
   | 'ai-studio-retention'
+  | 'chat-realtime-revocations'
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'devbox-unauthorized-run-sweep'
@@ -258,9 +259,13 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     'chat-realtime-revocations',
     '*/5 * * * *',
     'web',
-    '/api/cron/chat/realtime-revocations',
+    '/v1/publish',
     'idempotent',
-    { method: 'POST', timeoutMs: 25_000 }
+    {
+      method: 'POST',
+      timeoutMs: 25_000,
+      workerProcessor: 'chat-realtime-revocations',
+    }
   ),
   job(
     'web-deadline-reminders',

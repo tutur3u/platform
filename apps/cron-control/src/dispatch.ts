@@ -1,3 +1,4 @@
+import { CHAT_REALTIME_SECRET_MIN_LENGTH } from '@tuturuuu/realtime/chat/ticket';
 import {
   CRON_JOBS,
   type CronJob,
@@ -49,6 +50,26 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
+  if (cronJob.workerProcessor === 'chat-realtime-revocations') {
+    const secret = env.CHAT_REALTIME_TOKEN_SECRET?.trim();
+    if (!secret || secret.length < CHAT_REALTIME_SECRET_MIN_LENGTH)
+      return { problem: 'CHAT_REALTIME_TOKEN_SECRET unset' };
+    try {
+      const origin = new URL(env.CHAT_REALTIME_URL?.trim() ?? '');
+      if (
+        origin.protocol !== 'https:' ||
+        origin.username ||
+        origin.password ||
+        origin.pathname !== '/' ||
+        origin.search ||
+        origin.hash
+      )
+        return { problem: 'CHAT_REALTIME_URL must be an HTTPS origin' };
+      return { secret, url: new URL(cronJob.path, origin) };
+    } catch {
+      return { problem: 'CHAT_REALTIME_URL invalid' };
+    }
+  }
   const maintenanceRpc = cronJob.workerProcessor
     ? DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor]
     : undefined;
@@ -110,6 +131,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
     .map((id) => id.trim());
   if (
     !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
+    cronJob.workerProcessor !== 'chat-realtime-revocations' &&
     !selected.includes(cronJob.id)
   )
     return null;

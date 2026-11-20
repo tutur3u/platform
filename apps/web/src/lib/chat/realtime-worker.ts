@@ -1,18 +1,16 @@
 import 'server-only';
 
 import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
+import { prepareChatRealtimePublish } from '@tuturuuu/realtime/chat/publish';
 import {
   CHAT_REALTIME_INBOX_MAX_TTL_SECONDS,
-  CHAT_REALTIME_PUBLISH_MAX_TTL_SECONDS,
   CHAT_REALTIME_SECRET_MIN_LENGTH,
   CHAT_REALTIME_SUBSCRIBE_MAX_TTL_SECONDS,
   CHAT_REALTIME_TICKET_AUDIENCE,
-  chatRealtimeBodyDigest,
   signChatRealtimeTicket,
 } from '@tuturuuu/realtime/chat/ticket';
 import { z } from 'zod';
 
-const MAX_PUBLISH_BYTES = 64 * 1024;
 const PUBLISH_TIMEOUT_MS = 2_000;
 const publishResponseSchema = z.object({
   foregroundUserIds: z.array(z.uuid()).max(500),
@@ -52,25 +50,6 @@ function getWorkerConfig() {
   }
 
   return { secret, url };
-}
-
-export async function isChatRealtimeWorkerReady(signal: AbortSignal) {
-  const config = getWorkerConfig();
-  if (!config) return false;
-
-  const response = await fetch(new URL('/health', config.url), {
-    cache: 'no-store',
-    redirect: 'error',
-    signal: AbortSignal.any([signal, AbortSignal.timeout(PUBLISH_TIMEOUT_MS)]),
-  });
-  if (!response.ok) {
-    void response.body?.cancel().catch(() => undefined);
-    throw new Error(`Chat realtime Worker health returned ${response.status}`);
-  }
-  const health = z
-    .object({ ok: z.literal(true), stopped: z.boolean() })
-    .parse(await response.json());
-  return !health.stopped;
 }
 
 export async function createChatRealtimeSubscribeTicket(input: {
@@ -118,40 +97,13 @@ export async function publishChatRealtimeWorkerEvent(
   const config = getWorkerConfig();
   if (!config) return [];
 
-  const wsId = event.wsId.toLowerCase();
-  const body = JSON.stringify({
-    ...event,
-    actorUserId: event.actorUserId?.toLowerCase(),
-    audience:
-      event.audience.scope === 'users'
-        ? {
-            scope: 'users',
-            userIds: event.audience.userIds.map((id) => id.toLowerCase()),
-          }
-        : event.audience,
-    conversationId: event.conversationId?.toLowerCase(),
-    ...('userId' in event ? { userId: event.userId.toLowerCase() } : {}),
-    ...('messageId' in event
-      ? { messageId: event.messageId?.toLowerCase() }
-      : {}),
-    wsId,
-  });
-  if (new TextEncoder().encode(body).byteLength > MAX_PUBLISH_BYTES) return [];
-
-  const iat = Math.floor(Date.now() / 1_000);
-  const token = await signChatRealtimeTicket(
-    {
-      aud: CHAT_REALTIME_TICKET_AUDIENCE,
-      bodySha256: await chatRealtimeBodyDigest(body),
-      exp: iat + CHAT_REALTIME_PUBLISH_MAX_TTL_SECONDS,
-      iat,
-      kind: 'publish',
-      v: 1,
-      wsId,
-    },
-    config.secret
+  const publish = await prepareChatRealtimePublish(
+    event,
+    config.secret,
+    Date.now()
   );
-
+  if (!publish) return [];
+  const { body, token } = publish;
   const timeout = AbortSignal.timeout(PUBLISH_TIMEOUT_MS);
   const response = await fetch(new URL('/v1/publish', config.url), {
     body,
