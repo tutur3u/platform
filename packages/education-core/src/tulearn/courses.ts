@@ -136,7 +136,9 @@ export async function getAssignedCourseIds({
     .eq('workspace_user_groups.is_course_published', true);
 
   if (error) throw error;
-  return (data ?? []).map((row) => row.group_id);
+  const groupLinks: Pick<Tables<'workspace_user_groups_users'>, 'group_id'>[] =
+    data ?? [];
+  return groupLinks.map((row) => row.group_id);
 }
 
 export async function getLearnerCourseSummaries({
@@ -189,8 +191,9 @@ export async function getLearnerCourseSummaries({
   if (completionsResult.error) throw completionsResult.error;
   if (moduleQuizzesResult.error) throw moduleQuizzesResult.error;
 
+  const completionRows: ModuleIdOnly[] = completionsResult.data ?? [];
   const completedModuleIds = new Set(
-    (completionsResult.data ?? []).map((row) => row.module_id)
+    completionRows.map((row) => row.module_id)
   );
 
   const quizCountsByModule = new Map<string, number>();
@@ -205,7 +208,11 @@ export async function getLearnerCourseSummaries({
     modulesByCourse.set(module.group_id, modules);
   }
 
-  return (coursesResult.data ?? []).map((course) => {
+  const courses: Pick<
+    Tables<'workspace_user_groups'>,
+    'id' | 'name' | 'description'
+  >[] = coursesResult.data ?? [];
+  return courses.map((course) => {
     const moduleIds = modulesByCourse.get(course.id) ?? [];
     const completedModules = moduleIds.filter((moduleId) => {
       const isCompletedInDb = completedModuleIds.has(moduleId);
@@ -353,8 +360,9 @@ export async function getLearnerCourseDetail({
   if (testsResult.error) throw testsResult.error;
   if (submissionsResult.error) throw submissionsResult.error;
 
+  const completionRows: ModuleIdOnly[] = completionsResult.data ?? [];
   const completedModuleIds = new Set(
-    (completionsResult.data ?? []).map((row) => row.module_id)
+    completionRows.map((row) => row.module_id)
   );
 
   const flashcardCounts = countByModule(flashcards.data ?? [], moduleIds);
@@ -397,16 +405,17 @@ export async function getLearnerCourseDetail({
 
   const completedModules = modules.filter((module) => module.completed).length;
 
-  const tests = (testsResult.data ?? []).map((t) => ({
+  const testRows: (Omit<CourseTestSummary, 'module_ids'> & {
+    course_test_modules?: { module_id: string }[];
+  })[] = testsResult.data ?? [];
+  const tests = testRows.map((t) => ({
     id: t.id,
     name: t.name,
     start_at: t.start_at,
     duration_in_minutes: t.duration_in_minutes,
     description: t.description,
     is_score_published: t.is_score_published,
-    module_ids: (
-      (t.course_test_modules as { module_id: string }[] | undefined) ?? []
-    )
+    module_ids: (t.course_test_modules ?? [])
       .map((m) => m.module_id)
       .filter((moduleId) => moduleIds.has(moduleId)),
   }));

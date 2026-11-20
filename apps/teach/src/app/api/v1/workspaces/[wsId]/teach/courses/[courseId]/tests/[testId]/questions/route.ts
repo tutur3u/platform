@@ -5,6 +5,7 @@ import {
   requireTeachWorkspaceAccess,
   validateTeachCourse,
 } from '@tuturuuu/education-core/teach/api';
+import type { Tables } from '@tuturuuu/types/supabase';
 import { randomUUID } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -222,7 +223,9 @@ export const GET = withSessionAuth(
       );
     }
 
-    const quizIds = (testQuizzes ?? []).map((tq) => tq.quiz_id);
+    const quizLinks: Pick<Tables<'course_test_quizzes'>, 'quiz_id'>[] =
+      testQuizzes ?? [];
+    const quizIds = quizLinks.map((link) => link.quiz_id);
     if (quizIds.length === 0) {
       return NextResponse.json({
         data: [],

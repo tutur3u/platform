@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Tables } from '@tuturuuu/types/supabase';
 import {
   resolveMatchingKey,
   resolveOrderingKey,
@@ -166,9 +167,10 @@ export async function submitTestAttemptInternal(
 
   if (answersErr) throw answersErr;
 
-  const answersMap = new Map(
-    (savedAnswers ?? []).map((ans) => [ans.quiz_id, ans])
-  );
+  const answersMap = new Map<
+    string,
+    Pick<Tables<'course_test_attempt_answers'>, 'selected_option_id' | 'answer'>
+  >((savedAnswers ?? []).map((ans) => [ans.quiz_id, ans]));
   const correctAnswerMap = await loadCorrectAnswerMap({
     quizIds: (quizzes ?? []).map((quiz) => quiz.id),
     sbAdmin,
