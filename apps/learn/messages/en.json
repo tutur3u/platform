@@ -28,9 +28,13 @@
     "title": "AI Chat"
   },
   "assignments": {
+    "completionError": "Could not mark the assignment done. Try again.",
     "description": "{count, plural, =0 {Your quest board is clear.} one {One quest is waiting for you.} other {# quests are waiting for you.}}",
     "empty": "No assignments are due right now.",
     "markDone": "Mark done",
+    "noCompleted": "No completed assignments yet.",
+    "open": "Open",
+    "openAssessment": "Open assessment",
     "title": "Assignments",
     "untitled": "Untitled assignment"
   },

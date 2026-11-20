@@ -390,7 +390,10 @@ export async function listTulearnAssignments(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(withLearnApiBaseUrl(options));
-  return client.json<{ assignments: TulearnAssignmentSummary[] }>(
+  return client.json<{
+    assignments: TulearnAssignmentSummary[];
+    readOnly?: boolean;
+  }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/assignments`,
     { cache: 'no-store', query: studentQuery(studentId) }
   );

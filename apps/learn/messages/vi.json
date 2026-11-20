@@ -28,9 +28,13 @@
     "title": "AI Chat"
   },
   "assignments": {
+    "completionError": "Không thể đánh dấu bài tập đã xong. Hãy thử lại.",
     "description": "{count, plural, =0 {Bài tập đã trống.} one {Còn một nhiệm vụ đang chờ bạn.} other {Còn # nhiệm vụ đang chờ bạn.}}",
     "empty": "Hiện chưa có bài tập cần làm.",
     "markDone": "Đánh dấu xong",
+    "noCompleted": "Chưa có bài tập đã hoàn thành.",
+    "open": "Đang chờ",
+    "openAssessment": "Mở bài kiểm tra",
     "title": "Bài tập",
     "untitled": "Bài tập chưa có tiêu đề"
   },

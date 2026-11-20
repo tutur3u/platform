@@ -34,7 +34,7 @@ export const GET = withSessionAuth<Params>(
         wsId: subject.wsId,
       });
 
-      return NextResponse.json({ assignments });
+      return NextResponse.json({ assignments, readOnly: subject.readOnly });
     } catch (error) {
       const accessResponse = tulearnAccessErrorResponse(error);
       if (accessResponse) return accessResponse;
