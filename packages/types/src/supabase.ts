@@ -17650,6 +17650,254 @@ export type Database = {
         };
         Relationships: [];
       };
+      observability_alerts: {
+        Row: {
+          burn_long: number;
+          burn_short: number;
+          dedupe_key: string;
+          fired_notified: boolean;
+          healthy_windows: number;
+          last_evaluated_at: string;
+          resolved_at: string | null;
+          resolved_notified: boolean;
+          service: string;
+          severity: string;
+          slo_id: string;
+          started_at: string;
+          state: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          burn_long: number;
+          burn_short: number;
+          dedupe_key: string;
+          fired_notified?: boolean;
+          healthy_windows?: number;
+          last_evaluated_at?: string;
+          resolved_at?: string | null;
+          resolved_notified?: boolean;
+          service: string;
+          severity: string;
+          slo_id: string;
+          started_at: string;
+          state?: string;
+        };
+        Update: {
+          burn_long?: number;
+          burn_short?: number;
+          dedupe_key?: string;
+          fired_notified?: boolean;
+          healthy_windows?: number;
+          last_evaluated_at?: string;
+          resolved_at?: string | null;
+          resolved_notified?: boolean;
+          service?: string;
+          severity?: string;
+          slo_id?: string;
+          started_at?: string;
+          state?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'observability_alerts_slo_id_fkey';
+            columns: ['slo_id'];
+            isOneToOne: false;
+            referencedRelation: 'observability_slos';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      observability_daily_writes: {
+        Row: {
+          day: string;
+          rows_written: number;
+          source: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          day: string;
+          rows_written?: number;
+          source: string;
+        };
+        Update: {
+          day?: string;
+          rows_written?: number;
+          source?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'observability_daily_writes_source_fkey';
+            columns: ['source'];
+            isOneToOne: false;
+            referencedRelation: 'observability_source_control';
+            referencedColumns: ['source'];
+          },
+        ];
+      };
+      observability_deploy_markers: {
+        Row: {
+          deployed_at: string;
+          kind: string;
+          observed_at: string;
+          service: string;
+          sha: string | null;
+          source: string;
+          version_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          deployed_at: string;
+          kind?: string;
+          observed_at?: string;
+          service: string;
+          sha?: string | null;
+          source: string;
+          version_id: string;
+        };
+        Update: {
+          deployed_at?: string;
+          kind?: string;
+          observed_at?: string;
+          service?: string;
+          sha?: string | null;
+          source?: string;
+          version_id?: string;
+        };
+        Relationships: [];
+      };
+      observability_ingest_runs: {
+        Row: {
+          id: string;
+          marker_rows: number;
+          mode: string;
+          recorded_at: string;
+          requests: number;
+          rollup_rows: number;
+          source: string;
+          status: string;
+          window_end: string | null;
+          window_start: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: string;
+          marker_rows: number;
+          mode: string;
+          recorded_at?: string;
+          requests: number;
+          rollup_rows: number;
+          source: string;
+          status: string;
+          window_end?: string | null;
+          window_start?: string | null;
+        };
+        Update: {
+          id?: string;
+          marker_rows?: number;
+          mode?: string;
+          recorded_at?: string;
+          requests?: number;
+          rollup_rows?: number;
+          source?: string;
+          status?: string;
+          window_end?: string | null;
+          window_start?: string | null;
+        };
+        Relationships: [];
+      };
+      observability_rollups: {
+        Row: {
+          bucket_seconds: number;
+          bucket_start: string;
+          metric: string;
+          observed_at: string;
+          service: string;
+          source: string;
+          value: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          bucket_seconds: number;
+          bucket_start: string;
+          metric: string;
+          observed_at?: string;
+          service: string;
+          source: string;
+          value: number;
+        };
+        Update: {
+          bucket_seconds?: number;
+          bucket_start?: string;
+          metric?: string;
+          observed_at?: string;
+          service?: string;
+          source?: string;
+          value?: number;
+        };
+        Relationships: [];
+      };
+      observability_slos: {
+        Row: {
+          enabled: boolean;
+          id: string;
+          indicator: string;
+          latency_threshold_ms: number | null;
+          objective: number;
+          service: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          enabled?: boolean;
+          id: string;
+          indicator: string;
+          latency_threshold_ms?: number | null;
+          objective: number;
+          service: string;
+          updated_at?: string;
+        };
+        Update: {
+          enabled?: boolean;
+          id?: string;
+          indicator?: string;
+          latency_threshold_ms?: number | null;
+          objective?: number;
+          service?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      observability_source_control: {
+        Row: {
+          daily_row_budget: number;
+          generation: number;
+          max_requests_per_run: number;
+          mode: string;
+          source: string;
+          updated_at: string;
+          watermark: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          daily_row_budget?: number;
+          generation?: number;
+          max_requests_per_run?: number;
+          mode?: string;
+          source: string;
+          updated_at?: string;
+          watermark?: string | null;
+        };
+        Update: {
+          daily_row_budget?: number;
+          generation?: number;
+          max_requests_per_run?: number;
+          mode?: string;
+          source?: string;
+          updated_at?: string;
+          watermark?: string | null;
+        };
+        Relationships: [];
+      };
       parley_members: {
         Row: {
           created_at: string;
@@ -18466,6 +18714,37 @@ export type Database = {
         };
         Relationships: [];
       };
+      product_analytics_daily: {
+        Row: {
+          app: string;
+          computed_at: string;
+          day: string;
+          dimension: string;
+          metric: string;
+          suppressed: boolean;
+          value: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          app: string;
+          computed_at?: string;
+          day: string;
+          dimension?: string;
+          metric: string;
+          suppressed?: boolean;
+          value?: number | null;
+        };
+        Update: {
+          app?: string;
+          computed_at?: string;
+          day?: string;
+          dimension?: string;
+          metric?: string;
+          suppressed?: boolean;
+          value?: number | null;
+        };
+        Relationships: [];
+      };
       product_feedback_media: {
         Row: {
           content: string;
@@ -18763,6 +19042,28 @@ export type Database = {
           sku?: string;
           unit?: string;
           usage_date?: string;
+        };
+        Relationships: [];
+      };
+      push_dispatch_control: {
+        Row: {
+          id: boolean;
+          immediate_enabled: boolean;
+          per_user_per_minute: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          id?: boolean;
+          immediate_enabled?: boolean;
+          per_user_per_minute?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          immediate_enabled?: boolean;
+          per_user_per_minute?: number;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -27312,6 +27613,7 @@ export type Database = {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
       };
+      evaluate_observability_slos: { Args: { p_limit: number }; Returns: Json };
       expire_ai_live_sessions: {
         Args: { p_balance_id: string };
         Returns: undefined;
@@ -29337,6 +29639,7 @@ export type Database = {
           transcript: string;
         }[];
       };
+      list_observability_alerts: { Args: { p_limit: number }; Returns: Json };
       list_personal_journal: {
         Args: { p_actor_id: string; p_before?: string; p_ws_id: string };
         Returns: Json;
@@ -29887,6 +30190,42 @@ export type Database = {
         Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
+      observability_begin_ingest: { Args: { p_source: string }; Returns: Json };
+      observability_burn_rate: {
+        Args: {
+          p_service: string;
+          p_since: string;
+          p_slo: Omit<
+            Database['private']['Tables']['observability_slos']['Row'],
+            Database['private']['Tables']['observability_slos']['ComputedFields']
+          >;
+          p_until: string;
+        };
+        Returns: number;
+      };
+      observability_metric_allowed: {
+        Args: { p_metric: string; p_source: string };
+        Returns: boolean;
+      };
+      observability_rollup_window: {
+        Args: {
+          p_service?: string;
+          p_since: string;
+          p_step_seconds: number;
+          p_until: string;
+        };
+        Returns: Json;
+      };
+      observability_write_rollups: {
+        Args: {
+          p_generation: number;
+          p_markers: Json;
+          p_rollups: Json;
+          p_source: string;
+          p_watermark: string;
+        };
+        Returns: Json;
+      };
       parley_runtime_ready: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
@@ -30098,11 +30437,20 @@ export type Database = {
         };
         Returns: Json;
       };
+      product_analytics_hidden: {
+        Args: { p_events: number; p_people: number };
+        Returns: boolean;
+      };
+      product_analytics_suppressed: {
+        Args: { p_people: number };
+        Returns: boolean;
+      };
       prune_cron_history: { Args: { p_limit?: number }; Returns: Json };
       prune_discord_interaction_claims: {
         Args: { p_limit?: number };
         Returns: number;
       };
+      prune_observability_rollups: { Args: { p_limit: number }; Returns: Json };
       prune_storage_access_events: {
         Args: { p_limit?: number };
         Returns: Json;
@@ -30131,6 +30479,24 @@ export type Database = {
       purge_meet_transcripts_batch: {
         Args: { p_limit?: number; p_run_id: string };
         Returns: Json;
+      };
+      push_delivery_latency_summary: {
+        Args: { p_since: string };
+        Returns: {
+          channel: string;
+          max_ms: number;
+          p50_ms: number;
+          p95_ms: number;
+          sent_count: number;
+        }[];
+      };
+      push_immediate_admitted: {
+        Args: { p_user_id: string };
+        Returns: boolean;
+      };
+      push_recipient_reachable: {
+        Args: { p_user_id: string };
+        Returns: boolean;
       };
       qa_test_activate_user: {
         Args: { p_actor: string; p_user_id: string };
@@ -30388,6 +30754,19 @@ export type Database = {
         Args: { p_binding_erased: boolean };
         Returns: string;
       };
+      record_observability_ingest_run: {
+        Args: {
+          p_marker_rows: number;
+          p_mode: string;
+          p_requests: number;
+          p_rollup_rows: number;
+          p_source: string;
+          p_status: string;
+          p_window_end: string;
+          p_window_start: string;
+        };
+        Returns: Json;
+      };
       record_provider_cost_day: {
         Args: {
           p_account_id: string;
@@ -30614,6 +30993,10 @@ export type Database = {
       revoke_overlong_cross_app_tokens: {
         Args: Record<PropertyKey, never>;
         Returns: number;
+      };
+      rollup_product_analytics_daily: {
+        Args: { p_limit: number };
+        Returns: Json;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       save_learn_programming_problem: {

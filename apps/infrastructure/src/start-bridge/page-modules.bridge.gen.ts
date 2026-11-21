@@ -301,6 +301,14 @@ export const pageModules = {
       () => import('../app/[locale]/(dashboard)/[wsId]/monitoring/layout'),
     ],
   },
+  'src/app/[locale]/(dashboard)/[wsId]/monitoring/health/page.tsx': {
+    page: () => import('../app/[locale]/(dashboard)/[wsId]/monitoring/health/page'),
+    layouts: [
+      () => import('../app/[locale]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/layout'),
+      () => import('../app/[locale]/(dashboard)/[wsId]/monitoring/layout'),
+    ],
+  },
   'src/app/[locale]/(dashboard)/[wsId]/monitoring/logs/page.tsx': {
     page: () => import('../app/[locale]/(dashboard)/[wsId]/monitoring/logs/page'),
     layouts: [

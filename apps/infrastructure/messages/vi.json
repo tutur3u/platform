@@ -2983,6 +2983,10 @@
       "stress_tests": {
         "description": "Các lượt tải native có kiểm soát, lịch sử sức chịu tải và spike tài nguyên.",
         "title": "Stress Test"
+      },
+      "health": {
+        "title": "Tình trạng",
+        "description": "Tín hiệu vàng, triển khai và phân tích sản phẩm theo dịch vụ."
       }
     },
     "runtime": {
@@ -9289,7 +9293,8 @@
     "translations": "Bản dịch",
     "users": "Người dùng",
     "workspaces": "Không gian làm việc",
-    "deployments": "Triển khai"
+    "deployments": "Triển khai",
+    "monitoring_health": "Tình trạng"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
@@ -24609,5 +24614,79 @@
       "label": "Chi phí đã tính hằng ngày theo nhà cung cấp, đơn vị đô la Mỹ",
       "title": "Chi phí hằng ngày theo nhà cung cấp"
     }
+  },
+  "observability-health": {
+    "title": "Tình trạng dịch vụ",
+    "last_run": "Lần thu thập gần nhất: {source}, {status}, {time}",
+    "no_runs": "Chưa có lần thu thập nào.",
+    "range_label": "Khoảng thời gian",
+    "ranges": {
+      "24h": "24 giờ",
+      "7d": "7 ngày",
+      "30d": "30 ngày"
+    },
+    "load_error": "Không tải được dữ liệu tình trạng. Hãy tải lại trang để thử lại.",
+    "empty": {
+      "title": "Chưa có dữ liệu tình trạng",
+      "description": "Bật các bộ thu thập observability trong Cron Control và các dòng điều khiển nguồn của chúng để bắt đầu thu thập."
+    },
+    "columns": {
+      "service": "Dịch vụ",
+      "status": "Trạng thái",
+      "rate": "Yêu cầu",
+      "errors": "Tỷ lệ lỗi",
+      "p95": "Độ trễ p95",
+      "cpu": "CPU p99",
+      "do": "Lỗi DO",
+      "coverage": "Độ phủ",
+      "deploy": "Lần triển khai gần nhất"
+    },
+    "status": {
+      "healthy": "Ổn định",
+      "warning": "Suy giảm",
+      "critical": "Nghiêm trọng",
+      "unavailable": "Không có dữ liệu"
+    },
+    "run_status": {
+      "done": "hoàn tất",
+      "budget_exhausted": "đã chạm ngân sách",
+      "stopped": "đã dừng",
+      "stale": "đã bị thay thế",
+      "failed": "thất bại",
+      "unknown": "chưa xác nhận"
+    },
+    "none": "—",
+    "milliseconds": "{value} ms",
+    "per_minute": "{value}/phút",
+    "deployed": "{sha}, {time}",
+    "deploys_in_range": "{count, plural, =0 {Không có lần triển khai trong khoảng này} other {# lần triển khai trong khoảng này}}",
+    "series_error": "Không tải được chuỗi dữ liệu của dịch vụ này.",
+    "series_empty": "Không có lưu lượng nào cho dịch vụ này trong khoảng thời gian đã chọn.",
+    "charts": {
+      "requests": "Yêu cầu",
+      "errorRate": "Tỷ lệ lỗi",
+      "p95Ms": "Độ trễ p95 (ms)",
+      "cpuP99Ms": "CPU p99 (ms)"
+    },
+    "analytics": {
+      "title": "Phân tích sản phẩm",
+      "privacy": "Chỉ có số liệu tổng hợp theo ngày. Các nhóm dưới 10 người được ẩn.",
+      "load_error": "Không tải được phân tích sản phẩm.",
+      "empty": "Chưa có phân tích sản phẩm.",
+      "day": "Ngày (UTC)",
+      "missing": "—",
+      "suppressed": "<10",
+      "metrics": {
+        "dau": "Hoạt động hằng ngày",
+        "wau": "Hoạt động hằng tuần",
+        "signups": "Đăng ký",
+        "meet_minutes": "Phút Meet",
+        "meet_participants": "Người tham gia Meet",
+        "ai_requests": "Yêu cầu AI",
+        "ai_users": "Người dùng AI"
+      }
+    },
+    "runs_unavailable": "Không đọc được nhật ký thu thập.",
+    "deploys_unavailable": "Không có dữ liệu triển khai"
   }
 }

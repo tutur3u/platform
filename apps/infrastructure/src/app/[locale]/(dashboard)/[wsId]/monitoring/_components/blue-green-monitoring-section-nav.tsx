@@ -7,6 +7,7 @@ import {
   CalendarClock,
   DatabaseZap,
   Gauge,
+  HeartPulse,
   Logs,
   Radio,
   Zap,
@@ -65,6 +66,12 @@ export function BlueGreenMonitoringSectionNav({
       href: `${baseHref}/observability`,
       icon: DatabaseZap,
       title: t('routes.observability.title'),
+    },
+    {
+      description: t('routes.health.description'),
+      href: `${baseHref}/health`,
+      icon: HeartPulse,
+      title: t('routes.health.title'),
     },
     {
       description: t('routes.cron.description'),

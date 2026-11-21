@@ -80,6 +80,7 @@ describe('Infrastructure navigation', () => {
     expect(hrefs).toEqual(
       expect.arrayContaining([
         '/internal/monitoring/cron',
+        '/internal/monitoring/health',
         '/internal/monitoring/resources',
         '/internal/ai-agents',
         '/internal/ai/whitelist/domains',

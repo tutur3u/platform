@@ -13,6 +13,7 @@ import {
   FileText,
   Flag,
   GitBranch,
+  HeartPulse,
   Globe,
   History,
   LayoutDashboard,
@@ -138,6 +139,11 @@ function getTopLevelNavigation({
           href: href(wsId, '/monitoring/rollouts'),
           icon: icon(GitBranch),
           title: t('infrastructure-tabs.monitoring_rollouts'),
+        },
+        {
+          href: href(wsId, '/monitoring/health'),
+          icon: icon(HeartPulse),
+          title: t('infrastructure-tabs.monitoring_health'),
         },
         {
           href: href(wsId, '/monitoring/requests'),

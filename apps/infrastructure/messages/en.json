@@ -2983,6 +2983,10 @@
       "stress_tests": {
         "description": "Controlled native load runs, capacity history, and resource spikes.",
         "title": "Stress Tests"
+      },
+      "health": {
+        "title": "Health",
+        "description": "Golden signals, deploys and product analytics per service."
       }
     },
     "runtime": {
@@ -9289,7 +9293,8 @@
     "translations": "Translations",
     "users": "Users",
     "workspaces": "Workspaces",
-    "deployments": "Deployments"
+    "deployments": "Deployments",
+    "monitoring_health": "Health"
   },
   "integrations-page": {
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
@@ -24609,5 +24614,79 @@
       "label": "Daily billed spend by provider, in US dollars",
       "title": "Daily spend by provider"
     }
+  },
+  "observability-health": {
+    "title": "Service health",
+    "last_run": "Last collection: {source}, {status}, {time}",
+    "no_runs": "No collection has run yet.",
+    "range_label": "Time range",
+    "ranges": {
+      "24h": "24 hours",
+      "7d": "7 days",
+      "30d": "30 days"
+    },
+    "load_error": "Health data could not be loaded. Refresh to try again.",
+    "empty": {
+      "title": "No health data yet",
+      "description": "Turn on the observability collectors in Cron Control and their source control rows to start collecting."
+    },
+    "columns": {
+      "service": "Service",
+      "status": "Status",
+      "rate": "Requests",
+      "errors": "Error rate",
+      "p95": "p95 latency",
+      "cpu": "CPU p99",
+      "do": "DO errors",
+      "coverage": "Coverage",
+      "deploy": "Latest deploy"
+    },
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Degraded",
+      "critical": "Critical",
+      "unavailable": "No data"
+    },
+    "run_status": {
+      "done": "complete",
+      "budget_exhausted": "budget reached",
+      "stopped": "stopped",
+      "stale": "superseded",
+      "failed": "failed",
+      "unknown": "unconfirmed"
+    },
+    "none": "—",
+    "milliseconds": "{value} ms",
+    "per_minute": "{value}/min",
+    "deployed": "{sha}, {time}",
+    "deploys_in_range": "{count, plural, =0 {No deploys in range} one {# deploy in range} other {# deploys in range}}",
+    "series_error": "This service's series could not be loaded.",
+    "series_empty": "No traffic recorded for this service in the range.",
+    "charts": {
+      "requests": "Requests",
+      "errorRate": "Error rate",
+      "p95Ms": "p95 latency (ms)",
+      "cpuP99Ms": "CPU p99 (ms)"
+    },
+    "analytics": {
+      "title": "Product analytics",
+      "privacy": "Daily aggregates only. Groups of fewer than 10 people are hidden.",
+      "load_error": "Product analytics could not be loaded.",
+      "empty": "No product analytics yet.",
+      "day": "Day (UTC)",
+      "missing": "—",
+      "suppressed": "<10",
+      "metrics": {
+        "dau": "Daily active",
+        "wau": "Weekly active",
+        "signups": "Sign-ups",
+        "meet_minutes": "Meet minutes",
+        "meet_participants": "Meet participants",
+        "ai_requests": "AI requests",
+        "ai_users": "AI users"
+      }
+    },
+    "runs_unavailable": "The collection log could not be read.",
+    "deploys_unavailable": "Deploys unavailable"
   }
 }

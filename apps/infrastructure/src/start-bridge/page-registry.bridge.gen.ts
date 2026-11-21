@@ -46,6 +46,7 @@ export const pages = [
   { pattern: "/[wsId]/monitoring/analytics", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/analytics/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring/cron", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/cron/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring/deployments", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/deployments/page.tsx", defaults: { "locale": "en" } },
+  { pattern: "/[wsId]/monitoring/health", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/health/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring/logs", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/logs/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring/observability", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/observability/page.tsx", defaults: { "locale": "en" } },
   { pattern: "/[wsId]/monitoring", file: "src/app/[locale]/(dashboard)/[wsId]/monitoring/page.tsx", defaults: { "locale": "en" } },
