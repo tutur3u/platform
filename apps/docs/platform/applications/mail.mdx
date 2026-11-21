@@ -227,14 +227,42 @@ apex noindex, with no redirect; only `on` redirects subdomain navigations to
 `tuturuuu.com/mail`. Server functions, the RUM beacon, `/api`, `/assets`, public
 assets and the `/verify-token` handoff return (`mailMachinePathPrefixes`) are
 served on the subdomain in every mode, in Mail's decision and in the bridge's own
-one-origin step. Under the mount, `/verify-token` never redeems a token: it
-redirects to `/mail/login` with the app-relative destination preserved as `next`
-(normalized same-origin), and server redirects (login, not-available, home) carry
-the mount base. Mail ships its locale bundles in the build, so no runtime locale
-fetch needs a base. OAuth provider callback URLs are provider configuration and
-stay on the subdomain until the release owner moves them.
-Regression coverage: `mounted-routing.test.ts`, `one-origin.test.ts`,
-`mounted-session-endpoints.test.ts`, `page-model.test.ts`, `proxy-auth.test.ts`.
+one-origin step.
+
+Under the mount the shared session is read, never written. `mailMounts.isolation`
+gives Mail code an access-token-only Supabase session (no refresh or provider
+token), the logout fence and Mail's own cookies (`NEXT_LOCALE`, the sidebar
+preferences and `mail_oauth_state`); only those are written, host-only at
+`Path=/mail`. A malformed or sessionless shared cookie is withheld, an expired
+access token cannot be refreshed by Mail, and no `sb-*` or app-session
+`Set-Cookie` leaves the mount. Web alone refreshes and ends the shared session.
+The subdomain keeps its session and cookie behavior.
+
+`/login` on the mount sends the browser to Web with the mounted destination
+itself as the `returnUrl` (`https://tuturuuu.com/mail/<next>`), never through
+`/mail/verify-token`: Web's login flattens a `verify-token` return to its bare
+`nextUrl` unless Mail is an active mount there, which would drop the base. This
+works with or without Mail in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS`. A stray
+`/mail/verify-token` request never redeems a token; it redirects to
+`/mail/login` with the normalized same-origin destination as `next`. Server
+redirects (login, not-available, home) carry the mount base. Mail ships its
+locale bundles in the build, so no runtime locale fetch needs a base.
+
+Connected-account OAuth state is host-bound by design: the state cookie is set
+and read on the host that started the flow, so the apex and the subdomain each
+need their own registered callback and the legacy subdomain callback is never
+reused for an apex start. The subdomain flow is unchanged. Enabling the apex
+flow needs, per provider (Google and Microsoft), the redirect URI
+`https://tuturuuu.com/mail/api/v1/mail/connected/callback` registered with the
+OAuth client and `MAIL_GOOGLE_APEX_REDIRECT_URI` /
+`MAIL_MICROSOFT_APEX_REDIRECT_URI` set to it, with the existing
+`MAIL_*_REDIRECT_URI` subdomain registration kept. Until then a connect attempt
+on the apex answers `400 Mail authorization host is not registered`; connect
+accounts on `mail.tuturuuu.com` meanwhile, and shared-origin `shadow` or `on`
+exposes only that one limitation.
+Regression coverage: `mounted-routing.test.ts`, `mounted-isolation.test.ts`,
+`one-origin.test.ts`, `login-model.test.ts`, `mounted-session-endpoints.test.ts`,
+`page-model.test.ts`, `proxy-auth.test.ts`, `oauth-callback-url.test.ts`.
 
 Under `/mail`, Web owns shared-session writes: Mail rejects logout, token
 verification and session refresh before middleware or endpoint dispatch. The

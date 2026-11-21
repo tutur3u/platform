@@ -16,6 +16,15 @@ export const mailMachinePathPrefixes = [
   '/vi/verify-token',
 ] as const;
 
+// Cookies Mail itself owns on the mount: the locale, the sidebar preferences
+// and the connected-account OAuth state (set and cleared by the callback).
+export const mailOwnedCookies = [
+  'NEXT_LOCALE',
+  'sidebar-behavior',
+  'sidebar-collapsed',
+  'mail_oauth_state',
+] as const;
+
 // Each artifact serves only its own environment's host. The profile is a
 // build-time literal (see vite.config.ts), so the other lists fold away. There
 // is no default profile. Production also serves any other host at the root
@@ -35,6 +44,12 @@ export const mailMounts = {
       ? []
       : ['tuturuuu.com', 'web.tutur3u.com'],
   basePath: '/mail',
+  // Same-origin isolation on tuturuuu.com/mail: Mail code receives an
+  // access-token-only Supabase session (no refresh token, so it can verify the
+  // user but never rotate or clear the shared session), the logout fence and
+  // these cookies only, and writes only these, host-only at Path=/mail. Web
+  // alone refreshes and ends the shared session.
+  isolation: { ownedCookies: mailOwnedCookies },
   machinePathPrefixes: mailMachinePathPrefixes,
   unknownHost:
     process.env.MAIL_DEPLOYMENT_PROFILE === 'staging' ? 'reject' : 'root',

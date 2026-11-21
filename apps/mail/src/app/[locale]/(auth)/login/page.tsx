@@ -4,7 +4,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { getSatelliteSupabaseSessionUser } from '@tuturuuu/satellite/auth';
-import { withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { runtimeAppBase, withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -18,6 +18,14 @@ function normalizeNextPath(
 ) {
   const rawValue = Array.isArray(value) ? value[0] : value;
   return normalizeAuthRedirectPath(rawValue, origin, DEFAULT_MAIL_PATH);
+}
+
+const AUTH_STEP = /^\/(?:(?:en|vi)\/)?(?:login|verify-token)\/?$/u;
+
+/** A destination Web's login will not unwrap as an auth step. */
+function mountedDestination(nextPath: string) {
+  const { pathname } = new URL(nextPath, 'https://mail.invalid');
+  return AUTH_STEP.test(pathname) ? DEFAULT_MAIL_PATH : nextPath;
 }
 
 export default async function LoginPage({
@@ -49,8 +57,15 @@ export default async function LoginPage({
     redirect(nextPath);
   }
 
-  const returnUrl = new URL(withAppBase('/verify-token'), appOrigin);
-  returnUrl.searchParams.set('nextUrl', nextPath);
+  // The subdomain redeems a handoff token at its own `/verify-token`. On the
+  // shared origin the session is already shared, so Web returns straight to
+  // the mounted destination: a `/mail/verify-token` return is flattened to
+  // its bare `nextUrl` by Web's login when Mail is not an active mount there,
+  // which would drop the base.
+  const returnUrl = runtimeAppBase()
+    ? new URL(withAppBase(mountedDestination(nextPath)), appOrigin)
+    : new URL('/verify-token', appOrigin);
+  if (!runtimeAppBase()) returnUrl.searchParams.set('nextUrl', nextPath);
 
   const loginUrl = new URL('/login', TTR_URL);
   loginUrl.searchParams.set('returnUrl', returnUrl.toString());
