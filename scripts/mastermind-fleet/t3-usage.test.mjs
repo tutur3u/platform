@@ -136,7 +136,7 @@ for (const { name, origin, padding, permitted } of [
       bearer: 'test-local-bearer',
       now: NOW,
       async fetchImpl(url) {
-        return url.pathname.endsWith('/environment')
+        return new URL(url).pathname === '/.well-known/t3/environment'
           ? Response.json({ environmentId: 'fixture-environment' })
           : Response.json({ ticket: 'test-ticket' });
       },
