@@ -1,0 +1,5 @@
+# age recipients that can decrypt the people registry wrap-key escrow.
+# One public recipient per line, from `age-keygen -y identity.txt` or, for a
+# post-quantum hybrid key, `age-keygen -pq -y`. Keep each identity in a synced
+# password manager; only public recipients belong in this file.
+# The mint workflow refuses to run while this file lists no recipient.

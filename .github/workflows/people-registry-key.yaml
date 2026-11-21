@@ -1,0 +1,95 @@
+name: People Registry Key
+
+# Dispatch-only operator job that mints one people-registry root wrap key for
+# one environment under a new random kid. The key exists only in process
+# memory, in the age escrow and in the api-core Worker secrets. It is never a
+# GitHub secret, output, environment file, artifact, cache entry, log line or
+# command argument.
+#
+# Order, each step failing closed:
+#   1. preflight: escrow recipients are committed, the Workers exist, the kid
+#      and its escrow object are unused
+#   2. escrow: age-encrypt to the committed recipients, store the armored
+#      ciphertext in the private escrow bucket and read it back byte for byte
+#   3. write PEOPLE_REGISTRY_WRAP_KEY_<kid> to every target Worker
+#   4. activate: point PEOPLE_REGISTRY_WRAP_KID at the kid, then read back
+# A key is never minted without escrow, and an existing kid is never
+# rewritten, because wrapped workspace keys must stay readable. A secret write
+# deploys a new version built from the latest upload, so preflight, the key
+# write and the activation write each require the latest uploaded version to be
+# the one serving all traffic, checked immediately before each write; dispatch
+# only in a quiet window agreed with the web lane.
+#
+# The target uses the shared-secret-production environment, which requires a
+# reviewer. Credentials, by name: COLAB_CLOUDFLARE_API_TOKEN (Worker secrets)
+# and ESCROW_R2_TOKEN (a dedicated token limited to object read and write on
+# the tuturuuu-secret-escrow bucket, used over R2's S3 API with SigV4).
+#
+# Do not dispatch until every precondition in the runbook holds
+# (apps/docs/platform/architecture/secrets-vault-delivery.mdx, "Interim server
+# keys before workload principals"): the deployed api-core reads
+# PEOPLE_REGISTRY_WRAP_KID and PEOPLE_REGISTRY_WRAP_KEY_<kid>, its vinext build
+# exposes secret bindings to dynamic process.env reads, an owner recipient is
+# committed, and the web lane has agreed a quiet window.
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Destination environment
+        required: true
+        type: choice
+        # Staging has no vinext family Workers yet.
+        options:
+          - production
+
+permissions:
+  contents: read
+
+concurrency:
+  group: people-registry-key-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  mint:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: shared-secret-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Install age v1.3.2 (pinned digest)
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/age.tgz"
+          curl -fsSL --proto '=https' -o "$archive" \
+            https://github.com/FiloSottile/age/releases/download/v1.3.2/age-v1.3.2-linux-amd64.tar.gz
+          echo "cbe24006683f8eb669266162894b9a522a1af52f2665fbc63a4bb032ed26ac10  $archive" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/age" >> "$GITHUB_PATH"
+      - name: Mint, escrow, write and activate
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.environment }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.COLAB_CLOUDFLARE_API_TOKEN }}
+          ESCROW_R2_TOKEN: ${{ secrets.ESCROW_R2_TOKEN }}
+        run: |
+          set -euo pipefail
+          set +x
+          kid="$(openssl rand -hex 4)"
+          node scripts/ci/people-registry-key.mjs preflight "$TARGET_ENVIRONMENT" "$kid"
+          key="$(openssl rand -hex 32)"
+          printf '::add-mask::%s\n' "$key"
+          sealed="$RUNNER_TEMP/escrow.age"
+          trap 'rm -f "$sealed"' EXIT
+          printf '%s' "$key" | age --armor -R .github/escrow/people-registry-wrap-key.recipients -o "$sealed"
+          node scripts/ci/people-registry-key.mjs escrow "$TARGET_ENVIRONMENT" "$kid" < "$sealed"
+          rm -f "$sealed"
+          printf '%s' "$key" | node scripts/ci/people-registry-key.mjs write "$TARGET_ENVIRONMENT" "$kid"
+          unset key
+          node scripts/ci/people-registry-key.mjs activate "$TARGET_ENVIRONMENT" "$kid"
+          node scripts/ci/people-registry-key.mjs verify "$TARGET_ENVIRONMENT" "$kid"
+          echo "minted kid $kid for $TARGET_ENVIRONMENT" >> "$GITHUB_STEP_SUMMARY"
