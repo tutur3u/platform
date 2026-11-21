@@ -71,6 +71,12 @@ export interface OfflineRouteConfig {
   publicPrecachePatterns?: readonly string[] | false;
 }
 
+export interface OfflineWorkerFile {
+  /** Output path relative to the app root, such as `sw.js`. */
+  path: string;
+  contents: string;
+}
+
 export interface OfflineRouteResult {
   /**
    * Generates static params for the route

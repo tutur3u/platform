@@ -34,6 +34,7 @@
     "./precache": "./src/precache/index.ts",
     "./components": "./src/components/index.tsx",
     "./route": "./src/route/index.ts",
+    "./route/prebuilt": "./src/route/prebuilt.ts",
     "./provider": "./src/provider/index.tsx"
   },
   "packageManager": "bun@1.4.4"

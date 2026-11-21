@@ -1,13 +1,6 @@
 import { createOfflineRoute } from '@tuturuuu/offline/route';
+import { WEB_OFFLINE_WORKER_CONFIG } from '@/lib/offline-worker-config';
 
-export const { GET, generateStaticParams } = createOfflineRoute({
-  // Service worker source file
-  swSrc: 'src/app/sw.ts',
-  // Offline fallback page to precache
-  offlineFallbackUrl: '/~offline',
-  // Enable service worker in development for testing (default: disabled)
-  disableInDev: true,
-  // Avoid precaching every public asset on first visit; runtime/static HTTP
-  // caching still serves public files normally.
-  publicPrecachePatterns: false,
-});
+export const { GET, generateStaticParams } = createOfflineRoute(
+  WEB_OFFLINE_WORKER_CONFIG
+);

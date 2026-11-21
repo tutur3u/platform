@@ -76,6 +76,27 @@ Redis client, or when the upload exceeds the 9.5 MiB family budget.
 including the resolved version, is in
 `apps/web/cloudflare/vinext/<family>.check.json`.
 
+Before `vp build`, `build-family.sh` runs `cloudflare/vinext/service-worker.ts`.
+The Next.js route `src/app/serwist/[path]/route.ts` bundles `src/app/sw.ts`
+with esbuild-wasm and reads the revision through `node:child_process` at
+prerender time. Neither runs in a Worker. For the family that keeps that route
+(`web-rest`), the helper calls `buildOfflineWorker` from `@tuturuuu/offline/route`
+with the same config (`src/lib/offline-worker-config.ts`): the offline
+fallback `/~offline`, no public-file precache, and the checkout's commit as
+revision. It then replaces the route with `createPrebuiltOfflineRoute`
+(`@tuturuuu/offline/route/prebuilt`). `/serwist/sw.js` and `/serwist/sw.js.map`
+are served from the prebuilt bytes with the Next.js headers
+(`application/javascript`, `Service-Worker-Allowed: /`). A family build has no
+`.next/static`, so its precache manifest holds only the offline fallback.
+Hashed assets are cached when first fetched.
+
+`build-family.sh` also exports `PLATFORM_DEPLOYMENT_STAMP` as the first 12
+characters of the build commit. `cloudflare.config.ts` binds it as a text var,
+so the `/serwist/sw.js?v=<stamp>` cache-buster in `src/app/[locale]/layout.tsx`
+changes with each build. `cloudflare/vinext/service-worker.test.ts` checks the
+single owner, the order of the build steps, the binding and the parity with the
+Next.js route.
+
 Worker builds emit no source maps (`build.sourcemap: false`): Cloudflare
 rejects an upload whose source maps exceed 60 MiB (error 10021), and the
 `public-auth` maps alone reach about 70 MiB.

@@ -5,6 +5,9 @@ import { bindings, defineConfig, defineWorker } from 'cf/config';
 // no workers.dev or preview URL; traffic can only reach it through an explicit
 // gateway binding.
 const family = process.env.WEB_VINEXT_FAMILY?.trim();
+// build-family.sh sets the build commit; the service-worker URL uses it as
+// its cache-buster.
+const deploymentStamp = process.env.PLATFORM_DEPLOYMENT_STAMP?.trim();
 
 // Names only. Values come from deployment secrets, or `.dev.vars` locally.
 const runtimeVariables = [
@@ -60,6 +63,9 @@ export default defineConfig({
       TUTURUUU_SERVICE_NAME: bindings.text(
         family ? `web-vinext-${family}` : 'web-vinext'
       ),
+      PLATFORM_DEPLOYMENT_STAMP: deploymentStamp
+        ? bindings.text(deploymentStamp)
+        : false,
       ...Object.fromEntries(
         runtimeVariables.map((name) => [name, bindings.secret()])
       ),

@@ -44,6 +44,11 @@ while [[ "$parent_dir" != "/" ]]; do
   parent_dir="$(dirname "$parent_dir")"
 done
 
+# The service-worker URL carries the stamp as its cache-buster
+# (src/app/[locale]/layout.tsx); cloudflare.config.ts binds it into the Worker.
+PLATFORM_DEPLOYMENT_STAMP="$(git -C "$repo_dir" rev-parse HEAD | cut -c1-12)"
+export PLATFORM_DEPLOYMENT_STAMP
+
 cd "$repo_dir"
 npm pkg set "overrides.react=$react_version" "overrides.react-dom=$react_version"
 bun add -d "react@$react_version" "react-dom@$react_version"
@@ -55,6 +60,8 @@ bun x --no-install turbo run build --filter='@tuturuuu/web^...' --concurrency=4
 
 cd "$app_dir"
 bun cloudflare/vinext/prune.ts "$family" --apply
+# The family that keeps /serwist/[path] serves a service worker bundled now.
+bun cloudflare/vinext/service-worker.ts "$family" --apply
 WEB_VINEXT_FAMILY="$family" node --max-old-space-size=32768 \
   node_modules/vite-plus/bin/vp build --config vite.vinext.config.ts --configLoader runner
 # cf prints the upload size on stderr; the bundle check reads it from the log.
