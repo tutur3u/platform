@@ -105,9 +105,13 @@ describe('sharedEgressSubjects', () => {
     expect(
       new Set(subjects.map((subject) => ids(subject)?.join(' '))).size
     ).toBe(1);
+    const subjectLeak = /^(?:app:.*|.*ttr_.*)$/su;
+    expect('app:rotation').toMatch(subjectLeak);
+    expect('egress:ttr_one').toMatch(subjectLeak);
+    expect('client:abc').not.toMatch(subjectLeak);
     expect(
       subjects.flatMap((subject) => ids(subject) ?? [])
-    ).not.toContainEqual(expect.stringMatching(/^app:|ttr_/u));
+    ).not.toContainEqual(expect.stringMatching(subjectLeak));
   });
 
   it('bounds fingerprint rotation by the shared address aggregate', async () => {

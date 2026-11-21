@@ -11,6 +11,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
+  lineNamesProductionHost,
+  productionHostPattern,
   scanCalendarArtifact,
   scanCalendarForwardingSources,
 } from './calendar-host-scan.mjs';
@@ -216,6 +218,44 @@ test('the dev server is the only explicit development caller', () => {
   assert.equal(pkg.scripts.build, 'vp build');
   for (const name of ['build', 'start', 'preview'])
     assert.doesNotMatch(pkg.scripts[name], /CALENDAR_DEPLOYMENT_PROFILE/, name);
+});
+
+test('a production host matches only on a bounded slice', () => {
+  const embedded = [
+    'https://calendar.tuturuuu.com/x',
+    "const web = 'https://tuturuuu.com';",
+    'see tuturuuu.com.evil later',
+    'evil.tuturuuu.com.attacker.com',
+    'foo_tuturuuu.com',
+    '  tuturuuu.com',
+  ];
+  const exact = [
+    'TUTURUUU.COM',
+    'calendar.TUTURUUU.com',
+    'a.b.tuturuuu.com',
+    '-bad.tuturuuu.com',
+    'calendar.tuturuuu.com',
+  ];
+  const misses = [
+    'xtuturuuu.com',
+    'tuturuuu.comfoo',
+    'not a host',
+    'calendar.tutur3u.com',
+    'tuturuuu.com-foo',
+    'foo-tuturuuu.com',
+  ];
+  for (const line of embedded) {
+    assert.equal(productionHostPattern.test(line), false, line);
+    assert.equal(lineNamesProductionHost(line), true, line);
+  }
+  for (const line of exact) {
+    assert.equal(productionHostPattern.test(line), true, line);
+    assert.equal(lineNamesProductionHost(line), true, line);
+  }
+  for (const line of misses) {
+    assert.equal(lineNamesProductionHost(line), false, line);
+  }
+  assert.equal(productionHostPattern.test('tuturuuu.com.evil'), false);
 });
 
 test('staging forwarding sources name no production host', () => {

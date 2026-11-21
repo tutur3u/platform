@@ -6,10 +6,20 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { JSDOM } from 'jsdom';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { fleetResponseFixture } from '../src/fleet/fleet-fixture.ts';
 import { createFleetGrantee } from './fleet-admission.acceptance-cases.mjs';
+
+function documentScripts(html) {
+  const dom = new JSDOM(html);
+  try {
+    return [...dom.window.document.querySelectorAll('script')];
+  } finally {
+    dom.window.close();
+  }
+}
 
 /** Every <script> in the document must carry the response's CSP nonce. */
 function assertNonceHydration(response, html) {
@@ -19,13 +29,49 @@ function assertNonceHydration(response, html) {
   )?.[1];
   assert.ok(nonce, `nonce script policy expected: ${policy}`);
   assert.ok(!policy.includes('unsafe-inline'));
-  const scripts = [...html.matchAll(/<script\b[^>]*>/g)].map((m) => m[0]);
+  const scripts = documentScripts(html);
   assert.ok(scripts.length > 0, 'hydration scripts expected');
-  for (const tag of scripts) {
-    assert.ok(tag.includes(`nonce="${nonce}"`), `unstamped script: ${tag}`);
+  for (const script of scripts) {
+    assert.equal(
+      script.getAttribute('nonce'),
+      nonce,
+      `unstamped script: ${script.outerHTML}`
+    );
   }
   return nonce;
 }
+
+test('nonce hydration reads every script from the document parser', () => {
+  const nonce = 'abc+/=';
+  const response = {
+    headers: {
+      get: () => `script-src 'nonce-${nonce}' 'strict-dynamic'`,
+    },
+  };
+  const stamped = [
+    '<!doctype html><html><head>',
+    `<script nonce="${nonce}" src="/a.js"></script>`,
+    `<script\nnonce="${nonce}">window.__ok=1</script>`,
+    '</head><body></body></html>',
+  ].join('');
+  assert.equal(assertNonceHydration(response, stamped), nonce);
+  assert.throws(
+    () =>
+      assertNonceHydration(
+        response,
+        `<script nonce="${nonce}"></script><SCRIPT src="/x.js"></SCRIPT>`
+      ),
+    /unstamped script/
+  );
+  assert.throws(
+    () =>
+      assertNonceHydration(
+        response,
+        `<script nonce="${nonce}"></script><script nonce="other"></script>`
+      ),
+    /unstamped script/
+  );
+});
 
 test(
   'sealed emitted Worker enforces admission and renders the bilingual command center',

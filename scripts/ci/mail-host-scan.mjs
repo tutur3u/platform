@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { files, productionHostPattern } from './calendar-host-scan.mjs';
+import { files, lineNamesProductionHost } from './calendar-host-scan.mjs';
 
 export const expectedRootHosts = {
   production: ['mail.tuturuuu.com'],
@@ -67,7 +67,7 @@ export function scanMailForwardingSources(appDir, sources = forwardingSources) {
     const lines = readFileSync(join(appDir, source), 'utf8').split('\n');
     lines.forEach((line, index) => {
       assert.ok(
-        line.includes('host-scan-allow') || !productionHostPattern.test(line),
+        line.includes('host-scan-allow') || !lineNamesProductionHost(line),
         `staging forwarding source ${source}:${index + 1} names a production host`
       );
     });

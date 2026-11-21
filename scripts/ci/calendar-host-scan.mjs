@@ -21,16 +21,73 @@ const forbidden = {
 // legitimately name them inside staging bytes, so they are forbidden in the
 // source that forwards requests, where a fallback would carry staging session
 // cookies to production. A guard line opts out with `host-scan-allow`.
-export const productionHostPattern =
-  /(?<![a-z0-9-])(?:[a-z0-9-]+\.)*tuturuuu\.com(?![a-z0-9-])/iu;
+const productionHostName = 'tuturuuu.com';
+export const productionHostPattern = /^(?:[a-z0-9-]+\.)*tuturuuu\.com$/iu;
 const productionHostValuePattern =
   /^(?:[a-z0-9-]+\.)*tuturuuu\.com(?:[/?#][^\s'"`]*)?$/iu;
+
+function isHostAtom(char) {
+  const code = char.charCodeAt(0);
+  return (
+    (code >= 48 && code <= 57) ||
+    (code >= 65 && code <= 90) ||
+    (code >= 97 && code <= 122) ||
+    code === 45
+  );
+}
+
+function productionHostAt(line, from) {
+  const needle = productionHostName;
+  for (let index = from; index <= line.length - needle.length; index += 1) {
+    let matched = true;
+    for (let offset = 0; offset < needle.length; offset += 1) {
+      let char = line[index + offset];
+      const code = char.charCodeAt(0);
+      if (code >= 65 && code <= 90) char = String.fromCharCode(code + 32);
+      if (char !== needle[offset]) {
+        matched = false;
+        break;
+      }
+    }
+    if (matched) return index;
+  }
+  return -1;
+}
+
+function boundedProductionHost(line, at) {
+  const end = at + productionHostName.length;
+  const left = at === 0 ? '' : line[at - 1];
+  const right = end === line.length ? '' : line[end];
+  if ((left !== '' && isHostAtom(left)) || (right !== '' && isHostAtom(right)))
+    return false;
+  let start = at;
+  while (start > 0 && line[start - 1] === '.') {
+    let labelStart = start - 1;
+    while (labelStart > 0 && isHostAtom(line[labelStart - 1])) labelStart -= 1;
+    if (labelStart === start - 1) break;
+    const edge = labelStart === 0 ? '' : line[labelStart - 1];
+    if (edge !== '' && isHostAtom(edge)) break;
+    start = labelStart;
+  }
+  return productionHostPattern.test(line.slice(start, end));
+}
+
+export function lineNamesProductionHost(line) {
+  let from = 0;
+  while (from < line.length) {
+    const at = productionHostAt(line, from);
+    if (at < 0) return false;
+    if (boundedProductionHost(line, at)) return true;
+    from = at + 1;
+  }
+  return false;
+}
 
 // A URL, a bare host, or a host path is a forwarding target. Prose in an
 // error message may name the host without being one. The pattern itself stays
 // strict, and a URL inside an error message still counts.
 export function declaresProductionForwardingHost(line) {
-  if (line.includes('host-scan-allow') || !productionHostPattern.test(line))
+  if (line.includes('host-scan-allow') || !lineNamesProductionHost(line))
     return false;
   if (/https?:\/\//iu.test(line)) return true;
   const errorMessage = line.match(/\berror\s*:\s*(['"`])([\s\S]*?)\1/iu);
