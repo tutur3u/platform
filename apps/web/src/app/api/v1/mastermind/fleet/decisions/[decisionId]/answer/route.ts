@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
 import { fleetAnswerInputSchema } from '@/lib/mastermind/fleet/contract';
+import { isLoginActionable } from '@/lib/mastermind/fleet/login';
 import {
   FLEET_NO_STORE,
   fleetError,
@@ -50,6 +51,18 @@ export const POST = withSessionAuth<{ decisionId: string }>(
       const stored = await readFleetState(store);
       const decision = stored?.state.decisions.find((d) => d.id === decisionId);
       if (!decision) return fleetError('decision_closed', 409);
+      // "I signed in" exists only on login requests that are still open, and
+      // an ask's approve or hold never answers a login request.
+      if (
+        (parsed.data.action === 'signed_in') !== (decision.kind === 'login') &&
+        parsed.data.action !== 'reply'
+      )
+        return fleetError('invalid_answer', 422);
+      if (
+        parsed.data.action === 'signed_in' &&
+        (!decision.login || !isLoginActionable(decision.login))
+      )
+        return fleetError('login_closed', 409);
       if (
         parsed.data.optionId &&
         !decision.options.some((option) => option.id === parsed.data.optionId)

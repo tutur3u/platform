@@ -10,6 +10,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
+  baseFleetState,
+  parseDecisionExtras,
+  readRelease,
+  readResolved,
+} from './decision-extras.mjs';
+import {
   buildFleetState,
   contentHash,
   isoTime,
@@ -41,6 +47,17 @@ const TICK_BUDGET_MS = 25_000;
 const WEB_RESERVE_MS = 12_000;
 /** Hard stop for synchronous work the deadlines cannot interrupt. */
 const WATCHDOG_MS = 29_000;
+/** Asks keep the full v1 budget; login requests ride on top of it. */
+const MAX_DECISIONS = 50;
+const MAX_LOGINS = 10;
+const OPEN_LOGIN = new Set(['waiting', 'approved']);
+/**
+ * Responses that mean "this body", not "this publisher" (edge guard, size,
+ * schema): retry with the v1 core.
+ */
+const REFUSED_BODY = [' 400', ' 413', ' 422'];
+/** The answers route accepts at most this many acknowledgements per call. */
+const ACK_BATCH = 100;
 
 export function defaultPaths(home = os.homedir()) {
   const root = path.join(home, '.local/share/fleet-sync');
@@ -53,6 +70,8 @@ export function defaultPaths(home = os.homedir()) {
     configFile: path.join(root, 'config.json'),
     openDir: path.join(root, 'decisions/open'),
     answersDir: path.join(root, 'decisions/answers'),
+    resolvedDir: path.join(root, 'decisions/resolved'),
+    releaseFile: path.join(root, 'release.json'),
     stampFile: path.join(root, 'last-publish.json'),
   };
 }
@@ -116,8 +135,10 @@ function optionalIso(value) {
 }
 
 /** Validates one orchestrator-authored decision file; returns null if unusable. */
-export function parseDecision(raw) {
+export function parseDecision(raw, now = new Date()) {
   if (!raw || typeof raw !== 'object') return null;
+  const extras = parseDecisionExtras(raw, now);
+  if (!extras) return null;
   const { id, title, body, urgency, options, recommendedOptionId, laneId } =
     raw;
   if (typeof id !== 'string' || !SLUG.test(id)) return null;
@@ -151,6 +172,7 @@ export function parseDecision(raw) {
       ? { recommendedOptionId }
       : {}),
     ...(typeof laneId === 'string' && SLUG.test(laneId) ? { laneId } : {}),
+    ...extras,
     createdAt,
     ...(deadlineAt ? { deadlineAt } : {}),
   };
@@ -173,7 +195,20 @@ export function readDecisions(dir) {
     }
   }
   decisions.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  return { decisions: decisions.slice(0, 50), skipped };
+  // Login requests get their own small budget, and only open ones count,
+  // so a backlog of sign-ins can never push an ask out of the snapshot.
+  const logins = decisions
+    .filter((d) => d.kind === 'login' && OPEN_LOGIN.has(d.login.state))
+    .slice(-MAX_LOGINS);
+  const asks = decisions
+    .filter((d) => d.kind !== 'login')
+    .slice(0, MAX_DECISIONS);
+  return {
+    decisions: [...asks, ...logins].sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt)
+    ),
+    skipped,
+  };
 }
 
 const ACTIVE = new Set(['running', 'waiting', 'queued']);
@@ -190,6 +225,13 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   const size = (value) => Buffer.byteLength(JSON.stringify(value), 'utf8');
   let fitted = state;
   let bytes = size(fitted);
+  // Resolved history and release status go before anything v1 carries.
+  for (const key of ['resolved', 'release']) {
+    if (bytes <= budget || !(key in fitted)) continue;
+    const { [key]: _dropped, ...rest } = fitted;
+    fitted = rest;
+    bytes = size(fitted);
+  }
   // Drops lanes `keep` rejects from the low-priority end until it fits.
   const trimLanes = (keep) => {
     while (bytes > budget) {
@@ -236,7 +278,14 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
   }
   if (bytes > budget) trimLanes(() => false);
   while (bytes > budget && fitted.decisions.length > 0) {
-    fitted = { ...fitted, decisions: fitted.decisions.slice(0, -1) };
+    // The newest login request goes first, then the newest ask.
+    const decisions = fitted.decisions;
+    let drop = decisions.findLastIndex((d) => d.kind === 'login');
+    if (drop < 0) drop = decisions.length - 1;
+    fitted = {
+      ...fitted,
+      decisions: decisions.filter((_, index) => index !== drop),
+    };
     bytes = size(fitted);
   }
   return {
@@ -271,6 +320,39 @@ export function machineSummary(state, activeTotals) {
     for (const [id, active] of Object.entries(activeTotals))
       if (summary[id]) summary[id].active = active;
   return summary;
+}
+
+/** Older than the watchdog, so a lock left by a killed run is stale. */
+const LOCK_STALE_MS = 60_000;
+
+/**
+ * One publisher at a time (a manual run overlapping the launchd tick):
+ * overlapping publishes could store an older snapshot over a newer one.
+ * Returns a release function; throws `publisher_busy` when held. Known
+ * bound: two runs taking over the same stale lock at once can both
+ * proceed (documented in the Fleet sync runbook).
+ */
+export function acquirePublishLock(root, nowMs = Date.now()) {
+  const file = path.join(root, 'publish.lock');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const fd = fs.openSync(file, 'wx', 0o600);
+      fs.writeSync(fd, String(process.pid));
+      fs.closeSync(fd);
+      return () => fs.rmSync(file, { force: true });
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+      let age = 0;
+      try {
+        age = nowMs - fs.lstatSync(file).mtimeMs;
+      } catch {
+        continue;
+      }
+      if (age < LOCK_STALE_MS) throw new Error('publisher_busy');
+      fs.rmSync(file, { force: true });
+    }
+  }
+  throw new Error('publisher_busy');
 }
 
 function writePrivateJson(file, value) {
@@ -367,6 +449,8 @@ export async function runOnce({
   rows = { ...rows, peers: peerResult.peers };
   const { decisions, skipped } = readDecisions(paths.openDir);
   const label = config.machineLabel || os.hostname().split('.')[0];
+  const resolved = readResolved(paths.resolvedDir, now, readRegularText);
+  const release = readRelease(paths.releaseFile, readRegularText);
   const built = buildFleetState(rows, {
     now,
     decisions,
@@ -377,7 +461,11 @@ export async function runOnce({
         }
       : {}),
   });
-  const { state, droppedLanes } = fitToBudget(built);
+  const { state, droppedLanes } = fitToBudget({
+    ...built,
+    ...(resolved.length ? { resolved } : {}),
+    ...(release ? { release } : {}),
+  });
 
   const hash = contentHash(state);
   const stamp = readJson(paths.stampFile);
@@ -385,22 +473,50 @@ export async function runOnce({
     force ||
     stamp.hash !== hash ||
     now.getTime() - Date.parse(stamp.at ?? 0) >= HEARTBEAT_MS;
+  let degraded = due ? false : stamp.degraded === true;
   if (due) {
-    await call(web, 'PUT', STATE_PATH, JSON.stringify(state));
-    writePrivateJson(paths.stampFile, { hash, at: now.toISOString() });
+    try {
+      await call(web, 'PUT', STATE_PATH, JSON.stringify(state));
+    } catch (error) {
+      // An addition Web refuses (edge guard, size, schema) must not stop
+      // lanes and asks: publish the v1 core once more without the additions.
+      // The full snapshot is retried at the next heartbeat or change.
+      const base = baseFleetState(state);
+      const message = String(error?.message);
+      if (
+        base === state ||
+        !REFUSED_BODY.some((code) => message.endsWith(code))
+      )
+        throw error;
+      await call(web, 'PUT', STATE_PATH, JSON.stringify(base));
+      degraded = true;
+    }
+    writePrivateJson(paths.stampFile, {
+      hash,
+      at: now.toISOString(),
+      ...(degraded ? { degraded: true } : {}),
+    });
   }
 
+  // Web serves answers to decisions open in the last 48 hours too, so an
+  // answer survives this publish dropping its decision.
   const pulled = await call(
     web,
     'GET',
     `${ANSWERS_PATH}?nonce=${randomUUID()}`
   );
   const written = storeAnswers(paths.answersDir, pulled.answers ?? []);
-  if (written.length > 0)
-    await call(web, 'POST', ANSWERS_PATH, JSON.stringify({ acks: written }));
+  for (let i = 0; i < written.length; i += ACK_BATCH)
+    await call(
+      web,
+      'POST',
+      ANSWERS_PATH,
+      JSON.stringify({ acks: written.slice(i, i + ACK_BATCH) })
+    );
 
   return {
     published: due,
+    degraded,
     counts: state.counts,
     lanes: state.lanes.length,
     // Before the lane cap and the body budget trim anything.
@@ -422,15 +538,21 @@ async function main() {
   const origin =
     flag >= 0 ? args[flag + 1] : process.env.MASTERMIND_FLEET_ORIGIN;
   const { DatabaseSync } = await import('node:sqlite');
-  const result = await runOnce({
-    origin,
-    force: args.includes('--force'),
-    openDatabase: (file) => {
-      const db = new DatabaseSync(file, { readOnly: true });
-      db.exec('PRAGMA query_only = ON');
-      return db;
-    },
-  });
+  const release = acquirePublishLock(defaultPaths().root);
+  let result;
+  try {
+    result = await runOnce({
+      origin,
+      force: args.includes('--force'),
+      openDatabase: (file) => {
+        const db = new DatabaseSync(file, { readOnly: true });
+        db.exec('PRAGMA query_only = ON');
+        return db;
+      },
+    });
+  } finally {
+    release();
+  }
   // Counts only: no titles, ids or answer text reach the log.
   console.log(JSON.stringify({ at: new Date().toISOString(), ...result }));
 }

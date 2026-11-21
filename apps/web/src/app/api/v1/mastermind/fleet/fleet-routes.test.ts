@@ -155,6 +155,42 @@ describe('Mastermind fleet sync routes', () => {
       });
     });
 
+    it('sends no decision push for a login request', async () => {
+      vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', OWNER);
+      mocks.permission.mockImplementation(async () => ({
+        data: true,
+        error: null,
+      }));
+      expect((await publish(state())).status).toBe(200);
+      expect(
+        (
+          await publish(
+            sampleFleetState({
+              generatedAt: new Date().toISOString(),
+              decisions: [
+                {
+                  id: 'gh-login',
+                  kind: 'login',
+                  title: 'GitHub sign-in',
+                  urgency: 'high',
+                  login: {
+                    service: 'github',
+                    flow: 'device',
+                    state: 'waiting',
+                    url: 'https://github.com/login/device',
+                    userCode: 'ABCD-1234',
+                    expiresAt: new Date(Date.now() + 600_000).toISOString(),
+                  },
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            })
+          )
+        ).status
+      ).toBe(200);
+      expect(mocks.push).not.toHaveBeenCalled();
+    });
+
     it('sends one scrubbed Inbox push for a new id, to authorized fleet owners only', async () => {
       vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', PUSH_OWNER);
       vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', `${OWNER},${NO_PERMISSION}`);
@@ -382,6 +418,83 @@ describe('Mastermind fleet sync routes', () => {
       ).toBe(422);
     });
 
+    const loginDecision = (expiresAt: string) => ({
+      id: 'gh-login',
+      kind: 'login',
+      title: 'GitHub sign-in on Devbox',
+      urgency: 'high',
+      login: {
+        service: 'github',
+        flow: 'device',
+        state: 'waiting',
+        url: 'https://github.com/login/device',
+        userCode: 'ABCD-1234',
+        expiresAt,
+      },
+      createdAt: '2026-11-20T02:30:00.000Z',
+    });
+    const publishLogin = (expiresAt: string) =>
+      publish(
+        sampleFleetState({
+          decisions: [
+            ...sampleFleetState().decisions,
+            loginDecision(expiresAt),
+          ],
+        })
+      );
+    const soon = () => new Date(Date.now() + 10 * 60_000).toISOString();
+
+    it('takes "I signed in" only on open login requests', async () => {
+      await publishLogin(soon());
+      expect(
+        (await answer('ship-fleet-sync', { action: 'signed_in' })).status
+      ).toBe(422);
+      expect((await answer('gh-login', { action: 'approve' })).status).toBe(
+        422
+      );
+      const signedIn = await answer('gh-login', { action: 'signed_in' });
+      expect(signedIn.status).toBe(202);
+      expect(await signedIn.json()).toMatchObject({ action: 'signed_in' });
+      expect(
+        (await answer('gh-login', { action: 'reply', text: 'Later' })).status
+      ).toBe(202);
+    });
+
+    it('refuses "I signed in" once the request has expired', async () => {
+      await publishLogin('2026-11-20T02:45:00.000Z');
+      expect((await answer('gh-login', { action: 'signed_in' })).status).toBe(
+        409
+      );
+    });
+
+    it('shows login requests only to clients that declare the feature', async () => {
+      await publishLogin(soon());
+      const legacy = await (await ownerRead()).json();
+      expect(legacy.state.decisions.map((d: { id: string }) => d.id)).toEqual([
+        'ship-fleet-sync',
+      ]);
+      const current = await (
+        await ownerRead({ 'x-mastermind-fleet-features': 'login' })
+      ).json();
+      expect(
+        current.state.decisions.find((d: { id: string }) => d.id === 'gh-login')
+          .login
+      ).toMatchObject({ state: 'waiting', userCode: 'ABCD-1234' });
+    });
+
+    it('serves an expired login without its link or code', async () => {
+      await publishLogin('2026-11-20T02:45:00.000Z');
+      const body = await (
+        await ownerRead({ 'x-mastermind-fleet-features': 'login' })
+      ).json();
+      const login = body.state.decisions.find(
+        (d: { id: string }) => d.id === 'gh-login'
+      ).login;
+      expect(login.state).toBe('expired');
+      expect(login.url).toBeUndefined();
+      expect(login.userCode).toBeUndefined();
+    });
+
     it('accepts the idempotency key in the body', async () => {
       const key = randomUUID();
       const first = await answer(
@@ -416,6 +529,38 @@ describe('Mastermind fleet sync routes', () => {
   });
 
   describe('answers pull and ack (publisher)', () => {
+    it('keeps an answer pullable after its decision leaves the snapshot', async () => {
+      await publish();
+      await answer('ship-fleet-sync', { action: 'approve', optionId: 'yes' });
+      // Closed elsewhere (or a fallback publish) before the next pickup.
+      await publish(sampleFleetState({ decisions: [] }));
+      const { GET, POST } = await import('./answers/route');
+      const pull = async () =>
+        (
+          await (
+            await GET(
+              signed(
+                'GET',
+                `/api/v1/mastermind/fleet/answers?nonce=${randomUUID()}`
+              )
+            )
+          ).json()
+        ).answers;
+      expect(await pull()).toEqual([
+        expect.objectContaining({ decisionId: 'ship-fleet-sync', revision: 1 }),
+      ]);
+      await POST(
+        signed(
+          'POST',
+          '/api/v1/mastermind/fleet/answers',
+          JSON.stringify({
+            acks: [{ decisionId: 'ship-fleet-sync', revision: 1 }],
+          })
+        )
+      );
+      expect(await pull()).toEqual([]);
+    });
+
     it('returns pending answers with text, then clears them on ack', async () => {
       await publish();
       await answer('ship-fleet-sync', { action: 'reply', text: 'Wait' });

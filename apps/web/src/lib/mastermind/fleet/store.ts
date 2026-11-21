@@ -17,10 +17,109 @@ export const FLEET_READ_CACHE_MS = 5000;
 const CAS_ATTEMPTS = 3;
 const MGET_CHUNK = 64;
 
+/**
+ * Decisions closed in the last 48 hours, with when they closed, kept under
+ * their own small key. The answers pull covers these as well as the open
+ * decisions, so an answer outlives its decision leaving the snapshot
+ * (closed elsewhere, or a fallback publish) between the owner's tap and the
+ * next pickup. Only the publisher's PUT writes it, with a compare-and-set,
+ * before it writes the snapshot; answers and acknowledgements never touch
+ * it. Open decisions are listed too but never count against the cap.
+ */
+export interface RecentDecision {
+  id: string;
+  seenAt: string;
+  /** Present in a stored snapshot, so the owner could have answered it. */
+  stored?: true;
+}
+interface RecentRecord {
+  /** `generatedAt` of the newest snapshot accepted. */
+  generatedAt?: string;
+  entries: RecentDecision[];
+}
+const RECENT_KEY = 'mastermind:fleet:v1:recent';
+const RECENT_WINDOW_MS = 48 * 60 * 60 * 1000;
+/** Closed decisions kept; open ones are always kept on top. */
+const RECENT_CLOSED_MAX = 200;
+/** A stored generation this far ahead of the server clock is ignored. */
+const FUTURE_SKEW_MS = 5 * 60 * 1000;
+
+export class StaleFleetSnapshotError extends Error {
+  constructor() {
+    super('stale snapshot');
+  }
+}
+
 export interface StoredFleetState {
   state: FleetState;
   etag: string;
   receivedAt: string;
+}
+
+function parseRecent(raw: string | null): RecentRecord {
+  const value = parseJson<RecentRecord>(raw);
+  const entries = Array.isArray(value?.entries)
+    ? value.entries.filter(
+        (entry) =>
+          typeof entry?.id === 'string' && typeof entry?.seenAt === 'string'
+      )
+    : [];
+  return {
+    ...(typeof value?.generatedAt === 'string'
+      ? { generatedAt: value.generatedAt }
+      : {}),
+    entries,
+  };
+}
+
+function mergeRecent(
+  recent: RecentDecision[],
+  prior: StoredFleetState | null,
+  state: FleetState,
+  now: Date
+): RecentDecision[] {
+  const seenAt = now.toISOString();
+  const byId = new Map<string, RecentDecision>();
+  for (const entry of recent) byId.set(entry.id, entry);
+  // Decisions in the snapshot being replaced were stored, and open (and
+  // answerable) until this moment, including in a snapshot written before
+  // this list existed or after a long publisher outage.
+  for (const { id } of prior?.state.decisions ?? [])
+    byId.set(id, { id, seenAt, stored: true });
+  const open = new Set(state.decisions.map(({ id }) => id));
+  for (const id of open)
+    byId.set(id, {
+      id,
+      seenAt,
+      ...(byId.get(id)?.stored ? { stored: true as const } : {}),
+    });
+  const horizon = now.getTime() - RECENT_WINDOW_MS;
+  // Only decisions some stored snapshot carried can hold an answer, so an
+  // id from a publish whose snapshot write failed never takes a slot.
+  const closed = [...byId.values()]
+    .filter(
+      (entry) =>
+        !open.has(entry.id) &&
+        entry.stored &&
+        Date.parse(entry.seenAt) >= horizon
+    )
+    .sort((a, b) => b.seenAt.localeCompare(a.seenAt))
+    .slice(0, RECENT_CLOSED_MAX);
+  return [...[...open].map((id) => byId.get(id)!), ...closed];
+}
+
+/** Ids an answers pull covers: open decisions plus recently closed ones. */
+export async function answerableDecisionIds(
+  store: MastermindStore,
+  stored: StoredFleetState | null
+) {
+  const { entries } = parseRecent(await store.get(RECENT_KEY));
+  return [
+    ...new Set([
+      ...(stored?.state.decisions.map(({ id }) => id) ?? []),
+      ...entries.map(({ id }) => id),
+    ]),
+  ];
 }
 
 type StoredAnswer = Omit<FleetAnswerRecord, 'pickedUpRevision' | 'pickedUpAt'>;
@@ -54,11 +153,49 @@ export async function readFleetState(
   );
 }
 
+/**
+ * Records the snapshot's decisions in the recent list (compare-and-set on
+ * its own small key, so overlapping publishes keep each other's entries),
+ * then replaces the snapshot. A snapshot generated before the newest one
+ * accepted is refused, so a delayed publish cannot reopen a decision a
+ * later one closed. A failed read throws (503, the publisher retries)
+ * rather than reset the list.
+ */
 export async function writeFleetState(
   store: MastermindStore,
   state: FleetState,
   now = new Date()
 ): Promise<StoredFleetState> {
+  let recorded = false;
+  for (let attempt = 0; attempt < CAS_ATTEMPTS && !recorded; attempt++) {
+    const [recentRaw, priorRaw] = await store.mget([
+      RECENT_KEY,
+      FLEET_STATE_KEY,
+    ]);
+    const recent = parseRecent(recentRaw ?? null);
+    const newest = recent.generatedAt ? Date.parse(recent.generatedAt) : NaN;
+    if (
+      newest <= now.getTime() + FUTURE_SKEW_MS &&
+      Date.parse(state.generatedAt) < newest
+    )
+      throw new StaleFleetSnapshotError();
+    const next: RecentRecord = {
+      generatedAt: state.generatedAt,
+      entries: mergeRecent(
+        recent.entries,
+        parseJson<StoredFleetState>(priorRaw ?? null),
+        state,
+        now
+      ),
+    };
+    recorded = await store.compareAndSet(
+      RECENT_KEY,
+      recentRaw ?? null,
+      JSON.stringify(next),
+      STATE_TTL_MS
+    );
+  }
+  if (!recorded) throw new Error('recent contention');
   const stored: StoredFleetState = {
     state,
     etag: fleetEtag(state),

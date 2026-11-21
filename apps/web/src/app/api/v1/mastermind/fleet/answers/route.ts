@@ -9,6 +9,7 @@ import {
   acknowledgeFleetAnswers,
   pendingFleetAnswers,
   readFleetAnswers,
+  answerableDecisionIds,
   readFleetState,
 } from '@/lib/mastermind/fleet/store';
 
@@ -17,12 +18,13 @@ export async function GET(request: Request) {
   const auth = await authorizeFleetPublisher(request, 0);
   if (!auth.ok) return auth.response;
   try {
-    // Answers are keyed by decision; only decisions still open are pulled.
+    // Open decisions plus those open in the last 48 hours, so an answer
+    // outlives its decision leaving the snapshot.
     const stored = await readFleetState(auth.store);
     const answers = pendingFleetAnswers(
       await readFleetAnswers(
         auth.store,
-        stored?.state.decisions.map((decision) => decision.id) ?? []
+        await answerableDecisionIds(auth.store, stored)
       )
     );
     return NextResponse.json(

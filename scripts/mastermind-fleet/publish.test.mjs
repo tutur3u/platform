@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { fakePeers, fixtureDatabase, threadLister } from './fixture.mjs';
 import {
+  acquirePublishLock,
   fitToBudget,
   parseDecision,
   readDecisions,
@@ -194,7 +195,8 @@ test('publishes lanes from linked machines with their machine ids', async () => 
     peerFetchImpl: peers.fetchImpl,
     openDatabase: () => fixtureDatabase(),
   });
-  const published = JSON.parse(server.calls[0].body);
+  const put = server.calls.find((call) => call.method === 'PUT');
+  const published = JSON.parse(put.body);
   const studio = published.lanes.find((lane) => lane.title === 'Studio lane');
   assert.equal(studio.machineId, 'macstudio1');
   assert.equal(
@@ -208,7 +210,7 @@ test('publishes lanes from linked machines with their machine ids', async () => 
     lanes: 1,
   });
   assert.equal(fs.statSync(paths.peerCacheFile).mode & 0o777, 0o600);
-  assert.ok(!server.calls[0].body.includes('peer-token'));
+  assert.ok(!put.body.includes('peer-token'));
 });
 
 test('publishes on change, heartbeats, and stores then acks answers', async () => {
@@ -378,4 +380,211 @@ test('skips a FIFO decision file without blocking', async () => {
     ['ok']
   );
   assert.equal(skipped, 1);
+});
+
+test('a refused addition falls back to the v1 core and still picks up answers', async () => {
+  const paths = sandbox();
+  paths.releaseFile = path.join(paths.root, 'release.json');
+  fs.writeFileSync(
+    paths.releaseFile,
+    JSON.stringify({ main: { state: 'frozen', reason: '*****' } })
+  );
+  fs.writeFileSync(
+    path.join(paths.openDir, 'ship.json'),
+    JSON.stringify({
+      id: 'ship',
+      title: 'Ship?',
+      urgency: 'high',
+      why: 'Train is ready',
+      createdAt: NOW.toISOString(),
+    })
+  );
+  const bodies = [];
+  const fetchImpl = async (url, init) => {
+    if (init.method === 'PUT') {
+      bodies.push(JSON.parse(init.body));
+      // The server refuses the first body (too large here).
+      if (bodies.length === 1)
+        return { ok: false, status: 413, json: async () => ({}) };
+    }
+    return {
+      ok: true,
+      status: 200,
+      json: async () => (init.method === 'GET' ? { answers: [] } : {}),
+    };
+  };
+  const result = await runOnce({
+    paths,
+    origin: 'https://tuturuuu.com',
+    fetchImpl,
+    openDatabase: () => fixtureDatabase(),
+    now: NOW,
+  });
+  assert.equal(result.degraded, true);
+  assert.equal(bodies.length, 2);
+  assert.ok(bodies[0].release);
+  assert.equal(bodies[1].release, undefined);
+  assert.equal(bodies[1].decisions[0].why, undefined);
+  assert.equal(bodies[1].decisions[0].id, 'ship');
+});
+
+test('a degraded publish stays reported until the full snapshot lands', async () => {
+  const paths = sandbox();
+  paths.releaseFile = path.join(paths.root, 'release.json');
+  fs.writeFileSync(
+    paths.releaseFile,
+    JSON.stringify({ main: { state: 'frozen' } })
+  );
+  const refuse = async (url, init) =>
+    init.method === 'PUT' && JSON.parse(init.body).release
+      ? { ok: false, status: 422, json: async () => ({}) }
+      : {
+          ok: true,
+          status: 200,
+          json: async () => (init.method === 'GET' ? { answers: [] } : {}),
+        };
+  const options = {
+    paths,
+    origin: 'https://tuturuuu.com',
+    fetchImpl: refuse,
+    openDatabase: () => fixtureDatabase(),
+  };
+  assert.equal((await runOnce({ ...options, now: NOW })).degraded, true);
+  const quiet = await runOnce({
+    ...options,
+    now: new Date(NOW.getTime() + 30_000),
+  });
+  assert.equal(quiet.published, false);
+  assert.equal(quiet.degraded, true);
+});
+
+test('acknowledges pulled answers in batches the route accepts', async () => {
+  const paths = sandbox();
+  const answers = Array.from({ length: 150 }, (_, i) => ({
+    decisionId: `d${i}`,
+    revision: 1,
+    action: 'approve',
+    answeredAt: NOW.toISOString(),
+  }));
+  const acks = [];
+  const fetchImpl = async (url, init) => {
+    if (init.method === 'POST') acks.push(JSON.parse(init.body).acks.length);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => (init.method === 'GET' ? { answers } : {}),
+    };
+  };
+  const result = await runOnce({
+    paths,
+    origin: 'https://tuturuuu.com',
+    fetchImpl,
+    openDatabase: () => fixtureDatabase(),
+    now: NOW,
+  });
+  assert.equal(result.answers, 150);
+  assert.deepEqual(acks, [100, 50]);
+});
+
+test('trims additions, then login requests, before any ask', () => {
+  const ask = (i) => ({
+    id: `a${i}`,
+    title: 'Ask '.repeat(20),
+    urgency: 'normal',
+  });
+  const login = (i) => ({
+    id: `l${i}`,
+    kind: 'login',
+    title: 'Sign in '.repeat(10),
+    urgency: 'high',
+  });
+  const state = {
+    version: 1,
+    lanes: [],
+    decisions: [ask(0), login(0), ask(1), login(1)],
+    resolved: [{ id: 'r', title: 'x'.repeat(2000) }],
+    release: { main: { state: 'open', reason: 'y'.repeat(2000) } },
+  };
+  const core = { ...state, resolved: undefined, release: undefined };
+  const coreBytes = Buffer.byteLength(JSON.stringify(core));
+  const { state: noExtras } = fitToBudget(state, coreBytes + 10);
+  assert.equal(noExtras.resolved, undefined);
+  assert.equal(noExtras.release, undefined);
+  assert.equal(noExtras.decisions.length, 4);
+  const { state: tight } = fitToBudget(state, coreBytes - 50);
+  assert.deepEqual(
+    tight.decisions.map((d) => d.id),
+    ['a0', 'l0', 'a1']
+  );
+});
+
+test('login requests never crowd asks out of the snapshot', () => {
+  const paths = sandbox();
+  const at = (i) => new Date(NOW.getTime() - (100 - i) * 60_000).toISOString();
+  for (let i = 0; i < 30; i++)
+    fs.writeFileSync(
+      path.join(paths.openDir, `login-${i}.json`),
+      JSON.stringify({
+        id: `login-${i}`,
+        kind: 'login',
+        title: 'Sign in',
+        urgency: 'high',
+        createdAt: at(i),
+        login: {
+          service: 'github',
+          flow: 'device',
+          url: 'https://github.com/login/device',
+          userCode: 'ABCD-1234',
+          expiresAt: new Date(Date.now() + 600_000).toISOString(),
+        },
+      })
+    );
+  // 45 asks: all fit, with the 10 newest open logins on top.
+  for (let i = 30; i < 75; i++)
+    fs.writeFileSync(
+      path.join(paths.openDir, `ask-${i}.json`),
+      JSON.stringify({
+        id: `ask-${i}`,
+        title: 'Ask',
+        urgency: 'normal',
+        createdAt: at(i),
+      })
+    );
+  const { decisions } = readDecisions(paths.openDir);
+  assert.equal(decisions.length, 55);
+  assert.equal(decisions.filter((d) => d.kind === 'login').length, 10);
+  assert.equal(decisions.filter((d) => d.kind !== 'login').length, 45);
+});
+
+test('a failed answer pickup reports the failure after publishing', async () => {
+  const paths = sandbox();
+  const methods = [];
+  const fetchImpl = async (url, init) => {
+    methods.push(init.method);
+    if (init.method === 'GET')
+      return { ok: false, status: 503, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => ({}) };
+  };
+  await assert.rejects(
+    runOnce({
+      paths,
+      origin: 'https://tuturuuu.com',
+      fetchImpl,
+      openDatabase: () => fixtureDatabase(),
+      now: NOW,
+    }),
+    /GET .* 503/
+  );
+  assert.deepEqual(methods, ['PUT', 'GET']);
+});
+
+test('only one publisher runs at a time, and a stale lock is taken over', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fleet-lock-'));
+  const release = acquirePublishLock(root);
+  assert.throws(() => acquirePublishLock(root), /publisher_busy/);
+  release();
+  const again = acquirePublishLock(root);
+  // A lock left by a killed run is taken over once stale.
+  assert.ok(acquirePublishLock(root, Date.now() + 120_000));
+  again();
 });

@@ -108,6 +108,76 @@ product rules of the shell entry and every tab.
   opens the Inbox. A shared one-minute cap limits bursts, and repeated
   snapshots, answers and withdrawals generate no new alert. The Inbox carries
   every open decision. See the [delivery contract](/reference/api-reference/mastermind-push-events#fleet-decision-pushes).
+- **Decision context:** a decision may also carry `why` (why it is asked
+  now), `defaultOutcome` (what happens at the deadline without an answer)
+  and `requester` (the asking agent, lane or machine). All three are
+  scrubbed free text. `kind` is `ask` (default) or `login`. Older clients
+  ignore the extra fields and read a login request as an ask.
+- **Access requests (`kind: "login"`):** a CLI or provider on a fleet machine
+  needs the owner's sign-in. `login` holds `service` (`github`,
+  `cloudflare`, `vercel`, `claude`, `openai`, `google`, `apple`, `supabase`,
+  `microsoft`), `flow`, `state` (`waiting`, `approved`, `verified`,
+  `expired`, `failed`), `url`, `userCode`, `expiresAt` and `machineId`.
+  `device` flows show the URL and a short code for any device; `link` flows
+  show only the URL; `local_callback` flows (the provider redirects to a
+  loopback listener, as `wrangler login` does) complete only in a browser on
+  that machine, so the card names the machine. The URL is the one fleet
+  field that may hold a link: it must be https, without credentials, a port
+  or a fragment, on the service's host allowlist (`FLEET_LOGIN_HOSTS` in
+  `apps/web/src/lib/mastermind/fleet/login.ts`, mirrored by the publisher).
+  A device page carries no query, and an OAuth authorize link must name a
+  `redirect_uri` on loopback (the agent's own CLI) or on the same provider,
+  so a code can never go to a third-party callback. A loopback callback
+  reaches whichever device opens the link, so it is accepted only for the
+  `local_callback` flow, which must name its `machineId`. The code must
+  match a short device-code shape. An open request needs `expiresAt` within 24
+  hours. Terminal states carry neither link nor code. The publisher turns a
+  passed expiry into `expired`, and Web applies the same rule on every read,
+  so a stopped publisher never leaves a live link behind. "I signed in"
+  posts the `signed_in` answer, which only open login requests accept (409
+  once expired or closed); the agent still verifies the sign-in itself
+  before it marks the request `verified`. A malformed login file is skipped
+  and counted, never published. Only open requests are published, at most
+  10 (the newest), on top of the 50-ask budget, so a snapshot holds at most
+  60 decisions and older clients still receive every ask. Clients declare
+  support with the `x-mastermind-fleet-features: login` request header; reads without it
+  omit login requests, because older apps would offer Approve and Hold,
+  which Web refuses for them.
+- **Resolved and release status:** the publisher adds decisions resolved in
+  the last 24 hours from `decisions/resolved/<id>.json` (`id`, `title`,
+  `kind`, `answeredVia` of `mastermind`, `mobile`, `whatsapp` or `cli`,
+  `outcome`, `resolvedAt`; at most 20), so an answer given on WhatsApp shows
+  where it went. `release.json` supplies the main freeze state, production,
+  migrations and up to ten open incidents. Invalid entries are omitted. If
+  Web still refuses the snapshot at the edge, as too large or as invalid (400, 413 or 422), the
+  publisher republishes the v1 core without these additions so lanes and
+  asks keep flowing. It reports runs as degraded until the full snapshot is
+  accepted again at the next change or heartbeat. A small
+  separate store key lists the open decisions plus those closed in the last
+  48 hours (at most 200 closed; a decision counts as open until the publish
+  that drops it). Only the publisher's PUT writes it, with a compare-and-set
+  before writing the snapshot, so overlapping publishes keep each other's
+  entries; only decisions some stored snapshot carried count as closed. Web
+  refuses (409 `stale_snapshot`) a snapshot generated before the newest it
+  accepted, ignoring a stored generation more than five minutes ahead of its
+  own clock, and the publisher holds an exclusive `publish.lock` (taken over
+  after 60 seconds) so a manual run cannot overlap the launchd tick, and the answers pull covers
+  those as well as the open ones, so an answer given just before a decision
+  closes elsewhere (or a fallback publish) is still picked up. More than
+  200 decisions closing within 48 hours while an answer to the oldest is
+  still unpicked is the documented bound where it could be missed. The
+  publisher reads at most the 100 most recently written resolved files.
+  Known bounds: when a killed run leaves a stale lock, a manual run racing
+  the launchd tick can both take it over; and two publishers running
+  together (bypassing the lock) can, in a narrow interleaving, store the
+  older snapshot. Neither happens with launchd alone; avoid manual runs
+  within a minute of a killed one. Each run
+  publishes first and then pulls answers, acknowledging them in batches of
+  100. When the snapshot exceeds the body budget, resolved history and
+  release status are dropped first, and among decisions the newest login
+  request goes before any ask. Login requests never trigger a decision
+  push, because clients without the feature header would open an Inbox
+  that hides them; they reach the owner through Iris's own channels.
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record; a retry with the same
   key returns the same record, and a new answer to the same decision becomes
@@ -147,9 +217,12 @@ product rules of the shell entry and every tab.
   `machineLabel`, `machineId` and `orchestratorTitlePattern` (default
   `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
-  `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, with the source commit in
+  `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
+  with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
-  `StartInterval` 30. Update it by copying those four files from `main` and
+  `StartInterval` 30. Update it only after Web from the same commit is deployed (an older
+  Web accepts but drops the additions, so login requests would show as
+  plain asks), by copying those five files from `main` and
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
@@ -164,7 +237,7 @@ product rules of the shell entry and every tab.
   the hub Needs-you asks and the decision journal are no longer routed from
   these tabs.
 - **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
-  `apps/web/src/lib/mastermind/fleet/contract.test.ts`,
+  `apps/web/src/lib/mastermind/fleet/contract.test.ts`, `apps/web/src/lib/mastermind/fleet/login.test.ts` (login URL allowlist, codes, terminal states and the publisher mirror), `scripts/mastermind-fleet/decision-extras.test.mjs`,
   `apps/web/src/lib/mastermind/fleet/store.test.ts` (revisions, retries,
   pickups and racing answers), `apps/web/src/lib/mastermind/store.test.ts`
   (store resolution and push-event claims),

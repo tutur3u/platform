@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { fleetLoginSchema } from './login';
 import { scrubFleetText } from './scrub';
 
 /**
@@ -59,15 +60,31 @@ export const fleetDecisionOptionSchema = z.object({
   label: requiredText(60),
 });
 
+export const fleetDecisionKinds = ['ask', 'login'] as const;
+export type FleetDecisionKind = (typeof fleetDecisionKinds)[number];
+
+/**
+ * Optional context fields (`why`, `defaultOutcome`, `requester`) and the
+ * `login` kind are additive to v1: older clients ignore them and read a
+ * login request as an ask with its title and body.
+ */
 export const fleetDecisionSchema = z
   .object({
     id: slug,
+    kind: z.enum(fleetDecisionKinds).default('ask'),
     title: requiredText(120),
     body: text(600).optional(),
+    /** Why the orchestrator is asking now. */
+    why: text(240).optional(),
+    /** What happens at the deadline without an answer. */
+    defaultOutcome: text(160).optional(),
+    /** Who is asking: an agent, lane or machine label. */
+    requester: text(60).optional(),
     urgency: z.enum(['urgent', 'high', 'normal', 'fyi']),
     options: z.array(fleetDecisionOptionSchema).max(6).default([]),
     recommendedOptionId: slug.optional(),
     laneId: slug.optional(),
+    login: fleetLoginSchema.optional(),
     createdAt: isoTime,
     deadlineAt: isoTime.optional(),
   })
@@ -78,7 +95,65 @@ export const fleetDecisionSchema = z
         (option) => option.id === decision.recommendedOptionId
       ),
     { message: 'recommended option missing', path: ['recommendedOptionId'] }
-  );
+  )
+  .refine((decision) => (decision.kind === 'login') === !!decision.login, {
+    message: 'login kind and login payload go together',
+    path: ['login'],
+  });
+
+export const fleetAnswerChannels = [
+  'mastermind',
+  'mobile',
+  'whatsapp',
+  'cli',
+] as const;
+
+/** A decision closed recently, kept so every surface shows where it went. */
+export const fleetResolvedDecisionSchema = z.object({
+  id: slug,
+  kind: z.enum(fleetDecisionKinds).default('ask'),
+  title: requiredText(120),
+  answeredVia: z.enum(fleetAnswerChannels).optional(),
+  /** Display label of the chosen option or outcome, never reply text. */
+  outcome: text(60).optional(),
+  resolvedAt: isoTime,
+});
+
+const shortSha = z.string().regex(/^[0-9a-f]{7,12}$/);
+
+/** Release-train status: main freeze, production, migrations, incidents. */
+export const fleetReleaseSchema = z.object({
+  main: z.object({
+    state: z.enum(['open', 'frozen']),
+    reason: text(120).optional(),
+    queued: count.optional(),
+    headSha: shortSha.optional(),
+  }),
+  production: z
+    .object({
+      state: z.enum(['healthy', 'degraded', 'down', 'unknown']),
+      sha: shortSha.optional(),
+      deployedAt: isoTime.optional(),
+    })
+    .optional(),
+  migrations: z
+    .object({
+      pending: count,
+      state: z.enum(['idle', 'staging', 'gated', 'applying', 'failed']),
+    })
+    .optional(),
+  incidents: z
+    .array(
+      z.object({
+        id: slug,
+        title: requiredText(120),
+        severity: z.enum(['critical', 'high', 'medium', 'low']),
+        openedAt: isoTime,
+      })
+    )
+    .max(10)
+    .default([]),
+});
 
 export const fleetStateSchema = z.object({
   version: z.literal(FLEET_SYNC_VERSION),
@@ -97,15 +172,37 @@ export const fleetStateSchema = z.object({
   }),
   machines: z.array(fleetMachineSchema).max(32),
   lanes: z.array(fleetLaneSchema).max(300),
-  decisions: z.array(fleetDecisionSchema).max(50),
+  /** Up to 50 asks plus up to 10 login requests on top. */
+  decisions: z
+    .array(fleetDecisionSchema)
+    .max(60)
+    .refine(
+      (decisions) =>
+        decisions.filter((d) => d.kind !== 'login').length <= 50 &&
+        decisions.filter((d) => d.kind === 'login').length <= 10,
+      { message: 'at most 50 asks and 10 login requests' }
+    ),
+  resolved: z.array(fleetResolvedDecisionSchema).max(20).optional(),
+  release: fleetReleaseSchema.optional(),
 });
 
 export type FleetLane = z.infer<typeof fleetLaneSchema>;
 export type FleetMachine = z.infer<typeof fleetMachineSchema>;
 export type FleetDecision = z.infer<typeof fleetDecisionSchema>;
+export type FleetResolvedDecision = z.infer<typeof fleetResolvedDecisionSchema>;
+export type FleetRelease = z.infer<typeof fleetReleaseSchema>;
 export type FleetState = z.infer<typeof fleetStateSchema>;
 
-export const fleetAnswerActions = ['approve', 'hold', 'reply'] as const;
+/**
+ * `signed_in` is the owner's "I signed in" on a login request; the agent
+ * still verifies the sign-in itself before the request reads as verified.
+ */
+export const fleetAnswerActions = [
+  'approve',
+  'hold',
+  'reply',
+  'signed_in',
+] as const;
 export type FleetAnswerAction = (typeof fleetAnswerActions)[number];
 
 export const fleetAnswerInputSchema = z
