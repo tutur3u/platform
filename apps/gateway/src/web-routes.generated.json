@@ -727,6 +727,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/auth/login-view"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/auth/mfa/devices"
     },
     {
@@ -852,6 +857,26 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/fleet/consumer/claim"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/consumer/purge"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/consumer/receipt"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/fleet/consumer/status"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/fleet/digest"
     },
     {
@@ -968,6 +993,11 @@
       "family": "api-core",
       "localized": false,
       "pattern": "/api/v1/mastermind/access"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/alerts"
     },
     {
       "family": "api-core",
