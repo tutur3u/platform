@@ -32,7 +32,6 @@
     "test:runtime": "node --test cloudflare/*.runtime.mjs"
   },
   "dependencies": {
-    "@deepgram/sdk": "^5.15.0",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@hookform/resolvers": "^5.9.2",

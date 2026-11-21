@@ -48,7 +48,6 @@ minimumReleaseAgeExcludes = [
   "@ai-sdk/azure",
   "@ai-sdk/cerebras",
   "@ai-sdk/cohere",
-  "@ai-sdk/deepgram",
   "@ai-sdk/deepinfra",
   "@ai-sdk/deepseek",
   "@ai-sdk/elevenlabs",

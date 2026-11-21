@@ -49,11 +49,6 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
         purpose: 'Text-to-speech and voice AI',
         url: 'https://elevenlabs.io/privacy-policy',
       },
-      {
-        name: 'Deepgram',
-        purpose: 'Speech-to-text and audio processing',
-        url: 'https://deepgram.com/privacy',
-      },
     ],
   },
   {

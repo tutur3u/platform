@@ -11,6 +11,16 @@ Gen AI SDK. The server supplies a single-use, constrained ephemeral token;
 `/api/v1/live/token` and passed to the client. Google documents the protocol in the
 [Live API guide](https://ai.google.dev/gemini-api/docs/live-api).
 
+## Voice input providers
+
+Deepgram was removed on 21 November 2026. The legacy Web and Workspace chat
+composers offer typed messages. For voice, use Mira Live on Web or mobile,
+which uses Gemini for audio and transcripts. Meet transcription and mobile
+Notes voice analysis use their own Gemini transcription flows.
+
+The [repository regression test](https://github.com/tutur3u/platform/blob/main/scripts/no-deepgram.test.mjs)
+checks for Deepgram SDK imports, dependencies, hosts and environment keys.
+
 ## Native local text models
 
 See [Assistant local models](/platform/features/assistant-local-models) for mobile

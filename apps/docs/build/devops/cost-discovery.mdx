@@ -64,7 +64,6 @@ is held only by the collector.
 | Google Cloud and Firebase | OAuth, Calendar, Play Integrity, Firebase Cloud Messaging | Google Cloud invoice | Same billing export | `COST_GCP_BILLING_EXPORT_SA` | Infrastructure |
 | OpenAI | ChatGPT provider, speech evaluation | Organization invoice | Costs API `GET /v1/organization/costs` | `COST_OPENAI_ADMIN_KEY` (admin key; no read-only variant, so it lives only in the collector) | AI platform |
 | Anthropic | Direct provider in `packages/ai` | Console invoice | Usage and Cost Admin API (the `cost_report` endpoint is legacy; use the current analytics endpoints) | `COST_ANTHROPIC_ADMIN_KEY` (admin key; same isolation) | AI platform |
-| Deepgram | Speech to text | Console invoice | Management API `/usage/breakdown` | `COST_DEEPGRAM_API_KEY` (key with usage read scope) | AI platform |
 | Modal | Discord bot and speech-to-text jobs | Workspace invoice | None used | Invoice import | AI platform |
 | Supermemory | Mira memory | Invoice | None used | Invoice import | AI platform |
 | AWS | SES sending and inbound mail, S3 | AWS invoice | Cost Explorer `GetCostAndUsage` (each request is billed, so collect once a day) | `COST_AWS_ACCESS_KEY_ID`, `COST_AWS_SECRET_ACCESS_KEY` (IAM `ce:GetCostAndUsage` only) | Infrastructure |
@@ -131,7 +130,6 @@ These need a credential or an invoice before Admin can show a figure:
 - Vercel AI Gateway: credit top-up receipts through the Finance invoice flow.
 - Polar: the Finance ledger export.
 - AWS: `COST_AWS_ACCESS_KEY_ID` and `COST_AWS_SECRET_ACCESS_KEY`.
-- Deepgram: `COST_DEEPGRAM_API_KEY`.
 - Invoice-only providers (Modal, Supermemory, Upstash, SePay, Apple, Google
   Play, code signing, domains, Google Workspace, developer SaaS): import each
   invoice through the Finance invoice flow.

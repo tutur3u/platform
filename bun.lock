@@ -1811,7 +1811,6 @@
       "name": "@tuturuuu/rewise",
       "version": "0.46.0",
       "dependencies": {
-        "@deepgram/sdk": "^5.15.0",
         "@emotion/react": "^11.14.0",
         "@emotion/server": "^11.11.0",
         "@hookform/resolvers": "^5.9.2",
@@ -2337,7 +2336,6 @@
         "@ai-sdk/google": "^4.0.102",
         "@aws-sdk/client-s3": "3.1154.0",
         "@aws-sdk/s3-request-presigner": "^3.1154.0",
-        "@deepgram/sdk": "^5.15.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
@@ -2548,7 +2546,6 @@
         "@ai-sdk/google": "^4.0.102",
         "@aws-sdk/client-s3": "3.1154.0",
         "@aws-sdk/s3-request-presigner": "^3.1154.0",
-        "@deepgram/sdk": "^5.15.0",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
@@ -2782,7 +2779,6 @@
         "@ai-sdk/azure": "^4.0.107",
         "@ai-sdk/cerebras": "^3.0.75",
         "@ai-sdk/cohere": "^4.0.66",
-        "@ai-sdk/deepgram": "^3.1.36",
         "@ai-sdk/deepinfra": "^3.0.75",
         "@ai-sdk/deepseek": "^3.0.70",
         "@ai-sdk/elevenlabs": "^3.0.66",
@@ -4241,8 +4237,6 @@
 
     "@ai-sdk/cohere": ["@ai-sdk/cohere@4.0.66", "", { "dependencies": { "@ai-sdk/provider": "4.0.31", "@ai-sdk/provider-utils": "5.0.65" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-YwN/x/ZTpgmuwHrqRBkSaaiCrL8SgknMznqTVhBzNYQmKxKnTpm4mv4mG4oYoTcH5muO4s+AYr0zspUPnOpi7g=="],
 
-    "@ai-sdk/deepgram": ["@ai-sdk/deepgram@3.1.36", "", { "dependencies": { "@ai-sdk/provider": "4.0.31", "@ai-sdk/provider-utils": "5.0.65" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-h4s0gI+T4YuHig4McxPgNW7Zs/Ld1WhCB55ZjZJ+DQ4JPbpDyaHXpOmP+fikLr9f6DMv0iq970+TlfK6wbQpNg=="],
-
     "@ai-sdk/deepinfra": ["@ai-sdk/deepinfra@3.0.75", "", { "dependencies": { "@ai-sdk/openai-compatible": "3.0.75", "@ai-sdk/provider": "4.0.31", "@ai-sdk/provider-utils": "5.0.65" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-DQ48aMih0Cm4ZyhlZ8nVW5VliJS24E/1BqHmsbyRX9RTPbTIWJGM+UgZgn7GiPYEu5JxYSEGEjMp/S0mWUqAnA=="],
 
     "@ai-sdk/deepseek": ["@ai-sdk/deepseek@3.0.70", "", { "dependencies": { "@ai-sdk/provider": "4.0.31", "@ai-sdk/provider-utils": "5.0.65" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-smmwv3BVWiu5y71F6gxOOOVptjFbmKNlbLnBzwTADSPa0EQG3fJ5PYilJ65NsWbduNSsziMBB9UITHvAuoOsTA=="],
@@ -4612,8 +4606,6 @@
     "@csstools/selector-specificity": ["@csstools/selector-specificity@6.0.1", "", { "peerDependencies": { "postcss-selector-parser": "^7.1.1" } }, "sha512-MBuqFIIvqk4S593MGAskTkPpEUUzZNvGzh8mMxEwl3oHwjQlXmqHEDxNbN3Y0Tsh+xjmem4GZjeg7I0qkwBivg=="],
 
     "@date-fns/tz": ["@date-fns/tz@1.5.0", "", {}, "sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg=="],
-
-    "@deepgram/sdk": ["@deepgram/sdk@5.15.0", "", { "dependencies": { "ws": "^8.20.0" } }, "sha512-LAmMdOHVfvyJ8hz+YI4aK+kPmfqdtmMl7O8Q63lDWVyuHx9vEyoyt+W9y3vxxaVxdOmn4zFmGYjntbNVh/KyqA=="],
 
     "@dimforge/rapier3d-compat": ["@dimforge/rapier3d-compat@0.12.0", "", {}, "sha512-uekIGetywIgopfD97oDL5PfeezkFpNhwlzlaEYNOA0N6ghdsOvh/HYjSMek5Q2O1PYvRSDFcqFVJl4r4ZBwOow=="],
 
@@ -9462,8 +9454,6 @@
     "@cloudflare/workers-utils/undici": ["undici@7.29.1", "", {}, "sha512-RYONW2MeafgYlkVOKYKkA/Ag7BmXqgIWCa8t1m0JcxrQg9pI9lEqRhAOruOBCbAohOa/gkCF+iPi9hrgvTzu6Q=="],
 
     "@cspotcode/source-map-support/@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.9", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.0.3", "@jridgewell/sourcemap-codec": "^1.4.10" } }, "sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ=="],
-
-    "@deepgram/sdk/ws": ["ws@8.22.0", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg=="],
 
     "@discordjs/rest/@discordjs/collection": ["@discordjs/collection@2.1.1", "", {}, "sha512-LiSusze9Tc7qF03sLCujF5iZp7K+vRNEDBZ86FT9aQAv3vxMLihUvKvpsCWiQ2DJq1tVckopKm1rxomgNUc9hg=="],
 
