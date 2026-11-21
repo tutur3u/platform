@@ -32,7 +32,6 @@ const fieldIds: [GrantField, string][] = [
   ['expiresOn', 'fleet-grant-expiry'],
   ['questionsPerHour', 'fleet-grant-questions'],
   ['intentsPerDay', 'fleet-grant-intents'],
-  ['modelBudgetPerMonth', 'fleet-grant-budget'],
 ];
 
 /**
@@ -173,14 +172,6 @@ export function GrantForm({
             value={draft.intentsPerDay}
             onChange={(intentsPerDay) => edit({ intentsPerDay })}
           />
-          <TextField
-            id="fleet-grant-budget"
-            label={t.access.modelBudgetPerMonth}
-            inputMode="numeric"
-            error={message('modelBudgetPerMonth')}
-            value={draft.modelBudgetPerMonth}
-            onChange={(modelBudgetPerMonth) => edit({ modelBudgetPerMonth })}
-          />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3 md:px-5">
           <div className="mr-auto">
@@ -243,6 +234,10 @@ export function GrantForm({
                 ? formatInstant(locale, review.expiresAt)
                 : t.access.noExpiry}
             </dd>
+            <dt>{t.access.questionsPerHour}</dt>
+            <dd className="text-foreground">{review.questionsPerHour}</dd>
+            <dt>{t.access.intentsPerDay}</dt>
+            <dd className="text-foreground">{review.intentsPerDay}</dd>
           </dl>
         )}
       </ConfirmDialog>

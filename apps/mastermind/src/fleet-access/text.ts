@@ -15,6 +15,11 @@ export function useFleetText() {
   return { locale, t: bundles[locale] };
 }
 
+/** Worker `/login`, then back to this locale's Fleet page. */
+export function fleetSignInHref(locale: Locale) {
+  return `/login?nextUrl=${encodeURIComponent(`/${locale}/fleet-access`)}`;
+}
+
 export function fill(template: string, values: Record<string, string>) {
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in values ? String(values[key]) : match

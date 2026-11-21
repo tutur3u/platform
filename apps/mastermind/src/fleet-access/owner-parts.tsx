@@ -13,7 +13,7 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Label } from '@tuturuuu/ui/label';
 import type { ReactNode } from 'react';
 import type { OwnerRefusal, OwnerWrite } from './owner-upstream';
-import { useFleetText } from './text';
+import { fleetSignInHref, useFleetText } from './text';
 
 export function OwnerSection({
   id,
@@ -113,6 +113,24 @@ export function changeState<T>(
     : { kind: 'refused', reason: mutation.data.reason };
 }
 
+const signInRefusals = new Set<OwnerRefusal>([
+  'mfa_required',
+  'owner_session_required',
+]);
+
+/** A fresh Worker sign-in, which is what reloads a second-factor proof. */
+export function SignInLink() {
+  const { locale, t } = useFleetText();
+  return (
+    <a
+      href={fleetSignInHref(locale)}
+      className={buttonVariants({ variant: 'outline', size: 'sm' })}
+    >
+      {t.access.signIn}
+    </a>
+  );
+}
+
 export function ChangeNotice({ state }: { state: ChangeState }) {
   const { t } = useFleetText();
   switch (state.kind) {
@@ -127,9 +145,12 @@ export function ChangeNotice({ state }: { state: ChangeState }) {
       );
     case 'refused':
       return (
-        <p role="alert" className="text-destructive text-sm">
-          {t.ownerRefusal[state.reason]}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p role="alert" className="text-destructive text-sm">
+            {t.ownerRefusal[state.reason]}
+          </p>
+          {signInRefusals.has(state.reason) && <SignInLink />}
+        </div>
       );
   }
 }

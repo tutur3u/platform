@@ -515,7 +515,6 @@
       "projects": "Projects",
       "expiry": "Expires",
       "status": "Status",
-      "generation": "Generation",
       "noExpiry": "Never",
       "deletedAccount": "Deleted account",
       "edit": "Edit",
@@ -529,7 +528,6 @@
       "expiresOn": "Access ends after",
       "questionsPerHour": "Questions per hour",
       "intentsPerDay": "Requests per day",
-      "modelBudgetPerMonth": "Model budget per month",
       "review": "Review",
       "close": "Close",
       "confirmGrantTitle": "Grant {tier} access to {email}?",
@@ -561,6 +559,7 @@
       "removeTitle": "Remove “{value}”?",
       "removeBody": "Snapshots that still show this value are hidden until the publisher sends one without it.",
       "mfa": "Verify your second factor again to manage access.",
+      "signIn": "Sign in",
       "forbidden": "Only the Fleet Owner can manage access.",
       "stateRunning": "Running",
       "stateStopped": "Stopped"

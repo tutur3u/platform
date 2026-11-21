@@ -55,6 +55,8 @@ export interface RateLimitResult {
   limit: number;
   remaining: number;
   reset: number; // Unix timestamp in seconds
+  /** The store did not answer. A fail-closed caller must refuse. */
+  unavailable?: boolean;
 }
 
 /**
@@ -193,6 +195,7 @@ export async function checkRateLimitRedis(
   const unavailable = () => ({
     ...buildFailOpenRateLimitResult(config),
     allowed: !options.failClosed,
+    unavailable: true,
     ...(options.failClosed ? { remaining: 0 } : {}),
   });
   const redis = await getRedisClient();

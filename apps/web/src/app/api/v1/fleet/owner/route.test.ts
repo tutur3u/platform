@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session';
 import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET as listAccess } from './access/route';
 import { POST as control } from './control/route';
@@ -12,12 +12,15 @@ import { POST as grant } from './grants/route';
 import { FLEET_OWNER_MFA_MAX_AGE_SECONDS } from './owner-session';
 import { POST as projects } from './projects/route';
 
-const { createClient, getUser, rateLimit, rpc } = vi.hoisted(() => ({
-  createClient: vi.fn(),
-  getUser: vi.fn(),
-  rateLimit: vi.fn(),
-  rpc: vi.fn(),
-}));
+const { createClient, getUser, rateLimit, rateLimitRedis, rpc } = vi.hoisted(
+  () => ({
+    createClient: vi.fn(),
+    getUser: vi.fn(),
+    rateLimit: vi.fn(),
+    rateLimitRedis: vi.fn(),
+    rpc: vi.fn(),
+  })
+);
 
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
@@ -48,7 +51,10 @@ vi.mock('@/lib/abuse-risk', () => ({
 vi.mock('@/lib/infrastructure/log-drain', () => ({
   setLogDrainUserContext: vi.fn(),
 }));
-vi.mock('@/lib/rate-limit', () => ({ checkRateLimit: rateLimit }));
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: rateLimit,
+  checkRateLimitRedis: rateLimitRedis,
+}));
 
 const ownerId = 'fd000000-0000-4000-8000-000000000001';
 const granteeId = 'fd000000-0000-4000-8000-000000000002';
@@ -209,6 +215,12 @@ beforeEach(() => {
     randomBytes(32).toString('hex')
   );
   rateLimit.mockResolvedValue({ allowed: true, headers: {} });
+  rateLimitRedis.mockResolvedValue({
+    allowed: true,
+    limit: 20,
+    remaining: 19,
+    reset: 0,
+  });
   createClient.mockImplementation((incoming: NextRequest) => ({
     auth: { getUser: () => getUser(incoming.headers.get('authorization')) },
   }));
@@ -242,10 +254,7 @@ describe('Fleet Owner console reads', () => {
     expect(rpc).toHaveBeenCalledExactlyOnceWith('fleet_owner_list_access', {
       p_actor_id: ownerId,
     });
-    expect(rateLimit).not.toHaveBeenCalledWith(
-      expect.stringMatching(/^fleet:owner:/),
-      expect.anything()
-    );
+    expect(rateLimitRedis).not.toHaveBeenCalled();
   });
 
   it('refuses a database read that fails the response schema', async () => {
@@ -369,22 +378,39 @@ describe.each(mutations)(
       expect(response.headers.get('cache-control')).toBe('private, no-store');
       expect(await response.json()).toEqual(result);
       expect(rpc).toHaveBeenCalledExactlyOnceWith(rpcName, args);
-      expect(rateLimit).toHaveBeenCalledWith(`fleet:owner:mutate:${ownerId}`, {
-        windowMs: 60_000,
-        maxRequests: 20,
-      });
+      expect(rateLimitRedis).toHaveBeenCalledWith(
+        `fleet:owner:mutate:${ownerId}`,
+        { windowMs: 60_000, maxRequests: 20 },
+        { failClosed: true }
+      );
     });
 
     it('rate-limits Owner mutations before the database', async () => {
-      rateLimit.mockImplementation(async (key: string) =>
-        key.startsWith('fleet:owner:')
-          ? NextResponse.json({ error: 'Too Many Requests' }, { status: 429 })
-          : { allowed: true, headers: {} }
-      );
+      rateLimitRedis.mockResolvedValue({
+        allowed: false,
+        limit: 20,
+        remaining: 0,
+        reset: 0,
+      });
       await expectRefusal(
         await handler(request(path, mastermindSession(), body)),
         429,
         'rate_limited'
+      );
+    });
+
+    it('fails closed when the mutation limiter is unavailable', async () => {
+      rateLimitRedis.mockResolvedValue({
+        allowed: false,
+        limit: 20,
+        remaining: 0,
+        reset: 0,
+        unavailable: true,
+      });
+      await expectRefusal(
+        await handler(request(path, mastermindSession(), body)),
+        503,
+        'owner_unavailable'
       );
     });
 

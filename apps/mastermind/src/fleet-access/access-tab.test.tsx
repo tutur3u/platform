@@ -73,14 +73,14 @@ const consoleData: FleetOwnerConsole = {
       generation: '2',
       questionsPerHour: 30,
       intentsPerDay: 10,
-      modelBudgetPerMonth: 0,
+      modelBudgetPerMonth: 25,
     },
   ],
   projects: [
     {
       key: 'web',
-      nameEn: 'Web',
-      nameVi: 'Web',
+      nameEn: 'Website',
+      nameVi: 'Trang web',
       displayValues: { lane: ['Search'], releaseTitle: [], readinessItem: [] },
     },
   ],
@@ -145,9 +145,18 @@ describe('Access tab visibility', () => {
     expect(screen.getByRole('tab', { name: t.tabs.access })).toBeTruthy();
     expect(await screen.findByText('lead@example.com')).toBeTruthy();
     const row = screen.getByText('lead@example.com').closest('tr');
+    const table = row?.closest('table');
     expect(row?.textContent).toContain(t.tier.steerer);
     expect(row?.textContent).toContain(t.grantStatus.active);
     expect(row?.textContent).toContain(a.noExpiry);
+    expect(
+      within(row as HTMLElement).getAllByRole('cell')[2]?.textContent
+    ).toBe('Website');
+    expect(
+      within(table as HTMLElement)
+        .getAllByRole('columnheader')
+        .map((head) => head.textContent)
+    ).toEqual([a.person, a.tier, a.projects, a.expiry, a.status, a.edit]);
   });
 
   it('never shows Access or reads the console for grantees', () => {
@@ -200,7 +209,27 @@ describe('Access tab visibility', () => {
       reason: 'mfa_required',
     });
     show(live(fixtures.owner), 'access');
-    expect((await screen.findByRole('alert')).textContent).toContain(a.mfa);
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(a.mfa);
+    expect(
+      within(alert).getByRole('link', { name: a.signIn }).getAttribute('href')
+    ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+    expect(
+      within(alert).getByRole('button', { name: t.common.reload })
+    ).toBeTruthy();
+  });
+
+  it('offers sign-in when the console denies the owner session', async () => {
+    owner.fleetOwnerConsoleFn.mockResolvedValue({
+      kind: 'denied',
+      reason: 'forbidden',
+    });
+    show(live(fixtures.owner), 'access');
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(a.forbidden);
+    expect(
+      within(alert).getByRole('link', { name: a.signIn }).getAttribute('href')
+    ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
   });
 });
 
@@ -228,6 +257,7 @@ describe('Access changes', () => {
     });
     show(live(fixtures.owner), 'access');
     fireEvent.click(await screen.findByRole('button', { name: a.grant }));
+    expect(document.getElementById('fleet-grant-budget')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: a.review }));
     expect(screen.getByRole('alert').textContent).toBe(a.invalidForm);
     expect(screen.getByLabelText(a.email).getAttribute('aria-invalid')).toBe(
@@ -238,11 +268,16 @@ describe('Access changes', () => {
     fireEvent.change(screen.getByLabelText(a.email), {
       target: { value: 'new@example.com' },
     });
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Web' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Website' }));
     fireEvent.click(screen.getByRole('button', { name: a.review }));
+    const review = dialog();
     expect(
-      dialog().getByText('Grant Observer access to new@example.com?')
+      review.getByText('Grant Observer access to new@example.com?')
     ).toBeTruthy();
+    expect(review.getByText(a.questionsPerHour)).toBeTruthy();
+    expect(review.getByText('30')).toBeTruthy();
+    expect(review.getByText(a.intentsPerDay)).toBeTruthy();
+    expect(review.getByText('10')).toBeTruthy();
     expect(owner.grantFleetAccessFn).not.toHaveBeenCalled();
     fireEvent.click(dialog().getByRole('button', { name: a.confirm }));
     await waitFor(() =>
@@ -287,6 +322,7 @@ describe('Access changes', () => {
           email: 'lead@example.com',
           tier: 'steerer',
           capabilities: ['status.read', 'comment'],
+          modelBudgetPerMonth: 25,
           expectedGeneration: '2',
         }),
       })
@@ -294,7 +330,26 @@ describe('Access changes', () => {
     expect(
       await screen.findByText(t.ownerRefusal.generation_changed)
     ).toBeTruthy();
+    expect(screen.queryByRole('link', { name: a.signIn })).toBeNull();
     expect(screen.getByText(a.editGrant)).toBeTruthy();
+  });
+
+  it('offers sign-in beside a stale second factor or owner session', async () => {
+    for (const reason of ['mfa_required', 'owner_session_required'] as const) {
+      owner.grantFleetAccessFn.mockResolvedValue({ kind: 'refused', reason });
+      show(live(fixtures.owner), 'access');
+      const row = (await screen.findByText('lead@example.com')).closest('tr');
+      fireEvent.click(
+        within(row as HTMLElement).getByRole('button', { name: a.edit })
+      );
+      fireEvent.click(screen.getByRole('button', { name: a.review }));
+      fireEvent.click(dialog().getByRole('button', { name: a.confirm }));
+      expect(await screen.findByText(t.ownerRefusal[reason])).toBeTruthy();
+      expect(
+        screen.getByRole('link', { name: a.signIn }).getAttribute('href')
+      ).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+      cleanup();
+    }
   });
 
   it('revokes only after the confirmation', async () => {

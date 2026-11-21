@@ -54,9 +54,11 @@ it('keeps each caller fail policy when the assigned store is unusable', async ()
   const { checkRateLimitRedis } = await import('./rate-limit');
 
   expect((await checkRateLimitRedis('legacy', config)).allowed).toBe(true);
-  expect(
-    (await checkRateLimitRedis('sso', config, { failClosed: true })).allowed
-  ).toBe(false);
+  const closed = await checkRateLimitRedis('sso', config, {
+    failClosed: true,
+  });
+  expect(closed.allowed).toBe(false);
+  expect(closed.unavailable).toBe(true);
   expect(mocks.hasEnv).not.toHaveBeenCalled();
   warn.mockRestore();
 });

@@ -18,6 +18,10 @@ export type GrantDraft = {
   expiresOn: string;
   questionsPerHour: string;
   intentsPerDay: string;
+  /**
+   * Sent, not edited. A new grant sends 0. An edit sends the stored value.
+   * The form collects this when a slice enforces the cap and names its unit.
+   */
   modelBudgetPerMonth: string;
   /** Null files a new grant; an edit carries the generation it read. */
   expectedGeneration: string | null;

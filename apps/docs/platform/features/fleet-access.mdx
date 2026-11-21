@@ -120,10 +120,14 @@ An Observer `ask` executes as a read. Every Observer steer request is filed as
    append-only event with actor, channel, time, action and a reason code. The
    verbatim quote is stored separately, redacted, readable only by the Owner and
    the requester, and deleted after 90 days.
-4. **Rate and budget caps per person.** Each grant carries
-   `questions_per_hour` (default 30), `intents_per_day` (default 10) and
-   `model_budget_per_month`. The database enforces them atomically with the
-   insert. Exhausted caps defer the request and audit the refusal.
+4. **Rate caps per person.** Each grant carries `questions_per_hour`
+   (default 30) and `intents_per_day` (default 10). The database enforces
+   those two on the request and audits the refusal when a cap is exhausted.
+   `model_budget_per_month` is stored and only checked as a non-negative
+   number. Nothing applies that cap yet. The Access tab does not collect
+   it: a new grant sends 0 and an edit sends the stored value unchanged.
+   Bring the field back when a slice enforces the cap, and name the unit
+   in the label.
 5. **Requests are untrusted input.** Execution briefs are built only from
    enumerated values and server-resolved identifiers. Quotes and comments stay on
    the display path and never reach an executing lane. Ask runs in a tool-free
@@ -185,9 +189,10 @@ returns, and the API still decides every read and write:
 - **Link chat:** issue a link code, send it to Mira in a private chat, preview
   the pending channel and account label, then confirm.
 - **Approvals** (`approve.low`) stay hidden until that API exists.
-- **Access** (Owner only): grants, edits, revocation, caps, Fleet stop and
-  resume, the project catalog and approved digest display values. Grantees
-  never see the tab.
+- **Access** (Owner only): grants, edits, revocation, question and request
+  caps, Fleet stop and resume, the project catalog and approved digest
+  display values. The monthly model budget is stored with the grant and is
+  not collected or enforced on this tab. Grantees never see the tab.
 
 The Mastermind shell shows a grantee only the Fleet access entry, and the
 Owner keeps the full navigation. Every tier gets the language and theme
@@ -328,7 +333,7 @@ transitions and audit writes atomically.
 | Table                         | Purpose                                                       |
 | ----------------------------- | ------------------------------------------------------------- |
 | `fleet_projects`              | catalog: key, en/vi names, default risk, target resolution    |
-| `fleet_access_grants`         | person, tier, capabilities, caps, expiry, status, generation  |
+| `fleet_access_grants`         | person, tier, capabilities, rate caps, stored model budget, expiry, status, generation |
 | `fleet_access_grant_projects` | grant to project keys                                         |
 | `fleet_channel_identities`    | provider account, keyed sender and conversation fingerprints |
 | `fleet_identity_link_codes`   | one expiring code or pending confirmation per account         |

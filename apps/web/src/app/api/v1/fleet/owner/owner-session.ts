@@ -8,8 +8,9 @@ import {
 } from '@tuturuuu/utils/required-mfa-policy';
 import { connection, type NextRequest, type NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
-import { checkRateLimit, type RateLimitConfig } from '@/lib/rate-limit';
+import { checkRateLimitRedis, type RateLimitConfig } from '@/lib/rate-limit';
 import { fleetJson } from '../session';
+import { fleetOwnerUnavailable } from './owner-db';
 
 /** The Mastermind owner gate admits one second-factor check for a day. */
 export const FLEET_OWNER_MFA_MAX_AGE_SECONDS = 24 * 60 * 60;
@@ -56,13 +57,14 @@ export function withFleetOwner(
         return fleetJson({ error: 'mfa_required' }, 403);
       }
       if (mutation) {
-        const limit = await checkRateLimit(
+        // `checkRateLimit` allows the request when its store is down.
+        const limit = await checkRateLimitRedis(
           `fleet:owner:mutate:${user.id}`,
-          FLEET_OWNER_MUTATION_LIMIT
+          FLEET_OWNER_MUTATION_LIMIT,
+          { failClosed: true }
         );
-        if (!('allowed' in limit)) {
-          return fleetJson({ error: 'rate_limited' }, 429);
-        }
+        if (limit.unavailable) return fleetOwnerUnavailable();
+        if (!limit.allowed) return fleetJson({ error: 'rate_limited' }, 429);
       }
       return handler(user.id, request);
     },

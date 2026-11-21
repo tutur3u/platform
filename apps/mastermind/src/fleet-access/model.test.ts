@@ -12,6 +12,7 @@ import {
   visibleTabs,
 } from './model';
 import { fixtures } from './test-fixtures';
+import { fleetSignInHref } from './text';
 
 const draft = (patch: Partial<RequestDraft>): RequestDraft => ({
   kind: 'comment',
@@ -180,5 +181,18 @@ describe('Fleet access messages', () => {
 
   it('ships the same keys in English and Vietnamese', () => {
     expect(shape(vi.fleetAccess)).toEqual(shape(en.fleetAccess));
+    expect(en.fleetAccess.access).not.toHaveProperty('generation');
+    expect(en.fleetAccess.access).not.toHaveProperty('modelBudgetPerMonth');
+    expect(vi.fleetAccess.access.person).toBe('Người dùng');
+    expect(vi.fleetAccess.access.tier).toBe('Cấp bậc');
+    expect(vi.fleetAccess.access.signIn).toBe('Đăng nhập');
+    expect(vi.fleetAccess.access.removeBody.startsWith('Các bản tóm tắt')).toBe(
+      true
+    );
+  });
+
+  it('sends the Owner back through Worker login to this Fleet page', () => {
+    expect(fleetSignInHref('en')).toBe('/login?nextUrl=%2Fen%2Ffleet-access');
+    expect(fleetSignInHref('vi')).toBe('/login?nextUrl=%2Fvi%2Ffleet-access');
   });
 });

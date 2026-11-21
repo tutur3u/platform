@@ -85,10 +85,14 @@ or invalid publisher configuration returns `503`.
 These routes are for the configured Fleet Owner in Mastermind web. Each one
 requires a Mastermind access session whose MFA proof was verified within the
 last 24 hours and has not expired. The actor is the verified session user.
-The platform (CLI) audience, desk bearers and Supabase session cookies are
-refused with `403`. A stale or missing proof returns `403 {"error":"mfa_required"}`.
+The platform (CLI) audience and desk bearers return `401` and never reach
+the database. A Supabase bearer returns
+`403 {"error":"owner_session_required"}`. A stale or missing proof returns
+`403 {"error":"mfa_required"}`.
 Responses use `Cache-Control: private, no-store`. Mutations are limited to 20
 per minute per Owner and return `429 {"error":"rate_limited"}` past that.
+When that limiter is unavailable, the mutation returns
+`503 {"error":"owner_unavailable"}` and does not run.
 Someone who is not the configured Owner receives `403 {"error":"forbidden"}`.
 Unknown JSON fields are rejected with `400`.
 
@@ -98,10 +102,13 @@ every grant and the catalog with approved display values.
 `POST /api/v1/fleet/owner/grants` grants or edits one person, looked up by
 account email. The tier is `observer`, `steerer` or `operator`. Capabilities
 must sit inside that tier's ceiling. `projectKeys` must be catalog keys.
-`expiresAt` is optional and must be in the future. Caps are
-`questionsPerHour`, `intentsPerDay` and `modelBudgetPerMonth`. A new grant
-sends `expectedGeneration: null` and cannot replace a live grant. An edit
-sends the generation it read. Success is `{"result":"granted"|"updated","userId","generation"}`.
+`expiresAt` is optional and must be in the future. The enforced caps are
+`questionsPerHour` and `intentsPerDay`. `modelBudgetPerMonth` is accepted,
+stored as a non-negative number, and not applied yet. The Access tab omits
+that field: a new grant sends `0` and an edit resends the stored value.
+A new grant sends `expectedGeneration: null` and cannot replace a live
+grant. An edit sends the generation it read. Success is
+`{"result":"granted"|"updated","userId","generation"}`.
 
 `POST /api/v1/fleet/owner/grants/revoke` sends `{ userId, expectedGeneration }`
 and returns `{"result":"revoked","generation"}`. The revoke applies on the

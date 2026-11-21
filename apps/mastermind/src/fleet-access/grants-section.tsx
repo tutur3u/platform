@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { useState } from 'react';
 import { toneBadge } from '../components/tone';
+import type { Locale } from '../i18n';
 import { GrantForm } from './grant-form';
 import {
   emptyGrantDraft,
@@ -95,7 +96,6 @@ export function GrantsSection({
                 <TableHead>{t.access.projects}</TableHead>
                 <TableHead>{t.access.expiry}</TableHead>
                 <TableHead>{t.access.status}</TableHead>
-                <TableHead>{t.access.generation}</TableHead>
                 <TableHead>
                   <span className="sr-only">{t.access.edit}</span>
                 </TableHead>
@@ -106,6 +106,7 @@ export function GrantsSection({
                 <GrantRow
                   key={grant.userId}
                   grant={grant}
+                  projects={projects}
                   busy={editor.kind === 'open' || revoked.kind === 'saving'}
                   onEdit={() => open(grant.userId, grantDraftOf(grant))}
                   onRevoke={() => setRevoking(grant)}
@@ -138,13 +139,25 @@ export function GrantsSection({
   );
 }
 
+function projectLabel(
+  projects: readonly FleetOwnerProject[],
+  locale: Locale,
+  key: string
+) {
+  const project = projects.find((entry) => entry.key === key);
+  if (!project) return key;
+  return locale === 'vi' ? project.nameVi : project.nameEn;
+}
+
 function GrantRow({
   grant,
+  projects,
   busy,
   onEdit,
   onRevoke,
 }: {
   grant: FleetOwnerGrant;
+  projects: readonly FleetOwnerProject[];
   busy: boolean;
   onEdit: () => void;
   onRevoke: () => void;
@@ -156,8 +169,10 @@ function GrantRow({
         {grant.email ?? t.access.deletedAccount}
       </TableCell>
       <TableCell>{t.tier[grant.tier]}</TableCell>
-      <TableCell className="font-mono text-xs">
-        {grant.projects.join(', ')}
+      <TableCell>
+        {grant.projects
+          .map((key) => projectLabel(projects, locale, key))
+          .join(', ')}
       </TableCell>
       <TableCell className="whitespace-nowrap">
         {grant.expiresAt
@@ -172,7 +187,6 @@ function GrantRow({
           {t.grantStatus[grant.status]}
         </Badge>
       </TableCell>
-      <TableCell className="font-mono text-xs">{grant.generation}</TableCell>
       <TableCell>
         <div className="flex justify-end gap-1">
           <Button

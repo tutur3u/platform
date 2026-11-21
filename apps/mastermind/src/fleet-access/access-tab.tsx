@@ -6,6 +6,7 @@ import { CatalogSection } from './catalog-section';
 import { DisplayValuesSection } from './display-values-section';
 import { FleetControl } from './fleet-control';
 import { GrantsSection } from './grants-section';
+import { SignInLink } from './owner-parts';
 import { useOwnerConsole } from './owner-queries';
 import type { OwnerRead } from './owner-upstream';
 import { RefreshingMark } from './query-message';
@@ -71,13 +72,16 @@ export function AccessView({ state }: { state: ConsoleState }) {
                 ? t.access.mfa
                 : t.access.forbidden}
             </p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => window.location.reload()}
-            >
-              {t.common.reload}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <SignInLink />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                {t.common.reload}
+              </Button>
+            </div>
           </div>
         </SectionMessage>
       );
