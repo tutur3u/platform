@@ -330,9 +330,9 @@ test('Calendar root __proto__ filename is sealed, copied and independently check
   }
 });
 
-test('Calendar production acceptance targets the sealed apex path candidate', () => {
+test('Calendar production acceptance exercises the existing Worker at the apex mount', () => {
   const target = calendarProductionRuntimeTarget({
-    name: 'tuturuuu-calendar-path-candidate',
+    name: 'tuturuuu-calendar',
   });
   assert.equal(target.host, 'tuturuuu.com');
   assert.equal(target.basePath, '/calendar');
@@ -362,15 +362,15 @@ test('Calendar production acceptance targets the sealed apex path candidate', ()
   ]);
 });
 
-test('Calendar apex acceptance refuses the retained root or staging service identity', () => {
+test('Calendar apex acceptance refuses the previous candidate or staging identity', () => {
   for (const name of [
-    'tuturuuu-calendar',
+    'tuturuuu-calendar-path-candidate',
     'tuturuuu-calendar-wave1-staging',
     undefined,
   ]) {
     assert.throws(
       () => calendarProductionRuntimeTarget({ name }),
-      /sealed path-candidate service/
+      /sealed production Worker/
     );
   }
 });

@@ -173,7 +173,7 @@ test('hand-built invalid payload is refused before beginPhase', async () => {
   );
   assert.equal(begun, 0);
 });
-test('account cannot be supplied and Calendar locks include shared hosts and retained Worker', async () => {
+test('account cannot be supplied and Calendar locks include both hosts and the existing Worker', async () => {
   const { profiles } = await import('./wave1-native-profile.mjs');
   const { payloadDigest } = await import('./release-cf-queue.mjs');
   const values = input();
@@ -183,7 +183,6 @@ test('account cannot be supplied and Calendar locks include shared hosts and ret
   assert.equal(payload.target.account, profiles.accountId);
   for (const alias of [
     'tuturuuu-calendar',
-    'tuturuuu-calendar-path-candidate',
     'https://calendar.tuturuuu.com',
     'https://tuturuuu.com',
   ])

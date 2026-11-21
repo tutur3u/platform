@@ -258,10 +258,9 @@ export function assertRecipeSettings(settings, recipe) {
     settings.canonicalHost,
     new URL(recipe.canonicalHosts[0]).hostname
   );
-  const productionOverrides = { calendar: 'tuturuuu-calendar-path-candidate' };
   assert.equal(
     recipe.cf.productionWorker,
-    productionOverrides[recipe.app] ?? settings.productionWorker,
+    settings.productionWorker,
     'Legacy production Worker differs'
   );
   for (const [legacy, value] of [

@@ -104,6 +104,12 @@ unauthenticated workspace route. Meet and Roadmap use their own workflows and ar
 | Publication | Admitted in `tuturuuu.ci.ts`; dispatch `wave1-native-production.yaml` with `app=calendar` from `production` (environment `wave1-calendar-production`) |
 | Vercel rollback | `dpl_EDfFFKFtpxeJ29UUmxZc1VNqLsX2` (`calendar-2zv7iqdve-tuturuuu.vercel.app`, READY, aliased to `calendar.tuturuuu.com`) |
 
+The Calendar cutover keeps `calendar.tuturuuu.com` as the public app origin and
+uses the existing registered Google and Microsoft callbacks on that subdomain.
+The production artifact still qualifies `/calendar` routing for a future apex
+cutover. Switch the public origin and OAuth callbacks only after registering and
+verifying both apex callback URIs with their providers.
+
 ## Mail
 
 | Field | Value |

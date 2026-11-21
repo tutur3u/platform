@@ -37,7 +37,7 @@ test('upload failure exposes only numeric exit, signal and CF code metadata', as
       digest: 'b'.repeat(64),
       cfToken: secret,
       p: {
-        name: 'tuturuuu-calendar-path-candidate',
+        name: 'tuturuuu-calendar',
         accountId: 'c'.repeat(32),
       },
       exec: (_command, args) => {

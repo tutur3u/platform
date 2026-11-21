@@ -21,8 +21,8 @@ import { runInfrastructureProductionRuntime } from './infrastructure-production-
 export function calendarProductionRuntimeTarget(profile) {
   assert.equal(
     profile.name,
-    'tuturuuu-calendar-path-candidate',
-    'Calendar apex acceptance requires the sealed path-candidate service'
+    releaseRecipes.calendar.cf.productionWorker,
+    'Calendar apex acceptance requires the sealed production Worker'
   );
   return {
     host: 'tuturuuu.com',

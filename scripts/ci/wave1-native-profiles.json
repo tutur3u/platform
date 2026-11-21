@@ -45,10 +45,10 @@
           "GOOGLE_REDIRECT_URI"
         ],
         "allowedVars": {
-          "NEXT_PUBLIC_APP_URL": "https://tuturuuu.com/calendar",
-          "NEXT_PUBLIC_CALENDAR_APP_URL": "https://tuturuuu.com/calendar",
+          "NEXT_PUBLIC_APP_URL": "https://calendar.tuturuuu.com",
+          "NEXT_PUBLIC_CALENDAR_APP_URL": "https://calendar.tuturuuu.com",
           "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
-          "MICROSOFT_REDIRECT_URI": "https://tuturuuu.com/calendar/api/v1/calendar/auth/microsoft/callback",
+          "MICROSOFT_REDIRECT_URI": "https://calendar.tuturuuu.com/api/v1/calendar/auth/microsoft/callback",
           "TUTURUUU_NOINDEX": "0"
         },
         "publicInputPins": [],
@@ -72,7 +72,7 @@
           ]
         },
         "cf": {
-          "productionWorker": "tuturuuu-calendar-path-candidate",
+          "productionWorker": "tuturuuu-calendar",
           "compatibilityDate": "2026-10-19",
           "compatibilityFlags": [
             "nodejs_compat",
