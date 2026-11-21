@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { notifyNewFleetDecision } from '@/lib/mastermind/fleet/decision-push';
 import { isFleetOwner } from '@/lib/mastermind/fleet/auth';
 import {
   FLEET_MAX_BODY_BYTES,
@@ -93,7 +94,15 @@ export async function PUT(request: Request) {
   if (!parsed.success) return fleetError('invalid_state', 422);
 
   try {
+    const previous = parsed.data.decisions.length
+      ? await readFleetState(auth.store).catch(() => undefined)
+      : undefined;
     const stored = await writeFleetState(auth.store, parsed.data);
+    if (previous !== undefined) {
+      await notifyNewFleetDecision(auth.store, previous, stored).catch(() =>
+        console.warn('Mastermind fleet decision push failed')
+      );
+    }
     return NextResponse.json(
       { accepted: true, etag: stored.etag, receivedAt: stored.receivedAt },
       { headers: FLEET_NO_STORE }

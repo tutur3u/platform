@@ -32,6 +32,11 @@ product rules of the shell entry and every tab.
   `fyi`), up to six `options` (`{id, label}`), optional `recommendedOptionId`,
   `laneId`, `deadlineAt`, and `createdAt`. Unreadable files are skipped and
   only counted. Removing the file closes the decision on the next publish.
+- **Decision notifications:** a newly published open decision can alert fleet
+  owners with push enabled. The notification shows the scrubbed title and
+  opens the Inbox. A shared one-minute cap limits bursts, and repeated
+  snapshots, answers and withdrawals generate no new alert. The Inbox carries
+  every open decision. See the [delivery contract](/reference/api-reference/mastermind-push-events#fleet-decision-pushes).
 - **Answers:** Approve, Hold and Reply post an owner answer with an
   `Idempotency-Key`. Web stores it as a durable record; a retry with the same
   key returns the same record, and a new answer to the same decision becomes

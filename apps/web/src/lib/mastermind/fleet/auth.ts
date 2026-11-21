@@ -14,6 +14,14 @@ import { fleetSignedPayload } from './signing';
 export const FLEET_SIGNATURE_HEADER = MASTERMIND_PUSH_SIGNATURE_HEADER;
 export const FLEET_TIMESTAMP_HEADER = MASTERMIND_PUSH_TIMESTAMP_HEADER;
 
+export function fleetOwnerIds(
+  env: Record<string, string | undefined> = process.env
+) {
+  return parseMastermindPushOwnerIds(
+    env.MASTERMIND_FLEET_OWNER_IDS || env.MASTERMIND_PUSH_OWNER_IDS
+  );
+}
+
 /**
  * Owner-only: the root Mastermind permission (the same rule as
  * `GET /api/v1/mastermind/access`) and, as defence in depth, the owner
@@ -23,10 +31,7 @@ export async function isFleetOwner(
   user: NonNullable<Parameters<typeof getPermissions>[0]['user']>,
   env: Record<string, string | undefined> = process.env
 ) {
-  const owners = parseMastermindPushOwnerIds(
-    env.MASTERMIND_FLEET_OWNER_IDS || env.MASTERMIND_PUSH_OWNER_IDS
-  );
-  if (!owners.includes(user.id.toLowerCase())) return false;
+  if (!fleetOwnerIds(env).includes(user.id.toLowerCase())) return false;
   try {
     const permissions = await getPermissions({
       user,

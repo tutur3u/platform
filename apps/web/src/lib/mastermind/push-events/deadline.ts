@@ -3,8 +3,10 @@ export const MASTERMIND_PUSH_FANOUT_BUDGET_MS = 60_000;
 export class MastermindPushDeadlineExceeded extends Error {}
 
 /** Race each boundary; observed FCM success may be receipted before checking. */
-export function mastermindPushDeadline() {
-  const expiresAt = Date.now() + MASTERMIND_PUSH_FANOUT_BUDGET_MS;
+export function mastermindPushDeadline(
+  budgetMs = MASTERMIND_PUSH_FANOUT_BUDGET_MS
+) {
+  const expiresAt = Date.now() + budgetMs;
   const error = new MastermindPushDeadlineExceeded(
     'Mastermind push deadline exceeded'
   );
@@ -14,7 +16,7 @@ export function mastermindPushDeadline() {
     timer = setTimeout(() => {
       expired = true;
       reject(error);
-    }, MASTERMIND_PUSH_FANOUT_BUDGET_MS);
+    }, budgetMs);
   });
   function check() {
     if (expired || Date.now() >= expiresAt) throw error;

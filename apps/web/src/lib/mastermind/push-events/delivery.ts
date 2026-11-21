@@ -1,8 +1,12 @@
 import 'server-only';
 
+import type { PermissionId } from '@tuturuuu/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { UpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
-import { mastermindRequiresExplicitGrant } from '@/lib/mastermind/access';
+import {
+  mastermindAccessPermission,
+  mastermindRequiresExplicitGrant,
+} from '@/lib/mastermind/access';
 import {
   type CustomPushMessageInput,
   sendCustomPushMessageBatch,
@@ -83,7 +87,7 @@ export interface MastermindPushAdminClient {
   ): QueryResult<unknown>;
   rpc(
     name: 'has_workspace_permission',
-    args: { p_ws_id: string; p_user_id: string; p_permission: string }
+    args: { p_ws_id: string; p_user_id: string; p_permission: PermissionId }
   ): QueryResult<unknown>;
 }
 
@@ -127,19 +131,16 @@ async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
   return !error && data === true;
 }
 
-/**
- * The env allowlist names who may receive pushes; once the explicit-grant
- * rollout flag is on, the owner must also hold manage_mastermind in the root
- * workspace (an explicit, audited grant). An unreadable answer denies.
- */
+/** An unreadable root permission denies delivery. */
 async function holdsMastermindPermission(
   admin: MastermindPushAdminClient,
-  userId: string
+  userId: string,
+  permission: PermissionId
 ) {
   const { data, error } = await admin.rpc('has_workspace_permission', {
     p_ws_id: ROOT_WORKSPACE_ID,
     p_user_id: userId,
-    p_permission: 'manage_mastermind',
+    p_permission: permission,
   });
   return !error && data === true;
 }
@@ -158,6 +159,8 @@ export async function deliverMastermindPushEvent({
   redis,
   locale = 'en',
   nowMs = Date.now(),
+  fleetDecisionTitle,
+  deadline = mastermindPushDeadline(),
 }: {
   admin: MastermindPushAdminClient;
   event: MastermindPushEvent;
@@ -165,12 +168,12 @@ export async function deliverMastermindPushEvent({
   redis: Pick<UpstashRestRedisClient, 'get' | 'set' | 'eval'>;
   locale?: MastermindPushLocale;
   nowMs?: number;
+  fleetDecisionTitle?: string;
+  deadline?: ReturnType<typeof mastermindPushDeadline>;
 }): Promise<MastermindPushDeliveryResult> {
   const result = { sent: 0, coalesced: 0, skipped: 0, failed: 0 };
-  if (ownerIds.length === 0) return result;
-
-  const deadline = mastermindPushDeadline();
   try {
+    if (ownerIds.length === 0) return result;
     const { data: devices, error } = await deadline.run(() =>
       admin
         .from('notification_push_devices')
@@ -191,6 +194,11 @@ export async function deliverMastermindPushEvent({
     }
 
     const message = buildMastermindPushMessage(event.type, locale, nowMs);
+    if (fleetDecisionTitle !== undefined) message.title = fleetDecisionTitle;
+    const permission =
+      fleetDecisionTitle !== undefined || mastermindRequiresExplicitGrant()
+        ? mastermindAccessPermission()
+        : null;
     for (const userId of ownerIds) {
       await deliverOwner(userId);
     }
@@ -204,9 +212,9 @@ export async function deliverMastermindPushEvent({
       const userDevices = tokensByUser.get(userId);
       if (
         !userDevices?.length ||
-        (mastermindRequiresExplicitGrant() &&
+        (permission &&
           !(await deadline.run(() =>
-            holdsMastermindPermission(admin, userId)
+            holdsMastermindPermission(admin, userId, permission)
           ))) ||
         !(await deadline.run(() => allowsPush(admin, userId)))
       ) {

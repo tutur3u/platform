@@ -1,7 +1,7 @@
 ---
 title: Mastermind push events
-description: Signed hub-to-web endpoint that turns Mastermind events into owner mobile push notifications.
-updatedAt: "2026-10-30"
+description: Owner mobile push notifications for signed hub events and new fleet decisions.
+updatedAt: "2026-11-21"
 audience: developers
 ---
 
@@ -149,6 +149,32 @@ the cap whatever `Content-Length` says, including chunked bodies without one.
   or event key for receipt/window-write warnings. Never owner/device ids,
   device tokens, claim tokens, raw backend errors or secrets.
 
+## Fleet decision pushes
+
+An authenticated `PUT /api/v1/mastermind/fleet/state` first stores the
+scrubbed snapshot. When it introduces a decision ID absent from the preceding
+snapshot, Web can deliver a `decision.awaiting` push directly. This uses the
+fleet publisher signature and the shared FCM path. The hub POST contract
+above still uses its own signature and fixed notification copy.
+
+- **Audience:** the fleet owner allowlist, `MASTERMIND_FLEET_OWNER_IDS`, or
+  `MASTERMIND_PUSH_OWNER_IDS` when the fleet variable is unset or empty.
+  Each recipient must also hold the same root-workspace permission required
+  to open the fleet Inbox and have push notifications enabled.
+- **Copy:** the scrubbed decision title and the localized “Open Mastermind”
+  body. Push data contains the Inbox tab route and target. Decision IDs,
+  decision bodies, options and answer text stay out of the push payload.
+- **Rate and deduplication:** one fleet decision is admitted per 60 seconds
+  across Web instances, with the shared per-owner `decision.awaiting` cap
+  also applied. A decision present on consecutive publishes is skipped.
+  Web claims an admitted ID for 24 hours before delivery, so concurrent
+  publishes and reappearances within that period cannot resend it.
+  Decisions skipped during a burst remain in the Inbox.
+- **Lifecycle:** Web checks that the decision is still open and unanswered
+  before delivery. Answers and withdrawals generate no additional push.
+  Delivery is best effort with a five-second budget after snapshot storage.
+  Delivery failure does not change the publish response or schedule a retry.
+
 ## Responses
 
 Errors are `{"error":"<class>"}` and never echo input.
@@ -185,3 +211,8 @@ cover the fan-out deadline when FCM finishes only after timeout wins. See
 `route.v2.test.ts` covers the version 2 contract: every urgency, rejected
 versions and urgencies with their log fields, the signature over the canonical
 hub bytes, skew boundaries and dedupe shared across versions.
+
+The fleet PUT cases in `fleet/fleet-routes.test.ts` cover newly introduced
+IDs, repeat and concurrent publishes, coalescing, scrubbed notification
+copy, owner and permission checks, answer and withdrawal handling, and
+snapshot acceptance when push delivery fails.

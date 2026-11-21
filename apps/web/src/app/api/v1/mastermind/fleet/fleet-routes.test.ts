@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { recordFleetAnswer } from '@/lib/mastermind/fleet/store';
 import { createMemoryMastermindStore } from '@tuturuuu/utils/mastermind-store/client';
 import { sampleFleetState } from '@/lib/mastermind/fleet/sample-state.fixture';
 import { fleetSignedPayload } from '@/lib/mastermind/fleet/signing';
@@ -9,12 +11,17 @@ import { signMastermindPushEvent } from '@/lib/mastermind/push-events/signature'
 vi.mock('server-only', () => ({}));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
+const PUSH_OWNER = '22222222-2222-4222-8222-222222222222';
+const NO_PERMISSION = '33333333-3333-4333-8333-333333333333';
 const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
 
 const mocks = vi.hoisted(() => ({
   user: { id: '' },
   granted: [] as string[],
-  store: null as unknown,
+  store: null as ReturnType<typeof createMemoryMastermindStore> | null,
+  devices: vi.fn(),
+  permission: vi.fn(),
+  push: vi.fn(),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -33,8 +40,21 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 // The in-memory reference store has the Worker's semantics; the Worker itself
 // is covered by apps/mastermind-store/src/worker.test.ts.
-vi.mock('@/lib/mastermind/store', () => ({
+vi.mock('@/lib/mastermind/store', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/mastermind/store')>()),
   getMastermindStore: async () => mocks.store,
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    from: () => ({ select: () => ({ in: mocks.devices }) }),
+    rpc: async (name: string, args: unknown) => {
+      if (name === 'has_workspace_permission') return mocks.permission(args);
+      return { data: true, error: null };
+    },
+  }),
+}));
+vi.mock('@/lib/notifications/push-delivery', () => ({
+  sendCustomPushMessageBatch: mocks.push,
 }));
 
 function signed(method: string, path: string, body = '', secret = SECRET) {
@@ -89,12 +109,146 @@ async function answer(
 // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync
 describe('Mastermind fleet sync routes', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.clearAllMocks();
     mocks.store = createMemoryMastermindStore();
+    mocks.devices.mockReturnValue({
+      limit: async () => ({ data: [], error: null }),
+    });
+    mocks.permission.mockResolvedValue({ data: true, error: null });
+    mocks.push.mockResolvedValue({ deliveredCount: 1, invalidTokens: [] });
     mocks.user = { id: OWNER };
     mocks.granted = ['view_infrastructure'];
     vi.stubEnv('MASTERMIND_FLEET_PUBLISHER_SECRET', SECRET);
     vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', OWNER);
+    vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', '');
+    vi.stubEnv('MASTERMIND_PUSH_LOCALE', 'en');
     vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', '');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllEnvs();
+  });
+
+  describe('decision pushes from PUT state', () => {
+    const minutes = (value: number) =>
+      vi.setSystemTime(Date.now() + value * 60_000);
+    const decision = sampleFleetState().decisions[0]!;
+    const state = (...ids: string[]) =>
+      sampleFleetState({
+        generatedAt: new Date().toISOString(),
+        decisions: ids.map((id) => ({ ...decision, id })),
+      });
+
+    beforeEach(() => {
+      // Include a device outside the query audience to exercise the fan-out guard.
+      mocks.devices.mockReturnValue({
+        limit: async () => ({
+          data: [
+            { user_id: OWNER, token: 'owner-device' },
+            { user_id: PUSH_OWNER, token: 'other-device' },
+            { user_id: NO_PERMISSION, token: 'ungranted-device' },
+          ],
+          error: null,
+        }),
+      });
+    });
+
+    it('sends one scrubbed Inbox push for a new id, to authorized fleet owners only', async () => {
+      vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', PUSH_OWNER);
+      vi.stubEnv('MASTERMIND_FLEET_OWNER_IDS', `${OWNER},${NO_PERMISSION}`);
+      mocks.permission.mockImplementation(async ({ p_user_id }) => ({
+        data: p_user_id === OWNER,
+        error: null,
+      }));
+      expect((await publish(state())).status).toBe(200);
+      const first = state(decision.id);
+      const decisions = [
+        {
+          ...decision,
+          title:
+            'Approve rollout https://secret.example/thing person@example.com /Users/private/file',
+          body: 'private decision body',
+        },
+      ];
+      expect((await publish({ ...first, decisions })).status).toBe(200);
+      expect(mocks.devices).toHaveBeenCalledExactlyOnceWith('user_id', [
+        OWNER,
+        NO_PERMISSION,
+      ]);
+      expect(mocks.permission).toHaveBeenCalledWith({
+        p_ws_id: ROOT_WORKSPACE_ID,
+        p_user_id: OWNER,
+        p_permission: 'view_infrastructure',
+      });
+      expect(mocks.push).toHaveBeenCalledExactlyOnceWith({
+        devices: [{ token: 'owner-device' }],
+        message: {
+          title: 'Approve rollout',
+          body: 'Open Mastermind',
+          category: 'tuturuuu_mastermind',
+          expiresAt: expect.any(String),
+          data: { openTarget: 'mastermind', route: '/mastermind/inbox' },
+        },
+      });
+
+      minutes(2);
+      expect((await publish(state(decision.id))).status).toBe(200);
+      minutes(2);
+      expect((await publish(state())).status).toBe(200);
+      minutes(2);
+      expect((await publish(state(decision.id))).status).toBe(200);
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+    });
+
+    it('coalesces concurrent publishes and drops new ids inside the shared window', async () => {
+      const first = state('first', 'second');
+      const concurrent = await Promise.all([
+        publish(first),
+        publish({
+          ...first,
+          generatedAt: new Date(Date.now() + 1).toISOString(),
+        }),
+      ]);
+      expect(concurrent.map(({ status }) => status)).toEqual([200, 200]);
+      minutes(0.5);
+      expect((await publish(state('first', 'second', 'third'))).status).toBe(
+        200
+      );
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+      minutes(1);
+      expect(
+        (await publish(state('first', 'second', 'third', 'fourth'))).status
+      ).toBe(200);
+      expect(mocks.push).toHaveBeenCalledTimes(2);
+    });
+
+    it('skips answers and withdrawals without consuming the next decision slot', async () => {
+      const store = mocks.store;
+      if (!store) throw new Error('Missing test store');
+      await recordFleetAnswer(
+        store,
+        'answered',
+        { action: 'hold' },
+        randomUUID()
+      );
+      expect((await publish(state('answered'))).status).toBe(200);
+      minutes(0.25);
+      expect((await publish(state())).status).toBe(200);
+      expect(mocks.push).not.toHaveBeenCalled();
+      minutes(0.25);
+      expect((await publish(state('fresh'))).status).toBe(200);
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the accepted snapshot when push delivery fails', async () => {
+      mocks.push.mockRejectedValueOnce(new Error('FCM unavailable'));
+      expect((await publish(state('first'))).status).toBe(200);
+      minutes(2);
+      expect((await publish(state('first'))).status).toBe(200);
+      expect(mocks.push).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('PUT state (publisher)', () => {
