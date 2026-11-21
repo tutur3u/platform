@@ -859,7 +859,9 @@ with the first deployable slice.
       reconciliation does not finish within 15 minutes, the default is to
       abort: the current owner resumes under a fresh generation and the
       unresolved send stays marked uncertain for the operator, so a channel
-      is never left without a sender.
+      is never left without a sender. The abort neither resolves that send
+      nor promotes anything; it is never retried, and it keeps blocking any
+      later promotion until it is cleared with the two-part evidence above.
    3. Replace the desk-owner row and the channel's send owner, and verify
       both by readback.
    4. Enable the new owner under a fresh generation.
