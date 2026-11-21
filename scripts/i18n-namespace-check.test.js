@@ -185,3 +185,103 @@ test('namespace checker scopes task UI translations to direct consumers', (t) =>
   assert.match(result.stdout, /task-progress\.summary\.title/u);
   assert.doesNotMatch(result.stdout, /apps\/web: MISSING.*task-progress/u);
 });
+
+// An app registered with an empty shared-package scope has no shared namespace
+// check, so the claim behind the scope is asserted here: nothing it imports
+// from a shared package, directly or transitively, imports next-intl. A
+// specifier the walk cannot resolve fails the test instead of being skipped.
+const IMPORT_SPECIFIER = /(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/gu;
+
+function sharedModulesOf(appSource) {
+  const root = path.join(__dirname, '..');
+  const { SHARED_PACKAGES } = require('./i18n-namespace-apps');
+  const packages = SHARED_PACKAGES.map(({ name }) => {
+    const dir = path.join(root, name);
+    const manifest = require(path.join(dir, 'package.json'));
+    return { dir, exportsMap: manifest.exports ?? {}, name: manifest.name };
+  });
+  const targetOf = (entry) =>
+    typeof entry === 'string' ? entry : (entry.import ?? entry.default);
+  const existing = (base) =>
+    ['', '.tsx', '.ts', '/index.tsx', '/index.ts']
+      .map((suffix) => `${base}${suffix}`)
+      .find((file) => fs.existsSync(file) && fs.statSync(file).isFile());
+  const resolveExport = ({ dir, exportsMap }, subpath) => {
+    const exact = exportsMap[subpath ? `./${subpath}` : '.'];
+    if (exact) return existing(path.join(dir, targetOf(exact)));
+    for (const [key, entry] of Object.entries(exportsMap)) {
+      const [head, tail] = key.slice(2).split('*');
+      if (tail === undefined || !subpath.startsWith(head)) continue;
+      if (!subpath.endsWith(tail)) continue;
+      const middle = subpath.slice(head.length, subpath.length - tail.length);
+      const file = existing(
+        path.join(dir, targetOf(entry).replace('*', middle))
+      );
+      if (file) return file;
+    }
+    return undefined;
+  };
+  const sharedPackageOf = (specifier) =>
+    packages.find(
+      ({ name }) => specifier === name || specifier.startsWith(`${name}/`)
+    );
+  const importsOf = (file) =>
+    [...fs.readFileSync(file, 'utf8').matchAll(IMPORT_SPECIFIER)].map(
+      (match) => match[1]
+    );
+  const sourceFiles = (dir) =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const file = path.join(dir, entry.name);
+      if (entry.isDirectory()) return sourceFiles(file);
+      return /\.tsx?$/u.test(entry.name) ? [file] : [];
+    });
+
+  const modules = new Set();
+  const unresolved = [];
+  const follow = (specifier, from, relative) => {
+    const shared = sharedPackageOf(specifier);
+    if (!shared && !(relative && specifier.startsWith('.'))) return;
+    const file = shared
+      ? resolveExport(shared, specifier.slice(shared.name.length + 1))
+      : existing(path.resolve(path.dirname(from), specifier));
+    if (!file) {
+      unresolved.push(`${specifier} from ${path.relative(root, from)}`);
+      return;
+    }
+    if (modules.has(file)) return;
+    modules.add(file);
+    if (!/\.tsx?$/u.test(file)) return;
+    for (const next of importsOf(file)) follow(next, file, true);
+  };
+  for (const file of sourceFiles(appSource))
+    for (const specifier of importsOf(file)) follow(specifier, file, false);
+  return {
+    modules: [...modules].map((file) => path.relative(root, file)),
+    unresolved,
+  };
+}
+
+test('apps with an empty shared-package scope import only namespace-free shared UI', () => {
+  const { APP_SHARED_PACKAGE_SCOPES } = require('./i18n-namespace-policy');
+  const { APPS } = require('./i18n-namespace-apps');
+  const unscoped = APPS.filter(
+    (app) => APP_SHARED_PACKAGE_SCOPES.get(app.name)?.size === 0
+  );
+  assert.ok(unscoped.some((app) => app.name === 'apps/mastermind'));
+
+  for (const app of unscoped) {
+    const { modules, unresolved } = sharedModulesOf(
+      path.join(__dirname, '..', app.dir, 'src')
+    );
+    assert.ok(modules.length > 0, `${app.name} imports no shared UI`);
+    assert.deepEqual(unresolved, [], `${app.name} has unresolved imports`);
+    const readers = modules.filter((file) =>
+      [
+        ...fs
+          .readFileSync(path.join(__dirname, '..', file), 'utf8')
+          .matchAll(IMPORT_SPECIFIER),
+      ].some((match) => /^next-intl(?:\/|$)/u.test(match[1]))
+    );
+    assert.deepEqual(readers, [], `${app.name} reaches translated shared UI`);
+  }
+});

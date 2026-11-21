@@ -57,6 +57,11 @@ const APP_SHARED_PACKAGE_SCOPES = new Map([
   // packages/ui and ships its own learn/teach bundle, so no shared package
   // namespaces apply; its own namespace usage is still checked.
   ['apps/lms', new Set()],
+  // apps/mastermind renders only namespace-free primitives from packages/ui
+  // (button, badge, card, table, form controls, the settings section and the
+  // shell structure) and resolves copy through its own translator, so no shared
+  // package namespaces apply.
+  ['apps/mastermind', new Set()],
 ]);
 
 // Bare root-qualified keys in shared packages need app-level rollout scopes:
