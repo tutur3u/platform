@@ -95,7 +95,7 @@
   --sorbet-gutter: 16px;
   --sorbet-header-height: 56px;
   --sorbet-dock-height: 64px;
-  --sorbet-dock-inset: 16px;
+  --sorbet-dock-inset: 12px;
   --sorbet-dock-safe-area-tuck: 8px;
   --sorbet-dock-bottom-offset: max(
     var(--sorbet-dock-inset),

@@ -477,7 +477,7 @@
     "gutter": 16,
     "headerHeight": 56,
     "dockHeight": 64,
-    "dockInset": 16,
+    "dockInset": 12,
     "dockSafeAreaTuck": 8,
     "dockRadius": 9999,
     "sheetRadius": 24,

@@ -355,7 +355,6 @@ export const AgendaView = ({
             />
           </div>
           <Button
-            className="max-md:hidden"
             variant="outline"
             size="icon"
             aria-label={t('views.create_event')}
