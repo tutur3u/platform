@@ -16,6 +16,7 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "src/cli/resources-test-fixtures.ts",
+    "src/cli/__tests__/**",
     "examples"
   ]
 }

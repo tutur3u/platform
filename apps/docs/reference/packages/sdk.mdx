@@ -759,6 +759,74 @@ priority: high
 | Environment | Staging |
 ```
 
+### Agent Eval Pyramid
+
+Agents depend on `ttr` returning the same exit code, `--json` shape and error
+text every time, so the commands they call most are covered by a local eval
+pyramid under `packages/sdk/src/cli/__tests__/evals/`. It makes no paid or
+model calls and never reaches the network: each test file installs a
+disposable `HOME`, CLI config and a fetch that refuses every request before
+any case runs.
+
+| Tier | What it checks | Where |
+| --- | --- | --- |
+| Contract evals (base) | One deterministic run per case of the real `src/cli/index.ts` entrypoint against a fake HTTP world: exit code, stdout/stderr text, `--json` schema, the exact requests sent | `cli-contract.test.ts` |
+| Reliability evals | Retry- and timeout-prone paths repeated over fixed seeds, scored as pass@k and pass^k | `cli-reliability.test.ts` |
+| Model-routing and Mira evals | Not built; see the plan below | — |
+
+Every contract case also asserts the shared invariants: no access or refresh
+token in stdout or stderr, no stack trace in either stream, no request outside the fake
+platform and tasks origins, no unrouted request, no terminal escape or bell
+characters from API data, and an empty stdout when a `--json` command fails.
+A case may name a `knownGap` (for example `failure-without-stderr` for
+`ttr git <unknown>`) so a documented exception stays visible until it is
+fixed.
+
+Run the pyramid from `packages/sdk`:
+
+```bash
+bunx vitest run src/cli/__tests__/evals
+# Also write per-scenario pass@k / pass^k results to a JSON report.
+TTR_EVAL_REPORT=/tmp/ttr-evals.json bunx vitest run src/cli/__tests__/evals/cli-reliability.test.ts
+```
+
+Adding a command is one entry in the `cases` table in `cli-contract.test.ts`:
+its `argv`, the expected `exitCode`, and any of `json` (a Zod schema),
+`stdout`/`stderr` patterns, the ordered `requests`, `routes` overrides for
+failure responses, `session` (`logged-in`, `logged-out` or `expired`), and a
+`verify` hook. The shared fake world in `cli-eval-world-test-fixtures.ts`
+serves one workspace, board and task plus the CLI session refresh endpoint;
+create cases target its fixed `LIST_ID`. When you add a command module that `src/cli/index.ts` dispatches
+to directly, wrap it with `trackEntryModule` in the test's `vi.mock` block so
+the invoker can wait for it to finish.
+
+Reliability scenarios run once per seed in `SEEDS` and must reach pass^k = 1.
+Seeds choose fault modes in rotation (`cycleSeeded`), so eight consecutive
+seeds cover every target and failure pair. The two session-refresh scenarios
+also add seeded response latency so their concurrent requests interleave
+differently per seed. The fake fetch honors abort signals, so the slow
+registry case really waits for the update check's own timeout. Each trial
+also enforces the contract invariants above (allowing the npm registry
+origin for the update check). Current scenarios:
+an expired session refreshes exactly once across the concurrent `whoami`
+requests and the rotated session is saved; a revoked access token is
+refreshed and the request retried; a slow, failing or malformed npm update
+check never breaks a `--json` command; and transient 429/5xx or network
+failures fail fast with one clean error line and no retry. pass@k is the
+chance that at least one of k trials passes and pass^k the chance that all k
+pass, both estimated without bias from n trials. A flaky path shows up as
+pass@k = 1 with pass^k below 1.
+
+**Plan, not yet built:** model-routing and Mira evals would sit above these
+tiers and reuse them as the judge instead of a paid grader. A routing eval
+would give the model a request plus the `ttr --help` and scoped-help text,
+record the command it chooses, and score that command by running it through
+the contract harness and its fake world. It passes when the command succeeds
+with the expected requests and output. Because they need model calls, those
+evals would run on demand against a local or already-budgeted model, never in
+CI. They would reuse the pass@k / pass^k report format, with a fixed prompt
+set and a recorded model id so runs stay comparable.
+
 ### Finance CLI
 
 Finance commands use the selected workspace and the same authenticated internal
