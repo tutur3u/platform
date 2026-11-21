@@ -43,10 +43,12 @@ scope and `apps/calendar/src/proxy.cookie-path.test.ts` the `Path=/` session
 cookies that the satellite flow writes under `/calendar/*`.
 
 The production Worker uses `TTR_ONE_ORIGIN_CALENDAR` to control activation.
-`shadow` serves both hosts. After the apex is verified, `on` redirects
-subdomain pages to the corresponding path and query under the apex. GET and
-HEAD use 301, and other methods use 307. API, server-function and legacy
-completion paths continue to serve on the subdomain. Google and Microsoft
+`shadow` serves both hosts. After the apex is verified, `on` moves browser
+document navigations (GET/HEAD, by `Sec-Fetch-Mode: navigate` or an HTML
+`Accept` without Fetch Metadata) to the corresponding path and query under the
+apex with a 301. Fetches, prefetches, upgrades and every other method keep
+serving on the subdomain, as do API, server-function and legacy completion
+paths. `runtime/root-cutover.test.ts` covers both sides of that boundary. Google and Microsoft
 connections started at the apex navigate to their registered subdomain flow.
 Microsoft keeps its HttpOnly PKCE cookie on that host through its callback.
 Moving these callbacks to the apex requires registration with both providers.

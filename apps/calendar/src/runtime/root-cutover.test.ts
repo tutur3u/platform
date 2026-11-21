@@ -93,7 +93,8 @@ describe('Calendar cutover boundary', () => {
     try {
       const response = await handleCalendarRequest(
         new Request(
-          'https://calendar.tuturuuu.com/.well-known/acme-challenge/probe'
+          'https://calendar.tuturuuu.com/.well-known/acme-challenge/probe',
+          { headers: { 'sec-fetch-mode': 'navigate' } }
         ),
         apexRedirect,
         ctx,
@@ -158,15 +159,7 @@ describe('Calendar cutover boundary', () => {
 });
 
 describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
-  const methods = [
-    'GET',
-    'HEAD',
-    'POST',
-    'PUT',
-    'PATCH',
-    'DELETE',
-    'OPTIONS',
-  ] as const;
+  const navigation = { 'sec-fetch-mode': 'navigate' };
   it.each([
     ['/', '/calendar'],
     ['/en/personal', '/calendar/en/personal'],
@@ -182,19 +175,17 @@ describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
     ['/offline.html', '/calendar/offline.html'],
     ['/calendar/personal', '/calendar/personal'],
   ])('sends %s to the apex mount before auth', async (path, to) => {
-    for (const method of methods) {
+    for (const method of ['GET', 'HEAD']) {
       const response = await handleCalendarRequest(
         new Request(`https://calendar.tuturuuu.com${path}`, {
           method,
-          headers: { cookie: 'sb-fixture-auth-token=stale' },
+          headers: { ...navigation, cookie: 'sb-fixture-auth-token=stale' },
         }),
         apexRedirect,
         ctx,
         telemetry
       );
-      expect(response.status).toBe(
-        method === 'GET' || method === 'HEAD' ? 301 : 307
-      );
+      expect(response.status).toBe(301);
       expect(response.headers.get('location')).toBe(
         `https://tuturuuu.com${to}`
       );
@@ -205,6 +196,52 @@ describe('legacy calendar.tuturuuu.com host when apex redirect is on', () => {
     expect(suppliers.start).not.toHaveBeenCalled();
     expect(asset).not.toHaveBeenCalled();
   });
+
+  it('redirects a crawler GET that asks for HTML without Fetch Metadata', async () => {
+    const response = await handleCalendarRequest(
+      new Request('https://calendar.tuturuuu.com/en/personal', {
+        headers: { accept: 'text/html,application/xhtml+xml' },
+      }),
+      apexRedirect,
+      ctx,
+      telemetry
+    );
+    expect(response.status).toBe(301);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/calendar/en/personal'
+    );
+  });
+
+  it.each([
+    ['GET', { 'sec-fetch-mode': 'cors' }],
+    ['GET', { 'sec-fetch-mode': 'navigate', upgrade: 'websocket' }],
+    ['GET', {}],
+    ['HEAD', {}],
+    ['POST', navigation],
+    ['PUT', navigation],
+    ['PATCH', navigation],
+    ['DELETE', navigation],
+    ['OPTIONS', navigation],
+  ] as const)(
+    'serves a %s that is not a document navigation (%o) on the subdomain',
+    async (method, headers) => {
+      suppliers.proxy.mockResolvedValueOnce(
+        NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      );
+      const response = await handleCalendarRequest(
+        new Request('https://calendar.tuturuuu.com/en/personal', {
+          method,
+          headers,
+        }),
+        apexRedirect,
+        ctx,
+        telemetry
+      );
+      expect(response.status).toBe(401);
+      expect(response.headers.get('location')).toBeNull();
+      expect(suppliers.proxy).toHaveBeenCalledOnce();
+    }
+  );
 
   it.each(['/verify-token?nextUrl=%2Fabc', '/api/v1/calendar/connections'])(
     'keeps %s on the existing host when the page redirect is on',

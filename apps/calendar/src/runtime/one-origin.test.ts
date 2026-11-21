@@ -108,7 +108,9 @@ describe('Calendar one-origin activation', () => {
   it('on redirects subdomain navigations and replaces the service worker', async () => {
     const env = workerEnv('on');
     const page = await handleCalendarRequest(
-      new Request(`https://calendar.tuturuuu.com${WORKSPACE}`),
+      new Request(`https://calendar.tuturuuu.com${WORKSPACE}`, {
+        headers: { 'sec-fetch-mode': 'navigate' },
+      }),
       env,
       ctx,
       telemetry

@@ -82,7 +82,12 @@ function hasPrefix(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-function isNavigation(request: Request) {
+/**
+ * A browser document navigation: GET/HEAD without an upgrade, by Fetch
+ * Metadata, or by an HTML `Accept` for clients that send none. Only these
+ * move between hosts; fetches, prefetches and other methods stay served.
+ */
+export function isOneOriginNavigation(request: Request) {
   if (request.method !== 'GET' && request.method !== 'HEAD') return false;
   if (request.headers.get('upgrade')) return false;
   const mode = request.headers.get('sec-fetch-mode');
@@ -127,7 +132,7 @@ export function decideOneOriginRequest(
     ) || config.machinePaths?.has(appPath);
 
   if (config.mode === 'on' && config.basePathReady && !machine) {
-    if (isNavigation(request)) {
+    if (isOneOriginNavigation(request)) {
       // The subdomain root maps to the bare mount in one hop. Apps may retain
       // the spelling of nested paths for existing links.
       const suffix =

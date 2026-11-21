@@ -1,4 +1,5 @@
 import type { AppMountConfig } from '@tuturuuu/start-bridge/mounts';
+import { isOneOriginNavigation } from '@tuturuuu/utils/one-origin-routing';
 import { calendarMounts } from './calendar-mount';
 import { isCalendarStagingArtifact } from './deployment-profile';
 import { calendarOneOriginMode } from './one-origin';
@@ -41,11 +42,12 @@ function mountPath(pathname: string, basePath: string) {
 }
 
 /**
- * When `TTR_ONE_ORIGIN_CALENDAR=on`, the subdomain moves visitors to
- * `https://<mount host><base><path>?<query>` (301 for GET/HEAD; 307 preserves
- * other methods) before any auth, locale or app handling. Its build identity
- * stays served, and its service-worker path answers with a worker that
- * removes itself. `off` and `shadow` serve the subdomain unchanged, including
+ * When `TTR_ONE_ORIGIN_CALENDAR=on`, the subdomain moves browser document
+ * navigations (GET/HEAD) to `https://<mount host><base><path>?<query>` with a
+ * 301 before any auth, locale or app handling. Fetches, prefetches and every
+ * other method stay served on the subdomain, as do machine paths. Its build
+ * identity stays served, and its service-worker path answers with a worker
+ * that removes itself. `off` and `shadow` serve the subdomain unchanged, including
  * the registered OAuth callbacks. Staging never redirects.
  */
 export function legacyHostResponse(
@@ -74,13 +76,14 @@ export function legacyHostResponse(
       },
     });
   }
+  if (!isOneOriginNavigation(request)) return null;
   const target = new URL(
     mountPath(url.pathname, basePath),
     `https://${mountHost}`
   );
   target.search = url.search;
   return new Response(null, {
-    status: request.method === 'GET' || request.method === 'HEAD' ? 301 : 307,
+    status: 301,
     headers: { Location: target.href },
   });
 }
