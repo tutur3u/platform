@@ -12,6 +12,29 @@ function appendCookies(from: Headers, to: Headers) {
   for (const value of from.getSetCookie()) to.append('set-cookie', value);
 }
 
+/**
+ * A terminal proxy response without Next's internal `x-middleware-*` protocol
+ * headers (`x-middleware-set-cookie` and the like): they steer the framework,
+ * never the browser, and can carry cookie values the response itself scopes
+ * differently.
+ */
+export function withoutMiddlewareHeaders<T extends Response>(response: T): T {
+  const internal = [...response.headers.keys()].filter((name) =>
+    name.startsWith('x-middleware-')
+  );
+  if (!internal.length || response.status === 101) return response;
+  for (const name of internal) {
+    try {
+      response.headers.delete(name);
+    } catch {
+      const copy = new Response(response.body, response);
+      for (const header of internal) copy.headers.delete(header);
+      return copy as T;
+    }
+  }
+  return response;
+}
+
 /** The default Next middleware matcher used by the Tuturuuu satellites. */
 export function defaultProxyMatches(pathname: string) {
   return (
@@ -154,9 +177,10 @@ export async function dispatchThroughProxy({
         !middleware.headers.has('x-middleware-next') &&
         !middleware.headers.has('x-middleware-rewrite')
       ) {
-        if (middleware.status >= 400) return middleware;
+        if (middleware.status >= 400)
+          return withoutMiddlewareHeaders(middleware);
         appendCookies(responseHeaders, middleware.headers);
-        return middleware;
+        return withoutMiddlewareHeaders(middleware);
       }
 
       const forwarded = new Headers(initial.headers);
