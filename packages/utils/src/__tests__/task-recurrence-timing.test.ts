@@ -2,6 +2,7 @@ import type { CalendarRecurrenceRule } from '@tuturuuu/types/primitives/calendar
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import {
+  isTaskOccurrenceSkipped,
   planTaskRecurrenceGeneration,
   type TaskRecurrenceSchedule,
   taskOccurrenceInstants,
@@ -359,5 +360,34 @@ describe('planTaskRecurrenceGeneration', () => {
     expect(() =>
       planTaskRecurrenceGeneration(weekly, '2026-11-17', '2026-11-17T00:00:00Z')
     ).toThrow(/cursor/);
+  });
+});
+
+describe('isTaskOccurrenceSkipped', () => {
+  const timing = (timeZone: string, startOffsetDays = 0) => ({
+    timeZone,
+    dueTime: null,
+    startOffsetDays,
+  });
+
+  it('flags dates missing from the zone calendar', () => {
+    expect(isTaskOccurrenceSkipped(timing('Pacific/Apia'), '2011-12-30')).toBe(
+      true
+    );
+    expect(isTaskOccurrenceSkipped(timing('Pacific/Apia'), '2011-12-31')).toBe(
+      false
+    );
+  });
+
+  it('flags an occurrence whose start date is missing', () => {
+    expect(
+      isTaskOccurrenceSkipped(timing('Pacific/Apia', 1), '2011-12-31')
+    ).toBe(true);
+  });
+
+  it('keeps DST transition days', () => {
+    expect(
+      isTaskOccurrenceSkipped(timing('America/Sao_Paulo'), '2018-11-04')
+    ).toBe(false);
   });
 });

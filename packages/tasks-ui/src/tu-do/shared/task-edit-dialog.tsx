@@ -113,6 +113,8 @@ import { useTaskMutations } from './task-edit-dialog/hooks/use-task-mutations';
 import { useTaskRealtimeSync } from './task-edit-dialog/hooks/use-task-realtime-sync';
 import { useTaskRelationships } from './task-edit-dialog/hooks/use-task-relationships';
 import { useTaskSave } from './task-edit-dialog/hooks/use-task-save';
+import { TaskRecurrenceRow } from './task-recurrence/task-recurrence-row';
+import { useQuickCreateRecurrence } from './task-recurrence/use-quick-create-recurrence';
 import { useTaskYjsSync } from './task-edit-dialog/hooks/use-task-yjs-sync';
 import { PersonalOverridesSection } from './task-edit-dialog/personal-overrides-section';
 import { TaskDeleteDialog } from './task-edit-dialog/task-delete-dialog';
@@ -127,7 +129,6 @@ import {
 import { TaskPropertiesSection } from './task-edit-dialog/task-properties-section';
 import { TaskRelationshipsProperties } from './task-edit-dialog/task-relationships-properties';
 import type { WorkspaceTaskLabel } from './task-edit-dialog/types';
-// Re-export relationship types
 import type {
   PendingRelationship,
   PendingRelationshipType,
@@ -299,7 +300,6 @@ export function TaskEditDialog({
   // not mount yet: its content lives in the Yjs document, which only exists once
   // realtime is enabled after hydration.
   const isAwaitingTaskHydration = isHydratingTask && !taskLoadError;
-  // Core loading state
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -318,7 +318,6 @@ export function TaskEditDialog({
         projects: formState.selectedProjects,
       });
 
-  // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const richTextEditorRef = useRef<HTMLDivElement>(null);
@@ -371,7 +370,6 @@ export function TaskEditDialog({
     [formState.setName, isHydratingTask]
   );
 
-  // User state
   const [user, setUser] = useState<TaskDialogUserIdentity | null>(
     propsCurrentUser ? normalizeTaskDialogCurrentUser(propsCurrentUser) : null
   );
@@ -415,7 +413,6 @@ export function TaskEditDialog({
     [userId, userDisplayName, userColor]
   );
 
-  // User task settings
   const { data: userTaskSettings } = useQuery({
     queryKey: ['user-task-settings'],
     queryFn: async () => {
@@ -727,7 +724,6 @@ export function TaskEditDialog({
     }
   }, [propsCurrentUser]);
 
-  // Data fetching
   const [taskSearchQuery, setTaskSearchQuery] = useState<string>('');
   const taskSearchDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -793,7 +789,6 @@ export function TaskEditDialog({
   const descriptionPayloadTooLargeNotifiedRef = useRef(false);
   const closeBlockedByOverflowRef = useRef(false);
 
-  // Dialog states
   const [showNewLabelDialog, setShowNewLabelDialog] = useState(false);
   const [showNewProjectDialog, setShowNewProjectDialog] = useState(false);
   const [showEstimationConfigDialog, setShowEstimationConfigDialog] =
@@ -837,7 +832,6 @@ export function TaskEditDialog({
     null
   );
 
-  // Calendar events state
   const [localCalendarEvents, setLocalCalendarEvents] = useState<
     Task['calendar_events'] | undefined
   >(task?.calendar_events);
@@ -1085,7 +1079,6 @@ export function TaskEditDialog({
   });
   taskRealtimeBroadcastRef.current = taskRealtimeBroadcast;
 
-  // Task mutations
   const {
     updateEstimation,
     updatePriority,
@@ -1154,7 +1147,6 @@ export function TaskEditDialog({
     currentList?.status !== 'closed';
   const showDocumentArchiveAction = canShowArchiveAction && isDocumentTask;
 
-  // Task relationships
   const {
     toggleLabel,
     toggleAssignee,
@@ -1255,7 +1247,6 @@ export function TaskEditDialog({
     }
   }, [isHydratingTask]);
 
-  // Yjs sync
   useTaskYjsSync({
     taskId: task?.id,
     wsId: effectiveTaskWsId,
@@ -1450,7 +1441,6 @@ export function TaskEditDialog({
     showDescriptionPayloadTooLargeToast();
   }, [isDescriptionOverLimit, isOpen, showDescriptionPayloadTooLargeToast]);
 
-  // Quick due date handler
   const handleQuickDueDate = useCallback(
     (days: number | null) => {
       const newDate =
@@ -1463,7 +1453,6 @@ export function TaskEditDialog({
     [isCreateMode, setEndDate, updateEndDate]
   );
 
-  // Name update handlers
   const updateName = useCallback(
     (newName: string) => {
       if (nameUpdateTimerRef.current) clearTimeout(nameUpdateTimerRef.current);
@@ -1510,7 +1499,6 @@ export function TaskEditDialog({
     onUpdate();
   }, [queryClient, boardId, onUpdate]);
 
-  // Editor commands
   const { executeSlashCommand, insertMentionOption, handleCustomDateSelect } =
     useEditorCommands({
       editorInstance,
@@ -1647,8 +1635,20 @@ export function TaskEditDialog({
     boardConfig?.ws_id,
   ]);
 
-  // Save handler
-  // Transform user for save hook (ensure id is string if present)
+  const recurrence = useQuickCreateRecurrence({
+    wsId: effectiveTaskWsId,
+    boardId,
+    form: formState,
+    compactCreate: isCreateMode && presentation === 'compact',
+    draftId,
+    saveAsDraft,
+    parentTaskId,
+    pendingRelationship,
+    pendingRelationships,
+    createMultiple,
+    onUpdate,
+    onClose,
+  });
   const userForSave = useMemo(() => {
     if (!user?.id) return null;
     return {
@@ -1695,6 +1695,7 @@ export function TaskEditDialog({
     user: userForSave,
     userTaskSettings,
     createMultiple,
+    createRecurringTask: recurrence.createRecurringTask,
     nameUpdateTimerRef,
     pendingNameRef,
     flushEditorPendingRef,
@@ -2037,7 +2038,6 @@ export function TaskEditDialog({
     setShowDescriptionOverflowWarning,
   });
 
-  // Close handlers
   const { handleClose, handleForceClose, handleNavigateBack, handleCloseRef } =
     useTaskDialogClose({
       taskId: task?.id,
@@ -2098,7 +2098,6 @@ export function TaskEditDialog({
     await handleForceClose();
   }, [handleForceClose]);
 
-  // Dialog open change - prevents close when menus are open
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
       if (
@@ -2133,7 +2132,6 @@ export function TaskEditDialog({
     };
   }, [handleAttemptClose, isOpen, registerCloseRequestHandler]);
 
-  // Unsaved changes warning handlers
   const handleWarningDiscard = useCallback(() => {
     setShowUnsavedWarning(false);
     void handleClose().then((closed) => {
@@ -2168,7 +2166,6 @@ export function TaskEditDialog({
     [editorInstance]
   );
 
-  // Keyboard shortcuts
   const hasUnsavedChangesRef = useRef<boolean>(false);
   hasUnsavedChangesRef.current = hasUnsavedChanges;
 
@@ -2204,7 +2201,6 @@ export function TaskEditDialog({
     closeMentionMenu: suggestionMenus.closeMentionMenu,
   });
 
-  // Auto-close sync warning
   useEffect(() => {
     if (showSyncWarning && synced && connected) {
       const timer = setTimeout(async () => {
@@ -2270,7 +2266,6 @@ export function TaskEditDialog({
     return () => observer.disconnect();
   }, [isOpen, scrollContainer]);
 
-  // Reset state when dialog closes
   useEffect(() => {
     if (!isOpen) {
       if (nameUpdateTimerRef.current) {
@@ -2292,7 +2287,6 @@ export function TaskEditDialog({
     }
   }, [isOpen, suggestionMenus]);
 
-  // Task search debouncing
   useEffect(() => {
     if (!isOpen || !effectiveTaskWsId || !suggestionMenus.mentionState.open) {
       if (taskSearchQuery) setTaskSearchQuery('');
@@ -2418,7 +2412,6 @@ export function TaskEditDialog({
     </>
   ) : undefined;
 
-  // Update refs
   quickDueRef.current = handleQuickDueDate;
   updateEstimationRef.current = updateEstimation;
   handleConvertToTaskRef.current = handleConvertToTask;
@@ -2502,6 +2495,12 @@ export function TaskEditDialog({
         endDate={formState.endDate}
         task={isCreateMode ? undefined : task}
         wsId={effectiveTaskWsId}
+      />
+      <TaskRecurrenceRow
+        wsId={effectiveTaskWsId}
+        task={isCreateMode ? undefined : task}
+        form={formState}
+        canEdit={!taskControlsDisabled}
       />
       <TaskPropertiesSection {...taskPropertiesProps} variant={variant} />
     </>
@@ -2653,6 +2652,7 @@ export function TaskEditDialog({
                   <QuickCreatePropertyChips
                     {...taskPropertiesProps}
                     locale={locale}
+                    repeat={recurrence.chip}
                   />
                 ) : (
                   renderTaskPropertiesSection('compact')

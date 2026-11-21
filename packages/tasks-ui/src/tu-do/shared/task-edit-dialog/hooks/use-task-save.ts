@@ -118,6 +118,8 @@ export interface UseTaskSaveProps {
 
   // UI state
   createMultiple: boolean;
+  /** Set while a Repeat choice is active; creates a series instead. */
+  createRecurringTask?: (name: string, text: string | null) => Promise<void>;
 
   // Refs
   nameUpdateTimerRef: React.MutableRefObject<ReturnType<
@@ -208,6 +210,7 @@ export function useTaskSave({
   user,
   userTaskSettings,
   createMultiple,
+  createRecurringTask,
   nameUpdateTimerRef,
   pendingNameRef,
   flushEditorPendingRef,
@@ -248,18 +251,15 @@ export function useTaskSave({
         return;
       }
 
-      // Clear any pending name update
       if (nameUpdateTimerRef.current) {
         clearTimeout(nameUpdateTimerRef.current);
         nameUpdateTimerRef.current = null;
         pendingNameRef.current = null;
       }
 
-      // Get current description from editor
-      let currentDescription = description;
-      if (flushEditorPendingRef.current) {
-        currentDescription = flushEditorPendingRef.current();
-      }
+      const currentDescription = flushEditorPendingRef.current
+        ? flushEditorPendingRef.current()
+        : description;
 
       setIsSaving(true);
       setIsLoading(true);
@@ -394,6 +394,10 @@ export function useTaskSave({
         }
       }
 
+      if (isCreateMode && createRecurringTask) {
+        await createRecurringTask(trimmedName, descriptionString);
+        return;
+      }
       if (isCreateMode) {
         await handleCreateTask({
           wsId,
@@ -444,7 +448,6 @@ export function useTaskSave({
         return;
       }
 
-      // Update mode
       await handleUpdateTask({
         taskId,
         wsId,
@@ -494,6 +497,7 @@ export function useTaskSave({
     boardId,
     onUpdate,
     createMultiple,
+    createRecurringTask,
     onClose,
     taskId,
     updateSharedTaskMutation,
@@ -532,7 +536,6 @@ export function useTaskSave({
     t,
   ]);
 
-  // Keep ref updated
   handleSaveRef.current = handleSave;
 
   return {
@@ -541,7 +544,6 @@ export function useTaskSave({
   };
 }
 
-// Helper function for saving as draft
 async function handleSaveAsDraft({
   wsId,
   boardId,
@@ -706,8 +708,6 @@ async function handleSaveAsDraft({
   }
 }
 
-// Helper function for creating tasks
-// Helper function for updating tasks
 async function handleUpdateTask({
   taskId,
   wsId,

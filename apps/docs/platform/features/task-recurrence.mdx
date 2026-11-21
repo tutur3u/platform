@@ -34,7 +34,8 @@ The database starts with request and scheduler generation off and every
 workspace disabled. The dormant migration adds private storage, gate controls,
 capacity guards, a read-only probe, and a separate completion evidence entry
 point for the trusted server. The Tasks request API requires an enabled database
-workspace gate. The native scheduler and Repeat control have separate rollout steps.
+workspace gate. The Repeat controls appear once the request API admits a
+workspace. The native scheduler has a separate rollout step.
 
 An operator can enable gates with the restricted database role using the
 current epoch. The service credential can disable gates using compare-and-set.
@@ -117,6 +118,56 @@ Verify cap and rollback behavior with the
 and [settlement pgTAP test](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/task-recurrence-scheduler.sql).
 Use the [production migration runbook](/build/devops/environments-release-flow)
 for the list-only dispatch gate.
+
+## Web surfaces
+
+Every Repeat control reads eligibility from the request API and renders
+nothing while recurrence is unavailable. That covers the dormant default, a
+disabled workspace gate, guests, non-members, and a missing receipt secret. The
+API answers 404 in each of these cases, and the UI treats that answer as
+"hidden", not as an error.
+
+- **Quick create.** Repeat is the last chip in the quick create-task dialog. It
+  offers Daily, Weekdays, Weekly, Monthly, and Custom. The dialog asks
+  `prepare` for the selected list. The chip appears only when that call
+  returns a receipt. Drafts and creation with a parent or pending
+  relationships keep the plain create path and show no chip, because a series
+  template carries no relationships. The expanded editor shows no Repeat and
+  saves a plain task. With a choice set, Save calls `create` and the server
+  writes the first task. A retry of the same request reuses its receipt, so a
+  lost response can't create a second series.
+- **Custom.** The editor covers the CalendarRecurrenceRule v1 task subset:
+  daily, weekly, monthly, or yearly; intervals from 1 to 99; weekly days; a
+  month day, where 29–31 clamp to the last day; up to 1,000 occurrences; or an
+  end date within five years. Relative weekdays are not offered.
+- **Preview.** The shared planner lists the next three dates. If the picked
+  date isn't a repeat date (for example, Weekdays from a Saturday, or the 31st
+  from the 21st), an inline note names the date the first task will use. A
+  date that doesn't exist in the series zone is marked as skipped.
+- **Timing.** The series starts on the due date, else the start date, else
+  today, in the calendar time-zone preference. A due time before 23:59 becomes
+  the series due time. The gap from start date to due date becomes the start
+  offset.
+- **Cards.** A board card shows a Repeat badge for tasks in a series the
+  reader may see. Cards read their series in batches of up to 100 task IDs.
+  The badge's accessible name includes the series state.
+- **Task detail.** A Repeat row shows the badge with the schedule summary.
+  Members who can manage the series can also edit the schedule, which applies
+  to this and following tasks, and pause, resume, or end it. Ending asks for
+  confirmation first. When the task's fields differ from the series template,
+  the row asks where to apply the edits. "Only this task" is the default and
+  keeps the edit on this task. "This and following tasks" copies the current
+  fields into the series. The prompt follows edits made since the task opened.
+  A series edit starts after the dates the series has already created: a new
+  schedule starts the day after this task, and a template edit keeps the
+  schedule from its next date. Editing from an older task, once newer ones
+  exist, asks the member to edit from the latest task.
+
+Mobile uses the same request API and is not covered here. Component coverage
+lives in
+[`quick-create-repeat-chip.test.tsx`](https://github.com/tutur3u/platform/blob/main/packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/quick-create/quick-create-repeat-chip.test.tsx)
+and
+[`task-recurrence-eligibility.test.tsx`](https://github.com/tutur3u/platform/blob/main/packages/tasks-ui/src/tu-do/shared/task-recurrence/task-recurrence-eligibility.test.tsx).
 
 ## Database write paths
 

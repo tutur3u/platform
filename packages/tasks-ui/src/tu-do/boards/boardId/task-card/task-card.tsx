@@ -155,6 +155,7 @@ import {
 import { areTaskCardPropsEqual } from './task-card-comparator';
 import { shouldRenderTaskCardCompletionCheckbox } from './task-card-completion-checkbox-visibility';
 import { TaskCardIdentifierRow } from './task-card-identifier-row';
+import { useRecurrenceBadge } from './use-task-card-recurrence-badge';
 import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
@@ -1330,11 +1331,10 @@ function TaskCardInner({
     }
   };
 
+  const repeatBadge = useRecurrenceBadge(pageWorkspaceId, task.id, badgeRefs);
   const taskBadges = useMemo(() => {
-    // Collect all badges into an array for overflow handling
     const badges: { id: string; element: React.ReactNode }[] = [];
 
-    // Priority badge
     if (task.priority) {
       badges.push({
         id: 'priority',
@@ -1463,7 +1463,6 @@ function TaskCardInner({
       });
     }
 
-    // Estimation Points badge
     if (task.estimation_points != null) {
       badges.push({
         id: 'estimation',
@@ -1517,7 +1516,6 @@ function TaskCardInner({
       });
     }
 
-    // Labels badge
     if (task.labels && task.labels.length > 0) {
       badges.push({
         id: 'labels',
@@ -1658,10 +1656,12 @@ function TaskCardInner({
       });
     }
 
+    if (repeatBadge) badges.push(repeatBadge);
     return badges;
   }, [
     // Only depend on specific task properties that affect badge rendering
     // to prevent recalculation when unrelated properties (like name) change
+    repeatBadge,
     task.priority,
     task.projects,
     task.ticket_projects,
@@ -1729,7 +1729,6 @@ function TaskCardInner({
       setVisibleBadgeCount(count);
     };
 
-    // Initial calculation
     calculateVisibleCount();
 
     // Re-calculate on container resize

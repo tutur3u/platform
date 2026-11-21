@@ -331,6 +331,11 @@
       "import": "./dist/tasks.js",
       "require": "./dist/tasks.js"
     },
+    "./task-recurrence": {
+      "types": "./dist/task-recurrence.d.ts",
+      "import": "./dist/task-recurrence.js",
+      "require": "./dist/task-recurrence.js"
+    },
     "./task-media-cleanup": {
       "types": "./dist/task-media-cleanup.d.ts",
       "import": "./dist/task-media-cleanup.js",

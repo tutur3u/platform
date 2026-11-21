@@ -186,3 +186,27 @@ function latestOnOrBefore(
   }
   return latest;
 }
+
+function isAbsentLocalDate(date: Temporal.PlainDate, timeZone: string) {
+  return !date.toZonedDateTime({ timeZone }).toPlainDate().equals(date);
+}
+
+/** True when the occurrence date or its start date does not exist on the
+ * zone's calendar (a date-line shift). The series keeps such an occurrence
+ * and records it as skipped, matching the request planner. */
+export function isTaskOccurrenceSkipped(
+  timing: TaskRecurrenceTiming,
+  occurrenceDate: string
+): boolean {
+  const valid = TaskRecurrenceTimingSchema.parse(timing);
+  const date = Temporal.PlainDate.from(
+    TaskRecurrenceDateSchema.parse(occurrenceDate)
+  );
+  return (
+    isAbsentLocalDate(date, valid.timeZone) ||
+    isAbsentLocalDate(
+      date.subtract({ days: valid.startOffsetDays }),
+      valid.timeZone
+    )
+  );
+}

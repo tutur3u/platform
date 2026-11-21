@@ -26,6 +26,8 @@ import { QuickCreateCollectionChips } from './quick-create-collection-chips';
 import { QuickCreateDatePicker } from './quick-create-date-picker';
 import { QuickCreateListChip } from './quick-create-list-chip';
 import { QuickCreateOptionPicker } from './quick-create-option-picker';
+import type { QuickCreateRepeatModel } from '../../../task-recurrence/use-quick-create-recurrence';
+import { QuickCreateRepeatChip } from './quick-create-repeat-chip';
 import {
   getPriorityOptions,
   type QuickCreateAssignee,
@@ -63,6 +65,8 @@ export interface QuickCreatePropertyChipsProps {
   disabled?: boolean;
   /** Drafts do not store projects, so the Project chip is hidden. */
   isDraftMode?: boolean;
+  /** Present only when the API admits the actor to create a series here. */
+  repeat?: QuickCreateRepeatModel | null;
   onPriorityChange: (priority: TaskPriority | null) => void;
   onStartDateChange: (date: Date | undefined) => void;
   onEndDateChange: (date: Date | undefined) => void;
@@ -252,6 +256,13 @@ export function QuickCreatePropertyChips(props: QuickCreatePropertyChipsProps) {
         searchPlaceholder={search}
         noResults={noResults}
       />
+      {props.repeat && !props.isDraftMode ? (
+        <QuickCreateRepeatChip
+          repeat={props.repeat}
+          emptyValue={none}
+          {...chipState('repeat')}
+        />
+      ) : null}
       {startDate && endDate && startDate > endDate ? (
         <p
           role="alert"

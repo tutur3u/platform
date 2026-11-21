@@ -10,6 +10,7 @@ export const QUICK_CREATE_CHIP_IDS = [
   'labels',
   'project',
   'assignees',
+  'repeat',
 ] as const;
 
 export type QuickCreateChipId = (typeof QUICK_CREATE_CHIP_IDS)[number];
