@@ -5,6 +5,17 @@ import {
 } from '@tuturuuu/start-bridge/mounts';
 import { invalidMailDeploymentProfile } from './deployment-profile';
 
+// Machine traffic on the root host: server functions, the RUM beacon and the
+// handoff return from Web's login. The one-origin redirect never moves these.
+export const mailMachinePathPrefixes = [
+  '/_fn',
+  '/_mail',
+  '/_rum',
+  '/verify-token',
+  '/en/verify-token',
+  '/vi/verify-token',
+] as const;
+
 // Each artifact serves only its own environment's host. The profile is a
 // build-time literal (see vite.config.ts), so the other lists fold away. There
 // is no default profile. Production also serves any other host at the root
@@ -24,6 +35,7 @@ export const mailMounts = {
       ? []
       : ['tuturuuu.com', 'web.tutur3u.com'],
   basePath: '/mail',
+  machinePathPrefixes: mailMachinePathPrefixes,
   unknownHost:
     process.env.MAIL_DEPLOYMENT_PROFILE === 'staging' ? 'reject' : 'root',
 } satisfies AppMountConfig;

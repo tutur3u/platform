@@ -109,8 +109,7 @@ export async function handleMailRequest(
   const decision = decideOneOriginRequest(incoming, mailOneOriginConfig(env));
   if (decision.action !== 'serve') return finish(decision.response);
   const { request } = decision;
-  const { pathname } = new URL(request.url);
-  if (pathname === '/_rum' || pathname === '/mail/_rum')
+  if (path === '/_rum')
     return handleAppSwitchBeacon(
       request,
       (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,

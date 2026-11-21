@@ -471,3 +471,56 @@ describe('mounted Mail shared-session boundary', () => {
     expect(response.headers.getSetCookie()).toEqual([]);
   });
 });
+
+describe('mounted Mail handoff return', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const actual = await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
+      '@tuturuuu/auth/proxy'
+    );
+    mocks.normalizeAuthRedirectPath.mockImplementation(
+      actual.normalizeAuthRedirectPath
+    );
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+  });
+  const mountedRequest = (path: string) =>
+    new NextRequest(`https://tuturuuu.com/mail${path}`, {
+      nextConfig: { basePath: '/mail' },
+    });
+  it.each([
+    ['/verify-token', 'https://tuturuuu.com/mail/login'],
+    [
+      '/verify-token?token=untrusted&nextUrl=%2Fvi%2Fpersonal%2Fsent%3Fq%3Da',
+      'https://tuturuuu.com/mail/login?next=%2Fvi%2Fpersonal%2Fsent%3Fq%3Da',
+    ],
+    [
+      '/vi/verify-token/?nextUrl=%2Fpersonal%2Finbox',
+      'https://tuturuuu.com/mail/login?next=%2Fpersonal%2Finbox',
+    ],
+    [
+      '/verify-token?nextUrl=https%3A%2F%2Fattacker.example%2Fx',
+      'https://tuturuuu.com/mail/login?next=%2Fpersonal%2Finbox',
+    ],
+  ])('turns %s into a same-origin login step', async (path, location) => {
+    const response = await proxy(mountedRequest(path));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(location);
+    expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(response.headers.getSetCookie()).toEqual([]);
+  });
+  it('keeps the subdomain handoff on the token consumer', async () => {
+    mocks.consumeVerifyTokenRequest.mockResolvedValueOnce(
+      NextResponse.redirect('https://mail.tuturuuu.com/personal/inbox')
+    );
+    const response = await proxy(
+      new NextRequest(
+        'https://mail.tuturuuu.com/verify-token?token=t&nextUrl=%2Fpersonal%2Finbox'
+      )
+    );
+    expect(mocks.consumeVerifyTokenRequest).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('location')).toBe(
+      'https://mail.tuturuuu.com/personal/inbox'
+    );
+  });
+});

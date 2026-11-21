@@ -174,10 +174,11 @@ it.each([
   expect(response.headers.getSetCookie()).toEqual([]);
 });
 
-it.each(['off', 'shadow', 'on'])(
-  'keeps the unqualified shared-origin mount refused in %s mode',
+it.each([undefined, 'off', 'unknown'])(
+  'refuses the shared-origin mount unless the one-origin mode admits it (%s)',
   async (mode) => {
-    const runtimeEnv = { ...env, TTR_ONE_ORIGIN_MAIL: mode };
+    const runtimeEnv =
+      mode === undefined ? env : { ...env, TTR_ONE_ORIGIN_MAIL: mode };
     const response = await handleMailRequest(
       new Request('https://tuturuuu.com/mail/login'),
       runtimeEnv,
@@ -187,6 +188,27 @@ it.each(['off', 'shadow', 'on'])(
     expect(calls.routing).toHaveBeenCalledTimes(1);
     expect(calls.proxy).not.toHaveBeenCalled();
     expect(calls.start).not.toHaveBeenCalled();
+  }
+);
+
+it.each(['shadow', 'on'])(
+  'serves the shared-origin mount through the proxy and Start in %s mode',
+  async (mode) => {
+    calls.start.mockResolvedValueOnce(
+      new Response('<!doctype html><title>Mail</title>', {
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      })
+    );
+    const runtimeEnv = { ...env, TTR_ONE_ORIGIN_MAIL: mode };
+    const response = await handleMailRequest(
+      new Request('https://tuturuuu.com/mail/login'),
+      runtimeEnv,
+      ctx
+    );
+    expect(response.status).toBe(200);
+    expect(calls.proxy).toHaveBeenCalledTimes(1);
+    expect(calls.start).toHaveBeenCalledTimes(1);
+    expect(response.headers.get('x-robots-tag')).toContain('noindex');
   }
 );
 

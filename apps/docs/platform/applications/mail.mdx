@@ -221,6 +221,21 @@ canonical-route admission. Keep production publication held until the release ow
 the exact artifact, independent review, provider/webhook/attachment acceptance,
 mount/session acceptance and rollback evidence.
 
+`TTR_ONE_ORIGIN_MAIL` is the only admission switch. Unset or `off` refuses the
+apex mount and serves the subdomain unchanged; `shadow` serves both hosts, the
+apex noindex, with no redirect; only `on` redirects subdomain navigations to
+`tuturuuu.com/mail`. Server functions, the RUM beacon, `/api`, `/assets`, public
+assets and the `/verify-token` handoff return (`mailMachinePathPrefixes`) are
+served on the subdomain in every mode, in Mail's decision and in the bridge's own
+one-origin step. Under the mount, `/verify-token` never redeems a token: it
+redirects to `/mail/login` with the app-relative destination preserved as `next`
+(normalized same-origin), and server redirects (login, not-available, home) carry
+the mount base. Mail ships its locale bundles in the build, so no runtime locale
+fetch needs a base. OAuth provider callback URLs are provider configuration and
+stay on the subdomain until the release owner moves them.
+Regression coverage: `mounted-routing.test.ts`, `one-origin.test.ts`,
+`mounted-session-endpoints.test.ts`, `page-model.test.ts`, `proxy-auth.test.ts`.
+
 Under `/mail`, Web owns shared-session writes: Mail rejects logout, token
 verification and session refresh before middleware or endpoint dispatch. The
 fence uses the bridge's route matcher, so trailing and repeated slash variants

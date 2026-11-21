@@ -189,6 +189,8 @@ export function createBridgeHandler<
     return decideOneOriginRequest(incoming, {
       basePath: mounts.basePath,
       basePathReady: true,
+      machinePathPrefixes: mounts.machinePathPrefixes,
+      machinePaths: publicAssets,
       sharedOrigin: `https://${mountHost}`,
       subdomainOrigin: `https://${rootHost}`,
       ...readOneOriginEnv(vars, mounts.app),

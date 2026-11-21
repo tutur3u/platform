@@ -13,6 +13,7 @@ import {
   getSidebarCollapsedState,
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
+import { withAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { resolveNotificationWebAppUrl } from './notification-url.server';
@@ -20,7 +21,7 @@ import { cookies, headers } from './request-context';
 
 export async function loadMailWorkspace(id: string) {
   const user = await getSatelliteAppSessionUser('mail');
-  if (!user?.id) throw redirect({ href: '/login' });
+  if (!user?.id) throw redirect({ href: withAppBase('/login') });
   const isStaff = isVerifiedTuturuuuStaffSession(
     user &&
       (await getVerifiedAuthUser(
@@ -30,13 +31,13 @@ export async function loadMailWorkspace(id: string) {
   );
   const workspace = await getWorkspace(id, { useAdmin: true, user });
   if (!workspace?.personal && !isStaff)
-    throw redirect({ href: '/not-available' });
+    throw redirect({ href: withAppBase('/not-available') });
   if (!workspace?.joined) {
     const invitation = await getPendingWorkspaceInvitation(id, await headers());
     if (invitation) return { kind: 'invitation' as const, invitation };
   }
   if (!workspace) throw notFound();
-  if (!workspace.joined) throw redirect({ href: '/' });
+  if (!workspace.joined) throw redirect({ href: withAppBase('/') });
   const store = await cookies();
   const behavior = parseSidebarBehavior(store);
   return {

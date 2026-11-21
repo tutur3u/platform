@@ -149,10 +149,21 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   if (
     mounted &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
-  )
-    return NextResponse.redirect(
-      new URL(withAppBase('/login', req.nextUrl.basePath), req.nextUrl.origin)
+  ) {
+    // Web owns the shared session, so a handoff token is never redeemed here.
+    // The destination survives as an app-relative `next` for the login step.
+    const login = new URL(
+      withAppBase('/login', req.nextUrl.basePath),
+      req.nextUrl.origin
     );
+    const target = req.nextUrl.searchParams.get('nextUrl');
+    if (target)
+      login.searchParams.set(
+        'next',
+        normalizeAuthRedirectPath(target, req.nextUrl.origin, '/personal/inbox')
+      );
+    return NextResponse.redirect(login);
+  }
   const verifyTokenResponse = mounted
     ? null
     : await consumeVerifyTokenRequest(req, {

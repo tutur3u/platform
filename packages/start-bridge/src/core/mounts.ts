@@ -27,6 +27,13 @@ export interface AppMountConfig {
    */
   unknownHost?: 'root' | 'reject';
   /**
+   * Root-host path prefixes machines call (handoff returns, WebSockets,
+   * server functions) that the one-origin `on` redirect must never move to
+   * the mount, beyond the always-served `/api`, `/assets`, `/.well-known` and
+   * `/_serverFn`.
+   */
+  machinePathPrefixes?: readonly string[];
+  /**
    * Same-origin isolation for mounted (apex) requests: request cookies are
    * narrowed to the app's own, the logout fence and an access-token-only
    * Supabase session; only owned cookies are written, at `Path=<base>`.

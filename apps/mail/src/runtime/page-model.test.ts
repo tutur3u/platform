@@ -228,3 +228,69 @@ describe('Mail page authorization and projections', () => {
     expect(responseHeaders.getSetCookie()[0]).toContain('app=refreshed');
   });
 });
+
+describe('Mail page model under the /mail apex mount', () => {
+  function loadMounted(path: string) {
+    return withMailRequest(
+      {
+        request: new Request(`https://tuturuuu.com${path}`),
+        appBase: '/mail',
+        responseHeaders: new Headers(),
+        waitUntil: () => {},
+      },
+      () => loadPageModel(path)
+    );
+  }
+  it('keeps every app redirect and locale prefix under the mount', async () => {
+    await expect(loadMounted('/mail')).rejects.toMatchObject({
+      options: { href: '/mail/personal/inbox' },
+    });
+    await expect(loadMounted('/mail/vi/personal')).rejects.toMatchObject({
+      options: { href: `/mail/vi/${tenant}/inbox` },
+    });
+    expect(await loadMounted(`/mail/vi/${tenant}/sent?q=a+b`)).toMatchObject({
+      kind: 'folder',
+      folder: 'sent',
+      locale: 'vi',
+    });
+  });
+  it('sends anonymous, unavailable and unjoined callers to mounted pages', async () => {
+    mocks.actor.mockResolvedValue(null);
+    await expect(loadMounted(`/mail/${tenant}/inbox`)).rejects.toMatchObject({
+      options: { href: '/mail/login' },
+    });
+    mocks.actor.mockResolvedValue({
+      id: 'actor',
+      email: 'user@example.com',
+    });
+    await expect(loadMounted(`/mail/${tenant}/inbox`)).rejects.toMatchObject({
+      options: { href: '/mail/not-available' },
+    });
+    mocks.actor.mockResolvedValue({
+      id: 'actor',
+      email: 'staff@tuturuuu.com',
+    });
+    mocks.workspace.mockResolvedValue({
+      id: tenant,
+      personal: false,
+      joined: false,
+    });
+    await expect(loadMounted(`/mail/${tenant}/inbox`)).rejects.toMatchObject({
+      options: { href: '/mail' },
+    });
+  });
+  it('rejects paths outside the mount and passes login query through', async () => {
+    await expect(loadMounted('/personal/inbox')).rejects.toMatchObject({
+      isNotFound: true,
+    });
+    const redirect = new Error('central SSO');
+    mocks.login.mockRejectedValueOnce(redirect);
+    await expect(
+      loadMounted('/mail/login?refresh=1&next=%2Fvi%2Fpersonal%2Fsent')
+    ).rejects.toBe(redirect);
+    expect(await mocks.login.mock.calls[0]?.[0].searchParams).toEqual({
+      refresh: '1',
+      next: '/vi/personal/sent',
+    });
+  });
+});
