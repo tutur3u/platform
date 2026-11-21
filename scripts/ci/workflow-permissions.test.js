@@ -27,7 +27,6 @@ const scopes = [
 // each one is reviewed here. Jobs should request writes themselves instead.
 const workflowWriteScopes = {
   // Single resume job dispatches workflows and records deployment markers.
-  'production-package-resume.yaml': ['actions', 'deployments'],
   // Single migration job records the staging deployment marker. The file is a
   // blob-pinned producer contract for Supabase Production.
   'supabase-staging.yaml': ['deployments'],

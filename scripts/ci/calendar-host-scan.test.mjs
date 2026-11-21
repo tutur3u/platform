@@ -128,12 +128,6 @@ const buildPaths = [
   ['wave1-native-production.yaml', 'qualify', null, 'production'],
   ['mail-calendar-tasks-builds.yaml', 'calendar-native', null, 'production'],
   [
-    'vercel-production-calendar.yaml',
-    null,
-    'Build Project Artifacts',
-    'production',
-  ],
-  [
     'vercel-preview-calendar.yaml',
     null,
     'Build Project Artifacts',

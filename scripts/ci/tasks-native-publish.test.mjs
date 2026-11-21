@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveProductionVercelTargets } from './resolve-production-vercel-targets.ts';
+import { resolveProductionTargets } from './resolve-production-targets.ts';
 import { waitForTasksPreview } from './tasks-preview-readback.mjs';
 
 test('Tasks activation waits for two consecutive reads of its preview', async (t) => {
@@ -50,7 +50,7 @@ test('Tasks bootstraps the Worker marker while the Vercel publisher stays disabl
     ok: true,
     json: async () => [],
   }));
-  const [worker, vercel] = await resolveProductionVercelTargets({
+  const [worker, vercel] = await resolveProductionTargets({
     eventName: 'push',
     headSha: 'a'.repeat(40),
     refName: 'production',
@@ -64,5 +64,5 @@ test('Tasks bootstraps the Worker marker while the Vercel publisher stays disabl
   assert.equal(worker.shouldRun, true);
   assert.equal(worker.changeResult.source, 'deployment-marker-unavailable');
   assert.equal(vercel.shouldRun, false);
-  assert.match(vercel.reason, /publisher disabled/u);
+  assert.match(vercel.reason, /publisher retired/u);
 });

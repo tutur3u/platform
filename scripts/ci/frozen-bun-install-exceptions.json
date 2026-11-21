@@ -135,112 +135,12 @@
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
-    "vercel-production-ai.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-apps.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-calendar.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-contacts.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-finance.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-git.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-infrastructure.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-inventory.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-learn.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-mail.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
     "calendar-vercel-exact-sha.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
     "mail-vercel-exact-sha.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-meet.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-mind.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-nova.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-pay.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-platform.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-rewise.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-shortener.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-storefront.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-tanstack-web.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
-    "vercel-production-tasks.yaml",
     "Install Vercel CLI",
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],

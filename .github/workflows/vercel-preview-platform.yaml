@@ -77,48 +77,37 @@ jobs:
         id: resolve_target
         run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Check equivalent production platform build
-        if: steps.check_commits.outputs.skip_build != 'true'
-        id: equivalent_build
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          node --experimental-strip-types scripts/ci/github-deployment-markers.ts has-successful-marker \
-            --workflow vercel-production-platform.yaml \
-            --sha "${{ steps.resolve_target.outputs.sha }}" \
-            --marker-kind build
-
       - name: Setup bun
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
 
       - name: Install dependencies
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Install Vercel CLI
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         # unfrozen-bun-install: pinned global CLI has no project lockfile
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
 
       - name: Pull Vercel Environment Information
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PLATFORM_PROJECT_ID }}
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Generate shared build metadata
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         env:
           PLATFORM_BUILD_ENVIRONMENT: preview
           PLATFORM_BUILD_REF_NAME: ${{ inputs.preview_ref || github.ref_name }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
 
       - name: Build Project Artifacts
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        if: steps.check_commits.outputs.skip_build != 'true'
         env:
           NODE_OPTIONS: --max-old-space-size=8192
           TURBO_CONCURRENCY: "2"
@@ -129,10 +118,6 @@ jobs:
           command: vercel build --token=${{ secrets.VERCEL_TOKEN }}
           token: ${{ github.actor != 'dependabot[bot]' && secrets.TURBO_TOKEN || '' }}
           team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
-
-      - name: Check Web route budget
-        if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
-        run: node scripts/ci/check-web-vercel-route-budget.js
 
       - name: Record successful Vercel build marker
         if: steps.check_commits.outputs.skip_build != 'true'

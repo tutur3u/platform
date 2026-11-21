@@ -231,7 +231,7 @@ async function verify(world) {
 const ids = (n) => `producer=20${n} attempt=1 deployment=30${n}`;
 const fallbackLog = (source) => [
   `Staging source proof: source=${source} target=${target} tree=${tree} ${ids(source === first ? 2 : 3)}`,
-  `Production platform deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`,
+  `Cloudflare Web production deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`,
 ];
 const count = (requests, text) =>
   requests.filter((route) => route.includes(text)).length;
@@ -348,7 +348,7 @@ test('log: fallback ids name the selected parent marker and keep the runbook pre
   const exact = (await verify({ markers: { [target]: {} } })).logs;
   assert.deepEqual(exact, [
     `Staging source proof: source=${target} ${ids(1)}`,
-    `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`,
+    `Cloudflare Web production deployment marker and staging migration are bound to ${target}. Proceeding with migration.`,
   ]);
   assert.doesNotMatch(
     workflow.slice(workflow.indexOf(proofCommand)),

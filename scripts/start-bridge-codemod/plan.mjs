@@ -45,7 +45,6 @@ import {
   addPolicyTestApp,
   addProtectedSurface,
   addTsconfigExcludes,
-  addVercelProductionPolicyGate,
   dependencyCommands,
   VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
@@ -344,9 +343,6 @@ export function planConversion(repoRoot, app, options = {}) {
   }
 
   let ci = read(repoRoot, 'tuturuuu.ci.ts');
-  // The held record freezes the app's Vercel production publisher, so it is
-  // opt-in: conversion PRs leave production alone and each app's cutover-prep
-  // PR applies `--hold` just before the flip.
   if (options.hold) ci = addHeldRecord(ci, app);
   if (nativeCi) ci = addCiWorkflow(ci, `${app}-cloudflare.yaml`);
   edited('tuturuuu.ci.ts', ci);
@@ -358,14 +354,6 @@ export function planConversion(repoRoot, app, options = {}) {
       policyTestPath,
       addPolicyTestApp(read(repoRoot, policyTestPath), app)
     );
-    const vercelWorkflow = `.github/workflows/vercel-production-${app}.yaml`;
-    const vercelSource = read(repoRoot, vercelWorkflow);
-    if (vercelSource === null)
-      problems.push(
-        `${vercelWorkflow}: missing; the held-record regression expects a Vercel publisher per protected app`
-      );
-    else
-      edited(vercelWorkflow, addVercelProductionPolicyGate(vercelSource, app));
   }
   edited(
     '.oxfmtrc.json',

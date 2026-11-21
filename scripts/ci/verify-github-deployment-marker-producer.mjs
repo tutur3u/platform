@@ -1,7 +1,7 @@
-// Production platform deployment marker producer verification for migration apply.
+// Cloudflare Web production deployment marker producer verification for migration apply.
 // A failed planner also requires the existing canonical Cloudflare recovery gate;
 // positive job classification is an additional restriction, never a new recovery path.
-// Marker payload runId/runUrl come from record-vercel-deployment.ts (GITHUB_RUN_ID of the
+// Marker payload runId/runUrl come from record-deployment-marker.ts (GITHUB_RUN_ID of the
 // Production Deployment Planner caller); workflowName in payload is the callee workflow file.
 import { appendFileSync, writeFileSync } from 'node:fs';
 import {
@@ -31,87 +31,51 @@ const snapshot = (value) =>
       : item
   );
 
-// GITHUB_TOKEN deployment creation from vercel-production-platform record steps.
+// GITHUB_TOKEN deployment creation from the web-cloudflare-production record step.
 const TRUSTED_DEPLOYMENT_MARKER_CREATOR = Object.freeze({
   login: 'github-actions[bot]',
   id: 41898282,
   type: 'Bot',
 });
 
-const LEGACY_VERCEL_PLANNER_CONTRACTS = Object.freeze([
-  '76197c03e41dca432e53619bc384cfdd1c879576',
-  '45d2697d42ff3a645b2d5b8722342d5c64dd08ef',
-  '0d1e108c5cce714a6628816b40cb506c87769ace',
-]);
-// This planner omits retired Vercel jobs and retains the platform producer.
-const POST_RETIREMENT_PLANNER_CONTRACT =
-  '8c90988f9299c5c28d9f49049077a0b93b225b3d';
-// This planner also skips superseded pushes before selecting targets.
-const SUPERSEDED_SKIP_PLANNER_CONTRACT =
-  '821f197ff27852c19c422fcaabcbbe7c37e8fe5e';
-// This planner also grants the Colab job id-token: write for the deployment
-// coordinator. Platform proof is unchanged.
-const COLAB_OIDC_PLANNER_CONTRACT = '8bbb84a2ff0c72db5127a2ff2f8c8943a530c697';
-// This planner also publishes the deployment coordinator as an independent
-// app and grants id-token: write to every caller whose deploy job reports to
-// it. Platform proof is unchanged.
-const COORDINATOR_PLANNER_CONTRACT = '5dcdb368b1e7ac00cbadfa4c846436462acb10e5';
-// This planner also calls the Mastermind Cloudflare workflow as an independent
-// app. Platform proof is unchanged.
-const CURRENT_PLANNER_CONTRACT = '8b03f981c42a334644322fca9a421cd01be2505a';
-
-const PRODUCTION_PLATFORM = {
-  environment: 'vercel-production-platform',
-  markerWorkflowName: 'vercel-production-platform.yaml',
+// Git blob SHAs of every file that produces the marker. The marker is only as
+// trustworthy as the planner that calls the producer, the producer workflow,
+// the serving proof it runs and the recorder, so each revision is pinned and
+// changing one needs security review.
+const PRODUCTION_WEB = {
+  environment: 'cloudflare-production-web',
+  markerWorkflowName: 'web-cloudflare-production.yaml',
   refName: 'production',
   ref: 'refs/heads/production',
   callerWorkflowName: 'vercel-production.yaml',
   callerWorkflowPath: '.github/workflows/vercel-production.yaml',
   callerWorkflowDisplayName: 'Production Deployment Planner',
   callerAllowedEvents: Object.freeze(['push', 'workflow_dispatch']),
-  callerDeployJobName: 'deploy-platform / Deploy-Production',
-  calleeWorkflowName: 'vercel-production-platform.yaml',
-  calleeWorkflowPath: '.github/workflows/vercel-production-platform.yaml',
-  calleeWorkflowDisplayName: 'Vercel Platform Production Deployment',
-  calleeDeployJobName: 'Deploy-Production',
-  recordStep: 'Record successful Vercel deployment marker',
+  callerDeployJobName: 'deploy-web-cloudflare / Verify-Production',
+  recordStep: 'Record successful Cloudflare Web deployment marker',
   trustedDeploymentCreator: TRUSTED_DEPLOYMENT_MARKER_CREATOR,
   contracts: [
     [
       '.github/workflows/vercel-production.yaml',
-      [
-        ...LEGACY_VERCEL_PLANNER_CONTRACTS,
-        POST_RETIREMENT_PLANNER_CONTRACT,
-        SUPERSEDED_SKIP_PLANNER_CONTRACT,
-        COLAB_OIDC_PLANNER_CONTRACT,
-        COORDINATOR_PLANNER_CONTRACT,
-        CURRENT_PLANNER_CONTRACT,
-      ],
+      ['0d125be38c788860ea9b58f4d37cf75d0d0dd128'],
     ],
     [
-      '.github/workflows/vercel-production-platform.yaml',
-      [
-        '7d5cbcc55e8915a6343390c60dfc6ac372743534',
-        'a014ca72ba9b8a1d02297fc189be7e358190604b',
-        'b1e5dead4ac84db1b5f9e498026c21e6b2eae730',
-        '4f7ada884d805edda91cd25c1abeef196b0e4508',
-        '5cbada1d00428fb1b2f6480ae5cf1421146d79bc',
-        // Reports the deploy job to the deployment coordinator around its
-        // publish steps; the marker step and its proof are unchanged.
-        'ac102388e545887cc5aaef6f333aa17c6dc6d373',
-      ],
+      '.github/workflows/web-cloudflare-production.yaml',
+      ['68a7063ba1f2c8e41d61f8096dadf82ff8b417d3'],
     ],
     [
-      'scripts/ci/record-vercel-deployment.ts',
-      ['53b07b48226b55ad967e95a85cd62e22d449b07c'],
+      'scripts/ci/verify-cloudflare-web-production.mjs',
+      ['7967a7b8ab03bf53531ca73056529dfa4b70daae'],
+    ],
+    [
+      'scripts/ci/record-deployment-marker.ts',
+      ['35eaf73931589cfe9dd62f7456a3dbe3c48c988c'],
     ],
   ],
 };
 
 export function profileConfig(name) {
-  if (name === 'production-platform' || name === 'vercel-production-platform')
-    return PRODUCTION_PLATFORM;
-  return null;
+  return name === 'production-web' ? PRODUCTION_WEB : null;
 }
 
 export function checkMarkerCreator(deployment, trusted) {
@@ -240,9 +204,7 @@ export async function verifyMarker({
   onPhase = () => {},
 } = {}) {
   const setPhase = (value) => onPhase(value);
-  const profile = profileConfig(
-    env.MARKER_VERIFY_PROFILE || 'production-platform'
-  );
+  const profile = profileConfig(env.MARKER_VERIFY_PROFILE || 'production-web');
   assert(profile, 'proof-profile');
   const repo = env.GITHUB_REPOSITORY;
   const source = env.TARGET_SHA;
@@ -454,54 +416,35 @@ export async function verifyMarker({
     'marker-superseded'
   );
   setPhase(PHASE.CONTRACTS);
-  const sourceContracts = new Map();
-  async function checkContracts(producerHead) {
-    if (sourceContracts.has(producerHead))
-      return sourceContracts.get(producerHead);
-    let producerPlanner;
-    for (const [path, allowed] of profile.contracts) {
-      const unique = new Set();
-      for (const revision of new Set([source, producerHead])) {
-        const { data: entry } = await get(
-          `${base}/contents/${path}?ref=${revision}`
-        );
-        assert(
-          entry.type === 'file' &&
-            entry.path === path &&
-            allowed.includes(entry.sha),
-          'unknown-producer-contract'
-        );
-        unique.add(entry.sha);
-        if (path === profile.callerWorkflowPath && revision === producerHead)
-          producerPlanner = entry.sha;
-      }
-      for (const expected of unique) {
-        const { data: blob } = await get(`${base}/git/blobs/${expected}`);
-        assert(
-          blob.sha === expected &&
-            blob.encoding === 'base64' &&
-            Number.isSafeInteger(blob.size) &&
-            blob.size > 0 &&
-            blob.size <= 65536 &&
-            typeof blob.content === 'string',
-          'contract-blob-shape'
-        );
-        const bytes = Buffer.from(blob.content.replace(/\s/g, ''), 'base64');
-        assert(bytes.length === blob.size, 'contract-blob-size');
-        const object = Buffer.concat([
-          Buffer.from(`blob ${bytes.length}\0`),
-          bytes,
-        ]);
-        const digest = Buffer.from(
-          await crypto.subtle.digest('SHA-1', object)
-        ).toString('hex');
-        assert(digest === expected, 'contract-blob-hash');
-      }
-    }
-    sourceContracts.set(producerHead, producerPlanner);
-    return producerPlanner;
+  for (const [path, allowed] of profile.contracts) {
+    const { data: entry } = await get(`${base}/contents/${path}?ref=${source}`);
+    assert(
+      entry.type === 'file' &&
+        entry.path === path &&
+        allowed.includes(entry.sha),
+      'unknown-producer-contract'
+    );
+    const { data: blob } = await get(`${base}/git/blobs/${entry.sha}`);
+    assert(
+      blob.sha === entry.sha &&
+        blob.encoding === 'base64' &&
+        Number.isSafeInteger(blob.size) &&
+        blob.size > 0 &&
+        blob.size <= 65536 &&
+        typeof blob.content === 'string',
+      'contract-blob-shape'
+    );
+    const bytes = Buffer.from(blob.content.replace(/\s/g, ''), 'base64');
+    assert(bytes.length === blob.size, 'contract-blob-size');
+    const object = Buffer.concat([
+      Buffer.from(`blob ${bytes.length}\0`),
+      bytes,
+    ]);
+    const digest = Buffer.from(
+      await crypto.subtle.digest('SHA-1', object)
+    ).toString('hex');
+    assert(digest === entry.sha, 'contract-blob-hash');
   }
-  const producerPlanner = await checkContracts(callerRun.head_sha);
   setPhase(PHASE.JOBS);
   const callerJobs = await inventory(
     `${base}/actions/runs/${p.runId}/attempts/${p.runAttempt}/jobs`,
@@ -524,10 +467,7 @@ export async function verifyMarker({
       ),
     'planner-attempt-binding'
   );
-  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion, {
-    historicalPlanner:
-      LEGACY_VERCEL_PLANNER_CONTRACTS.includes(producerPlanner),
-  });
+  const classification = classifyPlannerJobs(callerJobs, callerRun.conclusion);
   assert(classification.ok, `planner-jobs-${classification.reason}`);
   if (callerRun.conclusion === 'failure') {
     const recovery = checkProductionMigrationRecovery({
@@ -599,7 +539,7 @@ export async function verifyMarker({
       appendFileSync(env.GITHUB_STEP_SUMMARY, `${summary}\n`);
   }
   console.log(
-    `Production platform deployment marker caller=${callerRun.id} attempt=${callerRun.run_attempt} deployment=${marker.id}`
+    `Cloudflare Web production deployment marker caller=${callerRun.id} attempt=${callerRun.run_attempt} deployment=${marker.id}`
   );
   return {
     producer: callerRun.id,

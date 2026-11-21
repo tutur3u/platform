@@ -1,10 +1,9 @@
-// Evaluation of a production platform deployment marker's status history.
+// Evaluation of a production Web deployment marker's status history.
 //
 // GitHub marks an older deployment `inactive` as soon as a newer deployment in
-// the same environment succeeds. For the production platform marker that newer
-// deployment is the platform's own deployment of the same SHA, so the newest
-// status is routinely `inactive` even though the marker was recorded as a
-// success. `inactive` rows are therefore skipped: the newest remaining status
+// the same environment succeeds. A rerun records a second marker for the same
+// SHA, so the newest status of the first can be `inactive` even though the
+// marker was recorded as a success. `inactive` rows are therefore skipped: the newest remaining status
 // must be a success, and a newer deployment of a different SHA in the same
 // environment means the production head has moved past the marker.
 import { readFileSync } from 'node:fs';

@@ -35,23 +35,8 @@ const targetApps = [
   ['learn', '@tuturuuu/learn'],
 ];
 
-const previewOnlyVercelApps = new Set([
-  'chat',
-  'cms',
-  'drive',
-  'forms',
-  'teach',
-  'tools',
-  'track',
-]);
-
-const vercelWorkflows = ['platform', ...targetApps.map(([app]) => app)].flatMap(
-  (app) => [
-    `vercel-preview-${app}.yaml`,
-    ...(previewOnlyVercelApps.has(app)
-      ? []
-      : [`vercel-production-${app}.yaml`]),
-  ]
+const vercelWorkflows = ['platform', ...targetApps.map(([app]) => app)].map(
+  (app) => `vercel-preview-${app}.yaml`
 );
 
 function writePackageJson(rootDir, workspacePath, packageJson) {

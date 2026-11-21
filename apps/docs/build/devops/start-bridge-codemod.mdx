@@ -132,19 +132,10 @@ The codemod writes or edits:
   `bun check:changed` passes changed files to Oxc explicitly.
 - With `--hold` only, the held record: `tuturuuu.ci.ts`
   `productionPublicationPolicy`, the protected surface in
-  `scripts/ci/production-publication-policy.ts` and its regression's app list,
-  and the `production-policy` gate in `vercel-production-<app>.yaml` (as for
-  Shortener).
+  `scripts/ci/production-publication-policy.ts` and its regression's app list.
 - `tsconfig.json` excludes the Start-only sources, so the existing Next
   `type-check` is unchanged; `type-check:cloudflare` checks them against
   `tsconfig.cloudflare.json`.
-
-<Warning>
-A held record also holds that app's `vercel-production-<app>.yaml`, so the
-current Vercel production deployment freezes until the cutover admits the app.
-Conversion PRs therefore run without `--hold`; the app's cutover-prep PR adds
-the hold and merges just before the flip.
-</Warning>
 
 ### Worker options
 

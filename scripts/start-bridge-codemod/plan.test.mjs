@@ -12,7 +12,6 @@ const HOLD_FILES = [
   'tuturuuu.ci.ts',
   'scripts/ci/production-publication-policy.ts',
   'scripts/ci/production-publication-policy.test.js',
-  '.github/workflows/vercel-production-demo.yaml',
 ];
 // Hermetic: the real start-bridge.config.ts loader has its own test.
 const plan = (root, options = {}) =>
@@ -523,16 +522,6 @@ test('a missing proxy is reported as a problem', (t) => {
   assert.equal(
     result.writes.some((write) => write.path.endsWith('cloudflare/worker.ts')),
     false
-  );
-});
-
-test('--hold without a Vercel publisher is a problem; no hold is not', (t) => {
-  const root = createFixtureRepo(t);
-  fs.rmSync(path.join(root, '.github/workflows/vercel-production-demo.yaml'));
-  assert.deepEqual(plan(root).problems, []);
-  assert.match(
-    plan(root, { hold: true }).problems.join('\n'),
-    /vercel-production-demo\.yaml: missing/
   );
 });
 

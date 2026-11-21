@@ -1,0 +1,57 @@
+name: Cloudflare Web Production Marker
+# Called by the Production Deployment Planner for every production revision.
+# Proves from Cloudflare version metadata that the activated vinext families
+# and the gateway serve code equivalent to the production commit, then records
+# the cloudflare-production-web deployment marker that gates production
+# database migrations. See apps/docs/build/devops/web-vinext-families.mdx.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  Verify-Production:
+    if: github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Holds the Web Cloudflare token; this job only reads with it.
+    environment: colab-production
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Check out production revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: |
+            /apps/web/cloudflare/vinext/families.json
+            /scripts/ci/verify-cloudflare-web-production.mjs
+            /scripts/ci/record-deployment-marker.ts
+          sparse-checkout-cone-mode: false
+
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Verify Cloudflare Web serves the production revision
+        env:
+          CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
+          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          WEB_VERIFY_RESULT_FILE: ${{ runner.temp }}/web-serving-proof.json
+        run: node scripts/ci/verify-cloudflare-web-production.mjs
+
+      - name: Record successful Cloudflare Web deployment marker
+        env:
+          DEPLOYMENT_MARKER_ENVIRONMENT: cloudflare-production-web
+          DEPLOYMENT_MARKER_REF_NAME: production
+          DEPLOYMENT_MARKER_SHA: ${{ github.sha }}
+          DEPLOYMENT_MARKER_WORKFLOW_NAME: web-cloudflare-production.yaml
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node --experimental-strip-types scripts/ci/record-deployment-marker.ts

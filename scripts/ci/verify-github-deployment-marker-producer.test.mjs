@@ -14,7 +14,7 @@ import {
   profileConfig,
 } from './verify-github-deployment-marker-producer.mjs';
 
-const profile = profileConfig('production-platform');
+const profile = profileConfig('production-web');
 const source = 'a'.repeat(40);
 const repo = 'example/platform';
 const server = 'https://github.com';
@@ -238,7 +238,7 @@ test('planner attempt conclusion admits success and failure only', () => {
 test('platform caller job is the nested deploy job name', () => {
   assert.equal(
     profile.callerDeployJobName,
-    'deploy-platform / Deploy-Production'
+    'deploy-web-cloudflare / Verify-Production'
   );
 });
 
@@ -365,6 +365,7 @@ async function fixture(t, change = () => {}) {
     GITHUB_REPOSITORY: repo,
     TARGET_SHA: source,
     GH_TOKEN: 'synthetic',
+    MARKER_VERIFY_PROFILE: 'production-web',
     PLANNER_RUN_ID: '301',
     PLANNER_RUN_ATTEMPT: '1',
     MARKER_VERIFY_RESULT_FILE: resultFile,
@@ -406,7 +407,7 @@ test('caller nested job proves an exact production marker without a separate cal
   assert.ok(requests.length <= 50);
   assert.ok(
     !requests.some((route) =>
-      route.includes('vercel-production-platform.yaml/runs')
+      route.includes('web-cloudflare-production.yaml/runs')
     )
   );
 });

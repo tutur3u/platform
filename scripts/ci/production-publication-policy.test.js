@@ -33,22 +33,16 @@ const apps = [
   'contacts',
 ];
 test('preview-only apps remain scoped and are absent from the production plan', async () => {
-  const {
-    getWorkflowDecision,
-    vercelProductionWorkflowTargets,
-    vercelWorkflowTargets,
-  } = await import('../../tuturuuu.ts');
-  const previewOnly = vercelWorkflowTargets.filter(
-    ({ productionWorkflow }) => productionWorkflow === null
+  const { getWorkflowDecision, vercelWorkflowTargets } =
+    await import('../../tuturuuu.ts');
+  const previewOnly = vercelWorkflowTargets.filter(({ app }) =>
+    ['chat', 'cms', 'drive', 'forms', 'teach', 'tools', 'track'].includes(app)
   );
   assert.ok(previewOnly.length > 0);
   const { productionPublicationHold } =
     await import('./production-publication-policy.ts');
   const planner = readWorkflow('vercel-production.yaml');
   for (const { app, appPath, packageName, previewWorkflow } of previewOnly) {
-    assert.ok(
-      !vercelProductionWorkflowTargets.some((target) => target.app === app)
-    );
     assert.ok(!Object.hasOwn(planner.jobs, `deploy-${app}`));
     assert.match(
       productionPublicationHold(`vercel-production-${app}.yaml`),
@@ -133,7 +127,7 @@ function fixture(t, policy) {
     'scripts/ci/tasks-production-inputs.ts',
     'scripts/ci/mastermind-production-target.ts',
     'scripts/ci/workspace-dependency-closure.ts',
-    'scripts/ci/resolve-production-vercel-targets.ts',
+    'scripts/ci/resolve-production-targets.ts',
     'scripts/ci/resolve-changed-files-core.ts',
     'scripts/ci/github-deployment-markers.ts',
     'scripts/ci/workflow-config-core.ts',
@@ -172,8 +166,8 @@ function plan(root, workflows, eventName = 'workflow_dispatch') {
       [
         '--eval',
         `
-    import { resolveProductionVercelTargets } from './scripts/ci/resolve-production-vercel-targets.ts';
-    const result = await resolveProductionVercelTargets({
+    import { resolveProductionTargets } from './scripts/ci/resolve-production-targets.ts';
+    const result = await resolveProductionTargets({
       eventName: ${JSON.stringify(eventName)}, refName: 'production',
       rootDir: ${JSON.stringify(root)}, workspaceManifests: [],
       targets: ${JSON.stringify(workflows.map((productionWorkflow) => ({ productionWorkflow })))},
@@ -258,14 +252,9 @@ for (const app of apps.filter((name) => name !== 'mind')) {
         assert.equal(decisions[index].shouldRun, false);
         assert.equal(decisions[index].held, true);
         assert.equal(decisions[index].changeResult.source, 'publication-hold');
-        const expectedReason =
-          workflow === 'vercel-production-forms.yaml' ||
-          workflow === 'vercel-production-finance.yaml' ||
-          workflow === 'vercel-production-nova.yaml' ||
-          workflow === 'vercel-production-git.yaml' ||
-          workflow === 'vercel-production-shortener.yaml'
-            ? /publisher retired/
-            : heldReason;
+        const expectedReason = workflow.startsWith('vercel-production-')
+          ? /publisher retired/
+          : heldReason;
         assert.match(decisions[index].reason, expectedReason);
         const result = runPolicy(root, workflow);
         assert.equal(result.output, 'allowed=false\n');
@@ -278,7 +267,6 @@ for (const app of apps.filter((name) => name !== 'mind')) {
 
 for (const workflow of [
   'meet-cloudflare.yml',
-  'vercel-production-meet.yml',
   'unknown.yaml',
   'supabase-production.yaml',
 ]) {
@@ -335,81 +323,30 @@ for (const app of apps.filter((name) => name !== 'mind')) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    const cloudflareCutover = {
-      finance: 'finance-cloudflare.yaml',
-      nova: 'nova-cloudflare.yaml',
-      git: 'git-cloudflare.yaml',
-      shortener: 'shortener-cloudflare.yaml',
-    };
-    const target =
-      cloudflareCutover[app] ??
-      ([
-        'meet',
-        'calendar',
-        'mail',
-        'apps',
-        'forms',
-        'workspace',
-        'lms',
-      ].includes(app)
-        ? workflow
-        : `vercel-production-${app}.yaml`);
     const root = fixture(t, policy);
-    const [decision] = plan(root, [target]);
+    const [decision] = plan(root, [workflow]);
     assert.equal(decision.shouldRun, true);
     assert.notEqual(decision.held, true);
     assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   });
 }
 
-const retiredSatelliteVercel = [
-  'vercel-production-ai.yaml',
-  'vercel-production-finance.yaml',
-  'vercel-production-git.yaml',
-  'vercel-production-infrastructure.yaml',
-  'vercel-production-learn.yaml',
-  'vercel-production-nova.yaml',
-  'vercel-production-pay.yaml',
-  'vercel-production-rewise.yaml',
-  'vercel-production-shortener.yaml',
-  'vercel-production-storefront.yaml',
-];
-test('retired Vercel satellites stay held when protected policy is malformed', (t) => {
-  const root = fixture(t, {});
-  for (const workflow of retiredSatelliteVercel) {
-    const [decision] = plan(root, [workflow]);
-    assert.equal(decision.shouldRun, false, workflow);
-    assert.equal(decision.held, true, workflow);
-    assert.match(decision.reason, /publisher retired/);
-    assert.equal(runPolicy(root, workflow).output, 'allowed=false\n');
-  }
-  const [inventory] = plan(root, ['vercel-production-inventory.yaml']);
-  assert.doesNotMatch(inventory.reason, /publisher retired/);
-});
-test('Cloudflare-served satellites leave the Vercel planner and inventory stays', (t) => {
-  const root = fixture(t);
-  for (const workflow of retiredSatelliteVercel) {
-    const [decision] = plan(root, [workflow]);
-    assert.equal(decision.shouldRun, false, workflow);
-    assert.match(decision.reason, /publisher retired/);
-  }
-  const [inventory] = plan(root, ['vercel-production-inventory.yaml']);
-  assert.equal(inventory.shouldRun, true);
-  assert.notEqual(inventory.held, true);
-  assert.equal(runPolicy(root, 'git-cloudflare.yaml').output, 'allowed=true\n');
-  const switchboard = readFileSync(join(repoRoot, 'tuturuuu.ci.ts'), 'utf8');
-  for (const workflow of [
-    ...retiredSatelliteVercel,
+test('all per-app Vercel publishers are retired regardless of switchboard or dispatch', (t) => {
+  const root = fixture(t, { meet: null });
+  const workflows = [
     'vercel-production-inventory.yaml',
-    'git-cloudflare.yaml',
-    'finance-cloudflare.yaml',
-  ]) {
-    assert.ok(switchboard.includes(`'${workflow}': true,`), workflow);
+    'vercel-production-platform.yaml',
+    'vercel-production-finance.yaml',
+    'vercel-production-future-app.yaml',
+    'vercel-production-meet.yml',
+  ];
+  for (const event of ['push', 'workflow_dispatch']) {
+    for (const decision of plan(root, workflows, event)) {
+      assert.equal(decision.held, true);
+      assert.equal(decision.shouldRun, false);
+      assert.match(decision.reason, /publisher retired/);
+    }
   }
-  assert.equal(
-    runPolicy(root, 'finance-cloudflare.yaml').output,
-    'allowed=true\n'
-  );
 });
 
 test('Calendar, Meet, Mail and Apps admissions open only their publishers', (t) => {
@@ -447,7 +384,7 @@ test('Calendar, Meet, Mail and Apps admissions open only their publishers', (t) 
 
 test('admitted apps refuse a dispatch of their switched-off Vercel publishers', (t) => {
   const root = fixture(t);
-  const disabled = /disabled in the tuturuuu\.ci\.ts switchboard/;
+  const disabled = /publisher retired/;
   for (const app of ['calendar', 'meet', 'mail', 'apps']) {
     const legacy = runPolicy(root, `vercel-production-${app}.yaml`);
     assert.equal(legacy.output, 'allowed=false\n');
@@ -462,8 +399,7 @@ test('admitted apps refuse a dispatch of their switched-off Vercel publishers', 
 
 test('a known publisher switched off in the switchboard holds on dispatch', (t) => {
   const root = fixture(t);
-  // Inventory stays on Vercel, so this is the publisher the switchboard still gates.
-  const workflow = 'vercel-production-inventory.yaml';
+  const workflow = 'tasks-cloudflare.yaml';
   assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   const config = join(root, 'tuturuuu.ci.ts');
   const source = readFileSync(config, 'utf8');
@@ -518,16 +454,6 @@ for (const app of ['git', 'shortener'])
   });
 
 const publishers = [
-  ...apps
-    // Some protected apps publish only on Cloudflare.
-    // Git's Vercel publisher predates the policy gate and stays outside it.
-    .filter(
-      (app) => !['forms', 'git', 'lms', 'mastermind', 'workspace'].includes(app)
-    )
-    .map((app) => ({
-      workflow: `vercel-production-${app}.yaml`,
-      job: 'Deploy-Production',
-    })),
   { workflow: 'meet-cloudflare.yaml', job: 'deploy' },
   { workflow: 'mastermind-cloudflare.yaml', job: 'deploy' },
 ];
@@ -574,16 +500,7 @@ for (const { workflow, job } of publishers) {
     );
     const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
-    assert.match(
-      result.summary,
-      workflow === 'vercel-production-mind.yaml'
-        ? /held: Mind stays with its dedicated owner/
-        : workflow === 'vercel-production-finance.yaml' ||
-            workflow === 'vercel-production-nova.yaml' ||
-            workflow === 'vercel-production-shortener.yaml'
-          ? /publisher retired/
-          : heldReason
-    );
+    assert.match(result.summary, heldReason);
   });
 }
 
@@ -593,8 +510,8 @@ test('all unrelated real production targets retain planner selection with invali
     [
       '--eval',
       `
-    import { cloudflareProductionTargets, vercelProductionWorkflowTargets } from './tuturuuu.ts';
-    console.log(JSON.stringify([...vercelProductionWorkflowTargets, ...cloudflareProductionTargets]
+    import { cloudflareProductionTargets } from './tuturuuu.ts';
+    console.log(JSON.stringify(cloudflareProductionTargets
       .filter(({app}) => !${JSON.stringify(apps)}.includes(app))
       .map(({productionWorkflow}) => productionWorkflow)));
   `,

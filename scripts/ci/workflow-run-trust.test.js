@@ -20,7 +20,6 @@ test('every workflow_run consumer rejects name-spoofed completions', () => {
   const consumers = workflowRunConsumers();
   for (const file of [
     'discord-modal-deploy.yml',
-    'production-package-resume.yaml',
     'release-please-transient-retry.yaml',
     'supabase-production.yaml',
   ]) {

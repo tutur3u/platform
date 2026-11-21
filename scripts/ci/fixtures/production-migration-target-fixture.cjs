@@ -121,7 +121,7 @@ if (request.endsWith('/git/ref/heads/production')) {
   const marker = (id, markerSha, created_at, payload = {}) => ({
     id, sha: markerSha, created_at, payload: {
       sha: markerSha, markerKind: 'deployment',
-      workflowName: 'vercel-production-platform.yaml', ...payload
+      workflowName: 'web-cloudflare-production.yaml', ...payload
     }
   });
   response = [
@@ -133,6 +133,8 @@ if (request.endsWith('/git/ref/heads/production')) {
   ];
   if (process.env.MARKER_PAYLOAD === 'empty') {
     response = [{id: 17, sha, created_at: '2026-01-06', payload: {}}];
+  } else if (process.env.MARKER_PAYLOAD === 'retired-vercel') {
+    response = [marker(17, sha, '2026-01-06', {workflowName: 'vercel-production-platform.yaml'})];
   } else if (process.env.MARKER_PAYLOAD === 'wrong-sha') {
     response = [marker(17, sha, '2026-01-06', {sha: process.env.UNRELATED_SHA})];
   } else {

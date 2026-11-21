@@ -49,7 +49,7 @@ project (catalog entry, e.g. "calendar")
 
   | Environment | Vercel apps | Cloudflare Workers |
   | ----------- | ----------- | ------------------ |
-  | production  | `vercel-production-<app>.yaml`; also `meet-cloudflare.yaml` for `meet` and `tasks-cloudflare.yaml` for `tasks`, which publish their native Workers | `<worker>-cloudflare.yaml` |
+  | production  | `meet-cloudflare.yaml` for `meet` and `tasks-cloudflare.yaml` for `tasks` | `<worker>-cloudflare.yaml` |
   | staging     | `wave1-native-publish.yaml` called from `<app>-cloudflare.yaml`, for `apps`, `calendar` and `mail`; none for the others, whose `<app>-cloudflare.yaml` only qualifies builds | none |
   | preview     | `vercel-preview-<app>.yaml` | none: Worker previews run on pull request events, which are rejected |
 
@@ -304,7 +304,7 @@ Every production deploy job reports, in one of two wirings:
 | Wiring | Jobs | `mode` input |
 | ------ | ---- | ------------ |
 | Enforce-capable: begin, publish steps gated on `publish`, check before the first provider effect, finish | Colab, Coordination, Cron Control, Devbox Control, Lettin and Parley `deploy` jobs | `vars.DEPLOY_COORDINATOR_MODE` |
-| Observe-only: begin and finish under `continue-on-error` and a 5-minute step timeout, no gating | `vercel-production-<app>.yaml`; the Meet (`meet-worker`), Tasks and gateway (`web-opennext.yaml`) publishers, which keep their own release admission and rollback; the Android, iOS and macOS store publishes | `observe` whenever the variable is `observe` or `enforce` |
+| Observe-only: begin and finish under `continue-on-error` and a 5-minute step timeout, no gating | the Meet (`meet-worker`), Tasks and gateway (`web-opennext.yaml`) publishers, which keep their own release admission and rollback; the Android, iOS and macOS store publishes | `observe` whenever the variable is `observe` or `enforce` |
 
 A Meet release dispatch of another commit (`release: true` with a
 `source_sha`) does not report, because the token names the dispatching commit.

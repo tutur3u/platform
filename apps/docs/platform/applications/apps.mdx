@@ -47,17 +47,14 @@ The gateway uses hidden locale routing, so old locale-prefixed paths such as
 
 ## CI/CD
 
-Preview and production deployments use dedicated Vercel workflows:
+Cloudflare qualification and staging use `apps-cloudflare.yaml`. The Vercel preview uses:
 
 - `.github/workflows/vercel-preview-apps.yaml`
-- `.github/workflows/vercel-production-apps.yaml`
 
-Both workflows are registered in `tuturuuu.ts` and use the shared
-`ci-check.yml` switchboard with affected-path gating. They require
+The preview is registered in `tuturuuu.ts` and requires
 environment-scoped Vercel credentials:
 
 - preview environment: `vercel-preview-apps`
-- production environment: `vercel-production-apps`
 - project secret: `VERCEL_APPS_PROJECT_ID`
 - shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
 

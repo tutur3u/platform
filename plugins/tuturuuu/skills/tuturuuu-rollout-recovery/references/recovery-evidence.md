@@ -18,8 +18,8 @@ app registration and proxy ownership, rather than a hard-coded incident inventor
 | Successful deployment marker and workflow SHA | Planner baseline; may predate an out-of-band rollback |
 | Satellite proxy → live platform API | The upstream route/auth contract the satellite requires |
 
-Use `tuturuuu.ts`, `scripts/ci/resolve-production-vercel-targets.ts`, the owning
-`vercel-production-*.yaml`, and the satellite proxy configuration as maintained
+Use `tuturuuu.ts`, `scripts/ci/resolve-production-targets.ts`, the owning
+the production planner and its Cloudflare publishers, and the satellite proxy configuration as maintained
 sources. Include platform Web and affected direct aliases such as Calendar or
 Infra when their routing matters. Finance, Inventory, Contacts, CMS, Tasks, and
 Learn are business-critical consumers; inspect the actual route owner for each.

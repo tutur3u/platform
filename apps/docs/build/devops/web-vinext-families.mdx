@@ -263,3 +263,50 @@ serves the Worker in workerd. Put disposable values in `apps/web/.dev.vars`
 - `next/image` is served unoptimized.
 - The 4 external rewrites to infrastructure and calendar forward credential
   headers, matching Next.js.
+
+
+## Production migration deployment proof
+
+The Production Deployment Planner calls `web-cloudflare-production.yaml`
+for each admitted `production` revision. The job uses the Cloudflare Workers
+API to read the gateway and every activated vinext family's serving version.
+The gateway flags and service bindings must match the committed vinext
+inventory. Each Worker must serve one version at 100%, and the job rechecks
+the serving versions before recording success. The version upload message
+identifies the build commit. For vinext it must agree with the build stamp
+binding. A 12-character stamp also needs an authenticated GitHub commit
+resolution. [Cloudflare Worker versions and deployments](https://developers.cloudflare.com/workers/versions-and-deployments/)
+
+Web families publish from `main`. During that arrangement the release gate
+accepts the production commit itself, a descendant contained in `main`, or
+an ancestor whose Worker build inputs are unchanged through the production
+commit. GitHub's repository comparison proves the relationship, and
+`verify-cloudflare-web-production.mjs` defines the build paths for each Worker
+type. Diverged commits, incomplete comparisons, stale build inputs, mixed
+traffic, and unknown routing withhold the marker. The job retries at two-minute
+intervals for up to 20 minutes. A public build-info response can support a smoke
+test.
+
+The job records `cloudflare-production-web` with `GITHUB_TOKEN`, binding the
+marker to the exact production SHA and planner attempt. The database workflow
+checks the pinned caller, reusable workflow, verifier and recorder blobs,
+the successful marker step, and the existing successful staging marker.
+Manual recovery requires the same Web proof. A missing marker keeps migration
+apply closed. Check the producer's Worker/version summary, coordinate an
+authorized Web publication with the serving owner, then rerun the planner on
+the pinned production SHA.
+
+### Move vinext publication to the production branch
+
+1. With the Web owner, qualify the active family build matrix and gateway
+   configuration from one pinned `production` SHA on CI. Stamp each upload
+   with its full build SHA. Retain the current serving Worker version IDs and
+   gateway routing preimage.
+2. Stage the version set and verify representative route families and gateway
+   bindings before assigning traffic. Serialize the production publisher with
+   the serving owner, and fence activation against a moved production ref or
+   newer deployment. Keep one-step rollback to the retained version set.
+3. After staged and production qualification, make the planner's proof depend
+   on that publication, require exact SHA equality for all serving Workers,
+   and review the resulting producer contract pins. Verify an exact-SHA
+   marker and separate staging proof before authorizing a database apply.

@@ -7,7 +7,6 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { DEPENDENCIES } from './contract.mjs';
 import { unifiedDiff } from './diff.mjs';
-import { VERCEL_WORKFLOW } from './fixture-repo.mjs';
 import {
   addOxcRouteTreeOverride,
   addCiWorkflow,
@@ -16,7 +15,6 @@ import {
   addPackageScripts,
   addPolicyTestApp,
   addProtectedSurface,
-  addVercelProductionPolicyGate,
   dependencyCommands,
   VOID_OUTPUT_IGNORES,
 } from './repo-edits.mjs';
@@ -30,14 +28,6 @@ const real = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
 // Real files: a refactor that moves an anchor must fail here, not silently.
 // The app id is one no branch converts, so applied conversions don't mask it.
 const PROBE = 'codemod-probe';
-// Any real per-app Vercel publisher that has no policy gate yet.
-const UNGATED_PUBLISHER = fs
-  .readdirSync(path.join(ROOT, '.github/workflows'))
-  .filter((name) => /^vercel-production-[a-z-]+\.yaml$/u.test(name))
-  .sort()
-  .find(
-    (name) => !real(`.github/workflows/${name}`).includes('production-policy:')
-  );
 const EDITS = [
   ['tuturuuu.ci.ts', (source) => addHeldRecord(source, PROBE)],
   [
@@ -51,14 +41,6 @@ const EDITS = [
   [
     'scripts/ci/production-publication-policy.test.js',
     (source) => addPolicyTestApp(source, PROBE),
-  ],
-  [
-    `.github/workflows/${UNGATED_PUBLISHER}`,
-    (source) =>
-      addVercelProductionPolicyGate(
-        source,
-        UNGATED_PUBLISHER.replace(/^vercel-production-|\.yaml$/gu, '')
-      ),
   ],
 ];
 for (const [file, edit] of EDITS) {
@@ -163,23 +145,6 @@ test('unified diff reports creations and in-place changes', () => {
       '1\n2\n3\n4\nfive\n6\n7\n8\n9\n'
     ),
     '--- a/x\n+++ b/x\n@@ -2,7 +2,7 @@\n 2\n 3\n 4\n-5\n+five\n 6\n 7\n 8\n'
-  );
-});
-
-test('the Vercel publisher gains the shared policy gate before deploying', () => {
-  const gated = addVercelProductionPolicyGate(VERCEL_WORKFLOW, 'demo');
-  assert.match(
-    gated,
-    /\n {2}production-policy:\n[\s\S]*run: node scripts\/ci\/production-publication-policy\.ts vercel-production-demo\.yaml "\$GITHUB_STEP_SUMMARY"\n\n {2}Deploy-Production:\n {4}needs: \[production-policy\]\n {4}if: github\.ref == 'refs\/heads\/production' && needs\.production-policy\.outputs\.allowed == 'true'\n {4}environment: vercel-production-demo\n/u
-  );
-  assert.equal(addVercelProductionPolicyGate(gated, 'demo'), gated);
-  assert.throws(
-    () =>
-      addVercelProductionPolicyGate(
-        'jobs:\n  Deploy-Production:\n    runs-on: x\n',
-        'demo'
-      ),
-    /production-only if/
   );
 });
 

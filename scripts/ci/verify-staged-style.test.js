@@ -30,7 +30,6 @@ const {
   verifyCss,
   writeProof,
 } = require('./verify-staged-style');
-const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 test('preserves staged CSP and MIME without forwarding deployment cookies or compressed lengths', () => {
   const headers = responseHeaders(
@@ -102,29 +101,6 @@ test('CSS must match the exact built asset and cannot escape its artifact root',
     verifyCss({ ...input, body: Buffer.alloc(0) }),
     /bytes differ/
   );
-});
-
-test('platform promotion requires staged CSS and uploaded 390/1440 proof first', () => {
-  const workflow = readWorkflow('vercel-production-platform.yaml');
-  const steps = workflow.jobs['Deploy-Production'].steps;
-  const stage = steps.findIndex((s) => s.id === 'stage_deployment');
-  const auth = steps.findIndex(
-    (s) => s.run === 'node scripts/ci/verify-staged-critical-app.js'
-  );
-  const style = steps.findIndex(
-    (s) => s.run === 'node scripts/ci/verify-staged-style.js'
-  );
-  const upload = steps.findIndex((s) => s.name === 'Retain staged style proof');
-  const promote = steps.findIndex((s) => s.id === 'promote');
-  assert.ok(stage < auth && auth < style && style < upload && upload < promote);
-  assert.equal(steps[style]['continue-on-error'], undefined);
-  assert.equal(steps[upload]['continue-on-error'], undefined);
-  assert.equal(
-    steps[style].env.VERCEL_STAGED_DEPLOYMENT_URL,
-    '${{ steps.stage_deployment.outputs.url }}'
-  );
-  assert.equal(steps[style].env.VERCEL_STAGED_APP, 'platform');
-  assert.ok(steps[upload].with.path.includes('staged-style-proof'));
 });
 
 test('failure descriptions use only listed reasons, never raw error text', () => {

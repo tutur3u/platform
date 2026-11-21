@@ -260,11 +260,6 @@ test('the new workflow is dispatch-only and the general Mail publisher stays hel
     path.join(root, '.github/workflows/mail-vercel-exact-sha.yaml'),
     'utf8'
   );
-  const general = readFileSync(
-    path.join(root, '.github/workflows/vercel-production-mail.yaml'),
-    'utf8'
-  );
-  const policy = readFileSync(path.join(root, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(workflow, /workflow_dispatch:/);
   assert.match(workflow, /main_sha:/);
   assert.match(workflow, /required: true/);
@@ -290,11 +285,6 @@ test('the new workflow is dispatch-only and the general Mail publisher stays hel
     workflow,
     /production-publication-policy|record-vercel-deployment/
   );
-  assert.doesNotMatch(general, /^\s*inputs:/m);
-  assert.match(general, /github\.ref == 'refs\/heads\/production'/);
-  assert.match(general, /void\.config\.ts/);
-  assert.doesNotMatch(general, /--skip-domain/);
-  assert.match(policy, /'vercel-production-mail\.yaml': false/);
 });
 
 test('rejects multiline deployment evidence before binding outputs', () => {

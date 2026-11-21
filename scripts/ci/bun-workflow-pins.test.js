@@ -18,7 +18,6 @@ test('workflows use the repo Bun setup and install retry helpers', () => {
   const retainedPins = new Map([
     ['tanstack-route-manifest.yaml', '1.4.1'],
     ['vercel-preview-tanstack-web.yaml', '1.4.1'],
-    ['vercel-production-tanstack-web.yaml', '1.4.1'],
   ]);
 
   for (const workflowFile of workflowFiles) {

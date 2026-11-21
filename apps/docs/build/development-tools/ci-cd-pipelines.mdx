@@ -32,7 +32,7 @@ in the dedicated DevOps pages below so the docs stay current as workflows change
 Tuturuuu currently automates:
 
 - Vercel preview deployments for non-`production` branches
-- Vercel production deployments from the `production` branch
+- Cloudflare production planning and Web serving proof on the `production` branch
 - Independent Vercel preview and production deployments for satellite apps such as `apps/cms`
 - Affected-app gating for Vercel deployments before dependency install, build, or deploy work
 - Supabase staging migrations driven from `main` and production migrations driven from `production`
@@ -53,7 +53,7 @@ Tuturuuu currently automates:
 - Vercel workflows use `tuturuuu.ts` app metadata and workspace `workspace:*` dependency closures to run only affected app deploys.
 - `bun.lock` changes run all Vercel app deploys because lockfile ownership is ambiguous without a source or manifest path.
 - Manual `workflow_dispatch` runs enabled workflows even when changed paths would otherwise be unaffected.
-- Production Vercel workflows cancel superseded per-app runs only for newer
+- The production planner skips superseded queued revisions only for newer
   `production` pushes. A `main` commit or manual recovery run never cancels an
   active production deployment.
 - The external-app internal-package build uses the same cancel-superseded policy, so rapid pushes cannot finish as green no-op builds.

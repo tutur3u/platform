@@ -28,10 +28,8 @@ values the release owner needs.
 
 Remove only the `finance.tuturuuu.com/*` Worker route and restore the captured DNS
 payload; assign only the Finance hostname to the captured immutable Vercel
-deployment if needed. Never promote the Vercel project as a whole. Freeze
-production sync during the flip and watch, because `vercel-production-finance.yaml`
-runs on `production` pushes and a new Vercel deployment would move the alias the
-rollback relies on. The Worker holds no state and the rollback touches no data.
+deployment if needed. Assign only the affected hostname. The Worker holds
+no state and the rollback touches no data.
 
 For apex rollback, restore the captured `tuturuuu-gateway` version at 100%
 traffic using the [gateway rollback procedure](/build/devops/gateway-worker#one-action-rollback-for-a-gateway-mount).

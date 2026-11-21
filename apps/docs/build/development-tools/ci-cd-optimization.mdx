@@ -86,7 +86,7 @@ is uncertain too.
 Pull requests skip a Cloudflare app only when that plan is certain and the app
 is outside the closure. Pushes to `main` type-check the full tree and deploy
 every Cloudflare app. A failed plan runs the checks. Production, manual,
-scheduled and release events keep running. Vercel production stays on the Production
+scheduled and release events keep running. Cloudflare production stays on the Production
 Deployment Planner in `vercel-production.yaml`. Type Check, Test, Oxc and docs
 read the plan from `.github/workflows/ci-plan.yaml`. Mobile keeps its path
 filters. Empty Turbo tokens on merge-queue and Cloudflare jobs stay empty on
@@ -249,7 +249,7 @@ same preview cancels stale work, while different preview refs remain independent
 ### The production planner
 
 A `production` push starts one `plan` job instead of starting one
-`check-ci` runner per Vercel app. `resolve-production-vercel-targets.ts` reads the
+`check-ci` runner per Vercel app. `resolve-production-targets.ts` reads the
 workspace graph once, memoizes dependency closures, resolves each target from
 its own successful deployment marker, and emits a reviewable Actions summary.
 Static reusable jobs call selected Vercel and Cloudflare workflows, so
@@ -310,7 +310,7 @@ skipped.
 
 Every Vercel app is registered once in `vercelWorkflowTargets`. Adding a new app
 means adding a single entry there (app slug, app path, package name, and the
-preview/production workflow filenames) — the gating logic and changed-file
+preview workflow filename) — the gating logic and changed-file
 matching then apply automatically.
 
 ```ts
@@ -319,11 +319,10 @@ matching then apply automatically.
   appPath: 'apps/web',
   packageName: '@tuturuuu/web',
   previewWorkflow: 'vercel-preview-platform.yaml',
-  productionWorkflow: 'vercel-production-platform.yaml',
 }
 ```
 
-**Applied to:** the 24-target production planner, the inline platform preview
+**Applied to:** the inline platform preview
 gate, and other gated CI workflows wired through `ci-check.yml`. The other 23
 preview workflows are trusted manual dispatches and therefore do not allocate a
 standalone configuration runner.
@@ -434,7 +433,7 @@ entire pending range, fails open when no trustworthy marker exists, and runs
 control files changed. Evaluation and deployment share one serialized job per
 environment, so no-op workflow-run signals finish quickly while database
 migrations cannot race. Production still requires the successful same-SHA
-platform deployment marker and staging migration before applying changes.
+Cloudflare Web deployment marker and staging migration before applying changes.
 
 ## Runner And Storage Policy
 
@@ -535,20 +534,20 @@ full diff since the last live deploy is considered.
 
 `check-workflow-config.ts` logs its decision and the matched paths. Preview
 `check-ci` logs show the individual decision; production uses the planner's
-**Production Vercel deployment plan** job summary, including the per-app
+**Production deployment plan: Cloudflare** job summary, including the per-app
 baseline source and deploy/skip result. Individual logs still look like:
 
 ```text
-Workflow: vercel-production-platform.yaml
+Workflow: vercel-preview-platform.yaml
 Should run: false
-Reason: vercel-production-platform.yaml is unaffected by the changed paths
+Reason: vercel-preview-platform.yaml is unaffected by the changed paths
 ```
 
 or, when it does run:
 
 ```text
 Should run: true
-Reason: vercel-production-platform.yaml is affected by 3 changed path(s)
+Reason: vercel-preview-platform.yaml is affected by 3 changed path(s)
 Matched paths:
 - apps/web/src/app/page.tsx
 - packages/ui/src/button.tsx
@@ -561,7 +560,7 @@ run:
 
 ```bash
 CHANGED_FILES="apps/web/src/app/page.tsx" \
-WORKFLOW_NAME="vercel-production-platform.yaml" \
+WORKFLOW_NAME="vercel-preview-platform.yaml" \
 node --experimental-strip-types scripts/ci/check-workflow-config.ts
 ```
 
@@ -570,7 +569,7 @@ There are also unit tests covering the gating logic:
 ```bash
 node --test scripts/ci/check-workflow-config.test.js
 node --test scripts/ci/resolve-changed-files.test.js
-node --test scripts/ci/resolve-production-vercel-targets.test.js
+node --test scripts/ci/resolve-production-targets.test.js
 ```
 
 ### Common Issues

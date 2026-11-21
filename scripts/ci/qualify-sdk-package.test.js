@@ -281,10 +281,14 @@ test('source mismatch blocks all package and runtime operations', async (t) => {
 test('deadline verifies group disappearance for a descendant that outlives its leader', async (t) => {
   const root = fixture(t);
   const marker = path.join(root, 'descendant-marker');
-  const child = `require('node:fs').writeFileSync(${JSON.stringify(marker)},process.argv[1]);setInterval(()=>{},1000)`;
-  const leader = `require('node:child_process').spawn(process.execPath,['-e',${JSON.stringify(child)},String(process.pid)],{stdio:'inherit'});process.exit(0)`;
+  // Wait for the descendant to start before the leader exits. The fixture
+  // keeps the inherited output streams open without starting a second Node VM.
+  const leader = [
+    '(printf "%s\\n" "$$" > "$1"; exec sleep 30) &',
+    'while [ ! -s "$1" ]; do sleep 0.01; done',
+  ].join('\n');
   await assert.rejects(
-    runProcess(process.execPath, ['-e', leader], {
+    runProcess('/bin/sh', ['-c', leader, 'sdk-deadline-fixture', marker], {
       env: { PATH: process.env.PATH },
       timeoutMs: 400,
     }),
@@ -576,7 +580,7 @@ test('workflow admits only raw-head build/test qualification and preserves other
   assert.match(workflow, /bun-version: 1\.4\.4/);
   const config = fs.readFileSync(path.join(repo, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(config, /'sdk-package-qualification.yaml': true/);
-  assert.match(config, /'vercel-production-tanstack-web.yaml': false/);
+  assert.doesNotMatch(config, /'vercel-production-tanstack-web.yaml': true/);
 });
 
 test('install failure retains only bounded diagnostic hashes and allowlisted reported codes before cleanup', async (t) => {

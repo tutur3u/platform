@@ -34,7 +34,6 @@ export type VercelWorkflowTarget = {
   appPath: string;
   packageName: string;
   previewWorkflow: string;
-  productionWorkflow: string | null;
 } & (
   | {
       buildInfoApp: string;
@@ -53,7 +52,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/ai-studio',
     previewWorkflow: 'vercel-preview-ai.yaml',
-    productionWorkflow: 'vercel-production-ai.yaml',
   },
   {
     app: 'apps',
@@ -62,7 +60,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/apps',
     previewWorkflow: 'vercel-preview-apps.yaml',
-    productionWorkflow: 'vercel-production-apps.yaml',
   },
   {
     app: 'calendar',
@@ -71,7 +68,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/calendar',
     previewWorkflow: 'vercel-preview-calendar.yaml',
-    productionWorkflow: 'vercel-production-calendar.yaml',
   },
   {
     app: 'chat',
@@ -80,7 +76,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/chat',
     previewWorkflow: 'vercel-preview-chat.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'cms',
@@ -89,7 +84,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/cms',
     previewWorkflow: 'vercel-preview-cms.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'drive',
@@ -98,7 +92,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/drive',
     previewWorkflow: 'vercel-preview-drive.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'finance',
@@ -107,7 +100,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/finance',
     previewWorkflow: 'vercel-preview-finance.yaml',
-    productionWorkflow: 'vercel-production-finance.yaml',
   },
   {
     app: 'inventory',
@@ -116,7 +108,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/inventory',
     previewWorkflow: 'vercel-preview-inventory.yaml',
-    productionWorkflow: 'vercel-production-inventory.yaml',
   },
   {
     app: 'infrastructure',
@@ -125,7 +116,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/admin',
     previewWorkflow: 'vercel-preview-infrastructure.yaml',
-    productionWorkflow: 'vercel-production-infrastructure.yaml',
   },
   {
     app: 'storefront',
@@ -134,7 +124,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/storefront',
     previewWorkflow: 'vercel-preview-storefront.yaml',
-    productionWorkflow: 'vercel-production-storefront.yaml',
   },
   {
     app: 'meet',
@@ -143,7 +132,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/meet',
     previewWorkflow: 'vercel-preview-meet.yaml',
-    productionWorkflow: 'vercel-production-meet.yaml',
   },
   {
     app: 'mail',
@@ -152,7 +140,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/mail',
     previewWorkflow: 'vercel-preview-mail.yaml',
-    productionWorkflow: 'vercel-production-mail.yaml',
   },
   {
     app: 'tanstack-web',
@@ -160,7 +147,6 @@ export const vercelWorkflowTargets = [
     framework: 'tanstack-start',
     packageName: '@tuturuuu/tanstack-web',
     previewWorkflow: 'vercel-preview-tanstack-web.yaml',
-    productionWorkflow: 'vercel-production-tanstack-web.yaml',
   },
   {
     app: 'mind',
@@ -169,7 +155,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/mind',
     previewWorkflow: 'vercel-preview-mind.yaml',
-    productionWorkflow: 'vercel-production-mind.yaml',
   },
   {
     app: 'nova',
@@ -178,7 +163,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/nova',
     previewWorkflow: 'vercel-preview-nova.yaml',
-    productionWorkflow: 'vercel-production-nova.yaml',
   },
   {
     app: 'platform',
@@ -187,7 +171,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/web',
     previewWorkflow: 'vercel-preview-platform.yaml',
-    productionWorkflow: 'vercel-production-platform.yaml',
   },
   {
     app: 'tools',
@@ -196,7 +179,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/tools',
     previewWorkflow: 'vercel-preview-tools.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'rewise',
@@ -205,7 +187,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/rewise',
     previewWorkflow: 'vercel-preview-rewise.yaml',
-    productionWorkflow: 'vercel-production-rewise.yaml',
   },
   {
     app: 'shortener',
@@ -213,7 +194,6 @@ export const vercelWorkflowTargets = [
     framework: 'tanstack-start',
     packageName: '@tuturuuu/shortener',
     previewWorkflow: 'vercel-preview-shortener.yaml',
-    productionWorkflow: 'vercel-production-shortener.yaml',
   },
   {
     app: 'tasks',
@@ -222,7 +202,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/tasks',
     previewWorkflow: 'vercel-preview-tasks.yaml',
-    productionWorkflow: 'vercel-production-tasks.yaml',
   },
   {
     app: 'teach',
@@ -231,7 +210,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/teach',
     previewWorkflow: 'vercel-preview-teach.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'track',
@@ -240,7 +218,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/track',
     previewWorkflow: 'vercel-preview-track.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'learn',
@@ -249,7 +226,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/learn',
     previewWorkflow: 'vercel-preview-learn.yaml',
-    productionWorkflow: 'vercel-production-learn.yaml',
   },
   {
     app: 'pay',
@@ -258,7 +234,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/pay',
     previewWorkflow: 'vercel-preview-pay.yaml',
-    productionWorkflow: 'vercel-production-pay.yaml',
   },
   {
     app: 'contacts',
@@ -267,7 +242,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/contacts',
     previewWorkflow: 'vercel-preview-contacts.yaml',
-    productionWorkflow: 'vercel-production-contacts.yaml',
   },
   {
     app: 'forms',
@@ -276,7 +250,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/forms',
     previewWorkflow: 'vercel-preview-forms.yaml',
-    productionWorkflow: null,
   },
   {
     app: 'git',
@@ -285,7 +258,6 @@ export const vercelWorkflowTargets = [
     framework: 'next',
     packageName: '@tuturuuu/git',
     previewWorkflow: 'vercel-preview-git.yaml',
-    productionWorkflow: 'vercel-production-git.yaml',
   },
 ] satisfies VercelWorkflowTarget[];
 
@@ -408,15 +380,8 @@ const scopedVercelAffectingPaths = [
   },
 ] as const;
 
-export const vercelProductionWorkflowTargets = vercelWorkflowTargets.filter(
-  (target) => target.productionWorkflow !== null
-);
 const vercelTargetsByWorkflow = new Map(
-  vercelWorkflowTargets.flatMap((target) =>
-    [target.previewWorkflow, target.productionWorkflow]
-      .filter((workflow) => workflow !== null)
-      .map((workflow) => [workflow, target] as const)
-  )
+  vercelWorkflowTargets.map((target) => [target.previewWorkflow, target])
 );
 const cloudflareTargetsByWorkflow = new Map(
   cloudflareProductionTargets.map((target) => [
@@ -603,8 +568,7 @@ export function getWorkflowDecision({
     if (databasePaths.length > 0) {
       return {
         matchedPaths: databasePaths,
-        reason:
-          'platform deployment is required to gate production database migrations',
+        reason: 'platform preview validates database changes',
         shouldRun: true,
       };
     }
@@ -629,6 +593,7 @@ export function getWorkflowDecision({
       return lockfileWorkspaces.some((name) => lockfileClosure.has(name));
     }
     if (
+      'productionWorkflow' in target &&
       workflowName === target.productionWorkflow &&
       isVerifiedProductionTestPath(filePath)
     ) {

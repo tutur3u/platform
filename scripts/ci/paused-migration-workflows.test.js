@@ -38,10 +38,6 @@ test('paused Docker, TanStack and Rust workflows remain disabled', () => {
       'tanstack-route-manifest.yaml',
       ['apps/tanstack-web/migration/route-manifest.json'],
     ],
-    [
-      'vercel-production-tanstack-web.yaml',
-      ['apps/tanstack-web/src/routes/index.tsx'],
-    ],
   ]) {
     const decision = assertWorkflowDecision(
       { changedFiles, rootDir, workflowName },
@@ -56,10 +52,6 @@ test('direct TanStack deploy entrypoints remain paused', () => {
   assertJobPaused(
     readWorkflow('vercel-preview-tanstack-web.yaml'),
     'Build-Preview'
-  );
-  assertJobPaused(
-    readWorkflow('vercel-production-tanstack-web.yaml'),
-    'Build-Production'
   );
 });
 

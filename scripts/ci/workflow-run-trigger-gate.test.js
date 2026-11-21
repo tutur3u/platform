@@ -118,7 +118,6 @@ test('dispatch-only detection rejects widened conditions', () => {
 test('every workflow_run consumer is gated by the canonical trust step', () => {
   assert.deepEqual(consumerFiles.sort(), [
     'discord-modal-deploy.yml',
-    'production-package-resume.yaml',
     'release-please-transient-retry.yaml',
     'supabase-production.yaml',
   ]);

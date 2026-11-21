@@ -37,20 +37,8 @@ const acceptedOutputInterpolations = {
     'steps.restored.outputs.restored',
     'steps.warm.outputs.restored',
   ],
-  'vercel-preview-platform.yaml': [
-    'steps.check_config.outputs.should_run',
-    'steps.resolve_target.outputs.sha',
-  ],
-  'vercel-production-platform.yaml': [
-    'steps.package_release_gate.outputs.pending_packages',
-    'steps.stage_deployment.outputs.url',
-  ],
+  'vercel-preview-platform.yaml': ['steps.check_config.outputs.should_run'],
 };
-for (const app of ['contacts', 'finance', 'inventory', 'tasks']) {
-  acceptedOutputInterpolations[`vercel-production-${app}.yaml`] = [
-    'steps.stage_deployment.outputs.url',
-  ];
-}
 
 function outputInterpolations(script) {
   return [...script.matchAll(/\$\{\{\s*([\s\S]*?)\s*\}\}/gu)]

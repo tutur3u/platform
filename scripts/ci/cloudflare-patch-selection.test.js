@@ -135,8 +135,8 @@ for (const app of workers) {
 }
 
 for (const workflow of [
-  'vercel-production-platform.yaml',
-  'vercel-production-meet.yaml',
+  'vercel-preview-platform.yaml',
+  'vercel-preview-meet.yaml',
 ]) {
   test(`the OpenNext patch does not select ${workflow}`, () => {
     assert.equal(decide(workflow).shouldRun, false);
@@ -200,27 +200,7 @@ test('own workflow and existing additional paths still select their owner', () =
   }
 });
 
-test('platform deployment covers existing non-schema database migration controls', () => {
-  for (const control of [
-    'tuturuuu.ts',
-    'tuturuuu.ci.ts',
-    'scripts/ci/github-deployment-markers.ts',
-  ]) {
-    const decision = decide('vercel-production-platform.yaml', [control]);
-    assert.equal(decision.shouldRun, true);
-    assert.deepEqual(decision.matchedPaths, [control]);
-    assert.equal(
-      decision.reason,
-      'platform deployment is required to gate production database migrations'
-    );
-  }
-});
-
-for (const workflow of [
-  'vercel-production-platform.yaml',
-  'supabase-production.yaml',
-  'supabase-staging.yaml',
-]) {
+for (const workflow of ['supabase-production.yaml', 'supabase-staging.yaml']) {
   test(`the exact four-path publication selects ${workflow}`, () => {
     const decision = decide(workflow, [
       patch,
@@ -232,7 +212,7 @@ for (const workflow of [
     assert.deepEqual(decision.matchedPaths, ['tuturuuu.ts']);
     assert.equal(
       decision.reason,
-      workflow === 'vercel-production-platform.yaml'
+      workflow === 'vercel-preview-platform.yaml'
         ? 'platform deployment is required to gate production database migrations'
         : `${workflow} is affected by 1 database path(s)`
     );
@@ -248,7 +228,7 @@ test('the shared candidate patch selects its Meet, Lettin and Parley Cloudflare 
     );
   }
   assert.equal(
-    decide('vercel-production-meet.yaml', [parleyCandidatePatch]).shouldRun,
+    decide('vercel-preview-meet.yaml', [parleyCandidatePatch]).shouldRun,
     false
   );
 });

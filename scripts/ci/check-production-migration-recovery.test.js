@@ -49,12 +49,12 @@ function fixture() {
       step('Record marker', 'skipped'),
     ]);
   }
-  job('deploy-platform / Deploy-Production', 'success', [
+  job('deploy-web-cloudflare / Verify-Production', 'success', [
     step('Promote', 'success'),
-    step('Record successful Vercel deployment marker', 'success'),
+    step('Record successful Cloudflare Web deployment marker', 'success'),
   ]);
   job('plan', 'success', [step('Resolve', 'success')]);
-  job('deploy-mail / Deploy-Production', 'skipped');
+  job('deploy-mail-native', 'skipped');
   return {
     allow: true,
     eventName: 'workflow_dispatch',
@@ -74,107 +74,17 @@ test('explicit exact-SHA manual recovery accepts only canonical verification fai
     reason: 'only_canonical_cloudflare_verification_failed',
   });
 });
-const QUOTA = 'api-deployments-free-per-day';
-function quotaFixture() {
-  const x = fixture();
-  x.jobPages[0].jobs = x.jobPages[0].jobs.filter(
-    (job) =>
-      !String(job.name).startsWith('deploy-lettin') &&
-      !String(job.name).startsWith('deploy-meet') &&
-      !String(job.name).startsWith('deploy-parley')
-  );
-  const step = (name, conclusion) => ({
-    name,
-    status: 'completed',
-    conclusion,
-  });
-  x.jobPages[0].jobs.unshift({
-    id: 50,
-    run_id: 100,
-    run_attempt: 2,
-    head_sha: sha,
-    head_branch: 'production',
-    name: 'deploy-ai / Deploy-Production',
-    status: 'completed',
-    conclusion: 'failure',
-    vercelQuotaCode: QUOTA,
-    steps: [
-      step('Build Project Artifacts', 'success'),
-      step('Deploy Project Artifacts to Vercel', 'failure'),
-      step('Record successful Vercel deployment marker', 'skipped'),
-    ],
-  });
-  x.jobPages[0].total_count = x.jobPages[0].jobs.length;
-  return x;
-}
-test('satellite Hobby quota is admitted only for that code and job class', async () => {
-  const { CONTROL_PLANE_REQUIRED, INDEPENDENT_APP, PLANNER_JOB_CLASSES } =
-    await import('./production-planner-job-classes.mjs');
-  assert.equal(PLANNER_JOB_CLASSES['deploy-ai'], INDEPENDENT_APP);
-  assert.equal(PLANNER_JOB_CLASSES['deploy-inventory'], INDEPENDENT_APP);
-  assert.notEqual(PLANNER_JOB_CLASSES['deploy-platform'], INDEPENDENT_APP);
-  assert.equal(
-    PLANNER_JOB_CLASSES['deploy-cron-control-cloudflare'],
-    CONTROL_PLANE_REQUIRED
-  );
-  assert.deepEqual(await decision(quotaFixture()), {
-    allowed: true,
-    reason: 'only_vercel_hobby_deploy_quota_failed',
-  });
-  const mixed = fixture();
-  mixed.jobPages[0].jobs.push({
-    ...quotaFixture().jobPages[0].jobs[0],
-    id: 60,
-  });
-  mixed.jobPages[0].total_count = mixed.jobPages[0].jobs.length;
-  assert.equal((await decision(mixed)).allowed, true);
-  const wrongCode = quotaFixture();
-  wrongCode.jobPages[0].jobs[0].vercelQuotaCode = 'deployment_error';
-  assert.equal((await decision(wrongCode)).allowed, false);
-  const controlPlane = quotaFixture();
-  controlPlane.jobPages[0].jobs[0].name =
-    'deploy-colab-cloudflare / Deploy-Production';
-  assert.equal((await decision(controlPlane)).allowed, false);
-  const otherCloudflare = quotaFixture();
-  otherCloudflare.jobPages[0].jobs[0].name =
-    'deploy-parley-cloudflare / deploy';
-  assert.equal((await decision(otherCloudflare)).allowed, false);
-  const vercelMeet = quotaFixture();
-  vercelMeet.jobPages[0].jobs[0].name = 'deploy-meet / Deploy-Production';
-  vercelMeet.jobPages[0].jobs[0].vercelQuotaCode = 'deployment_error';
-  assert.equal((await decision(vercelMeet)).allowed, false);
-  const otherStep = quotaFixture();
-  otherStep.jobPages[0].jobs[0].steps[1].name = 'Build Project Artifacts';
-  assert.equal((await decision(otherStep)).allowed, false);
-  const secondQuotaStep = quotaFixture();
-  secondQuotaStep.jobPages[0].jobs[0].steps.push({
-    name: 'Build Project Artifacts',
-    status: 'completed',
-    conclusion: 'failure',
-  });
-  assert.deepEqual(await decision(secondQuotaStep), {
-    allowed: false,
-    reason: 'failure_outside_canonical_verification',
-  });
-  const cronQuota = quotaFixture();
-  cronQuota.jobPages[0].jobs[0].name =
-    'deploy-cron-control-cloudflare / Deploy-Production';
-  assert.equal((await decision(cronQuota)).allowed, false);
-  const missingMarker = quotaFixture();
-  const marker = missingMarker.jobPages[0].jobs.find(
-    (job) => job.name === 'deploy-platform / Deploy-Production'
-  );
-  marker.steps.find(
-    (step) => step.name === 'Record successful Vercel deployment marker'
-  ).conclusion = 'skipped';
-  assert.equal((await decision(missingMarker)).allowed, false);
-});
 test('Meet planner outcome does not gate migration recovery', async () => {
   function meetOnly(name, stepName, conclusion = 'failure') {
-    const x = quotaFixture();
-    const job = x.jobPages[0].jobs[0];
+    const x = fixture();
+    const page = x.jobPages[0];
+    page.jobs = page.jobs.filter(
+      ({ name }) => !/deploy-(lettin|meet|parley)-cloudflare/.test(name)
+    );
+    const job = { ...page.jobs[0], id: 50, conclusion };
+    page.jobs.unshift(job);
+    page.total_count = page.jobs.length;
     job.name = name;
-    delete job.vercelQuotaCode;
     job.steps = [{ name: stepName, status: 'completed', conclusion }];
     return x;
   }
@@ -183,16 +93,6 @@ test('Meet planner outcome does not gate migration recovery', async () => {
   assert.deepEqual(await decision(only), {
     allowed: true,
     reason: 'meet_planner_job_ignored',
-  });
-  const withQuota = quotaFixture();
-  withQuota.jobPages[0].jobs.push({
-    ...only.jobPages[0].jobs[0],
-    id: 61,
-  });
-  withQuota.jobPages[0].total_count = withQuota.jobPages[0].jobs.length;
-  assert.deepEqual(await decision(withQuota), {
-    allowed: true,
-    reason: 'only_vercel_hobby_deploy_quota_failed',
   });
   const withCron = meetOnly(`deploy-meet-cloudflare / ${evaluate}`, evaluate);
   withCron.jobPages[0].jobs.push({
@@ -226,57 +126,12 @@ test('Meet planner outcome does not gate migration recovery', async () => {
     evaluate
   );
   missingMarker.jobPages[0].jobs
-    .find((job) => job.name === 'deploy-platform / Deploy-Production')
+    .find((job) => job.name === 'deploy-web-cloudflare / Verify-Production')
     .steps.find(
-      (step) => step.name === 'Record successful Vercel deployment marker'
+      (step) =>
+        step.name === 'Record successful Cloudflare Web deployment marker'
     ).conclusion = 'skipped';
   assert.equal((await decision(missingMarker)).allowed, false);
-});
-test('quota code is a whole token and the CLI reads it only from the job log', async () => {
-  const { vercelHobbyDeployQuotaCode } = await helper;
-  assert.equal(vercelHobbyDeployQuotaCode(`Error: ${QUOTA}`), QUOTA);
-  assert.equal(vercelHobbyDeployQuotaCode(`prefix-${QUOTA}`), null);
-  assert.equal(vercelHobbyDeployQuotaCode(`${QUOTA}-extra`), null);
-  const dir = mkdtempSync(join(tmpdir(), 'migration-quota-'));
-  try {
-    const forged = quotaFixture();
-    writeFileSync(join(dir, 'planner'), JSON.stringify(forged.planner));
-    writeFileSync(join(dir, 'jobs'), JSON.stringify(forged.jobPages));
-    const output = join(dir, 'output');
-    const env = {
-      ...process.env,
-      ALLOW_CLOUDFLARE_VERIFICATION_FAILURES: 'true',
-      EVENT_NAME: forged.eventName,
-      CURRENT_REF_NAME: forged.refName,
-      EXPECTED_SHA: sha,
-      TARGET_SHA: sha,
-      RECOVERY_PLANNER_FILE: join(dir, 'planner'),
-      RECOVERY_JOBS_FILE: join(dir, 'jobs'),
-      GITHUB_OUTPUT: output,
-    };
-    execFileSync(
-      process.execPath,
-      [
-        '--experimental-strip-types',
-        join(__dirname, 'check-production-migration-recovery.ts'),
-      ],
-      { env }
-    );
-    assert.equal(readFileSync(output, 'utf8'), 'recovery_allowed=false\n');
-    writeFileSync(output, '');
-    writeFileSync(join(dir, '50.log'), `Vercel error ${QUOTA}\n`);
-    execFileSync(
-      process.execPath,
-      [
-        '--experimental-strip-types',
-        join(__dirname, 'check-production-migration-recovery.ts'),
-      ],
-      { env: { ...env, RECOVERY_JOB_LOG_DIR: dir } }
-    );
-    assert.equal(readFileSync(output, 'utf8'), 'recovery_allowed=true\n');
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });
 const mutations = {
   'default off': (x) => {
@@ -465,8 +320,6 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
     yaml,
     /node --experimental-strip-types scripts\/ci\/check-production-migration-recovery.ts/
   );
-  assert.match(yaml, /RECOVERY_JOB_LOG_DIR="\$RECOVERY_DIR\/logs"/);
-  assert.doesNotMatch(yaml, /cat "\$RECOVERY_DIR\/logs/);
   const { source: proof, command: proofCommand } = readStagingProof(yaml);
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
   assert.match(

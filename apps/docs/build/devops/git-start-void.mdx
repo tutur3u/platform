@@ -6,8 +6,7 @@ audience: developers
 ---
 
 `apps/git` runs natively on TanStack Start + Vite+ + Void on `main`, beside its Next build.
-`vercel-production-git.yaml` still deploys the Next app, so the current Vercel deployment
-keeps serving until the route is flipped.
+The sealed Cloudflare artifact supports an operator-managed release.
 
 ## Worker
 
@@ -42,7 +41,7 @@ and exact source identity on both variants.
 
 `productionPublicationPolicy` in `tuturuuu.ci.ts` admits `git` for the `frontend` surface: a manual
 route-free upload of the sealed artifact, a private smoke and a one-step route rollback. No workflow
-publishes it, and `vercel-production-git.yaml` keeps deploying the Next app until a release owner
+publishes it. A release owner
 attaches the host.
 
 ## Worker caches
@@ -77,7 +76,7 @@ No smoke request may return `5xx`.
 1. Before the flip, record the current production Vercel deployment id (the repo does not
    store it) and the DNS records and TTLs for `git.tuturuuu.com` in the release record.
 2. Roll back by detaching the Worker route or restoring the captured DNS records to the
-   recorded deployment. `vercel-production-git.yaml` still deploys the Next app.
+   recorded deployment. Use the retained serving version and the captured routing for rollback.
 3. Rerun the smoke checks against the Vercel origin.
 
 Rolling back touches no database rows and no migrations. Route, DNS and deployment

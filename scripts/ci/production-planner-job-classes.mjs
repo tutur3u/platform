@@ -32,48 +32,20 @@ const independentApps = [
   'deploy-meet-cloudflare',
   'deploy-parley-cloudflare',
   'deploy-mastermind-cloudflare',
-  'deploy-apps',
-  'deploy-ai',
-  'deploy-calendar',
-  'deploy-contacts',
-  'deploy-git',
-  'deploy-finance',
-  'deploy-infrastructure',
-  'deploy-inventory',
-  'deploy-learn',
-  'deploy-mail',
-  'deploy-meet',
-  'deploy-mind',
-  'deploy-nova',
-  'deploy-pay',
-  'deploy-rewise',
-  'deploy-shortener',
-  'deploy-storefront',
-  'deploy-tanstack-web',
   'deploy-tasks',
 ];
-
-const retiredVercelCallers = new Set([
-  'deploy-chat',
-  'deploy-cms',
-  'deploy-drive',
-  'deploy-forms',
-  'deploy-teach',
-  'deploy-tools',
-  'deploy-track',
-]);
 
 export const PLANNER_JOB_CLASSES = Object.freeze(
   Object.fromEntries([
     ...controlPlane.map((id) => [id, CONTROL_PLANE_REQUIRED]),
-    ['deploy-platform', PLATFORM_REQUIRED],
+    ['deploy-web-cloudflare', PLATFORM_REQUIRED],
     ...independentApps.map((id) => [id, INDEPENDENT_APP]),
   ])
 );
 
 export const REQUIRED_PLANNER_JOBS = Object.freeze([
   'plan',
-  'deploy-platform / Deploy-Production',
+  'deploy-web-cloudflare / Verify-Production',
 ]);
 
 const heldConclusions = new Set(['failure', 'cancelled', 'timed_out']);
@@ -91,11 +63,7 @@ export function plannerCaller(name) {
   return match ? { caller: match[1], nested: match[2] ?? null } : null;
 }
 
-export function classifyPlannerJobs(
-  jobs,
-  runConclusion,
-  { historicalPlanner = false } = {}
-) {
+export function classifyPlannerJobs(jobs, runConclusion) {
   if (runConclusion !== 'success' && runConclusion !== 'failure')
     return reject('planner-conclusion-not-terminal');
   if (!Array.isArray(jobs) || jobs.length === 0)
@@ -107,12 +75,7 @@ export function classifyPlannerJobs(
       return reject('planner-job-identity');
     byName.set(job.name, job);
     const parsed = plannerCaller(job.name);
-    const kind = parsed
-      ? (PLANNER_JOB_CLASSES[parsed.caller] ??
-        (historicalPlanner && retiredVercelCallers.has(parsed.caller)
-          ? INDEPENDENT_APP
-          : undefined))
-      : undefined;
+    const kind = parsed ? PLANNER_JOB_CLASSES[parsed.caller] : undefined;
     if (!kind) return reject('planner-job-unclassified');
     if (job.status !== 'completed') return reject('planner-job-not-terminal');
     const conclusion = job.conclusion;

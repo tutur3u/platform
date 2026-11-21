@@ -156,51 +156,6 @@ export function addTsconfigExcludes(source, entries = START_ONLY_SOURCES) {
   return `${JSON.stringify(config, null, 2)}\n`;
 }
 
-const DEPLOY_JOB = '\n  Deploy-Production:\n';
-const DEPLOY_IF = "    if: github.ref == 'refs/heads/production'\n";
-
-/**
- * Gates `vercel-production-<app>.yaml` on the shared publication policy like
- * Shortener: an early `production-policy` job, and the deploy job runs only
- * when that job allows it. A held app therefore stops Vercel publication.
- */
-export function addVercelProductionPolicyGate(source, app) {
-  const label = `vercel-production-${app}.yaml`;
-  if (source.includes('\n  production-policy:\n')) return source;
-  const deploy = source.indexOf(DEPLOY_JOB);
-  if (deploy === -1)
-    throw new Error(`${label}: Deploy-Production job not found`);
-  const ifAt = source.indexOf(DEPLOY_IF, deploy);
-  if (ifAt !== deploy + DEPLOY_JOB.length)
-    throw new Error(
-      `${label}: expected the production-only if after Deploy-Production`
-    );
-  const gate = [
-    '  production-policy:',
-    '    name: Report production publication hold',
-    "    if: github.ref == 'refs/heads/production'",
-    '    runs-on: ubuntu-latest',
-    '    outputs:',
-    '      allowed: ${{ steps.policy.outputs.allowed }}',
-    '    steps:',
-    '      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
-    '      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0',
-    '        with:',
-    '          node-version: 24',
-    '      - id: policy',
-    `        run: node scripts/ci/production-publication-policy.ts ${label} "$GITHUB_STEP_SUMMARY"`,
-    '',
-  ].join('\n');
-  return [
-    source.slice(0, deploy + 1),
-    gate,
-    '\n  Deploy-Production:\n',
-    '    needs: [production-policy]\n',
-    "    if: github.ref == 'refs/heads/production' && needs.production-policy.outputs.allowed == 'true'\n",
-    source.slice(ifAt + DEPLOY_IF.length),
-  ].join('');
-}
-
 /** Local Void build output in the app root; never committed. */
 export const VOID_OUTPUT_IGNORES = ['.void/', '.void-wrangler.jsonc'];
 

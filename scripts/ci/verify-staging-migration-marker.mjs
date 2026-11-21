@@ -452,8 +452,8 @@ async function main() {
   );
   console.log(
     source === target
-      ? `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`
-      : `Production platform deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`
+      ? `Cloudflare Web production deployment marker and staging migration are bound to ${target}. Proceeding with migration.`
+      : `Cloudflare Web production deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`
   );
 }
 async function persistResult(result) {

@@ -4,10 +4,6 @@ const vm = require('node:vm');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const publishers = [
-  'vercel-production-meet.yaml',
-  'vercel-production-calendar.yaml',
-  'vercel-production-mail.yaml',
-  'vercel-production-apps.yaml',
   'meet-cloudflare.yaml',
   'mail-calendar-tasks-builds.yaml',
   'tasks-cloudflare.yaml',

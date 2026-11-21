@@ -469,7 +469,6 @@ function prGroupExclusion(file) {
   const named = {
     'supabase-production.yaml': 'migrates production',
     'supabase-staging.yaml': 'migrates staging',
-    'production-package-resume.yaml': 'resumes a production publish',
     'mobile-deploy-stores.yaml': 'publishes store builds',
     'desktop-store-draft.yaml': 'publishes a store draft',
     'wave1-native-publish.yaml': 'publishes native apps',

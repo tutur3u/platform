@@ -37,17 +37,21 @@ const WORKFLOW_POLICY_TESTS = [
   'scripts/ci/check-workflow-config.test.js',
   'scripts/ci/pr-label-gate.test.js',
 ];
-// The production migration gate pins the exact Git blobs of these producer
-// files. Changing one without extending its allowlist silently rejects the
-// next staging marker, so any change runs the contract tests.
-const STAGING_CONTRACT_TESTS = [
+// A change to a pinned staging or Cloudflare Web producer needs its marker
+// contract tests even when no test file changes.
+const MIGRATION_CONTRACT_TESTS = [
   'scripts/ci/staging-contract-allowlist.test.js',
   'scripts/ci/production-migration-target.test.js',
   'scripts/ci/staging-descendant-marker.test.js',
+  'scripts/ci/verify-cloudflare-web-production.test.mjs',
+  'scripts/ci/verify-github-deployment-marker-producer.test.mjs',
 ];
 const PINNED_CONTRACT_FILES = new Set([
   '.github/workflows/supabase-production.yaml',
   '.github/workflows/supabase-staging.yaml',
+  '.github/workflows/vercel-production.yaml',
+  '.github/workflows/web-cloudflare-production.yaml',
+  'scripts/ci/verify-cloudflare-web-production.mjs',
   'scripts/ci/fixtures/supabase-staging-legacy.yaml',
   'scripts/ci/record-deployment-marker.ts',
 ]);
@@ -435,7 +439,7 @@ function planChecks(changes, context) {
         .map(([file]) => file),
       ...(workflowTouched ? WORKFLOW_POLICY_TESTS : []),
       ...(all.some((file) => PINNED_CONTRACT_FILES.has(file))
-        ? STAGING_CONTRACT_TESTS
+        ? MIGRATION_CONTRACT_TESTS
         : []),
     ]),
   ].filter(exists);
@@ -602,7 +606,7 @@ module.exports = {
   OXC_VERSION,
   BRANCH_NAME_PATTERN,
   PINNED_CONTRACT_FILES,
-  STAGING_CONTRACT_TESTS,
+  MIGRATION_CONTRACT_TESTS,
   WORKFLOW_POLICY_TESTS,
   isBranchNameValid,
   isPausedPath,

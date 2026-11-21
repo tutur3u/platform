@@ -172,7 +172,7 @@ test('a deleted script still selects its surviving sibling test', () => {
 test('a blob-pinned producer file always runs the staging contract tests', () => {
   const {
     PINNED_CONTRACT_FILES,
-    STAGING_CONTRACT_TESTS,
+    MIGRATION_CONTRACT_TESTS,
   } = require('./check-changed/plan.js');
   for (const file of PINNED_CONTRACT_FILES) {
     const plan = planChecks([{ status: 'M', file }], {
@@ -182,7 +182,7 @@ test('a blob-pinned producer file always runs the staging contract tests', () =>
     });
     const args =
       plan.steps.find((step) => step.id === 'script-tests')?.args ?? [];
-    for (const contractTest of STAGING_CONTRACT_TESTS) {
+    for (const contractTest of MIGRATION_CONTRACT_TESTS) {
       assert.ok(args.includes(contractTest), `${file} -> ${contractTest}`);
     }
   }

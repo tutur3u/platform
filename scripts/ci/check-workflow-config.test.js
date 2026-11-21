@@ -50,11 +50,10 @@ function readCompositeStep(action, name) {
   return action.slice(start, next === -1 ? undefined : next);
 }
 
-function assertVercelControlScope(changedFiles, platformGate = false) {
+function assertVercelControlScope(changedFiles) {
   const rootDir = createFixtureRoot();
   for (const workflowName of vercelWorkflows) {
-    const expected = platformGate && workflowName.includes('-platform.');
-    assertWorkflowDecision({ changedFiles, rootDir, workflowName }, expected);
+    assertWorkflowDecision({ changedFiles, rootDir, workflowName }, false);
   }
   assertWorkflowDecision(
     { changedFiles, rootDir, workflowName: 'mobile.yaml' },
@@ -72,15 +71,8 @@ test('CI wrappers do not rebuild application artifacts', () => {
   assertVercelControlScope([
     '.github/workflows/ci-check.yml',
     '.github/workflows/vercel-production.yaml',
-    'scripts/ci/resolve-production-vercel-targets.ts',
+    'scripts/ci/resolve-production-targets.ts',
   ]);
-});
-
-test('database CI controls retain only the required platform deployment', () => {
-  assertVercelControlScope(
-    ['scripts/ci/workflow-config-core.ts', 'tuturuuu.ci.ts', 'tuturuuu.ts'],
-    true
-  );
 });
 
 test('app-only changes run only that app', () => {
@@ -187,14 +179,6 @@ test('app-only changes run only that app', () => {
       changedFiles: ['apps/admin/src/app/page.tsx'],
       rootDir,
       workflowName: 'vercel-preview-infrastructure.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/admin/src/app/page.tsx'],
-      rootDir,
-      workflowName: 'vercel-production-infrastructure.yaml',
     },
     true
   );
@@ -310,8 +294,8 @@ test('storefront UI modules only rebuild their verified consuming apps', () => {
   ];
 
   for (const workflowName of [
-    'vercel-production-storefront.yaml',
-    'vercel-production-inventory.yaml',
+    'vercel-preview-storefront.yaml',
+    'vercel-preview-inventory.yaml',
   ]) {
     assertWorkflowDecision(
       {
@@ -327,7 +311,7 @@ test('storefront UI modules only rebuild their verified consuming apps', () => {
     {
       changedFiles,
       rootDir,
-      workflowName: 'vercel-production-calendar.yaml',
+      workflowName: 'vercel-preview-calendar.yaml',
     },
     false
   );
@@ -431,35 +415,6 @@ test('Supabase migration gating tracks database changes and fails open safely', 
   );
   assert.equal(markerCoveredDecision.shouldRun, false);
   assert.match(markerCoveredDecision.reason, /marker already covers/u);
-});
-
-test('database migrations select the platform deployment used by the production gate', () => {
-  const rootDir = createFixtureRoot();
-
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
-      rootDir,
-      workflowName: 'vercel-production-platform.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
-      rootDir,
-      workflowName: 'vercel-preview-platform.yaml',
-    },
-    true
-  );
-  assertWorkflowDecision(
-    {
-      changedFiles: ['apps/database/supabase/migrations/001_example.sql'],
-      rootDir,
-      workflowName: 'vercel-production-calendar.yaml',
-    },
-    false
-  );
 });
 
 test('release-please workflow uses static switchboard gating', () => {

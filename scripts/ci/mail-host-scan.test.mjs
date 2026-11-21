@@ -124,7 +124,6 @@ const buildPaths = [
   ['mail-calendar-tasks-builds.yaml', { job: 'build-mail' }],
   ['programming-app-builds.yaml', { job: 'build' }],
   ['app-builds-affected.yaml', { job: 'build' }],
-  ['vercel-production-mail.yaml', { step: 'Build Project Artifacts' }],
   ['vercel-preview-mail.yaml', { step: 'Build Project Artifacts' }],
   ['mail-vercel-exact-sha.yaml', { step: 'Publish the exact SHA once' }],
 ];

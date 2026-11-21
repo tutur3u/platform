@@ -55,8 +55,7 @@ only produces the sealed Worker bytes. Secret values never appear here, only nam
   preflight and verify steps) and `WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN` (upload only, used
   by the upload step). The per-app Worker secrets listed below are set on the Worker, not
   in GitHub.
-- Legacy `vercel-production-mail.yaml` and `vercel-production-apps.yaml` are disabled in
-  `tuturuuu.ci.ts`, like Calendar and Meet: Vercel can no longer build either app.
+- The production planner contains no Vercel publishers.
 - Tasks and Track are not wave-1 profile apps. Their `mail-calendar-tasks-builds.yaml`
   (`tasks-cutover-artifact`) and `track-cloudflare.yaml` (`track-cutover-artifact`) jobs
   already rewrite the emitted config to the production Worker names `tuturuuu-tasks` and

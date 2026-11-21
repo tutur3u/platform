@@ -293,10 +293,9 @@ useful for sharing a planning snapshot or debugging AI patch output.
 Mind has dedicated Vercel workflows:
 
 - `.github/workflows/vercel-preview-mind.yaml`
-- `.github/workflows/vercel-production-mind.yaml`
 
 Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_MIND_PROJECT_ID` in the
-workflow environments `vercel-preview-mind` and `vercel-production-mind`.
+workflow environments `vercel-preview-mind`.
 Deployment should rely on Vercel project environment variables pulled by
 `vercel pull`; do not add provider AI keys or production Supabase service keys
 to GitHub Actions. The repository-level `TURBO_TOKEN` and `TURBO_TEAM` variable

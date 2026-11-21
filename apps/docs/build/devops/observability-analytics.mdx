@@ -24,10 +24,10 @@ delivery plan.
 | Cold starts | No GraphQL field. Workers Observability events carry per-invocation detail, sampled at 5% (1% for the gateway and turbo cache). | Gap: estimated only |
 | Worker logs and traces | `observability.enabled` in almost every `cloudflare.config.ts`, `wrangler*.jsonc` and `void.config.ts`, head-sampled at 0.05. `apps/ops-hub` is off. No `logpush` or `tail_consumers`. | Dashboard only |
 | Analytics Engine | One bound dataset: `mastermind_store` (`apps/mastermind-store`). `packages/utils/src/app-switch-rum-ingest.ts` is wired in Meet and Mail, but no config binds `APP_SWITCH_RUM`. | Partial |
-| Vercel apps (`apps/web` and the satellites still enabled for `vercel-production-*` in `tuturuuu.ci.ts`) | Nothing reads Vercel metrics, and no app ships Speed Insights or `@vercel/analytics`. | Gap |
+| Vercel preview analytics | Nothing reads Vercel metrics, and no app ships Speed Insights or `@vercel/analytics`. | Gap |
 | Supabase (Postgres, PostgREST, Auth) | Nothing reads the Supabase metrics endpoint or Management API metrics. | Gap |
 | GitHub Actions durations and queue times | `scripts/ci/ci-daily-sample.js` samples them by hand into a skill reference. `scripts/perf/perf-deploy-failures.mjs` lists failed production runs. | Not retained |
-| Deploy markers | Deploy coordinator Durable Objects (`apps/deploy-coordinator`, read in Admin through `apps/admin/src/lib/infrastructure/deploy-coordinator.ts`), Worker deployment and version annotations (read by the detector), GitHub Deployments (`vercel-production-platform` gates Supabase production). | Not correlated with signals |
+| Deploy markers | Deploy coordinator Durable Objects (`apps/deploy-coordinator`, read in Admin through `apps/admin/src/lib/infrastructure/deploy-coordinator.ts`), Worker deployment and version annotations (read by the detector), GitHub Deployments (`cloudflare-production-web` gates Supabase production). | Not correlated with signals |
 | Request, cron and usage history | The Postgres log drain (`requests`, `log_events`, `cron_runs`, `usage_events`, `deployments`) behind Admin → Monitoring. It belongs to the Docker web runtime, which is inactive. | Stale |
 | Cron Control runs | `CronLedger` Durable Object in `apps/cron-control`, with stop/resume operator routes. | Live, not in Admin |
 

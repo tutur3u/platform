@@ -4,11 +4,7 @@ import {
   productionAppExclusions,
   productionPublicationPolicy,
 } from '../../tuturuuu.ci.ts';
-import {
-  cloudflareProductionTargets,
-  vercelProductionWorkflowTargets,
-  vercelWorkflowTargets,
-} from '../../tuturuuu.ts';
+import { cloudflareProductionTargets } from '../../tuturuuu.ts';
 
 const protectedSurfaces = {
   lms: ['frontend'],
@@ -41,31 +37,13 @@ export type ProductionPublicationPolicy = Record<
 const protectedWorkflows = new Map<string, string>();
 for (const app of Object.keys(protectedSurfaces)) {
   // The native aliases remain protected before a publisher is added to the inventory.
-  protectedWorkflows.set(`vercel-production-${app}.yaml`, app);
   protectedWorkflows.set(`${app}-cloudflare.yaml`, app);
 }
-const retiredVercelWorkflows = new Set(
-  vercelWorkflowTargets
-    .filter(({ productionWorkflow }) => productionWorkflow === null)
-    .map(({ app }) => `vercel-production-${app}.yaml`)
-);
-// These Vercel publishers must not deploy. The hosts are served from
-// Cloudflare, except rewise.me, which no longer resolves. inventory is absent
-// because inventory.tuturuuu.com still answers as Vercel.
-const retiredSatelliteVercelWorkflows = new Set([
-  'vercel-production-ai.yaml',
-  'vercel-production-finance.yaml',
-  'vercel-production-git.yaml',
-  'vercel-production-infrastructure.yaml',
-  'vercel-production-learn.yaml',
-  'vercel-production-nova.yaml',
-  'vercel-production-pay.yaml',
-  'vercel-production-rewise.yaml',
-  'vercel-production-shortener.yaml',
-  'vercel-production-storefront.yaml',
-]);
+// Production publishes only to Cloudflare, so a per-app Vercel production
+// publisher never deploys, whatever the switchboard or dispatch says.
+const vercelProductionPublisher = /^vercel-production-.+\.ya?ml$/;
 const knownWorkflows = new Set<string>(
-  [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets].map(
+  cloudflareProductionTargets.map(
     ({ productionWorkflow }) => productionWorkflow
   )
 );
@@ -131,7 +109,7 @@ function switchboardHold(workflowName: string): string | undefined {
 
 function exclusionHold(workflowName: string): string | undefined {
   const app =
-    [...vercelProductionWorkflowTargets, ...cloudflareProductionTargets].find(
+    cloudflareProductionTargets.find(
       (entry) => entry.productionWorkflow === workflowName
     )?.app ?? protectedWorkflows.get(workflowName);
   if (!app || !Object.hasOwn(productionAppExclusions, app)) return undefined;
@@ -145,10 +123,7 @@ function exclusionHold(workflowName: string): string | undefined {
 export function productionPublicationHold(
   workflowName: string
 ): string | undefined {
-  if (
-    retiredVercelWorkflows.has(workflowName) ||
-    retiredSatelliteVercelWorkflows.has(workflowName)
-  )
+  if (vercelProductionPublisher.test(workflowName))
     return 'held: Vercel production publisher retired';
   // The app-id deny-list wins over admission, markers, and dispatch.
   const excluded = exclusionHold(workflowName);

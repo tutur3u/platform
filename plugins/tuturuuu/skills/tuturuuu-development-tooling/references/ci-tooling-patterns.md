@@ -617,7 +617,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   falls back to `github.token` merges fine and then dies on
   `GH013: Changes must be made through a pull request`. Do not "fix" this by
   giving the Actions app a ruleset bypass: `GITHUB_TOKEN` pushes do not trigger
-  `push` workflows, so the `production` push would skip the Vercel production
+  `push` workflows, so the `production` push would skip the production
   planner and the next Release Please run. Gate any workflow that will push
   protected branches on the secret being present, before the expensive steps —
   discovering it after `bun validate` wastes ~40 minutes per run.
@@ -702,33 +702,13 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   artifact must embed the archive contents and omit the consumer-facing `file:`
   dependency so npm and Bun can install it from any workspace; do not rewrite
   the dependency to a mutable external HTTPS tarball before `npm pack`.
-- Platform Vercel production deployment should run
-  `node scripts/ci/package-release-readiness.js gate-changed-package-versions`
-  before dependency installation when release-please package manifests changed.
-  The gate inspects only the checked-out latest commit instead of the whole push
-  event batch, tolerates shallow checkout by fetching a missing base SHA before
-  `git diff`, dispatches missing package release workflows for the same SHA,
-  fails fast if a related package release workflow failed, and exits
-  successfully with `packages_ready=false` while package releases are still
-  queued or running. Downstream install/build/deploy steps must be skipped when
-  packages are pending so the Vercel workflow does not occupy a runner while
-  waiting for npm. The deploy job therefore needs `actions: write` for workflow
-  dispatch recovery; keep npm publish authority isolated to package
-  `publish-npm` jobs. Because a package-gate skip is still a successful workflow
-  conclusion, the production planner must select the platform deploy for
-  database changes. Production database migration gates must require both the
-  successful planner run and `vercel-production-platform` deployment marker for
-  the same SHA before running `supabase db push`. Reusable `workflow_call` jobs
-  do not appear as standalone workflow runs, so migration gates query the
-  planner run through the Actions API.
-  Every active Vercel project must keep its root-Turbo `buildCommand` checked in.
-  Generate deterministic source metadata first, then run `vercel build` through
-  `.github/actions/run-with-turbo-remote-cache`; do not add a separate workspace
-  dependency prebuild. Platform preview remains build validation only and may
-  cross-credit successful same-SHA production build markers. Platform
-  production must build and deploy prebuilt artifacts, then record both build
-  and deployment markers. Satellite Vercel workflows still deploy prebuilt
-  artifacts independently.
+- Production planner jobs publish Cloudflare Workers. Require the selected
+  planner attempt, the same-SHA Cloudflare Web deployment marker and exact
+  staging proof for database apply. The Web producer authenticates active Worker
+  versions and gateway routes, then writes the marker through the job token.
+  Keep the planner, reusable producer, proof and recorder blob pins reviewed
+  together. See the [Web proof and cutover plan](../../../../../apps/docs/build/devops/web-vinext-families.mdx#production-migration-deployment-proof).
+
 - Avoid reusable configuration jobs when the caller already has to allocate a
   runner. Platform preview resolves changed files and configuration inside its
   deploy job so the required protected-`main` workflow-run signal remains
@@ -737,7 +717,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   affected-path gating. A path-simple compatibility smoke may use native
   trigger filters instead; the external-app smoke runs only for
   `apps/external/**`, `packages/**`, or its build-control files.
-- Keep automatic production Vercel deployments attached to the commit's push
+- Keep automatic production Cloudflare deployments attached to the commit's push
   run: resolve affected apps once in the planner, then call selected per-app
   workflows through static `workflow_call` jobs. Reserve `workflow_dispatch`
   for manual recovery so commit CI remains traceable by SHA.
@@ -926,7 +906,7 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   open without a trustworthy marker, keep staging/production jobs serialized,
   and combine evaluation with deployment so a no-op workflow-run signal uses
   one short runner. The production workflow-run trigger and Actions API lookup
-  must follow the production planner; the same-SHA platform deployment marker
+  must follow the production planner; the same-SHA Cloudflare Web deployment marker
   and successful staging checks remain mandatory.
 - Keep [cache credentials and held publisher admission](wave1-production-credentials.md)
   step scoped, outside workflow/job environments and `GITHUB_ENV`. Repository

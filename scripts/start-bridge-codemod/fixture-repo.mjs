@@ -19,17 +19,6 @@ export const REAL_FILES = [
   'scripts/ci/production-publication-policy.test.js',
 ];
 
-/** A Vercel production workflow shaped like the real per-app publishers. */
-export const VERCEL_WORKFLOW = [
-  'name: Vercel Demo Production Deployment',
-  'jobs:',
-  '  Deploy-Production:',
-  "    if: github.ref == 'refs/heads/production'",
-  '    environment: vercel-production-demo',
-  '    runs-on: ubuntu-latest',
-  '',
-].join('\n');
-
 export const DEMO_FILES = {
   'package.json': `${JSON.stringify(
     {
@@ -84,9 +73,7 @@ export function createFixtureRepo(t, app = 'demo', files = DEMO_FILES) {
     fs.copyFileSync(path.join(REPO_ROOT, relative), target);
   }
   writeTree(path.join(root, 'apps', app), files);
-  writeTree(root, {
-    [`.github/workflows/vercel-production-${app}.yaml`]: VERCEL_WORKFLOW,
-  });
+  writeTree(root, {});
   return root;
 }
 

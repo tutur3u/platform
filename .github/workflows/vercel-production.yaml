@@ -38,6 +38,7 @@ jobs:
       contents: read
       deployments: read
     outputs:
+      superseded: ${{ steps.admission.outputs.superseded }}
       workflows_json: ${{ steps.admission.outputs.superseded == 'true' && '[]' || steps.plan.outputs.workflows_json }}
     steps:
       - name: Admit queued production revision
@@ -98,7 +99,19 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PRODUCTION_PACKAGE_RESUME: ${{ inputs.package_resume }}
           PRODUCTION_EXPECTED_SHA: ${{ inputs.expected_sha }}
-        run: node --experimental-strip-types scripts/ci/resolve-production-vercel-targets.ts --package-resume "$PRODUCTION_PACKAGE_RESUME" --expected-sha "$PRODUCTION_EXPECTED_SHA" --step-summary "${GITHUB_STEP_SUMMARY}"
+        run: node --experimental-strip-types scripts/ci/resolve-production-targets.ts --package-resume "$PRODUCTION_PACKAGE_RESUME" --expected-sha "$PRODUCTION_EXPECTED_SHA" --step-summary "${GITHUB_STEP_SUMMARY}"
+
+  # Every non-superseded production revision proves that Cloudflare Web
+  # serves it and records the cloudflare-production-web marker, which the
+  # production database migration gate requires.
+  deploy-web-cloudflare:
+    needs: plan
+    if: needs.plan.outputs.superseded == 'false'
+    uses: ./.github/workflows/web-cloudflare-production.yaml
+    permissions:
+      contents: read
+      deployments: write
+    secrets: inherit
 
   deploy-colab-cloudflare:
     needs: plan
@@ -212,290 +225,9 @@ jobs:
       deployments: write
     secrets: inherit
 
-  deploy-apps:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-apps.yaml')
-    uses: ./.github/workflows/vercel-production-apps.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-ai:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-ai.yaml')
-    uses: ./.github/workflows/vercel-production-ai.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-calendar:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-calendar.yaml')
-    uses: ./.github/workflows/vercel-production-calendar.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-contacts:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-contacts.yaml')
-    uses: ./.github/workflows/vercel-production-contacts.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-git:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-git.yaml')
-    uses: ./.github/workflows/vercel-production-git.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-finance:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-finance.yaml')
-    uses: ./.github/workflows/vercel-production-finance.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-infrastructure:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-infrastructure.yaml')
-    uses: ./.github/workflows/vercel-production-infrastructure.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-inventory:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-inventory.yaml')
-    uses: ./.github/workflows/vercel-production-inventory.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-learn:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-learn.yaml')
-    uses: ./.github/workflows/vercel-production-learn.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-mail:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mail.yaml')
-    uses: ./.github/workflows/vercel-production-mail.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-meet:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-meet.yaml')
-    uses: ./.github/workflows/vercel-production-meet.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-mind:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-mind.yaml')
-    uses: ./.github/workflows/vercel-production-mind.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-nova:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-nova.yaml')
-    uses: ./.github/workflows/vercel-production-nova.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-pay:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-pay.yaml')
-    uses: ./.github/workflows/vercel-production-pay.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-platform:
-    needs: plan
-    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml')
-    uses: ./.github/workflows/vercel-production-platform.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      actions: write
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-rewise:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-rewise.yaml')
-    uses: ./.github/workflows/vercel-production-rewise.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-shortener:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-shortener.yaml')
-    uses: ./.github/workflows/vercel-production-shortener.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-storefront:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-storefront.yaml')
-    uses: ./.github/workflows/vercel-production-storefront.yaml
-    # Its deploy job reports to the deployment coordinator with GitHub OIDC.
-    permissions:
-      contents: read
-      deployments: write
-      id-token: write
-    secrets: inherit
-
-  deploy-tanstack-web:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-tanstack-web.yaml')
-    uses: ./.github/workflows/vercel-production-tanstack-web.yaml
-    secrets: inherit
-
   deploy-tasks:
-    needs: [plan, deploy-platform]
-    if: >-
-      always() && needs.plan.result == 'success' &&
-      (!contains(fromJSON(needs.plan.outputs.workflows_json), 'vercel-production-platform.yaml') ||
-      (needs.deploy-platform.result == 'success' && needs.deploy-platform.outputs.promoted == 'true')) &&
-      contains(fromJSON(needs.plan.outputs.workflows_json), 'tasks-cloudflare.yaml')
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.workflows_json), 'tasks-cloudflare.yaml')
     uses: ./.github/workflows/tasks-cloudflare.yaml
     # Its deploy job reports to the deployment coordinator with GitHub OIDC.
     permissions:

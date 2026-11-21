@@ -3,7 +3,7 @@ const path = require('node:path');
 const { readAllWorkflows } = require('./workflow-yaml-test-helper');
 const ROOT = path.resolve(__dirname, '../..');
 const RESERVED =
-  /^(discord-modal-deploy|supabase-staging|supabase-production|production-package-resume|release-please-transient-retry|security-checks|security-review-classifier)\./;
+  /^(discord-modal-deploy|supabase-staging|supabase-production|release-please-transient-retry|security-checks|security-review-classifier)\./;
 const SIGNAL =
   /(?:\bgh\b|TOKEN|\bPAT\b|workflow_dispatch|release-please|createComment|updateComment|auto.?merge)/i;
 function inventory() {
@@ -101,8 +101,6 @@ function inventory() {
       else if (/release-please-auto-approve/.test(relative))
         reason =
           'b: approval identity remains GITHUB_TOKEN; never pass the App token.';
-      else if (/resume-production-package/.test(relative))
-        reason = 'b: reserved follow-up with production-package-resume.';
       else if (
         /github-deployment-markers|record-deployment-marker|record-vercel-deployment/.test(
           relative

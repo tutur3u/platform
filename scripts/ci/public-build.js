@@ -96,7 +96,7 @@ function contract(app) {
   appName(app);
   if (app !== 'meet')
     throw new Error(
-      `${app}: missing committed public Vercel project/Build Output adapter configuration; canonical vercel-production-${app === 'web' ? 'platform' : app}.yaml uses authenticated vercel pull/build. Cloudflare Start and raw .next outputs are not substitutes.`
+      `${app}: missing committed public Vercel project/Build Output adapter configuration; the Vercel preview workflow uses authenticated vercel pull/build. Cloudflare Start and raw .next outputs are not substitutes.`
     );
   return {
     adapter: 'cloudflare-start+cloudflare-vite',

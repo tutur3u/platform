@@ -182,14 +182,15 @@ test('undeclared permissions count as the repository write default', () => {
 
 test('credential check flags a write-token job that persists credentials', () => {
   const changed = structuredClone(workflows);
-  const job = changed['vercel-production-ai.yaml'].jobs['Deploy-Production'];
+  const job =
+    changed['web-cloudflare-production.yaml'].jobs['Verify-Production'];
   const checkout = job.steps.find((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
   delete checkout.with['persist-credentials'];
   assert.deepEqual(
     persistedCheckouts(changed).filter((key) => !allowed(key)),
-    ['vercel-production-ai.yaml:Deploy-Production']
+    ['web-cloudflare-production.yaml:Verify-Production']
   );
 });
 

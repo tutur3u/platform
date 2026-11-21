@@ -278,10 +278,8 @@ Check the first response from each host and the app's build-info endpoint.
 `cf-ray` identifies Cloudflare's edge. A response with `x-vercel-id` still
 depends on Vercel. Confirm replacement ownership for every scheduled job.
 
-1. Remove the app's `vercel-production-<app>.yaml`, its planner job in
-   `vercel-production.yaml` and its switchboard line. Set the app's
-   `productionWorkflow` to `null` in `vercelWorkflowTargets` to retain the
-   preview and its affected-path checks.
+1. Confirm the production planner contains only Cloudflare publishers and
+   the app's Vercel publisher is absent.
 2. Verify that the production ref contains the change and Git-triggered Vercel
    deployments are disabled. Active apps set `git.deploymentEnabled: false` in
    their `vercel.json`. Keep the immutable Vercel deployment serving as the

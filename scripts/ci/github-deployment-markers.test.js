@@ -146,7 +146,7 @@ test('successful deployment marker lookup matches build markers by workflow and 
         payload: {
           markerKind: 'build',
           sha,
-          workflowName: 'vercel-production-platform.yaml',
+          workflowName: 'web-cloudflare-production.yaml',
         },
         sha,
         statuses_url: 'https://api.example.test/statuses/1',
@@ -156,7 +156,7 @@ test('successful deployment marker lookup matches build markers by workflow and 
     statuses: {
       1: [{ state: 'success' }],
     },
-    workflowName: 'vercel-production-platform.yaml',
+    workflowName: 'web-cloudflare-production.yaml',
   });
 
   assert.equal(found, 'true');
@@ -171,7 +171,7 @@ test('successful marker lookup accepts inactive latest status after success', ()
         payload: {
           markerKind: 'build',
           sha,
-          workflowName: 'vercel-production-platform.yaml',
+          workflowName: 'web-cloudflare-production.yaml',
         },
         sha,
         statuses_url: 'https://api.example.test/statuses/1',
@@ -181,7 +181,7 @@ test('successful marker lookup accepts inactive latest status after success', ()
     statuses: {
       1: [{ state: 'inactive' }, { state: 'success' }],
     },
-    workflowName: 'vercel-production-platform.yaml',
+    workflowName: 'web-cloudflare-production.yaml',
   });
 
   assert.equal(found, 'true');
@@ -219,7 +219,7 @@ test('non-platform build lookup rejects legacy deployment markers', () => {
         id: 1,
         payload: {
           sha,
-          workflowName: 'vercel-production-calendar.yaml',
+          workflowName: 'calendar-cloudflare.yaml',
         },
         sha,
         statuses_url: 'https://api.example.test/statuses/1',
@@ -229,7 +229,7 @@ test('non-platform build lookup rejects legacy deployment markers', () => {
     statuses: {
       1: [{ state: 'success' }],
     },
-    workflowName: 'vercel-production-calendar.yaml',
+    workflowName: 'calendar-cloudflare.yaml',
   });
 
   assert.equal(found, 'false');
@@ -244,7 +244,7 @@ test('last successful marker lookup accepts inactive latest status after success
         payload: {
           refName: 'production',
           sha,
-          workflowName: 'vercel-production-platform.yaml',
+          workflowName: 'web-cloudflare-production.yaml',
         },
         sha,
         statuses_url: 'https://api.example.test/statuses/1',
@@ -254,7 +254,7 @@ test('last successful marker lookup accepts inactive latest status after success
     statuses: {
       1: [{ state: 'inactive' }, { state: 'success' }],
     },
-    workflowName: 'vercel-production-platform.yaml',
+    workflowName: 'web-cloudflare-production.yaml',
   });
 
   assert.equal(found, sha);
@@ -283,7 +283,7 @@ test('Learn build marker cannot advance a deployed baseline', () => {
 
 for (const workflowName of [
   'vercel-preview-platform.yaml',
-  'vercel-production-platform.yaml',
+  'web-cloudflare-production.yaml',
 ]) {
   test(`${workflowName} retains existing build baseline behavior`, () => {
     assert.equal(
@@ -324,7 +324,7 @@ test('Learn build-only history has no deployed baseline', () => {
 
 test('explicit recovery marker loses exact-SHA coverage when success is followed by failure', () => {
   const sha = '1234567890abcdef1234567890abcdef12345678';
-  const workflowName = 'vercel-production-platform.yaml';
+  const workflowName = 'web-cloudflare-production.yaml';
   const input = {
     requireExplicitDeployment: true,
     refName: 'production',

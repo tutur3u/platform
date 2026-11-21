@@ -72,15 +72,14 @@ test('a superseded push skips checkout, setup, target selection, and all reusabl
     assert.equal(evaluateExpression(step.if, scope), false, step.name);
   }
   assert.equal(evaluateExpression(plan.outputs.workflows_json, scope), '[]');
+  const skipped = {
+    needs: {
+      plan: { outputs: { workflows_json: '[]', superseded: 'true' } },
+    },
+  };
   for (const [jobId, job] of Object.entries(workflow.jobs)) {
     if (!job.uses) continue;
-    const requiredTarget = job.uses.split('/').at(-1);
-    assert.ok(
-      job.if.includes(
-        `contains(fromJSON(needs.plan.outputs.workflows_json), '${requiredTarget}')`
-      ),
-      jobId
-    );
+    assert.equal(evaluateExpression(job.if, skipped), false, jobId);
   }
 });
 
@@ -139,7 +138,7 @@ test('manual recovery keeps its exact SHA constraint and shares the non-cancelli
     steps: {
       admission: { outputs: { superseded: 'false' } },
       plan: {
-        outputs: { workflows_json: '["vercel-production-platform.yaml"]' },
+        outputs: { workflows_json: '["tasks-cloudflare.yaml"]' },
       },
     },
   };

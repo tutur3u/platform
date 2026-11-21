@@ -59,7 +59,7 @@ time.
 - Do not run `bun sb:push` or `bun sb:linkpush` from an agent checkout. The
   gated `supabase-production.yaml` workflow applies eligible migrations after
   authorized production sync, successful staging migration, and a successful
-  production deployment marker. Verify its exact-SHA result separately; if it
+  Cloudflare Web deployment marker. Verify its exact-SHA result separately; if it
   skips or fails, stop and report the blocker rather than pushing manually.
 - Do not commit secrets, API keys, tokens, credentials, or raw sensitive values.
   Reference environment variables by name only.

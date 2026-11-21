@@ -195,7 +195,7 @@ test('enabled Vercel gating fails open when no successful deployment marker exis
     ],
     size: 1,
   });
-  const workflowName = 'vercel-production-storefront.yaml';
+  const workflowName = 'vercel-preview-storefront.yaml';
   const resolver = runChangedFileResolver({
     eventPath,
     headSha,

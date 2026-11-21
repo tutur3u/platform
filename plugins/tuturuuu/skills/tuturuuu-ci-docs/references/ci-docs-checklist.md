@@ -39,7 +39,7 @@ does not authorize promotion.
 - Keep staging and production Supabase migration CI on
   `supabase db push --include-all`; production migration CI stays
   triggered by the production deployment planner and prerequisite-gated on the
-  production platform deployment marker plus exact-source staging proof. Bind the
+  Cloudflare Web deployment marker plus exact-source staging proof. Bind the
   newest canonical marker and latest status to the current successful producer
   attempt and its successful checkout/apply/marker steps; wrapper heads may differ.
   Verify allowlisted, rehashed producer/emitter contracts at target and wrapper, use bounded

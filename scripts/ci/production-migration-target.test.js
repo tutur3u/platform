@@ -122,6 +122,7 @@ for (const overrides of [
   { MARKER_STATE: 'failure' },
   { MARKER_STATE: 'failure', OLD_SUCCESS: 'true' },
   { MARKER_PAYLOAD: 'empty' },
+  { MARKER_PAYLOAD: 'retired-vercel' },
   { MARKER_PAYLOAD: 'wrong-sha' },
   { DATABASE_AFFECTED: 'false' },
   { PLANNER_RESULT: 'failure' },

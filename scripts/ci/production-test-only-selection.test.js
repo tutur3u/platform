@@ -63,8 +63,8 @@ const testPaths = [
 const workspaceManifests = [
   { name: '@tuturuuu/tools', path: 'apps/tools', dependencies: [] },
   {
-    name: '@tuturuuu/web',
-    path: 'apps/web',
+    name: '@tuturuuu/tasks',
+    path: 'apps/tasks',
     dependencies: ['@tuturuuu/tools'],
   },
 ];
@@ -77,7 +77,7 @@ function decision(input = {}) {
         `
     import { getWorkflowDecision } from './tuturuuu.ts';
     console.log(JSON.stringify(getWorkflowDecision(${JSON.stringify({
-      workflowName: 'vercel-production-platform.yaml',
+      workflowName: 'tasks-cloudflare.yaml',
       eventName: 'push',
       workspaceManifests,
       ...input,
@@ -126,7 +126,7 @@ test('manual dispatch remains open and disabled targets remain disabled', () => 
   assert.equal(
     decision({
       changedFiles: testPaths,
-      ciConfig: { 'vercel-production-platform.yaml': false },
+      ciConfig: { 'tasks-cloudflare.yaml': false },
     }).shouldRun,
     false
   );
@@ -156,7 +156,7 @@ test('mixed runtime, unverified tests and build inputs still deploy', () => {
     'bun.lock',
     'package.json',
     'turbo.json',
-    '.github/workflows/vercel-production-platform.yaml',
+    '.github/workflows/tasks-cloudflare.yaml',
   ]) {
     const result = decision({ changedFiles: [...testPaths, filePath] });
     assert.equal(result.shouldRun, true, filePath);
@@ -164,7 +164,7 @@ test('mixed runtime, unverified tests and build inputs still deploy', () => {
   }
 });
 
-test('extracted planner helpers retain platform and migration gate coverage', () => {
+test('extracted planner helpers retain migration gate coverage', () => {
   for (const filePath of [
     'scripts/ci/production-test-only-paths.ts',
     'scripts/ci/tasks-production-inputs.ts',
@@ -172,7 +172,6 @@ test('extracted planner helpers retain platform and migration gate coverage', ()
     'scripts/ci/workspace-dependency-closure.ts',
   ]) {
     for (const workflowName of [
-      'vercel-production-platform.yaml',
       'supabase-production.yaml',
       'supabase-staging.yaml',
     ]) {

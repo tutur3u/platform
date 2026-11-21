@@ -4,7 +4,7 @@
   <img src="apps/web/public/media/branding/tuturuuu.svg" alt="Tuturuuu" width="80" />
 </p>
 
-[![Vercel Platform Production Deployment](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/vercel-production-platform.yaml)
+[![Production Deployment Planner](https://github.com/tutur3u/platform/actions/workflows/vercel-production.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/vercel-production.yaml)
 [![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
 [![Test](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml)
 

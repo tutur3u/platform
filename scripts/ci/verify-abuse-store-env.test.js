@@ -6,7 +6,6 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const repoRoot = path.resolve(__dirname, '../..');
 const SECRET = 'fixture-secret-value-never-printed-0123456789';
@@ -135,31 +134,4 @@ test('refuses when the pulled env file is missing', () => {
     { cwd: repoRoot, encoding: 'utf8' }
   );
   assert.equal(result.status, 1);
-});
-
-test('Web production runs the gate after vercel pull and before the build', () => {
-  const { jobs } = readWorkflow('vercel-production-platform.yaml');
-  const job = Object.values(jobs).find((candidate) =>
-    candidate.steps?.some(
-      (step) => step.name === 'Require a covering abuse-guard store'
-    )
-  );
-  assert.ok(job, 'the Web production job runs the abuse-guard store gate');
-  const { steps } = job;
-  const names = steps.map((step) => step.name);
-  const index = names.indexOf('Require a covering abuse-guard store');
-  const gateStep = steps[index];
-  assert.ok(index > names.indexOf('Pull Vercel Environment Information'));
-  assert.ok(index < names.indexOf('Build Project Artifacts'));
-  assert.ok(
-    index <
-      names.indexOf('Stage production artifacts without assigning domains')
-  );
-  assert.equal(
-    gateStep.run,
-    'bun run --silent scripts/ci/verify-abuse-store-env.ts .vercel/.env.production.local'
-  );
-  assert.equal(gateStep['continue-on-error'], undefined);
-  // Names only: the gate step receives no secret.
-  assert.equal(gateStep.env, undefined);
 });

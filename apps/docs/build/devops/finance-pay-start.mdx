@@ -284,8 +284,6 @@ publishes either Finance profile. `finance-cloudflare.yaml` qualifies both: the
 staging job, and a same-repository `native-production` job that builds with
 `VITE_FINANCE_NATIVE_PROFILE=production` and the `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`
 repository variable. Native deploys are operator actions inside an approved
-custody window. The Vercel publisher (`vercel-production-finance.yaml`) still
-runs on `production` pushes, so freeze production sync for the flip and watch;
-a new Vercel deployment would move the alias the DNS-only rollback relies on.
+custody window. Retain the immutable rollback target and captured DNS records.
 Finance owns its CSP in the app config. Preparation cannot stand in for the real
 Start build, provider sandbox, hosted acceptance, or cutover.

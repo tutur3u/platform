@@ -924,15 +924,9 @@ deployment precedes the migration.
 
 ## CI and deployment
 
-Mail preview and production use `.github/workflows/vercel-preview-mail.yaml`
-and `vercel-production-mail.yaml`, registered in `tuturuuu.ci.ts` through
-`ci-check.yml`. Preview builds prebuilt Vercel CLI artifacts. Production uses
-concurrency to prevent stale deployment; manual dispatch requires `refs/heads/production`.
-Credentials belong to the corresponding `vercel-preview-mail` or
-`vercel-production-mail` GitHub Environment: `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
-and `VERCEL_MAIL_PROJECT_ID`. Keep production Supabase/SES values in the Vercel
-project. Do not put those values, `TURBO_TOKEN` or `TURBO_TEAM` into workflow env;
-use `vercel pull`. `apps/mail/vercel.json` disables Vercel Git integration.
+Mail qualification and Cloudflare publication use `mail-cloudflare.yaml` and
+the [native Start migration runbook](/build/devops/native-start-migration).
+The Vercel preview workflow uses environment-scoped credentials.
 
 Fresh disposable hosted runners explicitly provision resource launchers with
 `bun packages/sdk/src/cli/resources-entry.ts setup --root "$GITHUB_WORKSPACE" --shell none`

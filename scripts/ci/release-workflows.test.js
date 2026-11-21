@@ -18,7 +18,6 @@ const {
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
 const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
-  'vercel-production-tanstack-web.yaml',
 ]);
 
 const SECRET_INTERPOLATION_PATTERN =
@@ -53,15 +52,6 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
     if (workflowName === 'vercel-preview-platform.yaml') {
       assert.match(workflow, /Record successful Vercel build marker/);
       assert.match(workflow, /VERCEL_MARKER_KIND: build/);
-      assert.match(
-        workflow,
-        /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
-      );
-    } else if (workflowName === 'vercel-production-platform.yaml') {
-      assert.match(workflow, /Record successful Vercel build marker/);
-      assert.match(workflow, /VERCEL_MARKER_KIND: build/);
-      assert.match(workflow, /Record successful Vercel deployment marker/);
-      assert.match(workflow, /VERCEL_MARKER_KIND: deployment/);
       assert.match(
         workflow,
         /node --experimental-strip-types scripts\/ci\/record-vercel-deployment\.ts/
@@ -274,10 +264,7 @@ test('Platform Vercel workflows rely on the checked-in full-app Turbo build', ()
     'cd ../.. && bun turbo:local run build --filter=@tuturuuu/web'
   );
 
-  for (const workflowName of [
-    'vercel-preview-platform.yaml',
-    'vercel-production-platform.yaml',
-  ]) {
+  for (const workflowName of ['vercel-preview-platform.yaml']) {
     const deployJob = readWorkflowJobBlock(
       workflowName,
       getVercelRunJobName(workflowName)
@@ -293,99 +280,11 @@ test('Platform Vercel workflows rely on the checked-in full-app Turbo build', ()
       /uses: \.\/\.github\/actions\/run-with-turbo-remote-cache/
     );
     assert.match(deployJob, /command: vercel build/);
-
-    if (workflowName === 'vercel-preview-platform.yaml') {
-      const equivalentBuildIndex = deployJob.indexOf(
-        'Check equivalent production platform build'
-      );
-
-      assert.notEqual(equivalentBuildIndex, -1);
-      assert.ok(
-        equivalentBuildIndex < installIndex,
-        `${workflowName} must check same-SHA production build markers before installing dependencies`
-      );
-      assert.match(
-        deployJob,
-        /steps\.equivalent_build\.outputs\.found != 'true'/
-      );
-      assert.match(deployJob, /--marker-kind build/);
-    } else {
-      assert.doesNotMatch(deployJob, /Check equivalent preview platform build/);
-      assert.doesNotMatch(deployJob, /steps\.equivalent_build/);
-      assert.match(deployJob, /VERCEL_MARKER_KIND: build/);
-    }
   }
 });
 
-test('Platform production build waits for release packages, deploys, and records markers', () => {
-  const deployJob = readWorkflowJobBlock(
-    'vercel-production-platform.yaml',
-    'Deploy-Production'
-  );
-  const releaseGateIndex = deployJob.indexOf('Gate package release visibility');
-  const installIndex = deployJob.indexOf('Install dependencies');
-  const vercelBuildIndex = deployJob.indexOf('Build Project Artifacts');
-  const vercelDeployIndex = deployJob.indexOf(
-    'Stage production artifacts without assigning domains'
-  );
-  const buildMarkerIndex = deployJob.indexOf(
-    'Record successful Vercel build marker'
-  );
-  const deploymentMarkerIndex = deployJob.indexOf(
-    'Record successful Vercel deployment marker'
-  );
-
-  assert.notEqual(releaseGateIndex, -1);
-  assert.notEqual(installIndex, -1);
-  assert.notEqual(vercelBuildIndex, -1);
-  assert.notEqual(vercelDeployIndex, -1);
-  assert.notEqual(buildMarkerIndex, -1);
-  assert.notEqual(deploymentMarkerIndex, -1);
-  assert.ok(
-    releaseGateIndex < installIndex,
-    'platform production build must wait for package releases before installing dependencies'
-  );
-  assert.ok(
-    releaseGateIndex < vercelBuildIndex,
-    'platform production build must wait for package releases before Vercel build'
-  );
-  assert.ok(
-    vercelBuildIndex < vercelDeployIndex,
-    'platform production deploy must use artifacts built by Vercel build'
-  );
-  assert.ok(
-    vercelDeployIndex < buildMarkerIndex,
-    'platform production build marker must be recorded after Vercel deploy succeeds'
-  );
-  assert.ok(
-    buildMarkerIndex < deploymentMarkerIndex,
-    'platform production deployment marker must be recorded after the build marker'
-  );
-  assert.match(
-    deployJob,
-    /node scripts\/ci\/package-release-readiness\.js gate-changed-package-versions/
-  );
-  assert.match(deployJob, /id:\s*package_release_gate/);
-  assert.match(deployJob, /packages_ready == 'false'/);
-  assert.match(deployJob, /packages_ready == 'true'/);
-  assert.doesNotMatch(deployJob, /TUTURUUU_NEXT_CACHE_COMPONENTS/);
-  assert.match(deployJob, /actions:\s*write/);
-  assert.match(deployJob, /GH_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.match(
-    deployJob,
-    /vercel deploy --archive=tgz --prebuilt --prod --skip-domain --token=\$\{\{ secrets\.VERCEL_TOKEN \}\}/
-  );
-  assert.match(deployJob, /VERCEL_MARKER_KIND: build/);
-  assert.match(deployJob, /VERCEL_MARKER_KIND: deployment/);
-  assert.doesNotMatch(deployJob, /Check equivalent preview platform build/);
-  assert.doesNotMatch(deployJob, /steps\.equivalent_build/);
-});
-
 test('mail deployment workflows do not persist checkout credentials', () => {
-  for (const workflowName of [
-    'vercel-preview-mail.yaml',
-    'vercel-production-mail.yaml',
-  ]) {
+  for (const workflowName of ['vercel-preview-mail.yaml']) {
     const workflow = fs.readFileSync(
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
@@ -846,7 +745,7 @@ test('Release Please manifest tracks platform and workspace releases safely', ()
   }
 });
 
-test('Supabase production migration requires production platform deploy and successful staged SHA', () => {
+test('Supabase production migration requires Cloudflare Web deployment and successful staged SHA', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
@@ -895,18 +794,18 @@ test('Supabase production migration requires production platform deploy and succ
     evaluateJob,
     /vercel-production\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
   );
-  assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
+  assert.match(evaluateJob, /PLANNER_SHA" != "\$TARGET_SHA"/);
   assert.match(
     evaluateJob,
     /no production deployment planner run was found for \$TARGET_SHA/
   );
   assert.match(
     evaluateJob,
-    /deployments\?environment=vercel-production-platform&per_page=100/
+    /deployments\?environment=cloudflare-production-web&per_page=100/
   );
   assert.match(
     evaluateJob,
-    /no production platform deployment marker was found for \$TARGET_SHA/
+    /no Cloudflare Web production deployment marker was found for \$TARGET_SHA/
   );
   assert.match(evaluateJob, /\(\$payload\.markerKind == "deployment"\)/);
   assert.match(evaluateJob, /DEPLOYMENT_MARKER_HAS_SUCCESS" != "true"/);
@@ -920,7 +819,7 @@ test('Supabase production migration requires production platform deploy and succ
     /run\.run_attempt === Number\(p\.runAttempt\)/,
     /step\.status === 'completed'/,
     /step\.conclusion === 'success'/,
-    /Production platform deployment marker and staging migration are bound to \$\{target\}/,
+    /Cloudflare Web production deployment marker and staging migration are bound to \$\{target\}/,
     /staging migration is bound to its tree-equal parent \$\{source\}/,
   ])
     assert.match(proof, pattern);
@@ -1168,30 +1067,6 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
   }
 });
 
-test('TanStack production Vercel workflow skips when project secret is absent', () => {
-  const workflowName = 'vercel-production-tanstack-web.yaml';
-  const workflow = fs.readFileSync(
-    path.join(repoRoot, '.github', 'workflows', workflowName),
-    'utf8'
-  );
-  const deployJob = readWorkflowJobBlock(workflowName, 'Build-Production');
-  const guardedStepPattern =
-    /if: steps\.vercel_config\.outputs\.configured == 'true'/g;
-
-  assert.match(deployJob, /- name: Check Vercel project configuration/);
-  assert.match(deployJob, /\n {8}id: vercel_config\n/);
-  assert.match(
-    deployJob,
-    /VERCEL_PROJECT_ID: \$\{\{ secrets\.VERCEL_TANSTACK_WEB_PROJECT_ID \}\}/
-  );
-  assert.match(deployJob, /configured=false/);
-  assert.match(deployJob, /TanStack Web Vercel deployment skipped/);
-  assert.ok(
-    [...workflow.matchAll(guardedStepPattern)].length >= 4,
-    'Vercel pull/build/marker steps must be skipped when project config is missing'
-  );
-});
-
 test('Git Vercel workflows skip when the project secret is absent', () => {
   for (const [
     workflowName,
@@ -1199,12 +1074,6 @@ test('Git Vercel workflows skip when the project secret is absent', () => {
     guardedStepPattern,
     minimumGuardedSteps,
   ] of [
-    [
-      'vercel-production-git.yaml',
-      'Deploy-Production',
-      /if: steps\.vercel_config\.outputs\.configured == 'true'/g,
-      5,
-    ],
     [
       'vercel-preview-git.yaml',
       'Deploy-Preview',

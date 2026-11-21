@@ -289,42 +289,10 @@ service mesh.
 
 ### Next.js apps: Vercel
 
-Each Next.js app deploys independently to Vercel. CI builds the selected app,
-packages prebuilt artifacts, and deploys the production artifact through the
-matching GitHub Actions workflow.
-
-There is one Vercel workflow per app, named by product surface. For example,
-`vercel-production-platform.yaml` builds `apps/web` on pushes to the `production`
-branch and deploys the prebuilt production artifact:
-
-```yaml
-# .github/workflows/vercel-production-platform.yaml (abridged)
-name: Vercel Platform Production Deployment
-on:
-  push:
-    branches: [production]
-  workflow_dispatch:
-
-jobs:
-  Deploy-Production:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-      - uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-      - run: bash scripts/ci/run-with-backoff.sh bun install
-      # Pull env, build the Vercel artifact, and deploy the prebuilt output.
-      - run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-      - run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-```
-
-Matching `vercel-preview-*.yaml` workflows run for pull requests. Node engines are
-`>=22` (CI uses Node 24) and Bun is pinned to `1.4.4`.
+The Production Deployment Planner selects Cloudflare publishers from the
+production branch. The gateway routes Web traffic to the active Workers.
+The [Cloudflare Web deployment proof](/build/devops/web-vinext-families#production-migration-deployment-proof)
+binds the serving Worker versions to the production migration target.
 
 ### Rust backend
 

@@ -284,19 +284,19 @@ jobs:
             echo "::notice::Skipping production migration because no database changes are pending."
           else
             echo "Checking production deployment planner status..."
-            VERCEL_RUN=$(gh api \
+            PLANNER_RUN=$(gh api \
               "repos/${{ github.repository }}/actions/workflows/vercel-production.yaml/runs?branch=production&head_sha=$TARGET_SHA&per_page=1" \
               --jq '.workflow_runs[0] // {} | {id: .id, name: .name, run_attempt: .run_attempt, conclusion: .conclusion, status: .status, created_at: .created_at, head_branch: .head_branch, head_sha: .head_sha}')
 
-            VERCEL_CONCLUSION=$(echo "$VERCEL_RUN" | jq -r '.conclusion // "missing"')
-            VERCEL_STATUS=$(echo "$VERCEL_RUN" | jq -r '.status // "missing"')
-            VERCEL_BRANCH=$(echo "$VERCEL_RUN" | jq -r '.head_branch // "missing"')
-            VERCEL_SHA=$(echo "$VERCEL_RUN" | jq -r '.head_sha // "missing"')
+            PLANNER_CONCLUSION=$(echo "$PLANNER_RUN" | jq -r '.conclusion // "missing"')
+            PLANNER_STATUS=$(echo "$PLANNER_RUN" | jq -r '.status // "missing"')
+            PLANNER_BRANCH=$(echo "$PLANNER_RUN" | jq -r '.head_branch // "missing"')
+            PLANNER_SHA=$(echo "$PLANNER_RUN" | jq -r '.head_sha // "missing"')
 
-            echo "Production deployment planner status: $VERCEL_STATUS"
-            echo "Production deployment planner conclusion: $VERCEL_CONCLUSION"
-            echo "Production deployment planner branch: $VERCEL_BRANCH"
-            echo "Production deployment planner SHA: $VERCEL_SHA"
+            echo "Production deployment planner status: $PLANNER_STATUS"
+            echo "Production deployment planner conclusion: $PLANNER_CONCLUSION"
+            echo "Production deployment planner branch: $PLANNER_BRANCH"
+            echo "Production deployment planner SHA: $PLANNER_SHA"
 
             RECOVERY_ALLOWED=false
             if [ "$ALLOW_CLOUDFLARE_VERIFICATION_FAILURES" = "true" ]; then
@@ -305,52 +305,38 @@ jobs:
                 echo "::error::Migration recovery requires manual production dispatch and the exact expected SHA."
                 exit 1
               fi
-              if [ "$VERCEL_STATUS" = "completed" ] && [ "$VERCEL_CONCLUSION" = "failure" ] && \
-                 [ "$VERCEL_SHA" = "$TARGET_SHA" ] && [ "$VERCEL_BRANCH" = "production" ]; then
+              if [ "$PLANNER_STATUS" = "completed" ] && [ "$PLANNER_CONCLUSION" = "failure" ] && \
+                 [ "$PLANNER_SHA" = "$TARGET_SHA" ] && [ "$PLANNER_BRANCH" = "production" ]; then
                 RECOVERY_DIR=$(mktemp -d)
                 trap 'rm -rf -- "$RECOVERY_DIR"' EXIT
-                printf '%s\n' "$VERCEL_RUN" > "$RECOVERY_DIR/planner.json"
+                printf '%s\n' "$PLANNER_RUN" > "$RECOVERY_DIR/planner.json"
                 chmod 600 "$RECOVERY_DIR/planner.json"
-                PLANNER_ID=$(echo "$VERCEL_RUN" | jq -r '.id')
-                PLANNER_ATTEMPT=$(echo "$VERCEL_RUN" | jq -r '.run_attempt')
+                PLANNER_ID=$(echo "$PLANNER_RUN" | jq -r '.id')
+                PLANNER_ATTEMPT=$(echo "$PLANNER_RUN" | jq -r '.run_attempt')
                 gh api --paginate --slurp \
                   "repos/${{ github.repository }}/actions/runs/$PLANNER_ID/attempts/$PLANNER_ATTEMPT/jobs?per_page=100" \
                   > "$RECOVERY_DIR/jobs.json"
                 chmod 600 "$RECOVERY_DIR/jobs.json"
-                mkdir -p "$RECOVERY_DIR/logs"
-                chmod 700 "$RECOVERY_DIR/logs"
-                while IFS= read -r job_id; do
-                  case "$job_id" in
-                    ''|*[!0-9]*) continue ;;
-                  esac
-                  zip="$RECOVERY_DIR/logs/$job_id.zip"
-                  if gh api "repos/${GITHUB_REPOSITORY}/actions/jobs/${job_id}/logs" > "$zip"; then
-                    unzip -p "$zip" > "$RECOVERY_DIR/logs/$job_id.log" || true
-                    chmod 600 "$RECOVERY_DIR/logs/$job_id.log" || true
-                  fi
-                  rm -f "$zip"
-                done < <(jq -r '.[] | .jobs[]? | select(.conclusion == "failure" and (.name | endswith(" / Deploy-Production"))) | .id' "$RECOVERY_DIR/jobs.json")
                 RECOVERY_PLANNER_FILE="$RECOVERY_DIR/planner.json" \
                   RECOVERY_JOBS_FILE="$RECOVERY_DIR/jobs.json" \
-                  RECOVERY_JOB_LOG_DIR="$RECOVERY_DIR/logs" \
                   GITHUB_OUTPUT="$RECOVERY_DIR/output" \
                   node --experimental-strip-types scripts/ci/check-production-migration-recovery.ts
                 RECOVERY_ALLOWED=$(sed -n 's/^recovery_allowed=//p' "$RECOVERY_DIR/output")
               fi
             fi
 
-            if [ "$VERCEL_SHA" != "$TARGET_SHA" ]; then
+            if [ "$PLANNER_SHA" != "$TARGET_SHA" ]; then
               echo "::notice::Skipping production migration because no production deployment planner run was found for $TARGET_SHA."
-            elif [ "$VERCEL_BRANCH" != "production" ]; then
-              echo "::notice::Skipping production migration because the matching production deployment planner ran on '$VERCEL_BRANCH'."
-            elif [ "$VERCEL_CONCLUSION" != "success" ] && [ "$RECOVERY_ALLOWED" != "true" ]; then
-              echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$VERCEL_CONCLUSION'."
+            elif [ "$PLANNER_BRANCH" != "production" ]; then
+              echo "::notice::Skipping production migration because the matching production deployment planner ran on '$PLANNER_BRANCH'."
+            elif [ "$PLANNER_CONCLUSION" != "success" ] && [ "$RECOVERY_ALLOWED" != "true" ]; then
+              echo "::notice::Skipping production migration because the production deployment planner for $TARGET_SHA has conclusion '$PLANNER_CONCLUSION'."
             else
-              echo "Checking successful production platform deployment marker..."
+              echo "Checking successful Cloudflare Web production deployment marker..."
               DEPLOYMENT_MARKER_DIR="$RUNNER_TEMP/deployment-marker"
               mkdir -p "$DEPLOYMENT_MARKER_DIR"
               gh api \
-                "repos/${{ github.repository }}/deployments?environment=vercel-production-platform&per_page=100" \
+                "repos/${{ github.repository }}/deployments?environment=cloudflare-production-web&per_page=100" \
                 > "$DEPLOYMENT_MARKER_DIR/deployments.json"
               chmod 600 "$DEPLOYMENT_MARKER_DIR/deployments.json"
               DEPLOYMENT_MARKER_DEPLOYMENT=$(jq --arg sha "$TARGET_SHA" '
@@ -368,7 +354,7 @@ jobs:
                     | select(
                         ($deployment.sha == $sha and $payload.sha == $sha)
                         and ($payload.markerKind == "deployment")
-                        and ($payload.workflowName == "vercel-production-platform.yaml")
+                        and ($payload.workflowName == "web-cloudflare-production.yaml")
                       )
                   ]
                   | sort_by(.created_at // "")
@@ -379,11 +365,11 @@ jobs:
               DEPLOYMENT_MARKER_DEPLOYMENT_ID=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.id // ""')
               DEPLOYMENT_MARKER_SHA=$(echo "$DEPLOYMENT_MARKER_DEPLOYMENT" | jq -r '.sha // "missing"')
 
-              echo "Production platform deployment marker deployment ID: ${DEPLOYMENT_MARKER_DEPLOYMENT_ID:-missing}"
-              echo "Production platform deployment marker SHA: $DEPLOYMENT_MARKER_SHA"
+              echo "Cloudflare Web production deployment marker deployment ID: ${DEPLOYMENT_MARKER_DEPLOYMENT_ID:-missing}"
+              echo "Cloudflare Web production deployment marker SHA: $DEPLOYMENT_MARKER_SHA"
 
               if [ -z "$DEPLOYMENT_MARKER_DEPLOYMENT_ID" ]; then
-                echo "::notice::Skipping production migration because no production platform deployment marker was found for $TARGET_SHA."
+                echo "::notice::Skipping production migration because no Cloudflare Web production deployment marker was found for $TARGET_SHA."
               else
                 gh api \
                   "repos/${{ github.repository }}/deployments/$DEPLOYMENT_MARKER_DEPLOYMENT_ID/statuses?per_page=100" \
@@ -398,17 +384,17 @@ jobs:
                 DEPLOYMENT_MARKER_HAS_SUCCESS=$(echo "$DEPLOYMENT_MARKER_VERDICT" | jq -r '.accepted')
                 DEPLOYMENT_MARKER_REASON=$(echo "$DEPLOYMENT_MARKER_VERDICT" | jq -r '.reason // "unknown"')
 
-                echo "Production platform deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
-                echo "Production platform deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
-                echo "Production platform deployment marker verdict: $DEPLOYMENT_MARKER_REASON"
+                echo "Cloudflare Web production deployment marker latest state: $DEPLOYMENT_MARKER_STATE"
+                echo "Cloudflare Web production deployment marker has success status: $DEPLOYMENT_MARKER_HAS_SUCCESS"
+                echo "Cloudflare Web production deployment marker verdict: $DEPLOYMENT_MARKER_REASON"
 
                 if [ "$DEPLOYMENT_MARKER_HAS_SUCCESS" != "true" ]; then
-                  echo "::notice::Skipping production migration because the production platform deployment marker for $TARGET_SHA does not have a current success status. Latest effective state is '$DEPLOYMENT_MARKER_STATE' ($DEPLOYMENT_MARKER_REASON)."
+                  echo "::notice::Skipping production migration because the Cloudflare Web production deployment marker for $TARGET_SHA does not have a current success status. Latest effective state is '$DEPLOYMENT_MARKER_STATE' ($DEPLOYMENT_MARKER_REASON)."
                 else
                   node scripts/ci/verify-staging-migration-marker.mjs
                   SHOULD_DEPLOY=true
-                  echo "planner_run_id=$(echo "$VERCEL_RUN" | jq -r '.id')" >> "$GITHUB_OUTPUT"
-                  echo "planner_run_attempt=$(echo "$VERCEL_RUN" | jq -r '.run_attempt')" >> "$GITHUB_OUTPUT"
+                  echo "planner_run_id=$(echo "$PLANNER_RUN" | jq -r '.id')" >> "$GITHUB_OUTPUT"
+                  echo "planner_run_attempt=$(echo "$PLANNER_RUN" | jq -r '.run_attempt')" >> "$GITHUB_OUTPUT"
                   echo "recovery_allowed=$RECOVERY_ALLOWED" >> "$GITHUB_OUTPUT"
                 fi
               fi
@@ -428,6 +414,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           CURRENT_REF_NAME: ${{ github.ref_name }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
+          MARKER_VERIFY_PROFILE: production-web
           MARKER_VERIFY_RESULT_FILE: ${{ runner.temp }}/production-marker-verification.json
         run: node --experimental-strip-types scripts/ci/verify-github-deployment-marker-producer.mjs
 

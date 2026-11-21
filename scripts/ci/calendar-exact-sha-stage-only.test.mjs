@@ -368,12 +368,7 @@ test('the workflow is a dispatch-only stage with minimal permissions', () => {
     path.join(root, '.github/workflows/calendar-vercel-exact-sha.yaml'),
     'utf8'
   );
-  const general = readFileSync(
-    path.join(root, '.github/workflows/vercel-production-calendar.yaml'),
-    'utf8'
-  );
   const source = readFileSync(script, 'utf8');
-  const policy = readFileSync(path.join(root, 'tuturuuu.ci.ts'), 'utf8');
   assert.match(workflow, /^ {2}workflow_dispatch:$/m);
   assert.match(workflow, /^ {6}main_sha:$/m);
   assert.match(workflow, /^ {6}alias_preimage:$/m);
@@ -429,8 +424,4 @@ test('the workflow is a dispatch-only stage with minimal permissions', () => {
   );
   assert.match(source, /'--skip-domain'/);
   assert.doesNotMatch(source, /'promote'|'alias'|'rollback'|'rm'/);
-  assert.doesNotMatch(general, /^\s*inputs:/m);
-  assert.match(general, /github\.ref == 'refs\/heads\/production'/);
-  assert.doesNotMatch(general, /--skip-domain/);
-  assert.match(policy, /'vercel-production-calendar\.yaml': false/);
 });

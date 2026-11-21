@@ -2,7 +2,6 @@ import { appendFileSync } from 'node:fs';
 import {
   cloudflareProductionTargets,
   getWorkflowDecision,
-  vercelProductionWorkflowTargets,
   type WorkspaceManifest,
 } from '../../tuturuuu.ts';
 import { productionPublicationHold } from './production-publication-policy.ts';
@@ -24,7 +23,6 @@ export const MISSING_CLOUDFLARE_MARKER_REASON =
 type ProductionTargetDecision = {
   held?: boolean;
   changeResult: ChangedFilesResult;
-  migrationChangeResult?: ChangedFilesResult;
   matchedPaths: string[];
   reason: string;
   shouldRun: boolean;
@@ -73,7 +71,7 @@ export function appendStepSummary(
   appendFileSync(
     summaryPath,
     [
-      '## Production deployment plan: Vercel and Cloudflare',
+      '## Production deployment plan: Cloudflare',
       '',
       '| Workflow | Decision | Baseline | Reason |',
       '| --- | --- | --- | --- |',
@@ -83,17 +81,14 @@ export function appendStepSummary(
   );
 }
 
-export async function resolveProductionVercelTargets({
+export async function resolveProductionTargets({
   eventName = process.env.GITHUB_EVENT_NAME,
   headSha = process.env.GITHUB_SHA,
   refName = process.env.GITHUB_REF_NAME,
   packageResume = false,
   expectedSha,
   rootDir,
-  targets = [
-    ...vercelProductionWorkflowTargets,
-    ...cloudflareProductionTargets,
-  ],
+  targets = cloudflareProductionTargets,
   workspaceManifests = readWorkspaceManifests(rootDir),
 }: ResolveProductionTargetsInput): Promise<ProductionTargetDecision[]> {
   // Only exact-production package recovery keeps commit-driven selection.
@@ -127,12 +122,9 @@ export async function resolveProductionVercelTargets({
           workflowName: productionWorkflow,
         };
       }
-      const isPlatform =
-        productionWorkflow === 'vercel-production-platform.yaml';
       const commitDriven = selectionEvent === 'push';
       const changeResult = await resolveChangedFiles({
-        requireExplicitDeployment:
-          packageResume || (isPlatform && commitDriven),
+        requireExplicitDeployment: packageResume,
         eventName: selectionEvent,
         headSha,
         refName,
@@ -164,7 +156,7 @@ export async function resolveProductionVercelTargets({
       // An exact deployment marker is positive coverage evidence, not an
       // unavailable empty changed-file list. Ordinary dispatch semantics stay intact.
       if (
-        (packageResume || (isPlatform && commitDriven)) &&
+        packageResume &&
         changeResult.available &&
         changeResult.source === 'deployment-marker' &&
         changeResult.baseSha === headSha
@@ -184,54 +176,6 @@ export async function resolveProductionVercelTargets({
         workspaceManifests,
       });
 
-      // Configuration gating remains authoritative, including disabled platform.
-      if (
-        isPlatform &&
-        commitDriven &&
-        getWorkflowDecision({
-          changedFiles: null,
-          eventName: selectionEvent,
-          workflowName: productionWorkflow,
-          workspaceManifests,
-        }).shouldRun
-      ) {
-        // Use the migration workflow's own marker semantics, never the platform
-        // deployment baseline: deployment can advance while migration apply is held.
-        const migrationChangeResult = await resolveChangedFiles({
-          eventName: 'workflow_run',
-          headSha,
-          refName,
-          rootDir,
-          workflowName: 'supabase-production.yaml',
-        });
-        const migrationDecision = getWorkflowDecision({
-          changedFiles: migrationChangeResult.available
-            ? migrationChangeResult.files
-            : null,
-          eventName: 'workflow_run',
-          workflowName: 'supabase-production.yaml',
-          workspaceManifests,
-        });
-        return {
-          changeResult,
-          migrationChangeResult,
-          ...decision,
-          ...(migrationDecision.shouldRun
-            ? {
-                shouldRun: true,
-                matchedPaths: [
-                  ...new Set([
-                    ...decision.matchedPaths,
-                    ...migrationDecision.matchedPaths,
-                  ]),
-                ],
-              }
-            : {}),
-          reason: `${migrationDecision.shouldRun ? 'platform deployment is required to gate production database migrations' : decision.reason}; migration baseline ${migrationChangeResult.source}: ${migrationDecision.reason}`,
-          workflowName: productionWorkflow,
-        };
-      }
-
       return {
         changeResult,
         ...decision,
@@ -247,7 +191,7 @@ async function main() {
     summaryPathIndex >= 0 ? process.argv[summaryPathIndex + 1] : undefined;
   const resumeIndex = process.argv.indexOf('--package-resume');
   const expectedShaIndex = process.argv.indexOf('--expected-sha');
-  const decisions = await resolveProductionVercelTargets({
+  const decisions = await resolveProductionTargets({
     packageResume: resumeIndex >= 0 && process.argv[resumeIndex + 1] === 'true',
     expectedSha:
       expectedShaIndex >= 0 ? process.argv[expectedShaIndex + 1] : undefined,

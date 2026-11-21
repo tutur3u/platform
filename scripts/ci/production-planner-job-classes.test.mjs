@@ -20,12 +20,12 @@ const moduleUrl = new URL(
 function jobs(overrides = {}, remove = []) {
   const base = {
     plan: 'success',
-    'deploy-platform / Deploy-Production': 'success',
+    'deploy-web-cloudflare / Verify-Production': 'success',
     'deploy-colab-cloudflare / deploy': 'success',
     'deploy-meet-cloudflare / validate': 'success',
     'deploy-meet-cloudflare / deploy': 'success',
     'deploy-parley-cloudflare / deploy': 'success',
-    'deploy-mail': 'skipped',
+    'deploy-mail-native': 'skipped',
     ...overrides,
   };
   for (const name of remove) delete base[name];
@@ -65,7 +65,7 @@ const rejected = [
   [
     'platform failed',
     'failure',
-    jobs({ 'deploy-platform / Deploy-Production': 'failure' }),
+    jobs({ 'deploy-web-cloudflare / Verify-Production': 'failure' }),
   ],
   [
     'control plane failed',
@@ -76,18 +76,18 @@ const rejected = [
   [
     'superseded planner completed successfully without a platform deploy',
     'success',
-    jobs({ 'deploy-platform / Deploy-Production': 'skipped' }),
+    jobs({ 'deploy-web-cloudflare / Verify-Production': 'skipped' }),
   ],
   [
     'platform cancelled',
     'failure',
-    jobs({ 'deploy-platform / Deploy-Production': 'cancelled' }),
+    jobs({ 'deploy-web-cloudflare / Verify-Production': 'cancelled' }),
   ],
   [
     'platform skipped',
     'failure',
     jobs({
-      'deploy-platform / Deploy-Production': 'skipped',
+      'deploy-web-cloudflare / Verify-Production': 'skipped',
       'deploy-meet-cloudflare / deploy': 'failure',
     }),
   ],
@@ -95,7 +95,7 @@ const rejected = [
     'platform job missing',
     'failure',
     jobs({ 'deploy-meet-cloudflare / deploy': 'failure' }, [
-      'deploy-platform / Deploy-Production',
+      'deploy-web-cloudflare / Verify-Production',
     ]),
   ],
   [
@@ -212,25 +212,15 @@ test('caller ids parse bare skipped and nested job names', () => {
   assert.equal(plannerCaller('deploy-ai /'), null);
 });
 
-test('retired callers remain classified only for historical producers', () => {
-  const historical = jobs({ 'deploy-tools / Deploy-Production': 'failure' });
-  assert.equal(classifyPlannerJobs(historical, 'failure').ok, false);
-  const result = classifyPlannerJobs(historical, 'failure', {
-    historicalPlanner: true,
-  });
-  assert.equal(result.ok, true);
-  assert.deepEqual(
-    result.held.map(({ app }) => app),
-    ['deploy-tools']
-  );
-});
-
 test('class table lists exactly the planner caller jobs', () => {
   const callers = [...plannerSource.matchAll(/^ {2}([a-z0-9-]+):$/gm)]
     .map((match) => match[1])
     .filter((name) => name === 'plan' || name.startsWith('deploy-'));
   assert.deepEqual(Object.keys(PLANNER_JOB_CLASSES).sort(), callers.sort());
-  assert.equal(PLANNER_JOB_CLASSES['deploy-platform'], 'platform-required');
+  assert.equal(
+    PLANNER_JOB_CLASSES['deploy-web-cloudflare'],
+    'platform-required'
+  );
   assert.equal(PLANNER_JOB_CLASSES.plan, 'control-plane-required');
 });
 

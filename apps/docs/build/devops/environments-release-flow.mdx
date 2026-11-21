@@ -45,7 +45,7 @@ No package version, dependency resolution or published changelog is rewritten.
 | ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref` | None by default                                                                                                                      |
 | `main` push                         | Platform Vercel preview build validation                                                           | `supabase-staging.yaml` independently applies staging migrations and records the exact main SHA                                                |
-| `production` push                   | Platform Vercel production deployment                                                              | `supabase-production.yaml` can apply production migrations after the deployment and staging prerequisites pass                       |
+| `production` push                   | Cloudflare production planner and Web serving verification                                                              | `supabase-production.yaml` can apply production migrations after the deployment and staging prerequisites pass                       |
 | `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                  | None                                                                                                                                 |
 | Manual `workflow_dispatch`          | Depends on workflow                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
 | Self-hosted server after `git pull` | Docker deploy from current checkout                                                                | Optional blue/green cutover through `bun serve:web:docker:bg`                                                                        |
@@ -137,7 +137,7 @@ No package version, dependency resolution or published changelog is rewritten.
   `refs/heads/main`. It requires a successful staging marker and every existing
   source, producer, workflow, run, attempt, critical-step, manual-source and reread
   contract for that parent. Missing, failed, superseded or unknown evidence denies
-  migration. The platform deployment marker remains bound to the production target.
+  migration. The Cloudflare Web deployment marker remains bound to the production target.
   Parent acceptance logs one `Staging source proof: source=<C> target=<B> tree=<tree sha>`
   line. Main can advance after the cut; no trunk freeze is needed. Regression
   coverage: `scripts/ci/production-marker-tree-parent.test.js`.
@@ -178,17 +178,12 @@ No package version, dependency resolution or published changelog is rewritten.
 
 ### Production
 
-- Satellite production web deploys run through `vercel-production-<app>.yaml`.
-- A production push first runs `vercel-production.yaml`, which computes affected
-  Vercel and Cloudflare apps in one runner and calls only the necessary per-app
-  workflows. Each target uses its own last successful deployment marker, so an
-  app skipped on an earlier commit still receives any undeployed changes.
-- Hosted `apps/web` production deploys run through
-  `vercel-production-platform.yaml`; self-hosted machines still use the Docker
-  release flow below for their own runtime deployment.
-- Chat, CMS, Drive, Forms, Teach, Tools and Track publish production builds on
-  Cloudflare. Their existing Vercel deployments are retained for rollback. See
-  [retiring an app's Vercel project](/build/devops/native-start-migration#retiring-an-apps-vercel-project).
+- A production push runs `vercel-production.yaml`, the Production Deployment
+  Planner. It selects Cloudflare publishers using their successful deployment
+  markers so skipped commits stay in the pending range.
+- The planner also verifies serving Web on Cloudflare for the production SHA.
+  See [Web deployment proof](/build/devops/web-vinext-families#production-migration-deployment-proof).
+
 - The production planner serializes runs without cancelling active work. When
   an automatic push run reaches the front of the queue, the planner compares
   its source to the current `production` ref. If a newer authorized revision
@@ -197,11 +192,8 @@ No package version, dependency resolution or published changelog is rewritten.
   revision. Manual and exact-SHA package recovery dispatches keep their
   existing admission rules.
 - Supersession produces no deployment marker. Production migrations still
-  require proof tied to the exact target, including its successful platform
-  deployment and staging migration proof.
-- Production deploy jobs are bound to `vercel-production-<app>` GitHub
-  Environments and reject manual dispatches unless the selected branch is
-  `production`.
+  require proof tied to the exact target, including its successful Cloudflare Web
+  deployment marker and staging migration proof.
 
 ### Hosted Calendar schedules
 
@@ -257,15 +249,15 @@ goes to the USER.
 
 `supabase-production.yaml` is stricter than staging:
 
-1. It re-evaluates automatically after either `Vercel Production Deployment
+1. It re-evaluates automatically after either `Production Deployment
    Planner` completes its selected production deploys on `production` or
    `Supabase Staging Migration` completes on `main`.
 2. The production planner for the target commit must have concluded
-   successfully on `production`, and the selected platform deployment must have
-   recorded the successful
-   `vercel-production-platform` deployment marker for the same SHA. A workflow
-   run that skipped because package releases were still publishing is not
-   enough.
+   successfully on `production` or qualify under the existing exact-SHA
+   manual recovery. The planner's Web verification job must have produced a
+   successful `cloudflare-production-web` deployment marker for that SHA.
+   Supabase Production checks the marker creator, trusted workflow blobs and
+   successful job in the selected run attempt.
 3. The `main` staging migration for the same target commit must have completed
    with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run
@@ -363,7 +355,7 @@ configuration establish active release behavior. See the
 2. Docker setup is inactive; do not require or run `docker-setup-check.yaml` until explicitly resumed.
 3. If database migrations changed, confirm the `main`-driven staging path first.
    Check that app code remains usable against the old production schema: the
-   production Vercel planner deploys apps before the production migration job
+   production planner deploys apps before the production migration job
    runs, and the job may wait in the Actions queue.
 4. Promote to `production` only after preview and staging behavior is understood.
 5. Confirm that the follow-up Supabase workflow's **Migrate production database**
@@ -376,7 +368,7 @@ configuration establish active release behavior. See the
 
 ## Rollback Guidance
 
-- Vercel-hosted rollback: for satellite apps, redeploy the previous known-good commit or use Vercel rollback tooling.
+- Restore the recorded Cloudflare Worker version and routing for the affected serving surface.
 - If an app reads a production column that has not migrated yet, roll back only
   that app to a tested deployment. Keep the migration workflow running, then
   test the newer deployment directly against the migrated database before
@@ -391,7 +383,7 @@ configuration establish active release behavior. See the
 - Do not manually dispatch production Supabase migration from `main`; the only
   valid `main` path is the automatic staging-migration re-evaluation, and the
   production gate still requires the same commit to have both a successful
-  production platform deployment and a completed successful `main` staging
+  Cloudflare Web deployment marker and a completed successful `main` staging
   migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.
 
