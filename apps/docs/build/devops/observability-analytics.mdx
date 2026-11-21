@@ -1,0 +1,302 @@
+---
+title: Observability and product analytics
+description: What Tuturuuu measures for every app and service, the gaps, and the Cloudflare ingestion, Admin views and SLO alerts that close them.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+This page is the inventory and design for platform observability: golden
+signals per app and Worker, privacy-preserving product analytics, the Admin
+(`/admin`) Health view, and SLO burn alerts. The
+[observability patterns page](/platform/architecture/system-design/observability-monitoring)
+explains the concepts; this page records the sources, schema, bounds and
+delivery plan.
+
+## Inventory
+
+### Golden signals
+
+| Signal | Source today | Status |
+| --- | --- | --- |
+| Worker request rate, errors, CPU and wall-time percentiles | Cloudflare GraphQL `workersInvocationsAdaptive`. Only the Perf Factory detector (`scripts/perf/perf-regression-cloudflare.mjs`) queries it, on demand, for five gateway mounts in `scripts/perf/perf-apps.json`. | Not retained, not shown in Admin |
+| Gateway p95 TTFB and 5xx per app mount | GraphQL `httpRequestsAdaptiveGroups`, read by the same detector. | Not retained |
+| Durable Object requests, errors, storage | GraphQL `durableObjectsInvocationsAdaptiveGroups` and `durableObjectsStorageGroups`. Nothing reads them. | Gap |
+| Cold starts | No GraphQL field. Workers Observability events carry per-invocation detail, sampled at 5% (1% for the gateway and turbo cache). | Gap: estimated only |
+| Worker logs and traces | `observability.enabled` in almost every `cloudflare.config.ts`, `wrangler*.jsonc` and `void.config.ts`, head-sampled at 0.05. `apps/ops-hub` is off. No `logpush` or `tail_consumers`. | Dashboard only |
+| Analytics Engine | One bound dataset: `mastermind_store` (`apps/mastermind-store`). `packages/utils/src/app-switch-rum-ingest.ts` is wired in Meet and Mail, but no config binds `APP_SWITCH_RUM`. | Partial |
+| Vercel apps (`apps/web` and the satellites still enabled for `vercel-production-*` in `tuturuuu.ci.ts`) | Nothing reads Vercel metrics, and Speed Insights and `@vercel/analytics` render `null` (`packages/vercel`). | Gap |
+| Supabase (Postgres, PostgREST, Auth) | Nothing reads the Supabase metrics endpoint or Management API metrics. | Gap |
+| GitHub Actions durations and queue times | `scripts/ci/ci-daily-sample.js` samples them by hand into a skill reference. `scripts/perf/perf-deploy-failures.mjs` lists failed production runs. | Not retained |
+| Deploy markers | Deploy coordinator Durable Objects (`apps/deploy-coordinator`, read in Admin through `apps/infrastructure/src/lib/infrastructure/deploy-coordinator.ts`), Worker deployment and version annotations (read by the detector), GitHub Deployments (`vercel-production-platform` gates Supabase production). | Not correlated with signals |
+| Request, cron and usage history | The Postgres log drain (`requests`, `log_events`, `cron_runs`, `usage_events`, `deployments`) behind Admin → Monitoring. It belongs to the Docker web runtime, which is inactive. | Stale |
+| Cron Control runs | `CronLedger` Durable Object in `apps/cron-control`, with stop/resume operator routes. | Live, not in Admin |
+
+### Product analytics
+
+| Measure | Source today | Status |
+| --- | --- | --- |
+| Platform DAU/WAU/MAU | `get_dau_count`, `get_wau_count`, `get_mau_count` over `auth.sessions`, shown on the Admin executive view. | Live, platform-wide only |
+| DAU/WAU per app | No per-app activity record exists. | Gap |
+| Meet minutes and participants | `private.meet_attendance_sessions` (join/leave intervals, 90-day retention, written by `apps/meet-realtime`). No rollup. | Gap |
+| AI usage | `public.ai_credit_transactions` (feature, model, tokens, credits, `cost_usd`), `private.ai_studio_usage`, `private.usage_*` meter tables. Executive view shows credit totals. | Partial |
+| Funnels | Only inventory commerce analytics. | Gap |
+| Consent | Cookie banner behind the `cookie_consent_banner` flag (off). Meet AI consent schema. No analytics preference. | Gap |
+
+Stores that hold personal data and must stay out of analytics: the log drain
+`requests`/`log_events` (IP, user agent, user id, email),
+`meet_attendance_sessions` (display name, user and guest ids),
+`get_power_users` (user id, username) and `external_provider_costs`
+(`actor_id`).
+
+### Alerting
+
+There are no Discord, email or Mira operational alerts. Mastermind receives
+signed hub events at `/api/v1/mastermind/push-events`; the contract carries no
+free text and only hub-issued item ids. The Perf Factory has no HTTP intake:
+a T3 scheduled task runs the detector every 30 minutes and turns JSON
+regression records into `perf:` cards on the Tasks Fleet board.
+
+## Design
+
+### Principles
+
+- **Aggregate on read from the provider, persist only rollups.** Ingestion
+  stores counts, sums and percentiles per service and time bucket. It never
+  stores request rows, URLs, IPs, user agents or log text.
+- **One scheduler.** Every collector is a Cron Control Worker processor.
+  It inherits the ledger lease, generation fence, deadline and durable failure
+  budget. No new Worker, cron trigger or queue.
+- **Fail closed.** A source runs only when its job is listed in
+  `CRON_CONTROL_ENABLED_JOBS` *and* its database control row says `on` or
+  `dry_run`. A missing row, an unknown mode or a stale generation means off.
+- **Source-aware reads.** Admin shows `unavailable`, `partial` and
+  `suppressed` distinctly from a measured zero, following the executive view.
+
+### Ingestion
+
+```text
+Cron Control (*/15) ── processor per source ──► provider read API (GET / GraphQL)
+        │                                            │ bounded pages
+        ▼                                            ▼
+private.observability_source_control  ◄── fence ──  normalize to rollup rows
+        │                                            │
+        └──────── private RPC (service key) ─────────► upsert_observability_rollups
+                                                     record_observability_ingest_run
+```
+
+| Source id | Cadence | Reads | Credential (by name) |
+| --- | --- | --- | --- |
+| `cloudflare-workers` | 15 min | One GraphQL request for `workersInvocationsAdaptive` (ten series: the sums of requests, errors and subrequests; CPU and wall-time p50 and p99; request-duration p50, p95 and p99; quantiles arrive in microseconds and are stored as ms) and one for `durableObjectsInvocationsAdaptiveGroups` (sum of requests and errors), grouped by `scriptName` and `datetimeFifteenMinutes`. Durable Object ids, names and colos are never selected. | `CLOUDFLARE_ANALYTICS_API_TOKEN` (Account Analytics Read), account id from the Worker config |
+| `cloudflare-gateway` | 15 min | `httpRequestsAdaptiveGroups` per app mount from `scripts/perf/perf-apps.json`: requests, 5xx, TTFB p50/p95/p99 | A token with Zone Analytics Read, `CLOUDFLARE_ZONE_ID` |
+| `github-actions` | 30 min | Workflow runs of `tutur3u/platform` created in each closed hour: run count, failures, duration and queue time (`run_started_at - created_at`) per workflow, and successful production deploy runs on `main` as deploy markers (app, head SHA, completion time). | `GITHUB_ACTIONS_READ_TOKEN` (fine-grained, Actions read) |
+| `vercel` | 30 min | Deployments per project as deploy markers. Request metrics need Observability Plus or a drain and stay out of scope until a provider decision. | `VERCEL_OBSERVABILITY_READ_TOKEN` |
+| `supabase` | 15 min | Project metrics endpoint (Prometheus text): connections, CPU, disk, PostgREST and Auth request counters, parsed into the allowlisted gauges only | `SUPABASE_METRICS_READ_SECRET` |
+
+Durable Object storage (`durableObjectsStorageGroups`) is not read yet.
+Workflow deploy markers say when a deploy finished; Worker version
+annotations, which the Perf Factory detector reads, remain the source for
+per-version suspects.
+
+Every token is read-only and scoped to the account or project it reads. Values
+are never logged, stored or returned; logs carry the source id, counts and the
+HTTP status class only.
+
+**Bounds per run.** Each source row sets `max_requests_per_run` (default 4,
+hard cap 10). Responses are capped at 1 MiB and writes at 5,000 rollup rows
+and 200 deploy markers. A Cloudflare run reads at most four 15-minute
+buckets starting two buckets before the watermark, so it commits at most two
+new buckets per 15-minute slot and gains one bucket per slot after an outage.
+Four buckets of about 100 scripts at 12 metrics are about 4,800 rows, inside
+the 5,000-row write cap. A GitHub run reads at most three new hours per
+30-minute slot. Reads stop at seven days back; anything older stays a
+recorded gap. A run that reaches a cap records `budget_exhausted` and keeps
+its watermark at the last complete bucket, and the next slot continues. There is no in-run retry. The Cloudflare
+GraphQL API allows 300 queries per 5 minutes; these sources issue at most 2
+per 15-minute slot.
+
+**Idempotence.** Rollup rows are keyed on
+`(source, service, metric, bucket_seconds, bucket_start)` and upserted with
+the newest observation, so a repeated or overlapping slot converges. Adaptive
+analytics can revise recent buckets; the Cloudflare collector re-reads the
+last two closed buckets each run.
+
+**Stop fence.** Each source has its own Cron Control job, so
+`/control/jobs/{id}/stop` stops exactly that source. The database adds a
+second fence: `private.observability_source_control` holds one row per source
+with `mode` (`off`, `dry_run`, `on`), `max_requests_per_run`, a daily row
+budget and a `generation` that any mode or budget change increments. This
+generation is separate from the Cron Control ledger generation. Rows start
+`off`. The processor reads the row at start, checks the Cron Control fence
+before every provider request and before the write, and passes the database
+generation to the write RPC, which refuses a stale generation, a source that
+is not `on`, and a write past the day's row budget. `dry_run` performs the
+reads and records counts without writing rollups. A failed or unknown run
+counts toward Cron Control's consecutive-failure budget, which stops the job
+after five until an operator resumes it.
+
+**Cost envelope.** Each source writes at most its daily row budget:
+150,000 rows for `cloudflare-workers` and 40,000 for `github-actions`.
+Expected volume is about 115,000 and 22,000 rows a day: about 100 scripts ×
+12 metrics × 96 buckets (10 Worker metrics plus Durable Object requests and
+errors), and about 150 workflows × 6 metrics (`runs`, `failed_runs`, duration
+and queue p50/p95) × 24 hours.
+The 15-minute rollups are kept for 90 days and hourly rollups for 400 days,
+so the store is capped at about 29.5 M rows (150,000 × 90 + 40,000 × 400) and
+expected near 19 M. Collectors run 144 times a day, plus 48 product analytics
+and 144 retention runs: about 340 Worker invocations and under 700 PostgREST
+calls a day. `prune_observability_rollups` runs in its own
+`observability-retention` job, at most 1,000 rows per table every 10 minutes
+(144,000 a day, above the expected daily expiry). GraphQL Analytics and the
+GitHub read API are not billed per call.
+
+### Schema
+
+All tables live in `private` and have RLS enabled with no policies. Clients
+have no table privileges; Cron Control reaches them only through `SECURITY
+DEFINER` RPCs executable by `service_role`. Admin reads through
+`/api/v1/infrastructure/` routes that check `view_infrastructure`.
+
+| Table | Key | Holds |
+| --- | --- | --- |
+| `observability_source_control` | `source` | Mode, request and daily row budgets, generation, watermark. |
+| `observability_daily_writes` | `(source, day)` | Rows written per UTC day, for the row budget. |
+| `observability_ingest_runs` | `id` | Source, window, status, request and row counts. Counts only. |
+| `observability_rollups` | `(source, service, metric, bucket_seconds, bucket_start)` | Numeric value from an allowlisted metric set. |
+| `observability_deploy_markers` | `(source, service, version_id)` | Deploy time, SHA, kind (`deploy`, `rollback`, `promotion`). |
+| `product_analytics_daily` | `(day, app, metric, dimension)` | Aggregate value, `suppressed` flag. |
+| `observability_slos` | `id` | Service, indicator, objective, window, owner role. |
+| `observability_alerts` | `dedupe_key` | SLO, burn rates, state (`firing`, `resolved`), delivery receipts. |
+
+The cost discovery work shares the scheduler, the source-control and ingest-run
+tables, and the Cloudflare read client. Its billing facts (minor units,
+currency, statement identities) stay in their own tables.
+
+### Product analytics and privacy
+
+Product analytics follows the
+[data protection standard](/platform/data-protection-standard):
+
+- **Aggregates only.** `private.rollup_product_analytics_daily(p_limit)` runs
+  inside Postgres as a Cron Control maintenance RPC every 30 minutes and
+  writes `(day, app, metric, dimension, value)` for the current and previous
+  UTC day. Session-based counts keep the highest value seen for the day,
+  because `auth.sessions` rows move forward or disappear after the day ends.
+  It never copies a user, guest, workspace or meeting id, a name or free text
+  into the analytics store.
+- **Small cells are suppressed whole.** A cell whose cohort has 1 to 9
+  people is stored as `suppressed = true` with a null value for every metric
+  in it, including sums such as minutes, tokens and credits. Zero stays a
+  measured zero.
+- **Complements are suppressed.** AI features with fewer than 10 people are
+  merged into an `other` cell. When `other` itself has 1 to 9 people, it and
+  the all-feature total are both suppressed, so no small cell can be derived
+  by subtraction. Per-app activity counts will follow the same rule against
+  the platform totals.
+- **Retention.** Daily aggregates are kept for 25 months. They are treated as
+  personal data with that bounded schedule until anonymization is verified;
+  they are not claimed as anonymized aggregates.
+- **Inputs keep their own clocks.** The rollup reads source tables inside
+  their existing retention (for example Meet attendance at 90 days) and does
+  not extend it.
+
+| Metric | Input | Notes |
+| --- | --- | --- |
+| `dau`, `wau` (platform) | `auth.sessions` | Same definitions as the executive view. |
+| `dau`, `wau` per app | `private.app_activity_marks` | Needs a new writer; see below. |
+| `meet_minutes`, `meet_participants`, `meet_meetings` | `private.meet_attendance_sessions` | Minutes clipped to the day; open intervals count until the rollup time. |
+| `ai_requests`, `ai_tokens`, `ai_credits`, `ai_users` per feature | `public.ai_credit_transactions` (`deduction`) | Feature names are code identifiers. |
+| `signups`, `workspaces_created` | `auth.users`, `public.workspaces` | Daily counts. |
+
+**Purpose and basis.** `product_analytics_daily` serves one purpose:
+aggregate product health for platform operators with `view_infrastructure`.
+The intended basis is legitimate interest. It holds no subject-level rows, so
+a subject export has nothing to return from it, and an erasure does not
+recompute closed days, whose counts cannot be traced to a person. The
+`observability-product-analytics` job stays out of `CRON_CONTROL_ENABLED_JOBS`
+until the legal owner confirms this record.
+
+**Per-app activity.** No store records which app a person used. The planned
+writer marks activity once per person, app and UTC day from the satellite
+session resolver. It stores `HMAC(key(day, app), user_id)`, with one key per
+day and app that lives until that UTC day closes, so marks cannot be joined
+across apps or days. Runs during the day only count marks. The first run
+after the day closes writes the final count, then deletes that day's marks
+and key in the same transaction. Before inserting, the writer checks the
+account-level usage analytics preference and pending erasure; turning the
+preference off deletes that person's marks for the open day. The writer needs
+the legal owner's confirmation of its basis and its own privacy review,
+because a keyed hash is personal data while the key exists.
+
+### Admin Health view
+
+`/admin` → Monitoring → **Health** (`/monitoring/health`) shows one row per app
+and Worker: request rate, error rate, p95 latency, CPU p99, DO errors, and the
+latest deploy, each with a status against its SLO. Selecting a service opens a
+drill-down with 15-minute series for 24 hours, 7 days or 30 days, deploy
+markers drawn on every chart, and the product analytics for that app. Every
+value carries its source state, and nothing outside `view_infrastructure` can
+read it.
+
+### SLOs and alerts
+
+Each SLO names a service, an indicator (availability from error rate, or
+latency against a p95 threshold) and an objective over 30 days. The
+`observability-slo-burn` processor runs every 15 minutes after ingestion and
+evaluates multi-window burn rates:
+
+| Severity | Long window | Short window | Burn rate |
+| --- | --- | --- | --- |
+| Page | 1 hour | 15 minutes (latest bucket) | 14.4 |
+| Ticket | 6 hours | 1 hour | 6 |
+
+A firing alert is keyed by `(slo, severity, start bucket)` and delivered once:
+
+- **Owner notification** through the shared
+  `private.send_root_operator_alert` RPC (shared with cost alerts), which
+  dedupes per key and calls `public.create_notification` for root workspace
+  members holding the alert's permission. This reaches the web inbox, email
+  and push, honoring each person's notification preferences.
+- **Fleet owner channel** for page-severity burns: the Fleet hub reads the
+  same operator route and relays the alert to the owner's ask channel. There
+  is no separate Mira channel; Mira sees the same owner notification.
+- **Mastermind** through the Fleet hub, which owns Mastermind item ids. Open
+  alerts are exposed at an operator route that the hub turns into
+  `needs_you` items. The push-event contract stays unchanged.
+- **Perf Factory** through a regression record in the detector's existing JSON
+  shape: `id`, `app`, `worker`, `metric`, `startTime`, `detectedAt`,
+  `baseline`, `trigger`, `observed`, `windows`, `baselineWindows`, `rule`,
+  `suspects`, `versionSummary` and `queries`, where each query has `name`,
+  `query`, `variables` and `rerun`. The detector reads open latency and error
+  alerts with `--observability-alerts`, fills `suspects` and `versionSummary`
+  from Worker version annotations as it does for its own regressions, and the
+  dispatcher investigates them by rerunning the stored queries.
+
+A bucket with no rollup is `unavailable`. It never counts as a healthy
+window, and an SLO whose long window is more than a quarter unavailable
+reports `unavailable` instead of a burn rate. Delivery uses bounded attempts
+with durable receipts. Resolution sends one follow-up and closes the alert
+after two healthy windows.
+
+## Delivery plan
+
+| Slice | Scope | Evidence |
+| --- | --- | --- |
+| (a) | This inventory and design. | Docs review |
+| (b) | Schema, source control, `cloudflare-workers` (Workers and Durable Objects), and `github-actions` collectors, product analytics rollup, retention. Jobs and rows start off. | Processor tests for bounds, fence, idempotence, dry run and failure budget; pgTAP for grants and the generation check |
+| (c) | Admin Health page and drill-down, en and vi. | Component and route tests, 390 px and 1440 px renders |
+| (d) | SLO table, burn evaluator, notification, Mastermind and Perf Factory delivery. | Burn-rate fixtures, delivery receipts, detector intake test |
+
+The `cloudflare-gateway`, Vercel and Supabase collectors and the per-app
+activity writer follow once their tokens are provisioned and their reviews
+pass. The Perf Factory detector covers gateway mounts until then.
+
+## Operating
+
+- Enable a source: provision its token, set its control row to `dry_run`,
+  add the job to `CRON_CONTROL_ENABLED_JOBS`, check the run log, then set `on`.
+- Stop a source now: stop its job with `/control/jobs/{id}/stop`. The
+  collector checks that fence before every provider request and before the
+  write. Setting the control row to `off` also stops it: a running collector
+  finishes its in-flight read, and the write is refused.
+- Investigate a missing series: read `observability_ingest_runs` for the source
+  (`budget_exhausted`, `failed`, `unknown`) before reading provider dashboards.
