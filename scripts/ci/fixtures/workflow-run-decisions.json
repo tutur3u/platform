@@ -137,6 +137,8 @@
   "security-review-reclassify.yaml": ["always"],
   "security-review-sweep.yaml": ["always"],
   "security-scan.yaml": ["always"],
+  "serving-worker-publish.yaml": ["always"],
+  "serving-workers-production.yaml": ["always"],
   "shared-secret-copy.yaml": ["always"],
   "shared-secret-write.yaml": ["always"],
   "shortener-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
