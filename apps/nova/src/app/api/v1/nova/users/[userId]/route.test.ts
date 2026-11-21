@@ -12,6 +12,11 @@ const VALID_ROLE_FLAGS = {
 
 const mocks = vi.hoisted(() => ({
   authorizeNovaRoleManager: vi.fn(),
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 
 vi.mock('@/lib/nova-team-api-auth', () => ({
@@ -59,6 +64,7 @@ function createRoleClient({
 
 function authorize(options?: Parameters<typeof createRoleClient>[0]) {
   const client = createRoleClient(options);
+  mocks.createAdminClient.mockResolvedValue(client.sbAdmin);
   mocks.authorizeNovaRoleManager.mockResolvedValue({
     ok: true,
     value: {
@@ -70,7 +76,7 @@ function authorize(options?: Parameters<typeof createRoleClient>[0]) {
         enabled: true,
       },
       sbAdmin: client.sbAdmin,
-      user: { id: 'manager-id' },
+      user: { id: OTHER_USER_ID },
     },
   });
 
@@ -146,6 +152,10 @@ describe('Nova user role route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      auditActorId: OTHER_USER_ID,
+    });
     expect(client.from).toHaveBeenCalledWith('platform_user_roles');
     expect(client.update).toHaveBeenCalledWith(VALID_ROLE_FLAGS);
     expect(client.updateEq).toHaveBeenCalledWith('user_id', TARGET_USER_ID);
@@ -251,6 +261,10 @@ describe('Nova user role route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({
+      noCookie: true,
+      auditActorId: OTHER_USER_ID,
+    });
     expect(client.from).toHaveBeenCalledWith('platform_user_roles');
     expect(client.deleteRoles).toHaveBeenCalledOnce();
     expect(client.deleteEq).toHaveBeenCalledWith('user_id', TARGET_USER_ID);

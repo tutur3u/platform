@@ -10,7 +10,10 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({
+    noCookie: true,
+    auditActorId: user.id,
+  });
 
   if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
     return NextResponse.json(
@@ -65,7 +68,10 @@ export async function DELETE(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({
+    noCookie: true,
+    auditActorId: user.id,
+  });
 
   if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
     return NextResponse.json(

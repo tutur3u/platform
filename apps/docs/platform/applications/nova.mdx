@@ -373,8 +373,17 @@ Platform-wide Nova permissions are **not** stored in a dedicated `nova_*` roles
 table. They come from the shared `public.platform_user_roles` table (`enabled`,
 `allow_challenge_management`, `allow_manage_all_challenges`,
 `allow_role_management`), exposed to Nova through
-`getNovaPlatformRole()`. The `is_nova_role_manager()` RPC reflects the
-`allow_role_management` flag.
+`getNovaPlatformRole()`. Platform role management requires both `enabled`
+and `allow_role_management`. Users can read their own role, and enabled role
+managers can read other users' roles and pending email grants.
+
+Platform role writes go through server actions and APIs. The Web role update
+endpoint also requires root workspace role-management permission and an
+MFA-verified session. The database checks the verified server actor, blocks
+self-edits, and preserves at least one enabled role manager once one exists.
+Auth signup can still consume a pending email grant, and deleting an account
+cannot remove the last enabled role manager. Database coverage lives in
+[`platform-role-write-hardening.sql`](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/platform-role-write-hardening.sql).
 
 ## Data Access Patterns
 

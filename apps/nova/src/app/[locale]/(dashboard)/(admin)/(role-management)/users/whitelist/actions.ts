@@ -6,7 +6,10 @@ import { canManageNovaRolesGlobally } from '@/lib/challenge-management-auth';
 
 export async function addWhitelistEmail(email: string, enabled: boolean) {
   const user = await requireNovaAppSessionUser();
-  const sbAdmin = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({
+    noCookie: true,
+    auditActorId: user.id,
+  });
   if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
     throw new Error('Forbidden');
   }
