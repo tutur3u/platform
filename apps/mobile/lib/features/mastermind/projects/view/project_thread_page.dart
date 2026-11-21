@@ -5,9 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
-import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_thread_reply_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_owner_live.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_reply_step_up.dart';
 import 'package:mobile/features/mastermind/projects/cubit/thread_cubit.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_live.dart';
 import 'package:mobile/features/mastermind/projects/data/projects_models.dart';
@@ -27,6 +28,7 @@ class ProjectThreadPage extends StatefulWidget {
     required this.machine,
     required this.threadId,
     this.repository,
+    this.stepUp,
     this.live = true,
     super.key,
   });
@@ -34,6 +36,10 @@ class ProjectThreadPage extends StatefulWidget {
   final ProjectsMachine machine;
   final String threadId;
   final ProjectsRepository? repository;
+
+  /// Renews the second factor for a reply; built over the app's
+  /// [AuthRepository] when not given.
+  final FleetReplyStepUp? stepUp;
   final bool live;
 
   @override
@@ -61,6 +67,14 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
     ),
     onPhase: _onReply,
   );
+
+  /// Over the app's own [AuthRepository]; null where none is provided.
+  late final FleetReplyStepUp? _stepUp =
+      widget.stepUp ??
+      switch (context.read<AuthRepository?>()) {
+        final auth? => FleetReplyStepUp(auth: auth),
+        null => null,
+      };
   final _draft = TextEditingController();
   StreamSubscription<FleetOwnerFrame>? _frames;
 
@@ -152,9 +166,7 @@ class _ProjectThreadPageState extends State<ProjectThreadPage> {
                       builder: (context, status) => PostedReplyBubble(
                         status: status,
                         onRetry: () => unawaited(reply.retry()),
-                        onSignIn: () => unawaited(
-                          context.read<AuthCubit?>()?.refreshAccountAssurance(),
-                        ),
+                        stepUp: _stepUp,
                         onWriteAnother: _replies.isCurrent(reply)
                             ? _replies.writeAnother
                             : null,

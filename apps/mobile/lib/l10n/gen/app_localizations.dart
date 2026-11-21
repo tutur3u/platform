@@ -35317,12 +35317,6 @@ abstract class AppLocalizations {
   /// **'Reading {machine}. This takes a few seconds.'**
   String mastermindProjectsReadingMachine(String machine);
 
-  /// No description provided for @mastermindProjectsSignInAgain.
-  ///
-  /// In en, this message translates to:
-  /// **'Sign in again'**
-  String get mastermindProjectsSignInAgain;
-
   /// No description provided for @mastermindFleetAnswerRetryingAttempt.
   ///
   /// In en, this message translates to:
@@ -35844,6 +35838,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The last read failed. The last snapshot is shown, marked stale.'**
   String get mastermindShipLiveLoadStaleBody;
+
+  /// No description provided for @mastermindProjectsVerifyDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify with this device'**
+  String get mastermindProjectsVerifyDevice;
+
+  /// No description provided for @mastermindProjectsStepUpReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify to send your reply'**
+  String get mastermindProjectsStepUpReason;
+
+  /// No description provided for @mastermindProjectsStepUpCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Six-digit code'**
+  String get mastermindProjectsStepUpCode;
+
+  /// No description provided for @mastermindProjectsStepUpVerify.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get mastermindProjectsStepUpVerify;
+
+  /// No description provided for @mastermindProjectsStepUpFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'That did not verify. Try again.'**
+  String get mastermindProjectsStepUpFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

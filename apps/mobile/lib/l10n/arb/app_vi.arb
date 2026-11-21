@@ -8015,7 +8015,6 @@
   "mastermindProjectsReceiptNotDelivered": "Chưa gửi được",
   "mastermindProjectsErrorInvalid": "Không dùng được nội dung tìm này. Hãy thử ít từ hơn",
   "mastermindProjectsReadingMachine": "Đang đọc {machine}. Việc này mất vài giây.",
-  "mastermindProjectsSignInAgain": "Đăng nhập lại",
   "mastermindFleetAnswerRetryingAttempt": "Chưa gửi được · lần {attempt} · thử lại sau {seconds} giây",
   "mastermindFleetAnswerChangesRequested": "Đã yêu cầu chỉnh sửa",
   "mastermindFleetUrgencyHigh": "Cao",
@@ -8102,5 +8101,10 @@
   "mastermindShipLiveLoadBody": "Lần đọc gần nhất thất bại. Các dòng được ẩn thay vì hiển thị như hiện tại.",
   "mastermindShipLiveViewLast": "Xem bản gần nhất, có đánh dấu cũ",
   "mastermindShipLiveSplit": "{percent}% lưu lượng",
-  "mastermindShipLiveLoadStaleBody": "Lần đọc gần nhất thất bại. Đang hiển thị bản gần nhất, có đánh dấu cũ."
+  "mastermindShipLiveLoadStaleBody": "Lần đọc gần nhất thất bại. Đang hiển thị bản gần nhất, có đánh dấu cũ.",
+  "mastermindProjectsVerifyDevice": "Xác minh bằng thiết bị này",
+  "mastermindProjectsStepUpReason": "Xác minh để gửi trả lời",
+  "mastermindProjectsStepUpCode": "Mã sáu chữ số",
+  "mastermindProjectsStepUpVerify": "Xác minh",
+  "mastermindProjectsStepUpFailed": "Chưa xác minh được. Hãy thử lại."
 }

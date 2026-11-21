@@ -19003,9 +19003,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindProjectsSignInAgain => 'Đăng nhập lại';
-
-  @override
   String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
     return 'Chưa gửi được · lần $attempt · thử lại sau $seconds giây';
   }
@@ -19313,4 +19310,19 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindShipLiveLoadStaleBody => 'Lần đọc gần nhất thất bại. Đang hiển thị bản gần nhất, có đánh dấu cũ.';
+
+  @override
+  String get mastermindProjectsVerifyDevice => 'Xác minh bằng thiết bị này';
+
+  @override
+  String get mastermindProjectsStepUpReason => 'Xác minh để gửi trả lời';
+
+  @override
+  String get mastermindProjectsStepUpCode => 'Mã sáu chữ số';
+
+  @override
+  String get mastermindProjectsStepUpVerify => 'Xác minh';
+
+  @override
+  String get mastermindProjectsStepUpFailed => 'Chưa xác minh được. Hãy thử lại.';
 }

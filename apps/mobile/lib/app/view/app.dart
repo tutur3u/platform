@@ -540,6 +540,7 @@ class _AppState extends State<App> {
         BlocProvider.value(value: _mastermind.fleetAccess),
         BlocProvider.value(value: _mastermind.snapshot),
         RepositoryProvider.value(value: _mastermind),
+        RepositoryProvider<AuthRepository>.value(value: _authRepo),
         BlocProvider.value(value: _appTabCubit),
         BlocProvider.value(value: _shellChromeActionsCubit),
         BlocProvider.value(value: _shellMiniNavCubit),

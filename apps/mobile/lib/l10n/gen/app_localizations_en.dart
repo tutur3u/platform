@@ -19226,9 +19226,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindProjectsSignInAgain => 'Sign in again';
-
-  @override
   String mastermindFleetAnswerRetryingAttempt(int attempt, int seconds) {
     return 'Not sent yet · attempt $attempt · retrying in $seconds s';
   }
@@ -19536,4 +19533,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindShipLiveLoadStaleBody => 'The last read failed. The last snapshot is shown, marked stale.';
+
+  @override
+  String get mastermindProjectsVerifyDevice => 'Verify with this device';
+
+  @override
+  String get mastermindProjectsStepUpReason => 'Verify to send your reply';
+
+  @override
+  String get mastermindProjectsStepUpCode => 'Six-digit code';
+
+  @override
+  String get mastermindProjectsStepUpVerify => 'Verify';
+
+  @override
+  String get mastermindProjectsStepUpFailed => 'That did not verify. Try again.';
 }

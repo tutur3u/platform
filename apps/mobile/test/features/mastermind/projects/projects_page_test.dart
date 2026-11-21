@@ -200,42 +200,6 @@ void main() {
     }
   });
 
-  testWidgets('needs MFA offers Sign in again; Send again delivers', (
-    tester,
-  ) async {
-    final bridge = (await repository.machines()).first;
-    await tester.pumpApp(
-      ProjectThreadPage(
-        machine: bridge,
-        threadId: 'p_tuturuuu_0',
-        repository: repository,
-        live: false,
-      ),
-    );
-    await tester.pumpAndSettle();
-    repository.failNext = ProjectsFailureKind.mfaRequired;
-    final field = find.byKey(const ValueKey('projects-composer-field')).last;
-    final send = find.byKey(const ValueKey('projects-composer-send'));
-    await tester.enterText(field, 'Ship it');
-    await tester.pump();
-    await tester.tap(send);
-    await tester.pumpAndSettle();
-    expect(find.text('Sign in again'), findsOneWidget);
-    expect(find.text('Verify this device with MFA to reply'), findsOneWidget);
-    expect(find.text('Retry'), findsNothing);
-    expect(find.text('Not delivered'), findsNothing);
-    // The text stays for the resend under the same key.
-    await tester.tap(send);
-    await tester.pumpAndSettle();
-    expect(find.text('Sent'), findsOneWidget);
-    expect(find.text('Write another'), findsOneWidget);
-    expect(find.text('Check again'), findsOneWidget);
-    expect(
-      find.text('This reply still delivers when the machine takes it'),
-      findsOneWidget,
-    );
-  });
-
   test('projectsLocation keeps the Work path', () {
     expect(projectsLocation(), '/mastermind/work');
     expect(

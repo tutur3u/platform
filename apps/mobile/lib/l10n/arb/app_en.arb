@@ -9517,7 +9517,6 @@
       }
     }
   },
-  "mastermindProjectsSignInAgain": "Sign in again",
   "mastermindFleetAnswerRetryingAttempt": "Not sent yet · attempt {attempt} · retrying in {seconds} s",
   "@mastermindFleetAnswerRetryingAttempt": {
     "placeholders": {
@@ -9790,5 +9789,10 @@
       }
     }
   },
-  "mastermindShipLiveLoadStaleBody": "The last read failed. The last snapshot is shown, marked stale."
+  "mastermindShipLiveLoadStaleBody": "The last read failed. The last snapshot is shown, marked stale.",
+  "mastermindProjectsVerifyDevice": "Verify with this device",
+  "mastermindProjectsStepUpReason": "Verify to send your reply",
+  "mastermindProjectsStepUpCode": "Six-digit code",
+  "mastermindProjectsStepUpVerify": "Verify",
+  "mastermindProjectsStepUpFailed": "That did not verify. Try again."
 }
