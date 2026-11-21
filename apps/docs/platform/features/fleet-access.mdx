@@ -303,9 +303,11 @@ The Observer API uses service-role-only definer functions. It binds read actors
 to verified Tuturuuu sessions and checks live grants, stop state and project
 scope before reading digest rows.
 
-Slice 3 binds submissions to the signed-in web user, a Mastermind app-session
-user, or a desk event verified against a separate trusted ingress key.
-The platform CLI audience can read its own receipts. The desk's event
+Slice 3 binds submissions to the signed-in web user, a Supabase session
+bearer (the mobile access token), a Mastermind app-session user, or a desk
+event verified against a separate trusted ingress key.
+The platform CLI audience can read its own receipts and cannot submit,
+issue a link code, or confirm one. The desk's event
 fingerprint, linked actor lookup and intent admission share one database
 transaction. Authoritative target aliases resolve across the project catalog,
 and the resolved action hash excludes the display quote.
@@ -363,8 +365,12 @@ Each slice links its coverage here when it lands:
   signature, input binding and freshness, one-time events and codes, signed-in
   preview and confirmation, refusal audit, target scope, receipt reads,
   revocation, quota, quote isolation and digest JSON types.
-  See [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts)
+  See [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts),
+  [mobile write-session tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/write-session.test.ts),
   and [fleet-intent-admission.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-intent-admission.sql).
+  The write-session tests admit a verified Supabase bearer on intent submit,
+  link-code issue, and link confirmation, and refuse a `platform` CLI session,
+  an unknown bearer, and a forged `x-user-id`.
 - Slice 6 covers tab visibility per tier, request options against intent
   admission, typed drafts, digest answers, redirect refusal, strict response
   validation, refusal mapping, the link flow and bilingual message parity. See

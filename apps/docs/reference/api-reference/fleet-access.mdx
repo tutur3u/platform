@@ -80,9 +80,11 @@ or invalid publisher configuration returns `503`.
 ## Submit and read intents
 
 `POST /api/v1/fleet/intents` accepts a signed-in Tuturuuu web session cookie, a
-Mastermind access session with `internal-app:session`, or a desk request with signed
-event evidence. The `platform` audience is read-only. Send
-`Content-Type: application/json` with `{ kind, payload, quote? }`. Bodies
+Supabase session bearer, a Mastermind access session with `internal-app:session`,
+or a desk request with signed event evidence. The mobile app sends its Supabase
+access token as `Authorization: Bearer`. That token is not an app-coordination
+token. The `platform` audience stays read-only, including a signed CLI session.
+Send `Content-Type: application/json` with `{ kind, payload, quote? }`. Bodies
 are limited to 4 KiB. Each payload includes a `projectKey`. Targeted requests
 also include a catalog `targetKey`, with the same syntax as a project key.
 
@@ -119,6 +121,12 @@ array contains up to 50 entries. Pass `nextBefore` as `?before=<intent UUID>`
 for the next page when present. Disabled or stopped access returns `403`.
 
 ## Link a private desk conversation
+
+`POST /api/v1/fleet/identity/link-codes` and
+`POST /api/v1/fleet/identity/confirm` accept the same signed-in sessions as
+`POST /api/v1/fleet/intents`: a web session cookie, a Supabase session bearer,
+or a Mastermind access session with `internal-app:session`. They refuse the
+`platform` audience. Desk event evidence is not a session on these two routes.
 
 1. A signed-in user with live Fleet access sends `{}` to
    `POST /api/v1/fleet/identity/link-codes`. The `201` response contains
