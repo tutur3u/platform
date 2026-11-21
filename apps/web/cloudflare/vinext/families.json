@@ -156,7 +156,7 @@
         "/[wsId]/inventory",
         "/[wsId]/epm"
       ],
-      "activated": false
+      "activated": true
     },
     {
       "id": "dashboard-apps",
