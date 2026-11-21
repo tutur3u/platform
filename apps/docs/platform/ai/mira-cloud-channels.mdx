@@ -40,6 +40,7 @@ account connectors, see [per-channel decisions](#per-channel-decisions)).
 | Decision | Scope | Default | Exceptions |
 | --- | --- | --- | --- |
 | **Personal accounts stay on the Mac.** Mira's internal personal WhatsApp and Zalo accounts keep running on the Mac desk host. | Internal tenant personal sessions. The cloud runtime serves only official channels (Discord bot, WhatsApp Business Cloud, Zalo OA and Bot) for every tenant, including the internal one. | Host-side personal sessions get only the reduced registry projection, and that projection is off until the registry's personal-session setting is turned on. | None: no `SessionContainer` is deployed and the cloud connect route refuses `personal` mode. |
+| **Meta and Zalo platform onboarding is deferred.** Tuturuuu is not onboarded as a Meta Tech Provider and has not completed Zalo OA developer verification. | WhatsApp Business Cloud (Embedded Signup) and Zalo OA connects for every tenant. | A well-formed connect answers `connect_unavailable` until a proof verifier is wired for its channel kind. The WhatsApp verifier and the Zalo OA path are not built until the onboarding is revisited, so a Zalo verifier that ships for Zalo Bot refuses `official` proofs with `invalid_proof`. | Discord (shared or bring-your-own bot) and Zalo Bot need no platform onboarding; their connects open when their proof verifiers ship. |
 
 Regression coverage: `packages/internal-api/src/mira-channels.test.ts` (personal
 connects are refused) and `apps/web/src/lib/mira-channels/service.test.ts`;
@@ -175,6 +176,9 @@ is not offered.
 
 ### WhatsApp
 
+Gated on Meta Tech Provider onboarding, which is deferred (see
+[decisions](#decisions)); the plan below applies once it completes.
+
 **Decision:** paying tenants use only the official **WhatsApp Business Cloud
 API**. Tuturuuu onboards as a Meta Tech Provider and offers Embedded Signup so a
 tenant connects its own WhatsApp Business Account and number in the wizard.
@@ -218,7 +222,8 @@ number banned. Material; the owner decides whether the internal desk keeps it.
 
 **Decision:** paying tenants use official routes only:
 
-- **Zalo Official Account API** for businesses with a verified OA on a tier that
+- **Zalo Official Account API** (gated on Zalo OA developer verification,
+  which is deferred; see [decisions](#decisions)) for businesses with a verified OA on a tier that
   includes OpenAPI access (the tenant pays Zalo for the OA tier). OAuth v4 with
   PKCE for OA access tokens; the tenant object refreshes them using the
   returned `expires_in`. Each new single-use refresh token is written back to
@@ -770,8 +775,9 @@ cron secrets and every other bearer.
 
 Target: first reply in under ten minutes.
 
-1. **Channel:** Discord invite (shared bot) or BYO token; WhatsApp Embedded
-   Signup; Zalo OA OAuth or Zalo Bot token.
+1. **Channel:** Discord invite (shared bot) or BYO token; Zalo Bot token;
+   WhatsApp Embedded Signup and Zalo OA OAuth once their onboarding completes
+   (see [decisions](#decisions)).
 2. **Persona:** name, purpose, tone, instructions; optional knowledge sources
    (workspace documents and URLs ingested through the existing memory and
    Drive paths).
@@ -930,7 +936,8 @@ with the first deployable slice.
 4. **Rollback:** the same fence in reverse with the previous owner's valid
    credentials, under another fresh generation. The M4 receivers keep running
    observe-only until the owner retires them.
-5. **Order:** Discord first (official, lowest risk), then Zalo, then WhatsApp.
+5. **Order:** Discord first (official, lowest risk), then Zalo Bot; Zalo OA
+   and WhatsApp follow once their platform onboarding completes.
 6. **Paying tenants:** open after the internal tenant has run each official
    route for a full week within latency and error targets.
 
@@ -944,5 +951,3 @@ report each result back to the fence.
 1. Personal-account mode for paying tenants: recommended never. The notice
    given to contacts in allowlisted personal conversations whose messages
    reach LLM providers is decided with it.
-2. Meta Tech Provider onboarding and Zalo developer verification for
-   Tuturuuu as the platform operator.
