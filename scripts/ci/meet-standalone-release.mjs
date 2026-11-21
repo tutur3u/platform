@@ -56,6 +56,17 @@ export const RELEASE_EXCEPTIONS = [
     followUp:
       'Root-script 6133, 6135-6138, 6276, 6581, 6940, 6950 and utils commercial-comparison. No Meet runtime failure.',
   },
+  {
+    // Known-drift Test failures only, same names as the Prod lane list at
+    // 0f7d0d58. Security, Meet Cloudflare, TypeScript and Oxc stay required.
+    // Expires 2026-11-22 23:59 ICT.
+    id: 'RA-20261122-0410-MEET-REL',
+    source: '89f8b2ffb6cc48fdd05dd138180c300657e42d51',
+    workflows: ['turbo-unit-tests.yaml'],
+    expires: '2026-11-22T16:59:00Z',
+    followUp:
+      'Root 6143, 6145-6148, 6287, 6592, 7002, 7012; utils commercial-comparison; Mail HSTS 6778. Wrangler ratchet 6292 is fixed and is not waived. Any other Test failure is outside this grant.',
+  },
 ];
 
 export function releaseException(
