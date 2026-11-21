@@ -189,6 +189,7 @@ export function AskCard({
             now={now}
             onUndo={answer.undo}
             onCheck={() => void answer.check()}
+            onRetry={answer.retryNow}
           />
         )}
       </CardContent>

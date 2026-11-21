@@ -29,14 +29,25 @@ export function AnswerOutcome({
   now,
   onUndo,
   onCheck,
+  onRetry,
 }: {
   state: Extract<
     AnswerState,
-    { kind: 'pending' | 'sending' | 'sent' | 'closed' | 'superseded' | 'error' }
+    {
+      kind:
+        | 'pending'
+        | 'sending'
+        | 'retrying'
+        | 'sent'
+        | 'closed'
+        | 'superseded'
+        | 'error';
+    }
   >;
   now: number;
   onUndo: () => void;
   onCheck: () => void;
+  onRetry: () => void;
 }) {
   const { t } = useI18n();
   // Stable, so focus moves to Undo once on mount and never again per tick.
@@ -69,6 +80,22 @@ export function AnswerOutcome({
         <p className="text-muted-foreground text-sm" aria-live="polite">
           {t('ask.sendingNow')}
         </p>
+      );
+    case 'retrying':
+      return (
+        <div
+          className="flex flex-wrap items-center gap-2 text-sm"
+          aria-live="polite"
+        >
+          <span className="text-muted-foreground tabular-nums">
+            {t('ask.retrying', {
+              seconds: Math.max(1, Math.ceil((state.retryAt - now) / 1000)),
+            })}
+          </span>
+          <Button size="sm" variant="outline" onClick={onRetry}>
+            {t('ask.retryNow')}
+          </Button>
+        </div>
       );
     case 'sent':
       return <ReceiptLine receipt={state.receipt} />;

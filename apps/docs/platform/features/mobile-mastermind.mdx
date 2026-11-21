@@ -301,8 +301,9 @@ product rules of the shell entry and every tab.
   open Work filtered (`?state=`), up to three open decisions and every machine.
   Inbox lists open decisions most urgent first with Approve (the selected or
   recommended option), Hold and Reply (a sheet on the root navigator), then
-  answered ones with their pickup status; a failed send offers Retry with the
-  same key. Work groups lanes by machine or provider (`?group=provider`) and
+  answered ones with their pickup status; an answer that could not reach Web
+  retries on its own with the same key (see
+  [Answer delivery](#answer-delivery)). Work groups lanes by machine or provider (`?group=provider`) and
   filters by state. Work holds the dock slot alone; the hub Threads preview,
   the hub Needs-you asks and the decision journal are no longer routed from
   these tabs.
@@ -388,10 +389,10 @@ owns Back, and every list reserves the dock clearance. Code lives in
   posted, and Undo in that window drops it unsent, even when a poll brings
   another device's answer meanwhile: the card keeps its place and this
   device's own submission (waiting, not sent or closed) shows over the
-  other receipt until it settles. A queued answer to a decision another
-  channel closed meanwhile, or to a login request that ended, is dropped
-  unsent. A login request that has ended
-  offers no Retry. After posting, Web keeps every answer
+  other receipt until it settles. A queued or retrying answer to a decision
+  another channel closed meanwhile, or to a login request that ended, stops
+  unsent and settles as closed. A login request that has ended offers no
+  Retry now. After posting, Web keeps every answer
   as a revision, so there is no later undo.
 - **Snooze:** 15 minutes, 1 hour, 08:00 the next day in Mastermind time
   (UTC+7) and, while it is more than five minutes away, until 5 minutes
@@ -411,8 +412,74 @@ owns Back, and every list reserves the dock clearance. Code lives in
   `resolved` show where the answer came from ("Answered on WhatsApp",
   "Answered on Mastermind", "Answered on mobile", "Answered in the CLI",
   or "Closed" without a channel) with the chosen outcome. A 409 from Web
-  marks the answer "This request has already closed" without Retry and
-  refetches the snapshot.
+  marks the answer closed without Retry and refetches the snapshot: "This
+  request has already closed" on a login request, "This request closed
+  before your answer arrived" on an ask.
+
+### Answer delivery
+
+Scope: every owner answer posted from the mobile Fleet Inbox (Approve, Hold,
+Reply, "I signed in") and from the Mastermind web app. Default: an answer is
+never left stuck as "Not sent".
+
+- **One key per answer.** The Idempotency-Key is made when the owner answers
+  and every attempt reuses it, so Web records the answer at most once.
+- **What retries.** A network error, 5xx, 429 or an unreadable 202 body
+  retries on its own after 5 s, 15 s, 1 min, then every 2 min, and again at
+  once when the app resumes, the device comes back online or a Mastermind
+  push arrives or is tapped. The card shows "Not sent yet · retrying in N s"
+  with Retry now.
+- **What stops.** A 409 (`decision_closed`, `login_closed`) settles as closed
+  and is never resent. Any other 4xx, such as a 422 `invalid_answer` or
+  `unknown_option`, settles as "Not delivered" with the reason and Dismiss,
+  which brings the actions back.
+- **Abuse step-up (mobile).** A 403 that asks for a browser check
+  (`ABUSE_CHALLENGE_REQUIRED` or `x-abuse-challenge`) is not lost access:
+  held data stays, and the answer retries every 2 min for about an hour
+  ("Couldn't deliver: the server asked for a browser check") with Retry now,
+  then settles as "Not delivered · the server asked for a browser check.
+  Reply on WhatsApp". Its budget counts challenged attempts only, so a long
+  outage before the challenge does not use it up. The web app reads a 403
+  as denied and does not retry it.
+- **Bounded by the decision.** Retries continue only while the decision is in
+  the snapshot's `decisions[]`. When a refresh no longer lists it, the retry
+  stops. Once the decision is in `resolved[]`, a closed or stopped approve or
+  hold is dropped, because the resolved row already says where it went, and
+  so is any answer whose decision was answered on mobile: its earlier
+  attempt most likely landed with the response lost. A written reply on a
+  decision closed elsewhere, or any answer whose decision vanished without
+  history, moves to "Not delivered" with "This request closed before your
+  answer arrived", Dismiss and, when Iris sends are enabled, "Send to Iris
+  as a note", which posts the words with the ask's title as a new Iris
+  message under the same key.
+- **Restarts.** Mobile keeps unsent and settled answers in
+  `<cache>/mastermind/<sha256(userId)>/fleet_outbox.json`. A write lands only
+  while the account that read the file is signed in. The file is erased on
+  logout, account switch or lost access, both by the fleet cubit and with the
+  whole Mastermind cache. A 401 or 403 on a fleet read drops the snapshot
+  but keeps unsent answers. Restored answers wait for the first snapshot,
+  settle against it, then go out. Settled entries are pruned after 24 hours.
+  The web app retries only while the ask's card is mounted, one resend at a
+  time, and treats a receipt for a different choice as another device's
+  answer. It does not persist across reloads.
+- **Closed asks leave Inbox.** A decision listed in `resolved[]` is never open,
+  even when a lagging publisher still lists it in `decisions[]`; it shows
+  under Answered with its channel. An answer pending on this device cannot
+  hold a decision in the open tiers once the snapshot drops it. The fleet
+  snapshot is held in memory only and replaced by every successful refresh.
+- **Freshness.** "Updated 12 s ago" counts from Web's `receivedAt` (when the
+  publisher's snapshot arrived) and re-renders every second. Past five
+  minutes it warns that the publisher may be paused; a failed refresh warns
+  "Couldn't refresh". The Inbox polls every 15 s in the foreground and
+  refreshes at once on resume and on a Mastermind push (`decision.awaiting`
+  and other Mastermind events, received or tapped).
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/fleet/fleet_delivery_test.dart`
+  (same-key retry and backoff, 409, 422, abuse step-up, resume, restart,
+  closed-ask settling, resolved precedence, push refresh),
+  `fleet_delivery_view_test.dart` (freshness tick, resolved display, not
+  delivered and Send to Iris) and `apps/mastermind/src/fleet/model.test.ts`
+  (web retry reducer).
 
 ### Access requests
 

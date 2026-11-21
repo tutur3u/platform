@@ -24,7 +24,11 @@ void main() {
   setUp(() async {
     source = FakeFleetSource();
     harness = MastermindViewHarness(
-      fleet: FleetCubit(source: source, newKey: () => 'key-1'),
+      fleet: FleetCubit(
+        source: source,
+        newKey: () => 'key-1',
+        timer: inertFleetTimer,
+      ),
     );
     await harness.setAccess(TestAccess.enabled);
   });
@@ -165,9 +169,9 @@ void main() {
     await tester.tap(find.text('Hold').first);
     await tester.pump();
     await tester.pump();
-    expect(find.text('Not sent'), findsOneWidget);
+    expect(find.textContaining('retrying in'), findsOneWidget);
     source.answerError = null;
-    await tester.tap(find.text('Retry'));
+    await tester.tap(find.text('Retry now'));
     await tester.pump();
     await tester.pump();
     expect(source.answers.map((a) => a['key']), ['key-1', 'key-1']);

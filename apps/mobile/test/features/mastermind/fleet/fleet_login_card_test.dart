@@ -40,7 +40,11 @@ void main() {
       ),
     );
     harness = MastermindViewHarness(
-      fleet: FleetCubit(source: source, newKey: () => 'key-1'),
+      fleet: FleetCubit(
+        source: source,
+        newKey: () => 'key-1',
+        timer: inertFleetTimer,
+      ),
     );
     await harness.setAccess(TestAccess.enabled);
   });
@@ -156,11 +160,11 @@ void main() {
     await tester.tap(find.text('I signed in').first);
     await tester.pump();
     await tester.pump();
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Retry now'), findsOneWidget);
     clock = DateTime.utc(2026, 11, 20, 3, 12);
     await tester.pump(const Duration(seconds: 1));
-    expect(find.text('Not sent'), findsOneWidget);
-    expect(find.text('Retry'), findsNothing);
+    expect(find.textContaining('retrying in'), findsOneWidget);
+    expect(find.text('Retry now'), findsNothing);
   });
 
   testWidgets('the countdown reaching expiry hides the code and link', (

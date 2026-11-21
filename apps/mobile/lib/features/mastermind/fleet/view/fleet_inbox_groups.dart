@@ -1,20 +1,28 @@
+import 'package:mobile/features/mastermind/fleet/cubit/fleet_pending_answer.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_models.dart';
 
 /// The Inbox at a moment: open decisions split into urgent, access requests,
 /// needs a decision and FYI, then the ones snoozed on this device, then the
-/// answered ones. Login requests form their own tier whatever their urgency:
-/// they block work until the owner signs in. A login request that has
+/// answered ones, then this device's answers that never reached a decision
+/// before it closed. Only the snapshot's open decisions form the open tiers:
+/// an answer still pending here cannot keep a closed decision there. Login
+/// requests form their own tier whatever their urgency: they block work
+/// until the owner signs in. A login request that has
 /// ended stays visible with its state but cannot be snoozed. A decision
-/// with an answer still in flight here (`inFlight`) keeps its place even
-/// when a poll brings another device's receipt, so Undo and Retry stay
-/// where the owner tapped.
+/// with an answer still in flight here keeps its place even when a poll
+/// brings another device's receipt, so Undo and Retry stay where the owner
+/// tapped.
 class FleetInboxGroups {
   FleetInboxGroups(
     FleetSnapshot snapshot,
     Map<String, DateTime> snoozes,
     DateTime now, {
-    Set<String> inFlight = const {},
+    Map<String, FleetPendingAnswer> pending = const {},
   }) {
+    final inFlight = {
+      for (final MapEntry(:key, :value) in pending.entries)
+        if (value.status != FleetSendStatus.closed) key,
+    };
     final open =
         [
           ...snapshot.openDecisions,
@@ -56,6 +64,12 @@ class FleetInboxGroups {
     );
     final live = {for (final d in snapshot.decisions) d.id};
     resolved.addAll(snapshot.resolved.where((r) => !live.contains(r.id)));
+    undelivered.addAll(
+      [
+        for (final MapEntry(:key, :value) in pending.entries)
+          if (!value.outstanding && !live.contains(key)) (key, value),
+      ]..sort((a, b) => b.$2.createdAt.compareTo(a.$2.createdAt)),
+    );
   }
 
   final urgent = <FleetDecision>[];
@@ -65,6 +79,9 @@ class FleetInboxGroups {
   final snoozed = <(FleetDecision, DateTime)>[];
   final answered = <FleetDecision>[];
   final resolved = <FleetResolvedDecision>[];
+
+  /// Closed or refused answers whose decision has left the snapshot.
+  final undelivered = <(String, FleetPendingAnswer)>[];
 
   /// Cards the owner can still act on; an ended login request shows its
   /// state in Access requests but does not count.

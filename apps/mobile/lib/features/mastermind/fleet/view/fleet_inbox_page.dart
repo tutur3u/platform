@@ -17,7 +17,9 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_inbox_rows.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_login_card.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_section.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_snooze.dart';
+import 'package:mobile/features/mastermind/fleet/view/fleet_undelivered_row.dart';
 import 'package:mobile/features/mastermind/fleet_access/view/fleet_access_entry.dart';
+import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -82,11 +84,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                       snapshot,
                       snoozes,
                       now,
-                      inFlight: {
-                        for (final MapEntry(:key, :value)
-                            in state.pending.entries)
-                          if (value.status != FleetSendStatus.closed) key,
-                      },
+                      pending: state.pending,
                     ),
                     now,
                   ),
@@ -133,6 +131,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                 ),
                 onRetry: () => unawaited(fleet.retry(decision.id)),
                 onUndo: () => fleet.undo(decision.id),
+                onDismiss: () => fleet.dismiss(decision.id),
                 onSnooze: snooze,
               )
             : FleetDecisionCard(
@@ -152,6 +151,7 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                 ),
                 onRetry: () => unawaited(fleet.retry(decision.id)),
                 onUndo: () => fleet.undo(decision.id),
+                onDismiss: () => fleet.dismiss(decision.id),
                 onSnooze: snooze,
               ),
       );
@@ -197,6 +197,17 @@ class _FleetInboxPageState extends State<FleetInboxPage> {
                 ),
               const SizedBox(height: AppSpacing.md),
             ],
+            ...fleetUndeliveredSection(
+              l10n,
+              groups.undelivered,
+              orchestrator: snapshot.orchestratorLabel,
+              onDismiss: fleet.dismiss,
+              sendNote:
+                  _runtime.iris.isConfigured &&
+                      mastermindIrisSendCapability.value
+                  ? _runtime.iris.send
+                  : null,
+            ),
             if (groups.answered.isNotEmpty || groups.resolved.isNotEmpty) ...[
               AppSectionHeader(
                 title: l10n.mastermindFleetAnsweredTitle,

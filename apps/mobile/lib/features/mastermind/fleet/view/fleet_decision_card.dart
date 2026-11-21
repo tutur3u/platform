@@ -23,6 +23,7 @@ class FleetDecisionCard extends StatefulWidget {
     required this.onAnswer,
     required this.onRetry,
     this.onUndo,
+    this.onDismiss,
     this.onSnooze,
     this.receipt,
     this.pending,
@@ -38,6 +39,7 @@ class FleetDecisionCard extends StatefulWidget {
   final FleetAnswerCallback onAnswer;
   final VoidCallback onRetry;
   final VoidCallback? onUndo;
+  final VoidCallback? onDismiss;
   final VoidCallback? onSnooze;
 
   @override
@@ -77,6 +79,8 @@ class _FleetDecisionCardState extends State<FleetDecisionCard> {
       orchestrator: widget.orchestrator,
       onRetry: widget.onRetry,
       onUndo: widget.onUndo ?? () {},
+      onDismiss: widget.onDismiss,
+      now: widget.now,
     );
     final recommended = decision.recommended;
     final showOptions =

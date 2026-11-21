@@ -130,7 +130,7 @@ void main() {
       await cubit.answer('pool-switch', FleetAnswerAction.reply, text: 'Yes');
       expect(
         cubit.state.pending['pool-switch']?.status,
-        FleetSendStatus.failed,
+        FleetSendStatus.retrying,
       );
 
       source.answerError = null;

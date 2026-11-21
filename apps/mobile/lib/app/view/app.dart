@@ -78,6 +78,7 @@ import 'package:mobile/features/mail/data/mail_offline_preparation.dart';
 import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_push_signals.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notes/notes_offline_preparation.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
@@ -269,6 +270,7 @@ class _AppState extends State<App> {
         ?_workspaceCubit.state.currentWorkspace,
         ..._workspaceCubit.state.workspaces,
       ].any((workspace) => workspace.id == wsId && workspace.personal),
+      mastermindPushes: mastermindPushSignals(PushNotificationService.instance),
     );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();

@@ -333,6 +333,9 @@ class FleetSnapshot {
         ? orchestrator
         : const <String, dynamic>{};
     final answers = json['answers'];
+    final resolved = _list(state['resolved'], FleetResolvedDecision.parse)
+      ..sort((a, b) => b.resolvedAt.compareTo(a.resolvedAt));
+    final closed = {for (final r in resolved) r.id};
     return FleetSnapshot(
       generatedAt: generatedAt,
       receivedAt: receivedAt,
@@ -344,7 +347,12 @@ class FleetSnapshot {
       counts: FleetCounts.parse(state['counts']),
       machines: _list(state['machines'], FleetMachine.parse),
       lanes: _list(state['lanes'], FleetLane.parse),
-      decisions: _list(state['decisions'], FleetDecision.parse),
+      // A decision listed as resolved is closed, even when a lagging
+      // publisher still lists it as open: it must not stay actionable.
+      decisions: _list(
+        state['decisions'],
+        FleetDecision.parse,
+      ).where((d) => !closed.contains(d.id)).toList(),
       answers: {
         if (answers is Map<String, dynamic>)
           for (final MapEntry(:key, :value) in answers.entries)
@@ -352,8 +360,7 @@ class FleetSnapshot {
               if (FleetAnswerReceipt.parse(value) case final receipt?)
                 key: receipt,
       },
-      resolved: _list(state['resolved'], FleetResolvedDecision.parse)
-        ..sort((a, b) => b.resolvedAt.compareTo(a.resolvedAt)),
+      resolved: resolved,
       release: switch (state['release']) {
         final Map<String, dynamic> release => FleetRelease.parse(release),
         _ => null,

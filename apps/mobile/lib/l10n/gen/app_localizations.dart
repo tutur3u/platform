@@ -34764,6 +34764,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fleet status, requests and chat links'**
   String get mastermindFleetAccessAppDescription;
+
+  /// No description provided for @mastermindFleetAgeSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} s ago'**
+  String mastermindFleetAgeSeconds(int count);
+
+  /// No description provided for @mastermindFleetAnswerRetrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent yet · retrying in {seconds} s'**
+  String mastermindFleetAnswerRetrying(int seconds);
+
+  /// No description provided for @mastermindFleetAnswerRetryNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry now'**
+  String get mastermindFleetAnswerRetryNow;
+
+  /// No description provided for @mastermindFleetAnswerClosedBeforeSent.
+  ///
+  /// In en, this message translates to:
+  /// **'This request closed before your answer arrived'**
+  String get mastermindFleetAnswerClosedBeforeSent;
+
+  /// No description provided for @mastermindFleetAnswerRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered · {reason}'**
+  String mastermindFleetAnswerRejected(String reason);
+
+  /// No description provided for @mastermindFleetRejectUnknownOption.
+  ///
+  /// In en, this message translates to:
+  /// **'That option is no longer offered'**
+  String get mastermindFleetRejectUnknownOption;
+
+  /// No description provided for @mastermindFleetRejectInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The fleet refused this answer'**
+  String get mastermindFleetRejectInvalid;
+
+  /// No description provided for @mastermindFleetRejectForbidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Your fleet access changed'**
+  String get mastermindFleetRejectForbidden;
+
+  /// No description provided for @mastermindFleetDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get mastermindFleetDismiss;
+
+  /// No description provided for @mastermindFleetUndeliveredTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered'**
+  String get mastermindFleetUndeliveredTitle;
+
+  /// No description provided for @mastermindFleetSendToIris.
+  ///
+  /// In en, this message translates to:
+  /// **'Send to {name} as a note'**
+  String mastermindFleetSendToIris(String name);
+
+  /// No description provided for @mastermindFleetIrisSendFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach {name}'**
+  String mastermindFleetIrisSendFailed(String name);
+
+  /// No description provided for @mastermindFleetIrisNote.
+  ///
+  /// In en, this message translates to:
+  /// **'About \"{title}\": {text}'**
+  String mastermindFleetIrisNote(String title, String text);
+
+  /// No description provided for @mastermindFleetAnswerChallenged.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t deliver: the server asked for a browser check · retrying in {seconds} s'**
+  String mastermindFleetAnswerChallenged(int seconds);
+
+  /// No description provided for @mastermindFleetRejectChallenge.
+  ///
+  /// In en, this message translates to:
+  /// **'the server asked for a browser check. Reply on WhatsApp'**
+  String get mastermindFleetRejectChallenge;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

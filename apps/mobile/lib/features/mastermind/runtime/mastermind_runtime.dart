@@ -15,6 +15,7 @@ import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/cubit/fleet_snooze_cubit.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_outbox_store.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_repository.dart';
 import 'package:mobile/features/mastermind/fleet/data/fleet_snooze_store.dart';
 import 'package:mobile/features/mastermind/fleet_access/cubit/fleet_access_cubit.dart';
@@ -50,9 +51,12 @@ final class MastermindRuntime {
     this.irisTrust,
     FleetCubit? fleet,
     FleetSnoozeStore? fleetSnoozeStore,
+    FleetOutboxStore? fleetOutboxStore,
     FleetAccessCubit? fleetAccess,
     Stream<bool>? onlineChanges,
+    Stream<void>? mastermindPushes,
   }) : _fleet = fleet,
+       _fleetOutboxStore = fleetOutboxStore,
        fleetAccess =
            fleetAccess ?? FleetAccessCubit(source: FleetAccessRepository()),
        _fleetSnoozeStore = fleetSnoozeStore,
@@ -72,8 +76,15 @@ final class MastermindRuntime {
       // the hub confirms replies are still on.
       if (online) {
         unawaited(this.replies.flush(recheckCapabilities: true));
+        _fleet?.retryNow();
       }
     }, onError: (Object _) {});
+    // A Mastermind push (a new decision awaiting the owner, received or
+    // tapped) means the fleet snapshot on screen is behind.
+    _pushSub = mastermindPushes?.listen(
+      (_) => refreshFleet(),
+      onError: (Object _) {},
+    );
   }
 
   /// Fixture or live source per build configuration; see
@@ -90,6 +101,7 @@ final class MastermindRuntime {
     IrisRelay? iris,
     IrisDeviceTrust? irisTrust,
     Stream<bool>? onlineChanges,
+    Stream<void>? mastermindPushes,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
     final trust =
@@ -134,7 +146,9 @@ final class MastermindRuntime {
       iris: iris ?? (source == null ? createIrisRelay(trust: trust) : null),
       irisTrust: trust,
       fleetSnoozeStore: PrefsFleetSnoozeStore(userId: userId),
+      fleetOutboxStore: createFleetOutboxStore(userId: userId),
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
+      mastermindPushes: mastermindPushes,
     );
   }
 
@@ -182,9 +196,11 @@ final class MastermindRuntime {
   /// Answers wait [fleetUndoWindow] before they are sent, so Undo is real.
   FleetCubit get fleet => _fleet ??= FleetCubit(
     source: FleetRepository(),
+    outbox: _fleetOutboxStore,
     undoWindow: fleetUndoWindow,
   );
   FleetCubit? _fleet;
+  final FleetOutboxStore? _fleetOutboxStore;
 
   static const fleetUndoWindow = Duration(seconds: 5);
 
@@ -199,6 +215,7 @@ final class MastermindRuntime {
   late final StreamSubscription<MastermindAccessState> _accessSub;
   late final StreamSubscription<MastermindSnapshotState> _snapshotSub;
   late final StreamSubscription<bool>? _onlineSub;
+  late final StreamSubscription<void>? _pushSub;
 
   // Losing access erases the held snapshot, memory and disk.
   void _onAccess(MastermindAccessState state) {
@@ -267,6 +284,15 @@ final class MastermindRuntime {
     }
   }
 
+  /// A push tap opened Mastermind: fetch the fleet now instead of waiting
+  /// for the next poll, and resend any answer waiting to retry.
+  void refreshFleet() {
+    final fleet = _fleet;
+    if (fleet == null) return;
+    fleet.retryNow();
+    unawaited(fleet.refresh());
+  }
+
   /// App resume: a failed access check (offline, a Worker blip) must not hide
   /// the module, or the Fleet access entry, until the next workspace change.
   Future<void> retryAccessAfterError(String? wsId) async {
@@ -280,6 +306,7 @@ final class MastermindRuntime {
 
   Future<void> close() async {
     await _onlineSub?.cancel();
+    await _pushSub?.cancel();
     await _accessSub.cancel();
     await _snapshotSub.cancel();
     scheduler.dispose();

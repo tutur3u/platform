@@ -30,6 +30,7 @@ class FleetLoginCard extends StatelessWidget {
     required this.onSignedIn,
     required this.onRetry,
     this.onUndo,
+    this.onDismiss,
     this.onSnooze,
     this.receipt,
     this.pending,
@@ -45,6 +46,7 @@ class FleetLoginCard extends StatelessWidget {
   final VoidCallback onSignedIn;
   final VoidCallback onRetry;
   final VoidCallback? onUndo;
+  final VoidCallback? onDismiss;
   final VoidCallback? onSnooze;
   final FleetAnswerReceipt? receipt;
   final FleetPendingAnswer? pending;
@@ -68,6 +70,8 @@ class FleetLoginCard extends StatelessWidget {
         // Web refuses signed_in once the request ended.
         onRetry: open ? onRetry : null,
         onUndo: onUndo ?? () {},
+        onDismiss: onDismiss,
+        now: now,
       );
       final sending = pending?.status == FleetSendStatus.sending;
       final where = machine ?? login.machineId;

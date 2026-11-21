@@ -7,7 +7,8 @@ import 'package:mobile/features/mastermind/fleet/cubit/fleet_cubit.dart';
 import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// "Updated 2 min ago", re-rendered every 30 seconds so the age stays true
+/// "Updated 12 s ago", measured from Web's `receivedAt` (when the publisher's
+/// snapshot arrived) and re-rendered every second so the age stays true
 /// between polls. A failed refresh or data older than [fleetStaleAfter]
 /// turns it into a warning; the text keeps foreground contrast and only the
 /// glyph takes the tone.
@@ -30,7 +31,7 @@ class _FleetFreshnessLineState extends State<FleetFreshnessLine> {
   void initState() {
     super.initState();
     _ticker = Timer.periodic(
-      const Duration(seconds: 30),
+      const Duration(seconds: 1),
       (_) => mounted ? setState(() {}) : null,
     );
   }

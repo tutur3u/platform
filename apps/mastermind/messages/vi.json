@@ -109,7 +109,9 @@
       "sendingNow": "Đang gửi",
       "notSent": "Chưa gửi: trang không kết nối được fleet sync.",
       "check": "Kiểm tra",
-      "superseded": "Đã được trả lời ở nơi khác trước; câu trả lời này chưa được gửi."
+      "superseded": "Đã được trả lời ở nơi khác trước; câu trả lời này chưa được gửi.",
+      "retrying": "Chưa gửi được · thử lại sau {seconds} giây",
+      "retryNow": "Thử lại ngay"
     },
     "snooze": {
       "label": "Tạm hoãn",

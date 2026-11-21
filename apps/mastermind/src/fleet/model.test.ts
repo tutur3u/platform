@@ -138,10 +138,10 @@ test('answer machine: undo window, one send, no automatic resend', () => {
   expect(answerReducer(sending, { type: 'undo' })).toBe(sending);
   const failed = answerReducer(sending, {
     type: 'result',
-    result: { kind: 'error', reason: 'unavailable' },
+    result: { kind: 'error', reason: 'invalid' },
   });
   expect(failed).toEqual({ kind: 'error', maybeSent: true });
-  // An error never queues again by itself; a fresh check decides.
+  // A refused send never queues again by itself; a fresh check decides.
   expect(answerReducer(failed, { type: 'queue', input, now })).toBe(failed);
   expect(answerReducer(failed, { type: 'checked', open: true })).toEqual({
     kind: 'idle',
@@ -164,6 +164,58 @@ test('answer machine: undo window, one send, no automatic resend', () => {
   expect(answerReducer({ kind: 'idle' }, { type: 'send' })).toEqual({
     kind: 'idle',
   });
+});
+
+test('an unreachable send retries with the same key until it lands', () => {
+  const now = Date.parse('2026-11-20T03:00:00.000Z');
+  const input = { action: 'hold' as const, idempotencyKey: 'key-1' };
+  let state: AnswerState = { kind: 'sending', input };
+  const delays: number[] = [];
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    state = answerReducer(state, {
+      type: 'result',
+      result: { kind: 'error', reason: 'unavailable' },
+      now,
+    });
+    if (state.kind !== 'retrying') throw new Error('expected retrying');
+    expect(state.input.idempotencyKey).toBe('key-1');
+    delays.push(state.retryAt - now);
+    state = answerReducer(state, { type: 'retry' });
+    expect(state).toMatchObject({ kind: 'sending', input });
+  }
+  expect(delays).toEqual([5_000, 15_000, 60_000, 120_000, 120_000]);
+
+  const retrying = answerReducer(state, {
+    type: 'result',
+    result: { kind: 'error', reason: 'unavailable' },
+    now,
+  });
+  // Still open with no receipt: keep retrying.
+  expect(answerReducer(retrying, { type: 'checked', open: true })).toBe(
+    retrying
+  );
+  expect(answerReducer(retrying, { type: 'checked', open: false })).toEqual({
+    kind: 'closed',
+  });
+  const receipt = {
+    action: 'hold' as const,
+    revision: 1,
+    answeredAt: new Date(now).toISOString(),
+    pickedUp: false,
+  };
+  expect(
+    answerReducer(retrying, { type: 'checked', open: true, receipt })
+  ).toEqual({ kind: 'sent', receipt });
+  expect(answerReducer(retrying, { type: 'supersede', receipt })).toEqual({
+    kind: 'superseded',
+    receipt,
+  });
+  expect(
+    answerReducer(answerReducer(retrying, { type: 'retry' }), {
+      type: 'result',
+      result: { kind: 'closed' },
+    })
+  ).toEqual({ kind: 'closed' });
 });
 
 test('countdown formatting', () => {

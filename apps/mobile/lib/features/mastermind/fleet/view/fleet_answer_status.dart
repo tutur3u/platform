@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
 import 'package:mobile/core/ui/ui.dart';
@@ -7,17 +9,20 @@ import 'package:mobile/features/mastermind/fleet/view/fleet_format.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The answer line under a card once the owner acted: inside the undo
-/// window, not sent, closed by Web, or recorded with its pickup status.
-/// Null when there is nothing to show and the actions should render. This
-/// device's own submission (queued, not sent or closed) takes precedence
-/// over a receipt a poll brought from another device, because it is the
-/// newer answer. Without [onRetry] a failed send offers no Retry.
+/// window, retrying with a live countdown, refused, closed, or recorded with
+/// its pickup status. Null when there is nothing to show and the actions
+/// should render. This device's own submission takes precedence over a
+/// receipt a poll brought from another device, because it is the newer
+/// answer. Without [onRetry] a retrying answer offers no Retry now; without
+/// [onDismiss] a refused one offers no Dismiss.
 Widget? fleetAnswerStatus({
   required FleetAnswerReceipt? receipt,
   required FleetPendingAnswer? pending,
   required String orchestrator,
   required VoidCallback? onRetry,
   required VoidCallback onUndo,
+  VoidCallback? onDismiss,
+  DateTime Function()? now,
 }) => switch ((receipt, pending?.status)) {
   (_, FleetSendStatus.queued) => _StatusRow(
     icon: LucideIcons.send,
@@ -25,16 +30,28 @@ Widget? fleetAnswerStatus({
     actionLabel: (l10n) => l10n.mastermindFleetUndo,
     onAction: onUndo,
   ),
+  (_, FleetSendStatus.retrying) => FleetRetryCountdown(
+    at: pending!.nextAttemptAt,
+    challenged: pending.reason == 'verification_required',
+    now: now,
+    onRetry: onRetry,
+  ),
   (_, FleetSendStatus.failed) => _StatusRow(
-    icon: LucideIcons.cloudOff,
-    label: (l10n) => l10n.mastermindFleetAnswerNotSent,
+    icon: LucideIcons.circleX,
+    label: (l10n) => l10n.mastermindFleetAnswerRejected(
+      fleetRejectionLabel(l10n, pending!.reason),
+    ),
     destructive: true,
-    actionLabel: onRetry == null ? null : (l10n) => l10n.commonRetry,
-    onAction: onRetry,
+    actionLabel: onDismiss == null
+        ? null
+        : (l10n) => l10n.mastermindFleetDismiss,
+    onAction: onDismiss,
   ),
   (_, FleetSendStatus.closed) => _StatusRow(
     icon: LucideIcons.circleX,
-    label: (l10n) => l10n.mastermindFleetAnswerClosed,
+    label: (l10n) => pending!.reason == 'login_closed'
+        ? l10n.mastermindFleetAnswerClosed
+        : l10n.mastermindFleetAnswerClosedBeforeSent,
   ),
   (final FleetAnswerReceipt receipt, _) => _Receipt(
     receipt: receipt,
@@ -42,6 +59,74 @@ Widget? fleetAnswerStatus({
   ),
   _ => null,
 };
+
+/// Web's refusal code as owner-facing words; an unknown code reads generic.
+String fleetRejectionLabel(AppLocalizations l10n, String? reason) =>
+    switch (reason) {
+      'unknown_option' => l10n.mastermindFleetRejectUnknownOption,
+      'forbidden' => l10n.mastermindFleetRejectForbidden,
+      'verification_required' => l10n.mastermindFleetRejectChallenge,
+      _ => l10n.mastermindFleetRejectInvalid,
+    };
+
+/// "Retrying in 12 s", counting down each second to the next attempt.
+class FleetRetryCountdown extends StatefulWidget {
+  const FleetRetryCountdown({
+    required this.at,
+    this.challenged = false,
+    this.now,
+    this.onRetry,
+    super.key,
+  });
+
+  final DateTime? at;
+
+  /// Web asked for a browser check this app cannot pass.
+  final bool challenged;
+  final DateTime Function()? now;
+  final VoidCallback? onRetry;
+
+  @override
+  State<FleetRetryCountdown> createState() => _FleetRetryCountdownState();
+}
+
+class _FleetRetryCountdownState extends State<FleetRetryCountdown> {
+  late final Timer _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => mounted ? setState(() {}) : null,
+    );
+  }
+
+  @override
+  void dispose() {
+    _ticker.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final now = (widget.now ?? DateTime.now)().toUtc();
+    final left = widget.at?.difference(now).inSeconds ?? 0;
+    return _StatusRow(
+      icon: LucideIcons.refreshCw,
+      label: (l10n) => switch ((left > 0, widget.challenged)) {
+        (true, true) => l10n.mastermindFleetAnswerChallenged(left),
+        (true, false) => l10n.mastermindFleetAnswerRetrying(left),
+        (false, _) => l10n.mastermindFleetAnswerSending,
+      },
+      destructive: widget.challenged,
+      actionLabel: widget.onRetry == null
+          ? null
+          : (l10n) => l10n.mastermindFleetAnswerRetryNow,
+      onAction: widget.onRetry,
+    );
+  }
+}
 
 class _Receipt extends StatelessWidget {
   const _Receipt({required this.receipt, required this.orchestrator});

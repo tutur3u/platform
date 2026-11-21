@@ -172,3 +172,19 @@ class FakeFleetSource implements FleetSource {
     );
   }
 }
+
+/// A retry timer that never fires and leaves nothing pending: widget tests
+/// drive retries through Retry now, resume or the cubit itself.
+Timer inertFleetTimer(Duration delay, void Function() callback) =>
+    _InertTimer();
+
+final class _InertTimer implements Timer {
+  @override
+  bool get isActive => false;
+
+  @override
+  int get tick => 0;
+
+  @override
+  void cancel() {}
+}

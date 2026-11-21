@@ -27,6 +27,7 @@ void main() {
         source: source,
         newKey: () => 'key-1',
         undoWindow: undoWindow,
+        timer: inertFleetTimer,
       ),
       fleetSnoozeStore: snoozeStore,
     );
@@ -245,8 +246,8 @@ void main() {
     await harness.runtime.fleet.refresh();
     await tester.pump(const Duration(seconds: 6));
     await tester.pump();
-    expect(find.text('Not sent'), findsOneWidget);
-    expect(find.text('Retry'), findsOneWidget);
+    expect(find.textContaining('retrying in'), findsOneWidget);
+    expect(find.text('Retry now'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

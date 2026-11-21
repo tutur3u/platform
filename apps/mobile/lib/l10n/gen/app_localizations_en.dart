@@ -18906,4 +18906,63 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessAppDescription => 'Fleet status, requests and chat links';
+
+  @override
+  String mastermindFleetAgeSeconds(int count) {
+    return '$count s ago';
+  }
+
+  @override
+  String mastermindFleetAnswerRetrying(int seconds) {
+    return 'Not sent yet · retrying in $seconds s';
+  }
+
+  @override
+  String get mastermindFleetAnswerRetryNow => 'Retry now';
+
+  @override
+  String get mastermindFleetAnswerClosedBeforeSent => 'This request closed before your answer arrived';
+
+  @override
+  String mastermindFleetAnswerRejected(String reason) {
+    return 'Not delivered · $reason';
+  }
+
+  @override
+  String get mastermindFleetRejectUnknownOption => 'That option is no longer offered';
+
+  @override
+  String get mastermindFleetRejectInvalid => 'The fleet refused this answer';
+
+  @override
+  String get mastermindFleetRejectForbidden => 'Your fleet access changed';
+
+  @override
+  String get mastermindFleetDismiss => 'Dismiss';
+
+  @override
+  String get mastermindFleetUndeliveredTitle => 'Not delivered';
+
+  @override
+  String mastermindFleetSendToIris(String name) {
+    return 'Send to $name as a note';
+  }
+
+  @override
+  String mastermindFleetIrisSendFailed(String name) {
+    return 'Couldn\'t reach $name';
+  }
+
+  @override
+  String mastermindFleetIrisNote(String title, String text) {
+    return 'About \"$title\": $text';
+  }
+
+  @override
+  String mastermindFleetAnswerChallenged(int seconds) {
+    return 'Couldn\'t deliver: the server asked for a browser check · retrying in $seconds s';
+  }
+
+  @override
+  String get mastermindFleetRejectChallenge => 'the server asked for a browser check. Reply on WhatsApp';
 }

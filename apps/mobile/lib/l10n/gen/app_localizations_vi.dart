@@ -18685,4 +18685,63 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindFleetAccessAppDescription => 'Trạng thái đội máy, yêu cầu và liên kết chat';
+
+  @override
+  String mastermindFleetAgeSeconds(int count) {
+    return '$count giây trước';
+  }
+
+  @override
+  String mastermindFleetAnswerRetrying(int seconds) {
+    return 'Chưa gửi được · thử lại sau $seconds giây';
+  }
+
+  @override
+  String get mastermindFleetAnswerRetryNow => 'Thử lại ngay';
+
+  @override
+  String get mastermindFleetAnswerClosedBeforeSent => 'Yêu cầu này đã đóng trước khi câu trả lời của bạn tới';
+
+  @override
+  String mastermindFleetAnswerRejected(String reason) {
+    return 'Chưa gửi được · $reason';
+  }
+
+  @override
+  String get mastermindFleetRejectUnknownOption => 'Lựa chọn này không còn nữa';
+
+  @override
+  String get mastermindFleetRejectInvalid => 'Hệ thống từ chối câu trả lời này';
+
+  @override
+  String get mastermindFleetRejectForbidden => 'Quyền truy cập của bạn đã thay đổi';
+
+  @override
+  String get mastermindFleetDismiss => 'Bỏ qua';
+
+  @override
+  String get mastermindFleetUndeliveredTitle => 'Chưa gửi được';
+
+  @override
+  String mastermindFleetSendToIris(String name) {
+    return 'Gửi cho $name dưới dạng ghi chú';
+  }
+
+  @override
+  String mastermindFleetIrisSendFailed(String name) {
+    return 'Không liên lạc được với $name';
+  }
+
+  @override
+  String mastermindFleetIrisNote(String title, String text) {
+    return 'Về \"$title\": $text';
+  }
+
+  @override
+  String mastermindFleetAnswerChallenged(int seconds) {
+    return 'Chưa gửi được: máy chủ yêu cầu xác minh trình duyệt · thử lại sau $seconds giây';
+  }
+
+  @override
+  String get mastermindFleetRejectChallenge => 'máy chủ yêu cầu xác minh trình duyệt. Hãy trả lời qua WhatsApp';
 }

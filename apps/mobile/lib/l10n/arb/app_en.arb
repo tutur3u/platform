@@ -9307,5 +9307,72 @@
   "mastermindFleetAccessDiscardTitle": "Discard this request?",
   "mastermindFleetAccessDiscard": "Discard",
   "mastermindFleetAccessKeepEditing": "Keep editing",
-  "mastermindFleetAccessAppDescription": "Fleet status, requests and chat links"
+  "mastermindFleetAccessAppDescription": "Fleet status, requests and chat links",
+  "mastermindFleetAgeSeconds": "{count} s ago",
+  "@mastermindFleetAgeSeconds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetAnswerRetrying": "Not sent yet · retrying in {seconds} s",
+  "@mastermindFleetAnswerRetrying": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetAnswerRetryNow": "Retry now",
+  "mastermindFleetAnswerClosedBeforeSent": "This request closed before your answer arrived",
+  "mastermindFleetAnswerRejected": "Not delivered · {reason}",
+  "@mastermindFleetAnswerRejected": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetRejectUnknownOption": "That option is no longer offered",
+  "mastermindFleetRejectInvalid": "The fleet refused this answer",
+  "mastermindFleetRejectForbidden": "Your fleet access changed",
+  "mastermindFleetDismiss": "Dismiss",
+  "mastermindFleetUndeliveredTitle": "Not delivered",
+  "mastermindFleetSendToIris": "Send to {name} as a note",
+  "@mastermindFleetSendToIris": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetIrisSendFailed": "Couldn't reach {name}",
+  "@mastermindFleetIrisSendFailed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetIrisNote": "About \"{title}\": {text}",
+  "@mastermindFleetIrisNote": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "text": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindFleetAnswerChallenged": "Couldn't deliver: the server asked for a browser check · retrying in {seconds} s",
+  "@mastermindFleetAnswerChallenged": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindFleetRejectChallenge": "the server asked for a browser check. Reply on WhatsApp"
 }

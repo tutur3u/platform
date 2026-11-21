@@ -7908,5 +7908,20 @@
   "mastermindFleetAccessDiscardTitle": "Bỏ yêu cầu này?",
   "mastermindFleetAccessDiscard": "Bỏ",
   "mastermindFleetAccessKeepEditing": "Tiếp tục sửa",
-  "mastermindFleetAccessAppDescription": "Trạng thái đội máy, yêu cầu và liên kết chat"
+  "mastermindFleetAccessAppDescription": "Trạng thái đội máy, yêu cầu và liên kết chat",
+  "mastermindFleetAgeSeconds": "{count} giây trước",
+  "mastermindFleetAnswerRetrying": "Chưa gửi được · thử lại sau {seconds} giây",
+  "mastermindFleetAnswerRetryNow": "Thử lại ngay",
+  "mastermindFleetAnswerClosedBeforeSent": "Yêu cầu này đã đóng trước khi câu trả lời của bạn tới",
+  "mastermindFleetAnswerRejected": "Chưa gửi được · {reason}",
+  "mastermindFleetRejectUnknownOption": "Lựa chọn này không còn nữa",
+  "mastermindFleetRejectInvalid": "Hệ thống từ chối câu trả lời này",
+  "mastermindFleetRejectForbidden": "Quyền truy cập của bạn đã thay đổi",
+  "mastermindFleetDismiss": "Bỏ qua",
+  "mastermindFleetUndeliveredTitle": "Chưa gửi được",
+  "mastermindFleetSendToIris": "Gửi cho {name} dưới dạng ghi chú",
+  "mastermindFleetIrisSendFailed": "Không liên lạc được với {name}",
+  "mastermindFleetIrisNote": "Về \"{title}\": {text}",
+  "mastermindFleetAnswerChallenged": "Chưa gửi được: máy chủ yêu cầu xác minh trình duyệt · thử lại sau {seconds} giây",
+  "mastermindFleetRejectChallenge": "máy chủ yêu cầu xác minh trình duyệt. Hãy trả lời qua WhatsApp"
 }

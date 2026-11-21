@@ -7,7 +7,9 @@ import 'package:mobile/l10n/l10n.dart';
 /// How long ago [time] was, relative to [now], in short words.
 String fleetAge(AppLocalizations l10n, DateTime time, DateTime now) {
   final age = now.difference(time);
-  if (age.inMinutes < 1) return l10n.mastermindFleetAgeNow;
+  // A device clock a little ahead of Web's reads as just now, not negative.
+  if (age.inSeconds < 5) return l10n.mastermindFleetAgeNow;
+  if (age.inMinutes < 1) return l10n.mastermindFleetAgeSeconds(age.inSeconds);
   if (age.inHours < 1) return l10n.mastermindFleetAgeMinutes(age.inMinutes);
   if (age.inDays < 1) return l10n.mastermindFleetAgeHours(age.inHours);
   return l10n.mastermindFleetAgeDays(age.inDays);

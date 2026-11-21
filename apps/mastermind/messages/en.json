@@ -109,7 +109,9 @@
       "sendingNow": "Sending",
       "notSent": "Not sent: the page could not reach fleet sync.",
       "check": "Check",
-      "superseded": "Answered elsewhere first; this answer was not sent."
+      "superseded": "Answered elsewhere first; this answer was not sent.",
+      "retrying": "Not sent yet · retrying in {seconds} s",
+      "retryNow": "Retry now"
     },
     "snooze": {
       "label": "Snooze",
