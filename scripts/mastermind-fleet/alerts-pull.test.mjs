@@ -67,6 +67,19 @@ function server(alerts) {
   return { calls, fetchImpl };
 }
 
+/** Mode and contents through one descriptor, so both describe one file. */
+function readPrivate(file) {
+  const fd = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW);
+  try {
+    return {
+      mode: fs.fstatSync(fd).mode & 0o777,
+      text: fs.readFileSync(fd, 'utf8'),
+    };
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 const run = (paths, fake, now = NOW) =>
   runOnce({
     paths,
@@ -86,8 +99,9 @@ test('pulls alerts after the publish and answer pickup, into a 0600 file', async
     'GET /api/v1/mastermind/fleet/alerts',
   ]);
   assert.deepEqual(result.alerts, { firing: 2, pages: 1 });
-  assert.equal(fs.statSync(paths.alertsFile).mode & 0o777, 0o600);
-  assert.deepEqual(JSON.parse(fs.readFileSync(paths.alertsFile, 'utf8')), {
+  const written = readPrivate(paths.alertsFile);
+  assert.equal(written.mode, 0o600);
+  assert.deepEqual(JSON.parse(written.text), {
     fetchedAt: NOW.toISOString(),
     alerts: [PAGE, TICKET],
   });
@@ -101,7 +115,7 @@ test('pulls alerts after the publish and answer pickup, into a 0600 file', async
 test('a failed pull keeps the previous file and logs counts only', async () => {
   const paths = sandbox();
   await run(paths, server([PAGE]));
-  const before = fs.readFileSync(paths.alertsFile, 'utf8');
+  const before = readPrivate(paths.alertsFile).text;
   for (const failure of [
     503,
     new Error('network down'),
@@ -114,7 +128,7 @@ test('a failed pull keeps the previous file and logs counts only', async () => {
       new Date(NOW.getTime() + 60_000)
     );
     assert.deepEqual(result.alerts, { failed: true });
-    assert.equal(fs.readFileSync(paths.alertsFile, 'utf8'), before);
+    assert.equal(readPrivate(paths.alertsFile).text, before);
   }
 });
 
