@@ -251,3 +251,5 @@ e34bb0320437291226babacb4ec5170a5a9e3c4a:scripts/ci/release-vercel-queue.test.mj
 # Each exception is scoped to the historical commit, test path, rule and line.
 11517227eb76d7cdce50f8749c4f580e762955ad:scripts/mastermind-fleet/publish.test.mjs:generic-api-key:10
 11517227eb76d7cdce50f8749c4f580e762955ad:apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts:generic-api-key:12
+# Deterministic HMAC key for signing Meet test tokens in a unit test; never a credential. Replaced by a low-entropy fixture. Exact fingerprint only.
+88e1fd4364fa2b98824b6451fb892fa43a471674:packages/realtime/src/meet/stream-tiers.test.ts:generic-api-key:21

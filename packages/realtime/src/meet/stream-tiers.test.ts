@@ -19,7 +19,8 @@ import {
 import { signMeetRealtimeToken, verifyMeetRealtimeToken } from './token';
 
 const now = '2026-11-22T08:00:00.000Z';
-const secret = 'test-secret-with-enough-length-0123456789';
+// Deterministic, non-secret HMAC key for signing test tokens only.
+const testSigningKey = 'test-secret';
 
 function payload(tier?: 'free' | 'paid') {
   return meetRealtimeTokenPayloadSchema.parse({
@@ -61,17 +62,20 @@ describe('stream tiers', () => {
   });
 
   it('refuses a token whose stream claim was raised after signing', () => {
-    const signed = signMeetRealtimeToken(payload('free'), secret);
+    const signed = signMeetRealtimeToken(payload('free'), testSigningKey);
     const [body, signature] = signed.split('.');
     const decoded = JSON.parse(
       Buffer.from(body!, 'base64url').toString('utf8')
     );
     decoded.limits.stream = meetStreamEntitlement('paid');
     const tampered = `${Buffer.from(JSON.stringify(decoded)).toString('base64url')}.${signature}`;
-    expect(verifyMeetRealtimeToken(tampered, secret)).toBeNull();
-    expect(verifyMeetRealtimeToken(signed, secret)?.limits.stream?.tier).toBe(
-      'free'
-    );
+    expect(
+      verifyMeetRealtimeToken(tampered, testSigningKey, Date.parse(now))
+    ).toBeNull();
+    expect(
+      verifyMeetRealtimeToken(signed, testSigningKey, Date.parse(now))?.limits
+        .stream?.tier
+    ).toBe('free');
   });
 
   it('flags reported dimensions beyond the entitlement with tolerance', () => {
