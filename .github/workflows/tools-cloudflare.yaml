@@ -162,7 +162,9 @@ jobs:
       deployments: read
     with:
       workflow_name: tools-cloudflare.yaml
-  # Qualify staging and production independently before Rex publishes either.
+  # Qualify staging and production independently. This workflow never
+  # publishes: production is a manual version upload, 0% stage and promotion
+  # (d74-cutover-runbooks) until serving-workers-production.yaml is enabled.
   native:
     needs: [check-ci, affected-gate]
     if: ${{ (github.ref != 'refs/heads/production' && (needs.affected-gate.outputs.run == 'true' && (needs.check-ci.outputs.should_run == 'true'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
