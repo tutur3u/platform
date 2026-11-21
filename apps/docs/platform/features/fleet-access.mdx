@@ -9,8 +9,12 @@ audience: developers
 defines the database foundation. Slice 2 adds the [Fleet API](/reference/api-reference/fleet-access)
 for live access, digest publishing and scoped reads. Slice 3 adds intent
 submission, requester receipts and desk identity linking. Slice 4 adds the
-desk-owner admission fence and desk digest reads. Production application and
-later slices need the approvals in the [implementation plan](#implementation-plan).
+desk-owner admission fence and desk digest reads. Slice 5 adds the dry-run
+consumer and retention purge in Cron Control. Slice 6 adds the Mastermind web
+Fleet access area and grantee admission. Slice 7 adds the Mastermind mobile
+Fleet access view. Every surface stays inert until the
+[activation steps](#activation) run. Later slices need the approvals in the
+[implementation plan](#implementation-plan).
 
 Fleet access lets named teammates (for example an operations lead) read the
 state of the agent fleet, ask about it, and steer work without routing every
@@ -388,6 +392,33 @@ event fingerprints older than 90 days. Unconfirmed link codes stay usable
 until expiry. Confirmation consumes the code and account deletion removes its
 codes. Every scheduled purge records counts in the append-only audit log.
 Quote readers must filter on `expires_at` from their first release.
+
+## Activation
+
+Shipping code grants nobody access. Each step below is separate, and each is
+run by the owner or the release owners:
+
+1. **Database:** the gated production migration workflow applies the Fleet
+   migrations after their exact-SQL review, CI and staging.
+2. **Grant:** the Owner grants a person a tier and projects through the
+   owner-only grant function. That person needs a tuturuuu.com account.
+3. **Catalog and digest:** the Owner registers project catalog rows and approved
+   display values, and the digest publisher token is issued so status exists to
+   read.
+4. **Web admission:** the Cloudflare Access policy for Mastermind web gains an
+   Allow rule listing the person's individual email, as described in the
+   [Mastermind web runbook](/build/devops/mastermind-web).
+5. **Mobile:** the next app release carries the Fleet access view and its Apps
+   hub tile.
+6. **Chat desks:** each desk follows the v2 cutover in the
+   [API reference](/reference/api-reference/fleet-access). Until then, Slice 0
+   stays dormant on the desk host.
+7. **Consumer:** the Slice 5 consumer token and mode are set only when dry-run
+   receipts are wanted. Its kill switch and the Fleet stop both halt it.
+
+Offboarding reverses steps 2 and 4: revoke the grant first, which takes effect on
+the next request, then remove the email and revoke the person's Cloudflare Access
+sessions.
 
 ## Implementation plan
 
