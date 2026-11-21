@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_APP_DIR,
   familyOwns,
   inSubtree,
   loadFamilies,
@@ -53,5 +56,30 @@ describe('vinext route families', () => {
     expect(keep.some((rel) => rel.includes('(marketing)/changelog'))).toBe(
       false
     );
+  });
+
+  // vinext compiles every kept entry, so an entry that imports another
+  // route entry (a page re-rendering a sibling page) needs both in one family.
+  it('keeps every route entry that a kept entry imports', () => {
+    const appSrc = path.join(DEFAULT_APP_DIR, 'src/app');
+    const importPattern = /(?:from|import\()\s*['"]((?:\.|@\/)[^'"]+)['"]/g;
+    for (const family of config.families.filter((f) => f.enabled)) {
+      const { keep, remove } = planVinextPrune(family.id);
+      const removed = new Set(remove.map((rel) => path.join(appSrc, rel)));
+      for (const rel of keep) {
+        const file = path.join(appSrc, rel);
+        for (const [, spec] of readFileSync(file, 'utf8').matchAll(
+          importPattern
+        )) {
+          const target = spec.startsWith('@/')
+            ? path.join(DEFAULT_APP_DIR, 'src', spec.slice(2))
+            : path.resolve(path.dirname(file), spec);
+          const hit = ['', '.ts', '.tsx'].find((ext) =>
+            removed.has(target + ext)
+          );
+          expect(hit, `${family.id}: ${rel} imports ${spec}`).toBeUndefined();
+        }
+      }
+    }
   });
 });
