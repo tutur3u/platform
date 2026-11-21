@@ -102,6 +102,7 @@ function rejected(
         type: 'index_release',
         userId,
         reservationId: mutation.reservation.reservationId,
+        operationId: mutation.operationId,
       },
       {
         type: 'audit',
@@ -205,7 +206,12 @@ export async function reduceSignIn(
       sessionId: sid,
       userId: outcome.userId,
     },
-    { type: 'index_confirm', userId: outcome.userId, reservationId },
+    {
+      type: 'index_confirm',
+      userId: outcome.userId,
+      reservationId,
+      operationId: mutation.operationId,
+    },
   ];
   if (eviction) {
     effects.push({

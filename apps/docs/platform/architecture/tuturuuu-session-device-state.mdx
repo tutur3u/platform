@@ -47,18 +47,24 @@ interface DeviceStore {
   refreshEpochCache(read: EpochRead, nowMs: number): Promise<void>;
 }
 interface UserIndexPort {
-  // One compare-and-set on the user's device list. `operationId` names the sign-in.
+  // One compare-and-set on the user's device list. `operationId` names the sign-in;
+  // every reserve adds a claim for it to the slot it returns.
   reserve(input: { userId: UserId; deviceId: string; operationId: string; cap: number;
                    nowMs: number }): Promise<
     | { kind: 'reserved'; reservation: Reservation }     // includes an existing slot
     | { kind: 'swap'; reservation: Reservation; evictDeviceId: string;
-        evictReservationId: string }
+        evictReservationId: string }                     // includes an existing slot
+                                                         // still holding a provisional swap
     | { kind: 'evicting' }                               // this device holds a tombstone for the user
     | { kind: 'unavailable' }
   >;
-  confirm(reservation: Reservation): Promise<void>;
-  release(reservation: Reservation): Promise<void>;
+  // Marks the slot confirmed, discards its victim and settles the operation's claim.
+  confirm(claim: ReservationClaim): Promise<void>;
+  // Settles one claim of the operation; a no-op without one. Drops the slot and
+  // restores its victim only when that was the last claim on an unconfirmed slot.
+  release(claim: ReservationClaim): Promise<void>;
 }
+type ReservationClaim = Reservation & { operationId: string };
 type EpochRead = { userId: UserId; epoch: number; readAtMs: number;
                    status: 'fresh' | 'stale' | 'unavailable' };
 type Entropy = (bytes: number) => Uint8Array;
@@ -215,7 +221,11 @@ sessions at once, a delayed lower fan-out cannot roll the cache back, and a
 late intermediate fan-out cannot look freshly read and suppress the re-read
 that would learn a newer epoch. Logout and
 `revoke_user_on_device` never raise it. A crash mid-merge leaves the older
-entry, which ages out within the 30-second bound.
+entry, which ages out within the 30-second bound. Because the cache is
+outside `DeviceState`, a fan-out none of whose writes returned `committed`
+succeeds only when the final read shows its revocation and a cache read shows
+the user's entry at or above `belowEpoch`; otherwise it is `unavailable` and
+`UserSessions` retries it.
 
 **Device revoke by slot.** Each session stores the `reservationId` of the
 index slot it was admitted under. `revoke_user_on_device` names the evicted
@@ -433,9 +443,10 @@ at most 256 records and 4,096 expired ids.
   `unavailable` fails it. Reset covers second factors only: the listed
   `factorIds` must equal that read's `second_factor` ids exactly, so a second
   factor enrolled on any device after confirmation fails the reset, and one
-  already removed elsewhere does not block it. The commit removes those
-  second factors and leaves `sign_in` passkeys, which only
-  `account.passkey.remove` removes.
+  already removed elsewhere does not block it. The commit keeps exactly the
+  session's own `sign_in` factors, whatever `sign_in` passkeys the read
+  lists, so a reset never adds or drops one; only `account.passkey.remove`
+  removes them.
 - `sign_in` requires a `FreshFactors` read. It rejects the sign-in when
   `outcome.amr` names `totp` or `passkey` and the read has no factor of that
   method. When the read has any `second_factor`, the sign-in must carry
@@ -472,7 +483,7 @@ at most 256 records and 4,096 expired ids.
 | G2 Expected account | Account-scoped routes reject `expectedSessionId: null`, and a mismatch with `activeSid` returns `account_mismatch`. `switch` needs a fresh `sign_in` for the target when its `authTime` is older than 24 hours, or its stored `factors` include a `second_factor` role and its `secondFactorSatisfied` is false. Step-up grants are ignored by `switch`. A switch emits a tab invalidation for the previous `sid` | Client invalidation channel |
 | G3 Stale authority | Only `rotate` sets `grace`. The grace secret resolves only for routes the registry classes as `read`, with `stale: true` and the grace deadline for `assertionExpiry`; any other or unknown route gets `rotated`. It never grants, consumes, mints, extends expiry or receives `Set-Cookie`. `record_factors` covers MFA enrollment, MFA removal, MFA reset and password change. It consumes a grant for the route's act (an `account.mfa.*`, `account.passkey.*` or `account.password` act) in the same compare-and-set, under the same checks as `consume_step_up` (raw parameters hashed by the reducer), and bumps `gen` | Data adapter honoring `stale` |
 | G6 Epoch fencing | `sign_in` with `capturedEpoch !== epoch.epoch` returns `credentials_changed`, writes no session, and the host calls `release`. Every mutation that acts on a session reads the epoch fresh and fails closed; only `read` resolutions may use the 30-second device cache. A credential change (password change, MFA reset, or MFA or passkey removal) first bumps the user's epoch in `UserSessions`, whose bump owns the `revoke_user_below_epoch(newEpoch)` fan-out to every other device and retries it whether or not `record_factors` commits. The host then calls `record_factors` with `credentialChange.newEpoch`, which keeps this session alive as above. If `record_factors` fails, the fan-out still revokes this session too, which fails safe. `revoke_user_below_epoch` revokes only sessions with `epochSeen < belowEpoch` (exclusive), so a delayed fan-out cannot revoke a session created after the bump | `UserSessions` epoch store and fan-out |
-| G7 Device cap | Every `sign_in` calls `reserve` before reducing, and passes the reservation in. `unavailable` fails the sign-in, and `evicting` returns `retry_later`. `swap` atomically replaces the device where that user's `lastSeenAt` is oldest with a provisional reservation and an index tombstone for the evicted device. After the local `sign_in` commits, its effects send `revoke_user_on_device` with `evictReservationId` to the evicted device and `confirm` the reservation. Every sign-in result other than success calls `release`, which drops the provisional reservation and, for a swap, restores the evicted device and removes its tombstone. Every reservation has a 60-second lease; on expiry the index calls `operationStatus` on the reserving device and confirms only on `succeeded`, releases on `rejected`, `expired` or `absent`, and until then the reservation counts toward the cap. `revoke_user_on_device` takes no epoch, is never blocked by a tombstone, and removes only that user's sessions on that device. It matches only sessions whose stored `reservationId` equals the named one. When it revokes sessions it records the id in `revokedReservations` for 30 days. The index gives up retrying a tombstone after 7 days, so the 30-day sweep never turns an in-window retry into `not_found`; the map holds at most one entry per evicted slot, which is bounded by sign-ins under their caps; a later revoke for a recorded id returns `already_revoked`, which the index treats as success. A revoke for an id this device never stored returns `not_found`, and the index keeps the tombstone and alerts. Its success is the acknowledgement: the index deletes the tombstone when it returns. Past the retry bound the index raises an alert and keeps the tombstone. `evicting` applies only to `sign_in` | Index object, leases and alarm retries |
+| G7 Device cap | Every `sign_in` calls `reserve` before reducing, and passes the reservation in. `unavailable` fails the sign-in, and `evicting` returns `retry_later`. `swap` atomically replaces the device where that user's `lastSeenAt` is oldest with a provisional reservation and an index tombstone for the evicted device. A reserve for an existing slot returns that slot's id and adds this operation's claim to it; while the slot still holds a provisional swap it returns `swap` with the same victim, so every sign-in admitted under the slot carries the eviction. `confirm` and `release` name the reservation and the operation. After the local `sign_in` commits, its effects send `revoke_user_on_device` with `evictReservationId` to the evicted device and `confirm` the claim. Any other definite result first reads the device's record for the operation: a `succeeded` sign-in, such as one retried with a rebuilt body that returns `idempotency_mismatch`, confirms the slot it was admitted under and never releases it; otherwise the host calls `release`, which settles that operation's claim and, only when it was the last claim on an unconfirmed slot, drops the provisional reservation and, for a swap, restores the evicted device and removes its tombstone. A losing sign-in that raced a committed one on the same device therefore never drops the winner's slot. Every claim has a 60-second lease; on expiry the index calls `leaseDecision` with the claim on the reserving device and confirms only a `succeeded` sign-in admitted under that slot, releases a `rejected`, `expired` or `absent` one, and until then the reservation counts toward the cap. `revoke_user_on_device` takes no epoch, is never blocked by a tombstone, and removes only that user's sessions on that device. It matches only sessions whose stored `reservationId` equals the named one. When it revokes sessions it records the id in `revokedReservations` for 30 days. The index gives up retrying a tombstone after 7 days, so the 30-day sweep never turns an in-window retry into `not_found`; the map holds at most one entry per evicted slot, which is bounded by sign-ins under their caps; a later revoke for a recorded id returns `already_revoked`, which the index treats as success. A revoke for an id this device never stored returns `not_found`, and the index keeps the tombstone and alerts. Its success is the acknowledgement: the index deletes the tombstone when it returns. Past the retry bound the index raises an alert and keeps the tombstone. `evicting` applies only to `sign_in` | Index object, leases and alarm retries |
 | G16 Effect classification and step-up | The registry is the only source of a route's class, account scope and step-up act. `grant_step_up` takes the route, loads `act` from the registry, bumps `gen` and binds the grant to the new `sid`, `gen`, `act`, the `ph` it computes from the raw parameters, and a 5-minute expiry. `consume_step_up` and `record_factors` load `act` from the route, recompute `ph` from their own raw parameters, check the grant's `sid`, `gen`, `act`, `ph`, expiry, the session's liveness, the fence and the epoch, then mark the grant consumed by this `operationId` and record the effect's acceptance in the same compare-and-set | Registry build-time validation per app, protected-effect hosts |
 
 ## Tests
@@ -493,8 +504,11 @@ at most 256 records and 4,096 expired ids.
   - a grant is consumed at most once, only under its `sid` and `gen`, and
     only for a route whose registry `act` matches;
   - eviction never removes another user's sessions, a failed sign-in never
-    leaves its victim evicted, and a committed sign-in is always confirmed in
-    the index;
+    leaves its victim evicted unless another sign-in was admitted under the
+    same slot, a provisional slot always has an unsettled claim, and a
+    committed sign-in, including one that raced another sign-in of its user
+    on the device, is always confirmed in the index with its victim evicted
+    and never restored;
   - replaying an `operationId` never applies a second transition, before or
     after its record expires, and the record maps never exceed their caps.
 - Each mutation has negative cases for a wrong fence, a null fence where it

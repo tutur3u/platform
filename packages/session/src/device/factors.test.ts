@@ -268,6 +268,25 @@ describe('account.mfa.reset', () => {
     expect(activeRow(world)?.factors).toEqual([SIGN_IN_PASSKEY]);
   });
 
+  it('keeps the session own sign-in passkeys whatever sign-in passkeys the read lists', async () => {
+    const other: SessionFactor = {
+      factorId: 'pk-2',
+      method: 'passkey',
+      role: 'sign_in',
+    };
+    for (const listed of [[other], [], [SIGN_IN_PASSKEY, other]]) {
+      const world = await ready([TOTP, SIGN_IN_PASSKEY]);
+      const grantId = await world.grant('account.mfa.reset');
+      world.epochs[USER_A] = 1;
+      const out = await record(world, 'account.mfa.reset', grantId, {
+        newEpoch: 1,
+        factors: factorRead(USER_A, world.now, [TOTP, ...listed]),
+      });
+      expect(reasonOf(out)).toBe('ok');
+      expect(activeRow(world)?.factors).toEqual([SIGN_IN_PASSKEY]);
+    }
+  });
+
   it('refuses a factor read for any other act', async () => {
     const world = await ready();
     const grantId = await world.grant('account.passkey.enroll');

@@ -8,7 +8,7 @@ import type {
   EpochCache,
   EpochRaise,
   IssuerId,
-  Reservation,
+  ReservationClaim,
   SessionCredentialIssuer,
   UserIndexPort,
   WriteOutcome,
@@ -153,28 +153,28 @@ export function createMemoryStore(initial: DeviceState = emptyDeviceState()) {
 }
 export type MemoryStore = ReturnType<typeof createMemoryStore>;
 
-type Slot = {
+export type IndexSlot = {
   reservationId: string;
   confirmed: boolean;
   lastSeenAt: number;
-  operationId: string;
+  /** Unsettled reserves per operation id. */
+  claims: Record<string, number>;
+  /** The device a provisional swap evicted, restored if the slot is dropped. */
+  victim: { deviceId: string; slot: IndexSlot } | null;
 };
 
-/** A user index with a cap, swap eviction, tombstones and releases that restore a victim. */
+/**
+ * A user index with a cap, swap eviction, tombstones and per-slot claims: a
+ * release settles one claim of its operation and drops the slot, restoring
+ * its victim, only when that was the last claim on an unconfirmed slot.
+ */
 export function createUserIndex(mintId: () => string) {
-  const slots = new Map<UserId, Map<string, Slot>>();
+  const slots = new Map<UserId, Map<string, IndexSlot>>();
   const tombstones = new Map<
     string,
-    { userId: UserId; deviceId: string; slot: Slot }
+    { userId: UserId; deviceId: string; slot: IndexSlot }
   >();
-  const reservations = new Map<
-    string,
-    {
-      userId: UserId;
-      deviceId: string;
-      victim: { deviceId: string; slot: Slot } | null;
-    }
-  >();
+  const owners = new Map<string, { userId: UserId; deviceId: string }>();
   const userSlots = (userId: UserId) => {
     let map = slots.get(userId);
     if (!map) slots.set(userId, (map = new Map()));
@@ -182,6 +182,37 @@ export function createUserIndex(mintId: () => string) {
   };
   const tombstoneKey = (userId: string, deviceId: string) =>
     `${userId}|${deviceId}`;
+  const slotFor = (reservationId: string) => {
+    const owner = owners.get(reservationId);
+    const slot = owner && slots.get(owner.userId)?.get(owner.deviceId);
+    return owner && slot?.reservationId === reservationId
+      ? { ...owner, slot }
+      : null;
+  };
+  /** Settles one claim of `operationId`; false when it held none. */
+  const settle = (slot: IndexSlot, operationId: string) => {
+    const held = Object.hasOwn(slot.claims, operationId)
+      ? (slot.claims[operationId] as number)
+      : 0;
+    if (held === 0) return false;
+    if (held === 1) delete slot.claims[operationId];
+    else slot.claims[operationId] = held - 1;
+    return true;
+  };
+  const reservedOf = (
+    slot: IndexSlot
+  ): Extract<ReserveOutcome, { kind: 'reserved' | 'swap' }> =>
+    slot.victim
+      ? {
+          kind: 'swap',
+          reservation: { reservationId: slot.reservationId },
+          evictDeviceId: slot.victim.deviceId,
+          evictReservationId: slot.victim.slot.reservationId,
+        }
+      : {
+          kind: 'reserved',
+          reservation: { reservationId: slot.reservationId },
+        };
   let available = true;
   const port: UserIndexPort = {
     async reserve({
@@ -198,74 +229,55 @@ export function createUserIndex(mintId: () => string) {
       const existing = map.get(deviceId);
       if (existing) {
         existing.lastSeenAt = nowMs;
-        return {
-          kind: 'reserved',
-          reservation: { reservationId: existing.reservationId },
-        };
+        existing.claims[operationId] = (existing.claims[operationId] ?? 0) + 1;
+        owners.set(existing.reservationId, { userId, deviceId });
+        return reservedOf(existing);
       }
-      const slot: Slot = {
+      const slot: IndexSlot = {
         reservationId: mintId(),
         confirmed: false,
         lastSeenAt: nowMs,
-        operationId,
+        claims: { [operationId]: 1 },
+        victim: null,
       };
-      if (map.size < cap) {
-        map.set(deviceId, slot);
-        reservations.set(slot.reservationId, {
+      if (map.size >= cap) {
+        const victims = [...map.entries()].filter(
+          ([, other]) => other.confirmed
+        );
+        if (victims.length === 0) return { kind: 'unavailable' };
+        victims.sort((left, right) => left[1].lastSeenAt - right[1].lastSeenAt);
+        const [victimDevice, victimSlot] = victims[0] as [string, IndexSlot];
+        map.delete(victimDevice);
+        tombstones.set(tombstoneKey(userId, victimDevice), {
           userId,
-          deviceId,
-          victim: null,
+          deviceId: victimDevice,
+          slot: victimSlot,
         });
-        return {
-          kind: 'reserved',
-          reservation: { reservationId: slot.reservationId },
-        };
+        slot.victim = { deviceId: victimDevice, slot: victimSlot };
       }
-      const victims = [...map.entries()].filter(([, other]) => other.confirmed);
-      if (victims.length === 0) return { kind: 'unavailable' };
-      victims.sort((left, right) => left[1].lastSeenAt - right[1].lastSeenAt);
-      const [victimDevice, victimSlot] = victims[0] as [string, Slot];
-      map.delete(victimDevice);
-      tombstones.set(tombstoneKey(userId, victimDevice), {
-        userId,
-        deviceId: victimDevice,
-        slot: victimSlot,
-      });
       map.set(deviceId, slot);
-      reservations.set(slot.reservationId, {
-        userId,
-        deviceId,
-        victim: { deviceId: victimDevice, slot: victimSlot },
-      });
-      return {
-        kind: 'swap',
-        reservation: { reservationId: slot.reservationId },
-        evictDeviceId: victimDevice,
-        evictReservationId: victimSlot.reservationId,
-      };
+      owners.set(slot.reservationId, { userId, deviceId });
+      return reservedOf(slot);
     },
-    async confirm(reservation: Reservation) {
-      const entry = reservations.get(reservation.reservationId);
-      const slot = entry && slots.get(entry.userId)?.get(entry.deviceId);
-      if (slot && slot.reservationId === reservation.reservationId)
-        slot.confirmed = true;
+    async confirm({ reservationId, operationId }: ReservationClaim) {
+      const found = slotFor(reservationId);
+      if (!found) return;
+      settle(found.slot, operationId);
+      found.slot.confirmed = true;
+      found.slot.victim = null;
     },
-    async release(reservation: Reservation) {
-      const entry = reservations.get(reservation.reservationId);
-      if (!entry) return;
-      const map = userSlots(entry.userId);
-      const slot = map.get(entry.deviceId);
-      if (
-        slot?.reservationId === reservation.reservationId &&
-        !slot.confirmed
-      ) {
-        map.delete(entry.deviceId);
-        if (entry.victim) {
-          map.set(entry.victim.deviceId, entry.victim.slot);
-          tombstones.delete(tombstoneKey(entry.userId, entry.victim.deviceId));
-        }
+    async release({ reservationId, operationId }: ReservationClaim) {
+      const found = slotFor(reservationId);
+      if (!found || !settle(found.slot, operationId)) return;
+      const { slot, userId, deviceId } = found;
+      if (slot.confirmed || Object.keys(slot.claims).length > 0) return;
+      const map = userSlots(userId);
+      map.delete(deviceId);
+      owners.delete(reservationId);
+      if (slot.victim) {
+        map.set(slot.victim.deviceId, slot.victim.slot);
+        tombstones.delete(tombstoneKey(userId, slot.victim.deviceId));
       }
-      reservations.delete(reservation.reservationId);
     },
   };
   return {

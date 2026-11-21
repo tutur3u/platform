@@ -114,9 +114,10 @@ export function deriveFactors(
       ) {
         return { ok: false, reason: 'factor_mismatch' };
       }
+      // The read decides only which second factors go; the session keeps its own sign-in factors.
       return {
         ok: true,
-        factors: fresh.factors.filter((factor) => factor.role === 'sign_in'),
+        factors: current.filter((factor) => factor.role === 'sign_in'),
       };
     }
     case 'account.password':

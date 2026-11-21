@@ -189,7 +189,8 @@ describe('sign_in with the user index', () => {
         reservationId: 'x',
         confirmed: true,
         lastSeenAt: 0,
-        operationId: 'x',
+        claims: {},
+        victim: null,
       },
     });
     const deps = {
@@ -259,11 +260,28 @@ describe('sign_in with the user index', () => {
         .reservationId,
     });
     expect(index.slotOf(USER_A, 'device-winner')?.confirmed).toBe(true);
-    expect(await leaseDecision(winner.memory.store, 'op-w')).toBe('confirm');
-    expect(await leaseDecision(failing.memory.store, 'op-f')).toBe('release');
-    expect(await leaseDecision(failing.memory.store, 'op-never')).toBe(
+    const winnerSlot = index.slotOf(USER_A, 'device-winner')
+      ?.reservationId as string;
+    const claim = (operationId: string) => ({
+      reservationId: winnerSlot,
+      operationId,
+    });
+    expect(await leaseDecision(winner.memory.store, claim('op-w'))).toBe(
+      'confirm'
+    );
+    expect(await leaseDecision(failing.memory.store, claim('op-f'))).toBe(
       'release'
     );
+    expect(await leaseDecision(failing.memory.store, claim('op-never'))).toBe(
+      'release'
+    );
+    // A claim on a slot other than the one the sign-in was admitted under.
+    expect(
+      await leaseDecision(winner.memory.store, {
+        reservationId: 'res-other',
+        operationId: 'op-w',
+      })
+    ).toBe('release');
   });
 
   it('keeps a committed sign-in succeeded through its lease after a lost acknowledgement', async () => {
@@ -288,7 +306,13 @@ describe('sign_in with the user index', () => {
     expect(reasonOf(out)).toBe('ok');
     world.advance(60_000);
     expect(operationStatus(world.state(), 'op-lost')).toBe('succeeded');
-    expect(await leaseDecision(world.memory.store, 'op-lost')).toBe('confirm');
+    expect(
+      await leaseDecision(world.memory.store, {
+        reservationId: index.slotOf(USER_A, 'device-1')
+          ?.reservationId as string,
+        operationId: 'op-lost',
+      })
+    ).toBe('confirm');
     expect(index.slotOf(USER_A, 'device-1')?.confirmed).toBe(true);
   });
 });

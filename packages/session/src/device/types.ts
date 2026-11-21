@@ -172,6 +172,9 @@ export interface DeviceStore {
 /** Minted fresh for every reserve that creates a slot. */
 export type Reservation = { reservationId: string };
 
+/** One sign-in operation's claim on a slot; `confirm` and `release` act on it. */
+export type ReservationClaim = Reservation & { operationId: string };
+
 export type ReserveOutcome =
   | { kind: 'reserved'; reservation: Reservation }
   | {
@@ -183,6 +186,16 @@ export type ReserveOutcome =
   | { kind: 'evicting' }
   | { kind: 'unavailable' };
 
+/**
+ * The per-user device index. Every `reserve` adds a claim for its
+ * `operationId` to the slot it returns, including an existing slot; a reserve
+ * for an existing slot that still carries a provisional swap returns `swap`
+ * with that victim, so every sign-in admitted under the slot evicts it.
+ * `confirm` marks the slot confirmed, discards its victim and settles that
+ * operation's claim. `release` settles one claim of that operation and is a
+ * no-op for an operation without one; it drops the slot and restores its
+ * victim only when it settles the last claim of an unconfirmed slot.
+ */
 export interface UserIndexPort {
   reserve(input: {
     userId: UserId;
@@ -191,8 +204,8 @@ export interface UserIndexPort {
     cap: number;
     nowMs: number;
   }): Promise<ReserveOutcome>;
-  confirm(reservation: Reservation): Promise<void>;
-  release(reservation: Reservation): Promise<void>;
+  confirm(claim: ReservationClaim): Promise<void>;
+  release(claim: ReservationClaim): Promise<void>;
 }
 
 declare const freshFactorsBrand: unique symbol;
@@ -398,8 +411,18 @@ export type Effect =
       reason?: string;
     }
   | { type: 'tab_invalidate'; sessionId: string }
-  | { type: 'index_confirm'; userId: UserId; reservationId: string }
-  | { type: 'index_release'; userId: UserId; reservationId: string }
+  | {
+      type: 'index_confirm';
+      userId: UserId;
+      reservationId: string;
+      operationId: string;
+    }
+  | {
+      type: 'index_release';
+      userId: UserId;
+      reservationId: string;
+      operationId: string;
+    }
   | {
       type: 'evict_device';
       userId: UserId;

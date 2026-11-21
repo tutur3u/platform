@@ -259,25 +259,61 @@ function checkCommit(entry: CommitRecord) {
 }
 
 /** A committed sign-in is confirmed in the index; a failed one never leaves its victim evicted. */
+/**
+ * The index after a sign-in settled: a committed sign-in is confirmed under
+ * its slot, and a swap victim stays evicted and receives its slot revoke once
+ * any sign-in was admitted under the slot; a provisional slot always has an
+ * unsettled claim; and the victim is restored once no sign-in was admitted
+ * under its slot and no claim holds that slot.
+ */
 export function checkSignInIndex(model: Model, entry: CommitRecord) {
   const { mutation, reserved } = entry;
   if (mutation.kind !== 'sign_in' || !reserved) return;
   if (reserved.kind !== 'reserved' && reserved.kind !== 'swap') return;
-  const status = operationStatus(model.memory.state, mutation.operationId);
-  const slot = model.index.slotOf(mutation.outcome.userId, DEVICE_ID);
+  const state = model.memory.state;
+  const { userId } = mutation.outcome;
+  const reservationId = reserved.reservation.reservationId;
+  const status = operationStatus(state, mutation.operationId);
+  const slot = model.index.slotOf(userId, DEVICE_ID);
+  const held = slot?.reservationId === reservationId;
   const where = `sign_in ${mutation.operationId} ${status}`;
   if (status === 'succeeded') {
-    expect(slot?.reservationId, where).toBe(reserved.reservation.reservationId);
+    expect(held, where).toBe(true);
     expect(slot?.confirmed, where).toBe(true);
-  } else if (reserved.kind === 'swap') {
+  }
+  if (held && !slot?.confirmed) {
+    expect(Object.keys(slot?.claims ?? {}).length, where).toBeGreaterThan(0);
+  }
+  if (reserved.kind !== 'swap') return;
+  const admitted = Object.values(state.sessions).some(
+    (row) => row.reservationId === reservationId
+  );
+  const victim = model.index.slotOf(userId, reserved.evictDeviceId);
+  const restored = victim?.reservationId === reserved.evictReservationId;
+  if (admitted) {
+    expect(restored, `${where} victim restored`).toBe(false);
+    // Some sign-in admitted under the slot carries the victim's slot revoke.
+    const evicts = Object.values(state.operations).some(
+      (record) =>
+        record.result.ok &&
+        record.effects.some(
+          (effect) =>
+            effect.type === 'index_confirm' &&
+            effect.reservationId === reservationId
+        ) &&
+        record.effects.some(
+          (effect) =>
+            effect.type === 'evict_device' &&
+            effect.reservationId === reserved.evictReservationId
+        )
+    );
+    expect(evicts, `${where} victim never evicted`).toBe(true);
+  } else if (held) {
+    expect(slot?.confirmed, where).toBe(false);
+  } else {
+    expect(restored, `${where} victim kept evicted`).toBe(true);
     expect(
-      model.index.slotOf(mutation.outcome.userId, reserved.evictDeviceId),
-      where
-    ).not.toBeNull();
-    expect(
-      model.index.tombstones.has(
-        `${mutation.outcome.userId}|${reserved.evictDeviceId}`
-      ),
+      model.index.tombstones.has(`${userId}|${reserved.evictDeviceId}`),
       where
     ).toBe(false);
   }

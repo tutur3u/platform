@@ -215,6 +215,38 @@ describe('system revokes', () => {
     });
   });
 
+  it('reports an epoch fan-out with nothing to revoke unavailable until its cache raise lands', async () => {
+    const world = createWorld();
+    // The only row below the bump is already revoked.
+    const sid = await active(world);
+    await world.commit(logout(world, sid));
+    const fanOut = (): DeviceMutation => ({
+      kind: 'revoke_user_below_epoch',
+      operationId: world.nextOp(),
+      nowMs: world.now,
+      userId: USER_A,
+      belowEpoch: 2,
+      bumpedAtMs: world.now,
+    });
+    const version = world.state().version;
+    for (const fault of ['conflict', 'unknown_lost', 'throw'] as const) {
+      world.memory.faults.push(fault, fault, fault);
+      const out = await world.commit(fanOut());
+      expect(reasonOf(out), fault).toBe('unavailable');
+      expect(out.effects, fault).toEqual([]);
+      expect(world.memory.cache[USER_A]?.epoch, fault).toBe(0);
+    }
+    expect(world.state().version).toBe(version);
+    // A raise that landed but lost every acknowledgement is read back.
+    world.memory.faults.push(
+      'unknown_committed',
+      'unknown_committed',
+      'unknown_committed'
+    );
+    expect(reasonOf(await world.commit(fanOut()))).toBe('ok');
+    expect(world.memory.cache[USER_A]?.epoch).toBe(2);
+  });
+
   it('revokes by slot only, records the slot, and answers already_revoked and not_found', async () => {
     const world = createWorld();
     await world.signIn(USER_A, {

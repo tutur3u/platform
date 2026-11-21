@@ -289,8 +289,7 @@ async function slotRevoke(model: Model) {
   );
 }
 
-async function signIn(model: Model) {
-  const userId = model.random.pick(USERS);
+async function signIn(model: Model, userId: UserId = model.random.pick(USERS)) {
   const out = await model.signIn(userId);
   const record = model.commits.at(-1);
   if (
@@ -299,22 +298,34 @@ async function signIn(model: Model) {
     record
   ) {
     // The 60-second lease settles a sign-in whose outcome the flow never learned.
-    const decision = await leaseDecision(
-      model.memory.store,
-      record.mutation.operationId
-    );
     const reserved = record.reserved;
     if (
       reserved &&
       (reserved.kind === 'reserved' || reserved.kind === 'swap')
     ) {
-      if (decision === 'confirm')
-        await model.index.port.confirm(reserved.reservation);
-      else await model.index.port.release(reserved.reservation);
+      const claim = {
+        reservationId: reserved.reservation.reservationId,
+        operationId: record.mutation.operationId,
+      };
+      const decision = await leaseDecision(model.memory.store, claim);
+      if (decision === 'confirm') await model.index.port.confirm(claim);
+      else await model.index.port.release(claim);
     }
   }
   if (record) checkSignInIndex(model, record);
   await settle(model, out);
+}
+
+/** Two sign-ins of one user on this device, the second inside the first's write. */
+async function raceSignIns(model: Model) {
+  const userId = model.random.pick(USERS);
+  if (model.nested()) return signIn(model, userId);
+  model.race = () => signIn(model, userId);
+  try {
+    await signIn(model, userId);
+  } finally {
+    model.race = null;
+  }
 }
 
 async function redeemChild(model: Model) {
@@ -412,7 +423,8 @@ async function advance(model: Model) {
 }
 
 const OPS: [number, (model: Model) => Promise<void>][] = [
-  [12, signIn],
+  [12, (model) => signIn(model)],
+  [4, raceSignIns],
   [
     5,
     async (model) => {
@@ -523,17 +535,15 @@ const OPS: [number, (model: Model) => Promise<void>][] = [
 ];
 
 /**
- * One weighted random operation. A concurrent one, run between another
- * mutation's read and write, neither signs in (two sign-ins racing on one
- * device share an index slot, which the index object owns) nor moves time.
+ * One weighted random operation. A concurrent one runs between another
+ * mutation's read and write, so two sign-ins race on one device and share
+ * its index slot; it never moves time.
  */
 export async function randomOp(
   model: Model,
   concurrent = false
 ): Promise<void> {
-  const ops = concurrent
-    ? OPS.filter(([, op]) => op !== signIn && op !== advance)
-    : OPS;
+  const ops = concurrent ? OPS.filter(([, op]) => op !== advance) : OPS;
   const total = ops.reduce((sum, [weight]) => sum + weight, 0);
   let roll = model.random.int(total);
   for (const [weight, op] of ops) {

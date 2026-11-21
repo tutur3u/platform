@@ -4,7 +4,8 @@
  * so a write that committed but lost its acknowledgement returns its stored
  * result and effects. After three attempts one final read decides; only when
  * it shows no record is the result `unavailable`, with nothing emitted.
- * Revocations follow the same loop with the outbox as their record.
+ * Revocations follow the same loop with the outbox as their record; an
+ * epoch fan-out also needs its cache raise, which lives outside the state.
  */
 import { constantTimeEqual, decodeBase64Url } from '../encoding';
 import { requestHash } from './hash';
@@ -191,6 +192,27 @@ function revocationOutcome(
   };
 }
 
+/**
+ * Whether an epoch fan-out's cache raise landed. The cache is outside
+ * `DeviceState`, so the final state read cannot show it; only the cache
+ * itself, read once more, can.
+ */
+async function raiseLanded(
+  store: DeviceStore,
+  mutation: RevocationMutation
+): Promise<boolean> {
+  if (mutation.kind !== 'revoke_user_below_epoch') return true;
+  try {
+    const cache = await store.readEpochCache();
+    const entry = Object.hasOwn(cache, mutation.userId)
+      ? cache[mutation.userId]
+      : undefined;
+    return entry !== undefined && entry.epoch >= mutation.belowEpoch;
+  } catch {
+    return false;
+  }
+}
+
 async function commitRevocation(
   deps: CommitDeps,
   mutation: RevocationMutation
@@ -231,8 +253,11 @@ async function commitRevocation(
       return revocationOutcome(next, plan, plan.cookie, false);
     if (written === 'unknown') sawUnknown = true;
   }
+  // No write returned `committed`: success needs the revocation visible and,
+  // for an epoch fan-out, its cache raise read back.
   const final = await safeRead(deps.store);
   if (!final || !revocationVisible(final, mutation)) return UNAVAILABLE;
+  if (!(await raiseLanded(deps.store, mutation))) return UNAVAILABLE;
   const plan = planRevocation(final, mutation);
   if (plan.kind !== 'done') return UNAVAILABLE;
   return revocationOutcome(final, plan, replayCookie(final, plan.keys), true);

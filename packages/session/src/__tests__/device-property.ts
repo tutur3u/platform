@@ -103,6 +103,8 @@ export type Model = {
   nested(): boolean;
   /** Runs one random operation concurrently with a pending write. */
   concurrent: (() => Promise<void>) | null;
+  /** Runs once inside the next top-level write, before it lands. */
+  race: (() => Promise<void>) | null;
 };
 
 const FAULTS: readonly (WriteFault | null)[] = [
@@ -160,16 +162,24 @@ export function createModel(seed: number): Model {
       }
     },
     concurrent: null,
+    race: null,
   };
   memory.onWrite(() => (random.bool(0.3) ? random.pick(FAULTS) : null));
   const base = memory.store;
   model.store = {
     ...base,
     async write(expected, next, raises) {
-      if (depth === 0 && model.concurrent && random.bool(0.1)) {
+      const race = depth === 0 ? model.race : null;
+      if (race) model.race = null;
+      const run =
+        race ??
+        (depth === 0 && model.concurrent && random.bool(0.1)
+          ? model.concurrent
+          : null);
+      if (run) {
         depth += 1;
         try {
-          await model.concurrent();
+          await run();
         } finally {
           depth -= 1;
         }
@@ -298,7 +308,8 @@ function topUpOtherDevices(world: Model, userId: UserId) {
       reservationId: `other-res-${userId.slice(0, 4)}-${next}-${world.now}`,
       confirmed: true,
       lastSeenAt: world.now - 1_000 * next,
-      operationId: 'elsewhere',
+      claims: {},
+      victim: null,
     });
   }
 }
