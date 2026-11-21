@@ -1,0 +1,24 @@
+{
+  "name": "@tuturuuu/vault-crypto",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@hpke/core": "1.9.0",
+    "@hpke/dhkem-x25519": "1.8.0",
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "cborg": "6.2.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}
