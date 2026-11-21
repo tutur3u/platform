@@ -152,7 +152,11 @@ async function handleProxy(request: NextRequest): Promise<NextResponse> {
     // sign-out and ban checks, so the only bearer these routes ever see is the
     // one the refresh below attaches.
     if (
-      request.nextUrl.pathname.startsWith(MIRA_OPERATOR_API_PREFIX) &&
+      // Repeated slashes are collapsed because the endpoint registry drops
+      // empty segments, so `/api//v1/...` still reaches these routes.
+      request.nextUrl.pathname
+        .replace(/\/{2,}/gu, '/')
+        .startsWith(MIRA_OPERATOR_API_PREFIX) &&
       request.headers.has('authorization')
     ) {
       return mountedAuthorizationRefusal();

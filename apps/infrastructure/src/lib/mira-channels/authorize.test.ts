@@ -115,4 +115,13 @@ describe('authorizeMiraOperator', () => {
     expect(result.ok).toBe(true);
     expect(mocks.resolveActor).toHaveBeenCalled();
   });
+
+  it('refuses paths with repeated slashes before resolving a session', async () => {
+    const result = await authorizeMiraOperator(
+      new Request('https://admin.test/api//v1/infrastructure/mira/global-stop')
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(401);
+    expect(mocks.resolveActor).not.toHaveBeenCalled();
+  });
 });

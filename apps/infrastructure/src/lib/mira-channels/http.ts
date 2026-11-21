@@ -1,4 +1,5 @@
 import 'server-only';
+import { z } from 'zod';
 import { authorizeMiraOperator, miraJson } from './authorize';
 import {
   type MiraOperatorAction,
@@ -11,6 +12,12 @@ type RouteContext = { params?: Promise<{ wsId?: string }> };
 export function miraOperatorRoute(action: MiraOperatorAction) {
   return async (request: Request, context?: RouteContext) => {
     const isWrite = action === 'tenant_stop' || action === 'global_stop_set';
+    const wsId = (await context?.params)?.wsId;
+    // A malformed id is refused before authorization. A dotted segment also
+    // skips the proxy matcher, so it must never reach a session lookup.
+    if (wsId !== undefined && !z.guid().safeParse(wsId).success) {
+      return miraJson({ error: 'invalid_request' }, 400);
+    }
     const authorization = await authorizeMiraOperator(request, {
       write: isWrite,
     });
@@ -25,7 +32,7 @@ export function miraOperatorRoute(action: MiraOperatorAction) {
         action,
         actorId: authorization.actorId,
         body: isWrite ? await request.json().catch(() => null) : undefined,
-        wsId: (await context?.params)?.wsId,
+        wsId,
         searchParams: new URL(request.url).searchParams,
       }
     );

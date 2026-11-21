@@ -469,6 +469,14 @@ describe('Infra proxy', () => {
         'https://tuturuuu.com/admin/api/v1/infrastructure/mira/tenants',
         '/admin',
       ],
+      [
+        'https://infra.tuturuuu.localhost/api//v1/infrastructure/mira/global-stop',
+        '',
+      ],
+      [
+        'https://infra.tuturuuu.localhost/api/v1/infrastructure//mira/tenants',
+        '',
+      ],
     ] as const) {
       const response = await proxy(
         new NextRequest(url, {
@@ -488,7 +496,8 @@ describe('Infra proxy', () => {
       response: NextResponse.next(),
     });
     const request = new NextRequest(
-      'https://infra.tuturuuu.localhost/api/v1/infrastructure/mira/global-stop'
+      'https://infra.tuturuuu.localhost/api/v1/infrastructure/mira/global-stop',
+      { headers: { cookie: 'sb-access-token=fixture' } }
     );
     await proxy(request);
     expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {

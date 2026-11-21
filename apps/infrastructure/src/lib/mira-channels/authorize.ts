@@ -61,9 +61,12 @@ export async function authorizeMiraOperator(
   request: Request,
   { write = false }: { write?: boolean } = {}
 ) {
+  // A path with repeated slashes may have missed the proxy's bearer refusal,
+  // so it is refused outright.
   if (
-    request.headers.has('authorization') &&
-    !getBearerAppCoordinationToken(request)
+    new URL(request.url).pathname.includes('//') ||
+    (request.headers.has('authorization') &&
+      !getBearerAppCoordinationToken(request))
   ) {
     return {
       ok: false as const,
