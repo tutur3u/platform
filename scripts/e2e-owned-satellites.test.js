@@ -292,3 +292,24 @@ test('refuses to route Storage E2E traffic to a remote Supabase project', async 
     /local Supabase fixture/
   );
 });
+
+test('every owned satellite resolves an existing app directory and package', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.resolve(__dirname, '..');
+  for (const satellite of OWNED_E2E_SATELLITES) {
+    const directory = satellite.appDir ?? satellite.appName;
+    const manifest = JSON.parse(
+      fs.readFileSync(
+        path.join(root, 'apps', directory, 'package.json'),
+        'utf8'
+      )
+    );
+    assert.deepEqual(getOwnedSatelliteDependencyBuildArgs(satellite), [
+      'turbo:local',
+      'run',
+      'build',
+      `--filter=${manifest.name}^...`,
+    ]);
+  }
+});

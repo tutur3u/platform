@@ -69,6 +69,7 @@ const OWNED_E2E_SATELLITES = Object.freeze([
       NEXT_PUBLIC_INFRASTRUCTURE_APP_URL: 'url',
       NEXT_PUBLIC_INFRA_APP_URL: 'url',
     },
+    appDir: 'admin',
     appName: 'infrastructure',
     baseUrlEnv: 'INFRASTRUCTURE_BASE_URL',
     port: '7823',
@@ -162,7 +163,7 @@ function getOwnedSatelliteDependencyBuildArgs(satellite) {
     'turbo:local',
     'run',
     'build',
-    `--filter=@tuturuuu/${satellite.appName}^...`,
+    `--filter=@tuturuuu/${satellite.appDir ?? satellite.appName}^...`,
   ];
 }
 
@@ -236,7 +237,8 @@ function startOwnedSatellite(satellite, options = {}) {
       ['next', 'dev', '-p', satellite.port, '--webpack'],
       {
         detached: process.platform !== 'win32',
-        cwd: path.join(rootDir, 'apps', satellite.appName),
+        // appDir names the directory when it differs from the app key.
+        cwd: path.join(rootDir, 'apps', satellite.appDir ?? satellite.appName),
         env: createOwnedSatelliteEnv(satellite, env),
         stdio: ['ignore', logFd, logFd],
       }

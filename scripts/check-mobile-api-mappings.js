@@ -4,6 +4,22 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+// App keys whose directory under apps/ differs from the key (the
+// infrastructure key, its host and Worker live in apps/admin).
+const APP_DIRECTORIES = require('./app-directories.json');
+const APP_KEY_BY_DIRECTORY = Object.fromEntries(
+  Object.entries(APP_DIRECTORIES)
+    .filter(([key]) => key !== '$comment')
+    .map(([key, directory]) => [directory, key])
+);
+
+/** The directory name under apps/ for an app key. */
+function appDirectory(appKey) {
+  const directory = APP_DIRECTORIES[appKey];
+  return appKey !== '$comment' && typeof directory === 'string'
+    ? directory
+    : appKey;
+}
 const MOBILE_API_CONFIG = 'apps/mobile/lib/core/config/api_config.dart';
 const MOBILE_API_ORIGINS = 'apps/mobile/lib/core/config/api_origins.dart';
 const MOBILE_API_CLIENT = 'apps/mobile/lib/data/sources/api_client.dart';
@@ -131,7 +147,9 @@ function collectOwnedApiRoutesByApp({ rootDir = ROOT_DIR } = {}) {
       const route = routeFileToApiPath(filePath);
       if (route) routes.add(canonicalizeRoute(route));
     }
-    if (routes.size > 0) routesByApp.set(appName, routes);
+    // Owners are app keys, the names the mobile origins and hosts use.
+    if (routes.size > 0)
+      routesByApp.set(APP_KEY_BY_DIRECTORY[appName] ?? appName, routes);
   }
 
   return routesByApp;
@@ -155,7 +173,7 @@ function collectReservedCliApiRoutes({ rootDir = ROOT_DIR } = {}) {
       typeof entry.canonicalApp !== 'string' ||
       !/^[a-z0-9-]+$/u.test(entry.canonicalApp) ||
       !fs.existsSync(
-        path.join(rootDir, 'apps', entry.canonicalApp, 'src/app')
+        path.join(rootDir, 'apps', appDirectory(entry.canonicalApp), 'src/app')
       ) ||
       typeof entry.clientFile !== 'string' ||
       !/^packages\/sdk\/src\/[a-zA-Z0-9/_-]+\.ts$/u.test(entry.clientFile)
@@ -256,7 +274,12 @@ function validateMobileOriginRouting({ rootDir = ROOT_DIR, mobilePaths }) {
   });
   const proxySources = new Map(
     [...configuredApps].map((appName) => {
-      const proxyPath = path.join(rootDir, 'apps', appName, 'src/proxy.ts');
+      const proxyPath = path.join(
+        rootDir,
+        'apps',
+        appDirectory(appName),
+        'src/proxy.ts'
+      );
       return [
         appName,
         fs.existsSync(proxyPath) ? fs.readFileSync(proxyPath, 'utf8') : null,

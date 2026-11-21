@@ -1,4 +1,7 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
 
 const {
@@ -6,6 +9,7 @@ const {
   collectApiPaths,
   collectConfiguredMobileApiApps,
   collectMobileApiPaths,
+  collectOwnedApiRoutesByApp,
   collectReservedCliApiRoutes,
   findSatelliteProxyBearerGaps,
   findUnconfiguredSatelliteOwners,
@@ -164,6 +168,29 @@ test('accounts CLI path is the deployed web route, not a reserved placeholder', 
     findUnmappedMobileApiPaths({
       mobilePaths: new Set(['/api/v1/admin/accounts']),
       ownedRoutes: result.ownedRoutes,
+    }),
+    []
+  );
+});
+
+test('keys route owners by app key when the directory differs', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mobile-api-owners-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const route = path.join(
+    root,
+    'apps/admin/src/app/api/v1/infrastructure/mobile-versions/route.ts'
+  );
+  fs.mkdirSync(path.dirname(route), { recursive: true });
+  fs.writeFileSync(route, 'export async function GET() {}\n');
+
+  const routesByApp = collectOwnedApiRoutesByApp({ rootDir: root });
+  // apps/admin holds the infrastructure app key (scripts/app-directories.json).
+  assert.deepEqual([...routesByApp.keys()], ['infrastructure']);
+  assert.deepEqual(
+    findUnconfiguredSatelliteOwners({
+      mobilePaths: new Set(['/api/v1/infrastructure/mobile-versions']),
+      routesByApp,
+      configuredApps: new Set(['infrastructure']),
     }),
     []
   );
