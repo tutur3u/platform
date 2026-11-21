@@ -163,30 +163,27 @@ the mobile shell's floating dock (`MobileDock` in `@tuturuuu/ui`): Home, Tasks,
 Calendar, Mira and Apps, matching the native app's dock. Destinations are
 icon-only 52px slots named for assistive technology (`aria-label`, English
 and Vietnamese), the current one in the `accent` fill. The 64px pill rests 8px
-inside a home-indicator safe area, never closer than the 12px dock inset, with
-its shadow falling below it. Mira opens `tuturuuu.com/personal` (the personal
-workspace home) from every app; the retired `[wsId]/mira` pet module redirects
-there. WebKit can resume a page (after an app switch, in Safari and
-in in-app browsers such as Instagram's) with fixed content ending above the
-visible bottom; `dock-viewport-anchor.ts` compares a hidden fixed probe with
-`visualViewport` and moves the dock, its fade and bottom toasts back onto the
-visible edge.
-Below a destination's own page a detached circular Back button with its own
-surface and shadow appears on the dock's leading side, on the pill's baseline;
-a long press returns to that destination's page. Its lane is reserved on every
-destination, so the pill keeps its place and size whether Back shows or not.
-Apps opens the apps launcher. The top bar keeps the page title and actions and
-never shows Back. Scrolling content reserves the dock's clearance, and a short
-fade behind the dock keeps it legible. Every satellite app shows the same dock
-(`SatelliteMobileDock`, mounted once in the shared satellite providers):
-Tasks and Calendar mark their own slot, every other app keeps Apps active and
-shows Back below its root, and links to other apps resolve their address for
-the current environment. With Sorbet off, the classic mobile navigation is
-unchanged. `mobile-dock.test.tsx` covers the active slot, icon-only
-names, the detached Back lane, long press and the fixed pill; `dock-viewport-anchor.test.ts`
-covers the resume correction; `dashboard-mobile-dock-location.test.ts` and
-`satellite-mobile-dock-location.test.ts` cover which destination and Back
-state each path gets.
+inside a home-indicator safe area, never closer than the 16px dock inset (aligned
+with the mobile gutter), with its shadow falling below it. Mira opens
+`tuturuuu.com/personal` (the personal workspace home) from every app; the retired
+`[wsId]/mira` pet module redirects there. WebKit can resume a page (after an app
+switch, in Safari and in in-app browsers such as Instagram's) with fixed content
+ending above the visible bottom; `dock-viewport-anchor.ts` compares a hidden fixed
+probe with `visualViewport` and moves the dock, its fade and bottom toasts back
+onto the visible edge.
+Browser and system Back own in-app history on web; the dock pill is centered and
+holds destinations only (no dock Back control). The native Flutter app keeps its
+own dock Back. Apps opens the apps launcher. The top bar keeps the page title and
+actions. Scrolling content uses the shared 16px shell gutter and reserves the
+dock's clearance; a short fade behind the dock keeps it legible. Every satellite
+app shows the same dock (`SatelliteMobileDock`, mounted once in the shared
+satellite providers): Tasks and Calendar mark their own slot; other apps keep Apps
+active; links to other apps resolve their address for the current environment.
+With Sorbet off, the classic mobile navigation is unchanged. `mobile-dock.test.tsx`
+covers the active slot, icon-only names and the full-width pill;
+`dock-viewport-anchor.test.ts` covers the resume correction;
+`dashboard-mobile-dock-location.test.ts` and `satellite-mobile-dock-location.test.ts`
+cover which destination each path gets.
 
 While the dock shows, the root publishes `--mobile-dock-clearance`; it is unset
 everywhere else. Viewport-height surfaces (Mira chat, the chat app, the CMS

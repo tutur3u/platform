@@ -55,14 +55,22 @@ describe('Sorbet surfaces', () => {
     expect(activeRule?.[1]).not.toMatch(/box-shadow|border-left/);
   });
 
-  it('gives a detached Back its own surface in a lane the pill never yields', () => {
-    const lane = css.match(
-      /:where\(\[data-slot="mobile-dock-back-lane"\]\)\s*\{([^}]*)\}/
-    );
-    expect(lane?.[1]).toContain('flex: none');
-    expect(lane?.[1]).toContain('width: var(--sorbet-dock-height)');
+  it('centers the dock pill without a separate back lane on web', () => {
     expect(css).toMatch(
-      /\[data-slot="mobile-dock-pill"\],\s*\[data-slot="mobile-dock-back-lane"\]:has\(> \*\)\s*\)\s*\{\s*background-color: var\(--card\)/
+      /\[data-slot="mobile-dock"\][\s\S]*justify-content: center/
+    );
+    expect(css).not.toMatch(/mobile-dock-back-lane/);
+    expect(css).toMatch(
+      /\[data-slot="mobile-dock-pill"\][\s\S]*background-color: var\(--card\)/
+    );
+  });
+
+  it('aligns structure content with the mobile gutter and flattens embed shells', () => {
+    expect(css).toMatch(
+      /\[data-slot="structure-content"\][\s\S]*padding-inline: var\(--sorbet-gutter\)/
+    );
+    expect(css).toMatch(
+      /\.dashboard-embed-shell\)[\s\S]*margin-inline: calc\(-1 \* var\(--sorbet-gutter\)\)/
     );
   });
 

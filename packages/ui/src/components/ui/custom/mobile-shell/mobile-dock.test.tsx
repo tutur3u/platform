@@ -1,15 +1,13 @@
 import '@testing-library/jest-dom';
-import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { MOBILE_DOCK_LONG_PRESS_MS, MobileDock } from './mobile-dock';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { MobileDock } from './mobile-dock';
 
 const items = [
   { key: 'home', label: 'Home', icon: <svg />, href: '/ws', active: true },
   { key: 'tasks', label: 'Tasks', icon: <svg />, href: '/ws/tasks' },
   { key: 'apps', label: 'Apps', icon: <svg />, onSelect: vi.fn() },
 ];
-
-afterEach(() => vi.useRealTimers());
 
 describe('MobileDock', () => {
   it('marks the active destination and renders links and buttons', () => {
@@ -27,51 +25,18 @@ describe('MobileDock', () => {
     expect(items[2]!.onSelect).toHaveBeenCalled();
   });
 
-  it('shows Back below a root as a detached button in a reserved lane', () => {
-    const { container, rerender } = render(
-      <MobileDock label="Nav" items={items} />
-    );
+  it('keeps a single full-width pill without a browser back control', () => {
+    const { container } = render(<MobileDock label="Nav" items={items} />);
+    const nav = screen.getByRole('navigation');
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
-    const frame = screen.getByRole('navigation');
-    const lane = container.querySelector('[data-slot="mobile-dock-back-lane"]');
-    const pill = container.querySelector('[data-slot="mobile-dock-pill"]');
-    expect(lane).toBeEmptyDOMElement();
-    expect(pill).not.toContainElement(lane as HTMLElement);
-
-    const onBack = vi.fn();
-    rerender(
-      <MobileDock label="Nav" items={items} back={{ label: 'Back', onBack }} />
-    );
-    expect(screen.getByRole('navigation')).toBe(frame);
-    expect(frame).toHaveAttribute('data-has-back', 'true');
-    const back = screen.getByRole('button', { name: 'Back' });
-    expect(lane).toContainElement(back);
-    expect(pill).not.toContainElement(back);
-    expect(container.querySelector('[data-slot="mobile-dock-pill"]')).toBe(
-      pill
-    );
-    fireEvent.click(back);
-    expect(onBack).toHaveBeenCalledOnce();
-  });
-
-  it('turns a long press on Back into the root action without also going back', () => {
-    vi.useFakeTimers();
-    const onBack = vi.fn();
-    const onLongPress = vi.fn();
-    render(
-      <MobileDock
-        label="Nav"
-        items={items}
-        back={{ label: 'Back', onBack, onLongPress }}
-      />
-    );
-    const back = screen.getByRole('button', { name: 'Back' });
-    fireEvent.pointerDown(back);
-    act(() => vi.advanceTimersByTime(MOBILE_DOCK_LONG_PRESS_MS));
-    fireEvent.pointerUp(back);
-    fireEvent.click(back);
-    expect(onLongPress).toHaveBeenCalledOnce();
-    expect(onBack).not.toHaveBeenCalled();
+    expect(
+      container.querySelector('[data-slot="mobile-dock-back-lane"]')
+    ).toBeNull();
+    expect(nav).toHaveAttribute('data-slot', 'mobile-dock');
+    expect(
+      container.querySelector('[data-slot="mobile-dock-pill"]')
+    ).toBeTruthy();
+    expect(nav).not.toHaveAttribute('data-has-back');
   });
 
   it('shows icons only and names every destination', () => {

@@ -17,7 +17,7 @@ export interface SatelliteDockLocation {
   base: string;
   /** The app's workspace root, inside the app (no base path, keeps a locale). */
   rootPath: string;
-  /** False below the app's root, where the dock shows Back. */
+  /** False below the app's own root section. */
   atRoot: boolean;
   workspace: string;
 }

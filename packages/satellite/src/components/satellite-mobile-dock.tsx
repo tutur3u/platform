@@ -16,7 +16,7 @@ import {
   resolveLaunchableAppUrl,
 } from '@tuturuuu/utils/launchable-apps';
 import Link from 'next/link';
-import { useParams, usePathname, useRouter } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState, useSyncExternalStore } from 'react';
 import { AppsLauncherDialog } from './apps-launcher';
@@ -43,10 +43,10 @@ const MIRA_PATH = '/personal';
 /**
  * The product-wide mobile dock in every satellite: Home, Tasks, Calendar,
  * Mira (the platform's personal workspace home) and Apps. Tasks and Calendar
- * mark their own slot; other apps keep Apps active and show Back below their
- * root. Links into this app stay in-app;
- * links to other apps resolve their origin for the current environment. It
- * shows on phones while Sorbet is on (sorbet-surfaces.css).
+ * mark their own slot; other apps keep Apps active. Links into this app stay
+ * in-app; links to other apps resolve their origin for the current environment.
+ * Browser history owns Back on the web. It shows on phones while Sorbet is on
+ * (sorbet-surfaces.css).
  */
 export function SatelliteMobileDock({ currentApp }: { currentApp: string }) {
   const pathname = usePathname() ?? '';
@@ -82,7 +82,6 @@ function SatelliteMobileDockView({
   origin: string;
 }) {
   const t = useTranslations('mobile_dock');
-  const router = useRouter();
   const [appsOpen, setAppsOpen] = useState(false);
 
   const hrefFor = (slot: Exclude<SatelliteDockSlot, 'apps'>) => {
@@ -141,18 +140,6 @@ function SatelliteMobileDockView({
       <MobileDock
         label={t('navigation')}
         items={items}
-        back={
-          location.atRoot
-            ? undefined
-            : {
-                label: t('back'),
-                onBack: () => {
-                  if (window.history.length > 1) router.back();
-                  else router.push(location.rootPath);
-                },
-                onLongPress: () => router.push(location.rootPath),
-              }
-        }
         renderLink={({ href, ...props }) =>
           href.startsWith('/') ? (
             <Link href={href} {...props} />

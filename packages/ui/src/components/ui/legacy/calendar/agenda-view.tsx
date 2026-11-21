@@ -200,7 +200,7 @@ function DateHeader({
   const holidayName = lunar ? getLunarHolidayName(lunar, locale) : null;
 
   return (
-    <div className="sticky top-0 z-10 flex items-center gap-3 bg-background/80 px-1 py-2 backdrop-blur-sm">
+    <div className="sticky top-0 z-10 flex items-center gap-3 bg-background/80 px-0 py-2 backdrop-blur-sm">
       {/* Date number badge */}
       <div
         className={cn(
@@ -342,12 +342,12 @@ export const AgendaView = ({
       className="h-full overflow-auto bg-background"
       data-calendar-view="agenda"
     >
-      <div className="mx-auto max-w-4xl px-4 py-5 sm:px-8">
-        <div className="mb-6 flex items-center gap-2 border-b pb-5">
-          <div className="relative flex-1">
-            <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+      <div className="mx-auto max-w-4xl max-md:px-0 px-4 py-4 sm:px-8 sm:py-5">
+        <div className="mb-4 flex items-center gap-2 border-b pb-4 sm:mb-6 sm:pb-5">
+          <div className="relative min-h-[var(--sorbet-touch-target,44px)] flex-1">
+            <Search className="absolute top-3 left-3 size-4 text-muted-foreground" />
             <Input
-              className="pl-9"
+              className="min-h-[var(--sorbet-touch-target,44px)] pl-9"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t('views.search_events')}
@@ -355,6 +355,7 @@ export const AgendaView = ({
             />
           </div>
           <Button
+            className="max-md:hidden"
             variant="outline"
             size="icon"
             aria-label={t('views.create_event')}
@@ -366,7 +367,7 @@ export const AgendaView = ({
         </div>
         {groupedEvents.length ? (
           groupedEvents.map(({ date, events }) => (
-            <section key={date.toISOString()} className="relative mb-5">
+            <section key={date.toISOString()} className="relative mb-4 sm:mb-5">
               <DateHeader
                 date={date}
                 eventCount={events.length}
@@ -374,7 +375,7 @@ export const AgendaView = ({
                 showLunar={showLunar}
                 t={t}
               />
-              <div className="ml-5 space-y-2 border-l pb-2 pl-4 sm:ml-5 sm:pl-8">
+              <div className="ml-0 space-y-2 border-l pb-2 pl-4 sm:ml-5 sm:pl-8">
                 {events.map((event) => (
                   <EventCard
                     key={event.id}

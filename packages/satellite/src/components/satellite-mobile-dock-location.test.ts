@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveSatelliteDockLocation } from './satellite-mobile-dock-location';
 
 describe('resolveSatelliteDockLocation', () => {
-  it('keeps Apps active in apps without their own slot, with Back below the root', () => {
+  it('keeps Apps active in apps without their own slot below their root', () => {
     expect(
       resolveSatelliteDockLocation('/personal', 'personal', 'finance')
     ).toEqual({

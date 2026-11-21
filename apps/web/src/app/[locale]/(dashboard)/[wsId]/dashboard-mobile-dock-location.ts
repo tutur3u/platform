@@ -12,7 +12,7 @@ export interface DockLocation {
   /** The workspace path, with any locale prefix the current URL carries. */
   base: string;
   destination: DockDestination;
-  /** True on a destination's own page, where the dock shows no Back. */
+  /** True on a destination's own page root (used for nav highlighting). */
   atRoot: boolean;
   rootHref: string;
   /** Mira's page, with the same locale prefix as `base`. */
