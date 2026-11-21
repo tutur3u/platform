@@ -19,12 +19,17 @@ import {
   replacePersonalTaskLabels,
   replacePersonalTaskProjects,
 } from '../personal-overlays';
+import {
+  taskFleetFieldsUnavailable,
+  taskFleetUpdateSchema,
+} from '../task-fleet-fields';
 import { publishTaskRealtime } from '../realtime-broadcast';
 import {
   requireWorkspaceAccess,
   type TaskDetailRouteAuthContext,
   type TaskDetailRouteContext,
 } from './access';
+import { buildTaskDescriptionUpdate } from './build-task-description-update';
 import { getWorkspaceTask, serializeTask } from './load-workspace-task';
 import {
   restoreTaskSchema,
@@ -33,15 +38,6 @@ import {
 } from './schema';
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
-
-async function deriveTaskDescriptionYjsState(
-  description: string | null | undefined
-) {
-  const { deriveTaskDescriptionYjsState: deriveYjsState } =
-    await import('@tuturuuu/utils/yjs-task-description');
-
-  return deriveYjsState(description);
-}
 
 export type { TaskDetailRouteAuthContext } from './access';
 
@@ -606,6 +602,10 @@ export async function handleTaskDetailRoutePUT(
     if ('error' in editAccess) return editAccess.error;
     if (editAccess.wsId !== wsId)
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    const fleetFields = taskFleetUpdateSchema.parse(body);
+    if (Object.keys(fleetFields).length && task.needs_user === undefined) {
+      return taskFleetFieldsUnavailable();
+    }
     const isGuestBoardAccess = editAccess.access.mode === 'guest';
 
     if (isGuestBoardAccess) {
@@ -733,21 +733,10 @@ export async function handleTaskDetailRoutePUT(
       }
     }
 
-    const normalizedDescription =
-      body.description !== undefined
-        ? body.description?.trim() || null
-        : undefined;
-
     const baseUpdatePayload = {
+      ...fleetFields,
       ...(body.name != null ? { name: body.name.trim() } : {}),
-      ...(normalizedDescription !== undefined
-        ? {
-            description: normalizedDescription,
-            description_yjs_state: await deriveTaskDescriptionYjsState(
-              normalizedDescription
-            ),
-          }
-        : {}),
+      ...(await buildTaskDescriptionUpdate(body.description)),
       ...(body.priority !== undefined
         ? { priority: body.priority as TaskPriority | null }
         : {}),

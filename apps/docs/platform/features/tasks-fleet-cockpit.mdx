@@ -76,12 +76,14 @@ first source that has one:
 | Links | the task's external links (http(s) only become links) |
 | Code | the task's external key, then the task number |
 
-The fleet task-fields work adds the fields that do not exist yet: fleet status,
-needs-user flag and reason, blocked reason, agent assignees, external links,
-external key and `updated_at`. Until each card is moved onto them, the view falls
-back to the legacy `<!-- fleet:v1 -->` block at the top of the description, but
-only for values the fields leave empty. The board sync removes each header once
-its fields are verified. Descriptions stay editable notes.
+The Tasks API stores agent assignees, the needs-user flag and reason, and
+links on each task. Incoming blockers use task relationships. The database
+sets `updated_at` on creation and edits to task content, status, placement,
+or Fleet metadata. Older tasks gain it on the first such edit.
+Fleet cards can read the legacy `<!-- fleet:v1 -->` description block for
+values the fields leave empty. Once a task's fields are verified, the board
+sync can remove the legacy header and leave the editable notes in place.
+The CLI field flags and output are documented in the [SDK reference](/reference/packages/sdk#fleet-task-fields).
 
 ## Surfaces
 
@@ -107,6 +109,9 @@ its fields are verified. Descriptions stay editable notes.
   is unchanged.
 
 ## Regression coverage
+
+- `packages/sdk/src/cli/task-fleet-fields.test.ts`: field writes, blocker
+  direction and retries, and CLI output.
 
 - `packages/tasks-ui/src/tu-do/fleet/fleet-task-meta.test.ts`: parsing,
   fallbacks, unknown values, freshness and ETA rules.

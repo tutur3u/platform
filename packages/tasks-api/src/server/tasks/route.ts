@@ -8,9 +8,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, TaskActorRpcArgs } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import {
-  MAX_COLOR_LENGTH,
-  MAX_TASK_DESCRIPTION_LENGTH,
-  MAX_TASK_NAME_LENGTH,
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -32,6 +29,15 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { CreateTaskSchema } from './create-task-schema';
+import {
+  isMissingTaskFleetColumn,
+  serializeTaskFleetFields,
+  taskFleetClient,
+  taskFleetFieldsUnavailable,
+  withTaskFleetColumns,
+  taskFleetUpdateSchema,
+} from './task-fleet-fields';
 import {
   canEditTaskBoardAccess,
   resolveTaskBoardAccess,
@@ -41,6 +47,7 @@ import {
   parseTaskCapacityViolation,
 } from '../capacity';
 import { resolveCreateTaskSortKey } from './create-sort-key';
+import { insertWorkspaceTask } from './insert-workspace-task';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
@@ -110,33 +117,6 @@ async function cleanupCreatedTask(
   }
 }
 
-const CreateTaskSchema = z.object({
-  name: z.string().min(1).max(MAX_TASK_NAME_LENGTH),
-  description: z
-    .string()
-    .max(MAX_TASK_DESCRIPTION_LENGTH)
-    .nullable()
-    .optional(),
-  description_yjs_state: z
-    .array(z.number().int().min(0).max(255))
-    .nullable()
-    .optional(),
-  listId: z.guid(),
-  priority: z.enum(['low', 'normal', 'high', 'critical']).nullable().optional(),
-  start_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
-  end_date: z.string().max(MAX_COLOR_LENGTH).nullable().optional(),
-  estimation_points: z.number().nullable().optional(),
-  label_ids: z.array(z.guid()).optional(),
-  project_ids: z.array(z.guid()).optional(),
-  assignee_ids: z.array(z.guid()).optional(),
-  total_duration: z.number().nonnegative().nullable().optional(),
-  is_splittable: z.boolean().nullable().optional(),
-  min_split_duration_minutes: z.number().int().min(0).nullable().optional(),
-  max_split_duration_minutes: z.number().int().min(0).nullable().optional(),
-  calendar_hours: z.string().nullable().optional(),
-  auto_schedule: z.boolean().nullable().optional(),
-});
-type TaskInsert = Database['public']['Tables']['tasks']['Insert'];
 function parseTaskIdentifierQuery(identifier: string) {
   const normalized = identifier.trim().toUpperCase();
 
@@ -485,7 +465,7 @@ async function loadAccessibleWorkspaceIds(
     throw new Error('SOURCE_WORKSPACE_ACCESS_QUERY_FAILED', { cause: error });
   }
 
-  return new Set(
+  return new Set<string>(
     (memberships ?? [])
       .map((membership) => membership.ws_id)
       .filter((wsId): wsId is string => Boolean(wsId))
@@ -809,8 +789,11 @@ async function normalizeRouteWorkspaceId({
 export async function handleTaskRouteGET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> },
-  auth: TaskRouteAuthContext
-) {
+  auth: TaskRouteAuthContext,
+  includeFleetFields = true
+): Promise<NextResponse> {
+  const withoutFleetFields = () =>
+    handleTaskRouteGET(request, { params }, auth, false);
   try {
     const { wsId } = await params;
     const { supabase, user } = auth;
@@ -1179,12 +1162,20 @@ export async function handleTaskRouteGET(
         sourceTaskCount = rpcCount;
 
         if (taskIds.length > 0) {
-          const { data: rpcTaskRows, error: rpcTaskError } = await sbAdmin
-            .from('tasks')
-            .select(selectedColumns)
-            .in('id', taskIds);
+          const { data: rpcTaskRows, error: rpcTaskError } =
+            await taskFleetClient(sbAdmin)
+              .from('tasks')
+              .select(
+                withTaskFleetColumns(
+                  selectedColumns,
+                  includeFleetFields && !forTimeTracking
+                )
+              )
+              .in('id', taskIds);
 
           if (rpcTaskError) {
+            if (includeFleetFields && isMissingTaskFleetColumn(rpcTaskError))
+              return withoutFleetFields();
             throw new Error('TASK_SOURCE_FILTER_HYDRATION_FAILED', {
               cause: rpcTaskError,
             });
@@ -1223,9 +1214,15 @@ export async function handleTaskRouteGET(
     }
 
     if (!loadedViaSourceFilterRpc) {
-      let query = sbAdmin
+      let query = taskFleetClient(sbAdmin)
         .from('tasks')
-        .select(selectedColumns, includeCount ? { count: 'exact' } : undefined)
+        .select(
+          withTaskFleetColumns(
+            selectedColumns,
+            includeFleetFields && !forTimeTracking
+          ),
+          includeCount ? { count: 'exact' } : undefined
+        )
         .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
         .is('task_lists.workspace_boards.deleted_at', null);
 
@@ -1325,6 +1322,8 @@ export async function handleTaskRouteGET(
       };
 
       if (error) {
+        if (includeFleetFields && isMissingTaskFleetColumn(error))
+          return withoutFleetFields();
         logTaskRouteError(
           'Database error in tasks query:',
           error,
@@ -1444,9 +1443,9 @@ export async function handleTaskRouteGET(
       }
 
       if (placedTaskIds.length > 0) {
-        let placedTasksQuery = sbAdmin
+        let placedTasksQuery = taskFleetClient(sbAdmin)
           .from('tasks')
-          .select(fullSelect)
+          .select(withTaskFleetColumns(fullSelect, includeFleetFields))
           .in('id', placedTaskIds)
           .is('deleted_at', null)
           .eq('task_lists.deleted', false)
@@ -1539,6 +1538,8 @@ export async function handleTaskRouteGET(
           await placedTasksQuery;
 
         if (placedTasksError) {
+          if (includeFleetFields && isMissingTaskFleetColumn(placedTasksError))
+            return withoutFleetFields();
           logTaskRouteError(
             'Failed to hydrate placed personal tasks:',
             placedTasksError,
@@ -1608,10 +1609,10 @@ export async function handleTaskRouteGET(
         !!targetPersonalBoardId && (!listId || !!virtualStagingBoardId);
 
       if (shouldLoadDefaultExternalTasks && targetPersonalBoardId) {
-        let defaultExternalQuery = sbAdmin
+        let defaultExternalQuery = taskFleetClient(sbAdmin)
           .from('tasks')
           .select(
-            fullSelectAssignedToMe,
+            withTaskFleetColumns(fullSelectAssignedToMe, includeFleetFields),
             includeCount ? { count: 'exact' } : undefined
           )
           .neq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId)
@@ -1758,6 +1759,11 @@ export async function handleTaskRouteGET(
           : await defaultExternalQuery.range(0, offset + limit - 1);
 
         if (defaultExternalResult.error) {
+          if (
+            includeFleetFields &&
+            isMissingTaskFleetColumn(defaultExternalResult.error)
+          )
+            return withoutFleetFields();
           logTaskRouteError(
             'Failed to load default external tasks:',
             defaultExternalResult.error,
@@ -2192,7 +2198,9 @@ export async function handleTaskRoutePOST(
         ? await deriveTaskDescriptionYjsState(normalizedDescription)
         : description_yjs_state;
 
-    const taskInsert: TaskInsert = {
+    const fleetFields = taskFleetUpdateSchema.parse(body);
+    const taskInsert = {
+      ...fleetFields,
       name: name.trim(),
       description: normalizedDescription,
       creator_id: user.id,
@@ -2207,37 +2215,16 @@ export async function handleTaskRoutePOST(
       closed_at: isClosedList ? now : null,
     };
 
-    const { data, error } = await sbAdmin
-      .from('tasks')
-      .insert({
-        ...taskInsert,
-        description_yjs_state: normalizedDescriptionYjsState,
-      })
-      .select(
-        `
-        id,
-        display_number,
-        name,
-        description,
-        priority,
-        completed,
-        start_date,
-        end_date,
-        estimation_points,
-        sort_key,
-        created_at,
-        list_id,
-          task_lists!inner(
-            id,
-            name,
-            workspace_boards!inner(
-              name,
-              ticket_prefix
-            )
-          )
-        `
-      )
-      .maybeSingle();
+    const insert = {
+      ...taskInsert,
+      description_yjs_state: normalizedDescriptionYjsState,
+    };
+    let result = await insertWorkspaceTask(sbAdmin, insert, true);
+    if (result.error && isMissingTaskFleetColumn(result.error)) {
+      if (Object.keys(fleetFields).length) return taskFleetFieldsUnavailable();
+      result = await insertWorkspaceTask(sbAdmin, insert, false);
+    }
+    const { data, error } = result;
 
     if (error) {
       console.error('Error creating task:', error);
@@ -2347,6 +2334,7 @@ export async function handleTaskRoutePOST(
     });
 
     const task = {
+      ...serializeTaskFleetFields(data),
       id: data.id,
       display_number: data.display_number,
       name: data.name,

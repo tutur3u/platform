@@ -1,4 +1,10 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  isMissingTaskFleetColumn,
+  serializeTaskFleetFields,
+  taskFleetClient,
+  withTaskFleetColumns,
+} from '../task-fleet-fields';
 import type { TaskRecord } from './schema';
 
 export async function getWorkspaceTask(
@@ -6,10 +12,12 @@ export async function getWorkspaceTask(
   wsId: string,
   taskId: string
 ): Promise<{ error: Error | null; task: TaskRecord | null }> {
-  const { data: task, error } = await supabase
-    .from('tasks')
-    .select(
-      `
+  const query = (includeFleetFields: boolean) =>
+    taskFleetClient(supabase)
+      .from('tasks')
+      .select(
+        withTaskFleetColumns(
+          `
       id,
       display_number,
       name,
@@ -65,10 +73,18 @@ export async function getWorkspaceTask(
           status
         )
       )
-    `
-    )
-    .eq('id', taskId)
-    .maybeSingle();
+    `,
+          includeFleetFields
+        )
+      )
+      .eq('id', taskId)
+      .maybeSingle();
+
+  let result = await query(true);
+  if (result.error && isMissingTaskFleetColumn(result.error)) {
+    result = await query(false);
+  }
+  const { data: task, error } = result;
 
   if (error) {
     return { error, task: null };
@@ -101,6 +117,7 @@ export function serializeTask(task: TaskRecord) {
   const uniqueProjectIds = [...new Set(projectIds)];
 
   return {
+    ...serializeTaskFleetFields(task),
     id: task.id,
     display_number: task.display_number,
     name: task.name,

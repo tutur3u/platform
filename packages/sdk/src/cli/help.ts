@@ -1,3 +1,8 @@
+import {
+  taskCreateHelp,
+  taskShowHelp,
+  taskUpdateHelp,
+} from './help-task-fields';
 import { feedbackHelp } from './feedback';
 import { boxHelp } from './help-devbox';
 import { formatHelp, type HelpTopic } from './help-format';
@@ -247,9 +252,10 @@ const helpTopics: Record<string, HelpTopic> = {
       'list                         list open tasks plus assigned external tasks in personal workspace',
       'search <query>               full-text, semantic, or hybrid task search',
       'use [id]                     select a task',
-      'get [id]                     show task details',
+      'get [id]                     get task details',
+      'show [id]                    show task details and incoming blockers',
       'create [name]                create a task',
-      'update [id] --json-payload   update task fields',
+      'update [id]                  update task fields',
       'description [action] [id]    read or edit a task description',
       'done [id]                    mark a task as done',
       'close [id]                   mark a task as closed',
@@ -627,32 +633,8 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       ],
       usage: 'ttr tasks bulk --ids <ids> --json-payload <json>',
     },
-    create: {
-      examples: [
-        'ttr tasks create "Add Tuturuuu CLI"',
-        'ttr tasks create --list <list-id> --name "Write release notes"',
-        'ttr tasks create --template bug-report --list <list-id>',
-        'ttr tasks create "Fix login" --priority critical --labels bug,cli',
-        'ttr tasks create "Ship CLI docs" --description-file notes.md --description-format markdown',
-        'ttr tasks create "QA handoff" --description-file table.md --description-format markdown',
-      ],
-      options: [
-        '--name <name>               task title; positional text is also accepted',
-        '--template <key-or-path>     create from a workspace or local task template',
-        '--description <text>        task description text',
-        '--description-file <path|-> task description file or stdin',
-        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
-        '--list <id>                 destination list; omitted means selected list or picker',
-        '--board <id>                board used when choosing a list',
-        '--priority <priority>       task priority',
-        '--start-date <iso>          start date',
-        '--end-date <iso>            due date',
-        '--labels <ids>              comma-separated label ids',
-        '--projects <ids>            comma-separated project ids',
-        '--assignees <ids>           comma-separated assignee ids',
-      ],
-      usage: 'ttr tasks create [name] [options]',
-    },
+    create: taskCreateHelp,
+    show: taskShowHelp,
     description: {
       description:
         'Read and edit descriptions, list changes with history [--limit n] [--offset n], or use snapshot <task-id> <history-id>.',
@@ -753,25 +735,7 @@ const actionHelpTopics: Record<string, Record<string, HelpTopic>> = {
       ],
       usage: 'ttr tasks move [task-id] [options]',
     },
-    update: {
-      examples: [
-        'ttr tasks update',
-        'ttr tasks update VHP-12 --json-payload \'{"name":"New title"}\'',
-        'ttr tasks update VHP-12 --description "Clarified acceptance criteria"',
-        'ttr tasks update VHP-12 --description-file notes.md --description-format markdown',
-        'ttr tasks update <task-id> --json-payload \'{"completed":true}\'',
-        'ttr tasks update <task-id> --list <done-list-id> --json-payload \'{"completed":true}\'',
-      ],
-      options: [
-        '--json-payload <json>       task update payload',
-        '--description <text>        update task description text',
-        '--description-file <path|-> update task description file or stdin',
-        '--description-format <fmt>  text, markdown, or json; markdown supports pipe tables',
-        '--list <id>, --list-id <id> also set list_id in the update payload',
-        '--json                      print machine-readable JSON',
-      ],
-      usage: 'ttr tasks update [task-id] --json-payload <json> [options]',
-    },
+    update: taskUpdateHelp,
   },
 };
 

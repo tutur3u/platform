@@ -928,6 +928,31 @@ output. Picker labels, descriptions, badges, and color names derived from
 platform data must visibly escape terminal control characters before rendering.
 Use `ttr -v` or `ttr --version` to print the installed CLI version.
 
+### Fleet task fields
+
+```bash
+ttr tasks create "Review access" --list <list-id> --agent-owners iris,selene --needs-user true --needs-user-reason "Approve scope"
+ttr tasks update VHP-12 --links-json '[{"url":"https://example.com/run","title":"Run"}]' --blocked-by <blocker-task-uuid>
+ttr tasks update VHP-12 --needs-user false --needs-user-reason= --remove-blocked-by <blocker-task-uuid>
+ttr tasks show VHP-12 --json
+```
+
+`--agent-owners` replaces the ordered agent keys. Use `--agent-owners=` to
+clear them. `--links-json` replaces the HTTP(S) links and accepts an optional
+title per link. Pass `--links-json '[]'` to clear the links. Omitted fields
+keep their stored values. Task timestamps are maintained by the database for
+task creation and edits to task content, status, placement and Fleet metadata.
+They appear as `updated_at` when available.
+
+`tasks show` includes incoming blockers and accepts a task UUID or ticket
+key. With `--json`, it returns the API field names under `task`, with incoming
+blockers in `task.blocked_by`. Create and update include incoming blockers in
+their output when the command modifies blocker relationships. The blocker
+flags take comma-separated task UUIDs. Blocker changes use separate
+relationship requests after the task is saved. If a relationship request
+fails, retry the blocker flags with `tasks update <task-id>`; the command
+skips edges already in the requested state.
+
 ## Client Initialization
 
 ### Basic Usage

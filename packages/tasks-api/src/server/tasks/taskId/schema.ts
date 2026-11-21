@@ -4,6 +4,7 @@ import {
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { z } from 'zod';
+import { taskFleetFields, type TaskFleetRow } from '../task-fleet-fields';
 
 export const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -12,6 +13,7 @@ export const paramsSchema = z.object({
 
 export const updateTaskSchema = z
   .object({
+    ...taskFleetFields,
     name: z.string().trim().min(1).max(MAX_TASK_NAME_LENGTH).optional(),
     description: z
       .string()
@@ -98,12 +100,13 @@ type TaskProjectContext =
     > & { ticket_number: number; created_at: string })
   | null;
 
-export type TaskRecord = TaskBaseRow & {
-  task_lists: TaskListContext | null;
-  assignees: TaskAssigneeContext[] | null;
-  labels: TaskLabelContext[] | null;
-  projects: TaskProjectContext[] | null;
-};
+export type TaskRecord = TaskBaseRow &
+  TaskFleetRow & {
+    task_lists: TaskListContext | null;
+    assignees: TaskAssigneeContext[] | null;
+    labels: TaskLabelContext[] | null;
+    projects: TaskProjectContext[] | null;
+  };
 
 export type TaskMutationResult = Pick<
   Database['public']['Tables']['tasks']['Row'],

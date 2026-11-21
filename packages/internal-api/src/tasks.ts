@@ -39,6 +39,15 @@ import {
   withTaskApiBaseUrl,
 } from './client';
 
+import type {
+  WorkspaceTaskFleetFields,
+  WorkspaceTaskUpdatePayload,
+} from './task-fleet-fields';
+export type {
+  WorkspaceTaskFleetFields,
+  WorkspaceTaskUpdatePayload,
+} from './task-fleet-fields';
+
 const credentialedTaskRequest = {
   cache: 'no-store',
   credentials: 'include',
@@ -293,25 +302,7 @@ export interface WorkspaceTaskHistoryForTaskResponse {
   };
 }
 
-export interface WorkspaceTaskUpdatePayload {
-  name?: string;
-  description?: string | null;
-  priority?: TaskPriority | null;
-  start_date?: string | null;
-  end_date?: string | null;
-  closed_at?: string | null;
-  completed_at?: string | null;
-  list_id?: string;
-  estimation_points?: number | null;
-  label_ids?: string[];
-  assignee_ids?: string[];
-  project_ids?: string[];
-  completed?: boolean;
-  deleted?: boolean;
-  sort_key?: number;
-}
-
-export interface WorkspaceTaskApiTask extends Task {
+export interface WorkspaceTaskApiTask extends Task, WorkspaceTaskFleetFields {
   assignee_ids?: string[];
   label_ids?: string[];
   project_ids?: string[];
@@ -588,7 +579,7 @@ export type WorkspaceTaskBoardEstimationConfig = Pick<
   | 'created_at'
 >;
 
-export interface CreateWorkspaceTaskPayload {
+export interface CreateWorkspaceTaskPayload extends WorkspaceTaskFleetFields {
   name: string;
   listId: string;
   description?: string | null;

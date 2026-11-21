@@ -33,6 +33,7 @@ const portableFiles = new Set([
   'internal-api/storage.ts',
   'internal-api/storage-export-links.ts',
   'internal-api/task-history.ts',
+  'internal-api/task-fleet-fields.ts',
   'internal-api/task-list-options.ts',
   'internal-api/task-media-filename.ts',
   'internal-api/task-project-mutations.ts',

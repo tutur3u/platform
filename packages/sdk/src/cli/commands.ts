@@ -20,6 +20,31 @@ import {
   readTokenFromStdin,
   receiveTokenFromBrowser,
 } from './auth';
+import {
+  getBlockerFlags,
+  getTaskFleetFlags,
+  renderTaskFleetDetails,
+  updateCreatedTaskFleetFields,
+  withTaskBlockers,
+} from './task-fleet-fields';
+import {
+  getPayload,
+  getTaskClosePayload,
+  getTaskDonePayload,
+  getTaskUpdatePayload,
+} from './task-mutation-payloads';
+export {
+  getTaskClosePayload,
+  getTaskDonePayload,
+  getTaskUpdatePayload,
+} from './task-mutation-payloads';
+import {
+  getIdentifierDisplayKey,
+  readTaskForFleetMutation,
+  renderFleetTaskMutation,
+  renderTaskMutationResult,
+  withTaskDisplayKey,
+} from './task-mutation-render';
 import { runCalendarFeedbackDispatch } from './calendar-feedback-dispatch';
 import { runUpgrade } from './cli-versions-command';
 import { readCommandConfig } from './command-config';
@@ -328,7 +353,7 @@ function getCliTaskListStatuses(flags: Record<string, FlagValue>) {
 
 function getCliTaskStateFilters(
   flags: Record<string, FlagValue>
-): Pick<ListWorkspaceTasksOptions, 'closed' | 'completed'> {
+): Partial<Pick<ListWorkspaceTasksOptions, 'closed' | 'completed'>> {
   if (
     flags.document === true ||
     flags.documents === true ||
@@ -764,76 +789,6 @@ async function login(flags: Record<string, FlagValue>, config: CliConfig) {
   await saveSession(config, await receiveTokenFromBrowser(config.baseUrl));
 }
 
-function getPayload(flags: Record<string, FlagValue>) {
-  const payload = getFlag(flags, 'json-payload');
-  return payload ? (JSON.parse(payload) as Record<string, unknown>) : {};
-}
-
-export function getTaskUpdatePayload(flags: Record<string, FlagValue>) {
-  const payload = getPayload(flags);
-  const listId = getFlag(flags, 'list') || getFlag(flags, 'list-id');
-
-  if (listId && payload.list_id === undefined) {
-    payload.list_id = listId;
-  }
-
-  if (
-    payload.completed === true &&
-    payload.completed_at === undefined &&
-    payload.closed_at === undefined
-  ) {
-    payload.completed_at = new Date().toISOString();
-  }
-
-  return payload;
-}
-
-export function getTaskDonePayload(
-  flags: Record<string, FlagValue>,
-  listId?: string
-) {
-  const payload = getPayload(flags);
-  const explicitListId =
-    listId || getFlag(flags, 'list') || getFlag(flags, 'list-id');
-
-  payload.completed = true;
-
-  if (payload.completed_at === undefined) {
-    payload.completed_at = new Date().toISOString();
-  }
-
-  if (explicitListId && payload.list_id === undefined) {
-    payload.list_id = explicitListId;
-  }
-
-  return payload;
-}
-
-export function getTaskClosePayload(
-  flags: Record<string, FlagValue>,
-  listId?: string
-) {
-  const payload = getPayload(flags);
-  const explicitListId =
-    listId || getFlag(flags, 'list') || getFlag(flags, 'list-id');
-
-  payload.completed = false;
-
-  if (payload.completed_at === undefined) {
-    payload.completed_at = null;
-  }
-
-  if (payload.closed_at === undefined) {
-    payload.closed_at = new Date().toISOString();
-  }
-
-  if (explicitListId && payload.list_id === undefined) {
-    payload.list_id = explicitListId;
-  }
-
-  return payload;
-}
-
 export function getTaskTemplatePayloadFromFlags(
   flags: Record<string, FlagValue>,
   fallbackName?: string
@@ -1081,64 +1036,6 @@ async function maybeMovePersonalExternalTaskToTerminal({
   return true;
 }
 
-async function renderTaskMutationResult({
-  client,
-  displayKey,
-  fallback,
-  group,
-  json,
-  taskId,
-  workspaceId,
-}: {
-  client: TuturuuuUserClient;
-  displayKey?: string;
-  fallback: unknown;
-  group: string;
-  json: boolean;
-  taskId: string;
-  workspaceId: string;
-}) {
-  if (json) {
-    render(fallback, { group, json });
-    return;
-  }
-
-  try {
-    render(
-      withTaskDisplayKey(
-        await client.tasks.get(workspaceId, taskId),
-        displayKey
-      ),
-      {
-        group,
-        json,
-      }
-    );
-  } catch {
-    render(withTaskDisplayKey(fallback, displayKey), { group, json });
-  }
-}
-
-function getIdentifierDisplayKey(identifier?: string) {
-  const value = identifier?.trim();
-  return value && /^[a-z][a-z0-9]*-\d+$/i.test(value)
-    ? value.toUpperCase()
-    : undefined;
-}
-
-function withTaskDisplayKey(data: unknown, displayKey?: string) {
-  if (!displayKey || !data || typeof data !== 'object') return data;
-  const record = data as { task?: unknown };
-  if (!record.task || typeof record.task !== 'object') return data;
-  return {
-    ...record,
-    task: {
-      ...(record.task as Record<string, unknown>),
-      display_key: displayKey,
-    },
-  };
-}
-
 export function normalizeLabelColor(value?: string) {
   const color = (value || 'gray').trim();
 
@@ -1333,6 +1230,10 @@ async function runTaskCreateCliCommand({
   group,
   positionalValue,
 }: WorkspaceCommandContext) {
+  const fields = getTaskFleetFlags(flags);
+  const blockers = getBlockerFlags(flags);
+  if (blockers.remove.length)
+    throw new Error('--remove-blocked-by is only available for tasks update');
   const listSelection = await selectListId(
     client,
     config,
@@ -1385,11 +1286,27 @@ async function runTaskCreateCliCommand({
       });
     }
 
-    render(response, { group, json });
+    const result = Object.keys(fields).length
+      ? await updateCreatedTaskFleetFields(
+          client,
+          workspaceId,
+          response,
+          fields
+        )
+      : response;
+    await renderFleetTaskMutation(
+      client,
+      workspaceId,
+      group,
+      json,
+      result,
+      blockers
+    );
     return true;
   }
 
   const createPayload = {
+    ...fields,
     assignee_ids: parseCsv(getFlag(flags, 'assignees')),
     end_date: getFlag(flags, 'end-date') || null,
     label_ids: parseCsv(getFlag(flags, 'labels')),
@@ -1413,7 +1330,14 @@ async function runTaskCreateCliCommand({
     });
   }
 
-  render(response, { group, json });
+  await renderFleetTaskMutation(
+    client,
+    workspaceId,
+    group,
+    json,
+    response,
+    blockers
+  );
   return true;
 }
 
@@ -1493,8 +1417,8 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
     process.stdout.write(`Current task set to ${selection.taskId}\n`);
     return true;
   }
-  if (action === 'get') {
-    const selection = await selectTaskId(
+  if (action === 'get' || action === 'show') {
+    const { taskId } = await selectTaskId(
       client,
       config,
       workspaceId,
@@ -1502,16 +1426,16 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
       json,
       firstId
     );
-    render(
-      withTaskDisplayKey(
-        await client.tasks.get(workspaceId, selection.taskId),
-        getIdentifierDisplayKey(firstId)
-      ),
-      {
-        group,
-        json,
-      }
-    );
+    const task = await client.tasks.get(workspaceId, taskId);
+    const response =
+      action === 'show'
+        ? await withTaskBlockers(client, workspaceId, task)
+        : task;
+    render(withTaskDisplayKey(response, getIdentifierDisplayKey(firstId)), {
+      group,
+      json,
+    });
+    if (!json) renderTaskFleetDetails(response.task);
     return true;
   }
   if (action === 'create') {
@@ -1527,13 +1451,28 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
       json,
       firstId
     );
+    const blockers = getBlockerFlags(flags);
+    const hasBlockerChanges =
+      blockers.add.length > 0 || blockers.remove.length > 0;
     const descriptionPayload = await getTaskDescriptionPayloadFromFlags(flags);
     const taskUpdatePayload = getTaskUpdatePayload(flags);
+    const hasFleetChanges = [
+      'virtual_assignees',
+      'needs_user',
+      'needs_user_reason',
+      'task_resources',
+    ].some((key) => key in taskUpdatePayload);
+    if (blockers.add.includes(selection.taskId.toLowerCase())) {
+      throw new Error('A task cannot block itself');
+    }
     const hasTaskUpdatePayload = Object.keys(taskUpdatePayload).length > 0;
-    let response: unknown;
+    let savedTask:
+      | Awaited<ReturnType<TuturuuuUserClient['tasks']['update']>>
+      | undefined;
+    let descriptionResult: unknown;
 
-    if (hasTaskUpdatePayload || !descriptionPayload) {
-      response = await client.tasks.update(
+    if (hasTaskUpdatePayload || (!descriptionPayload && !hasBlockerChanges)) {
+      savedTask = await client.tasks.update(
         workspaceId,
         selection.taskId,
         taskUpdatePayload
@@ -1541,7 +1480,7 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
     }
 
     if (descriptionPayload) {
-      response = await updateTaskDescriptionWithBestTransport({
+      descriptionResult = await updateTaskDescriptionWithBestTransport({
         client,
         payload: descriptionPayload,
         taskId: selection.taskId,
@@ -1549,10 +1488,27 @@ async function runTasksCliCommand(context: WorkspaceCommandContext) {
       });
     }
 
+    if (hasBlockerChanges || hasFleetChanges) {
+      await renderFleetTaskMutation(
+        client,
+        workspaceId,
+        group,
+        json,
+        (!descriptionPayload && savedTask) ||
+          (await readTaskForFleetMutation(
+            client,
+            workspaceId,
+            selection.taskId
+          )),
+        blockers
+      );
+      return true;
+    }
+
     await renderTaskMutationResult({
       client,
       displayKey: getIdentifierDisplayKey(firstId),
-      fallback: response,
+      fallback: descriptionPayload ? descriptionResult : savedTask,
       group,
       json,
       taskId: selection.taskId,
@@ -1821,7 +1777,14 @@ async function runProjectsCliCommand(context: WorkspaceCommandContext) {
     const projectId =
       firstId ||
       config.currentProjectId ||
-      (await chooseProject(client, workspaceId, config, json)).id;
+      (
+        (await chooseProject(
+          client,
+          workspaceId,
+          config,
+          json
+        )) as ListedProject
+      ).id;
     config = { ...config, currentProjectId: projectId };
     await writeCliConfig(config);
     render(await client.tasks.getProject(workspaceId, projectId), {
@@ -1834,7 +1797,14 @@ async function runProjectsCliCommand(context: WorkspaceCommandContext) {
     const projectId =
       firstId ||
       config.currentProjectId ||
-      (await chooseProject(client, workspaceId, config, json)).id;
+      (
+        (await chooseProject(
+          client,
+          workspaceId,
+          config,
+          json
+        )) as ListedProject
+      ).id;
     config = { ...config, currentProjectId: projectId };
     await writeCliConfig(config);
     render(await client.tasks.getProjectTasks(workspaceId, projectId), {

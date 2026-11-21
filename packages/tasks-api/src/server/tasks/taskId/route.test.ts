@@ -46,6 +46,7 @@ import {
 describe('task detail route CLI app-session auth', () => {
   const taskId = '00000000-0000-4000-8000-000000000777';
   const workspaceId = '00000000-0000-4000-8000-000000000123';
+  const selectTask = vi.fn();
   let adminSupabase!: TypedSupabaseClient;
 
   beforeEach(() => {
@@ -74,6 +75,10 @@ describe('task detail route CLI app-session auth', () => {
           estimation_points: null,
           sort_key: null,
           created_at: '2026-05-17T00:00:00.000Z',
+          updated_at: '2026-05-18T00:00:00.000Z',
+          virtual_assignees: [{ key: 'iris', kind: 'agent', position: 0 }],
+          needs_user: false,
+          task_resources: [{ kind: 'link', url: 'https://example.test/' }],
           closed_at: null,
           deleted_at: null,
           list_id: '00000000-0000-4000-8000-000000000555',
@@ -100,11 +105,12 @@ describe('task detail route CLI app-session auth', () => {
       }),
     };
     taskQuery.eq.mockReturnValue(taskQuery);
+    selectTask.mockReturnValue(taskQuery);
 
     const fromMock = vi.fn((table: string) => {
       if (table === 'tasks') {
         return {
-          select: vi.fn(() => taskQuery),
+          select: selectTask,
         };
       }
 
@@ -148,6 +154,33 @@ describe('task detail route CLI app-session auth', () => {
     }
   );
 
+  it('loads an existing task before the fleet migration is applied', async () => {
+    const missingColumnQuery = {
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: null,
+        error: {
+          code: '42703',
+          message: 'column tasks.virtual_assignees does not exist',
+        },
+      }),
+    };
+    selectTask.mockReturnValueOnce(missingColumnQuery);
+
+    const response = await handleTaskDetailRouteGET(
+      new NextRequest(`http://localhost/tasks/${taskId}`),
+      { params: Promise.resolve({ taskId, wsId: workspaceId }) },
+      {
+        appSession: true,
+        supabase: adminSupabase,
+        user: { id: 'member' } as SupabaseUser,
+      }
+    );
+    expect(response.status).toBe(200);
+    expect(selectTask.mock.calls[0]?.[0]).toContain('virtual_assignees');
+    expect(selectTask.mock.calls[1]?.[0]).not.toContain('virtual_assignees');
+  });
+
   it('loads personal tasks through a pre-authenticated CLI app-session context', async () => {
     const response = await handleTaskDetailRouteGET(
       new NextRequest(
@@ -188,10 +221,17 @@ describe('task detail route CLI app-session auth', () => {
         display_number: 123,
         ticket_prefix: 'F',
         list_name: 'In Progress',
+        updated_at: '2026-05-18T00:00:00.000Z',
+        virtual_assignees: [{ key: 'iris', kind: 'agent', position: 0 }],
+        needs_user: false,
+        task_resources: [{ kind: 'link', url: 'https://example.test/' }],
       },
       taskWorkspacePersonal: false,
       taskWorkspaceTier: 'PRO',
     });
+    expect(
+      selectTask.mock.calls[0]?.[0].match(/virtual_assignees/g)
+    ).toHaveLength(1);
     expect(createClientMock).not.toHaveBeenCalled();
     expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
       'personal',
