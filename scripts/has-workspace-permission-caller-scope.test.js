@@ -114,6 +114,60 @@ test('latest time-tracking update guard ignores the actor override for end users
 });
 
 const INVENTORY_ENTRY = /^--\s{2,}((?:public|private)\.\w+)\(\)/gmu;
+const INVENTORY_HEADER = /^-- Trigger inventory\b[^\n]*\n((?:--[^\n]*\n)+)/mu;
+
+// Applied migrations that redefine the helper without changing which triggers
+// call it, and that shipped without their own inventory header. Their bytes are
+// fixed once applied, so the inventory carries forward from the previous
+// definition that has one, plus any later addenda. Each entry needs a review
+// note stating that the redefinition adds no trigger caller.
+const INVENTORY_CARRIED_FORWARD = new Map([
+  [
+    '20261121141020_mira_operator_permission_evaluator.sql',
+    'Recreates the 20261030113002 definition with one explicit-grant branch for operate_mira_channels; it defines no trigger and adds no trigger caller.',
+  ],
+]);
+
+// Files that define the helper, in filename order.
+function helperDefiners() {
+  const header =
+    /create\s+(?:or\s+replace\s+)?function\s+(?:"?public"?\.)?"?has_workspace_permission"?\s*\(/iu;
+  return fs
+    .readdirSync(MIGRATIONS_DIR)
+    .filter((name) => name.endsWith('.sql'))
+    .sort()
+    .filter((name) =>
+      header.test(fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8'))
+    );
+}
+
+// The migration whose inventory header covers the latest helper definition.
+function inventorySource(latestFilename) {
+  const definers = helperDefiners();
+  let index = definers.indexOf(latestFilename);
+  assert.ok(index >= 0, `${latestFilename} does not define ${HELPER}`);
+  while (INVENTORY_CARRIED_FORWARD.has(definers[index]) && index > 0) {
+    const reason = INVENTORY_CARRIED_FORWARD.get(definers[index]);
+    assert.ok(
+      typeof reason === 'string' && reason.trim().length > 0,
+      `${definers[index]}: a carried-forward inventory needs a review note`
+    );
+    const sql = fs.readFileSync(
+      path.join(MIGRATIONS_DIR, definers[index]),
+      'utf8'
+    );
+    assert.ok(
+      !/\breturns\s+trigger\b/iu.test(sql),
+      `${definers[index]}: a carried-forward inventory cannot define a trigger`
+    );
+    index--;
+  }
+  const filename = definers[index];
+  return {
+    filename,
+    sql: fs.readFileSync(path.join(MIGRATIONS_DIR, filename), 'utf8'),
+  };
+}
 
 // Trigger calls are exempt from the caller binding, so every trigger that
 // evaluates permissions must be reviewed and listed in the inventory carried
@@ -121,8 +175,8 @@ const INVENTORY_ENTRY = /^--\s{2,}((?:public|private)\.\w+)\(\)/gmu;
 // bytes, so a later migration that adds a trigger caller lists it in its own
 // "-- Trigger inventory addendum" block instead.
 test('trigger callers of has_workspace_permission match the reviewed inventory', () => {
-  const { filename, sql } = latest(HELPER);
-  const block = sql.match(/^-- Trigger inventory\b[^\n]*\n((?:--[^\n]*\n)+)/mu);
+  const { filename, sql } = inventorySource(latest(HELPER).filename);
+  const block = sql.match(INVENTORY_HEADER);
   assert.ok(
     block,
     `${filename}: missing the "-- Trigger inventory" header block`

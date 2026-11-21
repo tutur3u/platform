@@ -133,7 +133,10 @@ describe('Permission Integration', () => {
 
     expect(new Set(actualPermissionIds).size).toBe(actualPermissionIds.length);
 
-    expect(EXPLICIT_GRANT_PERMISSIONS).toEqual(['manage_mastermind']);
+    expect(EXPLICIT_GRANT_PERMISSIONS).toEqual([
+      'manage_mastermind',
+      'operate_mira_channels',
+    ]);
     const explicitGrants: readonly string[] = EXPLICIT_GRANT_PERMISSIONS;
     for (const permissionId of explicitGrants) {
       expect(enumPermissionIds).toContain(permissionId);
