@@ -150,9 +150,20 @@ jobs:
         run: |
           set -o pipefail
           bun x --no-install wrangler deploy --dry-run --outdir "$RUNNER_TEMP/upload" \
+            --outfile "$RUNNER_TEMP/family-upload.multipart" \
             -c cloudflare/opennext/wrangler.api-identity.jsonc | tee "$RUNNER_TEMP/dry-run.log"
           node ../../scripts/ci/web-opennext-size.mjs "$RUNNER_TEMP/upload" \
             --log "$RUNNER_TEMP/dry-run.log" --receipt "$RUNNER_TEMP/size-api-identity.json"
+      - name: Qualify the bundled OpenNext Worker with cf
+        working-directory: apps/web
+        env:
+          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          ROOT_WORKSPACE_ID: '00000000-0000-0000-0000-000000000000'
+        run: |
+          set -euo pipefail
+          node ../../scripts/ci/web-opennext-cf-qualification.mjs api-identity \
+            cloudflare/opennext/*.api-identity.jsonc "$RUNNER_TEMP/family-upload.multipart" "$RUNNER_TEMP/cf-family"
+          node ../../scripts/ci/void-cf-publisher.mjs dry-run --build "$RUNNER_TEMP/cf-family"
       - name: Exercise and restore the sealed OpenNext Worker
         run: |
           node scripts/ci/web-opennext-smoke.mjs api-identity "$GITHUB_SHA"
@@ -173,6 +184,7 @@ jobs:
           path: |
             ${{ runner.temp }}/identity-seal/
             ${{ runner.temp }}/size-api-identity.json
+            ${{ runner.temp }}/cf-family/void-cf-receipt.json
             apps/web/cloudflare/opennext/prune-receipt.json
           if-no-files-found: error
           retention-days: 14

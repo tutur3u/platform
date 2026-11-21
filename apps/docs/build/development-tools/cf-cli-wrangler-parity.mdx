@@ -1,7 +1,7 @@
 ---
 title: "cf CLI and Void over Wrangler"
 description: "Per-operation parity matrix, native Worker template, rollback, the Wrangler usage guard and the per-service cutover checklist."
-updatedAt: '2026-11-20'
+updatedAt: '2026-11-21'
 audience: developers
 ---
 
@@ -58,7 +58,7 @@ allowlist in the same change when a switch retires Wrangler lines.
 | Native Workers (fetch, scheduled) | Vite+ with `@cloudflare/vite-plugin` reading `cloudflare.config.ts` (`experimental.newConfig.cfBuildOutput`) | cf Build Output Specification, `.cloudflare/output/v0` | `cf deploy --prebuilt` |
 | Durable Object Workers | Vite+ with the cf config | Same emitted bundle, with retained `v1` migration metadata | Wrangler until a separate rehearsal-backed publication change |
 | Framework apps (TanStack Start on Void) | Void SDK plugin on Vite+ | Void-emitted Worker config, converted to cf Build Output by `void-cf-output.mjs` | [Void publisher](#void-framework-app-publisher) (Meet); other apps keep their admitted publisher until they adopt it |
-| OpenNext apps (Parley, Lettin) | OpenNext Cloudflare adapter | OpenNext Worker | Wrangler (adapter-owned) until the app moves to Start on Void |
+| OpenNext apps (Parley, Lettin) | OpenNext Cloudflare adapter | OpenNext Worker | Wrangler (adapter-owned) pending operational parity |
 
 The Void SDK is not applied to native Workers. Void's supported app types are
 Void apps, meta-frameworks and static sites, so a native fetch/scheduled/Durable
@@ -114,7 +114,7 @@ The existing native profiles qualify only their declared configuration fields.
 | Deployment-source snapshots | API value `last_deployed_from: wrangler` | `cf` and `cf_cli` are also accepted; `cf_cli` is what the API reports for cf CLI deploys; historical provenance values remain distinct | `deployment-source-compatibility`: retain recognition until supported snapshots stop reporting the legacy value; no Wrangler CLI invocation |
 | Live logs | `wrangler tail` | `cf logs query` via `scripts/ci/cf-worker-observability.mjs` (bounded, non-streaming) | Partial gap (live stream) |
 | Prebuilt Void deploy | n/a | `void deploy` always builds and provisions; `--skip-build` is static-only (Void 1.1.12 and 1.2.1) | Gap for the exact-artifact contract |
-| OpenNext publication | `opennextjs-cloudflare deploy` invokes Wrangler | None | Gap until Start on Void |
+| OpenNext publication | `opennextjs-cloudflare deploy` invokes Wrangler | Sealed bundle conversion for Web API Identity | Dry-run qualification only. Adapter deploy effects and live rollback need parity. |
 
 ### Void emitted runtime qualification
 
@@ -473,9 +473,10 @@ publish nothing; their production publication stays held in `tuturuuu.ci.ts`.
 | LMS, Roadmap, Ops Hub, Turbo Cache, Mastermind, Drive | none (sealed artifact or build qualification) | — | Qualification only | — |
 | Native Start apps (AI, Chat, CMS, Contacts, External, Finance, Forms, Git, Hive, Infrastructure, Inventory, Learn, Marketing, Mind, Nova, Pay, Playground, Rewise, Shortener, Storefront, Teach, Tools, Track, Workspace) | Operator cutover of the sealed artifact; see [cutover runbooks](/build/devops/d74-cutover-runbooks) | same | Held in CI; cutover uses cf | Qualification still runs `wrangler deploy --dry-run` and `wrangler types` on the emitted config (`void-wave1-publication`) |
 | Meet realtime | `wrangler deploy --no-bundle` | same | Wrangler (Meet cutover lane) | Tag-migrated SQLite DOs; the Void publisher supports them without `exports` |
-| Colab | `wrangler deploy` (bundles from source) | same | Wrangler; prepared below | `pending-migration` |
-| Web OpenNext families | `wrangler deploy -c cloudflare/opennext/wrangler.<family>.jsonc` | same | Wrangler; prepared below | `opennext-web-families` |
-| Lettin, Parley | `opennextjs-cloudflare deploy` (invokes Wrangler); Lettin remote D1 migrations | same | Wrangler; prepared below | `opennext-adapter` |
+| Colab | `wrangler deploy` bundles the Worker after the public commit bake | same | Wrangler | Sealed Worker and assets, custom-domain settings, SQLite namespace and rollback |
+| Web OpenNext families | `wrangler deploy -c cloudflare/opennext/wrangler.<family>.jsonc` | same | API Identity has a build-only cf dry-run gate. Public Docs publishes with Wrangler. | Exact Public Docs artifact and disposable upload, service-binding and rollback rehearsal |
+| Lettin | `opennextjs-cloudflare deploy`; separate remote D1 migrations | same | Wrangler | Remote R2 cache preparation, version metadata binding and SHA tag, code with secrets, D1 migration parity |
+| Parley | `opennextjs-cloudflare deploy` | same | Wrangler | Remote R2 cache preparation, regional placement and provider bindings, code with signing secret |
 | Backend, TanStack Web | Paused | — | Excluded | `paused-runtime` |
 
 Wave-1 Start and Void publishers run the cf binary from Calendar's pinned
@@ -525,23 +526,34 @@ bindings.
 
 ### Preparing the remaining Wrangler publishers
 
-The Void publisher accepts a sealed, `no_bundle` emitted Worker config. Each
-remaining publisher needs one, with no traffic change, before it can switch:
+The Void publisher accepts a sealed, `no_bundle` Worker. Qualification and
+traffic assignment have separate gates:
 
-- **Colab** deploys with `wrangler deploy`, which bundles `src/` itself. Emit the
-  Worker with the Cloudflare Vite plugin (the local preview config already
-  reads the service configuration) and seal `dist/<worker>/wrangler.json`.
-  The converter must add the Workers AI binding, which it refuses today. The
-  SQLite Durable Object keeps its tag migrations: never add `exports`, and keep
-  any new migration on a non-versioned deployment. Then publish with
-  `void-cf-publisher.mjs publish --strict` and `assign`.
-- **Web OpenNext families** and **Lettin, Parley** build with
-  `@opennextjs/cloudflare`, whose Worker entry Wrangler bundles at deploy time.
-  `wrangler deploy --dry-run --outdir` already produces the bundled modules in
-  CI without publishing; seal that output with a `no_bundle` config and convert
-  it, so cf publishes the exact bytes. Until then, OpenNext deploys stay on the
-  ratchet. Lettin's remote D1 migrations need `cf d1 migrations apply` with the
-  database UUID and migration-table parity first.
+- **Colab** bakes the public commit into the assets and bundles the Worker at
+  deployment. A cf candidate must seal both outputs after the bake and preserve
+  the SPA routing rules and custom domain. Sponsored generation calls the
+  Tuturuuu AI API over HTTPS. The committed Colab Worker has no Workers AI
+  binding. Rehearse the `v1` SQLite Durable Object namespace, stored state and
+  rollback on a disposable Worker. Omit `exports` entirely.
+- **Web OpenNext families** use the family size gate's bundled modules.
+  The build-only `api-identity-seal-sha` CI job checks account and Worker
+  identity, converts the route-free API Identity upload to cf Build Output,
+  checks each module and source map against the serialized dry-run upload
+  body, and runs the pinned cf CLI with
+  `--prebuilt --dry-run --no-provision`. Its artifact contains
+  `void-cf-receipt.json` with the exact source SHA and output hashes. The dry run
+  covers conversion and CLI input. Before replacing the publisher, run the
+  same qualification on Public Docs and demonstrate upload readback, gateway
+  service routing, and rollback using a disposable Worker. Keep the
+  `opennext-web-families` publication allowance until then.
+- **Lettin and Parley** run the OpenNext deploy adapter, which prepares the
+  remote incremental cache and computes the deployment mapping when configured
+  before invoking the upload. Preserve that preparation, the pinned accounts
+  and custom domains, and the atomic code and secret upload. Lettin also emits
+  a version metadata binding and verifies the published SHA tag. Its remote D1
+  migration switch needs a disposable database check for the committed UUID,
+  migration directory and history table. Keep both adapter publishers until
+  these operations and a rollback are qualified.
 
 ### Colab local Worker preview
 
