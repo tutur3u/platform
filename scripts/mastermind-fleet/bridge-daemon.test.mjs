@@ -212,6 +212,36 @@ test('an idle connection sends pings and a rare safety request; it asks again at
   assert.equal((await done).reason, 'closed');
 });
 
+test('hands a read request to its handler and sends the answer back, or nothing', async () => {
+  const { FakeSocket, sockets } = fakeSocketClass();
+  const seen = [];
+  runConnection({
+    url: 'wss://store.example/v1/bridge/connect',
+    ticket: 'the-ticket',
+    WebSocketImpl: FakeSocket,
+    timers: quietTimers,
+    onReply: async () => null,
+    onRequest: async (frame) => {
+      seen.push(frame.request.id);
+      return frame.request.id === 'a'
+        ? { v: 1, t: 'res', id: 'a', box: { iv: 'i', data: 'd' } }
+        : null;
+    },
+  });
+  const [socket] = sockets;
+  socket.emit('open');
+  for (const id of ['a', 'b'])
+    socket.emit('message', {
+      data: JSON.stringify({ v: 1, t: 'req', request: { id } }),
+    });
+  await tick();
+  assert.deepEqual(seen, ['a', 'b']);
+  assert.deepEqual(
+    socket.frames().filter((frame) => frame.t === 'res'),
+    [{ v: 1, t: 'res', id: 'a', box: { iv: 'i', data: 'd' } }]
+  );
+});
+
 test('backs off between half and all of a doubling step, capped at a minute', () => {
   assert.equal(
     backoffDelay(0, () => 0),

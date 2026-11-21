@@ -71,7 +71,7 @@ export function isFreshMfaProof(
   );
 }
 
-type ClaimsReader = {
+export type ClaimsReader = {
   auth: {
     getClaims: () => Promise<{
       data: { claims: Record<string, unknown> } | null;
@@ -138,14 +138,42 @@ export async function replyAssurance(
     : { status: 'required' };
 }
 
-function fleetSecret(env: Record<string, string | undefined>) {
+/**
+ * Whether the platform's account second-factor policy lets this principal
+ * read fleet threads. Reads do not need the fresh proof a reply needs, but a
+ * recovery, a removed factor or a banned account stops them on the spot.
+ */
+export async function readAssurance(
+  request: Pick<NextRequest, 'headers' | 'url'>,
+  principal: { userId: string; supabase: ClaimsReader },
+  nowSeconds = Math.floor(Date.now() / 1000)
+): Promise<'allowed' | 'required' | 'unavailable'> {
+  const appToken = getAppSessionTokenFromRequest(request) ?? undefined;
+  const account = await checkRequiredAccountMfa(
+    request,
+    {
+      createUserClient: async () =>
+        principal.supabase as unknown as TypedSupabaseClient,
+      createAdminClient: async () =>
+        (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
+      nowSeconds: () => nowSeconds,
+    },
+    { userId: principal.userId, ...(appToken ? { appToken } : {}) }
+  );
+  if (account.status === 'unavailable') return 'unavailable';
+  return account.status === 'allowed' ? 'allowed' : 'required';
+}
+
+/** The fleet secret, or null when it is missing or too short to use. */
+export function fleetSecret(env: Record<string, string | undefined>) {
   const secret = env.MASTERMIND_FLEET_PUBLISHER_SECRET?.trim();
   return secret && secret.length >= MASTERMIND_PUSH_MIN_SECRET_LENGTH
     ? secret
     : null;
 }
 
-const derive = (secret: string, info: string) =>
+/** A purpose-bound 32-byte key derived from the fleet secret. */
+export const derive = (secret: string, info: string) =>
   Buffer.from(hkdfSync('sha256', secret, Buffer.alloc(0), info, 32));
 
 /** PKCS#8 wrapping of a raw 32-byte Ed25519 seed. */

@@ -23,6 +23,7 @@ import {
   createLedger,
   handleReply,
 } from './bridge-core.mjs';
+import { handleRequest } from './bridge-rpc.mjs';
 import { slugify } from './fleet-state.mjs';
 import { pokesDir, readPokes } from './poke.mjs';
 import { defaultPaths, readSecret, signRequest } from './publish.mjs';
@@ -35,6 +36,7 @@ const LOOPBACK_ORIGIN = /^http:\/\/127\.0\.0\.1(:\d+)?$/;
 const SOCKET_URL =
   /^(wss:\/\/[a-z0-9.-]+(:\d+)?|ws:\/\/127\.0\.0\.1(:\d+)?)\//i;
 const TICKET = /^[\w-]{32,128}$/;
+/** Replies are small; a read request is smaller still. */
 const MAX_FRAME_CHARS = 32 * 1024;
 export const BACKOFF = { minMs: 1_000, maxMs: 60_000, stableMs: 30_000 };
 const PING_MS = 25_000;
@@ -43,6 +45,7 @@ const HTTP_TIMEOUT_MS = 6_000;
 /** Above the bridge's minimum replay interval, so a retry is always served. */
 const RETRY_PENDING_MS = 15_000;
 const POKE_MIN_INTERVAL_MS = 1_000;
+const DATABASE_BUSY_MS = 500;
 /** The bridge replays at most this many undelivered replies per `hello`. */
 const REPLAY_BATCH = 50;
 /** An otherwise idle connection still asks this often: 144 requests a day. */
@@ -107,6 +110,7 @@ export function runConnection({
   url,
   ticket,
   onReply,
+  onRequest = async () => null,
   pokes = () => [],
   hasPending = () => false,
   WebSocketImpl = WebSocket,
@@ -197,6 +201,16 @@ export function runConnection({
       } catch {
         return;
       }
+      if (frame?.t === 'req') {
+        // A read (thread list or history); answered sealed, or not at all.
+        onRequest(frame)
+          .then((answer) => {
+            if (answer) send(answer);
+            log({ event: 'read', answered: Boolean(answer) });
+          })
+          .catch(() => log({ event: 'read', answered: false }));
+        return;
+      }
       if (frame?.t !== 'reply') return;
       batch++;
       const id = frame?.envelope?.id;
@@ -229,6 +243,7 @@ export async function runBridge({
   secret,
   machineId,
   onReply,
+  onRequest,
   pokes,
   hasPending,
   fetchImpl,
@@ -252,6 +267,7 @@ export async function runBridge({
         url,
         ticket,
         onReply,
+        onRequest,
         pokes,
         hasPending,
         WebSocketImpl,
@@ -284,6 +300,7 @@ async function main() {
   if (!HTTPS_ORIGIN.test(origin ?? '') && !LOOPBACK_ORIGIN.test(origin ?? ''))
     throw new Error('origin_invalid');
   const paths = bridgePaths();
+  const { DatabaseSync } = await import('node:sqlite');
   const secret = readSecret(paths.secretFile);
   const config = readConfig(paths.configFile);
   const label = config.machineLabel || os.hostname().split('.')[0];
@@ -318,6 +335,39 @@ async function main() {
     machineId,
     onReply: (frame) =>
       handleReply(frame, { secret, machineId, ledger, steer, firstSeen }),
+    onRequest: async (frame) => {
+      // A read of this machine comes from its own database; an MCP session
+      // is opened only for a read of a linked machine.
+      let session;
+      const call = async (name, args) => {
+        session ??= await connectLocalMcp();
+        return session.call(name, args);
+      };
+      try {
+        return await handleRequest(frame, {
+          secret,
+          machineId,
+          call,
+          openDatabase: () => {
+            // Read-only, and a short wait when T3 holds the database, so a
+            // read fails as unavailable instead of stalling replies.
+            const db = new DatabaseSync(paths.database, {
+              readOnly: true,
+              timeout: DATABASE_BUSY_MS,
+            });
+            try {
+              db.exec('PRAGMA query_only = ON');
+            } catch (error) {
+              db.close();
+              throw error;
+            }
+            return db;
+          },
+        });
+      } finally {
+        await session?.close();
+      }
+    },
     pokes: () => readPokes(paths.pokesDir),
     hasPending: () => firstSeen.size > 0,
     log,

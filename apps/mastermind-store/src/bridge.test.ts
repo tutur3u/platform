@@ -508,6 +508,69 @@ describe('fleet bridge', () => {
     }
   });
 
+  it('relays a sealed read to its machine and returns the sealed answer, storing nothing', async () => {
+    const mf = runtime();
+    try {
+      const rpc = (n: number, waitMs = 1500, machineId = 'skr-m4') =>
+        call(mf, '/v1/bridge/rpc', {
+          v: BRIDGE_PROTOCOL_VERSION,
+          request: {
+            id: uuid(n),
+            machineId,
+            kind: 'threads',
+            box: { iv: 'A'.repeat(16), data: 'sealed-args'.padEnd(40, 'x') },
+            issuedAt: Date.now(),
+            expiresAt: Date.now() + 30_000,
+          },
+          sig: 'c'.repeat(64),
+          waitMs,
+        });
+      const box = (data: string) => ({ iv: 'B'.repeat(16), data });
+      // No machine socket: refused at once, nothing queued for later.
+      expect((await rpc(1)).body).toEqual({ ok: false, error: 'offline' });
+      const link = await machine(mf);
+      const other = await machine(mf, 'm2');
+      const pending = rpc(1);
+      expect(await link.next()).toMatchObject({
+        t: 'req',
+        sig: 'c'.repeat(64),
+        request: { id: uuid(1), kind: 'threads' },
+      });
+      // Only the machine the read went to may answer it.
+      other.send({ t: 'res', id: uuid(1), box: box('x'.repeat(40)) });
+      await new Promise((done) => setTimeout(done, 80));
+      // The answer may be large; it is relayed as it came.
+      const answer = 'y'.repeat(200_000);
+      link.send({ t: 'res', id: uuid(1), box: box(answer) });
+      const answered = await pending;
+      expect(answered.status).toBe(200);
+      expect(answered.body).toEqual({ ok: true, box: box(answer) });
+      // No answer in time is a timeout, and a late answer goes nowhere.
+      const late = await rpc(2, 200);
+      expect([late.status, late.body]).toEqual([
+        504,
+        { ok: false, error: 'timeout' },
+      ]);
+      link.send({ t: 'res', id: uuid(2), box: box('x'.repeat(40)) });
+      expect((await rpc(3, 200, 'nobody')).body.error).toBe('offline');
+      const status = (await call(mf, '/v1/status', undefined, OPERATOR)).body
+        .bridge;
+      expect(status).toMatchObject({ pending: 0, replies: 0 });
+      // Behind the stop fence no read is relayed.
+      await call(mf, '/v1/fence', { stopped: true }, OPERATOR);
+      expect((await rpc(4, 200)).status).toBe(503);
+      await call(mf, '/v1/fence', { stopped: false }, OPERATOR);
+      // A read without a service token never reaches a machine.
+      const anonymous = await mf.dispatchFetch(`${ORIGIN}/v1/bridge/rpc`, {
+        method: 'POST',
+        body: '{}',
+      });
+      expect(anonymous.status).toBe(401);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
   it('stops at the daily operation budget', async () => {
     const mf = runtime('2');
     try {

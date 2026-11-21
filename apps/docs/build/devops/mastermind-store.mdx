@@ -81,6 +81,7 @@ client: `bridge-client.ts`.
 | `POST /v1/bridge/ticket` | service token | Single-use, 60-second ticket for a machine or an owner socket. |
 | `GET /v1/bridge/connect` | ticket as the second WebSocket subprotocol | The socket. Machines speak a closed frame set; owner sockets only listen. |
 | `POST /v1/bridge/send` | service token | Store one signed reply, push it, wait up to 2.5 s for the acknowledgement. |
+| `POST /v1/bridge/rpc` | service token | Relay one sealed read request to its machine and return the sealed answer; waits up to 12 s, stores nothing. |
 | `GET /v1/bridge/receipt?id=` | service token | A reply's receipt. |
 | `GET /v1/bridge/live` | service token | Machine presence and pokes. |
 
@@ -104,6 +105,10 @@ Bounds and stop fence:
   and refused past it with `budget` (429). Acknowledgements are counted
   against it but never refused, since the delivery already happened. A retry
   of a stored reply, receipts and `live` reads are not charged.
+- Read requests are relayed, never stored: refused when the machine is not
+  connected, at most 8 in flight, each charged one operation and answered or
+  timed out within 12 seconds. Only a machine's answer to a read still
+  waiting for it may exceed the 32 KiB frame cap, up to 384 KiB.
 - At most 200 undelivered replies, 16 live tickets, 6 replies per thread per
   minute and 60 per hour; an undelivered reply expires after 24 hours and is
   never sent late. Expiry and the 90-day record retention run at most 20 rows

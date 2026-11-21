@@ -5,6 +5,8 @@
  * - `GET  /v1/bridge/connect` (ticket as the second WebSocket subprotocol):
  *   the machine or owner socket.
  * - `POST /v1/bridge/send` (service token): store and push one thread reply.
+ * - `POST /v1/bridge/rpc` (service token): relay one sealed read request to
+ *   its machine and return the sealed answer.
  * - `GET  /v1/bridge/receipt?id=` (service token): a reply's receipt.
  * - `GET  /v1/bridge/live` (service token): machine presence and pokes.
  *
@@ -14,6 +16,7 @@
 import {
   BRIDGE_LIMITS,
   type BridgeErrorCode,
+  bridgeRpcSendSchema,
   bridgeSendRequestSchema,
   bridgeTicketRequestSchema,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
@@ -22,6 +25,8 @@ import { json, readCapped, tokenMatches } from './http';
 import type { StoreEnv } from './worker';
 
 const STATUS: Record<BridgeErrorCode, number> = {
+  offline: 503,
+  timeout: 504,
   bad_request: 400,
   unauthorized: 401,
   stopped: 503,
@@ -92,6 +97,22 @@ export async function handleBridge(
     return sent.ok
       ? { response: json(sent), kind: `bridge:send:${sent.receipt.state}` }
       : { response: fail(sent.error), kind: `bridge:send:${sent.error}` };
+  }
+
+  if (path === '/v1/bridge/rpc' && request.method === 'POST') {
+    const parsed = bridgeRpcSendSchema.safeParse(await parseBody(request));
+    if (!parsed.success)
+      return { response: fail('bad_request'), kind: 'bridge:rpc:schema' };
+    const answered = await stub(env).rpc(parsed.data, budget);
+    return answered.ok
+      ? {
+          response: json(answered),
+          kind: `bridge:rpc:${parsed.data.request.kind}`,
+        }
+      : {
+          response: fail(answered.error),
+          kind: `bridge:rpc:${answered.error}`,
+        };
   }
 
   if (path === '/v1/bridge/receipt' && request.method === 'GET') {

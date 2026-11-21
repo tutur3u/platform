@@ -18,6 +18,9 @@ export const BRIDGE_SEAL_KEY_INFO = 'mastermind-fleet-reply-enc-v1';
 export const BRIDGE_DIGEST_KEY_INFO = 'mastermind-fleet-reply-digest-v1';
 /** Seed of the Ed25519 key the machine signs acknowledgements with. */
 export const BRIDGE_ACK_KEY_INFO = 'mastermind-fleet-ack-sign-v1';
+/** First signed line and key label of a read request to the machine. */
+export const BRIDGE_RPC_DOMAIN = 'mastermind-fleet-rpc-v1';
+export const BRIDGE_RPC_KEY_INFO = 'mastermind-fleet-rpc-enc-v1';
 
 export const BRIDGE_LIMITS = {
   /** A thread reply is plain text, at most this many characters. */
@@ -49,6 +52,17 @@ export const BRIDGE_LIMITS = {
   ownerFramesPerMinute: 10,
   /** A `hello` (outbox replay) is honoured at most this often per socket. */
   helloMinIntervalMs: 10_000,
+  /**
+   * A read request waits this long for the machine, and lives this long. A
+   * read of a linked machine goes through T3's own tools and takes seconds.
+   */
+  maxRpcWaitMs: 12_000,
+  rpcLifetimeMs: 30_000,
+  /** Read requests in flight at once; more are refused, not queued. */
+  maxPendingRpc: 8,
+  /** Largest sealed read answer (base64url characters) and its frame. */
+  maxRpcAnswerChars: 360_000,
+  maxRpcFrameBytes: 384 * 1024,
 } as const;
 
 /** Closed set: a poke names a topic and a revision, never content. */
@@ -213,6 +227,21 @@ export const bridgeMachineFrameSchema = z.discriminatedUnion('t', [
   }),
   z.object({
     v,
+    t: z.literal('res'),
+    id: replyId,
+    box: z
+      .object({
+        iv: z.string().regex(/^[\w-]{16}$/u),
+        data: z
+          .string()
+          .regex(/^[\w-]+$/u)
+          .min(23)
+          .max(BRIDGE_LIMITS.maxRpcAnswerChars),
+      })
+      .strict(),
+  }),
+  z.object({
+    v,
     t: z.literal('poke'),
     topic: z.enum(BRIDGE_POKE_TOPICS),
     revision: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
@@ -271,6 +300,8 @@ export const bridgeSendRequestSchema = z.object({
 export type BridgeSendRequest = z.input<typeof bridgeSendRequestSchema>;
 
 export const bridgeErrorCodes = [
+  'offline',
+  'timeout',
   'bad_request',
   'unauthorized',
   'stopped',
@@ -316,3 +347,148 @@ export const bridgeLiveResponseSchema = z.union([
   z.object({ ok: z.literal(true), live: bridgeLiveSchema }),
   failure,
 ]);
+
+/** What the owner may read from a machine; a closed set. */
+export const BRIDGE_RPC_KINDS = ['machines', 'threads', 'transcript'] as const;
+export type BridgeRpcKind = (typeof BRIDGE_RPC_KINDS)[number];
+
+/**
+ * A read request from Web to the machine. Its arguments are sealed like a
+ * reply's text, and so is the answer, so the store Worker relays ciphertext
+ * in both directions: thread titles and transcripts never rest in the cloud.
+ */
+export const bridgeRpcRequestSchema = z
+  .object({
+    id: replyId,
+    machineId,
+    kind: z.enum(BRIDGE_RPC_KINDS),
+    box: sealedText,
+    issuedAt: epochMs,
+    expiresAt: epochMs,
+  })
+  .strict();
+export type BridgeRpcRequest = z.infer<typeof bridgeRpcRequestSchema>;
+
+/** The bytes Web signs for a read request; the sealed arguments are covered whole. */
+export function bridgeRpcSigningString(request: BridgeRpcRequest) {
+  return [
+    BRIDGE_RPC_DOMAIN,
+    request.id,
+    request.machineId,
+    request.kind,
+    String(request.issuedAt),
+    String(request.expiresAt),
+    request.box.iv,
+    request.box.data,
+  ].join('\n');
+}
+
+/** Bound into the encryption of a request's arguments and of its answer. */
+export function bridgeRpcSealContext(
+  direction: 'req' | 'res',
+  id: string,
+  machine: string
+) {
+  return `${direction}\n${id}\n${machine}`;
+}
+
+export const bridgeRpcSendSchema = z.object({
+  v,
+  request: bridgeRpcRequestSchema,
+  sig: signature,
+  waitMs: z
+    .number()
+    .int()
+    .min(100)
+    .max(BRIDGE_LIMITS.maxRpcWaitMs)
+    .default(BRIDGE_LIMITS.maxRpcWaitMs),
+});
+export const bridgeRpcResponseSchema = z.union([
+  z.object({
+    ok: z.literal(true),
+    box: z.object({ iv: z.string(), data: z.string() }),
+  }),
+  failure,
+]);
+
+/** Thread states as the owner sees them. */
+export const bridgeThreadStates = [
+  'running',
+  'waiting',
+  'failed',
+  'idle',
+] as const;
+
+export const bridgeThreadSchema = z.object({
+  threadId,
+  title: z.string().max(200),
+  projectId: z.string().max(400).optional(),
+  project: z.string().max(200).optional(),
+  state: z.enum(bridgeThreadStates),
+  updatedAt: z.string().max(40),
+  itemCount: z.number().int().min(0),
+});
+export type BridgeThread = z.infer<typeof bridgeThreadSchema>;
+
+/** What each read returns, after Web opens the sealed answer. */
+export const bridgeRpcAnswerSchemas = {
+  machines: z.object({
+    machines: z
+      .array(
+        z.object({
+          environmentId: environmentId.optional(),
+          label: z.string().max(80),
+          reachable: z.boolean(),
+        })
+      )
+      .max(32),
+  }),
+  threads: z.object({
+    threads: z.array(bridgeThreadSchema).max(100),
+    nextCursor: z.number().int().min(0).nullable(),
+    total: z.number().int().min(0),
+  }),
+  transcript: z.object({
+    thread: bridgeThreadSchema,
+    messages: z
+      .array(
+        z.object({
+          position: z.number().int().min(0),
+          role: z.enum(['user', 'assistant']),
+          text: z.string().max(8000),
+          truncated: z.boolean(),
+          at: z.string().max(40),
+        })
+      )
+      .max(50),
+    earlierPosition: z.number().int().min(0).nullable(),
+  }),
+} as const;
+
+/** Arguments of each read, validated by Web before sealing and by the machine after opening. */
+export const bridgeRpcArgsSchemas = {
+  machines: z.object({}).strict(),
+  threads: z
+    .object({
+      environmentId: environmentId.optional(),
+      query: z.string().trim().min(1).max(100).optional(),
+      cursor: z.number().int().min(0).max(100_000).optional(),
+      limit: z.number().int().min(1).max(50).default(50),
+    })
+    .strict(),
+  transcript: z
+    .object({
+      environmentId: environmentId.optional(),
+      threadId,
+      before: z.number().int().min(0).optional(),
+      limit: z.number().int().min(1).max(30).default(30),
+    })
+    .strict(),
+} as const;
+
+/** Why the machine could not answer a read; closed set. */
+export const bridgeRpcFailureCodes = [
+  'bad_request',
+  'unknown_thread',
+  'unavailable',
+] as const;

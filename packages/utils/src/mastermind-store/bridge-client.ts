@@ -11,6 +11,8 @@ import {
   type BridgeLive,
   type BridgeReceipt,
   type BridgeReplyEnvelope,
+  type BridgeRpcRequest,
+  bridgeRpcResponseSchema,
   bridgeLiveResponseSchema,
   bridgeReceiptResponseSchema,
   bridgeSendResponseSchema,
@@ -39,6 +41,12 @@ export interface MastermindBridge {
     ackKey: string;
     waitMs?: number;
   }): Promise<{ receipt: BridgeReceipt; replayed: boolean }>;
+  /** Relays a sealed read request; resolves to the machine's sealed answer. */
+  rpc(input: {
+    request: BridgeRpcRequest;
+    sig: string;
+    waitMs?: number;
+  }): Promise<{ iv: string; data: string }>;
   receipt(id: string): Promise<BridgeReceipt | null>;
   live(): Promise<BridgeLive>;
 }
@@ -122,6 +130,21 @@ export function createMastermindBridgeClient(options: {
         )
       );
       return { receipt, replayed };
+    },
+    async rpc(input) {
+      const waitMs = Math.min(
+        input.waitMs ?? BRIDGE_LIMITS.maxRpcWaitMs,
+        BRIDGE_LIMITS.maxRpcWaitMs
+      );
+      return unwrap(
+        bridgeRpcResponseSchema.safeParse(
+          await call(
+            '/v1/bridge/rpc',
+            { v: BRIDGE_PROTOCOL_VERSION, ...input, waitMs },
+            waitMs
+          )
+        )
+      ).box;
     },
     async receipt(id) {
       return unwrap(

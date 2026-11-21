@@ -8,7 +8,8 @@ vi.mock('server-only', () => ({}));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
 const STRANGER = '33333333-3333-4333-8333-333333333333';
-const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
+// A stand-in fleet signing value, padded to a usable length.
+const SECRET = 'fleet-test-'.padEnd(44, 'f');
 const NOW_S = () => Math.floor(Date.now() / 1000);
 
 const mocks = vi.hoisted(() => ({

@@ -18,6 +18,7 @@ import {
   type BridgeTicketRequest,
   bridgeAckSigningString,
   bridgeMachineFrameSchema,
+  type bridgeRpcSendSchema,
   type bridgeSendRequestSchema,
 } from '@tuturuuu/utils/mastermind-store/bridge-protocol';
 import type { z } from 'zod';
@@ -42,6 +43,8 @@ type Attachment =
   /** Replaced or fenced: its close handshake may lag, its frames never count. */
   | { role: 'retired'; at: number; windowStart?: number; frames?: number };
 type ParsedSend = z.output<typeof bridgeSendRequestSchema>;
+type ParsedRpc = z.output<typeof bridgeRpcSendSchema>;
+type RpcAnswer = { iv: string; data: string };
 /** Each owner frame without its version; `Omit` alone would merge the union. */
 type OwnerFrameBody = BridgeOwnerFrame extends infer Frame
   ? Frame extends unknown
@@ -112,6 +115,11 @@ export class FleetBridge extends DurableObject {
   private readonly waiters = new Map<
     string,
     Set<(receipt: BridgeReceipt) => void>
+  >();
+  /** Read requests waiting for their machine's answer; never persisted. */
+  private readonly rpcWaiters = new Map<
+    string,
+    { machineId: string; done: (answer: RpcAnswer) => void }
   >();
   private schemaReady = false;
 
@@ -298,6 +306,48 @@ export class FleetBridge extends DurableObject {
     });
   }
 
+  /**
+   * Relays one read request to its machine and waits for the sealed answer.
+   * Nothing is stored: a request the machine cannot take now is not queued.
+   */
+  async rpc(input: ParsedRpc, budget: number) {
+    const { request } = input;
+    const sockets = this.machineSockets(request.machineId);
+    if (sockets.length === 0) return { ok: false, error: 'offline' } as const;
+    if (
+      this.rpcWaiters.size >= BRIDGE_LIMITS.maxPendingRpc ||
+      this.rpcWaiters.has(request.id)
+    )
+      return { ok: false, error: 'rate_limited' } as const;
+    const now = Date.now();
+    const charged = this.attempt(() => this.engine.chargeFrame(now, budget));
+    if (!charged.ok) return charged;
+    const frame = JSON.stringify({
+      v: BRIDGE_PROTOCOL_VERSION,
+      t: 'req',
+      request,
+      sig: input.sig,
+    });
+    const answer = await new Promise<RpcAnswer | null>((resolve) => {
+      const timer = setTimeout(() => {
+        this.rpcWaiters.delete(request.id);
+        resolve(null);
+      }, input.waitMs);
+      this.rpcWaiters.set(request.id, {
+        machineId: request.machineId,
+        done: (box) => {
+          clearTimeout(timer);
+          this.rpcWaiters.delete(request.id);
+          resolve(box);
+        },
+      });
+      for (const socket of sockets) this.push(socket, frame);
+    });
+    return answer
+      ? ({ ok: true, box: answer } as const)
+      : ({ ok: false, error: 'timeout' } as const);
+  }
+
   async receipt(id: string) {
     this.schema();
     return this.engine.receipt(id, Date.now());
@@ -416,7 +466,15 @@ export class FleetBridge extends DurableObject {
     if (
       meter.role !== 'machine' ||
       typeof message !== 'string' ||
-      message.length > BRIDGE_LIMITS.maxFrameBytes
+      message.length > BRIDGE_LIMITS.maxRpcFrameBytes
+    )
+      return;
+    // Only this machine's answer to a read still waiting for it may be large.
+    if (
+      message.length > BRIDGE_LIMITS.maxFrameBytes &&
+      ![...this.rpcWaiters.values()].some(
+        (waiter) => waiter.machineId === meter.machineId
+      )
     )
       return;
     let json: unknown;
@@ -429,6 +487,13 @@ export class FleetBridge extends DurableObject {
     if (!parsed.success) return;
     const frame = parsed.data;
     const { machineId } = meter;
+    if (frame.t === 'res') {
+      // Sealed for Web; only the machine the request went to may answer it.
+      const waiter = this.rpcWaiters.get(frame.id);
+      if (waiter?.machineId === machineId) waiter.done(frame.box);
+      return;
+    }
+    if (message.length > BRIDGE_LIMITS.maxFrameBytes) return;
     this.schema();
     const budget = bridgeBudget(
       (this.env as { MASTERMIND_BRIDGE_DAILY_OPS?: string })

@@ -20,7 +20,8 @@ import {
   bridgeSealContext,
 } from '../../packages/utils/src/mastermind-store/bridge-protocol.ts';
 
-export const SECRET = 'fleet-publisher-secret-for-tests-0123456789';
+// A stand-in fleet signing value, padded to a usable length.
+export const SECRET = 'fleet-test-'.padEnd(44, 'f');
 export const NOW = Date.UTC(2026, 10, 21, 5, 0, 0);
 export const ACTOR = '00000000-0000-4000-8000-0000000000aa';
 export const uuid = (n) =>

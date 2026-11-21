@@ -1082,6 +1082,26 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/threads/machines"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/threads/messages"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/threads/read"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/threads"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/mastermind/fleet/usage"
     },
     {

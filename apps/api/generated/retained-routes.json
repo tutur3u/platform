@@ -2080,6 +2080,46 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/mastermind/fleet/threads/machines",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/machines/route.ts",
+    "sourceSha256": "0466c21345e45d85a154548e0b59646d3d9e3ee4722c6300117ddf45c3d4415f",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/threads/messages",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/messages/route.ts",
+    "sourceSha256": "d74124ea621e46553f5292e5cd98e1aff481a847c2376ce8acf545a12b413803",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/threads/read",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/read/route.ts",
+    "sourceSha256": "fe7556d78daf160fe63aa0281365814e407f28608ecd4ee707cd36fe1e0ff9c7",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/mastermind/fleet/threads",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/route.ts",
+    "sourceSha256": "58fd85c946e46acf0a53c1df5b93aeb20747d18b4e3ef1e04008f3419db85684",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/mastermind/fleet/usage",
     "sideEffects": "unknown",
     "shadow": "never",

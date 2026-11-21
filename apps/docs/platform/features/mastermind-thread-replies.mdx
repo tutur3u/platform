@@ -1,6 +1,6 @@
 ---
 title: Mastermind thread replies
-description: How a message from Mastermind tooling reaches a T3 thread on the orchestrator Mac steered, never queued, with its sign-in, idempotency, limits, install and rollback.
+description: How the owner reads fleet threads and how a message from Mastermind reaches a T3 thread on the orchestrator Mac steered, never queued, with sign-in, idempotency, limits, install and rollback.
 updatedAt: "2026-11-21"
 audience: developers
 ---
@@ -188,6 +188,79 @@ owner tap -> Web POST /api/v1/mastermind/fleet/replies
   listen-only owner socket (`POST /api/v1/mastermind/fleet/live/ticket`) and
   refetch the topic through its own owner route.
 
+## Thread list and history
+
+Product decision (owner, 21 Nov 2026): the owner can list, search and read
+every fleet thread from Mastermind, and nothing about those threads is kept
+in the cloud. The list and each page of history are fetched from the
+orchestrator Mac on demand; while it is not connected the routes answer 503
+`machine_offline`, a state of its own for clients to show.
+
+| Route | Returns |
+| --- | --- |
+| `GET /api/v1/mastermind/fleet/threads/machines?machineId=` | The bridge machine and up to 31 machines linked to it, each with whether it answers. |
+| `GET /api/v1/mastermind/fleet/threads?machineId=&environmentId=&q=&cursor=&limit=` | A page of up to 50 threads, newest first, optionally filtered by title: id, title, project, state (`running`, `waiting`, `failed`, `idle`), last update, item count and, when known, how many items the owner has seen. |
+| `GET /api/v1/mastermind/fleet/threads/messages?machineId=&environmentId=&threadId=&before=&limit=` | A page of up to 30 user and assistant messages, oldest first, with `earlierPosition` to page back. |
+| `POST /api/v1/mastermind/fleet/threads/read` | Records how many items of a thread the owner has seen. |
+
+- **Who may read.** The fleet owner, on an account the platform's
+  second-factor policy still accepts (`checkRequiredAccountMfa`), for all
+  four routes. Reads do not need the fresh proof a reply needs.
+- **End to end.** Web seals the arguments of each read and signs the request
+  (first signed line `mastermind-fleet-rpc-v1`, valid for 30 seconds); the
+  machine verifies it, checks the type and range of every argument, and
+  seals the answer for that one request. The store Worker relays both as
+  ciphertext, stores neither, and a read it cannot deliver at once is
+  refused, not queued. Web refuses an answer that does not open for the
+  request it sent or does not fit the closed shape for its kind, so no field
+  outside that shape reaches a client.
+- **Where the answer comes from.** A read of the bridge machine itself is
+  answered from T3's own projection database, opened read-only the way the
+  publisher opens it (`scripts/mastermind-fleet/bridge-local.mjs`): the list,
+  title search and history take milliseconds there, where T3's list tool
+  takes seconds on a machine with ten thousand threads. The database is
+  opened read-only with a half-second busy wait, and a database that is
+  busy, missing or not in the expected shape answers `unavailable` rather
+  than a partial list. The list of machines, and any read of a linked
+  machine, go through the T3 MCP read tools
+  (`t3_environment_links`, `t3_project_list`, `t3_thread_list`,
+  `t3_thread_read`) and takes a few seconds. No write tool is reachable from
+  a read.
+- **What leaves the machine** (`scripts/mastermind-fleet/bridge-rpc.mjs`).
+  Titles and project names pass the fleet scrubber. Message text keeps its
+  layout, paths and links, which the owner already sees in T3, but
+  credentials are replaced with `[redacted]`: PEM blocks, passwords inside
+  URLs, named values (`"api_key": "…"`, `PASSWORD=…` to the end of the line),
+  bearer and basic values, JWTs, provider key prefixes, hex of 32 characters
+  or more (a 40-character commit id named as one stays), 40-character mixed
+  keys and long base64. At most 16,000 characters of a message are scanned, each message
+  is capped at 4,000 characters and a page at 240 KiB, dropping the oldest
+  messages first. Only user and assistant messages are included; tool calls,
+  command output and reasoning are not.
+- **Read markers.** A count per thread, machine and environment, kept in the
+  Mastermind store for the 300 threads touched last. It only moves forward
+  and holds no content.
+- **Limits.** 60 list or history reads a minute per session, 8 reads in
+  flight at the bridge, each charged against the bridge's daily operation
+  budget, each waiting at most 12 seconds for the machine.
+
+Regression coverage: `scripts/mastermind-fleet/bridge-rpc.test.mjs` (protocol
+parity with Web, request signature, addressee and lifetime checks, silence
+toward an unverifiable request, argument types and ranges, each read's
+closed answer shape, read tools only, a local read without any T3 call, the
+page size cap, closed failure codes, an answer that opens only for its own
+request), `bridge-local.test.mjs` (order, state, literal search, paging back
+through history, deleted and archived threads, linked machines), a busy,
+missing or unexpected database answering `unavailable`,
+`transcript-scrub.test.mjs` (the credential corpus, ordinary text left
+alone, bounded scanning of a huge message),
+`apps/web/src/app/api/v1/mastermind/fleet/fleet-threads.test.ts` (owner and
+account admission on all four routes, sealed and signed arguments, malformed
+queries, the machine states, forged, reflected or misshaped answers refused,
+read markers) and `apps/mastermind-store/src/bridge.test.ts` (the relay:
+offline, the right machine only, a large answer, timeout, the stop fence,
+nothing stored).
+
 ### Bridge daemon
 
 `scripts/mastermind-fleet/bridge.mjs` runs under launchd as
@@ -206,8 +279,10 @@ and while a reply is waiting for the local T3 server or the last replay came
 back full. It logs counts and closed codes
 only.
 
-Install: copy `bridge.mjs`, `bridge-core.mjs`, `poke.mjs`, `private-files.mjs`,
-`t3-mcp.mjs` and `t3-steer.mjs` from `main` into the bin folder, add the
+Install: copy `bridge.mjs`, `bridge-core.mjs`, `bridge-rpc.mjs`, `poke.mjs`,
+`bridge-local.mjs`, `private-files.mjs`, `t3-mcp.mjs` and `t3-steer.mjs` from
+`main` into the bin folder (`scrub.mjs` and `fleet-state.mjs` are there with
+the publisher), add the
 launchd plist, then `launchctl bootstrap gui/$(id -u) <plist>`. Install only
 after Web and the store Worker from the same commit are deployed. Rollback:
 `launchctl bootout gui/$(id -u)/com.tuturuuu.mastermind-fleet-bridge` and

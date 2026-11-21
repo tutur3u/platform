@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 874,
+    "total": 878,
     "categories": {
-      "api": 674,
+      "api": 678,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
@@ -23,7 +23,7 @@
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 12, "Next-fallback": 862 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 866 }
   },
   "routes": [
     {
@@ -3104,6 +3104,38 @@
     {
       "pattern": "/api/v1/mastermind/fleet/state",
       "source": "apps/web/src/app/api/v1/mastermind/fleet/state/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/threads/machines",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/machines/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/threads/messages",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/messages/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/threads/read",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/read/route.ts",
+      "category": "api",
+      "owner": "web-next",
+      "disposition": "Next-fallback",
+      "cronOwner": null
+    },
+    {
+      "pattern": "/api/v1/mastermind/fleet/threads",
+      "source": "apps/web/src/app/api/v1/mastermind/fleet/threads/route.ts",
       "category": "api",
       "owner": "web-next",
       "disposition": "Next-fallback",

@@ -34,6 +34,10 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/mastermind/fleet/replies/[replyId]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/replies/%5BreplyId%5D/route.ts) |
 | `/api/v1/mastermind/fleet/replies` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/replies/route.ts) |
 | `/api/v1/mastermind/fleet/state` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/state/route.ts) |
+| `/api/v1/mastermind/fleet/threads/machines` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/threads/machines/route.ts) |
+| `/api/v1/mastermind/fleet/threads/messages` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/threads/messages/route.ts) |
+| `/api/v1/mastermind/fleet/threads/read` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/threads/read/route.ts) |
+| `/api/v1/mastermind/fleet/threads` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/threads/route.ts) |
 | `/api/v1/mastermind/fleet/usage` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/fleet/usage/route.ts) |
 | `/api/v1/mastermind/push-events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/push-events/route.ts) |
 | `/api/v1/meet/plans/[planId]/availability` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/availability/route.ts) |
@@ -190,9 +194,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns` | DELETE, GET, HEAD, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/columns/sync` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/columns/sync/route.ts) |
 | `/api/v1/workspaces/[wsId]/datasets/[datasetId]/duplicates/detect` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/duplicates/detect/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/duplicates/remove` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/duplicates/remove/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/full` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/full/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/route.ts) |
-| `/api/v1/workspaces/[wsId]/datasets/[datasetId]/rows/clear` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/datasets/%5BdatasetId%5D/rows/clear/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).
