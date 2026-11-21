@@ -1,3 +1,4 @@
+import { applyLiveQa } from './live-qa';
 import type { MeetRealtimeServerMessage } from './messages';
 import {
   applyMeetRoomCommand,
@@ -80,6 +81,8 @@ export class MeetCommandExecutor {
   run(command: MeetRoomCommand, options: CommandOptions): Promise<void> {
     // Charged once at admission, before room processing, any provider call
     // or queue wait. Refusals change no room state.
+    const qa = applyLiveQa(options.read(), command);
+    if (qa) return Promise.resolve(options.commit(qa));
     const refusal = admissionRefusal(command);
     // A silently dropped report never reaches the room or its storage.
     if (refusal?.length === 0) return Promise.resolve();

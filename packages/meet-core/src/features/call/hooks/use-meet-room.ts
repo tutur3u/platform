@@ -1,4 +1,5 @@
 'use client';
+import { handleLiveQaMessage } from '../tools/live-activities/qa/qa-handler';
 import { createMeetCallRealtimeToken } from '@tuturuuu/internal-api';
 import { deliverRoomAssistantAudio } from '@tuturuuu/meet-core/features/live-assistant/room-audio';
 import {
@@ -163,6 +164,7 @@ export function useMeetRoom({
     const signaling = new MeetSignaling({
       onMessage: (message) => {
         deliverRoomAssistantAudio(meetingId, message);
+        handleLiveQaMessage(meetingId, message, actions.sendLiveQa);
         if (message.type === 'ready' && message.admission === 'admitted') {
           resetSubscriber();
           if (!message.resumed) {

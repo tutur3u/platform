@@ -1,3 +1,4 @@
+import type { LiveQaCommand } from '../tools/live-activities/qa/qa-store';
 import { useEffect } from 'react';
 import { type CallState, localMediaLocks } from './call-state';
 import type {
@@ -32,6 +33,7 @@ export function createRoomActions(
   const mediaPolicy = createMediaPolicy();
   return {
     mediaPolicy,
+    sendLiveQa: (message: LiveQaCommand) => signaling.current?.send(message),
     reportTileHeight: (userId: string, devicePx: number | null) => {
       if (devicePx === null) tileHeights.delete(userId);
       else tileHeights.set(userId, devicePx);

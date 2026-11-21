@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { LiveQaSnapshot } from './live-qa';
 import type { ClassTimer } from './class-timer';
 import {
   type MeetRoomMediaQualitySummary,
@@ -47,6 +48,26 @@ const participantId = z.string().uuid();
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   transcriptionStateMessageSchema,
   transcriptionConsentMessageSchema,
+  z.object({ type: z.literal('qa.read'), requestId }),
+  z.object({
+    type: z.literal('qa.ask'),
+    text: z.string().trim().min(1).max(400),
+    requestId,
+  }),
+  z.object({
+    type: z.literal('qa.upvote'),
+    questionId: z.string().uuid(),
+    upvoted: z.boolean(),
+    requestId,
+  }),
+  z.object({
+    type: z.literal('qa.moderate'),
+    questionId: z.string().uuid(),
+    field: z.enum(['hidden', 'answered']),
+    value: z.boolean(),
+    requestId,
+  }),
+  z.object({ type: z.literal('qa.clear'), requestId }),
   z.object({
     type: z.literal('media.quality'),
     sample: meetMediaQualitySampleSchema,
@@ -235,6 +256,7 @@ export type MeetRealtimeRoomTrack = {
 };
 
 export type MeetRealtimeServerMessage =
+  | { type: 'qa.snapshot'; snapshot: LiveQaSnapshot; requestId?: string }
   | TranscriptionStateMessage
   | TranscriptionConsentMessage
   | {

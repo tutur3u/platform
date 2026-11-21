@@ -1,100 +1,50 @@
-export type LiveQaAnswer = {
-  id: string;
-  participantId: string;
-  text: string;
+import type {
+  MeetRealtimeClientMessage,
+  MeetRealtimeServerMessage,
+} from '@tuturuuu/realtime/meet';
+
+export type LiveQaSnapshot = Extract<
+  MeetRealtimeServerMessage,
+  { type: 'qa.snapshot' }
+>['snapshot'];
+export type LiveQaCommand = Extract<
+  MeetRealtimeClientMessage,
+  { type: `qa.${string}` }
+>;
+export type LiveQaChannel = {
+  send: (message: LiveQaCommand) => void;
+  subscribe: (
+    listener: (message: MeetRealtimeServerMessage) => void
+  ) => () => void;
 };
 
-export type LiveQaSnapshot = {
-  open: boolean;
-  question: string | null;
-  answers: readonly LiveQaAnswer[];
-};
-
-type Store = {
-  snapshot: LiveQaSnapshot;
-  listeners: Set<() => void>;
-};
-
-const DEFAULT_SNAPSHOT: LiveQaSnapshot = {
-  open: false,
-  question: null,
-  answers: [],
-};
-
-const stores = new Map<string, Store>();
-
-function roomStore(meetingId: string): Store {
-  const existing = stores.get(meetingId);
-  if (existing) return existing;
-  const created: Store = {
-    snapshot: { ...DEFAULT_SNAPSHOT, answers: [] },
-    listeners: new Set(),
+const EMPTY: LiveQaSnapshot = { questions: [] };
+/** One read model per mounted client, populated only by room messages. */
+export function createLiveQaClient(channel: LiveQaChannel) {
+  let snapshot = EMPTY;
+  const listeners = new Set<() => void>();
+  let stop: (() => void) | undefined;
+  return {
+    read: () => snapshot,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      if (!stop) {
+        stop = channel.subscribe((message) => {
+          if (message.type !== 'qa.snapshot') return;
+          snapshot = message.snapshot;
+          for (const notify of listeners) notify();
+        });
+        channel.send({ type: 'qa.read' });
+      }
+      return () => {
+        listeners.delete(listener);
+        if (!listeners.size) {
+          stop?.();
+          stop = undefined;
+        }
+      };
+    },
+    send: (message: LiveQaCommand) => channel.send(message),
   };
-  stores.set(meetingId, created);
-  return created;
 }
-
-function publish(meetingId: string) {
-  const store = roomStore(meetingId);
-  for (const listener of store.listeners) listener();
-}
-
-export function readLiveQa(meetingId: string): LiveQaSnapshot {
-  return roomStore(meetingId).snapshot;
-}
-
-export function subscribeLiveQa(meetingId: string, listener: () => void) {
-  const store = roomStore(meetingId);
-  store.listeners.add(listener);
-  return () => store.listeners.delete(listener);
-}
-
-export function resetLiveQa(meetingId: string) {
-  const store = roomStore(meetingId);
-  store.snapshot = { ...DEFAULT_SNAPSHOT, answers: [] };
-  publish(meetingId);
-}
-
-export function openLiveQa(meetingId: string) {
-  const store = roomStore(meetingId);
-  store.snapshot = { ...store.snapshot, open: true };
-  publish(meetingId);
-}
-
-export function closeLiveQa(meetingId: string) {
-  const store = roomStore(meetingId);
-  store.snapshot = { open: false, question: null, answers: [] };
-  publish(meetingId);
-}
-
-export function askLiveQaQuestion(meetingId: string, question: string) {
-  const trimmed = question.trim();
-  if (!trimmed) return;
-  const store = roomStore(meetingId);
-  store.snapshot = {
-    ...store.snapshot,
-    open: true,
-    question: trimmed,
-    answers: [],
-  };
-  publish(meetingId);
-}
-
-export function submitLiveQaAnswer(
-  meetingId: string,
-  participantId: string,
-  text: string
-) {
-  const trimmed = text.trim();
-  const store = roomStore(meetingId);
-  if (!store.snapshot.open || !store.snapshot.question || !trimmed) return;
-  const id = `${participantId}:${store.snapshot.answers.length}`;
-  store.snapshot = {
-    ...store.snapshot,
-    answers: [
-      ...store.snapshot.answers,
-      { id, participantId, text: trimmed },
-    ],
-  };
-  publish(meetingId);
-}
+export type LiveQaClient = ReturnType<typeof createLiveQaClient>;

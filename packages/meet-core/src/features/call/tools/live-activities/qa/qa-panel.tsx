@@ -1,141 +1,147 @@
 'use client';
 
-import { MessageSquare, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { type FormEvent, useState, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import type { MeetToolPanelProps } from '../meet-tool';
 import { LiveActivityPanelFrame } from '../panel-frame';
-import {
-  askLiveQaQuestion,
-  closeLiveQa,
-  openLiveQa,
-  readLiveQa,
-  submitLiveQaAnswer,
-  subscribeLiveQa,
-} from './qa-store';
+import type { LiveQaClient } from './qa-store';
+import { liveQaRoom } from './qa-handler';
+
+export const LiveQaClientContext = createContext<LiveQaClient | null>(null);
 
 export function QaPanel({
   meetingId = 'default',
-  role = 'participant',
-  participantId = 'guest',
+  role,
+  participantId,
   onClose,
 }: MeetToolPanelProps) {
-  const snapshot = useSyncExternalStore(
-    (onStoreChange) => subscribeLiveQa(meetingId, onStoreChange),
-    () => readLiveQa(meetingId),
-    () => readLiveQa(meetingId)
-  );
-  const [draftQuestion, setDraftQuestion] = useState('');
-  const [draftAnswer, setDraftAnswer] = useState('');
-  const isHost = role === 'host';
-  const myAnswer = snapshot.answers.find(
-    (answer) => answer.participantId === participantId
-  );
-
-  const publishQuestion = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    askLiveQaQuestion(meetingId, draftQuestion);
-    setDraftQuestion('');
-  };
-
-  const sendAnswer = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    submitLiveQaAnswer(meetingId, participantId, draftAnswer);
-    setDraftAnswer('');
-  };
-
+  const client =
+    useContext(LiveQaClientContext) ?? liveQaRoom(meetingId).client;
   return (
     <LiveActivityPanelFrame title="Q&A" onClose={onClose}>
-      {isHost && !snapshot.open ? (
-        <Button size="sm" variant="outline" onClick={() => openLiveQa(meetingId)}>
-          <MessageSquare className="size-4" />
-          Open Q&A
+      <ConnectedQa
+        client={client}
+        isHost={role === 'host'}
+        participantId={participantId}
+      />
+    </LiveActivityPanelFrame>
+  );
+}
+
+function ConnectedQa({
+  client,
+  isHost,
+  participantId,
+}: {
+  client: LiveQaClient;
+  isHost: boolean;
+  participantId?: string;
+}) {
+  const snapshot = useSyncExternalStore(
+    client.subscribe,
+    client.read,
+    client.read
+  );
+  const [draft, setDraft] = useState('');
+  return (
+    <div className="space-y-3">
+      <form
+        className="space-y-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          client.send({ type: 'qa.ask', text: draft });
+          setDraft('');
+        }}
+      >
+        <label className="grid gap-1 font-medium text-sm">
+          Question
+          <Textarea
+            maxLength={400}
+            rows={2}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+        </label>
+        <Button size="sm" type="submit" disabled={!draft.trim()}>
+          Ask
         </Button>
-      ) : null}
-      {isHost && snapshot.open ? (
-        <form onSubmit={publishQuestion} className="space-y-3">
-          <label className="grid gap-1 font-medium text-sm">
-            Question
-            <Textarea
-              aria-label="Question"
-              maxLength={400}
-              rows={2}
-              value={draftQuestion}
-              onChange={(event) => setDraftQuestion(event.target.value)}
-              placeholder={snapshot.question ?? 'Ask the room'}
-            />
-          </label>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" type="submit" disabled={!draftQuestion.trim()}>
-              <Send className="size-4" />
-              Ask
-            </Button>
-            <Button
-              size="sm"
-              type="button"
-              variant="ghost"
-              onClick={() => closeLiveQa(meetingId)}
-            >
-              <MessageSquare className="size-4" />
-              End
-            </Button>
-          </div>
-        </form>
-      ) : null}
-      {snapshot.question ? (
-        <section className="space-y-2 rounded-lg border border-border p-3 text-sm">
-          <p className="font-semibold text-foreground">{snapshot.question}</p>
-          {!isHost ? (
-            <form onSubmit={sendAnswer} className="space-y-2">
-              <label className="grid gap-1 font-medium">
-                Your answer
-                <Textarea
-                  aria-label="Your answer"
-                  maxLength={500}
-                  rows={3}
-                  value={draftAnswer}
-                  onChange={(event) => setDraftAnswer(event.target.value)}
-                />
-              </label>
-              <Button
-                size="sm"
-                type="submit"
-                disabled={!draftAnswer.trim() || Boolean(myAnswer)}
-              >
-                <Send className="size-4" />
-                {myAnswer ? 'Submitted' : 'Submit'}
-              </Button>
-            </form>
-          ) : null}
-          {myAnswer ? (
-            <p role="status" className="text-muted-foreground">
-              Your response: {myAnswer.text}
-            </p>
-          ) : null}
-        </section>
-      ) : (
-        !isHost && (
-          <p role="status" className="text-muted-foreground text-sm">
-            Waiting for a question.
-          </p>
-        )
+      </form>
+      {isHost && (
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => client.send({ type: 'qa.clear' })}
+        >
+          Clear moderation
+        </Button>
       )}
-      {isHost && snapshot.answers.length > 0 ? (
-        <ul className="space-y-2 text-sm">
-          {snapshot.answers.map((answer) => (
+      <ul className="space-y-2 text-sm">
+        {snapshot.questions
+          .filter((q) => isHost || !q.hidden)
+          .map((q) => (
             <li
-              key={answer.id}
-              className="rounded-md border border-border px-3 py-2"
+              key={q.id}
+              className="space-y-2 rounded-md border border-border p-3"
             >
-              <p className="text-muted-foreground text-xs">
-                {answer.participantId}
-              </p>
-              <p className="wrap-break-word whitespace-pre-wrap">{answer.text}</p>
+              <p className="wrap-break-word whitespace-pre-wrap">{q.text}</p>
+              {q.answered && <p role="status">Answered</p>}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  aria-pressed={q.upvotes.includes(participantId ?? '')}
+                  onClick={() =>
+                    client.send({
+                      type: 'qa.upvote',
+                      questionId: q.id,
+                      upvoted: !q.upvotes.includes(participantId ?? ''),
+                    })
+                  }
+                >
+                  Upvote ({q.upvotes.length})
+                </Button>
+                {isHost && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        client.send({
+                          type: 'qa.moderate',
+                          questionId: q.id,
+                          field: 'answered',
+                          value: !q.answered,
+                        })
+                      }
+                    >
+                      {q.answered ? 'Reopen' : 'Mark answered'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        client.send({
+                          type: 'qa.moderate',
+                          questionId: q.id,
+                          field: 'hidden',
+                          value: !q.hidden,
+                        })
+                      }
+                    >
+                      {q.hidden ? 'Show' : 'Hide'}
+                    </Button>
+                  </>
+                )}
+              </div>
             </li>
           ))}
-        </ul>
-      ) : null}
-    </LiveActivityPanelFrame>
+      </ul>
+    </div>
   );
 }
