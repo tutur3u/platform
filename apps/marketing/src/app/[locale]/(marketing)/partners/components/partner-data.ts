@@ -6,7 +6,7 @@ export interface Partner {
   category: string;
   accent: SurfaceAccent;
   logo: string;
-  website: string;
+  website?: string;
   highlights: string[];
   featured?: boolean;
 }
@@ -71,7 +71,6 @@ export const partners: Partner[] = [
     category: 'Analytics competition',
     accent: 'blue',
     logo: '/media/partners/rbac.jpg',
-    website: 'https://rbac.vn',
     highlights: [
       'Data-driven problem solving',
       'Real-world business cases',

@@ -67,18 +67,21 @@ export function PartnerCard({
   featured?: boolean;
 }) {
   const styles = accents[partner.accent];
+  const Root = partner.website ? 'a' : 'div';
+  const linkProps = partner.website
+    ? { href: partner.website, rel: 'noopener noreferrer', target: '_blank' }
+    : {};
 
   return (
-    <a
+    <Root
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-2xl border border-foreground/[0.08] bg-foreground/[0.015] p-5 transition-all duration-500',
-        'hover:-translate-y-1 hover:border-foreground/15 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5',
+        partner.website &&
+          'hover:-translate-y-1 hover:border-foreground/15 hover:bg-foreground/[0.03] hover:shadow-2xl hover:shadow-foreground/5',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         featured && 'sm:p-6'
       )}
-      href={partner.website}
-      rel="noopener noreferrer"
-      target="_blank"
+      {...linkProps}
     >
       <span
         aria-hidden
@@ -122,7 +125,9 @@ export function PartnerCard({
             )}
           >
             <span className="min-w-0">{partner.name}</span>
-            <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 text-foreground/25 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground/50" />
+            {partner.website ? (
+              <ArrowUpRight className="mt-1 h-3.5 w-3.5 shrink-0 text-foreground/25 transition-all duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground/50" />
+            ) : null}
           </h3>
         </div>
       </div>
@@ -142,6 +147,6 @@ export function PartnerCard({
           </li>
         ))}
       </ul>
-    </a>
+    </Root>
   );
 }
