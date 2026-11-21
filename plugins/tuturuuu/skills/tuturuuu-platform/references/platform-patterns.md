@@ -1734,3 +1734,9 @@ The shared handler answers `/api/csp-report` locally when CSP is configured.
 Pass each app's extra named policies explicitly; do not allow wildcard policies.
 See `apps/docs/platform/architecture/one-origin-security.mdx` for binding names,
 clean-window acceptance, custom LMS/Apps handling, and rollback scope.
+
+For external script loaders, pass exact URLs through
+`createBridgeRootRoute({ trustedTypes: { scriptUrls: [...] } })`. Include required
+query parameters and cover rejection of sibling URLs. The default policy runs
+even during report-only rollout, so an incompatible loader needs this explicit
+configuration before traffic acceptance.

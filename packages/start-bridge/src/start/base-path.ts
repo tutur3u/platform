@@ -1,5 +1,5 @@
 import { APP_BASE_GLOBAL, runtimeAppBase, withAppBase } from '../core/app-url';
-import { requestNonce, TRUSTED_TYPES_BOOTSTRAP } from '../core/csp';
+import { requestNonce, trustedTypesBootstrap } from '../core/csp';
 
 export { appPath, appUrl, runtimeAppBase, withAppBase } from '../core/app-url';
 export { createNonce, requestNonce } from '../core/csp';
@@ -46,9 +46,12 @@ export const bridgeServerFnFetch: typeof fetch = (input, init) => {
  * Add it directly after `appBaseHeadScript()` and before every other script
  * when the app's CSP requires Trusted Types: the policy reads the app base.
  */
-export function trustedTypesHeadScript(nonce = requestNonce()) {
+export function trustedTypesHeadScript(
+  nonce = requestNonce(),
+  scriptUrls: readonly string[] = []
+) {
   return {
-    children: TRUSTED_TYPES_BOOTSTRAP,
+    children: trustedTypesBootstrap(scriptUrls),
     ...(nonce ? { nonce } : {}),
   };
 }

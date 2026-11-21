@@ -3,6 +3,7 @@ import {
   TRUSTED_TYPES_APP_BASE_GLOBAL,
   TRUSTED_TYPES_BOOTSTRAP,
   TRUSTED_TYPES_DIRECTIVES,
+  trustedTypesBootstrap,
 } from '../core/csp';
 import { APP_BASE_GLOBAL } from '../core/app-url';
 import { appBaseHeadScript, trustedTypesHeadScript } from './base-path';
@@ -16,14 +17,21 @@ type Rules = {
 
 const BASE_SCRIPT = 'globalThis.__tuturuuuAppBase="/admin";';
 
-function register(existing?: object, base: string | null = '/admin') {
+function register(
+  existing?: object,
+  base: string | null = '/admin',
+  scriptUrls: readonly string[] = []
+) {
   const createPolicy = vi.fn((_name: string, rules: Rules) => rules);
   const trustedTypes = { defaultPolicy: existing, createPolicy };
   new Function(
     'globalThis',
     'document',
     'location',
-    TRUSTED_TYPES_BOOTSTRAP.replace('globalThis.trustedTypes', 'globalThis.t')
+    trustedTypesBootstrap(scriptUrls).replace(
+      'globalThis.trustedTypes',
+      'globalThis.t'
+    )
   )(
     { t: trustedTypes, [APP_BASE_GLOBAL]: base },
     {
@@ -123,4 +131,24 @@ describe('Trusted Types bootstrap', () => {
     expect(scripts({ trustedTypes: true })[1]).toBe(TRUSTED_TYPES_BOOTSTRAP);
     expect(scripts()).not.toContain(TRUSTED_TYPES_BOOTSTRAP);
   });
+});
+
+it('admits only explicitly configured external script URLs', () => {
+  const allowed =
+    'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onloadTurnstileCallback&render=explicit';
+  const rules = rulesOf(register(undefined, '/forms', [allowed]));
+  expect(rules.createScriptURL(allowed)).toBe(allowed);
+  for (const denied of [
+    allowed + '&extra=1',
+    allowed.replace('challenges.cloudflare.com', 'evil.example'),
+    allowed.replace('api.js?', 'other.js?'),
+  ]) {
+    expect(() => rules.createScriptURL(denied)).toThrow();
+  }
+  const route = createBridgeRootRoute({
+    trustedTypes: { scriptUrls: [allowed] },
+  });
+  expect(route.head().scripts[1]?.children).toBe(
+    trustedTypesBootstrap([allowed])
+  );
 });

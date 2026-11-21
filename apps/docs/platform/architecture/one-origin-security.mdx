@@ -59,7 +59,9 @@ The named policies include `default` and `dompurify`; Learn also names its Monac
 editor policies. Monaco's initial stale-realm replacement `domSanitize0` is listed;
 further stale-realm recoveries must be assessed from the report window. Neither
 wildcard names nor `allow-duplicates` are granted. Tiptap/ProseMirror create no
-additional named policies in the installed source. Forms' Turnstile flow and
+additional named policies in the installed source. Forms lists its exact Turnstile loader URL (including callback/render query parameters)
+in the generic bootstrap's script URL allowlist; other external script URLs remain
+refused. Forms' Turnstile flow and
 Learn's coding/editor/worker flows need explicit runtime coverage before enforcement.
 
 An app may enforce only after a clean window of a few hours of traffic, or a
