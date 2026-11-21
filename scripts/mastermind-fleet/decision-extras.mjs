@@ -311,6 +311,7 @@ export function baseFleetState(state) {
   const hasExtras =
     state.resolved ||
     state.release ||
+    state.machines?.some((machine) => machine.todayOutcomes) ||
     state.decisions.some(
       (d) => d.kind || d.login || d.why || d.defaultOutcome || d.requester
     );
@@ -318,6 +319,13 @@ export function baseFleetState(state) {
   const { resolved: _resolved, release: _release, ...rest } = state;
   return {
     ...rest,
+    ...(state.machines
+      ? {
+          machines: state.machines.map(
+            ({ todayOutcomes: _todayOutcomes, ...machine }) => machine
+          ),
+        }
+      : {}),
     decisions: state.decisions
       .filter((d) => d.kind !== 'login')
       .map(

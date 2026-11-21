@@ -280,6 +280,26 @@ product rules of the shell entry and every tab.
   windows and accounting coverage. T3's summary groups cost and tokens by
   day, provider and model. This source does not identify which account
   incurred a historical cost, so those records are unattributed.
+  The optional `usageMachines` list in the existing fleet publisher config
+  maps each fleet machine `id` to its T3 `environmentId` and trusted
+  `origin`. Each reader uses only `orchestration:read` and
+  `diagnostics:read`. Keep its bearer in the existing private publisher root
+  under `usage-readers/<id>` with mode 0600. The collector verifies the T3
+  environment descriptor before authentication. At most 12 machine readers
+  share a 6-second deadline. The signed Usage write runs after state and
+  answer delivery, on change or a 60-second heartbeat. Removing
+  `usageMachines` stops reads and Usage writes at the next publisher tick.
+  Keep a private backup of the installed script directory and config before
+  switching versions. Restore that directory and config together on rollback.
+  Verify a successful core state and answer tick during either switch.
+- **Today’s outcomes:** The publisher reads the local T3 failure projection
+  from the start of the ICT day. It counts an automatic quota recovery only
+  after a linked T3 continuation completes. Missing or unknown structured
+  failures are unclassified. Linked machines without an outcome feed show
+  unavailable coverage. Publisher and machine timestamps show stale after
+  two minutes. Account quota freshness uses the provider’s original check
+  time. The legacy Hub feed retains its own guard and prepared-publication
+  custody.
 - **Delivery and freshness SLO:** Mastermind is the primary owner channel,
   at least as fresh as the WhatsApp relay. Targets on the orchestrator Mac:
   a new or closed decision reaches Web within 30 seconds (one run, kicked by

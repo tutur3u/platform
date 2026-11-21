@@ -588,3 +588,75 @@ test('only one publisher runs at a time, and a stale lock is taken over', () => 
   assert.ok(acquirePublishLock(root, Date.now() + 120_000));
   again();
 });
+
+test('publishes configured usage after state and owner answers, with a bounded heartbeat', async () => {
+  const paths = sandbox();
+  const server = fakeServer();
+  const readers = path.join(paths.root, 'usage-readers');
+  fs.mkdirSync(readers, { mode: 0o700 });
+  fs.writeFileSync(
+    path.join(readers, 'local'),
+    'fixture-usage-bearer-0123456789abcdefgh',
+    {
+      mode: 0o600,
+    }
+  );
+  fs.writeFileSync(
+    paths.configFile,
+    JSON.stringify({
+      machineId: 'local',
+      machineLabel: 'Local',
+      usageMachines: [
+        {
+          id: 'local',
+          origin: 'http://127.0.0.1:3773',
+          environmentId: 'fixture-environment',
+        },
+      ],
+    })
+  );
+  const options = {
+    paths,
+    origin: 'https://tuturuuu.com',
+    now: NOW,
+    fetchImpl: server.fetchImpl,
+    openDatabase: () => fixtureDatabase(),
+    async collectUsage({ bearer, now }) {
+      assert.equal(bearer, 'fixture-usage-bearer-0123456789abcdefgh');
+      return {
+        quota: { kind: 'complete', observedAt: now.toISOString() },
+        accounting: { kind: 'unavailable' },
+        accounts: [],
+        buckets: [],
+      };
+    },
+  };
+  assert.equal((await runOnce(options)).usagePublished, true);
+  assert.deepEqual(
+    server.calls.map((call) => `${call.method} ${new URL(call.url).pathname}`),
+    [
+      'PUT /api/v1/mastermind/fleet/state',
+      'GET /api/v1/mastermind/fleet/answers',
+      'PUT /api/v1/mastermind/fleet/usage',
+    ]
+  );
+  assert.equal(
+    JSON.parse(server.calls[2].body).machines[0].quota.kind,
+    'complete'
+  );
+  assert.doesNotMatch(server.calls[2].body, /fixture-usage-bearer/);
+
+  server.calls.length = 0;
+  const quiet = await runOnce({
+    ...options,
+    now: new Date(NOW.getTime() + 15_000),
+  });
+  assert.equal(quiet.usagePublished, undefined);
+  assert.equal(server.calls.length, 1);
+
+  const next = await runOnce({
+    ...options,
+    now: new Date(NOW.getTime() + 60_000),
+  });
+  assert.equal(next.usagePublished, true);
+});

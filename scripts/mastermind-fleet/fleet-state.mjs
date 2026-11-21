@@ -289,8 +289,11 @@ export function buildFleetState(
     {
       id: localMachine.id,
       label: tidyText(localMachine.label, 40) || 'This Mac',
-      // The publisher itself is the heartbeat; `receivedAt` carries its age.
+      lastSeenAt: now.toISOString(),
       status: 'online',
+      ...(localMachine.todayOutcomes
+        ? { todayOutcomes: localMachine.todayOutcomes }
+        : {}),
     },
     ...peers.map((peer) => {
       const lastSeenAt = isoTime(peer.lastSeenAt ?? peer.last_reached_at);
@@ -339,7 +342,11 @@ export function contentHash(state) {
   // Every live probe refreshes `lastSeenAt`; the heartbeat publish carries
   // it, so only a status change forces an early publish.
   content.machines = content.machines.map(
-    ({ lastSeenAt: _lastSeenAt, ...machine }) => machine
+    ({ lastSeenAt: _lastSeenAt, todayOutcomes, ...machine }) => {
+      if (!todayOutcomes) return machine;
+      const { observedAt: _observedAt, ...counts } = todayOutcomes;
+      return { ...machine, todayOutcomes: counts };
+    }
   );
   return createHash('sha256').update(JSON.stringify(content)).digest('hex');
 }

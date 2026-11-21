@@ -21,13 +21,17 @@ import {
   buildFleetState,
   contentHash,
   isoTime,
+  peerMachineIds,
   readFleetRows,
   slugify,
 } from './fleet-state.mjs';
 import { PEER_DEADLINE_MS, readPeers } from './peer-lanes.mjs';
 import { fleetText } from './scrub.mjs';
+import { readTodayOutcomes } from './today-outcomes.mjs';
+import { usageCollector } from './usage-snapshot.mjs';
 
-const HEARTBEAT_MS = 2 * 60 * 1000;
+const HEARTBEAT_MS = 60_000;
+const USAGE_HEARTBEAT_MS = 60_000;
 const STATE_PATH = '/api/v1/mastermind/fleet/state';
 const ANSWERS_PATH = '/api/v1/mastermind/fleet/answers';
 const SLUG = /^[a-z0-9][a-z0-9._-]{0,63}$/;
@@ -235,6 +239,18 @@ export function fitToBudget(state, budget = BODY_BUDGET_BYTES) {
     fitted = rest;
     bytes = size(fitted);
   }
+  if (
+    bytes > budget &&
+    fitted.machines.some((machine) => machine.todayOutcomes)
+  ) {
+    fitted = {
+      ...fitted,
+      machines: fitted.machines.map(
+        ({ todayOutcomes: _todayOutcomes, ...machine }) => machine
+      ),
+    };
+    bytes = size(fitted);
+  }
   // Drops lanes `keep` rejects from the low-priority end until it fits.
   const trimLanes = (keep) => {
     while (bytes > budget) {
@@ -413,6 +429,7 @@ export async function runOnce({
   now = new Date(),
   fetchImpl = fetch,
   peerFetchImpl = fetch,
+  collectUsage,
   openDatabase,
   force = false,
 } = {}) {
@@ -427,11 +444,42 @@ export async function runOnce({
   const config = readJson(paths.configFile);
   const db = openDatabase(paths.database);
   let rows;
+  let todayOutcomes;
   try {
     rows = readFleetRows(db, now);
+    try {
+      todayOutcomes = readTodayOutcomes(db, now);
+    } catch {
+      // Older T3 projections may not have structured failure records.
+    }
   } finally {
     db.close();
   }
+  const label = config.machineLabel || os.hostname().split('.')[0];
+  const localMachine = {
+    id: slugify(config.machineId || label, 'local'),
+    label,
+    todayOutcomes,
+  };
+  const usage = (async () => {
+    const collect = usageCollector({
+      root: paths.root,
+      configs: config.usageMachines,
+      readSecret,
+      now,
+      signal: AbortSignal.timeout(6_000),
+      collect: collectUsage,
+    });
+    if (!collect) return null;
+    const ids = peerMachineIds(rows.peers, localMachine.id);
+    return collect([
+      localMachine,
+      ...rows.peers.map((peer) => ({
+        id: ids.get(peer.environment_id),
+        label: peer.label,
+      })),
+    ]);
+  })().catch(() => null);
   const peerResult = await readPeers({
     links: rows.peers,
     secretsDir: paths.peerSecretsDir,
@@ -451,13 +499,12 @@ export async function runOnce({
   }
   rows = { ...rows, peers: peerResult.peers };
   const { decisions, skipped } = readDecisions(paths.openDir);
-  const label = config.machineLabel || os.hostname().split('.')[0];
   const resolved = readResolved(paths.resolvedDir, now, readRegularText);
   const release = readRelease(paths.releaseFile, readRegularText);
   const built = buildFleetState(rows, {
     now,
     decisions,
-    localMachine: { id: slugify(config.machineId || label, 'local'), label },
+    localMachine,
     ...(config.orchestratorTitlePattern
       ? {
           orchestratorPattern: new RegExp(config.orchestratorTitlePattern, 'i'),
@@ -517,6 +564,36 @@ export async function runOnce({
       JSON.stringify({ acks: written.slice(i, i + ACK_BATCH) })
     );
 
+  const usageSnapshot = await usage;
+  let usagePublished;
+  const usageStampFile = path.join(paths.root, 'last-usage-publish.json');
+  const usageStamp = usageSnapshot ? readJson(usageStampFile) : {};
+  if (
+    usageSnapshot &&
+    (force ||
+      usageStamp.hash !== usageSnapshot.hash ||
+      now.getTime() - Date.parse(usageStamp.at ?? 0) >= USAGE_HEARTBEAT_MS)
+  ) {
+    try {
+      const receipt = await call(
+        web,
+        'PUT',
+        usageSnapshot.path,
+        usageSnapshot.body
+      );
+      usagePublished = receipt?.accepted === true;
+      if (usagePublished) {
+        writePrivateJson(usageStampFile, {
+          hash: usageSnapshot.hash,
+          at: now.toISOString(),
+        });
+      }
+    } catch {
+      // Optional usage never interrupts the established state and answer path.
+      usagePublished = false;
+    }
+  }
+
   const alerts = paths.alertsFile
     ? await pullAlerts({
         get: (pathWithQuery) => call(web, 'GET', pathWithQuery),
@@ -538,6 +615,7 @@ export async function runOnce({
     decisions: decisions.length,
     skippedDecisions: skipped,
     answers: written.length,
+    ...(usagePublished === undefined ? {} : { usagePublished }),
     ...(alerts ? { alerts } : {}),
   };
 }

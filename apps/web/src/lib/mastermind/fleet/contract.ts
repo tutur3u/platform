@@ -53,6 +53,17 @@ export const fleetMachineSchema = z.object({
   label: labelText(40, 'Machine'),
   status: z.enum(['online', 'stale', 'offline']),
   lastSeenAt: isoTime.optional(),
+  todayOutcomes: z
+    .object({
+      kind: z.enum(['complete', 'partial']),
+      observedAt: isoTime,
+      dayStart: isoTime,
+      real: count,
+      quotaRecovered: count,
+      quotaUnrecovered: count,
+      unclassified: count,
+    })
+    .optional(),
 });
 
 export const fleetDecisionOptionSchema = z.object({
