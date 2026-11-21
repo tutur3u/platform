@@ -91,6 +91,7 @@
   "parley-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "parley-offline-diagnostic.yaml": ["always"],
   "pay-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
+  "people-registry-key.yaml": ["always"],
   "periodic-report-delivery-contract.yaml": ["path-filters"],
   "playground-cloudflare.yaml": ["path-filters", "planner-affected-gate"],
   "playground-runtime-acceptance.yaml": ["path-filters"],
