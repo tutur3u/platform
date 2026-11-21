@@ -55,7 +55,7 @@ void main() {
           : LaunchMode.externalApplication;
       expect(calls, [(accountDeletionUri, mode)]);
     },
-    variant: TargetPlatformVariant({
+    variant: const TargetPlatformVariant({
       TargetPlatform.android,
       TargetPlatform.iOS,
       TargetPlatform.macOS,

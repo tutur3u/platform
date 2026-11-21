@@ -299,7 +299,7 @@ void main() {
           LaunchMode.inAppBrowserView,
         ),
       ]);
-    }, variant: TargetPlatformVariant({TargetPlatform.android}));
+    }, variant: const TargetPlatformVariant({TargetPlatform.android}));
 
     for (final language in ['en', 'vi']) {
       testWidgets(
@@ -345,7 +345,7 @@ void main() {
             ),
           ]);
         },
-        variant: TargetPlatformVariant({
+        variant: const TargetPlatformVariant({
           TargetPlatform.iOS,
           TargetPlatform.macOS,
         }),

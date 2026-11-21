@@ -143,6 +143,9 @@ void main() {
       await tester.pumpAndSettle();
       expect(calls, [(accountDeletionUri, LaunchMode.externalApplication)]);
     },
-    variant: TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.macOS}),
+    variant: const TargetPlatformVariant({
+      TargetPlatform.iOS,
+      TargetPlatform.macOS,
+    }),
   );
 }
