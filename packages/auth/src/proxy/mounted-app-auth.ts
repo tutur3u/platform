@@ -4,6 +4,12 @@ import {
 } from '@tuturuuu/utils/app-mounts';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
+} from '../app-session-core';
 import { appLogoutFenceResponse, withAppLogoutFence } from './logout-fence';
 import { normalizeAuthRedirectPath } from './redirect-path';
 import { mountedSessionFailureResponse } from './mounted-failure';
@@ -12,14 +18,49 @@ import {
   resolveMountedSharedSession,
 } from './mounted-shared-session';
 
+/** Credentials a refused mounted session must not leave on the request. */
+const APP_CREDENTIAL_COOKIES = new Set([
+  APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
+]);
+
+/**
+ * Continues a signed-out public page without app-session credentials or
+ * `Authorization`, so the page cannot revive a session the resolver refused.
+ */
+function anonymousNext(request: NextRequest) {
+  const headers = new Headers(request.headers);
+  headers.delete('authorization');
+  const kept = (headers.get('cookie') ?? '')
+    .split(';')
+    .map((part) => part.trim())
+    .filter((part) => {
+      const name = part.split('=')[0]?.trim() ?? '';
+      return part && !APP_CREDENTIAL_COOKIES.has(name.replace(/\.\d+$/u, ''));
+    });
+  if (kept.length) headers.set('cookie', kept.join('; '));
+  else headers.delete('cookie');
+  return NextResponse.next({ request: { headers } });
+}
+
 type MountedAppAuthDependencies = {
   resolveMountedSharedSession: typeof resolveMountedSharedSession;
   consumeMountedSharedSession: typeof consumeMountedSharedSession;
 };
 
-/** Reads Web's shared session behind the app logout fence; Web owns refresh. */
+/**
+ * Reads Web's shared session behind the app logout fence; Web owns refresh.
+ * `publicPaths` lists exact app-relative paths (no locale prefix, no
+ * trailing slash, e.g. `/` for the landing page) that are served signed out;
+ * every other page requires the session.
+ */
 export function createMountedAppAuth(
-  { targetApp }: { targetApp: AppName | string },
+  {
+    targetApp,
+    publicPaths = [],
+  }: { targetApp: AppName | string; publicPaths?: readonly string[] },
   deps: MountedAppAuthDependencies = {
     resolveMountedSharedSession,
     consumeMountedSharedSession,
@@ -60,6 +101,7 @@ export function createMountedAppAuth(
         refresh: resolveSession,
       });
     }
+    const isPublic = publicPaths.includes(path);
     const loginUrl = () => {
       const login = new URL('/login', apex);
       const callback = new URL(
@@ -80,10 +122,21 @@ export function createMountedAppAuth(
       login.searchParams.set('returnUrl', callback.href);
       return login;
     };
-    const signedOut = appLogoutFenceResponse(request, loginUrl);
+    const signedOut = isPublic
+      ? null
+      : appLogoutFenceResponse(request, loginUrl);
     if (signedOut) return signedOut;
     const session = await resolveSession(request);
     if (session.ok && path !== '/login') return session.response;
+    // A public page is served signed out only when there is no usable
+    // session; owed MFA or an assurance outage keeps its usual response.
+    if (
+      isPublic &&
+      !session.ok &&
+      session.error !== 'MFA required' &&
+      session.error !== 'Account assurance unavailable'
+    )
+      return anonymousNext(request);
     if (!session.ok && session.error === 'Account assurance unavailable') {
       return mountedSessionFailureResponse(
         request,

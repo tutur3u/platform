@@ -7,7 +7,8 @@ import {
 export const TEACH_APEX_URL = 'https://tuturuuu.com/teach';
 
 const mounted = createMountedAppAuth(
-  { targetApp: 'teach' },
+  // The landing page is public on the mount, as on the subdomain.
+  { targetApp: 'teach', publicPaths: ['/'] },
   {
     resolveMountedSharedSession: (...args) =>
       resolveMountedSharedSession(...args),

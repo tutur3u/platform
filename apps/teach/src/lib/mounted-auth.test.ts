@@ -94,13 +94,27 @@ describe('mountedTeachAuth', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 
+  it.each(['', '/', '/en', '/vi'])(
+    'serves the landing page %s signed out',
+    async (path) => {
+      mocks.resolveMountedSharedSession.mockResolvedValue({
+        ok: false,
+        error: 'Shared session unavailable',
+      });
+
+      const response = await mountedTeachAuth(mounted(path));
+
+      expect(response.headers.get('location')).toBeNull();
+    }
+  );
+
   it('asks Web for MFA when assurance is missing', async () => {
     mocks.resolveMountedSharedSession.mockResolvedValue({
       ok: false,
       error: 'MFA required',
     });
 
-    const response = await mountedTeachAuth(mounted('/en'));
+    const response = await mountedTeachAuth(mounted('/en/courses'));
 
     expect(
       new URL(response.headers.get('location') ?? '').searchParams.get('mfa')
