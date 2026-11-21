@@ -1,0 +1,179 @@
+---
+title: "Tuturuuu session auth Worker audit alert"
+description: "Slice 4 audit alert for the first-party Tuturuuu session: the GitHub Actions workflow that reads Cloudflare Audit Logs v2 for watched auth, gateway and key-plane scripts, its MACed cursor, its expected actors and its residual."
+audience: developers
+updatedAt: "2026-11-22"
+---
+
+**Status: design, pending independent security review.** This page completes
+the [key guard](/platform/architecture/tuturuuu-session-auth-worker-keys#key-guard)
+on [Tuturuuu session auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys).
+Its rollout and acceptances are on
+[auth Worker controls](/platform/architecture/tuturuuu-session-auth-worker-controls#rollout).
+
+## Workflow
+
+The audit alert is the scheduled GitHub Actions workflow
+`auth-audit-alert.yaml`. It shares no code, credential or runtime with the
+observer and runs outside Cloudflare, so an identity that can redeploy or
+silence the observer cannot silence it from inside the account.
+
+- **Source.** Every 5 minutes it reads the platform account's Cloudflare
+  Audit Logs v2, and no other audit log API, with `TTR_AUTH_AUDIT_READ_TOKEN`,
+  a token for its own service user whose only permission is Account Settings
+  Read on the platform account, which Audit Logs v2 requires. That
+  permission also reads account settings and members; it writes nothing.
+  Each query is filtered to the resource ids of the watched scripts and the
+  operator Access application, excludes `view` actions, and pages in
+  ascending event time, so a run reads only watched changes and stays within
+  10 API calls.
+- **Cursor.** The audit cursor store is a durable record outside the
+  platform Cloudflare account with versioned conditional writes, written
+  through `TTR_AUTH_AUDIT_CURSOR_TOKEN`. Its value is
+  `{ at, idsAt, runId, runAttempt, mac }`: `at` is an event time, `idsAt`
+  the ids of the events at exactly `at` already consumed, and `mac` an
+  HMAC-SHA-256 over the canonical JSON of the other members with
+  `TTR_AUTH_AUDIT_CURSOR_MAC_KEY`. That key is a secret of the `auth-audit`
+  GitHub environment, which allows the `main` branch only and which no
+  other workflow names, so only this workflow holds it.
+  - **Validation.** A value is accepted only when its `mac` verifies and
+    its `runId` and `runAttempt` name a run of `auth-audit-alert.yaml` on
+    `main` in the GitHub Actions run API. A missing value, a missing or bad
+    MAC, or a value this workflow did not write alerts and is ignored, and
+    that run reads only the 45-minute lookback.
+  - **Window.** Each run reads from the earlier of `at`, inclusive, and 45
+    minutes before its start, and skips events whose id is in `idsAt`. That
+    lookback exceeds the 30-minute missing-run threshold and re-reads events
+    the audit log delivers late.
+  - **Advance.** The run moves `at` only to the greatest event time T for
+    which it consumed every event at or before T, and stores the ids of the
+    events at T in `idsAt`. A run that reaches its cap with a page unread
+    alerts as a capped run, and the next run continues from that `at`.
+  - **Compare-and-swap.** The write is conditional on the version the run
+    just read, never a blind overwrite. A failed condition leaves the stored
+    value, alerts as a cursor conflict, and is not retried; the next run
+    starts from whichever value is stored.
+  - **Lag.** A run alerts as lagging when `at` is more than 20 minutes
+    behind its start, whatever the cause.
+- **Watched scripts.** `tuturuuu-auth`, `tuturuuu-gateway`,
+  `tuturuuu-auth-keyguard`, `tuturuuu-auth-keyguard-operator` and
+  `tuturuuu-auth-observer`, with their staging scripts.
+- **Watched changes.** A script or version upload, a deployment or rollback,
+  a secret put or delete, a change to settings, bindings, variables, cron
+  triggers, routes, custom domains, `workers.dev` or preview URLs, a script
+  deletion, and a change to the Access application or policy in front of the
+  operator Worker.
+- **Expected actors.** Each event is matched on `actor.type`,
+  `actor.context` and `actor.token_id`. `apps/auth-keyguard/deploy-identities.json`,
+  reviewed on `main`, lists each watched script's CI deploy token ids and
+  workflow job, and the keyguard deployer App's ids. An event is expected
+  only when its `actor.type` is `user` or `account`, its context is
+  `api_token`, and either:
+  - its token id is that script's CI token and its time falls between the
+    start and end of that script's job in a run of its workflow on `main`,
+    read from the GitHub Actions run and jobs APIs with the workflow's own
+    read-only `GITHUB_TOKEN`. For a key-plane script that run attempt must
+    also be a
+    [qualifying run](/platform/architecture/tuturuuu-session-auth-worker-keys#key-guard):
+    `event` `push`, `head_branch` `main`, `run_attempt` 1, the attempt that
+    uploaded the version, the job's deploy step completed, and a keyguard
+    deployer App deployment for that script's environment with a `success`
+    status whose `log_url` names that run and attempt and whose commit
+    equals `head_sha`. That deployment must also name the version id the
+    event carries. The job only uploads and deploys versions, so a key-plane
+    CI-token event with no version id, or one naming any other version, such
+    as an earlier attested version deployed again during a later honest
+    job, alerts; or
+  - for a script other than `tuturuuu-auth` and the key-plane scripts, its
+    token id has a ledger entry naming that script with `recordedAt` before
+    the event and the event before the entry's expiry, which posts a notice.
+
+  An event inside a key-plane job that is still running, in a run that
+  otherwise qualifies, is held: the run does not consume it, so the cursor
+  stays at or before its time, and it alerts when the job has no `success`
+  App status naming the event's version id 15 minutes after the event.
+  Every other event is a positive
+  alert: any other actor on `tuturuuu-auth` or a key-plane script; a CI
+  token outside any run of its job; a key-plane CI token in a
+  `workflow_dispatch` run, including one with ref `main`, a re-run, a run
+  on another branch, or a run that never reached its deploy step; a token
+  not in the ledger; a ledgered token outside its scripts, before its `recordedAt` or past its
+  expiry; an `actor.type` of `delegated_service`, `cloudflare_admin` or
+  `system`, even with context `api_token`, and an unknown or missing type;
+  and any context other than `api_token`. The known contexts are `api`,
+  `api_key` (a Global API key), `api_token`, `dash` (a dashboard session),
+  `oauth` and `origin_ca_key`; an unknown or missing context alerts too.
+  The workflow reads the ledger with `TTR_CREDENTIAL_LEDGER_READ_TOKEN`, a
+  read-only credential.
+- **Destination.** Alerts and notices go to the security on-call channel
+  through `TTR_SECURITY_ONCALL_WEBHOOK`, keyed by audit event id, so
+  overlapping windows post each event once. A run that cannot read the audit
+  log, the ledger, the identity file, or the GitHub runs, jobs or
+  deployments, or cannot write the cursor, alerts as a failed run, and the
+  channel alerts when no run has reported for 30 minutes. The workflow's
+  `GITHUB_TOKEN` has only `actions: read`, `deployments: read` and
+  `contents: read`.
+- **Detection only.** The alert changes nothing in Cloudflare and is no input
+  to the observer, so an observer outage does not stop it and an alert
+  outage does not change minting. The response is the containment under the
+  key guard's accepted residual.
+- **Its own residual.** A GitHub repository administrator, or anyone who can
+  change the workflow on `main`, could stop it, change its secrets, or
+  rewrite it to report nothing or to report falsely; the same access reaches
+  the `auth-audit` environment and so the cursor MAC key. The missing-run alert
+  covers only a stopped workflow. A rewritten workflow is a commit in
+  `main`'s history and GitHub's audit log records secret and settings
+  changes, but both are found after the fact. The observer's provenance
+  checks do not depend on this workflow, so a lying workflow alone does not
+  hide a key-plane or auth version that lacks its deployment record. The
+  same access could rewrite `keyguard-cloudflare.yaml`, which is the
+  workflow-compromise residual under the key guard.
+
+## Tests
+
+Against a fake Audit Logs v2, ledger, identity file, GitHub runs, jobs and
+deployments, and cursor store:
+
+- **CI tokens.** A watched change by the script's own CI token inside a
+  run of its job on `main`, and for a key-plane script inside a qualifying
+  run, raises nothing, and the same token outside any run alerts. On a
+  key-plane script the same token alerts in a re-run
+  (`run_attempt` 2), in a `workflow_dispatch` of `main`, in a
+  `workflow_dispatch` of another branch, in a run that never reached its
+  deploy step, and in a run whose only deployment record was created by
+  `github-actions[bot]` with a payload naming `keyguard-cloudflare.yaml`.
+- **Version match.** Inside a qualifying run whose App deployment names
+  version V3, a deploy event by the script's CI token carrying V3 raises
+  nothing. One carrying V1, an earlier version with its own App `success`
+  deployment from an earlier qualifying run, alerts, as does a CI-token
+  event carrying no version id.
+- **Ledgered tokens.** A change by a ledgered user token naming that
+  script, after its `recordedAt` and before its expiry, posts a notice,
+  except on `tuturuuu-auth` and each key-plane script, where it alerts. A
+  token absent from the ledger, a ledgered token outside its scripts,
+  before its `recordedAt` or past its expiry, and an entry whose expiry is
+  more than 24 hours after its `recordedAt` each alert.
+- **Actor type and context.** Contexts `api`, `api_key`, `dash`, `oauth`,
+  `origin_ca_key`, an unknown context and a missing context each alert. An
+  `actor.type` of `delegated_service`, `cloudflare_admin` or `system`, with
+  context `api_token` and the CI token id inside a qualifying run, each
+  alerts, as do an unknown and a missing `actor.type`.
+- **Query.** The query carries the watched resource filter and excludes
+  `view`, and the same event seen by two overlapping runs posts once.
+- **Held events.** An upload event inside a key-plane job that is still
+  running is not consumed and does not advance the cursor, raises nothing
+  once the job's App deployment for that version reaches `success`, and
+  alerts when it has not 15 minutes after the event.
+- **Cursor.** A cursor with a bad MAC, one with no MAC, and one with a
+  valid MAC whose `runId` is not a run of `auth-audit-alert.yaml` each
+  alert, and that run reads only the 45-minute lookback. A write whose
+  stored version changed since the read fails its compare-and-swap, keeps
+  the stored value and alerts. Three events at one timestamp split by the
+  cap are each consumed once across two runs, and the cursor never passes a
+  timestamp with an unconsumed event. A capped run moves the cursor only to
+  its last complete event time and the next run reads on from it
+  inclusively. A cursor 21 minutes behind alerts as lagging, and an event
+  delivered 40 minutes late is still read.
+- **Failed runs.** An unreadable audit log, ledger, identity file, run, job
+  or deployment list, or cursor, and a failed cursor write, each alert as a
+  failed run.

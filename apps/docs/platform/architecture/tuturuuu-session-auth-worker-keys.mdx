@@ -1,8 +1,8 @@
 ---
 title: "Tuturuuu session auth Worker keys"
-description: "Slice 4 key publication for the first-party Tuturuuu session: the pinned key guard and its emergency list, the out-of-account observer, the binding inventory, the Cloudflare API budget, the publication census and the observation cache."
+description: "Slice 4 key publication for the first-party Tuturuuu session: the pinned key guard and its emergency list control record, the observer, the deployment provenance rules, the binding inventory, the Cloudflare API budget, the publication census and the observation cache."
 audience: developers
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-22"
 ---
 
 **Status: design, pending independent security review.** This page completes
@@ -15,24 +15,122 @@ Release-authority acceptances and APEX dependencies are collected on
 ## Key guard
 
 Slice 2a requires the emergency list to belong to a deploy identity other than
-the one that writes `TTR_TOKEN_SIGNING_KEYS`. Cloudflare's Workers edit
-permission covers every script in an account, so a second Worker in the
-platform account would share the signer's secret administration, and a deploy
-variable in the platform account could point the signer at another list.
+the one that writes `TTR_TOKEN_SIGNING_KEYS`. The guard runs in the platform
+account, where Cloudflare's product-level Workers permissions cover every
+script. The split therefore rests on script-scoped tokens, key-plane scripts
+that take changes only from their own CI workflow, a trust anchor pinned in
+reviewed source, and a control record written only through the security
+operators' Access-gated Worker. An identity with Worker-wide rights in the
+account, or a compromise of that workflow and its token, is the accepted
+residual stated below.
 
+- **Key-plane scripts.** Three dedicated scripts in the platform account,
+  each with a separate staging script, built from `apps/auth-keyguard` with
+  one Wrangler config per script. None has a `workers.dev` or preview URL,
+  and the observer alerts if a live one does.
+  - `tuturuuu-auth-keyguard`, the guard: serves the signed list on its pinned
+    hostname and holds `GuardState`.
+  - `tuturuuu-auth-keyguard-operator`, the keyguard operator Worker: the only
+    path by which a security operator changes the emergency list or clears a
+    halt.
+  - `tuturuuu-auth-observer`, the observer below.
 - **Script-scoped deploy tokens.** Cloudflare API tokens can be scoped to
   individual Worker scripts. The auth workflow's token is an editor on the
   `tuturuuu-auth` scripts only, and the gateway workflow's token is an editor
-  on `tuturuuu-gateway` only, with no role on `tuturuuu-auth`, so no
-  steady-state deploy identity can both change the gateway's mounts and the
-  auth Worker.
-- **Creating the script.** A per-Worker role cannot create a Worker or be
+  on `tuturuuu-gateway` only. `keyguard-cloudflare.yaml` deploys the
+  key-plane scripts, one job per script, with
+  `CLOUDFLARE_KEYGUARD_DEPLOY_TOKEN`, `CLOUDFLARE_KEYGUARD_OPERATOR_DEPLOY_TOKEN`
+  and `CLOUDFLARE_AUTH_OBSERVER_DEPLOY_TOKEN`, each an editor on its one
+  script. Each script has its own GitHub environment per stage:
+  `keyguard-guard-staging`, `keyguard-guard-production`,
+  `keyguard-operator-staging`, `keyguard-operator-production`,
+  `keyguard-observer-staging` and `keyguard-observer-production`. Each holds
+  only its script's deploy token and the App key below, so a job never sees
+  another script's token. Every keyguard environment allows deployments
+  from the `main` branch only, requires a security operator as reviewer,
+  refuses self-review, and has administrator bypass turned off.
+  `keyguard-cloudflare.yaml` triggers on `push` to `main` only.
+  No steady-state CI deploy identity spans `tuturuuu-auth` and the gateway,
+  or `tuturuuu-auth` and a key-plane script.
+- **CI-only key plane.** After its creation run, each key-plane script takes
+  every change, code, variable, secret and rollback, only from its own job in
+  `keyguard-cloudflare.yaml`, the rule `tuturuuu-auth` follows with
+  `auth-cloudflare.yaml`. The job builds the script, uploads the build
+  manifest (each module's name and SHA-256) as the run artifact
+  `keyguard-<script>-manifest`, uploads a version without traffic, records
+  the version id, script and commit in a GitHub deployment for that script's
+  environment with an `in_progress` status, deploys the version to 100% of
+  traffic in one step, and then sets the status to `success`. The deployment
+  and both statuses are written as the keyguard deployer App below, and each
+  status's `log_url` names the run and its attempt.
+  - **API fields.** The App creates each deployment with `auto_merge: false`,
+    `required_contexts: []`, the script's environment name and an explicit
+    `production_environment` (`true` for production, `false` for staging),
+    so GitHub neither merges a branch nor waits on status checks. It writes
+    every status with `auto_inactive: false`, so a new `success` never makes
+    GitHub mark the previous deployment `inactive`.
+  - **Verification.** The observer's [key-plane check](#observer) verifies
+    that record for every version with traffic. A retry or a rollback is a
+    new commit on `main`, such as a revert, never a re-run, a dispatch or a
+    redeploy of an earlier version.
+- **Keyguard deployer App.** The GitHub App `tuturuuu-keyguard-deployer`,
+  installed on this repository only with Deployments write and no other
+  write permission, is the only identity that writes key-plane deployment
+  records. Its private key `TTR_KEYGUARD_DEPLOYER_APP_PRIVATE_KEY` is an
+  environment secret of the keyguard environments only, and each job mints
+  an installation token from it after the environment's approval. No other
+  workflow or person uses the App. `apps/auth-keyguard/deploy-identities.json`
+  pins its App id and bot user id. A record created by
+  `github-actions[bot]` through `GITHUB_TOKEN`, or by any other actor, never
+  counts, whatever its payload says.
+- **Qualifying run.** A run of `keyguard-cloudflare.yaml` qualifies for a
+  key-plane script only when the GitHub Actions run API reports, for the run
+  id and attempt read from the App's status `log_url`: workflow path
+  `.github/workflows/keyguard-cloudflare.yaml`, `event` `push`,
+  `head_branch` `main`, `head_sha` equal to the deployment's commit, and
+  `run_attempt` 1, which is the attempt that uploaded the version; and the
+  jobs API reports that attempt's job for that script with its deploy step
+  completed. A `workflow_dispatch`, including one with ref `main`, a re-run,
+  a run on another branch, and a run that never reached the deploy step do
+  not qualify. The run id is never read from the deployment payload.
+- **User tokens.** A member may deploy a script other than `tuturuuu-auth`
+  and the key-plane scripts with a short-lived user API token minted with the
+  cf CLI. It is scoped to the scripts the deploy changes where Cloudflare
+  allows it, expires within 24 hours, and is entered in the credential ledger
+  with its token id, owner, scripts, permission groups, expiry and purpose
+  before its first use. After their creation runs, `tuturuuu-auth` and the
+  key-plane scripts take changes only from their CI jobs, so no user token
+  deploys them, and the audit alert treats any such use as positive. A user
+  token that needs a Worker-wide grant is minted only under a creation waiver
+  below, names that waiver in its ledger entry and expires no later than the
+  waiver.
+- **Credential ledger.** An append-only store in security-operator custody,
+  outside the platform Cloudflare account and outside this public repository,
+  because its entries name members. The store stamps each entry's
+  `recordedAt` with its own clock, and no writer supplies it. Security
+  operators append entries; the audit alert workflow has read-only access.
+  The audit alert raises a positive alert when a ledgered token's event comes
+  before its entry's `recordedAt` or after its expiry, and an entry whose
+  expiry is more than 24 hours after its `recordedAt` never counts. The
+  24-hour cap and the scopes are ledger fields: neither the observer nor the
+  audit alert can list a user token, so neither can verify a token's real
+  lifetime or scope.
+- **Global API keys.** No deploy, CI job or Worker uses a Global API key.
+  Each member's key is disabled where the account allows it, and otherwise
+  rolled and left unused. The audit alert reads `actor.context` `api_key` as
+  a Global API key and alerts on any watched change made with one.
+- **Creating a script.** A per-Worker role cannot create a Worker or be
   granted on one that does not exist yet; creation needs product-level
-  Workers Admin, which covers every Worker. The auth scripts are created under
-  a time-bounded release-authority waiver (id, scope, expiry) that grants that
+  Workers Admin, which covers every Worker. Each script is created under a
+  time-bounded release-authority waiver (id, scope, expiry) that grants that
   Admin to one creation run and is removed before any auth version receives
-  traffic. The same applies to any later new Worker. Each waiver is published
-  as a commit reachable from `main` with its id, scope and expiry; the
+  traffic. The creation run for `tuturuuu-auth`, or for any later new Worker
+  outside the key plane, may use the waiver's CI token or a ledgered user
+  token that names the waiver. A key-plane script's creation run may use
+  only its own `keyguard-cloudflare.yaml` job, in a qualifying run, with the
+  waiver's CI token; no user token creates a key-plane script. Each waiver
+  is published as a commit reachable from `main` with its id, scope and
+  expiry; the
   observer ignores any other waiver.
 - **No standing Worker-wide grant.** A grant is Worker-wide when it can
   upload, put a secret on or deploy any Worker beyond one script, that is,
@@ -51,10 +149,11 @@ variable in the platform account could point the signer at another list.
   policies with the policies of every user group it belongs to, and for each
   account token it takes all of its policies, before classifying. If the
   union of an identity's resources for any permission that can upload, put a
-  secret or deploy covers both a `tuturuuu-auth` script and
-  `tuturuuu-gateway`, the identity is Worker-wide, because it breaks the
-  disjoint deploy split. Read-only permissions never count, so the
-  observer's and the census's own read tokens are never Worker-wide.
+  secret or deploy covers a `tuturuuu-auth` script together with
+  `tuturuuu-gateway` or any key-plane script, the identity is Worker-wide,
+  because it breaks the disjoint deploy split. Read-only permissions never
+  count, so the observer's and the census's own read tokens are never
+  Worker-wide.
 - **Grant check.** Every 5 minutes the observer reads the account members
   (`roles[]`, and `policies[].permission_groups` with their
   `resource_groups`), the user groups' policies, and the account-owned API
@@ -62,26 +161,24 @@ variable in the platform account could point the signer at another list.
   `identityBlocked`, so identity minting stops until it clears. A run counts
   as a successful read only when every page of members, user groups and
   account tokens was read. A cap fails the run only when a page remains
-  unread; an unread page or an error is a failed read, which keeps the last `identityBlocked`, alerts and does not move the
-  success time. When the last successful read is older than 15 minutes it
-  sets `identityBlocked`. User-owned API tokens and Global API keys cannot be
-  listed, so Workers access through either is banned and the release
-  authority attests to it. Only the `Super Administrator - All Privileges`
-  role is exempt: it can edit every Worker and is never blocked, because that
-  would stop minting permanently, and it is a standing residual the release
-  authority accepts.
-- **Account.** `tuturuuu-auth-keyguard` runs in a separate Cloudflare account,
-  the guard account. Its only deploy identity has no access to the platform
-  account, and no platform identity has access to the guard account.
+  unread; an unread page or an error is a failed read, which keeps the last
+  `identityBlocked`, alerts and does not move the success time. When the last
+  successful read is older than 15 minutes it sets `identityBlocked`. User
+  API tokens and Global API keys cannot be listed through the account, so the
+  observer cannot classify them: the ledger and Global API key rules above
+  govern them, and the audit alert reports their use outside those rules.
+  Only the `Super Administrator - All Privileges` role is exempt: it can edit
+  every Worker and is never blocked, because that would stop minting
+  permanently, and it is a standing residual the release authority accepts.
 - **State.** One `GuardState` Durable Object per environment holds
   `{ listVersion, kids, mintHalt, gatewayVersions, identityBlocked }`.
   `gatewayVersions` is the set of gateway version ids the observer accepted
   below, kept as a sorted array, and `identityBlocked` marks the identity
   class unusable. Every change increments `listVersion` in the same
-  transaction: an operator arming or removing an emergency `kid` through the
-  guard account's own pipeline, the observer setting the halt, accepting or
-  dropping a gateway version, or changing `identityBlocked`. Only an operator clears a
-  halt.
+  transaction: a security operator arming or removing an emergency `kid` or
+  clearing a halt, the observer setting the halt, accepting or dropping a
+  gateway version, or changing `identityBlocked`. Only a security operator
+  clears a halt.
 - **Document.** `GET /<env>` returns `{ payload, keyId, sig }`. `payload` is
   the base64url of the canonical bytes (RFC 8785 JSON) of
   `{ env, kids, listVersion, mintHalt, gatewayVersions, identityBlocked, issuedAtMs }`, and `sig` is Ed25519
@@ -89,7 +186,99 @@ variable in the platform account could point the signer at another list.
   stamps `issuedAtMs` at response time and signs every response afresh, so a
   successful fetch always yields a fresh document and a halt the guard is
   still serving never lapses. Every response carries
-  `Cache-Control: no-store`.
+  `Cache-Control: no-store`. The guard serves no other public path.
+
+### The emergency list control record
+
+The emergency list and the halt live only in `GuardState`, never in KV, a
+variable or a secret, which any editor of a binding script could attach or
+change. The guard accepts writes only through two `WorkerEntrypoint` classes
+with closed method sets:
+
+| Entry point | Bound by | Caller key | Methods |
+| --- | --- | --- | --- |
+| `OperatorEntry` | `tuturuuu-auth-keyguard-operator` only | `TTR_KEYGUARD_ENTRY_OPERATOR_KEY` | `armKid`, `removeKid`, `clearHalt`, `readState` |
+| `ObserverEntry` | `tuturuuu-auth-observer` only | `TTR_KEYGUARD_ENTRY_OBSERVER_KEY` | `setHalt`, `acceptGatewayVersion`, `dropGatewayVersion`, `setIdentityBlocked` |
+
+- **Keys checked inside the object.** Any Worker in the account can bind a
+  named entry point or another script's Durable Object class, so neither
+  binding proves its caller. Each entry passes the presented key into
+  `GuardState`, which compares it in constant time with the guard's own
+  secret, current value and at most one previous, before reading any other
+  argument. A foreign service or Durable Object binding without the key gets
+  `unauthorized` and changes nothing. Each key is 32 random bytes per
+  environment, rotated in the auth Worker's caller-key order. The observer's
+  key reaches no method that touches `kids` or clears a halt.
+- **Security operators.** Two layers gate the operator Worker. The first is
+  Cloudflare Access: the operator Access application, whose policy admits
+  only the security operators group, covers every hostname of the Worker,
+  and Worker-level Access stays enabled so a `workers.dev` or preview URL
+  would be gated too, though none may exist. The second is inside the Worker
+  and the guard: the operator Worker verifies the Access JWT for that
+  application's audience on every request, and `GuardState` accepts its
+  calls only with `TTR_KEYGUARD_ENTRY_OPERATOR_KEY`, held by the guard and
+  the operator Worker only, so another Worker's binding to `OperatorEntry`
+  changes nothing. Each write records the operator's Access identity and a
+  reason in an append-only log in `GuardState`.
+- **Slice 2a split.** The signing-key writer is the auth workflow's token, an
+  editor on `tuturuuu-auth` only. The emergency list writer is the
+  security-operator role, through the Access-gated operator Worker and its
+  caller key. The guard and the operator Worker change only through their
+  `keyguard-cloudflare.yaml` jobs, whose environments need a security
+  operator's approval and whose tokens have no role on `tuturuuu-auth`.
+  Neither writer has a role on the other's scripts, and the grant check
+  blocks identity minting while a listed identity spans both. Any other
+  write to the list needs one of the residuals below.
+
+### Accepted residual
+
+Because the guard runs in the platform account, a key-plane write by any path
+other than the operator Worker needs one of two things:
+
+- an identity with Worker-wide edit rights there: a
+  `Super Administrator - All Privileges` member, an identity under an open
+  creation waiver, or a Worker-wide user token; or
+- a compromise of `keyguard-cloudflare.yaml` and the deploy token of the
+  script it targets, such as a rewritten workflow on `main`, an approved
+  deployment of a malicious commit on `main`, or a stolen token.
+
+Either could redeploy `tuturuuu-auth-keyguard` with code that signs any list
+with the key it already holds, arming an emergency `kid`, clearing a halt,
+accepting a gateway version or clearing `identityBlocked`, or redeploy or
+silence the observer. A Worker-wide identity could also change
+`tuturuuu-auth` directly. The pin does not stop this, because the redeployed
+guard still holds the pinned key. The compensations that keep the guard in
+this account:
+
+- dedicated scripts for the guard, its operator Worker and the observer, each
+  deployed only from its own `keyguard-cloudflare.yaml` job with its own
+  script-scoped token, in its own per-stage keyguard environment limited to
+  `main` that needs a security operator's approval;
+- deployment records written only by the keyguard deployer App and tied to
+  a qualifying run through GitHub's own run API, with only the version on
+  the latest App `success` deployment accepted, so an earlier attested
+  version restored later is reported;
+- the emergency list in a control record written only through the
+  Access-gated operator Worker;
+- the observer's key-plane check, which alerts on any key-plane version with
+  traffic that lacks a matching GitHub deployment, so a CI token used outside
+  its workflow is reported;
+- the [audit alert](#audit-alert), which runs outside the observer's code and
+  outside Cloudflare and raises a positive alert on any change to a
+  key-plane script by an actor other than its CI token inside a qualifying
+  run of its job, which also covers a redeployed observer hiding its own
+  miss;
+- the credential ledger and the grant check, which leave the
+  `Super Administrator - All Privileges` role and open waivers as the only
+  standing Worker-wide grants the observer accepts.
+
+Detection follows the change. The response to an alert is to rotate the
+guard's signing key through a pin change; rotate
+`TTR_KEYGUARD_DEPLOYER_APP_PRIVATE_KEY` and the three key-plane deploy tokens
+`CLOUDFLARE_KEYGUARD_DEPLOY_TOKEN`,
+`CLOUDFLARE_KEYGUARD_OPERATOR_DEPLOY_TOKEN` and
+`CLOUDFLARE_AUTH_OBSERVER_DEPLOY_TOKEN`, revoking the old values; redeploy
+every watched script from `main`; and deny affected keys at the verifiers.
 
 ### The pin
 
@@ -98,7 +287,8 @@ variable in the platform account could point the signer at another list.
   `{ current, previous? }`, each with its `keyId`. The signer reads no guard
   URL or key from its environment, so changing the pin needs a reviewed commit
   on `main` and a CI deploy, which the observer checks.
-- **Rotation.** The guard account creates key K2. A reviewed auth change sets
+- **Rotation.** A security operator puts key K2 on `tuturuuu-auth-keyguard`
+  as its next signing key through `keyguard-cloudflare.yaml`. A reviewed auth change sets
   the pin to `{ current: K2, previous: K1 }`, and CI moves that auth version
   to 100% of traffic. Only then does the guard sign with K2. When the guard
   has signed with K2 for 300 seconds and no auth version without K2 carries
@@ -146,8 +336,8 @@ release-authority list.
 
 - **`kids`.** The held list's `kids` is the value the host passes to slice 2a
   as `TTR_TOKEN_EMERGENCY_KIDS`: at most one `kid` per class that may skip the
-  7-day wait, with slice 2a's rules. No platform secret or variable carries
-  it. An empty list removes only that skip, so a guard outage fails safe.
+  7-day wait, with slice 2a's rules. No auth Worker secret or variable
+  carries it. An empty list removes only that skip, so a guard outage fails safe.
 - **`mintHalt`.** While the held list carries `mintHalt: true`, `mintToken`
   refuses every class, identity included, and resolution answers
   `unavailable`, which the gateway turns into its retry result (see
@@ -161,15 +351,21 @@ release-authority list.
 
 ## Observer
 
-The observer is the guard Worker's scheduled handler, in the guard account, so
-no platform identity can change or silence it.
+The observer is `tuturuuu-auth-observer`, a dedicated cron Worker in the
+platform account with its own read tokens and its own script-scoped deploy
+token. It writes `GuardState` only through `ObserverEntry`. An identity with
+Worker-wide rights could change or silence it, so the
+[audit alert](#audit-alert) runs outside its code path.
 
 - **Credentials.** `TTR_AUTH_OBSERVER_CF_READ_TOKEN`, a Cloudflare API token
-  with Workers Scripts Read, Account Settings Read and Account API Tokens Read
-  on the platform account only (never Account Settings Write or SCIM
-  Provisioning), created for a dedicated service user; and `TTR_AUTH_OBSERVER_GITHUB_TOKEN`, read-only
-  access to repository contents and deployments. Both are guard-account
-  secrets.
+  with Workers Scripts Read, Account Settings Read, Account API Tokens Read
+  and Access: Apps and Policies Read on the platform account only (never
+  Account Settings Write or SCIM
+  Provisioning), created for a dedicated service user;
+  `TTR_AUTH_OBSERVER_GITHUB_TOKEN`, read-only access to repository
+  contents, deployments, Actions runs and artifacts; and
+  `TTR_KEYGUARD_ENTRY_OBSERVER_KEY`. All three are
+  observer secrets, and no other Worker holds the read tokens.
 - **CI-only production deploys.** `auth-cloudflare.yaml` is the only path that
   changes production or staging `tuturuuu-auth`. It uploads a version without
   traffic (`wrangler versions upload`, or `wrangler versions secret put` for a
@@ -188,7 +384,7 @@ no platform identity can change or silence it.
   outside CI fails the first condition. A positive mismatch sets `mintHalt`
   for that environment and alerts. An unreachable GitHub or Cloudflare API, a
   `429`, or an incomplete check alerts and leaves `mintHalt` unchanged, so an
-  expired read token cannot turn into a halt only a guard operator can end.
+  expired read token cannot turn into a halt only a security operator can end.
   The check also compares the auth binding's target script id and full
   binding definition, not the binding name alone.
 - **Gateway check, every 5 minutes.** For each environment's
@@ -204,11 +400,61 @@ no platform identity can change or silence it.
   fails the identity class at the next census tick, and a mismatched `AUTH`
   binding sets `mintHalt`. A GitHub or API error, or a run that reaches its
   cap with a page unread, alerts and accepts nothing new and removes nothing, and never fails the class
-  for a version already accepted; only a positive miss fails it. Both checks read GitHub
-  with `TTR_AUTH_OBSERVER_GITHUB_TOKEN`.
+  for a version already accepted; only a positive miss fails it.
+- **Key-plane check, every 5 minutes.** For each environment's
+  `tuturuuu-auth-keyguard`, `tuturuuu-auth-keyguard-operator` and
+  `tuturuuu-auth-observer`, every version with traffic must be the version
+  on the latest App `success` deployment for that script's environment. A
+  deployment is an App deployment when the deployment has the keyguard
+  deployer App's bot user as `creator` and the pinned App id in
+  `performed_via_github_app`; `github-actions[bot]` never counts. Its
+  status is its latest status with that same creator and App id. It is a
+  `success` deployment when that status is `success` and:
+  - its payload names `keyguard-cloudflare.yaml` and that exact version id,
+    and its commit is reachable from `main`;
+  - the run id and attempt come from that status's `log_url` and name a
+    [qualifying run](#key-guard);
+  - the version's variables, bindings and secret names equal that script's
+    committed Wrangler config at that commit; and
+  - the SHA-256 of each module of the version's content, read from the
+    Cloudflare API, equals the `keyguard-<script>-manifest` artifact of that
+    run, with the same module set. The result is kept by version id in
+    `ObserverCache`, since a version is immutable.
+
+  The latest `success` deployment is the most recently created one; an
+  earlier one stays latest until a newer deployment reaches `success`. So a
+  version with its own earlier attested record, restored later, alerts.
+  A status that GitHub generates, such as an `inactive` on a deployment
+  whose version has no traffic, has no App creator and is ignored. The check
+  reads only the App's latest status, never a deployment's full status
+  history, because GitHub drops status records after 90 days; a verified
+  `success` is kept by deployment id in `ObserverCache`, so a dropped record
+  does not undo it. A version on an App deployment newer than the latest
+  `success`, whose status is `in_progress` while its run attempt is still
+  running, is pending, and alerts when it has not reached `success`
+  15 minutes after its creation. No key-plane script may have a
+  `workers.dev` or preview URL, the guard serves only its pinned hostname,
+  and the operator Access application must cover every hostname of the
+  operator Worker. A miss is a positive alert to the security on-call
+  channel. A deploy made with a key-plane CI token outside a qualifying run
+  leaves a version with no accepted record, so it alerts here although the
+  audit alert may see an expected token. The check sets no halt,
+  since a redeployed guard would not serve it; the response is the
+  containment under the accepted residual. An API or GitHub error, or a run
+  capped with a page unread, alerts as a failed read. All three provenance
+  checks read GitHub with `TTR_AUTH_OBSERVER_GITHUB_TOKEN`.
 - **Inventory check, every 15 minutes.** See the binding inventory below.
 - **Bounded.** Each run stays inside its call cap below, writes only
-  `GuardState` and alerts, and never retries within a run.
+  `GuardState` through `ObserverEntry`, its own `ObserverCache` Durable
+  Object and alerts, and never retries within a run.
+
+## Audit alert
+
+The audit alert is the scheduled GitHub Actions workflow
+`auth-audit-alert.yaml`, which reads Cloudflare Audit Logs v2 for the watched
+scripts outside the observer's code and outside Cloudflare. Its source,
+MACed cursor, expected actors and residual are on
+[auth Worker audit alert](/platform/architecture/tuturuuu-session-auth-worker-audit).
 
 ## Binding inventory
 
@@ -216,18 +462,23 @@ no platform identity can change or silence it.
 allowed to bind `tuturuuu-auth`. `api-ops` is the only script listed twice,
 for `WebEntry` and `AdminEntry`; no other script binds `AdminEntry`. A CI check fails when a
 committed Wrangler config binds `tuturuuu-auth` outside it, or when it
-disagrees with the entry point table.
+disagrees with the entry point table. `apps/auth-keyguard/binding-inventory.json`
+lists the pairs allowed to bind `tuturuuu-auth-keyguard`: only
+`(tuturuuu-auth-keyguard-operator, OperatorEntry)` and
+`(tuturuuu-auth-observer, ObserverEntry)`.
 
 - **Live diff.** The observer's inventory check lists every script in the
   platform account, reads the bindings of each version with traffic, and diffs
-  bindings to `tuturuuu-auth` against `binding-inventory.json` on `main`. It
-  keeps each version's bindings by version id in `GuardState`, since a version
-  is immutable.
+  bindings to `tuturuuu-auth` and to `tuturuuu-auth-keyguard` against both
+  inventory files on `main`. Any Durable Object binding to a `GuardState`
+  class from another script is a finding. It keeps each version's bindings by
+  version id in `ObserverCache`, since a version is immutable.
 - **Incomplete runs.** When the call cap is reached while another API page
   exists or a script is unread, the run fails as `incomplete` and alerts. An
   incomplete run never counts as clean.
 - **Finding.** An alert means rotate that entry's caller key now, by the
-  rotation procedure on the auth Worker page.
+  rotation procedure on the auth Worker page; for the guard, its
+  `TTR_KEYGUARD_ENTRY_*` key in the same order.
 - **Prevention and detection.** The caller key is the preventive control: a
   binding without the key gets `unauthorized` and causes no downstream call.
   The inventory diff is detection only.
@@ -237,9 +488,9 @@ disagrees with the entry point table.
 
 ## Cloudflare API budget
 
-The census and the observer read the Cloudflare API, which allows 1,200
-requests per 5 minutes per user. Each token belongs to its own service user,
-apart from the CI deploy users, and each caller has a hard cap:
+The census, the observer and the audit alert read the Cloudflare API, which
+allows 1,200 requests per 5 minutes per user. Each read token belongs to its
+own service user, and each caller has a hard cap:
 
 | Caller | Cap | Worst case per 5 minutes |
 | --- | --- | --- |
@@ -247,9 +498,11 @@ apart from the CI deploy users, and each caller has a hard cap:
 | Observer auth check, every 5 minutes | 20 calls per run | 20 |
 | Observer inventory check, every 15 minutes | 300 calls per run | 300 |
 | Observer gateway check, every 5 minutes | 20 calls per run | 20 |
+| Observer key-plane check, every 5 minutes | 40 calls per run | 40 |
 | Observer grant check (members, user groups, account tokens), every 5 minutes | 30 calls per run | 30 |
+| Audit alert, every 5 minutes | 10 calls per run | 10 |
 
-The sum, 570, stays under 1,200 even if every token shared one user. A census
+The sum, 620, stays under 1,200 even if every token shared one user. A census
 tick that reaches its cap completes the classes it finished; the others keep
 their last good census. On a `429` the caller stops API reads until
 `Retry-After` has passed, alerts, and changes no stored result: every class

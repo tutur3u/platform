@@ -2,7 +2,7 @@
 title: "Tuturuuu session auth Worker controls"
 description: "Slice 4 controls for the first-party Tuturuuu session: revocation checks, stop-fence modes, operation accounting and cost bounds, first-adapter acceptance, gate closure, tests and rollout."
 audience: developers
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-22"
 ---
 
 **Status: design, pending independent security review.** This page completes
@@ -86,10 +86,10 @@ honors `Cache-Control`. Record every timestamp in the acceptance receipt.
 5. Assert from the `token.issued` audit stream that no token with `kid` A is
    minted after the signer's new version serves, and that identity minting
    resumes with C once the census holds C, with the gap recorded.
-6. Repeat with no `next` key: arm emergency key B through
-   the key guard's `GuardState` and assert that B signs only after every
-   registered deployment and the public JWKS report it, skipping only the
-   7 days, and that the identity outage lasts at most one census refresh plus
+6. Repeat with no `next` key: a security operator arms emergency key B
+   through the keyguard operator Worker's `OperatorEntry`; assert that B
+   signs only after every registered deployment and the public JWKS report
+   it, skipping only the 7 days, and that the identity outage lasts at most one census refresh plus
    configuration convergence.
 7. Restart the auth Worker (deploy the same code) between steps 2 and 5 and
    assert that A stays denied and no cold isolate mints with A.
@@ -302,8 +302,9 @@ same way.
 | `SessionCredentials` purge | Expired rows only | One alarm per expiry | No alarm when empty |
 | `SessionControl` resume | 100 entries per shard page, 8 pokes in flight | One poke per entry | Entry deleted |
 | Census cron | 1 fence read, 1 identity registry read, 1 `CensusEntry` call, one report per published verifier, at most 40 Cloudflare API calls (deployment reads plus one version read per new version), 1 key guard fetch, 1 JWKS fetch, 2 s timeouts, no retry; 1 `KeyObservations` write per completed class and 1 KV write | One minute | Stale after 300 s, minting stops; a `429` keeps every last good census |
-| Observer (guard account) | Auth check at most 20 API calls; gateway check at most 20; grant check at most 30; inventory check at most 300 | Every 5 minutes, inventory every 15 | Halt, block or alert per finding; a run that reaches its cap with a page or, for the inventory check, a script still unread is `incomplete` or a failed read, and one that reached its cap with nothing left unread is a success |
+| Observer (`tuturuuu-auth-observer`) | Auth check at most 20 API calls; gateway check at most 20; key-plane check at most 40; grant check at most 30; inventory check at most 300 | Every 5 minutes, inventory every 15 | Halt, block or alert per finding; a run that reaches its cap with a page or, for the inventory check, a script still unread is `incomplete` or a failed read, and one that reached its cap with nothing left unread is a success |
 | Fence purge cron | 1 fence read, 1 Hyperdrive call deleting at most 1,000 rows, no retry | Hourly | Skipped while parked |
+| Audit alert (`auth-audit-alert.yaml`, outside Cloudflare) | 1 Audit Logs v2 window from the earlier of its validated cursor, inclusive, and 45 minutes back, at most 10 API calls, 1 ledger read, 1 compare-and-swap cursor write, no retry | Every 5 minutes | Alert or notice per event, keyed by event id; a failed or capped run alerts and the next run resumes from the cursor; a cursor with a bad or missing MAC, or not written by this workflow, alerts and is ignored; a cursor more than 20 minutes behind alerts; a missing run alerts after 30 minutes |
 | Key guard fetch | 1 HTTPS request in the census tick, `no-store`, 2 s timeout, no retry | Once per minute per environment | Held list kept until 300 s old; then `kids` read empty and `mintHalt` false, while `gatewayVersions` and `identityBlocked` keep their values |
 | `SessionBudget` | One flush per isolate per minute; one reset alarm a day | One park and one clear per category per day | Flush dropped on failure |
 | Audit consumer | Batches of at most 100 | 5 retries | Dead-letter queue |
@@ -426,7 +427,13 @@ acceptance respects Mail's live constraints:
   `identityBlocked` keep their values. A re-issued equal document with a new
   `issuedAtMs` refreshes the held list and restores a served `mintHalt`.
   `mintHalt` refuses every class.
-  The guard's response carries `Cache-Control: no-store`.
+  The guard's response carries `Cache-Control: no-store`. `OperatorEntry` and
+  `ObserverEntry` calls with a wrong or absent caller key, and a
+  `GuardState` call through a foreign Durable Object binding without the key,
+  return `unauthorized` and change nothing; no `ObserverEntry` method changes
+  `kids` or clears a halt; an operator Worker request without a valid Access
+  JWT for its audience writes nothing; each operator write appends the
+  operator's identity and reason and increments `listVersion`.
 - **Observer tests.** Against a fake Cloudflare API and GitHub: a version
   with traffic and no recorded deployment, a recorded version from a commit
   not on `main`, a variable, binding or secret name differing from the
@@ -445,7 +452,7 @@ acceptance respects Mail's live constraints:
   group, while `Administrator Read Only` does not, a
   user-group grant, an account token policy, and an identity whose direct and
   group policies together give deploy rights on both `tuturuuu-auth` and
-  `tuturuuu-gateway`, while `Super Administrator - All Privileges` does not
+  `tuturuuu-gateway`, or on `tuturuuu-auth` and a key-plane script, while `Super Administrator - All Privileges` does not
   and an account-wide read token does not; an account token is classified on
   the union of all its policies, and upload or secret-put rights count the
   same as deploy; a gateway check that hits its cap with a page unread
@@ -454,6 +461,38 @@ acceptance respects Mail's live constraints:
   does not move the success time; an id with no traffic is dropped from
   `gatewayVersions`; two
   gateway versions with traffic and different mount maps fail the class.
+  An unlisted binding to `tuturuuu-auth-keyguard`, or a Durable Object
+  binding to `GuardState` from another script, is an inventory finding.
+  For each key-plane script, a version with traffic and no deployment
+  record, one recorded by another workflow, actor, script or version id, one
+  from a commit not on `main`, a config differing from the committed one, a
+  `workers.dev` or preview URL, and an operator hostname outside the Access
+  application each alert and set no halt. So does each of these key-plane
+  records: one from a re-run (`run_attempt` 2); one from a
+  `workflow_dispatch` of `main`; one from a `workflow_dispatch` of another
+  branch; one whose payload names `keyguard-cloudflare.yaml` and the version
+  id but whose creator is `github-actions[bot]`; one whose latest status is
+  not `success`, or whose run id appears only in the payload; one whose
+  status `log_url` names a run whose `head_sha` differs from the deployment
+  commit or whose job never reached its deploy step; and a version whose
+  module hashes differ from that run's `keyguard-<script>-manifest`. A
+  record still `in_progress` while its run runs is pending, and alerts after
+  15 minutes. A record from the keyguard deployer App for a qualifying run,
+  with matching config and module hashes, raises nothing. Restoring V1,
+  a version with its own earlier App `success` record, alerts while V2's
+  later record is the latest `success`, and also during a later honest job
+  whose V3 record is still `in_progress`. Until V3 reaches `success`, V2
+  stays the accepted version. A GitHub-generated `inactive` status on an
+  App deployment is ignored, and a `success` deployment whose earlier
+  `in_progress` status GitHub no longer returns is still accepted.
+- **Key-plane deployment fields.** Against a fake GitHub API, each App
+  deployment is created with `auto_merge: false`, `required_contexts: []`
+  and an explicit `production_environment`, and each App status carries
+  `auto_inactive: false`. A CI check fails when a `keyguard-cloudflare.yaml`
+  job names an environment other than its script's own per-stage
+  environment, or reads another script's deploy token.
+- **Audit alert tests.** Listed on
+  [auth Worker audit alert](/platform/architecture/tuturuuu-session-auth-worker-audit#tests).
 - **Issuer tests.** The AI token row keeps every payload field and the
   device's `resolvedAtMs`, the required-MFA gate refuses on mint and on
   validate, and tombstone and watermark lifetimes equal the `issuer.ts`
@@ -489,7 +528,14 @@ acceptance respects Mail's live constraints:
   complete run, an observer drill in which a staging auth version deployed
   by a dedicated drill job without a GitHub deployment record sets `mintHalt`
   within 5 minutes and an operator clears it, a `GatewayEntry` call from an
-  unlisted Worker without the key refused, and, once the release authority
+  unlisted Worker without the key refused, an audit alert drill in which a
+  staging key-plane script is edited with a token absent from the ledger,
+  the Audit Logs v2 event shows context `api_token` and that token's
+  `actor.token_id` within 10 minutes, and the security on-call channel
+  receives the alert within 10 minutes, a key-plane drill in which a staging
+  key-plane version deployed outside `keyguard-cloudflare.yaml` alerts from
+  the observer within 5 minutes, and,
+  once the release authority
   sets a staging reader to `shadow`, a soak with mismatches logged by id.
 
 ## Rollout
@@ -497,8 +543,9 @@ acceptance respects Mail's live constraints:
 This slice adds no auth flag and flips none. `TTR_SESSION_WRITER` stays
 `supabase`, every `TTR_SESSION_READER_<APP>` stays `supabase`, the fence starts
 at `running` on staging, and production stays held in `tuturuuu.ci.ts`.
-Provisioning the secrets, creating the key guard account, attaching the
-operator Worker, lifting the hold and
+Provisioning the secrets, creating the key-plane scripts under a creation
+waiver, minting their script-scoped tokens, enabling the audit alert,
+attaching the operator Workers, lifting the hold and
 any flag change are the release authority's decisions, each with its own
 rollback.
 
@@ -507,20 +554,22 @@ rollback.
 The release authority records each item with its scope and a review date
 before production leaves the hold. Until then the dependent gate stays open.
 
-Recorded decisions, scoped to the slice 4 auth Worker design at revision
-`53e354ede4`, review date 2026-12-21. A later change to these pages needs its
-own decision for the items it touches:
+Recorded decisions, scoped to the slice 4 auth Worker design: the auth
+Worker, keys and controls pages as of the commit that records these
+decisions, review date 2026-12-21. A later change to these pages needs its own
+decision for the items it touches:
 
 | Item | Decision |
 | --- | --- |
 | 1 G5 bounds | Accepted |
 | 2 `SessionControl` fuse | Accepted |
 | 3 Key guard outage | Accepted |
-| 4 Separate Cloudflare account | Open, with the owner |
+| 4 Key guard account | Accepted as modified: existing account with in-account compensations |
 | 5 Procedures | Accepted |
 | 6 AI validation cost | Accepted |
 | 7 Budget exhaustion | Accepted |
-| 8 Script-scoped deploy tokens and the token attestation | Open, with the owner |
+| 8 Script-scoped deploy tokens and the token policy | Accepted as modified: short-lived script-scoped user tokens allowed, recorded in the ledger |
+| 9 Global API keys | Banned: never a deploy credential; disabled where the account allows, otherwise rolled and unused; the audit alert reports a watched change made with one. Pending release-authority confirmation |
 
 The scoped gateway deploy token is in the Web release lane's custody.
 
@@ -535,17 +584,36 @@ The scoped gateway deploy token is in the Web release lane's custody.
    stops during a guard outage only when a gateway version not yet accepted
    has traffic.
    A halt the guard is still serving stops every token class and turns every
-   mounted request into the retry result until a guard operator clears it.
+   mounted request into the retry result until a security operator clears
+   it.
    Only a positive mismatch sets a halt; API errors and incomplete checks only
    alert.
-4. **Separate Cloudflare account.** The key guard and observer run in a guard
-   account that no platform identity can administer, with its own deploy
-   pipeline and operators staffed to clear a real halt.
+4. **Key guard in the platform account.** The key guard, its operator Worker
+   and the observer run in the existing platform account, and the weaker
+   isolation is accepted: an identity with Worker-wide edit rights there, or
+   whoever compromises `keyguard-cloudflare.yaml` and a key-plane deploy
+   token, could redeploy the guard or the observer. The compensations are
+   dedicated scripts for each that take changes only from their own
+   `keyguard-cloudflare.yaml` jobs, a script-scoped deploy token per script
+   in its own per-stage keyguard environment limited to `main` that needs a security
+   operator's approval, deployment records written only by the
+   `tuturuuu-keyguard-deployer` GitHub App and tied to a qualifying run, the
+   observer's provenance and module-hash check on all three scripts, the audit alert treating any other actor on
+   them as positive, and the emergency list in a `GuardState` control record
+   written only through the Access-gated operator Worker, so only security
+   operators write it unless one of those two residuals occurs. Security
+   operators are staffed to clear a real halt.
 5. **Procedures.** Caller-key rotation in the order on the auth Worker page,
-   and CI-only changes to `tuturuuu-auth`, including secrets and rollbacks. A
-   deployment record, for auth or the gateway, counts only when its
-   environment, creator, workflow and version id all match and its commit is
-   reachable from `main`.
+   and CI-only changes to `tuturuuu-auth` and the three key-plane scripts,
+   including secrets and rollbacks. A deployment record, for auth, a
+   key-plane script or the gateway, counts only when its environment,
+   creator, workflow and version id all match and its commit is reachable
+   from `main`; a key-plane record counts only when the keyguard deployer
+   App created it, its latest App status is `success`, that status names a
+   qualifying run, a `push` to `main` on attempt 1 whose `head_sha` is the
+   deployment commit, and it is the latest App `success` deployment for that
+   environment and script. A key-plane retry or rollback is a new commit on
+   `main`.
 6. **AI validation cost.** One `SessionCredentials` call, plus one Hyperdrive
    query, on every AI token validation.
 7. **Budget exhaustion never stops sign-in.** A budget park parks only that
@@ -555,13 +623,27 @@ The scoped gateway deploy token is in the Web release lane's custody.
    tokens are scoped to their own scripts and share no role. Creating a new
    Worker uses a time-bounded product-level Admin waiver with id, scope and
    expiry, published as a commit on `main` and removed before any auth version
-   has traffic. No standing Worker-wide grant remains, checked by the
-   observer with Account Settings Read and Account API Tokens Read. Workers
-   access through user-owned tokens is banned, which the release authority
-   attests, together with Global API keys, and the
+   has traffic. No standing Worker-wide grant remains on members, user
+   groups or account tokens, checked by the observer with Account Settings
+   Read and Account API Tokens Read, and the
    `Super Administrator - All Privileges` role is the only accepted standing
-   residual. Waiving this beyond a creation run waives slice 2a's
-   registry split and needs its own id, scope and expiry.
+   residual. Short-lived user tokens minted with the cf CLI may deploy
+   scripts other than `tuturuuu-auth` and the key-plane scripts:
+   script-scoped where Cloudflare allows it, expiring within 24 hours, and
+   each entered in the append-only credential ledger, whose store stamps
+   `recordedAt`, before use. The observer cannot list user tokens, so a
+   Worker-wide user token is invisible to it and is detected only by the
+   audit alert after use, and neither can verify a token's real lifetime or
+   scope. The alert treats as positive a change to a watched script by a
+   token outside the ledger, used before its `recordedAt` or past its expiry,
+   or, on `tuturuuu-auth`, by anything other than its CI token inside a run
+   of the auth job on `main`, and on a key-plane script by anything other
+   than that script's CI token inside a qualifying run of its job. Waiving the split
+   beyond a creation run waives slice 2a's registry split and needs its own
+   id, scope and expiry.
+9. **Global API keys.** No deploy, CI job or Worker uses one, and each
+   member's key is disabled where the account allows it and otherwise rolled
+   and left unused. The audit alert reports any watched change made with one.
 
 ### APEX dependencies
 

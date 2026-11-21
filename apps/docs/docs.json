@@ -384,6 +384,7 @@
                   "platform/architecture/tuturuuu-session-auth-worker",
                   "platform/architecture/tuturuuu-session-auth-worker-controls",
                   "platform/architecture/tuturuuu-session-auth-worker-keys",
+                  "platform/architecture/tuturuuu-session-auth-worker-audit",
                   "platform/architecture/satellite-apps",
                   "platform/architecture/one-origin-super-app",
                   "platform/architecture/one-origin-security",

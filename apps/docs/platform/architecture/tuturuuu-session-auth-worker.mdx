@@ -2,7 +2,7 @@
 title: "Tuturuuu session auth Worker"
 description: "Slice 4 of the first-party Tuturuuu session: the auth Worker, its Durable Objects, bindings and entry points, and how it hosts the pure token signer, step-up proof and device state modules."
 audience: developers
-updatedAt: "2026-11-21"
+updatedAt: "2026-11-22"
 ---
 
 **Status: design, pending independent security review.** Slice 4 hosts
@@ -22,7 +22,7 @@ and staging acceptance:
 
 | Sub-slice | Contents | Production effect |
 | --- | --- | --- |
-| 4a Token service | `apps/auth` Worker, entry-point caller keys, `SessionControl`, `SessionBudget`, `KeyObservations`, census collector, the key guard pin, the key guard and its observer, the binding inventory, public JWKS, the reducer's per-device user ceiling | None. Deployment held |
+| 4a Token service | `apps/auth` Worker, entry-point caller keys, `SessionControl`, `SessionBudget`, `KeyObservations`, census collector, the key guard pin, the key guard with its operator Worker and observer, the audit alert, the binding inventory, public JWKS, the reducer's per-device user ceiling | None. Deployment held |
 | 4b Session objects | `BrowserDevice`, `UserSessions`, every device port, the outbox drain, the epoch store and fan-out, the device index | None. Deployment held |
 | 4c Issuer contract | The AI temporary token store and `private.cross_app_tokens` on the session-bound issuer contract | None. The existing session path keeps today's behavior |
 | 4d First adapter | The gateway's `AUTH` binding and the first runtime adapter, with every reader at `supabase` | None until the release authority changes a reader flag |
@@ -46,9 +46,11 @@ cron triggers ─────── census, fence purge ────────
                                                                      ├─▶ ParkedWork DO (16 shards)
                                                                      ├─▶ SESSION_DB (Hyperdrive, caching off)
                                                                      ├─▶ SESSION_EVENTS Queue ─▶ private.session_events
-                                                                     └─▶ key guard Worker (guard account, HTTPS, read only)
+                                                                     └─▶ tuturuuu-auth-keyguard (HTTPS, read only)
 
-guard account: key guard ── GuardState DO ◀── observer cron ── Cloudflare API (read) and GitHub (read)
+tuturuuu-auth-keyguard ── GuardState DO ◀── ObserverEntry ◀── tuturuuu-auth-observer cron ── Cloudflare API and GitHub (read)
+                                        ◀── OperatorEntry ◀── tuturuuu-auth-keyguard-operator ◀── Access: security operators
+auth-audit-alert.yaml (GitHub Actions) ── Cloudflare audit log (read) ──▶ security on-call channel
 ```
 
 ### The `auth` Worker
@@ -111,7 +113,7 @@ guard account: key guard ── GuardState DO ◀── observer cron ── Clo
      value (an accounting point with outcome `previous_key`) has been zero
      for one hour.
 - **Binding inventory.** `apps/auth/binding-inventory.json`, a CI check, and
-  a live diff run from the guard account; see
+  a live diff run by the observer; see
   [auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys#binding-inventory).
   The caller key is the preventive control. The diff is detection only, and
   a finding means rotate that entry's key now.
@@ -163,8 +165,13 @@ Secrets, by name only. None is provisioned by this slice.
 | `TTR_TOKEN_OBSERVATION_MAC_KEY` | Auth Worker | The MAC on the observation snapshot in KV |
 | `TTR_SESSION_ENTRY_GATEWAY_KEY`, `TTR_SESSION_ENTRY_WEB_KEY`, `TTR_SESSION_ENTRY_ADMIN_KEY`, `TTR_SESSION_ENTRY_RELYING_KEY`, `TTR_SESSION_ENTRY_CONTROL_KEY` | Auth Worker, plus each entry's callers for that entry's key only | Caller keys, current value plus at most one previous |
 | `TTR_SESSION_CENSUS_READ_TOKEN` | Auth Worker | A Cloudflare API token with Workers Scripts read on the platform account only: live versions for the census, created for a dedicated service user |
-| `TTR_TOKEN_EMERGENCY_LIST_KEY` | Key guard only (guard account) | The Ed25519 key that signs the served list |
-| `TTR_AUTH_OBSERVER_CF_READ_TOKEN`, `TTR_AUTH_OBSERVER_GITHUB_TOKEN` | Observer only (guard account) | Read-only Cloudflare API and GitHub access for the observer |
+| `TTR_TOKEN_EMERGENCY_LIST_KEY` | `tuturuuu-auth-keyguard` only | The Ed25519 key that signs the served list |
+| `TTR_KEYGUARD_ENTRY_OPERATOR_KEY`, `TTR_KEYGUARD_ENTRY_OBSERVER_KEY` | `tuturuuu-auth-keyguard`, plus the operator Worker or the observer for its own key only | Caller keys for the guard's `OperatorEntry` and `ObserverEntry` |
+| `TTR_AUTH_OBSERVER_CF_READ_TOKEN`, `TTR_AUTH_OBSERVER_GITHUB_TOKEN` | `tuturuuu-auth-observer` only | Read-only Cloudflare API and GitHub access for the observer |
+| `TTR_AUTH_AUDIT_READ_TOKEN`, `TTR_CREDENTIAL_LEDGER_READ_TOKEN`, `TTR_AUTH_AUDIT_CURSOR_TOKEN`, `TTR_SECURITY_ONCALL_WEBHOOK` | `auth-audit-alert.yaml` only, as GitHub secrets | Audit Logs v2 and ledger reads, the audit cursor write, and alert delivery |
+| `TTR_AUTH_AUDIT_CURSOR_MAC_KEY` | `auth-audit-alert.yaml` only, as a secret of the `auth-audit` GitHub environment | The HMAC on each audit cursor value |
+| `CLOUDFLARE_KEYGUARD_DEPLOY_TOKEN`, `CLOUDFLARE_KEYGUARD_OPERATOR_DEPLOY_TOKEN`, `CLOUDFLARE_AUTH_OBSERVER_DEPLOY_TOKEN` | `keyguard-cloudflare.yaml` only, one per job, each a secret of only its script's environments: `keyguard-guard-*`, `keyguard-operator-*` and `keyguard-observer-*`, per stage (`staging`, `production`) | Script-scoped deploy tokens for the three key-plane scripts |
+| `TTR_KEYGUARD_DEPLOYER_APP_PRIVATE_KEY` | `keyguard-cloudflare.yaml` only, as a secret of the keyguard environments | Installation tokens for the `tuturuuu-keyguard-deployer` GitHub App, the only writer of key-plane deployment records |
 
 The key guard's URL and public keys are not variables: they are pinned in
 reviewed source (see the keys page). `wrangler.jsonc` lists each Worker's
@@ -176,10 +183,12 @@ no secret and receive public verification keys through configuration.
 
 ### Key guard, observer and census
 
-The key guard, its source-pinned trust anchor, the out-of-account observer,
-the binding inventory, the Cloudflare API budget, the publication census and
-the observation cache are on
+The key guard, its source-pinned trust anchor and emergency list control
+record, the observer, the binding inventory, the Cloudflare API budget, the
+publication census and the observation cache are on
 [Tuturuuu session auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys).
+The audit alert is on
+[auth Worker audit alert](/platform/architecture/tuturuuu-session-auth-worker-audit).
 
 ### Routes and the gateway
 
@@ -241,8 +250,10 @@ the key:
   (tests, type check, lint and the emitted-artifact build in CI only) and
   holds production with `productionAppExclusions.auth`. Staging deploys come
   from the same workflow. Removing the hold is the release authority's
-  explicit cutover change. The key guard deploys from its own account's
-  pipeline, not from this workflow.
+  explicit cutover change. The key guard, its operator Worker and the
+  observer deploy from `keyguard-cloudflare.yaml` with their own
+  script-scoped tokens, not from this workflow, and after creation take
+  changes from nothing else.
 - **CI only.** Every change to production or staging `tuturuuu-auth`, code,
   variable or secret, comes from `auth-cloudflare.yaml`, which records each
   version in a GitHub deployment before it carries traffic. The observer halts
