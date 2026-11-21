@@ -24,9 +24,15 @@ const REGISTRY = `${ROOT}packages/utils/src/app-mounts.ts`;
 /**
  * Mounted Workers that have no `/<base>/verify-token` route (no signed-in
  * app, or none yet): Web never returns a login to them, so they are never
- * listed. Tools moves out of this set once it serves /tools/verify-token.
+ * listed. Apps is a public catalogue; Tools moves out of this set once it
+ * serves /tools/verify-token.
  */
-export const SESSIONLESS_MOUNTS = new Set(['/roadmap', '/lms', '/tools']);
+export const SESSIONLESS_MOUNTS = new Set([
+  '/roadmap',
+  '/lms',
+  '/tools',
+  '/apps',
+]);
 
 /** Parses JSONC: line and block comments and trailing commas. */
 export function parseJsonc(text) {

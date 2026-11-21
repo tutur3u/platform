@@ -45,7 +45,10 @@ test('resolves bases and aliases to registered app names', () => {
 
 test('never lists a mount without a verify-token route', () => {
   assert.deepEqual(
-    resolveActiveMounts(['/admin', '/tools', '/roadmap', '/lms'], registry),
+    resolveActiveMounts(
+      ['/admin', '/tools', '/roadmap', '/lms', '/apps'],
+      registry
+    ),
     ['infra']
   );
 });

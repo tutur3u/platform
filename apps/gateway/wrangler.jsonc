@@ -44,7 +44,7 @@
     // after, or in the same change as, the gateway write that makes it live;
     // `node scripts/active-app-mounts.mjs --live <version.json>` fails when a
     // committed path is not live.
-    "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*,/roadmap,/tools,/tools/*,/teach,/teach/*,/lms,/lms/*,/admin,/admin/*,/meet,/meet/*,/mail,/mail/*,/calendar,/calendar/*",
+    "GATEWAY_MOUNTED_PATHS": "/learn,/nova,/nova/*,/roadmap,/tools,/tools/*,/teach,/teach/*,/lms,/lms/*,/admin,/admin/*,/meet,/meet/*,/mail,/mail/*,/calendar,/calendar/*,/apps,/apps/*",
     // Comma-separated apps/web route families (manifest `webFamilies`) served
     // by their own Worker through the binding WEB_FAMILY_<ID>. A family needs
     // both its id here and its binding; otherwise its paths go to the
@@ -72,6 +72,7 @@
     { "binding": "MOUNT_MEET", "service": "tuturuuu-meet" },
     { "binding": "MOUNT_MAIL", "service": "tuturuuu-mail" },
     { "binding": "MOUNT_CALENDAR", "service": "tuturuuu-calendar" },
+    { "binding": "MOUNT_APPS", "service": "tuturuuu-apps" },
   ],
   // One service binding per web family, added at that family's cutover. The
   // family Worker has no routes of its own:
