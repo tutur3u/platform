@@ -417,19 +417,9 @@ jobs:
           test -n "$version" && test "$version" != null || { echo "::error::cf version-only upload returned no version id"; exit 1; }
           echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
           echo "Uploaded gateway version $version via cf workers versions create --prebuilt (0% traffic until deploy step)."
-      - name: Upload the gateway version (Wrangler publisher fallback)
-        if: steps.no-downgrade.outputs.deploy == 'true' && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'
-        working-directory: apps/gateway
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.WEB_OPENNEXT_CLOUDFLARE_API_TOKEN }}
-        run: |
-          node ../../scripts/ci/gateway-deploy-config.mjs assert-current "$RUNNER_TEMP/gateway-settings.json"
-          bun x --no-install wrangler versions upload -c wrangler.deploy.json \
-            --message "gateway $GITHUB_SHA families=${GATEWAY_WEB_FAMILIES:-none}" | tee "$RUNNER_TEMP/gateway-upload.txt"
-          version=$(grep -oE 'Worker Version ID: [0-9a-f-]{36}' "$RUNNER_TEMP/gateway-upload.txt" | awk '{print $4}')
-          test -n "$version" || { echo "::error::no version id in the upload output"; exit 1; }
-          echo "GATEWAY_VERSION_ID=$version" >> "$GITHUB_ENV"
-      # CI moves gateway traffic only when GATEWAY_CF_VERSION_UPLOAD_LIVE is set.
+      # CI uploads and moves gateway traffic only when GATEWAY_CF_VERSION_UPLOAD_LIVE
+      # is set. An upload that is never served would become the Worker's latest
+      # version and block or ride along with later secret writes.
       - name: Deploy gateway traffic with cf
         if: steps.no-downgrade.outputs.deploy == 'true' && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'
         env:

@@ -4,28 +4,29 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const GUARD = "steps.no-downgrade.outputs.deploy == 'true'";
 
-test('gateway upload stays Wrangler until GATEWAY_CF_VERSION_UPLOAD_LIVE', () => {
+test('gateway uploads only through cf when GATEWAY_CF_VERSION_UPLOAD_LIVE', () => {
   const workflow = readWorkflow('web-opennext.yaml');
   const steps = workflow.jobs.gateway.steps;
-  const cfUpload = steps.find(
+  const uploads = steps.filter(
     (step) =>
-      step.name?.includes('cf prebuilt') &&
-      step.if === `${GUARD} && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'`
+      step.run?.includes('publish-version-only') ||
+      step.run?.includes('wrangler versions upload')
   );
-  const wranglerUpload = steps.find(
-    (step) =>
-      step.name?.includes('Wrangler publisher fallback') &&
-      step.if === `${GUARD} && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE != 'true'`
+  // A Wrangler upload without the flag would never be served and would become
+  // the Worker's latest version.
+  assert.equal(uploads.length, 1);
+  const [cfUpload] = uploads;
+  assert.ok(cfUpload.name.includes('cf prebuilt'));
+  assert.equal(
+    cfUpload.if,
+    `${GUARD} && vars.GATEWAY_CF_VERSION_UPLOAD_LIVE == 'true'`
   );
-  assert.ok(cfUpload?.run?.includes('publish-version-only'));
-  assert.ok(wranglerUpload?.run?.includes('wrangler versions upload'));
-  for (const upload of [cfUpload, wranglerUpload])
-    assert.ok(upload.run.includes('GATEWAY_VERSION_ID=$version'));
+  assert.ok(cfUpload.run.includes('GATEWAY_VERSION_ID=$version'));
   // One account source: the workflow-level CLOUDFLARE_ACCOUNT_ID.
   assert.equal(cfUpload.env.CLOUDFLARE_ACCOUNT_ID, undefined);
 });
 
-test('gateway traffic moves only through cf for either upload', () => {
+test('gateway traffic moves only through cf', () => {
   const workflow = readWorkflow('web-opennext.yaml');
   const steps = workflow.jobs.gateway.steps;
   const traffic = steps.filter((step) =>
@@ -99,7 +100,7 @@ test('the no-downgrade guard runs after capture and gates every write', () => {
         s.run?.includes('wrangler versions upload') ||
         s.run?.includes('gateway-cf-publication.mjs serve ')
     );
-  assert.equal(writes.length, 3);
+  assert.equal(writes.length, 2);
   for (const { s, i } of writes) {
     assert.ok(i > guard, s.name);
     assert.ok(s.if?.startsWith(`${GUARD} && `), s.name);

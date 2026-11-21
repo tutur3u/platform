@@ -74,8 +74,8 @@ reads and versions `tuturuuu-gateway`:
    secret.
 2. **gateway**: captures the live gateway settings, checks that every family in
    the `GATEWAY_WEB_FAMILIES` variable has its Worker and every secret name its
-   wrangler config requires, writes the deploy config, then
-   `wrangler versions upload` and `versions deploy` at 100%. `WEB_ORIGIN` (unread
+   wrangler config requires, writes the deploy config, then uploads a version
+   with `cf workers versions create --prebuilt` and serves it at 100%. `WEB_ORIGIN` (unread
    by the gateway, kept for deploy parity) comes from the `GATEWAY_WEB_ORIGIN`
    variable and `MARKETING_ORIGIN` is
    `https://marketing.tuturuuu.com`. The deploy config requires both origins to
@@ -91,8 +91,10 @@ reads and versions `tuturuuu-gateway`:
    the live gateway is an ancestor. A live gateway on the same commit, a
    descendant, a diverged or unknown commit skips the upload and deploy with a
    notice. An unparseable message also skips unless a `workflow_dispatch` run
-   sets `gateway-force-unparseable`. Even after the guard passes, CI moves
-   gateway traffic only when `GATEWAY_CF_VERSION_UPLOAD_LIVE` is `true`.
+   sets `gateway-force-unparseable`. Even after the guard passes, CI uploads and
+   serves a gateway version only when `GATEWAY_CF_VERSION_UPLOAD_LIVE` is
+   `true`; without it the job uploads nothing. An unserved upload would become
+   the Worker's latest version, which a later secret write acts on.
 
 Turning a family on: set its Worker secrets (names in `<family>.env.json`),
 mark it `"activated": true` in `families.json` in a reviewed commit, add its id
