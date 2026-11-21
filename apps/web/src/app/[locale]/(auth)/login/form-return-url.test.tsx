@@ -8,6 +8,7 @@ import {
   renderLoginForm,
   renderLoginFormSearch,
   resetReturnUrlLoginMocks,
+  openEmailStep,
 } from './login-form-test-support';
 
 const platformVerifyTokenReturnUrl =
@@ -59,6 +60,8 @@ describe('LoginForm returnUrl navigation', () => {
     mocks.getUser.mockReturnValue(new Promise(() => undefined));
 
     renderLoginForm('/');
+
+    await openEmailStep();
 
     await screen.findByRole('button', {
       name: 'login.continue_with_email',
@@ -205,37 +208,13 @@ describe('LoginForm returnUrl navigation', () => {
     });
   });
 
-  it('offers a labelled staff Microsoft entry with email recovery', async () => {
-    mocks.currentUserProfile = null;
-    mocks.getUser.mockReturnValue(new Promise(() => undefined));
-
-    renderLoginFormSearch('');
-
-    expect(
-      await screen.findByRole('button', {
-        name: /login\.staff_microsoft/u,
-      })
-    ).toBeInTheDocument();
-  });
-
-  it('does not automatically start Microsoft OAuth from a provider hint', async () => {
-    mocks.currentUserProfile = null;
-    mocks.getUser.mockResolvedValue({ data: { user: null } });
-    renderLoginFormSearch('?provider=azure');
-    await screen.findByRole('button', {
-      name: 'Microsoft login.staff_microsoft',
-    });
-    expect(mocks.signInWithOAuth).not.toHaveBeenCalled();
-    expect(
-      screen.getByText('login.microsoft_email_recovery')
-    ).toBeInTheDocument();
-  });
-
   it('navigates home after password login without a returnUrl', async () => {
     mocks.currentUserProfile = null;
     mockPrimarySignInSession('password');
 
     renderLoginFormSearch();
+
+    await openEmailStep();
 
     fireEvent.click(
       await screen.findByRole('button', {
@@ -279,6 +258,8 @@ describe('LoginForm returnUrl navigation', () => {
 
     renderLoginForm(platformVerifyTokenReturnUrl);
 
+    await openEmailStep();
+
     fireEvent.click(
       await screen.findByRole('button', {
         name: 'login.use_password_instead',
@@ -321,6 +302,8 @@ describe('LoginForm returnUrl navigation', () => {
     mockPrimarySignInSession('otp');
 
     renderLoginFormSearch();
+
+    await openEmailStep();
     fireEvent.change(
       await screen.findByPlaceholderText('login.email_username_placeholder'),
       {

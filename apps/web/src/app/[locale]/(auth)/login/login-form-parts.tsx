@@ -62,7 +62,7 @@ export function InternalAppAccountConfirmationFallback({
 export function RedirectingAfterAuthCard({ label }: { label: string }) {
   return (
     <div>
-      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
         <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
           <LoadingIndicator className="size-6" />
           <p className="font-medium text-muted-foreground text-sm">{label}</p>

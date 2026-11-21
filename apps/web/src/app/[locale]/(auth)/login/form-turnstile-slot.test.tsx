@@ -5,6 +5,7 @@ import {
   mocks,
   queryClients,
   renderLoginFormSearch,
+  openEmailStep,
 } from './login-form-test-support';
 
 beforeEach(() => {
@@ -38,6 +39,8 @@ describe('LoginForm Turnstile slot', () => {
 
     renderLoginFormSearch('');
 
+    await openEmailStep();
+
     await waitFor(() => expect(turnstileSlot()).not.toBeNull());
     expect(screen.queryByTestId('turnstile')).not.toBeInTheDocument();
 
@@ -52,6 +55,8 @@ describe('LoginForm Turnstile slot', () => {
     mocks.getOtpSettings.mockReturnValue(new Promise(() => {}));
 
     renderLoginFormSearch('');
+
+    await openEmailStep();
 
     const notice = await screen.findByText('login.captcha_not_configured');
     expect(notice).toBeInTheDocument();

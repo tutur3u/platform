@@ -3,11 +3,15 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   mocks,
+  openEmailStep,
   queryClients,
   renderLoginFormSearch,
 } from './login-form-test-support';
 
 async function identify(email: string) {
+  if (!screen.queryByPlaceholderText('login.email_username_placeholder')) {
+    await openEmailStep();
+  }
   const input = await screen.findByPlaceholderText(
     'login.email_username_placeholder'
   );
@@ -69,7 +73,12 @@ describe('LoginForm email method defaults', () => {
     expect(
       screen.getByRole('button', { name: 'continue_with_passkey' })
     ).toBeEnabled();
-    expect(screen.getByRole('button', { name: /google/i })).toBeEnabled();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'login.other_sign_in_methods' })
+    );
+    expect(
+      await screen.findByRole('button', { name: /google/i })
+    ).toBeEnabled();
   });
 
   it.each([

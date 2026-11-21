@@ -359,4 +359,21 @@ export function resetReturnUrlLoginMocks() {
   mocks.verifyOtpWithInternalApi.mockResolvedValue({});
 }
 
+/** Opens the email step from the first sign-in step. */
+export async function openEmailStep() {
+  const { fireEvent, screen } = await import('@testing-library/react');
+  fireEvent.click(
+    await screen.findByRole('button', { name: /^login\.continue_with_email/u })
+  );
+  await screen.findByPlaceholderText('login.email_username_placeholder');
+}
+
+/** Opens the "More sign-in options" disclosure on the first step. */
+export async function openMoreSignInOptions() {
+  const { fireEvent, screen } = await import('@testing-library/react');
+  fireEvent.click(
+    await screen.findByRole('button', { name: /login\.more_sign_in_options/u })
+  );
+}
+
 export { mocks };

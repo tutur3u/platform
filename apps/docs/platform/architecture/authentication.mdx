@@ -95,6 +95,17 @@ apps and internal satellites (`/login?provider=google&returnUrl=…`).
   the `headers()` rules in `apps/web/next-config.web.ts`; config headers win,
   so the public rule there is conditioned on a missing session cookie and a
   private rule follows it.
+- The regular sign-in is two steps with one decision each. The first step
+  always shows three methods (Google, "Continue with email" and passkey by
+  default), with Apple, GitHub and staff Microsoft behind "More sign-in
+  options". The method used last on the device (localStorage, a per-device
+  convenience, written for OAuth only once the provider start succeeds)
+  fills the first slot with a "Last used" badge, so a returning staff member
+  who signed in with Microsoft sees it without opening the disclosure. The
+  slots are keyed by position, so a remembered method fills a slot in place
+  after hydration and the step never changes height. The email step holds
+  the email field (focused on open), the Turnstile check and the passkey
+  button, which both need the check; going back focuses the first method.
 - Turnstile renders in a fixed 300 by 65 slot that is reserved while the
   OTP settings still resolve, and every focused step uses
   one fixed-height frame (a long saved-account list scrolls inside it), so
@@ -106,7 +117,8 @@ only to the provider and return it was chosen for. Microsoft (`azure`) is
 never started from a hint.
 
 Coverage: `apps/web/src/app/[locale]/(auth)/login/form-focused-sign-in.test.tsx`,
-`form-saved-account-chooser.test.tsx`, `login-view.test.ts`,
+`form-saved-account-chooser.test.tsx`, `form-sign-in-methods.test.tsx`,
+`last-login-method.test.ts`, `sign-in-methods-hydration.test.tsx`, `login-view.test.ts`,
 `login-view.server.test.ts`, `form-mfa-step-up.test.tsx`, `page.test.tsx`,
 `apps/web/src/app/api/v1/auth/login-view/route.test.ts`,
 `apps/web/src/lib/auth-shell-cache.test.ts`, `apps/web/next.config.test.ts`,

@@ -102,8 +102,6 @@ import {
   InternalAppAccountConfirmationFallback,
   LoginMethodSeparator,
   RedirectingAfterAuthCard,
-  SocialImageLogo,
-  SocialLogoMask,
   TurnstileLoadingFallback,
   type MobileMfaApprovalChallenge,
   type ReturnUrlValidationFailure,
@@ -112,8 +110,9 @@ import {
   FocusedSignInCard,
   FocusedSignInSkeleton,
 } from './focused-sign-in-card';
+import { type LoginMethod, rememberLoginMethod } from './last-login-method';
 import { SavedAccountChooser } from './saved-account-chooser';
-import { SocialLoginButton } from './social-login-button';
+import { OAuthMethodButtons, SignInMethods } from './sign-in-methods';
 import {
   getTurnstileClientErrorMessageKey,
   resolveLoginTurnstileClientState,
@@ -292,6 +291,8 @@ export default function LoginForm({
     string | null
   >(null);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [emailStepOpen, setEmailStepOpen] = useState(false);
+  const [returnedToMethods, setReturnedToMethods] = useState(false);
   const [focusedContinueClicked, setFocusedContinueClicked] = useState(false);
   const [returnUrlValidationFailure, setReturnUrlValidationFailure] =
     useState<ReturnUrlValidationFailure | null>(null);
@@ -784,6 +785,7 @@ export default function LoginForm({
 
   const completePrimarySignIn = useCallback(
     async (source: 'otp' | 'passkey' | 'password') => {
+      rememberLoginMethod(source === 'passkey' ? 'passkey' : 'email');
       router.refresh();
 
       if (await needsMFA()) {
@@ -1211,6 +1213,7 @@ export default function LoginForm({
           scopes: providerOptions.scopes,
         },
       });
+      if (!error) rememberLoginMethod(provider);
 
       if (error) {
         setLoading(false);
@@ -1224,49 +1227,16 @@ export default function LoginForm({
     [buildOAuthRedirectUrl, supabase.auth, t]
   );
 
-  const renderSocialLoginButtons = () => (
-    <div className="space-y-3">
-      <SocialLoginButton
-        disabled={loading}
-        onClick={() => void handleOAuthLogin('google')}
-        icon={<SocialImageLogo src="/media/logos/google.svg" alt="Google" />}
-      >
-        {t('login.continue_with_google')}
-      </SocialLoginButton>
-      <SocialLoginButton
-        disabled={loading}
-        onClick={() => void handleOAuthLogin('azure')}
-        icon={
-          <SocialImageLogo src="/media/logos/microsoft.svg" alt="Microsoft" />
-        }
-      >
-        {t('login.staff_microsoft')}
-      </SocialLoginButton>
-      <p className="text-muted-foreground text-sm">
-        {t('login.microsoft_email_recovery')}
-      </p>
-      <SocialLoginButton
-        disabled={loading}
-        onClick={() => void handleOAuthLogin('apple')}
-        icon={<SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />}
-      >
-        {t('login.continue_with_apple')}
-      </SocialLoginButton>
-      <SocialLoginButton
-        disabled={loading}
-        onClick={() => void handleOAuthLogin('github')}
-        icon={<SocialLogoMask src="/media/logos/github.svg" alt="GitHub" />}
-      >
-        {t('login.continue_with_github')}
-      </SocialLoginButton>
-    </div>
-  );
+  const chooseSignInMethod = (method: LoginMethod) => {
+    if (method === 'email' || method === 'passkey') setEmailStepOpen(true);
+    else void handleOAuthLogin(method);
+  };
   const renderRateLimitedSocialAuthSuggestion = (email: string) => (
     <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t('login.rate_limited_social_auth_hint', { email })}
       </p>
-      {renderSocialLoginButtons()}
+      <OAuthMethodButtons disabled={loading} onChoose={chooseSignInMethod} />
     </div>
   );
 
@@ -1662,7 +1632,7 @@ export default function LoginForm({
     return (
       <RequiredMfaEnrollment key={user?.id} onVerified={completeMfaSignIn}>
         <div>
-          <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
+          <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
             <CardContent className="space-y-6 p-6 sm:p-8">
               <div className="space-y-2 text-center">
                 <h2 className="font-semibold text-2xl tracking-tight">
@@ -1748,7 +1718,7 @@ export default function LoginForm({
 
                       {mobileMfaChallenge ? (
                         <div className="space-y-3">
-                          <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
+                          <div className="rounded-xl border border-border bg-background px-3 py-2">
                             <p className="text-muted-foreground text-xs">
                               {t('login.mobile_mfa_pair_code_label')}
                             </p>
@@ -1817,161 +1787,180 @@ export default function LoginForm({
 
   return (
     <fieldset disabled={!isHydrated} className="contents">
-      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
         <CardContent className="p-6 sm:p-8">
           <div>
             {authStage === 'identify' ? (
               <div key="identify-auth" className={authStageTransitionClassName}>
-                <Form {...emailForm}>
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      if (loading || isResolvingOtpEnablement) {
-                        return;
-                      }
-                      if (preferredEmailMode === 'otp') {
-                        void sendEmailOtp();
-                        return;
-                      }
-                      void advanceToPasswordStage(false);
-                    }}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={emailForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-medium text-sm">
-                            {t('login.email')}
-                          </FormLabel>
-                          <FormControl>
-                            <div className="group relative">
-                              <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
-                              <Input
-                                className={`h-12 rounded-2xl border-border bg-background pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
-                                  normalizedPreviewEmail ? 'pr-32' : ''
-                                }`}
-                                placeholder={t(
-                                  'login.email_username_placeholder'
-                                )}
-                                value={field.value}
-                                onChange={(event) => {
-                                  setShowDomainPreview(false);
-                                  field.onChange(event.target.value);
-                                  passwordForm.setValue(
-                                    'email',
-                                    event.target.value,
-                                    { shouldDirty: true }
-                                  );
-                                }}
-                                onBlur={() => {
-                                  if (
-                                    field.value.trim() &&
-                                    !field.value.includes('@')
-                                  ) {
-                                    setShowDomainPreview(true);
-                                  }
-                                  field.onBlur();
-                                }}
-                                disabled={loading}
-                              />
-                              {normalizedPreviewEmail ? (
-                                <div className="absolute inset-y-0 right-3 flex items-center">
-                                  <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground text-xs">
-                                    @tuturuuu.com
-                                  </span>
-                                </div>
-                              ) : null}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                          {normalizedPreviewEmail ? (
-                            <FormDescription className="text-xs">
-                              {t('login.will_sign_in_as')}{' '}
-                              <span className="font-medium text-foreground">
-                                {normalizedPreviewEmail}
-                              </span>
-                            </FormDescription>
-                          ) : null}
-                        </FormItem>
-                      )}
-                    />
-
-                    {turnstileClientState.isRequired ? (
-                      <div className="rounded-2xl bg-transparent py-1">
-                        {turnstileClientState.canRenderWidget &&
-                        turnstileSiteKey ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {isResolvingOtpEnablement ? (
-                              <TurnstileLoadingFallback />
-                            ) : (
-                              renderTurnstile(turnstileSiteKey)
-                            )}
-                            {captchaError ? (
-                              <p className="text-destructive text-sm">
-                                {captchaError}
-                              </p>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <p className="text-destructive text-sm">
-                            {t('login.captcha_not_configured')}
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-
+                {!emailStepOpen ? (
+                  <SignInMethods
+                    autoFocusFirst={returnedToMethods}
+                    disabled={loading}
+                    onChoose={chooseSignInMethod}
+                  />
+                ) : (
+                  <>
                     <Button
-                      type="submit"
-                      className="h-12 w-full rounded-2xl font-medium"
-                      disabled={
-                        isResolvingOtpEnablement ||
-                        loading ||
-                        !emailIsValid ||
-                        (preferredEmailMode === 'otp' &&
-                          isCaptchaBlockingPasswordSubmit)
-                      }
+                      className="-ml-2 w-fit rounded-full px-2.5 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setEmailStepOpen(false);
+                        setReturnedToMethods(true);
+                      }}
+                      size="sm"
+                      type="button"
+                      variant="ghost"
                     >
-                      {loading || isResolvingOtpEnablement ? (
-                        <div className="flex items-center gap-2">
-                          <LoadingIndicator className="h-4 w-4" />
-                          <span>{t('common.loading')}...</span>
-                        </div>
-                      ) : (
-                        t('login.continue_with_email')
-                      )}
+                      {t('login.other_sign_in_methods')}
                     </Button>
-
-                    {webOtpEnabled ? (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-11 w-full rounded-2xl"
-                        onClick={() => void advanceToPasswordStage()}
-                        disabled={loading || isResolvingOtpEnablement}
+                    <Form {...emailForm}>
+                      <form
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          if (loading || isResolvingOtpEnablement) {
+                            return;
+                          }
+                          if (preferredEmailMode === 'otp') {
+                            void sendEmailOtp();
+                            return;
+                          }
+                          void advanceToPasswordStage(false);
+                        }}
+                        className="space-y-5"
                       >
-                        {t('login.use_password_instead')}
-                      </Button>
-                    ) : null}
-                  </form>
-                </Form>
+                        <FormField
+                          control={emailForm.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="font-medium text-sm">
+                                {t('login.email')}
+                              </FormLabel>
+                              <FormControl>
+                                <div className="group relative">
+                                  <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                                  <Input
+                                    autoFocus
+                                    className={`h-12 rounded-2xl border-border bg-background pl-10 transition-all duration-200 focus:border-primary/40 focus:ring-primary/15 ${
+                                      normalizedPreviewEmail ? 'pr-32' : ''
+                                    }`}
+                                    placeholder={t(
+                                      'login.email_username_placeholder'
+                                    )}
+                                    value={field.value}
+                                    onChange={(event) => {
+                                      setShowDomainPreview(false);
+                                      field.onChange(event.target.value);
+                                      passwordForm.setValue(
+                                        'email',
+                                        event.target.value,
+                                        { shouldDirty: true }
+                                      );
+                                    }}
+                                    onBlur={() => {
+                                      if (
+                                        field.value.trim() &&
+                                        !field.value.includes('@')
+                                      ) {
+                                        setShowDomainPreview(true);
+                                      }
+                                      field.onBlur();
+                                    }}
+                                    disabled={loading}
+                                  />
+                                  {normalizedPreviewEmail ? (
+                                    <div className="absolute inset-y-0 right-3 flex items-center">
+                                      <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-medium text-muted-foreground text-xs">
+                                        @tuturuuu.com
+                                      </span>
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                              {normalizedPreviewEmail ? (
+                                <FormDescription className="text-xs">
+                                  {t('login.will_sign_in_as')}{' '}
+                                  <span className="font-medium text-foreground">
+                                    {normalizedPreviewEmail}
+                                  </span>
+                                </FormDescription>
+                              ) : null}
+                            </FormItem>
+                          )}
+                        />
 
-                <LoginMethodSeparator label={t('login.or')} />
+                        {turnstileClientState.isRequired ? (
+                          <div className="rounded-2xl bg-transparent py-1">
+                            {turnstileClientState.canRenderWidget &&
+                            turnstileSiteKey ? (
+                              <div className="flex flex-col items-center gap-2">
+                                {isResolvingOtpEnablement ? (
+                                  <TurnstileLoadingFallback />
+                                ) : (
+                                  renderTurnstile(turnstileSiteKey)
+                                )}
+                                {captchaError ? (
+                                  <p className="text-destructive text-sm">
+                                    {captchaError}
+                                  </p>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <p className="text-destructive text-sm">
+                                {t('login.captcha_not_configured')}
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
 
-                <PasskeyLoginButton
-                  captchaToken={captchaToken}
-                  canRenderTurnstile={turnstileClientState.canRenderWidget}
-                  disabled={loading}
-                  onAuthenticated={() => completePrimarySignIn('passkey')}
-                  onCaptchaReset={resetCaptcha}
-                  requiresTurnstile={turnstileClientState.isRequired}
-                  turnstileError={captchaError}
-                />
+                        <Button
+                          type="submit"
+                          className="h-12 w-full rounded-2xl font-medium"
+                          disabled={
+                            isResolvingOtpEnablement ||
+                            loading ||
+                            !emailIsValid ||
+                            (preferredEmailMode === 'otp' &&
+                              isCaptchaBlockingPasswordSubmit)
+                          }
+                        >
+                          {loading || isResolvingOtpEnablement ? (
+                            <div className="flex items-center gap-2">
+                              <LoadingIndicator className="h-4 w-4" />
+                              <span>{t('common.loading')}...</span>
+                            </div>
+                          ) : (
+                            t('login.continue_with_email')
+                          )}
+                        </Button>
 
-                <LoginMethodSeparator label={t('login.or')} />
+                        {webOtpEnabled ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="h-11 w-full rounded-2xl"
+                            onClick={() => void advanceToPasswordStage()}
+                            disabled={loading || isResolvingOtpEnablement}
+                          >
+                            {t('login.use_password_instead')}
+                          </Button>
+                        ) : null}
+                      </form>
+                    </Form>
 
-                {renderSocialLoginButtons()}
+                    <LoginMethodSeparator label={t('login.or')} />
+
+                    <PasskeyLoginButton
+                      captchaToken={captchaToken}
+                      canRenderTurnstile={turnstileClientState.canRenderWidget}
+                      disabled={loading}
+                      onAuthenticated={() => completePrimarySignIn('passkey')}
+                      onCaptchaReset={resetCaptcha}
+                      requiresTurnstile={turnstileClientState.isRequired}
+                      turnstileError={captchaError}
+                    />
+                  </>
+                )}
               </div>
             ) : authStage === 'otp' ? (
               <div key="otp-auth" className={authStageTransitionClassName}>

@@ -45,7 +45,7 @@ export function getInitials(value: string) {
 export function ConfirmationCard({ children }: { children: ReactNode }) {
   return (
     <div>
-      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1">
+      <Card className="overflow-hidden rounded-3xl border bg-card shadow-elevation-1!">
         <CardContent className="space-y-6 p-6 sm:p-8">{children}</CardContent>
       </Card>
     </div>
@@ -223,7 +223,7 @@ export function StoredAccountSwitchList({
               variant="secondary"
             >
               {switchingAccountId === account.id ? (
-                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background/70">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background">
                   <LoadingIndicator className="size-4" />
                 </span>
               ) : (
