@@ -123,6 +123,8 @@ export interface HandlerDeps {
 }
 
 const STORED_AT = 'x-gateway-stored-at';
+const STORED_IMMUTABLE = 'x-gateway-stored-immutable';
+const IMMUTABLE_CLIENT_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 const PAGE_CLIENT_CACHE_CONTROL = 'public, max-age=0, must-revalidate';
 
 /**
@@ -417,17 +419,32 @@ function servedFromCache(
   response.headers.delete(STORED_AT);
   response.headers.set('x-gateway-cache', state);
   response.headers.set('age', String(Math.floor((nowMs - storedAt) / 1000)));
+  if (cached.headers.get(STORED_IMMUTABLE) === '1') {
+    response.headers.set('cache-control', IMMUTABLE_CLIENT_CACHE_CONTROL);
+  }
+  response.headers.delete(STORED_IMMUTABLE);
   if (isPage) response.headers.set('cache-control', PAGE_CLIENT_CACHE_CONTROL);
   return response;
 }
 
-function storedCopy(response: Response, nowMs: number) {
+function storedCopy(
+  response: Response,
+  nowMs: number,
+  preserveImmutable: boolean
+) {
   const copy = new Response(response.body, response);
   copy.headers.set(
     'cache-control',
     `public, max-age=${FRESH_SECONDS + STALE_SECONDS}`
   );
   copy.headers.delete('set-cookie');
+  copy.headers.delete(STORED_IMMUTABLE);
+  if (
+    preserveImmutable &&
+    response.headers.get('cache-control') === IMMUTABLE_CLIENT_CACHE_CONTROL
+  ) {
+    copy.headers.set(STORED_IMMUTABLE, '1');
+  }
   copy.headers.set(STORED_AT, String(nowMs));
   return copy;
 }
@@ -437,7 +454,10 @@ export function createHandler(deps: HandlerDeps) {
     request: Request,
     origin: URL,
     key: string,
-    options: { respectOriginCacheControl: boolean },
+    options: {
+      respectOriginCacheControl: boolean;
+      preserveImmutable: boolean;
+    },
     publicHost: string | undefined,
     isPage: boolean
   ) {
@@ -461,7 +481,10 @@ export function createHandler(deps: HandlerDeps) {
       }
       await (
         await deps.cache()
-      ).put(new Request(key), storedCopy(response, deps.now()));
+      ).put(
+        new Request(key),
+        storedCopy(response, deps.now(), options.preserveImmutable)
+      );
     } catch {
       // A failed refresh leaves the stale entry for the next attempt.
     }
@@ -530,6 +553,7 @@ export function createHandler(deps: HandlerDeps) {
     const options = {
       respectOriginCacheControl:
         env.GATEWAY_RESPECT_ORIGIN_CACHE_CONTROL === 'true',
+      preserveImmutable: match.routeId === 'marketing-assets',
     };
     const isPage = match.cache === 'page';
     const head = request.method === 'HEAD';
@@ -598,7 +622,7 @@ export function createHandler(deps: HandlerDeps) {
     }
     const put = cache.put(
       new Request(key),
-      storedCopy(response.clone(), nowMs)
+      storedCopy(response.clone(), nowMs, options.preserveImmutable)
     );
     if (ctx) ctx.waitUntil(put);
     else await put;

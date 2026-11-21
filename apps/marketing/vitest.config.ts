@@ -4,6 +4,7 @@ import { landingCriticalCss } from './scripts/landing-critical-css.mjs';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  oxc: { tsconfig: new URL('./tsconfig.json', import.meta.url).pathname },
   plugins: [
     react(),
     landingCriticalCss(fileURLToPath(new URL('.', import.meta.url))),

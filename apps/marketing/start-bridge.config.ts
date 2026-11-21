@@ -11,6 +11,12 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 // Vite replaces this real Node-readable fallback with the emitted CSS mapping.
 import styles from './src/lib/landing-style-map.json' with { type: 'json' };
+const fingerprintedLandingStyles = new Set(
+  Object.values(
+    styles as Record<string, { critical: string; remaining: string }>
+  ).flatMap(({ critical, remaining }) => [critical, remaining])
+);
+
 /** Keep serialized RSC resource identities consistent with the document head. */
 export function landingStyles(
   html: string,
@@ -87,6 +93,22 @@ export default defineBridgeAppConfig({
         return finalize(styled, context);
       });
     }
-    return finalize(response, context);
+    const secured = finalize(response, context);
+    if (
+      fingerprintedLandingStyles.has(path) &&
+      !context.publicAssets?.has(path) &&
+      secured.status === 200 &&
+      (context.request.method === 'GET' || context.request.method === 'HEAD') &&
+      !secured.headers.has('set-cookie') &&
+      secured.headers.get('cache-control') ===
+        'public, max-age=0, must-revalidate' &&
+      /^text\/css(?:;|$)/iu.test(secured.headers.get('content-type') ?? '')
+    ) {
+      secured.headers.set(
+        'cache-control',
+        'public, max-age=31536000, immutable'
+      );
+    }
+    return secured;
   },
 });

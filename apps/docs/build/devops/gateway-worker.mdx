@@ -97,8 +97,10 @@ description in the tag or the deployment annotation instead.
 
 **Rollback** is re-assigning the previous gateway version (`wrangler rollback
 <version-id> --name tuturuuu-gateway`). There is no passthrough flag and no
-other origin to fall back to. No purge is needed: Marketing cache entries
-expire within 65 minutes.
+other origin to fall back to. Marketing entries in the gateway cache expire
+within 65 minutes. Fingerprinted landing styles carry a separate one-year
+browser cache policy, which the gateway preserves when serving cached assets.
+A change to those styles emits a new content-derived URL.
 
 ## Visitor IP for Web
 

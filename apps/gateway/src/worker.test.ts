@@ -144,6 +144,27 @@ describe('gateway handler', () => {
     expect(await fresh.text()).toBe('v2');
   });
 
+  it('retains Marketing immutable browser caching on miss, hit and stale', async () => {
+    const policy = 'public, max-age=31536000, immutable';
+    const t = setup(
+      () =>
+        new Response('body{}', {
+          headers: { 'cache-control': policy, 'content-type': 'text/css' },
+        })
+    );
+    const path = '/assets/landing-critical-48f5315d33d4.css';
+    for (const state of ['MISS', 'HIT', 'STALE']) {
+      if (state === 'STALE') t.advance(400);
+      const response = await t.call(path);
+      expect(response.headers.get('x-gateway-cache')).toBe(state);
+      expect(response.headers.get('cache-control')).toBe(policy);
+      expect(response.headers.has('x-gateway-stored-immutable')).toBe(false);
+      expect(await response.text()).toBe('body{}');
+    }
+    const stored = [...t.cache.entries.values()][0];
+    expect(stored?.headers.get('cache-control')).toBe('public, max-age=3900');
+  });
+
   it('passes other routes through untouched without following redirects', async () => {
     const t = setup(
       () =>

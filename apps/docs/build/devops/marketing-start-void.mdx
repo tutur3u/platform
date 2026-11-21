@@ -40,6 +40,15 @@ are placed on the Cloudflare Worker.
 | `TUTURUUU_NOINDEX` | Environment variable (var) | Optional. Set to `"1"` on staging and preview deployments to prevent indexing. |
 | `INTERNAL_WEB_API_ORIGIN` | Environment variable (var) | Optional. Origin for central internal API forwarding (defaults to `https://tuturuuu.com`). |
 
+## Static asset caching
+
+The Worker gives the landing page's critical and deferred styles a one-year
+immutable browser cache lifetime. The allowlist comes from the build's CSS map
+and contains only paths derived from their content digests. This applies to
+successful CSS responses without cookies. The gateway keeps the same browser
+policy on cache hits and stale responses while retaining its existing edge
+expiry. The Marketing and gateway response tests cover these paths.
+
 ## Production indexing
 
 Only `https://tuturuuu.com` may index the marketing allowlist in
