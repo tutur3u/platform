@@ -2,7 +2,12 @@ import '@testing-library/jest-dom';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VersionBadge, VersionBadgeSetting } from './version-badge';
+import { TUTURUUU_PLATFORM_VERSION } from '@tuturuuu/utils/platform-release';
+import {
+  VersionBadge,
+  VersionBadgeSetting,
+  VersionInfoSetting,
+} from './version-badge';
 
 const mockUseUserBooleanConfig = vi.fn();
 
@@ -97,6 +102,11 @@ describe('VersionBadge', () => {
     render(<VersionBadge release={release} />);
 
     expect(screen.getAllByText('v0.1.0')).toHaveLength(2);
+    // Phones and touch screens get the version from settings instead.
+    expect(screen.getByRole('button', { name: 'trigger_label' })).toHaveClass(
+      'hidden',
+      'md:pointer-fine:block'
+    );
     expect(screen.getAllByText('abcdef1')).toHaveLength(2);
     expect(screen.getByText('feat: ship version badge')).toBeInTheDocument();
     expect(screen.getByText('5 minutes ago')).toBeInTheDocument();
@@ -157,7 +167,7 @@ describe('VersionBadge', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('stays hidden until hover, keyboard focus or open details', () => {
+  it('shows only on desktop, hidden until hover, focus or open details', () => {
     mockUseUserBooleanConfig.mockReturnValue({
       isLoading: false,
       value: true,
@@ -166,13 +176,33 @@ describe('VersionBadge', () => {
     render(<VersionBadge release={release} />);
 
     const trigger = screen.getByRole('button', { name: 'trigger_label' });
+    // Phones and touch screens get the version from settings instead.
+    expect(trigger).toHaveClass('hidden', 'md:pointer-fine:block');
     expect(trigger).toHaveClass(
       'opacity-0',
       'hover:opacity-100',
       'focus-visible:opacity-100',
-      'data-[state=open]:opacity-100',
-      '[@media(hover:none)]:opacity-100'
+      'data-[state=open]:opacity-100'
     );
+    expect(trigger).not.toHaveClass('[@media(hover:none)]:opacity-100');
+  });
+});
+
+describe('VersionInfoSetting', () => {
+  it('lists the running version without the commit for every user', () => {
+    render(<VersionInfoSetting showCommit={false} />);
+
+    expect(
+      screen.getByText(`v${TUTURUUU_PLATFORM_VERSION}`)
+    ).toBeInTheDocument();
+  });
+
+  it('adds the commit for members who manage the badge', () => {
+    render(<VersionInfoSetting showCommit />);
+
+    expect(
+      screen.getByText(new RegExp(`^v${TUTURUUU_PLATFORM_VERSION} · \\S+$`))
+    ).toBeInTheDocument();
   });
 });
 

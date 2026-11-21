@@ -330,7 +330,7 @@ export default function Chat({
   return (
     <div
       className={cn(
-        'relative flex h-[calc(100vh-5rem)] min-h-0 flex-col overflow-hidden md:h-[calc(100vh-2rem)]',
+        'relative flex h-[calc(100dvh-5rem-var(--mobile-dock-clearance,0px))] min-h-0 flex-col overflow-hidden md:h-[calc(100vh-2rem)]',
         className
       )}
     >

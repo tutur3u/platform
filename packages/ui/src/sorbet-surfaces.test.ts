@@ -55,6 +55,23 @@ describe('Sorbet surfaces', () => {
     expect(activeRule?.[1]).not.toMatch(/box-shadow|border-left/);
   });
 
+  it('gives a detached Back its own surface in a lane the pill never yields', () => {
+    const lane = css.match(
+      /:where\(\[data-slot="mobile-dock-back-lane"\]\)\s*\{([^}]*)\}/
+    );
+    expect(lane?.[1]).toContain('flex: none');
+    expect(lane?.[1]).toContain('width: var(--sorbet-dock-height)');
+    expect(css).toMatch(
+      /\[data-slot="mobile-dock-pill"\],\s*\[data-slot="mobile-dock-back-lane"\]:has\(> \*\)\s*\)\s*\{\s*background-color: var\(--card\)/
+    );
+  });
+
+  it('publishes the dock clearance for viewport-height composers', () => {
+    expect(css).toMatch(
+      /:root\[data-ui="sorbet"\]:has\(\[data-slot="mobile-dock"\]\)\s*\{\s*--mobile-dock-clearance: var\(--sorbet-content-bottom-clearance\);/
+    );
+  });
+
   it('loads after the Sorbet palettes', () => {
     const globals = readUiFile('globals.css');
     expect(globals.indexOf('@import "./sorbet-surfaces.css";')).toBeGreaterThan(

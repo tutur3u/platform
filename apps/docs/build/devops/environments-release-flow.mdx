@@ -236,13 +236,17 @@ with all Calendar clients closed; a READY deployment alone is insufficient.
 - The account-scoped version badge uses `public.user_configs` key
   `SHOW_VERSION_BADGE`. It is hidden by default and only exact
   `@tuturuuu.com` accounts may enable a truthy value.
-- When enabled, the badge stays invisible in the bottom-right corner of every
-  app until the pointer reaches it, it receives keyboard focus, or its details
-  are open, so it never covers app content.
+- When enabled, the badge renders only on desktop-width screens with a fine
+  pointer, and stays invisible in the bottom-right corner until the pointer
+  reaches it, it receives keyboard focus, or its details are open, so it never
+  covers app content or the mobile dock.
 - Exact-domain enforcement happens on the server through
   `isExactTuturuuuDotComEmail`; subdomains such as `@xwf.tuturuuu.com` are not
   eligible, and client cookies cannot make the badge render for ineligible
   users.
+- Appearance settings list the running version for every user on every screen
+  (`VersionInfoSetting`); badge-eligible accounts also see the short commit
+  hash there.
 
 ### Production Database
 

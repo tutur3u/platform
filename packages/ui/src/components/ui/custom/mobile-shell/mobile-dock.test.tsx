@@ -27,20 +27,30 @@ describe('MobileDock', () => {
     expect(items[2]!.onSelect).toHaveBeenCalled();
   });
 
-  it('shows Back only below a root, inside the same frame', () => {
-    const { rerender } = render(<MobileDock label="Nav" items={items} />);
+  it('shows Back below a root as a detached button in a reserved lane', () => {
+    const { container, rerender } = render(
+      <MobileDock label="Nav" items={items} />
+    );
     expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
     const frame = screen.getByRole('navigation');
-    const frameClass = frame.className;
+    const lane = container.querySelector('[data-slot="mobile-dock-back-lane"]');
+    const pill = container.querySelector('[data-slot="mobile-dock-pill"]');
+    expect(lane).toBeEmptyDOMElement();
+    expect(pill).not.toContainElement(lane as HTMLElement);
 
     const onBack = vi.fn();
     rerender(
       <MobileDock label="Nav" items={items} back={{ label: 'Back', onBack }} />
     );
     expect(screen.getByRole('navigation')).toBe(frame);
-    expect(frame.className).toBe(frameClass);
     expect(frame).toHaveAttribute('data-has-back', 'true');
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    const back = screen.getByRole('button', { name: 'Back' });
+    expect(lane).toContainElement(back);
+    expect(pill).not.toContainElement(back);
+    expect(container.querySelector('[data-slot="mobile-dock-pill"]')).toBe(
+      pill
+    );
+    fireEvent.click(back);
     expect(onBack).toHaveBeenCalledOnce();
   });
 

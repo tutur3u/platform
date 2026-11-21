@@ -16,7 +16,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
 import { persistLocalePreference } from '../locale-preference';
-import { VersionBadgeSetting } from '../version-badge';
+import { VersionBadgeSetting, VersionInfoSetting } from '../version-badge';
 import { ExperimentalUiSetting } from './experimental-ui-setting';
 import { ThemeModePreview } from './theme-mode-preview';
 
@@ -121,6 +121,8 @@ export function AppearanceSettings({
         {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />
         ) : null}
+
+        <VersionInfoSetting showCommit={canManageVersionBadge} />
       </SettingsSection>
     </div>
   );

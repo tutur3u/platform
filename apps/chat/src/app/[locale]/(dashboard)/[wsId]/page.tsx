@@ -19,7 +19,7 @@ export default async function ChatWorkspacePage({
   if (!workspace?.joined) redirect('/');
 
   return (
-    <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
+    <div className="-m-2 h-[calc(100dvh-4.25rem-var(--mobile-dock-clearance,0px))] md:-m-4 md:h-dvh">
       <ChatWorkspace
         currentUserId={user.id}
         defaultConversationScope={getDefaultChatConversationScope(workspace)}

@@ -98,8 +98,9 @@
   Mobile shell on phones (below the md breakpoint, where the shared Structure
   shows its top bar): the top bar sits on the page background (the ground is
   for the frame only, and matches the sunken fills in light), and the floating dock
-  (MobileDock) shows only while Sorbet is on. Its frame never moves or
-  resizes; scrolling content reserves the dock clearance, and a short fade
+  (MobileDock) shows only while Sorbet is on. Its pill never moves or
+  resizes, and Back is a detached circle in a lane reserved beside it;
+  scrolling content reserves the dock clearance, and a short fade
   behind the dock keeps content legible as it scrolls under. As in the native
   app, the pill rests 8px inside a home-indicator safe area (never closer than
   the dock inset) with its shadow below it; --mobile-dock-viewport-drop
@@ -123,20 +124,59 @@
     transform: translate3d(0, var(--mobile-dock-viewport-drop, 0px), 0);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     max-width: 480px;
     height: var(--sorbet-dock-height);
     margin-inline: auto;
-    padding: 6px;
+    pointer-events: none;
+  }
+
+  /*
+    The Back lane is reserved on every destination so the pill never moves;
+    below a root it holds a detached circular Back button with its own
+    surface, on the pill's baseline.
+  */
+  :root[data-ui="sorbet"] :where([data-slot="mobile-dock-back-lane"]) {
+    flex: none;
+    width: var(--sorbet-dock-height);
+    height: var(--sorbet-dock-height);
     border-radius: 9999px;
+  }
+
+  /* Only the surfaces take taps; the empty lane and the gap pass them on. */
+  :root[data-ui="sorbet"]
+    :where([data-slot="mobile-dock-pill"], [data-slot="mobile-dock-back"]) {
+    pointer-events: auto;
+  }
+
+  :root[data-ui="sorbet"]
+    :where(
+      [data-slot="mobile-dock-pill"],
+      [data-slot="mobile-dock-back-lane"]:has(> *)
+    ) {
     background-color: var(--card);
     box-shadow:
       0 12px 24px -10px color-mix(in oklab, var(--foreground) 22%, transparent),
       0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
   }
 
-  /* Dark shadows fall below the pill in black, as in the native dock. */
-  :root[data-ui="sorbet"].dark :where([data-slot="mobile-dock"]) {
+  :root[data-ui="sorbet"] :where([data-slot="mobile-dock-pill"]) {
+    display: flex;
+    flex: 1 1 0%;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    height: 100%;
+    padding: 6px;
+    border-radius: 9999px;
+  }
+
+  /* Dark shadows fall below the surfaces in black, as in the native dock. */
+  :root[data-ui="sorbet"].dark
+    :where(
+      [data-slot="mobile-dock-pill"],
+      [data-slot="mobile-dock-back-lane"]:has(> *)
+    ) {
     box-shadow:
       0 12px 24px -10px rgb(0 0 0 / 0.6),
       0 0 0 1px color-mix(in oklab, var(--foreground) 5%, transparent);
@@ -161,6 +201,15 @@
   :root[data-ui="sorbet"]:has([data-slot="mobile-dock"])
     :where([data-slot="structure-content"]) {
     padding-bottom: var(--sorbet-content-bottom-clearance);
+  }
+
+  /*
+    Viewport-height surfaces (chat, inboxes) subtract this so their bottom
+    composer rests above the dock instead of scrolling under it. It is unset,
+    and the surfaces fall back to 0px, wherever the dock does not show.
+  */
+  :root[data-ui="sorbet"]:has([data-slot="mobile-dock"]) {
+    --mobile-dock-clearance: var(--sorbet-content-bottom-clearance);
   }
 }
 

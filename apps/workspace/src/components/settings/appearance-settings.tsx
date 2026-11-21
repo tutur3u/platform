@@ -6,7 +6,10 @@ import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { SettingsSection } from '@tuturuuu/ui/custom/settings-section';
 import { ExperimentalUiSetting } from '@tuturuuu/ui/custom/settings/experimental-ui-setting';
 import { ThemeModePreview } from '@tuturuuu/ui/custom/settings/theme-mode-preview';
-import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
+import {
+  VersionBadgeSetting,
+  VersionInfoSetting,
+} from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import {
@@ -170,6 +173,8 @@ export default function AppearanceSettings({
         {canManageVersionBadge ? (
           <VersionBadgeSetting canManage={canManageVersionBadge} />
         ) : null}
+
+        <VersionInfoSetting showCommit={canManageVersionBadge} />
       </SettingsSection>
 
       <SettingsSection>

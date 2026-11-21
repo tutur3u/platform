@@ -307,8 +307,9 @@ time.
   and system-owned flows must open above the shell, never stack their navbar
   inside its body.
 - Mobile top navbars show the destination title and actions without a Back button.
-  The floating bottom navbar owns all in-app Back navigation; keep its position
-  consistent across destinations and preserve system Back and deep-link fallbacks.
+  The floating bottom navbar owns all in-app Back navigation through a detached
+  circular Back button beside its pill, in a lane reserved on every destination
+  so the pill never moves; preserve system Back and deep-link fallbacks.
   Shell bodies inherit the background, omit duplicate titles/top bars, and reserve
   floating-navbar clearance in scroll content.
 - After Flutter ARB key changes, run `flutter gen-l10n` before Flutter analysis

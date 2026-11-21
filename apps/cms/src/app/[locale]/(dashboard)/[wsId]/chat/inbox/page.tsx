@@ -25,7 +25,7 @@ export default async function ConnectedChatInboxPage({
   const readOnly = access.workspacePermissions.withoutPermission('create_chat');
 
   return (
-    <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
+    <div className="-m-2 h-[calc(100dvh-4.25rem-var(--mobile-dock-clearance,0px))] md:-m-4 md:h-dvh">
       <ChatWorkspace
         currentUserId={access.userId}
         defaultConversationScope="external"

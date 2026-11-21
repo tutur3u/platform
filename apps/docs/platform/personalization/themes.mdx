@@ -171,8 +171,10 @@ in in-app browsers such as Instagram's) with fixed content ending above the
 visible bottom; `dock-viewport-anchor.ts` compares a hidden fixed probe with
 `visualViewport` and moves the dock, its fade and bottom toasts back onto the
 visible edge.
-Below a destination's own page the dock adds a leading Back button; a long
-press returns to that destination's page, and the dock's frame never moves.
+Below a destination's own page a detached circular Back button with its own
+surface and shadow appears on the dock's leading side, on the pill's baseline;
+a long press returns to that destination's page. Its lane is reserved on every
+destination, so the pill keeps its place and size whether Back shows or not.
 Apps opens the apps launcher. The top bar keeps the page title and actions and
 never shows Back. Scrolling content reserves the dock's clearance, and a short
 fade behind the dock keeps it legible. Every satellite app shows the same dock
@@ -181,7 +183,7 @@ Tasks and Calendar mark their own slot, every other app keeps Apps active and
 shows Back below its root, and links to other apps resolve their address for
 the current environment. With Sorbet off, the classic mobile navigation is
 unchanged. `mobile-dock.test.tsx` covers the active slot, icon-only
-names, Back, long press and the fixed frame; `dock-viewport-anchor.test.ts`
+names, the detached Back lane, long press and the fixed pill; `dock-viewport-anchor.test.ts`
 covers the resume correction; `dashboard-mobile-dock-location.test.ts` and
 `satellite-mobile-dock-location.test.ts` cover which destination and Back
 state each path gets.

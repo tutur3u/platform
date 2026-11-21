@@ -6,7 +6,11 @@ import { useAfterFirstPaint } from '@tuturuuu/ui/hooks/use-after-first-paint';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
-import type { PlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
+import {
+  type PlatformReleaseInfo,
+  TUTURUUU_PLATFORM_BUILD_METADATA,
+  TUTURUUU_PLATFORM_VERSION,
+} from '@tuturuuu/utils/platform-release';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { SettingItemTab } from './settings-item-tab';
@@ -83,10 +87,12 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
           type="button"
           aria-label={t('trigger_label')}
           className={cn(
-            // Hidden until the pointer reaches the corner, keyboard focus lands on
-            // it or its details are open, so it never covers app content. Touch
-            // devices cannot hover, so it stays visible there.
-            'fixed right-3 bottom-3 z-1000 rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs opacity-0 shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue data-[state=open]:opacity-100 [@media(hover:none)]:opacity-100 motion-reduce:transition-none',
+            // Desktop only, and hidden until the pointer reaches the corner,
+            // keyboard focus lands on it or its details are open, so it never
+            // covers app content. Phones and touch screens cannot hover and
+            // would have it over the dock; the settings dialog lists the
+            // version on every screen instead.
+            'fixed right-3 bottom-3 z-1000 hidden md:pointer-fine:block rounded-md border border-border/70 bg-background/90 px-2 py-1 font-mono text-muted-foreground text-xs opacity-0 shadow-lg backdrop-blur-xl transition hover:border-dynamic-blue/60 hover:text-foreground hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dynamic-blue data-[state=open]:opacity-100 motion-reduce:transition-none',
             className
           )}
         >
@@ -135,6 +141,25 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
         </div>
       </PopoverContent>
     </Popover>
+  );
+}
+
+/**
+ * The running version, read-only, for every signed-in user. Members who can
+ * manage the badge also see the commit it was built from.
+ */
+export function VersionInfoSetting({ showCommit }: { showCommit: boolean }) {
+  const t = useTranslations('version-badge');
+
+  return (
+    <SettingItemTab title={t('version')} layout="compact">
+      <span className="font-mono text-muted-foreground text-sm">
+        v{TUTURUUU_PLATFORM_VERSION}
+        {showCommit
+          ? ` · ${TUTURUUU_PLATFORM_BUILD_METADATA.shortCommitHash}`
+          : null}
+      </span>
+    </SettingItemTab>
   );
 }
 
