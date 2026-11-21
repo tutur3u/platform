@@ -106,6 +106,7 @@ function resolveRelative(from: string, specifier: string): string {
 
 const TOKENS_ENTRY = './tokens';
 const STEPUP_ENTRY = './stepup';
+const DEVICE_ENTRY = './device';
 const TOKENS_MODULE = /^src\/tokens(\.ts|\/)/;
 /** The only `./tokens` modules `./stepup` may reach: verification, no signing. */
 const STEPUP_TOKEN_MODULES = [
@@ -170,9 +171,17 @@ const TOKENS_SUBTLE =
   /crypto\.subtle\.(?!sign\(|verify\(|importKey\(|digest\()/;
 /** `./stepup`: it may verify and hash, never sign or import keys. */
 const STEPUP_SUBTLE = /crypto\.subtle\.(?!verify\(|digest\()/;
+/**
+ * `./device`: SHA-256 for the request hash and the step-up parameters
+ * digest, and the verification its shared principal types reach. It never
+ * signs or imports keys; device secrets are keyed through the injected
+ * hasher port.
+ */
+const DEVICE_SUBTLE = /crypto\.subtle\.(?!verify\(|digest\()/;
 const SUBTLE_RULES = new Map([
   [TOKENS_ENTRY, TOKENS_SUBTLE],
   [STEPUP_ENTRY, STEPUP_SUBTLE],
+  [DEVICE_ENTRY, DEVICE_SUBTLE],
 ]);
 
 describe('portable entry points', () => {

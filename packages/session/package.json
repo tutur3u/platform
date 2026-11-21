@@ -9,7 +9,8 @@
     "./verify": "./src/verify.ts",
     "./provider": "./src/provider.ts",
     "./tokens": "./src/tokens.ts",
-    "./stepup": "./src/stepup.ts"
+    "./stepup": "./src/stepup.ts",
+    "./device": "./src/device.ts"
   },
   "license": "MIT",
   "scripts": {

@@ -3,12 +3,12 @@
  * and the relying service both call `paramsHash` over the same stored
  * challenge values; neither serializes them another way.
  */
-import { canonicalJson, encodeBase64Url, utf8 } from '../encoding';
 import { STEP_UP_ACTS, type StepUpClaims } from '../tokens/profiles';
+import { digestActParams, PARAMS_HASH_DOMAIN } from './params-digest';
 
 export type StepUpAct = StepUpClaims['act'];
 
-export const PARAMS_HASH_DOMAIN = 'ttr-stepup/v1';
+export { PARAMS_HASH_DOMAIN };
 export const PARAMS_HASH_BYTES = 32;
 
 export type ParamsHashResult =
@@ -36,13 +36,7 @@ export async function paramsHash(
   params: unknown
 ): Promise<ParamsHashResult> {
   if (!isStepUpAct(act)) return { ok: false, reason: 'act' };
-  const canonical = canonicalJson(params);
-  if (canonical === undefined) return { ok: false, reason: 'params' };
-  const hash = new Uint8Array(
-    await crypto.subtle.digest(
-      'SHA-256',
-      utf8(`${PARAMS_HASH_DOMAIN}|${act}|${canonical}`)
-    )
-  );
-  return Object.freeze({ ok: true, hash, ph: encodeBase64Url(hash) });
+  const digest = await digestActParams(act, params);
+  if (!digest) return { ok: false, reason: 'params' };
+  return Object.freeze({ ok: true, hash: digest.hash, ph: digest.ph });
 }
