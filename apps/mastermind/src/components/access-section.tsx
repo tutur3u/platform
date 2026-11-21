@@ -14,7 +14,11 @@ export function AccessSection({
   interactive: boolean;
 }) {
   const { t } = useI18n();
-  const requests = loginRequests(state, new Date(now));
+  // Open requests are answered from Needs you in the Inbox; one card per
+  // request keeps a single answer state. This section keeps the rest.
+  const requests = loginRequests(state, new Date(now)).filter(
+    (request) => request.state !== 'waiting' && request.state !== 'approved'
+  );
   const label = (id?: string) =>
     state.machines.find((m) => m.id === id)?.label ?? id;
   return (
@@ -34,7 +38,7 @@ export function AccessSection({
           ))}
         </div>
       ) : (
-        <SectionMessage>{t('access.empty')}</SectionMessage>
+        <SectionMessage>{t('access.inInbox')}</SectionMessage>
       )}
     </Section>
   );

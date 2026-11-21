@@ -82,7 +82,7 @@ function failure(status: number) {
 export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
   const headers = {
     Authorization: `Bearer ${owner.token}`,
-    [FLEET_FEATURES_HEADER]: 'login',
+    [FLEET_FEATURES_HEADER]: 'login,review',
   };
   return {
     async liveTicket(): Promise<OwnerLiveTicket | null> {

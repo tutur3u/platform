@@ -1,33 +1,17 @@
-import { Input } from '@tuturuuu/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useState } from 'react';
+import { Badge } from '@tuturuuu/ui/badge';
+import { ChevronDown, ChevronRight } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { useRef, useState } from 'react';
 import type { FleetSnapshot } from '../fleet/contract';
-import {
-  type InboxItem,
-  type InboxTier,
-  type InboxView,
-  inbox,
-  tierOf,
-} from '../fleet/model';
+import { inboxLanes, type NeedsItem } from '../fleet/inbox-lanes';
 import { useSnoozes } from '../fleet/snooze';
 import { useI18n } from '../i18n';
 import { AskCard } from './ask-card';
-import { ResolvedCard } from './resolved-card';
+import { FyiPanel, RecentAnswers } from './inbox-side';
+import { Kbd, onListKey, visibleCards } from './inbox-keys';
+import { LoginCard } from './login-card';
+import { ReviewCard } from './review-card';
 import { Section, SectionMessage } from './section';
-import { toneDot } from './tone';
-
-const TIERS: { tier: InboxTier; tone: 'red' | 'orange' | 'gray' }[] = [
-  { tier: 'urgent', tone: 'red' },
-  { tier: 'decide', tone: 'orange' },
-  { tier: 'fyi', tone: 'gray' },
-];
-const VIEWS: InboxView[] = ['open', 'snoozed', 'answered'];
-
-type Entry = InboxItem & { view: InboxView };
-
-function matches(query: string, title: string) {
-  return !query || title.toLowerCase().includes(query.toLowerCase());
-}
 
 export function Inbox({
   snapshot,
@@ -37,93 +21,143 @@ export function Inbox({
 }: {
   snapshot: FleetSnapshot;
   now: number;
+  /** Off hides open FYI asks; closed decisions still show. */
   showFyi: boolean;
   interactive: boolean;
 }) {
   const { t } = useI18n();
-  const snoozes = useSnoozes();
-  const [view, setView] = useState<InboxView>('open');
-  const [query, setQuery] = useState('');
-  const views = inbox(snapshot, snoozes, now);
-  const resolved = (snapshot.state.resolved ?? []).filter(
-    (decision) => decision.kind !== 'login'
-  );
-  // Every ask card lives under one keyed parent and the view and search only
-  // toggle visibility, so moving between Open, Snoozed and Answered (a snooze
-  // ending, Unsnooze) never remounts a card or drops its queued answer.
-  const entries: Entry[] = VIEWS.flatMap((name) =>
-    views[name].map((item) => ({ ...item, view: name }))
-  );
-  const shown = (entry: Entry) =>
-    entry.view === view &&
-    matches(query, entry.decision.title) &&
-    (showFyi || view !== 'open' || tierOf(entry.decision) !== 'fyi');
-  const shownResolved =
-    view === 'answered'
-      ? resolved.filter((decision) => matches(query, decision.title))
-      : [];
-  const empty = !entries.some(shown) && !shownResolved.length;
+  const lanes = inboxLanes(snapshot, useSnoozes(), now);
+  const list = useRef<HTMLDivElement>(null);
+  const [showSnoozed, setShowSnoozed] = useState(false);
+  const label = (id?: string) =>
+    snapshot.state.machines.find((m) => m.id === id)?.label ?? id;
+  // After the answered card re-renders, so its Undo never keeps focus.
+  const focusNext = (id: string) => () =>
+    setTimeout(() => {
+      const cards = visibleCards(list.current);
+      const from = cards.findIndex(
+        (card) => card.closest<HTMLElement>('[data-id]')?.dataset.id === id
+      );
+      cards[from + 1]?.focus();
+    }, 0);
+  const card = (item: NeedsItem) => {
+    if (item.kind === 'login')
+      return (
+        <LoginCard
+          decision={item.request.decision}
+          login={item.request.login}
+          state={item.request.state}
+          machine={label(item.request.login.machineId)}
+          now={now}
+          interactive={interactive}
+        />
+      );
+    if (item.kind === 'review')
+      return (
+        <ReviewCard
+          item={item}
+          now={now}
+          interactive={interactive}
+          onAnswered={focusNext(item.decision.id)}
+        />
+      );
+    return (
+      <AskCard
+        item={item}
+        now={now}
+        interactive={interactive}
+        onAnswered={focusNext(item.decision.id)}
+      />
+    );
+  };
+  const idOf = (item: NeedsItem) =>
+    item.kind === 'login' ? item.request.decision.id : item.decision.id;
 
   return (
-    <Section id="inbox" title={t('nav.inbox')}>
-      <Tabs
-        value={view}
-        onValueChange={(value) => setView(value as InboxView)}
-        className="gap-4"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <TabsList aria-label={t('nav.inbox')}>
-            {VIEWS.map((name) => (
-              <TabsTrigger key={name} value={name}>
-                {t(`inbox.${name}`)}
-                <span className="text-muted-foreground tabular-nums">
-                  {name === 'answered'
-                    ? views.answered.length + resolved.length
-                    : views[name].length}
-                </span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          <Input
-            type="search"
-            className="max-w-64"
-            aria-label={t('inbox.search')}
-            placeholder={t('inbox.search')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </div>
-      </Tabs>
-      <div className="space-y-3">
-        {view === 'snoozed' && (
-          <p className="text-muted-foreground text-sm">
-            {t('inbox.snoozeNote')}
+    <Section id="inbox" title={t('nav.inbox')} note={t('inbox.note')}>
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-semibold">{t('inbox.needsYou')}</h3>
+            <Badge variant="secondary" className="tabular-nums">
+              {lanes.needs.length}
+            </Badge>
+            <span className="ml-auto text-muted-foreground text-sm">
+              {t('inbox.mostUrgent')}
+            </span>
+          </div>
+          <p className="hidden flex-wrap items-center gap-1.5 text-muted-foreground text-xs md:flex">
+            <Kbd>J</Kbd>
+            <Kbd>K</Kbd>
+            {t('inbox.keys.move')}
+            <Kbd>1</Kbd>
+            <Kbd>2</Kbd>
+            <Kbd>3</Kbd>
+            {t('inbox.keys.choose')}
+            <Kbd>R</Kbd>
+            {t('inbox.keys.reply')}
+            <Kbd>Ctrl/Cmd Enter</Kbd>
+            {t('inbox.keys.sendNext')}
           </p>
-        )}
-        {empty && <SectionMessage>{t(`inbox.empty.${view}`)}</SectionMessage>}
-        <div className="space-y-6">
-          {TIERS.map(({ tier, tone }) => {
-            const group = entries.filter(
-              (entry) => tierOf(entry.decision) === tier
-            );
-            if (!group.length) return null;
-            return (
-              <div key={tier} className="space-y-3" hidden={!group.some(shown)}>
-                <h3 className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                  <span className={toneDot(tone)} aria-hidden />
-                  {t(`tier.${tier}`)}
-                </h3>
-                {group.map((entry) => (
-                  <div key={entry.decision.id} hidden={!shown(entry)}>
-                    <AskCard item={entry} now={now} interactive={interactive} />
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-          {shownResolved.map((decision) => (
-            <ResolvedCard key={decision.id} decision={decision} />
-          ))}
+          {/* Keys are handled on the list; each card is focusable. */}
+          {/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          {/* Every card, snoozed ones too, is a keyed entry of one array,
+              so moving between Needs you and Snoozed never remounts a card
+              or drops its queued answer, retry or draft. */}
+          <div ref={list} className="space-y-3" onKeyDown={onListKey}>
+            {[
+              ...(lanes.needs.length
+                ? []
+                : [
+                    <SectionMessage key="empty">
+                      {t('inbox.empty.needs')}
+                    </SectionMessage>,
+                  ]),
+              ...lanes.needs.map((item) => (
+                <div key={idOf(item)} data-id={idOf(item)} className="contents">
+                  {card(item)}
+                </div>
+              )),
+              ...(lanes.snoozed.length
+                ? [
+                    <Button
+                      key="snoozed-toggle"
+                      variant="ghost"
+                      size="sm"
+                      aria-expanded={showSnoozed}
+                      onClick={() => setShowSnoozed((open) => !open)}
+                    >
+                      {showSnoozed ? <ChevronDown /> : <ChevronRight />}
+                      {t('inbox.snoozedTitle', { n: lanes.snoozed.length })}
+                    </Button>,
+                  ]
+                : []),
+              ...(showSnoozed && lanes.snoozed.length
+                ? [
+                    <p
+                      key="snoozed-note"
+                      className="text-muted-foreground text-sm"
+                    >
+                      {t('inbox.snoozeNote')}
+                    </p>,
+                  ]
+                : []),
+              ...lanes.snoozed.map((item) => (
+                <div
+                  key={item.decision.id}
+                  data-id={item.decision.id}
+                  data-hidden={showSnoozed ? undefined : ''}
+                  className={showSnoozed ? 'contents' : 'hidden'}
+                >
+                  <AskCard item={item} now={now} interactive={interactive} />
+                </div>
+              )),
+            ]}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <FyiPanel lanes={lanes} showFyi={showFyi} />
+          <RecentAnswers items={lanes.recent} />
         </div>
       </div>
     </Section>

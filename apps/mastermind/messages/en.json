@@ -12,7 +12,7 @@
     "title": "Command center",
     "subtitle": "Owner view of the agent fleet",
     "nav": {
-      "overview": "Overview",
+      "overview": "Today",
       "inbox": "Inbox",
       "access": "Access requests",
       "fleet": "Fleet",
@@ -59,13 +59,17 @@
       "frozenQueued": "Main is frozen: {reason}; {queued} queued.",
       "frozenPlain": "Main is frozen.",
       "logins": "Sign-in needed: {list}.",
-      "calm": "Nothing needs you right now."
+      "calm": "Nothing needs you right now.",
+      "headline": "{running} lanes running, {failed} failed",
+      "settled": "{n} other lanes ended as cancelled duplicates or recovered; they are not failures.",
+      "machines": "{online} of {machines} machines online."
     },
     "kpi": {
       "running": "Running lanes",
       "needYou": "Need you",
       "logins": "Blocked on sign-in",
-      "machines": "Machines online"
+      "machines": "Machines online",
+      "failed": "Failed"
     },
     "inbox": {
       "open": "Open",
@@ -75,9 +79,24 @@
       "empty": {
         "open": "No open asks.",
         "snoozed": "Nothing snoozed on this device.",
-        "answered": "No answers in the last 24 hours."
+        "answered": "No answers in the last 24 hours.",
+        "needs": "Nothing needs you right now.",
+        "fyi": "Nothing to skim."
       },
-      "snoozeNote": "Snooze hides an ask on this device only; its deadline still applies."
+      "snoozeNote": "Snooze hides an ask on this device only; its deadline still applies.",
+      "note": "Decisions that need you, then everything worth knowing.",
+      "needsYou": "Needs you",
+      "mostUrgent": "Most urgent first",
+      "keys": {
+        "move": "move",
+        "choose": "choose",
+        "reply": "reply",
+        "sendNext": "send and next"
+      },
+      "fyi": "FYI",
+      "recent": "Your recent answers",
+      "recentNote": "Each answer shows how far it got.",
+      "snoozedTitle": "Snoozed on this device ({n})"
     },
     "tier": {
       "urgent": "Urgent",
@@ -112,7 +131,10 @@
       "check": "Check",
       "superseded": "Answered elsewhere first; this answer was not sent.",
       "retrying": "Not sent yet · retrying in {seconds} s",
-      "retryNow": "Retry now"
+      "retryNow": "Retry now",
+      "whyNow": "Why now",
+      "replyInline": "Or type a reply. It is steered to the asking lane.",
+      "sendNext": "Send and next"
     },
     "snooze": {
       "label": "Snooze",
@@ -124,7 +146,8 @@
     "resolved": {
       "via": "Answered on {channel}",
       "at": "{outcome} at {time}",
-      "plain": "Resolved at {time}"
+      "plain": "Resolved at {time}",
+      "closedHere": "closed here too"
     },
     "channel": {
       "mastermind": "Mastermind",
@@ -158,7 +181,8 @@
         "expired": "Expired",
         "failed": "Sign-in not detected"
       },
-      "expiresLabel": "Expires"
+      "expiresLabel": "Expires",
+      "inInbox": "Open sign-in requests are answered from the Inbox. Closed ones show here."
     },
     "fleet": {
       "outcomes": "{real} failures · {quotaRecovered} quota stops auto-recovered · {quotaUnrecovered} quota stops with no automatic recovery · {unclassified} unclassified",
@@ -289,9 +313,47 @@
       "approve": "Approved",
       "hold": "Held",
       "reply": "Replied",
-      "signed_in": "Signed in"
+      "signed_in": "Signed in",
+      "request_changes": "Changes requested"
     },
-    "reload": "Refresh"
+    "reload": "Refresh",
+    "urgency": {
+      "urgent": "Urgent",
+      "high": "High",
+      "normal": "Normal",
+      "fyi": "FYI"
+    },
+    "review": {
+      "badge": "Design review",
+      "open": "Open full mockup",
+      "approve": "Approve",
+      "requestChanges": "Request changes",
+      "notes": "What should change?",
+      "send": "Send changes",
+      "previewAlt": "Preview of {title}",
+      "noPreview": "Preview unavailable"
+    },
+    "delivery": {
+      "sent": "Sent",
+      "received": "Received by Iris"
+    },
+    "outcomes": {
+      "settled": "Recovered or cancelled",
+      "settledNote": "Counted apart from failures.",
+      "cancelled": "cancelled duplicates",
+      "quotaRecovered": "recovered after quota",
+      "recovered": "retried and passed",
+      "failed": "Failed, not yet superseded",
+      "noFailed": "No lane has failed without a retry."
+    },
+    "banner": {
+      "theMac": "the orchestrator Mac",
+      "live": "Live · {machine} published {age} ago · this browser checked {checked} ago",
+      "paused": "Fleet publisher paused on {machine}",
+      "pausedBody": "Last publish {time} ({age} ago). This browser is online and checked {checked} ago, so the numbers below are {age} old.",
+      "offline": "This device is offline",
+      "offlineBody": "Showing what it received at {time}. The publisher may still be running; this clears when you reconnect."
+    }
   },
   "owner": "Authenticated owner",
   "fleetAccess": {

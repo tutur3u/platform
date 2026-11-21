@@ -18,23 +18,47 @@ shell and `@tuturuuu/ui` components. Every section reads the
 [fleet sync](/platform/features/mobile-mastermind#fleet-sync) snapshot, and
 nothing renders a value the snapshot does not carry:
 
-- **What's happening now**: one sentence and four counts (running lanes,
-  open asks that need the owner, sign-ins waiting, machines online).
-- **Inbox**: open asks in urgent, needs-a-decision and FYI tiers, ordered by
-  deadline. A card shows Why, If no answer, From and a live countdown. The
-  recommended option answers in one tap; other options, Hold and Reply sit
-  beside it. A tapped answer waits five seconds with **Undo** before it is
-  sent, then shows the receipt (waiting for pickup or picked up, with the
-  revision). Answers use one idempotency key per answer, reused on retry.
-  The Answered tab lists recorded answers and decisions resolved elsewhere
-  (WhatsApp, the phone, the CLI) in the last 24 hours.
+- **Today**: the headline counts running lanes and only failures nobody
+  picked up again (`counts.failed`); recovered, quota-recovered and cancelled
+  lanes appear in a separate "Recovered or cancelled" card with their
+  breakdown, beside the list of unsuperseded failed lanes. Four counts:
+  running lanes, open items that need the owner, sign-ins waiting, failed.
+- **Freshness banner**: "Fleet publisher paused on <machine>" when this page
+  still reaches Web but the snapshot's `generatedAt` is old, and "This device
+  is offline" when the page's own refresh fails (it shows when the data on
+  screen arrived). Live shows when the Mac published and when this browser
+  last checked.
+- **Inbox**: two lanes. **Needs you** holds open asks, design reviews and
+  open sign-in requests, by urgency and then deadline (sign-ins rank with
+  high asks). An ask card shows its urgency, requester, countdown, Why now
+  and If no answer, numbered options with the recommended one filled, Hold,
+  Snooze, and an inline reply steered to the asking lane. Answering moves
+  focus to the next card; J and K move, a digit picks that option, R jumps
+  to the reply box and Ctrl or Cmd with Enter sends. A tapped answer waits
+  five seconds with **Undo**, then shows its delivery state (sending,
+  retrying with the same idempotency key, not sent, closed, superseded, or
+  the receipt). **FYI** lists open FYI asks and decisions resolved anywhere,
+  with "Answered on WhatsApp" (or the phone, the CLI) and "closed here too";
+  **Your recent answers** shows each recorded answer as Sent or Received by
+  Iris. Snoozed asks sit in a collapsed list under Needs you.
+- **Design reviews** (`kind: review`): the preview image, Open full mockup
+  (new tab, `noopener`), Approve, and Request changes, which opens a notes
+  box and sends `request_changes`. The page never loads a preview URL
+  directly: the `loadReviewPreview` server function reads the owner's own
+  snapshot, fetches the uploaded asset with the owner's bearer (or a
+  first-party hosted image without credentials), refuses redirects, caps the
+  size, checks the image signature and returns a data URL, which the page
+  CSP (`img-src 'self' data:`) allows. The page reads fleet state with
+  `x-mastermind-fleet-features: login,review`.
 - **Snooze** is per device: Web keeps no per-owner snooze record, so a snooze
   lives in this browser's storage, hides the ask until the chosen time and
   never changes its deadline or what the phone shows.
-- **Access requests**: login decisions with the allowlisted link, the device
-  code with Copy, the expiry countdown, the waiting, approved and verified
-  steps, and "I signed in" (the `signed_in` answer). A request whose expiry
-  passes on the page clock reads as expired and hides its link and code.
+- **Access requests**: open requests are answered from Needs you (one card
+  per request keeps one answer state); this section keeps closed ones. A
+  card shows the allowlisted link, the device code with Copy, the expiry
+  countdown, the waiting, approved and verified steps, and "I signed in"
+  (the `signed_in` answer). A request whose expiry passes on the page clock
+  reads as expired and hides its link and code.
 - **Fleet**: the main freeze, production, migrations and incidents strip
   from `release`, then machines with their lanes. Provider quota is not in
   the snapshot, so its card says so.
@@ -46,8 +70,10 @@ nothing renders a value the snapshot does not carry:
   per-device "Show FYI" switch.
 
 Page state is one union (ready, stale, unpublished, error). A snapshot older
-than ten minutes, an offline orchestrator or a failed refresh keeps the last
-snapshot on screen marked stale. The page refreshes every 15 seconds through
+than two minutes, an offline orchestrator or a failed refresh keeps the last
+snapshot on screen marked stale and read-only. Regression coverage:
+`apps/mastermind/src/components/inbox.test.tsx`,
+`src/fleet/inbox-lanes.test.ts` and `src/native/review-preview.test.ts`. The page refreshes every 15 seconds through
 TanStack Query; route changes between locales show a fixed skeleton.
 
 ## Request admission

@@ -12,7 +12,7 @@
     "title": "Trung tâm điều khiển",
     "subtitle": "Góc nhìn của chủ sở hữu về đội agent",
     "nav": {
-      "overview": "Tổng quan",
+      "overview": "Hôm nay",
       "inbox": "Hộp thư",
       "access": "Yêu cầu đăng nhập",
       "fleet": "Đội máy",
@@ -59,13 +59,17 @@
       "frozenQueued": "Main đang đóng băng: {reason}; {queued} đang chờ.",
       "frozenPlain": "Main đang đóng băng.",
       "logins": "Cần đăng nhập: {list}.",
-      "calm": "Hiện không có việc cần bạn."
+      "calm": "Hiện không có việc cần bạn.",
+      "headline": "{running} luồng đang chạy, {failed} luồng lỗi",
+      "settled": "{n} luồng khác kết thúc do bị hủy vì trùng lặp hoặc đã phục hồi; đó không phải lỗi.",
+      "machines": "{online}/{machines} máy trực tuyến."
     },
     "kpi": {
       "running": "Luồng đang chạy",
       "needYou": "Cần bạn",
       "logins": "Chờ đăng nhập",
-      "machines": "Máy trực tuyến"
+      "machines": "Máy trực tuyến",
+      "failed": "Lỗi"
     },
     "inbox": {
       "open": "Đang mở",
@@ -75,9 +79,24 @@
       "empty": {
         "open": "Không có câu hỏi đang mở.",
         "snoozed": "Không có mục tạm hoãn trên thiết bị này.",
-        "answered": "Không có câu trả lời trong 24 giờ qua."
+        "answered": "Không có câu trả lời trong 24 giờ qua.",
+        "needs": "Hiện không có việc gì cần bạn.",
+        "fyi": "Không có gì để lướt."
       },
-      "snoozeNote": "Tạm hoãn chỉ ẩn câu hỏi trên thiết bị này; hạn vẫn áp dụng."
+      "snoozeNote": "Tạm hoãn chỉ ẩn câu hỏi trên thiết bị này; hạn vẫn áp dụng.",
+      "note": "Quyết định cần bạn, sau đó là những điều nên biết.",
+      "needsYou": "Cần bạn",
+      "mostUrgent": "Khẩn nhất ở trên",
+      "keys": {
+        "move": "di chuyển",
+        "choose": "chọn",
+        "reply": "trả lời",
+        "sendNext": "gửi và tiếp"
+      },
+      "fyi": "FYI",
+      "recent": "Trả lời gần đây của bạn",
+      "recentNote": "Mỗi trả lời hiện đã đi đến đâu.",
+      "snoozedTitle": "Đã tạm ẩn trên thiết bị này ({n})"
     },
     "tier": {
       "urgent": "Khẩn cấp",
@@ -112,7 +131,10 @@
       "check": "Kiểm tra",
       "superseded": "Đã được trả lời ở nơi khác trước; câu trả lời này chưa được gửi.",
       "retrying": "Chưa gửi được · thử lại sau {seconds} giây",
-      "retryNow": "Thử lại ngay"
+      "retryNow": "Thử lại ngay",
+      "whyNow": "Vì sao lúc này",
+      "replyInline": "Hoặc nhập trả lời. Tin được điều hướng tới luồng đã hỏi.",
+      "sendNext": "Gửi và tiếp"
     },
     "snooze": {
       "label": "Tạm hoãn",
@@ -124,7 +146,8 @@
     "resolved": {
       "via": "Đã trả lời trên {channel}",
       "at": "{outcome} lúc {time}",
-      "plain": "Đã xử lý lúc {time}"
+      "plain": "Đã xử lý lúc {time}",
+      "closedHere": "cũng đã đóng ở đây"
     },
     "channel": {
       "mastermind": "Mastermind",
@@ -158,7 +181,8 @@
         "expired": "Đã hết hạn",
         "failed": "Không thấy đăng nhập"
       },
-      "expiresLabel": "Hết hạn"
+      "expiresLabel": "Hết hạn",
+      "inInbox": "Yêu cầu đăng nhập đang mở được trả lời trong Hộp thư. Yêu cầu đã đóng hiện ở đây."
     },
     "fleet": {
       "outcomes": "{real} lần lỗi · {quotaRecovered} lần hết hạn mức đã tự phục hồi · {quotaUnrecovered} lần hết hạn mức chưa tự phục hồi · {unclassified} chưa phân loại",
@@ -289,9 +313,47 @@
       "approve": "Đã duyệt",
       "hold": "Đã giữ",
       "reply": "Đã trả lời",
-      "signed_in": "Đã đăng nhập"
+      "signed_in": "Đã đăng nhập",
+      "request_changes": "Đã yêu cầu chỉnh sửa"
     },
-    "reload": "Làm mới"
+    "reload": "Làm mới",
+    "urgency": {
+      "urgent": "Khẩn",
+      "high": "Cao",
+      "normal": "Thường",
+      "fyi": "FYI"
+    },
+    "review": {
+      "badge": "Duyệt thiết kế",
+      "open": "Mở bản mẫu đầy đủ",
+      "approve": "Duyệt",
+      "requestChanges": "Yêu cầu chỉnh sửa",
+      "notes": "Cần thay đổi điều gì?",
+      "send": "Gửi yêu cầu",
+      "previewAlt": "Ảnh xem trước của {title}",
+      "noPreview": "Không có ảnh xem trước"
+    },
+    "delivery": {
+      "sent": "Đã gửi",
+      "received": "Iris đã nhận"
+    },
+    "outcomes": {
+      "settled": "Đã phục hồi hoặc đã hủy",
+      "settledNote": "Được đếm riêng, không tính là lỗi.",
+      "cancelled": "trùng lặp đã hủy",
+      "quotaRecovered": "phục hồi sau hết hạn mức",
+      "recovered": "chạy lại và đạt",
+      "failed": "Lỗi, chưa có bản thay thế",
+      "noFailed": "Không có luồng lỗi nào chưa được chạy lại."
+    },
+    "banner": {
+      "theMac": "máy Mac điều phối",
+      "live": "Trực tiếp · {machine} phát {age} trước · trình duyệt kiểm tra {checked} trước",
+      "paused": "Bộ phát dữ liệu trên {machine} đang tạm dừng",
+      "pausedBody": "Lần phát cuối {time} ({age} trước). Trình duyệt này đang trực tuyến và đã kiểm tra {checked} trước, nên số liệu dưới đây đã cũ {age}.",
+      "offline": "Thiết bị này đang ngoại tuyến",
+      "offlineBody": "Đang hiện dữ liệu nhận lúc {time}. Bộ phát có thể vẫn chạy; thông báo này tự tắt khi bạn kết nối lại."
+    }
   },
   "owner": "Chủ sở hữu đã xác thực",
   "fleetAccess": {

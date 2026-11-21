@@ -1,6 +1,8 @@
 import { createServerFn } from '@tanstack/react-start';
 import { createFleetClient } from '../native/clients';
 import { currentOwner } from '../native/context';
+import { z } from 'zod';
+import { fetchReviewPreview } from '../native/review-preview';
 import { fleetAnswerRequestSchema } from './contract';
 
 /**
@@ -20,3 +22,22 @@ export const loadFleet = createServerFn({ method: 'GET' }).handler(async () => {
 export const answerFleetDecision = createServerFn({ method: 'POST' })
   .validator(fleetAnswerRequestSchema)
   .handler(({ data }) => createFleetClient(currentOwner()).answer(data));
+
+/**
+ * A design review's preview image as a data URL, or null. Only the decision
+ * id comes from the page; the image source is read from the owner's own
+ * validated snapshot.
+ */
+export const loadReviewPreview = createServerFn({ method: 'GET' })
+  .validator(
+    z.object({ decisionId: z.string().regex(/^[a-z0-9][a-z0-9._-]{0,63}$/) })
+  )
+  .handler(async ({ data }) => {
+    const owner = currentOwner();
+    const read = await createFleetClient(owner).state();
+    if (read.kind !== 'ready') return null;
+    const decision = read.snapshot.state.decisions.find(
+      (d) => d.id === data.decisionId && d.kind === 'review'
+    );
+    return decision?.review ? fetchReviewPreview(owner, decision.review) : null;
+  });

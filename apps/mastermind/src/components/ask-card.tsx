@@ -1,87 +1,86 @@
-import { Check, Clock, MessageSquare } from '@tuturuuu/icons';
-import { Badge } from '@tuturuuu/ui/badge';
+import { Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
+import { useState } from 'react';
 import { useAnswer } from '../fleet/answer';
 import type { InboxItem } from '../fleet/model';
-import { formatRemaining, tierOf } from '../fleet/model';
 import { setSnooze } from '../fleet/snooze';
 import { formatTime, useI18n } from '../i18n';
+import { Due, UrgencyBadge } from './ask-meta';
 import { AnswerOutcome, ReceiptLine } from './ask-outcome';
 import { Facts } from './section';
 import { SnoozeMenu } from './snooze-menu';
-import { toneBadge } from './tone';
 
-const DUE_TONE = { urgent: 'red', decide: 'orange', fyi: 'gray' } as const;
-
-function Due({
-  deadlineAt,
-  now,
-  tier,
-}: {
-  deadlineAt?: string;
-  now: number;
-  tier: keyof typeof DUE_TONE;
-}) {
-  const { t } = useI18n();
-  if (!deadlineAt) return null;
-  const left = Date.parse(deadlineAt) - now;
-  return (
-    <Badge
-      variant="outline"
-      className={toneBadge(left > 0 ? DUE_TONE[tier] : 'gray')}
-    >
-      <Clock />
-      <span className="tabular-nums">
-        {left > 0
-          ? t('ask.due', { time: formatRemaining(left) })
-          : t('ask.overdue')}
-      </span>
-    </Badge>
-  );
-}
-
+/**
+ * One ask: numbered options with the recommended one filled, and a typed
+ * reply steered to the asking lane. `onAnswered` moves focus to the next
+ * card ("send and next").
+ */
 export function AskCard({
   item,
   now,
   interactive,
+  onAnswered,
 }: {
   item: InboxItem;
   now: number;
   /** False while the snapshot is stale from a failed refresh. */
   interactive: boolean;
+  onAnswered?: () => void;
 }) {
   const { t, locale } = useI18n();
   const { decision, receipt, snoozedUntil } = item;
   const answer = useAnswer(decision.id);
   const { state } = answer;
-  const tier = tierOf(decision);
-  const recommended = decision.options.find(
-    (option) => option.id === decision.recommendedOptionId
+  const [draft, setDraft] = useState('');
+  const options = [...decision.options].sort(
+    (a, b) =>
+      Number(b.id === decision.recommendedOptionId) -
+      Number(a.id === decision.recommendedOptionId)
   );
-  const others = decision.options.filter((option) => option !== recommended);
-  const actionable =
-    interactive &&
-    !receipt &&
-    (state.kind === 'idle' || state.kind === 'replying');
+  const actionable = interactive && !receipt && state.kind === 'idle';
+  const choose = (input: Parameters<typeof answer.queue>[0], next = true) => {
+    answer.queue(input);
+    if (next) onAnswered?.();
+  };
+  const sendReply = () => {
+    const text = draft.trim();
+    if (!text) return;
+    setDraft('');
+    choose({ action: 'reply', text });
+  };
 
   return (
-    <Card className={cn(!actionable && 'bg-muted/50')}>
+    <Card
+      data-inbox-card
+      tabIndex={-1}
+      className={cn(
+        'focus-visible:outline-2 focus-visible:outline-ring',
+        !actionable && 'bg-muted/50'
+      )}
+    >
       <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <h4 className="min-w-0 flex-1 font-semibold">{decision.title}</h4>
-          <Due deadlineAt={decision.deadlineAt} now={now} tier={tier} />
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <UrgencyBadge urgency={decision.urgency} />
+            {decision.requester && (
+              <span className="text-muted-foreground text-sm">
+                {decision.requester}
+              </span>
+            )}
+          </div>
+          <Due deadlineAt={decision.deadlineAt} now={now} />
         </div>
+        <h4 className="font-semibold">{decision.title}</h4>
         {decision.body && (
           <p className="text-muted-foreground text-sm">{decision.body}</p>
         )}
         <Facts
           rows={[
-            [t('ask.why'), decision.why],
+            [t('ask.whyNow'), decision.why],
             [t('ask.default'), decision.defaultOutcome],
-            [t('ask.from'), decision.requester],
           ]}
         />
         {receipt && state.kind === 'idle' && <ReceiptLine receipt={receipt} />}
@@ -97,51 +96,48 @@ export function AskCard({
             </Button>
           </div>
         )}
-        {actionable && tier !== 'fyi' && (
+        {actionable && (
           <div className="flex flex-wrap gap-2">
-            {recommended && (
+            {options.map((option, index) => {
+              const recommended = option.id === decision.recommendedOptionId;
+              return (
+                <Button
+                  key={option.id}
+                  size="sm"
+                  data-option={index + 1}
+                  variant={recommended ? 'default' : 'outline'}
+                  onClick={() =>
+                    choose({ action: 'approve', optionId: option.id })
+                  }
+                >
+                  <span className="font-mono text-xs opacity-70">
+                    {index + 1}
+                  </span>
+                  {option.label}
+                  {recommended && (
+                    <span className="font-normal text-xs opacity-70">
+                      {t('ask.recommended')}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+            {!options.length && (
               <Button
-                onClick={() =>
-                  answer.queue({ action: 'approve', optionId: recommended.id })
-                }
+                size="sm"
+                data-option={1}
+                onClick={() => choose({ action: 'approve' })}
               >
-                <Check />
-                {recommended.label}
-                <span className="font-normal text-xs opacity-70">
-                  {t('ask.recommended')}
-                </span>
-              </Button>
-            )}
-            {others.map((option) => (
-              <Button
-                key={option.id}
-                variant="outline"
-                onClick={() =>
-                  answer.queue({ action: 'approve', optionId: option.id })
-                }
-              >
-                {option.label}
-              </Button>
-            ))}
-            {!decision.options.length && (
-              <Button onClick={() => answer.queue({ action: 'approve' })}>
-                <Check />
+                <span className="font-mono text-xs opacity-70">1</span>
                 {t('ask.approve')}
               </Button>
             )}
             <Button
-              variant="outline"
-              onClick={() => answer.queue({ action: 'hold' })}
+              size="sm"
+              variant="ghost"
+              onClick={() => choose({ action: 'hold' })}
             >
               {t('ask.hold')}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={answer.reply}
-              aria-expanded={state.kind === 'replying'}
-            >
-              <MessageSquare />
-              {t('ask.reply')}
             </Button>
             {!snoozedUntil && (
               <SnoozeMenu
@@ -151,36 +147,32 @@ export function AskCard({
             )}
           </div>
         )}
-        {actionable && state.kind === 'replying' && (
+        {actionable && (
           <form
-            className="space-y-2"
+            className="flex gap-2"
             onSubmit={(event) => {
               event.preventDefault();
-              const text = state.draft.trim();
-              if (text) answer.queue({ action: 'reply', text });
+              sendReply();
             }}
           >
-            <Textarea
-              autoFocus
+            <Input
+              data-reply
               aria-label={t('ask.reply')}
-              placeholder={t('ask.replyPlaceholder')}
+              placeholder={t('ask.replyInline')}
               maxLength={2000}
-              value={state.draft}
-              onChange={(event) => answer.draft(event.target.value)}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                  event.preventDefault();
+                  sendReply();
+                }
+              }}
             />
-            <div className="flex gap-2">
-              <Button size="sm" type="submit" disabled={!state.draft.trim()}>
-                {t('ask.send')}
-              </Button>
-              <Button
-                size="sm"
-                type="button"
-                variant="ghost"
-                onClick={answer.cancel}
-              >
-                {t('ask.cancel')}
-              </Button>
-            </div>
+            <Button type="submit" variant="secondary" disabled={!draft.trim()}>
+              <Send />
+              {t('ask.sendNext')}
+            </Button>
           </form>
         )}
         {state.kind !== 'idle' && state.kind !== 'replying' && (

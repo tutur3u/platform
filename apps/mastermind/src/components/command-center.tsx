@@ -2,7 +2,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { useNow } from '../fleet/clock';
 import { type FleetSnapshot } from '../fleet/contract';
-import { inbox, loginRequests } from '../fleet/model';
+import { inboxLanes } from '../fleet/inbox-lanes';
+import { loginRequests } from '../fleet/model';
 import { subscribeOwnerLive } from '../fleet/owner-live';
 import {
   type FleetLoad,
@@ -21,7 +22,7 @@ import { SettingsSection } from './cost-settings';
 import { Digest } from './digest';
 import { FleetSection } from './fleet-section';
 import { Inbox } from './inbox';
-import { BlockingState, FreshnessLine, StaleNotice } from './page-states';
+import { BlockingState, FreshnessBanner, FreshnessLine } from './page-states';
 import { PageHeader, Shell } from './shell';
 
 export const FLEET_QUERY_KEY = ['fleet'] as const;
@@ -112,7 +113,7 @@ export function CommandCenter({ initial }: { initial: FleetLoad }) {
       ? state.snapshot
       : undefined;
   const counts = snapshot && {
-    inbox: inbox(snapshot, snoozes, now).open.length,
+    inbox: inboxLanes(snapshot, snoozes, now).needs.length,
     access: loginRequests(snapshot.state, new Date(now)).filter(
       (item) => item.state === 'waiting' || item.state === 'approved'
     ).length,
@@ -130,11 +131,16 @@ export function CommandCenter({ initial }: { initial: FleetLoad }) {
       }
     >
       <PageHeader title={t('title')} subtitle={query.data.email} />
-      {state.kind === 'stale' && (
-        <StaleNotice
-          reason={state.reason}
-          onRetry={retry}
+      {snapshot && (
+        <FreshnessBanner
+          state={state}
+          generatedAt={snapshot.state.generatedAt}
+          checkedAt={query.data.fetchedAt}
+          // The publisher lists its own machine first.
+          machine={snapshot.state.machines[0]?.label}
+          now={now}
           retrying={query.isFetching}
+          onRetry={retry}
         />
       )}
       {snapshot ? (

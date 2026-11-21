@@ -20,6 +20,12 @@ export {
   fleetAnswerActions,
 } from '../../../web/src/lib/mastermind/fleet/contract';
 export {
+  type FleetReview,
+  safeReviewImageUrl,
+  sniffReviewImage,
+  FLEET_REVIEW_IMAGE_MAX_BYTES,
+} from '../../../web/src/lib/mastermind/fleet/review';
+export {
   type FleetLogin,
   type FleetLoginState,
   effectiveLoginState,
@@ -54,8 +60,10 @@ export const fleetAnswerRequestSchema = z
     text: z.string().trim().max(2000).optional(),
     idempotencyKey: z.uuid(),
   })
-  .refine((input) => input.action !== 'reply' || !!input.text, {
-    message: 'reply needs text',
-    path: ['text'],
-  });
+  .refine(
+    (input) =>
+      (input.action !== 'reply' && input.action !== 'request_changes') ||
+      !!input.text,
+    { message: 'reply needs text', path: ['text'] }
+  );
 export type FleetAnswerRequest = z.infer<typeof fleetAnswerRequestSchema>;

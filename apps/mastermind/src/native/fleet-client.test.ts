@@ -12,7 +12,7 @@ const owner: Owner = {
   mfa: true,
 };
 
-test('fleet reads send only the owner bearer and the login feature, and validate the body', async () => {
+test('fleet reads send only the owner bearer and the login and review features, and validate the body', async () => {
   const fetcher = vi.fn<typeof fetch>(async () =>
     Response.json(fleetResponseFixture(Date.now()))
   );
@@ -23,7 +23,9 @@ test('fleet reads send only the owner bearer and the login feature, and validate
     'https://tuturuuu.com/api/v1/mastermind/fleet/state'
   );
   expect(request.headers.get('Authorization')).toBe('Bearer session-token');
-  expect(request.headers.get('x-mastermind-fleet-features')).toBe('login');
+  expect(request.headers.get('x-mastermind-fleet-features')).toBe(
+    'login,review'
+  );
   expect(request.redirect).toBe('manual');
   expect([...request.headers.keys()].sort()).toEqual([
     'authorization',

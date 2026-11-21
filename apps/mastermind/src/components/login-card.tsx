@@ -102,8 +102,15 @@ export function LoginCard({
   const open = state === 'waiting' || state === 'approved';
   const host = login.url ? new URL(login.url).host : undefined;
   const left = login.expiresAt ? Date.parse(login.expiresAt) - now : undefined;
+  // An answer already under way keeps its outcome on screen while the
+  // page is read-only; only a new "I signed in" needs a live page.
+  const showFooter = open && (interactive || answer.state.kind !== 'idle');
   return (
-    <Card>
+    <Card
+      data-inbox-card
+      tabIndex={-1}
+      className="focus-visible:outline-2 focus-visible:outline-ring"
+    >
       <CardHeader className="flex-row flex-wrap items-start justify-between gap-3 p-4">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="grid size-10 flex-none place-items-center rounded-md border bg-muted font-mono font-semibold text-xs uppercase">
@@ -167,7 +174,7 @@ export function LoginCard({
         )}
         <Stepper state={state} />
       </CardContent>
-      {open && interactive && (
+      {showFooter && (
         <CardFooter className="gap-2 border-t px-4 py-3">
           {answer.state.kind === 'idle' ? (
             <Button
