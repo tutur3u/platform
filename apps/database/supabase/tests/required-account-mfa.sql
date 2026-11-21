@@ -3,7 +3,21 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select plan(63);
 -- Accounts are created by the auth server role, which seeds platform roles through create_user_profile.
-set local role supabase_auth_admin;
+-- Switch only when this session is not already admitted and can assume it: the local runner is non-superuser postgres.
+do $assume$
+begin
+  if coalesce(nullif(current_setting('role'), 'none'), session_user::text)
+       in ('postgres', 'supabase_auth_admin') then
+    return;
+  end if;
+  if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
+    return;
+  end if;
+  if pg_has_role(session_user, 'supabase_auth_admin', 'SET') then
+    perform set_config('role', 'supabase_auth_admin', true);
+  end if;
+end
+$assume$;
 insert into auth.users (id, aud, role, email, raw_app_meta_data, created_at, updated_at)
 values ('00000000-0000-4000-8000-000000009901', 'authenticated', 'authenticated', 'mfa-policy-test@tuturuuu.com', '{}', now(), now());
 reset role;
