@@ -17,6 +17,7 @@ import {
   sha256Hex,
 } from '@/lib/people-registry/request-signature';
 import { GET as getChanges } from './changes/route';
+import { POST as writeEvent } from './events/route';
 import { POST as recall } from './recall/route';
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
@@ -328,5 +329,104 @@ describe('people registry machine routes', () => {
       })
     );
     expect(invalid.status).toBe(400);
+  });
+
+  const observe = JSON.stringify({ items: [{ type: 'observe_sender' }] });
+  const writeEvidence = { operation: 'registry.write' };
+
+  it('writes a bundle with the current conversation hash and the body hash', async () => {
+    let writeArgs: Record<string, unknown> = {};
+    registry('responder', {
+      people_machine_lookup_keys: lookupKeys,
+      people_write_event: (args) => {
+        writeArgs = args;
+        return {
+          reason: 'ok',
+          items: [{ type: 'observe_sender', result: 'created' }],
+        };
+      },
+    });
+    const response = await writeEvent(
+      signedRequest('/api/v1/people/events', {
+        body: observe,
+        event: writeEvidence,
+      })
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      items: [{ type: 'observe_sender', result: 'created' }],
+    });
+    const conversation = lookupHash(
+      unwrapWorkspaceKey(
+        wsId,
+        lookupKeys()[1] as Parameters<typeof unwrapWorkspaceKey>[1]
+      ),
+      { wsId, channel: 'zalo', account: 'acct-1', externalId: 'conv-1' }
+    ).toString('hex');
+    expect(writeArgs).toMatchObject({
+      p_input_sha256: createHash('sha256').update(observe).digest('hex'),
+      p_conversation_current: { version: 1, hash: conversation },
+      p_conversation_lookups: [{ version: 1, hash: conversation }],
+      p_items: [{ type: 'observe_sender' }],
+    });
+    expect(JSON.stringify(writeArgs)).not.toContain('conv-1');
+  });
+
+  it.each([
+    ['unknown_sender', 422],
+    ['consent_required', 422],
+    ['event_consumed', 409],
+    ['scope_denied', 403],
+  ])('maps a %s receipt to %i', async (reason, status) => {
+    registry('responder', {
+      people_machine_lookup_keys: lookupKeys,
+      people_write_event: () => ({ reason }),
+    });
+    const response = await writeEvent(
+      signedRequest('/api/v1/people/events', {
+        body: observe,
+        event: writeEvidence,
+      })
+    );
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error: reason });
+  });
+
+  it('marks a replayed receipt', async () => {
+    registry('responder', {
+      people_machine_lookup_keys: lookupKeys,
+      people_write_event: () => ({
+        reason: 'ok',
+        items: [{ type: 'observe_sender', result: 'created' }],
+        replayed: true,
+      }),
+    });
+    const response = await writeEvent(
+      signedRequest('/api/v1/people/events', {
+        body: observe,
+        event: writeEvidence,
+      })
+    );
+    expect((await response.json()).replayed).toBe(true);
+  });
+
+  it('refuses recall evidence, unknown items and memories on the write route', async () => {
+    registry('responder', {});
+    const recallEvidence = await writeEvent(
+      signedRequest('/api/v1/people/events', { body: observe })
+    );
+    expect(recallEvidence.status).toBe(401);
+    for (const body of [
+      JSON.stringify({ items: [{ type: 'propose_sender' }] }),
+      JSON.stringify({ items: [], memories: [] }),
+    ]) {
+      const response = await writeEvent(
+        signedRequest('/api/v1/people/events', { body, event: writeEvidence })
+      );
+      expect(response.status).toBe(400);
+    }
+    expect(rpc.mock.calls.map(([fn]) => fn)).not.toContain(
+      'people_write_event'
+    );
   });
 });

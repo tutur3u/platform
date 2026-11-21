@@ -657,15 +657,27 @@ recall requires only the signature and returns the reduced projection.
   a Fleet desk account before it consumes the provider event. A refused event
   takes no slot, so a tenant can never spend the Fleet slot of an account it
   does not own.
-- `POST /api/v1/people/events` — the event's write bundle. Its `observe` items
-  record a `desk_observed` identity or conversation membership for a known
-  person. When capture is on and capture consent allows it, an `observe` item
-  proposes a new person, and suppression blocks it. Its `memories` items are
-  `{text, kind, status?, due_at?, target: person | conversation}`. The response
-  is one receipt per item, either `created` or `duplicate`, or the whole bundle
-  is refused with one reason: `consent_required`, `suppressed`, `deleting`,
-  `scope_denied` or `event_consumed`. A memory edit with a stale revision is a
-  manager action and returns `revision_conflict`.
+- `POST /api/v1/people/events` — the event's write bundle, body
+  `{items: [...]}`. The route accepts one item kind:
+  - `observe_sender` records that a confirmed person spoke in the
+    conversation named by the evidence. It creates the conversation under the
+    current lookup key when it is new, records the membership, and marks an
+    `asserted` identity as `desk_observed`. It needs a confirmed sender
+    identity and a profile consent that is not `denied`, `revoked` or
+    `expired`.
+
+  The capture proposal for an unknown sender (capture on, capture consent
+  granted, suppression checked) and `memories` items
+  (`{text, kind, status?, due_at?, target: person | conversation}`, through the
+  memory service namespace in slice 3) are not accepted by this route; unknown
+  item kinds and fields are refused. The response is one receipt per item,
+  either `created` or `duplicate`, or the whole bundle is refused with one
+  reason: `unknown_sender`, `consent_required`, `deleting`, `scope_denied` or
+  `event_consumed`. Every check runs before any write. The outcome, accepted
+  or refused, is stored as a receipt keyed by the event, so a retry with the
+  same body returns the original receipt marked `replayed`, and a different
+  body for a consumed event is refused. A memory edit with a stale revision is
+  a manager action and returns `revision_conflict`.
 - `GET /api/v1/people/changes?after={cursor}&limit={1-500}` — drain principals
   only. The response is `{events, next}`. The cursor is a per-workspace
   sequence allocated under a row lock held until commit, so a cursor never
@@ -984,6 +996,10 @@ Each slice links its coverage here when it lands.
     and [ingress evidence](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/people-registry/ingress-event.test.ts)
     tests cover replay onto another body, path or method, foreign keys,
     bearer refusal, Fleet operations and domains, and the evidence window.
+  - [people-registry-writes.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/people-registry-writes.sql)
+    covers observation, membership and desk-observed verification, replayed
+    and conflicting receipts, the registry write slot excluding Fleet, refused
+    bundles writing nothing, and unbound, desk and cross-tenant refusals.
   - The [route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/people/route.test.ts)
     cover hashed lookups (raw sender IDs never reach the database),
     `not_modified`, refusal mapping and the change feed cursor.

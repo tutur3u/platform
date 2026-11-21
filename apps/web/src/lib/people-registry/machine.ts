@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { connection, type NextRequest, NextResponse } from 'next/server';
+import type { z } from 'zod';
 import {
   admitSignedRequest,
   type PeopleAdmission,
@@ -41,6 +42,17 @@ const refusalStatus: Record<
   rate_limited: 429,
   registry_unavailable: 503,
 };
+
+// Parses the exact signed body bytes; an empty body is an empty object.
+export function parseMachineBody<T>(bytes: Uint8Array, schema: z.ZodType<T>) {
+  try {
+    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    const parsed = schema.safeParse(text ? JSON.parse(text) : {});
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 async function readBody(request: NextRequest) {
   const declared = Number(request.headers.get('content-length') ?? '0');

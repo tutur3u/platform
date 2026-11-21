@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { verifyPeopleIngressEvent } from '@/lib/people-registry/ingress-event';
+import { InvalidExternalIdError } from '@/lib/people-registry/keys';
 import {
-  InvalidExternalIdError,
-  lookupHash,
-  PEOPLE_KEY_PURPOSES,
-  unwrapWorkspaceKey,
-} from '@/lib/people-registry/keys';
-import { machineJson, withPeopleMachine } from '@/lib/people-registry/machine';
+  machineJson,
+  parseMachineBody,
+  withPeopleMachine,
+} from '@/lib/people-registry/machine';
+import { deriveEvidenceLookups } from '@/lib/people-registry/machine-lookups';
 
 // Full recall for a responder principal. The person and conversation come
 // from the signed ingress evidence, hashed here under every retained lookup
@@ -19,14 +19,6 @@ const bodySchema = z.strictObject({
     .regex(/^[0-9a-f]{64}$/)
     .optional(),
 });
-const keysSchema = z.array(
-  z.object({
-    purpose: z.enum(PEOPLE_KEY_PURPOSES),
-    version: z.number().int().positive(),
-    wrappedKey: z.string(),
-    current: z.boolean(),
-  })
-);
 const recallSchema = z.object({
   reason: z.string(),
   personId: z.string().nullable().optional(),
@@ -43,20 +35,10 @@ const refusals: Record<string, number> = {
   event_consumed: 409,
 };
 
-function parseBody(bytes: Uint8Array) {
-  try {
-    const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-    const parsed = bodySchema.safeParse(text ? JSON.parse(text) : {});
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
 export const POST = withPeopleMachine(
   ['responder'],
   async ({ request, principal, body, rpc }) => {
-    const input = parseBody(body);
+    const input = parseMachineBody(body, bodySchema);
     if (!input) return machineJson({ error: 'invalid_request' }, 400);
     const evidence = verifyPeopleIngressEvent({
       headers: request.headers,
@@ -65,43 +47,15 @@ export const POST = withPeopleMachine(
     });
     if (!evidence) return machineJson({ error: 'evidence_refused' }, 401);
 
-    const loaded = await rpc('people_machine_lookup_keys', {
-      p_ws: principal.wsId,
-      p_principal: principal.principalId,
-    });
-    const wrapped = keysSchema.safeParse(loaded.data);
-    if (loaded.error || !wrapped.success || wrapped.data.length === 0)
-      return machineJson({ error: 'registry_unavailable' }, 503);
-
-    let lookups: Record<'sender' | 'conversation', unknown[]>;
+    let lookups: Awaited<ReturnType<typeof deriveEvidenceLookups>>;
     try {
-      const hashes = (
-        purpose: 'sender_lookup' | 'conversation_lookup',
-        externalId: string
-      ) =>
-        wrapped.data
-          .filter((key) => key.purpose === purpose)
-          .map((key) => {
-            const unwrapped = unwrapWorkspaceKey(principal.wsId, key);
-            return {
-              version: key.version,
-              hash: lookupHash(unwrapped, {
-                wsId: principal.wsId,
-                channel: evidence.channel,
-                account: evidence.account,
-                externalId,
-              }).toString('hex'),
-            };
-          });
-      lookups = {
-        sender: hashes('sender_lookup', evidence.sender),
-        conversation: hashes('conversation_lookup', evidence.conversation),
-      };
+      lookups = await deriveEvidenceLookups(rpc, principal, evidence);
     } catch (error) {
       if (error instanceof InvalidExternalIdError)
         return machineJson({ error: 'evidence_refused' }, 401);
       throw error;
     }
+    if (!lookups) return machineJson({ error: 'registry_unavailable' }, 503);
 
     const recalled = await rpc('people_recall', {
       p_ws: principal.wsId,
