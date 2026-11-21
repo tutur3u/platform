@@ -622,6 +622,53 @@ Global help shows the command map. Group help explains defaults and shared
 flags. Action help focuses on a single operation, including required ids,
 payload flags, and practical examples.
 
+### Fleet Board
+
+`ttr board` exposes the Ops Hub Fleet Board protocol for operators with a
+configured Board deployment and a trusted assertion issuer. Each invocation
+prints JSON. Run `ttr board --help` for command syntax.
+
+| Command | Operation |
+| --- | --- |
+| `board list` | List channels. Pass `--channel <project-uuid>` to list its task threads. |
+| `board show <task-uuid> --channel <project-uuid>` | Read the thread's messages. |
+| `board claim --channel <project-uuid> --request-id <uuid>` | Claim the next eligible task for five minutes. `--ttl-ms` accepts 30000–600000. A `null` lease means no task was available. |
+| `board release <task-uuid> --channel <project-uuid> --request-id <uuid>` | Release the task's current lease using its token. |
+| `board add-dependency <task-uuid> <prerequisite-uuid> --workspace <uuid>` | Add a Tasks dependency in which the prerequisite blocks the task. This command uses the saved `ttr login` session. |
+| `board add-follow-up <task-uuid> --channel <project-uuid> --request-id <uuid> --due-at-ms <unix-ms>` | Schedule one check that the task is done. Use a future time within 30 days. |
+
+Board reads return one page with `items` and `nextCursor`. Pass
+`--limit <n>` (1–100, default 25) and pass the returned cursor to
+`--cursor` with the same command, channel, and limit to get another page.
+
+For Ops Hub requests, set `TUTURUUU_BOARD_URL` to the HTTPS Worker origin.
+Pipe a JSON object containing `assertion` into stdin. Release also takes
+`token` in that object. The assertion issuer must bind the request to its
+HTTP method, path and query, exact body bytes and, for writes, the UUID from
+`--request-id`. The request targets and bodies are:
+
+| Command | Target | Compact JSON body |
+| --- | --- | --- |
+| List channels | `GET /board/channels` | Empty |
+| List threads | `GET /board/channels/<channel>/threads` | Empty |
+| Show messages | `GET /board/channels/<channel>/threads/<task>/messages` | Empty |
+| Claim | `POST /board/channels/<channel>/leases/claim` | `{"ttlMs":300000}` with `--ttl-ms 300000`, or `{}` when omitted |
+| Release | `POST /board/channels/<channel>/leases/<task>/release` | `{"token":"<lease-token>"}` |
+| Add follow-up | `POST /board/channels/<channel>/threads/<task>/followups` | `{"dueAt":<unix-ms>,"kind":"verify_task","payload":{"expected":"done"}}` |
+
+IDs in request paths and headers use lowercase. Query parameters use standard
+URL form encoding in the order `limit`, then `cursor`. Capture a claim's
+stdout privately because `lease.token` authorizes release. On an uncertain
+write outcome, reconcile within 24 hours using the same request ID and the
+identical payload with a fresh assertion. After 24 hours, inspect the board's
+state before issuing another write. A claim replay returns its token only
+while the lease is still valid. A new operation needs its own request ID.
+
+Fleet Board starts stopped. Task-backed Board operations require the Tasks
+adapter in addition to a signed assertion. The saved CLI login can create
+Tasks dependencies independently. See the
+[Fleet Board activation and cost bounds](/build/development-tools/oxc-cloudflare-adoption#fleet-board-coordination-cost-bounds).
+
 ### Agent-Friendly Discovery
 
 For autonomous engineering workflows, start by discovering the current account

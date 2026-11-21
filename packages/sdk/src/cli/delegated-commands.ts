@@ -1,7 +1,8 @@
 // Commands that own their argument parsing and bypass the workspace CLI.
-// Both modules load lazily so ordinary CLI commands skip their imports.
+// Modules load lazily so ordinary CLI commands skip their imports.
 export function isDelegatedCommand(command: string | undefined) {
   return (
+    command === 'board' ||
     command === 'resources' ||
     command === 'storage' ||
     command === 'git' ||
@@ -10,6 +11,8 @@ export function isDelegatedCommand(command: string | undefined) {
 }
 
 export async function runDelegatedCommand(argv: string[]) {
+  if (argv[0] === 'board')
+    return (await import('./board-command.js')).runBoardCommand(argv.slice(1));
   if (argv[0] === 'git')
     return (await import('./git-guard.js')).runGitCommand(argv.slice(1));
   if (argv[0] === 'check') {

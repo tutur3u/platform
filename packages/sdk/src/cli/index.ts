@@ -2,6 +2,8 @@
 import { installedBuildIdentity } from './build-identity';
 
 const args = process.argv.slice(2);
+const board =
+  args[0] === 'board' || (args[0] === 'help' && args[1] === 'board');
 const local = args[0] === 'backlog' || args[0] === 'operational-memory';
 const separator = args.indexOf('--');
 const globalArgs = separator >= 0 ? args.slice(0, separator) : args;
@@ -40,7 +42,13 @@ const run =
                 ? import('./operational-cli.js').then(({ runOperationalCli }) =>
                     runOperationalCli(args)
                   )
-                : import('./commands.js').then(({ runCli }) => runCli());
+                : board
+                  ? import('./board-command.js').then(({ runBoardCommand }) =>
+                      runBoardCommand(
+                        args[0] === 'board' ? args.slice(1) : ['--help']
+                      )
+                    )
+                  : import('./commands.js').then(({ runCli }) => runCli());
 run.catch((error) => {
   process.stderr.write(
     `${error instanceof Error ? error.message : String(error)}\n`
