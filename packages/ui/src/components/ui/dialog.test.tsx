@@ -25,6 +25,8 @@ describe('DialogContent presentation', () => {
     expect(className).toContain('data-[state=open]:fade-in-0');
     expect(className).toContain('data-[state=open]:zoom-in-95');
     expect(dialog).toHaveClass('rounded-lg');
+    // Tall content scrolls inside a phone viewport instead of overflowing it.
+    expect(dialog).toHaveClass('max-h-[calc(100dvh-2rem)]', 'overflow-y-auto');
   });
 
   it('renders fullscreen content as an opaque non-animated viewport surface', () => {
@@ -68,5 +70,24 @@ describe('DialogContent presentation', () => {
     expect(
       document.querySelector('[data-slot="dialog-overlay"]')
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('DialogContent safe areas', () => {
+  it('pads a fullscreen dialog for the notch and home indicator', () => {
+    renderOpenDialog(
+      <DialogContent presentation="fullscreen">
+        <DialogTitle>Fullscreen dialog</DialogTitle>
+      </DialogContent>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Fullscreen dialog' });
+    expect(dialog).toHaveClass(
+      'pt-[env(safe-area-inset-top,0px)]',
+      'pb-[env(safe-area-inset-bottom,0px)]'
+    );
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveClass(
+      'top-[calc(1rem+env(safe-area-inset-top,0px))]'
+    );
   });
 });

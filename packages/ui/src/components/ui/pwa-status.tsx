@@ -88,7 +88,7 @@ export function PwaStatus({
           className={
             placement === 'settings'
               ? 'flex items-start gap-2 rounded-lg border bg-muted/30 p-3 text-sm'
-              : 'fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl items-start gap-2 rounded-lg border bg-background p-3 text-sm shadow-lg'
+              : 'fixed inset-x-3 bottom-[calc(var(--mobile-dock-clearance,0px)+0.75rem)] z-50 mx-auto flex max-w-xl items-start gap-2 rounded-lg border bg-background p-3 text-sm shadow-lg'
           }
         >
           <WifiOff className="mt-0.5 size-4 shrink-0 text-muted-foreground" />

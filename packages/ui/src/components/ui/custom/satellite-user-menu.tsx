@@ -45,7 +45,7 @@ export function SatelliteUserMenu({
           aria-busy={loading || undefined}
           disabled={loading}
           className={cn(
-            'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
+            'flex h-10 w-full gap-2 rounded-md p-1 text-start transition pointer-coarse:h-11',
             hideMetadata
               ? 'items-center justify-center'
               : 'items-center justify-start hover:bg-foreground/5'

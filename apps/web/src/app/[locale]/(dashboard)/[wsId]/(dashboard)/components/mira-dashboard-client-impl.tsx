@@ -100,7 +100,7 @@ export default function MiraDashboardClientImpl({
         '@container relative flex flex-col overflow-hidden',
         isFullscreen
           ? 'fixed inset-0 z-50 bg-background p-3 sm:p-4'
-          : 'h-[calc(100dvh-5rem-var(--mobile-dock-clearance,0px))] min-h-0 md:h-[calc(100dvh-2rem)]'
+          : 'h-[calc(100dvh-var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))-1.25rem-var(--mobile-dock-clearance,0px))] min-h-0 md:h-[calc(100dvh-2rem)]'
       )}
     >
       {/* Animated gradient backdrop in fullscreen */}

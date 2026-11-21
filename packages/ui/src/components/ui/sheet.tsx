@@ -53,10 +53,30 @@ function SheetOverlay({
   );
 }
 
+/**
+ * Transparent borders hold the notch and home-indicator insets, so a caller's
+ * own padding (often `p-0`) cannot remove them, and the absolutely placed
+ * close button clears the notch with the content. Bottom sheets take the home
+ * indicator as padding, matching the Sorbet bottom-sheet rule.
+ */
+const TOP_INSET = {
+  '--sheet-inset-top': 'env(safe-area-inset-top, 0px)',
+  borderTop: 'var(--sheet-inset-top) solid transparent',
+};
+const SAFE_AREA_BORDERS = {
+  top: TOP_INSET,
+  edge: {
+    ...TOP_INSET,
+    '--sheet-inset-bottom': 'env(safe-area-inset-bottom, 0px)',
+    borderBottom: 'var(--sheet-inset-bottom) solid transparent',
+  },
+} as const satisfies Record<string, React.CSSProperties>;
+
 function SheetContent({
   className,
   children,
   side = 'right',
+  style,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left';
@@ -76,14 +96,24 @@ function SheetContent({
           side === 'top' &&
             'inset-x-0 top-0 h-auto border-b data-[state=closed]:-translate-y-full data-[state=open]:translate-y-0',
           side === 'bottom' &&
-            'inset-x-0 bottom-0 h-auto border-t data-[state=closed]:translate-y-full data-[state=open]:translate-y-0',
+            'inset-x-0 bottom-0 h-auto border-t pb-[env(safe-area-inset-bottom,0px)] data-[state=closed]:translate-y-full data-[state=open]:translate-y-0',
           className
         )}
+        style={{
+          ...(side === 'bottom'
+            ? undefined
+            : SAFE_AREA_BORDERS[side === 'top' ? 'top' : 'edge']),
+          ...style,
+        }}
         onClick={(e) => e.stopPropagation()}
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+        <SheetPrimitive.Close
+          className={cn(
+            'absolute top-4 right-4 rounded-xs opacity-70 pointer-coarse:after:absolute pointer-coarse:after:-inset-3.5 pointer-coarse:after:content-[""] ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary'
+          )}
+        >
           <XIcon className="size-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>

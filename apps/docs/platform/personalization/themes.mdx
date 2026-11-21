@@ -188,6 +188,17 @@ covers the resume correction; `dashboard-mobile-dock-location.test.ts` and
 `satellite-mobile-dock-location.test.ts` cover which destination and Back
 state each path gets.
 
+While the dock shows, the root publishes `--mobile-dock-clearance`; it is unset
+everywhere else. Viewport-height surfaces (Mira chat, the chat app, the CMS
+inbox, Rewise chat) subtract it with the measured top bar height
+(`--mobile-nav-height`, which includes the top safe area) so their composer
+rests above the dock, and the sticky bottom bar and offline banner sit above
+it. Shared dialogs cap their height to the viewport and scroll; fullscreen
+dialogs, sheets, the bottom drawer, the mobile sidebar and the apps launcher
+pad for the notch and home indicator; and shell icon controls reach 44px on
+touch screens (`pointer-coarse:`). `structure.test.tsx`, `dialog.test.tsx` and
+`sorbet-surfaces.test.ts` cover these.
+
 On touch screens (`pointer: coarse`) Sorbet fields are at least 44px tall, and
 buttons, tabs and switches get an invisible 44px hit area without changing their
 drawn size. Bottom sheets and drawers round their top edge and pad for the home

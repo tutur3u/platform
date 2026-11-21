@@ -81,12 +81,14 @@ export function Structure({
   });
   const mobileNavRef = useRef<HTMLElement>(null);
   const mainRef = useRef<HTMLElement>(null);
+  // Content clears the measured top bar, which grows with the top safe area
+  // when the app runs from the home screen.
   useLayoutEffect(() => {
-    if (!contentFullBleed || sidebarHidden) return;
+    if (sidebarHidden) return;
     const nav = mobileNavRef.current;
     const main = mainRef.current;
     if (nav && main) return observeMobileHeaderHeight(nav, main);
-  }, [contentFullBleed, sidebarHidden]);
+  }, [sidebarHidden]);
 
   const sidebarStyle = {
     '--sidebar-collapsed-width': sidebarCollapsedWidth,
@@ -162,7 +164,7 @@ export function Structure({
             <SidebarOverlayContext value={overlayClose.registerOverlay}>
               <aside
                 className={cn(
-                  'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg md:left-0 md:z-20 md:border-r md:border-l-0',
+                  'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg max-md:pt-[env(safe-area-inset-top,0px)] md:left-0 md:z-20 md:border-r md:border-l-0',
                   // The hover overlay never animates width: a width transition
                   // reflows the panel on every frame. The reveal is a paint-only
                   // clip-path/opacity animation instead (see globals.css).
@@ -276,7 +278,7 @@ export function Structure({
                   )}
                   <div
                     className={cn(
-                      'mt-auto flex border-foreground/10 border-t p-2',
+                      'mt-auto flex border-foreground/10 border-t p-2 max-md:pb-[max(0.5rem,env(safe-area-inset-bottom,0px))]',
                       isCollapsed ? 'justify-center' : ''
                     )}
                   >
@@ -340,7 +342,9 @@ export function Structure({
                     : 'flex min-h-0 flex-1 flex-col pt-[var(--mobile-nav-height,calc(4.25rem+env(safe-area-inset-top,0px)))] md:pt-0'
                   : [
                       'h-full p-2 md:p-4 md:pt-4',
-                      sidebarHidden ? 'pt-2' : 'pt-17 pl-2',
+                      sidebarHidden
+                        ? 'pt-2'
+                        : 'pt-[calc(var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))+0.75rem)] pl-2',
                     ]
               )}
             >

@@ -118,7 +118,7 @@ export function AppsLauncherCoreDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="top-4 flex max-h-[calc(100%-2rem)] w-[min(640px,calc(100%-1rem))] max-w-none translate-y-0 flex-col gap-0 overflow-hidden rounded-(--radius-popover) border bg-popover p-0 text-popover-foreground shadow-lg sm:top-20 sm:max-h-[calc(100%-6rem)] sm:max-w-none"
+        className="top-[max(1rem,env(safe-area-inset-top,0px))] flex max-h-[calc(100%-2rem-env(safe-area-inset-top,0px))] w-[min(640px,calc(100%-1rem))] max-w-none translate-y-0 flex-col gap-0 overflow-hidden rounded-(--radius-popover) border bg-popover p-0 text-popover-foreground shadow-lg sm:top-20 sm:max-h-[calc(100%-6rem)] sm:max-w-none"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           if (window.innerWidth < 768) return;

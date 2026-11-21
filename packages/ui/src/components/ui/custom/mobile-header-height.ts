@@ -7,6 +7,9 @@ export function observeMobileHeaderHeight(nav: HTMLElement, main: HTMLElement) {
     );
   };
   update();
+  if (typeof ResizeObserver === 'undefined') {
+    return () => main.style.removeProperty('--mobile-nav-height');
+  }
   const observer = new ResizeObserver(update);
   observer.observe(nav);
   return () => {

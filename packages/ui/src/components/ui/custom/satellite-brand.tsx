@@ -83,7 +83,7 @@ export function SatelliteBrand({
     <button
       aria-haspopup="dialog"
       aria-label={launcherLabel}
-      className="group flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-1 font-semibold text-lg tracking-tight transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex min-w-0 items-center gap-1.5 rounded-lg px-1.5 py-1 pointer-coarse:min-h-11 font-semibold text-lg tracking-tight transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onAppClick}
       type="button"
     >
@@ -106,7 +106,7 @@ export function SatelliteBrand({
     <div className={cn('flex min-w-0 flex-1 items-center gap-2.5', className)}>
       <Link
         aria-label="Tuturuuu"
-        className="flex size-9 shrink-0 items-center justify-center rounded-xl transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex size-9 shrink-0 items-center justify-center rounded-xl pointer-coarse:size-11 transition hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         href={centralHref}
       >
         {logo}

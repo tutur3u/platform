@@ -193,7 +193,7 @@ export function AppLauncherRow({
         aria-label={favoriteLabel}
         aria-pressed={isFavorite}
         className={cn(
-          'absolute top-1/2 right-1 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-(--radius-inner) text-muted-foreground transition-opacity hover:bg-background/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
+          'absolute top-1/2 right-1 flex size-8 -translate-y-1/2 cursor-pointer pointer-coarse:after:absolute pointer-coarse:after:-inset-1.5 pointer-coarse:after:content-[""] items-center justify-center rounded-(--radius-inner) text-muted-foreground transition-opacity hover:bg-background/60 hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none',
           isFavorite || props.isActive
             ? 'opacity-100'
             : 'opacity-0 group-hover/app-row:opacity-100',

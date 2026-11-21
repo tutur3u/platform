@@ -78,6 +78,31 @@ describe('Structure', () => {
     );
   });
 
+  it('clears the measured mobile top bar, including the top safe area', () => {
+    const { container } = render(
+      <Structure
+        isCollapsed
+        setIsCollapsed={vi.fn()}
+        mobileHeader={<span>Mobile header</span>}
+        sidebarContent={<span>Sidebar content</span>}
+        sidebarHeader={<span>Sidebar header</span>}
+      >
+        <span>Page content</span>
+      </Structure>
+    );
+
+    const nav = container.querySelector('[data-slot="mobile-top-bar"]');
+    expect(nav).toHaveClass('safe-top');
+    expect(
+      container
+        .querySelector('main')
+        ?.style.getPropertyValue('--mobile-nav-height')
+    ).toMatch(/px$/);
+    expect(screen.getByText('Page content').parentElement).toHaveClass(
+      'pt-[calc(var(--mobile-nav-height,calc(3.5rem+env(safe-area-inset-top,0px)))+0.75rem)]'
+    );
+  });
+
   it('keeps the account and notification controls in the collapsed footer', () => {
     const { container } = render(
       <Structure
