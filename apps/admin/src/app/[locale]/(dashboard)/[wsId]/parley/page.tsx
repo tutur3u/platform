@@ -65,7 +65,7 @@ export default async function ParleyAdministration({
           <Button type="submit">{t('allow')}</Button>
         </form>
         <ul className="divide-y">
-          {members.data?.map((member) => (
+          {members.data?.map((member: { email: string; enabled: boolean }) => (
             <li
               className="flex items-center justify-between gap-4 py-3 text-sm"
               key={member.email}
@@ -104,7 +104,7 @@ export default async function ParleyAdministration({
               className="block rounded border bg-background p-2"
             >
               <option value="">{t('unassigned')}</option>
-              {scenarios.data?.map((s) => (
+              {scenarios.data?.map((s: { id: string; title: string }) => (
                 <option key={s.id} value={s.id}>
                   {s.title}
                 </option>
@@ -114,7 +114,7 @@ export default async function ParleyAdministration({
           <Button>{t('upload')}</Button>
         </form>
         <ul className="list-inside list-disc text-sm">
-          {references.data?.map((r) => (
+          {references.data?.map((r: { id: string; filename: string }) => (
             <li key={r.id}>
               <a
                 className="underline"

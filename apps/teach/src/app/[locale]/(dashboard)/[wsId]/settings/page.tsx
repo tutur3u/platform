@@ -21,7 +21,7 @@ export default async function TeachSettingsPage({
   if (!bootstrap)
     return redirect({ href: `/login?next=/${wsId}/settings`, locale });
   const workspace = bootstrap.workspaces.find(
-    (candidate) => candidate.id === wsId
+    (candidate: { id: string }) => candidate.id === wsId
   );
   if (!workspace) {
     const fallbackId = bootstrap.workspaces[0]?.id;

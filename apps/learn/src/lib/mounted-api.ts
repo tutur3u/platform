@@ -14,5 +14,5 @@ export function mountedFetch(
   init?: RequestInit
 ): Promise<Response> {
   const target = typeof input === 'string' ? appApiPath(input) : input;
-  return fetch(target, init);
+  return init === undefined ? fetch(target) : fetch(target, init);
 }
