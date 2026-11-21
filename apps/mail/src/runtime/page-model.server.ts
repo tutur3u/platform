@@ -62,6 +62,8 @@ export async function loadPageModel(path: string) {
   const current = mailRequest();
   const requestUrl = new URL(current.request.url);
   const base = createBasePath({ app: 'mail', basePath: appBasePath() });
+  const actualPath = base.strip(requestUrl.pathname);
+  if (actualPath === null) throw notFound();
   const url = new URL(base.withBase(path), requestUrl);
   if (url.origin !== requestUrl.origin)
     throw new Error('Invalid Mail page origin');
@@ -69,7 +71,6 @@ export async function loadPageModel(path: string) {
   if (!base.isRoot && url.pathname === requestUrl.pathname)
     url.search = requestUrl.search;
   const logical = new Request(url, { headers: current.request.headers });
-  const actualPath = base.strip(requestUrl.pathname) ?? requestUrl.pathname;
   if (
     actualPath !== MAIL_FUNCTION_BASE &&
     !actualPath.startsWith(`${MAIL_FUNCTION_BASE}/`)

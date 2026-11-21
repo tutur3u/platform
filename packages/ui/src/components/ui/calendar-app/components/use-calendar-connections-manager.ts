@@ -18,10 +18,7 @@ import {
   updateWorkspaceCalendarSyncPreferences,
   updateWorkspaceCalendar,
 } from '@tuturuuu/internal-api/calendar';
-import {
-  InternalApiError,
-  resolveInternalApiUrl,
-} from '@tuturuuu/internal-api/client';
+import { resolveInternalApiUrl } from '@tuturuuu/internal-api/client';
 import { getCurrentUserProfile } from '@tuturuuu/internal-api/users';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -424,7 +421,13 @@ export function useCalendarConnectionsManager(wsId: string) {
             color: calendarData.color,
           });
         } catch (error) {
-          if (!(error instanceof InternalApiError && error.status === 409))
+          if (
+            !(
+              error instanceof Error &&
+              'status' in error &&
+              error.status === 409
+            )
+          )
             throw error;
           await updateCalendarConnectionRequest({ ...connection, wsId });
         }
