@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { encodeBase64Url, utf8 } from './encoding';
 import {
+  bareKeySource,
   createTestIssuer,
   defaultTestClaims,
   TEST_AUDIENCE,
   TEST_ISSUER,
+  TEST_KEY_LIFETIME,
   type TestIssuer,
 } from './testing';
 import { type VerifyOptions, verifyIdentityAssertion } from './verify';
@@ -187,7 +189,9 @@ describe('verifyIdentityAssertion', () => {
       false,
       ['verify']
     );
-    expect(await run({ get: async () => hmac })).toEqual({
+    expect(
+      await run(bareKeySource(issuer.kid, hmac, TEST_KEY_LIFETIME))
+    ).toEqual({
       ok: false,
       reason: 'key_type',
     });
@@ -196,7 +200,9 @@ describe('verifyIdentityAssertion', () => {
       false,
       ['sign', 'verify']
     )) as CryptoKeyPair;
-    expect(await run({ get: async () => p384.publicKey })).toEqual({
+    expect(
+      await run(bareKeySource(issuer.kid, p384.publicKey, TEST_KEY_LIFETIME))
+    ).toEqual({
       ok: false,
       reason: 'key_type',
     });

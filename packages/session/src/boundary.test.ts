@@ -104,15 +104,15 @@ function resolveRelative(from: string, specifier: string): string {
   throw new Error(`Unresolved import ${specifier} from ${from}`);
 }
 
-/** The runtime module graph reachable from the package's portable entry points. */
-function runtimeGraph() {
-  const entries = Object.entries(packageJson.exports)
-    .filter(([key]) => key !== TEST_ONLY_ENTRY)
-    .map(([, target]) => resolve(PACKAGE_DIR, target));
+const TOKENS_ENTRY = './tokens';
+const TOKENS_MODULE = /^src\/tokens(\.ts|\/)/;
+
+/** The runtime module graph reachable from the given entry targets. */
+function graphFrom(targets: string[]) {
   const seen = new Set<string>();
   const external: Array<{ file: string } & ModuleImport> = [];
   const dynamic: Array<{ file: string } & ModuleImport> = [];
-  const queue = [...entries];
+  const queue = targets.map((target) => resolve(PACKAGE_DIR, target));
   while (queue.length > 0) {
     const file = queue.pop() as string;
     if (seen.has(file)) continue;
@@ -130,6 +130,38 @@ function runtimeGraph() {
   }
   return { files: [...seen], external, dynamic };
 }
+
+const entryPoints = () =>
+  Object.entries(packageJson.exports).filter(
+    ([key]) => key !== TEST_ONLY_ENTRY
+  );
+
+/** The runtime module graph reachable from the package's portable entry points. */
+function runtimeGraph() {
+  return graphFrom(entryPoints().map(([, target]) => target));
+}
+
+const COMMON_FORBIDDEN = [
+  /\bfetch\s*\(/,
+  /\bprocess\b/,
+  /\bglobalThis\b/,
+  /\bcaches\b/,
+  /\bXMLHttpRequest\b/,
+  /\bWebSocket\b/,
+  /\bnavigator\b/,
+  /\bdocument\b/,
+  /\blocation\b/,
+  /\bgetRandomValues\b/,
+  /\brandomUUID\b/,
+  /\bMath\.random\b/,
+  /\bgenerateKey\b/,
+  /\bexportKey\b/,
+];
+/** Entries other than `./tokens`: verification and HMAC only, no ECDSA signing. */
+const NO_SIGNING = /crypto\.subtle\.(?!sign\('HMAC'|verify\()/;
+/** `./tokens`: it may also sign, import keys and hash. */
+const TOKENS_SUBTLE =
+  /crypto\.subtle\.(?!sign\(|verify\(|importKey\(|digest\()/;
 
 describe('portable entry points', () => {
   const graph = runtimeGraph();
@@ -156,27 +188,62 @@ describe('portable entry points', () => {
     }
   });
 
-  it('read no request globals, network, environment or signing capability', () => {
-    for (const file of graph.files) {
-      const source = readFileSync(file, 'utf8');
-      for (const forbidden of [
-        /\bfetch\s*\(/,
-        /\bprocess\b/,
-        /\bglobalThis\b/,
-        /\bcaches\b/,
-        /\bXMLHttpRequest\b/,
-        /\bWebSocket\b/,
-        /\bnavigator\b/,
-        /\bdocument\b/,
-        /\blocation\b/,
-        /crypto\.subtle\.(?!sign\('HMAC'|verify\()/,
-        /\bgetRandomValues\b/,
-      ]) {
-        expect(
-          source,
-          `${relative(PACKAGE_DIR, file)} matches ${forbidden}`
-        ).not.toMatch(forbidden);
+  it('expose ./tokens as an entry point', () => {
+    expect(packageJson.exports).toHaveProperty(TOKENS_ENTRY, './src/tokens.ts');
+  });
+
+  it.each(entryPoints().map(([key, target]) => [key, target]))(
+    '%s reads no request globals, network, environment, global randomness or key generation, and signs only as its entry allows',
+    (key, target) => {
+      const subtle = key === TOKENS_ENTRY ? TOKENS_SUBTLE : NO_SIGNING;
+      for (const file of graphFrom([target]).files) {
+        const source = readFileSync(file, 'utf8');
+        for (const forbidden of [...COMMON_FORBIDDEN, subtle]) {
+          expect(
+            source,
+            `${key}: ${relative(PACKAGE_DIR, file)} matches ${forbidden}`
+          ).not.toMatch(forbidden);
+        }
       }
+    }
+  );
+
+  it.each(
+    entryPoints()
+      .filter(([key]) => key !== TOKENS_ENTRY)
+      .map(([key, target]) => [key, target])
+  )('%s never reaches ./tokens', (key, target) => {
+    const files = graphFrom([target]).files.map((file) =>
+      relative(PACKAGE_DIR, file)
+    );
+    expect(
+      files.filter((file) => TOKENS_MODULE.test(file)),
+      key
+    ).toEqual([]);
+  });
+
+  it('./verify keeps ECDSA signing out of its graph', () => {
+    const files = graphFrom(['./src/verify.ts']).files;
+    expect(files.some((file) => file.endsWith('token-core.ts'))).toBe(true);
+    for (const file of files) {
+      const source = readFileSync(file, 'utf8');
+      expect(source).not.toMatch(/subtle\.sign\(\s*\{\s*name:\s*'ECDSA'/);
+      expect(source).not.toMatch(/\bimportKey\b/);
+    }
+  });
+
+  it('expose no bare-CryptoKey adapter or observation fake from any entry', async () => {
+    for (const [, target] of entryPoints()) {
+      for (const file of graphFrom([target]).files) {
+        const source = readFileSync(file, 'utf8');
+        expect(source).not.toMatch(/\bbareKeySource\b/);
+        expect(source).not.toMatch(/\bcreateFakeObservationStore\b/);
+      }
+    }
+    const tokens = await import('./tokens');
+    const verify = await import('./verify');
+    for (const exported of [...Object.keys(tokens), ...Object.keys(verify)]) {
+      expect(exported).not.toMatch(/bare|fake|test/i);
     }
   });
 });

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bareKeySource,
   createTestIssuer,
   defaultTestClaims,
   TEST_AUDIENCE,
   TEST_ISSUER,
+  TEST_KEY_LIFETIME,
   type TestIssuer,
 } from './testing';
 import { AUTH_METHODS, principalFromAssertion } from './principal';
@@ -173,9 +175,11 @@ describe('assertion provenance', () => {
   it('rejects a key result with a type but no algorithm', async () => {
     const issuer = await createTestIssuer();
     const token = await issuer.sign(defaultTestClaims(NOW));
-    const keys = {
-      get: async () => ({ type: 'public', usages: ['verify'] }),
-    } as unknown as VerifyOptions['keys'];
+    const keys = bareKeySource(
+      issuer.kid,
+      { type: 'public', usages: ['verify'] },
+      TEST_KEY_LIFETIME
+    );
     expect(
       await verifyIdentityAssertion(token, options(issuer, { keys }))
     ).toEqual({ ok: false, reason: 'key_type' });
@@ -202,7 +206,7 @@ describe('hostile key objects', () => {
   ])('rejects %s as key_type without throwing', async (_label, key) => {
     const issuer = await createTestIssuer();
     const token = await issuer.sign(defaultTestClaims(NOW));
-    const keys = { get: async () => key } as unknown as VerifyOptions['keys'];
+    const keys = bareKeySource(issuer.kid, key, TEST_KEY_LIFETIME);
     await expect(
       verifyIdentityAssertion(token, options(issuer, { keys }))
     ).resolves.toEqual({
@@ -220,7 +224,7 @@ it('rejects a plain object that mimics an ECDSA public key', async () => {
     algorithm: { name: 'ECDSA', namedCurve: 'P-256' },
     usages: ['verify'],
   };
-  const keys = { get: async () => fake } as unknown as VerifyOptions['keys'];
+  const keys = bareKeySource(issuer.kid, fake, TEST_KEY_LIFETIME);
   expect(
     await verifyIdentityAssertion(token, options(issuer, { keys }))
   ).toEqual({ ok: false, reason: 'key_type' });
