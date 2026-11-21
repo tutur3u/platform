@@ -1,0 +1,112 @@
+---
+title: "Tuturuuu session step-up proof"
+description: "Slice 2b of the first-party Tuturuuu session: the ttr+stepup profile, canonical parameters hash, verifier and consume port."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** Slice 2b is a pure module in `packages/session` that defines the `ttr+stepup` proof and how a relying service authorizes it. It is one of
+the [Tuturuuu session slices](/platform/architecture/tuturuuu-session-slices).
+
+## Profile
+
+| Member | Rule |
+| --- | --- |
+| Header `typ` | `ttr+stepup` |
+| `iss`, `env`, `sid`, `gen` | As for identity assertions |
+| `sub` | As for identity assertions, and equal to the user the relying service's challenge was issued for |
+| `aud` | One string `stepup:<service>`, equal to the verifier's service |
+| `act` | `vault.pin-eval`, the only registered `ttr+stepup` act. Any other value is rejected |
+| `ph` | SHA-256 parameters hash, exactly 32 bytes in canonical base64url |
+| `nonce` | 16 to 32 bytes in canonical base64url, issued by the relying service for one stored challenge |
+| `aal` | Exactly `aal2` |
+| `amr` | The step-up factors only: a non-empty array, every member `totp` or `passkey`, no duplicates. First factors such as `pwd` never appear |
+| `auth_time` | Time of the step-up ceremony, `iat - 300 <= auth_time <= iat` |
+| `iat`, `exp`, `jti` | `exp - iat <= 300`, `iat <= now + 5`, `now < exp` |
+
+No other member is accepted. The 60-second identity lifetime cap does not
+apply to this class.
+
+## Canonical parameters
+
+`canonicalJson(value)` sits beside `parseStrictJson` and is the only
+serializer either side uses:
+
+- values are `null`, booleans, safe integers (with `-0` rejected), strings,
+  arrays and plain objects. Binary values such as keys and digests are passed
+  as canonical base64url strings; raw byte arrays are rejected, so both sides
+  encode them the same way before hashing; a plain object is one whose prototype is
+  `Object.prototype` or `null` and that has only own enumerable string-keyed
+  data properties;
+- object members sorted recursively by UTF-16 code unit order;
+- no whitespace;
+- strings escape only `"`, `\` and U+0000 to U+001F, the control characters
+  as `\u00XX` in lowercase hex; lone surrogates are rejected; no Unicode
+  normalization;
+- arrays keep their order; `undefined`, functions, symbols, bigints,
+  non-integer numbers, sparse arrays and any other object are rejected rather
+  than dropped.
+
+`paramsHash(act, params)` is SHA-256 over the UTF-8 bytes of
+`"ttr-stepup/v1|" + act + "|" + canonicalJson(params)`, with `act` checked
+against the closed `ttr+stepup` act list first. The vault and Web import this function; neither
+reimplements it. Golden vectors cover escapes, key order, nesting, `null`,
+booleans, a `null`-prototype object and every rejected input.
+
+## Verification is not authorization
+
+```ts
+verifyStepUpProof(token, {
+  issuer, environment, now,               // as identity verification
+  keys,                                   // the 2a key lookup, step-up class
+  audience,                               // 'stepup:<service>'
+  subject,                                // the user the challenge belongs to
+  act, expectedParamsHash, allowedAmr,
+}): Promise<StepUpVerified | StepUpFailure>;
+
+type StepUpVerified = Readonly<{
+  subject: UserId; sessionId: string; generation: number; act: StepUpAct;
+  nonce: string; jti: string; expiresAt: number; amr: ('totp' | 'passkey')[];
+}>; // branded: only verifyStepUpProof constructs it
+
+interface StepUpConsumePort {
+  // One storage transaction, scoped to this audience.
+  consume(input: { subject: UserId; nonce: string; jti: string; challengeId: string;
+                   exp: number }):
+    Promise<'consumed' | 'unknown_nonce' | 'replayed' | 'unavailable'>;
+}
+```
+
+- `keys` is the step-up class key lookup (`{ key, class, notBefore, notAfter }`) from
+  [slice 2a](/platform/architecture/tuturuuu-session-token-signer), and the verifier is
+  `verifyToken('stepup', …)` followed by the checks below, so class, denial,
+  `notBefore` and `notAfter` apply.
+- The verifier rejects a proof whose `sub` differs from `subject` with
+  `subject_mismatch`, and the consume port accepts a nonce only when its
+  stored challenge belongs to that `subject`, so a proof minted for another
+  user's session cannot spend this user's challenge.
+- The verifier checks signature, profile and times, requires
+  `amr ⊆ allowedAmr ∩ { totp, passkey }`, and compares `ph` with
+  `constantTimeEqual` after decoding exactly 32 bytes. The relying service
+  computes `expectedParamsHash` from its own stored challenge.
+- `StepUpVerified` grants nothing. `authorizeStepUp(verified, port)` calls
+  `consume`, and only `consumed` authorizes the action. The port accepts only
+  a nonce the service issued for that `challengeId` before minting, rejects a
+  used `jti` or `nonce`, and keeps both until `exp`. `unknown_nonce` and
+  `replayed` are distinct failure reasons; `unavailable` fails closed.
+- The consume transaction stores only `jti`, `nonce` and `challengeId`.
+  After `consumed`, `authorizeStepUp` asks an injected `SessionLivenessPort`
+  whether `sid` is live with generation `gen`. The port is an uncached,
+  authoritative check with a fresh epoch read, never the 30-second read
+  cache. Only `live` returns `authorized`; `revoked`, `superseded` and
+  `unavailable` fail closed, and the consumed nonce stays spent.
+- A relying service runs any charged or effectful step, such as a quota
+  charge or an evaluation, in a later transaction and only after
+  `authorized`, so a dead session or an unavailable liveness check never
+  costs the user quota.
+- Tests cover a valid proof, each member's violation, `pwd` in `amr`, a wrong
+  `ph` length, an unknown nonce, a replayed `jti`, a replayed nonce with a new
+  `jti`, a 300-second proof accepted and a 301-second one rejected, consume
+  failing closed, liveness returning `revoked`, `superseded` and
+  `unavailable` with no charged step run, and a live proof whose `sub` is a
+  different user.

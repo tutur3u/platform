@@ -1,0 +1,549 @@
+---
+title: "Tuturuuu session device state"
+description: "Slice 3 of the first-party Tuturuuu session: the device state machine for sessions, rotation, switching, revocation, the device cap and step-up grants."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** Slice 3 is a pure reducer in `packages/session` over injected storage ports; the auth Worker in slice 4 hosts it. It is one of
+the [Tuturuuu session slices](/platform/architecture/tuturuuu-session-slices).
+
+Entry point `@tuturuuu/session/device`. A pure reducer over injected ports,
+so the Durable Object host in slice 4 stays thin.
+
+## State and ports
+
+```ts
+type DeviceState = {
+  version: number;                 // 0 when the store holds nothing; +1 per committed mutation
+  activeSid: string | null;
+  gen: number;                     // current generation of the device secret
+  secretHash: Uint8Array;          // current secret
+  grace: { secretHash: Uint8Array; gen: number; deadlineMs: number } | null;
+  sessions: Record<string, SessionRecord & {
+    reservationId: string;                     // the index slot this session was admitted under
+    factors: { factorId: string; method: 'totp' | 'passkey';
+               role: 'second_factor' | 'sign_in' }[];  // from a fresh factor read
+    secondFactorSatisfied: boolean;  // true only if its sign-in presented totp or a UV passkey
+  }>;
+  revokedReservations: Record<string, number>; // reservationId -> revokedAt, kept 30 days
+  outbox: Record<string, RevocationOutbox>;    // revoked sessionId, or <sid>:change:<at>
+  grants: Record<string, StepUpGrant>;
+  operations: Record<string, { requestHash: Uint8Array; result: OperationResult;
+                               effects: Effect[]; expiresAtMs: number }>;
+  expiredOperations: Record<string, number>;  // operationId -> time it expired
+};
+// The epoch cache is not part of DeviceState and never travels in a snapshot.
+type EpochCache = Record<UserId, { epoch: number; readAtMs: number }>;
+
+interface DeviceStore {
+  read(): Promise<DeviceState>;   // an empty device is version 0
+  // One storage transaction: compare-and-set the state, then merge each epoch raise.
+  write(expectedVersion: number, next: DeviceState, epochRaises: EpochRaise[]):
+    Promise<'committed' | 'conflict' | 'unknown'>;
+  readEpochCache(): Promise<EpochCache>;
+  touch(sessionId: string, lastSeenAtMs: number): Promise<void>; // outside the version
+  // Outside the version, in one storage transaction, with the same merge as write.
+  refreshEpochCache(read: EpochRead, nowMs: number): Promise<void>;
+}
+interface UserIndexPort {
+  // One compare-and-set on the user's device list. `operationId` names the sign-in.
+  reserve(input: { userId: UserId; deviceId: string; operationId: string; cap: number;
+                   nowMs: number }): Promise<
+    | { kind: 'reserved'; reservation: Reservation }     // includes an existing slot
+    | { kind: 'swap'; reservation: Reservation; evictDeviceId: string;
+        evictReservationId: string }
+    | { kind: 'evicting' }                               // this device holds a tombstone for the user
+    | { kind: 'unavailable' }
+  >;
+  confirm(reservation: Reservation): Promise<void>;
+  release(reservation: Reservation): Promise<void>;
+}
+type EpochRead = { userId: UserId; epoch: number; readAtMs: number;
+                   status: 'fresh' | 'stale' | 'unavailable' };
+type Entropy = (bytes: number) => Uint8Array;
+// Minted fresh for every reserve that creates a slot; never reused after release,
+// confirm or lease expiry. A reserve for an existing slot returns that slot's id.
+type Reservation = { reservationId: string };
+type EffectState = 'pending' | 'acked' | 'superseded' | 'abandoned';
+type RevocationOutbox = {
+  gen: number;                               // device generation at revocation
+  upstream: UpstreamGrant | null;            // moved off the session row
+  effects: { upstream: EffectState; cookie: EffectState;
+             credentials: Record<IssuerId, EffectState> };   // every registered issuer
+  attempts: { upstream: number; credentials: Record<IssuerId, number> };
+  nextAttemptMs: number;
+};
+interface FactorReadPort {
+  // A fresh, uncached read from the identity provider; never a device snapshot.
+  read(userId: UserId): Promise<FreshFactors | 'unavailable'>;
+}
+// Branded: only the port constructs it. A second factor is any factor the provider
+// requires after the first factor: every totp, and a passkey enrolled as an MFA factor.
+type FreshFactors = { userId: UserId; readAtMs: number;
+                      factors: { factorId: string; method: 'totp' | 'passkey';
+                                 role: 'second_factor' | 'sign_in' }[] };
+```
+
+Secrets are generated from the injected `Entropy` and compared as hashes with
+`constantTimeEqual`. `SessionRecord` is the parent page's session record,
+whose `epochSeen` `sign_in` sets. `StepUpGrant` is
+`{ id, sid, gen, act, ph, expiresAtMs, consumedBy?: string }`, with `ph` from
+[slice 2b](/platform/architecture/tuturuuu-session-step-up-proof)'s `paramsHash`; there is no second canonicalization. An `EpochRead`
+whose `userId` differs from the session it is checked against is rejected as
+`invalid_operation`.
+
+## Effect registry
+
+A registry, owned by each app's integration and validated at build time,
+maps every `RouteId` to a declaration:
+
+```ts
+type RouteDeclaration =
+  | { class: 'read' | 'write' | 'credential' | 'security'; accountScoped: boolean }
+  | { class: 'credential' | 'security'; accountScoped: true;
+      stepUp: { act: GrantAct; tenantParams: string[] } };
+```
+
+The registry declares the two credential mint routes, `auth.ai_token.mint` and
+`auth.handoff.mint`, as `{ class: 'credential', accountScoped: true }` with no
+step-up. An issuer mints only after resolving one of those route ids, so a
+stale tab without the expected account cannot receive a credential for
+whichever account is active.
+
+The class is independent of HTTP method, `GET` and upgrades. An unknown route
+is treated as `{ class: 'security', accountScoped: true }` and never takes a
+step-up. A route is account-sensitive when `accountScoped` is true. For a
+step-up route, `tenantParams` names the workspace and target fields the
+parameters hash must cover; the host builds the parameters from the request
+with those fields present, so a missing tenant field fails before hashing.
+`GrantAct` is a closed union covering the parent page's step-up actions.
+Each act names the parameters its hash must cover, and the registry rejects a
+step-up route whose `tenantParams` omit any of them:
+
+| Act | Required parameters | Credential change |
+| --- | --- | --- |
+| `account.mfa.enroll` | `factorType`, `factorId` | No |
+| `account.mfa.remove` | `factorIds` (sorted) | Yes |
+| `account.mfa.reset` | `factorIds` (every enrolled second factor, sorted) | Yes |
+| `account.passkey.enroll` | `credentialId` | No |
+| `account.passkey.remove` | `credentialIds` (sorted) | Yes |
+| `account.password` | `passwordChangeId`, a challenge committed to the new password's hash | Yes |
+| `account.email` | `newEmailHash` | No |
+| `account.delete` | `userId` | Revoke-all |
+| `sessions.revoke_all` | `userId` | Revoke-all |
+| `api_keys.create` | `workspaceId`, `keyName`, `role` | No |
+| `api_keys.rotate` | `workspaceId`, `keyId` | No |
+| `api_keys.revoke` | `workspaceId`, `keyId` | No |
+| `cli.approve` | `userCode`, `clientId` | No |
+| `qr.approve` | `challengeId` | No |
+| `oauth.consent` | `clientId`, `scopes`, `workspaceIds` | No |
+| `vault.pin-eval` | The challenge, wrap version, client HPKE key and blinded-element hash, as in the vault design | No |
+
+Every act also hashes its own name through `paramsHash`, so a grant confirmed
+for one act never matches another, even with equal parameters. Adding a value
+is a reviewed change to this union.
+
+## Resolve
+
+`resolve(state, { secretHash, route, expectedSessionId, epoch, nowMs })` is a
+pure read. It never records an operation and never bumps `version`; the host
+calls `touch` for `lastSeenAt` at most once every 5 minutes per session.
+
+- The current secret resolves for every route. The grace secret resolves
+  only for `read` routes, with `stale: true`; any other route gets `rotated`.
+- A session with `revokedAt` set, or past its idle or absolute expiry,
+  resolves as `signed_out` before any epoch check. A child session also
+  resolves as `signed_out` when its parent row is revoked or expired.
+- A `read` route may use `epochCache` for the session's user when it is at
+  most 30 seconds old. Every other route, and a `read` route whose cache is
+  older, needs a `fresh` `EpochRead`, and `stale` or `unavailable` then fails
+  closed with `epoch_unavailable`. A fresh read refreshes the cache through
+  `refreshEpochCache`, outside the device version, so a cache refresh never
+  supersedes a rendered fence.
+- A session whose `epochSeen` is below the epoch used resolves as
+  `signed_out`, and the host commits its revocation.
+
+## Mutations
+
+Every mutation carries an `operationId`, an idempotency key from the caller,
+and every fenced mutation carries the `fence` its page was rendered under:
+
+```ts
+type Fence = { sessionId: string; gen: number; version: number };
+
+type DeviceMutation = { operationId: string; nowMs: number } & (
+  | { kind: 'sign_in'; fence: Fence | null; outcome: AuthenticatedOutcome; reservation: Reservation;
+      capturedEpoch: number; epoch: EpochRead; factors: FreshFactors | 'unavailable' }
+  | { kind: 'switch'; fence: Fence; targetSessionId: string; epoch: EpochRead }
+  | { kind: 'rotate'; fence: Fence; epoch: EpochRead }
+  | { kind: 'record_factors'; fence: Fence; route: RouteId; grantId: string; params: JsonValue;
+      credentialChange: null | { newEpoch: number }; epoch: EpochRead;
+      factors: FreshFactors | 'unavailable' | null }   // required for reset, null otherwise
+  | { kind: 'redeem_child'; codeParent: { sid: string; gen: number; epoch: number };
+      child: ChildSessionInput;
+      epoch: EpochRead }
+  | { kind: 'revoke'; fence: Fence | null; sessionId: string; reason: RevokeReason }
+  | { kind: 'revoke_user_below_epoch'; userId: UserId; belowEpoch: number; bumpedAtMs: number }
+  | { kind: 'revoke_user_on_device'; userId: UserId; reservationId: string }
+  | { kind: 'grant_step_up'; fence: Fence; route: RouteId; params: JsonValue; epoch: EpochRead }
+  | { kind: 'consume_step_up'; fence: Fence; route: RouteId; grantId: string; params: JsonValue;
+      epoch: EpochRead }
+);
+```
+
+`fence: null` is accepted only for a `sign_in` from a request with no device
+cookie and a `revoke` of the caller's own session (logout); any other null
+fence is `invalid_operation`. `redeem_child` is a server-to-server call from
+the handoff redemption, authenticated by the host and bound to the code's
+stored parent triple instead of a fence; a moved parent generation or epoch
+fails it. Logout, `revoke_user_below_epoch` and
+`revoke_user_on_device` take no fresh epoch, so they still run while
+`UserSessions` is unavailable. The three system mutations come from
+`UserSessions` or the host and are authenticated by it.
+
+**Epoch cache merge.** Every writer of the cache uses one rule inside one
+storage transaction: an entry is replaced only when the new epoch is higher,
+or equal with a newer `readAtMs`. Versioned commits never assign the cache
+from a snapshot; they return `epochRaises`, which `write` merges under that
+rule in the same transaction as the compare-and-set. `refreshEpochCache`
+accepts only `status: 'fresh'` with `readAtMs` at most 5 seconds before
+`nowMs`. `revoke_user_below_epoch` raises that user's entry to `belowEpoch`
+with `readAtMs` set to the bump's own time, `bumpedAtMs` from `UserSessions`,
+never the delivery time, so a reached device stops resolving the revoked
+sessions at once, a delayed lower fan-out cannot roll the cache back, and a
+late intermediate fan-out cannot look freshly read and suppress the re-read
+that would learn a newer epoch. Logout and
+`revoke_user_on_device` never raise it. A crash mid-merge leaves the older
+entry, which ages out within the 30-second bound.
+
+**Device revoke by slot.** Each session stores the `reservationId` of the
+index slot it was admitted under. `revoke_user_on_device` names the evicted
+slot's `reservationId` and revokes only that user's sessions admitted under
+it, so a redelivery never revokes a session from a later sign-in, whatever
+the two clocks say.
+
+## Commit rule
+
+The request hash is SHA-256 over the UTF-8 bytes of `canonicalJson` of the
+mutation without `operationId` and `nowMs`, with byte arrays as canonical
+base64url strings.
+
+1. **Read.** If `operations[operationId]` exists, an equal request hash
+   returns the stored result and re-emits its stored effects without a second
+   transition; a different hash returns `idempotency_mismatch`. If
+   `expiredOperations[operationId]` exists, return `expired_idempotency`
+   without reducing.
+2. **Fence.** For a fenced mutation, any difference in `sessionId`, `gen` or
+   `version` returns `superseded`. The reducer never recomputes a fenced
+   write against newer state.
+3. **Reduce.** Compute the next state, its result and its effects (cookie to
+   emit, audit events, upstream revocations, index confirmations, epoch
+   fan-out, tab invalidation), record the mutation with its effects, move
+   expired records into `expiredOperations` and drop `expiredOperations`
+   entries older than 7 days, all in this one write, with compare-and-set on
+   the version read.
+4. **Unconfirmed write.** On `conflict` or `unknown`, read again and go to
+   step 1, so a write that committed but lost its acknowledgement returns its
+   stored result and effects. A fenced mutation then returns `superseded` at
+   step 2 if the state moved. An unfenced mutation reduces again against the
+   new state. After three attempts, read once more and apply step 1; only
+   when that read shows no record is the result `unavailable`, with nothing
+   emitted.
+5. **Effects** run only from a committed record, at step 1 or after step 3.
+   Every effect is idempotent on `operationId`, so re-emission is safe.
+
+**Revocations and their outbox.** Logout and the two system revokes skip
+the operation map entirely: they ignore `operationId`, never return
+`idempotency_mismatch`, and never move or evict a record. In the same
+transaction that sets `revokedAt`, the reducer also sets `revokedAt` on every
+child session of each revoked session, so `resolve` never serves a child of a
+revoked parent, and gives each revoked session one `RevocationOutbox` row,
+outside both caps. The row holds the device `gen` at revocation, the upstream
+grant (moved off the session row) and a state per effect. A child's upstream
+grant belongs to its parent, so a child's row has none and its `upstream`
+effect starts `acked`.
+
+**Session-bound credentials.** AI temporary tokens and handoff codes are bound
+to the `sid` that minted them, and the device keeps no list of their ids.
+
+- An issuer mints only after resolving the request's current device secret
+  through its declared mint route. That resolution refuses the grace secret
+  and any revoked or expired session, so the previous cookie cannot mint
+  during the 30-second rotation window.
+- **Issuer contract.** A `SessionCredentialIssuer` port, implemented by each
+  credential store, provides:
+  - a `sid` on every credential and an index by `sid`;
+  - `mint(sid, resolvedAtMs, credential)`, one atomic conditional write
+    under a per-`sid` lock that commits only under the full predicate below,
+    never a read followed by a separate write.
+    `resolvedAtMs` is the device clock's `nowMs` of the authorizing
+    resolution, copied unchanged by the device host; the issuer never
+    substitutes its own clock. Inside the lock the write commits only when no
+    tombstone exists for that `sid`, `resolvedAtMs >= watermark` (a missing
+    watermark does not restrict), and `resolvedAtMs` is no more than 30
+    seconds behind and no more than 5 seconds ahead of the issuer's clock.
+    Each stored credential keeps its `resolvedAtMs`;
+  - `revokeForSession(sid)`, which under the same lock inserts the tombstone
+    and revokes every credential for that `sid`; an existing tombstone is
+    success;
+  - validation that rejects a credential whose `sid` has a tombstone.
+
+  Tombstones live at least 300 seconds, and at least the issuer's longest
+  credential lifetime plus the allowed resolve-to-commit delay, so a mint that
+  commits after the revocation is still covered.
+- **Issuer registry.** `IssuerId` is a closed union from a build-time
+  registry of the same shape as the route registry: `ai_token` and
+  `handoff_code`. Every outbox row initializes every registered issuer to
+  `pending`; a key that is missing counts as pending and blocks prune, so one
+  issuer's success never retires another's revocation.
+- **Resolve-to-commit bound.** The 30-second bound is part of the locked
+  predicate above, never a check made before the lock, so the tombstone
+  lifetime of at least 300 seconds always covers a late commit.
+- **Credential changes.** A password change, MFA reset, or MFA or passkey
+  removal keeps the acting session, so it also calls each issuer's
+  `revokeForSessionBefore(sid, changedAt)` for that session, with `changedAt`
+  from the device clock. Under the same per-`sid` lock it raises the `sid`'s
+  watermark to `changedAt` (never lowering it) and revokes every stored
+  credential whose `resolvedAtMs` is before `changedAt`. A mint authorized
+  before the change therefore fails at commit, whenever it lands, and a mint
+  authorized after it succeeds. The watermark lives at least the 30-second
+  resolve-to-commit bound plus the issuer's longest credential lifetime. This
+  revoke is a `credentials` effect on its own outbox row, keyed
+  `<sid>:change:<changedAt>` so it never collides with a later revocation of
+  the same session. That row carries no `revokedAt` and no tombstone, has a
+  null upstream grant, and starts its `upstream` and `cookie` effects
+  `acked`, so the drain never signs the acting session out upstream. The
+  drain retries only its `credentials` effects, and acknowledges one only
+  after that issuer's watermark raise and revoke scan have committed. The row
+  prunes once no `credentials` effect is pending, counting `abandoned` as
+  not pending.
+- **Current stores.** The existing AI temporary token store and
+  `private.cross_app_tokens` carry no `sid`, mint with a read followed by a
+  separate write, and revoke handoff codes only for the calling user. They do
+  not meet the issuer contract, and this design has no fallback for them: the
+  first-party session never mints or revokes through a store that does not
+  meet it. The slice that wires each store first moves it onto the contract
+  (a `sid` column and index, the locked conditional mint, a tombstone, and a
+  service revoke that needs no user context). Until then the existing
+  session path keeps today's behavior unchanged.
+- **Child sessions.** A `redeem_child` mutation creates a child session only
+  in the same compare-and-set that sees its parent live, and `resolve` of a
+  child returns `signed_out` whenever its parent row is revoked or expired, so
+  a redemption racing the parent's revocation can never serve a child.
+  - The handoff code freezes the parent's `sid`, `gen` and epoch from the
+    authorizing resolution, never from the time of the commit. The
+    redemption reads that stored triple in the same transaction that consumes
+    the code and passes it; `redeem_child` rejects unless it equals the live
+    parent's `sid` and `gen` and the fresh epoch. A code minted before a
+    rotation or a credential change therefore fails, and the host can never
+    substitute the current generation.
+  - `ChildSessionInput` is `{ host, callback, kind: 'child' }`. The reducer
+    sets the child's idle and absolute deadlines to the minimum of the
+    parent's and the child policy's, caps the child cookie's `Max-Age` there,
+    and `touch` never moves a child deadline past its parent's.
+  - A child is live when it is neither revoked nor expired. A parent holds at
+    most 8 live children and at most 32 retained child rows; a `redeem_child`
+    past either ceiling returns `rate_limited`. Expired child rows are pruned
+    on the drain alarm without waiting for a revoke, and revoked ones prune
+    under the session rule below.
+- The cookie effect needs a browser response, so the alarm never emits or
+  counts it. It stays pending and rides the next response to this device,
+  and for a logout that is the logout response itself. At that emit it is
+  checked against the row's `gen`: if the device's `gen` has moved on, it
+  becomes `superseded` and the current cookie is left alone; otherwise it
+  emits `Max-Age=0` only when the device has no live session, and the current
+  session's cookie when it does. A cookie that is never delivered restores
+  nothing, because `resolve` already returns `signed_out` from `revokedAt`.
+- The outbox is the committed record for these three. After an `unknown`
+  write, the host re-reads. If the session shows `revokedAt`, it emits every
+  pending effect and returns success. If it does not, the host retries, and
+  when the last read still shows no `revokedAt` the result is `unavailable`
+  with nothing emitted, so a lost write is never reported as a completed
+  logout.
+- A replay of an already revoked session reduces to no change and emits only
+  pending effects; once none is pending it emits nothing.
+- Credential revocation is scoped to the revoked `sid`, so a replay never
+  touches credentials a newer session minted.
+- **Drain.** A device alarm retries each pending `upstream` and `credentials`
+  effect on its own attempt count, after 1 minute, 15 minutes,
+  1 hour, 6 hours and 24 hours, the parent design's dead-letter bound. After
+  the fifth failure it raises an alert and marks only that effect
+  `abandoned`, which is terminal: no replay emits it again. The first-party
+  revocation is never undone. The same alarm deletes `revokedReservations`
+  entries older than 30 days.
+
+- A session row and its outbox are pruned together, once neither `upstream`
+  nor `credentials` is pending and at least 7 days after `revokedAt`, so every
+  row is pruned within 7 days plus the drain bound. A cookie still pending at
+  prune time is dropped; it restores nothing. Rows are bounded by sessions, which `sign_in` (under its caps) and
+  `redeem_child` (32 retained rows per parent) create.
+
+**Bounds.** These are hard ceilings that no mutation exceeds. Records keep
+their full body 24 hours, longer than any host retry and far longer than the
+60-second index lease, and `expiredOperations` keeps their ids 7 days, so a
+late replay fails instead of reducing again. Each attempt first moves records
+older than 24 hours and drops ids older than 7 days, then applies the caps:
+at most 256 records and 4,096 expired ids.
+
+- **Security records** (`sign_in`, `redeem_child`, `record_factors`,
+  `grant_step_up`, `consume_step_up`) are never moved before 24 hours and their ids are never
+  dropped before 7 days.
+- **Fenced-only records** (`switch`, `rotate`) may move early into
+  `expiredOperations` when records are full, and their ids may be dropped
+  early when ids are full. A replay of a dropped one fails its fence,
+  because the device's version has moved past it, and returns `superseded`.
+- When neither cap can make room under those rules, the mutation returns
+  `rate_limited`. Logout and the two system revokes are never rate limited,
+  because they need no record.
+
+`operationStatus(state, operationId)` is a pure read returning `succeeded`,
+`rejected` (a stored result that changed no session, such as
+`credentials_changed`), `expired` or `absent`, used by the index lease below.
+
+## Generations and epochs
+
+- `sign_in`, `switch`, `record_factors` and `grant_step_up` each bump `gen`,
+  replace the secret, clear `grace` and emit `Set-Cookie` for the new
+  generation in the same commit. `rotate` does the same but keeps the
+  previous secret in `grace` for 30 seconds.
+- `sign_in` sets the new session's `epochSeen` to `epoch.epoch` and stores
+  `reservation.reservationId` on it.
+- Every mutation that takes an `EpochRead` requires it `fresh` for the user
+  of the session it acts on, fails closed with `epoch_unavailable` otherwise,
+  and refuses, revoking in the same commit, any session it acts on or
+  activates whose `epochSeen < epoch.epoch`. A fresh read also returns an
+  epoch raise, merged in that commit.
+- `grant_step_up`, `consume_step_up` and `record_factors` take the act's raw
+  parameters and never a hash. The reducer validates them against the act
+  table, sorts the fields the table marks sorted, rejects duplicates and
+  missing fields, and computes `paramsHash(act, params)` itself, so a host
+  cannot spend a grant on other parameters by echoing its hash.
+- `record_factors` derives the session's next `factors` from the act:
+  enrollment adds the named factor or passkey with its role
+  (`account.mfa.enroll` adds a `second_factor`, `account.passkey.enroll` a
+  `sign_in` passkey); removal requires every listed
+  id to be in the session's factors and removes exactly those; password
+  change leaves `factors` unchanged.
+- A `FreshFactors` value is accepted only when its `userId` equals the
+  session's user and its `readAtMs` is at most 5 seconds before `nowMs`;
+  otherwise the mutation is `invalid_operation`, the same rule as an
+  `EpochRead`. `unavailable` fails the mutation closed.
+- `account.mfa.reset` requires a `FreshFactors` read; `null` or
+  `unavailable` fails it. Reset covers second factors only: the listed
+  `factorIds` must equal that read's `second_factor` ids exactly, so a second
+  factor enrolled on any device after confirmation fails the reset, and one
+  already removed elsewhere does not block it. The commit removes those
+  second factors and leaves `sign_in` passkeys, which only
+  `account.passkey.remove` removes.
+- `sign_in` requires a `FreshFactors` read. It rejects the sign-in when
+  `outcome.amr` names `totp` or `passkey` and the read has no factor of that
+  method. When the read has any `second_factor`, the sign-in must carry
+  either `totp` in `outcome.amr` while a `totp` second factor is enrolled, or
+  `passkey` in `outcome.amr` with `outcome.passkeyUserVerified === true`
+  (passkey user verification, which the parent design accepts in place of a
+  password plus a second factor), whatever the outcome's `aal` label. A
+  passkey without that result never satisfies an enrolled second factor,
+  even when that factor is itself a passkey. `passkeyUserVerified` is a field the
+  provider adapter's `AuthOutcome` gains in the slice that wires sign-in. A user whose only
+  factors are `sign_in` passkeys needs nothing beyond the passkey in `amr`.
+  It stores the read as the session's `factors`, and whether the sign-in met
+  that second-factor rule as `secondFactorSatisfied`. The flag is true only
+  when the sign-in actually presented `totp` or a user-verified `passkey`,
+  never because no second factor was required. `record_factors` never sets
+  the flag true. It sets it false only when the previous set had no
+  `second_factor` and this act adds one; every other act leaves it unchanged.
+- `record_factors` with a `credentialChange` requires
+  `credentialChange.newEpoch === epoch.epoch > session.epochSeen`, sets this
+  session's `epochSeen` to it, and exempts this session from the below-epoch
+  check in the same commit. The credential changes are the acts marked "Yes"
+  in the act table: MFA and passkey removal, MFA reset and password change.
+  `record_factors` accepts `credentialChange` only for those acts and
+  refuses it for enrollment.
+- Account deletion, an admin "compromised" action and `sessions.revoke_all`
+  are revoke-all: `UserSessions` bumps the epoch and fans out to every device
+  including this one, with no `epochSeen` exemption.
+
+## Gate design
+
+| Gate | Reducer design | Left to slice 4 |
+| --- | --- | --- |
+| G1 Write freshness | Writes never use a cached resolution: `resolve` for a route that is not `read` uses a fresh epoch and the stored state, and every mutation is fenced as above. Recovery is per cause: a dead or unknown cookie returns `signed_out` and the client navigates to Web's sign-in, keeping saved accounts; `account_mismatch` reloads the page; `rotated` (the grace secret on a non-`read` route) makes a fetch retry once with the current cookie; `superseded` makes a fetch reload the page, never a document redirect from inside a fetch | Gateway cache bypass for writes and issuance |
+| G2 Expected account | Account-scoped routes reject `expectedSessionId: null`, and a mismatch with `activeSid` returns `account_mismatch`. `switch` needs a fresh `sign_in` for the target when its `authTime` is older than 24 hours, or its stored `factors` include a `second_factor` role and its `secondFactorSatisfied` is false. Step-up grants are ignored by `switch`. A switch emits a tab invalidation for the previous `sid` | Client invalidation channel |
+| G3 Stale authority | Only `rotate` sets `grace`. The grace secret resolves only for routes the registry classes as `read`, with `stale: true` and the grace deadline for `assertionExpiry`; any other or unknown route gets `rotated`. It never grants, consumes, mints, extends expiry or receives `Set-Cookie`. `record_factors` covers MFA enrollment, MFA removal, MFA reset and password change. It consumes a grant for the route's act (an `account.mfa.*`, `account.passkey.*` or `account.password` act) in the same compare-and-set, under the same checks as `consume_step_up` (raw parameters hashed by the reducer), and bumps `gen` | Data adapter honoring `stale` |
+| G6 Epoch fencing | `sign_in` with `capturedEpoch !== epoch.epoch` returns `credentials_changed`, writes no session, and the host calls `release`. Every mutation that acts on a session reads the epoch fresh and fails closed; only `read` resolutions may use the 30-second device cache. A credential change (password change, MFA reset, or MFA or passkey removal) first bumps the user's epoch in `UserSessions`, whose bump owns the `revoke_user_below_epoch(newEpoch)` fan-out to every other device and retries it whether or not `record_factors` commits. The host then calls `record_factors` with `credentialChange.newEpoch`, which keeps this session alive as above. If `record_factors` fails, the fan-out still revokes this session too, which fails safe. `revoke_user_below_epoch` revokes only sessions with `epochSeen < belowEpoch` (exclusive), so a delayed fan-out cannot revoke a session created after the bump | `UserSessions` epoch store and fan-out |
+| G7 Device cap | Every `sign_in` calls `reserve` before reducing, and passes the reservation in. `unavailable` fails the sign-in, and `evicting` returns `retry_later`. `swap` atomically replaces the device where that user's `lastSeenAt` is oldest with a provisional reservation and an index tombstone for the evicted device. After the local `sign_in` commits, its effects send `revoke_user_on_device` with `evictReservationId` to the evicted device and `confirm` the reservation. Every sign-in result other than success calls `release`, which drops the provisional reservation and, for a swap, restores the evicted device and removes its tombstone. Every reservation has a 60-second lease; on expiry the index calls `operationStatus` on the reserving device and confirms only on `succeeded`, releases on `rejected`, `expired` or `absent`, and until then the reservation counts toward the cap. `revoke_user_on_device` takes no epoch, is never blocked by a tombstone, and removes only that user's sessions on that device. It matches only sessions whose stored `reservationId` equals the named one. When it revokes sessions it records the id in `revokedReservations` for 30 days. The index gives up retrying a tombstone after 7 days, so the 30-day sweep never turns an in-window retry into `not_found`; the map holds at most one entry per evicted slot, which is bounded by sign-ins under their caps; a later revoke for a recorded id returns `already_revoked`, which the index treats as success. A revoke for an id this device never stored returns `not_found`, and the index keeps the tombstone and alerts. Its success is the acknowledgement: the index deletes the tombstone when it returns. Past the retry bound the index raises an alert and keeps the tombstone. `evicting` applies only to `sign_in` | Index object, leases and alarm retries |
+| G16 Effect classification and step-up | The registry is the only source of a route's class, account scope and step-up act. `grant_step_up` takes the route, loads `act` from the registry, bumps `gen` and binds the grant to the new `sid`, `gen`, `act`, the `ph` it computes from the raw parameters, and a 5-minute expiry. `consume_step_up` and `record_factors` load `act` from the route, recompute `ph` from their own raw parameters, check the grant's `sid`, `gen`, `act`, `ph`, expiry, the session's liveness, the fence and the epoch, then mark the grant consumed by this `operationId` and record the effect's acceptance in the same compare-and-set | Registry build-time validation per app, protected-effect hosts |
+
+## Tests
+
+- Property tests over random interleavings of every mutation and `resolve`,
+  with a store fake that injects `conflict`, `unknown` after a committed
+  write on any attempt including the last, and lost effect acknowledgements,
+  assert:
+  - at most one current generation per device, and a grace secret only after
+    `rotate`;
+  - no fenced mutation commits against a state whose fence differs;
+  - a committed mutation whose acknowledgement was lost returns its stored
+    result and emits its effects, and is never reported `unavailable`;
+  - `resolve` never changes `version` or the record maps;
+  - no session with `epochSeen >= belowEpoch` is revoked by an epoch fan-out,
+    and no session with `epochSeen` below a fresh epoch is activated, granted
+    or consumed;
+  - a grant is consumed at most once, only under its `sid` and `gen`, and
+    only for a route whose registry `act` matches;
+  - eviction never removes another user's sessions, a failed sign-in never
+    leaves its victim evicted, and a committed sign-in is always confirmed in
+    the index;
+  - replaying an `operationId` never applies a second transition, before or
+    after its record expires, and the record maps never exceed their caps.
+- Each mutation has negative cases for a wrong fence, a null fence where it
+  is not allowed, a missing expected account, a wrong account, the grace
+  secret on a write route, an unknown route, an expired or mismatched grant,
+  a grant used on a route with another `act`, a `record_factors` without a
+  grant, a stale or unavailable epoch, an `EpochRead` for another user, a
+  reused `operationId` with a different body, and an `evicting` reservation.
+  `resolve` has cases for a cached epoch within and past 30 seconds during a
+  `UserSessions` outage, a revoked or expired session with a young cache, and
+  a reached device right after `revoke_user_below_epoch`.
+- Bounds tests fill the record maps and assert that logout and both system
+  revokes still commit without adding a record, that thousands of repeated
+  logouts leave the maps unchanged, that a committed `sign_in` stays
+  `succeeded` through its lease, that security records survive under
+  `switch` and `rotate` churn, that the epoch cache never lowers under a late
+  lower fan-out or a concurrent versioned commit, that a redelivered device
+  revoke spares a later sign-in (the evicted slot's id revokes, an earlier or
+  later id does not), that a lost acknowledgement on logout re-emits from the
+  outbox and returns success, that a replayed logout after full
+  acknowledgement emits nothing, that a host-echoed `ph` with other
+  parameters fails, that reset fails after a new factor is enrolled, that a
+  lease confirms only a `succeeded` sign-in, and that a `credentials_changed`
+  sign-in after a swap restores the evicted device.
+- Outbox tests: a provider outage on `revokeUpstream` is retried by the
+  drain until success or `abandoned`; a logout replayed after a later
+  sign-in leaves the new cookie alone; a system revoke's cookie effect waits
+  for the next response and never spends an attempt; one effect's failures
+  never abandon another; an `abandoned` effect is never re-emitted; a child of a revoked parent never
+  resolves; a session with no upstream grant and no minted credentials prunes
+  after 7 days; a mint and a `revokeForSession` racing under the per-`sid` lock
+  never leave a live credential; a credential presented after its `sid`
+  tombstone fails validation; one issuer's ack leaves the other pending;
+  a child redeemed while its parent is revoked never resolves; a
+  code minted before the parent rotated fails; a ninth child is refused; a
+  child cookie never outlives its parent; a late intermediate fan-out keeps
+  its bump time; the grace secret cannot mint; an issuer that has
+  not written its `sid` tombstone never acks the `credentials` effect; a
+  credential minted for a newer session survives.
+- Factor tests: a lagging read is never used, `unavailable` fails sign-in and
+  reset, a password-only sign-in for a user with an enrolled `totp` or MFA passkey
+  is rejected whatever its `aal` label, a passkey sign-in without user
+  verification is rejected for a user with an MFA passkey, enrolling a first
+  second factor and then switching back to that saved session needs a fresh
+  sign-in, a mint authorized before a credential change and committed after
+  its revoke leaves nothing live while one authorized after it succeeds,
+  eight expired children do not block a ninth handoff, a passkey sign-in for a passkey-only
+  user is accepted, an offline device's revoked row still prunes, a read for another user or older than 5 seconds is rejected, and
+  a factor removed elsewhere does not block a reset. A late slot revoke after
+  pruning returns `already_revoked`.
+- The reducer runs under the boundary test: no clock, random source or
+  network access except through its ports.

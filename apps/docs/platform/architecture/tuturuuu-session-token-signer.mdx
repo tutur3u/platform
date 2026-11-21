@@ -1,0 +1,278 @@
+---
+title: "Tuturuuu session token signer"
+description: "Slice 2a of the first-party Tuturuuu session: key sets, per-class claim profiles, minting, verification and the public JWKS."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** Slice 2a is a pure module in `packages/session` that parses key sets, mints and verifies every token class, and builds the public JWKS. It is one of
+the [Tuturuuu session slices](/platform/architecture/tuturuuu-session-slices).
+
+## Entry points and the boundary
+
+- `@tuturuuu/session/verify` stays free of signing. It never imports
+  `./tokens`, and the boundary test keeps rejecting ECDSA `sign` and
+  `getRandomValues` in the graphs of `./verify`, `./cookie` and the expiry
+  module.
+- `@tuturuuu/session/tokens` is a new entry point. It signs only with a
+  `CryptoKey` its caller passes in, and draws `jti` bytes from an injected
+  `RandomSource`, so it calls no global random function. The boundary test
+  scopes its no-signing rule by entry point instead of scanning every export,
+  and asserts that no entry other than `./tokens` reaches `./tokens`.
+- `verifyIdentityAssertion` keeps its name, option names and failure-reason
+  union, and becomes the identity case of `verifyToken`. Its `keys` option
+  changes type to the key lookup below, so the production identity path
+  checks class and lifetimes. The existing negative tests run through the
+  fenced test adapter.
+- **Key lookup.** One lookup,
+  `get(kid): Promise<{ key, class, notBefore, notAfter } | null | 'unavailable'>`,
+  serves `verifyToken`, `verifyIdentityAssertion` and slice 2b's step-up
+  verification. Key acceptance runs after the payload is parsed, so the
+  class, `iat >= notBefore` and `now < notAfter` are checked against the
+  token. An adapter from a bare `CryptoKey` exists only inside the fenced test
+  issuer, takes explicit finite lifetimes with no open default, and a boundary
+  assertion keeps it unreachable from every other entry point.
+- **Durations** in this page are seconds: a day is 86,400, 7 days 604,800 and
+  90 days 7,776,000. They are not the core's millisecond `DAY_MS`, and every
+  comparison uses a seconds clock.
+
+## Key sets
+
+`TTR_TOKEN_SIGNING_KEYS` (signer) and the internal key set given to verifiers
+share one JSON shape, parsed by `parseKeySet(json, { mode, now })` with the
+core's `parseStrictJson`. In signer mode it also takes the signer's
+observation rows and `emergencyKids`, and computes each key's `mintableAt`:
+
+```ts
+type KeySetEntry = {
+  kid: string;            // [A-Za-z0-9_-]{1,64}, unique across the set
+  class: TokenClass;      // 'identity' | 'stepup' | 's2s' | 'realtime' | 'access'
+  status: 'next' | 'active' | 'retired';
+  publishedAt: number;    // seconds; untrusted and informational; never an input to mintableAt
+  notBefore: number;      // seconds; the key verifies nothing issued before this
+  retiredAt?: number;     // seconds; required when status is 'retired'
+  notAfter: number;       // seconds; the key verifies nothing at or after this
+  publicJwk: EcPublicJwk; // P-256: kty, crv, x, y only
+  privateJwk?: EcPrivateJwk;
+};
+type KeySet = { entries: KeySetEntry[]; deniedKids: string[] };
+```
+
+Parse rules, each with a rejection test:
+
+- **Document and entry failures.** A document that is not strict JSON in the
+  `KeySet` shape fails as a whole and its key source returns `unavailable`,
+  which fails closed as `keys_unavailable`. Inside a valid document, an entry
+  that breaks a rule below is disabled alone; the rest of the set, and
+  `deniedKids`, still apply. If the disabled entry is a signed class's
+  `active` key, that class stops minting.
+- **One key, one class.** A key belongs to exactly one class. The key source
+  for a class returns only that class's keys.
+- **Threat model.** Key-set configuration is trusted input. Anyone who can
+  write `TTR_TOKEN_SIGNING_KEYS` already holds the private keys, so
+  `deniedKids` in that same document cannot stop them; that case is covered
+  by secret custody and by the separately deployed verifier configuration.
+  The 7-day pre-publication rule from the parent design is a propagation
+  rule, enforced only by the honest signer, so verifiers never depend on it.
+  It gives every verifier a window to load a key before tokens signed with it
+  appear; a verifier still without the key after the window fails closed with
+  `unknown_key`. Early signatures by someone who already holds a private key
+  are an accepted residual, not something this rule prevents.
+- **Observation port.** `KeyObservationStore` is an injected port, so 2a stays
+  pure and is tested with a fake. It offers an insert-only get-or-create of a
+  `(class, kid, thumbprint)` row time-stamped by the store's own clock, and
+  one transaction that marks the first row of a class as its bootstrap key.
+  The thumbprint is SHA-256 over the RFC 7638 canonical JSON of `crv`, `kty`,
+  `x` and `y` only, encoded as base64url without padding. A `kid`
+  whose thumbprint differs from its row is a different key with its own row.
+  The Durable Object adapter, who may administer it, and cache durability
+  belong to slice 4.
+- **Verifier registry.** Each class has a closed list of verifier
+  deployments, owned by that class's verifier owner and never by the identity
+  that writes `TTR_TOKEN_SIGNING_KEYS`:
+  - identity: the gateway's effective mount inventory (its mounted paths and
+    mount bindings, merged with the live bindings), owned by the gateway
+    release;
+  - realtime, s2s, access and step-up: their verifier Workers, each listed by
+    its owning release.
+
+  Each report is identified by the deployment id that the deployment itself
+  produces.
+- **Census.** The host refreshes the reports and a public fetch of
+  `/.well-known/jwks.json` in the background and hands the pure module the
+  last successful census with its time. `mintToken` never fetches. A census
+  older than 300 seconds, the same bound as the public JWKS cache and `kid`
+  denial, fails closed; a failed refresh keeps the last success only until
+  that cap.
+- **Publication evidence.**
+  `publicationHolds(entry, { registry, census, now })` is true only when:
+  - the class's `registry` is non-empty and `census` is at most 300 seconds
+    old;
+  - the census holds exactly one report for every registered deployment and
+    none for anything else (a missing, extra or duplicate report fails);
+  - each report is the public key bundle that deployment actually loaded, and
+    the census's JWKS is the public fetch of `/.well-known/jwks.json`, never
+    `jwksDocument()`'s own return value;
+  - for each of them, the reducer parses the key, recomputes its thumbprint
+    from `crv`, `kty`, `x` and `y` with the function above, ignores any
+    thumbprint field on the document, and finds the same `(kid, thumbprint)`.
+
+  The signer inserts a key's row the first time `publicationHolds` is true,
+  and the row's store time is its `publishedAt`. The document's `publishedAt`
+  field is untrusted and never an input to `mintableAt`; the only rule on it
+  is that a value later than `now` disables the entry. How slice 4 collects the reports is part of its design.
+- **Minting time.** `mintableAt` is `max(notBefore, publishedAt + 7 days)` for
+  an ordinary key. The class's bootstrap key and an armed emergency key skip
+  only the 7 days. Every mint, for every key, also requires
+  `publicationHolds` against the last census, so a deployment added or rolled
+  back after the row was written stops minting, at the latest at the next
+  refresh, until it holds the key again.
+- **Store errors.** The signer caches only rows the store has committed, never
+  a local election, and a store error fails closed for any key whose committed
+  row is not cached. That is the pure module's rule. Slice 4 must persist
+  committed rows across isolates and keep minting from that persisted cache
+  when the store errors, so a store outage during a deploy cannot stop
+  authentication; only a key with no persisted row stays blocked. The adapter
+  stamps `publishedAt` from the store's clock: no caller supplies it, and the
+  identity that writes `TTR_TOKEN_SIGNING_KEYS` cannot insert or backdate
+  rows.
+- **Emergency keys.** Only the signer reads `TTR_TOKEN_EMERGENCY_KIDS`, a
+  separate configuration with at most one `kid` per class, owned by a
+  different deploy identity from the one that writes `TTR_TOKEN_SIGNING_KEYS`.
+  An armed `kid` skips only the 7-day wait, and only when it is already its
+  class's single `active` key inside the signing window. A listed `kid` that
+  is unknown, `next`, retired, of the wrong class or a second one for its
+  class is ignored alone. Verifiers are unaffected, because they never apply
+  the delay.
+- **Conflicts.** Two `active` keys in one class, or two entries with one
+  `kid`, disable all of the conflicting entries, and that class stops
+  minting. A `retiredAt` on an entry whose status is not `retired` disables
+  the entry, so a half-applied retirement cannot keep a key signing.
+- **Windows.** A key signs for at most 90 days after its `notBefore`. A
+  non-retired key's `notAfter` is exactly
+  `notBefore + 90 days + maxLifetime(class) + 1 day`, where `maxLifetime` is
+  the class's largest cap (600 s for realtime); one second off disables the
+  entry. A `retired` key has `retiredAt`, and its `notAfter` is
+  `min(notBefore + 90 days + maxLifetime(class) + 1 day, retiredAt + maxLifetime(class) + 1 day)`,
+  so retiring a key never lengthens its verification window; any other value
+  disables the entry.
+- **Emergency rotation.** `deniedKids` in the verifier configuration is the
+  emergency stop. An armed emergency key skips only the 7-day wait: it signs
+  as soon as every registered deployment and the served JWKS report it.
+- **Signer mode** is configured with the classes it signs, all read from
+  `TTR_TOKEN_SIGNING_KEYS`. Each signed class has at most one `active` and at
+  most one `next` key carrying a `privateJwk` whose public half matches
+  `publicJwk`; a `privateJwk` on a `retired` key disables that entry.
+  `mintToken` uses only the class's `active` key while
+  `mintableAt <= now < min(notBefore + 90 days, notAfter)`, never a `next`
+  key, and refuses that class alone when no such key exists.
+- **Verifier mode** disables any entry carrying a `privateJwk`. A class may
+  have no usable active key; its non-denied `next` and `retired` keys still
+  verify under the rules below, so a lapsed active key never takes valid
+  retired keys with it. Verifiers read only their configured key set; they
+  have no store dependency at parse time or on the token path, and a cold
+  start needs only that configuration.
+- **Key acceptance.** A verifier accepts a key for a token only when the class
+  matches, the `kid` is not denied, `now < notAfter`, and `iat >= notBefore`.
+  A `next` key is accepted under the same rule, which is what lets a signer
+  promote it without a verifier configuration push.
+- **Denial.** A `kid` in `deniedKids` is removed before any other rule runs.
+  A denied, expired, not-yet-valid or unknown `kid` resolves to
+  `unknown_key`, the same reason a key source returning `null` gives today.
+
+## Public JWKS
+
+`jwksDocument(set, now)` returns `next`, `active` and `retired` keys before
+their `notAfter`, minus `deniedKids`. Each JWK carries `kty`, `crv`, `x`, `y`,
+`kid`, `use: "sig"`, `alg: "ES256"`, `ttr:class`, `nbf` (the key's
+`notBefore`) and `exp` (its `notAfter`). A JWKS-fed verifier rejects a key
+whose `ttr:class`, `nbf` or `exp` is missing, or whose class differs from the
+class it verifies, and applies the key acceptance rule above with `nbf` and
+`exp`. `exp` is only the bound a stale cache can never extend past; it is not
+a denial channel. JWKS consumers refetch under the parent's
+`Cache-Control: public, max-age=300` and drop any `kid` no longer listed, which
+is how a denied key stops verifying within 5 minutes.
+
+## Claim profiles
+
+Every class uses the identity verifier's encoding rules: the token is at most
+4 KiB; three canonical base64url segments; header members exactly `alg`,
+`typ` and `kid`; strict JSON with duplicate members rejected, `__proto__` parsed as an
+ordinary member (and then rejected as unknown by the closed member set), and
+canonical numbers; `aud` a single string; `iat <= now + 5`, `exp > iat`
+and `now < exp`.
+
+`verifyToken(class, token, { issuer, environment, audience, keys, now, ...classOptions })`
+pins `alg: ES256` and the class's `typ`, rejects every member outside the
+class's closed set, including unknown nested members, and applies key
+acceptance. It rejects an `iss`, `env` or `aud` that differs from the
+configured value with the identity reasons `issuer`, `environment` and
+`audience`, and checks that the configured `audience` has the class's shape.
+Class options supply the other expected values: realtime takes the expected
+`topic`, access takes the scope and client registries, and s2s takes the
+service registry. `mintToken` checks the same registries. For s2s it takes
+`caller`, the minting Worker's own service identity supplied by its host, and
+signs only when `sub` and `azp` both equal `caller`.
+
+`mintToken(class, claims, { keySet, observations, emergencyKids, census, caller, random, now })`
+takes the parsed signer key set, selects the class's mintable `active` entry
+itself, and refuses when there is none; callers never pass a bare key. It
+applies the same profile and member types before signing and refuses a
+violation instead of signing it.
+
+Member types for every class: `jti` is 16 bytes in canonical base64url; a
+user `sub` is a canonical lowercase UUID; `sid` and `gen` follow the identity
+profile.
+
+| Class | `typ` | `aud` shape | Class members beyond `iss env sub aud iat exp jti` | Max lifetime |
+| --- | --- | --- | --- | --- |
+| identity | `ttr+identity` | `mount:<name>` | As today | 60 s |
+| stepup | `ttr+stepup` | `stepup:<service>` | See [slice 2b](/platform/architecture/tuturuuu-session-step-up-proof) | 300 s |
+| s2s | `ttr+s2s` | `service:<name>` | `sub` and `azp` both present, equal to the injected caller identity of the minting Worker, matching `^[a-z][a-z0-9-]{1,62}$`, and in the injected service registry; no `sid` | 300 s |
+| realtime | `ttr+realtime` | `realtime:<service>` | `sid`, `gen`, `topic` = `{ kind: 'channel' \| 'meet' \| 'chat', id }`, `id` a non-empty string of at most 128 bytes, equal to the expected topic | 60 s for `channel`, 600 s for `meet` and `chat`, chosen by `topic.kind` |
+| access | `ttr+access` | `https://tuturuuu.com/api` | `azp` a registered client; `sid`; `scope` space-separated unique tokens from the injected scope registry; `ws` (array of canonical workspace UUIDs, at most 64) | 300 s |
+
+`ws` is required. An empty array grants no workspace access; there is no
+omitted or wildcard form. The `ttr+access` lifetime follows the parent token
+table; the rollout page's open question on that lifetime stays open, and the
+cap is one constant that a decision would change.
+
+## What 2a does not close
+
+2a makes every verifier reject denied and expired keys the same way. The rest
+of G5, which is the risk decision on the ordinary-read bound, uncached checks
+for mutations and issuance with their outage behavior, and the end-to-end
+emergency `kid` denial test, belongs to slice 4.
+
+## Tests
+
+Mint and verify every class. Prove cross-class rejection in both directions
+for every pair, including s2s against step-up. Reject denied, expired,
+not-yet-valid and wrong-class keys through both the internal key set and the
+JWKS, including a JWK with no `ttr:class`, `nbf` or `exp`, and a cached JWK
+past its `exp`. Pin the wait: accept at `publishedAt + 604800`, reject at
+`publishedAt + 604799`. Reject publication for an empty registry, an empty report list, a census
+older than 300 seconds, two of three registered deployments, and when only `jwksDocument()` output
+contains the key. Prove a retired identity key past its `notAfter` and a key
+of another class both fail through `verifyIdentityAssertion` itself. On the
+signer, refuse to mint before 7 days of publication,
+including with a backdated `notBefore` or `publishedAt` or a reused `kid`
+with a new thumbprint, and before both the JWKS and the internal verifier set
+contain the key, using the served document rather than `jwksDocument()`
+output and every deployed verifier set; skip only the 7 days for the
+bootstrap key and an armed emergency `active` key, still after both
+observations; ignore an armed `next` key; keep minting with cached committed
+rows during a store outage, and stop on a cold start. A verifier set without
+a kid returns `unknown_key` for a token signed after the 7 days. Two active
+keys, a duplicated `kid` and a stray `retiredAt` disable the entries named
+above, and a `notAfter` one second off the formula is rejected. Reject a wrong
+`iss`, `env`, `aud` and realtime `topic` in both directions, an unregistered
+scope, client or service, an s2s token whose `sub` and `azp` differ or name
+a service other than `caller`, and a
+malformed `jti` or `sub`. Verify that a retired key past its `notAfter`
+fails through the production identity entry point. A bad entry, or a bad
+emergency list entry, disables only itself. Refuse to mint with a `next` key or past 90 days. Accept a `next` key only for
+`iat >= nbf`. Keep verifying a retired key after the active key lapses.
+Reject realtime tickets over the cap for their topic kind, an access token
+without `ws`, and every unknown member. Run the identity verifier's existing
+encoding negatives against every class.

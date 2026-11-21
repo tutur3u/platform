@@ -1,0 +1,63 @@
+---
+title: "Tuturuuu session slices"
+description: "Index of the implementation slices of the first-party Tuturuuu session: the pure token signer, step-up proof and device state modules, and the auth Worker and step-up page that host them."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** These slices build on
+the portable core in `packages/session` described on
+[Tuturuuu session](/platform/architecture/tuturuuu-session). Each row names the
+part of a design gate on
+[Tuturuuu session rollout](/platform/architecture/tuturuuu-session-rollout#design-gates)
+that the slice owns; a gate closes only when every part of it has landed. No
+slice adds a runtime flag or wires an app.
+
+Slices 2a, 2b and 3 are pure modules in `packages/session`, tested without a
+Workers runtime. They take time, entropy, keys and storage as injected ports.
+Hosting them in a Worker or Durable Object is slice 4, which is not designed
+yet and needs its own review, because that is where deployment, routing and
+cost controls apply.
+
+| Slice | Contents | Owns | Depends on |
+| --- | --- | --- | --- |
+| [2a Token signer](/platform/architecture/tuturuuu-session-token-signer) | Key-set parsing, per-class claim profiles, minting, verification, public JWKS | G5: key denial and expiry semantics in every verifier | Core |
+| [2b Step-up proof](/platform/architecture/tuturuuu-session-step-up-proof) | The `ttr+stepup` profile, canonical parameters hash, verifier and consume port | Vault prerequisite (MFA unlock) | 2a |
+| [3 Device state machine](/platform/architecture/tuturuuu-session-device-state) | Device, session, rotation, switch, factor changes, epoch fencing, revocation, device cap and step-up grant logic | The reducer parts of G1, G2, G3, G6, G7 and G16 | Core |
+| 4 Auth Worker | Hosts 2a, 2b and 3. Not yet designed | Remaining parts of G1-G3, G5-G7, G16, and G8, G17, G18 | 2a, 2b, 3 |
+| 5 Step-up page | Web-owned confirmation page that mints `ttr+stepup`. Not yet designed | Vault MFA unlock | 4 |
+
+## Slices 4 and 5
+
+Slice 4 hosts slices 2a, 2b and 3 in an `auth` Worker with `BrowserDevice`,
+`UserSessions` and `SessionControl` Durable Objects, with deployment held in
+`tuturuuu.ci.ts`. It is not designed yet. Before any code, its design gets an
+independent review covering the parts the table above leaves to it, and:
+
+- G5 revocation bounds measured end to end, including emergency `kid` denial;
+- G8 stop-fence modes and fence versions;
+- G17 operation accounting;
+- G18 emitted-artifact and real-ingress acceptance.
+
+Slices 2a and 3 also leave these requirements to slice 4:
+
+- collect the publication census in the background: one report per
+  registered verifier deployment, identified by the deployment id that the
+  deployment itself produces (for identity, the gateway's effective mount
+  inventory; for other classes, their verifier Workers), plus a public fetch
+  of `/.well-known/jwks.json`. A missing, extra or duplicate report fails
+  publication and stops minting for that class at the next refresh; a
+  failed refresh keeps the last success only until the 300-second cap;
+- persist committed key-observation rows across isolates and keep minting
+  from that cache when the store errors; a key with no persisted row stays
+  blocked, and a cold start with no persisted rows stops minting;
+- move the AI temporary token store and `private.cross_app_tokens` onto the
+  session-bound issuer contract before the first-party session mints or
+  revokes through them.
+
+Slice 5 adds the step-up confirmation page on Web and the one-time code
+redemption that mints `ttr+stepup` for relying services. It is not designed
+yet.
+
+The vault's MFA unlock needs slices 2a, 2b, 3, 4 and 5. Passkey and recovery
+unlock do not depend on any of them.

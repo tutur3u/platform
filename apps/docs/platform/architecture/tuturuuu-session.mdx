@@ -122,10 +122,11 @@ Only the 24-hour rotation keeps the previous generation for 30 seconds, so
 parallel requests from one tab do not sign out. During that window the
 previous generation has **read authority only**:
 
-- it resolves for `GET` and `HEAD` with `stale: true`;
+- it resolves with `stale: true` only for routes the effect registry classes
+  as `read`, whatever their HTTP method;
 - it carries no step-up and cannot use a step-up grant;
 - it cannot mint any credential, extend expiry or receive a `Set-Cookie`;
-- an unsafe request with it gets `401 SESSION_ROTATED`, and the client retries
+- any other or unknown route with it gets `401 SESSION_ROTATED`, and the client retries
   with the current cookie.
 
 The `BrowserDevice` object serializes every write for its device, so rotation,
@@ -180,8 +181,11 @@ pure function of the record and an injected clock.
 - **Upstream:** every revocation calls the adapter's `revokeUpstream` for that
   session's grant, retried through the Queue. A provider failure never undoes
   the first-party revocation.
-- Password change, MFA reset, account deletion and an admin "compromised"
-  action run revoke-all.
+- Account deletion, an admin "compromised" action and the revoke-all
+  endpoint revoke every session on every device, including the caller's.
+- Password change, MFA reset, and MFA or passkey removal bump the epoch and
+  revoke every other device; the session that made the change stays signed
+  in at the new epoch.
 
 Revocation bounds are listed in
 [Tuturuuu session rollout](/platform/architecture/tuturuuu-session-rollout#revocation-bounds).
@@ -395,7 +399,13 @@ using that assertion at another mount.
 
 ```ts
 // @tuturuuu/session/verify
-type KeySource = { get(kid: string): Promise<CryptoKey | null | 'unavailable'> };
+type KeySource = {
+  get(kid: string): Promise<
+    | { key: CryptoKey; class: TokenClass; notBefore: number; notAfter: number }
+    | null
+    | 'unavailable'
+  >;
+};
 
 function verifyIdentityAssertion(
   token: string,
@@ -422,8 +432,9 @@ the session is still live, or that the action is authorized.
 The function never throws for a bad token, makes no network call and needs no
 signing key. A key source that returns `null` gives `unknown_key`. A key source
 that returns `'unavailable'` or throws gives `keys_unavailable`. A key that is
-not a public P-256 ECDSA verification key gives `key_type`. Every failure is a
-rejection.
+not a public P-256 ECDSA verification key gives `key_type`. A key of another
+class, or a token with `iat` before the key's `notBefore` or verified at or
+after its `notAfter`, gives `unknown_key`. Every failure is a rejection.
 
 ## 4. Service tokens and credential families
 
@@ -444,7 +455,7 @@ rejection.
 | `ttr+s2s` | Worker to Worker over HTTP | 5 min | `service:<name>` |
 | `ttr+realtime` | Browser, one topic | ≤ 60 s for channels, ≤ 10 min for meet and chat joins | `realtime:<service>` plus a `topic` claim |
 | `ttr+access` | Mobile, CLI, external app | 5 min | The resource server, `https://tuturuuu.com/api`. The client is `azp` |
-| `ttr+stepup` | A Worker that must check a step-up offline, such as the secrets vault share service | ≤ 5 min | `service:<name>`. Carries `act` (the action), `nonce` (the caller's single-use nonce), `sid`, `gen`, `amr` and `auth_time`. The receiving service enforces single use of `jti` and `nonce` until `exp`. Registered `act` values: `vault.unlock`, `vault.pin-eval` |
+| `ttr+stepup` | A Worker that must check a step-up offline, such as the secrets vault share service | ≤ 5 min | `stepup:<service>`, a prefix no other class uses. Carries `act` (the action), `nonce` (a single-use nonce the receiving service issued for its stored challenge), `sid`, `gen`, `amr` and `auth_time`. The receiving service enforces single use of `jti` and `nonce` until `exp`. Registered `act` value: `vault.pin-eval` |
 
 Refresh tokens are never JWTs. They are opaque, single-use secrets stored as
 HMACs in the session row and rotated on every use. Reusing a rotated refresh
@@ -483,5 +494,6 @@ asymmetric token service, a verifier never holds a key that can mint.
 | Refresh replay sets in Redis | `refresh-replay.ts`, `cli:refresh:used` | Refresh state in the device object |
 
 Rate limits use the existing `apps/abuse-guard` Durable Objects. Sign-out,
-password change and revoke-all keep revoking AI temporary auth tokens and
-outstanding handoff codes.
+password change, MFA reset, MFA or passkey removal, account deletion, the
+admin "compromised" action and revoke-all keep revoking AI temporary auth
+tokens and outstanding handoff codes.
