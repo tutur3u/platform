@@ -6,6 +6,59 @@ import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+// These equal the strict database limits on public.tasks (the
+// *_strict_length_check, *_strict_bytes_check and *_strict_payload_size_check
+// constraints), so an oversized value is a 400 instead of a database error.
+export const TASK_FLEET_LIMITS = {
+  needsUserReasonChars: 512,
+  needsUserReasonBytes: 2048,
+  payloadBytes: 8192,
+} as const;
+
+const utf8 = new TextEncoder();
+
+const utf8ByteLength = (value: string) => utf8.encode(value).length;
+
+// Postgres counts characters as code points, not UTF-16 units.
+const codePointLength = (value: string) => [...value].length;
+
+// Byte length of the Postgres jsonb text rendering, which the payload
+// constraints measure: JSON.stringify escaping plus ", " and ": " separators.
+export function jsonbTextByteLength(value: unknown): number {
+  if (Array.isArray(value)) {
+    const items = value.map(jsonbTextByteLength);
+    return (
+      2 +
+      items.reduce((sum, bytes) => sum + bytes, 0) +
+      2 * Math.max(items.length - 1, 0)
+    );
+  }
+  if (typeof value === 'object' && value !== null) {
+    const entries = Object.entries(value).filter(
+      ([, entry]) => entry !== undefined
+    );
+    return (
+      2 +
+      entries.reduce(
+        (sum, [key, entry]) =>
+          sum + jsonbTextByteLength(key) + 2 + jsonbTextByteLength(entry),
+        0
+      ) +
+      2 * Math.max(entries.length - 1, 0)
+    );
+  }
+  return utf8ByteLength(JSON.stringify(value));
+}
+
+const payloadLimit = (field: string) =>
+  [
+    (value: unknown) =>
+      jsonbTextByteLength(value) <= TASK_FLEET_LIMITS.payloadBytes,
+    {
+      message: `${field} must be at most ${TASK_FLEET_LIMITS.payloadBytes} bytes`,
+    },
+  ] as const;
+
 export const taskFleetFields = {
   virtual_assignees: z
     .array(
@@ -16,10 +69,30 @@ export const taskFleetFields = {
       })
     )
     .max(50)
+    .refine(...payloadLimit('virtual_assignees'))
     .nullable()
     .optional(),
   needs_user: z.boolean().nullable().optional(),
-  needs_user_reason: z.string().trim().min(1).max(1000).nullable().optional(),
+  needs_user_reason: z
+    .string()
+    .trim()
+    .min(1)
+    .refine(
+      (value) =>
+        codePointLength(value) <= TASK_FLEET_LIMITS.needsUserReasonChars,
+      {
+        message: `needs_user_reason must be at most ${TASK_FLEET_LIMITS.needsUserReasonChars} characters`,
+      }
+    )
+    .refine(
+      (value) =>
+        utf8ByteLength(value) <= TASK_FLEET_LIMITS.needsUserReasonBytes,
+      {
+        message: `needs_user_reason must be at most ${TASK_FLEET_LIMITS.needsUserReasonBytes} bytes`,
+      }
+    )
+    .nullable()
+    .optional(),
   task_resources: z
     .array(
       z.object({
@@ -29,6 +102,7 @@ export const taskFleetFields = {
       })
     )
     .max(50)
+    .refine(...payloadLimit('task_resources'))
     .nullable()
     .optional(),
 };

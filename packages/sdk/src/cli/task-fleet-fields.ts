@@ -45,8 +45,8 @@ export function getTaskFleetFlags(flags: Record<string, FlagValue>) {
     fields.needs_user = needsUser === 'true';
   }
   if (reason !== undefined) {
-    if (reason.length > 1000) {
-      throw new Error('--needs-user-reason accepts up to 1000 characters');
+    if ([...reason.trim()].length > 512) {
+      throw new Error('--needs-user-reason accepts up to 512 characters');
     }
     fields.needs_user_reason = reason || null;
   }
