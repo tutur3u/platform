@@ -18,7 +18,7 @@ product rules of the shell entry and every tab.
   /api/v1/mastermind/fleet/answers` and `GET
   /api/v1/mastermind/fleet/alerts`.
 - **Source:** `scripts/mastermind-fleet/publish.mjs` runs on the orchestrator
-  Mac every 30 seconds. It reads the local T3 state database read-only
+  Mac every 15 seconds and whenever a decision file changes. It reads the local T3 state database read-only
   (`PRAGMA query_only`) and selects run statuses, thread titles, project names,
   providers, models, lineage and the linked environments. It never selects
   message bodies, prompts or runtime requests. Thread ids leave only as
@@ -224,7 +224,13 @@ product rules of the shell entry and every tab.
   `MASTERMIND_FLEET_PUBLISHER_SECRET` (rotation slot
   `MASTERMIND_FLEET_PUBLISHER_SECRET_NEXT`), a five-minute skew window and a
   15-minute single-use signature fence. Without a secret every publisher call
-  answers 503.
+  answers 503. Web's adaptive abuse check challenges a session mutation whose
+  User-Agent is not a browser (the phone sends `Dart/... (dart:io)`) with a
+  Turnstile step-up (403 `ABUSE_CHALLENGE_REQUIRED`), which a native client
+  cannot solve. The answer route therefore passes `stepUpExempt: isFleetOwner`
+  to `withSessionAuth`: only a mutation that would be challenged consults it,
+  only the fleet owner skips the challenge, and the per-user rate limit (30
+  per minute) still applies. Other session mutations keep the challenge.
 - **Payload rules:** every free-text field is scrubbed on Web before storage
   (URLs, emails, paths, IPs, UUIDs, token and key shapes, long opaque runs and
   invisible characters are removed) and length-capped; lane and machine labels
@@ -249,12 +255,44 @@ product rules of the shell entry and every tab.
   `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
   `alerts-pull.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
-  `StartInterval` 30. Update it only after Web from the same commit is deployed (an older
+  `StartInterval` 15, `ThrottleInterval` 10 and `WatchPaths` on
+  `decisions/open` and `decisions/resolved`, so a new or closed decision
+  starts a run at once and no two runs start within 10 seconds (the answers
+  `GET` stays at most one per 10 seconds; launchd never overlaps a job's runs,
+  so the 25-second budget still holds). Update it only after Web from the same commit is deployed (an older
   Web accepts but drops the additions, so login requests would show as
   plain asks), by copying those six files from `main` and
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
+- **Delivery and freshness SLO:** Mastermind is the primary owner channel,
+  at least as fresh as the WhatsApp relay. Targets on the orchestrator Mac:
+  a new or closed decision reaches Web within 30 seconds (one run, kicked by
+  `WatchPaths`); a stored owner answer is picked up within 30 seconds (the
+  next run, at most 15 seconds plus run time); a picked-up answer reaches
+  the orchestrator thread within 10 seconds. The orchestrator's ask tool
+  (`iris-ask`) runs its sweep from launchd `WatchPaths` on
+  `decisions/answers` (`ThrottleInterval` 5) plus a 30-second interval. Every
+  terminal path (an answer on either channel, `resolve`, `withdraw`, a login
+  end state) writes `decisions/resolved/<id>.json` before it removes the
+  open file, and each sweep closes any open file the ask ledger already
+  answered or withdrew, so a stale card lasts at most one cycle. Web answers
+  409 `decision_closed` to an answer for a decision the stored snapshot no
+  longer carries: the phone treats that card as closed
+  (`FleetFailure.closed`), never as a retryable send.
+- **Verifying the SLO:** create a throwaway ask titled "Test: Mastermind
+  reply path" with urgency `fyi` through `iris-ask` (no WhatsApp relay), and
+  time the first `published:true` line in `logs/publisher.log` after it
+  (open to publish). Answer it: from the phone as the owner when possible
+  (proves the Web hop and the step-up exemption), otherwise by running the
+  installed `runOnce` with a fetch fixture that returns one pending answer,
+  which exercises the signed pull, `storeAnswers` and the ack against the
+  real answers folder. Time the ledger's `answered` row against the pickup
+  (pickup to orchestrator), and check the orchestrator thread received
+  `USER-ANSWER <id>: ... (via mastermind)`, that `resolved/<id>.json` says
+  `answeredVia: mastermind`, and that the next publish drops the decision.
+  For the Web hop, Workers observability shows each answer `POST` with its
+  status; 202 means stored.
 - **Mobile surfaces:** Today shows a health hero (open decisions, then
   failures, then running work), Running/Waiting/Queued/Failed/Idle tiles that
   open Work filtered (`?state=`), up to three open decisions and every machine.
@@ -265,7 +303,10 @@ product rules of the shell entry and every tab.
   filters by state. Work holds the dock slot alone; the hub Threads preview,
   the hub Needs-you asks and the decision journal are no longer routed from
   these tabs.
-- **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`,
+- **Regression coverage:** `apps/web/src/app/api/v1/mastermind/fleet/fleet-routes.test.ts`
+  (owner-only step-up exemption on the answer route),
+  `apps/web/src/lib/api-auth.test.ts` (`stepUpExempt`: consulted only on a
+  challenged mutation, refusal or failure keeps the challenge),
   `apps/web/src/app/api/v1/mastermind/fleet/fleet-alerts.test.ts` (alerts
   feature gate, isolate cache, fail-open, ETag, publisher channel),
   `apps/web/src/lib/mastermind/fleet/alerts.test.ts` (alert ids, ordering,

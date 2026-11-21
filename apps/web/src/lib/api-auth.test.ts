@@ -398,3 +398,101 @@ describe('withSessionAuth undetermined client IP', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 });
+
+describe('withSessionAuth stepUpExempt', () => {
+  const owner = {
+    created_at: '2026-01-01T00:00:00.000Z',
+    email: 'owner@example.com',
+    id: 'owner-1',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.buildAbuseRiskSubjects.mockReturnValue([]);
+    mocks.checkUserSuspension.mockResolvedValue({ suspended: false });
+    mocks.extractIPFromHeaders.mockReturnValue('203.0.113.1');
+    mocks.getAppSessionTokenFromRequest.mockReturnValue(null);
+    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
+    mocks.isIPBlocked.mockResolvedValue(null);
+    mocks.createClient.mockResolvedValue({ auth: { getUser: vi.fn() } });
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      authError: null,
+      user: owner,
+    });
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json({ code: 'ABUSE_CHALLENGE_REQUIRED' }, { status: 403 })
+    );
+    mocks.resolveWebAbuseDecision.mockResolvedValue({
+      decisionSource: 'heuristic',
+      reasons: ['suspicious_browser_mutation'],
+      subjectKey: 'session:test',
+      subjects: [],
+      tier: 'challenge_required',
+      trustMultiplier: 1,
+    });
+  });
+
+  const nativeRequest = (method: string) =>
+    new NextRequest('https://tuturuuu.com/api/v1/mastermind/fleet/x', {
+      headers: {
+        authorization: 'Bearer supabase-access-token',
+        'user-agent': 'Dart/3.14 (dart:io)',
+      },
+      method,
+      ...(method === 'POST' ? { body: '{}' } : {}),
+    });
+
+  it('lets an exempt user skip a challenged mutation', async () => {
+    const stepUpExempt = vi.fn(async () => true);
+    const handler = vi.fn(() => NextResponse.json({ ok: true }));
+    const route = withSessionAuth(handler, { rateLimit: false, stepUpExempt });
+
+    const response = await route(nativeRequest('POST'));
+
+    expect(response.status).toBe(200);
+    expect(stepUpExempt).toHaveBeenCalledWith(owner);
+    expect(mocks.enforceAdaptiveStepUpChallenge).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the challenge for users the predicate refuses or that throw', async () => {
+    for (const stepUpExempt of [
+      vi.fn(async () => false),
+      vi.fn(async () => {
+        throw new Error('permission lookup failed');
+      }),
+    ]) {
+      const handler = vi.fn(() => NextResponse.json({ ok: true }));
+      const route = withSessionAuth(handler, {
+        rateLimit: false,
+        stepUpExempt,
+      });
+
+      const response = await route(nativeRequest('POST'));
+
+      expect(response.status).toBe(403);
+      expect(handler).not.toHaveBeenCalled();
+    }
+  });
+
+  it('does not consult the predicate when nothing would be challenged', async () => {
+    mocks.resolveWebAbuseDecision.mockResolvedValue({
+      decisionSource: 'default',
+      reasons: [],
+      subjectKey: null,
+      subjects: [],
+      tier: 'standard',
+      trustMultiplier: 1,
+    });
+    mocks.enforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    const stepUpExempt = vi.fn(async () => true);
+    const route = withSessionAuth(() => NextResponse.json({ ok: true }), {
+      rateLimit: false,
+      stepUpExempt,
+    });
+
+    expect((await route(nativeRequest('POST'))).status).toBe(200);
+    expect((await route(nativeRequest('GET'))).status).toBe(200);
+    expect(stepUpExempt).not.toHaveBeenCalled();
+  });
+});

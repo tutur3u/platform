@@ -315,11 +315,13 @@ interface SessionAuthOptions {
    */
   allowAppSessionAuth?: AppSessionAuthOptions;
   preferSupabaseSessionAuth?: boolean;
-  /**
-   * Allows verified app-session requests to skip browser step-up challenges.
-   * Use only for server-to-server routes that are protected by explicit scopes.
-   */
+  /** Verified app-session requests skip browser step-up (scoped server-to-server routes only). */
   skipAppSessionStepUpChallenge?: boolean;
+  /**
+   * Admits users who skip the browser step-up on a challenged mutation: native
+   * clients cannot solve Turnstile. Only for allowlisted routes; rate limits still apply.
+   */
+  stepUpExempt?: (user: SupabaseUser) => Promise<boolean>;
 }
 
 type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
@@ -348,6 +350,7 @@ async function applyAdaptiveSessionControls({
   rateLimit,
   request,
   skipStepUpChallenge = false,
+  stepUpExempt,
   user,
 }: {
   authKind: SessionAdaptiveAuthKind;
@@ -357,6 +360,7 @@ async function applyAdaptiveSessionControls({
   rateLimit: RateLimitConfig | false | undefined;
   request: NextRequest;
   skipStepUpChallenge?: boolean;
+  stepUpExempt?: SessionAuthOptions['stepUpExempt'];
   user: SupabaseUser;
 }): Promise<{
   decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
@@ -374,7 +378,14 @@ async function applyAdaptiveSessionControls({
     userId: user.id,
   });
 
-  if (!skipStepUpChallenge) {
+  // The exemption is checked only when a mutation would be challenged.
+  const exempt =
+    !skipStepUpChallenge &&
+    !isRead &&
+    decision.tier === 'challenge_required' &&
+    stepUpExempt !== undefined &&
+    (await stepUpExempt(user).catch(() => false));
+  if (!skipStepUpChallenge && !exempt) {
     const challengeResponse = await enforceAdaptiveStepUpChallenge({
       decision,
       ipAddress,
@@ -385,15 +396,13 @@ async function applyAdaptiveSessionControls({
       userId: user.id,
     });
 
-    if (challengeResponse) {
+    if (challengeResponse)
       return { decision, headers: {}, response: challengeResponse };
-    }
   }
 
   const config = rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
-  if (rateLimit === false || config === false) {
+  if (rateLimit === false || config === false)
     return { decision, headers: {}, response: null };
-  }
 
   const { config: adaptiveConfig } = getAdaptiveRateLimitConfig(
     config,
@@ -519,9 +528,7 @@ export function withSessionAuth<T = unknown>(
           `session:ip:${isRead ? 'read' : 'mutate'}:${ipAddress}`,
           config
         );
-        if (!('allowed' in rateLimitResult)) {
-          return rateLimitResult;
-        }
+        if (!('allowed' in rateLimitResult)) return rateLimitResult;
       }
     }
 
@@ -529,9 +536,8 @@ export function withSessionAuth<T = unknown>(
       ? await validateAiTempAuthRequest(request)
       : { status: 'missing' as const };
 
-    if (tempAuth.status === 'revoked') {
+    if (tempAuth.status === 'revoked')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     if (tempAuth.status === 'valid') {
       const tempUser = tempAuth.context.user as SupabaseUser;
@@ -567,9 +573,7 @@ export function withSessionAuth<T = unknown>(
         request,
         user: tempUser,
       });
-      if (adaptiveControls.response) {
-        return adaptiveControls.response;
-      }
+      if (adaptiveControls.response) return adaptiveControls.response;
 
       const response = await handler(
         request,
@@ -619,9 +623,7 @@ export function withSessionAuth<T = unknown>(
           options.allowAppSessionAuth
         );
 
-        if (!appSessionVerification.ok) {
-          return appSessionVerification.response;
-        }
+        if (!appSessionVerification.ok) return appSessionVerification.response;
 
         const appSessionUser = createAppSessionUser(
           appSessionVerification.claims
@@ -668,11 +670,10 @@ export function withSessionAuth<T = unknown>(
           skipStepUpChallenge:
             options?.skipAppSessionStepUpChallenge === true ||
             isCliAppSessionClaims(appSessionVerification.claims),
+          stepUpExempt: options?.stepUpExempt,
           user: appSessionUser,
         });
-        if (adaptiveControls.response) {
-          return adaptiveControls.response;
-        }
+        if (adaptiveControls.response) return adaptiveControls.response;
 
         const response = await handler(
           request,
@@ -777,11 +778,10 @@ export function withSessionAuth<T = unknown>(
       isRead,
       rateLimit: options?.rateLimit,
       request,
+      stepUpExempt: options?.stepUpExempt,
       user,
     });
-    if (adaptiveControls.response) {
-      return adaptiveControls.response;
-    }
+    if (adaptiveControls.response) return adaptiveControls.response;
 
     const response = await handler(request, { user, supabase }, params);
 

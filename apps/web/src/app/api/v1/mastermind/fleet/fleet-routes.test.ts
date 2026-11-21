@@ -414,6 +414,23 @@ describe('Mastermind fleet sync routes', () => {
       await publish();
     });
 
+    it('exempts only the fleet owner from the browser step-up challenge', async () => {
+      await import('./decisions/[decisionId]/answer/route');
+      const exempt = mocks.authOptions
+        .map(
+          (o) =>
+            (o as { stepUpExempt?: (u: unknown) => Promise<boolean> })
+              .stepUpExempt
+        )
+        .filter(Boolean);
+      // Only the answer route opts in; the native app cannot solve Turnstile.
+      expect(exempt).toHaveLength(1);
+      expect(await exempt[0]?.({ id: OWNER })).toBe(true);
+      expect(await exempt[0]?.({ id: NO_PERMISSION })).toBe(false);
+      mocks.granted = [];
+      expect(await exempt[0]?.({ id: OWNER })).toBe(false);
+    });
+
     it('records an answer to an open decision', async () => {
       const response = await answer('ship-fleet-sync', {
         action: 'approve',

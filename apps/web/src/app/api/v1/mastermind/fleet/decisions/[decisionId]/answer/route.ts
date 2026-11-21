@@ -96,5 +96,8 @@ export const POST = withSessionAuth<{ decisionId: string }>(
     rateLimit: { windowMs: 60_000, maxRequests: 30 },
     maxPayloadSize: 8192,
     allowAppSessionAuth: MASTERMIND_APP_SESSION,
+    // The Mastermind phone app cannot solve the browser Turnstile step-up;
+    // the fleet owner (allowlist plus root permission) is exempt from it.
+    stepUpExempt: (user) => isFleetOwner(user),
   }
 );
