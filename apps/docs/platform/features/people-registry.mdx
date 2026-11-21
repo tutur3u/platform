@@ -58,6 +58,10 @@ number.
 - `people_registry_managers` lists named users the owner adds, each with an
   optional expiry. Only the registry owner can add or remove a manager.
   Managers cannot delegate.
+- Managers browse and edit records: people, identity proposals and
+  decisions, facts, rules and relationships. Owner-only actions are those
+  that change authority, consent or retention: managers, bindings, flags,
+  principals, consent records, deletion, erasure and lifting a suppression.
 
 This is a registry table, not a `workspace_role_permissions` value, so no role,
 wildcard or default permission can reach it.
@@ -68,8 +72,8 @@ wildcard or default permission can reach it.
   `authenticated` and `service_role` have no table privileges.
 - Tables and functions are owned by `people_registry_definer`, a `NOLOGIN` role
   that holds privileges only on registry tables, plus `EXECUTE` on
-  `private.fleet_consume_provider_event` and
-  `private.fleet_list_user_channel_identities`.
+  `private.fleet_consume_registry_event`,
+  `private.fleet_list_user_channel_identities` and `private.fleet_is_owner`.
 - Every function is `SECURITY DEFINER` with
   `set search_path = pg_catalog, pg_temp` and schema-qualified references. Each
   function is created, revoked from `PUBLIC`, `anon`, `authenticated` and
@@ -93,7 +97,7 @@ a Tuturuuu account, and each link is explicit and audited.
 
 | Table                          | Purpose                                                                                      |
 | ------------------------------ | -------------------------------------------------------------------------------------------- |
-| `people_registry_control`      | registry owner, capture setting, stop flag and generation per workspace                      |
+| `people_registry_control`      | registry owner, capture setting, `personal_sessions_enabled` (default false; a missing row counts as false), stop flag, generation |
 | `people_registry_managers`     | named managers, added by the owner                                                            |
 | `people_persons`               | kind (`person`, `organisation`), label, status, `merged_into`, links, versions               |
 | `people_channel_identities`    | channel, provider account, lookup hash, encrypted display value, verification, link state    |
@@ -108,6 +112,7 @@ a Tuturuuu account, and each link is explicit and audited.
 | `people_suppressions`          | suppression tokens left by deletion                                                           |
 | `people_change_events`         | invalidation outbox                                                                           |
 | `people_principals`            | per-workspace machine principals and their public keys                                       |
+| `people_personal_recalls`      | one row per personal session and provider event, for the session cap and the one-recall rule |
 | `people_channel_bindings`      | which workspace each provider account serves, unique per account                             |
 | `people_import_runs`, `people_import_items`, `people_import_staging` | migration runs, receipts and quarantined records         |
 | `people_audit_events`          | append-only events                                                                            |
@@ -353,7 +358,9 @@ through every derivation. They are never instructions.
 
 - Recall for generation returns a chat-safe projection: preferred name, form of
   address, language and pronouns, the effective rules as enumerated values, the
-  brief, and memories as quoted data.
+  brief, and memories as quoted data. On a personal session, generation gets
+  only the addressing projection described under
+  [Ingress evidence](#ingress-evidence).
 - **Audience:** every memory and fact records its origin conversation and an
   audience. The default audience is the origin conversation only. Recall for
   conversation C returns only records whose audience includes C. Shared
@@ -413,7 +420,7 @@ retained items separately.
   so it survives a restored snapshot. After a restore, the registry stays
   closed until that ledger has been replayed: deletions are re-run and
   suppressions re-applied, while erasures that dropped their token re-run
-  without one. Slice 1 tests this restore path before it ships.
+  without one. Slice 6 tests this restore path before it ships.
 
 The owner-facing delete dialog states what remains. An erasure that also drops
 the suppression token is available and warns that the person could then be
@@ -536,17 +543,21 @@ need ingress evidence. That reuses the Fleet access event contract in
     policy behind it.
   - **Eligibility:** only identities the owner confirmed (basis
     `owner_statement` or `fleet_verified`), with consent and audience applied.
-    `denied`, `revoked` and `expired` withhold the three facts.
+    Under `denied`, `revoked` or `expired` profile consent, the answer is the
+    miss body: no facts and no person speech rules.
   - **Uniform answer:** a hit, a miss, the switch being off, a denial, a
     suppression and a deletion all return the same response shape. A miss
-    returns the channel-default speech rules and no facts. Writes get one
+    returns the channel-default speech rules and no facts. Off, denied,
+    suppressed and deleted outcomes all return that miss body. Writes get one
     refusal code. Response timing is padded so outcomes are indistinguishable.
-    Each personal session has a low recall cap, applied before any lookup, and
-    one recall per inbound event.
+    A semantic query is not accepted. Each personal session has a low recall
+    cap, applied before any lookup. Each inbound event gets one recall,
+    recorded in `people_personal_recalls`.
   - **No side effects:** `registry.write` (and so observation, capture and
     membership) is refused on the session class before any person, consent,
-    capture, suppression or membership lookup. A personal recall consumes no
-    Fleet event, emits no change event and bumps no version. It takes no
+    capture, suppression or membership lookup. Neither a personal recall nor
+    that refusal calls `fleet_consume_registry_event`, increments the event's
+    attempt counter, emits a change event or bumps a version. It takes no
     `if_version`, never returns `not_modified`, and uses a cache namespace that
     full-recall callers never read or write.
   - **Switch:** `personal_sessions_enabled` on the control row is false by
@@ -583,7 +594,10 @@ recall requires only the signature and returns the reduced projection.
   `{person_id | null, conversation_id | null, versions, snapshot | not_modified,
   memories}`. `snapshot` is the chat-safe projection. A non-empty `query` adds
   semantic recall bounded by `k` (at most 20). `if_version` lets a cache
-  revalidate cheaply.
+  revalidate cheaply. A personal session gets none of this: its recall takes
+  no `query` or `if_version`, and returns only the uniform addressing
+  projection and delivery decision, with no IDs, versions, memories or
+  `not_modified`.
 - `POST /api/v1/people/events` — the event's write bundle. Its `observe` items
   record a `desk_observed` identity or conversation membership for a known
   person. When capture is on and capture consent allows it, an `observe` item
@@ -609,7 +623,11 @@ as `people-registry.ts`.
 ## Caching and invalidation
 
 Responders may cache snapshot content in a Durable Object, but serving it is
-always gated by a live check:
+always gated by a live check. This section describes full recall. Personal
+sessions never use `if_version` or `not_modified`. Their fills live in a separate
+namespace that full-recall callers never read or write, and the switch check
+drops them.
+
 
 - Every reply starts with `recall` and `if_version`. The server checks the
   principal, evidence, status, consent and suppression live, and returns either
@@ -788,20 +806,34 @@ A slice ships only when its gates pass:
 - **Slice 1:**
   - One-time, atomic bootstrap of each workspace's registry.
   - Live checks of the root owner and manager expiry.
-  - Mutations restricted to the owner.
+  - Authority, consent and retention mutations restricted to the owner,
+    with tests that an active manager can edit records but cannot perform them.
   - Serialised generations.
   - Proof that `people_registry_definer` has no Fleet table privileges and
     reaches Fleet only through `fleet_consume_registry_event` and
     `fleet_list_user_channel_identities`.
-  - Deletion-ledger restore tested.
 - **Slice 2:**
-  - Personal-session tests: no memories, briefs, routing rules, IDs or
-    versions; no observation, capture or write; one indistinguishable miss;
-    no read or fill of the full-recall cache; and the projection lost on the
-    request that turns the switch off.
+  - Personal-session tests:
+    - no memories, briefs, pronouns, routing or schedule rules, IDs or
+      versions;
+    - a delivery decision without policy;
+    - identical bodies and padded timing for hit, miss, off, denied,
+      suppressed and deleted;
+    - the cap applied before lookup, and one recall per event;
+    - no observation, capture or write, no replay wrapper call, no attempt
+      increment, no change event, and no `if_version` or `not_modified`;
+    - the audit shape on every outcome;
+    - the switch false by default and when the row is missing, owner-only,
+      bumping the generation, and ending the projection on the request that
+      turns it off;
+    - no read or fill of the full-recall cache, and full-recall callers never
+      reading the personal namespace.
   - A live account binding checked at signing and at verification.
   - Tests for evidence mismatches and account reassignment.
-  - Single use of a provider event across Fleet and the registry.
+  - Single use of a provider event across Fleet and the registry: `fleet` and
+    `registry_write` exclude each other, and `registry_recall` coexists with
+    either. Personal-session recalls and refusals call no replay wrapper and
+    leave the attempt counter unchanged.
   - A verifier test that stale provider events and redeliveries outside the
     evidence window are refused before any slot is consumed.
   - Canonical signature bytes, covering the exact query and the key ID.
@@ -824,6 +856,8 @@ A slice ships only when its gates pass:
     accepted.
   - Memory routes stay disabled until slice 3 passes.
 - **Slice 6:**
+  - The R2 deletion ledger, with its restore path tested before the
+    registry reopens.
   - A commit-safe cursor.
   - Idempotent recovery after Queue acceptance, partial delivery and gaps in
     outbox retention.
