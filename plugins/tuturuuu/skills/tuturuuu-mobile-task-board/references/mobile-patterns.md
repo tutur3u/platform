@@ -603,6 +603,13 @@ and the pre-`runApp` join. Completion-barrier tests live in
   tests; `test/helpers/mastermind_fleet_fixture.dart` holds the synthetic
   snapshot and fake source.
 
+- Usage reads the owner-only fleet Usage endpoint from the mounted, unlocked
+  account. Keep account email in memory for that session and clear it on
+  account changes or authorization refusal. Account freshness comes from the
+  provider check time. Use `AppPageScrollView` for the list and token table
+  so the shell's floating dock clearance applies. See the
+  [fleet sync runbook](../../../../../apps/docs/platform/features/mobile-mastermind.mdx#fleet-sync).
+
 ## Mastermind Machines
 
 - The read-only Machines parser lives in `features/mastermind/machines/`. Keep

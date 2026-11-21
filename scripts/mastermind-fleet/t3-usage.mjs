@@ -14,6 +14,7 @@ function readUsageRpc(url, { openSocket, signal, now }) {
   return new Promise((resolve, reject) => {
     signal.throwIfAborted();
     const socket = openSocket(url);
+    socket.binaryType = 'arraybuffer';
     const pending = new Set(['quota', 'accounting']);
     const results = { quota: null, accounting: null };
     let done = false;
@@ -50,14 +51,25 @@ function readUsageRpc(url, { openSocket, signal, now }) {
       }
     };
     const accept = (event) => {
-      if (typeof event.data !== 'string' || event.data.length > MAX_FRAME) {
+      const data = event.data;
+      const length = typeof data === 'string' ? data.length : data?.byteLength;
+      if (!Number.isSafeInteger(length) || length > MAX_FRAME) {
         return finish(new Error('usage_rpc_frame_invalid'));
       }
       try {
-        const frame = JSON.parse(event.data);
-        if (frame?._tag !== 'Exit' || !pending.delete(frame.requestId)) return;
-        if (frame.exit?._tag === 'Success') {
-          results[frame.requestId] = frame.exit.value;
+        const parsed = JSON.parse(
+          typeof data === 'string'
+            ? data
+            : new TextDecoder('utf-8', { fatal: true }).decode(data)
+        );
+        const frames = Array.isArray(parsed) ? parsed : [parsed];
+        if (frames.length > 64) throw new Error('usage_rpc_frame_invalid');
+        for (const frame of frames) {
+          if (frame?._tag !== 'Exit' || !pending.delete(frame.requestId))
+            continue;
+          if (frame.exit?._tag === 'Success') {
+            results[frame.requestId] = frame.exit.value;
+          }
         }
         if (!pending.size) finish();
       } catch {
@@ -111,6 +123,6 @@ export async function readT3Usage({
   const result = await readUsageRpc(url, { openSocket, signal, now });
   return {
     ...normalizeT3Quota(result.quota, now),
-    ...normalizeT3Accounting(result.accounting),
+    ...normalizeT3Accounting(result.accounting, { trackSources: true }),
   };
 }

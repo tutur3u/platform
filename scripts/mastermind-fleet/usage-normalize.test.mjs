@@ -127,3 +127,44 @@ test('preserves missing prices and partial coverage without exposing scan paths'
     },
   ]);
 });
+
+test('keeps impossible dates out of observations and quota resets', () => {
+  const row = {
+    ...PROVIDER,
+    usageLimits: {
+      checkedAt: '2026-02-31T00:00:00.000Z',
+      windows: [
+        {
+          kind: 'session',
+          usedPercent: 10,
+          resetsAt: '2026-02-31T18:00:00+07:00',
+        },
+      ],
+    },
+  };
+  const { accounts } = normalizeT3Quota({ providers: [row] }, NOW);
+  assert.equal(accounts[0].checkedAt, null);
+  assert.equal(accounts[0].windows[0].resetsAt, null);
+  const { buckets, accounting } = normalizeT3Accounting({
+    readAt: NOW.toISOString(),
+    sources: [{ status: 'ok' }],
+    buckets: [
+      {
+        day: '2026-02-31',
+        provider: 'codex',
+        model: 'fixture-model',
+        unpricedRecords: 0,
+        costSource: 'modelPriced',
+        costUsd: 1,
+        totals: {
+          uncachedInputTokens: 1,
+          cachedInputTokens: 0,
+          cacheCreationTokens: 0,
+          outputTokens: 1,
+        },
+      },
+    ],
+  });
+  assert.equal(accounting.kind, 'partial');
+  assert.deepEqual(buckets, []);
+});

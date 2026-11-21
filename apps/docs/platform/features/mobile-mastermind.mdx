@@ -246,10 +246,10 @@ product rules of the shell entry and every tab.
 - **Storage failure:** without a configured store (or with the store stopped,
   over budget or unreachable) every fleet route answers 503 and the phone
   keeps its last snapshot with the Couldn't refresh warning.
-- **Freshness:** the publisher sends on change and at least every two minutes.
+- **Freshness:** the publisher sends on change or every 60 seconds.
   The phone polls every 15 seconds while a fleet tab is in the foreground and
   on pull-to-refresh, shows `Updated <age>` from the receive time, and warns
-  once the snapshot is more than five minutes old.
+  once the snapshot is more than two minutes old.
 - **Runbook:** store the secret in Vercel production as
   `MASTERMIND_FLEET_PUBLISHER_SECRET` and on the orchestrator Mac in
   `~/.local/share/fleet-sync/publisher-secret` (mode 0600, at least 32
@@ -258,7 +258,7 @@ product rules of the shell entry and every tab.
   `^\[Iris\]`). launchd job `com.skora.mastermind-fleet-publisher` runs the
   installed copy in `~/.local/share/fleet-sync/bin/` (`publish.mjs`,
   `fleet-state.mjs`, `peer-lanes.mjs`, `scrub.mjs`, `decision-extras.mjs`,
-  `alerts-pull.mjs`, with the source commit in
+  `alerts-pull.mjs`, `today-outcomes.mjs`, `usage-snapshot.mjs`,`usage-normalize.mjs`, and `t3-usage.mjs`, with the source commit in
   `SOURCE_SHA`) as `node publish.mjs --origin https://tuturuuu.com` with
   `StartInterval` 15, `ThrottleInterval` 10 and `WatchPaths` on
   `decisions/open` and `decisions/resolved`, so a new or closed decision
@@ -266,7 +266,7 @@ product rules of the shell entry and every tab.
   `GET` stays at most one per 10 seconds; launchd never overlaps a job's runs,
   so the 25-second budget still holds). Update it only after Web from the same commit is deployed (an older
   Web accepts but drops the additions, so login requests would show as
-  plain asks), by copying those six files from `main` and
+  plain asks), by installing the complete reviewed set from `main` and
   running `launchctl kickstart -k gui/$(id -u)/com.skora.mastermind-fleet-publisher`.
   It logs counts only, plus per-machine status and lane counts; failures log
   the HTTP status in `logs/publisher.err.log`.
@@ -279,7 +279,9 @@ product rules of the shell entry and every tab.
   The T3 normalization tests cover authenticated account identity, quota
   windows and accounting coverage. T3's summary groups cost and tokens by
   day, provider and model. This source does not identify which account
-  incurred a historical cost, so those records are unattributed.
+  incurred a historical cost, so those records are unattributed. When T3
+  identifies the same physical provider log on two machines, the collector
+  counts it once. It keeps log paths and fingerprints outside the payload.
   The optional `usageMachines` list in the existing fleet publisher config
   maps each fleet machine `id` to its T3 `environmentId` and trusted
   `origin`. Each reader uses only `orchestration:read` and

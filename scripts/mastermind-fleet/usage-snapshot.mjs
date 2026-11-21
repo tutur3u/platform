@@ -45,7 +45,7 @@ export function usageCollector({
   const configured = configuredMachines(configs);
   if (!configured.size) return null;
   return async (fleetMachines) => {
-    const machines = await Promise.all(
+    const annotated = await Promise.all(
       fleetMachines.slice(0, MAX_MACHINES).map(async ({ id, label }) => {
         const machine = { id, label: fleetText(label, 48) || id };
         const config = configured.get(id);
@@ -72,6 +72,35 @@ export function usageCollector({
         };
       })
     );
+
+    // Match T3's physical-log deduplication. Choose one observed copy before
+    // serialization so raw fingerprints and source paths stay on the host.
+    const sourceOwners = new Map();
+    const ranked = [...annotated].sort(
+      (a, b) =>
+        Number(b.accounting.kind === 'complete') -
+          Number(a.accounting.kind === 'complete') ||
+        (Date.parse(b.accounting.observedAt) || 0) -
+          (Date.parse(a.accounting.observedAt) || 0)
+    );
+    for (const machine of ranked) {
+      for (const id of machine.bucketSourceIds ?? []) {
+        if (id && !sourceOwners.has(id)) sourceOwners.set(id, machine.id);
+      }
+    }
+    const machines = annotated.map(({ bucketSourceIds, ...machine }) => {
+      if (!bucketSourceIds) return machine;
+      const buckets = machine.buckets.filter((_, index) => {
+        const key = bucketSourceIds[index];
+        return !key || sourceOwners.get(key) === machine.id;
+      });
+      if (buckets.length === machine.buckets.length) return machine;
+      return {
+        ...machine,
+        accounting: { ...machine.accounting, kind: 'partial' },
+        buckets,
+      };
+    });
 
     const snapshot = { v: 1, generatedAt: now.toISOString(), machines };
     const body = JSON.stringify(snapshot);

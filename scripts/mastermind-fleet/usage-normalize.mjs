@@ -11,11 +11,16 @@ const ACCOUNT_EMAIL =
 const PLAN_LABEL =
   /^(?:ChatGPT|Claude|Cursor|OpenCode|Grok|Antigravity) [a-z0-9][a-z0-9 ()+-]{0,42}$/i;
 const ISO_TIME =
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+  /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function isoTime(value) {
-  if (typeof value !== 'string' || !ISO_TIME.test(value)) return null;
+  if (
+    typeof value !== 'string' ||
+    !ISO_TIME.test(value) ||
+    !validDay(value.slice(0, 10))
+  )
+    return null;
   const at = Date.parse(value);
   return Number.isFinite(at) ? new Date(at).toISOString() : null;
 }
@@ -184,7 +189,27 @@ function normalizedBucket(row) {
   };
 }
 
-export function normalizeT3Accounting(summary) {
+function physicalSourceKey(row, sources) {
+  const candidates = sources
+    .map((source) => source?.fingerprint)
+    .filter((source) => source?.provider === row.provider);
+  const source = row.sourcePath
+    ? candidates.find((item) => item.resolvedHomePath === row.sourcePath)
+    : candidates.length === 1
+      ? candidates[0]
+      : undefined;
+  if (
+    typeof source?.physicalSourceId !== 'string' ||
+    !source.physicalSourceId ||
+    source.physicalSourceId.length > 512
+  )
+    return null;
+  return createHash('sha256')
+    .update(JSON.stringify([row.provider, source.physicalSourceId]))
+    .digest('hex');
+}
+
+export function normalizeT3Accounting(summary, { trackSources = false } = {}) {
   const observedAt = isoTime(summary?.readAt);
   if (
     !observedAt ||
@@ -193,13 +218,17 @@ export function normalizeT3Accounting(summary) {
   ) {
     return { accounting: { kind: 'unavailable' }, buckets: [] };
   }
-  const buckets = summary.buckets.map(normalizedBucket).filter(Boolean);
-  buckets.sort((a, b) => b.day.localeCompare(a.day));
+  const rows = summary.buckets.flatMap((raw) => {
+    const bucket = normalizedBucket(raw);
+    return bucket ? [{ bucket, raw }] : [];
+  });
+  rows.sort((a, b) => b.bucket.day.localeCompare(a.bucket.day));
+  const selected = rows.slice(0, BUCKET_MAX);
   return {
     accounting: {
       kind:
-        buckets.length !== summary.buckets.length ||
-        buckets.length > BUCKET_MAX ||
+        rows.length !== summary.buckets.length ||
+        rows.length > BUCKET_MAX ||
         !summary.sources.length ||
         summary.sources.some(
           (source) => source?.status !== 'ok' || source.refreshing
@@ -208,6 +237,13 @@ export function normalizeT3Accounting(summary) {
           : 'complete',
       observedAt,
     },
-    buckets: buckets.slice(0, BUCKET_MAX),
+    buckets: selected.map(({ bucket }) => bucket),
+    ...(trackSources
+      ? {
+          bucketSourceIds: selected.map(({ raw }) =>
+            physicalSourceKey(raw, summary.sources)
+          ),
+        }
+      : {}),
   };
 }

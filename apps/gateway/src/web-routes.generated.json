@@ -1027,6 +1027,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/mastermind/fleet/usage"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/mastermind/push-events"
     },
     {
