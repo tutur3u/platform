@@ -221,7 +221,17 @@ nothing populates the R2 store yet.
   fetch rejects every `cache` mode except `no-store` ("Unsupported cache
   mode"). vinext keeps its own handling of `cache`, `next.revalidate` and
   `next.tags`, and the network fetch drops the mode workerd rejects.
-  `bun run --cwd apps/web test:vinext:runtime` checks this in workerd.
+  workerd's fetch and `Request` constructor also throw `Invalid redirect
+  value` for `redirect: 'error'`, which server code (the Mastermind store
+  client, `@tuturuuu/internal-api`, auth attestation and asset fetches) passes
+  so credentialed requests never follow a redirect. The installed global
+  fetch, and any patch later assigned to it such as vinext's caching fetch,
+  sends those requests with `redirect: 'manual'` and fails a 3xx response
+  with a `TypeError`. Without it every such call fails, and the Mastermind
+  fleet routes answer `503 {"error":"unavailable"}`.
+  `bun run --cwd apps/web test:vinext:runtime` checks both in workerd, and
+  that a secret no config declares reaches `process.env` as a whole object
+  and by a dynamic key.
 - Workers send no User-Agent on subrequests, and the proxy answers 400 to a
   sessionless API request without one. `@tuturuuu/internal-api` therefore
   sends `User-Agent: tuturuuu-<service>/1.0` on server requests that set none,
