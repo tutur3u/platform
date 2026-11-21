@@ -161,9 +161,7 @@ flips for every writer at once.
    session cookie. Behaviors the task API defines for every caller:
    - Deleting a task sets `deleted_at`, removes its linked calendar events and
      every user's scheduling settings for it.
-   - The task GET returns project and label metadata to board-share guests.
-     That is broader than the workspace-member policies on those tables; it is
-     recorded as a task API finding for its owner.
+   - The task GET applies the [shared task metadata policy](/platform/applications/tasks#workspace-labels-and-projects-on-shared-tasks).
 
    Still to move:
    - `use-calendar`, the `supabase-provider` fallback, `task-item-checkbox`,

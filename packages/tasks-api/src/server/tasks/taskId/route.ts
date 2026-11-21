@@ -450,7 +450,7 @@ export async function handleTaskDetailRouteGET(
     }
 
     return NextResponse.json({
-      task: serializeTask(task),
+      task: serializeTask(task, access.access.mode),
       taskWsId: wsId,
       taskWorkspacePersonal: workspace?.personal ?? false,
       taskWorkspaceTier: taskWorkspaceTier ?? 'FREE',
@@ -850,9 +850,9 @@ export async function handleTaskDetailRoutePUT(
         p_assignee_ids: normalizedAssigneeIds,
         p_replace_assignees: body.assignee_ids !== undefined,
         p_label_ids: normalizedLabelIds,
-        p_replace_labels: body.label_ids !== undefined,
+        p_replace_labels: !isGuestBoardAccess && !!normalizedLabelIds,
         p_project_ids: normalizedProjectIds,
-        p_replace_projects: body.project_ids !== undefined,
+        p_replace_projects: !isGuestBoardAccess && !!normalizedProjectIds,
         p_actor_user_id: user.id,
       };
     const { data: updatedTaskRow, error: updateError } = await sbAdmin
@@ -884,35 +884,35 @@ export async function handleTaskDetailRoutePUT(
       await clampTaskScheduleToCompletedWork(sbAdmin, taskId);
     }
 
-    const updatedTaskResult = await getWorkspaceTask(sbAdmin, wsId, taskId);
+    const reload = await getWorkspaceTask(sbAdmin, wsId, taskId);
 
-    if (updatedTaskResult.error) {
-      console.error('Error reloading updated task:', updatedTaskResult.error);
+    if (reload.error) {
+      console.error('Error reloading updated task:', reload.error);
       return NextResponse.json(
         { error: 'Failed to load updated task' },
         { status: 500 }
       );
     }
 
-    if (!updatedTaskResult.task) {
+    if (!reload.task) {
       return NextResponse.json(
         { error: 'Task not found after update' },
         { status: 404 }
       );
     }
-
-    const serializedTask = serializeTask(updatedTaskResult.task);
+    const serializedTask = serializeTask(reload.task, access.access.mode);
+    const { p_replace_labels, p_replace_projects } = updateTaskRelationsPayload;
     await publishTaskRealtime({
       actorUserId: user.id,
       event: 'task:upsert',
+      notifyRelationChanges: p_replace_labels || p_replace_projects,
       sbAdmin,
       taskIds: [taskId],
       taskPayloadsById: new Map([[taskId, serializedTask]]),
     });
-
     const capacityWarnings = await loadTaskCapacityWarnings(
       sbAdmin,
-      updatedTaskResult.task.task_lists?.board_id
+      reload.task.task_lists?.board_id
     );
     return NextResponse.json({
       task: serializedTask,

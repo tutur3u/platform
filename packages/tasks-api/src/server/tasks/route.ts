@@ -45,6 +45,7 @@ import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
   normalizeTask,
+  redactWorkspaceTaskMetadata,
   type TaskRecord,
   type TaskRelationshipSummary,
 } from './get-tasks-helpers';
@@ -689,11 +690,9 @@ export async function handleTaskRouteGET(
       Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
     const searchQuery = url.searchParams.get('q')?.trim();
     const identifierQuery = url.searchParams.get('identifier')?.trim();
-    const includeRelationshipSummaryParam = url.searchParams.get(
-      'includeRelationshipSummary'
-    );
-    let includeRelationshipSummary =
-      includeRelationshipSummaryParam !== 'false';
+    const includeRelationshipSummary =
+      !isGuestBoardAccess &&
+      url.searchParams.get('includeRelationshipSummary') !== 'false';
     const includeDeletedParam = url.searchParams.get('includeDeleted');
     const includeDeletedMode =
       includeDeletedParam === 'only'
@@ -828,20 +827,19 @@ export async function handleTaskRouteGET(
       workspaceId: normalizedWorkspaceId,
     };
 
-    if (isGuestBoardAccess) {
-      if (
-        sourceScope !== 'all_visible' ||
+    if (
+      isGuestBoardAccess &&
+      (sourceScope !== 'all_visible' ||
         sourceWorkspaceIds.length > 0 ||
         sourceBoardIds.length > 0 ||
-        forTimeTracking
-      ) {
-        return NextResponse.json(
-          { error: 'Workspace access denied' },
-          { status: 403 }
-        );
-      }
-
-      includeRelationshipSummary = false;
+        labelIds.length > 0 ||
+        projectIds.length > 0 ||
+        forTimeTracking)
+    ) {
+      return NextResponse.json(
+        { error: 'Workspace access denied' },
+        { status: 403 }
+      );
     }
 
     const { data: workspaceRow, error: workspaceError } = await sbAdmin
@@ -906,7 +904,8 @@ export async function handleTaskRouteGET(
             {
               displayNumber: parsedIdentifier.displayNumber,
               ticketPrefix: parsedIdentifier.ticketPrefix,
-            }
+            },
+            isGuestBoardAccess ? 'guest' : 'member'
           )
         : null;
     const shouldMergePersonalSort = !!(
@@ -1883,7 +1882,7 @@ export async function handleTaskRouteGET(
         | null
         | undefined;
       return {
-        ...task,
+        ...(isGuestBoardAccess ? redactWorkspaceTaskMetadata(task) : task),
         is_assigned_to_current_user: task.assignee_ids?.includes(user.id),
         board_id: task.board_id ?? taskList?.board_id ?? null,
         board_name: task.board_name ?? taskList?.workspace_boards?.name ?? null,

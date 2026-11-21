@@ -293,8 +293,8 @@ describe('task detail route PUT assignee validation', () => {
         display_name: id === boardGuestUserId ? 'Board Guest' : 'Member',
         id,
       })),
-      labels: [],
-      projects: [],
+      labels: [{ id: 'label', name: 'Workspace label' }],
+      projects: [{ id: 'project', name: 'Workspace project' }],
     };
   }
 
@@ -418,15 +418,13 @@ describe('task detail route PUT assignee validation', () => {
           `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
           {
             body: JSON.stringify({
+              ...(mode === 'guest' ? { label_ids: [], project_ids: [] } : {}),
               assignee_ids: [
                 workspaceMemberUserId,
                 boardGuestUserId,
                 outsideUserId,
               ],
             }),
-            headers: {
-              'content-type': 'application/json',
-            },
             method: 'PUT',
           }
         ),
@@ -450,12 +448,22 @@ describe('task detail route PUT assignee validation', () => {
       expect(updateTaskPayload).toMatchObject({
         p_assignee_ids: [workspaceMemberUserId, boardGuestUserId],
         p_replace_assignees: true,
+        p_replace_labels: false,
+        p_replace_projects: false,
         p_task_id: taskId,
       });
       await expect(response.json()).resolves.toMatchObject({
         task: {
           assignee_ids: [workspaceMemberUserId, boardGuestUserId],
           id: taskId,
+          labels:
+            mode === 'guest' ? [] : [{ id: 'label', name: 'Workspace label' }],
+          projects:
+            mode === 'guest'
+              ? []
+              : [{ id: 'project', name: 'Workspace project' }],
+          label_ids: mode === 'guest' ? [] : ['label'],
+          project_ids: mode === 'guest' ? [] : ['project'],
         },
       });
       expect(publishTaskRealtimeMock).toHaveBeenCalledWith(

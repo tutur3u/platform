@@ -263,6 +263,100 @@ describe('personal recipient authorization', () => {
     });
     expect(fanout.userIds).toContain('guest');
   });
+  it.each([false, true])(
+    'keeps workspace metadata out of both transports with relation updates set to %s',
+    async (notifyRelationChanges) => {
+      const { sbAdmin } = createRealtimeSupabaseMock({
+        tasks: { data: [task('task-a', 'board-a')] },
+      });
+      const send = vi
+        .fn<(message: unknown) => Promise<string>>()
+        .mockResolvedValue('ok');
+      const taskFields = { id: 'task-a', name: 'Shared task' };
+      await publishTaskRealtime({
+        actorUserId: 'editor',
+        sbAdmin: {
+          ...sbAdmin,
+          channel: vi.fn(() => ({ send })),
+          removeChannel: vi.fn(async () => 'ok'),
+        } as never,
+        taskIds: ['task-a'],
+        event: 'task:upsert',
+        notifyRelationChanges,
+        taskPayloadsById: new Map([
+          [
+            'task-a',
+            {
+              ...taskFields,
+              labels: [{ id: 'label' }],
+              projects: [{ id: 'project', ticket_number: 42 }],
+              label_ids: ['label'],
+              project_ids: ['project'],
+            },
+          ],
+        ]),
+      });
+
+      expect(publisher).toHaveBeenCalledTimes(notifyRelationChanges ? 4 : 2);
+      expect(send).toHaveBeenCalledTimes(notifyRelationChanges ? 4 : 2);
+      const message = expect.objectContaining({
+        payload: expect.objectContaining({
+          task: {
+            ...taskFields,
+            source_board_id: 'board-a',
+            source_board_name: 'Source',
+            source_list_id: 'list-task-a',
+            source_workspace_id: 'source-workspace',
+            ticket_prefix: null,
+            list_id: 'list-task-a',
+          },
+        }),
+      });
+      expect(publisher).toHaveBeenCalledWith('board-realtime-board-a', message);
+      expect(publisher).toHaveBeenCalledWith(
+        'task-user-realtime-editor',
+        message
+      );
+      expect(send).toHaveBeenNthCalledWith(1, message, expect.any(Object));
+      expect(send).toHaveBeenNthCalledWith(
+        notifyRelationChanges ? 3 : 2,
+        message,
+        expect.any(Object)
+      );
+      if (notifyRelationChanges) {
+        const relationMessage = {
+          type: 'broadcast',
+          event: 'task:relations-changed',
+          payload: {
+            __tuturuuuBoardRealtimeEventId: expect.any(String),
+            __tuturuuuBoardRealtimeOrigin: 'server',
+            actor_user_id: 'editor',
+            actorUserId: 'editor',
+            taskIds: ['task-a'],
+          },
+        };
+        expect(publisher).toHaveBeenCalledWith(
+          'board-realtime-board-a',
+          relationMessage
+        );
+        expect(publisher).toHaveBeenCalledWith(
+          'task-user-realtime-editor',
+          relationMessage
+        );
+        expect(send).toHaveBeenNthCalledWith(
+          2,
+          relationMessage,
+          expect.any(Object)
+        );
+        expect(send).toHaveBeenNthCalledWith(
+          4,
+          relationMessage,
+          expect.any(Object)
+        );
+      }
+    }
+  );
+
   it('does not send another task in a batch to a recipient of only one task', async () => {
     const { sbAdmin } = createRealtimeSupabaseMock({
       tasks: { data: [task('task-a', 'board-a'), task('task-b', 'board-b')] },

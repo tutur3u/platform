@@ -111,7 +111,7 @@ const mocks = vi.hoisted(() => {
 
   const adminSchemaClient = {
     rpc: vi.fn((name: string) =>
-      Promise.resolve(dequeue(adminRpcQueues, name))
+      createQuery(name, dequeue(adminRpcQueues, name))
     ),
   };
   const adminClient = {
@@ -119,6 +119,7 @@ const mocks = vi.hoisted(() => {
       createQuery(table, dequeue(adminQueues, table))
     ),
     schema: vi.fn(() => adminSchemaClient),
+    rpc: adminSchemaClient.rpc,
     auth: {
       admin: {
         // Board access resolves guest mailbox authority from verified Auth.

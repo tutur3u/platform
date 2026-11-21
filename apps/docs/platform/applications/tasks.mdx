@@ -109,6 +109,21 @@ and workspace membership retain their existing access rules. Coverage lives in
 `packages/tasks-api/src/server/board-access-identity.test.ts` and the Tasks
 shared-task route tests.
 
+## Workspace labels and projects on shared tasks
+
+A board share grants access to the tasks on that board. Task detail, list, and
+edit responses return empty label and project arrays and ID arrays to board-share
+guests. Guests can look up board tickets, including retained board keys. Label,
+project, and project ticket searches require workspace access. Workspace members
+receive the full metadata through the Tasks API. Web and Tasks use the same API
+contract.
+
+Server-published task realtime events omit workspace label and project fields.
+Relation edits signal clients to refresh through the caller-scoped API. The
+[task API regressions](https://github.com/tutur3u/platform/blob/main/packages/tasks-api/src/server/tasks/shared-task-metadata.test.ts)
+and [realtime regressions](https://github.com/tutur3u/platform/blob/main/packages/tasks-api/src/server/tasks/realtime-broadcast.test.ts)
+cover those boundaries.
+
 ## Direct list and assignee access
 
 Task-list reads require a `MEMBER` workspace membership or an explicit board

@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TaskBoardAccessMode } from '../../board-access';
 import {
   isMissingTaskFleetColumn,
   serializeTaskFleetFields,
@@ -97,20 +98,21 @@ export async function getWorkspaceTask(
   return { error: null, task: task as TaskRecord };
 }
 
-export function serializeTask(task: TaskRecord) {
+export function serializeTask(task: TaskRecord, access: TaskBoardAccessMode) {
+  const labels = access === 'member' ? (task.labels ?? []) : [];
+  const projects = access === 'member' ? (task.projects ?? []) : [];
   const assigneeIds = Array.isArray(task.assignees)
     ? task.assignees
         .map((entry) => entry?.id)
         .filter((id): id is string => !!id)
     : [];
 
-  const labelIds = Array.isArray(task.labels)
-    ? task.labels.map((entry) => entry?.id).filter((id): id is string => !!id)
-    : [];
-
-  const projectIds = Array.isArray(task.projects)
-    ? task.projects.map((entry) => entry?.id).filter((id): id is string => !!id)
-    : [];
+  const labelIds = labels
+    .map((entry) => entry?.id)
+    .filter((id): id is string => !!id);
+  const projectIds = projects
+    .map((entry) => entry?.id)
+    .filter((id): id is string => !!id);
 
   const uniqueAssigneeIds = [...new Set(assigneeIds)];
   const uniqueLabelIds = [...new Set(labelIds)];
@@ -139,8 +141,8 @@ export function serializeTask(task: TaskRecord) {
     list_name: task.task_lists?.name ?? null,
     list_status: task.task_lists?.status ?? null,
     assignees: task.assignees ?? [],
-    labels: task.labels ?? [],
-    projects: task.projects ?? [],
+    labels,
+    projects,
     assignee_ids: uniqueAssigneeIds,
     label_ids: uniqueLabelIds,
     project_ids: uniqueProjectIds,

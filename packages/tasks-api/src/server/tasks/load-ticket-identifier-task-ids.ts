@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { TaskBoardAccessMode } from '../board-access';
 
 type TicketIdentifier = { displayNumber: number; ticketPrefix: string };
 
@@ -35,16 +36,11 @@ async function loadBoardTicketPage(
     .range(offset, offset + 199);
 }
 
-/** Resolve exact identifier candidates before pagination in personal-placement queries.
- * Call only after admitting the requested workspace. The caller still applies
- * board, assignment, placement and source-workspace visibility checks to each ID.
- */
-export async function loadTicketIdentifierTaskIds(
+async function loadMemberTicketWorkspaces(
   client: TypedSupabaseClient,
   userId: string,
-  workspaceId: string,
-  identifier: TicketIdentifier
-): Promise<string[]> {
+  workspaceId: string
+) {
   const { data: memberships, error } = await client
     .from('workspace_members')
     .select('ws_id')
@@ -52,14 +48,32 @@ export async function loadTicketIdentifierTaskIds(
     .eq('type', 'MEMBER');
   if (error)
     throw new Error('TICKET_MEMBERSHIP_LOOKUP_FAILED', { cause: error });
-  const workspaceIds = [
+  return [
     ...new Set([workspaceId, ...(memberships ?? []).map((row) => row.ws_id)]),
   ];
+}
+
+/** The caller applies board, assignment and placement visibility to the candidates. */
+export async function loadTicketIdentifierTaskIds(
+  client: TypedSupabaseClient,
+  userId: string,
+  workspaceId: string,
+  identifier: TicketIdentifier,
+  access: TaskBoardAccessMode = 'member'
+): Promise<string[]> {
+  const workspaceIds =
+    access === 'member'
+      ? await loadMemberTicketWorkspaces(client, userId, workspaceId)
+      : [workspaceId];
+  const kinds =
+    access === 'member'
+      ? (['project', 'board'] as const)
+      : (['board'] as const);
   const ids = new Set<string>();
   // Chunk tenant filters and page candidates: PostgREST's row cap must not hide matches.
   for (let index = 0; index < workspaceIds.length; index += 100) {
     const chunk = workspaceIds.slice(index, index + 100);
-    for (const kind of ['project', 'board'] as const) {
+    for (const kind of kinds) {
       for (let offset = 0; ; offset += 200) {
         const { data, error: lookupError } =
           kind === 'project'

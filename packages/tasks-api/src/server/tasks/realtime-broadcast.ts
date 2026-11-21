@@ -68,6 +68,7 @@ export type PublishTaskRealtimeOptions = {
   taskIds: string[];
   actorUserId?: string | null;
   taskPayloadsById?: Map<string, Record<string, unknown>>;
+  notifyRelationChanges?: boolean;
   payload?: Record<string, unknown>;
   logWarning?: BroadcastLogFn;
 };
@@ -315,6 +316,12 @@ function buildTaskRealtimePayload({
 }) {
   const sourceBoardId = source?.sourceBoardId ?? null;
   const sourceListId = source?.sourceListId ?? null;
+  // Board and personal task channels can include board-share guests.
+  const broadcastTask = { ...taskPayload };
+  delete broadcastTask.labels;
+  delete broadcastTask.projects;
+  delete broadcastTask.label_ids;
+  delete broadcastTask.project_ids;
   const enrichedTask =
     taskPayload || event === 'task:upsert'
       ? {
@@ -326,7 +333,7 @@ function buildTaskRealtimePayload({
           ticket_prefix: source?.ticketPrefix ?? null,
           list_id:
             (taskPayload?.list_id as string | null | undefined) ?? sourceListId,
-          ...(taskPayload ?? {}),
+          ...broadcastTask,
         }
       : undefined;
 
@@ -359,6 +366,7 @@ export async function publishTaskRealtime({
   actorUserId,
   event,
   logWarning,
+  notifyRelationChanges,
   payload,
   sbAdmin,
   taskIds,
@@ -425,6 +433,21 @@ export async function publishTaskRealtime({
                 taskIds: messages.map((entry) => entry.taskId),
               },
       });
+      if (notifyRelationChanges) {
+        await sendTaskBroadcast({
+          sbAdmin,
+          channelNames: [channelName],
+          logWarning,
+          event: 'task:relations-changed',
+          payload: {
+            __tuturuuuBoardRealtimeEventId: createTaskRealtimeEventId(),
+            __tuturuuuBoardRealtimeOrigin: 'server',
+            actor_user_id: actorUserId ?? null,
+            actorUserId: actorUserId ?? null,
+            taskIds: messages.map((entry) => entry.taskId),
+          },
+        });
+      }
     }
   } catch (error) {
     logWarning?.('Task realtime fanout failed', {

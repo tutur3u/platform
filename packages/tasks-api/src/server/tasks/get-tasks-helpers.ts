@@ -91,6 +91,10 @@ async function loadRelationshipEdgesByTaskColumn(
   return relationshipEdges;
 }
 
+export function redactWorkspaceTaskMetadata<T extends object>(task: T) {
+  return { ...task, labels: [], projects: [], label_ids: [], project_ids: [] };
+}
+
 export function normalizeTask<T extends TaskRecord>(task: T) {
   const taskList = task.task_lists as
     | {
