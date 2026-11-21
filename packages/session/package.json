@@ -1,0 +1,27 @@
+{
+  "name": "@tuturuuu/session",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Provider-agnostic first-party Tuturuuu session core: cookie codec, expiry policy, identity assertion verification and provider adapter types.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./verify": "./src/verify.ts",
+    "./provider": "./src/provider.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "license": "MIT",
+  "scripts": {
+    "test": "vitest run",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "effect": "^3.22.3"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

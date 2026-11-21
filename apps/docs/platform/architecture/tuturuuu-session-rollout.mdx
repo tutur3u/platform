@@ -30,7 +30,7 @@ a Supabase token.
 | --- | --- |
 | A. Upstream Supabase session per request | **Use through P2.** The session service decrypts the grant and gives its access token only to the trusted data adapter for one request |
 | C. Claims-bound transactions over Hyperdrive | **Target from P3, gated on the parity work below** |
-| B. A Tuturuuu-held key trusted by Supabase | **Rejected.** Supabase accepts externally minted Data API tokens only under an imported, activated project key. Such a key can mint any role, including `service_role`, which bypasses RLS for every tenant. A standby key in the JWKS is not evidence that the Data API accepts it |
+| B. A Tuturuuu-held key trusted by Supabase | **Rejected.** For a Tuturuuu-minted Data API token, Supabase needs an imported, activated project key or a configured third-party auth issuer. Such a key can mint any role, including `service_role`, which bypasses RLS for every tenant. A standby key in the JWKS is not evidence that the Data API accepts it |
 | D. Service role plus explicit authorization | **Rejected for user requests.** One missed check exposes every tenant. The service role stays limited to an allowlist of system jobs |
 
 ### Trusted data adapter
@@ -240,6 +240,31 @@ IPv6 limits aggregate by /64.
 - The service-specific cost evidence goes in the
   [Cloudflare adoption guidance](/build/development-tools/oxc-cloudflare-adoption)
   before P1 enables any write.
+
+## Design gates
+
+These requirements must be specified, reviewed and tested before the slice that
+introduces the behavior. None of them blocks the unwired portable core.
+
+| Gate | Blocks | Requirement |
+| --- | --- | --- |
+| G1 Write freshness | Device object, P1 | Writes and issuance bypass the gateway cache and check the expected `sid` and generation where the effect commits. Specify recovery from a superseded cookie |
+| G2 Expected account | Device object, P1 | Account-sensitive reads and mutations carry the UI's expected session, mismatches are rejected, and old tab data is invalidated on switch. Define which saved accounts need fresh proof to switch to |
+| G3 Stale authority | Device object | Handlers and the data adapter enforce `stale` read-only authority, including effectful `GET` requests and upgrades |
+| G4 Ingress proof | Any reader above `supabase` | Activation needs the effective route, hostname, preview and binding inventories, a dedicated authenticated gateway entry point, and equivalent ingress authentication for Web on Vercel |
+| G5 Revocation | P1 | Record a risk decision on the ordinary-read bound. Specify uncached authoritative checks for mutations and issuance, with outage behavior. Test emergency `kid` denial end to end |
+| G6 Epoch fencing | Device object | Issuance is fenced by the credential version or epoch captured at authentication, and fan-out targets only older epochs. A stale epoch read fails closed |
+| G7 Device cap | Device object | The user index reserves admission and keeps an eviction tombstone until acknowledged. Eviction revokes only that user's sessions |
+| G8 Stop-fence modes | P1 | Specify the allowed operations per mode (assertions, logout, revoke, security cleanup), a fence version at the final issuance decision, and how consumers park and resume |
+| G9 Child sessions | Satellite handoff | A host-bound child credential that selects one child session, with parent checks on redemption and resolution and a defined effect of a parent switch |
+| G10 Legacy QR and CLI | P2 | A separate challenge namespace for the legacy native poller with rejection tests in both directions and a retirement date. Freeze device-code entropy, user-code attempt bounds, client and scope binding and poll cadence |
+| G11 Refresh recovery | Mobile and external apps | Every retry needs a fresh proof. Return a stored successor only if it is still current and the family, epoch and key version are live |
+| G12 Grant transfer | P1, P2 | A global fence by upstream `session_id`, identity and grant equality, and a durable ownership transfer that rejects late writes by the former owner |
+| G13 Option C parity | P3 | Freeze the claim and role map against deployed versions. Test claim precedence, definer behavior, `auth.users` predicates, read-only transactions for `GET` and `HEAD`, and pool reuse after success and failure |
+| G14 Credential authority | P3 | An explicit authority record per user, passkey compatibility proof, and rollback eligibility per user before switching authority |
+| G15 Provisioning | P3 | The effective trigger and FK inventory, and a Better Auth-only user exercised through signup, email change, MFA and erasure |
+| G16 Effect classification and step-up | P1 | Classify operations by effect rather than method, bind step-up grants to canonical targets including tenant, and consume them with the protected effect |
+| G17 Abuse accounting | P1 | Count control, abuse, epoch and session Durable Object operations separately, classify Worker subrequests before trusting IP provenance, and test stops across restarts and in-flight work |
 
 ## First implementation slice
 

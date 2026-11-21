@@ -66,8 +66,9 @@ browser ── __Host-ttr_session ──▶ gateway ──▶ session service �
 ### Device cookie
 
 The browser cookie names a **device**, not a user. The active account is a
-server-side pointer in the device's Durable Object, so an account switch never
-needs a cookie write and a late response cannot restore a superseded account.
+server-side pointer in the device's Durable Object. A switch moves that pointer
+and issues a new generation, so a late response carrying an older generation
+cannot restore the superseded account.
 
 | Property | Value |
 | --- | --- |
@@ -75,20 +76,27 @@ needs a cookie write and a late response cannot restore a superseded account.
 | Attributes | `HttpOnly; Secure; SameSite=Lax; Path=/`, no `Domain` |
 | Value | `v1.<dev>.<gen>.<secret>.<mac>` |
 | `dev` | 16 random bytes, base64url without padding (22 characters). Addresses the `BrowserDevice` object |
-| `gen` | Device generation, a decimal integer of at most 10 digits |
+| `gen` | Device generation: canonical decimal (no sign, no leading zero except `0`), from 0 to 2147483647 |
 | `secret` | 32 random bytes, base64url without padding (43 characters) |
-| `mac` | First 16 bytes of `HMAC-SHA-256(TTR_SESSION_COOKIE_MAC_KEY, "v1." + dev + "." + gen + "." + secret)`, base64url (22 characters) |
+| `mac` | First 16 bytes of `HMAC-SHA-256(k, "ttr-session-mac/v1|" + env + "|" + host + "|" + dev + "." + gen + "." + secret)`, base64url (22 characters) |
 | Stored | `HMAC-SHA-256(TTR_SESSION_PEPPER, secret)` and `gen`. The raw secret exists only in the cookie |
-| `Max-Age` | The longest absolute expiry among the device's live sessions |
+| `Max-Age` | Whole seconds, rounded down, until the latest absolute deadline among the device's live sessions. Zero or less clears the cookie |
 
 Codec invariants, in `@tuturuuu/session`:
 
 - The whole value matches one strict pattern and is at most 128 bytes.
   Base64url must be canonical: no padding and no non-zero trailing bits.
-- A `Cookie` header with more than one `__Host-ttr_session` is **ambiguous**
-  and resolves to signed out for every method. The response clears the name.
-- The gateway checks `mac` in constant time before any Durable Object call, so
-  a forged or random cookie costs no storage request.
+- The codec counts the name across every `Cookie` field value it is given,
+  including split headers. More than one `__Host-ttr_session` is
+  **ambiguous** and resolves to signed out for every method. The response
+  clears the name with `Max-Age=0` and the same attributes.
+- **The MAC is an admission filter, not authorization.** It lets the gateway
+  drop forged or random cookies before any Durable Object call. The device
+  secret hash in storage still decides. `k` comes from
+  `TTR_SESSION_COOKIE_MAC_KEYS`, scoped by environment and host through the MAC
+  input. Verification accepts the current key and at most one previous key for
+  a 24-hour rollover. Emergency retirement removes a key, and its cookies fall
+  through to storage-backed checks under the abuse limits.
 - `dev` reveals nothing about the user. The cookie carries no claims.
 
 Pre-authentication state (OAuth `state`, PKCE verifier, WebAuthn challenge,
@@ -218,6 +226,8 @@ interface IdentityProvider {
   refreshUpstream(grant: UpstreamGrant): Effect<UpstreamGrant, UpstreamExpired | UpstreamUnknown>;
   revokeUpstream(grant: UpstreamGrant): Effect<void, ProviderUnavailable>;
   factors(userId: UserId): Effect<FactorSummary[], ProviderUnavailable>;
+  // Credential IDs for WebAuthn allowCredentials. Never returns public keys or counters.
+  passkeys(userId: UserId): Effect<PasskeySummary[], ProviderUnavailable>;
   enrollFactor(userId: UserId, request: FactorEnrollment): Effect<FactorChallenge, AuthError>;
 }
 
@@ -338,19 +348,30 @@ get the same assertion back.
 
 ### Identity assertion profile
 
-| Part | Rule |
+The header and claims sets are closed: any member not listed here is rejected.
+
+| Member | Type and rule |
 | --- | --- |
-| Header | `alg: ES256`, `typ: ttr+identity`, `kid` matching `[A-Za-z0-9_-]{1,64}`. `jku`, `jwk`, `x5u`, `x5c`, `crit` and any `b64` member are rejected |
-| `iss` | The environment's issuer: `https://tuturuuu.com`, or the staging or local issuer configured for that verifier |
-| `env` | `production`, `staging` or `local`, and equal to the verifier's own environment |
-| `aud` | One string, `mount:<appId>`, equal to the verifier's own mount. Arrays are rejected |
-| `sub`, `sid`, `gen` | User UUID, session ID, device generation |
-| `src` | `cookie` or `bearer`: how the gateway authenticated the request |
-| `stale` | `true` only inside the read-only rotation window |
-| `aal`, `amr`, `auth_time` | Assurance. `auth_time <= iat` |
-| `iat`, `exp`, `jti` | Integers in seconds. `exp > iat`, `exp - iat <= 60`, `iat <= now + 5`, `now < exp + 5`. `exp` is also capped by the session's own expiry |
-| `ipp` | Optional client address prefix (/24 or /48). Never a full address |
-| Encoding | At most 4 KiB, canonical base64url, JSON objects only, duplicate member names rejected |
+| Header `alg` | Exactly `ES256`. The signature is the 64-byte JWS `r‖s` form, verified with a public P-256 ECDSA key |
+| Header `typ` | Exactly `ttr+identity` |
+| Header `kid` | String matching `[A-Za-z0-9_-]{1,64}`. Keys come only from the injected key source for the identity class |
+| `iss` | String, equal to the verifier's configured issuer |
+| `env` | `production`, `staging` or `local`, equal to the verifier's environment |
+| `aud` | One string `mount:<appId>`, equal to the verifier's mount. Arrays are rejected |
+| `sub` | Lowercase canonical UUID |
+| `sid`, `jti` | Strings of 22 base64url characters (16 bytes) |
+| `gen` | Integer from 0 to 2147483647 |
+| `src` | `cookie` or `bearer` |
+| `stale` | Boolean |
+| `aal` | `aal1` or `aal2` |
+| `amr` | Array of 1 to 8 distinct values from `pwd`, `otp`, `totp`, `passkey`, `oauth`, `sso`, `device_approval`, `qr` |
+| `auth_time`, `iat`, `exp` | Non-negative safe integers in seconds. `auth_time <= iat < exp`, `exp - iat <= 60`, `iat <= now + 5`, and `now < exp` with no tolerance past `exp` |
+| `ipp` | Optional. An IPv4 `/24` or IPv6 `/48` prefix in CIDR form. Never a full address |
+| Encoding | At most 4 KiB, three canonical base64url segments, JSON objects only, duplicate member names rejected |
+
+The gateway caps `exp` at the earliest of the session's idle, absolute and
+parent deadlines, and for a `stale` assertion at the end of the grace window.
+No tolerance extends a deadline.
 
 Assertions are not single use. They only travel gateway to mount over a
 service binding, so an outside party cannot present one. A mount that misuses
@@ -373,15 +394,21 @@ function verifyIdentityAssertion(
 ): Promise<
   | { ok: true; assertion: VerifiedAssertion }
   | { ok: false; reason: 'malformed' | 'header' | 'signature' | 'issuer' | 'environment'
-      | 'audience' | 'type' | 'time' | 'claims' | 'unknown_key' | 'keys_unavailable' }
+      | 'audience' | 'type' | 'time' | 'claims' | 'unknown_key' | 'key_type'
+      | 'keys_unavailable' }
 >;
 ```
 
-A successful result proves that the gateway issued this assertion for this
-mount within the last 60 seconds. It does not prove the session is still live,
-and it is not an authorization decision. The function never throws for a bad
-token, makes no network call and needs no signing key. Unknown keys and an
-unavailable key source both fail closed.
+A successful result proves only that a trusted identity-class key signed these
+claims, for this issuer, environment and mount, and that the verifier's clock
+is inside the accepted window. It does not prove how the request arrived, that
+the session is still live, or that the action is authorized.
+
+The function never throws for a bad token, makes no network call and needs no
+signing key. A key source that returns `null` gives `unknown_key`. A key source
+that returns `'unavailable'` or throws gives `keys_unavailable`. A key that is
+not a public P-256 ECDSA verification key gives `key_type`. Every failure is a
+rejection.
 
 ## 4. Service tokens and credential families
 
@@ -402,6 +429,7 @@ unavailable key source both fail closed.
 | `ttr+s2s` | Worker to Worker over HTTP | 5 min | `service:<name>` |
 | `ttr+realtime` | Browser, one topic | ≤ 60 s for channels, ≤ 10 min for meet and chat joins | `realtime:<service>` plus a `topic` claim |
 | `ttr+access` | Mobile, CLI, external app | 5 min | The resource server, `https://tuturuuu.com/api`. The client is `azp` |
+| `ttr+stepup` | A Worker that must check a step-up offline, such as the secrets vault share service | ≤ 5 min | `service:<name>`. Carries `act` (the action), `nonce` (the caller's single-use nonce), `sid`, `gen`, `amr` and `auth_time`. The receiving service enforces single use of `jti` and `nonce` until `exp` |
 
 Refresh tokens are never JWTs. They are opaque, single-use secrets stored as
 HMACs in the session row and rotated on every use. Reusing a rotated refresh
@@ -416,7 +444,7 @@ token revokes the whole session family.
 | **CLI** | Device authorization (RFC 8628). The CLI holds a secret `device_code`. The user enters an 8-character `user_code` on Web. Codes last 10 minutes; polling has an interval with `slow_down`; wrong `user_code` attempts are limited per account and per IP prefix. The approval page shows the client name, the device name it reported and the request's coarse location, then asks for explicit confirmation and a step-up grant bound to that `user_code`. Redemption is one time and bound to that approval. The CLI gets `ttr+access` and a rotating refresh in a `cli` session |
 | **Mobile** | The existing native sign-in endpoints return `ttr+access` and a rotating refresh in a `mobile` session; the app stops calling Supabase directly. The refresh is bound to the device approval key registered through the existing attested enrollment. Each refresh sends a JWS proof over the method, URL, refresh family, refresh token hash, `iat` and `jti`. `iat` must be within 60 s and `jti` is single use, stored in the device object. If the same old refresh token and key arrive within 30 s after a successful rotation, the object returns the same new pair it stored (encrypted) instead of treating it as reuse, so a lost response does not advance the family twice. Replacing the device key needs a fresh sign-in and revokes the old family |
 | **QR login** | A separate challenge type for browsers. The browser that creates the challenge gets a redemption secret in `__Host-ttr_flow`; the QR shows only the challenge ID and an approval number. A signed-in phone approves with its device approval key after showing the origin, browser and number, using a step-up grant. Only the initiating browser, presenting its flow secret, can redeem it. Redemption is atomic and ends in a server-set `__Host-ttr_session`. Browser challenges have no native-poller redemption path |
-| **Realtime** | `ttr+realtime` tickets verified through the realtime Workers' key source. An established connection holds a lease of at most 5 minutes and renews it with a fresh ticket, so a revoked session disconnects within 5 minutes |
+| **Realtime** | `ttr+realtime` tickets verified through the realtime Workers' key source. Admission and every lease renewal check the session's live state. A lease ends at most 5 minutes after the ticket's `iat`, so a revoked session disconnects within 5 minutes of its ticket's issue, and the realtime Worker closes the connection when the lease ends |
 | **Workspace API keys** | Unchanged (`ttr_<hex>`, scrypt). They resolve to a principal of kind `api_key` |
 
 ### Mapping the existing credentials
