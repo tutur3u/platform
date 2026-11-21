@@ -395,9 +395,10 @@ retained items separately.
 
 ### What remains
 
-- **Suppression tokens:** `people_suppressions` keeps an HMAC under the
-  workspace suppression key of each deleted identity's channel, provider
-  account and external ID, plus the deletion time. It holds no name, content or
+- **Suppression tokens:** `people_suppressions` keeps, for each deleted
+  identity, an HMAC of its lookup hash under the workspace suppression key, plus
+  the deletion time. Ingress recomputes the lookup hash from the raw ID and
+  derives the token to check it. It holds no name, content or
   raw identifier. It is linkable only to someone who presents the same raw
   identifier. It is used only to stop capture, imports and replays from
   re-creating the person, it is readable only by fence checks, and lifting it
@@ -506,6 +507,22 @@ need ingress evidence. That reuses the Fleet access event contract in
   ingress signs and again when the server verifies. Reassigning an account
   invalidates every unconsumed event signed for the old binding.
 - Ingress verifies group membership and the sender with the provider itself.
+- **Personal sessions:** on a personal account (an internal Zalo or WhatsApp
+  login whose connector signs its own envelopes), a compromised connector
+  could vouch for any sender. Evidence from such a session therefore gets
+  only the addressing projection:
+  - It returns the effective rules as enumerated values, plus owner-entered
+    `preferred_name`, `form_of_address` and `language` facts.
+  - It covers only identities the owner confirmed, with basis
+    `owner_statement` or `fleet_verified`.
+  - It never returns memories or briefs, and it never admits a write bundle.
+  - It is off for every workspace until the registry owner turns on
+    `personal_sessions_enabled`. Turning that off stops it at once.
+  - Any failed check returns no person.
+  - Every read is audited with the channel, the session and the identity.
+
+  Full recall on personal accounts needs a second, independent attestation of
+  the sender, which waits on a host review.
 - **Signers and bindings:** Fleet operations accept only the registered Fleet
   desks. Registry operations also accept the Mira ingress signer, whose
   versioned public keys come from `MIRA_INGRESS_PUBLIC_KEYS`. For every
