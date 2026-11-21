@@ -49,6 +49,18 @@ done
 PLATFORM_DEPLOYMENT_STAMP="$(git -C "$repo_dir" rev-parse HEAD | cut -c1-12)"
 export PLATFORM_DEPLOYMENT_STAMP
 
+# Login returns to a mounted app's /<app>/verify-token only for apps in this
+# list, so it must name exactly the mounts live on the gateway. It is derived
+# from the committed gateway mount inventory; the script fails closed on an
+# unregistered mount, and an empty list is refused here.
+NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS="$(node "$repo_dir/scripts/active-app-mounts.mjs")"
+if [[ -z "$NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS" ]]; then
+  echo "Refusing to build: scripts/active-app-mounts.mjs printed no active mounts." >&2
+  exit 1
+fi
+export NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS
+echo "Active app mounts: $NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS"
+
 cd "$repo_dir"
 npm pkg set "overrides.react=$react_version" "overrides.react-dom=$react_version"
 bun add -d "react@$react_version" "react-dom@$react_version"
