@@ -171,7 +171,7 @@ function ParticipantTileImpl({
       ref={tileRef}
       data-testid={`participant-${participant.userId}-${kind}`}
       className={cn(
-        'group relative isolate min-h-0 overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-border',
+        '@container group relative isolate min-h-0 overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-border',
         isSpeaking && 'ring-2 ring-dynamic-green',
         handRaised &&
           kind === 'camera' &&
@@ -258,10 +258,10 @@ function ParticipantTileImpl({
       {handRaised && kind === 'camera' && (
         <div
           role="status"
-          className="motion-safe:zoom-in absolute top-3 left-3 flex items-center gap-2 rounded-full border border-dynamic-orange/50 bg-background/95 px-3 py-2 font-semibold text-dynamic-orange text-sm shadow-lg motion-safe:animate-in"
+          className="motion-safe:zoom-in absolute top-3 left-3 flex items-center gap-2 rounded-full border border-dynamic-orange/50 bg-background/95 px-3 py-2 font-semibold text-dynamic-orange text-sm shadow-lg motion-safe:animate-in @max-[12rem]:top-1.5 @max-[12rem]:left-1.5 @max-[12rem]:p-1.5"
         >
-          <Hand className="size-5 fill-dynamic-orange/20" />
-          {t('hand_raised')}
+          <Hand className="size-5 fill-dynamic-orange/20 @max-[12rem]:size-4" />
+          <span className="@max-[12rem]:sr-only">{t('hand_raised')}</span>
         </div>
       )}
       <div
@@ -328,12 +328,12 @@ function ParticipantTileImpl({
           )}
       </div>
       {!floating && (
-        <div className="absolute top-2 right-2 flex gap-1 rounded-lg bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+        <div className="absolute top-2 right-2 flex gap-1 rounded-lg @max-[12rem]:top-1 @max-[12rem]:right-1 @max-[12rem]:gap-0.5 @max-[12rem]:p-0.5 bg-background/80 p-1 opacity-100 backdrop-blur transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
           {!isSelf && audioTrack && (
             <Button
               size="icon"
               variant={silenced ? 'secondary' : 'ghost'}
-              className="size-8"
+              className="size-8 @max-[12rem]:size-6"
               aria-label={t(
                 silenced ? 'audio_unmute_for_me' : 'audio_mute_for_me',
                 { name: participant.displayName }
@@ -356,7 +356,7 @@ function ParticipantTileImpl({
             <Button
               size="icon"
               variant={focused ? 'secondary' : 'ghost'}
-              className="size-8"
+              className="size-8 @max-[12rem]:size-6"
               aria-label={focused ? t('unfocus_feed') : t('focus_feed')}
               aria-pressed={focused}
               onClick={() =>
@@ -371,7 +371,7 @@ function ParticipantTileImpl({
           <Button
             size="icon"
             variant="ghost"
-            className="size-8"
+            className="size-8 @max-[12rem]:size-6"
             aria-label={t(
               expanded || fullscreen ? 'exit_fullscreen' : 'fullscreen_feed'
             )}

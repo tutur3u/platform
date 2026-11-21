@@ -29,7 +29,9 @@ import type { MeetRoomController } from '../lib/room-controller';
 import { CallResizeHandle } from './call-resize-handle';
 import { MiraParticipant } from './mira-participant';
 import { ParticipantTile } from './participant-tile';
+import { fitTileGrid, useElementSize } from './stage-grid-fit';
 export type CallLayout = 'auto' | 'grid' | 'spotlight' | 'sidebar';
+const FIXED_STRIP_TILE = 'aspect-video w-40 shrink-0 lg:w-full';
 const densities = ['auto', 'large', 'compact'] as const;
 type GridDensity = (typeof densities)[number];
 
@@ -54,6 +56,7 @@ export function CallStage({
   layout,
   compact = false,
   hideSelfCamera = false,
+  selfInGrid,
   focus,
   onFocus,
   onChat,
@@ -65,6 +68,11 @@ export function CallStage({
   compact?: boolean;
   /** Omit the local camera tile when it renders as a floating preview. */
   hideSelfCamera?: boolean;
+  /**
+   * Show the local camera as a tile in the same grid as everyone else. When
+   * omitted it follows `!hideSelfCamera`, so existing callers are unchanged.
+   */
+  selfInGrid?: boolean;
   focus: string | null;
   onFocus: (key: string | null) => void;
   onChat: () => void;
@@ -73,6 +81,9 @@ export function CallStage({
   const labels = useLargeRoomLabels();
   const mobile = useCompactStage();
   const stageId = useId();
+  const gridRef = useRef<HTMLDivElement>(null);
+  const stageSize = useElementSize(gridRef);
+  const showSelf = selfInGrid ?? !hideSelfCamera;
   const [density, setDensity] = useState<GridDensity>('auto');
   const [filmstripWidth, setFilmstripWidth] = useState(25);
   const [spotlightHeight, setSpotlightHeight] = useState(70);
@@ -129,7 +140,7 @@ export function CallStage({
       const self = participant.userId === room.state.selfUserId;
       const remote = room.remoteMedia[participant.userId];
       const key = `${participant.userId}:camera`;
-      if (!(self && hideSelfCamera))
+      if (!self || showSelf)
         result.push({
           key,
           participant,
@@ -162,7 +173,7 @@ export function CallStage({
     room.remoteMedia,
     room.localStream,
     room.screenStream,
-    hideSelfCamera,
+    showSelf,
   ]);
   const share =
     tiles.find((tile) => tile.kind === 'screen' && tile.key === focus) ??
@@ -173,7 +184,7 @@ export function CallStage({
       <MiraParticipant
         sessionId={mira.sessionId}
         compact={compact}
-        className={compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className}
+        className={compact && !fit ? FIXED_STRIP_TILE : className}
         focused={!share && focus === 'mira'}
         onFocus={
           share ? undefined : () => onFocus(focus === 'mira' ? null : 'mira')
@@ -244,7 +255,7 @@ export function CallStage({
       onSilence={toggleSilence}
       key={tile.key}
       className={cn(
-        compact ? 'aspect-video w-40 shrink-0 lg:w-full' : className,
+        compact && !fit ? FIXED_STRIP_TILE : className,
         share && tile.kind === 'camera' && '[&_video]:object-cover'
       )}
       kind={tile.kind}
@@ -274,8 +285,20 @@ export function CallStage({
   const sidebar = split && layout === 'sidebar' && !mobile;
   const horizontalStrip = split && !!share && !sidebar;
   const featuredHeight = share ? shareHeight : spotlightHeight;
+  const fitted = compact || (!spotlight && density === 'auto');
+  const fit =
+    fitted && stageSize
+      ? fitTileGrid({
+          count,
+          width: stageSize.width - 8,
+          height: stageSize.height - 8,
+          gap: compact ? 8 : 12,
+          minWidth: compact ? 112 : 160,
+        })
+      : null;
   const tileClass = (key: string) => {
-    if (compact) return 'aspect-video w-40 shrink-0 lg:w-full';
+    if (fit) return 'h-(--tile-h) w-(--tile-w) shrink-0';
+    if (compact) return FIXED_STRIP_TILE;
     if (!spotlight) return density === 'compact' ? 'min-h-24' : 'min-h-32';
     if (key === focusedKey)
       return sidebar
@@ -385,16 +408,30 @@ export function CallStage({
       )}
       <div
         id={stageId}
+        ref={gridRef}
         style={
           {
+            ...(fit && {
+              '--tile-w': `${fit.tileWidth}px`,
+              '--tile-h': `${fit.tileHeight}px`,
+            }),
             '--stage-rows': Math.max(1, count - 1),
             '--stage-rail': `${filmstripWidth}%`,
             '--stage-primary': `${featuredHeight}%`,
           } as CSSProperties
         }
         className={cn(
-          'grid min-h-0 flex-1 gap-3 overflow-auto p-1',
-          compact && 'flex gap-2 lg:flex-col',
+          'min-h-0 flex-1 overflow-auto p-1',
+          fit
+            ? cn(
+                'flex flex-wrap justify-center',
+                compact ? 'gap-2' : 'gap-3',
+                fit.scroll ? 'content-start' : 'content-center'
+              )
+            : cn(
+                'grid gap-3',
+                compact && 'flex gap-2 lg:flex-col'
+              ),
           !compact &&
             spotlight &&
             (sidebar
@@ -407,7 +444,8 @@ export function CallStage({
                       ? 'grid-rows-[minmax(0,var(--stage-primary))_0.5rem] gap-2'
                       : 'grid-rows-[minmax(0,1fr)]'
                   )),
-          !compact &&
+          !fit &&
+            !compact &&
             !spotlight &&
             (density === 'auto'
               ? cn('auto-rows-[minmax(8rem,1fr)]', columns(count))
