@@ -107,6 +107,9 @@
     "api-route-wrappers": "^apps/web/src/(app/api|legacy-api-routes)/",
     "mobile-lucide-sync": "^(bun\\.lock$|apps/mobile/(lib/core/ui/icons/generated|assets/fonts/lucide|test/fixtures/lucide)/|scripts/(mobile-lucide/|check-mobile-lucide-sync\\.js$))",
     "mobile-shadcn-ratchet": "^(apps/mobile/(lib|test)/|apps/mobile/tool/shadcn_import_allowlist\\.txt$|scripts/(check-mobile-shadcn-imports|dart-directive-uris)\\.js$)",
-    "mobile-api-mappings": "^(apps/mobile/lib|apps/web/src/app/api)/"
+    "mobile-api-mappings": "^(apps/mobile/lib|apps/web/src/app/api)/",
+    "api-registry": "^apps/(api/|web/src/app/api/)",
+    "web-route-manifest": "^(apps/web/(src/app/|cloudflare/|vercel\\.json$|next\\.config\\.ts$|src/proxy\\.ts$|src/lib/satellite-api-rewrites\\.ts$|start-route-manifest\\.json$)|packages/utils/src/next-config\\.ts$|\\.oxfmtrc\\.json$|bun\\.lock$)",
+    "gateway-routes": "^apps/(web/(src/app/|cloudflare/)|gateway/src/web-routes\\.generated\\.json$)"
   }
 }

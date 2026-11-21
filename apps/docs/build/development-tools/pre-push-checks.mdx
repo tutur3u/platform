@@ -55,6 +55,7 @@ set in the environment.
 | `apps/mobile/`                                                                          | `flutter gen-l10n` first when ARB files changed, `dart format` on changed Dart files, then `flutter analyze lib test` exactly as `mobile.yaml` runs it                                                                                                                                                                                                                                                                   |
 | `apps/*/messages/*.json`                                                                | i18n sort and en/vi key parity                                                                                                                                                                                                                                                                                                                                                                                           |
 | Migrations, docs, web API routes                                                        | Migration timestamps, docs audit, legacy route wrappers, mobile API mappings                                                                                                                                                                                                                                                                                                                                             |
+| Web routes/pages, `apps/api/**`, Web Cloudflare route config, `.oxfmtrc.json`, `bun.lock`| Route registries `--check`, build-free: API route registry (`apps/api/generated`), Web route manifest (`start-route-manifest.json`) and gateway route table. Editing a handler changes its recorded source hash, so a registry can be stale without a new route                                                                                                                                                          |
 | Migrations, the public-schema allowlist, generated types, mobile/Discord or app/package source| [Public schema guard](/build/devops/public-schema-privatization#guard-no-new-public-relations) (`bun db:public-guard`)
 
 Oxfmt and Oxlint both block pushes on failures. The root Oxc configs define the
@@ -241,11 +242,16 @@ node scripts/generate-web-api-route-wrappers.js --write
 node scripts/generate-docs-inventory.js
 bun run --cwd apps/api generate
 bun apps/web/cloudflare/generate-inventory.ts
+bun apps/web/cloudflare/vinext/gateway-routes.ts
 ```
 
-Run the corresponding `--check` commands before publishing. The standalone API
-uses `bun run --cwd apps/api registry:check`. The build-free changed-files gate
-checks wrappers and docs inventory; it does not cover the standalone API registry
-or Web Start census. Run these two checks explicitly for Web API route changes.
+The build-free changed-files gate runs the corresponding `--check` of each
+inventory a change can affect: wrappers, docs inventory, the standalone API
+registry (`bun run --cwd apps/api registry:check`), the Web Start census
+(`routes:candidate:check`) and the gateway route table
+(`routes:gateway:check`). A stale inventory fails the gate and names the
+command that refreshes it. The paths that select each check live in
+`scripts/ci/check-map.json`; `scripts/check-changed/route-registries.test.js`
+pins them and keeps the gate's commands identical to the workspace scripts.
 Generated inventories locate retained handlers; they do not establish Worker
 runtime acceptance or authorize a cutover.

@@ -16,6 +16,9 @@ function validateMap(value = map) {
     'mobile-lucide-sync',
     'mobile-shadcn-ratchet',
     'mobile-api-mappings',
+    'api-registry',
+    'web-route-manifest',
+    'gateway-routes',
   ])
     if (!Object.hasOwn(value.localChecks, id))
       throw new Error(`Missing local check: ${id}`);

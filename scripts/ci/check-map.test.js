@@ -16,6 +16,9 @@ test('shared map selects local checks for changed and deleted supplier paths', (
   for (const id of [
     'api-route-wrappers',
     'mobile-api-mappings',
+    'api-registry',
+    'web-route-manifest',
+    'gateway-routes',
     'i18n',
     'migration-timestamps',
     'sdk-portable',

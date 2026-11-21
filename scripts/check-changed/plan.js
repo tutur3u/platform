@@ -6,6 +6,7 @@ const { selectLocalChecks } = require('../ci/check-map.js');
 const { reverseDependents, assertSafePaths } = require('./workspaces.js');
 const { AUTH_GUARDS } = require('../auth-guards.js');
 const { PAUSED_APP_DIRECTORIES } = require('../paused-runtimes.js');
+const { routeRegistrySteps } = require('./route-registries.js');
 
 const OXC_VERSION = '0.74.0';
 // Keep in sync with .github/workflows/branch-name-check.yaml (tested).
@@ -407,6 +408,7 @@ function planChecks(changes, context) {
       ])
     );
   }
+  steps.push(...routeRegistrySteps(selected));
 
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
   const relatedTests = new Map();

@@ -98,6 +98,9 @@ test('TypeScript changes map to oxc, oxlint, guards, vitest and type-check', () 
     'browser-session-surface',
     'public-schema',
     'mounted-client-api',
+    // A page is a route: the registries derived from the route tree.
+    'web-route-manifest',
+    'gateway-routes',
     'vitest:packages/utils',
     'vitest:apps/web',
     'type-check:apps/web',
