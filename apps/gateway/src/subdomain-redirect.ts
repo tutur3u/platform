@@ -87,7 +87,13 @@ export async function handleSubdomainRedirect(
       basePathReady: true,
       machinePathPrefixes: MACHINE_PATH_PREFIXES,
     });
-    if (decision.action === 'redirect') return decision.response;
+    if (decision.action === 'redirect') {
+      // A stored 301 would outlive a rollback and also answer later
+      // non-navigation requests (fetches, webhook retries) to the same URL.
+      const response = new Response(null, decision.response);
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    }
   }
   return target.binding.fetch(request);
 }

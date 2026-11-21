@@ -1,6 +1,15 @@
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import {
+  hasAmbiguousSupabaseSession,
+  isolateMountedRequest,
+  type MountIsolationConfig,
+  scopeMountedResponseCookies,
+  stripMountedSupabaseWrites,
+} from '@tuturuuu/start-bridge/mount-isolation';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { withHstsResponsePolicy } from '@tuturuuu/start-bridge/response-policy';
+import { admitMountedMutation } from '@tuturuuu/start-bridge/start/csrf-admission';
+import { stripMountedSessionWrites } from '@tuturuuu/start-bridge/start/mounted-session-guard';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
@@ -36,7 +45,47 @@ const appMounts = {
   basePath: '/apps',
 };
 
+/**
+ * Same-origin isolation on tuturuuu.com/apps: Apps code sees only its locale
+ * cookie, the logout fence and an access-token-only Supabase session, and
+ * writes only NEXT_LOCALE, host-only at Path=/apps.
+ */
+const APPS_ISOLATION: MountIsolationConfig = { ownedCookies: ['NEXT_LOCALE'] };
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/**
+ * Serves the subdomain root as is. A mounted request is admitted like any
+ * bridge mount (same-origin mutations only, no ambiguous session cookies),
+ * isolated on the way in, and its Set-Cookie headers are confined to the
+ * mount on the way out.
+ */
 export async function appsRequest(request: Request, env: AppsEnvironment) {
+  const url = new URL(request.url);
+  const mount = resolveAppBase(url, appMounts);
+  if (!mount || mount.mode === 'root') return serveApps(request, env);
+  const appPath = url.pathname.slice(mount.basePath.length) || '/';
+  if (
+    !SAFE_METHODS.has(request.method) &&
+    hasAmbiguousSupabaseSession(request.headers.get('cookie'))
+  )
+    return new Response('Ambiguous session', {
+      status: 400,
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  const refused = admitMountedMutation({ appPath, mode: 'enforce', request });
+  if (refused) return refused;
+  const response = await serveApps(
+    isolateMountedRequest(request, APPS_ISOLATION),
+    env
+  );
+  return scopeMountedResponseCookies(
+    stripMountedSupabaseWrites(stripMountedSessionWrites(response)),
+    mount.basePath,
+    APPS_ISOLATION
+  );
+}
+
+async function serveApps(request: Request, env: AppsEnvironment) {
   const requestUrl = new URL(request.url);
   const mount = resolveAppBase(requestUrl, appMounts);
   if (!mount) return new Response('Not Found', { status: 404 });

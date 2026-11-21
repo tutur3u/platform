@@ -33,14 +33,14 @@ describe('browser cookies in a mounted app', () => {
       ...LOCALE,
       domain: '.tuturuuu.com',
     });
-    expect(options).toEqual({ ...LOCALE, path });
+    expect(options).toEqual({ ...LOCALE, path, secure: true });
     expect(options).not.toHaveProperty('domain');
   });
 
   it('deletes only its own base copy, never the shared origin cookies', () => {
     mountAt('/tasks');
     expect(getTuturuuuBrowserCookieDeleteOptions(LOCALE)).toEqual([
-      { ...LOCALE, maxAge: 0, path: '/tasks' },
+      { ...LOCALE, maxAge: 0, path: '/tasks', secure: true },
     ]);
   });
 

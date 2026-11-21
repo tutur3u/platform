@@ -375,10 +375,12 @@ custom domain to the redirect Worker. Capture the prior attachment first.
 - An unlisted app is served through its binding without redirecting, so the
   hostname can be attached before the redirect is switched on.
 
+The `301` carries `Cache-Control: no-store`, so browsers do not keep it:
+a rollback takes effect on the next request, and a later fetch or webhook
+retry to a redirected URL still reaches the app.
+
 Rollback: remove the app from `SUBDOMAIN_REDIRECT_APPS`, or reattach the
-hostname to the app Worker from the capture. Browsers keep a `301` they have
-already followed, so a rollback only affects visitors who have not been
-redirected yet; the mount must stay served. Regression coverage lives in
+hostname to the app Worker from the capture. Regression coverage lives in
 `apps/gateway/src/subdomain-redirect.test.ts`.
 
 ### Hosted rollback status on 2026-11-20

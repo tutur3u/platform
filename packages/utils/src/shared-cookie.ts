@@ -318,16 +318,38 @@ export function getTuturuuuSharedCookieOptions<
  */
 const APP_BASE_GLOBAL = '__tuturuuuAppBase';
 
+/** A mount base: one or more lowercase path segments, e.g. `/lms/learn`. */
+const MOUNT_BASE = /^(?:\/[a-z0-9][a-z0-9-]*)+$/u;
+/** A mounted build's chunk URL: `<base>/assets/<file>`. */
+const MOUNTED_CHUNK = /^((?:\/[a-z0-9][a-z0-9-]*)+)\/assets\//u;
+
+function chunkBase() {
+  try {
+    const chunk = new URL(import.meta.url);
+    if (chunk.origin !== globalThis.location?.origin) return '';
+    return MOUNTED_CHUNK.exec(chunk.pathname)?.[1] ?? '';
+  } catch {
+    return '';
+  }
+}
+
 /**
  * In the browser, the base of an app mounted under a path of a shared origin
- * (`/tasks` on `tuturuuu.com/tasks`). Empty at a subdomain root, in apps
- * without the bridge, and on the server.
+ * (`/tasks` on `tuturuuu.com/tasks`). It comes from the Start bridge head
+ * global, or, when that script did not run, from this module's own chunk URL
+ * (`/tasks/assets/...`), so a mounted document never falls back to the shared
+ * cookie scope. Empty at a subdomain root, in apps without the bridge, and on
+ * the server.
  */
 export function browserMountedAppBase(): string {
   if (typeof document === 'undefined') return '';
   const value = (globalThis as Record<string, unknown>)[APP_BASE_GLOBAL];
-  const base = typeof value === 'function' ? value() : value;
-  return typeof base === 'string' ? base.replace(/\/+$/u, '') : '';
+  const declared = typeof value === 'function' ? value() : value;
+  if (typeof declared === 'string') {
+    const base = declared.replace(/\/+$/u, '');
+    if (MOUNT_BASE.test(base)) return base;
+  }
+  return chunkBase();
 }
 
 /**
@@ -342,7 +364,7 @@ export function getTuturuuuBrowserSharedCookieOptions<
   const base = browserMountedAppBase();
   if (base) {
     const { domain: _domain, ...mountedOptions } = options;
-    return { ...mountedOptions, path: base } as TOptions;
+    return { ...mountedOptions, path: base, secure: true } as TOptions;
   }
   return getTuturuuuSharedCookieOptions(options);
 }

@@ -27,6 +27,7 @@ describe('handleSubdomainRedirect', () => {
     expect(response.headers.get('location')).toBe(
       'https://tuturuuu.com/tasks/en/ws/boards/b1?x=1&y=2'
     );
+    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(fetch).not.toHaveBeenCalled();
   });
 
