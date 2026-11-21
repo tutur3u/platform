@@ -11,6 +11,19 @@ module.exports = [
   ...require('./sql-grant-guard-verified-findings-fleet'),
   ...require('./sql-grant-guard-verified-findings-vault'),
   {
+    path: 'apps/database/supabase/migrations/20261121205000_cms_publish_event_payload_limit.sql',
+    line: 1,
+    rule: 'function-acl',
+    fileDigest:
+      'ea80b7e61d2059bd457bb8340ba02485cb184cef87b1bff2be87573275af358e',
+    digest: '0ffa3c2bcd74cdca82e7cb1c4d87d76bea33e520d3b7f95da9fa024224f8085b',
+    class: 'fixed-forward',
+    requiredMigration:
+      'apps/database/supabase/migrations/20261121205500_preserve_strict_payload_helper_execute.sql',
+    reason:
+      'The follow-up explicitly restores the existing EXECUTE ACL of the SECURITY INVOKER helper used by row-write triggers.',
+  },
+  {
     path: 'apps/database/supabase/migrations/20261121091000_add_task_fleet_fields.sql',
     line: 45,
     rule: 'function-acl',

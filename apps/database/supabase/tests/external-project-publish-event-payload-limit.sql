@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(8);
+select plan(9);
 
 insert into auth.users (id) values ('7a9e0000-0000-4000-8000-000000009001') on conflict do nothing;
 insert into public.users (id) values ('7a9e0000-0000-4000-8000-000000009001') on conflict do nothing;
@@ -62,6 +62,18 @@ select is((select octet_length(payload::text)
   from public.workspace_external_project_publish_events
   where id = '7a9e0000-0000-4000-8000-000000009004'), 262144,
   'the rejected write preserves the boundary payload');
+
+set local role authenticated;
+set local request.jwt.claims = '{"role":"authenticated","sub":"7a9e0000-0000-4000-8000-000000009001"}';
+select lives_ok($$insert into public.workspace_external_project_publish_events (
+  id, ws_id, canonical_external_project_id, payload
+) values (
+  '7a9e0000-0000-4000-8000-000000009005',
+  '7a9e0000-0000-4000-8000-000000009002',
+  'publish-payload-limit-test',
+  to_jsonb(repeat('x', 262142))
+)$$, 'an authenticated workspace creator can write a payload at the limit');
+reset role;
 
 select * from finish();
 rollback;
