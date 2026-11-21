@@ -58,7 +58,10 @@ function LinkConfirmation() {
       confirmationCode: proof.confirmationCode.trim(),
     });
     setInvalid(!parsed.success);
-    if (!parsed.success) return;
+    if (!parsed.success) {
+      document.getElementById('fleet-link-id')?.focus();
+      return;
+    }
     setProof(parsed.data);
     confirm.mutate(
       { ...parsed.data, preview: true },
@@ -72,7 +75,15 @@ function LinkConfirmation() {
 
   switch (state.kind) {
     case 'entry':
-    case 'checking':
+    case 'checking': {
+      const refusal =
+        state.kind === 'entry' && state.refusal
+          ? state.refusal
+          : invalid
+            ? 'invalid_confirmation'
+            : undefined;
+      // The ID and code are checked together, so a mismatch marks both.
+      const mismatch = refusal === 'invalid_confirmation';
       return (
         <form
           onSubmit={check}
@@ -85,7 +96,8 @@ function LinkConfirmation() {
               label={t.link.linkId}
               value={proof.linkId}
               mono
-              error={invalid ? t.refusal.invalid_confirmation : undefined}
+              invalid={mismatch}
+              describedBy={refusal ? 'fleet-link-error' : undefined}
               onChange={(linkId) => setProof({ ...proof, linkId })}
             />
             <TextField
@@ -93,15 +105,21 @@ function LinkConfirmation() {
               label={t.link.confirmation}
               value={proof.confirmationCode}
               mono
+              invalid={mismatch}
+              describedBy={refusal ? 'fleet-link-error' : undefined}
               onChange={(confirmationCode) =>
                 setProof({ ...proof, confirmationCode })
               }
             />
           </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            {state.kind === 'entry' && state.refusal && (
-              <p role="alert" className="mr-auto text-destructive text-sm">
-                {t.refusal[state.refusal]}
+            {refusal && (
+              <p
+                id="fleet-link-error"
+                role="alert"
+                className="mr-auto text-destructive text-sm"
+              >
+                {t.refusal[refusal]}
               </p>
             )}
             <Button type="submit" disabled={state.kind === 'checking'}>
@@ -110,6 +128,7 @@ function LinkConfirmation() {
           </div>
         </form>
       );
+    }
     case 'pending':
     case 'linking':
       return (

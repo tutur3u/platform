@@ -166,14 +166,15 @@ returns, and the API still decides every read and write:
 - **Ask** (`ask` and `status.read`): a project and a typed topic (status,
   readiness or timeline) answered from the scoped digest in the page, without
   a model. Free-text questions wait for the tool-free Ask execution path.
-- **Requests:** the person's receipts with typed states, and a typed form per
-  intent kind the grant can file. Kinds filed through `intent.request` are
-  marked for Owner approval. Target keys are typed as catalog keys.
-- **Approvals** (`approve.low`): read-only until an approval API exists.
-- **Link chat:** issue a link code, preview the pending channel and account
-  label, then confirm.
-- **Access (Owner only):** grants, revocation, caps, fleet stop and the audit
-  log. Read-only until grant management APIs exist.
+- **Requests:** the person's receipts with typed states and short intent IDs,
+  and a typed form per intent kind the grant can file. Kinds filed through
+  `intent.request` are marked in the kind list, carry a persistent note and
+  confirm as sent for Owner approval. Target keys are typed as catalog keys.
+- **Link chat:** issue a link code, send it to Mira in a private chat, preview
+  the pending channel and account label, then confirm.
+- **Approvals** (`approve.low`) and **Access** (Owner only: grants,
+  revocation, caps, fleet stop and the audit log) stay hidden until their APIs
+  exist.
 
 A disabled, stopped or revoked grant shows no tabs. A read refused mid-session
 asks the person to reload. Server functions call the Fleet API with the

@@ -1,7 +1,7 @@
 import { RefreshCw } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
 import type { ReactNode } from 'react';
+import { BlockingState, LoadingState } from '../components/page-states';
 import { SectionMessage } from '../components/section';
 import { useFleetText } from './text';
 import type { FleetRead } from './upstream';
@@ -45,7 +45,10 @@ export function readState<T>(query: {
   return { kind: 'loading' };
 }
 
-/** Loading, error and denied views; `ready` renders through the caller. */
+/**
+ * Loading and error reuse the command center's page states; a grant that
+ * changed mid-session asks for a reload. `ready` renders through the caller.
+ */
 export function ReadMessage({
   state,
 }: {
@@ -54,30 +57,14 @@ export function ReadMessage({
   const { t } = useFleetText();
   switch (state.kind) {
     case 'loading':
-      return (
-        <div role="status" aria-label={t.common.loading} className="space-y-3">
-          <Skeleton className="h-9 w-full rounded-xl" />
-          <Skeleton className="h-40 w-full rounded-xl" />
-        </div>
-      );
+      return <LoadingState />;
     case 'error':
       return (
-        <SectionMessage tone="error">
-          <div className="space-y-3">
-            <p>{t.common.error}</p>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={state.retry}
-              disabled={state.retrying}
-            >
-              <RefreshCw
-                className={state.retrying ? 'animate-spin' : undefined}
-              />
-              {t.common.retry}
-            </Button>
-          </div>
-        </SectionMessage>
+        <BlockingState
+          state={{ kind: 'error', reason: 'unavailable' }}
+          retrying={state.retrying}
+          onRetry={state.retry}
+        />
       );
     case 'denied':
       return (
@@ -95,4 +82,22 @@ export function ReadMessage({
         </SectionMessage>
       );
   }
+}
+
+/** A background refetch of data already on screen. */
+export function RefreshingMark({ active }: { active: boolean }) {
+  const { t } = useFleetText();
+  return (
+    <span
+      role="status"
+      className="inline-flex items-center gap-1.5 text-muted-foreground text-xs"
+    >
+      {active && (
+        <>
+          <RefreshCw className="size-3 animate-spin" aria-hidden />
+          {t.common.refreshing}
+        </>
+      )}
+    </span>
+  );
 }

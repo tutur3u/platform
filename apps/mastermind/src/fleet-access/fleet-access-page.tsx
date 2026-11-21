@@ -7,7 +7,6 @@ import { Preferences, Shell } from '../components/shell';
 import { AskTab } from './ask-tab';
 import { LinkIdentityTab } from './link-identity-tab';
 import { type FleetTab, type LiveFleetAccess, visibleTabs } from './model';
-import { UnavailableTab } from './query-message';
 import { RequestsTab } from './requests-tab';
 import { StatusTab } from './status-tab';
 import { useFleetText } from './text';
@@ -51,7 +50,9 @@ export function FleetAccessPage({ access, tab, onTabChange }: Props) {
       {gate.kind === 'live' ? (
         <LiveTabs access={gate.access} tab={tab} onTabChange={onTabChange} />
       ) : (
-        <SectionMessage tone="error">{t.gate[gate.kind]}</SectionMessage>
+        <SectionMessage tone={gate.kind === 'denied' ? 'error' : 'empty'}>
+          {t.gate[gate.kind]}
+        </SectionMessage>
       )}
     </Shell>
   );
@@ -73,9 +74,7 @@ function LiveTabs({
     status: () => <StatusTab />,
     ask: () => <AskTab projects={access.projects} />,
     requests: () => <RequestsTab access={access} />,
-    approvals: () => <UnavailableTab>{t.approvals.unavailable}</UnavailableTab>,
     link: () => <LinkIdentityTab />,
-    access: () => <UnavailableTab>{t.access.unavailable}</UnavailableTab>,
   };
   return (
     <Tabs

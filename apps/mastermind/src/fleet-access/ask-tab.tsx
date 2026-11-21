@@ -9,7 +9,12 @@ import {
   type DigestAnswer,
   laneTone,
 } from './model';
-import { ReadMessage, readState, UnavailableTab } from './query-message';
+import {
+  ReadMessage,
+  RefreshingMark,
+  readState,
+  UnavailableTab,
+} from './query-message';
 import { useFleetDigest } from './queries';
 import { useFleetText } from './text';
 
@@ -39,6 +44,7 @@ export function AskTab({ projects }: { projects: string[] }) {
           onChange={setTopic}
         />
       </div>
+      {state.kind === 'ready' && <RefreshingMark active={state.refreshing} />}
       {state.kind === 'ready' ? (
         <Answer
           answer={answerFromDigest(state.data.sections, projectKey, topic)}

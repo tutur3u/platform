@@ -250,9 +250,7 @@
       "status": "Trạng thái",
       "ask": "Hỏi",
       "requests": "Yêu cầu",
-      "approvals": "Phê duyệt",
-      "link": "Liên kết chat",
-      "access": "Quyền truy cập"
+      "link": "Liên kết chat"
     },
     "tier": {
       "observer": "Quan sát viên",
@@ -270,7 +268,8 @@
       "loading": "Đang tải",
       "error": "Không thể tải nội dung này.",
       "loadMore": "Tải thêm",
-      "reload": "Tải lại"
+      "reload": "Tải lại",
+      "refreshing": "Đang làm mới"
     },
     "laneState": {
       "planned": "Đã lên kế hoạch",
@@ -379,12 +378,16 @@
       "submit": "Gửi yêu cầu",
       "submitting": "Đang gửi",
       "submitted": "Đã ghi nhận yêu cầu.",
-      "ownerApproval": "Chủ sở hữu duyệt",
+      "ownerApproval": "Cần chủ sở hữu duyệt",
       "empty": "Chưa có yêu cầu nào.",
       "history": "Yêu cầu của bạn",
       "required": "Bắt buộc.",
       "badKey": "Dùng chữ thường, chữ số, dấu gạch ngang hoặc gạch dưới.",
-      "badSha": "Dùng commit SHA đầy đủ 40 ký tự."
+      "badSha": "Dùng commit SHA đầy đủ 40 ký tự.",
+      "ownerApprovalMark": "Chủ sở hữu duyệt",
+      "ownerApprovalNote": "Chủ sở hữu sẽ duyệt yêu cầu này trước khi thực hiện.",
+      "submittedForApproval": "Đã gửi để chủ sở hữu duyệt.",
+      "invalid": "Hãy kiểm tra các trường được đánh dấu."
     },
     "refusal": {
       "questions_per_hour": "Đã đạt giới hạn câu hỏi mỗi giờ.",
@@ -402,12 +405,6 @@
       "quota": "Đã đạt giới hạn. Hãy thử lại sau.",
       "unavailable": "Đội máy hiện không khả dụng. Hãy thử lại."
     },
-    "approvals": {
-      "unavailable": "Chưa thể phê duyệt tại đây."
-    },
-    "access": {
-      "unavailable": "Chưa thể quản lý quyền tại đây."
-    },
     "link": {
       "issue": "Lấy mã liên kết",
       "reissue": "Lấy mã mới",
@@ -415,8 +412,8 @@
       "expires": "Hết hạn lúc {time}",
       "copy": "Sao chép",
       "copied": "Đã sao chép",
-      "instructions": "Gửi mã này cho desk trong cuộc trò chuyện riêng. Desk sẽ trả lời bằng mã liên kết và mã xác nhận.",
-      "linkId": "Mã liên kết",
+      "instructions": "Gửi mã này cho Mira trong cuộc trò chuyện riêng. Mira sẽ trả lời bằng ID liên kết và mã xác nhận.",
+      "linkId": "ID liên kết",
       "confirmation": "Mã xác nhận",
       "preview": "Kiểm tra",
       "confirm": "Liên kết chat",

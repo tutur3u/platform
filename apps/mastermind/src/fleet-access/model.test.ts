@@ -32,17 +32,15 @@ describe('Fleet tabs', () => {
     ]);
   });
 
-  it('adds Approvals at Steerer and Access only for the Owner', () => {
-    expect(visibleTabs(fixtures.steerer)).toContain('approvals');
-    expect(visibleTabs(fixtures.steerer)).not.toContain('access');
-    expect(visibleTabs(fixtures.owner)).toEqual([
-      'status',
-      'ask',
-      'requests',
-      'approvals',
-      'link',
-      'access',
-    ]);
+  it('hides Approvals and Access for every tier until their APIs exist', () => {
+    for (const access of [fixtures.steerer, fixtures.owner]) {
+      expect(visibleTabs(access)).toEqual([
+        'status',
+        'ask',
+        'requests',
+        'link',
+      ]);
+    }
   });
 
   it('hides digest tabs without status.read', () => {

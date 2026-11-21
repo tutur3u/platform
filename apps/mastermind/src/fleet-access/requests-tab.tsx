@@ -4,7 +4,12 @@ import { Button } from '@tuturuuu/ui/button';
 import { SettingsSectionMessage } from '@tuturuuu/ui/custom/settings-section';
 import { toneBadge } from '../components/tone';
 import { type LiveFleetAccess, receiptTone, requestOptions } from './model';
-import { Panel, ReadMessage, type ReadState } from './query-message';
+import {
+  Panel,
+  ReadMessage,
+  type ReadState,
+  RefreshingMark,
+} from './query-message';
 import { useFleetIntents } from './queries';
 import { RequestForm } from './request-form';
 import { formatInstant, useFleetText } from './text';
@@ -27,9 +32,12 @@ function Receipts() {
   const state = receiptState(query);
   return (
     <section className="space-y-3">
-      <h2 className="font-semibold text-base tracking-tight">
-        {t.requests.history}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-semibold text-base tracking-tight">
+          {t.requests.history}
+        </h2>
+        <RefreshingMark active={state.kind === 'ready' && state.refreshing} />
+      </div>
       {state.kind === 'ready' ? (
         <Panel>
           {state.data.length === 0 ? (
@@ -92,10 +100,14 @@ function ReceiptRow({ receipt }: { receipt: FleetIntentReceipt }) {
     <li className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-3 md:px-5">
       <div className="min-w-0">
         <p className="font-medium text-sm">{t.kind[receipt.kind]}</p>
-        <p className="text-muted-foreground text-sm">
+        <p className="flex flex-wrap gap-x-3 text-muted-foreground text-sm">
           <time dateTime={receipt.createdAt}>
             {formatInstant(locale, receipt.createdAt)}
           </time>
+          {/* Receipts carry no project or target, so the ID tells them apart. */}
+          <code className="font-mono" title={receipt.id}>
+            {receipt.id.slice(0, 8)}
+          </code>
         </p>
       </div>
       <Badge

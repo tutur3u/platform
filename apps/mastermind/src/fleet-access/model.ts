@@ -8,14 +8,8 @@ import {
 } from '@tuturuuu/internal-api/fleet';
 import type { Tone } from '../components/tone';
 
-export const fleetTabs = [
-  'status',
-  'ask',
-  'requests',
-  'approvals',
-  'link',
-  'access',
-] as const;
+/** Approvals and grant management join when their APIs exist. */
+export const fleetTabs = ['status', 'ask', 'requests', 'link'] as const;
 export type FleetTab = (typeof fleetTabs)[number];
 
 type Capability = Extract<
@@ -40,10 +34,6 @@ export function visibleTabs(access: LiveFleetAccess): FleetTab[] {
       case 'requests':
       case 'link':
         return true;
-      case 'approvals':
-        return can('approve.low');
-      case 'access':
-        return access.tier === 'owner';
     }
   });
 }

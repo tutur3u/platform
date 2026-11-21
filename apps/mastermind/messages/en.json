@@ -250,9 +250,7 @@
       "status": "Status",
       "ask": "Ask",
       "requests": "Requests",
-      "approvals": "Approvals",
-      "link": "Link chat",
-      "access": "Access"
+      "link": "Link chat"
     },
     "tier": {
       "observer": "Observer",
@@ -270,7 +268,8 @@
       "loading": "Loading",
       "error": "Couldn't load this.",
       "loadMore": "Load more",
-      "reload": "Reload"
+      "reload": "Reload",
+      "refreshing": "Refreshing"
     },
     "laneState": {
       "planned": "Planned",
@@ -379,12 +378,16 @@
       "submit": "Send request",
       "submitting": "Sending",
       "submitted": "Request filed.",
-      "ownerApproval": "Owner approval",
+      "ownerApproval": "Needs Owner approval",
       "empty": "No requests yet.",
       "history": "Your requests",
       "required": "Required.",
       "badKey": "Use lowercase letters, digits, hyphens or underscores.",
-      "badSha": "Use the full 40-character commit SHA."
+      "badSha": "Use the full 40-character commit SHA.",
+      "ownerApprovalMark": "Owner approval",
+      "ownerApprovalNote": "The Owner approves this request before it runs.",
+      "submittedForApproval": "Sent for Owner approval.",
+      "invalid": "Check the highlighted fields."
     },
     "refusal": {
       "questions_per_hour": "Hourly question limit reached.",
@@ -402,12 +405,6 @@
       "quota": "Limit reached. Try again later.",
       "unavailable": "Fleet is unavailable. Try again."
     },
-    "approvals": {
-      "unavailable": "Approvals can't be decided here yet."
-    },
-    "access": {
-      "unavailable": "Grants can't be managed here yet."
-    },
     "link": {
       "issue": "Get link code",
       "reissue": "Get a new code",
@@ -415,7 +412,7 @@
       "expires": "Expires at {time}",
       "copy": "Copy",
       "copied": "Copied",
-      "instructions": "Send this code to the desk in a private chat. The desk replies with a link ID and a confirmation code.",
+      "instructions": "Send this code to Mira in a private chat. Mira replies with a link ID and a confirmation code.",
       "linkId": "Link ID",
       "confirmation": "Confirmation code",
       "preview": "Check",

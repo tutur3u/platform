@@ -21,9 +21,19 @@ import type { FleetRefusal } from './upstream';
 
 type SubmitState =
   | { kind: 'editing' }
+  | { kind: 'invalid' }
   | { kind: 'submitting' }
-  | { kind: 'filed' }
+  | { kind: 'filed'; ownerApproval: boolean }
   | { kind: 'refused'; reason: FleetRefusal };
+
+/** Field order on screen, so the first invalid field takes focus. */
+const fieldIds: [FieldName, string][] = [
+  ['projectKey', 'fleet-request-project'],
+  ['targetKey', 'fleet-request-target'],
+  ['choice', 'fleet-request-choice'],
+  ['commitSha', 'fleet-request-sha'],
+  ['quote', 'fleet-request-quote'],
+];
 
 function emptyDraft(kind: IntentKind, projectKey: string): RequestDraft {
   return {
@@ -56,7 +66,11 @@ export function RequestForm({
     ? t.choice[choice.field]
     : {};
   const option = options.find(({ kind }) => kind === draft.kind) ?? first;
-  const state = submitState(mutation);
+  const needsOwner = (kind: IntentKind | undefined) =>
+    options.some((entry) => entry.kind === kind && entry.ownerApproval);
+  const state: SubmitState = Object.keys(errors).length
+    ? { kind: 'invalid' }
+    : submitState(mutation, needsOwner(mutation.variables?.kind));
 
   const edit = (patch: Partial<RequestDraft>) => {
     if (state.kind !== 'editing') mutation.reset();
@@ -74,7 +88,11 @@ export function RequestForm({
     event.preventDefault();
     const found = fieldErrors(draft);
     setErrors(found ?? {});
-    if (found) return;
+    if (found) {
+      const first = fieldIds.find(([field]) => found[field]);
+      if (first) document.getElementById(first[1])?.focus();
+      return;
+    }
     const input = fleetIntentInputSchema.parse(draftToInput(draft));
     mutation.mutate(input, {
       onSuccess: (result) => {
@@ -108,9 +126,14 @@ export function RequestForm({
               id="fleet-request-kind"
               label={t.field.kind}
               value={draft.kind}
-              options={options.map(({ kind }) => ({
+              note={
+                option.ownerApproval ? t.requests.ownerApprovalNote : undefined
+              }
+              options={options.map(({ kind, ownerApproval }) => ({
                 value: kind,
-                label: t.kind[kind],
+                label: ownerApproval
+                  ? `${t.kind[kind]} · ${t.requests.ownerApprovalMark}`
+                  : t.kind[kind],
               }))}
               onChange={(kind) => edit({ kind })}
             />
@@ -182,18 +205,17 @@ export function RequestForm({
   );
 }
 
-function submitState(mutation: ReturnType<typeof useSubmitFleetIntent>) {
-  if (mutation.isPending) return { kind: 'submitting' } as SubmitState;
-  if (mutation.isError) {
-    return { kind: 'refused', reason: 'unavailable' } as SubmitState;
-  }
+function submitState(
+  mutation: ReturnType<typeof useSubmitFleetIntent>,
+  ownerApproval: boolean
+): SubmitState {
+  if (mutation.isPending) return { kind: 'submitting' };
+  if (mutation.isError) return { kind: 'refused', reason: 'unavailable' };
   const result = mutation.data;
-  if (!result) return { kind: 'editing' } as SubmitState;
-  return (
-    result.kind === 'ok'
-      ? { kind: 'filed' }
-      : { kind: 'refused', reason: result.reason }
-  ) as SubmitState;
+  if (!result) return { kind: 'editing' };
+  return result.kind === 'ok'
+    ? { kind: 'filed', ownerApproval }
+    : { kind: 'refused', reason: result.reason };
 }
 
 function SubmitStatus({ state }: { state: SubmitState }) {
@@ -202,10 +224,18 @@ function SubmitStatus({ state }: { state: SubmitState }) {
     case 'editing':
     case 'submitting':
       return null;
+    case 'invalid':
+      return (
+        <p role="alert" className="mr-auto text-destructive text-sm">
+          {t.requests.invalid}
+        </p>
+      );
     case 'filed':
       return (
         <output className="mr-auto text-muted-foreground text-sm">
-          {t.requests.submitted}
+          {state.ownerApproval
+            ? t.requests.submittedForApproval
+            : t.requests.submitted}
         </output>
       );
     case 'refused':

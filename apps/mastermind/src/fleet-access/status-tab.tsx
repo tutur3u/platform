@@ -3,7 +3,12 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { toneBadge } from '../components/tone';
 import { DigestSection } from './digest-section';
 import { type LaneState, laneTone } from './model';
-import { ReadMessage, readState, UnavailableTab } from './query-message';
+import {
+  ReadMessage,
+  RefreshingMark,
+  readState,
+  UnavailableTab,
+} from './query-message';
 import { useFleetDigest } from './queries';
 import { useFleetText } from './text';
 
@@ -17,7 +22,7 @@ export function StatusTab() {
   }
   return (
     <>
-      <Totals totals={totals} />
+      <Totals totals={totals} refreshing={state.refreshing} />
       {sections.map((section) => (
         <DigestSection key={section.projectKey} section={section} />
       ))}
@@ -25,7 +30,13 @@ export function StatusTab() {
   );
 }
 
-function Totals({ totals }: { totals: FleetDigest['totals'] }) {
+function Totals({
+  totals,
+  refreshing,
+}: {
+  totals: FleetDigest['totals'];
+  refreshing: boolean;
+}) {
   const { t } = useFleetText();
   const states = (
     Object.entries(totals.byState) as [LaneState, number][]
@@ -49,6 +60,7 @@ function Totals({ totals }: { totals: FleetDigest['totals'] }) {
           ))}
         </div>
       )}
+      <RefreshingMark active={refreshing} />
     </div>
   );
 }
