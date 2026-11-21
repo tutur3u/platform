@@ -116,16 +116,42 @@ function readableTrack(page) {
   );
 }
 
+/**
+ * The JSON shape of an unexpected response, for logs: types and top-level
+ * key names only, never values, so store data cannot leak into CI output.
+ */
+export function responseShape(value) {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return `array(${value.length})`;
+  if (typeof value !== 'object') return typeof value;
+  const keys = Object.keys(value).sort();
+  const listed = keys
+    .slice(0, 8)
+    .map((key) => {
+      const field = value[key];
+      const type =
+        field === null ? 'null' : Array.isArray(field) ? 'array' : typeof field;
+      return `${key}:${type}`;
+    })
+    .join(',');
+  return `object{${listed}${keys.length > 8 ? ',…' : ''}}`;
+}
+
 /** Tracks holding releases that a commit would send for review with ours. */
 export function pendingReviewTracks(byTrack) {
-  for (const page of Object.values(byTrack)) {
-    // An empty list may omit `releases`; anything else is not a list result.
-    if (!readableTrack(page))
-      throw new Error('Google Play returned an unreadable release list');
-    for (const release of page.releases ?? []) {
+  for (const [track, page] of Object.entries(byTrack)) {
+    // An empty list may omit `releases`, or come back with no content at all
+    // (204, read as null); anything else is not a list result.
+    if (page !== null && !readableTrack(page))
+      throw new Error(
+        `Google Play returned an unreadable release list for track ${track} (${responseShape(page)})`
+      );
+    for (const release of page?.releases ?? []) {
       const state = release?.releaseLifecycleState;
       if (state !== NOT_SENT_FOR_REVIEW && !SETTLED_STATES.has(state))
-        throw new Error('Google Play returned an unknown release state');
+        throw new Error(
+          `Google Play returned an unknown release state on track ${track} (${typeof state === 'string' ? state : responseShape(state)})`
+        );
     }
   }
   return Object.entries(byTrack)
@@ -197,7 +223,9 @@ export function planPlayBeta({ internal, buildNumber, notes, targets }) {
   );
   for (const [track, state] of Object.entries(targets)) {
     if (!readableTrack(state))
-      throw new Error(`Google Play track ${track} is unreadable`);
+      throw new Error(
+        `Google Play track ${track} is unreadable (${responseShape(state)})`
+      );
     if (hasNewerBuild(state, buildNumber))
       throw new Error(
         `Google Play track ${track} already serves a build newer than ${buildNumber}`
@@ -311,7 +339,9 @@ export async function uploadInternal(buildNumber, aabPath, notesDir) {
     // gone live since the job's earlier check.
     const internal = await json(`${editUrl}/tracks/internal`, { headers });
     if (!readableTrack(internal))
-      throw new Error('Google Play internal track is unreadable');
+      throw new Error(
+        `Google Play internal track is unreadable (${responseShape(internal)})`
+      );
     if (hasNewerBuild(internal, buildNumber))
       throw new Error(
         `Google Play internal already serves a build newer than ${buildNumber}`

@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   PLAY_NOTES_LIMIT,
   pendingReviewTracks,
+  responseShape,
   VI_NOTES_HEADER,
   parseBetaTracks,
   planPlayBeta,
@@ -364,13 +365,29 @@ test('promotion never replaces a draft release', () => {
 });
 
 test('an unreadable release list fails closed before a commit', () => {
-  for (const page of [null, [], { releases: {} }, 'x']) {
+  for (const page of [[], { releases: {} }, 'x', { releases: 'x' }]) {
     assert.throws(
       () => pendingReviewTracks({ production: page }),
-      /unreadable release list/
+      /unreadable release list for track production \(/
     );
   }
   assert.deepEqual(pendingReviewTracks({ alpha: {} }), []);
+});
+
+test('a release list with no content reads as empty', () => {
+  // A track with nothing to list may answer with no content (204, read as null).
+  assert.deepEqual(pendingReviewTracks({ alpha: null, beta: {} }), []);
+});
+
+test('unreadable responses are described by shape, never by value', () => {
+  assert.equal(responseShape(null), 'null');
+  assert.equal(responseShape([1, 2]), 'array(2)');
+  assert.equal(responseShape('secret-value'), 'string');
+  assert.equal(
+    responseShape({ releases: { name: 'secret' }, kind: 'x' }),
+    'object{kind:string,releases:object}'
+  );
+  assert.ok(!responseShape({ releases: 'secret' }).includes('secret'));
 });
 
 test('an unreadable target track is never planned over', () => {
@@ -400,6 +417,13 @@ test('an unknown or missing release state stops the commit', () => {
       /unknown release state/
     );
   }
+  assert.throws(
+    () =>
+      pendingReviewTracks({
+        alpha: { releases: [{ releaseLifecycleState: 'SOMETHING_NEW' }] },
+      }),
+    /unknown release state on track alpha \(SOMETHING_NEW\)/
+  );
 });
 
 test('promotion never moves a track back to an older build', () => {
