@@ -11,8 +11,11 @@ import { type BasePath, createBasePath } from '../core/base-path';
 import { createNonce } from '../core/csp';
 import {
   assertMountIsolationConfig,
+  hasAmbiguousSupabaseSession,
   isolateMountedRequest,
+  reduceMountedSessionRequest,
   scopeMountedResponseCookies,
+  stripMountedSupabaseWrites,
   withoutCredentials,
 } from '../core/mount-isolation';
 import { type BridgeEndpoint, dispatchEndpoint } from '../core/endpoints';
@@ -222,13 +225,15 @@ export function createBridgeHandler<
     const headers = new Headers(incoming.headers);
     headers.delete(APP_BASE_HEADER);
     if (!base.isRoot) headers.set(APP_BASE_HEADER, base.basePath);
-    // An isolated mount sees only its own cookies, the logout fence and an
-    // access-token-only Supabase session; admission below still reads the
-    // incoming request's own headers.
+    // Every mount sees an access-token-only Supabase session; an isolated
+    // mount also sees only its own cookies and the logout fence. Admission
+    // below still reads the incoming request's own headers.
     const isolated = !base.isRoot && isolation ? isolation : undefined;
-    const request = isolated
-      ? isolateMountedRequest(new Request(incoming, { headers }), isolated)
-      : new Request(incoming, { headers });
+    const request = base.isRoot
+      ? new Request(incoming, { headers })
+      : isolated
+        ? isolateMountedRequest(new Request(incoming, { headers }), isolated)
+        : reduceMountedSessionRequest(new Request(incoming, { headers }));
     // A mounted app shares the root session: it never mints or refreshes a
     // per-app session, so those endpoints are refused before anything runs.
     if (!base.isRoot) {
@@ -239,6 +244,16 @@ export function createBridgeHandler<
     // a mounted app's own pages from another origin, so a cookie-authenticated
     // mutation is always held to same-origin there, whatever the app's mode.
     if (!base.isRoot) {
+      // Duplicate session cookies on a mutation could resolve to different
+      // users in the bridge and in app code.
+      if (
+        !['GET', 'HEAD', 'OPTIONS'].includes(incoming.method) &&
+        hasAmbiguousSupabaseSession(incoming.headers.get('cookie'))
+      )
+        return new Response('Ambiguous session', {
+          status: 400,
+          headers: { 'Cache-Control': 'no-store' },
+        });
       const refused = admitMountedMutation({
         appPath,
         exemptions: options.csrf?.exemptions,
@@ -350,7 +365,10 @@ export function createBridgeHandler<
             isolated,
             isMountedLogoutPath(appPath)
           )
-        : stripMountedSessionWrites(finalized);
+        : stripMountedSupabaseWrites(
+            stripMountedSessionWrites(finalized),
+            isMountedLogoutPath(appPath)
+          );
     if (!nonce || !options.csp) return final;
     // A framable path's upstream policy (Web's `sandbox` CSP for uploaded
     // WebGL builds) must reach the browser untouched, or the uploaded

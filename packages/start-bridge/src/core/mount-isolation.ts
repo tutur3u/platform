@@ -126,30 +126,33 @@ export function reduceSupabaseSessionValue(raw: string): string | null {
   }
 }
 
-/**
- * The `Cookie` header a mounted, isolated app receives, or `null` for none.
- * Chunked Supabase sessions are joined in index order (a gap ends the value,
- * as in `@supabase/ssr`) and re-emitted as one cookie under the storage key.
- */
-export function isolateMountedCookieHeader(
-  header: string | null,
-  config: MountIsolationConfig
-): string | null {
-  const owned = new Set(config.ownedCookies);
-  const kept: string[] = [];
-  const sessions = new Map<string, { whole?: string; chunks: string[] }>();
-  for (const { name, value } of parseCookieHeader(header)) {
-    const session = SUPABASE_AUTH_COOKIE.exec(name);
-    if (session?.groups?.key) {
-      const entry = sessions.get(session.groups.key) ?? { chunks: [] };
-      if (session.groups.chunk === undefined) entry.whole ??= value;
-      else entry.chunks[Number(session.groups.chunk)] ??= value;
-      sessions.set(session.groups.key, entry);
+type SessionParts = { whole?: string; chunks: string[]; seen: number };
+
+/** Groups Supabase session cookies by storage key; other cookies by order. */
+function splitSessionCookies(header: string | null) {
+  const others: Array<{ name: string; value: string }> = [];
+  const sessions = new Map<string, SessionParts>();
+  for (const cookie of parseCookieHeader(header)) {
+    const session = SUPABASE_AUTH_COOKIE.exec(cookie.name);
+    if (!session?.groups?.key) {
+      others.push(cookie);
       continue;
     }
-    if (owned.has(name) || name === LOGOUT_FENCE_COOKIE_NAME)
-      kept.push(`${name}=${value}`);
+    const entry = sessions.get(session.groups.key) ?? { chunks: [], seen: 0 };
+    entry.seen += 1;
+    if (session.groups.chunk === undefined) entry.whole ??= cookie.value;
+    else entry.chunks[Number(session.groups.chunk)] ??= cookie.value;
+    sessions.set(session.groups.key, entry);
   }
+  return { others, sessions };
+}
+
+/**
+ * Reduced session cookies, one per storage key. Chunked sessions are joined
+ * in index order (a gap ends the value, as in `@supabase/ssr`).
+ */
+function reducedSessionCookies(sessions: Map<string, SessionParts>) {
+  const kept: string[] = [];
   for (const [key, entry] of sessions) {
     let raw = entry.whole;
     if (raw === undefined) {
@@ -161,7 +164,94 @@ export function isolateMountedCookieHeader(
     const reduced = raw === undefined ? null : reduceSupabaseSessionValue(raw);
     if (reduced) kept.push(`${key}=${reduced}`);
   }
+  return kept;
+}
+
+/**
+ * Whether the header carries more than one candidate for a Supabase session:
+ * a repeated name (cookies with the same name at different paths or
+ * domains), or a whole cookie next to chunks. Parsers collapse these in
+ * different ways, so a mounted mutation carrying them is refused.
+ */
+export function hasAmbiguousSupabaseSession(header: string | null) {
+  for (const entry of splitSessionCookies(header).sessions.values()) {
+    const parts =
+      (entry.whole === undefined ? 0 : 1) +
+      entry.chunks.filter((chunk) => chunk !== undefined).length;
+    if (entry.seen !== parts || (entry.whole !== undefined && parts > 1))
+      return true;
+  }
+  return false;
+}
+
+/**
+ * The `Cookie` header a mounted, isolated app receives, or `null` for none.
+ * Chunked Supabase sessions are re-emitted as one reduced cookie under the
+ * storage key.
+ */
+export function isolateMountedCookieHeader(
+  header: string | null,
+  config: MountIsolationConfig
+): string | null {
+  const owned = new Set(config.ownedCookies);
+  const { others, sessions } = splitSessionCookies(header);
+  const kept = others
+    .filter(({ name }) => owned.has(name) || name === LOGOUT_FENCE_COOKIE_NAME)
+    .map(({ name, value }) => `${name}=${value}`);
+  kept.push(...reducedSessionCookies(sessions));
   return kept.length ? kept.join('; ') : null;
+}
+
+/**
+ * The `Cookie` header every mounted app receives when it has no isolation
+ * policy: other cookies pass unchanged, and the Supabase session is reduced to
+ * its access-token-only form, so no mounted app can read or rotate the
+ * central refresh token.
+ */
+export function reduceMountedSessionCookieHeader(
+  header: string | null
+): string | null {
+  const { others, sessions } = splitSessionCookies(header);
+  const kept = others.map(({ name, value }) => `${name}=${value}`);
+  kept.push(...reducedSessionCookies(sessions));
+  return kept.length ? kept.join('; ') : null;
+}
+
+/** A copy of `request` with the baseline mounted session reduction. */
+export function reduceMountedSessionRequest(request: Request): Request {
+  const headers = new Headers(request.headers);
+  const cookie = reduceMountedSessionCookieHeader(headers.get('cookie'));
+  if (cookie === null) headers.delete('cookie');
+  else headers.set('cookie', cookie);
+  return new Request(request, { headers });
+}
+
+/**
+ * Drops every Supabase session `Set-Cookie` a mounted app sends, writes and
+ * deletions alike, except the central logout's deletions. The session belongs
+ * to Web; a mounted app never writes it.
+ */
+export function stripMountedSupabaseWrites(
+  response: Response,
+  centralLogout = false
+): Response {
+  if (response.status === 101) return response;
+  const setCookies = response.headers.getSetCookie();
+  const kept = setCookies.filter((value) => {
+    const name = cookieName(value);
+    if (!SUPABASE_AUTH_COOKIE.test(name)) return true;
+    const [pair, ...attributes] = value.split(';');
+    return (
+      centralLogout &&
+      pair?.trim() === `${name}=` &&
+      attributes.some((attribute) => /^max-age=0$/iu.test(attribute.trim()))
+    );
+  });
+  if (kept.length === setCookies.length) return response;
+  const result = new Response(response.body, response);
+  result.headers.delete('set-cookie');
+  for (const value of kept) result.headers.append('set-cookie', value);
+  return result;
 }
 
 /** A copy of `request` whose `Cookie` header is isolated for the mount. */
