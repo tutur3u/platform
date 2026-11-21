@@ -56,10 +56,8 @@ export function fitTileGrid({
     count,
     Math.max(1, Math.floor((stageWidth + gap) / (minWidth + gap)))
   );
-  const tileWidth = Math.max(
-    1,
-    Math.floor((stageWidth - gap * (columns - 1)) / columns)
-  );
+  const room = Math.floor((stageWidth - gap * (columns - 1)) / columns);
+  const tileWidth = Math.max(minWidth, Math.max(1, room));
   return {
     columns,
     rows: Math.ceil(count / columns),

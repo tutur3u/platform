@@ -49,7 +49,11 @@ it('keeps the minimum tile width and scrolls when the stage is too small', () =>
   const result = fit(12, 300, 200, 120);
   expect(result).toMatchObject({ columns: 2, scroll: true });
   expect(result?.tileWidth).toBeGreaterThanOrEqual(120);
-  expect(fit(12, 100, 200, 160)).toMatchObject({ columns: 1, scroll: true });
+  expect(fit(12, 100, 200, 160)).toMatchObject({
+    columns: 1,
+    scroll: true,
+    tileWidth: 160,
+  });
 });
 
 it('reports no fit before the stage has a size or without tiles', () => {

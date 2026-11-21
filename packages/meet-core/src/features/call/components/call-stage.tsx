@@ -290,8 +290,8 @@ export function CallStage({
     fitted && stageSize
       ? fitTileGrid({
           count,
-          width: stageSize.width - 8,
-          height: stageSize.height - 8,
+          width: stageSize.width,
+          height: stageSize.height,
           gap: compact ? 8 : 12,
           minWidth: compact ? 112 : 160,
         })
