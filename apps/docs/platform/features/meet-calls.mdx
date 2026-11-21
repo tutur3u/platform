@@ -71,6 +71,60 @@ overflow, room closure and moderator controls. Poll, class timer, Quiz Arena,
 command executor, token issuance, guest rate limit and reconnect suites also
 passed in this preflight.
 
+#### Isolated signaling capacity
+
+On 21 November 2026, an isolated Wrangler Worker and Durable Object admitted
+100 signed synthetic clients to one room and 40 clients each to three
+concurrent rooms. The test room used a signed limit of 100 participants,
+including up to eight publishers. The 101st join returned
+`participant_limit_reached`, so the planned 150-person ramp stopped at the
+limit. The 220 admitted clients completed the SFU session request against a
+loopback provider stub in each run. No unexpected signaling errors occurred.
+
+| Room size | New joins in phase | Join p50 / p95 | SFU session p95 | Chat fan-out p95 |
+| --- | ---: | ---: | ---: | ---: |
+| 10 | 10 | 16–58 / 17–59 ms | 15–55 ms | 1–9 ms |
+| 40 | 30 | 17–36 / 21–102 ms | 14–88 ms | 5–6 ms |
+| 80 | 40 | 17–23 / 24–42 ms | 18–33 ms | 16–20 ms |
+| 100 | 20 | 17–64 / 24–114 ms | 27–117 ms | 24–33 ms |
+| 3 concurrent rooms of 40 | 120 total | 21–79 / 45–185 ms | 29–122 ms | 5–22 ms |
+
+The table shows ranges across three completed runs and, for concurrent rooms,
+across rooms. Joins started in batches of ten per room. Every client received
+the phase's chat message. The 100-client ramp delivered 1,323–1,599 signaling
+frames and 3.46–3.50 MB of payload across clients. The local workerd process
+pair used 344–351 MiB of resident memory and 0.42–0.82 additional CPU seconds at
+the 100-client checkpoint. The concurrent run used 372–377 MiB and 0.36–0.71
+additional CPU seconds. These measurements cover the local runtime processes
+as a whole. The session stub exercised the Worker's request and response path.
+Browser decoding, RTP, TURN and hosted SFU capacity require the hosted rehearsal.
+
+Reproduce the run with `apps/meet-realtime/tests/scale-local-run.py` and
+`scale-local.ts`. Run the stop drill before the single-room and concurrent
+scenarios. Use a fresh directory for the stop file and JSON evidence.
+
+```bash
+run_dir="$(mktemp -d)"
+for scenario in drill single parallel; do
+  ttr resources run -- python3 apps/meet-realtime/tests/scale-local-run.py \
+    apps/meet-realtime/tests/scale-local.ts "$run_dir/$scenario.stop" \
+    "$run_dir/$scenario.json" "$scenario" || break
+done
+```
+
+Creating the scenario's stop file stops new work, ends rooms through their
+hosts, and shuts down the local Worker. The runner has an independent deadline,
+caps connections and provider requests, and uses disposable persistence. The
+drill opens ten clients, trips the stop file with another wave in flight,
+then verifies no further commands were sent and both rooms ended. Each
+capacity run also verified the persisted ended state for all four rooms.
+
+For fair planning, reserve one room for about 40 participants including the
+host and limit active camera and microphone publishers to eight. Use the
+viewer role for the audience after checking it is deployed and enabled. Qualify
+a 50-person class or multiple rooms carrying live media with a hosted run
+before committing to those limits.
+
 For a hosted rehearsal of the current call flow:
 
 1. Create one private room for the run. Confirm the host entitlement and actual
