@@ -108,8 +108,13 @@ built checkout:
 
 ```bash
 CLOUDFLARE_ACCOUNT_ID=... WEB_VINEXT_FAMILY=<family> node_modules/.bin/cf deploy \
-  --prebuilt --no-provision --secrets-file <secrets.json> --message "vinext <family> <sha12>"
+  --prebuilt --no-provision --secrets-file <secrets.json> --message "vinext <family> <full-sha>"
 ```
+
+The production deployment proof reads each family's `PLATFORM_DEPLOYMENT_STAMP`
+binding (the first 12 characters of the build commit, set by
+`build-family.sh`), so build every family from one main commit. Use the full
+40-character commit in the message so the serving version names its source.
 
 A redeploy of an existing Worker omits `--secrets-file`; its secrets carry
 over. The deploy reports `No targets deployed`: the Worker has no routes,
@@ -119,7 +124,10 @@ production traffic as soon as the deploy finishes, so:
 1. Before deploying, record the version that serves the Worker now
    (`GET /accounts/<account>/workers/scripts/tuturuuu-web-vinext-<family>/deployments`,
    the first deployment's version at 100%). That is the rollback target.
-2. Deploy, then confirm the new version is at 100% in the same listing.
+2. Deploy, then confirm the new version is at 100% in the same listing. The
+   listing can show 100% a few seconds before the edge serves the new
+   version, so the smoke in the next step retries `/api/build-info` for up to
+   40 seconds before treating an old commit as a failure.
 3. Smoke through `https://tuturuuu.com`: every response carries
    `x-gateway-family: <family>`. Check `/api/build-info` (api-core) for the
    commit and `environment: production`, a page of the family (for example

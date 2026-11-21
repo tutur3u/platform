@@ -172,6 +172,12 @@ before file tools run. Internal dash directories, including Git app routes, are 
 other than `HEAD`. Agents should run `bun check:changed` explicitly before
 pushing whether or not the hook is enabled.
 
+Chain the push on the gate's own exit status: `bun check:changed && git push`.
+A pipe such as `bun check:changed | tail` reports the last command's status, so
+a refused or failed gate (for example a disk admission refusal) would still let
+the push run. Write the output to a file and check the status instead. After a
+rebase, re-run the gate on the rebased commit before pushing.
+
 ### Bun upgrade and lock normalization
 
 Until the Bun 1.4.4 upgrade in #6427 lands, a normal `bun install` with installed

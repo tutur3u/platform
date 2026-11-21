@@ -87,6 +87,14 @@ with `x-gateway-cache: FAMILY`, that an anonymous dashboard path redirects to
 login on the public host, and that session cookies and `Authorization` go to
 a family.
 
+**Version message.** Every gateway version, including a bindings-only mount
+write, carries the `workers/message` annotation `gateway <full-sha>`: the main
+commit whose `apps/gateway` code and committed mount inventory the version
+matches. The production deployment proof
+(`scripts/ci/verify-cloudflare-web-production.mjs`) parses only
+`^(?:gateway )?<40-hex sha>` and refuses any other message, so put a human
+description in the tag or the deployment annotation instead.
+
 **Rollback** is re-assigning the previous gateway version (`wrangler rollback
 <version-id> --name tuturuuu-gateway`). There is no passthrough flag and no
 other origin to fall back to. No purge is needed: Marketing cache entries
