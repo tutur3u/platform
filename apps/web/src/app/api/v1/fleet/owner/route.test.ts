@@ -235,9 +235,7 @@ async function expectRefusal(
 describe('Fleet Owner console reads', () => {
   it('lists access for the verified Owner session and ignores x-user-id', async () => {
     rpc.mockResolvedValueOnce({ data: consoleRead, error: null });
-    const response = await listAccess(
-      request('access', mastermindSession())
-    );
+    const response = await listAccess(request('access', mastermindSession()));
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(await response.json()).toEqual(consoleRead);
@@ -255,9 +253,7 @@ describe('Fleet Owner console reads', () => {
       data: { ...consoleRead, grants: [{ userId: granteeId }] },
       error: null,
     });
-    const response = await listAccess(
-      request('access', mastermindSession())
-    );
+    const response = await listAccess(request('access', mastermindSession()));
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: 'owner_unavailable' });
   });
@@ -267,9 +263,7 @@ describe('Fleet Owner console reads', () => {
       data: null,
       error: { code: '42501', message: 'Fleet Owner access required' },
     });
-    const response = await listAccess(
-      request('access', mastermindSession())
-    );
+    const response = await listAccess(request('access', mastermindSession()));
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: 'forbidden' });
   });
@@ -281,91 +275,88 @@ describe('Fleet Owner console sessions', () => {
     ...mutations,
   ];
 
-  it.each(routes)('$path requires an MFA proof', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    await expectRefusal(
-      await handler(request(path, mastermindSession(null), body)),
-      403,
-      'mfa_required'
-    );
-  });
+  it.each(routes)(
+    '$path requires an MFA proof',
+    async ({ path, handler, body }) => {
+      await expectRefusal(
+        await handler(request(path, mastermindSession(null), body)),
+        403,
+        'mfa_required'
+      );
+    }
+  );
 
-  it.each(routes)('$path refuses an MFA proof older than the window', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    const stale = now() - FLEET_OWNER_MFA_MAX_AGE_SECONDS - 1;
-    await expectRefusal(
-      await handler(
-        request(
-          path,
-          mastermindSession({ sessionId: 's', verifiedAt: stale }),
-          body
-        )
-      ),
-      403,
-      'mfa_required'
-    );
-  });
+  it.each(routes)(
+    '$path refuses an MFA proof older than the window',
+    async ({ path, handler, body }) => {
+      const stale = now() - FLEET_OWNER_MFA_MAX_AGE_SECONDS - 1;
+      await expectRefusal(
+        await handler(
+          request(
+            path,
+            mastermindSession({ sessionId: 's', verifiedAt: stale }),
+            body
+          )
+        ),
+        403,
+        'mfa_required'
+      );
+    }
+  );
 
-  it.each(routes)('$path refuses an expired MFA approval', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    const proof = {
-      sessionId: 's',
-      verifiedAt: now() - 120,
-      expiresAt: now() - 1,
-    };
-    await expectRefusal(
-      await handler(request(path, mastermindSession(proof), body)),
-      403,
-      'mfa_required'
-    );
-  });
+  it.each(routes)(
+    '$path refuses an expired MFA approval',
+    async ({ path, handler, body }) => {
+      const proof = {
+        sessionId: 's',
+        verifiedAt: now() - 120,
+        expiresAt: now() - 1,
+      };
+      await expectRefusal(
+        await handler(request(path, mastermindSession(proof), body)),
+        403,
+        'mfa_required'
+      );
+    }
+  );
 
-  it.each(routes)('$path refuses the platform CLI audience', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    const { access } = createCliAppSession({
-      userId: ownerId,
-      mfa: { sessionId: 's', verifiedAt: now() - 60 },
-    });
-    await expectRefusal(await handler(request(path, access.token, body)), 401);
-    expect(createClient).not.toHaveBeenCalled();
-  });
+  it.each(routes)(
+    '$path refuses the platform CLI audience',
+    async ({ path, handler, body }) => {
+      const { access } = createCliAppSession({
+        userId: ownerId,
+        mfa: { sessionId: 's', verifiedAt: now() - 60 },
+      });
+      await expectRefusal(
+        await handler(request(path, access.token, body)),
+        401
+      );
+      expect(createClient).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each(routes)('$path refuses a Supabase session without a Mastermind session', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    await expectRefusal(
-      await handler(request(path, supabaseBearer, body)),
-      403,
-      'owner_session_required'
-    );
-  });
+  it.each(routes)(
+    '$path refuses a Supabase session without a Mastermind session',
+    async ({ path, handler, body }) => {
+      await expectRefusal(
+        await handler(request(path, supabaseBearer, body)),
+        403,
+        'owner_session_required'
+      );
+    }
+  );
 
-  it.each(routes)('$path refuses a desk bearer', async ({
-    path,
-    handler,
-    body,
-  }) => {
-    await expectRefusal(
-      await handler(
-        request(path, `ttr_fleet_desk_mira.${'a'.repeat(43)}`, body)
-      ),
-      401
-    );
-  });
+  it.each(routes)(
+    '$path refuses a desk bearer',
+    async ({ path, handler, body }) => {
+      await expectRefusal(
+        await handler(
+          request(path, `ttr_fleet_desk_mira.${'a'.repeat(43)}`, body)
+        ),
+        401
+      );
+    }
+  );
 });
 
 describe.each(mutations)(
@@ -378,10 +369,10 @@ describe.each(mutations)(
       expect(response.headers.get('cache-control')).toBe('private, no-store');
       expect(await response.json()).toEqual(result);
       expect(rpc).toHaveBeenCalledExactlyOnceWith(rpcName, args);
-      expect(rateLimit).toHaveBeenCalledWith(
-        `fleet:owner:mutate:${ownerId}`,
-        { windowMs: 60_000, maxRequests: 20 }
-      );
+      expect(rateLimit).toHaveBeenCalledWith(`fleet:owner:mutate:${ownerId}`, {
+        windowMs: 60_000,
+        maxRequests: 20,
+      });
     });
 
     it('rate-limits Owner mutations before the database', async () => {

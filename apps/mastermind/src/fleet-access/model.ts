@@ -9,7 +9,13 @@ import {
 import type { Tone } from '../components/tone';
 
 /** Approvals join when its API exists. */
-export const fleetTabs = ['status', 'ask', 'requests', 'link', 'access'] as const;
+export const fleetTabs = [
+  'status',
+  'ask',
+  'requests',
+  'link',
+  'access',
+] as const;
 export type FleetTab = (typeof fleetTabs)[number];
 
 type Capability = Extract<

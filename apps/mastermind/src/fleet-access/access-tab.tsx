@@ -27,7 +27,11 @@ export function consoleState(query: {
     return { kind: 'denied', reason: query.data.reason };
   }
   if (query.data?.kind === 'ok') {
-    return { kind: 'ready', data: query.data.data, refreshing: query.isFetching };
+    return {
+      kind: 'ready',
+      data: query.data.data,
+      refreshing: query.isFetching,
+    };
   }
   if (query.isError) {
     return {

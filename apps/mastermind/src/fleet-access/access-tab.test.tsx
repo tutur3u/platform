@@ -271,7 +271,9 @@ describe('Access changes', () => {
     });
     show(live(fixtures.owner), 'access');
     const row = (await screen.findByText('lead@example.com')).closest('tr');
-    fireEvent.click(within(row as HTMLElement).getByRole('button', { name: a.edit }));
+    fireEvent.click(
+      within(row as HTMLElement).getByRole('button', { name: a.edit })
+    );
     expect(screen.getByText(a.editGrant)).toBeTruthy();
     expect(screen.queryByLabelText(a.email)).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: a.review }));

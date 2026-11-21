@@ -24,7 +24,11 @@ type ProjectField = keyof FleetProjectInput;
 const blank: FleetProjectInput = { key: '', nameEn: '', nameVi: '' };
 
 /** Adds catalog projects and renames them. Keys never change. */
-export function CatalogSection({ projects }: { projects: FleetOwnerProject[] }) {
+export function CatalogSection({
+  projects,
+}: {
+  projects: FleetOwnerProject[];
+}) {
   const { t } = useFleetText();
   const mutation = useUpsertFleetProject();
   const [draft, setDraft] = useState(blank);

@@ -108,5 +108,4 @@ export const sendProject = (
 export const sendDisplayValue = (
   input: FleetDisplayValueInput,
   options: InternalApiClientOptions
-) =>
-  write(setFleetDisplayValue(input, options), fleetDisplayValueResultSchema);
+) => write(setFleetDisplayValue(input, options), fleetDisplayValueResultSchema);

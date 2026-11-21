@@ -229,7 +229,9 @@ export function GrantForm({
             <dd className="text-foreground">{t.tier[review.tier]}</dd>
             <dt>{t.access.capabilities}</dt>
             <dd className="text-foreground">
-              {review.capabilities.map((value) => t.capability[value]).join(', ')}
+              {review.capabilities
+                .map((value) => t.capability[value])
+                .join(', ')}
             </dd>
             <dt>{t.access.projects}</dt>
             <dd className="text-foreground">
