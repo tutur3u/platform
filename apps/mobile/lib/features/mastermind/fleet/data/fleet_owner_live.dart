@@ -2,10 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/mastermind/fleet/data/fleet_owner_socket_io.dart'
+    if (dart.library.js_interop) 'package:mobile/features/mastermind/fleet/data/fleet_owner_socket_web.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
-import 'fleet_owner_socket_io.dart'
-    if (dart.library.js_interop) 'fleet_owner_socket_web.dart';
 
 enum FleetOwnerFrameKind { poke, machine, receipt }
 
