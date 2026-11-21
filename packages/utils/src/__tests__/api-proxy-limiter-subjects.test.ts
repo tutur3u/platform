@@ -14,6 +14,8 @@ import {
 import { makeRequest } from './api-proxy-test-request';
 
 const EGRESS = '104.22.222.49';
+const WORKER_EGRESS = '2a06:98c0:3600::103';
+const NO_PROXY: ClientIpConfig = { mode: 'none', trustedHops: 1 };
 const PROFILE = {
   get: [{ duration: '1 m' as const, limit: 60, window: 'minute' as const }],
   mutate: [{ duration: '1 m' as const, limit: 30, window: 'minute' as const }],
@@ -65,8 +67,8 @@ describe('sharedEgressSubjects', () => {
     );
     const a = await sharedEgressSubjects(siteA, EGRESS, 'p', PROFILE);
     const b = await sharedEgressSubjects(siteB, EGRESS, 'p', PROFILE);
-    expect(ids(a)).toEqual(['site:site-a', `egress:${EGRESS}`]);
-    expect(ids(b)).toEqual(['site:site-b', `egress:${EGRESS}`]);
+    expect(ids(a)).toEqual([`site:site-a:ip:${EGRESS}`, `egress:${EGRESS}`]);
+    expect(ids(b)).toEqual([`site:site-b:ip:${EGRESS}`, `egress:${EGRESS}`]);
     expect(a?.[0]?.rateLimits.get[0]?.limit).toBe(
       60 * SHARED_EGRESS_SITE_MULTIPLIER
     );
@@ -85,34 +87,97 @@ describe('sharedEgressSubjects', () => {
     ).toBe(null);
   });
 
-  it('keys app-token calls per app, in either header form', async () => {
-    const bearer = (token: string) =>
-      makeRequest('/api/v1/anything', 'GET', {
-        authorization: `Bearer ${token}`,
-      });
-    const one = await sharedEgressSubjects(
-      bearer('ttr_one'),
-      EGRESS,
-      'p',
-      PROFILE
+  it('keeps fake app-token rotation inside the client key and address aggregate', async () => {
+    const subjects = await Promise.all(
+      ['ttr_one', 'ttr_two', 'ttr_three'].map((token) =>
+        sharedEgressSubjects(
+          makeRequest('/api/v1/anything', 'GET', {
+            authorization: `Bearer ${token}`,
+            'user-agent': 'A',
+          }),
+          EGRESS,
+          'p',
+          PROFILE,
+          NO_PROXY
+        )
+      )
     );
-    const again = await sharedEgressSubjects(
-      makeRequest('/api/v1/anything', 'GET', { authorization: 'ttr_one' }),
-      EGRESS,
-      'p',
-      PROFILE
+    expect(
+      new Set(subjects.map((subject) => ids(subject)?.join(' '))).size
+    ).toBe(1);
+    expect(
+      subjects.flatMap((subject) => ids(subject) ?? [])
+    ).not.toContainEqual(expect.stringMatching(/^app:|ttr_/u));
+  });
+
+  it('bounds fingerprint rotation by the shared address aggregate', async () => {
+    const subjects = await Promise.all(
+      ['A', 'B', 'C'].map((agent) =>
+        sharedEgressSubjects(
+          makeRequest('/api/v1/anything', 'GET', { 'user-agent': agent }),
+          EGRESS,
+          'p',
+          PROFILE,
+          NO_PROXY
+        )
+      )
     );
-    const two = await sharedEgressSubjects(
-      bearer('ttr_two'),
-      EGRESS,
-      'p',
-      PROFILE
+    expect(new Set(subjects.map((subject) => subject?.[0]?.id)).size).toBe(3);
+    for (const subject of subjects) {
+      expect(subject?.[1]?.id).toBe(`egress:${EGRESS}`);
+    }
+  });
+
+  it('never lets one address drain a site for another address', async () => {
+    const read = (ip: string) =>
+      sharedEgressSubjects(
+        makeRequest(
+          '/api/v1/workspaces/site-a/external-projects/delivery',
+          'GET'
+        ),
+        ip,
+        'p',
+        PROFILE,
+        NO_PROXY
+      );
+    const first = await read(EGRESS);
+    const second = await read('172.64.0.9');
+    expect(first?.[0]?.id).toBe(`site:site-a:ip:${EGRESS}`);
+    expect(second?.[0]?.id).toBe('site:site-a:ip:172.64.0.9');
+    expect(ids(first)).not.toEqual(expect.arrayContaining(ids(second) ?? []));
+  });
+
+  it('keys Worker traffic per CF-Worker zone, outside the shared address aggregate', async () => {
+    const fromZone = (zone: string, path = '/api/v1/anything') =>
+      sharedEgressSubjects(
+        makeRequest(path, 'GET', { 'cf-worker': zone, 'user-agent': 'A' }),
+        WORKER_EGRESS,
+        'p',
+        PROFILE,
+        NO_PROXY
+      );
+    const evil = await fromZone('Evil.Example');
+    const good = await fromZone('good.example');
+    expect(ids(evil)).toEqual(['worker:evil.example']);
+    expect(ids(good)).toEqual(['worker:good.example']);
+    expect(evil?.[0]?.prefix).toBe(
+      `p:worker-x${SHARED_EGRESS_AGGREGATE_MULTIPLIER}`
     );
-    expect(one?.[0]?.id).toMatch(/^app:[0-9a-f]{24}$/u);
-    expect(one?.[0]?.id).not.toContain('ttr_one');
-    expect(again?.[0]?.id).toBe(one?.[0]?.id);
-    expect(two?.[0]?.id).not.toBe(one?.[0]?.id);
-    expect(ids(one)?.[1]).toBe(`egress:${EGRESS}`);
+    const site = await fromZone(
+      'good.example',
+      '/api/v1/workspaces/site-a/external-projects/delivery'
+    );
+    expect(ids(site)).toEqual([
+      'site:site-a:worker:good.example',
+      'worker:good.example',
+    ]);
+    // The platform's own zone and malformed values name no caller.
+    expect(ids(await fromZone('tuturuuu.com'))?.[1]).toBe(
+      `egress:${WORKER_EGRESS}`
+    );
+    expect(ids(await fromZone('not a zone'))?.[1]).toBe(
+      `egress:${WORKER_EGRESS}`
+    );
   });
 
   it('ignores spoofed cf-connecting-ip and X-Forwarded-For without a valid proof', async () => {

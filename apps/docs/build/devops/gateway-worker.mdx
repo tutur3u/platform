@@ -135,15 +135,21 @@ visitor address into `x-tuturuuu-origin-auth`, and Web verifies it with
   warning (no value). Web then falls back to Vercel headers, which name the
   Cloudflare egress address.
 
+- **Calling Worker zone:** beside its proof, the gateway forwards the
+  Cloudflare-set `CF-Worker` value of the incoming request in
+  `x-tuturuuu-origin-worker`; a client-sent copy never passes. Web trusts it
+  only with a valid proof for the same address
+  (`packages/utils/src/abuse-protection/abuse-subject.ts`).
 - **Shared Cloudflare addresses:** an address in Cloudflare's published ranges
   (`packages/utils/src/abuse-protection/cloudflare-ip-ranges.ts`) is never
-  blocked as a unit, never escalates toward a block and never earns location
-  trust. Anonymous API requests from one are rate-limited per app token, per
-  site for CMS delivery reads, or per client otherwise, and every one also
-  counts against a bounded aggregate for the address
-  (`packages/utils/src/api-proxy-limiter-subjects.ts`). Verified sessions and
-  actors keep their own buckets, and a visitor address from a valid proof is
-  keyed per IP.
+  blocked as a unit and never earns location trust. Blocks and abuse
+  escalation apply to its calling Worker zone instead. Anonymous API requests
+  from it are rate-limited per Worker zone, or per client under a bounded
+  aggregate for the address when no zone is named; CMS delivery reads are
+  limited per site and caller (`packages/utils/src/api-proxy-limiter-subjects.ts`).
+  Credentials never select a bucket before they are verified. Verified
+  sessions and actors keep their own buckets, and a visitor address from a
+  valid proof is keyed per IP.
 
 Configuration, by name only:
 

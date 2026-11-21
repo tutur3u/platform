@@ -9,7 +9,7 @@ import {
   getCachedTrustEntries,
   hasCachedIpBlockAppealRelief,
 } from './abuse-protection/edge-trust';
-import { isCloudflareIp } from './abuse-protection/cloudflare-ip-ranges';
+import { abuseSubject, isCloudflareIp } from './abuse-protection/abuse-subject';
 import { guardApiProxyBody } from './api-proxy-body';
 
 export { clearApiProxyGuardLimiterCache } from './api-proxy-rate-limiters';
@@ -1006,8 +1006,8 @@ export async function guardApiProxyRequest(
     const routePolicy = getRoutePolicy(req, routePolicies);
     const abuseProtectionControls = await readEdgeAbuseProtectionControls();
 
-    if (abuseProtectionControls.ipBlockingEnabled && ip !== 'unknown') {
-      const blockInfo = await isIPBlockedEdge(ip);
+    if (abuseProtectionControls.ipBlockingEnabled) {
+      const blockInfo = await isIPBlockedEdge(abuseSubject(req.headers, ip));
       if (blockInfo) {
         const hasTemporaryRelief =
           routePolicy.key === 'rate-limit-appeal' ||

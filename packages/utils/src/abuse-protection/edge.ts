@@ -194,7 +194,7 @@ export async function writeEdgeAbuseProtectionControls(
 export async function isIPBlockedEdge(
   ipAddress: string
 ): Promise<BlockInfo | null> {
-  if (isCloudflareIp(ipAddress)) return null;
+  if (ipAddress === 'unknown' || isCloudflareIp(ipAddress)) return null;
   try {
     const controls = await readEdgeAbuseProtectionControls();
     if (!controls.ipBlockingEnabled) return null;
@@ -225,7 +225,7 @@ export async function blockIPEdge(
   ipAddress: string,
   reason: BlockInfo['reason']
 ): Promise<BlockInfo | null> {
-  if (isCloudflareIp(ipAddress)) return null;
+  if (ipAddress === 'unknown' || isCloudflareIp(ipAddress)) return null;
   try {
     const controls = await readEdgeAbuseProtectionControls();
     if (!controls.ipBlockingEnabled) return null;
@@ -284,7 +284,7 @@ async function recordEdgeAbuseSignal(
   }
 ): Promise<BlockInfo | null> {
   // A shared Cloudflare address never escalates toward a block.
-  if (isCloudflareIp(ipAddress)) return null;
+  if (ipAddress === 'unknown' || isCloudflareIp(ipAddress)) return null;
   try {
     const redis = await getEdgeRedisClient();
     if (!redis) return null;

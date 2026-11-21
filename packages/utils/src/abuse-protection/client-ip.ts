@@ -188,7 +188,10 @@ export function resolveTrustedProxyConfig(
   return { mode: 'none', trustedHops };
 }
 
-function readHeader(headers: ClientIpHeaders, name: string): string | null {
+export function readHeader(
+  headers: ClientIpHeaders,
+  name: string
+): string | null {
   if (typeof Headers !== 'undefined' && headers instanceof Headers) {
     return headers.get(name);
   }

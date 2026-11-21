@@ -92,7 +92,7 @@ describe('guardApiProxyRequest on a shared Cloudflare address', () => {
 
   it('exhausting one client site never limits another', async () => {
     mocks.limit.mockImplementation(async (id: string) =>
-      id === 'site:site-a'
+      id.startsWith('site:site-a:')
         ? {
             success: false,
             limit: 600,
@@ -111,19 +111,37 @@ describe('guardApiProxyRequest on a shared Cloudflare address', () => {
     expect(siteB).toBeNull();
   });
 
-  it('limits app-token calls per app', async () => {
-    mocks.limit.mockImplementation(async (id: string) =>
-      id.startsWith('app:')
-        ? { success: false, limit: 60, remaining: 0, reset: Date.now() + 5_000 }
-        : allowed
+  it('blocks an abusive Worker zone without blocking the shared address', async () => {
+    mocks.isBlocked.mockImplementation(async (subject: string) =>
+      subject === 'worker:evil.example'
+        ? {
+            id: 'edge:block',
+            blockLevel: 1,
+            reason: 'api_abuse',
+            blockedAt: new Date(),
+            expiresAt: new Date(Date.now() + 60_000),
+          }
+        : null
     );
-    const response = await guard('/api/v1/anything', {
-      authorization: 'Bearer ttr_one',
+    const evil = await guard('/api/v1/anything', {
+      'cf-worker': 'evil.example',
     });
-    expect(response?.status).toBe(429);
+    const good = await guard('/api/v1/anything', {
+      'cf-worker': 'good.example',
+    });
+    const plain = await guard('/api/v1/anything', { 'user-agent': 'A' });
+    expect(evil?.status).toBe(429);
+    expect(evil?.headers.get('X-RateLimit-Policy')).toBe('proxy-ip-block');
+    expect(good).toBeNull();
+    expect(plain).toBeNull();
+    expect(mocks.isBlocked).not.toHaveBeenCalledWith(EGRESS);
+  });
+
+  it('does not key or exempt fake app tokens', async () => {
+    await guard('/api/v1/anything', { authorization: 'Bearer ttr_one' });
     const limited = mocks.limit.mock.calls.map(([id]) => id as string);
-    expect(limited).toHaveLength(1);
-    expect(limited[0]).toMatch(/^app:[0-9a-f]{24}$/u);
+    expect(limited.some((id) => id.startsWith('app:'))).toBe(false);
+    expect(limited).toContain(`egress:${EGRESS}`);
   });
 
   it('keys a visitor address resolved from a valid proof per IP as before', async () => {

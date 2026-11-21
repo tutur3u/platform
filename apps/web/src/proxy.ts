@@ -8,6 +8,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { abuseSubject } from '@tuturuuu/utils/abuse-protection/abuse-subject';
 import {
   extractIPFromRequest,
   isIPBlockedEdge,
@@ -798,8 +799,9 @@ async function blockMalformedApiAuthCookieRequest(
     return response;
   }
 
-  const existingBlock =
-    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+  // A shared Cloudflare address is blocked only per calling Worker zone.
+  const blockSubject = abuseSubject(req.headers, ipAddress);
+  const existingBlock = await isIPBlockedEdge(blockSubject);
 
   if (existingBlock) {
     const retryAfter = Math.max(
@@ -814,10 +816,7 @@ async function blockMalformedApiAuthCookieRequest(
     return response;
   }
 
-  const newBlock =
-    ipAddress === 'unknown'
-      ? null
-      : await recordMalformedAuthCookieEdge(ipAddress);
+  const newBlock = await recordMalformedAuthCookieEdge(blockSubject);
 
   if (newBlock) {
     const retryAfter = Math.max(
@@ -886,8 +885,9 @@ async function blockSuspiciousAnonymousApiRequest(
   }
 
   const ipAddress = extractIPFromRequest(req.headers);
-  const existingBlock =
-    ipAddress === 'unknown' ? null : await isIPBlockedEdge(ipAddress);
+  // A shared Cloudflare address is blocked only per calling Worker zone.
+  const blockSubject = abuseSubject(req.headers, ipAddress);
+  const existingBlock = await isIPBlockedEdge(blockSubject);
 
   if (existingBlock) {
     const retryAfter = Math.max(
@@ -900,10 +900,7 @@ async function blockSuspiciousAnonymousApiRequest(
     });
   }
 
-  const newBlock =
-    ipAddress === 'unknown'
-      ? null
-      : await recordSuspiciousApiRequestEdge(ipAddress);
+  const newBlock = await recordSuspiciousApiRequestEdge(blockSubject);
 
   if (newBlock) {
     const retryAfter = Math.max(

@@ -7,6 +7,7 @@ import { manifest } from './manifest';
 import {
   createOriginClientIpProof,
   ORIGIN_AUTH_HEADER,
+  ORIGIN_WORKER_HEADER,
   originProofFor,
   resetOriginAuthWarning,
 } from './origin-ip-proof';
@@ -200,6 +201,30 @@ describe('gateway origin proof', () => {
     expect(mount.mock.calls[0]?.[0].headers.has(ORIGIN_AUTH_HEADER)).toBe(
       false
     );
+  });
+
+  it('forwards the calling Worker zone only beside its own proof', async () => {
+    const { seen, handle } = setup();
+    const fromWorker = (extra: Record<string, string>) =>
+      new Request('https://tuturuuu.com/api/v1/x', {
+        method: 'POST',
+        headers: {
+          'cf-connecting-ip': '2a06:98c0:3600::103',
+          [ORIGIN_WORKER_HEADER]: 'forged.example',
+          ...extra,
+        },
+      });
+    await handle(fromWorker({ 'cf-worker': 'caller.example' }), ENV);
+    await handle(fromWorker({}), ENV);
+    await handle(fromWorker({ 'cf-worker': 'caller.example' }), {
+      ...ENV,
+      TRUSTED_PROXY_ORIGIN_SECRET: undefined,
+    });
+    expect(seen.map((r) => r.headers.get(ORIGIN_WORKER_HEADER))).toEqual([
+      'caller.example',
+      null,
+      null,
+    ]);
   });
 
   it('signs the edge address on web family requests', async () => {

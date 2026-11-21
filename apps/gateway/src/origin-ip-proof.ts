@@ -12,6 +12,8 @@ import type { Env } from './worker';
  * workspace dependencies, so it signs with Web Crypto.
  */
 export const ORIGIN_AUTH_HEADER = 'x-tuturuuu-origin-auth';
+/** Calling Worker zone, trusted by Web only beside a valid proof. */
+export const ORIGIN_WORKER_HEADER = 'x-tuturuuu-origin-worker';
 export const ORIGIN_SECRET_NAME = 'TRUSTED_PROXY_ORIGIN_SECRET';
 const MIN_SECRET_LENGTH = 32;
 
@@ -157,8 +159,14 @@ export function originProofFor(request: Request, env: Env, origin: URL) {
     : Promise.resolve(null);
 }
 
-/** Replaces any proof on `headers` with the gateway's own, or removes it. */
+/** Replaces any proof and Worker zone on `headers` with the gateway's own, or removes them. */
 export function withOriginAuth(headers: Headers, proof: string | null) {
+  // Cloudflare stamps the gateway's own zone into CF-Worker on the origin
+  // subrequest, so the calling Worker's zone (set by Cloudflare on the
+  // incoming request, copied into `headers`) travels beside the proof.
+  const worker = proof ? headers.get('cf-worker')?.trim() : undefined;
+  if (worker) headers.set(ORIGIN_WORKER_HEADER, worker);
+  else headers.delete(ORIGIN_WORKER_HEADER);
   if (proof) headers.set(ORIGIN_AUTH_HEADER, proof);
   else headers.delete(ORIGIN_AUTH_HEADER);
 }

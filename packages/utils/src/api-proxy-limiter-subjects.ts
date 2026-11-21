@@ -2,11 +2,13 @@
  * Rate-limit subjects for the API proxy guard. A request is checked against
  * every subject in order; the first exhausted window rejects it. A request
  * resolved to a shared Cloudflare address (Worker egress or the apex gateway
- * without a verified visitor proof) gets a narrower subject plus a bounded
- * aggregate on the shared address instead of one bucket for every visitor
- * behind it.
+ * without a verified visitor proof) is keyed per calling Worker zone when
+ * Cloudflare names one, otherwise per client under a bounded aggregate for the
+ * address, never in one bucket for every visitor behind it.
  */
 import type { NextRequest, NextResponse } from 'next/server';
+import { cloudflareWorkerZone } from './abuse-protection/abuse-subject';
+import type { ClientIpConfig } from './abuse-protection/client-ip';
 import { isCloudflareIp } from './abuse-protection/cloudflare-ip-ranges';
 import type { RateLimitProfile } from './api-proxy-guard';
 import {
@@ -22,14 +24,13 @@ export type LimiterSubject = {
   rateLimits: RateLimitProfile;
 };
 
-/** Budget of all requests from one shared address, as a route-budget multiple. */
+/** Budget of one shared address or one Worker zone, as a route-budget multiple. */
 export const SHARED_EGRESS_AGGREGATE_MULTIPLIER = 20;
 /** Budget of one site's anonymous CMS delivery reads, as a route-budget multiple. */
 export const SHARED_EGRESS_SITE_MULTIPLIER = 10;
 
 const CMS_DELIVERY_PATH =
   /^\/api\/v1\/workspaces\/([^/]{1,64})\/external-projects\/(?:delivery|assets)(?:\/|$)/u;
-const APP_TOKEN = /^ttr_[A-Za-z0-9_-]+$/u;
 
 function scaleProfile(
   profile: RateLimitProfile,
@@ -51,15 +52,6 @@ async function digest(value: string): Promise<string> {
     .slice(0, 24);
 }
 
-/** The workspace app token (`ttr_…`) on the request, if any. */
-function appToken(headers: Headers): string | null {
-  const header = headers.get('authorization')?.trim() ?? '';
-  const token = header.toLowerCase().startsWith('bearer ')
-    ? header.slice(7).trim()
-    : header;
-  return APP_TOKEN.test(token) ? token : null;
-}
-
 /** The site an anonymous CMS delivery read belongs to, keyed by workspace. */
 export function cmsDeliverySite(
   req: Pick<NextRequest, 'method' | 'nextUrl'>
@@ -71,39 +63,40 @@ export function cmsDeliverySite(
 
 /**
  * Subjects for an anonymous request from a shared Cloudflare address, or null
- * for any other address. App-token calls are keyed per token, CMS delivery
- * reads per site, and other requests per address and client fingerprint;
- * every one also counts against the address aggregate, so rotating the
- * narrower key never exceeds a fixed multiple of the per-address budget.
+ * for any other address. A calling Worker zone is one caller with its own
+ * aggregate; without one, requests are keyed per client under the address
+ * aggregate, so rotating a header never exceeds a fixed multiple of the
+ * per-address budget. CMS delivery reads are keyed per site and caller, so
+ * draining a site from one address or zone never starves another. Credentials
+ * are not keys here: an unverified token would mint fresh buckets.
  */
 export async function sharedEgressSubjects(
   req: Pick<NextRequest, 'headers' | 'method' | 'nextUrl'>,
   ip: string,
   prefix: string,
-  rateLimits: RateLimitProfile
+  rateLimits: RateLimitProfile,
+  config?: ClientIpConfig
 ): Promise<LimiterSubject[] | null> {
   if (!isCloudflareIp(ip)) return null;
+  const zone = cloudflareWorkerZone(req.headers, ip, config);
+  const caller = zone ? `worker:${zone}` : `egress:${ip}`;
   const aggregate: LimiterSubject = {
-    id: `egress:${ip}`,
-    prefix: `${prefix}:egress-x${SHARED_EGRESS_AGGREGATE_MULTIPLIER}`,
+    id: caller,
+    prefix: `${prefix}:${zone ? 'worker' : 'egress'}-x${SHARED_EGRESS_AGGREGATE_MULTIPLIER}`,
     rateLimits: scaleProfile(rateLimits, SHARED_EGRESS_AGGREGATE_MULTIPLIER),
   };
-  const token = appToken(req.headers);
-  if (token) {
-    const id = `app:${await digest(`app-token:${token}`)}`;
-    return [{ id, prefix: `${prefix}:app`, rateLimits }, aggregate];
-  }
   const site = cmsDeliverySite(req);
   if (site) {
     return [
       {
-        id: `site:${site}`,
+        id: `site:${site}:${zone ? caller : `ip:${ip}`}`,
         prefix: `${prefix}:site-x${SHARED_EGRESS_SITE_MULTIPLIER}`,
         rateLimits: scaleProfile(rateLimits, SHARED_EGRESS_SITE_MULTIPLIER),
       },
       aggregate,
     ];
   }
+  if (zone) return [aggregate];
   const client = await digest(
     [
       req.headers.get('user-agent') ?? '',
