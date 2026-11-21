@@ -10,7 +10,9 @@ import { createLoopbackTlsFixture } from './runtime-fixture-crypto.mjs';
 test('fixture trusts its certificate and verifies the loopback identity', async (t) => {
   const scratch = await mkdtemp(join(tmpdir(), 'cms-fixture-tls-'));
   t.onTestFinished(() => rm(scratch, { recursive: true, force: true }));
-  const { ca, httpsKeyPath } = await createLoopbackTlsFixture(scratch);
+  const { ca, httpsCertPath, httpsKeyPath } =
+    await createLoopbackTlsFixture(scratch);
+  assert.equal(await readFile(httpsCertPath, 'utf8'), ca);
   const server = createServer(
     { key: await readFile(httpsKeyPath), cert: ca },
     (request, response) => response.end(request.headers.host)

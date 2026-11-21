@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -8,7 +8,7 @@ const run = promisify(execFile);
 export async function createLoopbackTlsFixture(scratch) {
   const httpsKeyPath = join(scratch, 'loopback-key.pem');
   const httpsCertPath = join(scratch, 'loopback-cert.pem');
-  await run(
+  const { stdout: ca } = await run(
     'openssl',
     [
       'req',
@@ -28,10 +28,9 @@ export async function createLoopbackTlsFixture(scratch) {
       'extendedKeyUsage=serverAuth',
       '-keyout',
       httpsKeyPath,
-      '-out',
-      httpsCertPath,
     ],
     { timeout: 15_000 }
   );
-  return { httpsKeyPath, httpsCertPath, ca: await readFile(httpsCertPath) };
+  await writeFile(httpsCertPath, ca, { flag: 'wx' });
+  return { httpsKeyPath, httpsCertPath, ca };
 }
