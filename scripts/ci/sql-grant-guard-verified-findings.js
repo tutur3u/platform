@@ -8,6 +8,7 @@ module.exports = [
   ...require('./sql-grant-guard-verified-findings-qa'),
   ...require('./sql-grant-guard-verified-findings-push'),
   ...require('./sql-grant-guard-verified-findings-people'),
+  ...require('./sql-grant-guard-verified-findings-fleet'),
   {
     path: 'apps/database/supabase/migrations/20261121091000_add_task_fleet_fields.sql',
     line: 45,

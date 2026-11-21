@@ -193,6 +193,39 @@
     "reason": "CREATE OR REPLACE of an existing private routine keeps its ACL: 20261027151470 revoked EXECUTE from PUBLIC, anon, authenticated and service_role, and the replacement only adds QA test account exclusions with search_path pg_catalog, pg_temp. 20261120200000_restrict_staff_identity_verifier_execute.sql recreates the complete definition and restates the revocation; only postgres-owned definer staff gates execute it."
   },
   {
+    "file": "apps/database/supabase/migrations/20261121140100_fleet_desk_ownership.sql",
+    "line": 325,
+    "sourceDigest": "ad1589f89d29a44b1c490faaddde602bd145c99f5489bf66cf58c2025b9b78fb",
+    "rule": "public-execute",
+    "signature": "private.fleet_verify_link_code(bytea,bytea,jsonb)",
+    "digest": "4c863c638211202d66c45b1d2e807182de4b1ed1912fe7290591d4a4849c979e",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "CREATE OR REPLACE of private.fleet_verify_link_code(bytea,bytea,jsonb) keeps the ACL from 20261121114610 and 20261121124400, which revoked EXECUTE from PUBLIC, anon and authenticated and granted it only to service_role. PostgreSQL preserves that ACL, so the replacement is not a PUBLIC grant. 20261121151849_restate_fleet_desk_function_acl.sql restates the revoke and the service_role grant. A remediation binding cannot replay this routine: 20261121141000 alters type public.workspace_role_permission between the original file and any later migration."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261121140100_fleet_desk_ownership.sql",
+    "line": 363,
+    "sourceDigest": "ad1589f89d29a44b1c490faaddde602bd145c99f5489bf66cf58c2025b9b78fb",
+    "rule": "public-execute",
+    "signature": "private.fleet_submit_resolved_intent(private . fleet_intent_kind,text,text,jsonb,uuid,jsonb,text)",
+    "digest": "ef23658ec1dda914f08b02f839560843a70c3911d118a3c51781fbd89685d7d5",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "CREATE OR REPLACE of private.fleet_submit_resolved_intent(private.fleet_intent_kind,text,text,jsonb,uuid,jsonb,text) keeps the ACL from 20261121114610, which revoked EXECUTE from PUBLIC, anon and authenticated and granted it only to service_role. PostgreSQL preserves that ACL, so the replacement is not a PUBLIC grant. 20261121151849_restate_fleet_desk_function_acl.sql restates the revoke and the service_role grant. A remediation binding cannot replay this routine: 20261121141000 alters type public.workspace_role_permission between the original file and any later migration."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261121140101_fleet_desk_digest.sql",
+    "line": 161,
+    "sourceDigest": "4d5605342512b9da13b04555394500348a9d6fa3b3ad884e90e328a113790b2c",
+    "rule": "public-execute",
+    "signature": "private.fleet_get_digest(uuid)",
+    "digest": "66ad993cf64b699f0d499b2edabd2202582e709346764fa9d71fa5ee858cc88c",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "CREATE OR REPLACE of private.fleet_get_digest(uuid) keeps the ACL from 20261121104726, which revoked EXECUTE from PUBLIC, anon, authenticated and service_role and then granted it only to service_role. PostgreSQL preserves that ACL, so the replacement is not a PUBLIC grant. 20261121151849_restate_fleet_desk_function_acl.sql restates the revoke and the service_role grant. A remediation binding cannot replay this routine: 20261121141000 alters type public.workspace_role_permission between the original file and any later migration."
+  },
+  {
     "file": "apps/database/supabase/migrations/20261121141020_mira_operator_permission_evaluator.sql",
     "signature": "public.has_workspace_permission(uuid,uuid,text)",
     "rule": "public-execute",

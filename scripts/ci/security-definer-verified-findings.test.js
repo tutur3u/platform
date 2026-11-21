@@ -228,6 +228,21 @@ const expectedVerifiedIdentities = [
     'public-execute',
   ],
   [
+    'apps/database/supabase/migrations/20261121140100_fleet_desk_ownership.sql',
+    'private.fleet_submit_resolved_intent(private . fleet_intent_kind,text,text,jsonb,uuid,jsonb,text)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140100_fleet_desk_ownership.sql',
+    'private.fleet_verify_link_code(bytea,bytea,jsonb)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140101_fleet_desk_digest.sql',
+    'private.fleet_get_digest(uuid)',
+    'public-execute',
+  ],
+  [
     'apps/database/supabase/migrations/20261121141020_mira_operator_permission_evaluator.sql',
     'public.has_workspace_permission(uuid,uuid,text)',
     'public-execute',
