@@ -476,9 +476,11 @@ forge, replay or redirect one.
   limited to one account and is valid only while that account's live session
   lease is held; revoking the lease revokes the key. Because a compromised
   container could attest arbitrary senders for its account, these channels
-  get **no Fleet operations and no private registry access** unless an
-  independent sender verification exists for them. They run with default
-  behavior and no person context.
+  get **no Fleet operations and no registry writes**. Registry recall from
+  them returns only a reduced projection (rules and owner-entered addressing
+  facts for identities the owner confirmed; no memories or briefs), and only
+  while the registry's personal-session setting is on, which it is not by
+  default. Otherwise they run with default behavior and no person context.
 - **Typed private operations:** one typed operation per use, each owned by
   one signer as listed above. The owning signer derives parameters and the reply destination from the verified event and
   policy, builds and hashes the exact UTF-8 body, and sends it to a fixed
@@ -632,6 +634,30 @@ messages or API responses; provider and AI SDK errors are redacted before
 - **Writes on both surfaces:** kill switches write first and confirm by readback;
   the UI never shows optimistic success. Secret fields are write-only and show
   only connected state and timestamp.
+
+### API contract
+
+Tenant routes live under `apps/web/src/app/api/v1/workspaces/[wsId]/mira`;
+operator routes under `apps/infrastructure/src/app/api/v1/infrastructure/mira`.
+Both validate bodies with zod schemas exported from `packages/internal-api`,
+call only the `private.mira_*` RPCs, and return the RPC error code mapped to
+HTTP (`40001` → 409, `42501` → 403, `P0002` → 404, `23505` → 409,
+`22023` → 400).
+
+| Method and path | Permission | Body | Response |
+| --- | --- | --- | --- |
+| `GET /workspaces/:wsId/mira` | Mira view | none | tenant settings, persona, bound channels with secret names and connected times, stop reasons and generations, `configVersion` |
+| `PATCH /workspaces/:wsId/mira/settings` | Mira manage | `{ expectedConfigVersion, settings }` with `enabled`, `keyMode`, `preset`, `modelId`, `neverSilent`, `quietHours`, `dailyCapMicroUsd`, `monthlyCapMicroUsd` | `{ configVersion }` |
+| `POST /workspaces/:wsId/mira/stop` | Mira manage | `{ channelId?, stopped }`; the reason is always `tenant` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
+| `POST /workspaces/:wsId/mira/channels/:kind/connect` | Mira manage | provider proof (Embedded Signup code, OAuth callback state, bot token) | `{ channelId }` |
+| `DELETE /workspaces/:wsId/mira/channels/:channelId` | Mira manage | none | `{ unbound }`; 403 while a stop the tenant does not own is set |
+| `GET /workspaces/:wsId/mira/usage` | Mira view | `?from&to` (at most 400 days) | daily usage per channel and model |
+| `GET /infrastructure/mira/tenants` | root admin + Mira operator | `?after&limit` (limit at most 100) | per-tenant overview: enabled, stop reasons, channel counts, seven-day cost and replies |
+| `POST /infrastructure/mira/tenants/:wsId/stop` | root admin + Mira operator | `{ channelId?, stopped }`; the reason is always `operator` | `{ stopReasons, stopGeneration }`, confirmed by a readback |
+| `POST /infrastructure/mira/global-stop` | root admin + Mira operator | `{ stopped }` | global fence state and generation, confirmed by a readback |
+
+Billing adjusts caps through the same settings RPC with the `billing`
+authority from its own server path; no HTTP route exposes that authority.
 
 ### Setup wizard
 
