@@ -11,7 +11,7 @@ typedef FleetOwnerFrame = ({
   Map<String, dynamic> payload,
 });
 
-const _maxFrameBytes = 32 * 1024;
+const int _maxFrameBytes = 32 * 1024;
 const _ticketPath = '/api/v1/mastermind/fleet/live/ticket';
 
 FleetOwnerFrame? decodeFleetOwnerFrame(Object? raw) {
@@ -71,19 +71,19 @@ class FleetOwnerLive {
   }
 
   void _releaseSocket() {
-    final subscription = _subscription;
+    final cancelling = _subscription?.cancel();
     final socket = _socket;
     _subscription = null;
     _socket = null;
-    unawaited(_close(subscription, socket));
+    unawaited(_close(cancelling, socket));
   }
 
   static Future<void> _close(
-    StreamSubscription<Object?>? subscription,
+    Future<void>? cancelling,
     WebSocketChannel? socket,
   ) async {
     try {
-      await subscription?.cancel();
+      await cancelling;
     } on Object {
       // A failed subscription cleanup does not prevent the socket from closing.
     }
@@ -133,13 +133,14 @@ class FleetOwnerLive {
       await candidate.ready.timeout(const Duration(seconds: 10));
       if (current != _generation) return;
       _subscription = candidate.stream.listen(
-        (Object? raw) {
+        (raw) {
           if (current != _generation) return;
           final frame = decodeFleetOwnerFrame(raw);
           if (frame == null) return;
           if (frame.kind == FleetOwnerFrameKind.poke &&
-              !_recordPoke(frame.payload))
+              !_recordPoke(frame.payload)) {
             return;
+          }
           onFrame(frame);
         },
         onDone: () => _retryConnection(current),

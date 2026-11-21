@@ -28,6 +28,8 @@ type UsageRead =
   | { kind: 'ready'; usage: FleetUsageResponse }
   | Exclude<FleetRead, { kind: 'ready' }>;
 
+type OwnerLiveTicket = { url: string; ticket: string; expiresAt: string };
+
 /** One instance per isolate; only call after request authentication. */
 export function createOwnerMemo<T>(now = Date.now) {
   const entries = new Map<string, { value: T; until: number }>();
@@ -83,7 +85,7 @@ export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
     [FLEET_FEATURES_HEADER]: 'login',
   };
   return {
-    async liveTicket(): Promise<unknown> {
+    async liveTicket(): Promise<OwnerLiveTicket | null> {
       try {
         const response = await refuseRedirect(
           fetcher(
@@ -96,7 +98,17 @@ export function createFleetClient(owner: Owner, fetcher: typeof fetch = fetch) {
             })
           )
         );
-        return response.ok ? await response.json() : null;
+        if (!response.ok) return null;
+        const body: unknown = await response.json();
+        if (!body || typeof body !== 'object') return null;
+        const { url, ticket, expiresAt } = body as Record<string, unknown>;
+        if (
+          typeof url !== 'string' ||
+          typeof ticket !== 'string' ||
+          typeof expiresAt !== 'string'
+        )
+          return null;
+        return { url, ticket, expiresAt };
       } catch {
         return null;
       }
