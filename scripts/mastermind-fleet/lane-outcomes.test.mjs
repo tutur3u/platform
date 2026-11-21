@@ -30,7 +30,7 @@ test('reads retries, rounds and re- prefixes as the same work', () => {
   // Different wording is not provably the same work; it stays a failure.
   assert.equal(
     same(
-      "Migrate ALL apps' Cloudflare publishing from Wrangler to cf",
+      "Migrate ALL apps' Cloudflare publishing from the old CLI to cf",
       "Migrate ALL apps' Cloudflare publishing to cf (retry, codex)"
     ),
     false

@@ -485,14 +485,14 @@
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
     },
     ".github/workflows/web-opennext.yaml": {
-      "lines": 12,
-      "uses": 14,
+      "lines": 10,
+      "uses": 11,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/4178955fdab0990a8e70b0cafbb014b2f4050751",
-        "reason": "The vinext family check removed two Wrangler mentions. Lines fell from 14 to 12 and uses from 16 to 14. The family deploy, secret-name check, and gateway upload fallback remain, and publish calls stay at 2."
+        "decision": "https://github.com/tutur3u/platform/commit/1e704f19821010a6e119aa4a6eadc7e801c21117",
+        "reason": "The no-downgrade guard gates the gateway upload and traffic steps on one CI-served path. Lines fell from 12 to 10 and uses from 14 to 11, and the remaining Wrangler gateway publish call fell from 2 to 1."
       },
-      "digest": "2cd2ca57c620192e4ea1dd3094c8fbfdf3d4a3d0a62f06e248570ec8beb92541"
+      "digest": "25c1744751537faf0a6874a8691eb952659b14d7148920fae90bd46cc6f8dd22"
     },
     ".github/workflows/web-start-candidate.yaml": {
       "lines": 1,
@@ -999,20 +999,20 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/74c3ad6ccba4cc44ac4e7f64ed06cac453beeca6",
-        "reason": "Gateway config comments describe binding-only Web routing: no WEB_ORIGIN, no passthrough mode, rollback by previous gateway version. No Wrangler command or publish call is added, so the file stays one config use and the pending-migration gap is unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/19498fa9486cf588dcca376dbf43dfa4b6073145",
+        "reason": "The committed mount inventory gains the tuturuuu.com/apps mount. The filename stays the only Wrangler use, so counts stay 1/1."
       },
-      "digest": "58d7cfc1d8d2debd2523b3a210736feaace8cd104371780e9dfa8815c98b356e"
+      "digest": "96acadd933eb2bc42a13aad5d51768a8b08fe27f5a6455e3ada8868dfb315f5d"
     },
     "apps/gateway/wrangler.subdomain-redirect.jsonc": {
       "lines": 1,
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/17ad3c716a4d27ddba972966804afa9d24f1d58a",
-        "reason": "New gateway config for the legacy apex redirect Worker. The filename is the only Wrangler use: the content has no wrangler token and the file makes no publish call. It stays on the pending-migration gap until cf + Void replaces it."
+        "decision": "https://github.com/tutur3u/platform/commit/6eaebe139ccf51fa3e1579edf87ff6aa53e80818",
+        "reason": "The legacy subdomain redirect binds the Apps Worker. The filename stays the only Wrangler use, so counts stay 1/1."
       },
-      "digest": "bc94b232d9dc6689796e4159b6091eaf5bd823e2bcc77c171d8db58b035a8e36"
+      "digest": "948c1fab075030230b4f0523014036bbae13495e0682b73e19416a61b14c12d1"
     },
     "apps/git/.gitignore": {
       "lines": 1,
@@ -3733,14 +3733,14 @@
       "digest": "a4a353fa3c894f530726d9581cda208933d0ef09a4753282f43934c4437cade3"
     },
     "scripts/ci/web-opennext-gateway-workflow.test.js": {
-      "lines": 6,
-      "uses": 7,
+      "lines": 4,
+      "uses": 4,
       "gap": "opennext-web-families",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/721719b65d67c77261d2ba5d8b4374e929be0dbc",
-        "reason": "The workflow contract asserts the retained Wrangler gateway upload and that no Wrangler traffic, deployment or rollback command remains in the gateway job."
+        "decision": "https://github.com/tutur3u/platform/commit/1e704f19821010a6e119aa4a6eadc7e801c21117",
+        "reason": "The workflow contract asserts the guarded single gateway publish path. Lines fell from 6 to 4 and uses from 7 to 4."
       },
-      "digest": "d4c1baf3ca0ecd4e32e97fb171a3ddd51f6d8e1defbd1d68550741cd9774394c"
+      "digest": "1725b07b5555124be18caabcfed4574fdef0ebcdd0ceff805512f065cc4ac520"
     },
     "scripts/ci/web-opennext-size.mjs": {
       "lines": 7,
@@ -3907,7 +3907,7 @@
     ".github/workflows/colab-cloudflare.yaml": 1,
     ".github/workflows/meet-cloudflare.yaml": 1,
     ".github/workflows/rust-backend.yml": 1,
-    ".github/workflows/web-opennext.yaml": 2,
+    ".github/workflows/web-opennext.yaml": 1,
     "apps/colab/package.json": 1,
     "apps/lettin/package.json": 2,
     "apps/meet/package.json": 1,
