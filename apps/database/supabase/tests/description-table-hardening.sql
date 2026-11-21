@@ -239,12 +239,18 @@ insert into contract_client_policies (table_name, policy_name, command) values
   ('rate_limit_appeals', 'Users can create their own rate-limit appeals', 'INSERT'),
   ('rate_limit_appeals', 'Users can read their own rate-limit appeals', 'SELECT'),
   ('task_leaderboards', 'task_leaderboards_member_select', 'SELECT'),
-  ('task_leaderboards', 'task_leaderboards_member_write', 'ALL'),
+  ('task_leaderboards', 'task_leaderboards_creator_delete', 'DELETE'),
+  ('task_leaderboards', 'task_leaderboards_creator_insert', 'INSERT'),
+  ('task_leaderboards', 'task_leaderboards_creator_update', 'UPDATE'),
   ('task_progress_achievements', 'task_progress_achievements_member_select', 'SELECT'),
   ('task_progress_goals', 'task_progress_goals_member_select', 'SELECT'),
-  ('task_progress_goals', 'task_progress_goals_member_write', 'ALL'),
+  ('task_progress_goals', 'task_progress_goals_owner_delete', 'DELETE'),
+  ('task_progress_goals', 'task_progress_goals_owner_insert', 'INSERT'),
+  ('task_progress_goals', 'task_progress_goals_owner_update', 'UPDATE'),
   ('task_progress_metrics', 'task_progress_metrics_member_select', 'SELECT'),
-  ('task_progress_metrics', 'task_progress_metrics_member_write', 'ALL'),
+  ('task_progress_metrics', 'task_progress_metrics_creator_delete', 'DELETE'),
+  ('task_progress_metrics', 'task_progress_metrics_creator_insert', 'INSERT'),
+  ('task_progress_metrics', 'task_progress_metrics_creator_update', 'UPDATE'),
   ('task_templates', 'task_templates_delete_owner', 'DELETE'),
   ('task_templates', 'task_templates_insert_member', 'INSERT'),
   ('task_templates', 'task_templates_select_accessible', 'SELECT'),
@@ -259,7 +265,8 @@ insert into contract_client_policies (table_name, policy_name, command) values
 -- Constraints that match the legacy 10,000-character, 40,000-byte or 2 MiB
 -- patterns and are the approved limit for their column: the strict limit for
 -- calendar descriptions and crawled HTML, the database-owned AI chat content
--- limit, the task plan note limit and the external project page-version cap.
+-- limit, the task plan note and task template description limits, and the
+-- external project page-version cap.
 create temporary table contract_legacy_pattern_constraints (
   table_name text,
   constraint_name text,
@@ -271,6 +278,8 @@ insert into contract_legacy_pattern_constraints (table_name, constraint_name) va
   ('crawled_urls', 'html_strict_bytes_check'),
   ('crawled_urls', 'html_strict_length_check'),
   ('task_plan_items', 'task_plan_items_notes_check'),
+  ('task_templates', 'description_strict_bytes_check'),
+  ('task_templates', 'description_strict_length_check'),
   ('workspace_calendar_events', 'description_strict_bytes_check'),
   ('workspace_calendar_events', 'description_strict_length_check'),
   (

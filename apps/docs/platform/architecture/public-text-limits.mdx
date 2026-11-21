@@ -30,9 +30,9 @@ lists only shrink.
 These tables were created after the strict-text resync without the generic
 trigger. Writes through their feature APIs are bounded by API validation and
 any table-specific CHECKs. Where RLS also lets clients write a table directly,
-only those CHECKs apply: `task_templates.name`, `task_name`, `slug` and
-`description` accept workspace-member writes with no length limit, and the
-`description` columns of `hive_servers`, `hive_workflows` and
+only those CHECKs apply. `task_templates` carries the Tasks API limits as
+named strict checks (slug 120, name and task name 1,024, description 10,000
+characters). The `description` columns of `hive_servers`, `hive_workflows` and
 `hive_research_sessions` accept platform-administrator writes with no length
 limit. Attaching the trigger would apply generic limits that could reject
 supported values, so each table needs a per-column limit review first.
@@ -80,7 +80,7 @@ review before it ships. Other predicate edits rely on code review.
 | `hive_research_sessions`, `hive_servers`, `hive_workflows` | select, insert, update, delete | Members read; platform administrators manage |
 | `meet_ai_memories` | select | The owning user |
 | `rate_limit_appeals` | select, insert | The appeal's creator |
-| `task_leaderboards`, `task_progress_goals`, `task_progress_metrics` | select, insert, update, delete | Task progress workspace members read, update and delete every row; new rows in `task_leaderboards` and `task_progress_goals` must name the writer as creator or owner |
+| `task_leaderboards`, `task_progress_goals`, `task_progress_metrics` | select, insert, update, delete | Task progress workspace members read every row; only the row's creator (`created_by`) or goal owner (`owner_id`) inserts, updates or deletes it, and cannot reassign it |
 | `task_progress_achievements` | select, insert, update, delete | Task progress workspace members; only a select policy exists, so RLS blocks writes |
 | `task_templates` | select, insert, update, delete | The creator, plus workspace members for workspace-visible templates |
 | `workspace_external_project_field_definitions` | select, insert, update, delete | External project managers and publishers |
@@ -91,4 +91,5 @@ review before it ships. Other predicate edits rely on code review.
 - `workspace_calendar_events.description` and `crawled_urls.html`: their strict limit is 10,000 characters and 40,000 bytes.
 - `ai_chat_messages.content`: the database-owned 10,000-character and 40,000-byte limit.
 - `task_plan_items.notes`: the 10,000-character note limit.
+- `task_templates.description`: the 10,000-character Tasks API limit.
 - `workspace_external_project_page_versions.data`: the 2 MiB page-version cap.
