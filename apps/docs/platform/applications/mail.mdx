@@ -238,15 +238,14 @@ access token cannot be refreshed by Mail, and no `sb-*` or app-session
 `Set-Cookie` leaves the mount. Web alone refreshes and ends the shared session.
 The subdomain keeps its session and cookie behavior.
 
-`/login` on the mount sends the browser to Web with the mounted destination
-itself as the `returnUrl` (`https://tuturuuu.com/mail/<next>`), never through
-`/mail/verify-token`: Web's login flattens a `verify-token` return to its bare
-`nextUrl` unless Mail is an active mount there, which would drop the base. This
-works with or without Mail in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS`. A stray
-`/mail/verify-token` request never redeems a token; it redirects to
-`/mail/login` with the normalized same-origin destination as `next`. Server
-redirects (login, not-available, home) carry the mount base. Mail ships its
-locale bundles in the build, so no runtime locale fetch needs a base.
+A signed-out mounted page redirects to Web's `/login` with
+`https://tuturuuu.com/mail/verify-token?nextUrl=<Mail path and query>` as its
+`returnUrl`. The mounted verifier checks Web's shared session and resumes the
+Mail destination for GET or HEAD. Page requests on the alternate Mail mount
+redirect to the canonical apex mount. This follows the
+[one-origin login return decision](../architecture/one-origin-super-app#decisions-of-2026-11-21).
+Mail ships its locale bundles in the build, so no runtime locale fetch needs a
+base.
 
 Connected-account OAuth state is host-bound by design: the state cookie is set
 and read on the host that started the flow, so the apex and the subdomain each

@@ -9,12 +9,14 @@ import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
+  createMountedAppAuth,
   getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
 import {
   getCurrentUserDefaultWorkspace,
   withForwardedInternalApiAuth,
@@ -37,11 +39,7 @@ import {
   TTR_URL,
 } from './constants/common';
 import { type Locale, supportedLocales } from './i18n/routing';
-import { isCalendarApexMountUrl } from './lib/calendar-mount-hosts';
-import {
-  calendarMountedDestination,
-  centralCalendarLoginUrl,
-} from './lib/central-login';
+import { centralCalendarLoginUrl } from './lib/central-login';
 import {
   preferredCalendarLocale,
   resolveCalendarLocale,
@@ -73,19 +71,7 @@ const authProxy = createCentralizedAuthProxy({
 });
 const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
-/**
- * The mounted branch serves the shared apex session, so it applies only to the
- * configured apex host under the base path. Every other host serving the base
- * path (`calendar.tuturuuu.com/calendar/*`) keeps the satellite session flow.
- * `nextUrl` is built from the URL the runtime routed, not from `Host` or
- * `X-Forwarded-Host`, so request headers cannot select the branch.
- */
-function isApexMountedRequest(req: NextRequest) {
-  return isCalendarApexMountUrl(
-    new URL(req.nextUrl.href),
-    req.nextUrl.basePath
-  );
-}
+const mountedAuth = createMountedAppAuth({ targetApp: 'calendar' });
 
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const response = await routeProxy(req);
@@ -98,7 +84,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
 }
 
 async function routeProxy(req: NextRequest): Promise<NextResponse> {
-  const mounted = isApexMountedRequest(req);
+  const mounted = mountedAuth.isMounted(req);
   if (req.nextUrl.pathname.startsWith('/api')) {
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
@@ -110,19 +96,19 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
       req.nextUrl.pathname.startsWith('/api/cron/') &&
       isTrustedProxyBypassRequest(req.nextUrl.pathname, req.headers);
     const appSessionRefresh =
-      mounted || isLocalAuthApi || hasBearerApiSession || hasTrustedCron
+      isLocalAuthApi || hasBearerApiSession || hasTrustedCron
         ? null
-        : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
-            targetApp: 'calendar',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(req)
+          : await refreshAppSessionForRequest(req, {
+              sessionMode: 'supabase-first',
+              targetApp: 'calendar',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
-      return appSessionFailureResponse(
-        req,
-        appSessionRefresh.error,
-        appSessionRefresh.response
-      );
+      return (
+        mounted ? mountedSessionFailureResponse : appSessionFailureResponse
+      )(req, appSessionRefresh.error, appSessionRefresh.response);
     }
 
     const isNativePreference =
@@ -163,20 +149,16 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
     !req.nextUrl.searchParams.has('token');
   if (
     mounted &&
+    req.method !== 'GET' &&
+    req.method !== 'HEAD' &&
     /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
   ) {
-    // Web owns the shared session. A mounted legacy handoff never renders
-    // or forwards its verifier, even when the request carries no token.
-    const destination = isDocumentRequest
-      ? calendarMountedDestination(
-          req.nextUrl.searchParams.get('nextUrl') ??
-            req.nextUrl.searchParams.get('next'),
-          req.nextUrl.origin,
-          req.nextUrl.basePath
-        )
-      : withAppBase('/login', req.nextUrl.basePath);
-    return NextResponse.redirect(new URL(destination, req.nextUrl.origin));
+    return new NextResponse(null, {
+      status: 405,
+      headers: { Allow: 'GET, HEAD', 'Cache-Control': 'private, no-store' },
+    });
   }
+
   const verifyTokenResponse =
     mounted || publicCompletion
       ? null
@@ -186,7 +168,7 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
   }
 
   // Handle authentication and MFA with the centralized middleware
-  const authRes = mounted ? NextResponse.next() : await authProxy(req);
+  const authRes = mounted ? await mountedAuth.auth(req) : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   // If the auth middleware returned a redirect response, return it
@@ -218,7 +200,7 @@ async function routeProxy(req: NextRequest): Promise<NextResponse> {
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
   const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
   const hasSatelliteSession =
-    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
+    mounted || hasSupabaseSession || Boolean(appSession && hasWebAppSession);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID

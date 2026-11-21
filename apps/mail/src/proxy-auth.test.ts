@@ -31,6 +31,7 @@ const mocks = vi.hoisted(() => {
     ),
     propagateAuthCookies: vi.fn(),
     refreshAppSessionForRequest: vi.fn(),
+    resolveMountedSession: vi.fn(),
   };
 });
 
@@ -49,27 +50,37 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@tuturuuu/auth/proxy')>()),
-  consumeVerifyTokenRequest: (
-    ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
-  ) => mocks.consumeVerifyTokenRequest(...args),
-  createCentralizedAuthProxy: (
-    ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
-  ) => mocks.createCentralizedAuthProxy(...args),
-  getRequestHeadersWithResponseCookies: (
-    ...args: Parameters<typeof mocks.getRequestHeadersWithResponseCookies>
-  ) => mocks.getRequestHeadersWithResponseCookies(...args),
-  normalizeAuthRedirectPath: (
-    ...args: Parameters<typeof mocks.normalizeAuthRedirectPath>
-  ) => mocks.normalizeAuthRedirectPath(...args),
-  propagateAuthCookies: (
-    ...args: Parameters<typeof mocks.propagateAuthCookies>
-  ) => mocks.propagateAuthCookies(...args),
-  refreshAppSessionForRequest: (
-    ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
-  ) => mocks.refreshAppSessionForRequest(...args),
-}));
+vi.mock('@tuturuuu/auth/proxy', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@tuturuuu/auth/proxy')>();
+  return {
+    ...actual,
+    createMountedAppAuth: (
+      options: Parameters<typeof actual.createMountedAppAuth>[0]
+    ) =>
+      actual.createMountedAppAuth(options, {
+        resolveMountedSharedSession: mocks.resolveMountedSession,
+        consumeMountedSharedSession: actual.consumeMountedSharedSession,
+      }),
+    consumeVerifyTokenRequest: (
+      ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
+    ) => mocks.consumeVerifyTokenRequest(...args),
+    createCentralizedAuthProxy: (
+      ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
+    ) => mocks.createCentralizedAuthProxy(...args),
+    getRequestHeadersWithResponseCookies: (
+      ...args: Parameters<typeof mocks.getRequestHeadersWithResponseCookies>
+    ) => mocks.getRequestHeadersWithResponseCookies(...args),
+    normalizeAuthRedirectPath: (
+      ...args: Parameters<typeof mocks.normalizeAuthRedirectPath>
+    ) => mocks.normalizeAuthRedirectPath(...args),
+    propagateAuthCookies: (
+      ...args: Parameters<typeof mocks.propagateAuthCookies>
+    ) => mocks.propagateAuthCookies(...args),
+    refreshAppSessionForRequest: (
+      ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
+    ) => mocks.refreshAppSessionForRequest(...args),
+  };
+});
 
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserDefaultWorkspace: vi.fn(),
@@ -389,6 +400,10 @@ it('persists an explicit English entry locale over a Vietnamese cookie or langua
 
 describe('mounted Mail app-owned redirects', () => {
   beforeEach(() => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     vi.clearAllMocks();
     mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
@@ -397,25 +412,6 @@ describe('mounted Mail app-owned redirects', () => {
       (value, _origin, fallback) => value ?? fallback
     );
   });
-  it.each(['/login', '/vi/login'])(
-    'leaves %s for the verified login view even when a provider cookie is present',
-    async (path) => {
-      mocks.authProxy.mockResolvedValue(NextResponse.next());
-      mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
-      const request = new NextRequest(
-        `https://tuturuuu.com/mail${path}?next=/vi/personal/sent`,
-        {
-          nextConfig: { basePath: '/mail' },
-        }
-      );
-      const response = await proxy(request);
-      expect(response.headers.get('location')).toBeNull();
-      expect(response.headers.get('x-middleware-next')).toBe('1');
-      expect(response.headers.getSetCookie()).toEqual([]);
-      expect(mocks.authProxy).not.toHaveBeenCalled();
-    }
-  );
-
   it.each(['en', 'vi'])(
     'retains the explicit mounted %s locale on a deep link',
     async (locale) => {
@@ -439,6 +435,10 @@ describe('mounted Mail app-owned redirects', () => {
 
 describe('mounted Mail shared-session boundary', () => {
   beforeEach(() => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     vi.clearAllMocks();
     mocks.guardApiProxyRequest.mockResolvedValue(null);
     mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
@@ -498,40 +498,103 @@ describe('mounted Mail shared-session boundary', () => {
 });
 
 describe('mounted Mail handoff return', () => {
-  beforeEach(async () => {
+  const APEX = 'https://tuturuuu.com';
+  const BASE = '/mail';
+  const mounted = (path: string) =>
+    new NextRequest(APEX + BASE + path, { nextConfig: { basePath: BASE } });
+
+  beforeEach(() => {
     vi.clearAllMocks();
-    const actual = await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-      '@tuturuuu/auth/proxy'
-    );
-    mocks.normalizeAuthRedirectPath.mockImplementation(
-      actual.normalizeAuthRedirectPath
-    );
-    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
-  });
-  const mountedRequest = (path: string) =>
-    new NextRequest(`https://tuturuuu.com/mail${path}`, {
-      nextConfig: { basePath: '/mail' },
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: false,
+      error: 'Shared session unavailable',
     });
-  it.each([
-    ['/verify-token', 'https://tuturuuu.com/mail/login'],
-    [
-      '/verify-token?token=untrusted&nextUrl=%2Fvi%2Fpersonal%2Fsent%3Fq%3Da',
-      'https://tuturuuu.com/mail/login?next=%2Fvi%2Fpersonal%2Fsent%3Fq%3Da',
-    ],
-    [
-      '/vi/verify-token/?nextUrl=%2Fpersonal%2Finbox',
-      'https://tuturuuu.com/mail/login?next=%2Fpersonal%2Finbox',
-    ],
-    [
-      '/verify-token?nextUrl=https%3A%2F%2Fattacker.example%2Fx',
-      'https://tuturuuu.com/mail/login?next=%2Fpersonal%2Finbox',
-    ],
-  ])('turns %s into a same-origin login step', async (path, location) => {
-    const response = await proxy(mountedRequest(path));
+  });
+
+  it('rejects mutation methods at the mounted verifier', async () => {
+    const response = await proxy(
+      new NextRequest(APEX + BASE + '/vi/verify-token?nextUrl=%2Fpersonal', {
+        method: 'POST',
+        nextConfig: { basePath: BASE },
+      })
+    );
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('GET, HEAD');
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.resolveMountedSession).not.toHaveBeenCalled();
+  });
+
+  it('canonicalizes a page on the alternate Mail mount before satellite auth', async () => {
+    const path = '/mail/login?next=%2Fpersonal%2Finbox';
+    const response = await proxy(
+      new NextRequest('https://web.tutur3u.com' + path, {
+        nextConfig: { basePath: BASE },
+      })
+    );
     expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(location);
-    expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
-    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+    expect(response.headers.get('location')).toBe(APEX + path);
+    expect(mocks.authProxy).not.toHaveBeenCalled();
+  });
+
+  it('round-trips a signed-out deep link through Web and the mounted verifier', async () => {
+    const path = '/personal?view=week&q=one%26two';
+    const handoff = await proxy(mounted(path));
+    expect(handoff.status).toBe(307);
+    const login = new URL(handoff.headers.get('location') ?? '');
+    expect(login.origin + login.pathname).toBe('https://tuturuuu.com/login');
+    const verifier = new URL(login.searchParams.get('returnUrl') ?? '');
+    expect(verifier.origin + verifier.pathname).toBe(
+      APEX + BASE + '/verify-token'
+    );
+    expect(verifier.searchParams.get('nextUrl')).toBe(path);
+    expect(handoff.headers.getSetCookie()).toEqual([]);
+
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
+    const completion = await proxy(mounted('/verify-token' + verifier.search));
+    expect(completion.status).toBe(307);
+    expect(completion.headers.get('location')).toBe(APEX + BASE + path);
+    expect(completion.headers.getSetCookie()).toEqual([]);
+  });
+
+  it.each([
+    'https://tuturuuu.com/calendar/personal',
+    '//evil.example/personal',
+    '/../calendar/personal',
+  ])('keeps a verifier return for %s inside the mount', async (next) => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
+    const response = await proxy(
+      mounted('/verify-token?' + new URLSearchParams({ nextUrl: next }))
+    );
+    expect(response.headers.get('location')).toBe(APEX + BASE);
+  });
+
+  it.each(['/personal', '/verify-token?nextUrl=%2Fpersonal'])(
+    'requests MFA for %s',
+    async (path) => {
+      mocks.resolveMountedSession.mockResolvedValue({
+        ok: false,
+        error: 'MFA required',
+      });
+      const response = await proxy(mounted(path));
+      const login = new URL(response.headers.get('location') ?? '');
+      expect(login.searchParams.get('mfa')).toBe('required');
+      expect(response.headers.getSetCookie()).toEqual([]);
+    }
+  );
+
+  it('returns the assurance service failure on a mounted page', async () => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: false,
+      error: 'Account assurance unavailable',
+    });
+    const response = await proxy(mounted('/personal'));
+    expect(response.status).toBe(503);
     expect(response.headers.getSetCookie()).toEqual([]);
   });
   it('keeps the subdomain handoff on the token consumer', async () => {

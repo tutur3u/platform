@@ -47,6 +47,7 @@ const start = createBridgeStartHandler();
 const mountedCookies = {
   ownedCookies: [
     'NEXT_LOCALE',
+    'calendar-plan-panel',
     'sidebar-behavior',
     'sidebar-behavior-updated-at',
     'sidebar-collapsed',

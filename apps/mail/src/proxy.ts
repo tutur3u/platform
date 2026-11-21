@@ -10,12 +10,14 @@ import {
   appSessionFailureResponse,
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
+  createMountedAppAuth,
   getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
   preserveMfaRecoveryCookies,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
+import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
 import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import {
   guardApiProxyRequest,
@@ -89,8 +91,12 @@ function withMailApiCors(request: NextRequest, response: NextResponse) {
   return response;
 }
 
+const mountedAuth = createMountedAppAuth({ targetApp: 'mail' });
+
 async function handleProxy(req: NextRequest): Promise<NextResponse> {
-  const mounted = Boolean(req.nextUrl.basePath);
+  const mounted = mountedAuth.isMounted(req);
+  const alternateMount =
+    req.nextUrl.basePath === '/mail' && req.nextUrl.host === 'web.tutur3u.com';
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (req.method === 'OPTIONS') {
       return withMailApiCors(req, new NextResponse(null, { status: 204 }));
@@ -105,17 +111,19 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     );
     const hasBearerApiSession = hasAuthenticatedBearerToken(req.headers);
     const appSessionRefresh =
-      mounted || isLocalAuthApi || hasBearerApiSession
+      alternateMount || isLocalAuthApi || hasBearerApiSession
         ? null
-        : await refreshAppSessionForRequest(req, {
-            sessionMode: 'supabase-first',
-            targetApp: 'mail',
-          });
+        : mounted
+          ? await mountedAuth.resolveSession(req)
+          : await refreshAppSessionForRequest(req, {
+              sessionMode: 'supabase-first',
+              targetApp: 'mail',
+            });
 
     if (appSessionRefresh && !appSessionRefresh.ok) {
       return withMailApiCors(
         req,
-        appSessionFailureResponse(
+        (mounted ? mountedSessionFailureResponse : appSessionFailureResponse)(
           req,
           appSessionRefresh.error,
           appSessionRefresh.response
@@ -140,40 +148,50 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
     return withMailApiCors(
       req,
       appSessionRefresh?.response ??
-        (mounted
+        (mounted || alternateMount
           ? NextResponse.next()
           : clearSupabaseAuthCookies(req, NextResponse.next()))
     );
   }
 
+  const isVerifierPath = /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(
+    req.nextUrl.pathname
+  );
+  if (alternateMount) {
+    if (req.method !== 'GET' && req.method !== 'HEAD')
+      return new NextResponse(null, {
+        status: 405,
+        headers: { Allow: 'GET, HEAD', 'Cache-Control': 'private, no-store' },
+      });
+    const destination = new URL('https://tuturuuu.com');
+    destination.pathname = withAppBase(req.nextUrl.pathname, '/mail');
+    destination.search = req.nextUrl.search;
+    if (isVerifierPath) destination.searchParams.delete('token');
+    return NextResponse.redirect(destination, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
+
   if (
     mounted &&
-    /^\/(?:en\/|vi\/)?verify-token\/?$/u.test(req.nextUrl.pathname)
+    req.method !== 'GET' &&
+    req.method !== 'HEAD' &&
+    isVerifierPath
   ) {
-    // Web owns the shared session, so a handoff token is never redeemed here.
-    // The destination survives as an app-relative `next` for the login step.
-    const login = new URL(
-      withAppBase('/login', req.nextUrl.basePath),
-      req.nextUrl.origin
-    );
-    const target = req.nextUrl.searchParams.get('nextUrl');
-    if (target)
-      login.searchParams.set(
-        'next',
-        normalizeAuthRedirectPath(target, req.nextUrl.origin, '/personal/inbox')
-      );
-    return NextResponse.redirect(login);
+    return new NextResponse(null, {
+      status: 405,
+      headers: { Allow: 'GET, HEAD', 'Cache-Control': 'private, no-store' },
+    });
   }
+
   const verifyTokenResponse = mounted
     ? null
-    : await consumeVerifyTokenRequest(req, {
-        locales: supportedLocales,
-      });
+    : await consumeVerifyTokenRequest(req, { locales: supportedLocales });
   if (verifyTokenResponse) {
     return verifyTokenResponse;
   }
 
-  const authRes = mounted ? NextResponse.next() : await authProxy(req);
+  const authRes = mounted ? await mountedAuth.auth(req) : await authProxy(req);
   if (authRes.status >= 400) return authRes;
 
   if (authRes.headers.has('Location')) {
@@ -188,7 +206,7 @@ async function handleProxy(req: NextRequest): Promise<NextResponse> {
   const hasWebAppSession = hasWebAppSessionTokenFromRequest(authRequest);
   const hasSupabaseSession = hasSupportedSupabaseAuthCookie(authRequest);
   const hasSatelliteSession =
-    hasSupabaseSession || Boolean(appSession && hasWebAppSession);
+    mounted || hasSupabaseSession || Boolean(appSession && hasWebAppSession);
   const pathSegments = req.nextUrl.pathname.split('/').filter(Boolean);
   const uuidRegex =
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

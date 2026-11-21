@@ -262,15 +262,18 @@ describe('Calendar proxy signed-out login handoff', () => {
     }
   });
 
-  it('leaves the mounted apex login unchanged', async () => {
+  it('hands the mounted apex login to Web with the mounted verifier', async () => {
     const response = await proxy(
       new NextRequest(`${CENTRAL_ORIGIN}/calendar/login`, {
         nextConfig: { basePath: '/calendar' },
       })
     );
 
-    expect(response.headers.get('location') ?? '').not.toContain(
-      `${CENTRAL_ORIGIN}/login?returnUrl`
+    expect(response.status).toBe(307);
+    const login = new URL(response.headers.get('location') ?? '');
+    expect(login.origin + login.pathname).toBe(`${CENTRAL_ORIGIN}/login`);
+    expect(login.searchParams.get('returnUrl')).toBe(
+      `${CENTRAL_ORIGIN}/calendar/verify-token?nextUrl=%2F`
     );
     expect(mocks.authProxy).not.toHaveBeenCalled();
   });

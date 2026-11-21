@@ -3,20 +3,14 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
-import {
-  getSatelliteAppSession,
-  getSatelliteSupabaseSessionUser,
-} from '@tuturuuu/satellite/auth';
-import { runtimeAppBase, withAppBase } from '@tuturuuu/start-bridge/app-url';
+import { getSatelliteAppSession } from '@tuturuuu/satellite/auth';
+import { withAppBase } from '@tuturuuu/start-bridge/app-url';
 import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, TTR_URL } from '@/constants/common';
 
-import {
-  calendarMountedDestination,
-  DEFAULT_CALENDAR_PATH,
-} from '@/lib/central-login';
+import { DEFAULT_CALENDAR_PATH } from '@/lib/central-login';
 
 function normalizeNextPath(
   value: string | string[] | undefined,
@@ -34,21 +28,11 @@ export default async function LoginPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const appBase = runtimeAppBase();
-  const origin = new URL(maybeBridgeRequest()?.request.url ?? BASE_URL).origin;
   const nextPath = normalizeNextPath(
     params.next ?? params.nextUrl,
-    appBase ? origin : new URL(BASE_URL).origin
+    new URL(BASE_URL).origin
   );
   const shouldRefreshCrossAppSession = params.refresh === '1';
-  if (appBase) {
-    const destination = calendarMountedDestination(nextPath, origin, appBase);
-    const user = await getSatelliteSupabaseSessionUser();
-    if (user?.id && !shouldRefreshCrossAppSession) redirect(destination);
-    const central = new URL('/login', TTR_URL);
-    central.searchParams.set('returnUrl', new URL(destination, origin).href);
-    redirect(central.href);
-  }
   const requestHeaders = await headers();
   const appSession = await getSatelliteAppSession('calendar');
   const hasWebAppSession = hasWebAppSessionTokenFromRequest({

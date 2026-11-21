@@ -47,30 +47,41 @@ vi.mock('@tuturuuu/auth/app-session', () => ({
   ) => mocks.hasWebAppSessionTokenFromRequest(...args),
 }));
 
-vi.mock('@tuturuuu/auth/proxy', async () => ({
-  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-    '@tuturuuu/auth/proxy'
-  )),
-  consumeVerifyTokenRequest: (
-    ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
-  ) => mocks.consumeVerifyTokenRequest(...args),
-  createCentralizedAuthProxy: (
-    ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
-  ) => mocks.createCentralizedAuthProxy(...args),
-  getRequestHeadersWithResponseCookies: (
-    ...args: Parameters<typeof mocks.getRequestHeadersWithResponseCookies>
-  ) => mocks.getRequestHeadersWithResponseCookies(...args),
-  normalizeAuthRedirectPath: vi.fn(
-    (_value: string | null | undefined, _origin: string, fallback: string) =>
-      fallback
-  ),
-  propagateAuthCookies: (
-    ...args: Parameters<typeof mocks.propagateAuthCookies>
-  ) => mocks.propagateAuthCookies(...args),
-  refreshAppSessionForRequest: (
-    ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
-  ) => mocks.refreshAppSessionForRequest(...args),
-}));
+vi.mock('@tuturuuu/auth/proxy', async (load) => {
+  const actual = await load<typeof import('@tuturuuu/auth/proxy')>();
+  return {
+    ...actual,
+    createMountedAppAuth: (
+      options: Parameters<typeof actual.createMountedAppAuth>[0]
+    ) =>
+      actual.createMountedAppAuth(options, {
+        resolveMountedSharedSession: async () =>
+          ({ ok: true, response: NextResponse.next() }) as Awaited<
+            ReturnType<typeof actual.resolveMountedSharedSession>
+          >,
+        consumeMountedSharedSession: actual.consumeMountedSharedSession,
+      }),
+    consumeVerifyTokenRequest: (
+      ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
+    ) => mocks.consumeVerifyTokenRequest(...args),
+    createCentralizedAuthProxy: (
+      ...args: Parameters<typeof mocks.createCentralizedAuthProxy>
+    ) => mocks.createCentralizedAuthProxy(...args),
+    getRequestHeadersWithResponseCookies: (
+      ...args: Parameters<typeof mocks.getRequestHeadersWithResponseCookies>
+    ) => mocks.getRequestHeadersWithResponseCookies(...args),
+    normalizeAuthRedirectPath: vi.fn(
+      (_value: string | null | undefined, _origin: string, fallback: string) =>
+        fallback
+    ),
+    propagateAuthCookies: (
+      ...args: Parameters<typeof mocks.propagateAuthCookies>
+    ) => mocks.propagateAuthCookies(...args),
+    refreshAppSessionForRequest: (
+      ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
+    ) => mocks.refreshAppSessionForRequest(...args),
+  };
+});
 
 vi.mock('@tuturuuu/internal-api', () => ({
   getCurrentUserDefaultWorkspace: (

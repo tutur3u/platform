@@ -191,6 +191,26 @@ it.each([undefined, 'off', 'unknown'])(
   }
 );
 
+it('dispatches the mounted verifier to the proxy without minting a session', async () => {
+  calls.proxy.mockResolvedValueOnce(
+    NextResponse.redirect('https://tuturuuu.com/mail/personal')
+  );
+  const runtimeEnv = { ...env, TTR_ONE_ORIGIN_MAIL: 'shadow' };
+  const response = await handleMailRequest(
+    new Request('https://tuturuuu.com/mail/verify-token?nextUrl=%2Fpersonal'),
+    runtimeEnv,
+    ctx
+  );
+  expect(response.status).toBe(307);
+  expect(response.headers.get('location')).toBe(
+    'https://tuturuuu.com/mail/personal'
+  );
+  expect(response.headers.getSetCookie()).toEqual([]);
+  expect(calls.proxy).toHaveBeenCalledTimes(1);
+  expect(calls.handler).not.toHaveBeenCalled();
+  expect(calls.start).not.toHaveBeenCalled();
+});
+
 it.each(['shadow', 'on'])(
   'serves the shared-origin mount through the proxy and Start in %s mode',
   async (mode) => {

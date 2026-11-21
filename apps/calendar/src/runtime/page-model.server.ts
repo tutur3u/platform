@@ -2,11 +2,11 @@ import { matchPage } from '@tuturuuu/start-bridge/pages';
 import { calendarBase } from './calendar-mount';
 import { pages } from './page-registry.bridge.gen';
 import '@tanstack/react-start/server-only';
+import { redirect as documentRedirect } from '@tanstack/react-router';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { PUBLIC_PATHS } from '../constants/common';
-import { calendarMountedDestination } from '../lib/central-login';
 import { calendarPageModel } from './calendar-page-model.server';
 import { labModel } from './lab-model.server';
 import { loadLocaleContext } from './locale-context.server';
@@ -44,14 +44,19 @@ async function loadResolvedPageModel(url: URL) {
   const locale = loadLocaleContext(`${url.pathname}${url.search}`);
   if (segments[0] === 'en' || segments[0] === 'vi') segments.shift();
   const verifier = segments[0] === 'verify-token' && segments.length === 1;
-  if (verifier && base && !base.isRoot)
-    redirect(
-      calendarMountedDestination(
-        url.searchParams.get('nextUrl') ?? url.searchParams.get('next'),
-        url.origin,
-        base.basePath
-      )
-    );
+  if (base && !base.isRoot && segments.length === 1) {
+    if (verifier) {
+      const completion = new URL(base.withBase('/verify-token'), url.origin);
+      const next = url.searchParams.get('nextUrl');
+      if (next !== null) completion.searchParams.set('nextUrl', next);
+      throw documentRedirect({ href: completion.href, reloadDocument: true });
+    }
+    if (segments[0] === 'login')
+      throw documentRedirect({
+        href: new URL(base.withBase('/login') + url.search, url.origin).href,
+        reloadDocument: true,
+      });
+  }
   const request = calendarRequest().request;
   if (
     (request.method === 'GET' || request.method === 'HEAD') &&

@@ -1,41 +1,7 @@
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
-import { withAppBase } from '@tuturuuu/start-bridge/app-url';
-import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import { BASE_URL, TTR_URL } from '../constants/common';
 
 export const DEFAULT_CALENDAR_PATH = '/personal';
-
-/** Keep the next page on the mount and keep auth steps out of the return. */
-export function calendarMountedDestination(
-  rawNext: string | null | undefined,
-  origin: string,
-  basePath: string
-) {
-  const next = normalizeAuthRedirectPath(
-    rawNext,
-    origin,
-    DEFAULT_CALENDAR_PATH
-  );
-  const { pathname } = new URL(next, origin);
-  const relative =
-    createBasePath({ app: 'calendar', basePath }).strip(pathname) ?? pathname;
-  try {
-    const segments = relative
-      .split('/')
-      .filter(Boolean)
-      .map(decodeURIComponent);
-    const first = segments[0];
-    const page = first === 'en' || first === 'vi' ? segments[1] : first;
-    return withAppBase(
-      page === 'login' || page === 'verify-token'
-        ? DEFAULT_CALENDAR_PATH
-        : next,
-      basePath
-    );
-  } catch {
-    return withAppBase(DEFAULT_CALENDAR_PATH, basePath);
-  }
-}
 
 /**
  * Central Web sign-in URL for a signed-out Calendar visitor.

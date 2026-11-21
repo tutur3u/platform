@@ -1,7 +1,5 @@
-import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import LoginPage from './app/[locale]/(auth)/login/page';
 import { centralCalendarLoginUrl } from './lib/central-login';
 import { proxy } from './proxy';
 
@@ -14,336 +12,126 @@ const mocks = vi.hoisted(() => ({
   clearSupabaseAuthCookies: vi.fn(
     (_request: NextRequest, response: NextResponse) => response
   ),
-  consumeVerifyTokenRequest: vi.fn(),
-  getSatelliteAppSession: vi.fn(),
-  getSatelliteSupabaseSessionUser: vi.fn(),
+  resolveMountedSession: vi.fn(),
   hasSupportedSupabaseAuthCookie: vi.fn(),
-  headers: vi.fn(),
-  redirect: vi.fn((url: string): never => {
-    throw new Error(`redirect:${url}`);
-  }),
-  refreshAppSessionForRequest: vi.fn(),
 }));
 
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  clearSupabaseAuthCookies: (
-    ...args: Parameters<typeof mocks.clearSupabaseAuthCookies>
-  ) => mocks.clearSupabaseAuthCookies(...args),
+vi.mock('@tuturuuu/auth/app-session', async (load) => ({
+  ...(await load<typeof import('@tuturuuu/auth/app-session')>()),
+  clearSupabaseAuthCookies: mocks.clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest: () => null,
-  hasSupportedSupabaseAuthCookie: (
-    ...args: Parameters<typeof mocks.hasSupportedSupabaseAuthCookie>
-  ) => mocks.hasSupportedSupabaseAuthCookie(...args),
-  hasWebAppSessionTokenFromRequest: () => false,
+  hasSupportedSupabaseAuthCookie: mocks.hasSupportedSupabaseAuthCookie,
 }));
 
-// Redirect-path validation, cookie propagation and request header merging stay
-// real so the assertions cover the shipped same-origin checks.
-vi.mock('@tuturuuu/auth/proxy', async () => ({
-  ...(await vi.importActual<typeof import('@tuturuuu/auth/proxy')>(
-    '@tuturuuu/auth/proxy'
-  )),
-  consumeVerifyTokenRequest: (
-    ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
-  ) => mocks.consumeVerifyTokenRequest(...args),
-  createCentralizedAuthProxy: () => mocks.authProxy,
-  refreshAppSessionForRequest: (
-    ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
-  ) => mocks.refreshAppSessionForRequest(...args),
-}));
-
-vi.mock('@tuturuuu/internal-api', () => ({
-  getCurrentUserDefaultWorkspace: vi.fn(),
-  withForwardedInternalApiAuth: vi.fn(),
-}));
-
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  isPersonalWorkspace: vi.fn(async () => false),
-}));
-
-vi.mock('@tuturuuu/satellite/auth', () => ({
-  getSatelliteAppSession: (
-    ...args: Parameters<typeof mocks.getSatelliteAppSession>
-  ) => mocks.getSatelliteAppSession(...args),
-  getSatelliteSupabaseSessionUser: () =>
-    mocks.getSatelliteSupabaseSessionUser(),
-}));
-
-vi.mock('next/headers', () => ({
-  headers: () => mocks.headers(),
-}));
-
-vi.mock('next/navigation', async () => ({
-  ...(await vi.importActual<typeof import('next/navigation')>(
-    'next/navigation'
-  )),
-  redirect: (url: string) => mocks.redirect(url),
-}));
+vi.mock('@tuturuuu/auth/proxy', async (load) => {
+  const actual = await load<typeof import('@tuturuuu/auth/proxy')>();
+  return {
+    ...actual,
+    createCentralizedAuthProxy: () => mocks.authProxy,
+    createMountedAppAuth: (
+      options: Parameters<typeof actual.createMountedAppAuth>[0]
+    ) =>
+      actual.createMountedAppAuth(options, {
+        resolveMountedSharedSession: mocks.resolveMountedSession,
+        consumeMountedSharedSession: actual.consumeMountedSharedSession,
+      }),
+  };
+});
 
 vi.mock('next-intl/middleware', () => ({
   default: () => () => NextResponse.next(),
 }));
 
-// The production apex artifact resolves BASE_URL to the mounted app URL.
-vi.mock('@/constants/common', async () => ({
-  ...(await vi.importActual<typeof import('@/constants/common')>(
-    '@/constants/common'
-  )),
-  BASE_URL: 'https://tuturuuu.com/calendar',
-  TTR_URL: 'https://tuturuuu.com',
-}));
-
-function mounted(
-  pathAndQuery: string,
-  init: { method?: string; cookie?: string } = {}
-) {
-  return new NextRequest(`${APEX}${pathAndQuery}`, {
-    method: init.method ?? 'GET',
-    headers: init.cookie ? { cookie: init.cookie } : undefined,
+function mounted(path: string) {
+  return new NextRequest(APEX + BASE + path, {
     nextConfig: { basePath: BASE },
   });
 }
 
-function verifyTokenUrl(params: Record<string, string>, path = '') {
-  return `${BASE}${path}/verify-token?${new URLSearchParams(params)}`;
-}
-
-/** Renders the mounted login page and returns the URL it redirects to. */
-async function renderMountedLogin(
-  searchParams: Record<string, string>,
-  cookie?: string
-) {
-  const request = new Request(
-    `${APEX}${BASE}/login?${new URLSearchParams(searchParams)}`,
-    { headers: cookie ? { cookie } : undefined }
-  );
-  mocks.headers.mockResolvedValue(request.headers);
-  const outcome = await withBridgeRequest({ request, appBase: BASE }, () =>
-    LoginPage({ searchParams: Promise.resolve(searchParams) })
-  ).then(
-    () => new Error('Login page rendered without redirecting'),
-    (error: unknown) => error
-  );
-  if (!(outcome instanceof Error) || !outcome.message.startsWith('redirect:'))
-    throw outcome;
-  return outcome.message.slice('redirect:'.length);
-}
-
-function expectNoSessionWrites(response: Response) {
-  expect(response.headers.getSetCookie()).toEqual([]);
-  expect(mocks.consumeVerifyTokenRequest).not.toHaveBeenCalled();
-  expect(mocks.authProxy).not.toHaveBeenCalled();
-  expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
-  expect(mocks.clearSupabaseAuthCookies).not.toHaveBeenCalled();
-}
-
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.authProxy.mockReturnValue(NextResponse.next());
-  mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
-  mocks.getSatelliteAppSession.mockResolvedValue(null);
-  mocks.getSatelliteSupabaseSessionUser.mockResolvedValue(null);
+  mocks.authProxy.mockResolvedValue(NextResponse.next());
   mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(false);
-  mocks.headers.mockResolvedValue(new Headers());
-  mocks.refreshAppSessionForRequest.mockResolvedValue({
-    ok: true,
-    response: NextResponse.next(),
+  mocks.resolveMountedSession.mockResolvedValue({
+    ok: false,
+    error: 'Shared session unavailable',
   });
 });
 
-describe('mounted Calendar verify-token resume', () => {
-  it('keeps the deep link across the Web sign-in handoff', async () => {
-    const login = await proxy(mounted(`${BASE}/login?next=%2Fabc`));
-    expect(login.headers.get('location')).toBeNull();
-
-    const handoff = new URL(await renderMountedLogin({ next: '/abc' }));
-    expect(`${handoff.origin}${handoff.pathname}`).toBe(`${APEX}/login`);
-    const returnUrl = new URL(handoff.searchParams.get('returnUrl') ?? '');
-    expect(returnUrl.href).toBe(`${APEX}${BASE}/abc`);
-  });
-
-  it.each([
-    ['GET', ''],
-    ['HEAD', ''],
-    ['GET', '/en'],
-    ['HEAD', '/vi'],
-  ])(
-    '%s %s/verify-token resumes without consuming the token',
-    async (method, locale) => {
-      for (const trailing of ['', '/']) {
-        const path = verifyTokenUrl({ token: 'x', nextUrl: '/abc' }, locale);
-        const response = await proxy(
-          mounted(path.replace('/verify-token?', `/verify-token${trailing}?`), {
-            method,
-            cookie: SHARED_COOKIE,
-          })
-        );
-        expect(response.status).toBe(307);
-        expect(response.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
-        expectNoSessionWrites(response);
-      }
-    }
-  );
-
-  it('preserves a valid workspace path with its query', async () => {
+describe('mounted Calendar shared session', () => {
+  it('rejects mutation methods at the mounted verifier', async () => {
     const response = await proxy(
-      mounted(
-        verifyTokenUrl({
-          token: 'x',
-          nextUrl: '/ws-id/calendar?date=2026-11-14',
-        })
-      )
+      new NextRequest(APEX + BASE + '/vi/verify-token?nextUrl=%2Fpersonal', {
+        method: 'POST',
+        nextConfig: { basePath: BASE },
+      })
     );
-    expect(response.headers.get('location')).toBe(
-      `${APEX}${BASE}/ws-id/calendar?date=2026-11-14`
-    );
-    expectNoSessionWrites(response);
-  });
-
-  it('accepts `next` when `nextUrl` is absent', async () => {
-    const response = await proxy(
-      mounted(verifyTokenUrl({ token: 'x', next: '/abc' }))
-    );
-    expect(response.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
-  });
-
-  it('drops a token nested in a verify-token next path', async () => {
-    const response = await proxy(
-      mounted(
-        verifyTokenUrl({
-          token: 'x',
-          nextUrl: '/verify-token?token=nested&nextUrl=%2Fabc',
-        })
-      )
-    );
-    expect(response.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
-    expectNoSessionWrites(response);
-  });
-
-  it.each([
-    '//evil.example',
-    '/\\evil.example',
-    'https://evil.example/x',
-    '%2F%2Fevil.example',
-    '/%5Cevil.example',
-    'javascript:alert(1)',
-    '',
-  ])(
-    'sends the hostile next path %j to /calendar/personal',
-    async (nextUrl) => {
-      const response = await proxy(
-        mounted(verifyTokenUrl({ token: 'x', nextUrl }))
-      );
-      expect(response.status).toBe(307);
-      expect(response.headers.get('location')).toBe(`${APEX}${BASE}/personal`);
-      expectNoSessionWrites(response);
-    }
-  );
-
-  it('falls back to /calendar/personal without a next path', async () => {
-    const response = await proxy(mounted(verifyTokenUrl({ token: 'x' })));
-    expect(response.headers.get('location')).toBe(`${APEX}${BASE}/personal`);
-  });
-
-  it.each(['POST', 'PUT', 'PATCH', 'DELETE'])(
-    'returns %s to the mounted login without consuming the token',
-    async (method) => {
-      const response = await proxy(
-        mounted(verifyTokenUrl({ token: 'x', nextUrl: '/abc' }), {
-          method,
-          cookie: SHARED_COOKIE,
-        })
-      );
-      expect(response.status).toBe(307);
-      expect(response.headers.get('location')).toBe(`${APEX}${BASE}/login`);
-      expectNoSessionWrites(response);
-    }
-  );
-
-  it.each([
-    '/verify-token-extra',
-    '/verify-token/abc',
-    '/fr/verify-token',
-    '/en/en/verify-token',
-    '/xverify-token',
-    '/abc/verify-token',
-  ])('does not treat %s as the verify-token resume', async (path) => {
-    const response = await proxy(
-      mounted(`${BASE}${path}?token=x&nextUrl=%2Fabc`)
-    );
+    expect(response.status).toBe(405);
+    expect(response.headers.get('allow')).toBe('GET, HEAD');
     expect(response.headers.get('location')).toBeNull();
-    expectNoSessionWrites(response);
+    expect(mocks.resolveMountedSession).not.toHaveBeenCalled();
   });
-});
 
-describe('mounted Calendar public completion redirect', () => {
-  for (const method of ['GET', 'HEAD']) {
-    it.each([
-      ['/verify-token', {}, '/personal'],
-      ['/verify-token', { cookie: 'NEXT_LOCALE=vi' }, '/personal'],
-      ['/vi/verify-token', {}, '/personal'],
-      ['/verify-token?nextUrl=%2Fabc', {}, '/abc'],
-    ] as const)(
-      `${method} tokenless %s resumes without rendering the verifier`,
-      async (path, headers, destination) => {
-        const response = await proxy(
-          new NextRequest(`${APEX}${BASE}${path}`, {
-            method,
-            headers,
-            nextConfig: { basePath: BASE },
-          })
-        );
-        expect(response.status).toBe(307);
-        expect(response.headers.get('location')).toBe(
-          `${APEX}${BASE}${destination}`
-        );
-        expect(response.headers.has('x-middleware-rewrite')).toBe(false);
-        expectNoSessionWrites(response);
-      }
+  it('round-trips a signed-out deep link through Web and the mounted verifier', async () => {
+    const path = '/personal?view=week&q=one%26two';
+    const handoff = await proxy(mounted(path));
+    expect(handoff.status).toBe(307);
+    const login = new URL(handoff.headers.get('location') ?? '');
+    expect(login.origin + login.pathname).toBe('https://tuturuuu.com/login');
+    const verifier = new URL(login.searchParams.get('returnUrl') ?? '');
+    expect(verifier.origin + verifier.pathname).toBe(
+      APEX + BASE + '/verify-token'
     );
-  }
+    expect(verifier.searchParams.get('nextUrl')).toBe(path);
+    expect(handoff.headers.getSetCookie()).toEqual([]);
 
-  it('keeps a token-bearing mounted request on the resume redirect', async () => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
+    const completion = await proxy(mounted('/verify-token' + verifier.search));
+    expect(completion.status).toBe(307);
+    expect(completion.headers.get('location')).toBe(APEX + BASE + path);
+    expect(completion.headers.getSetCookie()).toEqual([]);
+  });
+
+  it.each([
+    'https://tuturuuu.com/mail/personal',
+    '//evil.example/personal',
+    '/../mail/personal',
+  ])('keeps a verifier return for %s inside the mount', async (next) => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: true,
+      response: NextResponse.next(),
+    });
     const response = await proxy(
-      mounted(verifyTokenUrl({ token: 'x', nextUrl: '/abc' }))
+      mounted('/verify-token?' + new URLSearchParams({ nextUrl: next }))
     );
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(`${APEX}${BASE}/abc`);
-    expectNoSessionWrites(response);
-  });
-});
-
-describe('mounted Calendar login with a stale shared cookie', () => {
-  beforeEach(() => {
-    // The cookie name is present, but the session behind it no longer verifies.
-    mocks.hasSupportedSupabaseAuthCookie.mockReturnValue(true);
-    mocks.getSatelliteAppSession.mockResolvedValue(null);
+    expect(response.headers.get('location')).toBe(APEX + BASE);
   });
 
-  it.each(['/login', '/en/login', '/login?next=%2Fpersonal'])(
-    'lets the login page decide at %s instead of bouncing to a protected page',
+  it.each(['/personal', '/verify-token?nextUrl=%2Fpersonal'])(
+    'requests MFA for %s',
     async (path) => {
-      const response = await proxy(
-        mounted(`${BASE}${path}`, { cookie: SHARED_COOKIE })
-      );
-      expect(response.status).not.toBe(307);
-      expect(response.headers.get('location')).toBeNull();
-      expectNoSessionWrites(response);
+      mocks.resolveMountedSession.mockResolvedValue({
+        ok: false,
+        error: 'MFA required',
+      });
+      const response = await proxy(mounted(path));
+      const login = new URL(response.headers.get('location') ?? '');
+      expect(login.searchParams.get('mfa')).toBe('required');
+      expect(response.headers.getSetCookie()).toEqual([]);
     }
   );
 
-  it('hands a stale session to Web instead of back to /calendar/personal', async () => {
-    const target = new URL(await renderMountedLogin({}, SHARED_COOKIE));
-    expect(`${target.origin}${target.pathname}`).toBe(`${APEX}/login`);
-    expect(target.searchParams.get('returnUrl')).toBe(
-      `${APEX}${BASE}/personal`
-    );
-  });
-
-  it('sends a verified session from the mounted login to its next path', async () => {
-    mocks.getSatelliteSupabaseSessionUser.mockResolvedValue({ id: 'user-1' });
-    await expect(
-      renderMountedLogin({ next: '/abc' }, SHARED_COOKIE)
-    ).resolves.toBe(`${BASE}/abc`);
+  it('returns the assurance service failure on a mounted page', async () => {
+    mocks.resolveMountedSession.mockResolvedValue({
+      ok: false,
+      error: 'Account assurance unavailable',
+    });
+    const response = await proxy(mounted('/personal'));
+    expect(response.status).toBe(503);
+    expect(response.headers.getSetCookie()).toEqual([]);
   });
 });
 

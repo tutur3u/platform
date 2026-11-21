@@ -51,38 +51,6 @@ describe('native canonical Mail SSO model', () => {
       login({ next: 'https://attacker.example' })
     ).rejects.toMatchObject({ options: { href: destination.toString() } });
   });
-  it.each([
-    [{ next: 'https://attacker.example' }, '/mail/personal'],
-    [{ next: '/vi/personal/sent?q=a+b' }, '/mail/vi/personal/sent?q=a+b'],
-    [{}, '/mail/personal'],
-    [{ next: '/verify-token?nextUrl=%2Fvi%2Fpersonal' }, '/mail/vi/personal'],
-    [{ next: '/vi/login' }, '/mail/personal'],
-    [{ next: '/mail/vi/login' }, '/mail/personal'],
-  ])(
-    'returns mounted central sign-in %j straight to the mounted destination',
-    async (params, destination) => {
-      const target = new URL('/login', 'https://tuturuuu.com');
-      target.searchParams.set(
-        'returnUrl',
-        new URL(destination, 'https://tuturuuu.com').toString()
-      );
-      await expect(
-        login(params, 'https://tuturuuu.com/mail/login', '/mail')
-      ).rejects.toMatchObject({ options: { href: target.toString() } });
-    }
-  );
-  it('never routes the mounted return through verify-token', async () => {
-    const error = await login(
-      { next: '/personal/inbox' },
-      'https://tuturuuu.com/mail/login',
-      '/mail'
-    ).catch((thrown: unknown) => thrown);
-    const href = (error as { options: { href: string } }).options.href;
-    const returnUrl = new URL(href).searchParams.get('returnUrl') ?? '';
-    expect(new URL(returnUrl).origin).toBe('https://tuturuuu.com');
-    expect(returnUrl).toBe('https://tuturuuu.com/mail/personal/inbox');
-    expect(returnUrl).not.toContain('verify-token');
-  });
   it('requires web-session proof with an app claim and honors forced refresh', async () => {
     mocks.claims.mockReturnValue({ sub: 'actor' });
     await expect(login({ next: '/personal/sent' })).rejects.toMatchObject({
@@ -104,18 +72,6 @@ describe('native canonical Mail SSO model', () => {
       login({ nextUrl: '/personal/drafts?compose=1' })
     ).rejects.toMatchObject({
       options: { href: '/personal/drafts?compose=1' },
-    });
-  });
-  it('retains the mounted path for an already verified actor', async () => {
-    mocks.supabase.mockResolvedValue({ id: 'actor' });
-    await expect(
-      login(
-        { next: '/vi/personal/drafts?compose=1' },
-        'https://tuturuuu.com/mail/login',
-        '/mail'
-      )
-    ).rejects.toMatchObject({
-      options: { href: '/mail/vi/personal/drafts?compose=1' },
     });
   });
 });

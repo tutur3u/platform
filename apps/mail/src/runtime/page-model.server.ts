@@ -1,7 +1,6 @@
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createBasePath } from '@tuturuuu/start-bridge/base-path';
 import {
   appBasePath,
@@ -16,47 +15,6 @@ import { loadMailWorkspace } from './mail-workspace-model.server';
 import { resolveMailPage } from './page-policy';
 import { dispatchThroughMailProxy } from './proxy-bridge';
 import { mailRequest, withMailRequest } from './request-context';
-
-/** URL parsing would silently resolve these into a different path. */
-function hasDotSegment(value: string | null) {
-  if (!value) return false;
-  let decoded = value;
-  for (let round = 0; round < 3; round += 1) {
-    try {
-      decoded = decodeURIComponent(decoded);
-    } catch {
-      return true;
-    }
-  }
-  return decoded
-    .split(/[/\\?#]/u)
-    .some((part) => part === '.' || part === '..');
-}
-
-const RETURNABLE_PAGES = new Set(['home', 'workspace-index', 'folder']);
-
-/**
- * The token handoff page is never served under the mount. Anything it carried
- * is dropped; only a normalized app-relative Mail path, with no query, can be
- * sent to the mounted login as `next`.
- */
-function mountedLoginRedirect(url: URL, basePath: string) {
-  const raw = url.searchParams.get('nextUrl') ?? url.searchParams.get('next');
-  const normalized = normalizeAuthRedirectPath(raw, url.origin, '');
-  const login = new URL(withAppBase('/login'), url.origin);
-  if (normalized && !hasDotSegment(raw)) {
-    const pathname = new URL(normalized, url.origin).pathname;
-    const appPath =
-      createBasePath({ app: 'mail', basePath }).strip(pathname) ?? pathname;
-    if (
-      appPath &&
-      appPath !== '/' &&
-      RETURNABLE_PAGES.has(resolveMailPage(appPath).kind)
-    )
-      login.searchParams.set('next', appPath);
-  }
-  return login.pathname + login.search;
-}
 
 export async function loadPageModel(path: string) {
   const current = mailRequest();
@@ -132,6 +90,19 @@ async function loadResolvedPage(url: URL) {
     ? page.locale
     : await getLocale();
   const prefix = `${appBasePath()}${locale === 'vi' ? '/vi' : ''}`;
+  if (
+    appBasePath() &&
+    (page.kind === 'login' || page.kind === 'verify-token')
+  ) {
+    const destination = new URL(withAppBase('/' + page.kind), url.origin);
+    if (page.kind === 'verify-token') {
+      const next = url.searchParams.get('nextUrl');
+      if (next !== null) destination.searchParams.set('nextUrl', next);
+    } else {
+      destination.search = url.search;
+    }
+    throw redirect({ href: destination.href, reloadDocument: true });
+  }
   const actor = await getSatelliteAppSessionUser('mail');
   const params: Record<string, string> = { locale };
   const common = {
@@ -148,12 +119,8 @@ async function loadResolvedPage(url: URL) {
         searchParams: Promise.resolve(Object.fromEntries(url.searchParams)),
       });
       throw new Error('Mail login did not redirect');
-    case 'verify-token': {
-      const basePath = appBasePath();
-      if (basePath)
-        throw redirect({ href: mountedLoginRedirect(url, basePath) });
+    case 'verify-token':
       return { ...common, kind: 'verify-token' as const };
-    }
     case 'not-available':
       return { ...common, kind: 'not-available' as const };
     case 'missing':

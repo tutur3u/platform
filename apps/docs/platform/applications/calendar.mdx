@@ -29,18 +29,16 @@ verifier cookies; failure retains the safe fallback and cookie cleanup. Other
 methods, protected pages, shared auth defaults and other satellite apps are
 unchanged. Web and mobile Calendar surfaces are outside this rule's scope.
 
-Web owns the session at `tuturuuu.com/calendar`. Mounted completion requests
-resume a validated Calendar destination with GET or HEAD and return to the
-mounted login with other methods. They discard any handoff token. The legacy
-subdomain continues to serve and verify its completion flow.
-These mounted rules apply only when the request URL's host is a configured apex
-mount host (`tuturuuu.com`, from `apps/calendar/src/lib/calendar-mount-hosts.ts`)
-and the base path is set. The same base path on `calendar.tuturuuu.com` keeps
-the satellite flow: app-session refresh, verify-token consumption and the
-central auth proxy. The decision reads the routed request URL, never `Host` or
-`X-Forwarded-Host`; `apps/calendar/src/proxy.host-mount.test.ts` covers the host
-scope and `apps/calendar/src/proxy.cookie-path.test.ts` the `Path=/` session
-cookies that the satellite flow writes under `/calendar/*`.
+Web owns the session at `tuturuuu.com/calendar`. A signed-out mounted page
+redirects to Web's `/login` with
+`https://tuturuuu.com/calendar/verify-token?nextUrl=<Calendar path and query>`
+as its `returnUrl`. The mounted verifier checks Web's shared session and
+resumes the Calendar destination for GET or HEAD. This follows the
+[one-origin login return decision](../architecture/one-origin-super-app#decisions-of-2026-11-21).
+The proxy selects the shared session from the routed HTTPS apex URL and the
+`/calendar` base. The subdomain keeps its app-session refresh, token verifier
+and central auth proxy. Calendar's plan-panel preference passes through the
+mount and writes a host-only cookie at `Path=/calendar`.
 
 The production Worker uses `TTR_ONE_ORIGIN_CALENDAR` to control activation.
 `shadow` serves both hosts. After the apex is verified, `on` moves browser

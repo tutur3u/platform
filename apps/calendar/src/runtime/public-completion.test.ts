@@ -495,7 +495,11 @@ it.each(['/verify-token', '/vi/%76erify-token/'])(
         () => loadPageModel(location)
       )
     ).rejects.toMatchObject({
-      options: { href: `/calendar${next}`, statusCode: 307 },
+      options: {
+        reloadDocument: true,
+        href: `https://tuturuuu.com/calendar/verify-token?${new URLSearchParams({ nextUrl: next })}`,
+        statusCode: 307,
+      },
     });
     expect(ports.actor).not.toHaveBeenCalled();
     expect(ports.data).not.toHaveBeenCalled();

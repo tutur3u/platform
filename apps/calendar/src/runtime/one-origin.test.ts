@@ -178,6 +178,7 @@ describe('Calendar one-origin activation', () => {
     suppliers.start.mockImplementationOnce(async (request: Request) => {
       const cookie = request.headers.get('cookie') ?? '';
       expect(cookie).toContain('NEXT_LOCALE=en');
+      expect(cookie).toContain('calendar-plan-panel=open');
       expect(cookie).not.toContain('foreign=');
       const value = cookie
         .split(/;\s*/u)
@@ -196,6 +197,14 @@ describe('Calendar one-origin activation', () => {
         'set-cookie',
         'NEXT_LOCALE=vi; Domain=.tuturuuu.com; Path=/'
       );
+      headers.append(
+        'set-cookie',
+        'calendar-plan-panel=closed; Domain=.tuturuuu.com; Path=/'
+      );
+      headers.append(
+        'set-cookie',
+        '__Host-ttr_session=ignored; Path=/; Secure'
+      );
       return new Response('served', { headers });
     });
     const response = await handleCalendarRequest(
@@ -204,6 +213,7 @@ describe('Calendar one-origin activation', () => {
           Cookie: [
             'foreign=ignore',
             'NEXT_LOCALE=en',
+            'calendar-plan-panel=open',
             'sb-project-auth-token=' +
               encodeURIComponent(
                 JSON.stringify({
@@ -223,6 +233,7 @@ describe('Calendar one-origin activation', () => {
     expect(response.headers.get('clear-site-data')).toBeNull();
     expect(response.headers.getSetCookie()).toEqual([
       'NEXT_LOCALE=vi; Path=/calendar; Secure',
+      'calendar-plan-panel=closed; Path=/calendar; Secure',
     ]);
   });
 
