@@ -37,7 +37,11 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
   ) => mocks.readAiCreditSnapshot(...args),
 }));
 
-import { checkAiCredits, deductAiCredits } from './check-credits';
+import {
+  checkAiCredits,
+  deductAiCredits,
+  recordUnbilledAiCharge,
+} from './check-credits';
 import {
   commitFixedAiCreditReservation,
   reserveFixedAiCredits,
@@ -272,5 +276,76 @@ describe('AI credit Redis snapshot cache', () => {
     });
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it('records an unbilled chat charge with the settlement pricing', async () => {
+    mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+
+    await expect(
+      recordUnbilledAiCharge({
+        wsId: 'workspace-1',
+        userId: 'user-1',
+        modelId: 'gemini-lite',
+        inputTokens: 100,
+        outputTokens: 20,
+        reasoningTokens: 8,
+        searchCount: 2,
+        feature: 'chat',
+        chatMessageId: 'message-1',
+        errorCode: 'INSUFFICIENT_CREDITS',
+      })
+    ).resolves.toBe(true);
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'record_unbilled_ai_charge',
+      expect.objectContaining({
+        p_chat_message_id: 'message-1',
+        p_ws_id: 'workspace-1',
+        p_user_id: 'user-1',
+        p_feature: 'chat',
+        p_input_tokens: 100,
+        // The ledger prices reasoning separately from visible output.
+        p_output_tokens: 12,
+        p_reasoning_tokens: 8,
+        p_search_count: 2,
+        p_error_code: 'INSUFFICIENT_CREDITS',
+      })
+    );
+  });
+
+  it('never throws and skips charges it cannot settle', async () => {
+    const charge = {
+      modelId: 'gemini-lite',
+      inputTokens: 1,
+      outputTokens: 1,
+      feature: 'chat' as const,
+    };
+    await expect(
+      recordUnbilledAiCharge({ ...charge, chatMessageId: 'message-1' })
+    ).resolves.toBe(false);
+    await expect(
+      recordUnbilledAiCharge({ ...charge, wsId: 'workspace-1' })
+    ).resolves.toBe(false);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+
+    mocks.createAdminClient.mockRejectedValueOnce(new Error('unavailable'));
+    await expect(
+      recordUnbilledAiCharge({
+        ...charge,
+        wsId: 'workspace-1',
+        chatMessageId: 'message-1',
+      })
+    ).resolves.toBe(false);
+
+    mocks.createAdminClient.mockResolvedValue({ rpc: mocks.rpc });
+    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: 'x' } });
+    await expect(
+      recordUnbilledAiCharge({
+        ...charge,
+        wsId: 'workspace-1',
+        chatMessageId: 'message-1',
+      })
+    ).resolves.toBe(false);
   });
 });

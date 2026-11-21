@@ -1,0 +1,116 @@
+---
+title: AI chat credit settlement
+description: How chat replies are charged exactly once after streaming, how a failed charge is recorded, and the bounded Cron Control job that settles it.
+updatedAt: "2026-11-21"
+audience: developers
+---
+
+## Decision
+
+Every assistant chat message is charged **at most once**, and a charge that
+fails after the reply was served is **recorded, not dropped**.
+
+- Scope: the shared chat route (`packages/ai/src/chat/google/route.ts`) used by
+  Mira and AI chat on web and mobile. Fixed-cost tool reservations and
+  AI Studio runs settle through their own reservation RPCs.
+- Default: the reply is always delivered and saved first; credits settle from
+  the stream's `onFinish`/`onAbort`, after the response has returned.
+- Exception: a charge with no workspace (`wsId`) cannot be settled and is
+  only logged.
+
+## Exactly once
+
+`public.deduct_ai_credits` returns the earlier deduction when one already
+exists for `p_chat_message_id`, instead of charging again. The wallet row lock
+serializes concurrent settlements of one message; settlements that resolve
+different wallets meet at the unique partial index
+`ai_credit_transactions_one_chat_message_deduction`, and the loser returns the
+winner's row. The index (migration `20261121184400`, built `CONCURRENTLY` so
+ledger writes continue) covers rows from 2026-11-21 00:00Z on, so older rows
+cannot block it. Before applying it, confirm no message has two deductions in
+that window:
+
+```sql
+select chat_message_id, count(*)
+from public.ai_credit_transactions
+where transaction_type = 'deduction' and chat_message_id is not null
+  and created_at >= timestamptz '2026-11-21 00:00:00+00'
+group by chat_message_id having count(*) > 1;
+```
+
+Settlement runs outside the request scope (Next `after()`, Cloudflare
+`waitUntil`). Its admin clients use `createAdminClient({ noCookie: true })`,
+because the default admin client reads request cookies and throws there.
+
+## Unbilled charges
+
+When the post-stream deduction throws or returns `success: false`,
+`recordUnbilledAiCharge` (`packages/ai/src/credits/check-credits.ts`) calls
+`public.record_unbilled_ai_charge`, which inserts one row per message into
+`private.ai_credit_unbilled_charges` (first record wins). The log line
+`Failed to deduct AI credits after assistant response.` or
+`AI credit deduction returned unsuccessful result.` carries the error class,
+message and `recordedUnbilled`.
+
+The table has row level security, no policies and no grants; only the
+service-role `SECURITY DEFINER` functions read or write it. It has no foreign
+key to the message or the user, so deleting either leaves the record to end
+`abandoned` and never bills a deleted user's charge to the workspace wallet.
+
+## Retry job
+
+Cron Control job `ai-credit-unbilled-settlement` (`*/15 * * * *`, enabled in
+`apps/cron-control/cloudflare.config.ts`) calls
+`private.settle_unbilled_ai_charges(p_limit)` once per slot:
+
+- At most 100 pending rows per call, oldest first, `FOR UPDATE SKIP LOCKED`.
+- Each row is charged through `deduct_ai_credits`, so a replay never charges
+  twice. Success marks it `settled`.
+- A failure increments `attempts` and keeps `last_error`; the fifth failure
+  marks it `abandoned`, a terminal audit record of uncharged usage. A
+  timeout, deadlock or serialization failure aborts the run without spending
+  an attempt.
+- No in-slot retry. Five failed or unknown slots stop the job durably in the
+  Cron Control ledger.
+
+## Cost bounds
+
+| Bound | Per slot (96 a day) |
+| --- | --- |
+| Database requests | 1 |
+| Rows processed | At most 100, each at most 5 times in its lifetime |
+| Processor time | 30 seconds |
+
+## Stop
+
+- Fastest: `POST /control/jobs/ai-credit-unbilled-settlement/stop` (operator
+  token).
+- Database, without a deploy:
+  `revoke execute on function private.settle_unbilled_ai_charges(integer) from service_role;`
+- Config: remove the id from `CRON_CONTROL_ENABLED_JOBS`.
+- `apps/database/rollbacks/20261121184500_ai_chat_credit_exactly_once.rollback.sql`
+  restores the previous wrapper and drops the store; read non-settled rows
+  first.
+
+## Inspect
+
+```sql
+select status, count(*), max(attempts), min(created_at)
+from private.ai_credit_unbilled_charges group by status;
+```
+
+## Regression evidence
+
+- `apps/database/supabase/tests/ai-chat-credit-exactly-once.sql`: one charge per
+  message across repeated settlement, the index rejecting a second row, first
+  record wins, settlement of pending rows without re-charging an already
+  charged message, abandonment after five attempts, the zero limit, grants and
+  pinned search paths.
+- `packages/ai/src/chat/google/stream-finish-persistence.test.ts`: a thrown or
+  unsuccessful deduction keeps the reply and records it unbilled; a deducted
+  charge is not recorded.
+- `packages/ai/src/credits/check-credits-cache.test.ts`: settlement and
+  recording use the cookie-free admin client and the ledger's pricing.
+- `apps/cron-control/src/ai-credit-unbilled-settlement.test.ts`: registration,
+  default off, one bounded call per slot, durable stop, failure stop and
+  invalid summaries.

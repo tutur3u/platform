@@ -1,5 +1,6 @@
 import { purgeAccountsAudit } from './accounts-audit-retention';
 import type { WorkerProcessorId } from '../jobs';
+import { settleUnbilledAiCharges } from './ai-credit-unbilled-settlement';
 import { purgeAiStudioRetention } from './ai-studio-retention';
 import { recoverChatRevocations } from './chat-realtime-revocations';
 import { expireCheckouts } from './checkout-expiry';
@@ -31,6 +32,7 @@ export const WORKER_PROCESSORS: Record<
   (context: ProcessorContext) => Promise<ProcessorResult>
 > = {
   'accounts-audit-retention': purgeAccountsAudit,
+  'ai-credit-unbilled-settlement': settleUnbilledAiCharges,
   'ai-studio-retention': purgeAiStudioRetention,
   'chat-realtime-revocations': recoverChatRevocations,
   'checkout-expiry': expireCheckouts,

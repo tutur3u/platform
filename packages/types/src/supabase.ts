@@ -522,6 +522,61 @@ export type Database = {
           },
         ];
       };
+      ai_credit_unbilled_charges: {
+        Row: {
+          attempts: number;
+          chat_message_id: string;
+          created_at: string;
+          feature: string;
+          input_tokens: number;
+          last_error: string | null;
+          model_id: string;
+          output_tokens: number;
+          reasoning_tokens: number;
+          search_count: number;
+          settled_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          chat_message_id: string;
+          created_at?: string;
+          feature: string;
+          input_tokens: number;
+          last_error?: string | null;
+          model_id: string;
+          output_tokens: number;
+          reasoning_tokens?: number;
+          search_count?: number;
+          settled_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          attempts?: number;
+          chat_message_id?: string;
+          created_at?: string;
+          feature?: string;
+          input_tokens?: number;
+          last_error?: string | null;
+          model_id?: string;
+          output_tokens?: number;
+          reasoning_tokens?: number;
+          search_count?: number;
+          settled_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       ai_embedding_credit_reservations: {
         Row: {
           amount: number;
@@ -18965,6 +19020,7 @@ export type Database = {
           person_id: string | null;
           version: number;
           ws_id: string;
+          ws_seq: number;
         };
         ComputedFields: never;
         Insert: {
@@ -18976,6 +19032,7 @@ export type Database = {
           person_id?: string | null;
           version: number;
           ws_id: string;
+          ws_seq: number;
         };
         Update: {
           consent_version?: number;
@@ -18986,12 +19043,37 @@ export type Database = {
           person_id?: string | null;
           version?: number;
           ws_id?: string;
+          ws_seq?: number;
         };
         Relationships: [
           {
             foreignKeyName: 'people_change_events_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
+            referencedRelation: 'people_registry_control';
+            referencedColumns: ['ws_id'];
+          },
+        ];
+      };
+      people_change_sequences: {
+        Row: {
+          last_seq: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          last_seq?: number;
+          ws_id: string;
+        };
+        Update: {
+          last_seq?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'people_change_sequences_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
             referencedRelation: 'people_registry_control';
             referencedColumns: ['ws_id'];
           },
@@ -30174,6 +30256,10 @@ export type Database = {
         };
         Returns: number;
       };
+      fleet_is_desk_account: {
+        Args: { p_account: string; p_channel: string };
+        Returns: boolean;
+      };
       fleet_is_owner: { Args: { p_user_id: string }; Returns: boolean };
       fleet_linked_desk_actor: { Args: { p_event: Json }; Returns: string };
       fleet_list_intents: {
@@ -32497,6 +32583,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      people_admit_event: {
+        Args: {
+          p_event: Json;
+          p_operation: string;
+          p_principal: string;
+          p_ws: string;
+        };
+        Returns: string;
+      };
       people_admit_request: {
         Args: {
           p_generation: number;
@@ -32529,6 +32624,10 @@ export type Database = {
           p_ws: string;
         };
         Returns: Json;
+      };
+      people_brief_usable: {
+        Args: { p_cited: string[]; p_conversation: string; p_ws: string };
+        Returns: boolean;
       };
       people_bump_person: {
         Args: { p_consent: boolean; p_person: string; p_ws: string };
@@ -32597,6 +32696,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      people_list_changes: {
+        Args: {
+          p_after: number;
+          p_limit: number;
+          p_principal: string;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       people_list_persons: {
         Args: {
           p_actor: string;
@@ -32631,11 +32739,31 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      people_machine_lookup_keys: {
+        Args: { p_principal: string; p_ws: string };
+        Returns: Json;
+      };
       people_memory_consent_granted: {
         Args: { p_conversation: string; p_person: string; p_ws: string };
         Returns: boolean;
       };
       people_principal_key: { Args: { p_kid: string }; Returns: Json };
+      people_profile_granted: {
+        Args: { p_person: string; p_ws: string };
+        Returns: boolean;
+      };
+      people_recall: {
+        Args: {
+          p_conversation_lookups: Json;
+          p_conversation_type: string;
+          p_event: Json;
+          p_if_version: string;
+          p_principal: string;
+          p_sender_lookups: Json;
+          p_ws: string;
+        };
+        Returns: Json;
+      };
       people_record_personal_recall: {
         Args: { p_event_hash: string; p_session_hash: string; p_ws: string };
         Returns: boolean;
@@ -32842,6 +32970,7 @@ export type Database = {
         Returns: Json;
       };
       people_user_exists: { Args: { p_user: string }; Returns: boolean };
+      people_valid_lookups: { Args: { p_lookups: Json }; Returns: boolean };
       people_workspace_creator: { Args: { p_ws: string }; Returns: string };
       people_wrap_kid_usage: { Args: { p_kid: string }; Returns: number };
       periodic_report_delivery_contract_ready: {
@@ -33900,6 +34029,7 @@ export type Database = {
           success: boolean;
         }[];
       };
+      settle_unbilled_ai_charges: { Args: { p_limit?: number }; Returns: Json };
       skip_held_periodic_reports: {
         Args: { p_report_ids: string[]; p_ws_id: string };
         Returns: string[];
@@ -63108,6 +63238,21 @@ export type Database = {
           p_user_id: string;
         };
         Returns: string;
+      };
+      record_unbilled_ai_charge: {
+        Args: {
+          p_chat_message_id: string;
+          p_error_code?: string;
+          p_feature: string;
+          p_input_tokens: number;
+          p_model_id: string;
+          p_output_tokens: number;
+          p_reasoning_tokens?: number;
+          p_search_count?: number;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
       };
       release_expired_workspace_usage: {
         Args: { p_hold: string; p_receipt: string; p_ws: string };

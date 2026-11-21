@@ -20,6 +20,7 @@ export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
   | 'accounts-audit-retention'
+  | 'ai-credit-unbilled-settlement'
   | 'ai-studio-retention'
   | 'chat-realtime-revocations'
   | 'checkout-expiry'
@@ -46,6 +47,9 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
   'accounts-audit-retention': 'accounts_purge',
+  // Charges chat replies whose post-stream deduction failed; idempotent per
+  // chat message and bounded to five attempts per charge.
+  'ai-credit-unbilled-settlement': 'settle_unbilled_ai_charges',
   'ai-studio-retention': 'cleanup_ai_studio_retention_batch',
   'cron-history-retention': 'prune_cron_history',
   'devbox-unauthorized-run-sweep': 'cancel_unauthorized_devbox_runs',
@@ -133,6 +137,14 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
       workerProcessor: 'finance-bill-split-reminders',
       timeoutMs: 30_000,
     }
+  ),
+  job(
+    'ai-credit-unbilled-settlement',
+    '*/15 * * * *',
+    'web',
+    '/rest/v1/rpc/settle_unbilled_ai_charges',
+    'claim-fenced',
+    { workerProcessor: 'ai-credit-unbilled-settlement', timeoutMs: 30_000 }
   ),
   job(
     'database-cron-history-retention',

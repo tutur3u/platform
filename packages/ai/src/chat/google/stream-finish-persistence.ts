@@ -1,4 +1,7 @@
-import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
+import {
+  deductAiCredits,
+  recordUnbilledAiCharge,
+} from '@tuturuuu/ai/credits/check-credits';
 import { normalizeAiTokenUsage } from '../../credits/token-usage';
 import type { CreditDeductionResult } from '../../credits/types';
 import { assistantMessageContentPreview } from '../assistant-message-content';
@@ -585,34 +588,47 @@ export async function persistAssistantResponse({
       reasoningTokens > 0 ||
       searchCount > 0)
   ) {
+    const charge = {
+      wsId: wsId ?? undefined,
+      userId,
+      modelId: model,
+      inputTokens,
+      outputTokens,
+      reasoningTokens,
+      feature: 'chat' as const,
+      chatMessageId: messageData?.id,
+      ...(searchCount > 0 ? { searchCount } : {}),
+    };
     let deductionResult: CreditDeductionResult;
     try {
-      deductionResult = await deductAiCredits({
-        wsId: wsId ?? undefined,
-        userId,
-        modelId: model,
-        inputTokens,
-        outputTokens,
-        reasoningTokens,
-        feature: 'chat',
-        chatMessageId: messageData?.id,
-        ...(searchCount > 0 ? { searchCount } : {}),
-      });
+      deductionResult = await deductAiCredits(charge);
     } catch (error) {
+      // Workers Logs serialize an Error as {}; keep its class and message.
+      const errorName = error instanceof Error ? error.name : typeof error;
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      const recorded = await recordUnbilledAiCharge({
+        ...charge,
+        errorCode: `${errorName}: ${errorMessage}`,
+      });
       console.error('Failed to deduct AI credits after assistant response.', {
         wsId,
         userId,
         chatMessageId: messageData?.id,
         model,
         ...(searchCount > 0 ? { searchCount } : {}),
-        // Workers Logs serialize an Error as {}; keep its class and message.
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
+        errorName,
+        errorMessage,
+        recordedUnbilled: recorded,
       });
       return true;
     }
 
     if (!deductionResult.success) {
+      const recorded = await recordUnbilledAiCharge({
+        ...charge,
+        errorCode: deductionResult.errorCode ?? 'DEDUCTION_FAILED',
+      });
       console.error('AI credit deduction returned unsuccessful result.', {
         wsId,
         userId,
@@ -620,6 +636,7 @@ export async function persistAssistantResponse({
         model,
         ...(searchCount > 0 ? { searchCount } : {}),
         deductionResult,
+        recordedUnbilled: recorded,
       });
       return true;
     }
