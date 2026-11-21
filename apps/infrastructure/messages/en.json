@@ -12842,7 +12842,7 @@
       "retry": "Retry"
     },
     "controls": {
-      "description": "Temporarily disable edge protections during false-positive incidents without changing subject rules.",
+      "description": "Shared with the Web API proxy. Temporarily disable edge protections during false-positive incidents without changing subject rules.",
       "ip_blocking": "IP blocking",
       "ip_blocking_description": "Enforce cached IP blocks and create new edge IP blocks from proxy abuse signals.",
       "never_updated": "Default settings",

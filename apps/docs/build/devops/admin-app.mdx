@@ -72,7 +72,11 @@ keeps per-instance proxy windows rather than no limit. `ratelimit` and
 `integrity` are assigned for the shared names only: Admin's own session and API
 limiter (`src/lib/rate-limit.ts`) stays on Upstash with its in-memory fallback,
 and the rate-limit pages read Upstash with `SCAN`, which the guard store does
-not implement.
+not implement. The Protection controls card (Route rate limits, IP blocking) reads and writes
+the shared `proxy` controls through the guard's `proxy` view. Web's API proxy
+(`/api` and `/native-integrity/turnstile`) reads the same controls, so a switch
+changes Web's API protection as well as Admin's; document routes and apps that
+do not assign the `proxy` family do not read them.
 
 Mounted apps follow the apex isolation rules: app-owned cookies use
 `Path=/admin`, and no service worker is registered over `/`.
@@ -118,9 +122,26 @@ report-only policy without a rebuild.
 | `tuturuuu-infrastructure` | `5ed24f1d-6c45-4f12-ac1b-d41624282368` | `36411ab8fb1c66b9bc43a231f7addafdfd4d61d6` | `6b451924-fb31-450d-b188-d960c8c790be` |
 | `tuturuuu-gateway` | `57f12582-206d-4196-b6ab-2b463726a04d` | serving module of `fc59b682` plus `MOUNT_ADMIN` and `/admin,/admin/*` | `fc59b682-2a15-48c7-939e-c9cbc05cd4cb` |
 
+Later Admin versions on 2026-11-21, each assigned with `--expect-current` on
+the one before it:
+
+| Version | Source | Change |
+| --- | --- | --- |
+| `cea83e5b-0dd8-46b1-b5c2-205e28b86fce` | `36411ab8fb` | Secret-only version: `TTR_CSP_ADMIN=report` while client navigation broke under enforced Trusted Types |
+| `0aed07f7-9be0-4a44-8aea-b93362e944db` | `4e4b70bff7` | `publish --strict` with the `TUTURUUU_LEGACY_HOST_REDIRECT` override; includes the Trusted Types allowlist policy and sandboxed email previews (`6f0d79df04`) and the legacy-host redirect |
+| `681800e7-f1ae-428c-9db9-2f2a29122d6f` | `4e4b70bff7` | Secret-only version removing `TTR_CSP_ADMIN`, so Trusted Types is enforced |
+| `5de03f57-99fc-40f1-8b10-c3b2c92616bb` | `47885230b3` | Shared abuse-guard binding; published without `--strict` because strict accepts only variable overrides, gated by a binding diff that allowed only `ABUSE_GUARD` and `ABUSE_GUARD_FAMILIES` to appear |
+
+The code versions were built on a workstation with the cutover job's steps: a
+clean checkout of the exact SHA, the production Wrangler config rewrite from
+the workflow, then seal and pack.
+
 ## Rollback
 
 - Admin Worker: `void-cf-publisher.mjs assign --version <previous> --expect-current <new>`.
+  From `5de03f57` the chain is `681800e7` (no guard binding), `0aed07f7`
+  (Trusted Types report-only) and `cea83e5b` (code before the Trusted Types
+  fix).
 - Gateway: redeploy the previous gateway version; removing `/admin` entries
   returns the path to Web.
 - Redirect: assign the previous Worker version, which serves the app on the
