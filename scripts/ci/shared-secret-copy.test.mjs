@@ -1,10 +1,7 @@
 // Static contract for .github/workflows/shared-secret-copy.yaml: dispatch on
-// the production branch (copy-meet also on main under the one-off
-// RA-20261121-COPY-MAIN), one
-// job per source environment, a read-only token, existing action pins, and the
-// copied value only in one variable and on stdin.
+// the production branch only, one job per source environment, a read-only token, existing
+// action pins, and the copied value only in one variable and on stdin.
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -21,26 +18,9 @@ const FILE = 'shared-secret-copy.yaml';
 const text = readFileSync(join(workflowsDir, FILE), 'utf8');
 const workflow = readWorkflow(FILE, { raw: true });
 
-const ONE_OFF = 'RA-20261121-COPY-MAIN';
-const PRODUCTION_GUARD = "github.ref == 'refs/heads/production'";
-const ONE_OFF_GUARD =
-  "(github.ref == 'refs/heads/production' || (github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.allow_main_one_off == 'RA-20261121-COPY-MAIN'))";
-const PRODUCTION_STEP = 'test "$GITHUB_REF" = refs/heads/production';
-const ONE_OFF_STEP = [
-  'test "$GITHUB_REF" = refs/heads/production || {',
-  '  test "$GITHUB_REF" = refs/heads/main &&',
-  '    test "$GITHUB_EVENT_NAME" = workflow_dispatch &&',
-  '    test "$ALLOW_MAIN_ONE_OFF" = RA-20261121-COPY-MAIN',
-  '}',
-  '',
-].join('\n');
-
 const JOBS = {
   'copy-repo-secret': {
     environment: 'colab-production',
-    // colab-production holds the Workers token without reviewers, so this job
-    // never runs off production, the one-off included.
-    oneOff: false,
     when: "inputs.secret != 'MEET_REALTIME_TOKEN_SECRET'",
     sources: [
       ['CRON_CONTROL_DELIVERY_TOKEN', 'CRON_CONTROL_DELIVERY_TOKEN'],
@@ -49,23 +29,14 @@ const JOBS = {
   },
   'copy-meet': {
     environment: 'meet-cloudflare-production',
-    oneOff: true,
     when: "inputs.secret == 'MEET_REALTIME_TOKEN_SECRET'",
     sources: [],
   },
 };
 
-test('dispatch only, with the secret choice and the one-off approval input', () => {
+test('dispatch only, with one choice input', () => {
   assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch']);
-  const { secret, allow_main_one_off: oneOff } =
-    workflow.on.workflow_dispatch.inputs;
-  assert.deepEqual(Object.keys(workflow.on.workflow_dispatch.inputs), [
-    'secret',
-    'allow_main_one_off',
-  ]);
-  assert.equal(oneOff.type, 'string');
-  assert.equal(oneOff.default, '');
-  assert.equal(oneOff.required, false);
+  const { secret } = workflow.on.workflow_dispatch.inputs;
   assert.equal(secret.type, 'choice');
   assert.deepEqual(secret.options, [
     'MEET_REALTIME_TOKEN_SECRET',
@@ -95,77 +66,15 @@ for (const [name, spec] of Object.entries(JOBS)) {
   const secretStep = steps.at(-1);
   const script = secretStep.run;
 
-  test(`${name}: the ref guard admits production${spec.oneOff ? ' and only the approved main one-off' : ' only'}`, () => {
-    const guard = (env) =>
-      spawnSync('bash', ['-e', '-c', steps[0].run], {
-        env: { PATH: process.env.PATH, ...env },
-      }).status;
-    const dispatch = { GITHUB_EVENT_NAME: 'workflow_dispatch' };
-    const main = (value) => ({
-      ...dispatch,
-      GITHUB_REF: 'refs/heads/main',
-      ALLOW_MAIN_ONE_OFF: value,
-    });
-    assert.equal(
-      guard({ ...dispatch, GITHUB_REF: 'refs/heads/production' }),
-      0
-    );
-    assert.equal(
-      guard({
-        ...dispatch,
-        GITHUB_REF: 'refs/heads/production',
-        ALLOW_MAIN_ONE_OFF: '',
-      }),
-      0
-    );
-    assert.equal(guard({ ...dispatch, GITHUB_REF: 'refs/heads/main' }), 1);
-    assert.equal(guard(main('')), 1);
-    for (const wrong of [
-      'yes',
-      'ra-20261121-copy-main',
-      `${ONE_OFF} `,
-      `${ONE_OFF}x`,
-    ])
-      assert.equal(guard(main(wrong)), 1, wrong);
-    // Only copy-meet takes the one-off; copy-repo-secret refuses it.
-    assert.equal(guard(main(ONE_OFF)), spec.oneOff ? 0 : 1);
-    assert.equal(
-      guard({
-        GITHUB_EVENT_NAME: 'push',
-        GITHUB_REF: 'refs/heads/main',
-        ALLOW_MAIN_ONE_OFF: ONE_OFF,
-      }),
-      1
-    );
-    for (const ref of [
-      'refs/heads/Main',
-      'refs/heads/MAIN',
-      'refs/heads/feature',
-      'refs/tags/production',
-      'refs/heads/production2',
-    ])
-      assert.equal(
-        guard({ ...dispatch, GITHUB_REF: ref, ALLOW_MAIN_ONE_OFF: ONE_OFF }),
-        1,
-        ref
-      );
-  });
-
-  test(`${name}: ${spec.oneOff ? 'production branch or the main one-off' : 'production branch only'}, its environment, no job-wide credentials`, () => {
+  test(`${name}: production branch only, its environment, no job-wide credentials`, () => {
     assert.equal(
       job.if,
-      `${spec.oneOff ? ONE_OFF_GUARD : PRODUCTION_GUARD} && ${spec.when}`
+      `github.ref == 'refs/heads/production' && ${spec.when}`
     );
     assert.equal(job.environment, spec.environment);
     assert.equal(job.permissions, undefined);
     assert.equal(job.env, undefined);
-    assert.equal(steps[0].run, spec.oneOff ? ONE_OFF_STEP : PRODUCTION_STEP);
-    assert.deepEqual(
-      steps[0].env,
-      spec.oneOff
-        ? { ALLOW_MAIN_ONE_OFF: '$' + '{{ inputs.allow_main_one_off }}' }
-        : undefined
-    );
+    assert.equal(steps[0].run, 'test "$GITHUB_REF" = refs/heads/production');
     const checkout = steps.find((step) =>
       step.uses?.startsWith('actions/checkout')
     );
