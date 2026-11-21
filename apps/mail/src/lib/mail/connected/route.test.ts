@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   update: vi.fn(),
   send: vi.fn(),
   connect: vi.fn(),
+  table: vi.fn(),
 }));
 vi.mock('next/server', async (original) => ({
   ...(await original<typeof import('next/server')>()),
@@ -29,7 +30,7 @@ vi.mock('../route-utils', () => ({
 vi.mock('./repository', () => ({
   listAccounts: mocks.list,
   getAccount: mocks.account,
-  table: vi.fn(),
+  table: mocks.table,
 }));
 vi.mock('./messages', () => ({
   updateMessage: mocks.update,
@@ -44,7 +45,9 @@ vi.mock('./send', () => ({
 }));
 vi.mock('./oauth', () => ({ startOAuth: mocks.connect }));
 
+import { seal } from './crypto';
 import { connectedMailRoute } from './route';
+import { GOOGLE_REVOKE_URL } from './revoke';
 
 const accountId = '3b83b485-f740-4e43-9966-a9a63b792a9c';
 const origin = 'https://mail.example.test';
@@ -124,5 +127,125 @@ describe('connected mail API boundaries', () => {
       ).status
     ).toBe(400);
     expect(mocks.send).not.toHaveBeenCalled();
+  });
+});
+
+describe('connected mail disconnect', () => {
+  const refreshToken = 'synthetic-refresh-secret';
+  const accessToken = 'synthetic-access-secret';
+  let events: string[];
+  let deleteResult: { error: unknown };
+  let warn: ReturnType<typeof vi.spyOn>;
+  const disconnect = () =>
+    connectedMailRoute(request('DELETE'), 'personal', [accountId]);
+  const useAccount = (provider: 'google' | 'microsoft') =>
+    mocks.account.mockResolvedValue({
+      id: accountId,
+      provider,
+      user_id: 'owner',
+      ws_id: 'personal-id',
+      credentials: seal({ accessToken, refreshToken, expiresAt: 0 }, 'owner'),
+    });
+  beforeEach(() => {
+    vi.stubEnv('MAIL_CONNECTED_ACCOUNTS_KEY', 'a'.repeat(64));
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    events = [];
+    deleteResult = { error: null };
+    const filters: [string, string][] = [];
+    const chain = {
+      delete: () => {
+        events.push('delete');
+        return chain;
+      },
+      eq: (column: string, value: string) => {
+        filters.push([column, value]);
+        return filters.length === 3 ? Promise.resolve(deleteResult) : chain;
+      },
+    };
+    mocks.table.mockImplementation(async (name: string) => {
+      events.push(`table:${name}`);
+      return chain;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it('revokes the Google grant before deleting the stored tokens', async () => {
+    useAccount('google');
+    const fetch = vi.fn().mockImplementation(async () => {
+      events.push('revoke');
+      return new Response(null, { status: 200 });
+    });
+    vi.stubGlobal('fetch', fetch);
+    const response = await disconnect();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      disconnected: true,
+      revoked: true,
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      GOOGLE_REVOKE_URL,
+      expect.objectContaining({ method: 'POST' })
+    );
+    expect(String(fetch.mock.calls[0]?.[1].body)).toBe(
+      new URLSearchParams({ token: refreshToken }).toString()
+    );
+    expect(events).toEqual([
+      'revoke',
+      'table:mail_connected_accounts',
+      'delete',
+    ]);
+  });
+
+  it.each([
+    [
+      'rejects the token',
+      () => Promise.resolve(new Response(null, { status: 400 })),
+    ],
+    ['is unreachable', () => Promise.reject(new TypeError('fetch failed'))],
+    [
+      'times out',
+      () => Promise.reject(new DOMException('timed out', 'TimeoutError')),
+    ],
+  ])('still deletes the account when Google %s', async (_, reply) => {
+    useAccount('google');
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(reply));
+    const response = await disconnect();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      disconnected: true,
+      revoked: false,
+    });
+    expect(events).toContain('delete');
+    expect(warn).toHaveBeenCalled();
+    const logged = JSON.stringify(warn.mock.calls);
+    expect(logged).not.toContain(refreshToken);
+    expect(logged).not.toContain(accessToken);
+  });
+
+  it('deletes Microsoft accounts without calling a provider endpoint', async () => {
+    useAccount('microsoft');
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    const response = await disconnect();
+    expect(await response.json()).toEqual({
+      disconnected: true,
+      revoked: true,
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(events).toEqual(['table:mail_connected_accounts', 'delete']);
+  });
+
+  it('reports a failed deletion instead of claiming a disconnect', async () => {
+    useAccount('microsoft');
+    deleteResult = { error: { message: 'db' } };
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn());
+    const response = await disconnect();
+    expect(response.status).toBe(500);
+    expect(await response.json()).not.toHaveProperty('disconnected');
   });
 });

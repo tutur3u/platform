@@ -1,6 +1,6 @@
 ---
 title: Tuturuuu Mail
-updatedAt: '2026-09-18'
+updatedAt: '2026-11-21'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
 audience: users
 ---
@@ -1473,8 +1473,19 @@ RLS and no `anon`/`authenticated` grants. Expired tokens refresh on the server;
 refresh writes compare revisions; only a newer scoped, valid winner can resolve a conflict.
 An unauthorized read can refresh and retry once; mutations are not automatically
 replayed. Disconnect removes local access and encrypted credentials without
-changing provider messages. Provider-side application consent can be revoked in
-Google/Microsoft account settings.
+changing provider messages. Before deleting a Gmail connection, the server posts
+the stored refresh token (or the access token when no refresh token exists) to
+Google's OAuth revoke endpoint with a 5-second timeout and no retry. Microsoft has
+no app-scoped revocation endpoint, and Graph `revokeSignInSessions` would sign the
+user out of every app, so deleting the stored tokens is the Outlook revocation;
+users can remove consent at `https://account.live.com/consent/Manage` or
+`https://myapps.microsoft.com`. A failed, rejected or timed-out revocation never
+blocks the disconnect: the row is still deleted, a token-free `console.warn` is
+logged, and the response reports `{ disconnected: true, revoked: false }`.
+Coverage lives in `revoke.test.ts` and `route.test.ts` under
+`apps/mail/src/lib/mail/connected/`. The Privacy Policy's "Google user data in
+Tuturuuu Mail" section (`packages/legal/src/mail-google-revision-2026-11-21.ts`)
+describes this disconnect behavior and the Limited Use commitments.
 Sends reserve an account/request claim; acceptance records a receipt. Proven pre-send
 failures or explicit provider rejections release only their matching sending claim for user retry.
 Completed requests acknowledge without resending; in-flight, unknown or post-acceptance failures require provider Sent checks.

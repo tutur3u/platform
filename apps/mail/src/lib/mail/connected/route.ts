@@ -9,6 +9,7 @@ import { listMessages, readMessage, updateMessage } from './messages';
 import { composeSchema } from './mime';
 import { startOAuth } from './oauth';
 import { getAccount, listAccounts, table } from './repository';
+import { revokeProviderAccess } from './revoke';
 import {
   respondToConnectedInvitation,
   saveDraft,
@@ -53,6 +54,7 @@ export async function connectedMailRoute(
       return NextResponse.json({ error: 'Invalid account' }, { status: 400 });
     const account = await getAccount(ctx, accountId.data);
     if (segments.length === 1 && request.method === 'DELETE') {
+      const revoked = await revokeProviderAccess(account);
       const { error } = await (
         await table('mail_connected_accounts')
       )
@@ -61,7 +63,7 @@ export async function connectedMailRoute(
         .eq('user_id', ctx.user.id)
         .eq('ws_id', ctx.normalizedWsId);
       if (error) throw new Error('Failed to disconnect mail account');
-      return NextResponse.json({ disconnected: true });
+      return NextResponse.json({ disconnected: true, revoked });
     }
     if (
       segments[1] === 'messages' &&
