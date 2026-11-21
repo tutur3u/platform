@@ -3,7 +3,10 @@ import { connection, type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { readSyncFailures } from '@/lib/calendar/sync-diagnostics';
-import { classifyCalendarSyncHealth } from '@/lib/calendar/sync-health';
+import {
+  classifyCalendarSyncHealth,
+  type SyncDashboardRecord,
+} from '@/lib/calendar/sync-health';
 
 interface RouteParams {
   wsId: string;
@@ -54,9 +57,11 @@ export async function GET(
       await Promise.all([
         supabase
           .from('calendar_auth_tokens')
-          .select('id, provider, account_email, account_name, expires_at')
+          .select(
+            'id, provider, account_email, account_name, expires_at, is_active'
+          )
           .eq('ws_id', wsId)
-          .eq('is_active', true)
+          .eq('user_id', user.id)
           .order('created_at', { ascending: true }),
         supabase
           .from('calendar_connections')
@@ -75,19 +80,55 @@ export async function GET(
           .limit(10),
       ]);
 
-    if (
-      accountsResult.error ||
-      connectionsResult.error ||
-      dashboardResult.error
-    ) {
+    const failedReads = [
+      { source: 'accounts', error: accountsResult.error },
+      { source: 'connections', error: connectionsResult.error },
+      { source: 'dashboard', error: dashboardResult.error },
+    ].flatMap(({ source, error }) =>
+      error
+        ? [
+            {
+              source,
+              code: /^[A-Z0-9]{5,10}$/.test(error.code)
+                ? error.code
+                : 'unknown',
+            },
+          ]
+        : []
+    );
+    if (failedReads.length) {
+      console.error('Calendar sync status reads failed', { failedReads });
       return NextResponse.json(
         { error: 'Failed to load sync status' },
         { status: 500 }
       );
     }
 
-    const accounts = accountsResult.data ?? [];
-    const connections = connectionsResult.data ?? [];
+    const ownedAccounts: Array<{
+      id: string;
+      provider: string;
+      account_email: string | null;
+      account_name: string | null;
+      expires_at: string | null;
+      is_active: boolean;
+    }> = accountsResult.data ?? [];
+    const accounts = ownedAccounts
+      .filter((account) => account.is_active)
+      .map(({ is_active: _, ...account }) => account);
+    const inactiveAccountIds = new Set(
+      ownedAccounts.filter((account) => !account.is_active).map(({ id }) => id)
+    );
+    const connections: Array<{
+      id: string;
+      auth_token_id: string | null;
+      calendar_id: string;
+      calendar_name: string | null;
+      is_enabled: boolean;
+      sync_inbound_enabled: boolean | null;
+    }> = connectionsResult.data ?? [];
+    const recentRuns: Array<
+      SyncDashboardRecord & { error_stack_trace: string | null }
+    > = dashboardResult.data ?? [];
     const health = classifyCalendarSyncHealth({
       hasEnabledConnections: connections.some(
         (connection) =>
@@ -98,19 +139,19 @@ export async function GET(
           connection.is_enabled &&
           connection.sync_inbound_enabled !== false &&
           connection.auth_token_id &&
-          !accounts.some((account) => account.id === connection.auth_token_id)
+          inactiveAccountIds.has(connection.auth_token_id)
       ),
       accounts: accounts.map((account) => ({
         provider: account.provider as 'google' | 'microsoft',
         expires_at: account.expires_at,
       })),
-      recentRuns: dashboardResult.data ?? [],
+      recentRuns,
     });
 
     return NextResponse.json({
       health,
       failedCalendars: readSyncFailures(
-        dashboardResult.data?.[0]?.error_stack_trace
+        recentRuns[0]?.error_stack_trace
       ).filter((failure) =>
         connections.some(
           (connection) =>
@@ -134,9 +175,7 @@ export async function GET(
       },
       accounts,
       connections,
-      recentRuns: (dashboardResult.data ?? []).map(
-        ({ error_stack_trace: _, ...run }) => run
-      ),
+      recentRuns: recentRuns.map(({ error_stack_trace: _, ...run }) => run),
       cron: {
         inbound: '*/15 * * * *',
         scheduler: '0 * * * *',

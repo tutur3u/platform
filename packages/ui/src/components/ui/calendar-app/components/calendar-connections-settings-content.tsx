@@ -11,7 +11,7 @@ import {
 } from '@tuturuuu/icons';
 import type { CalendarSourceOption } from '@tuturuuu/internal-api/calendar';
 import Image from 'next/image';
-import type React from 'react';
+import { type ChangeEvent, type KeyboardEvent, useState } from 'react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -105,11 +105,15 @@ export function CalendarConnectionsSettingsContent({
     !syncPreferencesData ||
     syncSettingsUnavailable ||
     syncPreferencesMutation.isPending;
+  const [tab, setTab] = useState('calendars');
 
   return (
     <div className={className ? `space-y-4 ${className}` : 'space-y-4'}>
-      <CalendarSyncRecovery state={state} />
-      <Tabs defaultValue="calendars" className="py-4">
+      <CalendarSyncRecovery
+        state={state}
+        showAccountRows={tab !== 'accounts'}
+      />
+      <Tabs value={tab} onValueChange={setTab} className="py-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="calendars">
             {t('settings_tab_calendars') || 'Calendars'}
@@ -213,14 +217,14 @@ export function CalendarConnectionsSettingsContent({
                   <div className="py-4">
                     <Input
                       value={newCalendarName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
                         setNewCalendarName(e.target.value)
                       }
                       placeholder={
                         t('enter_calendar_name') || 'Enter calendar name'
                       }
                       autoFocus
-                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                      onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
                         if (e.key === 'Enter' && newCalendarName.trim()) {
                           createCalendarMutation.mutate({
                             name: newCalendarName.trim(),

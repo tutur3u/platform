@@ -3775,6 +3775,12 @@
     "sync_in_progress": "Đang đồng bộ",
     "sync_now": "Đồng bộ ngay",
     "sync_recovery": {
+      "account_status_configuration": "Lỗi cấu hình dịch vụ",
+      "account_status_expired": "Quyền đã hết hạn hoặc bị thu hồi",
+      "account_status_removed": "Tài khoản đã bị xóa",
+      "account_status_retry": "Tạm thời không khả dụng",
+      "account_status_scope": "Cần cấp quyền",
+      "account_status_unknown": "Chưa xác định được kết nối",
       "account_removed": "Tài khoản này không còn khả dụng tại nhà cung cấp lịch.",
       "confirm_remove_account": "Gỡ {account} khỏi không gian làm việc này? Các sự kiện đã đồng bộ vẫn còn.",
       "contact_support": "Liên hệ hỗ trợ",

@@ -7,12 +7,24 @@ import {
 
 type ProviderCalendarEntry = Required<ProviderCalendar>;
 
+type CalendarProviderAccountIssue = 'configuration' | 'status_unknown';
+
 export type CalendarProviderAccountState =
   | 'connected'
   | 'reconnect_required'
   | 'scope_required'
   | 'temporarily_unavailable'
+  | CalendarProviderAccountIssue
   | 'removed';
+
+export type CalendarProviderAccountStatusPayload =
+  | { state: 'temporarily_unavailable'; issue?: CalendarProviderAccountIssue }
+  | {
+      state: Exclude<
+        CalendarProviderAccountState,
+        CalendarProviderAccountIssue | 'temporarily_unavailable'
+      >;
+    };
 
 export interface ProviderCalendarsResponse {
   accounts: Array<{
@@ -24,6 +36,43 @@ export interface ProviderCalendarsResponse {
   byAccount: Record<string, ProviderCalendarEntry[]>;
   calendars: ProviderCalendarEntry[];
   accountStatuses?: Record<string, { state: CalendarProviderAccountState }>;
+}
+
+export type ProviderCalendarsPayload = Omit<
+  ProviderCalendarsResponse,
+  'accountStatuses'
+> & {
+  accountStatuses?: Record<string, CalendarProviderAccountStatusPayload>;
+};
+
+export async function listProviderCalendars(
+  wsId: string,
+  query?: { accountId?: string },
+  options?: InternalApiClientOptions
+): Promise<ProviderCalendarsResponse> {
+  const client = getInternalApiClient(options);
+  const response = await client.json<ProviderCalendarsPayload>(
+    '/api/v1/calendar/auth/provider-calendars',
+    {
+      query: { wsId, accountId: query?.accountId },
+      cache: 'no-store',
+    }
+  );
+  if (!response.accountStatuses) return response;
+  return {
+    ...response,
+    accountStatuses: Object.fromEntries(
+      Object.entries(response.accountStatuses).map(([id, status]) => [
+        id,
+        {
+          state:
+            status.state === 'temporarily_unavailable'
+              ? (status.issue ?? status.state)
+              : status.state,
+        },
+      ])
+    ),
+  };
 }
 
 export interface CalendarSyncHealth {

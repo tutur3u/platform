@@ -137,7 +137,7 @@ async function dispatchCalendarRequest(
         url.searchParams.get('navigation') === '1'
       ) {
         const target = new URL(appPath, `https://${host}`);
-        for (const name of ['wsId', 'reconnect', 'navigation']) {
+        for (const name of ['wsId', 'accountId', 'reconnect', 'navigation']) {
           const value = url.searchParams.get(name);
           if (value !== null) target.searchParams.set(name, value);
         }

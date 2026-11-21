@@ -5,6 +5,7 @@ import {
   CalendarAccountRecovery,
   CalendarStatusRetry,
 } from './calendar-account-recovery';
+import { isCalendarAccountStatusRetryable } from './calendar-account-status';
 import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import {
   type CalendarSyncStatus,
@@ -26,6 +27,8 @@ type RecoveryState = Pick<
   | 'syncHealth'
   | 'syncStatus'
   | 'retrySyncStatus'
+  | 'isRetryingSyncStatus'
+  | 'showSyncStatusSupport'
   | 'syncMutation'
   | 'manualSyncDisabled'
   | 'googleAuthMutation'
@@ -48,18 +51,27 @@ type VisibleRecoveryStatus = Extract<
   { kind: 'syncing' | 'attention' | 'status_error' }
 >;
 
-function recoveryDescriptionKey(status: VisibleRecoveryStatus) {
+function recoveryDescriptionKey(
+  status: VisibleRecoveryStatus,
+  failure: RecoveryState['statusCheckFailure']
+) {
   switch (status.kind) {
     case 'syncing':
       return 'sync_recovery.syncing_description';
     case 'status_error':
-      return 'sync_recovery.status_failed';
+      return `sync_recovery.status_detail_${failure ?? 'network'}` as const;
     case 'attention':
       return syncAttentionDescriptionKey(status.reason);
   }
 }
 
-export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
+export function CalendarSyncRecovery({
+  state,
+  showAccountRows = true,
+}: {
+  state: RecoveryState;
+  showAccountRows?: boolean;
+}) {
   const { t, syncHealth, syncStatus: status } = state;
   if (
     status.kind !== 'syncing' &&
@@ -70,6 +82,7 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
   const syncing = calendarSyncIsActive(status);
   const needsAttention = status.kind !== 'syncing';
   const reconnectAccounts = status.kind === 'syncing' ? [] : status.accounts;
+  const reconnectAccountIds = new Set(reconnectAccounts.map(({ id }) => id));
   const accountsWithIssues = new Map(
     reconnectAccounts.map((account) => [account.id, account])
   );
@@ -85,11 +98,20 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
     status.kind === 'status_error' ||
     (status.kind === 'attention' &&
       ['configuration', 'provider_unavailable'].includes(status.reason));
-  const summarizedByAccount =
-    status.kind === 'attention' &&
-    accountsWithIssues.size > 0 &&
-    (status.reason === 'reconnect_required' ||
-      status.reason === 'provider_unavailable');
+  const hasAccountRetry = [...accountsWithIssues.keys()].some(
+    (id) =>
+      !reconnectAccountIds.has(id) &&
+      isCalendarAccountStatusRetryable(
+        state.providerAccountStatuses?.[id]?.state
+      )
+  );
+  const showSupport =
+    (retryStatus || hasAccountRetry) && state.showSyncStatusSupport;
+  const showRetry = retryStatus && !hasAccountRetry;
+  const summary =
+    status.kind === 'attention' && (accountsWithIssues.size || syncing)
+      ? 'sync_recovery.attention'
+      : recoveryDescriptionKey(status, state.statusCheckFailure);
   return (
     <Alert
       role={needsAttention ? 'alert' : 'status'}
@@ -104,14 +126,8 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
       ) : (
         <AlertTriangle className="size-4 text-dynamic-orange" />
       )}
-      <AlertTitle>
-        {t(needsAttention ? 'sync_recovery.attention' : 'syncing_calendars')}
-      </AlertTitle>
-      <AlertDescription className="space-y-3">
-        {!summarizedByAccount && <p>{t(recoveryDescriptionKey(status))}</p>}
-        <p className="text-muted-foreground text-xs">
-          {t('sync_recovery.saved_events')}
-        </p>
+      <AlertTitle>{t(summary)}</AlertTitle>
+      <AlertDescription className="space-y-2">
         {!!status.failedCalendars.length && (
           <ul className="space-y-2">
             {status.failedCalendars.map((failure) => (
@@ -153,28 +169,34 @@ export function CalendarSyncRecovery({ state }: { state: RecoveryState }) {
             })}
           </p>
         )}
-        {[...accountsWithIssues.values()].map((account) => (
-          <CalendarAccountRecovery
-            key={account.id}
-            account={account}
-            status={
-              state.providerAccountStatuses?.[account.id]?.state ??
-              'reconnect_required'
-            }
-            state={state}
-          />
-        ))}
-        {status.kind === 'status_error' && (
-          <p className="text-muted-foreground text-xs">
-            {t(
-              `sync_recovery.status_detail_${state.statusCheckFailure ?? 'network'}`
-            )}
-          </p>
+        {showAccountRows && accountsWithIssues.size > 0 && (
+          <div className="divide-y">
+            {[...accountsWithIssues.values()].map((account) => (
+              <CalendarAccountRecovery
+                key={account.id}
+                account={account}
+                status={
+                  reconnectAccountIds.has(account.id)
+                    ? 'reconnect_required'
+                    : state.providerAccountStatuses?.[account.id]?.state
+                }
+                state={state}
+              />
+            ))}
+          </div>
         )}
-        {retryStatus &&
-          (status.kind === 'status_error' || !accountsWithIssues.size) && (
-            <CalendarStatusRetry state={state} />
-          )}
+        {(showRetry || showSupport) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {showRetry && <CalendarStatusRetry state={state} />}
+            {showSupport && (
+              <Button asChild size="sm" variant="link">
+                <a href="mailto:support@tuturuuu.com">
+                  {t('sync_recovery.contact_support')}
+                </a>
+              </Button>
+            )}
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           {!retryStatus && (
             <Button

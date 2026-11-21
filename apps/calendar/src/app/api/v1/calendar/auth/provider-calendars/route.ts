@@ -1,5 +1,5 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
-import type { CalendarProviderAccountState } from '@tuturuuu/internal-api/calendar';
+import type { CalendarProviderAccountStatusPayload } from '@tuturuuu/internal-api/calendar';
 import { createGraphClient } from '@tuturuuu/microsoft';
 import { fetchMicrosoftCalendars } from '@tuturuuu/microsoft/calendar';
 import {
@@ -72,7 +72,7 @@ export async function GET(request: Request) {
   let tokenQuery = supabase
     .from('calendar_auth_tokens')
     .select(
-      'id, provider, access_token, refresh_token, account_email, account_name'
+      'id, provider, access_token, refresh_token, expires_at, account_email, account_name'
     )
     .eq('user_id', user.id)
     .eq('ws_id', normalizedWsId)
@@ -94,22 +94,35 @@ export async function GET(request: Request) {
 
   const byAccount: Record<string, unknown[]> = {};
   const calendars: unknown[] = [];
-  const accountStatuses: Record<
-    string,
-    { state: CalendarProviderAccountState }
-  > = {};
+  const accountStatuses: Record<string, CalendarProviderAccountStatusPayload> =
+    {};
 
   for (const token of tokens ?? []) {
     if (token.provider !== 'google' && token.provider !== 'microsoft') continue;
     try {
       if (token.provider === 'google') {
+        if (
+          !token.refresh_token &&
+          (!token.access_token ||
+            Date.parse(token.expires_at ?? '') <= Date.now())
+        ) {
+          byAccount[token.id] = [];
+          accountStatuses[token.id] = { state: 'reconnect_required' };
+          continue;
+        }
         const auth = getGoogleAuthClient({
           access_token: token.access_token,
           refresh_token: token.refresh_token,
         });
         if (!auth) {
           byAccount[token.id] = [];
-          accountStatuses[token.id] = { state: 'temporarily_unavailable' };
+          accountStatuses[token.id] = {
+            state: 'temporarily_unavailable',
+            issue: 'configuration',
+          };
+          console.warn('Calendar provider OAuth configuration unavailable', {
+            provider: token.provider,
+          });
           continue;
         }
         const calendar = google.calendar({ version: 'v3', auth });
@@ -168,7 +181,10 @@ export async function GET(request: Request) {
         state,
       });
       byAccount[token.id] = [];
-      accountStatuses[token.id] = { state };
+      accountStatuses[token.id] =
+        state === 'configuration' || state === 'status_unknown'
+          ? { state: 'temporarily_unavailable', issue: state }
+          : { state };
     }
   }
 

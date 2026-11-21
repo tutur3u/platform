@@ -2198,6 +2198,12 @@
     "sync_now": "Sync now",
     "sync_recovery": {
       "account_removed": "This account is no longer available from your calendar provider.",
+      "account_status_configuration": "Service configuration issue",
+      "account_status_expired": "Access expired or revoked",
+      "account_status_removed": "Account removed",
+      "account_status_retry": "Temporarily unavailable",
+      "account_status_scope": "Permission needed",
+      "account_status_unknown": "Connection status unknown",
       "attention": "Sync needs attention",
       "calendar_failed": "Other calendars can keep syncing. You can pause this calendar while its connection is repaired.",
       "calendar_paused": "Sync paused for this calendar. Saved events remain available.",

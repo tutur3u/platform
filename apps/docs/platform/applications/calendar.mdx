@@ -442,11 +442,17 @@ picker when sync stalls, data becomes stale, a provider account needs action,
 or the status check fails. The Calendar header popover and the **Accounts** tab
 identify the affected account. **Reconnect Google** renews a rejected grant
 for that account. **Grant access** requests missing permissions. For a
-provider outage or failed status check, **Check again** reloads the status and
-**Contact support** opens an email. **Remove account** asks for confirmation
+provider outage or failed status check, **Check again** reloads the status.
+**Contact support** appears if that retry fails. **Remove account** asks for confirmation
 when the provider reports that an account is gone. Stored events remain
 available after removal and during provider outages. Google automatically
 refreshes normally expiring access tokens.
+
+Each affected account appears with its status and one recovery action. A
+confirmed expired or revoked Google credential offers **Reconnect Google**.
+A missing OAuth configuration or an unidentified failure offers a retry.
+The status service logs the failed read category and database error code
+without returning database details to the browser.
 
 Calendar Settings loads Hours and Category Colors through the shared typed
 client. Under the apex mount, the client targets `/calendar/api/` for these

@@ -4,6 +4,16 @@ import {
   calendarSyncIsActive,
 } from './calendar-sync-status';
 
+export function isCalendarAccountStatusRetryable(
+  state: CalendarProviderAccountState | undefined
+) {
+  return (
+    state === 'temporarily_unavailable' ||
+    state === 'status_unknown' ||
+    state === 'configuration'
+  );
+}
+
 /** The status dot of one account row, in the vocabulary of `CalendarSyncStatus`. */
 export type CalendarAccountSyncState =
   | { kind: 'connected' }

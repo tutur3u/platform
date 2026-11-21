@@ -74,13 +74,27 @@ describe('calendar sync recovery actions', () => {
     expect(value.syncMutation.mutate).toHaveBeenCalledOnce();
     expect(screen.queryByText('sync_recovery.reconnect_google')).toBeNull();
   });
-  it('rechecks failed status requests instead of starting an unobserved sync', () => {
+  it('offers support only after an explicit status retry fails', () => {
     const value = state({ syncStatusError: true });
-    render(<CalendarSyncRecovery state={value} />);
+    const view = render(<CalendarSyncRecovery state={value} />);
+    expect(
+      screen.queryByRole('link', { name: 'sync_recovery.contact_support' })
+    ).toBeNull();
     fireEvent.click(
       screen.getByRole('button', { name: 'sync_recovery.check_again' })
     );
     expect(value.retrySyncStatus).toHaveBeenCalledOnce();
+    value.isRetryingSyncStatus = true;
+    view.rerender(<CalendarSyncRecovery state={value} />);
+    expect(
+      screen.getByRole('button', { name: 'sync_recovery.checking' })
+    ).toBeDisabled();
+    expect(
+      screen.queryByRole('link', { name: 'sync_recovery.contact_support' })
+    ).toBeNull();
+    value.isRetryingSyncStatus = false;
+    value.showSyncStatusSupport = true;
+    view.rerender(<CalendarSyncRecovery state={value} />);
     expect(
       screen.getByRole('link', { name: 'sync_recovery.contact_support' })
     ).toHaveAttribute('href', 'mailto:support@tuturuuu.com');
@@ -110,7 +124,7 @@ describe('calendar sync recovery actions', () => {
     expect(needsCalendarSyncAttention(value)).toBeTruthy();
     render(<CalendarSyncRecovery state={value} />);
     expect(screen.getByRole('alert').textContent).toContain(
-      'sync_recovery.reconnect_description'
+      'sync_recovery.account_status_expired'
     );
     expect(screen.getByText('Owner Outlook')).toBeTruthy();
     expect(screen.queryByText('sync_recovery.reconnect_google')).toBeNull();
@@ -132,7 +146,7 @@ describe('calendar sync recovery actions', () => {
         'google-account': { state: 'reconnect_required' },
       },
     });
-    render(<CalendarSyncRecovery state={value} />);
+    const view = render(<CalendarSyncRecovery state={value} />);
     fireEvent.click(
       screen.getByRole('button', { name: 'sync_recovery.reconnect_google' })
     );
@@ -141,6 +155,15 @@ describe('calendar sync recovery actions', () => {
       reconnect: true,
       accountId: 'google-account',
     });
+    view.rerender(
+      <CalendarSyncRecovery state={value} showAccountRows={false} />
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'sync_recovery.attention'
+    );
+    expect(
+      screen.queryByRole('button', { name: 'sync_recovery.reconnect_google' })
+    ).toBeNull();
   });
   it('asks for permissions on the selected account and confirms removal of the retired account', () => {
     const makeAccount = (id: string, name: string) => ({
@@ -321,7 +344,7 @@ it('shows nothing while the first status response is loading', () => {
 it('explains a failed status request instead of a sync failure', () => {
   render(<CalendarSyncRecovery state={state({ syncStatusError: true })} />);
   expect(screen.getByRole('alert').textContent).toContain(
-    'sync_recovery.status_failed'
+    'sync_recovery.status_detail_network'
   );
   expect(screen.queryByText('sync_recovery.stalled')).toBeNull();
 });

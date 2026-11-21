@@ -13,7 +13,6 @@ import type {
   CalendarAccountDisconnectResponse,
   CalendarAccountsResponse,
 } from './calendar-account-types';
-import type { ProviderCalendarsResponse } from './calendar-sync';
 
 export * from './calendar-auth';
 export * from './calendar-link-preview';
@@ -593,21 +592,6 @@ export async function disconnectCalendarAccount(
     {
       method: 'DELETE',
       query: { accountId, wsId },
-      cache: 'no-store',
-    }
-  );
-}
-
-export async function listProviderCalendars(
-  wsId: string,
-  query?: { accountId?: string },
-  options?: InternalApiClientOptions
-) {
-  const client = getInternalApiClient(options);
-  return client.json<ProviderCalendarsResponse>(
-    '/api/v1/calendar/auth/provider-calendars',
-    {
-      query: { wsId, accountId: query?.accountId },
       cache: 'no-store',
     }
   );

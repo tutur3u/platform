@@ -275,10 +275,22 @@ describe('calendar internal API helpers', () => {
     );
   });
 
-  it('calls provider account and auth helpers with expected route contracts', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(createJsonResponse({ accounts: [], calendars: [] }));
+  it('decodes provider status detail and calls the account and auth routes', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        accounts: [],
+        calendars: [],
+        accountStatuses: {
+          old: { state: 'temporarily_unavailable' },
+          config: { state: 'temporarily_unavailable', issue: 'configuration' },
+          unknown: {
+            state: 'temporarily_unavailable',
+            issue: 'status_unknown',
+          },
+          revoked: { state: 'reconnect_required' },
+        },
+      })
+    );
 
     await listCalendarAccounts('workspace 1', options(fetchMock));
     await disconnectCalendarAccount(
@@ -288,11 +300,17 @@ describe('calendar internal API helpers', () => {
     );
     await getGoogleCalendarAuthUrl('workspace 1', options(fetchMock));
     await getMicrosoftCalendarAuthUrl('workspace 1', options(fetchMock));
-    await listProviderCalendars(
+    const providerCalendars = await listProviderCalendars(
       'workspace 1',
       { accountId: 'account 1' },
       options(fetchMock)
     );
+    expect(providerCalendars.accountStatuses).toEqual({
+      old: { state: 'temporarily_unavailable' },
+      config: { state: 'configuration' },
+      unknown: { state: 'status_unknown' },
+      revoked: { state: 'reconnect_required' },
+    });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,

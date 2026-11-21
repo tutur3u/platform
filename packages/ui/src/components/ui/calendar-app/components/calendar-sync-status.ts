@@ -162,10 +162,12 @@ function attentionReason(
     providerStates.some((state) => state !== 'connected');
   if (!needsAttention) return null;
   if (hasReconnectAccounts) return 'reconnect_required';
+  if (providerStates.includes('configuration')) return 'configuration';
   if (
     providerStates.some(
       (state) =>
         state === 'temporarily_unavailable' ||
+        state === 'status_unknown' ||
         state === 'scope_required' ||
         state === 'removed'
     )

@@ -125,43 +125,78 @@ describe('calendar provider calendars route', () => {
     expect(supabase.from).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['invalid_grant', 'reconnect_required'],
-    ['invalid_request', 'temporarily_unavailable'],
-    ['rateLimitExceeded', 'temporarily_unavailable'],
-  ])('maps provider error %s to %s', async (error, state) => {
+  it('offers reconnection for an expired Google access token without a refresh credential', async () => {
     const tokenQuery = createTokenQuery();
     tokenQuery.data = [
       {
-        id: 'account-1',
+        id: 'expired',
         provider: 'google',
         access_token: 'expired',
-        refresh_token: 'invalid',
-        account_email: 'member@example.com',
-        account_name: 'Member',
+        expires_at: '2020-01-01T00:00:00.000Z',
       },
     ];
-    const supabase = { from: vi.fn(() => tokenQuery) };
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
-      supabase,
+      supabase: { from: () => tokenQuery },
       user: { id: 'user-1' },
     });
-    googleCalendarMock.mockImplementation(() => {
-      throw new Error(error);
-    });
-
     const response = await GET(
       new Request(
         'http://localhost/api/v1/calendar/auth/provider-calendars?wsId=workspace-1'
       )
     );
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.byAccount).toEqual({ 'account-1': [] });
-    expect(body.accountStatuses).toEqual({
-      'account-1': { state },
+    expect(await response.json()).toMatchObject({
+      accountStatuses: { expired: { state: 'reconnect_required' } },
     });
+    expect(googleCalendarMock).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['invalid_grant', { state: 'reconnect_required' }],
+    [
+      'invalid_request',
+      { state: 'temporarily_unavailable', issue: 'configuration' },
+    ],
+    [
+      'rateLimitExceeded',
+      { state: 'temporarily_unavailable', issue: 'status_unknown' },
+    ],
+  ])(
+    'maps provider error %s with a compatible retry state',
+    async (error, status) => {
+      const tokenQuery = createTokenQuery();
+      tokenQuery.data = [
+        {
+          id: 'account-1',
+          provider: 'google',
+          access_token: 'expired',
+          refresh_token: 'invalid',
+          account_email: 'member@example.com',
+          account_name: 'Member',
+        },
+      ];
+      const supabase = { from: vi.fn(() => tokenQuery) };
+      resolveSessionAuthContextMock.mockResolvedValue({
+        ok: true,
+        supabase,
+        user: { id: 'user-1' },
+      });
+      googleCalendarMock.mockImplementation(() => {
+        throw new Error(error);
+      });
+
+      const response = await GET(
+        new Request(
+          'http://localhost/api/v1/calendar/auth/provider-calendars?wsId=workspace-1'
+        )
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.byAccount).toEqual({ 'account-1': [] });
+      expect(body.accountStatuses).toEqual({
+        'account-1': status,
+      });
+    }
+  );
 });

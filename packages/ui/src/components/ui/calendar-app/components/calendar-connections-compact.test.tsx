@@ -88,7 +88,7 @@ describe('CalendarConnectionsCompact connect card', () => {
     openPopover(value);
     expect(screen.queryByText('connect_calendar_accounts')).toBeNull();
     expect(screen.getByRole('alert').textContent).toContain(
-      'sync_recovery.status_failed'
+      'sync_recovery.status_detail_network'
     );
   });
 

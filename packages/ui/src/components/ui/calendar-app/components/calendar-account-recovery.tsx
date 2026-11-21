@@ -11,6 +11,7 @@ import {
   AlertDialogTrigger,
 } from '../../alert-dialog';
 import { Button } from '../../button';
+import { isCalendarAccountStatusRetryable } from './calendar-account-status';
 import { reconnectCalendarProvider } from './calendar-reconnect-action';
 import type { CalendarSyncAccountRef } from './calendar-sync-status';
 import type { CalendarConnectionsManagerState } from './use-calendar-connections-manager';
@@ -22,31 +23,45 @@ type RecoveryControls = Pick<
   | 'googleAuthMutation'
   | 'microsoftAuthMutation'
   | 'retrySyncStatus'
+  | 'isRetryingSyncStatus'
   | 't'
 >;
 
 export function CalendarStatusRetry({
   state,
 }: {
-  state: Pick<RecoveryControls, 'retrySyncStatus' | 't'>;
+  state: Pick<
+    RecoveryControls,
+    'isRetryingSyncStatus' | 'retrySyncStatus' | 't'
+  >;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={() => void state.retrySyncStatus()}
-      >
-        {state.t('sync_recovery.check_again')}
-      </Button>
-      <Button asChild size="sm" variant="link">
-        <a href="mailto:support@tuturuuu.com">
-          {state.t('sync_recovery.contact_support')}
-        </a>
-      </Button>
-    </div>
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={state.isRetryingSyncStatus}
+      onClick={() => state.retrySyncStatus()}
+    >
+      {state.t(
+        state.isRetryingSyncStatus
+          ? 'sync_recovery.checking'
+          : 'sync_recovery.check_again'
+      )}
+    </Button>
   );
 }
+
+const ACCOUNT_STATUS_LABELS = {
+  reconnect_required: 'sync_recovery.account_status_expired',
+  temporarily_unavailable: 'sync_recovery.account_status_retry',
+  status_unknown: 'sync_recovery.account_status_unknown',
+  configuration: 'sync_recovery.account_status_configuration',
+  scope_required: 'sync_recovery.account_status_scope',
+  removed: 'sync_recovery.account_status_removed',
+} as const satisfies Record<
+  Exclude<CalendarProviderAccountState, 'connected'>,
+  string
+>;
 
 export function CalendarAccountRecovery({
   account,
@@ -55,7 +70,7 @@ export function CalendarAccountRecovery({
   showAccount = true,
 }: {
   account: CalendarSyncAccountRef;
-  status: CalendarProviderAccountState | undefined;
+  status: keyof typeof ACCOUNT_STATUS_LABELS | 'connected' | undefined;
   state: RecoveryControls;
   showAccount?: boolean;
 }) {
@@ -66,20 +81,16 @@ export function CalendarAccountRecovery({
   const isGoogle = account.provider === 'google';
 
   return (
-    <div className="space-y-2 rounded-md border p-3">
-      {showAccount && <p className="break-words font-medium">{label}</p>}
-      <p className="text-muted-foreground text-xs">
-        {t(
-          status === 'scope_required'
-            ? 'sync_recovery.scope_required'
-            : status === 'removed'
-              ? 'sync_recovery.account_removed'
-              : status === 'reconnect_required'
-                ? 'sync_recovery.reconnect_description'
-                : 'sync_recovery.provider_unavailable'
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+      <div className="min-w-0 flex-1">
+        {showAccount && (
+          <p className="break-words font-medium text-sm">{label}</p>
         )}
-      </p>
-      {status === 'temporarily_unavailable' ? (
+        <p className="text-muted-foreground text-xs">
+          {t(ACCOUNT_STATUS_LABELS[status])}
+        </p>
+      </div>
+      {isCalendarAccountStatusRetryable(status) ? (
         <CalendarStatusRetry state={state} />
       ) : status === 'removed' ? (
         <AlertDialog>

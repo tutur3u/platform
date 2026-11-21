@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  type CalendarProviderAccountState,
   type CalendarSyncResult,
   createCalendarConnection,
   createWorkspaceCalendar,
@@ -31,6 +32,7 @@ import {
   getCalendarColor,
   sourceInputFromOption,
 } from './calendar-connections-manager-helpers';
+import { isCalendarAccountStatusRetryable } from './calendar-account-status';
 import type { AuthResponse } from './calendar-types';
 import {
   calendarSyncStatusStyles,
@@ -533,12 +535,28 @@ export function useCalendarConnectionsManager(wsId: string) {
     : statusErrors.some((error) => error && !(error instanceof TypeError))
       ? 'server'
       : 'network';
-  const retrySyncStatus = () =>
-    Promise.all([
-      accountsQuery.refetch(),
-      syncStatusQuery.refetch(),
-      ...(hasConnectedAccounts ? [providerCalendarsQuery.refetch()] : []),
-    ]);
+  const retryStatusMutation = useMutation({
+    mutationKey: ['calendar-sync-status-retry', wsId],
+    mutationFn: async () => {
+      const [accountsResult, statusResult, providerResult] = await Promise.all([
+        accountsQuery.refetch(),
+        syncStatusQuery.refetch(),
+        hasConnectedAccounts ? providerCalendarsQuery.refetch() : undefined,
+      ]);
+      const providers:
+        | Record<string, { state: CalendarProviderAccountState }>
+        | undefined = providerResult?.data?.accountStatuses;
+      return (
+        accountsResult.isError ||
+        statusResult.isError ||
+        providerResult?.isError === true ||
+        Object.values(providers ?? {}).some(({ state }) =>
+          isCalendarAccountStatusRetryable(state)
+        )
+      );
+    },
+  });
+  const retrySyncStatus = retryStatusMutation.mutate;
   const syncStatus = deriveCalendarSyncStatus({
     status: syncStatusData,
     queryErrored: syncStatusError,
@@ -591,6 +609,9 @@ export function useCalendarConnectionsManager(wsId: string) {
     syncHealth,
     syncStatusError,
     retrySyncStatus,
+    isRetryingSyncStatus: retryStatusMutation.isPending,
+    showSyncStatusSupport:
+      retryStatusMutation.data === true || retryStatusMutation.isError,
     statusCheckFailure,
     syncMutation,
     syncPreferencesData,

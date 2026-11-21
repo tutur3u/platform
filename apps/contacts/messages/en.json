@@ -925,6 +925,12 @@
     "sync_in_progress": "Sync in progress",
     "sync_now": "Sync now",
     "sync_recovery": {
+      "account_status_configuration": "Service configuration issue",
+      "account_status_expired": "Access expired or revoked",
+      "account_status_removed": "Account removed",
+      "account_status_retry": "Temporarily unavailable",
+      "account_status_scope": "Permission needed",
+      "account_status_unknown": "Connection status unknown",
       "account_removed": "This account is no longer available from your calendar provider.",
       "confirm_remove_account": "Remove {account} from this workspace? Previously synced events will remain available.",
       "contact_support": "Contact support",

@@ -253,9 +253,10 @@ describe('Calendar one-origin activation', () => {
   it.each(['/api/v1/calendar/auth', '/api/v1/calendar/auth/microsoft'])(
     'starts %s on the registered subdomain for a mounted navigation',
     async (path) => {
+      const accountId = '00000000-0000-4000-8000-000000000001';
       const response = await handleCalendarRequest(
         new Request(
-          `https://tuturuuu.com/calendar${path}?wsId=personal&reconnect=1&navigation=1`
+          `https://tuturuuu.com/calendar${path}?wsId=personal&accountId=${accountId}&reconnect=1&navigation=1&next=https%3A%2F%2Fexample.com`
         ),
         workerEnv('shadow'),
         ctx,
@@ -268,6 +269,7 @@ describe('Calendar one-origin activation', () => {
       );
       expect(Object.fromEntries(target.searchParams)).toEqual({
         wsId: 'personal',
+        accountId,
         reconnect: '1',
         navigation: '1',
       });
