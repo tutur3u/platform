@@ -29,6 +29,11 @@ export const PURPOSES = [
   'snapshot-leaf',
   'attestation',
   'edk-id',
+  'keyring-head',
+  'keyring-head-hash',
+  'keyring-attestation',
+  'keyring-confirm',
+  'witness-confirm',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];

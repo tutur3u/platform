@@ -146,3 +146,24 @@ export {
   verifyAttestation,
 } from './snapshot';
 export { assertCanonicalX25519, dhClass } from './x25519';
+export {
+  type KeyringAttestation,
+  type KeyringConfirmationBody,
+  type KeyringHead,
+  keyringHeadHash,
+  MAX_KEYRING_ATTESTATION_AGE_SECONDS,
+  type SignedKeyringAttestation,
+  type SignedKeyringHead,
+  signKeyringAttestation,
+  signKeyringConfirmation,
+  signKeyringHead,
+  signWitnessConfirmation,
+  validateKeyringHead,
+  VAULT_USER_ID_BYTES,
+  verifyKeyringAttestation,
+  verifyKeyringConfirmation,
+  verifyKeyringSuccessor,
+  verifyWitnessConfirmation,
+  type WitnessConfirmation,
+  type WitnessHeadView,
+} from './witness-heads';
