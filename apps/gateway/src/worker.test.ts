@@ -41,6 +41,23 @@ function setup(origin: (request: Request) => Response | Promise<Response>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('gateway handler', () => {
+  it('redirects /mastermind to its host only when enabled, even in passthrough', async () => {
+    const t = setup(() => new Response('web'));
+    const enabled = { ...ENV, GATEWAY_MASTERMIND_REDIRECT: '1' };
+    for (const env of [enabled, { ...enabled, GATEWAY_MODE: 'passthrough' }]) {
+      const response = await t.call('/mastermind/vi?x=1', undefined, env);
+      expect(response.status).toBe(302);
+      expect(response.headers.get('Location')).toBe(
+        'https://mastermind.tuturuuu.com/vi?x=1'
+      );
+    }
+    expect(t.fetchMock).not.toHaveBeenCalled();
+    const off = await t.call('/mastermind/vi');
+    expect(off.headers.get('Location')).not.toBe(
+      'https://mastermind.tuturuuu.com/vi'
+    );
+  });
+
   it('caches anonymous public pages: MISS then HIT without Set-Cookie', async () => {
     const t = setup(() => new Response('<h1>about</h1>'));
     const first = await t.call('/about');

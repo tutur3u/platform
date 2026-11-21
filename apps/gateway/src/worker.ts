@@ -8,6 +8,7 @@ import {
   withBypass,
 } from './acceptance-host';
 import { lmsRedirectDestination } from './lms-redirect';
+import { mastermindRedirect } from './mastermind-redirect';
 import { originProofFor, withOriginAuth } from './origin-ip-proof';
 import { HOP_HEADER, isClientForwardingHeader } from './forwarding-headers';
 import { applyMarketingRobots } from './marketing-robots';
@@ -57,6 +58,8 @@ export interface Env {
    * Clearing an app's entries is part of that app's one-step rollback.
    */
   GATEWAY_MOUNTED_PATHS?: string;
+  /** Redirect tuturuuu.com/mastermind after its host passes acceptance. */
+  GATEWAY_MASTERMIND_REDIRECT?: string;
   /** Activate legacy redirects after the LMS mount passes acceptance. */
   GATEWAY_LMS_REDIRECTS?: string;
   /**
@@ -500,6 +503,12 @@ export function createHandler(deps: HandlerDeps) {
     // The acceptance host fails closed without its bypass secret.
     if (isAcceptanceHost(request, env) && !bypassSecret(env)) {
       return acceptanceUnavailable();
+    }
+    // Mastermind is served only on its own host; the apex path redirects
+    // there once the release owner enables it after host acceptance.
+    if (env.GATEWAY_MASTERMIND_REDIRECT === '1') {
+      const mastermind = mastermindRedirect(request);
+      if (mastermind) return mastermind;
     }
     if (
       env.GATEWAY_MODE !== 'passthrough' &&
