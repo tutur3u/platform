@@ -12,7 +12,9 @@ platform that ships that commit uses both.
 ## Release ledger
 
 The ledger is a set of annotated git tags `app-b<B>`, one per production commit
-that ships. Each tag points at its commit and carries
+that ships. Git tags created by CI are the release owner's chosen store for the
+shared build counter; it has no database table, so a release needs only the
+repository and the workflow token. Each tag points at its commit and carries
 `{ build, version, sha, shared, platforms }` as JSON. `scripts/app-version/allocate.mjs`
 reads and extends it. It runs before any build in `mobile-deploy-stores.yaml`
 (**Allocate shared app version**) and in `desktop-beta.yaml` (`release-status`):

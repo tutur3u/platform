@@ -436,6 +436,24 @@ groups and reads the assignments back. External groups require explicit opt-in
 by exact name or ID; newly created external groups are never included by default.
 An accepted upload alone does not pass verification.
 
+### Distribution policy: internal testing only
+
+The release owner's standing decision is that store betas stay on internal
+testing:
+
+- **Google Play:** builds publish to the internal track only. No automatic
+  promotion to closed (`alpha`) or open (`beta`) testing.
+  `GOOGLE_PLAY_BETA_TRACKS` stays empty, so the promotion step logs
+  `testing tracks [none opted in]`.
+- **TestFlight:** builds go to the internal group only. No external tester
+  group and no beta App Review submission. `TESTFLIGHT_EXTERNAL_BETA_GROUPS`
+  stays empty, which also keeps the review retry job from submitting anything.
+
+Setting either variable changes this policy. Do it only on a new explicit
+decision from the release owner, and update this section in the same change.
+The store receipt records the opted-in Play track count, so a run that
+promoted anywhere is visible in its receipt.
+
 Configure these optional GitHub repository variables. The review scheduler reads
 the repository-level external opt-in before entering any environment:
 
@@ -444,7 +462,6 @@ the repository-level external opt-in before entering any environment:
 | `TESTFLIGHT_BETA_ENABLED` | `true` | Set `false` to skip automatic group assignment. The internal group's own automatic distribution setting still applies. |
 | `TESTFLIGHT_BETA_GROUPS` | empty | Optional internal group names or IDs. Empty or `all` selects internal groups only. |
 | `TESTFLIGHT_EXTERNAL_BETA_GROUPS` | empty | Explicit opt-in: comma-separated exact external group names or IDs. `all` is rejected. Empty disables external assignment, review submission and notification, including the review queue. |
-
 | `GOOGLE_PLAY_BETA_TRACKS` | empty | Explicit opt-in: comma-separated Play testing track IDs that receive the verified internal version code. Empty keeps Android on internal testing only. |
 
 After TestFlight verification, CI adds a Vietnamese (`vi`) What to Test beside
