@@ -7,6 +7,7 @@ import {
   withAppLogoutFence,
 } from '@tuturuuu/auth/proxy/logout-fence';
 import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
+import { getAppMountBasePaths } from '@tuturuuu/utils/app-mounts';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /** Nova on the shared origin. */
@@ -23,7 +24,7 @@ const options = {
 export function isMountedNova(request: NextRequest) {
   return (
     request.nextUrl.origin === apex.origin &&
-    request.nextUrl.basePath === apex.pathname
+    getAppMountBasePaths(options.targetApp).includes(request.nextUrl.basePath)
   );
 }
 
@@ -56,7 +57,7 @@ export async function mountedNovaAuth(request: NextRequest) {
   }
   const loginUrl = () => {
     const login = new URL('/login', apex);
-    const callback = new URL(`${apex.pathname}/verify-token`, apex);
+    const callback = new URL(`${request.nextUrl.basePath}/verify-token`, apex);
     callback.searchParams.set(
       'nextUrl',
       path === '/login'

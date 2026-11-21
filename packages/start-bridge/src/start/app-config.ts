@@ -1,5 +1,15 @@
 import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
-import type { AppMountConfig } from '../core/mounts';
+import {
+  isolateMountedRequest,
+  reduceMountedSessionRequest,
+  scopeMountedResponseCookies,
+  stripMountedSupabaseWrites,
+} from '../core/mount-isolation';
+import { type AppMountConfig, resolveAppBase } from '../core/mounts';
+import {
+  isMountedLogoutPath,
+  stripMountedSessionWrites,
+} from './mounted-session-guard';
 
 /**
  * The Worker options an app owns in its `start-bridge.config.ts`. The codemod
@@ -74,8 +84,69 @@ export interface BridgeAppConfig<Env = unknown> {
   ) => Response | Promise<Response>;
 }
 
+type WrapContext<Env> = Parameters<
+  NonNullable<BridgeAppConfig<Env>['wrapResponse']>
+>[1];
+
+/**
+ * The mount a wrapped response belongs to, from the Worker's effective mounts
+ * (or the config's own), or `null` at a root host.
+ */
+function mountedBase<Env>(
+  context: WrapContext<Env>,
+  fallback: BridgeAppConfig<Env>['mounts']
+) {
+  const mounts = context.mounts ?? fallback;
+  if (!mounts?.basePath || !mounts.mountHosts?.length) return null;
+  const mount = resolveAppBase(new URL(context.request.url), {
+    app: context.mounts?.app ?? 'app',
+    rootHosts: mounts.rootHosts ?? [],
+    mountHosts: mounts.mountHosts,
+    basePath: mounts.basePath,
+    isolation: mounts.isolation,
+  });
+  return mount?.mode === 'mounted'
+    ? { basePath: mount.basePath, isolation: mounts.isolation }
+    : null;
+}
+
+/**
+ * Declares an app's Worker options. `wrapResponse` runs after the bridge, so
+ * on a mount it receives the reduced request and its result is guarded again:
+ * whatever it adds, a mounted response never writes the Supabase or
+ * first-party session, `Clear-Site-Data`, or (with isolation) a cookie the
+ * app does not own outside its base.
+ */
 export function defineBridgeAppConfig<Env = unknown>(
   config: BridgeAppConfig<Env>
-) {
-  return config;
+): BridgeAppConfig<Env> {
+  const wrap = config.wrapResponse;
+  if (!wrap) return config;
+  return {
+    ...config,
+    async wrapResponse(response, context) {
+      const mount = mountedBase(context, config.mounts);
+      if (!mount) return wrap(response, context);
+      const request = mount.isolation
+        ? isolateMountedRequest(context.request, mount.isolation)
+        : reduceMountedSessionRequest(context.request);
+      const wrapped = await wrap(response, { ...context, request });
+      const appPath =
+        new URL(context.request.url).pathname.slice(mount.basePath.length) ||
+        '/';
+      const logout = isMountedLogoutPath(appPath);
+      const guarded = stripMountedSupabaseWrites(
+        stripMountedSessionWrites(wrapped),
+        logout
+      );
+      return mount.isolation
+        ? scopeMountedResponseCookies(
+            guarded,
+            mount.basePath,
+            mount.isolation,
+            logout
+          )
+        : guarded;
+    },
+  };
 }

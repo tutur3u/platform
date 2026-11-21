@@ -7,6 +7,7 @@ import {
   withAppLogoutFence,
 } from '@tuturuuu/auth/proxy/logout-fence';
 import { mountedSessionFailureResponse } from '@tuturuuu/auth/proxy/mounted-failure';
+import { getAppMountBasePaths } from '@tuturuuu/utils/app-mounts';
 import { type NextRequest, NextResponse } from 'next/server';
 
 /** Learn on the shared origin. */
@@ -23,8 +24,7 @@ const options = {
 export function isMountedLearn(request: NextRequest) {
   return (
     request.nextUrl.origin === apex.origin &&
-    (request.nextUrl.basePath === apex.pathname ||
-      request.nextUrl.basePath === '/lms/learn')
+    getAppMountBasePaths(options.targetApp).includes(request.nextUrl.basePath)
   );
 }
 

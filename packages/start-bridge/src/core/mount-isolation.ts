@@ -1,4 +1,5 @@
 import { isMountedForbiddenCookieName } from '../start/mounted-session-guard';
+import { withHeaders } from './response-headers';
 
 /**
  * Same-origin isolation for an app mounted on the shared apex
@@ -234,33 +235,39 @@ export function reduceMountedSessionRequest(request: Request): Request {
   return new Request(request, { headers });
 }
 
+function isSessionWrite(value: string, centralLogout: boolean) {
+  const name = cookieName(value);
+  if (name === FIRST_PARTY_SESSION_COOKIE) return true;
+  if (!SUPABASE_AUTH_COOKIE.test(name)) return false;
+  const [pair, ...attributes] = value.split(';');
+  const deletion =
+    pair?.trim() === `${name}=` &&
+    attributes.some((attribute) => /^max-age=0$/iu.test(attribute.trim()));
+  return !(centralLogout && deletion);
+}
+
 /**
- * Drops every Supabase session `Set-Cookie` a mounted app sends, writes and
- * deletions alike, except the central logout's deletions. The session belongs
- * to Web; a mounted app never writes it.
+ * Drops every Supabase session and first-party session `Set-Cookie` a
+ * mounted app sends, writes and deletions alike, except the central logout's
+ * Supabase deletions, and any `Clear-Site-Data` (it clears cookies for the
+ * whole site). The session belongs to Web; a mounted app never writes it.
+ * WebSocket upgrades are covered too.
  */
 export function stripMountedSupabaseWrites(
   response: Response,
   centralLogout = false
 ): Response {
-  if (response.status === 101) return response;
   const setCookies = response.headers.getSetCookie();
-  const kept = setCookies.filter((value) => {
-    const name = cookieName(value);
-    if (name === FIRST_PARTY_SESSION_COOKIE) return false;
-    if (!SUPABASE_AUTH_COOKIE.test(name)) return true;
-    const [pair, ...attributes] = value.split(';');
-    return (
-      centralLogout &&
-      pair?.trim() === `${name}=` &&
-      attributes.some((attribute) => /^max-age=0$/iu.test(attribute.trim()))
-    );
-  });
-  if (kept.length === setCookies.length) return response;
-  const result = new Response(response.body, response);
-  result.headers.delete('set-cookie');
-  for (const value of kept) result.headers.append('set-cookie', value);
-  return result;
+  const kept = setCookies.filter(
+    (value) => !isSessionWrite(value, centralLogout)
+  );
+  const clears = response.headers.has('clear-site-data');
+  if (kept.length === setCookies.length && !clears) return response;
+  const headers = new Headers(response.headers);
+  headers.delete('set-cookie');
+  headers.delete('clear-site-data');
+  for (const value of kept) headers.append('set-cookie', value);
+  return withHeaders(response, headers);
 }
 
 /** A copy of `request` whose `Cookie` header is isolated for the mount. */
@@ -302,8 +309,8 @@ export function scopeOwnedSetCookie(setCookie: string, basePath: string) {
 
 /**
  * Drops every `Set-Cookie` the app does not own and scopes the ones it does
- * to `basePath`. Returns the same response when nothing changes; a WebSocket
- * upgrade (101) cannot be re-wrapped and carries no cookies from app code.
+ * to `basePath`, and drops `Clear-Site-Data`. Returns the same response when
+ * nothing changes; WebSocket upgrades keep their socket.
  */
 export function scopeMountedResponseCookies(
   response: Response,
@@ -311,12 +318,9 @@ export function scopeMountedResponseCookies(
   config: MountIsolationConfig,
   centralLogout = false
 ): Response {
-  if (response.headers.has('clear-site-data') && response.status !== 101) {
-    response = new Response(response.body, response);
-    response.headers.delete('clear-site-data');
-  }
   const setCookies = response.headers.getSetCookie();
-  if (!setCookies.length || response.status === 101) return response;
+  const clears = response.headers.has('clear-site-data');
+  if (!setCookies.length && !clears) return response;
   const owned = new Set(config.ownedCookies);
   const scoped = setCookies.flatMap((value) => {
     const name = cookieName(value);
@@ -333,8 +337,9 @@ export function scopeMountedResponseCookies(
       ? [value]
       : [];
   });
-  const result = new Response(response.body, response);
-  result.headers.delete('set-cookie');
-  for (const value of scoped) result.headers.append('set-cookie', value);
-  return result;
+  const headers = new Headers(response.headers);
+  headers.delete('set-cookie');
+  headers.delete('clear-site-data');
+  for (const value of scoped) headers.append('set-cookie', value);
+  return withHeaders(response, headers);
 }

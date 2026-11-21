@@ -24,6 +24,7 @@ export const SHARED_APP_ORIGIN = 'https://tuturuuu.com';
  * names are reserved as workspace handles.
  */
 export const ONE_ORIGIN_APP_BASE_PATHS = {
+  ai: '/ai',
   apps: '/apps',
   calendar: '/calendar',
   chat: '/chat',
@@ -32,12 +33,14 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
   drive: '/drive',
   finance: '/finance',
   forms: '/forms',
+  git: '/git',
   infra: '/admin',
   inventory: '/inventory',
   learn: '/learn',
   mail: '/mail',
   meet: '/meet',
   mind: '/mind',
+  nova: '/nova',
   pay: '/pay',
   storefront: '/store',
   tasks: '/tasks',
@@ -47,6 +50,18 @@ export const ONE_ORIGIN_APP_BASE_PATHS = {
 } as const;
 
 export type MountableAppName = keyof typeof ONE_ORIGIN_APP_BASE_PATHS;
+
+/**
+ * Further shared-origin mounts of the same app artifact, e.g. Learn and Teach
+ * under the LMS launcher. They serve the app, but its canonical base stays
+ * the one in {@link ONE_ORIGIN_APP_BASE_PATHS}.
+ */
+export const ONE_ORIGIN_APP_ALIAS_BASE_PATHS: Partial<
+  Record<MountableAppName, readonly string[]>
+> = {
+  learn: ['/lms/learn'],
+  teach: ['/lms/teach'],
+};
 
 function readActiveMountsEnv(): string | undefined {
   // Literal access so Next can inline it on the client.
@@ -74,6 +89,16 @@ function isMountableApp(app: string): app is MountableAppName {
 /** The app's mount path (for example `/tasks`), or `null` if it never mounts. */
 export function getAppBasePath(app: string): string | null {
   return isMountableApp(app) ? ONE_ORIGIN_APP_BASE_PATHS[app] : null;
+}
+
+/** Every shared-origin base the app is served under (canonical first). */
+export function getAppMountBasePaths(app: string): readonly string[] {
+  return isMountableApp(app)
+    ? [
+        ONE_ORIGIN_APP_BASE_PATHS[app],
+        ...(ONE_ORIGIN_APP_ALIAS_BASE_PATHS[app] ?? []),
+      ]
+    : [];
 }
 
 /** Whether the app is mounted on the shared origin right now. */

@@ -390,9 +390,16 @@ export function createBridgeHandler<
       );
       return denied;
     }
+    // The policy callback is app code: on a mount it sees the reduced
+    // request, and a header copy it cannot use to add cookies back.
     const policy = options.csp(nonce, {
-      request: incoming,
-      response: final,
+      request: base.isRoot ? incoming : request,
+      response: base.isRoot
+        ? final
+        : new Response(null, {
+            status: final.status === 101 ? 200 : final.status,
+            headers: final.headers,
+          }),
       path: appPath,
     });
     if (policy == null) return final;

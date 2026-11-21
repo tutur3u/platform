@@ -1,3 +1,4 @@
+import { withHeaders } from '../core/response-headers';
 import {
   APP_SESSION_COOKIE_NAME,
   APP_SESSION_REFRESH_COOKIE_NAME,
@@ -120,12 +121,9 @@ export function stripMountedSessionWrites(response: Response): Response {
   if (kept.length === setCookies.length && !widensServiceWorker) {
     return response;
   }
-  // A WebSocket upgrade cannot be re-wrapped without losing its socket, and
-  // an upgrade response carries no session cookie from these writers.
-  if (response.status === 101) return response;
-  const result = new Response(response.body, response);
-  result.headers.delete('set-cookie');
-  for (const value of kept) result.headers.append('set-cookie', value);
-  result.headers.delete('service-worker-allowed');
-  return result;
+  const headers = new Headers(response.headers);
+  headers.delete('set-cookie');
+  for (const value of kept) headers.append('set-cookie', value);
+  headers.delete('service-worker-allowed');
+  return withHeaders(response, headers);
 }

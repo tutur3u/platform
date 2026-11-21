@@ -1,5 +1,8 @@
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
-import { getAppBasePath, SHARED_APP_ORIGIN } from '@tuturuuu/utils/app-mounts';
+import {
+  getAppMountBasePaths,
+  SHARED_APP_ORIGIN,
+} from '@tuturuuu/utils/app-mounts';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { discardAppCookiesForVerifiedProvider } from '@tuturuuu/utils/required-mfa-credentials';
 import { enforceRequiredMfaRequest } from '@tuturuuu/utils/required-mfa-runtime';
@@ -46,11 +49,9 @@ function asRecord(value: unknown): Record<string, unknown> {
 }
 
 function trustedSharedMount(req: NextRequest, targetApp: AppName | string) {
-  const basePath = getAppBasePath(targetApp);
   return (
-    basePath !== null &&
     req.nextUrl.origin === SHARED_APP_ORIGIN &&
-    req.nextUrl.basePath === basePath
+    getAppMountBasePaths(targetApp).includes(req.nextUrl.basePath)
   );
 }
 
