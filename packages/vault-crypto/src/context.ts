@@ -23,6 +23,11 @@ export const PURPOSES = [
   'record',
   'key-log',
   'fingerprint',
+  'genesis',
+  'record-hash',
+  'entry-hash',
+  'snapshot-leaf',
+  'attestation',
 ] as const;
 
 export type Purpose = (typeof PURPOSES)[number];
