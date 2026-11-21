@@ -877,6 +877,11 @@
     {
       "family": "api-core",
       "localized": false,
+      "pattern": "/api/v1/fleet/desk/digest"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
       "pattern": "/api/v1/fleet/digest"
     },
     {
@@ -2438,6 +2443,61 @@
       "family": "api-core",
       "localized": false,
       "pattern": "/api/v1/workspaces/[wsId]/notes/voice-jobs"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/bindings"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/flags"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/managers"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/consents"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/facts"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/identities"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/relationships"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/rules"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry/persons"
+    },
+    {
+      "family": "api-core",
+      "localized": false,
+      "pattern": "/api/v1/workspaces/[wsId]/people-registry"
     },
     {
       "family": "api-core",

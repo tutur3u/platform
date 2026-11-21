@@ -1954,7 +1954,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/mastermind/fleet/state/route.ts",
-    "sourceSha256": "a9cb88c8553e2459c52f8630d8d76f35dff4ff4ac17813f38de852299136d032",
+    "sourceSha256": "28cb5be8fc976ca4ac31134383e48a99920bfbca9bff1419985024b90c1dec2d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -4815,6 +4815,116 @@
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/workspaces/[wsId]/notes/voice-jobs/route.ts",
     "sourceSha256": "9151bcd912e9a680b67e58369b4a528d8c7b580b92af4874430eabcbb6397778",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/bindings",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/bindings/route.ts",
+    "sourceSha256": "9b2f7984d34aa3bd5ee7f4e89ba0d2c05da236b2464f22ca36f089f0a0a81eb2",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/flags",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/flags/route.ts",
+    "sourceSha256": "41e53d4330511fc15062979d0b72df9dd74948c6a31235f91880b41075ef76c9",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/managers",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/managers/route.ts",
+    "sourceSha256": "9c6594fb520bf0097477346adc1f9bc523ab275abfc4f1df997b37df997b24bc",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}/consents",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/consents/route.ts",
+    "sourceSha256": "79dfd105f64ad9e47c40841fd9f6bbd967d95c7a0b6817b09a337950642686a3",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}/facts",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/facts/route.ts",
+    "sourceSha256": "4feef8d49dc96a41ada970bb8661669ace0134c01bafc9688f9b39492c374a73",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}/identities",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/identities/route.ts",
+    "sourceSha256": "56656ba027090a33fc2e22a893c1a2cfa8c9af2d35599131836d083c65aa49ae",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}/relationships",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/relationships/route.ts",
+    "sourceSha256": "48979182b71aa345793b78faefa16aaf2bcd38e31d27877ea5cca33401f5ef03",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/route.ts",
+    "sourceSha256": "9d5596de0031c01d4365b7725772d15b757946b429ee0ce390d4694beb996576",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons/{personId}/rules",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/[personId]/rules/route.ts",
+    "sourceSha256": "1e552797ee04c0e0c916fa2e3588f9b691fd977e0f11a0a8151d9af5feec5ff8",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry/persons",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/persons/route.ts",
+    "sourceSha256": "25cfa02db409ac75a222514b298f45d945a1d22c1c223f9940f56b6ad877a2bc",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
+    "path": "/api/v1/workspaces/{wsId}/people-registry",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/workspaces/[wsId]/people-registry/route.ts",
+    "sourceSha256": "55a253bb42c6e637baaddf15f9ae4ac646bdfd8fe80f1767276041f1bff6151d",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
