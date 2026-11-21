@@ -143,6 +143,31 @@ workspace cache invalidation. These behaviors are covered by
 - Use CMS copy in this area: team access, people, invites, access levels, member defaults, guest defaults, and Advanced access.
 - The workspace creator cannot be removed from the team. The creator can always manage the workspace, so this keeps someone who can manage members in every workspace whose creator is a member. It applies to every caller of the CMS remove route (`DELETE /api/v1/workspaces/{wsId}/external-projects/members/access?id=`), including linked sites that manage their team through it; the route answers `403` with code `WORKSPACE_CREATOR_PROTECTED` and removes nothing, and it removes nothing when the creator cannot be read. The `id` must be a uuid written as `8-4-4-4-12` hex digits in either case; any other spelling is `400`. Cancelling an invitation by email is unaffected. Regression coverage: `apps/web/src/lib/external-projects/team-member-removal.test.ts`.
 
+### Guarded team removals
+
+The RPCs `remove_workspace_member_guarded` and
+`remove_workspace_role_member_guarded` serialize removals with a
+workspace-scoped advisory lock. Only `service_role` may execute them. The two
+CMS removal routes do not call these functions. The route-level creator check
+and the database guard are separate layers.
+
+The RPCs require studio read and the corresponding workspace management
+permission, or root CMS administrator permission. A root guest with an enabled
+root default of `admin`, `manage_external_projects`, or `manage_workspace_roles`
+also needs a full membership in the target workspace to remove a role
+membership. Member removal accepts the root guest grant without target
+membership.
+
+If a full workspace member can manage members before a removal, at least one
+must retain that permission after it. Only full members count toward this
+requirement.
+
+The RPCs return `removed` on success, `not_found` when the workspace or
+scoped membership is missing, `forbidden` when the actor lacks permission, or
+`last_manager` when the removal would leave no member manager. Member removal
+also returns `creator_protected` for the workspace creator. Refusals leave the
+membership and role assignments intact.
+
 ## Onboard editors for the first site
 
 Use this runbook after the site-builder permission and publish changes have

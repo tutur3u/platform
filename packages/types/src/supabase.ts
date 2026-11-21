@@ -28771,6 +28771,10 @@ export type Database = {
         Args: { p_actor: string; p_topic: string };
         Returns: string;
       };
+      cms_guarded_removal_authorized: {
+        Args: { p_actor_id: string; p_permission: string; p_ws_id: string };
+        Returns: boolean;
+      };
       collect_ai_studio_consumption_events: {
         Args: {
           p_from: string;
@@ -35223,6 +35227,10 @@ export type Database = {
       };
       workspace_has_blocking_subscription: {
         Args: { p_ws_id: string };
+        Returns: boolean;
+      };
+      workspace_has_member_manager: {
+        Args: { p_user_id?: string; p_ws_id: string };
         Returns: boolean;
       };
       workspace_quiz_authored_key: {
@@ -63350,6 +63358,19 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      remove_workspace_member_guarded: {
+        Args: { p_actor_id: string; p_user_id: string; p_ws_id: string };
+        Returns: string;
+      };
+      remove_workspace_role_member_guarded: {
+        Args: {
+          p_actor_id: string;
+          p_role_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
       };
       reorder_workspace_course_module_groups: {
         Args: { p_group_id: string; p_module_group_ids: string[] };
