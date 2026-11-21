@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, vi } from 'vitest';
 import { fleetResponseFixture } from '../fleet/fleet-fixture';
 import type { Owner } from './auth';
@@ -154,4 +155,28 @@ test('usage reads are owner-scoped and preserve missing accounting data', async 
       async () => new Response(null, { status: 403 })
     ).usage()
   ).toEqual({ kind: 'error', reason: 'denied' });
+});
+
+// The emitted-Worker smoke runs only in CI; its Web stub rejects any other
+// feature list, which leaves the page without a snapshot to render.
+test('the emitted-Worker smoke stubs the features the fleet client declares', async () => {
+  const fetcher = vi.fn<typeof fetch>(async () =>
+    Response.json(fleetResponseFixture(Date.now()))
+  );
+  await createFleetClient(owner, fetcher).state();
+  const request = fetcher.mock.calls[0]?.[0] as Request;
+  const declared = request.headers.get('x-mastermind-fleet-features');
+  const smoke = readFileSync(
+    new URL(
+      '../../cloudflare/native-built-worker.acceptance.mjs',
+      import.meta.url
+    ),
+    'utf8'
+  );
+  const expected =
+    /headers\.get\('x-mastermind-fleet-features'\),\s*'([^']*)'/.exec(
+      smoke
+    )?.[1];
+  expect(declared).toBeTruthy();
+  expect(expected).toBe(declared);
 });

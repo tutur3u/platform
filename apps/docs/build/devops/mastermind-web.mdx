@@ -248,7 +248,7 @@ Data moves only through two server functions, `loadFleet` (GET) and
 `answerFleetDecision` (POST), which run after every admission gate and read
 the owner from the request context. `createFleetClient` calls
 `GET /api/v1/mastermind/fleet/state` (with
-`x-mastermind-fleet-features: login`) and
+`x-mastermind-fleet-features: login,review`) and
 `POST /api/v1/mastermind/fleet/decisions/{id}/answer` with only the owner's
 satellite bearer, refuses redirects, applies an eight-second timeout and
 validates every body against the shared contract in
