@@ -5,7 +5,9 @@ import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { isMailApiPath } from './mail-api-options';
 
 export function registerMailServerApiPaths() {
-  return registerDefaultAppBaseResolver((path) =>
-    isMailApiPath(path) ? appUrl(path, bridgeRequest().request.url) : path
+  return registerDefaultAppBaseResolver(
+    (path) =>
+      isMailApiPath(path) ? appUrl(path, bridgeRequest().request.url) : path,
+    { app: 'mail' }
   );
 }
