@@ -537,10 +537,27 @@ function planChecks(changes, context) {
     });
   }
 
+  // A deleted manifest means the workspace itself was removed: nothing is
+  // left to type-check, and its dependents changed their own manifests.
+  const removedWorkspaces = new Set(
+    changes
+      .filter(
+        (change) =>
+          change.status === 'D' &&
+          workspaceOf(change.file) &&
+          change.file === `${workspaceOf(change.file)}/package.json`
+      )
+      .map((change) => workspaceOf(change.file))
+  );
   const typeWorkspaces = new Set();
   for (const file of all) {
     const workspace = workspaceOf(file);
-    if (!workspace || workspace === 'apps/mobile' || isPausedPath(file))
+    if (
+      !workspace ||
+      workspace === 'apps/mobile' ||
+      isPausedPath(file) ||
+      removedWorkspaces.has(workspace)
+    )
       continue;
     if (
       TS_SOURCE.test(file) ||

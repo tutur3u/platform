@@ -198,6 +198,19 @@ test('deleted and paused-runtime files never reach file-level tools', () => {
   assert.ok(ids(plan).includes('type-check:packages/ui'));
 });
 
+test('a removed workspace is not type-checked', () => {
+  const plan = planChecks(
+    [
+      { status: 'D', file: 'packages/gone/package.json' },
+      { status: 'D', file: 'packages/gone/src/index.ts' },
+      { status: 'M', file: 'apps/web/package.json' },
+    ],
+    context()
+  );
+  assert.equal(ids(plan).includes('type-check:packages/gone'), false);
+  assert.ok(ids(plan).includes('type-check:apps/web'));
+});
+
 test('mobile changes run gen-l10n first, dart format and flutter analyze', () => {
   const plan = planChecks(
     changed(
