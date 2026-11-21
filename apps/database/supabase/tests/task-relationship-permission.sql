@@ -228,13 +228,15 @@ delete from public.workspace_members
 where ws_id = '00000000-0000-4000-8000-00000000f101'
   and user_id = '00000000-0000-4000-8000-00000000f901';
 reset role;
--- Recreate a stale role grant for the non-member to prove the policy also
--- requires workspace membership.
+-- The membership guard refuses a stale role grant for the non-member; replica
+-- mode writes one to prove the policy also requires workspace membership.
+set local session_replication_role = replica;
 insert into public.workspace_role_members (role_id, user_id)
 values (
   '00000000-0000-4000-8000-00000000f111',
   '00000000-0000-4000-8000-00000000f901'
 );
+set local session_replication_role = origin;
 set local role authenticated;
 
 select throws_ok(

@@ -223,4 +223,49 @@ describe('external app workspace member helpers', () => {
     expect(upsert).not.toHaveBeenCalled();
     errorLog.mockRestore();
   });
+
+  it('answers 403 when the database refuses a role for a guest', async () => {
+    mocks.roleHasCreatorGrantPermission.mockResolvedValue(false);
+    const roleMemberUpsert = vi.fn().mockResolvedValue({
+      error: {
+        code: '42501',
+        message:
+          "workspace roles can only be held by members of the role's workspace",
+      },
+    });
+    const admin = {
+      from: vi.fn((table: string) => {
+        const query: Record<string, unknown> = {};
+        query.select = vi.fn(() => query);
+        query.in = vi.fn(() => query);
+        query.eq = vi.fn(() => query);
+        query.maybeSingle = vi.fn(async () => ({
+          data: { id: 'role-external-admin', ws_id: 'workspace-1' },
+          error: null,
+        }));
+        query.upsert =
+          table === 'workspace_role_members'
+            ? roleMemberUpsert
+            : vi.fn().mockResolvedValue({ error: null });
+        query.then = (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: [], error: null }).then(resolve);
+        return query;
+      }),
+    };
+    mocks.getWorkspaceMembers.mockResolvedValue([
+      { ...splitRoleMember, roles: [] },
+    ]);
+
+    const response = await updateExternalAppWorkspaceMemberRole({
+      access: access({ admin }),
+      request: new Request('http://localhost', {
+        body: JSON.stringify({ role: 'admin' }),
+        method: 'PATCH',
+      }),
+      userId: 'user-2',
+    });
+
+    expect(response.status).toBe(403);
+    expect(roleMemberUpsert).toHaveBeenCalled();
+  });
 });

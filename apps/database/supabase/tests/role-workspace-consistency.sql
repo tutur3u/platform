@@ -117,7 +117,7 @@ $$),
 select is(pg_temp.as_err(pg_temp.uid('actor'), format($q$
   insert into public.workspace_role_members (role_id, user_id)
   values ('1ac00000-0000-4000-8000-0000000000c6', %L)
-$q$, pg_temp.uid('outsider'))),
+$q$, pg_temp.uid('actor'))),
   'ok', 'a disabled creator-grant row does not block role-member changes');
 select is(pg_temp.as_err(pg_temp.uid('creator_b'), $$
   update public.workspace_roles set name = 'Creator Renamed Billing'

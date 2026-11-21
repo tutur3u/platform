@@ -393,6 +393,13 @@ export async function updateExternalAppWorkspaceMemberRole({
       });
     }
   } catch (error) {
+    // The database refuses roles for users without a MEMBER membership.
+    if ((error as { code?: unknown } | null)?.code === '42501') {
+      return NextResponse.json(
+        { message: 'Only workspace members can hold workspace roles' },
+        { status: 403 }
+      );
+    }
     console.error('Error updating external app workspace member role', {
       error,
       userId,

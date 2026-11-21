@@ -26,8 +26,12 @@ insert into public.workspace_user_linked_users(platform_user_id,virtual_user_id,
 insert into public.workspace_roles(id,ws_id,name) values(pg_temp.fid(97201),pg_temp.fid(97011),'Review role');
 insert into public.workspace_role_permissions(role_id,ws_id,permission,enabled)
   values(pg_temp.fid(97201),pg_temp.fid(97011),'approve_reports',true);
+-- 97004 is a GUEST, so the membership guard refuses its role row; replica mode
+-- writes it to prove role admin still cannot reach a guest.
+set local session_replication_role = replica;
 insert into public.workspace_role_members(role_id,user_id) values
   (pg_temp.fid(97201),pg_temp.fid(97003)),(pg_temp.fid(97201),pg_temp.fid(97004));
+set local session_replication_role = origin;
 create function pg_temp.can_review(actor integer,kind text default 'periodic') returns boolean language sql as $$
   select private.can_review_report_entry(pg_temp.fid(97011),pg_temp.fid(actor),pg_temp.fid(actor+100),kind);
 $$;

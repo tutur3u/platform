@@ -23,7 +23,11 @@ update public.workspace_default_permissions set enabled=false where ws_id='00000
 delete from public.workspace_role_members where user_id='00000000-0000-4000-8000-000000009920';
 insert into public.workspace_roles(id,ws_id,name) values
 ('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009922','Foreign role fixture');
+-- The membership guard refuses this foreign-workspace role row for a non-member;
+-- replica mode writes it so the negative stays causal.
+set local session_replication_role = replica;
 insert into public.workspace_role_members(role_id,user_id) values('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009920');
+set local session_replication_role = origin;
 insert into public.workspace_role_permissions(ws_id,role_id,permission,enabled) values
 ('00000000-0000-4000-8000-000000009922','00000000-0000-4000-8000-000000009923','admin',true);
 select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role admin is not a root workspace grant');
@@ -33,7 +37,9 @@ select throws_ok($$select private.assert_employee_administrator('00000000-0000-4
 select throws_ok($$select private.finalize_employee_creation('00000000-0000-4000-8000-000000009920','00000000-0000-4000-8000-000000009925','denied-fixture@tuturuuu.com','Denied fixture')$$,'42501','Employee administrator access denied','foreign explicit grant cannot reach finalization target lookup');
 select ok(not exists(select 1 from private.employee_creation_intents where user_id='00000000-0000-4000-8000-000000009925'),'denied actor left no creation intent');
 delete from public.workspace_role_members where user_id='00000000-0000-4000-8000-000000009920';
+set local session_replication_role = replica;
 insert into public.workspace_role_members(role_id,user_id) values('00000000-0000-4000-8000-000000009923','00000000-0000-4000-8000-000000009920');
+set local session_replication_role = origin;
 select throws_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'42501','Employee administrator access denied','foreign role explicit permission is not a root workspace grant');
 update public.workspace_roles set ws_id='00000000-0000-0000-0000-000000000000' where id='00000000-0000-4000-8000-000000009923';
 select lives_ok($$select private.assert_employee_administrator('00000000-0000-4000-8000-000000009920')$$,'valid root role explicit grant permits employee operations');
