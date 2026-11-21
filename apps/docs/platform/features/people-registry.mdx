@@ -681,14 +681,17 @@ mobile Mastermind module, using the shared navigation and design.
   dialog and report confirmed and retained items.
 
 - **Web:** `apps/mastermind/src/routes/$locale/people.tsx`, with code under
-  `apps/mastermind/src/people/` and one shell navigation entry. Reads and
+  `apps/mastermind/src/people/`, one owner-scoped shell navigation entry and
+  the shell's `PageHeader`. Reads and
   writes go through server functions and a people client that forwards the
   verified Mastermind app session to the manager routes. The client refuses
   redirects, applies a timeout and validates response schemas. Mastermind
   admission stays owner-only.
 - **Mobile:** a pushed route `/mastermind/people` under
-  `features/mastermind/people/`, opened from the Today overflow menu. It adds no
-  dock tab and calls the same manager routes.
+  `features/mastermind/people/`, opened from a Today navbar action
+  (`PeopleTodayAction`, registered in `fleet_today_page.dart` the way Fleet
+  access registers its action). It adds no dock tab and calls the same manager
+  routes.
 
 All strings ship in English and Vietnamese.
 
