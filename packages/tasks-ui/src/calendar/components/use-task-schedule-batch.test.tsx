@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  onlineManager,
+  QueryClient,
+  QueryClientProvider,
+} from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -56,6 +60,19 @@ describe('task schedule batch', () => {
     });
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.settingsByTaskId).toEqual({});
+  });
+
+  it('does not report loading while the query is paused offline', () => {
+    onlineManager.setOnline(false);
+    try {
+      const { result } = renderHook(() => useTaskScheduleBatch(input), {
+        wrapper,
+      });
+      expect(result.current.isLoading).toBe(false);
+      expect(getTaskScheduleBatch).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it('never loads for an empty task set', () => {

@@ -129,7 +129,7 @@ export interface TaskScheduleBatchResponse {
   minutesByTaskId: Record<string, number>;
   settingsByTaskId: Record<string, TaskScheduleBatchSettings | null>;
 }
-/** Bounded sequential chunks avoid replacing one startup fan-out with another. */
+/** Reads at most 100 tasks per request; a failed chunk rejects the whole batch. */
 export async function getTaskScheduleBatch(
   wsId: string,
   taskIds: string[],

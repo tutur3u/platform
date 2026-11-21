@@ -23,7 +23,7 @@ export function useTaskScheduleBatch({
   const actor = useWorkspaceActor();
   const sortedIds = [...new Set(taskIds)].sort();
   const enabled = !!actor && sortedIds.length > 0;
-  const { data, error, isPending } = useQuery({
+  const { data, error, fetchStatus, isPending } = useQuery({
     queryKey: [
       'task-schedule-batch',
       actor?.actorId,
@@ -60,7 +60,8 @@ export function useTaskScheduleBatch({
 
   const snapshot = visibleTaskScheduleSnapshot(data, error);
   return {
-    isLoading: enabled && isPending && !error,
+    // A paused (offline) query has not started, so it is not loading.
+    isLoading: enabled && isPending && fetchStatus === 'fetching' && !error,
     minutesByTaskId: snapshot?.minutesByTaskId ?? {},
     settingsByTaskId: snapshot?.settingsByTaskId ?? {},
   };

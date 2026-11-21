@@ -1,9 +1,11 @@
 import { useCalendarClock } from '@tuturuuu/ui/hooks/use-calendar-clock';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { HOUR_HEIGHT } from './config';
 import { useCalendarSettings } from './settings/settings-context';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 /**
