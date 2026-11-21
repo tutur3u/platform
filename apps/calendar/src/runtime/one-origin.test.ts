@@ -250,31 +250,45 @@ describe('Calendar one-origin activation', () => {
     expect(suppliers.proxy).toHaveBeenCalled();
   });
 
-  it.each(['/api/v1/calendar/auth', '/api/v1/calendar/auth/microsoft'])(
-    'starts %s on the registered subdomain for a mounted navigation',
+  it('starts Microsoft on the registered subdomain for a mounted navigation', async () => {
+    const path = '/api/v1/calendar/auth/microsoft';
+    const accountId = '00000000-0000-4000-8000-000000000001';
+    const response = await handleCalendarRequest(
+      new Request(
+        `https://tuturuuu.com/calendar${path}?wsId=personal&accountId=${accountId}&reconnect=1&navigation=1&next=https%3A%2F%2Fexample.com`
+      ),
+      workerEnv('shadow'),
+      ctx,
+      telemetry
+    );
+    const target = new URL(response.headers.get('location') ?? '');
+    expect(response.status).toBe(307);
+    expect(target.origin + target.pathname).toBe(
+      `https://calendar.tuturuuu.com${path}`
+    );
+    expect(Object.fromEntries(target.searchParams)).toEqual({
+      wsId: 'personal',
+      accountId,
+      reconnect: '1',
+      navigation: '1',
+    });
+    expect(response.headers.getSetCookie()).toEqual([]);
+    expect(suppliers.proxy).not.toHaveBeenCalled();
+  });
+
+  it.each(['/api/v1/calendar/auth', '/api/v1/calendar/auth/callback'])(
+    'dispatches the mounted Google path %s without a subdomain handoff',
     async (path) => {
-      const accountId = '00000000-0000-4000-8000-000000000001';
       const response = await handleCalendarRequest(
-        new Request(
-          `https://tuturuuu.com/calendar${path}?wsId=personal&accountId=${accountId}&reconnect=1&navigation=1&next=https%3A%2F%2Fexample.com`
-        ),
-        workerEnv('shadow'),
+        new Request(`https://tuturuuu.com/calendar${path}?navigation=1`),
+        workerEnv('on'),
         ctx,
         telemetry
       );
-      const target = new URL(response.headers.get('location') ?? '');
-      expect(response.status).toBe(307);
-      expect(target.origin + target.pathname).toBe(
-        `https://calendar.tuturuuu.com${path}`
-      );
-      expect(Object.fromEntries(target.searchParams)).toEqual({
-        wsId: 'personal',
-        accountId,
-        reconnect: '1',
-        navigation: '1',
-      });
-      expect(response.headers.getSetCookie()).toEqual([]);
-      expect(suppliers.proxy).not.toHaveBeenCalled();
+      // The real endpoint rejects missing parameters; the Worker admitted it.
+      expect(response.status).toBe(400);
+      expect(response.headers.get('location')).toBeNull();
+      expect(suppliers.proxy).toHaveBeenCalled();
     }
   );
 

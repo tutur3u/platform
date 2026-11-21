@@ -1,4 +1,6 @@
+import { maybeBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { BASE_URL } from '@/constants/common';
+import { CALENDAR_PRODUCTION_MOUNT_HOSTS } from '@/lib/calendar-mount-hosts';
 
 const GOOGLE_CALENDAR_CALLBACK_PATH = '/api/v1/calendar/auth/callback';
 const DEFAULT_WEB_ORIGIN = 'https://tuturuuu.com';
@@ -120,17 +122,23 @@ export function resolveGoogleCalendarWebOrigin(request?: HeaderCarrier) {
   );
 }
 
-/**
- * Google `redirect_uri` for the Calendar callback. A configured
- * `GOOGLE_REDIRECT_URI` wins. In production the fallback is the Calendar
- * app's trusted `BASE_URL` (the app that serves this callback); the
- * Web-origin and forwarded-header fallbacks apply only outside production,
- * for local proxies.
- */
+/** The Worker sets this request context after matching the configured mount. */
+export function resolveMountedGoogleCalendarOrigin() {
+  if (
+    process.env.CALENDAR_DEPLOYMENT_PROFILE !== 'production' ||
+    maybeBridgeRequest()?.appBase !== '/calendar'
+  )
+    return null;
+  return `https://${CALENDAR_PRODUCTION_MOUNT_HOSTS[0]}/calendar`;
+}
+
+/** Mounted requests use the registered apex URL; other requests use app configuration. */
 export function resolveGoogleCalendarOAuthRedirectUri(
   request?: HeaderCarrier,
   baseUrl: string = BASE_URL
 ) {
+  const mountedOrigin = resolveMountedGoogleCalendarOrigin();
+  if (mountedOrigin) return `${mountedOrigin}${GOOGLE_CALENDAR_CALLBACK_PATH}`;
   const configured = normalizeHttpUrl(process.env.GOOGLE_REDIRECT_URI);
   if (configured) return configured;
 

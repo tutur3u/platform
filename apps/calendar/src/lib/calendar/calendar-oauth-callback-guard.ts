@@ -55,7 +55,10 @@ export async function authorizeCalendarOAuthCallback({
   const { supabase, user } = authContext;
 
   if (user.id !== verifiedState.userId) {
-    calendarOAuthDebug('❌ [DEBUG] OAuth state belongs to another user');
+    console.warn('calendar.oauth.state_rejected', {
+      provider,
+      reason: 'session_mismatch',
+    });
     return reject('Invalid OAuth state', 403);
   }
 
@@ -81,7 +84,10 @@ export async function authorizeCalendarOAuthCallback({
   });
 
   if (consumption === 'replayed') {
-    calendarOAuthDebug('❌ [DEBUG] OAuth state was already used');
+    console.warn('calendar.oauth.state_rejected', {
+      provider,
+      reason: 'replayed',
+    });
     return reject('Invalid OAuth state', 400);
   }
 

@@ -1,3 +1,4 @@
+import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -89,21 +90,31 @@ describe('Google Calendar auth route', () => {
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
   });
 
-  it('hints the selected account and signs the reconnect target', async () => {
+  it('keeps mounted reconnect on the apex and signs the selected account', async () => {
+    vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', 'production');
+    vi.stubEnv(
+      'GOOGLE_REDIRECT_URI',
+      'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback'
+    );
     const accountId = '00000000-0000-4000-8000-000000000001';
     resolveSessionAuthContextMock.mockResolvedValue({
       ok: true,
       supabase: sessionClient([], 'person@example.com'),
       user: { id: 'user-1' },
     });
-    const response = await GET(
-      new NextRequest(
-        `https://tuturuuu.com/api/v1/calendar/auth?wsId=personal&accountId=${accountId}`
-      )
+    const request = new NextRequest(
+      `https://tuturuuu.com/calendar/api/v1/calendar/auth?wsId=personal&accountId=${accountId}`
+    );
+    const response = await withBridgeRequest(
+      { request, appBase: '/calendar' },
+      () => GET(request)
     );
     expect(response.status).toBe(200);
     const { authUrl } = await response.json();
     const params = new URL(authUrl).searchParams;
+    expect(params.get('redirect_uri')).toBe(
+      'https://tuturuuu.com/calendar/api/v1/calendar/auth/callback'
+    );
     expect(params.get('login_hint')).toBe('person@example.com');
     expect(params.get('prompt')).toBe('consent');
     expect(

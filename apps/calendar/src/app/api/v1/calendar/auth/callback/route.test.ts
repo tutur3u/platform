@@ -1,3 +1,5 @@
+import { OAuth2Client } from '@tuturuuu/google';
+import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
@@ -13,16 +15,21 @@ const {
 }));
 
 vi.mock('@tuturuuu/google', () => ({
-  OAuth2Client: vi.fn(function OAuth2Client(this: {
-    getToken: typeof getTokenMock;
-    setCredentials: (tokens: unknown) => void;
-    generateAuthUrl: (input: Record<string, unknown>) => string;
-  }) {
+  OAuth2Client: vi.fn(function OAuth2Client(
+    this: {
+      getToken: typeof getTokenMock;
+      setCredentials: (tokens: unknown) => void;
+      generateAuthUrl: (input: Record<string, unknown>) => string;
+    },
+    options?: { redirectUri?: string }
+  ) {
     this.getToken = getTokenMock;
     this.setCredentials = vi.fn();
     this.generateAuthUrl = (input) =>
       `https://accounts.google.com/o/oauth2/v2/auth?${new URLSearchParams(
-        Object.entries(input).map(([key, value]) => [key, String(value)])
+        Object.entries({ redirect_uri: options?.redirectUri, ...input }).map(
+          ([key, value]) => [key, String(value)]
+        )
       )}`;
   }),
   google: {
@@ -83,6 +90,7 @@ import {
   createCalendarOAuthState,
   deriveCalendarOAuthPkce,
 } from '@/lib/calendar/calendar-oauth-state';
+import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import {
   createSupabaseClient,
   createTokenResponse,
@@ -156,6 +164,57 @@ describe('Google Calendar OAuth callback route', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('completes an apex state and PKCE round trip using the same registered callback at token exchange', async () => {
+    vi.stubEnv('CALENDAR_DEPLOYMENT_PROFILE', 'production');
+    vi.stubEnv(
+      'GOOGLE_REDIRECT_URI',
+      'https://calendar.tuturuuu.com/api/v1/calendar/auth/callback'
+    );
+    const origin = 'https://tuturuuu.com/calendar';
+    const redirectUri = `${origin}/api/v1/calendar/auth/callback`;
+    const start = new Request(`${origin}/api/v1/calendar/auth`, {
+      headers: { 'x-forwarded-host': 'untrusted.example' },
+    });
+    const authorization = new URL(
+      withBridgeRequest({ request: start, appBase: '/calendar' }, () =>
+        buildGoogleCalendarAuthUrl({
+          request: start,
+          userId: 'user-1',
+          wsId: 'workspace-1',
+          clientId: 'google-client-id',
+          clientSecret: 'google-client-secret',
+          consent: false,
+        })
+      )
+    );
+    expect(authorization.searchParams.get('redirect_uri')).toBe(redirectUri);
+    const callback = new URL(redirectUri);
+    callback.searchParams.set('code', 'apex-fixture-code');
+    callback.searchParams.set(
+      'state',
+      authorization.searchParams.get('state')!
+    );
+    const request = new Request(callback);
+    const response = await withBridgeRequest(
+      { request, appBase: '/calendar' },
+      () => GET(request)
+    );
+    expect(response.status).toBe(302);
+    expect(response.headers.get('location')).toContain(`${origin}/workspace-1`);
+    expect(OAuth2Client).toHaveBeenLastCalledWith(
+      expect.objectContaining({ redirectUri })
+    );
+    expect(getTokenMock).toHaveBeenCalledExactlyOnceWith({
+      code: 'apex-fixture-code',
+      codeVerifier: expect.any(String),
+    });
+    const { codeVerifier } = getTokenMock.mock.calls[0]![0];
+    const { createHash } = await import('node:crypto');
+    expect(createHash('sha256').update(codeVerifier).digest('base64url')).toBe(
+      authorization.searchParams.get('code_challenge')
+    );
   });
 
   it.each(['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] as const)(

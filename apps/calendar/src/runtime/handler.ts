@@ -56,8 +56,6 @@ const mountedCookies = {
   ],
 };
 const providerHandoffs = [
-  '/api/v1/calendar/auth',
-  '/api/v1/calendar/auth/callback',
   '/api/v1/calendar/auth/microsoft',
   '/api/v1/calendar/auth/microsoft/callback',
 ];
@@ -132,8 +130,7 @@ async function dispatchCalendarRequest(
       if (
         host &&
         request.method === 'GET' &&
-        (appPath === '/api/v1/calendar/auth' ||
-          appPath === '/api/v1/calendar/auth/microsoft') &&
+        appPath === '/api/v1/calendar/auth/microsoft' &&
         url.searchParams.get('navigation') === '1'
       ) {
         const target = new URL(appPath, `https://${host}`);

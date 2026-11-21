@@ -5,6 +5,7 @@ import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkCalendarOAuthRuntime } from '@/lib/calendar/calendar-oauth-runtime';
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
+import { resolveMountedGoogleCalendarOrigin } from '@/lib/calendar/google-oauth-urls';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(request: NextRequest) {
@@ -57,7 +58,9 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const runtime = checkCalendarOAuthRuntime();
+  const runtime = checkCalendarOAuthRuntime(
+    resolveMountedGoogleCalendarOrigin() ?? undefined
+  );
   if (!runtime.ok) return runtime.response;
 
   let loginHint: string | null = null;

@@ -14,7 +14,10 @@ import { reactivateCalendarAuthToken } from '@/lib/calendar/calendar-token-recon
 import { buildGoogleCalendarAuthUrl } from '@/lib/calendar/google-calendar-auth-url';
 import { admitGoogleConsentRestart } from '@/lib/calendar/google-consent-restart';
 import { getGoogleCalendarOAuthConfig } from '@/lib/calendar/google-oauth-config';
-import { resolveGoogleCalendarOAuthRedirectUri } from '@/lib/calendar/google-oauth-urls';
+import {
+  resolveGoogleCalendarOAuthRedirectUri,
+  resolveMountedGoogleCalendarOrigin,
+} from '@/lib/calendar/google-oauth-urls';
 import {
   calendarOAuthDebug,
   calendarOAuthError,
@@ -62,7 +65,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const runtime = checkCalendarOAuthRuntime();
+  const runtime = checkCalendarOAuthRuntime(
+    resolveMountedGoogleCalendarOrigin() ?? undefined
+  );
   if (!runtime.ok) return runtime.response;
 
   // The state is signed at initiation and binds this flow to the initiating
@@ -73,7 +78,8 @@ export async function GET(request: Request) {
     oauthConfig.config.clientSecret
   );
   if (!verifiedState.ok) {
-    calendarOAuthDebug('❌ [DEBUG] Rejected OAuth state', {
+    console.warn('calendar.oauth.state_rejected', {
+      provider: 'google',
       reason: verifiedState.reason,
     });
     return NextResponse.json({ error: 'Invalid OAuth state' }, { status: 400 });
