@@ -37,6 +37,7 @@ function createCookieHandler(
     path: cookieOptions.path,
     sameSite: cookieOptions.sameSite,
     secure: cookieOptions.secure,
+    ...(cookieOptions.httpOnly ? { httpOnly: true } : {}),
   };
 
   return {

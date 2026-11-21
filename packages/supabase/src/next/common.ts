@@ -305,6 +305,19 @@ export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
   return [...headers];
 }
 
+/**
+ * Server-only switch that makes the Supabase session cookie `HttpOnly`.
+ * Browser bundles never see this variable, and page script cannot write an
+ * `HttpOnly` cookie, so only server writers apply it.
+ * See apps/docs/platform/architecture/httponly-session-cookie.mdx.
+ */
+export function isSupabaseSessionCookieHttpOnly(): boolean {
+  return (
+    typeof window === 'undefined' &&
+    isEnabled(process.env.TUTURUUU_SESSION_COOKIE_HTTP_ONLY)
+  );
+}
+
 export function getSupabaseCookieOptions(
   supabaseUrl: string,
   requestUrl?: string | URL | null
@@ -319,6 +332,10 @@ export function getSupabaseCookieOptions(
   if (sharedCookieDomain) {
     options.domain = sharedCookieDomain.cookieDomain;
     options.secure = sharedCookieDomain.secure;
+  }
+
+  if (isSupabaseSessionCookieHttpOnly()) {
+    options.httpOnly = true;
   }
 
   return options;

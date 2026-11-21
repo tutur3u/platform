@@ -364,6 +364,7 @@
                   "platform/architecture/trpc",
                   "platform/architecture/authentication",
                   "platform/architecture/shared-session",
+                  "platform/architecture/httponly-session-cookie",
                   "platform/architecture/satellite-apps",
                   "platform/architecture/one-origin-super-app",
                   "platform/architecture/one-origin-security",

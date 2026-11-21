@@ -81,6 +81,9 @@ vi.mock('../common', () => ({
       name: `sb-${new URL(url).hostname.split('.')[0]}-auth-token`,
       path: '/',
       sameSite: 'lax',
+      ...(process.env.TUTURUUU_SESSION_COOKIE_HTTP_ONLY === '1'
+        ? { httpOnly: true }
+        : {}),
     };
   },
   getHostOnlyCookieClearHeaders: (
@@ -375,6 +378,66 @@ describe('Supabase Proxy', () => {
         secure: true,
       })
     );
+  });
+
+  it('carries HttpOnly on mirror and clear writes when the flag is on', async () => {
+    vi.stubEnv('TUTURUUU_SESSION_COOKIE_HTTP_ONLY', '1');
+    try {
+      const common = await import('../common');
+      const session = JSON.stringify({
+        access_token: 'jwt.with.dots',
+        refresh_token: 'refresh',
+      });
+      mockRequest.url = 'https://tasks.tuturuuu.com';
+      vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
+        'http://127.0.0.1:8001',
+        'http://host.docker.internal:8001',
+      ]);
+      mockRequest.cookies.getAll = () => [
+        { name: 'sb-host-auth-token', value: session },
+      ];
+
+      await updateSession(mockRequest as any);
+
+      const cookieHandler = (createServerClient as any).mock.calls[0][2]
+        .cookies;
+      cookieHandler.getAll();
+      expect(nextResponseMocks.cookieSet).toHaveBeenCalledWith(
+        'sb-127-auth-token',
+        session,
+        expect.objectContaining({ httpOnly: true, maxAge: 34_560_000 })
+      );
+      expect(nextResponseMocks.cookieSet).toHaveBeenCalledWith(
+        'sb-host-auth-token',
+        '',
+        expect.objectContaining({ httpOnly: true, maxAge: 0 })
+      );
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('omits HttpOnly on mirror writes while the flag is off', async () => {
+    const common = await import('../common');
+    const session = JSON.stringify({
+      access_token: 'jwt.with.dots',
+      refresh_token: 'refresh',
+    });
+    mockRequest.url = 'https://tasks.tuturuuu.com';
+    vi.mocked(common.getSupabaseAuthCookieUrls).mockReturnValueOnce([
+      'http://127.0.0.1:8001',
+      'http://host.docker.internal:8001',
+    ]);
+    mockRequest.cookies.getAll = () => [
+      { name: 'sb-host-auth-token', value: session },
+    ];
+
+    await updateSession(mockRequest as any);
+
+    const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
+    cookieHandler.getAll();
+    for (const [, , options] of nextResponseMocks.cookieSet.mock.calls)
+      expect(options).not.toHaveProperty('httpOnly');
   });
 
   it('should clear malformed chunked Supabase auth cookies before getClaims', async () => {

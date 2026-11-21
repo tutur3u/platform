@@ -33,7 +33,7 @@ English and Vietnamese.
 
 | Rule | Default | Status |
 | --- | --- | --- |
-| The session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`; page script cannot read it | Applies to every browser session | Planned (Stage A) |
+| The session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`; page script cannot read it | Applies to every browser session | Planned (Stage A, see [HttpOnly session cookie](/platform/architecture/httponly-session-cookie)) |
 | No auth endpoint returns a raw access or refresh token to a browser request; only native clients (no `Origin`, no Fetch Metadata) receive token pairs | Always | Enforced: `lib/auth/password.test.ts`, `lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts` |
 | No endpoint exports the session or its cookies as JSON | Always | Enforced (`/api/auth/me/session` removed) |
 | Browser code never holds a session token in Web Storage, IndexedDB or the Cache API | Always | Planned (browser-surface guard) |

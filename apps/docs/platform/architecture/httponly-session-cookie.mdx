@@ -1,0 +1,282 @@
+---
+title: "HttpOnly session cookie"
+description: "Design, browser inventory and rollout for making the shared Supabase session cookie unreadable by page script."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+This page owns **Stage A** of the
+[server-held session decision](/build/devops/start-bridge#shared-session-on-the-apex-decision-b-server-held-session):
+the `sb-<ref>-auth-token*` cookie becomes `HttpOnly`, so no script on any
+`tuturuuu.com` page, mounted app or `*.tuturuuu.com` subdomain can read the
+access or refresh token. The product rule is listed in
+[Shared session](/platform/architecture/shared-session#who-can-read-the-session).
+
+**Status:** Slice 1 in review; the flip is held. Security finding `APEX-SESSION-COOKIE` is open. Release
+authority record `RA-20261121-1145-APEX-SESSION-COOKIE` accepts enforced CSP
+plus Trusted Types as an interim control until 2026-12-05. This design removes
+the root cause.
+
+## Problem
+
+`getSupabaseCookieOptions` (`packages/supabase/src/next/common.ts`) never sets
+`httpOnly`, and `@supabase/ssr` defaults it to `false`. The cookie holds the
+whole Supabase session JSON (access token, refresh token and provider tokens) at
+`Domain=.tuturuuu.com`. Every satellite is moving under the single apex origin,
+so an XSS in any app can read `document.cookie`, exfiltrate the refresh token and
+keep a full Web session after the tab closes.
+
+## Target state
+
+| Property | Rule |
+| --- | --- |
+| Session cookie | `HttpOnly; Secure; SameSite=Lax; Path=/`, keeping `Domain=.tuturuuu.com` in Stage A so subdomain servers still read it |
+| Writers | Server code only: Web, plus the server proxies and route handlers of subdomain apps. Mounted apps stay non-writers through the bridge guard |
+| Browser data access | Same-origin `/api/*` routes and `@tuturuuu/internal-api` with the cookie, using TanStack Query and no `useEffect` data fetching |
+| Browser realtime | `@tuturuuu/internal-api/realtime` only: Cloudflare realtime with 60 s topic join tickets from `/api/v1/realtime/channels`. No browser code uses Supabase Realtime |
+| Browser storage | Server-issued signed URLs, each for one object. Private links last at most 15 minutes |
+| Browser auth flows | Server routes for sign-in, OTP, OAuth start, MFA, passkey, refresh, identity and sign-out. The browser never receives a token pair |
+| Supabase token in the browser | **None.** There is no browser-token endpoint, because the inventory shows no consumer that needs one |
+
+An XSS can still act as the user while the page is open, because in any
+cookie design it can call same-origin APIs with the cookie. With the cookie
+`HttpOnly` and the token-returning routes below closed, it can no longer read
+the Supabase access or refresh token from the page. Residual risks remain:
+
+- Sibling `*.tuturuuu.com` servers still receive the full domain cookie until
+  Stage B moves to a host-only `__Host-` cookie.
+- A sibling host can shadow the cookie with one of the same name.
+- Tokens exposed before the flip stay valid until they expire or are revoked.
+- Other credential families (cross-app handoff and CLI tokens) need their own
+  boundaries; see the holds below.
+
+CSP and Trusted Types stay mandatory. The 2026-12-05 interim acceptance is
+time-bounded and does not extend past these holds.
+
+If a later consumer needs a Supabase token in the browser, it must go through
+its own security review. The default answer is a Cloudflare ticket or a server
+route. A Supabase access token cannot be scoped below the `authenticated` role
+without project JWT-signing material, which Tuturuuu does not hold.
+
+## Server changes
+
+- `getSupabaseCookieOptions` sets `httpOnly: true` only when it runs on the
+  server (`typeof window === 'undefined'`) and
+  `TUTURUUU_SESSION_COOKIE_HTTP_ONLY` is enabled. The browser bundle never
+  sees that variable. Page script cannot write an `HttpOnly` cookie, nor
+  overwrite an existing `HttpOnly` cookie of the same name and scope.
+- Server writers carry the attribute:
+  - `next/server.ts` and `next/proxy.ts`, including their sanitizer mirror
+    and clear writes;
+  - `account-switch-auth.ts`, including the switch install and clear writes;
+  - the QA session helper, which copies `httpOnly` from the options.
+
+  `request/server.ts` discards cookie writes, so it is not a writer.
+- Cookie writes outside `packages/supabase` still need inventory before the
+  flip. Track live writers, deletion-only paths, forwarders and local fixtures
+  separately:
+  - `packages/auth/src/app-session.ts` (shared cleanup);
+  - the malformed-cookie cleanup in `apps/web/src/proxy.ts`;
+  - `apps/web/src/app/~recover-browser-state/route.ts`;
+  - the host-only clear serializer in `common.ts`;
+  - the local-only dev-session mirror
+    (`apps/web/src/legacy-api-routes/auth/dev-session/route.ts`), which writes a
+    readable value and stays outside production acceptance.
+- **No in-place upgrade marker.** `@supabase/ssr` writes a chunk only when its
+  value changes, and a `Cookie` header carries no attributes. So no server can
+  prove that an existing shared cookie is `HttpOnly`. A request-snapshot
+  re-emit could also race a later refresh, switch or logout. Existing readable
+  cookies become `HttpOnly` on their next refresh (at most one access-token
+  lifetime). The flip waits for a migration design that Web owns: a versioned
+  `HttpOnly` cookie, legacy-name cleanup, and a rule that stops a stale
+  response from restoring a superseded session.
+
+## Flags and rollout
+
+| Flag | Scope | Default |
+| --- | --- | --- |
+| `TUTURUUU_SESSION_COOKIE_HTTP_ONLY` | Server-only env, read wherever cookie options are built | off |
+| `NEXT_PUBLIC_TUTURUUU_BROWSER_SESSION_MODE` | Per-app client deployment control: `cookie` (current) or `server`. In `server` mode, browser auth and identity calls use server routes and `createAuthClient` is not constructed. It is embedded at build time, so open tabs and cached assets keep the old client until they reload | `cookie` |
+
+The cookie is shared across `.tuturuuu.com`. For one name and scope, the last
+accepted write sets its attributes. With the server flag on in Web only, a
+subdomain app with the flag off would write a readable cookie again on its next
+refresh. The browser side therefore rolls out app by app, and the server flag
+flips for every writer at once.
+
+1. **Slice 1, server plumbing (flag off).** Cookie options, plus mirror and
+   clear writes, carry `HttpOnly` when the flag is on, with tests for each
+   adapter and re-emitter. The output is unchanged while the flag is off.
+2. **Slice 2, close token-returning browser routes.** These leak tokens today
+   whatever the cookie attributes, so they ship first.
+   - The TOTP challenge verify and factor verify handlers return allowlisted,
+     token-free bodies.
+   - QR-login polling and the QA mint endpoint deliver tokens only to explicit
+     native or machine callers. They reject browser requests before consuming
+     a challenge or minting a token.
+   - Each has a negative route test.
+3. **Slice 3, shared identity.** `RealtimeLogProvider` (mounted in 12 apps) and
+   the `getUser`-only call sites in `packages/ui` and `packages/tasks-ui` read
+   identity from `/api/v1/realtime/session` or an existing internal-api user
+   query through TanStack Query.
+4. **Slice 4, shared CRUD and storage.**
+   - `use-calendar`, the `supabase-provider` fallback, `task-item-checkbox`,
+     `scheduling-dialog`, `use-task-data`, `task-actions` and `task-list-form`
+     move to internal-api routes.
+   - Track's signed image URL moves to a server route with workspace and object
+     authorization, with the link lifetime aligned to the storage runbook.
+5. **Slice 5, Web and Workspace auth.** Login, required MFA enrollment, SSO
+   reauthentication, passkey sign-in and settings, account deletion, sign-out,
+   `mira-soul-scope` and the notes key transfer move to server routes, under
+   these rules:
+   - Every browser auth POST requires same-origin proof even without an
+     incoming session, with explicit handling for trusted forwards. The global
+     CSRF guard admits cookie-less requests, so it is not enough.
+   - OAuth state, PKCE and the redirect destination are bound to the
+     initiating flow.
+   - WebAuthn challenges are bound to the ceremony, origin and RP ID. For
+     registration and notes step-up, they are also bound to the current user
+     and session.
+   - Notes recovery verifies the passkey with a detached client, which does not
+     save the session, and keeps the existing account on a user mismatch.
+   - Responses are allowlisted with `Cache-Control: private, no-store`. MFA
+     assurance and rate limits are preserved.
+   - Tests cover refresh and logout on direct and mounted routes, including
+     expired sessions and app-only logout.
+6. **Per app.** Turn on `server` mode for the app and verify login, refresh,
+   realtime and storage on staging.
+7. **Flip.** Wait for every hold below to clear. Then set
+   `TUTURUUU_SESSION_COOKIE_HTTP_ONLY=1` on every server writer of the shared
+   domain (Web and each subdomain app): staging first, then production.
+8. **Rollback.** Prefer rolling back an app's `server` mode while the cookie
+   stays `HttpOnly`. Unsetting the server flag is the last resort, because new
+   writes become readable again.
+
+## Holds before the flip and apex admission
+
+These come from the independent security design review, and each needs its own
+fix and tests:
+
+- **Mounted guard on every mount.** The access-token-only request view and the
+  Supabase `Set-Cookie` filter apply today only to mounts that opt into
+  isolation (Hive). Every admitted mount must enforce both, with narrow,
+  routed exceptions for Web-owned auth operations. Ambiguous duplicate session
+  cookies are rejected on unsafe requests before parsers collapse them. Owner:
+  apex-paths lane (`packages/start-bridge`).
+- **BFF readiness input.** Wire the one-origin admission check
+  (`packages/utils/src/one-origin-routing.ts`) to the verified readiness inputs
+  named in the Start bridge runbook.
+- **CLI and handoff credentials.** `/api/auth/generate-app-tokens` takes a
+  caller-selected target and returns a credential in JSON. The CLI verifier
+  issues Tuturuuu access and refresh credentials. Reserve CLI issuance for the
+  dedicated flow, bind redemption to the initiating CLI, and test that a
+  generic browser handoff cannot produce a CLI credential.
+- **Migration.** The versioned cookie migration in Server changes.
+- **Bundle-level inventory.** Check the transitive client graph and emitted
+  assets, including relative and direct SDK imports. auth-js reads cookies
+  itself and can broadcast sessions between tabs.
+
+## Verification
+
+- Browser tests assert that `document.cookie` contains no `sb-` name after
+  login, after a forced refresh and after an account switch, on emitted
+  staging builds.
+- Response tests assert that every `sb-*` `Set-Cookie` carries `HttpOnly` when
+  the flag is on, including chunked cookies, mirror writes and clears, through
+  the real `@supabase/ssr` and Next serializers
+  (`packages/supabase/src/next/__tests__/session-cookie-http-only.test.ts`, which also
+  covers the `next/server.ts` mirror, plus the flag cases in `proxy.test.ts`). With the flag off,
+  the output is unchanged.
+- Code that re-emits `Set-Cookie` without authoring it keeps `HttpOnly`
+  byte-for-byte:
+  - `apps/web/cloudflare/request-sanitizer.test.ts`;
+  - `packages/start-bridge/src/core/api-forward.test.ts`;
+  - `apps/gateway/src/web-family.test.ts`.
+
+  `vinext` 1.4.6, which Web's Cloudflare families use in place of Next, emits
+  `HttpOnly` for `httpOnly: true` (`shims/internal/cookie-serialize.js`). That
+  serializer is not a public export, so emitted-Worker staging acceptance
+  checks the attribute before the flip.
+- A guard fails the build if a browser module imports
+  `@tuturuuu/supabase/next/client` or `next/auth-browser` for runtime use
+  (type-only imports are allowed) once an app is in `server` mode.
+- Login, refresh, realtime and storage upload/download each pass on staging for
+  the app before production.
+
+## Browser Supabase inventory
+
+This inventory covers runtime browser code in `apps/*` and `packages/*` that
+reads the session through supabase-js. It excludes type-only imports, inactive
+runtimes and the Flutter app, which keeps its own session storage. Regenerate
+it before each app's rollout.
+
+Findings:
+
+- No browser code uses Supabase Realtime. Every channel, presence and broadcast
+  call goes through the Cloudflare client in `@tuturuuu/internal-api/realtime`.
+- No browser code reads `sb-` cookies through `document.cookie`.
+
+| App or package | Files | Auth | CRUD | Storage |
+| --- | --- | --- | --- | --- |
+| apps/web | 11 | 11 | 1 | 0 |
+| apps/workspace | 8 | 8 | 0 | 0 |
+| apps/track | 1 | 0 | 0 | 1 |
+| packages/supabase (`RealtimeLogProvider`, mounted in 16 files across 12 apps) | 1 | 1 | 0 | 0 |
+| packages/ui | 5 | 3 | 3 | 0 |
+| packages/tasks-ui | 7 | 5 | 4 | 0 |
+| packages/utils (`onboarding-helper.ts`, no importers) | 1 | 0 | 1 | 0 |
+
+### apps/web and apps/workspace
+
+Workspace has copies of the Web login, MFA, SSO, notes, Mira and passkey files.
+
+| File (under `src/`) | Calls |
+| --- | --- |
+| `app/[locale]/(auth)/login/form.tsx` | `getUser`, `refreshSession`, `mfa.listFactors/challenge/verify`, `signInWithOAuth`, `signOut` |
+| `app/[locale]/(auth)/login/passkey-login-button.tsx` | `signInWithPasskey` |
+| `app/[locale]/(auth)/login/required-mfa-enrollment.tsx` | `mfa.listFactors/enroll/challengeAndVerify`, `getUser`, `getClaims`, `signOut` |
+| `app/[locale]/(auth)/sso/consent/reauthenticate.tsx` | `mfa.listFactors/challengeAndVerify`, `signOut` |
+| `app/[locale]/(dashboard)/[wsId]/notes/note-key-transfer.tsx` | `getUser`, `getSession`, `signInWithPasskey`, `setSession`, `signOut` |
+| `app/[locale]/(dashboard)/[wsId]/(dashboard)/components/mira-meeting-create.tsx` | `getUser` |
+| `components/settings/account/passkeys-settings.tsx` | `passkey.list/update/delete`, `registerPasskey` |
+| `components/mira-soul-scope.tsx` | `onAuthStateChange` |
+| Web only: `app/[locale]/auth-button.tsx` | `signOut` |
+| Web only: `app/[locale]/(marketing)/account/delete/page.tsx` | `getUser`, `signOut` |
+| Web only: `hooks/useWhiteboardCollaboration.ts` | `getUser`, `.from('users')` |
+
+### apps/track
+
+| File | Calls |
+| --- | --- |
+| `src/app/[locale]/(dashboard)/[wsId]/requests/hooks/use-request-images.ts` | `storage.from('time_tracking_requests').createSignedUrl(path, 3600)` |
+
+### Shared packages
+
+| File | Calls |
+| --- | --- |
+| `packages/supabase/src/next/realtime-log-provider.tsx` | `getUser`, `onAuthStateChange` (logging context only) |
+| `packages/ui/src/hooks/use-calendar.tsx` | `getUser`; `task_calendar_events`, `task_user_scheduling_settings`, `workspace_calendar_events` |
+| `packages/ui/src/hooks/use-yjs-collaboration.ts` with `supabase-provider.ts` | `.from(table)` fallback when no `loadState`/`saveState` is supplied |
+| `packages/ui/src/components/ui/text-editor/task-item-checkbox.ts` | `.from('tasks')` |
+| `packages/ui/src/components/ui/calendar-app/components/use-calendar-connections-manager.ts` | `getUser` |
+| `packages/ui/src/components/ui/legacy/calendar/settings/google-calendar-settings.tsx` | `getUser` |
+| `packages/tasks-ui/src/calendar/components/scheduling-dialog.tsx` | `getUser`, `task_user_scheduling_settings` |
+| `packages/tasks-ui/src/tu-do/shared/fade-setting-initializer.tsx` | `getUser` |
+| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-form-reset.ts` | `getUser` |
+| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/create-task-with-recovery.ts` | `getUser` |
+| `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/hooks/use-task-data.ts` | `getUser`, `.from('users')` |
+| `packages/tasks-ui/src/tu-do/boards/boardId/task-actions.tsx` | `.from('tasks')` select and soft delete, without a `workspaceId` |
+| `packages/tasks-ui/src/tu-do/boards/boardId/task-list-form.tsx` | `.from('task_lists').insert` |
+
+### Server-issued browser credentials already in place
+
+| Route | Credential |
+| --- | --- |
+| `apps/web/src/app/api/v1/realtime/channels/route.ts` | Channel join ticket, one topic, 60 s |
+| `apps/web/src/app/api/v1/realtime/session/route.ts` | No token; current user identity |
+| `apps/web/src/app/api/v1/workspaces/[wsId]/chat/realtime/ticket/route.ts` | Chat subscribe ticket, at most 15 min |
+| `apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/realtime-token/route.ts` | Meet join token, 10 min |
+| `apps/hive/src/app/api/v1/hive/servers/[serverId]/realtime-token/route.ts` | Hive realtime token, 15 min |
+| `apps/web/src/app/api/v1/live/token/route.ts` | Constrained Gemini Live token, 5 min |
+
+None of these routes returns the Supabase access token to a browser.

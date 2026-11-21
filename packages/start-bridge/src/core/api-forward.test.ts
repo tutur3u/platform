@@ -216,3 +216,23 @@ describe('request header allowlist', () => {
     expect(body).toBe('part-1,part-2');
   });
 });
+
+describe('session cookie attributes', () => {
+  it('re-emits HttpOnly Supabase session chunks byte-for-byte', async () => {
+    const sessionCookies = [
+      'sb-ref-auth-token.0=base64-a; Domain=.tuturuuu.com; Path=/; Max-Age=34560000; Secure; HttpOnly; SameSite=lax',
+      'sb-ref-auth-token.1=b; Domain=.tuturuuu.com; Path=/; Max-Age=34560000; Secure; HttpOnly; SameSite=lax',
+    ];
+    const fetcher = vi.fn(async () => {
+      const headers = new Headers();
+      for (const cookie of sessionCookies) headers.append('Set-Cookie', cookie);
+      return new Response(null, { status: 204, headers });
+    });
+    const response = await forwardToCentralApi(
+      new Request('https://ttr.gg/api/v1/users/me'),
+      'https://central.example',
+      { fetcher: fetcher as unknown as typeof fetch }
+    );
+    expect(response.headers.getSetCookie()).toEqual(sessionCookies);
+  });
+});

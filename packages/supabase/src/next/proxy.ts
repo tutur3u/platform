@@ -81,6 +81,7 @@ export async function updateSession(request: NextRequest): Promise<{
       path: cookieOptions.path,
       sameSite: cookieOptions.sameSite,
       secure: cookieOptions.secure,
+      ...(cookieOptions.httpOnly ? { httpOnly: true } : {}),
     };
     const authCookieUrls = getSupabaseAuthCookieUrls(url);
     const possibleHostOnlyAuthCookieNames = cookieOptions.domain
