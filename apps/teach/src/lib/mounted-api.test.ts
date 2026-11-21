@@ -37,8 +37,7 @@ describe('teach mounted API paths', () => {
     vi.stubGlobal('fetch', fetchMock);
     await mountedFetch('/api/v1/vocabulary/suggestions?q=apple');
     expect(fetchMock).toHaveBeenCalledWith(
-      '/teach/api/v1/vocabulary/suggestions?q=apple',
-      undefined
+      '/teach/api/v1/vocabulary/suggestions?q=apple'
     );
   });
 });
