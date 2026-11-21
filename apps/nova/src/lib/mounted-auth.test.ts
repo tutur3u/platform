@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,7 +23,11 @@ vi.mock('@tuturuuu/auth/proxy/logout-fence', () => ({
   withAppLogoutFence: (_request: NextRequest, run: () => unknown) => run(),
 }));
 
-import { isMountedNova, mountedNovaAuth } from './mounted-auth';
+import {
+  isMountedNova,
+  mountedNovaAuth,
+  NOVA_MOUNTED_PUBLIC_PAGES,
+} from './mounted-auth';
 
 const mounted = (path: string) =>
   new NextRequest(`https://tuturuuu.com/nova${path}`, {
@@ -134,5 +140,27 @@ describe('mountedNovaAuth', () => {
       targetApp: 'nova',
       webAppUrl: 'https://tuturuuu.com',
     });
+  });
+});
+
+describe('NOVA_MOUNTED_PUBLIC_PAGES', () => {
+  it('lists only pages Nova serves', () => {
+    const app = resolve(process.cwd(), 'src/app/[locale]');
+    for (const path of NOVA_MOUNTED_PUBLIC_PAGES) {
+      const page =
+        path === '/'
+          ? join(app, 'page.tsx')
+          : join(app, '(marketing)', path, 'page.tsx');
+      const rootPage = [
+        join(app, 'page.tsx'),
+        join(app, '(marketing)', 'page.tsx'),
+      ];
+      expect(
+        path === '/'
+          ? rootPage.some((file) => existsSync(file))
+          : existsSync(page),
+        path
+      ).toBe(true);
+    }
   });
 });

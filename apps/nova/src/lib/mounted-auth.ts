@@ -1,21 +1,31 @@
-import { NOVA_PUBLIC_PAGES } from '../constants/common';
 import {
   createMountedAppAuth,
   consumeMountedSharedSession,
   resolveMountedSharedSession,
 } from '@tuturuuu/auth/proxy';
 
+/**
+ * Pages Nova serves signed out on tuturuuu.com/nova: its landing page and the
+ * marketing pages under (marketing). Exact paths only, so every other page,
+ * nested or not, stays gated. Each entry must have a route
+ * (mounted-auth.test.ts checks it).
+ */
+export const NOVA_MOUNTED_PUBLIC_PAGES = [
+  '/',
+  '/learn',
+  '/learn/introduction',
+  '/learn/basic-techniques',
+  '/learn/best-practices',
+  '/learn/advanced-strategies',
+  '/competitions/neo-league/prompt-the-future/about',
+] as const;
+
 export const NOVA_APEX_URL = 'https://tuturuuu.com/nova';
 
 const mounted = createMountedAppAuth(
-  // The landing and marketing pages are public on the mount, as on the
-  // subdomain; exact paths only, so nested pages stay gated.
   {
     targetApp: 'nova',
-    publicPaths: [
-      '/',
-      ...NOVA_PUBLIC_PAGES.filter((path) => path !== '/verify-token'),
-    ],
+    publicPaths: NOVA_MOUNTED_PUBLIC_PAGES,
   },
   {
     resolveMountedSharedSession: (...args) =>
