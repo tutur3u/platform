@@ -1019,20 +1019,20 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7963",
-        "reason": "Start + Void candidate (#7963) records the pinned Wrangler adapter (ignored .void-wrangler.jsonc, built-worker harness, or dependency pin). Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
     "apps/infrastructure/cloudflare/build-info-admin.runtime.mjs": {
       "lines": 1,
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/8359",
-        "reason": "Infrastructure build-info admin runtime harness (#8359) uses the pinned Wrangler adapter (unstable_startWorker, remote false) for the local native check, same as auth-redirect.runtime.mjs. Publication stays on the void-wave1 gap until cf deploy --prebuilt parity is proven."
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
     "apps/infrastructure/cloudflare/native-built-worker.runtime.mjs": {
       "lines": 1,
@@ -1049,10 +1049,10 @@
       "uses": 1,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/6ccb29db0d4df77c1ca357a7d27cd8589d79e043",
-        "reason": "The Infrastructure production runtime gate starts the sealed Worker on a local workerd through the Wrangler startWorker API to exercise HTTPS production requests; it runs locally against the sealed bytes, publishes nothing, and the publication gap and its removal condition remain."
+        "decision": "https://github.com/tutur3u/platform/commit/c2f9a7857eeffcdac1b794fe79e09c8b72e11f83",
+        "reason": "The Infrastructure runtime harness keeps one pinned Wrangler adapter line (const sdk = require('wrangler')) so it can start the local abuse-guard fixture and the Worker on the same local workerd registry, like Mind's runtime harness. It runs locally, publishes nothing, and the void-wave1 publication gap and its removal condition remain."
       },
-      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
     "apps/infrastructure/package.json": {
       "lines": 1,
