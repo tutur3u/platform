@@ -1,6 +1,9 @@
 import 'server-only';
 
-import type { MastermindStore } from '@tuturuuu/utils/mastermind-store/client';
+import {
+  type MastermindStore,
+  MastermindStoreUnavailableError,
+} from '@tuturuuu/utils/mastermind-store/client';
 import { NextResponse } from 'next/server';
 import { getMastermindStore } from '../store';
 import { claimFleetNonce } from './store';
@@ -14,11 +17,30 @@ export function fleetError(error: string, status: number) {
   return NextResponse.json({ error }, { status, headers: FLEET_NO_STORE });
 }
 
+/**
+ * Logs why a store call failed: the store error code and the transport error
+ * name and message. Keys, values and credentials are never logged.
+ */
+export function logFleetStoreFailure(error: unknown) {
+  const cause =
+    error instanceof Error && error.cause instanceof Error
+      ? error.cause
+      : undefined;
+  console.warn('Mastermind store call failed', {
+    code:
+      error instanceof MastermindStoreUnavailableError ? error.code : 'unknown',
+    ...(cause ? { cause: `${cause.name}: ${cause.message}` } : {}),
+  });
+}
+
 /** The Mastermind store (Cloudflare Worker, or legacy Upstash), or null. */
 export async function fleetStore(): Promise<MastermindStore | null> {
   try {
-    return await getMastermindStore();
-  } catch {
+    const store = await getMastermindStore();
+    if (!store) console.warn('Mastermind store is not configured');
+    return store;
+  } catch (error) {
+    logFleetStoreFailure(error);
     return null;
   }
 }
@@ -73,7 +95,8 @@ export async function authorizeFleetPublisher(
   try {
     if (!(await claimFleetNonce(store, signature)))
       return { ok: false, response: fleetError('replayed', 409) };
-  } catch {
+  } catch (error) {
+    logFleetStoreFailure(error);
     return { ok: false, response: fleetError('unavailable', 503) };
   }
   return { ok: true, body, store };

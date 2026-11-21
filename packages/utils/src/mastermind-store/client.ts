@@ -12,9 +12,10 @@ import {
 
 export class MastermindStoreUnavailableError extends Error {
   constructor(
-    readonly code: StoreErrorCode | 'timeout' | 'network' | 'invalid_response'
+    readonly code: StoreErrorCode | 'timeout' | 'network' | 'invalid_response',
+    options?: ErrorOptions
   ) {
-    super(`Mastermind store unavailable: ${code}`);
+    super(`Mastermind store unavailable: ${code}`, options);
     this.name = 'MastermindStoreUnavailableError';
   }
 }
@@ -68,7 +69,8 @@ export function createMastermindStoreClient(options: {
       throw new MastermindStoreUnavailableError(
         error instanceof Error && error.name === 'TimeoutError'
           ? 'timeout'
-          : 'network'
+          : 'network',
+        { cause: error }
       );
     }
     let body: unknown;

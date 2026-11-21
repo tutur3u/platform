@@ -17,6 +17,7 @@ import {
   FLEET_NO_STORE,
   fleetError,
   fleetStore,
+  logFleetStoreFailure,
 } from '@/lib/mastermind/fleet/http';
 import {
   readFleetAnswers,
@@ -144,6 +145,7 @@ export async function PUT(request: Request) {
     // A newer snapshot is already stored; this one must not replace it.
     if (error instanceof StaleFleetSnapshotError)
       return fleetError('stale_snapshot', 409);
+    logFleetStoreFailure(error);
     return fleetError('unavailable', 503);
   }
 }
