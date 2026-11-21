@@ -294,3 +294,31 @@ and fence older list reads. Regression tests cover these held-response boundarie
 conflict review, audit warnings, English/Vietnamese labels, enlarged text and
 48-pixel actions. Actual native paste gestures run through the global keyboard
 wrapper on Android/iOS widget targets; these are not physical-device proof.
+
+## People namespace
+
+People registry memories live in their own authorisation namespace, enforced
+by the memory service itself rather than by a product filter. The contract is
+`@tuturuuu/ai/memory/people-namespace`, a framework-free module the service
+runs before any storage access:
+
+- Container tags are `tuturuuu.people.{wsId}.person.{personId}` and
+  `tuturuuu.people.{wsId}.conversation.{conversationId}`, with lowercase
+  UUIDs. They are longer than 100 characters, so they never pass through the
+  compact ID helper that rewrites assistant scope tags.
+- Only the people registry caller (`people-registry`, authenticated with
+  `MEMORY_PEOPLE_CALLER_SECRET`) may name a people tag. Any other caller is
+  refused for any spelling a lenient store could fold into the prefix: case,
+  Unicode compatibility forms, surrounding whitespace and the bare
+  `tuturuuu.people`.
+- The people caller may name only well-formed people tags, all in one
+  workspace per request.
+- Every add and read by custom ID carries a `customId` of the form
+  `people.{wsId}.{ledgerId}` (the registry ledger's format), for the same
+  workspace as the tags.
+
+`PEOPLE_ISOLATION_CASES` is the acceptance suite: every implementation runs
+each case through its own request handler and requires the same decision. The
+service also needs a unique `customId` with read by `customId`, a revision on
+add and a fenced purge for the registry's ledger and deletion flows; see
+[people registry memories](/platform/features/people-registry#memories).
