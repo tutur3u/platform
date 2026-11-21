@@ -44,18 +44,18 @@ its phase P0. The product rules stay in
 
 | Component | Runs on | Owns |
 | --- | --- | --- |
-| Session service (Web auth routes, then an `auth` Worker) | Cloudflare Worker | Sign-in flows, cookie writes, rotation, step-up grants, revocation, provider adapters |
+| Session service (Web auth routes, then the `auth` Worker) | Cloudflare Worker, reached only through service-binding entry points with per-entry caller keys | Sign-in flows, the cookie MAC check, the 5-second `read` resolution cache, cookie writes, rotation, step-up grants, revocation, identity assertion signing, provider adapters. Holds every session and signing secret |
 | `BrowserDevice` Durable Object, one per device | SQLite-backed Durable Object | The device secret, the device's sessions, the active-account pointer, rotation order |
 | `UserSessions` Durable Object, one per user | SQLite-backed Durable Object | The user's device index, revocation epoch, revoke-all fan-out |
 | `SessionControl` Durable Object, one per environment | SQLite-backed Durable Object | The durable stop fence |
-| Token service | `auth` Worker, separate secrets | Short-lived ES256 JWTs and the JWKS |
-| Gateway (`apps/gateway`) | Cloudflare Worker | The only public ingress: resolves the cookie, enforces CSRF, strips credentials, forwards a per-mount identity assertion |
+| Token service | The signer inside the `auth` Worker; its emergency key list comes from a key guard Worker in a separate account | Short-lived ES256 JWTs and the JWKS |
+| Gateway (`apps/gateway`) | Cloudflare Worker | The only public ingress: checks the cookie codec, enforces CSRF, classifies ingress, strips credentials, forwards the auth Worker's per-mount identity assertion. Holds no session or signing secret |
 | `@tuturuuu/session` | Portable package | Types, cookie codec, expiry policy, assertion verification, runtime adapters |
 | Audit sink | Postgres through a Queue | Append-only session and credential events |
 
 ```text
-browser ── __Host-ttr_session ──▶ gateway ──▶ session service ──▶ BrowserDevice DO ──▶ UserSessions DO
-                                   │  (MAC check before any DO call)      │
+browser ── __Host-ttr_session ──▶ gateway ──▶ auth Worker ──▶ BrowserDevice DO ──▶ UserSessions DO
+                                   │  (MAC check before any DO call)  │
                                    │                                      └─▶ provider adapter
                                    ▼  service binding only
                        mount Worker ── x-ttr-identity (≤ 60 s, aud = mount) ── verify with key source
@@ -90,8 +90,8 @@ Codec invariants, in `@tuturuuu/session`:
   including split headers. More than one `__Host-ttr_session` is
   **ambiguous** and resolves to signed out for every method. The response
   clears the name with `Max-Age=0` and the same attributes.
-- **The MAC is an admission filter, not authorization.** It lets the gateway
-  drop forged or random cookies before any Durable Object call. The device
+- **The MAC is an admission filter, not authorization.** It lets the auth
+  Worker drop forged or random cookies before any Durable Object call. The device
   secret hash in storage still decides. `k` comes from
   `TTR_SESSION_COOKIE_MAC_KEYS` (HMAC-SHA-256, sign-capable), scoped by
   environment and host through the MAC input. The host is the hostname from
@@ -347,13 +347,20 @@ the gateway's service binding:
 
 ### Resolution
 
-1. The gateway checks the cookie's codec and MAC, then calls the session
-   service, which resolves the device, its active session and the user's
-   epoch. The gateway may cache a successful resolution for up to 5 seconds,
-   keyed by the cookie's HMAC, and never caches a failure.
-2. For an unsafe method with a cookie, the gateway enforces CSRF before minting
-   (see the rollout page). A failed check means no assertion.
-3. The gateway mints `x-ttr-identity` for this mount and request.
+1. The gateway checks the cookie's codec without any key and, for an unsafe
+   method with a cookie, enforces CSRF (see the rollout page); a failed check
+   means no assertion. It classifies ingress and calls the auth Worker's
+   `GatewayEntry.resolveForMount` with its caller key.
+2. The auth Worker checks the cookie MAC before any Durable Object call, then
+   resolves the device, its active session and the user's epoch. It may cache
+   a successful resolution of a `read` route for up to 5 seconds in its own
+   isolate, keyed by the SHA-256 of the cookie value and the host. It never
+   caches a failure or any other route class. On every cache hit it re-runs
+   the route's class and expected-account checks from its current registry
+   and signs a new assertion for the requesting mount, so a cached entry
+   never skips `account_mismatch`.
+3. The auth Worker signs `x-ttr-identity` for this mount and request, and the
+   gateway forwards it.
 4. The mount's adapter verifies it with `verifyIdentityAssertion` and builds a
    `Principal`. Sensitive operations, and anything that mints a credential, also
    call `requireLiveSession()`, which asks the session service and fails closed.
@@ -361,9 +368,14 @@ the gateway's service binding:
    or the app verifies the access token or resolves the workspace API key, and
    ignores cookies.
 
-Runtimes outside the gateway path (Web on Vercel during migration) call the
-session service's resolve endpoint over an authenticated internal request and
-get the same assertion back.
+No runtime may resolve a session outside the gateway path, and that is a
+precondition, not a property of today's gateway, which still forwards some
+paths to `WEB_ORIGIN` and leaves some apex paths on direct zone routes.
+Before any reader leaves `supabase`, APEX confirms that no session-bearing app
+has a direct zone route and that no session-bearing path reaches `WEB_ORIGIN`.
+Web family Workers that own auth routes call the auth Worker's `WebEntry` over
+a service binding with their own caller key; see
+[Tuturuuu session auth Worker](/platform/architecture/tuturuuu-session-auth-worker).
 
 ### Identity assertion profile
 
@@ -388,12 +400,12 @@ The header and claims sets are closed: any member not listed here is rejected.
 | `ipp` | Optional. An IPv4 `/24` with a zero last octet, or an IPv6 `/48` with zero host bits in canonical RFC 5952 form. Never a full address |
 | Encoding | At most 4 KiB, three canonical base64url segments, JSON objects only, duplicate member names rejected (including escaped spellings), `__proto__` treated as an ordinary member. Numbers must be canonical decimal safe integers: no fraction, exponent or `-0` |
 
-The gateway caps `exp` at the earliest of the session's idle, absolute and
+The auth Worker caps `exp` at the earliest of the session's idle, absolute and
 parent deadlines, and for a `stale` assertion at the end of the grace window.
 No tolerance extends a deadline.
 
-Assertions are not single use. They only travel gateway to mount over a
-service binding, so an outside party cannot present one. A mount that misuses
+Assertions are not single use. They only travel from the auth Worker
+through the gateway to the mount over service bindings, so an outside party cannot present one. A mount that misuses
 its own assertion is already inside its own boundary, and `aud` keeps it from
 using that assertion at another mount.
 
@@ -443,7 +455,7 @@ after its `notAfter`, gives `unknown_key`. Every failure is a rejection.
 | Property | Rule |
 | --- | --- |
 | Algorithm | ES256 (P-256) |
-| Keys | Private keys only in the token service's secrets (`TTR_TOKEN_SIGNING_KEYS`), one active key per class family. Verifiers get public keys through an injected key source |
+| Keys | Private keys only in the auth Worker's secrets (`TTR_TOKEN_SIGNING_KEYS`), one active key per class family. The cookie MAC keys, the pepper and the upstream grant key are auth Worker secrets too; the gateway's only session secret is its caller key, beside its existing `TRUSTED_PROXY_ORIGIN_SECRET` for Web's visitor IP proof. Verifiers get public keys through an injected key source |
 | JWKS | `https://tuturuuu.com/.well-known/jwks.json` for external verifiers, `Cache-Control: public, max-age=300`. Internal Workers receive keys through configuration, not a runtime fetch |
 | Rotation | Every 90 days. A new key is published 7 days before it signs. A retired key stays published for the longest token lifetime plus 1 day |
 | Compromise | Remove the `kid` from every key source and the JWKS, then rotate. Verifiers reject that `kid` within the JWKS cache bound (5 minutes) or at once for configuration-fed Workers |

@@ -13,7 +13,7 @@ needs its own reviewed implementation slices. Every flag defaults off.
 
 | Credential | After revoke-one or revoke-all |
 | --- | --- |
-| Browser request through a mount | At most 70 s: the 5 s gateway cache, the 60 s assertion, and 5 s of clock tolerance. Add 30 s for a device that revoke-all fan-out has not reached |
+| Browser request through a mount | At most 70 s: the auth Worker's 5 s read cache, the 60 s assertion, and 5 s of clock tolerance. Add 30 s for a device that revoke-all fan-out has not reached |
 | Sensitive actions and credential issuance | Immediate. They call `requireLiveSession()` and consume step-up grants in the device object |
 | `ttr+access` (mobile, CLI, external apps) | At most 5 min plus 5 s of tolerance. Refresh stops at once |
 | Upstream provider token | It never leaves the trusted data adapter. The upstream session is signed out on revocation; a request already in flight may finish |
@@ -228,8 +228,9 @@ IPv6 limits aggregate by /64.
   time. Queue events retry at most 5 times within 24 hours, then go to a
   dead-letter queue. Every alarm and Queue consumer checks the stop fence first.
 - **Stop fence.** `SessionControl` stores the state durably, so it survives
-  restarts. The gateway and session service read it with a 10-second cache, so
-  a change takes effect within 15 seconds; a test proves that bound.
+  restarts. Auth Worker isolates read it with a 10-second cache, and the
+  gateway never reads it, so a change takes effect within 15 seconds; a test
+  proves that bound.
   - `issuance_stopped` blocks new sessions, refreshes, token issuance and
     background work. Existing sessions keep resolving.
   - `stopped` also blocks resolution. In P1 readers fall back to the legacy
@@ -248,7 +249,7 @@ introduces the behavior. None of them blocks the unwired portable core.
 
 | Gate | Blocks | Requirement |
 | --- | --- | --- |
-| G1 Write freshness | Device object, P1 | Writes and issuance bypass the gateway cache and check the expected `sid` and generation where the effect commits. Specify recovery from a superseded cookie |
+| G1 Write freshness | Device object, P1 | Writes and issuance bypass the auth Worker's read cache and check the expected `sid` and generation where the effect commits. Specify recovery from a superseded cookie |
 | G2 Expected account | Device object, P1 | Account-sensitive reads and mutations carry the UI's expected session, mismatches are rejected, and old tab data is invalidated on switch. Define which saved accounts need fresh proof to switch to |
 | G3 Stale authority | Device object | Handlers and the data adapter enforce `stale` read-only authority, including effectful `GET` requests and upgrades |
 | G4 Ingress proof | Any reader above `supabase` | Activation needs the effective route, hostname, preview and binding inventories, a dedicated authenticated gateway entry point, and equivalent ingress authentication for Web on Vercel |

@@ -1,0 +1,367 @@
+---
+title: "Tuturuuu session auth Worker keys"
+description: "Slice 4 key publication for the first-party Tuturuuu session: the pinned key guard and its emergency list, the out-of-account observer, the binding inventory, the Cloudflare API budget, the publication census and the observation cache."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** This page completes
+[Tuturuuu session auth Worker](/platform/architecture/tuturuuu-session-auth-worker)
+for slice 2a's key publication rules on
+[Tuturuuu session token signer](/platform/architecture/tuturuuu-session-token-signer).
+Release-authority acceptances and APEX dependencies are collected on
+[auth Worker controls](/platform/architecture/tuturuuu-session-auth-worker-controls#rollout).
+
+## Key guard
+
+Slice 2a requires the emergency list to belong to a deploy identity other than
+the one that writes `TTR_TOKEN_SIGNING_KEYS`. Cloudflare's Workers edit
+permission covers every script in an account, so a second Worker in the
+platform account would share the signer's secret administration, and a deploy
+variable in the platform account could point the signer at another list.
+
+- **Script-scoped deploy tokens.** Cloudflare API tokens can be scoped to
+  individual Worker scripts. The auth workflow's token is an editor on the
+  `tuturuuu-auth` scripts only, and the gateway workflow's token is an editor
+  on `tuturuuu-gateway` only, with no role on `tuturuuu-auth`, so no
+  steady-state deploy identity can both change the gateway's mounts and the
+  auth Worker.
+- **Creating the script.** A per-Worker role cannot create a Worker or be
+  granted on one that does not exist yet; creation needs product-level
+  Workers Admin, which covers every Worker. The auth scripts are created under
+  a time-bounded release-authority waiver (id, scope, expiry) that grants that
+  Admin to one creation run and is removed before any auth version receives
+  traffic. The same applies to any later new Worker. Each waiver is published
+  as a commit reachable from `main` with its id, scope and expiry; the
+  observer ignores any other waiver.
+- **No standing Worker-wide grant.** A grant is Worker-wide when it can
+  upload, put a secret on or deploy any Worker beyond one script, that is,
+  when its resource scope is the Workers product, the developer platform or
+  the account, and its permission group is any Admin or Editor that covers
+  Workers: Workers Admin, Workers Editor, Developer Platform Admin, Developer
+  Platform Editor, legacy Workers Platform Admin, Workers Scripts Edit,
+  Workers Scripts Write, Workers CI Edit, Workers Observability Edit or
+  Workers Observability Telemetry Edit. The account role `Administrator`, on
+  `roles[].name` or as an account-scoped policy permission group, is
+  Worker-wide too, as is its legacy alias `Account Administrator` where a
+  payload still emits it. Role and permission group names match as the full
+  string, so `Administrator Read Only` and other read roles never count.
+- **Effective access.** Each policy has one scope, and an identity's access is
+  the union of its policies. For each member the observer unions its direct
+  policies with the policies of every user group it belongs to, and for each
+  account token it takes all of its policies, before classifying. If the
+  union of an identity's resources for any permission that can upload, put a
+  secret or deploy covers both a `tuturuuu-auth` script and
+  `tuturuuu-gateway`, the identity is Worker-wide, because it breaks the
+  disjoint deploy split. Read-only permissions never count, so the
+  observer's and the census's own read tokens are never Worker-wide.
+- **Grant check.** Every 5 minutes the observer reads the account members
+  (`roles[]`, and `policies[].permission_groups` with their
+  `resource_groups`), the user groups' policies, and the account-owned API
+  tokens' policies. Any Worker-wide grant outside an open waiver sets
+  `identityBlocked`, so identity minting stops until it clears. A run counts
+  as a successful read only when every page of members, user groups and
+  account tokens was read. A cap fails the run only when a page remains
+  unread; an unread page or an error is a failed read, which keeps the last `identityBlocked`, alerts and does not move the
+  success time. When the last successful read is older than 15 minutes it
+  sets `identityBlocked`. User-owned API tokens and Global API keys cannot be
+  listed, so Workers access through either is banned and the release
+  authority attests to it. Only the `Super Administrator - All Privileges`
+  role is exempt: it can edit every Worker and is never blocked, because that
+  would stop minting permanently, and it is a standing residual the release
+  authority accepts.
+- **Account.** `tuturuuu-auth-keyguard` runs in a separate Cloudflare account,
+  the guard account. Its only deploy identity has no access to the platform
+  account, and no platform identity has access to the guard account.
+- **State.** One `GuardState` Durable Object per environment holds
+  `{ listVersion, kids, mintHalt, gatewayVersions, identityBlocked }`.
+  `gatewayVersions` is the set of gateway version ids the observer accepted
+  below, kept as a sorted array, and `identityBlocked` marks the identity
+  class unusable. Every change increments `listVersion` in the same
+  transaction: an operator arming or removing an emergency `kid` through the
+  guard account's own pipeline, the observer setting the halt, accepting or
+  dropping a gateway version, or changing `identityBlocked`. Only an operator clears a
+  halt.
+- **Document.** `GET /<env>` returns `{ payload, keyId, sig }`. `payload` is
+  the base64url of the canonical bytes (RFC 8785 JSON) of
+  `{ env, kids, listVersion, mintHalt, gatewayVersions, identityBlocked, issuedAtMs }`, and `sig` is Ed25519
+  over exactly those bytes with `TTR_TOKEN_EMERGENCY_LIST_KEY`. The guard
+  stamps `issuedAtMs` at response time and signs every response afresh, so a
+  successful fetch always yields a fresh document and a halt the guard is
+  still serving never lapses. Every response carries
+  `Cache-Control: no-store`.
+
+### The pin
+
+- **In reviewed source.** `apps/auth/src/keys/key-guard-pin.ts` exports, per
+  environment, the guard URL and its Ed25519 public keys as
+  `{ current, previous? }`, each with its `keyId`. The signer reads no guard
+  URL or key from its environment, so changing the pin needs a reviewed commit
+  on `main` and a CI deploy, which the observer checks.
+- **Rotation.** The guard account creates key K2. A reviewed auth change sets
+  the pin to `{ current: K2, previous: K1 }`, and CI moves that auth version
+  to 100% of traffic. Only then does the guard sign with K2. When the guard
+  has signed with K2 for 300 seconds and no auth version without K2 carries
+  traffic, a reviewed change drops `previous`. A URL change follows the same
+  order: the new hostname serves before the pin names it, and the old one
+  keeps serving until no auth version with traffic names it.
+
+### Accepting a list
+
+The census cron fetches the document once per tick with `cache: 'no-store'`, a
+2-second timeout and no retry, and stores the response bytes in
+`KeyObservations`. Every isolate verifies the bytes itself with the pinned
+keys; `KeyObservations` only stores and forwards them, so a writer of that
+object cannot forge a list.
+
+A document is valid only when its `keyId` names the pin's `current` or
+`previous` key, `sig` verifies over the exact `payload` bytes, `payload` is
+canonical JSON with the closed member set above and no duplicate members,
+`env` equals `TTR_SESSION_ENV`, and `issuedAtMs` is at most 5 seconds ahead of
+the isolate clock. Against the held list, a valid document:
+
+| `listVersion` | Content | Result |
+| --- | --- | --- |
+| Greater | Any | Replaces the held list |
+| Equal | Every signed member except `issuedAtMs` the same, `gatewayVersions` compared as a sorted array | Refreshes the held list's `issuedAtMs` |
+| Equal | Different | Rejected and alerted as a conflict |
+| Lower | Any | Rejected and alerted as a rollback |
+
+`KeyObservations` keeps the highest accepted `listVersion` durably and refuses
+to store a lower one, and the observation snapshot carries the held document,
+so a restart or a cold isolate never accepts an older list. A fetch error, an
+invalid document, a conflict or a rollback keeps the held list in force until
+its `issuedAtMs` is 300 seconds old by the isolate clock. Past that, the
+signer's read view gives `kids` as empty and `mintHalt` as false, while the
+stored document stays the input to the comparison above, so the next valid
+equal document refreshes it and restores both fields. `gatewayVersions` and
+`identityBlocked` keep their last held values: a guard outage never fails the
+identity class for a gateway version already accepted, and never clears a
+block. A new gateway version with traffic that has not been accepted fails the
+identity class until the guard is back and accepts it, so a gateway deploy
+during a guard outage stops identity minting; that stall is stated in the
+release-authority list.
+
+### Effect on the signer
+
+- **`kids`.** The held list's `kids` is the value the host passes to slice 2a
+  as `TTR_TOKEN_EMERGENCY_KIDS`: at most one `kid` per class that may skip the
+  7-day wait, with slice 2a's rules. No platform secret or variable carries
+  it. An empty list removes only that skip, so a guard outage fails safe.
+- **`mintHalt`.** While the held list carries `mintHalt: true`, `mintToken`
+  refuses every class, identity included, and resolution answers
+  `unavailable`, which the gateway turns into its retry result (see
+  [auth Worker controls](/platform/architecture/tuturuuu-session-auth-worker-controls#g8-stop-fence-modes)).
+  The halt lives only in the held list, so it lapses when the guard stays
+  unreachable for 300 seconds. Guard availability is a minting dependency only
+  for accepting a new gateway version, as described above. The halt contains configuration drift under honest auth code.
+  A deployed version whose code differs from `main` can ignore it; the
+  observer reports that version, and the containment is key denial at the
+  verifiers.
+
+## Observer
+
+The observer is the guard Worker's scheduled handler, in the guard account, so
+no platform identity can change or silence it.
+
+- **Credentials.** `TTR_AUTH_OBSERVER_CF_READ_TOKEN`, a Cloudflare API token
+  with Workers Scripts Read, Account Settings Read and Account API Tokens Read
+  on the platform account only (never Account Settings Write or SCIM
+  Provisioning), created for a dedicated service user; and `TTR_AUTH_OBSERVER_GITHUB_TOKEN`, read-only
+  access to repository contents and deployments. Both are guard-account
+  secrets.
+- **CI-only production deploys.** `auth-cloudflare.yaml` is the only path that
+  changes production or staging `tuturuuu-auth`. It uploads a version without
+  traffic (`wrangler versions upload`, or `wrangler versions secret put` for a
+  secret change), records the version id and commit in a GitHub deployment for
+  that environment, and only then deploys the version. A rollback deploys a
+  recorded version. No person or agent deploys, edits a variable or puts a
+  secret on `tuturuuu-auth` outside that job.
+- **Auth check, every 5 minutes.** For each environment's `tuturuuu-auth`,
+  every version with traffic must appear in a GitHub deployment for that
+  environment whose creator is the auth workflow's GitHub actor, whose payload
+  names `auth-cloudflare.yaml` and that exact version id, and whose commit is
+  reachable from `main` (any other deployment does not count); its variables, bindings and
+  secret names must equal `apps/auth/wrangler.jsonc` at that commit; and the
+  script must have no route, custom domain, `workers.dev` or preview URL. Any
+  code, variable or secret change creates a new version, so a change made
+  outside CI fails the first condition. A positive mismatch sets `mintHalt`
+  for that environment and alerts. An unreachable GitHub or Cloudflare API, a
+  `429`, or an incomplete check alerts and leaves `mintHalt` unchanged, so an
+  expired read token cannot turn into a halt only a guard operator can end.
+  The check also compares the auth binding's target script id and full
+  binding definition, not the binding name alone.
+- **Gateway check, every 5 minutes.** For each environment's
+  `tuturuuu-gateway`, the observer accepts a version with traffic only when a
+  GitHub deployment for that environment has the gateway workflow's GitHub
+  actor, names `gateway-cloudflare.yaml`, carries that exact version id, and
+  is at a commit reachable from `main`; any other deployment does not count.
+  It also compares that version's `AUTH` binding (target script id and full
+  definition) with the committed gateway configuration. Accepted version ids
+  go into `gatewayVersions`; an id is dropped once its version has no traffic,
+  which bumps `listVersion`, so the array stays bounded. A positive miss
+  leaves the version out, which
+  fails the identity class at the next census tick, and a mismatched `AUTH`
+  binding sets `mintHalt`. A GitHub or API error, or a run that reaches its
+  cap with a page unread, alerts and accepts nothing new and removes nothing, and never fails the class
+  for a version already accepted; only a positive miss fails it. Both checks read GitHub
+  with `TTR_AUTH_OBSERVER_GITHUB_TOKEN`.
+- **Inventory check, every 15 minutes.** See the binding inventory below.
+- **Bounded.** Each run stays inside its call cap below, writes only
+  `GuardState` and alerts, and never retries within a run.
+
+## Binding inventory
+
+`apps/auth/binding-inventory.json` is a set of `(script, entrypoint)` pairs
+allowed to bind `tuturuuu-auth`. `api-ops` is the only script listed twice,
+for `WebEntry` and `AdminEntry`; no other script binds `AdminEntry`. A CI check fails when a
+committed Wrangler config binds `tuturuuu-auth` outside it, or when it
+disagrees with the entry point table.
+
+- **Live diff.** The observer's inventory check lists every script in the
+  platform account, reads the bindings of each version with traffic, and diffs
+  bindings to `tuturuuu-auth` against `binding-inventory.json` on `main`. It
+  keeps each version's bindings by version id in `GuardState`, since a version
+  is immutable.
+- **Incomplete runs.** When the call cap is reached while another API page
+  exists or a script is unread, the run fails as `incomplete` and alerts. An
+  incomplete run never counts as clean.
+- **Finding.** An alert means rotate that entry's caller key now, by the
+  rotation procedure on the auth Worker page.
+- **Prevention and detection.** The caller key is the preventive control: a
+  binding without the key gets `unauthorized` and causes no downstream call.
+  The inventory diff is detection only.
+- **Acceptance.** Staging and production acceptance run the same diff once
+  from CI against git and fail on any finding or an incomplete run. This is a
+  G4 input, and the G4 owner owns the procedure.
+
+## Cloudflare API budget
+
+The census and the observer read the Cloudflare API, which allows 1,200
+requests per 5 minutes per user. Each token belongs to its own service user,
+apart from the CI deploy users, and each caller has a hard cap:
+
+| Caller | Cap | Worst case per 5 minutes |
+| --- | --- | --- |
+| Census tick, once a minute | 40 calls per tick | 200 |
+| Observer auth check, every 5 minutes | 20 calls per run | 20 |
+| Observer inventory check, every 15 minutes | 300 calls per run | 300 |
+| Observer gateway check, every 5 minutes | 20 calls per run | 20 |
+| Observer grant check (members, user groups, account tokens), every 5 minutes | 30 calls per run | 30 |
+
+The sum, 570, stays under 1,200 even if every token shared one user. A census
+tick that reaches its cap completes the classes it finished; the others keep
+their last good census. On a `429` the caller stops API reads until
+`Retry-After` has passed, alerts, and changes no stored result: every class
+keeps its last good census, whose 300-second cap is measured from its own
+store time and is never shortened by the error. Persistent `429` responses
+still stop minting once that cap passes. Every call writes a `keys`
+accounting point.
+
+## Publication census
+
+- **Identity membership.** The identity registry is the gateway's effective
+  mount inventory (its mounted paths and mount bindings) merged with the live
+  bindings, as slice 2a defines. The gateway release publishes it as the
+  identity registry artifact, an APEX-owned dependency: the gateway exports a
+  `MountInventory` entry point whose `list()` returns
+  `{ env, gatewayVersionId, registryVersion, mounts: [{ mountId, script, base }] }`,
+  the committed gateway configuration merged with the live bindings that
+  gateway version was deployed with. The auth Worker binds it as
+  `{ service: 'tuturuuu-gateway', entrypoint: 'MountInventory' }`. A service
+  binding RPC is unreachable from any public route, so it needs no caller key
+  or signature, and the gateway's deploy helper already asserts that the
+  committed set is a subset of the live one. The gateway release can attach a
+  signed snapshot of the same list as a CI artifact for offline evidence. The
+  auth Worker and its deploy identity can only call `list()`, no file under
+  `apps/auth` lists identity membership, and the signer is never the source of
+  membership.
+- **Other classes.** Realtime, s2s, access and step-up registries follow the
+  same contract, each published by its verifier's release with that family's
+  slice. A class with no published artifact has an empty registry and mints
+  nothing, as slice 2a requires.
+- **Published versus live.** The authority for identity membership is the
+  Cloudflare API view of the script named `tuturuuu-gateway`, read with
+  `TTR_SESSION_CENSUS_READ_TOKEN`: each tick reads its active deployment and,
+  for each version with traffic, projects that version's mount map from its
+  `GATEWAY_MOUNTED_PATHS` variable and its `MOUNT_<SEGMENT>` service bindings
+  (for example `MOUNT_MAIL` to `tuturuuu-mail` for `/mail` and `/mail/*`) into
+  entries of `mountId`, script and base. Every version with traffic must
+  produce the same map, and each must be in the signed `gatewayVersions` list
+  from the key guard, so the census needs no GitHub credential of its own.
+  `list()` must equal that map. The class fails when the artifact's
+  `gatewayVersionId` is not an accepted version with traffic, when its
+  `registryVersion` is lower than the highest seen, or when `list()` and the
+  API view differ in any entry, or when the key guard's list marks the
+  identity class blocked. Because the gateway's deploy token cannot edit
+  `tuturuuu-auth`, and the auth token cannot edit the gateway, the signer's
+  deploy identity is never the source of membership.
+- **Live versions.** Each tick reads every listed script's active deployment,
+  its versions and their traffic shares. A version's configured key bundle is
+  immutable, so the collector reads it once per new version id and keeps it in
+  `KeyObservations`' version bundle cache.
+- **Reports.** Each verifier serves `KeysReportEntry.report()`, which returns
+  `{ versionId, keys }`: the `CF_VERSION_METADATA` id of the running version
+  and the public key bundle it loaded. For identity, the collector calls
+  `CensusEntry.report(mounts)` with the published mounts, and the gateway
+  calls each listed mount's report with at most 8 in flight and a 2-second
+  timeout, returning one result per listed mount, timeouts included.
+- **Class result.** A class's census succeeds only when membership passes
+  and every published entry has an active deployment and a report, the
+  report's `versionId` is one of that deployment's versions, and its keys
+  equal that version's configured bundle. A timeout, an error, a missing
+  entry, a report for an unpublished entry, a duplicate, or a mismatch fails
+  the class. A key holds only when every live version of every entry contains
+  it, so an entry mid gradual deployment, with two live versions, passes only
+  when both bundles contain the key.
+- **Public JWKS.** The collector also fetches
+  `https://tuturuuu.com/.well-known/jwks.json` with caching disabled. The
+  fetch counts only when its response carries `x-gateway-cache: AUTH` and the
+  serving auth deployment id, proving it crossed the public gateway path
+  rather than a same-zone shortcut; otherwise every class's census fails.
+- **Write.** A tick checks the fence first. A complete census for a class is
+  written to `KeyObservations` in one transaction with the store's time, and
+  the collector then writes the snapshot described below.
+- **Use.** The signer hands `publicationHolds` the last census and its time.
+  A failed refresh keeps the last success only until the 300-second cap, so a
+  collector outage stops minting for that class after at most 5 minutes.
+- **Rows.** The first time `publicationHolds` is true for a key, the isolate
+  calls `KeyObservations.getOrCreate(class, kid, thumbprint)`. The object
+  inserts the row stamped with its own clock in one transaction, marking the
+  first row of a class as bootstrap. Rows are never updated or deleted, and
+  no caller supplies a time.
+
+## Observation cache across isolates
+
+`publicationHolds` needs the committed rows and the last census, and the
+signer needs the held guard document, so the persisted copy carries all three.
+
+- **Warm isolates.** Each isolate loads every committed row, each class's last
+  successful census with its store time, and the held guard document from
+  `KeyObservations` at start and every 60 seconds. When a read fails it keeps
+  its last good copy; the 300-second census cap and the guard list's
+  300-second age still apply to it.
+- **Snapshot.** After each complete census the collector writes one snapshot
+  to `KEY_OBSERVATION_SNAPSHOT`: every committed row, each class's last
+  successful census with its store time, the held guard document as fetched,
+  `TTR_SESSION_ENV`, and the writing auth deployment id, under one HMAC with
+  `TTR_TOKEN_OBSERVATION_MAC_KEY`. That is at most one KV write per minute per
+  environment.
+- **Cold isolates.** An isolate whose first `KeyObservations` read fails loads
+  the snapshot and checks its MAC and that its environment equals
+  `TTR_SESSION_ENV`. It uses only rows whose `(class, kid, thumbprint)`
+  matches an entry in the current key set, and a class's census only while
+  its store time is at most 300 seconds before the isolate clock; past that
+  the class mints nothing. It verifies the guard document with the pin as any
+  isolate does. A missing or invalid snapshot leaves the isolate with no rows,
+  no census and an empty guard list, and it mints nothing, as slice 2a
+  requires. A key with no persisted row stays blocked.
+- **Writer version.** The deployment id records which auth version wrote the
+  snapshot. A snapshot from the previous auth version stays usable during a
+  deploy, because `publicationHolds` checks keys against the current key set,
+  not the writer.
+- **Staleness.** KV is eventually consistent. A stale snapshot can only lack
+  the newest row, which keeps that key blocked, hold an older census, which
+  the 300-second cap measures from the census's own store time, or hold an
+  older guard document, which the `listVersion` rule and its 300-second age
+  bound.

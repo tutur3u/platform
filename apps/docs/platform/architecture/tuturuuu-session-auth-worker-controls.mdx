@@ -1,0 +1,579 @@
+---
+title: "Tuturuuu session auth Worker controls"
+description: "Slice 4 controls for the first-party Tuturuuu session: revocation checks, stop-fence modes, operation accounting and cost bounds, first-adapter acceptance, gate closure, tests and rollout."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** This page completes
+[Tuturuuu session auth Worker](/platform/architecture/tuturuuu-session-auth-worker)
+and [its key publication](/platform/architecture/tuturuuu-session-auth-worker-keys)
+for gates G2, G5, G8, G17 and G18 on
+[Tuturuuu session rollout](/platform/architecture/tuturuuu-session-rollout#design-gates).
+
+## G2 Tab invalidation channel
+
+The channel is the device cookie itself; no `BroadcastChannel`, storage event
+or push is used. A switch commits a new device generation and returns the new
+cookie, which every tab of that browser shares. The next request from a tab
+still rendered for the previous account carries that account's
+`expectedSessionId`, which no longer equals `activeSid`, so the device returns
+`account_mismatch` and no data or credential of the new account. The adapter
+answers with a full reload of the current route, which renders for the active
+account. A tab that sends no request keeps showing data it already had. The
+auth isolate's read cache re-runs this check on every hit, so a cached
+resolution never answers a stale tab for the new account.
+
+## G5 Revocation
+
+### Ordinary-read bound: risk decision
+
+| Path after revoke-one or revoke-all | Bound |
+| --- | --- |
+| A new mounted request, device reached by revocation | 5 s: the auth isolate's read cache |
+| A new mounted request, device not yet reached by revoke-all fan-out | 35 s: the 30-second device epoch cache plus the 5-second read cache |
+| An assertion a mount already holds (long render, streamed response) | Up to its 60-second lifetime plus 5 s of tolerance, so 70 s, or 100 s on an unreached device |
+
+**Decision proposed for the release authority:** accept these bounds for
+`read` routes only. The residual risk is that a holder of a stolen device
+cookie keeps reading for up to 100 seconds after revocation and cannot write,
+mint or step up. The alternative, an uncached Durable Object check on every
+mounted request, adds one `BrowserDevice` and one `UserSessions` operation to
+every request. The decision is not in force until the release authority
+records it with its scope (P1, `read` routes) and a review date; until then G5
+stays open and no reader leaves `supabase`.
+
+### Uncached authoritative checks
+
+- **Which.** Every route the effect registry classes as `write`, `credential`
+  or `security`, every unknown route, every mint (`mintCredential`, realtime
+  and access issuance), every step-up grant and consume, and
+  `RelyingEntry.liveness` for slice 2b's `SessionLivenessPort`.
+- **How.** These calls never use the isolate's 5-second cache or the device's
+  30-second epoch cache. The isolate passes the request to `BrowserDevice`,
+  which reads its stored state and takes a `fresh` epoch from `UserSessions`
+  in the same call. `requireLiveSession()` in every adapter maps to
+  `WebEntry.requireLive`.
+- **Outage behavior.**
+
+| Failure | Result |
+| --- | --- |
+| `UserSessions` unreachable or slow (2-second timeout) | `epoch_unavailable`. The mutation or mint fails with `503 SESSION_UNAVAILABLE` and `Retry-After: 5`. No cache fallback |
+| `BrowserDevice` unreachable | Same `503`. Logout reports `unavailable` only when the re-read cannot show `revokedAt` |
+| Hyperdrive or the provider unreachable during sign-in or factor acts | `factors_unavailable`, fail closed |
+| `read` routes during a `UserSessions` outage | Served from a device epoch cache up to 30 seconds old, then `epoch_unavailable` |
+| Logout, `revoke_user_below_epoch`, `revoke_user_on_device` | Proceed without `UserSessions`, as the reducer requires |
+| The auth Worker unreachable from the gateway, or answering `unavailable` | No assertion. The gateway sends the mount an internal `x-ttr-identity-status: unavailable` (client copies deleted at ingress) and keeps the session cookie, never clearing it, and the mount shows a retry page instead of signing the user out |
+
+### Emergency `kid` denial, end to end
+
+Run on staging with the real gateway, auth Worker, two mount Workers fed keys
+by configuration, one realtime verifier, and a JWKS-fed verifier fixture that
+honors `Cache-Control`. Record every timestamp in the acceptance receipt.
+
+1. Identity, realtime and access keys A are `active` with committed rows.
+   For identity, a `next` key C has been published for at least 7 days.
+   Mint one token of each class with A and keep a long-lived mount render
+   holding an A assertion.
+2. At `T0`, deploy `deniedKids: [A]` to every configuration-fed verifier and
+   to the signer key set, and promote C to `active`.
+3. Assert that each configuration-fed verifier rejects A with `unknown_key`
+   from the first request served by its new version, and record that
+   version's convergence time.
+4. Assert that the JWKS document served after `T0` omits A, that its
+   response never carries `max-age` above 300 or an `Age` that would extend
+   past it, and that the fixture rejects A no later than `T0 + 305 s`.
+5. Assert from the `token.issued` audit stream that no token with `kid` A is
+   minted after the signer's new version serves, and that identity minting
+   resumes with C once the census holds C, with the gap recorded.
+6. Repeat with no `next` key: arm emergency key B through
+   the key guard's `GuardState` and assert that B signs only after every
+   registered deployment and the public JWKS report it, skipping only the
+   7 days, and that the identity outage lasts at most one census refresh plus
+   configuration convergence.
+7. Restart the auth Worker (deploy the same code) between steps 2 and 5 and
+   assert that A stays denied and no cold isolate mints with A.
+
+## G8 Stop-fence modes
+
+### The fence record
+
+`SessionControl` stores
+`{ mode, version, background, budgetParks, changedAtMs, actor, reason }`:
+`mode` is `running`, `issuance_stopped` or `stopped`; `version` increases by
+one on every change and never decreases; `background` is `running` or
+`parked`; `budgetParks` lists the accounting categories whose daily budget is
+exhausted.
+The effective mode is the stricter of the stored mode and
+`TTR_SESSION_FENCE_FLOOR`, a Worker variable that an operator can deploy
+without `SessionControl` and that new isolates and restarted objects read at
+once.
+
+- **Readers.** Only auth isolates read `SessionControl`, at most once every 10
+  seconds each. An isolate passes its snapshot `{ mode, version, readAtMs }`
+  into every object call. Objects never poll `SessionControl` on the request
+  path; an alarm reads it once per wake.
+- **Final issuance decision.** The object that commits issuance (the
+  `BrowserDevice` commit for `sign_in`, `redeem_child`, `rotate`, `switch`,
+  `grant_step_up` and `record_factors`; the isolate immediately before
+  `mintToken`; the `SessionCredentials` object and the database function for
+  credential mints) checks the snapshot it was given right before the commit.
+  It refuses when the snapshot is older than 10 seconds or its mode forbids
+  the operation, and the committed record and its audit event carry the fence
+  version. A stop therefore stops new issuance within 15 seconds, including
+  work already in flight.
+- **Unavailable fence.** Issuance fails closed when no snapshot younger than
+  10 seconds exists. While the snapshot is stale, resolution of existing
+  sessions applies the stricter of the last known mode and
+  `TTR_SESSION_FENCE_FLOOR`, so a floor deployed during a `SessionControl`
+  outage takes effect at once. Five minutes after the snapshot's `readAtMs`,
+  or at once in an isolate with no snapshot, resolution answers `unavailable`
+  rather than `signed_out`: the gateway returns its retry result,
+  `x-ttr-identity-status: unavailable`, keeps the session cookie and never
+  clears it, so the outage ends without signing anyone out. This 5-minute fuse
+  turns a `SessionControl` outage into a retry page for every mounted request
+  and is a release-authority acceptance item (see the rollout section).
+- **Writes.** `ControlEntry.setFence(mode, reason)`, `parkBackground` and
+  `resumeBackground` write the record and append to the fence log in one
+  transaction. Only the operator Worker holds `ControlEntry`'s caller key.
+  `SessionBudget` writes only `budgetParks`, through two internal methods
+  (see accounting below).
+
+### Allowed operations per mode
+
+| Operation | `running` | `issuance_stopped` | `stopped` |
+| --- | --- | --- | --- |
+| Identity assertions for existing sessions (`resolveForMount`, `resolve`) | Yes | Yes | No. In P1 readers fall back to the legacy cookie |
+| `requireLive` and `liveness` | Yes | Yes | No, fails closed |
+| `sign_in`, `redeem_child`, `rotate`, `switch` | Yes | No | No |
+| Credential mints: AI token, handoff code, realtime, access, refresh, step-up proof | Yes | No | No |
+| `s2s` mints | Yes | No | No |
+| Step-up grant and consume, `record_factors` | Yes | Only acts `sessions.revoke_all` and `account.password` | No |
+| Logout of the caller's own session | Yes | Yes | Yes |
+| Revoke one, revoke-all, admin "compromised" | Yes | Yes | Admin path only, since user paths need resolution |
+| Security cleanup: outbox upstream and credential revokes, issuer tombstones and watermarks, index tombstone revokes, epoch fan-out, audit sink | Yes | Yes | Yes |
+| Background work: census collection, pruning (including the fence purge), lease decisions, index touches | Yes, unless `background` is `parked` or its category is in `budgetParks` | Parked | Parked |
+
+`issuance_stopped` keeps password change and revoke-all because both replace
+or remove access during an incident; the generation each bumps replaces the
+acting session's cookie and adds no credential. It stops `s2s` mints and
+background work with the rest of issuance; security cleanup keeps running.
+
+No mode, switch or budget parks security cleanup. A legacy upstream grant
+keeps authorizing until the provider revokes it, and a credential keeps
+validating until its issuer holds the tombstone, so upstream revokes and
+issuer tombstones must stay runnable for as long as either can still
+authorize. Their spend is bounded per item by the attempt caps below.
+`background: parked` is the switch for runaway background spend and parks
+only the census, pruning, lease decisions and index touches. Parking the
+census stops minting 300 seconds later; parked lease decisions leave claims
+counting toward the 50-slot cap, which fails safe.
+
+### Parking and resuming
+
+- A consumer that finds its work forbidden does not reschedule. An object
+  writes its id and the fence version into `ParkedWork` shard
+  `hash(objectId) mod 16`, at most once per fence version, and deletes its
+  alarm. The census and purge crons have no object id and skip the tick. The
+  audit consumer is security cleanup and is never parked; its dead-letter
+  queue is retained 14 days and replayed by the operator.
+- Attempt counters, cursors and deadlines are durable and are never reset by
+  parking, a restart or a resume.
+- When a fence change makes parked work allowed again, `SessionControl` sets
+  its resume alarm. Each wake reads at most 100 entries from each shard in
+  turn, pokes at most 8 objects at a time to re-arm their alarms, deletes the
+  entries it poked, and re-checks the fence before each page. A poke is
+  idempotent. Any request to a parked object also re-arms it.
+- An entry whose version is older than the current fence and still parked
+  stays until the fence allows it.
+
+## G17 Operation accounting and cost bounds
+
+### Accounting
+
+Every Durable Object call, Hyperdrive query, Queue send and abuse-guard call
+writes one `SESSION_OPS` data point:
+`{ category, method, outcome, entry, ingressClass, deploymentId, rowsRead, rowsWritten }`.
+
+| Category | Counts |
+| --- | --- |
+| `control` | `SessionControl`, `SessionBudget` and `ParkedWork` calls |
+| `abuse` | `ABUSE_GUARD` calls |
+| `epoch` | `UserSessions` epoch reads, bumps and fan-out calls |
+| `index` | `UserSessions` reserve, confirm, release, lease and tombstone calls |
+| `session` | `BrowserDevice` calls and alarm wakes |
+| `credential` | `SessionCredentials` calls and issuer database functions |
+| `keys` | `KeyObservations` calls, census reports, Cloudflare API reads, the snapshot write, the key guard fetch and the public JWKS fetch |
+
+The first four are the categories G17 names; `index`, `credential` and `keys`
+are kept apart from them so no one category hides another.
+
+Budgets live in `SessionBudget`, never in `SessionControl`, so accounting
+load and an accounting outage stay off the fence read that issuance fails
+closed on. Each isolate keeps per-category counters and flushes them to
+`SessionBudget` every 60 seconds; a failed flush is dropped, counted and
+alerted, and never delays or refuses a request. When a category's daily total
+crosses its budget, `SessionBudget` calls `SessionControl.addBudgetPark` once
+and alerts; its midnight UTC alarm calls `clearBudgetParks` once. A budget
+park reaches consumers through the ordinary fence snapshot and parks only that
+category's background work. It never parks security cleanup and never sets
+`issuance_stopped` or `stopped`, which stay operator decisions, so a flood
+cannot stop sign-in for everyone.
+
+### Ingress classification before IP trust
+
+The gateway classifies every request before any address is used:
+
+| Class | Condition | Limit key |
+| --- | --- | --- |
+| `public` | A valid `cf-connecting-ip` outside Cloudflare's published ranges. A `CF-Worker` header is ignored | The address's IPv4 `/24` or IPv6 `/64` prefix, from the expanded address |
+| `worker` | A valid `cf-connecting-ip` inside Cloudflare's published ranges | `worker:<zone>` when `cloudflareWorkerZone` names a zone, otherwise the shared Worker bucket |
+| `unknown` | No valid address | The conservative shared bucket |
+
+The class is decided by the address alone. `CF-Worker` is read only for an
+address inside Cloudflare's ranges, exactly as `cloudflareWorkerZone` in
+`packages/utils/src/abuse-protection/abuse-subject.ts` does, which also
+rejects the platform's own zone; a client outside those ranges cannot choose
+its class or bucket by sending the header.
+
+Prefixes come from the fully expanded address, matching the IP identity rules
+on the rollout page:
+
+- **Parse.** A full IPv4 and IPv6 parser accepts dotted IPv4 and every RFC 4291
+  IPv6 text form, including `::` in any position and an embedded IPv4 tail,
+  and rejects zone ids, a second `::` and out-of-range groups.
+- **Expand.** An IPv6 address expands to eight 16-bit groups before any
+  prefix is taken. An IPv4-mapped address (`::ffff:a.b.c.d`) is treated as
+  that IPv4 address.
+- **Aggregate.** Limits use the IPv4 `/24` or the first four expanded groups
+  as the IPv6 `/64`. The assertion's `ipp` claim is a separate, coarser display
+  prefix: IPv4 `/24` or the first three groups as an IPv6 `/48` in canonical
+  RFC 5952 form, as the identity assertion profile requires.
+- **Failure.** An address that does not parse is not valid, so the request is
+  class `unknown`, its limit key is the conservative shared bucket
+  `unknown`, and `ipp` is unset.
+
+`getCidrSubjectKey` in `packages/utils/src/abuse-protection/reputation.ts`
+splits on `:` and drops empty groups, so `2001:db8::1` yields no key and
+`2001:db8:a::1` yields `2001:db8:a:1::/64` instead of `2001:db8:a::/64`.
+Implementing slice 4 fixes that helper to use the expanding parser, with
+tests for each `::` position, mapped and embedded IPv4 and rejected inputs,
+so the gateway and the reputation module share one aggregator.
+
+The class and both prefixes travel as `resolveForMount` arguments, which the
+auth Worker trusts only after the gateway's caller key passes. The auth Worker
+never reads its own `cf-connecting-ip`, Web family callers pass the class the
+gateway forwarded, and alarms, cron and Queue work carry `system` and no
+address.
+
+Forged cookies cost no Durable Object operation. Each isolate keeps an
+in-memory counter per limit key and calls abuse-guard at most once per key per
+10 seconds with the aggregated count, so a flood of bad MACs cannot multiply
+abuse-guard operations either. A valid MAC with a wrong secret counts the
+same way.
+
+### Operations per request
+
+| Request | DO calls | Other |
+| --- | --- | --- |
+| Any entry call with a wrong caller key | 0 | None |
+| Mounted request, no cookie or failed MAC | 0 | 0 to 1 abuse-guard call per limit key per 10 s per isolate |
+| Mounted `read`, isolate cache hit | 0 | One service-binding call |
+| Mounted `read`, cache miss | 1 `BrowserDevice`, plus 1 `UserSessions` when the device epoch cache is older than 30 s | Touch write at most every 5 min per session; index touch at most every 24 h |
+| `write`, `credential`, `security`, unknown route | 1 `BrowserDevice`, 1 `UserSessions` | None |
+| Sign-in | 1 `BrowserDevice`, 3 `UserSessions` (epoch, reserve, confirm) | 1 Hyperdrive query, 1 Queue send |
+| Logout | 1 `BrowserDevice` | Drain: at most 5 attempts per effect |
+| Revoke-all | 1 `UserSessions` bump, at most 8 device calls inline, the rest on the fan-out alarm | At most 5 calls per indexed or tombstoned device per bump |
+| AI token mint | Live check (2), 1 `SessionCredentials` | 1 Hyperdrive query (required-MFA gate) |
+| AI token validation | 1 `SessionCredentials` | 1 Hyperdrive query (required-MFA gate) |
+| JWKS | 0 | Served from the isolate's parsed key set |
+| Fence read | 1 `SessionControl` per isolate per 10 s while it serves, 1 per alarm wake or cron tick | None |
+| Budget flush | 1 `SessionBudget` per isolate per 60 s while it serves | At most 2 `SessionControl` writes per category per day |
+| Observation load | 1 `KeyObservations` read per isolate per 60 s | 1 KV read only when that read fails |
+
+### Alarm, cron and retry bounds
+
+| Owner | Per wake | Total per item | Terminal |
+| --- | --- | --- | --- |
+| `BrowserDevice` drain | 16 tasks, 4 in flight, 10 s each | 5 attempts per effect over about 31 h | `abandoned` plus alert |
+| `UserSessions` fan-out | 8 devices in flight | 5 attempts per device | Row deleted plus alert; epoch re-read still applies |
+| `UserSessions` leases | Every expired claim, 8 in flight | 6 decisions | Claim kept plus alert; counts toward the cap |
+| `UserSessions` tombstones | 8 in flight | At most 11 attempts in 7 days | Tombstone kept plus alert |
+| `SessionCredentials` purge | Expired rows only | One alarm per expiry | No alarm when empty |
+| `SessionControl` resume | 100 entries per shard page, 8 pokes in flight | One poke per entry | Entry deleted |
+| Census cron | 1 fence read, 1 identity registry read, 1 `CensusEntry` call, one report per published verifier, at most 40 Cloudflare API calls (deployment reads plus one version read per new version), 1 key guard fetch, 1 JWKS fetch, 2 s timeouts, no retry; 1 `KeyObservations` write per completed class and 1 KV write | One minute | Stale after 300 s, minting stops; a `429` keeps every last good census |
+| Observer (guard account) | Auth check at most 20 API calls; gateway check at most 20; grant check at most 30; inventory check at most 300 | Every 5 minutes, inventory every 15 | Halt, block or alert per finding; a run that reaches its cap with a page or, for the inventory check, a script still unread is `incomplete` or a failed read, and one that reached its cap with nothing left unread is a success |
+| Fence purge cron | 1 fence read, 1 Hyperdrive call deleting at most 1,000 rows, no retry | Hourly | Skipped while parked |
+| Key guard fetch | 1 HTTPS request in the census tick, `no-store`, 2 s timeout, no retry | Once per minute per environment | Held list kept until 300 s old; then `kids` read empty and `mintHalt` false, while `gatewayVersions` and `identityBlocked` keep their values |
+| `SessionBudget` | One flush per isolate per minute; one reset alarm a day | One park and one clear per category per day | Flush dropped on failure |
+| Audit consumer | Batches of at most 100 | 5 retries | Dead-letter queue |
+| Commit loop | 3 store attempts | Per request | `unavailable` with nothing emitted |
+
+Every alarm checks the fence before background work and before rescheduling, sets only a
+finite future deadline, deletes itself when no work remains, and catches its
+own errors. The service-specific cost envelope, priced with current product
+pricing, goes into the
+[Cloudflare adoption guidance](/build/development-tools/oxc-cloudflare-adoption)
+before P1 enables any write.
+
+## G18 First-adapter acceptance
+
+Run against the first adapter that consumes `x-ttr-identity`, and repeat for
+each later adapter family. The first adapter is Mail, mounted at
+`tuturuuu.com/mail` through the gateway's `MOUNT_MAIL` binding. Its
+acceptance respects Mail's live constraints:
+
+- `mail.tuturuuu.com` redirects navigations only; its API, webhooks, OAuth
+  callbacks and `/verify-token` stay served there and stay outside the
+  first-party reader until a reviewed step moves them.
+- Mounted login keeps the shared return path through Web's `/login` and
+  `createMountedAppAuth`.
+- Mount isolation holds: Mail never writes `__Host-ttr_session` or `sb-*`,
+  logout, refresh and minting answer `409` on the mount, and Web stays the only
+  session writer.
+- Connected-account OAuth stays staff-gated, with its client secrets on the
+  Mail Worker.
+- Mail releases are sealed artifacts published with `expect-current`, so any
+  binding the adapter needs is in the sealed profile and reviewed before the
+  release.
+
+- **Emitted artifact.** Build the adapter app in CI for the exact commit.
+  Assert from the emitted Worker's module graph that `@tuturuuu/session`,
+  `./verify` and the principal module each appear once. Run the emitted
+  artifact (not source) in the local Workers runtime with a test key set and
+  send a request whose assertion it must verify and convert through
+  `principalFromAssertion` through the public entry points the adapter
+  imports; the response must carry the principal's user id. A second module
+  instance fails the brand check and the test.
+- **Real ingress.** Against the staging gateway hostname, with a raw HTTP/1.1
+  and an HTTP/2 client rather than `fetch`, prove: two separate `Cookie`
+  fields arrive as separate values or joined with `; `; two
+  `__Host-ttr_session` values resolve to signed out with a clearing
+  `Set-Cookie`; and a neighboring cookie value containing commas stays
+  intact and does not split the session cookie.
+- **Key ingestion.** Each verifier parses and validates its configured key set
+  at isolate start. An invalid document yields `keys_unavailable` on every
+  request and one telemetry reason, never `signature` or `unknown_key`.
+
+## Gates this slice closes
+
+| Gate | Slice 4 closes | Stays open |
+| --- | --- | --- |
+| G1 | The isolate cache serves only `read` resolutions; writes and issuance always reach the device object with a fresh epoch | Each app's client recovery handling, with its adapter |
+| G2 | `expectedSessionId` travels on every entry point call; the tab invalidation channel is the new cookie generation plus `account_mismatch` on the next request | Each app's reload on `account_mismatch`, with its adapter |
+| G3 | No entry point accepts a stale principal for a write, mint or step-up; upgrades use the registry class | The trusted data adapter honoring `stale` |
+| G5 | Uncached checks, outage behavior and the denial test above | The release authority's recorded risk decision and the staging receipt |
+| G6 | The `UserSessions` epoch store, captured epoch and fan-out | None after acceptance |
+| G7 | The index object, leases and alarm retries | None after acceptance |
+| G8 | Modes, fence versions, the floor during a stale snapshot, parking and resuming, security cleanup that never parks | The operator Worker binding and hosted stop evidence |
+| G16 | Registry validation for the auth-owned routes and the `account.*` and `sessions.revoke_all` acts | Each protected-effect host (API keys, CLI, QR, consent, vault) |
+| G17 | Separate accounting off the fence path, address-only ingress classification and the stop tests | Hosted alert delivery and billed-usage evidence |
+| G18 | The acceptance procedure above | Running it on the first adapter |
+
+## Tests and acceptance
+
+- **Unit and port tests** (Vitest, in CI). Each port against the slice-3 and
+  slice-2a contract suites: the SQLite `DeviceStore` under injected
+  `conflict` and `unknown`, the index under racing reserves and expired
+  leases, the issuer stores under racing mint and revoke, the observation
+  store's insert-only rule and bootstrap election, and the captured-epoch
+  margin at exactly 5 seconds, including a read whose `readAtMs` differs from
+  the isolate clock by exactly 5 seconds (passes) and by more (fails closed).
+- **Entry and ingress tests.** Every method of every entry point refuses a
+  wrong key, a missing key, a dropped previous key and an absent auth-side
+  secret with no downstream call; a `GatewayEntry` call with forged ingress
+  values and no key is refused. `WebEntry` has no `adminRevokeUser`, and the
+  Web key presented to `AdminEntry` is refused. A call accepted with the
+  previous value writes a `previous_key` accounting point. `CF-Worker` on an
+  address outside Cloudflare's ranges is ignored, and a Cloudflare address
+  with no or the platform's own zone lands in the shared Worker bucket.
+- **IPv6 aggregation tests.** `2001:db8::1`, `::1`, `2001:db8::`,
+  `2001:db8:a::1`, `2001:0db8:000a:0000::1` and a full eight-group form each
+  aggregate to the `/64` of their expanded address; `2001:db8:a::1` gives
+  `2001:db8:a::/64`. `::ffff:192.0.2.7` aggregates as `192.0.2.0/24`. A zone
+  id, a second `::`, a group over `ffff` and an empty value land in the
+  `unknown` bucket with no `ipp`. `ipp` is the expanded `/48` in RFC 5952
+  form. The same fixtures run against the fixed `getCidrSubjectKey`.
+- **Read cache tests.** A failure is never cached, and a `write`,
+  `credential`, `security` or unknown route never reads the cache. Each hit
+  signs a new assertion whose `aud` is the requesting mount, so an entry
+  filled by one mount never returns another mount's assertion. Post-switch
+  stale tab: tab B switches to account 2 and fills the cache for the new
+  cookie, then tab A sends the new cookie with account 1's
+  `expectedSessionId` to an `accountScoped` route and gets `account_mismatch`
+  with no assertion. Declaration change: an entry filled through a route
+  declared `accountScoped: false` with `expectedSessionId: null`, followed by
+  a hit on a route declared `accountScoped: true` with a null or different
+  `expectedSessionId`, gets `account_mismatch`; the same hit with the
+  matching `expectedSessionId` gets an assertion.
+- **Census and snapshot tests.** A published entry that times out or is
+  missing fails its class, and so does a report for an unpublished entry; an
+  entry with two live versions passes only when both bundles hold the key.
+  A live gateway version binding a mount absent from the identity registry
+  artifact, an artifact naming a gateway version without traffic, and an
+  artifact with a lower `registryVersion` each fail the class. A tick capped
+  at 40 calls completes only the classes it finished, and a `429` leaves
+  every stored census unchanged. A cold isolate with a snapshot whose census
+  is 300 seconds old mints, 301 seconds old does not, and a missing, bad-MAC
+  or wrong-environment snapshot mints nothing.
+- **Key guard tests.** A document signed by the pin's `previous` key passes
+  and one by an unpinned key fails. A signature over non-canonical bytes, a
+  duplicate member, a wrong environment and an `issuedAtMs` more than 5
+  seconds ahead are invalid. A lower `listVersion` and equal-version
+  different content are rejected, also after a restart and in a cold isolate.
+  After a fetch error the held list stays in force at 300 seconds; at 301
+  `kids` reads empty and `mintHalt` false, while `gatewayVersions` and
+  `identityBlocked` keep their values. A re-issued equal document with a new
+  `issuedAtMs` refreshes the held list and restores a served `mintHalt`.
+  `mintHalt` refuses every class.
+  The guard's response carries `Cache-Control: no-store`.
+- **Observer tests.** Against a fake Cloudflare API and GitHub: a version
+  with traffic and no recorded deployment, a recorded version from a commit
+  not on `main`, a variable, binding or secret name differing from the
+  committed config, and a route on `tuturuuu-auth` each set `mintHalt`. An
+  unlisted binding alerts without a halt. A run capped while another page
+  exists ends `incomplete`. A `429`, an API error, a GitHub error and an
+  incomplete auth check each alert and leave `mintHalt` unchanged. A gateway
+  version recorded by another workflow, actor or version id is not accepted;
+  a gateway `AUTH` binding to another script sets `mintHalt`; a standing
+  Worker-wide grant marks the identity class blocked, for product-scoped
+  Workers Admin and Editor, Developer Platform Admin and Editor, legacy
+  Workers Platform Admin, Workers Scripts Edit, Workers Scripts Write, Workers
+  CI Edit, Workers Observability Edit, Workers Observability Telemetry Edit,
+  the account role `Administrator` and its legacy alias `Account Administrator`,
+  each as an exact `roles[].name` and as an account-scoped policy permission
+  group, while `Administrator Read Only` does not, a
+  user-group grant, an account token policy, and an identity whose direct and
+  group policies together give deploy rights on both `tuturuuu-auth` and
+  `tuturuuu-gateway`, while `Super Administrator - All Privileges` does not
+  and an account-wide read token does not; an account token is classified on
+  the union of all its policies, and upload or secret-put rights count the
+  same as deploy; a gateway check that hits its cap with a page unread
+  accepts no new id, removes no accepted id and does not fail the class; a grant run that
+  hits its cap with unread pages is a failed read that keeps the block and
+  does not move the success time; an id with no traffic is dropped from
+  `gatewayVersions`; two
+  gateway versions with traffic and different mount maps fail the class.
+- **Issuer tests.** The AI token row keeps every payload field and the
+  device's `resolvedAtMs`, the required-MFA gate refuses on mint and on
+  validate, and tombstone and watermark lifetimes equal the `issuer.ts`
+  functions for each store. The racing mint and revoke test runs against the
+  `cross_app_tokens` SQL functions, including a first mint for a `sid` with
+  no fence row, a null `sid`, and `EXECUTE` refused to `anon` and
+  `authenticated`.
+- **Runtime tests** in the local Workers runtime through
+  `@cloudflare/vitest-pool-workers`, in CI: real Durable Object storage,
+  alarms and RPC; an object reset between `write` and its acknowledgement; an
+  alarm throwing never adding attempts; parking, restart and resume with
+  attempt counters unchanged; a stop written while a sign-in commit and a
+  drain wake are in flight; the floor variable applied to issuance and to
+  resolution with `SessionControl` unreachable; resolution with a snapshot
+  older than 5 minutes answering `unavailable`, which the gateway turns into
+  `x-ttr-identity-status: unavailable` with the cookie kept; `s2s` refused under
+  `issuance_stopped`; upstream and issuer revokes still running under
+  `background: parked`, `issuance_stopped` and `stopped`; and issuance
+  unaffected while `SessionBudget` is unreachable.
+- **Operation-count regressions.** Each row of the per-request and alarm
+  tables is a test that counts calls through instrumented stubs and asserts
+  the exact number, including repeated wakes with persistent downstream
+  failure, empty work, expired state and duplicate delivery. A change to a
+  count needs a reviewed change to these tables.
+- **Local Wrangler run**, when a defect needs it: the auth Worker, gateway and
+  one mount under `wrangler dev` with isolated persistence on loopback, to
+  reproduce multi-Worker binding behavior and the stop bound with a real
+  clock. Setup, ports and cleanup go into the owning runbook.
+- **Staging acceptance**, before the hold is lifted: the G5 denial run, the
+  G18 ingress run, a 15-second stop measured from `setFence` to the first
+  refused sign-in and mint, a census outage stopping minting at 300 seconds,
+  the binding inventory diff run from CI against git with no finding and a
+  complete run, an observer drill in which a staging auth version deployed
+  by a dedicated drill job without a GitHub deployment record sets `mintHalt`
+  within 5 minutes and an operator clears it, a `GatewayEntry` call from an
+  unlisted Worker without the key refused, and, once the release authority
+  sets a staging reader to `shadow`, a soak with mismatches logged by id.
+
+## Rollout
+
+This slice adds no auth flag and flips none. `TTR_SESSION_WRITER` stays
+`supabase`, every `TTR_SESSION_READER_<APP>` stays `supabase`, the fence starts
+at `running` on staging, and production stays held in `tuturuuu.ci.ts`.
+Provisioning the secrets, creating the key guard account, attaching the
+operator Worker, lifting the hold and
+any flag change are the release authority's decisions, each with its own
+rollback.
+
+### Release-authority acceptances
+
+The release authority records each item with its scope and a review date
+before production leaves the hold. Until then the dependent gate stays open.
+
+1. **G5 bounds.** The ordinary-read bounds above (5, 35, 70 and 100 seconds)
+   for `read` routes only.
+2. **The 5-minute `SessionControl` fuse.** Past 5 minutes without a fence
+   snapshot, every mounted request gets the retry result, with the cookie
+   kept.
+3. **Key guard outage.** Once the held list is 300 seconds old, a guard
+   outage removes only the 7-day skip and lapses `mintHalt`. Accepted gateway
+   versions and `identityBlocked` keep their last values, so identity minting
+   stops during a guard outage only when a gateway version not yet accepted
+   has traffic.
+   A halt the guard is still serving stops every token class and turns every
+   mounted request into the retry result until a guard operator clears it.
+   Only a positive mismatch sets a halt; API errors and incomplete checks only
+   alert.
+4. **Separate Cloudflare account.** The key guard and observer run in a guard
+   account that no platform identity can administer, with its own deploy
+   pipeline and operators staffed to clear a real halt.
+5. **Procedures.** Caller-key rotation in the order on the auth Worker page,
+   and CI-only changes to `tuturuuu-auth`, including secrets and rollbacks. A
+   deployment record, for auth or the gateway, counts only when its
+   environment, creator, workflow and version id all match and its commit is
+   reachable from `main`.
+6. **AI validation cost.** One `SessionCredentials` call, plus one Hyperdrive
+   query, on every AI token validation.
+7. **Budget exhaustion never stops sign-in.** A budget park parks only that
+   category's background work and never sets `issuance_stopped` or
+   `stopped`.
+8. **Script-scoped, disjoint deploy tokens.** The auth and gateway deploy
+   tokens are scoped to their own scripts and share no role. Creating a new
+   Worker uses a time-bounded product-level Admin waiver with id, scope and
+   expiry, published as a commit on `main` and removed before any auth version
+   has traffic. No standing Worker-wide grant remains, checked by the
+   observer with Account Settings Read and Account API Tokens Read. Workers
+   access through user-owned tokens is banned, which the release authority
+   attests, together with Global API keys, and the
+   `Super Administrator - All Privileges` role is the only accepted standing
+   residual. Waiving this beyond a creation run waives slice 2a's
+   registry split and needs its own id, scope and expiry.
+
+### APEX dependencies
+
+APEX owns the gateway; these land in gateway releases before the dependent
+step:
+
+- **Identity registry artifact.** The gateway exports the `MountInventory`
+  entry point described on the keys page. Without it the identity class has
+  no registry and mints nothing.
+- **No bypass before readers move.** Before any app's reader leaves
+  `supabase`, APEX moves that app's direct zone routes behind the gateway and
+  a CI check refuses a session-bearing app whose Worker configuration has a
+  zone route, custom domain, `workers.dev` or preview URL. No session-bearing
+  path reaches `WEB_ORIGIN`.
+- **One gateway version.** The `AUTH` service binding, the gateway caller key
+  and the JWKS dispatch ship in one gateway version. No public path forwards
+  to `AUTH` beyond the routes this design lists, the caller key is a secret
+  carried through every later gateway write, and the write is serialized with
+  `expect-current` like every gateway change.
+- **Scoped gateway token.** The gateway workflow's deploy token is an editor
+  on `tuturuuu-gateway` only and has no role on `tuturuuu-auth`. Each gateway
+  release records a GitHub deployment for its environment, created by the
+  gateway workflow's GitHub actor, with a payload naming
+  `gateway-cloudflare.yaml` and the exact version id, at a commit reachable
+  from `main`, so the observer can accept it. Two gateway versions with
+  traffic and different mount maps fail the identity class, so a mount change
+  finishes draining the old version before the census passes.
+- **Retry result.** The gateway sends `x-ttr-identity-status: unavailable`
+  and keeps the cookie when the auth Worker is unreachable or answers
+  `unavailable`.
+- **Expanded-address prefixes.** The gateway's ingress classification uses
+  the expanding parser above.

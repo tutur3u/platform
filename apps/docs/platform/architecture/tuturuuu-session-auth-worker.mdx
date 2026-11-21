@@ -1,0 +1,508 @@
+---
+title: "Tuturuuu session auth Worker"
+description: "Slice 4 of the first-party Tuturuuu session: the auth Worker, its Durable Objects, bindings and entry points, and how it hosts the pure token signer, step-up proof and device state modules."
+audience: developers
+updatedAt: "2026-11-21"
+---
+
+**Status: design, pending independent security review.** Slice 4 hosts
+slices 2a, 2b and 3 in an `auth` Worker with Durable Objects. It is one of the
+[Tuturuuu session slices](/platform/architecture/tuturuuu-session-slices). Its
+revocation, stop-fence, cost and acceptance controls are on
+[Tuturuuu session auth Worker controls](/platform/architecture/tuturuuu-session-auth-worker-controls),
+and its key publication on
+[Tuturuuu session auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys).
+No runtime flag is added or flipped, no app reader leaves `supabase`, and no
+secret named here is provisioned.
+
+## Scope
+
+Slice 4 lands in four reviewed sub-slices, each behind its own exact-commit CI
+and staging acceptance:
+
+| Sub-slice | Contents | Production effect |
+| --- | --- | --- |
+| 4a Token service | `apps/auth` Worker, entry-point caller keys, `SessionControl`, `SessionBudget`, `KeyObservations`, census collector, the key guard pin, the key guard and its observer, the binding inventory, public JWKS, the reducer's per-device user ceiling | None. Deployment held |
+| 4b Session objects | `BrowserDevice`, `UserSessions`, every device port, the outbox drain, the epoch store and fan-out, the device index | None. Deployment held |
+| 4c Issuer contract | The AI temporary token store and `private.cross_app_tokens` on the session-bound issuer contract | None. The existing session path keeps today's behavior |
+| 4d First adapter | The gateway's `AUTH` binding and the first runtime adapter, with every reader at `supabase` | None until the release authority changes a reader flag |
+
+Browser sessions are in scope. Mobile, CLI, external-app, realtime and QR
+families use the same objects and land with their own family slices.
+
+## Topology
+
+```text
+public request ─▶ gateway (apps/gateway) ── AUTH: GatewayEntry ──▶ auth Worker isolate
+                     │ codec, CSRF, ingress class                    │ caller key, MAC, 5 s read cache, signing
+                     │                                               ├─▶ BrowserDevice DO (one per device)
+Web family Workers ── AUTH: WebEntry ────────────────────────────────┤      └─▶ UserSessions DO (one per user)
+api-ops ───────────── AUTH: AdminEntry ──────────────────────────────┤
+relying Workers ───── AUTH: RelyingEntry ────────────────────────────┤
+operator Worker ───── AUTH: ControlEntry ────────────────────────────┤─▶ SessionControl DO (one per environment)
+                                                                     ├─▶ SessionBudget DO (one per environment)
+cron triggers ─────── census, fence purge ───────────────────────────┤─▶ KeyObservations DO (one per environment)
+                                                                     ├─▶ SessionCredentials DO (one per minting sid)
+                                                                     ├─▶ ParkedWork DO (16 shards)
+                                                                     ├─▶ SESSION_DB (Hyperdrive, caching off)
+                                                                     ├─▶ SESSION_EVENTS Queue ─▶ private.session_events
+                                                                     └─▶ key guard Worker (guard account, HTTPS, read only)
+
+guard account: key guard ── GuardState DO ◀── observer cron ── Cloudflare API (read) and GitHub (read)
+```
+
+### The `auth` Worker
+
+- **App.** `apps/auth`, a plain TypeScript Worker named `tuturuuu-auth`, with a
+  separate staging Worker. It is not a Start or Next app, renders no pages,
+  and has no `next/*` or `@tuturuuu/start-bridge` import. Its domain code is
+  the pure modules in `packages/session`; the Worker holds only port
+  implementations, entry points and scheduling.
+- **No public ingress.** `wrangler.jsonc` sets `workers_dev: false` and
+  `preview_urls: false` and declares no `routes` or custom domains. A CI check
+  on the config and the observer's auth check enforce it. Every caller reaches
+  it through a service binding to a named entry point.
+- **Cloudflare only, as a precondition.** The auth Worker has no HTTP entry,
+  so only Cloudflare Workers reach it. Today the gateway still forwards some
+  paths to `WEB_ORIGIN` on Vercel and some apex paths use direct zone routes.
+  Before any reader leaves `supabase`, APEX confirms that no session-bearing
+  app has a direct zone route and that no session-bearing path reaches
+  `WEB_ORIGIN`. Until then G4 stays open, and G4's owner updates its Vercel
+  ingress clause.
+- **Entry points.** Each is a `WorkerEntrypoint` class with a closed method
+  set. A caller's binding names exactly one entry point, and the method set is
+  the authorization boundary for that caller class.
+
+| Entry point | Bound by | Caller key | Methods |
+| --- | --- | --- | --- |
+| `GatewayEntry` | `apps/gateway` only | `TTR_SESSION_ENTRY_GATEWAY_KEY` | `resolveForMount`, `jwks` |
+| `WebEntry` | Web family Workers that own auth routes (`api-core`, `public-auth`, `api-ops`) | `TTR_SESSION_ENTRY_WEB_KEY` | `resolve`, `requireLive`, `signIn`, `switch`, `logout`, `revoke`, `revokeAll`, `listSessions`, `grantStepUp`, `consumeStepUp`, `recordFactors`, `mintCredential` |
+| `AdminEntry` | `api-ops` only, for the platform admin "compromised" action | `TTR_SESSION_ENTRY_ADMIN_KEY` | `adminRevokeUser` |
+| `RelyingEntry` | Relying services: the secrets vault, Web AI routes | `TTR_SESSION_ENTRY_RELYING_KEY` | `liveness`, `validateAiToken` |
+| `ControlEntry` | One operator Worker, chosen by the release authority | `TTR_SESSION_ENTRY_CONTROL_KEY` | `readFence`, `setFence`, `parkBackground`, `resumeBackground` |
+
+- **Caller keys.** A binding does not authenticate its caller, because any
+  Worker in the account can declare a binding to any named entry point and
+  pass any argument, including gateway-only values such as the ingress class,
+  the CSRF result and the trusted host. Every method of every entry point
+  therefore takes its entry's caller key as its first argument. Each key is 32
+  random bytes per environment, held by the auth Worker and by the callers in
+  that row only, so a Web family Worker never holds the gateway's key. Inside
+  every method, before reading any other argument, the auth Worker compares
+  the presented key in constant time with the current value and at most one
+  previous value of its own secret. A wrong key, or an absent or malformed
+  secret on the auth side, refuses with a uniform `unauthorized` and no
+  Durable Object, Hyperdrive or abuse-guard call; a caller whose own key is
+  absent sends nothing. `adminRevokeUser` has its own entry and key because
+  revoking any user is a different power from minting for the caller's own
+  session; `api-ops` checks the platform admin permission live before it
+  calls, and the key only proves the caller class.
+- **Caller-key rotation.** The order keeps every live caller version
+  accepted:
+  1. Through the auth CI workflow, set the entry's secret to the new value as
+     current and the old value as previous.
+  2. Move that auth version to 100% of traffic. No caller sends the new key
+     while any auth version without it carries traffic.
+  3. Deploy each caller in the entry's row with the new key.
+  4. Drop the previous value, through the auth CI workflow, only after every
+     caller version with traffic holds the new key: each caller script's
+     active deployment lists only versions deployed in step 3 or later, and
+     the auth Worker's per-entry count of calls accepted with the previous
+     value (an accounting point with outcome `previous_key`) has been zero
+     for one hour.
+- **Binding inventory.** `apps/auth/binding-inventory.json`, a CI check, and
+  a live diff run from the guard account; see
+  [auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys#binding-inventory).
+  The caller key is the preventive control. The diff is detection only, and
+  a finding means rotate that entry's key now.
+
+### Durable Objects
+
+All objects are SQLite-backed classes exported by the auth Worker and declared
+in its `migrations` block (`new_sqlite_classes`). No object class is bound by
+another Worker.
+
+| Class | Name (`idFromName`) | Holds |
+| --- | --- | --- |
+| `BrowserDevice` | `dev:<env>:<dev>` | `DeviceState` in normalized tables, the epoch cache, the outbox, the drain alarm |
+| `UserSessions` | `user:<env>:<userId>` | The user's epoch and its bump time, the device index (slots, claims, tombstones), revoke-all fan-out rows |
+| `SessionControl` | `control:<env>` | The stop-fence record, its version, the background switch, budget parks, the fence event log (last 1,000 events) |
+| `SessionBudget` | `budget:<env>` | Per-category daily operation totals flushed by isolates, budgets and their exhaustion state |
+| `KeyObservations` | `keys:<env>` | Insert-only key observation rows, the last successful census per class, the per-version key bundle cache |
+| `SessionCredentials` | `cred:<env>:<sid>` | AI temporary tokens for one session, that session's tombstone and watermark |
+| `ParkedWork` | `parked:<env>:<0-15>` | Object ids whose background work parked under a fence, with the fence version they parked at |
+
+`dev` comes from a cookie whose MAC passed, so a forged value never names an
+object. The environment prefix keeps staging and production objects apart
+even when a namespace is reused by mistake.
+
+### Bindings and configuration
+
+| Name | Kind | Purpose |
+| --- | --- | --- |
+| `BROWSER_DEVICE`, `USER_SESSIONS`, `SESSION_CONTROL`, `SESSION_BUDGET`, `KEY_OBSERVATIONS`, `SESSION_CREDENTIALS`, `PARKED_WORK` | Durable Object namespaces | The classes above |
+| `SESSION_DB` | Hyperdrive, caching disabled | The issuer, factor and required-MFA functions below, through a dedicated login role |
+| `SESSION_EVENTS` | Queue producer and consumer, dead-letter queue `session-events-dlq` | The audit sink |
+| `KEY_OBSERVATION_SNAPSHOT` | KV namespace | The signed rows-and-census snapshot for cold isolates |
+| `SESSION_OPS` | Analytics Engine dataset | Operation accounting |
+| `ABUSE_GUARD` | Service binding, `AbuseGuardEntrypoint` | Rate limits through `apps/abuse-guard` in a new `session` family |
+| `CENSUS_GATEWAY` | Service binding, the gateway's `CensusEntry` | Identity reports from the registered mounts |
+| `VERIFIER_<NAME>` | Service bindings, each verifier's `KeysReportEntry` | The realtime, s2s, access and step-up reports |
+| `CF_VERSION_METADATA` | Version metadata | The deployment id in reports, audit and accounting |
+| `TTR_SESSION_ENV` | Variable | `production`, `staging` or `local` |
+| `TTR_SESSION_FENCE_FLOOR` | Variable | Break-glass minimum fence mode; see the controls page |
+
+Secrets, by name only. None is provisioned by this slice.
+
+| Secret | Held by | Used for |
+| --- | --- | --- |
+| `TTR_SESSION_PEPPER` | Auth Worker | The `SecretHasher`: HMAC-SHA-256 over device and child secrets |
+| `TTR_SESSION_COOKIE_MAC_KEYS` | Auth Worker | The cookie MAC check, current key plus at most one previous |
+| `TTR_SESSION_UPSTREAM_KEY` | Auth Worker | AES-256-GCM custody of upstream grants, `dev` and `sid` as associated data |
+| `TTR_TOKEN_SIGNING_KEYS` | Auth Worker | The signer key set in signer mode |
+| `TTR_TOKEN_OBSERVATION_MAC_KEY` | Auth Worker | The MAC on the observation snapshot in KV |
+| `TTR_SESSION_ENTRY_GATEWAY_KEY`, `TTR_SESSION_ENTRY_WEB_KEY`, `TTR_SESSION_ENTRY_ADMIN_KEY`, `TTR_SESSION_ENTRY_RELYING_KEY`, `TTR_SESSION_ENTRY_CONTROL_KEY` | Auth Worker, plus each entry's callers for that entry's key only | Caller keys, current value plus at most one previous |
+| `TTR_SESSION_CENSUS_READ_TOKEN` | Auth Worker | A Cloudflare API token with Workers Scripts read on the platform account only: live versions for the census, created for a dedicated service user |
+| `TTR_TOKEN_EMERGENCY_LIST_KEY` | Key guard only (guard account) | The Ed25519 key that signs the served list |
+| `TTR_AUTH_OBSERVER_CF_READ_TOKEN`, `TTR_AUTH_OBSERVER_GITHUB_TOKEN` | Observer only (guard account) | Read-only Cloudflare API and GitHub access for the observer |
+
+The key guard's URL and public keys are not variables: they are pinned in
+reviewed source (see the keys page). `wrangler.jsonc` lists each Worker's
+secrets under `secrets.required`. Apart from its own caller key, no other
+Worker holds a session or signing secret. The gateway's only session secret is
+`TTR_SESSION_ENTRY_GATEWAY_KEY`; it also keeps the existing
+`TRUSTED_PROXY_ORIGIN_SECRET`, which signs the visitor IP for Web. Mounts hold
+no secret and receive public verification keys through configuration.
+
+### Key guard, observer and census
+
+The key guard, its source-pinned trust anchor, the out-of-account observer,
+the binding inventory, the Cloudflare API budget, the publication census and
+the observation cache are on
+[Tuturuuu session auth Worker keys](/platform/architecture/tuturuuu-session-auth-worker-keys).
+
+### Routes and the gateway
+
+The auth Worker has no route. The gateway gains:
+
+- an exact dispatch for `GET` and `HEAD` `/.well-known/jwks.json` on
+  `PUBLIC_HOST` to `GatewayEntry.jwks`, ahead of mounts and families, answered
+  with `Cache-Control: public, max-age=300` and `x-gateway-cache: AUTH`, never
+  stored in the gateway cache;
+- an `AUTH` binding used by the identity step for mounted requests. Every
+  reader stays `supabase` in this slice, so the gateway calls
+  `resolveForMount` only for a staging reader that the release authority sets
+  to `shadow`;
+- a `CensusEntry` that, given the published identity registry's mounts,
+  calls each mount's report (see the
+  [publication census](/platform/architecture/tuturuuu-session-auth-worker-keys#publication-census)).
+
+For a mounted request carrying `__Host-ttr_session`, the gateway runs the
+codec without any key (ambiguous, oversized and malformed values resolve to
+signed out with a clearing `Set-Cookie`), enforces CSRF for unsafe methods,
+classifies ingress (see the controls page), deletes client `x-ttr-*` headers,
+and calls `resolveForMount` with its caller key, the `Cookie` field values as
+received, the trusted host, the route id, the mount, the method, the CSRF
+result, the expected session id and the ingress class with its prefixes. The
+auth isolate checks the caller key, then the MAC before any Durable Object
+call. The MAC check and signing stay in the auth isolate, so the gateway holds
+no session or signing secret.
+
+The isolate's 5-second read cache holds device resolutions, never signed
+assertions. The design re-runs the checks on every hit rather than widening
+the key:
+
+- **Entry.** A successful resolution of a route the registry classes as
+  `read`, keyed by the SHA-256 of the cookie value and the host. It stores the
+  device's `activeSid` at resolution time, that session's user, `aal`, `amr`,
+  `auth_time`, `stale` flag and deadlines, the device generation and
+  `cachedAtMs`. A failure, including `account_mismatch`, is never cached.
+- **Every hit.** The isolate reads the route's declaration from the registry
+  in its own bundle, never from the entry. A route that is not `read` bypasses
+  the cache. For an `accountScoped` route it requires `expectedSessionId` to be
+  present and equal to the entry's `activeSid`, otherwise it answers
+  `account_mismatch` and signs nothing. It then signs a new assertion for this
+  request with `aud` set to this mount, a new `jti` and `iat`, and `exp`
+  capped by the stored deadlines.
+- **Why not a wider key.** Keying by expected session, route and mount would
+  split one browser's renders into many entries, while re-running the checks
+  costs no Durable Object call. One entry serves every route and mount of that
+  cookie, so an entry filled through a route that is not `accountScoped` still
+  meets the expected-account check on an `accountScoped` route. Entries live
+  only in the isolate, so a new auth version starts empty. A switch changes
+  the cookie, so a post-switch request uses a new key; an
+  entry from before the switch serves only a request still carrying the
+  previous cookie, for at most 5 seconds and only for `read`, within the G5
+  bound.
+
+### Deployment
+
+- **Held.** `tuturuuu.ci.ts` adds the CI workflow `auth-cloudflare.yaml`
+  (tests, type check, lint and the emitted-artifact build in CI only) and
+  holds production with `productionAppExclusions.auth`. Staging deploys come
+  from the same workflow. Removing the hold is the release authority's
+  explicit cutover change. The key guard deploys from its own account's
+  pipeline, not from this workflow.
+- **CI only.** Every change to production or staging `tuturuuu-auth`, code,
+  variable or secret, comes from `auth-cloudflare.yaml`, which records each
+  version in a GitHub deployment before it carries traffic. The observer halts
+  minting on any version with traffic that CI did not record; see the keys
+  page.
+- **Rollback.** The auth Worker keeps its immutable prior version; rollback is
+  one run of the same workflow that deploys the previous recorded version of
+  `tuturuuu-auth`. A Durable Object migration that
+  adds a class is additive; no slice-4 migration deletes or renames a class.
+- **Gateway.** Gateway changes follow the gateway's one-action rollback; the
+  JWKS dispatch, the `AUTH` binding and the gateway caller key ship in one
+  gateway version.
+
+## Hosting the pure modules
+
+### DeviceStore over Durable Object storage
+
+`BrowserDevice` runs the slice-3 commit loop, `signInWithReservation`,
+`resolve`, the drain and housekeeping inside the object, so every
+`DeviceStore` call is local storage.
+
+- **Tables.** `meta` (one row: `version`, `activeSid`, `gen`, `secretHash`,
+  `grace`), `sessions` (one row per session, `last_seen_at` in its own
+  column), `operations`, `expired_operations`, `outbox`, `grants`,
+  `revoked_reservations` and `epoch_cache`. `read()` assembles `DeviceState`
+  from them; an object with no `meta` row is version 0.
+- **`write(expectedVersion, next, raises)`** runs in one
+  `ctx.storage.transactionSync`: read `meta.version`, return `conflict` if it
+  differs, otherwise upsert changed rows and delete removed rows by key, set
+  the version, and merge each raise with `replacesEpochEntry`. A throw inside
+  the transaction rolls it back and returns `conflict`. A storage error
+  surfaced after the transaction call, or an object reset, returns `unknown`,
+  and the commit loop re-reads.
+- **Serialization.** Correctness never depends on input gates. The object
+  awaits other objects, Hyperdrive and Web Crypto, and during those awaits
+  other requests interleave; the version compare-and-set is the only
+  serialization the reducer relies on. External inputs (the fresh epoch,
+  fresh factors, the reservation) are gathered before the commit loop starts.
+- **`touch`** updates one `sessions.last_seen_at` with `touchedSession`
+  outside the version, at most once per 5 minutes per session. When it
+  advances a session past 24 hours since the last index touch, the object
+  sends one `UserSessions.touchSlot` so the index can choose the longest-idle
+  device for eviction.
+- **`refreshEpochCache`** merges in one transaction under the same rule.
+- **Remote calls.** Every call to another object or to Hyperdrive has a
+  2-second timeout and one attempt. A timeout is `unavailable` for epoch and
+  factor reads, which the reducer fails closed, and `unknown` for a commit
+  relayed from the isolate, which the operation id makes safe to repeat.
+
+### Epoch store and credential issuer stores
+
+- **Epoch.** `UserSessions` stores `{ epoch, bumpedAtMs }`. `readEpoch`
+  returns `{ userId, epoch, readAtMs: now, status: 'fresh' }` and the bump
+  time; a failed call becomes `status: 'unavailable'` at the caller, and the
+  host never produces `stale`. `bumpEpoch(reason)` increments the epoch,
+  stamps `bumpedAtMs` from the object clock, writes one fan-out row per
+  indexed or tombstoned device in the same transaction, and sets the alarm.
+- **Captured epoch.** The sign-in host records `authStartedAtMs` before it
+  calls the provider. At commit it reads the epoch fresh and passes
+  `capturedEpoch = epoch - 1` when `bumpedAtMs >= authStartedAtMs - 5000`,
+  otherwise `epoch`. Any credential change during the ceremony, with 5 seconds
+  of clock margin, therefore returns `credentials_changed`, and the user signs
+  in again. No user id is needed before the provider answers.
+- **Clock check.** `authStartedAtMs` comes from the isolate clock and
+  `bumpedAtMs` from the object clock, so the margin holds only while the two
+  agree within 5 seconds. The host compares the epoch read's `readAtMs` with
+  the isolate clock taken when the read returns; a difference of more than
+  5 seconds in either direction treats the epoch as `unavailable`, and the
+  sign-in fails closed with nothing written. A difference of exactly 5
+  seconds passes.
+- **Fan-out.** The fan-out alarm runs at most 8 device calls at a time, calls
+  `revoke_user_below_epoch` with the bump's own `bumpedAtMs`, deletes a row on
+  success, and retries a failure after 1 minute, 15 minutes, 1 hour, 6 hours
+  and 24 hours. After the fifth failure it alerts and deletes the row: the
+  device's 30-second epoch re-read is the authority, and fan-out only
+  shortens the bound. `revokeAll` runs one inline wave of at most 8 devices
+  and reports the rest as pending.
+- **Credential issuers.** Each `SessionCredentialIssuer` keeps its own
+  per-`sid` lock, tombstone and watermark; see the issuer migration below.
+
+### UserIndexPort
+
+`UserSessions` implements reserve, confirm and release with claims, leases and
+tombstones, all in single storage transactions:
+
+- **Tables.** `slots` (`reservationId`, `deviceId`, `state` provisional or
+  confirmed, `lastSeenAtMs`, the provisional victim), `claims`
+  (`reservationId`, `operationId`, `leaseExpiresAtMs`), `tombstones`
+  (`deviceId`, `reservationId`, `createdAtMs`, `attempts`, `nextAttemptMs`).
+- **`reserve`.** A tombstone on the device returns `evicting`. An existing
+  slot for the device gains this operation's claim and returns `reserved`, or
+  `swap` with its stored victim while it is provisional. Otherwise a new slot
+  is created with a fresh id from `Entropy` while the user holds fewer than 50
+  slots; at the cap the confirmed slot with the oldest `lastSeenAtMs` and no
+  unsettled claim becomes the victim, moves into `tombstones`, and the new slot
+  records it. With no eligible victim the result is `unavailable`.
+- **`confirm` and `release`** follow the slice-3 contract exactly: confirm
+  settles the claim and discards the victim; release settles one claim and
+  only the last claim of an unconfirmed slot drops it and restores its victim.
+- **Leases.** Each claim leases for 60 seconds. The index alarm wakes at the
+  earliest lease expiry and calls `BrowserDevice.leaseDecision(claim)`:
+  `confirm` and `release` settle it, `unknown` retries after 1, 5 and 15
+  minutes, then 1 and 6 hours, then alerts and keeps the claim. An unsettled
+  claim keeps counting toward the cap, which fails safe.
+- **Tombstones.** The index sends `revoke_user_on_device` with the victim's
+  `reservationId` after 0 seconds, 1 minute, 15 minutes, 1 hour, 6 hours and
+  24 hours, then once a day until 7 days after creation, so at most 11
+  attempts. `ok` and `already_revoked` delete the tombstone; `not_found` keeps
+  it and alerts; past 7 days the index alerts and keeps it.
+
+### FactorReadPort, Entropy and the hasher
+
+- **FactorReadPort.** The Supabase adapter's port calls one Hyperdrive
+  function, `private.session_factor_summary(user_id)`, which returns the
+  user's verified TOTP factors as `second_factor`, passkeys enrolled as MFA
+  factors as `second_factor`, other passkeys as `sign_in`, and nothing else
+  (no secrets, public keys or counters). The port stamps `readAtMs` and builds
+  `FreshFactors` through `freshFactors`; any error is `unavailable`. No
+  factor read is cached anywhere. The Better Auth adapter gets its own port in
+  P3.
+- **Entropy** wraps `crypto.getRandomValues` in the host. The pure modules
+  never call a global random function.
+- **SecretHasher** is HMAC-SHA-256 under `TTR_SESSION_PEPPER`, imported once
+  per isolate as a non-extractable key. The pepper is not versioned: replacing
+  it signs every browser out at its next resolution, which is the documented
+  emergency effect.
+
+### Outbox drain on alarms
+
+- After any commit that adds or changes an outbox row, or creates a child,
+  the object sets its alarm to the earliest of: the next due effect attempt
+  (`planDrain`), the next prune deadline, and the next child expiry.
+- **One wake.** Read the fence (see the controls page). Run at most 16 due
+  tasks with 4 in flight, each with a 10-second timeout, through `runDrain`,
+  whose `applyEffectResults` records attempts durably. Due effects are
+  security cleanup, which no mode, switch or budget parks, because an upstream
+  grant keeps authorizing until it is revoked upstream and a credential keeps
+  validating until its issuer holds the tombstone. Pruning runs only while the
+  fence allows background work; otherwise the object registers in
+  `ParkedWork` for its prune deadline. Then set the next alarm only if
+  runnable work remains with a finite deadline. With nothing pending the
+  object deletes its alarm.
+- **Never throw.** The alarm handler catches every error and records it, so
+  the platform's automatic alarm retries never multiply the drain's own
+  attempts. Each effect has at most 5 attempts under the slice-3 schedule,
+  then `abandoned`.
+- **Ports.** `UpstreamRevokePort` decrypts the grant and calls the adapter's
+  `revokeUpstream`. The issuer ports call `revokeForSession` or
+  `revokeForSessionBefore`. Cookie effects ride the next response through
+  `settleResponseCookie` and are never run by the alarm.
+
+### Issuer-contract migration
+
+The first-party session mints or revokes through a store only after the store
+meets the slice-3 issuer contract. Sub-slice 4c moves both stores; until a
+store has moved, the existing session path keeps today's behavior and the
+issuer registry entry stays absent from the auth Worker's wiring. Lifetimes
+come from `tombstoneLifetimeMs` and `watermarkLifetimeMs` in
+`packages/session/src/device/issuer.ts`, applied to each store's longest
+credential lifetime.
+
+**AI temporary tokens** (today in Upstash Redis, 60-second lifetime, revoked
+by a per-user version) move to the `SessionCredentials` object of the minting
+`sid`, whose storage transaction is the per-`sid` lock. The token format
+embeds the `sid` so validation addresses the right object.
+
+- **Row.** Everything the Redis payload in
+  `packages/utils/src/ai-temp-auth.ts` keeps except the raw token: the
+  SHA-256 digest of the token, the user id and email, `wsId`, `creditWsId`,
+  `creditSource`, `issuedAt` and `expiresAt`, plus the authorizing
+  `resolvedAtMs`.
+- **Mint.** `WebEntry.mintCredential` passes the `resolvedAtMs` from the
+  device's `mintAuthority` through unchanged. The object evaluates
+  `mintAllowed` with that device time and its own clock as `issuerNowMs`
+  only, never substituting the object clock for `resolvedAtMs`, and stores
+  the row in the same transaction.
+- **Revoke.** `revokeForSession` writes a tombstone for
+  `tombstoneLifetimeMs(60_000)`, 300 seconds. `revokeForSessionBefore(t)`
+  raises the watermark to the device time `t`, never lowering it, for
+  `watermarkLifetimeMs(60_000)`, 90 seconds.
+- **Validate.** `RelyingEntry.validateAiToken` looks up the digest and rejects
+  an expired token, a token under a tombstone, and a token whose stored
+  `resolvedAtMs` is below the watermark.
+- **Required-MFA gate.** Mint and validate both apply the decision of
+  `isRequiredMfaProofAllowed(userId, null)`, because these tokens carry no
+  second-factor proof: the user exists, is not banned, and has no
+  required-MFA policy. The auth Worker reads it through the Hyperdrive
+  function `private.session_ai_token_allowed(user_id)`, whose policy parsing
+  runs the same fixtures as `readRequiredMfaPolicy`. A denial or any error
+  returns no token on mint and `revoked` on validate.
+- **Purge.** The object's alarm deletes expired tokens, tombstones and
+  watermarks, and an empty object schedules nothing. The Redis path stays for
+  sessions that are not first-party until P2 removes it.
+
+**`private.cross_app_tokens`** gets one reviewed migration. CLI handoff codes
+live 300 seconds and other codes 60 (`private.cross_app_token_lifetime_seconds`),
+so the store's tombstones live `tombstoneLifetimeMs(300_000)`, 330 seconds,
+and its watermarks `watermarkLifetimeMs(300_000)`, 330 seconds.
+
+- **Schema.** Nullable `sid` and `resolved_at_ms` columns with an index on
+  `sid`, and a fence table `private.session_credential_fences` keyed by `sid`
+  (tombstone expiry, watermark, watermark expiry).
+- **Issuer lock.** Every new function first takes
+  `pg_advisory_xact_lock` on a fixed namespace and the hash of `sid`, then
+  reads the fence row. A row lock cannot serve, because `SELECT … FOR UPDATE`
+  on a fence row that does not exist yet locks nothing. A hash collision only
+  serializes two unrelated `sid` values.
+- **Mint.** The session mint function rejects a null `sid`, takes the lock,
+  reads `clock_timestamp()` after the lock (`now()` is the transaction start)
+  as the issuer clock, evaluates the full `mintAllowed` predicate with the
+  caller's `resolvedAtMs` unchanged, and inserts the code with its `sid` and
+  `resolved_at_ms` only when the predicate holds. The existing lifetime cap
+  still applies.
+- **Revoke and watermark.** The service revoke function takes the lock,
+  extends the tombstone to 330 seconds from the issuer clock (never
+  shortening it), and revokes every code of that `sid` with no user context.
+  The watermark function takes the lock and raises the watermark, never
+  lowering it, with its 330-second expiry.
+- **Validation** rejects a code whose `sid` holds a live tombstone or whose
+  `resolved_at_ms` is below the watermark. Existing rows and the existing
+  mint path keep a null `sid` and the existing user-scoped revoke.
+- **Grants.** The migration revokes `EXECUTE` on every new function from
+  `PUBLIC`, `anon` and `authenticated`, and grants it to
+  `ttr_session_service` only.
+- **Purge.** An hourly cron trigger on the auth Worker calls one bounded
+  purge function that deletes at most 1,000 fence rows whose tombstone and
+  watermark have both expired. It runs once per tick with no retry and parks
+  with other background work. No `pg_cron` job is added.
+- **Race test.** The issuer contract's racing mint and revoke test runs in CI
+  against these SQL functions on a local database, not against a TypeScript
+  model of them.
+- **Rollback** drops only the new objects.
+
+**Database role.** `SESSION_DB` logs in as `ttr_session_service`: no table
+privileges, no `BYPASSRLS`, `EXECUTE` only on the issuer and purge functions
+above, `private.session_factor_summary` and `private.session_ai_token_allowed`.
+Each migration needs the exact-SQL security review, a local reset and the
+gated production workflow.
+
+### Per-device distinct-user ceiling
+
+`sign_in` refuses a new user on a device that already holds live,
+non-child sessions for **10** distinct users. A sign-in by a user who already
+has a live session there replaces it and never counts twice. The refusal is a
+recorded rejection with the new reason `account_limit`, like
+`credentials_changed`: no session is written, the host releases the
+reservation, and the audit event is `session.sign_in_rejected`. Sub-slice 4a
+adds it to the reducer, with property and bounds tests, before any device
+object is hosted.
+
+Why 10:
+
+- It equals `MAX_WEB_ACCOUNT_SESSIONS` in the saved-account vault, so moving
+  saved accounts to sibling sessions in P2 drops no account a user has today.
+- It bounds one device's rows: at most 10 live parents, each with at most 8
+  live and 32 retained children, so at most 330 live or retained session rows
+  beside revoked rows, which the 256-record sign-in cap and the 7-day prune
+  bound separately.
+- It bounds fan-in: each distinct user adds one slot to that user's index and
+  one fan-out target per revoke-all, and one stolen device cookie exposes at
+  most 10 accounts.
+- A lower number would remove accounts users keep today; a higher one has no
+  product need and raises the per-device blast radius.
