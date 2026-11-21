@@ -5,6 +5,8 @@ import {
 import {
   APP_SESSION_COOKIE_NAME,
   APP_SESSION_REFRESH_COOKIE_NAME,
+  WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
   verifyAppSessionRefreshToken,
   verifyAppSessionToken,
 } from '@tuturuuu/auth/app-session-core';
@@ -254,7 +256,10 @@ export async function refreshSession(
   now = Date.now(),
   fetcher: typeof fetch = fetch
 ) {
-  const refreshToken = readCookie(request, APP_SESSION_REFRESH_COOKIE_NAME);
+  const refreshToken = readCookie(
+    hostSessionRequest(request),
+    APP_SESSION_REFRESH_COOKIE_NAME
+  );
   const secret = env.TUTURUUU_APP_COORDINATION_SECRET;
   if (!refreshToken || !secret) return null;
   const local = verifyAppSessionRefreshToken(refreshToken, {
@@ -287,23 +292,64 @@ export function readCookie(request: Request, name: string) {
   return null;
 }
 
+/**
+ * The browser holds the session under `__Host-` names, which no sibling
+ * `*.tuturuuu.com` host can set. The shared names are what the auth core
+ * reads, so only the Worker maps one onto the other.
+ */
+export const HOST_SESSION_COOKIE = '__Host-mastermind_session';
+export const HOST_REFRESH_COOKIE = '__Host-mastermind_refresh';
+const SHARED_SESSION_COOKIES = new Set([
+  APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
+]);
+
+/**
+ * The request with shared-name session cookies dropped, since a sibling host
+ * could plant them, and this host's `__Host-` cookies under the names the
+ * auth core reads.
+ */
+const mapped = new WeakSet<Request>();
+export function hostSessionRequest(request: Request) {
+  const raw = request.headers.get('cookie');
+  if (!raw || mapped.has(request)) return request;
+  const renamed: Record<string, string> = {
+    [HOST_SESSION_COOKIE]: APP_SESSION_COOKIE_NAME,
+    [HOST_REFRESH_COOKIE]: APP_SESSION_REFRESH_COOKIE_NAME,
+  };
+  const parts = raw
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .flatMap((part) => {
+      const [key = '', ...value] = part.split('=');
+      if (SHARED_SESSION_COOKIES.has(key)) return [];
+      const name = renamed[key];
+      return [name ? `${name}=${value.join('=')}` : part];
+    });
+  const headers = new Headers(request.headers);
+  if (parts.length) headers.set('cookie', parts.join('; '));
+  else headers.delete('cookie');
+  const next = new Request(request, { headers });
+  mapped.add(next);
+  return next;
+}
+
 /** Host-only, Secure, HttpOnly, SameSite=Lax session cookies. */
 export function sessionCookies(session: IssuedSession) {
   const cookie = (name: string, value: string, expires: Date) =>
     `${name}=${value}; Path=/; Expires=${expires.toUTCString()}; HttpOnly; Secure; SameSite=Lax`;
   return [
-    cookie(APP_SESSION_COOKIE_NAME, session.access, session.accessExpiresAt),
-    cookie(
-      APP_SESSION_REFRESH_COOKIE_NAME,
-      session.refresh,
-      session.refreshExpiresAt
-    ),
+    cookie(HOST_SESSION_COOKIE, session.access, session.accessExpiresAt),
+    cookie(HOST_REFRESH_COOKIE, session.refresh, session.refreshExpiresAt),
   ];
 }
 
 /** Expires both session cookies so the next visit signs in again. */
 export function clearedSessionCookies() {
-  return [APP_SESSION_COOKIE_NAME, APP_SESSION_REFRESH_COOKIE_NAME].map(
+  return [HOST_SESSION_COOKIE, HOST_REFRESH_COOKIE].map(
     (name) => `${name}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`
   );
 }

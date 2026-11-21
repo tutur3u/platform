@@ -195,12 +195,16 @@ the return Web keeps. `/verify-token` exchanges a handoff only when both
 match, strips `mm_state` from the return and clears the cookie, so a handoff
 URL started in another browser cannot sign this browser in as someone else.
 
-Two gaps remain. The shared session cookie names carry no `__Host-` prefix,
-so script on a sibling `*.tuturuuu.com` host could plant its own valid
-grantee session. The state binds the browser, not the handoff token, so a
-nonce read from the sign-in URL within its ten minutes allows the same swap.
-Binding internal handoffs to an S256 challenge, as external apps already are,
-closes both.
+The session cookies carry `__Host-` names too (`__Host-mastermind_session`,
+`__Host-mastermind_refresh`). The Worker drops the shared app-session cookie
+names before verifying, so a session a sibling `*.tuturuuu.com` host plants
+under those names is never read.
+
+One gap remains, owned by the Web auth lane, latest by 2026-12-05. The state
+binds the browser, not the handoff token, so a nonce read from the sign-in URL
+within its ten minutes allows a login swap into the reader's own grantee
+session. Binding internal handoffs to an S256 challenge, as external apps
+already are, closes it.
 
 **Revocation.** Removing the owner from the Worker's `OWNER_IDS` or from
 Web's root Mastermind permission denies the next request and every refresh.

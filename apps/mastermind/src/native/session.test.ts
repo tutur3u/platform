@@ -127,7 +127,7 @@ test('handoff accepts only a 300 s owner session for target mastermind with the 
 test('refresh needs a local owner refresh credential before calling Web', async () => {
   const cookie = (token: string) =>
     new Request('https://mastermind.tuturuuu.com/en', {
-      headers: { cookie: `tuturuuu_app_session_refresh=${token}` },
+      headers: { cookie: `__Host-mastermind_refresh=${token}` },
     });
   expect(
     await refreshSession(
@@ -233,7 +233,7 @@ test('an expired access session rotates inline; without a session a navigation g
   const response = await mastermindRequest(
     new Request('https://mastermind.tuturuuu.com/en', {
       headers: {
-        cookie: `tuturuuu_app_session=${expired}; tuturuuu_app_session_refresh=${refresh}`,
+        cookie: `__Host-mastermind_session=${expired}; __Host-mastermind_refresh=${refresh}`,
       },
     }),
     env,
@@ -273,6 +273,40 @@ test('an expired access session rotates inline; without a session a navigation g
   expect(login.headers.getSetCookie()).toEqual([
     `__Host-mastermind_login_state=${nonce}; Path=/; Max-Age=600; HttpOnly; Secure; SameSite=Lax`,
   ]);
+});
+
+test('shared-name session cookies a sibling host could plant are ignored', async () => {
+  const planted = issued().appSessionToken;
+  let rendered = 0;
+  for (const name of [
+    'tuturuuu_app_session',
+    'tuturuuu_web_app_session',
+    'tuturuuu_app_session_refresh',
+  ]) {
+    const response = await mastermindRequest(
+      new Request('https://mastermind.tuturuuu.com/en', {
+        headers: { cookie: `${name}=${planted}` },
+      }),
+      env,
+      () => {
+        rendered++;
+        return new Response('page');
+      },
+      now
+    );
+    expect(response.status).toBe(403);
+  }
+  expect(rendered).toBe(0);
+  expect(web).not.toHaveBeenCalled();
+  const own = await mastermindRequest(
+    new Request('https://mastermind.tuturuuu.com/en', {
+      headers: { cookie: `__Host-mastermind_session=${planted}` },
+    }),
+    env,
+    () => new Response('page'),
+    now
+  );
+  expect(own.status).toBe(200);
 });
 
 test("a callback without this browser's login state or with a malformed token never reaches Web", async () => {

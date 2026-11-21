@@ -96,7 +96,7 @@ async function call(
     new Request(`${host}${path}`, {
       method,
       headers: {
-        cookie: `tuturuuu_app_session=${session(as)}`,
+        cookie: `__Host-mastermind_session=${session(as)}`,
         ...headers,
       },
     }),
@@ -250,7 +250,7 @@ test('the Owner tier never admits the grantee path', async () => {
     await refreshSession(
       new Request(`${host}/en/fleet-access`, {
         headers: {
-          cookie: `tuturuuu_app_session_refresh=${pair(grantee).appSessionRefreshToken}`,
+          cookie: `__Host-mastermind_refresh=${pair(grantee).appSessionRefreshToken}`,
         },
       }),
       env,
@@ -268,7 +268,7 @@ test('an owner id cannot get a session under another email', async () => {
     await refreshSession(
       new Request(`${host}/en/fleet-access`, {
         headers: {
-          cookie: `tuturuuu_app_session_refresh=${pair(grantee).appSessionRefreshToken}`,
+          cookie: `__Host-mastermind_refresh=${pair(grantee).appSessionRefreshToken}`,
         },
       }),
       env,
@@ -282,7 +282,7 @@ test('a grantee login and callback return only to the Fleet page', async () => {
   const returnOf = async (path: string, as = grantee) => {
     const response = await mastermindRequest(
       new Request(`${host}${path}`, {
-        headers: { cookie: `tuturuuu_app_session=${session(as)}` },
+        headers: { cookie: `__Host-mastermind_session=${session(as)}` },
       }),
       env,
       () => new Response('unreachable'),
@@ -429,7 +429,7 @@ test('a grantee session is issued and rotated only with a live grant', async () 
   const refreshing = (user: { id: string; email: string }) =>
     new Request(`${host}/en/fleet-access`, {
       headers: {
-        cookie: `tuturuuu_app_session_refresh=${pair(user).appSessionRefreshToken}`,
+        cookie: `__Host-mastermind_refresh=${pair(user).appSessionRefreshToken}`,
       },
     });
   web.mockClear();

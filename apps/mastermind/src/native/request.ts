@@ -15,6 +15,7 @@ import {
   CLEAR_LOGIN_STATE,
   clearedSessionCookies,
   consumeLoginState,
+  hostSessionRequest,
   exchangeHandoff,
   isHandoffToken,
   loginRedirect,
@@ -104,6 +105,7 @@ export async function mastermindRequest(
   now = Date.now(),
   nonce?: string
 ) {
+  request = hostSessionRequest(request);
   const url = new URL(request.url);
   const mount =
     url.protocol === 'https:' ? resolveAppBase(url, mastermindMount) : null;

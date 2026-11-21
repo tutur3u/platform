@@ -159,8 +159,8 @@ test('an owner session without MFA gets the MFA notice, not a login loop', async
   expect(response.status).toBe(403);
   expect(response.headers.get('Location')).toBeNull();
   expect(response.headers.getSetCookie()).toEqual([
-    'tuturuuu_app_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
-    'tuturuuu_app_session_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+    '__Host-mastermind_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
+    '__Host-mastermind_refresh=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax',
   ]);
   expect(await response.text()).toMatch(/multi-factor authentication/);
 });
