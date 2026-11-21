@@ -400,8 +400,9 @@ export function watchSenderBandwidth({
           // Unsupported browser controls leave the existing sender running.
         }
       }
-      // Stats from a peer that was replaced meanwhile describe nothing live.
-      if (readPeer() === pc)
+      // Stats from a peer that was replaced, closed or disposed meanwhile
+      // describe nothing live.
+      if (active && readPeer() === pc && pc.connectionState === 'connected')
         recorder?.recordSender({
           sendKbps,
           availableSendKbps:

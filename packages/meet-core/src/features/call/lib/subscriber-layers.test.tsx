@@ -302,3 +302,37 @@ it('clears the reading on dimming even while a layer change is queued', async ()
     layers: { high: 0, mid: 0, low: 0 },
   });
 });
+
+it('clears on dimming while a visible tick waits on its stats', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { pc } = setup(undefined, undefined, { policy });
+  let resolveStats!: (stats: RTCStatsReport) => void;
+  (pc.getStats as ReturnType<typeof vi.fn>).mockImplementationOnce(
+    () =>
+      new Promise<RTCStatsReport>((resolve) => {
+        resolveStats = resolve;
+      })
+  );
+  policy.quality.recordReceiver(
+    { loss: 0, freezes: 0, rttMs: 30, availableKbps: null, receivedKbps: 400 },
+    ['high'],
+    false
+  );
+  await act(() => vi.advanceTimersByTimeAsync(2000));
+  policy.setVisibility('dimmed');
+  expect(policy.quality.take(policy.getSnapshot()).recvVideoKbps).toBeNull();
+  // Returning before the old sample lands must not revive it either.
+  policy.setVisibility('visible');
+  await act(async () => resolveStats(new Map() as unknown as RTCStatsReport));
+  expect(policy.quality.take(policy.getSnapshot()).recvVideoKbps).toBeNull();
+});
+
+it('keeps sampling while a layer change waits in the queue', async () => {
+  const policy = (await import('./media-policy')).createMediaPolicy(null);
+  const { pc, refs } = setup(undefined, undefined, { policy });
+  refs.queue.current = new Promise<void>(() => undefined);
+  await act(() => vi.advanceTimersByTimeAsync(8000));
+  expect(
+    (pc.getStats as ReturnType<typeof vi.fn>).mock.calls.length
+  ).toBeGreaterThanOrEqual(3);
+});

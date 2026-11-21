@@ -198,6 +198,8 @@ export function useSubscriberLayers({
     let busy = false;
     let pausedUntil = 0;
     let audio = initialAudioOnly();
+    let epoch = 0;
+    let dispatching = false;
     let restoring = false;
     let lastPhase = policy?.getSnapshot().visibility;
     const counters = new Map<string, Counters>();
@@ -367,6 +369,7 @@ export function useSubscriberLayers({
         // spends no stats work on a view nobody is looking at.
         let sample: ReceiverSample | null = null;
         if (phase === 'visible') {
+          const sampledEpoch = epoch;
           const stats = await pc.getStats();
           // The receiver, session or policy may have changed while sampling;
           // a stale sample is discarded and the reading cleared.
@@ -375,6 +378,7 @@ export function useSubscriberLayers({
             state.current.remoteTracks
           );
           if (
+            epoch !== sampledEpoch ||
             peer.current !== pc ||
             sessionRef.current !== sessionId ||
             !capable() ||
@@ -483,11 +487,16 @@ export function useSubscriberLayers({
             { layer, key: keys.get(mid) ?? '' },
           ])
         );
-        const run = queue.current.then(() =>
-          dispatch(pc, sessionId, planned, phase)
-        );
+        // Sampling never waits on the queue; one dispatch is in flight at a
+        // time and the next tick replans from confirmed layers.
+        if (dispatching) return;
+        dispatching = true;
+        const run = queue.current
+          .then(() => dispatch(pc, sessionId, planned, phase))
+          .finally(() => {
+            dispatching = false;
+          });
         queue.current = run.catch(() => undefined);
-        await run;
       } catch {
         // Stats and updates are best-effort; the next tick samples again.
       } finally {
@@ -500,6 +509,10 @@ export function useSubscriberLayers({
       if (phase === lastPhase) return;
       restoring ||= phase === 'visible';
       lastPhase = phase;
+      // Invalidate in-flight samples and clear the reading and baseline at
+      // once, even if a tick is busy.
+      epoch++;
+      idle();
       void tick();
     });
     return () => {

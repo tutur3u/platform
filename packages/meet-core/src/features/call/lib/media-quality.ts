@@ -47,12 +47,13 @@ export function createMediaQualityRecorder(clock: () => number = Date.now) {
       layers: liveReceiver ? layers : none(),
     };
   };
-  const publish = () => {
-    (globalThis as { __meetMediaStats?: unknown }).__meetMediaStats = {
-      ...current(),
-      freezesSinceReport: freezes,
-    };
-  };
+  // A getter, so load tests read the same expiry as room reports.
+  const publish = () =>
+    Object.defineProperty(globalThis, '__meetMediaStats', {
+      configurable: true,
+      enumerable: false,
+      get: () => ({ ...current(), freezesSinceReport: freezes }),
+    });
   return {
     /** A null reading clears the sender, for example when its peer retires. */
     recordSender(reading: SenderReading | null) {

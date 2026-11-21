@@ -156,6 +156,36 @@ describe('sender telemetry teardown', () => {
   });
 });
 
+describe('late sender samples', () => {
+  it('never records stats that resolve after the peer closed', async () => {
+    const recorder = { recordSender: vi.fn() };
+    let resolveStats!: (stats: Map<string, unknown>) => void;
+    const pc = {
+      connectionState: 'connected',
+      signalingState: 'stable',
+      getStats: () =>
+        new Promise((resolve) => {
+          resolveStats = resolve;
+        }),
+    };
+    const watcher = watchSenderBandwidth({
+      readPeer: () => pc as unknown as RTCPeerConnection,
+      readSenders: () => new Map(),
+      mode: () => 'auto',
+      hasAudience: () => true,
+      recorder,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    pc.connectionState = 'closed';
+    resolveStats(new Map());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(recorder.recordSender).not.toHaveBeenCalledWith(
+      expect.objectContaining({ rttMs: expect.anything() })
+    );
+    watcher.dispose();
+  });
+});
+
 describe('page visibility with Picture-in-Picture', () => {
   function fakeDocument() {
     const listeners = new Map<string, Set<() => void>>();
