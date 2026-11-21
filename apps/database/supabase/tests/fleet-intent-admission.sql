@@ -18,12 +18,22 @@ insert into private.fleet_access_grant_projects (user_id, project_key) values
   ('fc000000-0000-4000-8000-000000000001', 'intent-local'),
   ('fc000000-0000-4000-8000-000000000002', 'intent-remote');
 
+insert into private.fleet_desk_owners
+  (channel, provider_account_id, provider_account_label, desk_id, credential_version, quiesced)
+values
+  ('zalo', 'account-a', 'Operations Zalo', 'desk-a', 1, false),
+  ('zalo', 'account-b', 'Other Zalo', 'desk-b', 1, false);
+
 create function pg_temp.event(
   p_id text, p_account text default 'account-a', p_conversation text default repeat('c', 64)
 )
 returns jsonb language sql as $$
   select jsonb_build_object('channel', 'zalo', 'account', p_account,
-    'accountLabel', 'Operations Zalo',
+    'version', 2, 'conversationType', 'private_1_to_1', 'operation', 'identity.verify',
+    'bearerDeskId', case when p_account = 'account-a' then 'desk-a' else 'desk-b' end,
+    'signingDeskId', case when p_account = 'account-a' then 'desk-a' else 'desk-b' end,
+    'deskId', case when p_account = 'account-a' then 'desk-a' else 'desk-b' end,
+    'signingCredentialVersion', 1, 'credentialVersion', 1, 'ownerGeneration', '1',
     'eventHash', encode(sha256(convert_to(p_id, 'UTF8')), 'hex'),
     'senderHash', repeat('b', 64), 'conversationHash', p_conversation)
 $$;
@@ -35,7 +45,7 @@ create function pg_temp.submit(
 returns text language sql as $$
   select reason_code from private.fleet_submit_resolved_intent(
     'priority.set', p_project, p_target, '{"priority":"high"}',
-    p_event => p_event, p_redacted_quote => p_quote)
+    p_event => p_event || '{"operation":"intent.submit"}', p_redacted_quote => p_quote)
 $$;
 
 create temporary table link_results (name text primary key, value jsonb);

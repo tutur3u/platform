@@ -71,6 +71,8 @@ async function submit(
           ? fleetJson({ id: id.data }, 201)
           : fleetUnavailable();
       }
+      case 'unauthorized_desk_event':
+        return fleetDeskDenied();
       case 'questions_per_hour':
       case 'intents_per_day':
         return fleetJson({ error: reason }, 429);

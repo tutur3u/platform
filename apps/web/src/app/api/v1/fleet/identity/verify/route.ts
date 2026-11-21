@@ -19,6 +19,7 @@ const verifySchema = z.strictObject({ code: fleetCodeSchema });
 const pendingSchema = z.discriminatedUnion('reason', [
   z.strictObject({ reason: z.literal('pending'), linkId: z.uuid() }),
   z.strictObject({ reason: z.literal('event_replayed') }),
+  z.strictObject({ reason: z.literal('unauthorized_desk_event') }),
   z.strictObject({ reason: z.literal('invalid_link_code') }),
 ]);
 
@@ -52,6 +53,8 @@ export async function POST(request: Request) {
     switch (result.data.reason) {
       case 'pending':
         return fleetJson({ linkId: result.data.linkId, confirmationCode }, 201);
+      case 'unauthorized_desk_event':
+        return fleetDeskDenied();
       case 'event_replayed':
         return fleetJson({ error: result.data.reason }, 409);
       case 'invalid_link_code':

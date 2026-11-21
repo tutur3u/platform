@@ -13,26 +13,26 @@ const deskBearer =
   /^Bearer (ttr_fleet_desk_([a-z0-9-]{1,40})\.[A-Za-z0-9_-]{43})$/i;
 const sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 const providerId = z.string().regex(/^[!-~]{1,200}$/);
+const deskIdSchema = z.string().regex(/^[a-z0-9-]{1,40}$/);
+const credentialVersion = z.number().int().min(1).max(2147483647);
 const deskConfigSchema = z.strictObject({
   tokenSha256: sha256,
   ingressPublicKey: z.string().min(1).max(512),
-  channel: z.enum(['whatsapp', 'zalo', 'discord']),
-  account: providerId,
-  accountLabel: z.string().trim().min(1).max(80),
+  credentialVersion,
 });
-const desksSchema = z.record(
-  z.string().regex(/^[a-z0-9-]{1,40}$/),
-  deskConfigSchema
-);
+const desksSchema = z.record(deskIdSchema, deskConfigSchema);
 const eventSchema = z.strictObject({
-  version: z.literal(1),
-  channel: deskConfigSchema.shape.channel,
+  version: z.literal(2),
+  deskId: deskIdSchema,
+  credentialVersion,
+  ownerGeneration: z.string().regex(/^[1-9][0-9]{0,18}$/),
+  channel: z.enum(['whatsapp', 'zalo', 'discord']),
   account: providerId,
   sender: providerId,
   conversation: providerId,
   conversationType: z.literal('private_1_to_1'),
   eventId: providerId,
-  operation: z.enum(['identity.verify', 'intent.submit']),
+  operation: z.enum(['identity.verify', 'intent.submit', 'digest.read']),
   inputSha256: sha256,
   issuedAt: z.number().int(),
 });
@@ -57,7 +57,7 @@ export function authenticateFleetDesk(request: Request) {
     if (!desk) return null;
     const actual = createHash('sha256').update(token).digest();
     return timingSafeEqual(actual, Buffer.from(desk.tokenSha256, 'hex'))
-      ? desk
+      ? { ...desk, bearerDeskId: deskId, signingDeskId: deskId }
       : null;
   } catch {
     return null;
@@ -66,7 +66,7 @@ export function authenticateFleetDesk(request: Request) {
 
 export function verifyFleetDeskEvent(
   request: Request,
-  desk: z.infer<typeof deskConfigSchema>,
+  desk: NonNullable<ReturnType<typeof authenticateFleetDesk>>,
   body: Uint8Array,
   operation: z.infer<typeof eventSchema>['operation']
 ) {
@@ -87,7 +87,7 @@ export function verifyFleetDeskEvent(
       key.asymmetricKeyType !== 'ed25519' ||
       !verify(
         null,
-        Buffer.from(`fleet-event-v1.${proof}`),
+        Buffer.from(`fleet-event-v2.${proof}`),
         key,
         Buffer.from(signature, 'base64url')
       )
@@ -103,8 +103,6 @@ export function verifyFleetDeskEvent(
     );
     const age = Date.now() - event.issuedAt;
     if (
-      event.channel !== desk.channel ||
-      event.account !== desk.account ||
       event.operation !== operation ||
       age < -30_000 ||
       age > 300_000 ||
@@ -120,7 +118,15 @@ export function verifyFleetDeskEvent(
     return {
       channel: event.channel,
       account: event.account,
-      accountLabel: desk.accountLabel,
+      version: event.version,
+      conversationType: event.conversationType,
+      operation: event.operation,
+      bearerDeskId: desk.bearerDeskId,
+      signingDeskId: desk.signingDeskId,
+      signingCredentialVersion: desk.credentialVersion,
+      deskId: event.deskId,
+      credentialVersion: event.credentialVersion,
+      ownerGeneration: event.ownerGeneration,
       senderHash: identityHash('sender', event.sender),
       conversationHash: identityHash('conversation', event.conversation),
       eventHash: createHash('sha256').update(event.eventId).digest('hex'),

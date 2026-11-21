@@ -106,13 +106,18 @@ UUID. Each alias must uniquely identify one target within its group across
 the entire catalog. The server binds the resolved ID, parameters, kind and
 owning project version to the action hash. A project mismatch, missing target
 or ambiguous alias is denied. The release intent kinds file requests for approval.
+Desk requests never approve themselves. A desk-filed low- or medium-risk
+request waits for approval even when the requester holds `approve.low`.
+Desk-filed `comment` and `status_question` intents need no approval and still
+execute. Desk operations resolve a live grant row, so the Owner needs a
+non-Owner grant to use them.
 
 The optional `quote` is capped at 1,000 characters and required for comments.
 The server scrubs recognizable sensitive values and stores the result separately
 as display text. Keep credentials and private data out of submitted quotes.
 A successful response is `201 {"id":"<intent UUID>"}`.
-Denied requests return `403`, event replays and stale mappings return `409`,
-and exhausted quotas return `429`. Invalid JSON or unknown fields return `400`.
+Refused desk evidence returns `401`. Denied requests return `403`, event
+replays and stale mappings return `409`, and exhausted quotas return `429`. Invalid JSON or unknown fields return `400`.
 
 `GET /api/v1/fleet/intents` accepts the same human sessions as the access
 endpoint. It returns the caller's own receipts for currently authorized
@@ -138,7 +143,7 @@ or a Mastermind access session with `internal-app:session`. They refuse the
    sender in the same conversation.
 3. The same signed-in user sends `{ linkId, confirmationCode, preview: true }`
    to `POST /api/v1/fleet/identity/confirm` within the original ten-minute
-   window to read the pending `channel` and configured `accountLabel` with
+   window to read the pending `channel` and the desk owner's `accountLabel` with
    `linked: false`. Sending `{ linkId, confirmationCode }` to the same route
    confirms the link and returns the channel and label with `linked: true`.
    Neither response exposes provider sender or conversation identifiers.
@@ -147,38 +152,116 @@ or a Mastermind access session with `internal-app:session`. They refuse the
 
 ### Desk and ingress credentials
 
-Set `FLEET_DESKS` on Web to a JSON object keyed by desk ID. Each entry contains
-`channel` (`whatsapp`, `zalo`, or `discord`), the provider `account`, a
-user-facing `accountLabel` of 1–80 characters, `tokenSha256` (hex SHA-256 of the full bearer token), and `ingressPublicKey`
-(an Ed25519 public key in PEM format). The desk bearer format is
-`ttr_fleet_desk_<desk-id>.<32 random bytes in unpadded base64url>`. Issue one
-token per desk. Replace its verifier to rotate it or remove the desk entry
-to revoke it. Store the signing key only at ingress and the bearer token
-only with its desk.
+Set `FLEET_DESKS` on Web to a JSON object keyed by desk ID. Each entry
+contains `tokenSha256` (lowercase hex SHA-256 of the full bearer),
+`ingressPublicKey` (an Ed25519 public key in PEM format), and
+`credentialVersion` (a positive 32-bit integer). Desk IDs contain 1–40
+lowercase letters, digits or hyphens. The bearer format is
+`ttr_fleet_desk_<desk-id>.<32 random bytes in unpadded base64url>`. Store
+the private signing key only at ingress and the bearer only with its desk.
+`FLEET_DESKS` holds key material only and admits nothing by itself. A
+configuration that still names a `channel`, `account` or `accountLabel` fails
+validation, and every desk request then returns `401`.
 
 Trusted ingress validates the provider event, its original freshness, account,
-sender and approved private conversation before constructing the authorized
-request body and issuing proof. It applies the freshness check again on provider
-redelivery and never issues fresh proof for an expired provider event. Send the UTF-8 JSON claims as
-unpadded base64url in `X-Fleet-Event`. Sign the ASCII string
-`fleet-event-v1.<encoded claims>` with Ed25519 and send the unpadded base64url
-signature in `X-Fleet-Event-Signature`. The claims are:
+sender and approved private conversation before constructing the request body.
+It repeats the freshness check on provider redelivery and declines to sign
+expired events. Send the UTF-8 JSON claims as unpadded base64url in
+`X-Fleet-Event`. Sign the ASCII string `fleet-event-v2.<encoded claims>` with
+Ed25519 and send the unpadded base64url signature in
+`X-Fleet-Event-Signature`. The v1 claims and signature domain are retired.
+The v2 claims are:
 
-- `version` of `1`, `channel`, `account`, `sender`, `conversation` and
-  `conversationType` of `private_1_to_1`.
-- The provider's `eventId`, the allowed `operation` (`identity.verify` or
-  `intent.submit`), and `inputSha256` (the lowercase hex SHA-256 of the exact
-  HTTP JSON body bytes).
+- `version` of `2`, `channel` (`whatsapp`, `zalo`, or `discord`), `account`,
+  `sender`, `conversation`, and `conversationType` of `private_1_to_1`.
+- `deskId`, `credentialVersion`, and `ownerGeneration`. Use the decimal
+  string returned by the Owner operation for `ownerGeneration`.
+- The provider's `eventId`, the allowed `operation` (`identity.verify`,
+  `intent.submit`, or `digest.read`), and `inputSha256` (lowercase hex
+  SHA-256 of the exact HTTP JSON body bytes).
 - `issuedAt`, Unix time in milliseconds. Evidence permits up to 30 seconds
   of future clock skew and expires after five minutes.
 
-The API consumes the event ID once per channel and provider account across
-both operations. Replay fingerprints have a 90-day retention horizon from
-consumption. Signed proof and bearer credentials are required together.
-`FLEET_IDENTITY_HMAC_KEY` is 32 random bytes in lowercase hex, stored on Web
-only. It namespaces stored sender and conversation fingerprints by provider
-and account. Preserve the key across deployments. Rotating it requires
-coordinating retirement and re-linking of existing identities.
+Admission requires an active, unquiesced database row for the channel and
+provider account. Inside the action transaction, the API matches the bearer
+desk ID, the verifying key's desk ID and credential version, and the signed
+desk ID, credential version and generation to that row. A missing or
+mismatched row, quiesced owner or retired proof returns `401`, leaves the
+event unconsumed and appends an audit event without an actor. The API
+consumes the event ID once per channel and provider account across all
+three operations and across desk rotations and cutovers. Replay fingerprints
+are retained for 90 days from consumption. Preserve
+`FLEET_IDENTITY_HMAC_KEY` across cutovers. It is 32 random bytes in lowercase
+hex stored only on Web. Changing it requires retirement and re-linking of
+existing sender and conversation identities.
+
+### Register, rotate and cut over a desk
+
+Change the desk owner only from a trusted database-owner session carrying the
+configured Owner's verified request identity and live explicit root
+`manage_mastermind` permission. No API role can execute these functions or
+read the owner tables. Each function takes the channel and provider account
+first, returns the account, desk ID, credential version, owner generation (a
+decimal string) and quiesce state, and appends an audit event.
+
+| Function | Further arguments | Result |
+| --- | --- | --- |
+| `private.fleet_register_desk_owner` | 1–80 character display label, desk ID, credential version | Creates a quiesced row at generation `1` |
+| `private.fleet_quiesce_desk_owner` | Current generation | Blocks admission and advances the generation |
+| `private.fleet_rotate_desk_credential` | Current generation, higher credential version | Keeps the desk, replaces its admitted credential and advances the generation |
+| `private.fleet_promote_desk_owner` or `private.fleet_rollback_desk_owner` | Current generation, different desk ID, higher credential version | Replaces the desk of a quiesced owner and advances the generation |
+| `private.fleet_resume_desk_owner` | Current generation | Enables the quiesced desk and advances the generation |
+
+A stale expected generation fails with `55000`, and an invalid transition
+with `22023`. Each generation advances by exactly one, and the database
+rejects direct writes that skip, repeat or rename an owner row. Owner rows and
+the credential history cannot be deleted. A desk ID and credential version
+pair is admitted at most once across all accounts, so a retired credential
+never becomes valid again, even when its desk later serves another account.
+
+Each credential version maps to one `FLEET_DESKS` entry. A rollback assigns a
+new version. It may reuse the previous desk's key only while that key is still
+held and unexpired; otherwise provision a fresh bearer and key. Quiesce before
+rotating when Web replicas receive verifier configuration at different times.
+After the verifier configuration and the database readback agree, resume and
+issue proofs with the returned generation. For a runtime cutover, quiesce both
+admission and the provider send fence, reconcile in-flight sends and verify
+the desk and send owners before resuming. Use the same sequence for rollback.
+If a cutover is aborted, resume the quiesced current owner at a fresh
+generation. See the
+[Mira cutover procedure](/platform/ai/mira-cloud-channels#migration).
+
+### Cut over from v1 evidence
+
+1. Apply the desk-owner migrations. Every desk request returns `401` until
+   the remaining steps finish.
+2. Register the owner row, which starts quiesced.
+3. Install the matching v2 `FLEET_DESKS` entry for that desk ID and
+   credential version on every Web replica.
+4. Resume the owner after the configuration and the database readback agree.
+5. Sign only v2 proofs carrying the generation that resume returned.
+
+Keep `FLEET_IDENTITY_HMAC_KEY` unchanged so linked identities still resolve.
+Retire the v1 signers once v2 proofs are admitted.
+
+**Known gap:** `FLEET_DESKS` holds one key per desk ID, so Web cannot verify
+an old and a new credential side by side during rotation. Quiesce before
+rotating when replicas receive configuration at different times. A rollback
+always mints a higher credential version.
+
+## Read a digest from a desk
+
+Send `POST /api/v1/fleet/desk/digest` with `Content-Type: application/json`,
+body `{}` and v2 proof for `digest.read`. A successful response has the same
+`sections` and `totals` as the session digest. The transaction consumes the
+event, resolves the actor from the linked private conversation, and requires a
+live `status.read` grant. It returns only projects in that grant. An unlinked
+conversation, inactive grant, missing capability or Fleet stop returns `403`.
+A replay returns `409`. Every successful read uses one slot from the actor's
+rolling `questions_per_hour` quota, shared with status-question intents.
+Quota exhaustion returns `429`. The endpoint returns digest data only.
+Generated answers additionally require `ask` and a model budget reservation.
+Desk credentials confer no approval authority.
 
 ## Dry-run consumer
 

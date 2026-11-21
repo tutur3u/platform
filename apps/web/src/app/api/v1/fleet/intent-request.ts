@@ -46,6 +46,6 @@ export async function parseFleetRequest<T>(
 }
 
 export function fleetUnavailable() {
-  console.error('Fleet intent or identity operation unavailable');
+  console.error('Fleet operation unavailable');
   return fleetJson({ error: 'fleet_unavailable' }, 503);
 }

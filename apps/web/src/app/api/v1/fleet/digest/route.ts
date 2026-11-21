@@ -1,13 +1,9 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import {
-  type FleetDigestSection,
-  fleetDigestSectionSchema,
-  fleetStoredDigestSectionSchema,
-  summarizeFleetDigest,
-} from '@tuturuuu/internal-api/fleet';
+import { fleetDigestSectionSchema } from '@tuturuuu/internal-api/fleet';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { readBoundedResponseBytes } from '@tuturuuu/utils/read-bounded-response';
 import { connection, NextResponse } from 'next/server';
+import { summarizeStoredFleetDigest } from '../digest-sections';
 import { fleetJson, withFleetSession } from '../session';
 
 const publisherBearer = /^Bearer (ttr_fleet_digest_[A-Za-z0-9_-]{43})$/i;
@@ -25,16 +21,7 @@ export const GET = withFleetSession(async (actorId) => {
       if (data === null) return fleetJson({ error: 'forbidden' }, 403);
 
       if (Array.isArray(data)) {
-        const sections: FleetDigestSection[] = [];
-        for (const item of data) {
-          const section = fleetStoredDigestSectionSchema.safeParse(item);
-          if (section.success) {
-            sections.push(section.data);
-          } else {
-            console.error('Invalid stored Fleet digest section');
-          }
-        }
-        return fleetJson(summarizeFleetDigest(sections));
+        return fleetJson(summarizeStoredFleetDigest(data));
       }
     }
   } catch {

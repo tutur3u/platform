@@ -1550,11 +1550,21 @@
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
   },
   {
+    "path": "/api/v1/fleet/desk/digest",
+    "sideEffects": "unknown",
+    "shadow": "never",
+    "source": "apps/web/src/app/api/v1/fleet/desk/digest/route.ts",
+    "sourceSha256": "4a82ade570f7421643ec7de1c2b268f4c8cf1c23cebff9d2023082300d4f04bb",
+    "runtime": "retained-next",
+    "policy": "retained-next-proxy",
+    "reason": "Unflipped; preserve existing Next handler and proxy guards"
+  },
+  {
     "path": "/api/v1/fleet/digest",
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/fleet/digest/route.ts",
-    "sourceSha256": "6918272fd263609fe40a964dbc6eba7badb7e783361686363c9e8f25416f834c",
+    "sourceSha256": "cb0ee13d64bf3fcbc0d4943dbacdae06f11e8c33e5f72664ba0f58357efbf4db",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1584,7 +1594,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/fleet/identity/verify/route.ts",
-    "sourceSha256": "5d7e6cbec084f8eacdc102a385c9bd3f0f14bbe7c9c3684918db861d6af31736",
+    "sourceSha256": "3b1154ecbae3580d70eea4d98eed88361f537f3249faf969a421be5d722ae572",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"
@@ -1594,7 +1604,7 @@
     "sideEffects": "unknown",
     "shadow": "never",
     "source": "apps/web/src/app/api/v1/fleet/intents/route.ts",
-    "sourceSha256": "df3ec465f2be94813b5ddbc33202b1b707e6d6c603cc9889dd1bb3ffeddb8812",
+    "sourceSha256": "41f10cea7260f483e010b05f3f408d4798098d1fdc4aa78015d12a9d68137ba8",
     "runtime": "retained-next",
     "policy": "retained-next-proxy",
     "reason": "Unflipped; preserve existing Next handler and proxy guards"

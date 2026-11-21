@@ -21,6 +21,7 @@ type FleetIntentDatabase = Omit<Database, 'private'> & {
         Returns: Json;
       };
       fleet_consumer_purge: { Args: ConsumerSlot; Returns: Json };
+      fleet_read_desk_digest: { Args: { p_event: Json }; Returns: Json };
       fleet_create_link_code: {
         Args: { p_actor_id: string; p_code_hash: string };
         Returns: boolean;

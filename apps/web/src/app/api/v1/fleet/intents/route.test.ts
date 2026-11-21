@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { POST as readDeskDigest } from '../desk/digest/route';
 import { POST as confirm } from '../identity/confirm/route';
 import { POST as createCode } from '../identity/link-codes/route';
 import { POST as verifyCode } from '../identity/verify/route';
@@ -95,18 +96,27 @@ function request(path: string, body?: unknown, authorization?: string) {
 function deskRequest(
   path: string,
   body: unknown,
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
+  version = 2
 ) {
   const signedBody = JSON.stringify(body);
   const event = {
-    version: 1,
+    version: 2,
+    deskId: 'zalo',
+    credentialVersion: 3,
+    ownerGeneration: '4',
     channel: 'zalo',
     account: 'account-a',
     sender: 'sender-a',
     conversation: 'conversation-a',
     conversationType: 'private_1_to_1',
     eventId: 'event-a',
-    operation: path === 'intents' ? 'intent.submit' : 'identity.verify',
+    operation:
+      path === 'intents'
+        ? 'intent.submit'
+        : path === 'desk/digest'
+          ? 'digest.read'
+          : 'identity.verify',
     inputSha256: hash(signedBody),
     issuedAt: Date.now(),
     ...overrides,
@@ -114,7 +124,7 @@ function deskRequest(
   const proof = Buffer.from(JSON.stringify(event)).toString('base64url');
   const signature = sign(
     null,
-    Buffer.from(`fleet-event-v1.${proof}`),
+    Buffer.from(`fleet-event-v${version}.${proof}`),
     ingress.privateKey
   );
   const result = request(path, body, `Bearer ${deskToken}`);
@@ -150,9 +160,7 @@ beforeEach(() => {
           type: 'spki',
           format: 'pem',
         }),
-        channel: 'zalo',
-        account: 'account-a',
-        accountLabel: 'Operations Zalo',
+        credentialVersion: 3,
       },
     })
   );
@@ -283,9 +291,61 @@ describe('Fleet desk and identity routes', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it('rejects a retired desk entry that carries account routing instead of a credential version', async () => {
+    vi.stubEnv(
+      'FLEET_DESKS',
+      JSON.stringify({
+        zalo: {
+          tokenSha256: hash(deskToken),
+          ingressPublicKey: ingress.publicKey.export({
+            type: 'spki',
+            format: 'pem',
+          }),
+          channel: 'zalo',
+          account: 'account-a',
+          accountLabel: 'Operations Zalo',
+        },
+      })
+    );
+    expect((await POST(deskRequest('intents', intent))).status).toBe(401);
+    expect(
+      (await verifyCode(deskRequest('identity/verify', { code }))).status
+    ).toBe(401);
+    expect((await readDeskDigest(deskRequest('desk/digest', {}))).status).toBe(
+      401
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it.each(['intents', 'identity/verify'] as const)(
+    'rejects the v1 signature domain on %s',
+    async (path) => {
+      const body = path === 'intents' ? intent : { code };
+      const response =
+        path === 'intents'
+          ? await POST(deskRequest(path, body, {}, 1))
+          : await verifyCode(deskRequest(path, body, {}, 1));
+      expect(response.status).toBe(401);
+      expect(rpc).not.toHaveBeenCalled();
+    }
+  );
+
   it.each([
-    { account: 'account-b' },
-    { channel: 'discord' },
+    { deskId: 'Zalo' },
+    { credentialVersion: 0 },
+    { credentialVersion: '3' },
+    { ownerGeneration: '0' },
+    { deskId: undefined },
+  ])('rejects malformed v2 desk claims %#', async (overrides) => {
+    expect((await POST(deskRequest('intents', intent, overrides))).status).toBe(
+      401
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { version: 1 },
+    { ownerGeneration: 4 },
     { conversationType: 'group' },
     { operation: 'identity.verify' },
     { inputSha256: hash('different body') },
@@ -336,7 +396,15 @@ describe('Fleet desk and identity routes', () => {
     expect(args.p_event).toEqual({
       channel: 'zalo',
       account: 'account-a',
-      accountLabel: 'Operations Zalo',
+      version: 2,
+      operation: 'intent.submit',
+      conversationType: 'private_1_to_1',
+      bearerDeskId: 'zalo',
+      signingDeskId: 'zalo',
+      signingCredentialVersion: 3,
+      deskId: 'zalo',
+      credentialVersion: 3,
+      ownerGeneration: '4',
       eventHash: hash('event-a'),
       senderHash: expect.stringMatching(/^[a-f0-9]{64}$/),
       conversationHash: expect.stringMatching(/^[a-f0-9]{64}$/),
@@ -406,5 +474,104 @@ describe('Fleet desk and identity routes', () => {
       p_confirmation_hash: `\\x${hash(pending.confirmationCode)}`,
       p_preview: undefined,
     });
+  });
+});
+
+describe('Fleet desk digest route', () => {
+  it('returns the scoped digest with Slice 2 totals and no-store headers', async () => {
+    const section = {
+      projectKey: 'fleet-one',
+      generatedAt: '2026-11-21T01:00:00.000Z',
+      receivedAt: '2026-11-21T01:00:00.000Z',
+      stale: false,
+      lanes: [{ lane: 'Alpha', state: 'running', blockerCodes: [] }],
+    };
+    rpc.mockResolvedValueOnce({
+      data: { reason: 'accepted', sections: [section] },
+      error: null,
+    });
+    const response = await readDeskDigest(deskRequest('desk/digest', {}));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toMatchObject({
+      sections: [section],
+      totals: { projects: 1, lanes: 1 },
+    });
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('fleet_read_desk_digest', {
+      p_event: expect.objectContaining({
+        operation: 'digest.read',
+        bearerDeskId: 'zalo',
+        signingDeskId: 'zalo',
+        signingCredentialVersion: 3,
+        ownerGeneration: '4',
+      }),
+    });
+  });
+
+  it('drops a stored section that fails the digest schema', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    rpc.mockResolvedValueOnce({
+      data: { reason: 'accepted', sections: [{ projectKey: 'fleet-one' }] },
+      error: null,
+    });
+    const response = await readDeskDigest(deskRequest('desk/digest', {}));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      sections: [],
+      totals: { projects: 0, lanes: 0 },
+    });
+    expect(logged).toHaveBeenCalledExactlyOnceWith(
+      'Invalid stored Fleet digest section'
+    );
+    logged.mockRestore();
+  });
+
+  it.each([
+    ['unauthorized_desk_event', 401],
+    ['event_replayed', 409],
+    ['unlinked_identity', 403],
+    ['fleet_stopped', 403],
+    ['inactive_grant', 403],
+    ['missing_capability', 403],
+    ['questions_per_hour', 429],
+  ])('maps the database refusal %s to %s', async (reason, status) => {
+    rpc.mockResolvedValueOnce({ data: { reason }, error: null });
+    const response = await readDeskDigest(deskRequest('desk/digest', {}));
+    expect(response.status).toBe(status);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ error: reason });
+  });
+
+  it('rejects the v1 signature domain', async () => {
+    const response = await readDeskDigest(
+      deskRequest('desk/digest', {}, {}, 1)
+    );
+    expect(response.status).toBe(401);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { version: 1 },
+    { conversationType: 'group' },
+    { operation: 'intent.submit' },
+    { inputSha256: hash('different body') },
+  ])('rejects proof outside the digest operation %#', async (overrides) => {
+    const response = await readDeskDigest(
+      deskRequest('desk/digest', {}, overrides)
+    );
+    expect(response.status).toBe(401);
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects web sessions and caller-supplied project or actor inputs', async () => {
+    expect((await readDeskDigest(request('desk/digest', {}))).status).toBe(401);
+    expect(
+      (
+        await readDeskDigest(
+          deskRequest('desk/digest', { actorId, projectKey: 'other' })
+        )
+      ).status
+    ).toBe(400);
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

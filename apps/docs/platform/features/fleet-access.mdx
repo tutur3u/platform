@@ -8,7 +8,8 @@ audience: developers
 **Status:** [Slice 0](#transitional-slice-0) is the transitional desk rule. Slice 1
 defines the database foundation. Slice 2 adds the [Fleet API](/reference/api-reference/fleet-access)
 for live access, digest publishing and scoped reads. Slice 3 adds intent
-submission, requester receipts and desk identity linking. Production application and
+submission, requester receipts and desk identity linking. Slice 4 adds the
+desk-owner admission fence and desk digest reads. Production application and
 later slices need the approvals in the [implementation plan](#implementation-plan).
 
 Fleet access lets named teammates (for example an operations lead) read the
@@ -86,6 +87,13 @@ An Observer `ask` executes as a read. Every Observer steer request is filed as
   canonical action: kind, authoritative project IDs, every execution parameter,
   resolved targets, environment and commit SHA. Project ownership is
   re-resolved before dispatch, and any drift voids the approval.
+- **Desk requests:** a desk-filed request never approves itself. Low- and
+  medium-risk requests from a desk wait for approval even when the requester
+  holds `approve.low`. Desk-filed `comment` and `status_question` intents need
+  no approval and still execute.
+- **Owner at a desk:** desk operations resolve a live grant row, and the Owner
+  tier is never granted. The Owner needs a non-Owner grant, whose projects,
+  capabilities and caps then apply, to use a desk.
 - **High risk:** needs an approver other than the requester and an interactive
   step-up (fresh tuturuuu.com sign-in within five minutes). Chat channels can
   file high-risk requests but cannot approve them.
@@ -273,7 +281,7 @@ person ─▶ surface (web / Mira / mobile)
 
 | Principal        | May                                                                 |
 | ---------------- | ------------------------------------------------------------------- |
-| Mira desk        | read the scoped digest and submit intents for verified events only  |
+| Mira desk        | read the scoped digest and submit intents for verified events only, while it is the live owner of the provider account |
 | Consumer         | read the stop fence, claim eligible intents, record dry-run receipts on its current lease, and purge expired data |
 | Digest publisher | write schema-validated digests                                      |
 
@@ -318,6 +326,7 @@ transitions and audit writes atomically.
 | `fleet_access_grant_projects` | grant to project keys                                         |
 | `fleet_channel_identities`    | provider account, keyed sender and conversation fingerprints |
 | `fleet_identity_link_codes`   | one expiring code or pending confirmation per account         |
+| `fleet_desk_owners`           | active desk and credential, generation, quiesce state per account |
 | `fleet_provider_events`       | consumed event fingerprints and consumption time by account  |
 | `fleet_intents`               | kind, typed payload, risk, action hash, state, lease, receipts |
 | `fleet_intent_quotes`         | redacted quote, 90-day retention                              |
@@ -355,6 +364,16 @@ fingerprint, linked actor lookup and intent admission share one database
 transaction. Authoritative target aliases resolve across the project catalog,
 and the resolved action hash excludes the display quote.
 
+Slice 4 requires v2 desk evidence and a live, unquiesced desk-owner row for
+every desk operation. `FLEET_DESKS` carries key material only. The database
+checks the bearer, verifying key, signed claims and owner generation in the
+action transaction before consuming the event. Owner changes advance the
+generation by one through Owner-only audited functions, and a retired desk
+credential is never admitted again. The desk digest returns the linked
+actor's grant-scoped snapshot and uses the same hourly question quota as
+status-question intents. Approval requires a separate authorized principal.
+See the [desk API and cutover procedure](/reference/api-reference/fleet-access#desk-and-ingress-credentials).
+
 Link codes expire after ten minutes and a signed-in account must confirm the
 pending link with proof returned in the verified private conversation. The page
 can preview the pending provider and account label before confirming. A fresh
@@ -378,7 +397,7 @@ Quote readers must filter on `expires_at` from their first release.
 | 1     | Migrations: private tables, definer functions, triggers, quotas; SQL tests                    | Database (Codex)             | explicit owner approval before production |
 | 2     | Observer reads: `GET /api/v1/fleet/access`, digest publish and scoped read, `@tuturuuu/internal-api` client | Web API (Codex) | 1 |
 | 3     | Pending submissions: `POST /api/v1/fleet/intents`, identity linking, event binding            | Web API (Codex)              | 2 |
-| 4     | Mira desks move to the API; Slice 0 retired                                                   | Mira desk host (Codex)       | 3 and 5 acceptance |
+| 4     | Fleet API adds scoped desk digests and a live desk-owner fence. Mira ingress adopts v2 evidence and retires Slice 0 after cutover. | Web API and Mira desk host | 3 and 5 acceptance, independent review and send-fence rehearsal |
 | 5     | Dry-run consumer: claims, leases, generations, receipts and Fleet retention on Cloudflare | Orchestrator          | 3 |
 | 6     | Mastermind web Fleet area and admission change (en and vi)                                    | Design (Claude Opus)         | 2, release approval |
 | 7     | Mastermind mobile Fleet view                                                                  | Mobile design (Claude Opus)  | 2 |
@@ -435,5 +454,12 @@ Each slice links its coverage here when it lands:
   ([registered destinations](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/apps/registry/registered_destinations_smoke_test.dart)), strict parsing,
   the stale badge, request validation and payloads, receipts paging and the
   link flow in the [Fleet access mobile tests](https://github.com/tutur3u/platform/tree/main/apps/mobile/test/features/mastermind/fleet_access).
-- Slice 4: desk tests for unlinked senders, group chats, injected instructions
-  and stale digests.
+- Slice 4 covers Owner-only transitions, privileges and pinned search paths,
+  monotonic generations, direct-write fences, credential history, quiesce,
+  every bearer, key and claim mismatch, stale replicas, linked conversation
+  and project scope, capability, stop, revocation, shared question quotas,
+  desk self-approval and cross-operation replay in
+  [fleet-desk-admission.sql](https://github.com/tutur3u/platform/blob/main/apps/database/supabase/tests/fleet-desk-admission.sql).
+  The [Fleet desk route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/fleet/intents/route.test.ts)
+  cover v2 proof, v1 claims, signature domain and configuration rejection,
+  strict digest inputs, scoped totals and denial responses.
