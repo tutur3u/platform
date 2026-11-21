@@ -7,6 +7,7 @@ import {
   Inbox,
   KeyRound,
   LayoutDashboard,
+  Rocket,
   Server,
   ShieldCheck,
   Users,
@@ -58,6 +59,7 @@ export const NAV: readonly NavEntry[] = [
     to: '/$locale/projects',
   },
   { id: 'access', label: 'nav.access', icon: KeyRound },
+  { id: 'ship', label: 'nav.ship', icon: Rocket, to: '/$locale/ship' },
   { id: 'fleet', label: 'nav.fleet', icon: Server },
   {
     id: 'fleet-access',

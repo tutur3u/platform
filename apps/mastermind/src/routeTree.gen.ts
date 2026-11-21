@@ -6,6 +6,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LocaleRouteImport } from './routes/$locale'
 import { Route as LocaleFleetAccessRouteImport } from './routes/$locale_.fleet-access'
 import { Route as LocaleProjectsRouteImport } from './routes/$locale_.projects'
+import { Route as LocaleShipRouteImport } from './routes/$locale_.ship'
 
 const LocaleRoute = LocaleRouteImport.update({
   id: '/$locale',
@@ -22,35 +23,53 @@ const LocaleProjectsRoute = LocaleProjectsRouteImport.update({
   path: '/$locale/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocaleShipRoute = LocaleShipRouteImport.update({
+  id: '/$locale_/ship',
+  path: '/$locale/ship',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/$locale': typeof LocaleRoute
   '/$locale/fleet-access': typeof LocaleFleetAccessRoute
   '/$locale/projects': typeof LocaleProjectsRoute
+  '/$locale/ship': typeof LocaleShipRoute
 }
 export interface FileRoutesByTo {
   '/$locale': typeof LocaleRoute
   '/$locale/fleet-access': typeof LocaleFleetAccessRoute
   '/$locale/projects': typeof LocaleProjectsRoute
+  '/$locale/ship': typeof LocaleShipRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/$locale': typeof LocaleRoute
   '/$locale_/fleet-access': typeof LocaleFleetAccessRoute
   '/$locale_/projects': typeof LocaleProjectsRoute
+  '/$locale_/ship': typeof LocaleShipRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/$locale' | '/$locale/fleet-access' | '/$locale/projects'
+  fullPaths:
+    | '/$locale'
+    | '/$locale/fleet-access'
+    | '/$locale/projects'
+    | '/$locale/ship'
   fileRoutesByTo: FileRoutesByTo
-  to: '/$locale' | '/$locale/fleet-access' | '/$locale/projects'
-  id: '__root__' | '/$locale' | '/$locale_/fleet-access' | '/$locale_/projects'
+  to: '/$locale' | '/$locale/fleet-access' | '/$locale/projects' | '/$locale/ship'
+  id:
+    | '__root__'
+    | '/$locale'
+    | '/$locale_/fleet-access'
+    | '/$locale_/projects'
+    | '/$locale_/ship'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   LocaleRoute: typeof LocaleRoute
   LocaleFleetAccessRoute: typeof LocaleFleetAccessRoute
   LocaleProjectsRoute: typeof LocaleProjectsRoute
+  LocaleShipRoute: typeof LocaleShipRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -76,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LocaleProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$locale_/ship': {
+      id: '/$locale_/ship'
+      path: '/$locale/ship'
+      fullPath: '/$locale/ship'
+      preLoaderRoute: typeof LocaleShipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -83,6 +109,7 @@ const rootRouteChildren: RootRouteChildren = {
   LocaleRoute: LocaleRoute,
   LocaleFleetAccessRoute: LocaleFleetAccessRoute,
   LocaleProjectsRoute: LocaleProjectsRoute,
+  LocaleShipRoute: LocaleShipRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -21,7 +21,8 @@
       "approvals": "Phê duyệt",
       "cost": "Mức sử dụng",
       "settings": "Thông báo",
-      "fleetAccess": "Quyền truy cập đội máy"
+      "fleetAccess": "Quyền truy cập đội máy",
+      "ship": "Phát hành"
     },
     "sidebar": {
       "open": "Mở điều hướng",
@@ -415,6 +416,121 @@
         "expired": "Chưa gửi được: máy ngoại tuyến quá lâu",
         "shortcut": "Ctrl/Cmd Enter để gửi"
       }
+    },
+    "ship": {
+      "title": "Phát hành",
+      "subtitle": "Bản nào đang chạy, gì đang chờ và CI có khớp không, theo từng ứng dụng.",
+      "checkNow": "Kiểm tra ngay",
+      "checking": "Đang kiểm tra",
+      "checkedNext": "Đã kiểm tra {age} trước, lần tới sau {next}",
+      "checkedDue": "Đã kiểm tra {age} trước, sắp đến lần kiểm tra tới",
+      "lastGood": "Lần kiểm tra tốt gần nhất {time} ICT",
+      "checkDone": "Vừa kiểm tra xong",
+      "checkLimited": "Vừa kiểm tra xong. Thử lại sau {seconds} giây.",
+      "checkStopped": "Bộ thu thập đang dừng. Bật lại trong Cron Control.",
+      "checkDisabled": "Bộ thu thập chưa được bật.",
+      "checkUnconfigured": "Chưa cấu hình Kiểm tra ngay.",
+      "checkFailed": "Lần kiểm tra chưa xong. Các dòng giữ thời điểm cũ.",
+      "groups": {
+        "platform": "Nền tảng Tuturuuu",
+        "mobile": "Di động",
+        "upskii": "Upskii",
+        "masteryAi": "Mastery AI",
+        "pktm": "PKTM"
+      },
+      "liveOf": "{live}/{total} đang chạy",
+      "waitingBadge": "{n} commit đang chờ",
+      "nothingWaiting": "Không có gì chờ",
+      "columns": {
+        "app": "Ứng dụng",
+        "production": "Production",
+        "staging": "Staging",
+        "waiting": "Chờ phát hành",
+        "freshness": "Độ mới và nguồn"
+      },
+      "env": {
+        "notLive": "Chưa lên production",
+        "stagingOnly": "Chỉ có trên staging",
+        "unknown": "Chưa rõ",
+        "noRecord": "Không tìm thấy bản ghi triển khai",
+        "noStaging": "Không có môi trường staging",
+        "none": "Không có",
+        "ict": "{time} ICT",
+        "workerRuns": "Worker đang chạy {sha}",
+        "split": "{percent}% lưu lượng"
+      },
+      "deploy": {
+        "ok": "Đã triển khai",
+        "failed": "Triển khai lỗi",
+        "running": "Đang triển khai"
+      },
+      "ci": {
+        "success": "CI đạt",
+        "failure": "CI lỗi",
+        "pending": "CI đang chạy",
+        "none": "Chưa rõ CI"
+      },
+      "pending": {
+        "unknown": "Chưa rõ",
+        "upToDate": "Đã cập nhật",
+        "commits": "{n} commit",
+        "commitsCapped": "{n}+ commit",
+        "oldest": "cũ nhất {age}"
+      },
+      "fresh": {
+        "checked": "Đã kiểm tra {age} trước",
+        "partial": "Một phần: thiếu {sources}, phần còn lại {age} trước",
+        "stale": "Cũ: kiểm tra lần cuối {age} trước",
+        "unknown": "Chưa kiểm tra lần nào",
+        "notConfigured": "Chưa cấu hình nguồn",
+        "from": "Từ",
+        "partialOnly": "Một phần: thiếu {sources}, xác nhận lần cuối {age} trước"
+      },
+      "chips": {
+        "github": "Triển khai · CI",
+        "cloudflare": "Workers"
+      },
+      "source": {
+        "github": "GitHub deployments và CI ({repository})",
+        "cloudflare": "Phiên bản Cloudflare Worker",
+        "ok": "{age} trước",
+        "error": "lỗi, thử lần cuối {age} trước",
+        "backoff": "tạm dừng đến {time} ICT",
+        "unconfigured": "chưa cấu hình",
+        "down": "lỗi"
+      },
+      "stats": {
+        "live": "Đang chạy production",
+        "waiting": "Chờ phát hành",
+        "waitingValue": "{n} commit",
+        "oldestIn": "cũ nhất {age} ({app})",
+        "failing": "CI lỗi trên SHA đang chạy",
+        "doubtful": "Dòng cũ hoặc chưa rõ"
+      },
+      "partial": {
+        "title": "Một số nguồn không khả dụng",
+        "body": "Các dòng cần những nguồn này được đánh dấu Một phần. Phần còn lại vẫn mới.",
+        "retry": "Thử lại"
+      },
+      "error": {
+        "title": "Phát hành không kết nối được nguồn nào",
+        "body": "Lần kiểm tra thành công gần nhất lúc {time} ICT ({age} trước). Các dòng bị ẩn thay vì hiển thị như dữ liệu hiện tại.",
+        "never": "Chưa nguồn nào phản hồi. Các dòng bị ẩn thay vì hiển thị như dữ liệu hiện tại.",
+        "retry": "Thử lại",
+        "view": "Xem bản lúc {time}, có đánh dấu cũ",
+        "hide": "Ẩn bản cũ"
+      },
+      "load": {
+        "title": "Không có dữ liệu Phát hành",
+        "denied": "Tài khoản này không đọc được Phát hành.",
+        "unavailable": "Web không phản hồi. Không hiển thị gì như dữ liệu hiện tại.",
+        "invalid": "Web trả về dữ liệu Phát hành không xác minh được."
+      },
+      "empty": {
+        "title": "Chưa có lần kiểm tra nào",
+        "body": "Bộ thu thập ghi bản đầu tiên trong vòng hai phút sau khi được bật. Kiểm tra ngay sẽ chạy ngay lập tức."
+      },
+      "loading": "Đang kiểm tra GitHub deployments, lượt chạy CI và phiên bản Cloudflare Worker. Không hiển thị dữ liệu cũ trong lúc chờ."
     }
   },
   "owner": "Chủ sở hữu đã xác thực",

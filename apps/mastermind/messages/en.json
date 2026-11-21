@@ -21,7 +21,8 @@
       "approvals": "Approvals",
       "cost": "Usage",
       "settings": "Notifications",
-      "fleetAccess": "Fleet access"
+      "fleetAccess": "Fleet access",
+      "ship": "Ship"
     },
     "sidebar": {
       "open": "Open navigation",
@@ -415,6 +416,121 @@
         "expired": "Not delivered: the machine stayed offline",
         "shortcut": "Ctrl/Cmd Enter to send"
       }
+    },
+    "ship": {
+      "title": "Ship",
+      "subtitle": "What is live, what is waiting and whether CI agrees, per app.",
+      "checkNow": "Check now",
+      "checking": "Checking now",
+      "checkedNext": "Checked {age} ago, next in {next}",
+      "checkedDue": "Checked {age} ago, next check due",
+      "lastGood": "Last good check {time} ICT",
+      "checkDone": "Checked just now",
+      "checkLimited": "Checked moments ago. Try again in {seconds} s.",
+      "checkStopped": "The collector is stopped. Resume it in Cron Control.",
+      "checkDisabled": "The collector is not enabled yet.",
+      "checkUnconfigured": "Check now is not configured.",
+      "checkFailed": "The check did not finish. Rows keep their last stamps.",
+      "groups": {
+        "platform": "Tuturuuu platform",
+        "mobile": "Mobile",
+        "upskii": "Upskii",
+        "masteryAi": "Mastery AI",
+        "pktm": "PKTM"
+      },
+      "liveOf": "{live} of {total} live",
+      "waitingBadge": "{n} commits waiting",
+      "nothingWaiting": "Nothing waiting",
+      "columns": {
+        "app": "App",
+        "production": "Production",
+        "staging": "Staging",
+        "waiting": "Waiting to ship",
+        "freshness": "Freshness and sources"
+      },
+      "env": {
+        "notLive": "Not in production yet",
+        "stagingOnly": "Staging only",
+        "unknown": "Unknown",
+        "noRecord": "No deployment record found",
+        "noStaging": "No staging environment",
+        "none": "None",
+        "ict": "{time} ICT",
+        "workerRuns": "Worker runs {sha}",
+        "split": "{percent}% of traffic"
+      },
+      "deploy": {
+        "ok": "Deployed",
+        "failed": "Deploy failed",
+        "running": "Deploying"
+      },
+      "ci": {
+        "success": "CI passed",
+        "failure": "CI failed",
+        "pending": "CI running",
+        "none": "CI unknown"
+      },
+      "pending": {
+        "unknown": "Unknown",
+        "upToDate": "Up to date",
+        "commits": "{n} commits",
+        "commitsCapped": "{n}+ commits",
+        "oldest": "oldest {age}"
+      },
+      "fresh": {
+        "checked": "Checked {age} ago",
+        "partial": "Partial: {sources} unavailable, rest {age} ago",
+        "stale": "Stale: last check {age} ago",
+        "unknown": "Never checked",
+        "notConfigured": "Source not configured",
+        "from": "From",
+        "partialOnly": "Partial: {sources} unavailable, last confirmed {age} ago"
+      },
+      "chips": {
+        "github": "Deploys · CI",
+        "cloudflare": "Workers"
+      },
+      "source": {
+        "github": "GitHub deployments and CI ({repository})",
+        "cloudflare": "Cloudflare Worker versions",
+        "ok": "{age} ago",
+        "error": "failed, last try {age} ago",
+        "backoff": "paused until {time} ICT",
+        "unconfigured": "not configured",
+        "down": "down"
+      },
+      "stats": {
+        "live": "Live in production",
+        "waiting": "Waiting to ship",
+        "waitingValue": "{n} commits",
+        "oldestIn": "oldest {age} ({app})",
+        "failing": "CI failing on a live SHA",
+        "doubtful": "Stale or unknown rows"
+      },
+      "partial": {
+        "title": "Some sources are unavailable",
+        "body": "Rows that rely on them are marked Partial. The rest are current.",
+        "retry": "Retry"
+      },
+      "error": {
+        "title": "Ship could not reach any source",
+        "body": "The last successful check was {time} ICT ({age} ago). Rows are hidden rather than shown as current.",
+        "never": "No source has answered yet. Rows are hidden rather than shown as current.",
+        "retry": "Try again",
+        "view": "View the {time} snapshot, marked stale",
+        "hide": "Hide the stale snapshot"
+      },
+      "load": {
+        "title": "Ship data is unavailable",
+        "denied": "This account cannot read Ship.",
+        "unavailable": "Web did not answer. Nothing is shown as current.",
+        "invalid": "Web returned data Ship could not verify."
+      },
+      "empty": {
+        "title": "No ship check has run yet",
+        "body": "The collector writes the first snapshot within two minutes of being enabled. Check now runs it immediately."
+      },
+      "loading": "Checking GitHub deployments, CI runs and Cloudflare Worker versions. Nothing is shown from an older snapshot while this runs."
     }
   },
   "owner": "Authenticated owner",
