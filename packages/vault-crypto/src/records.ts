@@ -1,8 +1,19 @@
+import { equalBytes, toHex } from './bytes';
 import type { CanonicalObject } from './canonical';
 import { contextBytes, type VaultScope } from './context';
-import { equalBytes } from './bytes';
 import { VaultCryptoError } from './errors';
 import { sha256 } from './kdf';
+import type { KeyLogState } from './keylog';
+import {
+  bool,
+  bytes,
+  count,
+  malformed,
+  nullableBytes,
+  oneOf,
+  record,
+  text,
+} from './schema';
 import { assertSignature, signObject } from './signing';
 
 export const CIPHERS = [
@@ -15,8 +26,8 @@ export type Cipher = (typeof CIPHERS)[number];
 
 /**
  * Re-encryption into a new epoch keeps the original record's hash and
- * signature, and the re-encrypting admin attests the plaintext is unchanged,
- * so a consumer can verify both signatures.
+ * signature, and an admin attests the plaintext is unchanged, so a consumer
+ * verifies both signatures.
  */
 export type ReencryptionSource = {
   readonly record_hash: Uint8Array;
@@ -49,69 +60,90 @@ export type SignedRecord = {
   readonly signature: Uint8Array;
 };
 
+const RECORD_FIELDS = [
+  'deployment',
+  'vault_id',
+  'env',
+  'variable_id',
+  'name',
+  'type',
+  'sensitive',
+  'version',
+  'epoch',
+  'cipher',
+  'enc_id',
+  'ciphertext_hash',
+  'prev_record_hash',
+  'auth_seq',
+  'writer_id',
+  'written_at',
+  'source',
+] as const;
 const NAME = /^[A-Z_][A-Z0-9_]{0,127}$/;
+export const MAX_PROVENANCE_DEPTH = 16;
 
 function invalid(message: string): never {
   throw new VaultCryptoError('invalid_input', message);
 }
 
-const isCount = (n: number) => Number.isSafeInteger(n) && n >= 0;
+function fail(message: string): never {
+  throw new VaultCryptoError('bad_signature', message);
+}
 
-export function validateRecord(r: VersionRecord): void {
-  if (!NAME.test(r.name)) invalid('Invalid variable name');
-  if (r.type !== 'secret' && r.type !== 'variable') invalid('Invalid type');
-  if (!CIPHERS.includes(r.cipher)) invalid('Invalid cipher');
-  if (!isCount(r.version) || r.version < 1) invalid('Invalid version');
-  if (!isCount(r.epoch) || !isCount(r.auth_seq) || !isCount(r.written_at)) {
-    invalid('Invalid counter');
-  }
-  if ((r.version === 1) !== (r.prev_record_hash === null)) {
+/** Exact wire schema plus the structural rules every record obeys. */
+export function validateRecord(value: unknown): asserts value is VersionRecord {
+  const r = record(value, RECORD_FIELDS, 'record');
+  text(r.deployment, 'deployment');
+  bytes(r.vault_id, 32, 'vault_id');
+  text(r.env, 'env');
+  text(r.variable_id, 'variable_id');
+  if (typeof r.name !== 'string' || !NAME.test(r.name)) malformed('name');
+  oneOf(r.type, ['secret', 'variable'] as const, 'type');
+  const sensitive = bool(r.sensitive, 'sensitive');
+  const version = count(r.version, 'version', 1);
+  count(r.epoch, 'epoch', 1);
+  const cipher = oneOf(r.cipher, CIPHERS, 'cipher');
+  const encId = nullableBytes(r.enc_id, 16, 'enc_id');
+  const ctHash = nullableBytes(r.ciphertext_hash, 32, 'ciphertext_hash');
+  const prev = nullableBytes(r.prev_record_hash, 32, 'prev_record_hash');
+  count(r.auth_seq, 'auth_seq');
+  text(r.writer_id, 'writer_id');
+  count(r.written_at, 'written_at');
+  if ((version === 1) !== (prev === null))
     invalid('Only the first version has no previous record');
-  }
-  if (r.prev_record_hash !== null && r.prev_record_hash.length !== 32) {
-    invalid('Invalid previous record hash');
-  }
-  const tombstone = r.cipher === 'tombstone';
-  if (
-    tombstone !== (r.ciphertext_hash === null) ||
-    tombstone !== (r.enc_id === null)
-  ) {
+  const tombstone = cipher === 'tombstone';
+  if (tombstone !== (ctHash === null) || tombstone !== (encId === null)) {
     invalid('Ciphertext fields must match the cipher');
   }
-  if (r.ciphertext_hash !== null && r.ciphertext_hash.length !== 32) {
-    invalid('Invalid ciphertext hash');
-  }
-  if (r.enc_id !== null && r.enc_id.length !== 16) invalid('Invalid enc_id');
-  if ((r.cipher === 'hpke-esk') !== r.sensitive && !tombstone) {
+  if (!tombstone && (cipher === 'hpke-esk') !== sensitive) {
     invalid('Sensitive values must be sealed to the ESK');
   }
   if (r.source !== null) {
+    const s = record(
+      r.source,
+      ['record_hash', 'writer_id', 'signature', 'plaintext_unchanged'],
+      'source'
+    );
+    bytes(s.record_hash, 32, 'source');
+    text(s.writer_id, 'source');
+    bytes(s.signature, 64, 'source');
+    if (s.plaintext_unchanged !== true) malformed('source');
     if (tombstone) invalid('A tombstone is not a re-encryption');
-    if (r.source.plaintext_unchanged !== true) invalid('Missing attestation');
-    if (
-      r.source.record_hash.length !== 32 ||
-      r.source.signature.length !== 64
-    ) {
-      invalid('Invalid re-encryption source');
-    }
   }
 }
 
-function recordObject(record: VersionRecord): CanonicalObject {
-  return {
-    ...record,
-    source: record.source === null ? null : { ...record.source },
-  };
+function recordObject(r: VersionRecord): CanonicalObject {
+  return { ...r, source: r.source === null ? null : { ...r.source } };
 }
 
 export function signRecord(
   secretKey: Uint8Array,
-  record: VersionRecord
+  r: VersionRecord
 ): SignedRecord {
-  validateRecord(record);
+  validateRecord(r);
   return {
-    record,
-    signature: signObject(secretKey, 'record', recordObject(record)),
+    record: r,
+    signature: signObject(secretKey, 'record', recordObject(r)),
   };
 }
 
@@ -125,68 +157,145 @@ export function recordHash(signed: SignedRecord): Uint8Array {
   );
 }
 
-export type WriterLookup = (
-  writerId: string,
-  env: string,
-  authSeq: number
-) => { readonly signingKey: Uint8Array; readonly canWrite: boolean } | null;
+export type Authority = {
+  readonly signingKey: Uint8Array;
+  readonly canWrite: boolean;
+  /** Admin authority: may attest that a re-encryption preserves plaintext. */
+  readonly canAttest: boolean;
+};
 
 /**
- * Verifies a record's structure and writer signature, that the writer could
- * write at `auth_seq`, and, for a re-encryption, the source writer's
- * signature over the original record. The original record is supplied by the
- * caller, and its hash must match the reference.
+ * Authority of `userId` on `env` after key-log entry `seq`: a workspace owner
+ * or admin, or the member role in force then.
  */
-export function verifyRecord(
-  signed: SignedRecord,
-  writerAt: WriterLookup,
-  original?: SignedRecord
-): void {
+export function authorityAt(
+  state: KeyLogState,
+  userId: string,
+  env: string,
+  seq: number
+): Authority | null {
+  const m = state.managersAt(seq);
+  const manager = [...m.owners, ...m.admins].find((p) => p.user_id === userId);
+  if (manager)
+    return { signingKey: manager.signing_key, canWrite: true, canAttest: true };
+  const role = state.roleAt(env, userId, seq);
+  if (!role) return null;
+  return {
+    signingKey: role.signingKey,
+    canWrite:
+      role.role === 'writer' || role.role === 'editor' || role.role === 'admin',
+    canAttest: role.role === 'admin',
+  };
+}
+
+function verifyOne(signed: SignedRecord, state: KeyLogState): VersionRecord {
+  validateRecord(signed.record);
   const r = signed.record;
-  validateRecord(r);
-  const writer = writerAt(r.writer_id, r.env, r.auth_seq);
-  if (!writer?.canWrite) {
-    throw new VaultCryptoError(
-      'bad_signature',
-      'Writer not authorised at auth_seq'
-    );
+  if (
+    r.deployment !== state.deployment ||
+    !equalBytes(r.vault_id, state.vaultId)
+  )
+    fail('Record for another vault');
+  bytes(signed.signature, 64, 'signature');
+  const authority = authorityAt(state, r.writer_id, r.env, r.auth_seq);
+  if (!authority?.canWrite || (r.source !== null && !authority.canAttest)) {
+    fail('Writer not authorised at auth_seq');
   }
   assertSignature(
-    writer.signingKey,
+    authority.signingKey,
     'record',
     recordObject(r),
     signed.signature
   );
-  if (r.source === null) return;
-  if (!original || !equalBytes(recordHash(original), r.source.record_hash)) {
-    throw new VaultCryptoError(
-      'bad_signature',
-      'Re-encryption source mismatch'
-    );
+  return r;
+}
+
+/**
+ * Historical verification: the record, and for a re-encryption every
+ * ancestor up to an original write, were signed by principals authorised at
+ * their `auth_seq`. Ancestors are looked up by record hash in `ancestry`.
+ */
+export function verifyRecord(
+  signed: SignedRecord,
+  state: KeyLogState,
+  ancestry: ReadonlyMap<string, SignedRecord> = new Map()
+): void {
+  let current = verifyOne(signed, state);
+  for (let depth = 0; current.source !== null; depth++) {
+    if (depth >= MAX_PROVENANCE_DEPTH) fail('Re-encryption chain too long');
+    const source = current.source;
+    const original = ancestry.get(toHex(source.record_hash));
+    if (!original || !equalBytes(recordHash(original), source.record_hash))
+      fail('Re-encryption source missing');
+    const o = verifyOne(original, state);
+    if (
+      o.cipher === 'tombstone' ||
+      o.env !== current.env ||
+      o.variable_id !== current.variable_id ||
+      o.name !== current.name ||
+      o.sensitive !== current.sensitive ||
+      o.writer_id !== source.writer_id ||
+      !equalBytes(original.signature, source.signature) ||
+      o.epoch >= current.epoch ||
+      o.version >= current.version
+    ) {
+      fail('Re-encryption source mismatch');
+    }
+    current = o;
   }
-  const o = original.record;
+}
+
+/**
+ * Append validation for the witness: on top of historical verification, the
+ * writer must still hold authority at the current head (no intervening
+ * revocation), the record must use the current epoch, and it must extend the
+ * variable's current head exactly.
+ */
+export function verifyAppend(
+  signed: SignedRecord,
+  state: KeyLogState,
+  head: SignedRecord | null,
+  ancestry?: ReadonlyMap<string, SignedRecord>
+): void {
+  verifyRecord(signed, state, ancestry);
+  const r = signed.record;
+  const now = authorityAt(state, r.writer_id, r.env, state.headSeq);
   if (
-    o.variable_id !== r.variable_id ||
-    o.env !== r.env ||
-    o.writer_id !== r.source.writer_id ||
-    !equalBytes(original.signature, r.source.signature) ||
-    o.epoch >= r.epoch
+    !now?.canWrite ||
+    !equalBytes(
+      now.signingKey,
+      authorityAt(state, r.writer_id, r.env, r.auth_seq)?.signingKey ??
+        new Uint8Array()
+    )
   ) {
-    throw new VaultCryptoError(
-      'bad_signature',
-      'Re-encryption source mismatch'
-    );
+    fail('Writer authority revoked since auth_seq');
   }
-  verifyRecord(original, writerAt);
+  if (r.source !== null && !now.canAttest)
+    fail('Writer authority revoked since auth_seq');
+  const epoch = state.epochAt(r.env);
+  if (!epoch || epoch.epoch !== r.epoch)
+    fail('Record must use the current epoch');
+  if (head === null) {
+    if (r.version !== 1) fail('First record must be version 1');
+    return;
+  }
+  if (head.record.variable_id !== r.variable_id || head.record.env !== r.env)
+    fail('Head for another variable');
+  if (
+    r.version !== head.record.version + 1 ||
+    !equalBytes(r.prev_record_hash ?? new Uint8Array(), recordHash(head))
+  ) {
+    fail('Record does not extend the current head');
+  }
 }
 
 export function assertCiphertextHash(
-  record: VersionRecord,
+  r: VersionRecord,
   ciphertext: Uint8Array
 ): void {
   if (
-    record.ciphertext_hash === null ||
-    !equalBytes(sha256(ciphertext), record.ciphertext_hash)
+    r.ciphertext_hash === null ||
+    !equalBytes(sha256(ciphertext), r.ciphertext_hash)
   ) {
     throw new VaultCryptoError(
       'bad_mac',

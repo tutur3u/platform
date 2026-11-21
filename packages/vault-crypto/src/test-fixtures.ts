@@ -1,12 +1,14 @@
 import {
   type EntryBody,
   type EntryPayload,
+  type EpochDescriptor,
   entryHash,
   type GenesisBody,
   genesisHash,
   type PartyKey,
   type SignedEntry,
   type SignedGenesis,
+  sortSignatures,
   vaultIdOf,
 } from './keylog';
 import {
@@ -30,14 +32,16 @@ export function key(p: Party): PartyKey {
 }
 
 function sign(body: GenesisBody | EntryBody, signers: readonly Party[]) {
-  return signers.map((s) => ({
-    key: s.signing_key,
-    signature: signObject(
-      s.pair.secretKey,
-      'key-log',
-      body as unknown as Parameters<typeof signObject>[2]
-    ),
-  }));
+  return sortSignatures(
+    signers.map((s) => ({
+      key: s.signing_key,
+      signature: signObject(
+        s.pair.secretKey,
+        'key-log',
+        body as unknown as Parameters<typeof signObject>[2]
+      ),
+    }))
+  );
 }
 
 export function makeGenesis(
@@ -89,4 +93,32 @@ export class LogBuilder {
   get pinned() {
     return { deployment: DEPLOYMENT, vaultId: this.vaultId };
   }
+}
+
+export function descriptor(
+  env: string,
+  n: number,
+  fps: number[] = [1]
+): EpochDescriptor {
+  return {
+    env,
+    epoch: n,
+    edk_id: new Uint8Array(16).fill(n),
+    intake_key: new Uint8Array(32).fill(2),
+    esk_key: new Uint8Array(32).fill(3),
+    pin_allowed: false,
+    wraps: fps.map((f) => ({
+      recipient_fp: new Uint8Array(32).fill(f),
+      key_kind: 'edk' as const,
+      epoch: n,
+      digest: new Uint8Array(32).fill(f + 10),
+    })),
+    history:
+      n === 1
+        ? null
+        : {
+            normal: new Uint8Array(32).fill(7),
+            sensitive: new Uint8Array(32).fill(8),
+          },
+  };
 }
