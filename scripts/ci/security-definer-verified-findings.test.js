@@ -118,6 +118,116 @@ const expectedVerifiedIdentities = [
     'public-execute',
   ],
   [
+    'apps/database/supabase/migrations/20261121140000_people_registry_schema.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    'private.people_registry_enable(uuid,uuid,jsonb)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    'private.people_registry_get_control(uuid,uuid)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    'private.people_registry_set_binding(uuid,uuid,private . people_channel,text,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    'private.people_registry_set_flags(uuid,uuid,bool,bool,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140002_people_registry_authority.sql',
+    'private.people_registry_set_manager(uuid,uuid,uuid,timestamptz,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_add_identity(uuid,uuid,uuid,private . people_channel,text,bytea,smallint,bytea,private . people_link_basis,bytea,smallint,bytea [ ])',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_create_person(uuid,uuid,private . people_person_kind,text,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_decide_identity(uuid,uuid,uuid,private . people_link_state)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_set_consent(uuid,uuid,uuid,uuid,private . people_consent_store,private . people_consent_state,private . people_consent_basis,jsonb,jsonb,timestamptz)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_set_fact(uuid,uuid,uuid,text,text,bigint,private . people_audience,uuid [ ],bool,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_set_relationship(uuid,uuid,uuid,uuid,private . people_relationship_kind,text,numeric,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_set_rule(uuid,uuid,private . people_rule_scope,private . people_channel,uuid,uuid,private . people_rule,jsonb,timestamptz,bigint,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140003_people_registry_records.sql',
+    'private.people_update_person(uuid,uuid,uuid,bigint,text,private . people_person_kind)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    'private.people_begin_delete(uuid,uuid,uuid,bool)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    'private.people_finish_delete(uuid,uuid,uuid)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    'private.people_get_person(uuid,uuid,uuid)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    'private.people_lift_suppression(uuid,uuid,bytea,smallint)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261121140004_people_registry_lifecycle.sql',
+    'private.people_list_persons(uuid,uuid,text,int4,uuid)',
+    'public-execute',
+  ],
+  [
     'apps/database/supabase/migrations/20261121141020_mira_operator_permission_evaluator.sql',
     'public.has_workspace_permission(uuid,uuid,text)',
     'public-execute',
@@ -148,7 +258,9 @@ test('verified findings remain separate from the historical debt inventory', () 
             ? ['authenticated', 'service_role']
             : entry.file.includes('030500') ||
                 entry.file.includes('20261104213040') ||
-                entry.file.includes('20261120194100')
+                entry.file.includes('20261120194100') ||
+                (entry.file.includes('20261121140000') &&
+                  entry.rule === 'dynamic-execute-acl')
               ? []
               : ['service_role']
     );
