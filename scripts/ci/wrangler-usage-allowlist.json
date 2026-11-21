@@ -929,10 +929,10 @@
       "uses": 1,
       "gap": "pending-migration",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/commit/c2e7e43dc42fe44a1a828348103e4cd214d397ff",
-        "reason": "Gateway config after the trusted-proxy secret name and the learn/nova mounts. The secret comment no longer spells a Wrangler command, so the file stays one config use and zero publish calls. The pending-migration gap is unchanged."
+        "decision": "https://github.com/tutur3u/platform/commit/74c3ad6ccba4cc44ac4e7f64ed06cac453beeca6",
+        "reason": "Gateway config comments describe binding-only Web routing: no WEB_ORIGIN, no passthrough mode, rollback by previous gateway version. No Wrangler command or publish call is added, so the file stays one config use and the pending-migration gap is unchanged."
       },
-      "digest": "d59918a1a323c1e93ce92bd752df39e494789cfa01500bc485e491a45c111aa5"
+      "digest": "58d7cfc1d8d2debd2523b3a210736feaace8cd104371780e9dfa8815c98b356e"
     },
     "apps/git/.gitignore": {
       "lines": 1,
